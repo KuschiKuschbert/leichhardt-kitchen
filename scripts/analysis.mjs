@@ -178,8 +178,8 @@ export async function analyse(K, options = {}) {
   const pub = Object.fromEntries(publications);
   const people = (Array.isArray(cfg.people) ? cfg.people : []).filter(p => p && typeof p.id === 'string' && p.active !== false).map(p => ({ id: p.id, name: String(p.name || '') }));
   const secs = (Array.isArray(cfg.kitSecs) ? cfg.kitSecs : []).filter(x => x && !x.off && typeof x.name === 'string' && x.name.trim()).map(x => x.name);
-  const queue = core.trainingQueue(pub['30'], training, people, secs);
-  board.needs = { links: core.linkQueue(pub['90'], refs).length, training: queue.length, inTraining: queue.filter(o => o.assessment && o.assessment.status === 'in-training').length };
+  // the training counts went with the written assessments (10 Nov 2026) and nothing read them (13 Nov 2026, R4)
+  board.needs = { links: core.linkQueue(pub['90'], refs).length };
   if (bytes(board) > 700000) throw new Error('analysis-dashboard-too-large');
   const teamFrom = shift(today, -7 * TEAM_WEEKS), shiftFrom = shift(today, -TEAM_DAYS);
   const plans = await read(K.collection('team').where('day', '>=', teamFrom).where('day', '<=', to));

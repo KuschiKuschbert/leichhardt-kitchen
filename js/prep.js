@@ -3029,7 +3029,7 @@
      is guessed: a line with no section known (none typed, none for you today, none learned) has no Add. No reads. */
   function suggestHTML() {
     var list = typeahead(S.text).slice(0, 4);
-    S.sugg = list;
+    S.sugg = list; if (list.length) sg('ptype', 's');
     // a small heading when the first suggestions are lines this kitchen writes (learned), as drawn; recipe names alone have none
     return (list.some(function (x) { return x.uses > 0; }) ? '<p class="nb-sgh">Your usual</p>' : '') + list.map(function (x, i) {
       var sec = sugSec(x), uq = String(S.qty || '').trim() || usualQty(x.text), bits = [uq, sec, matchRecipe(x.text) ? 'has a recipe' : ''].filter(Boolean).join(' · ');
@@ -3061,7 +3061,9 @@
      lk.daily (out of date at the next kitchen day: then it is sent as one record daily/<day>_<phone tag> through W(),
      and started again). The nightly job adds the records into summary/usage and deletes them after 7 days.
      A count that cannot be sent waits on the phone for the next open (at most 7 days, then it is dropped). */
-  var DAILY_FEATS = ['quick', 'usual', 'ordfill', 'fnneed', 'checks'];
+  // 13 Nov 2026 (docs/smart-book-options/brief.md, E1): every suggestion is counted, and e is "changed after the guess".
+  // The rules allow 12 features in a daily record (firestore.rules, daily): this list must stay at 12 or fewer.
+  var DAILY_FEATS = ['quick', 'usual', 'ordfill', 'fnneed', 'checks', 'wfill', 'xfill', 'wchip', 'xchip', 'otype', 'oreg', 'ptype'];
   var LCP_B = [500, 1000, 2500, 4000], TAP_B = [50, 100, 200, 500];   // the third edge is Google's target: 2.5 s, 200 ms
   var dailyMem = null;
   function dailyGet() {
@@ -4718,10 +4720,11 @@
     if ((kind === 'insights' || kind === 'team') && statsGaps()) { toast(MISS_TEXT); return; }
     var n = S.statsRange, a = AF(), tag = dayNow() + '-' + n + 'd';
     if (kind === 'insights' && S.stats && !S.stats.loading) {
-      var rows = [['Date', 'Weekday', 'Section', 'Line', 'Amount', 'Written by', 'Written on', 'Written at', 'Rolled over (times)', 'Ticked', 'Reported prepared by', 'Ticked at', 'Minutes to tick']];
+      var rows = [['Date', 'Weekday', 'Section', 'Line', 'Amount', 'Written by', 'Written on', 'Written at', 'Rolled over (times)', 'Ticked', 'Reported prepared by', 'Ticked at', 'Minutes to tick', 'On it by', 'On it at', 'Minutes from On it to tick']];
       afDates(n, 0).forEach(function (d) { afItems(d).forEach(function (x) {
         if (!afMine(x) && !(a.who && preparedWorker(x).id === a.who)) return;
-        rows.push([d, DOWN[DOW.indexOf(parseYmd(d).getDay())], x.station || 'General', x.text, x.qty || '', x.rolled ? (x.origBy || '') : (x.addedBy || ''), firstAt(x) ? T.day(firstAt(x)) : '', hm(firstAt(x)), rolledN(x), x.done ? 'yes' : 'no', preparedWorker(x).name || '', hm(x.doneAt), x.done && x.doneAt && x.addedAt && !x.rolled ? Math.round((x.doneAt - x.addedAt) / 60000) : '']);
+        rows.push([d, DOWN[DOW.indexOf(parseYmd(d).getDay())], x.station || 'General', x.text, x.qty || '', x.rolled ? (x.origBy || '') : (x.addedBy || ''), firstAt(x) ? T.day(firstAt(x)) : '', hm(firstAt(x)), rolledN(x), x.done ? 'yes' : 'no', preparedWorker(x).name || '', hm(x.doneAt), x.done && x.doneAt && x.addedAt && !x.rolled ? Math.round((x.doneAt - x.addedAt) / 60000) : '',
+          typeof x.onBy === 'string' ? x.onBy : '', typeof x.onAt === 'number' && x.onAt ? hm(x.onAt) : '', x.done && typeof x.onAt === 'number' && x.onAt && x.doneAt > x.onAt ? Math.round((x.doneAt - x.onAt) / 60000) : '']);
       }); });
       downloadCSV('leichhardt-prep-lines-' + tag + '.csv', rows);
     } else if (kind === 'transfers' && S.xStats && !S.xStats.loading) {
@@ -4730,6 +4733,7 @@
       S.xStats.lines.filter(function (x) { return !x.deleted && xd[x.date] && (!xv || okey(x.venue) === xv); })
         .sort(function (p, q) { return (p.date + hm(p.addedAt)) < (q.date + hm(q.addedAt)) ? -1 : 1; })
         .forEach(function (x) { xr.push([x.date, DOWN[DOW.indexOf(parseYmd(x.date).getDay())], hm(x.addedAt), x.dir === 'in' ? 'We took' : 'They took', x.venue || '', x.person || '', x.text, x.amount, x.unit, x.note || '', x.addedBy || '', x.returned ? 'Yes' : 'No', x.returnedBy || '', x.returnedAt ? new Date(x.returnedAt).toISOString() : '']); });
+      if (X_OLD.s === 'ok') xOldList(n).filter(function (x) { return !xv || okey(x.venue) === xv; }).forEach(function (x) { xr.push([x.date, DOWN[DOW.indexOf(parseYmd(x.date).getDay())], hm(x.addedAt), x.dir === 'in' ? 'We took' : 'They took', x.venue || '', x.person || '', x.text, x.amount, x.unit, x.note || '', x.addedBy || '', 'No, still out (before these days)', '', '']); });
       downloadCSV('leichhardt-transfers-' + tag + '.csv', xr);
     } else if (kind === 'team' && S.stats && !S.stats.loading) {
       var td = teamData(n), t = [['Person', 'Lines written', 'Days written', 'Lines ticked', 'Days ticked', 'Main section', 'Share in main section', 'Days in a row', 'Based on', 'Rotation', 'Last wrote']];
@@ -4802,7 +4806,9 @@
   }
   /* summary/usage (scripts/nightly-learn.mjs): one read when Insights opens, kept for the day in lk.use (out of date at
      the next kitchen day; the head chef's Google account only). */
-  var USE_NAMES = { quick: 'Quick add chips', usual: 'Usual amount chips', ordfill: 'Usual order amount filled in', fnneed: 'For the functions (Handy)', checks: 'To check before the functions' };
+  var USE_NAMES = { quick: 'Quick add chips', usual: 'Usual amount chips', ordfill: 'Usual order amount filled in', fnneed: 'For the functions (Handy)', checks: 'To check before the functions',
+    wfill: 'Wastage: filled from last time', xfill: 'Transfers: unit filled from last time', wchip: 'Wastage: Logged often and suggestions', xchip: 'Transfers: often taken and suggestions',
+    otype: 'Orders: suggestions while typing', oreg: 'Orders: Usually ordered', ptype: 'Prep: suggestions while typing' };
   function loadUsage() {
     if (!kitchenAccess() || !S.configFull) return;
     if (S.useFor === dayNow() || S.useBusy || !fb || S.level !== 'owner' || waiting('use')) return;
@@ -6341,9 +6347,7 @@
       // Transfers not returned: one query of the open loans when the Dashboard opens and on Refresh (one read each, at least 1).
       loans: function () {
         if (!intelligenceAllowed()) return Promise.reject({ code: 'permission' });
-        return fb.fs.getDocsFromServer(fb.fs.query(fb.fs.collection.apply(null, [fb.db].concat(base(), ['transferOpen'])), fb.fs.where('open', '==', true))).then(function (sn) {
-          return sn.docs.map(function (d) { var v = d.data(); return Object.assign({}, v.record, { date: v.date, id: v.lineId }); });
-        });
+        return openLoansRead();
       },
       open: function (tab, days) {
         if (tab === 'team') { if (teamOK()) location.hash = '#/team'; return; }
@@ -7445,6 +7449,18 @@
     var hit = ingredientFor(t), p = me(), ref = fb.fs.doc(ordCol(S.ordDate));
     var oFix = pr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ');
     var q = (reg ? String(reg.q || '') : S.oqty).trim().slice(0, 40), need = reg ? '' : needOf({ need: S.oneed });
+    /* Already on the list (13 Nov 2026, docs/smart-book-options/brief.md, I2): an open request for the same item, with
+       the same amount or none, is not added a second time (staff cannot take one off). The slip says so, with Add anyway,
+       like the prep list. Only a list that loaded is checked: a list still loading never reads as "not there". */
+    if (!S.oDupOk && S.ordDate === dayNow() && S.ordState === 'ok') {
+      var odk = dupKey(t), odq = qtyKey(q), otw = odk && S.ordLines.filter(function (x) { return !x.deleted && !x.ordered && dupKey(x.text) === odk && (!odq || !qtyKey(x.qty) || qtyKey(x.qty) === odq); })[0];
+      if (otw) {
+        var oWho = [otw.qty, otw.addedBy].filter(Boolean).join(', ');
+        toast(slipName(otw.text) + ' is already on the list' + (oWho ? ' (' + oWho + ')' : '') + '.', { label: 'Add anyway', fn: function () { S.oDupOk = true; try { addOrder(oneTapAdd, reg); } finally { S.oDupOk = false; } } });
+        if (!reg) focusK('o-text');
+        return;
+      }
+    }
     // a regular tapped over its own name typed, or the start of it ("Cre" for Cream): the boxes empty too, or Add put it
     // on the list twice (29 Oct 2026). Anything else half typed stays for its own Add.
     var own = !!reg && !!okey(S.otext) && okey(reg.text).indexOf(okey(S.otext)) === 0;
@@ -7497,7 +7513,7 @@
     return out.slice(0, 6);
   }
   function ordSuggHTML() {
-    var l = ordSuggest(); S.osugg = l;
+    var l = ordSuggest(); S.osugg = l; if (l.length) sg('otype', 's');
     return l.map(function (t, i) { var uq = (ordQtyList(t)[0] || {}).q; return '<button type="button" class="chip sq nb-sg" data-p="osugg" data-i="' + i + '">' + esc(t) + (uq ? ' <span class="nb-uq">' + esc(uq) + '</span>' : '') + '</button>'; }).join('') + oQtyChipsHTML();
   }
   function recipeChips(x) {
@@ -7619,7 +7635,8 @@
       .forEach(function (x) { if (list.length < 10) list.push({ text: x.text, same: x.dow[dn], nd: x.uses, q: (ordQtyList(x.text)[0] || {}).q || '' }); });
     S.oregs = list;
     if (!list.length) return '';
-    return '<div class="w-often"><span class="nb-ql">Usually ordered on a ' + esc(dname) + ' or often. Tap to add</span><div class="chiprow">' + list.map(function (e, i) { return '<button type="button" class="chip sq" data-p="oreg" data-i="' + i + '">' + esc(e.text) + (e.q ? ' <span class="nb-uq">' + esc(e.q) + '</span>' : '') + '</button>'; }).join('') + '</div></div>';
+if (list.length) sg('oreg', 's');
+        return '<div class="w-often"><span class="nb-ql">Usually ordered on a ' + esc(dname) + ' or often. Tap to add</span><div class="chiprow">' + list.map(function (e, i) { return '<button type="button" class="chip sq" data-p="oreg" data-i="' + i + '">' + esc(e.text) + (e.q ? ' <span class="nb-uq">' + esc(e.q) + '</span>' : '') + '</button>'; }).join('') + '</div></div>';
   }
   function ordersHTML() {
     // loadLearned: the order rollover and Closing soon need when tomorrow's list is written (summary/learned, once a day)
@@ -7772,7 +7789,7 @@
     return out.slice(0, 6);
   }
   function wSuggHTML() {
-    var l = wSuggest(); S.wsugg = l;
+    var l = wSuggest(); S.wsugg = l; if (l.length) sg('wchip', 's');
     return l.map(function (t, i) { return '<button type="button" class="chip sq nb-sg" data-p="wsugg" data-i="' + i + '">' + esc(t) + '</button>'; }).join('');
   }
   function wOften() {
@@ -7820,7 +7837,7 @@
     // a unit changes only before an amount is written: "2" typed in kg must not become 2 portions
     if (l.unit && l.unit !== f.unit && !String(f.amt).trim()) { f.unit = l.unit; x.unit = l.unit; }
     if (!x.sec && !x.reason && !x.unit) return;
-    f.fill = x; f.emptied = false; wFillPatch();
+    f.fill = x; f.emptied = false; sg('wfill', 's'); wFillPatch();
   }
   /* the filled values go again, where they are still what the book put there (a changed one is the cook's now). A new
      name keeps the unit once an amount is written in it (the cook wrote "1.5" in portions); Empty these boxes does not. */
@@ -7886,6 +7903,7 @@
     sset(ref, practiceOn({ text: t, amount: amt, unit: f.unit, reason: f.reason, action: f.act.trim().slice(0, 120), station: sec, recipe: rm ? rm.id : '',
       addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), deleted: false })).catch(function (e) { failed(e, function () { if (!S.wf.text.trim()) S.wf = f; }); });
     if (sec) noteSection(sec);
+    if (f.fill) sg('wfill', 't');
     // a section the book filled for this item is not kept for the next one (like keptSection() on Prep); a typed one is
     S.wf = { text: '', amt: '', unit: f.fill && f.fill.unit && f.unit === f.fill.unit ? f.fill.prevUnit || f.unit : f.unit, reason: '', sec: f.fill && f.fill.sec && f.sec === f.fill.sec ? '' : sec, act: '' };
     draw(); focusK('w-text');
@@ -8048,7 +8066,7 @@
     if (S.wDate !== today) { S.wDate = today; watchWaste(); }
     var f = S.wf, live = (S.wLines || []).filter(function (x) { return !x.deleted; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); });
     var shown = (S.wLines || []).filter(function (x) { return wAll() || !x.deleted; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); });
-    var often = wOften();
+    var often = wOften(); if (often.length && S.wLog) sg('wchip', 's');
     var add = can('add') ?
       '<form class="nb-add w-add" data-p-form="wadd">' + (often.length ? '<div class="w-often"><span class="nb-ql">Logged often</span><div class="chiprow">' + often.map(function (e, i) { return '<button type="button" class="chip sq" data-p="woften" data-i="' + i + '">' + esc(e.text) + '</button>'; }).join('') + '</div></div>' : '') +
       '<div class="nb-add-row"><label class="visually-hidden" for="w-sec">Section</label>' + fbHTML('nb-in-sec', '<input id="w-sec" class="nb-in" data-k="w-sec" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(f.sec || mySec()) + '"' + (wfOn('sec') ? ' aria-describedby="w-fill"' : '') + '>', 'Last time', wfOn('sec')) +
@@ -8279,7 +8297,7 @@
     return out.slice(0, 6);
   }
   function xSuggHTML() {
-    var l = xSuggest(); S.xsugg = l;
+    var l = xSuggest(); S.xsugg = l; if (l.length) sg('xchip', 's');
     return l.map(function (t, i) { return '<button type="button" class="chip sq nb-sg" data-p="tr-sugg" data-i="' + i + '">' + esc(t) + '</button>'; }).join('');
   }
   /* what the venue picked usually takes (or gives), else what is moved most this way: from the summary, twice or more.
@@ -8304,7 +8322,7 @@
     var f = S.xf, k = okey(f.text);
     if (S.name !== 'transfers' || !S.xLog || !k || f.noFill === k || (f.fill && f.fill.from === k) || String(f.amt).trim()) return;
     var l = xLast(f.text); if (!l || !l.unit || l.unit === f.unit) return;
-    f.fill = { from: k, unit: l.unit, prevUnit: f.unit }; f.unit = l.unit; f.emptied = false; xFillPatch();
+    f.fill = { from: k, unit: l.unit, prevUnit: f.unit }; f.unit = l.unit; f.emptied = false; sg('xfill', 's'); xFillPatch();
   }
   function xUnfill() { var f = S.xf, x = f.fill; if (!x) return; if (f.unit === x.unit) f.unit = x.prevUnit || f.unit; f.fill = null; }
   function xFillNoteHTML() {
@@ -8376,7 +8394,8 @@
       xWrite(date, ref.id, record).catch(function (e) { failed(e, function () { if (!S.xf.text.trim() && !(S.xf.basket || []).length) S.xf = f; }); });
     });
     // the next pick-up keeps the way, the venue, the person and the unit
-    S.xf = xBlank({ dir: dir, venue: venue, person: person, unit: items[items.length - 1].unit });
+    if (f.fill && f.fill.unit && f.unit === f.fill.unit) sg('xfill', 't');
+    S.xf = xBlank({ dir: dir, venue: venue, person: person, unit: f.fill && f.fill.unit && f.unit === f.fill.unit ? f.fill.prevUnit || f.unit : items[items.length - 1].unit });
     draw(); focusK('tr-text');
     var changes = [].concat.apply([], items.map(function (it) { return it.changes; }));
     var what = items.length === 1 ? num(items[0].amt) + ' ' + items[0].unit + ' ' + items[0].t : items.length + ' items';
@@ -8481,7 +8500,7 @@
     return l.length ? '<div class="chiprow tr-chips" role="group" aria-label="' + (f.dir === 'in' ? 'Who gave it before' : 'Who came before') + '">' + l.map(function (v) { return '<button type="button" class="chip sq" data-p="tr-ppick" data-v="' + esc(v) + '" aria-pressed="' + (okey(v) === okey(f.person)) + '">' + esc(v) + '</button>'; }).join('') + '</div>' : '';
   }
   function xOftenHTML() {
-    var l = xOften();
+    var l = xOften(); if (l.length && S.xLog) sg('xchip', 's');
     return l.length ? '<div class="w-often"><span class="nb-ql">' + (S.xf.dir === 'in' ? 'We often take' : 'Often taken') + '</span><div class="chiprow">' + l.map(function (e, i) { return '<button type="button" class="chip sq" data-p="tr-often" data-i="' + i + '">' + esc(e.text) + '</button>'; }).join('') + '</div></div>' : '';
   }
   function xChipsSync() {
@@ -8559,7 +8578,7 @@
       if (f.fill && f.fill.from !== xk) xUnfill();
       xFillPatch(); return;
     }
-    if (k === 'tr-amt') { f.amt = el.value.replace(/[^0-9.,]/g, ''); f.amtAuto = false; if (el.value !== f.amt) el.value = f.amt; xFillPatch(); return; }
+    if (k === 'tr-amt') { if (f.amtAuto && f.amt !== el.value) sg('xchip', 'e'); f.amt = el.value.replace(/[^0-9.,]/g, ''); f.amtAuto = false; if (el.value !== f.amt) el.value = f.amt; xFillPatch(); return; }
     if (k === 'tr-venue') { f.venue = el.value; xChipsSync(); return; }
     if (k === 'tr-person') { f.person = el.value; var pc = S.root.querySelector('#tr-pchips'); if (pc) pc.innerHTML = xPeopleChips(); return; }
     if (k === 'tr-note') { f.note = el.value; }
@@ -8570,19 +8589,19 @@
     if (a === 'tr-bk-add') { xBasketAdd(); return; }
     if (a === 'tr-bk-del') { f.basket = (f.basket || []).filter(function (x, k) { return k !== i; }); draw(); focusK('tr-text'); return; }
     if (a === 'tr-dir') { f.dir = v === 'in' ? 'in' : 'out'; draw(); return; }
-    if (a === 'tr-unit') { if (X_UNITS.indexOf(v) >= 0) f.unit = v; f.fill = null; draw(); return; }
-    if (a === 'tr-unfill') { xUnfill(); f.noFill = okey(f.text); f.emptied = true; xFillPatch(); return; }
+    if (a === 'tr-unit') { if (X_UNITS.indexOf(v) >= 0) { if (f.fill && f.fill.unit !== v) sg('xfill', 'e'); f.unit = v; } f.fill = null; draw(); return; }
+    if (a === 'tr-unfill') { sg('xfill', 'd'); xUnfill(); f.noFill = okey(f.text); f.emptied = true; xFillPatch(); return; }
     if (a === 'tr-vpick') { f.venue = xStr(v, 40); draw(); focusK(f.person.trim() ? (f.text.trim() ? 'tr-amt' : 'tr-text') : 'tr-person'); return; }
     if (a === 'tr-ppick') { f.person = xStr(v, 40); draw(); focusK(f.text.trim() ? 'tr-amt' : 'tr-text'); return; }
-    if (a === 'tr-sugg') { var t = (S.xsugg || [])[i]; if (t) { xUnfill(); f.emptied = false; f.text = t; xFill(xLast(t)); draw(); focusFilled('tr-amt'); } return; }
-    if (a === 'tr-often') { var o = xOften()[i]; if (o) { xUnfill(); f.emptied = false; f.text = o.text; xFill(o); draw(); focusFilled('tr-amt'); } return; }
+    if (a === 'tr-sugg') { var t = (S.xsugg || [])[i]; if (t) { sg('xchip', 't'); xUnfill(); f.emptied = false; f.text = t; xFill(xLast(t)); draw(); focusFilled('tr-amt'); } return; }
+    if (a === 'tr-often') { var o = xOften()[i]; if (o) { sg('xchip', 't'); xUnfill(); f.emptied = false; f.text = o.text; xFill(o); draw(); focusFilled('tr-amt'); } return; }
     if (a === 'tr-note-open') { f.noteOpen = true; draw(); focusSel('#tr-note'); return; }
     if (a === 'tr-unreturn') { returnXfer(dt, id, true); return; }
     if (a === 'tr-return') { returnXfer(dt, id); return; }
     if (a === 'tr-del') { removeXfer(dt, id); return; }
     if (a === 'tr-restore') { removeXfer(dt, id, true); return; }
     if (a === 'tr-go-admin') { S.atab = 'transfers'; lsSet('lk.prep.atab', 'transfers'); return; }
-    if (a === 'tr-refresh') { loadXStats(true); draw(); }
+    if (a === 'tr-refresh') { loadXStats(true); xOldLoad(true); draw(); }
   }
 
   /* ---------- shift pings (stored as notes) ----------
@@ -9992,8 +10011,8 @@
   function whCSV() {
     var r = whRange(), ws = S.wStats, h = whState();
     if (r.error || !ws || ws.loading || ws.error || ws.tag !== whTag() || ws.from > r.from || ws.to < r.to) { toast('Load the complete period before exporting.'); return; }
-    var rows = [['Date', 'Weekday', 'Time', 'Section', 'Item', 'Amount', 'Unit', 'Reason', 'Action', 'Logged by', 'Status', 'Removed by', 'Removed at']];
-    whSorted(whLines(r, h.removed)).forEach(function (x) { rows.push([x.date, DOWN[DOW.indexOf(parseYmd(x.date).getDay())], hm(x.addedAt), x.station || '', x.text, x.amount, x.unit, reasonName(x.reason), x.action || '', x.addedBy || '', x.deleted ? 'Removed' : 'Logged', x.deleted ? x.deletedBy || '' : '', x.deleted && x.deletedAt ? T.day(x.deletedAt) + ' ' + clock(x.deletedAt) : '']); });
+    var rows = [['Date', 'Weekday', 'Time', 'Section', 'Item', 'Amount', 'Unit', 'Reason', 'Action', 'Logged by', 'Status', 'Removed by', 'Removed at', 'Amount before a change', 'Changed by']];
+    whSorted(whLines(r, h.removed)).forEach(function (x) { rows.push([x.date, DOWN[DOW.indexOf(parseYmd(x.date).getDay())], hm(x.addedAt), x.station || '', x.text, x.amount, x.unit, reasonName(x.reason), x.action || '', x.addedBy || '', x.deleted ? 'Removed' : 'Logged', x.deleted ? x.deletedBy || '' : '', x.deleted && x.deletedAt ? T.day(x.deletedAt) + ' ' + clock(x.deletedAt) : '', x.was && typeof x.was.amount === 'number' ? num(x.was.amount) + ' ' + String(x.was.unit || '') : '', x.was ? String(x.chgBy || '') : '']); });
     downloadCSV('leichhardt-wastage-' + r.from + '-to-' + r.to + '.csv', rows);
   }
   function wasteStatsHTML() {
@@ -10140,8 +10159,34 @@
     return out + '</div>' + (a.venue ? '<p class="a-fnote">Showing: ' + esc(a.venue) + '.</p>' : '');
   }
   function xAz(a, b) { return String(a).toLowerCase().localeCompare(String(b).toLowerCase()); }
+  // the loans still out (transferOpen, open == true): 1 read a loan, at least 1. The Inbox reads it when it opens; the
+  // Transfers report reads it once a session for the loans older than its days (13 Nov 2026, R4)
+  function openLoansRead() {
+    return fb.fs.getDocsFromServer(fb.fs.query(fb.fs.collection.apply(null, [fb.db].concat(base(), ['transferOpen'])), fb.fs.where('open', '==', true))).then(function (sn) {
+      return sn.docs.map(function (d) { var v = d.data(); return Object.assign({}, v.record, { date: v.date, id: v.lineId }); });
+    });
+  }
+  /* A loan older than the report's days was in the Inbox's Not back but missing here and from the CSV (13 Nov 2026,
+     docs/smart-book-options/audit.md, R4): the report lists them under its tiles. When: the report opens, once for this
+     admin session and again on Refresh; cost: 1 read a loan still out. A failed read says so, never "none". */
+  var X_OLD = { ctx: '', s: '', v: [] };
+  function xOldLoad(force) {
+    var ctx = intelligenceContext();
+    if (!intelligenceAllowed() || (X_OLD.ctx === ctx && X_OLD.s && X_OLD.s !== 'error' && !force) || (X_OLD.ctx === ctx && X_OLD.s === 'loading')) return;
+    X_OLD = { ctx: ctx, s: 'loading', v: [] };
+    openLoansRead().then(function (l) { if (X_OLD.ctx !== ctx) return; X_OLD = { ctx: ctx, s: 'ok', v: l.filter(function (x) { return !x.deleted && !x.returned; }) }; if (S.name === 'admin' && S.atab === 'transfers') draw(); },
+      function () { if (X_OLD.ctx !== ctx) return; X_OLD = { ctx: ctx, s: 'error', v: [] }; if (S.name === 'admin' && S.atab === 'transfers') draw(); });
+  }
+  function xOldList(n) { var first = xDays(n).slice().sort()[0] || dayNow(); return X_OLD.v.filter(function (x) { return x.date < first; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }); }
+  function xOldHTML(n) {
+    if (X_OLD.s === 'error') return '<p class="p-err" role="alert">Could not read the loans still out from before these days. Check the signal and tap Refresh.</p>';
+    if (X_OLD.s !== 'ok') return '';
+    var l = xOldList(n); if (!l.length) return '';
+    return '<h3 class="a-ch-h">Still out from before these days</h3><span class="hint">Lent or borrowed earlier and not back yet. They stay here until someone marks them returned on the transfer list.</span><ul class="a-list">' +
+      l.map(function (x) { return '<li>' + esc(dayShort(x.date)) + ': ' + esc((x.dir === 'in' ? 'We took ' : (x.venue || 'A venue') + ' took ') + num(x.amount) + ' ' + x.unit + ' ' + x.text + (x.dir === 'in' && x.venue ? ' from ' + x.venue : '')) + '</li>'; }).join('') + '</ul>';
+  }
   function xferStatsHTML() {
-    loadXStats(false);
+    loadXStats(false); xOldLoad(false);
     var xs = S.xStats, n = S.statsRange, vk = okey(AF().venue);
     var head = '<section class="set-block">' + toolsHTML('transfers', 'Transfers', { at: xs && !xs.loading ? xs.at : 0 }) +
       '<span class="hint">From the transfer list on the phones: what other venues took from us and what we took from them. Amounts are what people wrote (grams are counted as kg). Days older than 30 are in the backups. <a href="#/transfers">Open the transfer list</a></span>' + xFiltersHTML();
@@ -10160,8 +10205,8 @@
     });
     var venues = Object.keys(vm).map(function (k) { return vm[k]; }), items = Object.keys(im).map(function (k) { return im[k]; });
     var tiles = [[lines.length, lines.length === 1 ? 'transfer' : 'transfers', ''], [outs.length, 'taken from us', ''], [ins.length, 'we took', ''], [venues.length, venues.length === 1 ? 'venue' : 'venues', '']].filter(tileKeep);
-    var log = xLogHTML(all);
-    if (!lines.length) return head + miss + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div><p class="hint">No transfers in this time yet.</p>' + log + '</section>';
+    var log = xLogHTML(all), old = xOldHTML(n);
+    if (!lines.length) return head + miss + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div><p class="hint">No transfers in this time yet.</p>' + old + log + '</section>';
     function amounts(l) { return l.length ? esc(l.length + ' (' + xTotText(l) + ')') : '<span class="o-who-i">none</span>'; }
     var venueList = lvHTML({
       key: 'xfer-venues', items: venues, step: 10, tools: 8, noun: ['venue', 'venues'], ph: 'Search venues', empty: 'No transfers in this time.',
@@ -10187,7 +10232,7 @@
         { h: 'Venues', wide: true, html: function (e) { return esc(Object.keys(e.vs).sort(xAz).join(', ')); } }
       ]
     });
-    return head + miss + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div>' +
+    return head + miss + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div>' + old +
       '<h3 class="a-ch-h">By venue</h3><span class="hint">How many transfers each way, with the amounts added up per unit.</span>' + venueList +
       '<h3 class="a-ch-h">By item</h3>' + itemList + log + '</section>';
   }
@@ -12441,7 +12486,7 @@
     if (a === 'otoday') { S.ordDate = dayNow(); watchOrders(); draw(); return; }
     if (a === 'o-write') { wSheetOpen('olog'); return; }
     if (a === 'o-done-toggle') { e.preventDefault(); S.oDoneOpen = !S.oDoneOpen; draw(); return; }
-    if (a === 'osugg') { var st = (S.osugg || [])[i]; if (st) { S.otext = st; if (!S.oqty.trim()) S.oqty = (ordQtyList(st)[0] || {}).q || ''; draw(); var oe = S.root.querySelector('[data-k="o-text"]'); if (oe) { oe.focus(); try { oe.setSelectionRange(oe.value.length, oe.value.length); } catch (x) {} } } return; }
+    if (a === 'osugg') { var st = (S.osugg || [])[i]; if (st) { sg('otype', 't'); S.otext = st; if (!S.oqty.trim()) S.oqty = (ordQtyList(st)[0] || {}).q || ''; draw(); var oe = S.root.querySelector('[data-k="o-text"]'); if (oe) { oe.focus(); try { oe.setSelectionRange(oe.value.length, oe.value.length); } catch (x) {} } } return; }
     if (a === 'who') { pickName(id); return; }
     if (a === 'who-change') { whoChange(e); return; }
     if (a === 'guest-who') { guestAsk(null); return; }
@@ -12467,8 +12512,8 @@
     if (a === 'toast-act') { var ta = S.toastAct, tm = S.toast; S.toast = ''; S.toastAct = null; if (ta && ta.fn) { if (ta.fn() !== false) undoneSay(ta, tm); } draw(); return; }
     if (a === 'export') { exportAll(); return; }
     if (a === 'move-pin') { movePin(); return; }
-    if (a === 'sugg') { pickSugg(i); return; }
-    if (a === 'sgadd') { sgAdd(i); return; }
+    if (a === 'sugg') { sg('ptype', 't'); pickSugg(i); return; }
+    if (a === 'sgadd') { sg('ptype', 't'); sgAdd(i); return; }
     if (a === 'quick') { quickAdd(i); return; }
     if (a === 'fnneed') { fnNeedAdd(i); return; }
     if (a === 'fnneed-hide') { fnNeedHide(i); return; }
@@ -12482,26 +12527,26 @@
     if (a === 'af-reset') { S.af = { sec: '', who: '', dow: '', reason: '', venue: '' }; afSave(); draw(); return; }
     if (a === 'cal-day') { S.date = el.getAttribute('data-d'); S.tab = ''; watchItems(); location.hash = '#/prep'; return; }
     if (a === 'close-hide') { lsSet('lk.closeout', dayNow()); draw(); return; }
-    if (a === 'oreg') { var orr = (S.oregs || [])[i]; if (orr) addOrder(true, orr); return; }
+    if (a === 'oreg') { var orr = (S.oregs || [])[i]; if (orr) { sg('oreg', 't'); addOrder(true, orr); } return; }
     // Last 7 days always counts today from the live list, whatever day was being browsed; the past days come from the day cache
-    if (a === 'wunit') { S.wf.unit = el.getAttribute('data-v'); if (S.wf.fill) { S.wf.fill.unit = ''; wFillTidy(); } draw(); return; }
-    if (a === 'w-unfill') { wUnfill(true); S.wf.noFill = okey(S.wf.text); S.wf.emptied = true; wFillPatch(); return; }
+    if (a === 'wunit') { S.wf.unit = el.getAttribute('data-v'); if (S.wf.fill) { if (S.wf.fill.unit) sg('wfill', 'e'); S.wf.fill.unit = ''; wFillTidy(); } draw(); return; }
+    if (a === 'w-unfill') { sg('wfill', 'd'); wUnfill(true); S.wf.noFill = okey(S.wf.text); S.wf.emptied = true; wFillPatch(); return; }
     if (a === 'w-act-open') { S.wf.actOpen = true; draw(); focusSel('#w-act'); return; }
     if (a === 'w-log') { wSheetOpen('log'); return; }
     if (a === 'w-rv') { wSheetOpen('rv'); return; }
     if (a === 'w-again') { wAgain(dt, id); return; }
-    if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); if (S.wf.fill) { S.wf.fill.reason = ''; wFillTidy(); } if (S.sheet) wasteSheetClose(); else draw(); return; }
+    if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); if (S.wf.fill) { if (S.wf.fill.reason && S.wf.fill.reason !== S.wf.reason) sg('wfill', 'e'); S.wf.fill.reason = ''; wFillTidy(); } if (S.sheet) wasteSheetClose(); else draw(); return; }
     if (a === 'sheet') {
       S.sheet = 'reason';
       window.LK_UX.AdaptivePicker({ label: 'Why was it wasted?', trigger: el, value: [S.wf.reason], items: REASONS.map(function (r) { return { value: r[0], label: r[1] }; }), onChange: function (v) { S.sheet = ''; S.wf.reason = v[0]; if (S.wf.fill) { S.wf.fill.reason = ''; wFillTidy(); } draw(); }, onDismiss: function () { S.sheet = ''; } }); return;
     }
     if (a === 'sec-pick') {
       var sk = el.getAttribute('data-sk'), sv = el.getAttribute('data-v') || '', lit = el.getAttribute('aria-pressed') === 'true';
-      if (sk === 'p-section') { S.section = lit ? '' : sv; S.secTyped = !lit; } else if (sk === 'w-sec') { S.wf.sec = lit ? '' : sv; if (S.wf.fill) { S.wf.fill.sec = ''; wFillTidy(); } }
+      if (sk === 'p-section') { S.section = lit ? '' : sv; S.secTyped = !lit; } else if (sk === 'w-sec') { S.wf.sec = lit ? '' : sv; if (S.wf.fill) { if (S.wf.fill.sec) sg('wfill', 'e'); S.wf.fill.sec = ''; wFillTidy(); } }
       draw(); focusSel('[data-p="sec-pick"][data-sk="' + sk + '"][data-v="' + CSS.escape(sv) + '"]'); return;
     }
-    if (a === 'wsugg') { var wt = (S.wsugg || [])[i]; if (wt) { wUnfill(); S.wf.emptied = false; S.wf.text = wt; var wl = wLast(wt); if (wl) { if (wl.unit) S.wf.unit = wl.unit; if (wl.reason && !S.wf.reason) S.wf.reason = wl.reason; if (wl.station && !S.wf.sec && !mySec()) S.wf.sec = wl.station; if (wl.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wl.amt; S.wf.amtAuto = true; } } draw(); focusFilled('w-amt'); } return; }
-    if (a === 'woften') { var wo = wOften()[i]; if (wo) { wUnfill(); S.wf.emptied = false; S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec && !mySec()) S.wf.sec = wo.sec; if (wo.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wo.amt; S.wf.amtAuto = true; } draw(); focusFilled('w-amt'); } return; }
+    if (a === 'wsugg') { var wt = (S.wsugg || [])[i]; if (wt) { sg('wchip', 't'); wUnfill(); S.wf.emptied = false; S.wf.text = wt; var wl = wLast(wt); if (wl) { if (wl.unit) S.wf.unit = wl.unit; if (wl.reason && !S.wf.reason) S.wf.reason = wl.reason; if (wl.station && !S.wf.sec && !mySec()) S.wf.sec = wl.station; if (wl.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wl.amt; S.wf.amtAuto = true; } } draw(); focusFilled('w-amt'); } return; }
+    if (a === 'woften') { var wo = wOften()[i]; if (wo) { sg('wchip', 't'); wUnfill(); S.wf.emptied = false; S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec && !mySec()) S.wf.sec = wo.sec; if (wo.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wo.amt; S.wf.amtAuto = true; } draw(); focusFilled('w-amt'); } return; }
     if (a === 'wdel') { removeWaste(dt, id); return; }
     if (a === 'wrestore') { removeWaste(dt, id, true); return; }
     if (a === 'rv-day') { if (!whCanChange()) return; var rr = whRange(), rd = shift(S.rvDate || rr.to, +el.getAttribute('data-d')); if (rd <= rr.to && rd >= rr.from) { S.rvDate = rd; S.wrA = S.wrC = null; } draw(); return; }
@@ -12716,8 +12761,8 @@
       if (S.wf.fill && S.wf.fill.from !== wk) wUnfill();
       wFillPatch(); return;
     }
-    if (k === 'w-amt') { S.wf.amt = el.value.replace(/[^0-9.,]/g, ''); S.wf.amtAuto = false; if (el.value !== S.wf.amt) el.value = S.wf.amt; wFillPatch(); return; }
-    if (k === 'w-sec') { S.wf.sec = el.value; if (S.wf.fill && S.wf.fill.sec && el.value !== S.wf.fill.sec) { S.wf.fill.sec = ''; wFillTidy(); wFillPatch(); } return; }
+    if (k === 'w-amt') { if (S.wf.amtAuto && S.wf.amt !== el.value) sg('wchip', 'e'); S.wf.amt = el.value.replace(/[^0-9.,]/g, ''); S.wf.amtAuto = false; if (el.value !== S.wf.amt) el.value = S.wf.amt; wFillPatch(); return; }
+    if (k === 'w-sec') { S.wf.sec = el.value; if (S.wf.fill && S.wf.fill.sec && el.value !== S.wf.fill.sec) { sg('wfill', 'e'); S.wf.fill.sec = ''; wFillTidy(); wFillPatch(); } return; }
     if (k === 'w-act') { S.wf.act = el.value; return; }
     // the admin panel's Daily reviews form and the wastage page each keep their own (rvTyped())
     if (k === 'w-ra' || k === 'w-rc') { if (el.closest('.a-rvform')) { if (k === 'w-ra') S.wrA = el.value; else S.wrC = el.value; } else if (k === 'w-ra') S.wpA = el.value; else S.wpC = el.value; saveSync(); return; }

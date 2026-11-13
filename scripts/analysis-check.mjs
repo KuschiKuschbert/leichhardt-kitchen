@@ -94,7 +94,7 @@ await analyse(K2, { days: 3, at: at + 1000 });
 assert.equal((await K2.collection('analysis').doc('dashboard').get()).data().days[0].fs.c.missN, 2, 'Records: a counted day stays counted (its records cannot change after the day).');
 assert.equal(JSON.stringify(board).includes('price'), false);
 // Needs you: Slaw is linked, so 6 of 7 recorded names wait; Cy (recipe only) and Dee (in training) need a Larder review.
-assert.deepEqual(board.needs, { links: 6, training: 2, inTraining: 1 }, 'Needs you counts the Review desk queues: ' + JSON.stringify(board.needs));
+assert.deepEqual(board.needs, { links: 6 }, 'Needs you counts the item links to review (the training counts went with the assessments): ' + JSON.stringify(board.needs));
 // Day digests (Plan B 2.1, 5 Nov 2026): one record per past day with its prep and order lines, written only when they change
 const dig = async day => (await K2.collection('digest').doc(day).get()).data();
 const dg = await dig(d2);

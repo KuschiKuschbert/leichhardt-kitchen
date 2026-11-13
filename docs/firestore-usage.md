@@ -2,6 +2,8 @@
 
 ## Records and Filled for you, 13 November 2026
 
+Since 14 November 2026 Reports, Transfers also reads the loans still out (`transferOpen`, open) once a session and on Refresh, 1 read a loan, at least 1, to list those older than its days. Counting every suggestion (E1) adds no read and no write: the counts ride the daily record each phone already sends.
+
 [Records](smart-book-options/brief.md) (admin only): opening the page reads `analysis/dashboard` once (kept in memory until Refresh; a reload opens with no day chosen, so it reads nothing more). A finished day's Food safety part reads nothing; Everything reads that day's wastage and transfer lines, `team/<day>` and `analysisDaily/<generation>_<day>` (about 10 to 30 reads, in memory); Print this month and Export CSV read nothing. The nightly analysis job adds the cleaning count (`scripts/records-core.mjs`): the open task revisions and each not yet counted day's completions, about 35 reads a day, once per day; deliveries come from the read it already makes. Filled for you (Wastage, Transfers, Orders) reads nothing: `summary/waste`, `summary/transfers`, the order learning and today's live lines are already on the phone.
 
 ## Who has said Got it to a function, 10 November 2026
