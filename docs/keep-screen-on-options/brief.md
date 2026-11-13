@@ -1,6 +1,6 @@
 # Keep the screen on with a recipe open
 
-Requested by the head chef on 13 November 2026: "In my app when on a mobile device can we have the option in the recipes for a leave screen on toggle? ... It's annoying having the recipes open and the screen turns off." **Not chosen yet.** This brief holds the council's two rounds, three designs, a mix and the recommendation. The previews are screenshots of the real recipe page in the click-test stand-in, with each design drawn into it; nothing in the book has changed.
+Requested by the head chef on 13 November 2026: "In my app when on a mobile device can we have the option in the recipes for a leave screen on toggle? ... It's annoying having the recipes open and the screen turns off." **Not chosen yet.** Recommended: the combined design (A's chip on the card + B's Settings row), off until a cook taps it. This brief holds the council's two rounds, three designs, the mix and the recommendation. The previews are screenshots of the real recipe page in the click-test stand-in, with each design drawn into it; nothing in the book has changed.
 
 Evidence: commit `5dff5a6` (main), staff Bo signed in, 390 x 844 px unless stated, normal text, Chicken Burger (`#/r/burger`) and the longest recipe name, Salt and Szechuan Pepper Calamari (`#/r/calamari`). All measurements are **Preview** (the real app and shell with the design drawn in by a script), not an implemented feature. This is role-based analysis, not research with real staff.
 
@@ -111,16 +111,147 @@ A wide "Cook from this" button sits above the method's "Tap a step to tick it of
 
 ## Round 2: scores (13 Nov 2026)
 
-[To come: the council and the kitchen screen designer score A, B and C.]
+Six fresh reviewers (the five from round 1 and the kitchen screen designer) saw all three designs, the same contract excerpts, the previews and the measurements. Scores out of 10 (10 = best for the kitchen), as each reviewer gave them. All six said the designs differ in structure (default, where the control lives, and what it covers), not just in looks.
+
+| Reviewer | A | B | C | Recommends |
+| --- | --- | --- | --- | --- |
+| Cook mid-service | 7 | 6 | 3 | A + B: on by itself, the chip as the one-tap off |
+| Head chef | 8 | 6 | 3 | A, off until tapped; a Settings row is optional |
+| Skeptic | 7 | 5 | 3 | A, off until tapped, no Settings row |
+| New starter | 7 | 6 | 4 | A + B: on by itself, Settings holds the same choice |
+| Keeper | 8 | 6 | 4 | A with B's Settings row on one helper, off until tapped |
+| Kitchen screen designer | 7 | 5 | 3 | A's chip + B's default + B's Settings row |
+| **Total** | **44** | **34** | **20** | |
+
+**Every reviewer ranked A first and nobody kept C.** Four of six want B's Settings row as well. The **default** is a 3 to 3 split: on by itself (cook, new starter, screen designer: a new starter gets it with no taps) against off until tapped (head chef, Skeptic, Keeper: it is what was asked, personal phones are their owners' choice, and every untested failure would land on phones nobody switched on).
+
+What the reviewers found, and what the combined design does about it:
+
+| Finding | Who | Combined design |
+| --- | --- | --- |
+| "Chicken Bur..." reads as broken. Measured after: 47 of 128 names would be cut on The Pass at 390 px, most on Tiles; wrapping instead costs 28 to 49 px | Screen designer, head chef | On phones the trail drops the recipe's own name, which is the heading right under it. Parent links stay. Nothing is cut and no line is lost |
+| The dark "on" pill is the darkest shape under the top bar; a chosen control should be orange | Screen designer, cook, Skeptic | On is an orange edge and orange words (`--small-ink`) on plain paper, with a tick. Not the `--hit` tint, which the follow-up found looks like the may-contain allergen tag |
+| After the 15-minute release the chip shows off; does the next tap ask again or switch it off? | Keeper, Skeptic, cook, head chef, new starter | The chip follows the real hold, and a tap always does what its words say. The chip is left out of the page-wide touch that asks again |
+| "This phone said no." does not say what was refused | New starter | "This phone will not keep the screen on. Battery saver may be on." |
+| B's "Not on this phone" beside a pressed On contradicts itself and goes stale | Screen designer, new starter, Keeper, Skeptic | The Settings row shows only the choice; no remembered refusal |
+| An iPad home-screen app may not show its iOS version | Keeper | Not offered in a home-screen app on an Apple touch screen whose version cannot be read |
+| C's bar covers a method line, replaces the pinned jump row and fights a remembered choice; Text size already makes steps bigger | All six | C left out |
+
+### How the designs fit the seven-app principles
+
+| Principle | A | B | C |
+| --- | --- | --- | --- |
+| Things 3: frequent action visible, details tucked away | Works: the chip is on every recipe | Needs work: the only control is 4 taps away | Needs work: a mode to start every time |
+| Todoist: known defaults | Needs work: off until found | Works: on by itself | Needs work: off every time |
+| Flighty: real status, never stale | Works if the chip follows the hold (Not evidenced until built) | Needs work: no status on the recipe; the refusal goes stale | Needs work: "the screen stays on" in large words where the browser can be wrong |
+| Duolingo: each tap answers truthfully | Works: the words change in place | Not evidenced: a Settings tap far from the recipe | Works: the bar appears |
+| Headspace: plain words, no interruptions | Works: words on the chip | Works: nothing on the page | Needs work: a dark bar over the method during service |
+| Linear: one way to do a job | Works | Works | Needs work: a second mode beside Text size |
+| Airbnb: status and action together | Works | Needs work | Works |
+
+### Contract fit
+
+| Check | A | B | C | Combined |
+| --- | --- | --- | --- | --- |
+| Service rules 1 to 4 | Works: finding a recipe unchanged, no pop-up, no line lost | Works | Needs work: rule 3 (a bar over the method), rule 4 (2 taps every time) | Works: 0 lines lost in every case measured |
+| Phone's first screen (name, yield, allergens before the drawing) | Works | Works | Works | Works |
+| Sticky jump row (`docs/design-patterns.md`, A long card) | Works | Works | Fails: the bar replaces it | Works |
+| Choosing chip, 44 px | Works | Works | Works | Works: 44 px, measured |
+| Operational colour: chosen controls orange | Needs work: ink fill | Works | Needs work: charcoal live-board surface | Works: orange edge, words and tick |
+| Action feedback: answer in place, failure stays | Works | Needs work: refusal only in Settings | Works | Works: refusal line until the next tap or leaving |
+| Rendered contrast | Not evidenced (calculated: ink on paper 16.9:1, `--bad-ink` on the page 7.5:1) | Not evidenced | Not evidenced | Not evidenced (calculated: `--small-ink` words and edge on the page 5.4:1, above 4.5:1 for text and 3:1 for the edge) |
+| Recipe hierarchy links stay as quiet breadcrumbs (`docs/navigation.md`) | Works, name trimmed | Works | Works | Works: parent links kept; the page's own name hidden on screen on phones only, kept for screen readers |
+| Reads, writes, listeners, rules, security header | None | None | None | None |
 
 ## A mix of all three
 
-[To come.]
+| From | Part | Take or reject | Why | Principle |
+| --- | --- | --- | --- | --- |
+| A | The worded chip on the trail line, remembered on this phone | Take (6 of 6) | The state and the off switch where the cook looks | Things 3, Airbnb |
+| A | Trimming the recipe's own name | Reject | Reads as broken; 47 of 128 names cut at 390 px | Headspace |
+| A | Dark ink fill when on | Reject | A chosen control is orange | Contract |
+| B | The Settings row on the same saved choice | Take (4 of 6) | Explains the 15-minute rule and gives a second way to find it | Things 3 |
+| B | On by itself | Head chef's call (3 to 3) | Zero taps against owner's choice and untested failures | Todoist |
+| B | Remembered refusal in Settings | Reject | Stale status | Flighty |
+| B | Not drawing the control where the phone cannot do it | Take | No promise the phone cannot keep | Flighty |
+| C | The cooking mode, bar and bigger steps | Reject (6 of 6) | Covers the method, replaces the jump row, a second way beside the remembered choice and Text size, two pull requests | Headspace, Linear |
+| C | The words "the screen stays on" | Take in the Settings explanation | Plain words | Headspace |
+
+**All three together loses:** C's one-session mode next to a remembered choice gives two controls for one lock, doubles the build and breaks rule 3. **A + B beats A alone** for four of six reviewers, because the Settings row explains the rule at no cost on the recipe page. The combined design below is that A + B, with the round 2 fixes.
+
+### The combined design
+
+Previews: `previews/mix-off.png`, `previews/mix-on.png`, `previews/mix-refused.png`, `previews/mix-tiles.png`, `previews/mix-nested.png` (a linked part), `previews/mix-long-on.png` (the longest name), `previews/mix-320-large-burger.png` (320 px, Large text), `previews/mix-768-normal-tiles-burger.png` (tablet, Tiles), `previews/mix-settings.png`.
+
+| State | Chip | A tap |
+| --- | --- | --- |
+| Off, or chosen but not held right now (15 minutes without a touch, the page hidden and back, the phone refused by itself) | Outline, "Keep screen on", not pressed | Saves on and asks the phone |
+| Held | Orange edge and words on plain paper, a tick, "Screen on", pressed | Lets go and saves off |
+| Refused after a tap | "Keep screen on" with a red line under the trail: "This phone will not keep the screen on. Battery saver may be on." | Asks again |
+
+With the choice saved on, the book asks by itself on every recipe page, when the book comes back on screen, and on the next touch after the 15 minutes. On phones the trail shows the parent links only ("The pass", or "The pass / Chicken Burger" on Ranch).
+
+Measured (Preview, name and allergens in px from the top, today then combined):
+
+| Case | Today | Combined |
+| --- | --- | --- |
+| The Pass 390, Chicken Burger, chip off or on | 301, 408 | 301, 408 |
+| The Pass 390, Calamari (longest name) | 301, 611 | 301, 611 |
+| The Pass 390, Large text, Calamari | 347, 722 | 315, 691 |
+| The Pass 390, Extra large, Calamari | 369, 785 | 334, 750 |
+| 320 px, Calamari | 325, 659 | 297, 631 |
+| 320 px, Large text, Chicken Burger | 311, 500 | 311, 500 |
+| Tiles 390, Chicken Burger | 188, 410 | 188, 410 |
+| Tiles 390, Calamari | 211, 600 | 188, 576 |
+| Tiles 768, Chicken Burger | 237, 434 | 237, 434 |
+| Linked part, Chicken Burger / Ranch | 301, 432 | 301, 432 |
+| After a refused tap, Chicken Burger | | 362, 470 |
+
+The chip is 44 px tall and keeps one width in both states, 133 px (149 to 165 px at Large and Extra large), so it does not jump when the phone wakes. No sideways scroll at any width tested. Taps to keep the screen on: 1, once per phone (or 0 if the head chef chooses on by itself); to stop: 1.
+
+Today's tab bar labels already run together at 320 px with Large text (seen in the follow-up, and in today's page with nothing drawn in). That is not part of this design; it is noted for its own fix.
+
+**Review status:** lead synthesis from the six round 2 reviews, then a focused follow-up on the combined preview by the three reviewers whose findings it changed most. It is not a new full round.
+
+| Reviewer | Their A | Combined | What they said |
+| --- | --- | --- | --- |
+| Kitchen screen designer | 7 | 8 | One layout and flow. Both findings fixed. New: the peach tint looked like the "Soy?" tag (now plain paper with an orange edge); the chip changed width on waking (now one width); the Settings row's ink chips differ from the card's orange; a refusal pushes the name down 61 px; the trail change needs `docs/navigation.md` and the phone-first tests updated. |
+| New starter | 7 | 8 | On, off and refused are clear without colour; refusal words fixed. "Screen on" reads more as a status than a button. After the 15 minutes nothing says why it changed. Off and paused look the same. |
+| Keeper | 8 | 8.5 | Break-it 1 (a tap after the 15-minute release) closed, if only one request is in flight and the chip acts on the words shown when the finger went down. New risks: a refusal loop if every touch asks again; the hidden name must use `.visually-hidden`; one width query and its opposite at 600 px; an iPad home-screen app with no readable version. |
+
+### Break-it findings after round 2
+
+| Scenario | Expected | Observed or hypothesis | Status | Repair or check |
+| --- | --- | --- | --- | --- |
+| Choice on, 15 minutes without a touch, the cook taps the chip | One tap holds the screen again | The tap could ask and switch off at once | Risk / Not evidenced | The chip follows the hold; a tap does what its words say; the chip is left out of the page-wide touch; one request in flight. Stub test: lock granted late, two quick taps, one live lock |
+| Battery saver refuses, choice on | One request, then quiet | Every touch on the page asks again | Risk / Not evidenced | After a refusal, ask again only on a chip tap or when the book comes back on screen. Stub: refuse, tap the page 20 times, one request |
+| iPhone or iPad home-screen app before iOS 18.4 | Not offered | Offered, says on, screen sleeps | Risk / Not evidenced | Not offered when the version is below 18.4 or cannot be read on an Apple touch screen. Stub the user agent, touch points and home-screen mode; then a real device |
+| Screen reader on a phone | The current page is still read out | The hidden name is not read | Risk / Not evidenced | `.visually-hidden`, never `display: none` or `aria-hidden`; a check in the trail test |
+| Phone in a pocket, choice on | Sleeps within 15 minutes | Stays lit | Risk / Not evidenced | The 15-minute release; stub with the test clock |
+| Shared tablet idle or 04:00 lock | Lets go | Stays lit behind the PIN screen | Risk / Not evidenced | Let go on both locks; shared-screen fixture with the stub |
+| Recipe to recipe, back to Recipes, hidden and shown | 1, 0, 0 then 1 live locks | Leaks or misses a lock | Risk / Not evidenced | Stub counts live locks on each path |
+| A refused tap | The words stay until the next tap or leaving | | Checked in the preview (the words and their place only) | Name moves down 61 px, two lines, only after a refused tap |
 
 ## Recommendation
 
-[To come.]
+**Recommend the combined design: A's chip on the card + B's Settings row, off until a cook taps it.** Leave C out.
+
+- **Why it beats the alternatives.** Every reviewer ranked A first (44 points against B's 34 and C's 20), and the three focused follow-ups scored the combined design above their A (8, 8 and 8.5). The cook sees the state in words where they look, turns it on with one tap once per phone, and turns it off with one tap. Settings explains the 15-minute rule without adding anything to the recipe. No recipe loses a line at any width or text size measured, and long names gain room because the trail no longer repeats the heading on phones. No reads, writes, rules or new files.
+- **App principles that help:** Things 3 (the frequent action stays visible), Flighty and Duolingo (the chip says "Screen on" only while the screen really is held, and a tap answers in place), Headspace (plain words, no icon to learn, no pop-up), Linear (one way to do it: C's second mode is out).
+- **Main downside:** off until someone taps it, so a new starter may not find it on their own phone. "Keep screen on" in words at the top of every recipe makes that likely to be noticed, and switching the default to on later is a one-line change once real phones pass.
+- **The question for the head chef: on by itself, or off until tapped?** The council split 3 to 3. The recommendation is off until tapped for the first release because it is what was asked, a personal phone is its owner's choice, and the untested failures (old iPhone home-screen app, battery saver, pocket) would otherwise reach phones nobody switched on.
+- **Also the head chef's call:** the trail on phones drops the recipe's own name ("The pass" instead of "The pass / Chicken Burger"). It is the heading right under it, so nothing is lost, but it changes every recipe page on a phone. The alternative is trimming it ("Chicken Bur...") on about 47 of 128 recipes.
+- **Disagreement kept:** the Skeptic wanted no Settings row; the head chef reviewer called it optional. The cook, new starter and screen designer preferred on by itself. The screen designer would prefer the Settings row's Off and On chips in the same orange as the card; they stay like Text size beside them.
+- **Unresolved until built:** rendered contrast, reduced motion, every Break-it row above, and the real-device checks below.
 
 ## Build and verification plan
 
-[To come once a design is chosen.]
+One pull request once the head chef chooses, so every phone reloads once.
+
+- `js/app.js`: one helper owns one lock. It holds only on a recipe page (`#/r/...`, The Pass or Tiles), when the saved choice is on (or after a chip tap), the book is on screen, it is a touch screen with a wake lock, it is not an Apple home-screen app below iOS 18.4 or with no readable version, a shared screen is not locked, and there was a touch in the last 15 minutes (`LK_TIME.now()`). One request in flight. The chip shows "Screen on" only after the browser grants the lock and goes back on its `release` event. After a refusal it asks again only on a chip tap or when the book comes back on screen. The chip acts on the words shown when the finger went down. Lets go on leaving recipe pages and on the shared idle and 04:00 locks.
+- The chip in the trail on both layouts (`.wk`, the choosing chip's corners and 44 px, an orange edge and words when on, one width for both labels). On phones the recipe's own name in the trail uses `.visually-hidden`, with one width query and its opposite.
+- Settings, This phone: "Keep the screen on with a recipe open", Off and On, the same saved key (`wake` in `lk.settings.v1`).
+- `css/app.css`: the chip and the trail rule, from existing tokens.
+- `docs/design-patterns.md` and `tests/design-patterns.test.js`: the new trail chip pattern. `docs/navigation.md`: the trail on phones. `README.md`, `docs/session-map.md`, `docs/head-chef-decisions.md`.
+- Tests, a new `tests/keep-screen-on.test.js` with a stub `navigator.wakeLock` that counts live locks, can refuse, can grant late, and a forced visibility state with the test clock: off by default; one tap holds and is remembered after a reload; tap again lets go; recipe to recipe 1 lock; back to Recipes 0; hidden 0, shown 1; 15 minutes without a touch 0, then 1 after a touch; a refusal shows the words and one request after 20 page taps; two quick taps with a late grant give 1; shared screen idle lock 0; no wake lock or an old Apple home-screen app shows no chip; the hidden trail name is still the current page for a screen reader. Update `tests/phone-first.test.js` and any trail test, and run `tests/roles.test.js` (signed out included) and the 390, 768 and 1280 px page checks.
+- Real devices after merge: Android Chrome, Samsung with battery saver on, iPhone Safari, an iPhone home-screen app on 18.4 or later (and one older, which should show no chip), the shared tablet through an idle lock and the 04:00 reload.
