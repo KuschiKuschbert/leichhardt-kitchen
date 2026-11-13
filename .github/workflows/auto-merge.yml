@@ -55,8 +55,9 @@ permissions:
 # not wrap: 2230-2400 and 0000-0230.
 env:
   RELEASE_WINDOWS: '1500-1630 2230-2400 0000-0230'
-  # One-off owner request, 9 Nov 2026: keep releasing until 08:00 Queensland on 10 Nov. Full UTC date, end excluded.
-  RELEASE_UNTIL: '2026-11-09T22:00:00Z'
+  # One-off owner request, 14 Nov 2026 (at 02:50): keep releasing until 09:30 Queensland that morning. Full UTC date,
+  # end excluded. (The one before: 9 Nov 2026, until 08:00 on 10 Nov.)
+  RELEASE_UNTIL: '2026-11-13T23:30:00Z'
 
 # Three jobs (4 Nov 2026): a waiting run in a shared concurrency group is replaced by the next one, so one shared group
 # dropped the ready events of pull requests marked ready at the same moment. Each pull request now has its own group for
