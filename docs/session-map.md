@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Renamed kitchen sections keep their history, 13 November 2026
+
+The owner asked whether staff data should be linked together more. An audit found people already linked by a fixed staff ID, but sections stored by name in prep lines, wastage, the learned usual section and the nightly summaries, so a rename split their history. The owner: "I might rename sections." Chosen: option A of the audit (old names kept, folded on read), not ids on every line. Council quick check (small change). `kitSecs[].was` saved by `ksClean()`; `secFold()`, `secNow()`, `lineSec()`, `alsoNow()`, `ksSecNow()`, `ksWasHTML()` in `js/prep.js`; `api.secNow` folds in `js/admin-dashboard.js` (v5) and `js/admin-intelligence.js` (v8). Nightly jobs unchanged. `tests/section-renames.test.js` (17 of 25 fail on the old code). Note: `docs/section-renames.md`.
+
 ## README split and housekeeping decisions, 12 November 2026
 
 `README.md` went from 169 KB to 104 KB. Three sections moved word for word into their own notes, with a short summary left under the same heading: [The first screen on a phone](phone-screens.md) (34 KB, what each page shows first under 900 px), [Testing](testing.md) (21 KB, the story behind particular checks) and [Supplier order and catalogue](supplier-order.md) (11 KB; its data contract stays in `supplier-workspace.md`). Links in the moved text now point from `docs/`. The owner also chose to keep Chicken Adobo and Pork Knuckle hidden (`head-chef-decisions.md`) and to keep the three page toasts as they are (`open-work.md`, Checked and kept).

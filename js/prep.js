@@ -2226,6 +2226,9 @@
     var t = String(v || '').replace(/\s+/g, ' ').trim().slice(0, 40);
     if (!t) return '';
     var lt = t.toLowerCase();
+    // a renamed section's old name is written as its name now (unless Undo kept the old name)
+    var now_ = secNow(t);
+    if (now_ !== t && !KEEP_SEC[lt]) { if (info) { info.from = t; info.to = now_; info.renamed = true; } return now_; }
     var hit = S.sections.filter(function (x) { return String(x.name).toLowerCase() === lt; })[0];
     if (hit) return hit.name;
     if (KEEP_SEC[lt]) return t;
@@ -2270,7 +2273,7 @@
     if (!info.from) { if (v && v !== el.value) { el.value = v; if (key === 'p-section') S.section = v; else S.wf.sec = v; } return; }
     if (key === 'p-section') S.section = v; else S.wf.sec = v;
     el.value = v;
-    toast('Section corrected: ' + info.from + ' to ' + v, { label: 'Undo', fn: function () { keepSection(info.from); if (key === 'p-section') S.section = info.from; else S.wf.sec = info.from; } });
+    toast(info.renamed ? info.from + ' is now called ' + v : 'Section corrected: ' + info.from + ' to ' + v, { label: 'Undo', fn: function () { keepSection(info.from); if (key === 'p-section') S.section = info.from; else S.wf.sec = info.from; } });
   }
   /* One section control (3 Nov 2026, work pages redesign S2): the kitchen's sections as chips under the section box on
      the prep list and wastage, in place of the box's Choose Section picker (the box and a picker were two controls for
@@ -2293,8 +2296,9 @@
   }
   function suggestions() {
     var seen = {}, out = [];
-    S.sections.filter(function (x) { return !x.hidden; }).sort(function (a, b) { return (b.uses || 0) - (a.uses || 0); }).forEach(function (x) { seen[x.name.toLowerCase()] = 1; out.push(x.name); });
-    S.items.forEach(function (x) { var n = x.station; if (n && !seen[n.toLowerCase()]) { seen[n.toLowerCase()] = 1; out.push(n); } });
+    // a renamed section's old name is offered as its name now, once
+    S.sections.filter(function (x) { return !x.hidden; }).sort(function (a, b) { return (b.uses || 0) - (a.uses || 0); }).forEach(function (x) { var n = secNow(x.name); if (n && !seen[n.toLowerCase()]) { seen[n.toLowerCase()] = 1; out.push(n); } });
+    S.items.forEach(function (x) { var n = lineSec(x); if (n && !seen[n.toLowerCase()]) { seen[n.toLowerCase()] = 1; out.push(n); } });
     return out;
   }
 
@@ -2704,7 +2708,7 @@
         if (have[id] || gone[root]) return;
         have[id] = true;
         jobs.push(['set', itemRef(today, id), {
-          text: x.text, station: x.station || '', qty: x.qty || '', recipe: x.recipe || '',
+          text: x.text, station: lineSec(x), qty: x.qty || '', recipe: x.recipe || '',
           addedBy: 'Rolled over', addedById: '', addedAt: now(), done: false, deleted: false,
           rolled: (x.rolled || 0) + 1, root: root, from: x.id, rolledFrom: src.date, origBy: x.origBy || x.addedBy || '', origAt: x.origAt || (x.rolled ? 0 : x.addedAt || 0), urgent: !!x.urgent,
           ahead: !!(x.ahead || writtenLate(x, src.date, cut))
@@ -2803,9 +2807,11 @@
   var REGULAR = 4;   // typed or picked this many times and it becomes a regular
   function lkey(t) { return slug(String(t).toLowerCase()).slice(0, 80); }
   function learnedFor(text) { var k = lkey(text), d = dupKey(text); return S.learned.filter(function (x) { return x.id === k || (x.ids || []).indexOf(k) >= 0 || (d && dupKey(x.text) === d); })[0] || null; }
+  // the section an item is written under most, by its name now: a renamed section's old and new counts add up
   function bestSection(x) {
-    var best = '', n = 0;
-    Object.keys(x.secs || {}).forEach(function (k) { var v = x.secs[k]; if (v && v.name && v.n > n) { n = v.n; best = v.name; } });
+    var best = '', n = 0, by = Object.create(null), order = [];
+    Object.keys(x.secs || {}).forEach(function (k) { var v = x.secs[k]; if (!v || !v.name || !(+v.n > 0)) return; var nm = secNow(String(v.name)); if (!(nm in by)) { by[nm] = 0; order.push(nm); } by[nm] += +v.n; });
+    order.forEach(function (nm) { if (by[nm] > n) { n = by[nm]; best = nm; } });
     return best;
   }
   /* Amounts written for a line before: the learned record (kept for good) and the last 7 days, most used first. */
@@ -2985,7 +2991,7 @@
   function addToTwin(tw, data, after) {
     var dte = S.date, up = {};
     if (data.qty && !tw.qty) up.qty = data.qty;
-    if (data.station && data.station !== (tw.station || '') && (tw.also || []).indexOf(data.station) < 0) up.also = (tw.also || []).concat([data.station]).slice(0, 8);
+    if (data.station && secNow(data.station) !== lineSec(tw) && alsoNow(tw).indexOf(secNow(data.station)) < 0) up.also = (tw.also || []).concat([data.station]).slice(0, 8);
     var prev = prevOf(tw, up), changed = Object.keys(up).length;
     if (changed) supd(itemRef(dte, tw.id), up).catch(failed);
     toast('On the list: ' + tw.text + (up.qty || tw.qty ? ', ' + (up.qty || tw.qty) : '') + '.', { label: 'Add anyway', fn: function () {
@@ -2999,13 +3005,15 @@
   /* Functions (22 Oct 2026): a function's platter lines (fn, written by js/fnedit.js) sit on their own highlighted tab,
      never mixed into All or the day's count, so the daily prep reads as before. FN_TAB is that tab (no section has an @). */
   var FN_TAB = '@fn';
-  function inTab(x) { if (S.tab === FN_TAB) return !!x.fn; if (x.fn) return false; return !S.tab || (x.station || '') === S.tab || (x.also || []).indexOf(S.tab) >= 0; }
+  function inTab(x) { if (S.tab === FN_TAB) return !!x.fn; if (x.fn) return false; return !S.tab || lineSec(x) === S.tab || alsoNow(x).indexOf(S.tab) >= 0; }
+  // the other sections a line was written under, by their names now
+  function alsoNow(x) { return (Array.isArray(x.also) ? x.also : []).map(secNow); }
   /* "Also" on a line: the other sections it was written under, and any other open line for the same item (a different
      amount, or kept apart), so whoever does it sees both. */
   function alsoHTML(x, under, twins) {
     var out = [];
-    [x.station || ''].concat(x.also || []).forEach(function (s) { if (s && s !== under && out.indexOf(s) < 0) out.push(s); });
-    (twins[dupKey(x.text)] || []).forEach(function (y) { if (y.id !== x.id) out.push([(y.station || '') !== under ? y.station : '', y.qty].filter(Boolean).join(' ') || 'here'); });
+    [lineSec(x)].concat(alsoNow(x)).forEach(function (s) { if (s && s !== under && out.indexOf(s) < 0) out.push(s); });
+    (twins[dupKey(x.text)] || []).forEach(function (y) { if (y.id !== x.id) out.push([lineSec(y) !== under ? lineSec(y) : '', y.qty].filter(Boolean).join(' ') || 'here'); });
     return out.length ? '<span class="nb-also">Also ' + esc(out.join(', ')) + '</span>' : '';
   }
   function isRegular(x) { return !x.hidden && (x.uses || 0) >= REGULAR; }
@@ -3565,7 +3573,7 @@
       people: cfg.people.filter(function (p) { return String(p.name).trim(); }).map(function (p) {
         return { id: p.id, name: String(p.name).trim().slice(0, 40), role: p.role || 'staff', add: !!p.add, tick: !!p.tick, del: !!p.del, ping: !!p.ping, fn: !!p.fn, active: p.active !== false };
       }),
-      kitSecs: ksClean(cfg.kitSecs !== undefined ? cfg.kitSecs : ((S.config && S.config.kitSecs) || [])),
+      kitSecs: ksClean(cfg.kitSecs !== undefined ? cfg.kitSecs : ((S.config && S.config.kitSecs) || []), (S.config && S.config.kitSecs) || []),
       kitShifts: shClean(cfg.kitShifts !== undefined ? cfg.kitShifts : ((S.config && S.config.kitShifts) || [])), showBadges: cfg.showBadges !== false, staffSee: staffSee(cfg),
       sousMail: !!(S.config && S.config.sousMail === true),   // set only from the Kitchen mail tab (mlSousSet)
       prepStandardsEnabled: !!(S.config && S.config.prepStandardsEnabled === true), // the Admin Prep switch; keep it on other config saves
@@ -4035,7 +4043,7 @@
     pastDays(PAST_DAYS).forEach(function (e) { e[1].forEach(function (x) {
       if (x.deleted || x.rolled || !x.text) return;
       var k = lkey(x.text), o = m[k] = m[k] || { text: x.text, days: {}, sec: {} };
-      o.days[e[0]] = 1; if (x.station) o.sec[x.station] = (o.sec[x.station] || 0) + 1;
+      o.days[e[0]] = 1; if (x.station) o.sec[lineSec(x)] = (o.sec[lineSec(x)] || 0) + 1;
     }); });
     var hidden = {}; S.learned.forEach(function (x) { if (x.hidden) hidden[x.id] = 1; });
     return Object.keys(m).filter(function (k) { return !have[k] && !hidden[k]; }).map(function (k) {
@@ -4152,15 +4160,15 @@
     for (i = n - 1 + offset; i >= offset; i--) { var d = shift(today, -i); if (dw === '' || String(parseYmd(d).getDay()) === dw) out.push(d); }
     return out;
   }
-  function afItems(d) { var sec = AF().sec; return ((S.stats && S.stats.days[d]) || []).filter(function (x) { return !x.deleted && (!sec || (x.station || 'General') === sec); }); }
+  function afItems(d) { var sec = AF().sec; return ((S.stats && S.stats.days[d]) || []).filter(function (x) { return !x.deleted && (!sec || (lineSec(x) || 'General') === sec); }); }
   /* the Person filter: a line counts when the person wrote it, or when it rolled over from a line they wrote (origBy is a
      name, since rolled copies carry no id). Every number and chart on Insights goes through this, so they agree. */
   function afMine(x) { var who = AF().who; return !who || (x.rolled ? x.origBy === personName(who) : x.addedById === who); }
   function personName(id) { var p = ((S.config && S.config.people) || []).filter(function (x) { return x.id === id; })[0]; return p ? p.name : ''; }
   function afSections() {
     var m = Object.create(null);
-    if (S.stats && S.stats.days) Object.keys(S.stats.days).forEach(function (d) { S.stats.days[d].forEach(function (x) { if (!x.deleted) m[x.station || 'General'] = 1; }); });
-    if (S.wStats && S.wStats.lines) S.wStats.lines.forEach(function (x) { if (!x.deleted) m[x.station || 'General'] = 1; });
+    if (S.stats && S.stats.days) Object.keys(S.stats.days).forEach(function (d) { S.stats.days[d].forEach(function (x) { if (!x.deleted) m[lineSec(x) || 'General'] = 1; }); });
+    if (S.wStats && S.wStats.lines) S.wStats.lines.forEach(function (x) { if (!x.deleted) m[lineSec(x) || 'General'] = 1; });
     return Object.keys(m).sort();
   }
   function filtersHTML(kind) {
@@ -4203,7 +4211,7 @@
           pd.w++; agg.written++;
           var nm = x.addedBy || 'Unknown', pp = agg.people[nm] = agg.people[nm] || { w: 0, t: 0 };
           pp.w++;
-          if (x.station) agg.sections[x.station] = (agg.sections[x.station] || 0) + 1;
+          if (x.station) agg.sections[lineSec(x)] = (agg.sections[lineSec(x)] || 0) + 1;
           if (x.addedAt) agg.wHour[T.hour(x.addedAt)]++;
           if (x.orig && x.orig !== x.text) agg.fixes.push({ d: d, from: x.orig, to: x.text, by: x.addedBy || '' });
         }
@@ -4403,7 +4411,7 @@
       afItems(d).forEach(function (x) {
         if (mode === 'w' ? x.rolled : !rolledN(x)) return;
         if (!afMine(x)) return;
-        var k = x.station || 'General', c = cell[k] = cell[k] || {};
+        var k = lineSec(x) || 'General', c = cell[k] = cell[k] || {};
         c[dw] = (c[dw] || 0) + 1; tot[dw] = (tot[dw] || 0) + 1; secT[k] = (secT[k] || 0) + 1;
       });
     });
@@ -4424,7 +4432,7 @@
   }
   function stickyHTML(n) {
     var m = {}, all = [];
-    afDates(n, 0).forEach(function (d) { all = all.concat(((S.stats && S.stats.days[d]) || []).filter(function (x) { var sec = AF().sec; return (!sec || (x.station || 'General') === sec) && afMine(x); })); });
+    afDates(n, 0).forEach(function (d) { all = all.concat(((S.stats && S.stats.days[d]) || []).filter(function (x) { var sec = AF().sec; return (!sec || (lineSec(x) || 'General') === sec) && afMine(x); })); });
     all.forEach(function (x) {
       var k = okey(x.text); if (!k) return;
       var e = m[k] = m[k] || { text: String(x.text).trim(), w: 0, tt: [], r: 0, del: 0 };
@@ -4665,7 +4673,7 @@
     if (bh >= 0) out.push('Most lines get ticked between ' + (bh < 10 ? '0' : '') + bh + ':00 and ' + (bh + 1 < 10 ? '0' : '') + (bh + 1) + ':00.');
     if (!a.sec) {
       var sr = {};
-      agg.dates.forEach(function (d) { afItems(d).forEach(function (x) { if (!afMine(x)) return; var k = x.station || 'General', e = sr[k] = sr[k] || { n: 0, r: 0 }; e.n++; if (rolledN(x)) e.r++; }); });
+      agg.dates.forEach(function (d) { afItems(d).forEach(function (x) { if (!afMine(x)) return; var k = lineSec(x) || 'General', e = sr[k] = sr[k] || { n: 0, r: 0 }; e.n++; if (rolledN(x)) e.r++; }); });
       var worst = Object.keys(sr).filter(function (k) { return sr[k].n >= 8; }).sort(function (x, y) { return sr[y].r / sr[y].n - sr[x].r / sr[x].n; })[0];
       if (worst && sr[worst].r) out.push(worst + ' rolls over most: ' + pct(sr[worst].r, sr[worst].n) + '% of its lines were carried from an earlier day.');
     }
@@ -4679,7 +4687,7 @@
     if (sl && sl.m >= 3600000) out.push(sl.t + ' takes longest to get ticked: usually ' + dur(sl.m) + ' after it is written.');
     if (S.wStats && !S.wStats.loading) {
       var from = shift(dayNow(), -(n - 1)), wm = {};
-      S.wStats.lines.forEach(function (x) { if (!x.deleted && x.date >= from && (!a.sec || (x.station || 'General') === a.sec) && (!a.who || x.addedById === a.who)) { var k = okey(x.text); (wm[k] = wm[k] || { t: x.text, n: 0 }).n++; } });
+      S.wStats.lines.forEach(function (x) { if (!x.deleted && x.date >= from && (!a.sec || (lineSec(x) || 'General') === a.sec) && (!a.who || x.addedById === a.who)) { var k = okey(x.text); (wm[k] = wm[k] || { t: x.text, n: 0 }).n++; } });
       var tw = Object.keys(wm).sort(function (x, y) { return wm[y].n - wm[x].n; })[0];
       if (tw && wm[tw].n >= 2) out.push(wm[tw].t + ' is the most wasted item: logged ' + wm[tw].n + ' times.');
     }
@@ -4721,7 +4729,7 @@
       var rows = [['Date', 'Weekday', 'Section', 'Line', 'Amount', 'Written by', 'Written on', 'Written at', 'Rolled over (times)', 'Ticked', 'Reported prepared by', 'Ticked at', 'Minutes to tick']];
       afDates(n, 0).forEach(function (d) { afItems(d).forEach(function (x) {
         if (!afMine(x) && !(a.who && preparedWorker(x).id === a.who)) return;
-        rows.push([d, DOWN[DOW.indexOf(parseYmd(d).getDay())], x.station || 'General', x.text, x.qty || '', x.rolled ? (x.origBy || '') : (x.addedBy || ''), firstAt(x) ? T.day(firstAt(x)) : '', hm(firstAt(x)), rolledN(x), x.done ? 'yes' : 'no', preparedWorker(x).name || '', hm(x.doneAt), x.done && x.doneAt && x.addedAt && !x.rolled ? Math.round((x.doneAt - x.addedAt) / 60000) : '']);
+        rows.push([d, DOWN[DOW.indexOf(parseYmd(d).getDay())], lineSec(x) || 'General', x.text, x.qty || '', x.rolled ? (x.origBy || '') : (x.addedBy || ''), firstAt(x) ? T.day(firstAt(x)) : '', hm(firstAt(x)), rolledN(x), x.done ? 'yes' : 'no', preparedWorker(x).name || '', hm(x.doneAt), x.done && x.doneAt && x.addedAt && !x.rolled ? Math.round((x.doneAt - x.addedAt) / 60000) : '']);
       }); });
       downloadCSV('leichhardt-prep-lines-' + tag + '.csv', rows);
     } else if (kind === 'transfers' && S.xStats && !S.xStats.loading) {
@@ -4745,7 +4753,7 @@
     var m = {}, who = AF().who;
     afDates(n, 0).forEach(function (d) { afItems(d).forEach(function (x) {
       if (x.rolled || !x.done || !x.doneAt || !x.addedAt || x.doneAt <= x.addedAt || (who && preparedWorker(x).id !== who)) return;
-      (m[x.station || 'General'] = m[x.station || 'General'] || []).push(x.doneAt - x.addedAt);
+      (m[lineSec(x) || 'General'] = m[lineSec(x) || 'General'] || []).push(x.doneAt - x.addedAt);
     }); });
     var rows = Object.keys(m).filter(function (k) { return m[k].length >= 2; }).map(function (k) { var v = m[k].sort(function (a, b) { return a - b; }); return { k: k, n: v.length, med: v[Math.floor(v.length / 2)], p90: v[Math.min(v.length - 1, Math.floor(v.length * 0.9))] }; }).sort(function (a, b) { return b.med - a.med; });
     if (!rows.length) return '<h3 class="a-ch-h">Time to tick by section</h3><p class="hint">Not enough ticked lines yet.</p>';
@@ -4987,7 +4995,7 @@
     var ln = (row.getAttribute('data-ln') || '').split('/'), kind = S.name === 'orders' ? 'o' : S.name === 'waste' ? 'w' : S.name === 'transfers' ? 'x' : 'p', line = lineOf(kind, ln[0], ln[1]);
     var wx = kind === 'w' || kind === 'x', fix = line && (wx ? wxFixOk(kind, line) : lineFixOk(line, ln[0]));
     var fixHTML = fix ? '<button type="button" class="sheet-o lm-fix" data-lm="qty"><strong>Change amount</strong><small>' + esc(wx ? num(+line.amount || 0) + ' ' + line.unit : line.qty || 'No amount yet') + '</small></button>' +
-      (kind === 'p' ? '<button type="button" class="sheet-o lm-fix" data-lm="sec"><strong>Move to section</strong><small>' + esc(line.station || 'No section yet') + '</small></button>' : '') : '';
+      (kind === 'p' ? '<button type="button" class="sheet-o lm-fix" data-lm="sec"><strong>Move to section</strong><small>' + esc(lineSec(line) || 'No section yet') + '</small></button>' : '') : '';
     var box = document.createElement('div');
     box.id = 'lm-sheet';
     box.innerHTML = '<div class="sheet-bg" data-lm="close"></div><div class="sheet lm-sheet" role="dialog" aria-modal="true" aria-labelledby="lm-h"><div class="sheet-grip" aria-hidden="true"></div>' +
@@ -5016,7 +5024,7 @@
       return;
     }
     if (!x || !lineFixOk(x, l.date)) { lmClose(); toast('That line has changed. Try again.'); return; }
-    var cur = what === 'qty' ? (x.qty || '') : (x.station || ''), chips = what === 'qty' ? qtyList(x.text).slice(0, 4).map(function (q) { return q.q; }) : secChoices(cur);
+    var cur = what === 'qty' ? (x.qty || '') : lineSec(x), chips = what === 'qty' ? qtyList(x.text).slice(0, 4).map(function (q) { return q.q; }) : secChoices(cur);
     sh.innerHTML = '<div class="sheet-grip" aria-hidden="true"></div><h3 id="lm-h">' + (what === 'qty' ? 'Change amount' : 'Move to section') + '</h3><p class="lm-who">' + esc(l.name) + '</p>' +
       '<form class="lm-form" data-lm-form="' + what + '"><label class="label" for="lm-v">' + (what === 'qty' ? 'Amount' : 'Section') + '</label>' +
       '<input id="lm-v" class="nb-in" maxlength="40" autocomplete="off" enterkeyhint="done"' + (what === 'qty' ? '' : ' autocapitalize="words"') + ' value="' + esc(cur) + '">' +
@@ -5032,7 +5040,7 @@
     if (!x || !lineFixOk(x, l.date)) { lmClose(); toast('That line has changed. Try again.'); return; }
     v = String(v || '').replace(/\s+/g, ' ').trim().slice(0, 40);
     if (what === 'sec' && v) v = cleanSection(v).slice(0, 40);
-    var old = what === 'qty' ? (x.qty || '') : (x.station || '');
+    var old = what === 'qty' ? (x.qty || '') : lineSec(x);   // a renamed section's old name is the same section
     lmOpenFrom = null; lmClose();
     if (v === old) return;
     var ref = l.kind === 'o' ? ordRef(l.date, l.id) : itemRef(l.date, l.id), patch, undo;
@@ -5234,19 +5242,19 @@
   // "Pans are done. Fryers have 2 left.": a name that ends in one s, or joins two things, reads as more than one.
   function secMany(n) { return /[^s]s$/i.test(n) || /\s(and|&)\s/i.test(n); }
   // Every line of a section, wherever the book shows it: its own lines and the lines also listed under it.
-  function secLines(daily, n) { return daily.filter(function (x) { return (x.station || '') === n || (Array.isArray(x.also) ? x.also : []).indexOf(n) >= 0; }); }
+  function secLines(daily, n) { return daily.filter(function (x) { return lineSec(x) === n || alsoNow(x).indexOf(n) >= 0; }); }
   /* What is next: the first section in the All list's own order (pageBody()) that has a name, an open line, and a
      count the All list, its own tab and Home agree on: every open line of it is its own (none only listed under it
      as an also section) and none was written tonight for tomorrow. A section they count differently is passed over. */
   function secNext(date, daily, not) {
     var cut = cutFor(date, S.items), seen = Object.create(null), order = [];
     S.items.filter(function (x) { return !x.fn && (S.showRemoved || !x.deleted); }).sort(sortItems).forEach(function (x) {
-      var k = x.station || '';
+      var k = lineSec(x);
       if (!tonightLine(x, date, cut) && !seen[k]) { seen[k] = 1; order.push(k); }
     });
     for (var i = 0; i < order.length; i++) {
       var n = order[i], open = n === not || !secName(n) ? [] : secLines(daily, n).filter(function (x) { return !x.done; });
-      if (open.length && open.every(function (x) { return (x.station || '') === n && !tonightLine(x, date, cut); })) return { name: n, left: open.length };
+      if (open.length && open.every(function (x) { return lineSec(x) === n && !tonightLine(x, date, cut); })) return { name: n, left: open.length };
     }
     return null;
   }
@@ -5267,7 +5275,7 @@
       // this person's own tick, still standing
       if (!it || !it.done || it.doneById !== m.who || m.who !== S.who) return '';
       // the heading the line sits under: the tab's on a section's own tab, the line's own section on All
-      var name = S.tab || it.station || '';
+      var name = S.tab || lineSec(it);
       if (typeof name !== 'string' || !secName(name) || (m.name && m.name !== name)) return '';
       // the ticked line is one of the section's own, and the section is finished (secSaid())
       var said = secLines(daily, name).indexOf(it) >= 0 ? secSaid(date, daily, name) : null;
@@ -5449,7 +5457,7 @@
        tonight's list was started (cutFor(), the same cut the rollover uses) sit last under their own heading, because
        they go on tomorrow's list. No read: the cut comes from the day's own lines and summary/learned. */
     var TONIGHT = '\u0001tonight', FNS = 'Function platters', FNCOL = '\u0002fn', cut = !S.tab && date === dayNow() ? cutFor(date, items) : -1;
-    function secOf(x) { if (board && x.fn) return FNCOL; if (tonightLine(x, date, cut)) return TONIGHT; return S.tab === FN_TAB ? FNS : S.tab || x.station || ''; }
+    function secOf(x) { if (board && x.fn) return FNCOL; if (tonightLine(x, date, cut)) return TONIGHT; return S.tab === FN_TAB ? FNS : S.tab || lineSec(x); }
     shown.forEach(function (x) { var k = secOf(x); if (!seen[k]) { seen[k] = 1; order.push(k); } });
     [FNCOL, TONIGHT].forEach(function (last) { if (seen[last]) order = order.filter(function (k) { return k !== last; }).concat([last]); });
     return order.map(function (sec) {
@@ -5459,7 +5467,7 @@
       if (!rows.length) return '';
       var name = sec === FNCOL ? FNS : sec || (board ? 'No section' : ''), out;
       if (sec === TONIGHT) out = '<div class="nb-hd nb-hd-tonight"><span>Tonight, for tomorrow</span><span>' + live.length + '</span></div><p class="nb-sd nb-tonight-sd">On tomorrow\'s list. Tick here if it gets done tonight.</p>' +
-        '<ul class="nb-rows">' + rows.map(function (x) { return rowHTML(x, date, false, (x.station ? '<span class="nb-also">' + esc(x.station) + '</span>' : '') + alsoHTML(x, x.station || '', twins)); }).join('') + '</ul>';
+        '<ul class="nb-rows">' + rows.map(function (x) { return rowHTML(x, date, false, (lineSec(x) ? '<span class="nb-also">' + esc(lineSec(x)) + '</span>' : '') + alsoHTML(x, lineSec(x), twins)); }).join('') + '</ul>';
       else out = (name ? '<div class="nb-hd"><span>' + esc(name) + '</span>' + secBar(live) + '<span>' + live.filter(function (x) { return x.done; }).length + '/' + live.length + '</span></div>' : '') +
         '<ul class="nb-rows">' + rows.map(function (x) { return rowHTML(x, date, false, alsoHTML(x, sec === FNCOL ? FNS : sec, twins)); }).join('') + '</ul>';
       return board ? '<section class="wb-col" aria-label="' + esc(sec === TONIGHT ? 'Tonight, for tomorrow' : name) + '">' + out + '</section>' : out;
@@ -5658,7 +5666,7 @@
     var live = S.tab === FN_TAB ? fnLive : daily, doneN = live.filter(function (x) { return x.done; }).length;
     var removed = S.items.filter(function (x) { return x.deleted; });
     var secs = {}, tabs = [];
-    daily.forEach(function (x) { [x.station].concat(x.also || []).forEach(function (n) { if (n && !secs[n]) { secs[n] = 1; tabs.push(n); } }); });
+    daily.forEach(function (x) { [lineSec(x)].concat(alsoNow(x)).forEach(function (n) { if (n && !secs[n]) { secs[n] = 1; tabs.push(n); } }); });
     var fnTab = fnLive.length ? '<button type="button" class="nb-tab nb-tab-fn" data-p="tab" data-v="' + FN_TAB + '" aria-pressed="' + (S.tab === FN_TAB) + '">Functions' + (fnOpen ? ' <span class="nb-tab-n">' + fnOpen + '</span>' : '') + '</button>' : '';
     var tabHTML = tabs.length || fnTab ? '<nav class="nb-tabs" aria-label="Sections"><button type="button" class="nb-tab" data-p="tab" data-v="" aria-pressed="' + !S.tab + '">All</button>' +
       tabs.map(function (t) { return '<button type="button" class="nb-tab" data-p="tab" data-v="' + esc(t) + '" aria-pressed="' + (S.tab === t) + '">' + esc(t) + '</button>'; }).join('') + fnTab +
@@ -5806,13 +5814,14 @@
     dates.forEach(function (d) {
       (S.stats.days[d] || []).forEach(function (x) {
         if (x.deleted) return;
+        var xs = lineSec(x);   // a renamed section's old lines count under its name now
         if (!x.rolled) {
           var r = rec(x); r.w++; r.days[d] = 1; activeDays[d] = 1; if (!r.last || d > r.last) r.last = d;
-          if (x.station) { r.secs[x.station] = (r.secs[x.station] || 0) + 1; secTotal[x.station] = (secTotal[x.station] || 0) + 1; (r.secDay[d] = r.secDay[d] || {})[x.station] = ((r.secDay[d] || {})[x.station] || 0) + 1; }
+          if (xs) { r.secs[xs] = (r.secs[xs] || 0) + 1; secTotal[xs] = (secTotal[xs] || 0) + 1; (r.secDay[d] = r.secDay[d] || {})[xs] = ((r.secDay[d] || {})[xs] || 0) + 1; }
         }
         if (x.done && preparedWorker(x).id) {
           var worker = preparedWorker(x), tr = per[worker.id] = per[worker.id] || blankRec(worker.id);if (!names[worker.id] && worker.name) names[worker.id] = worker.name;tr.t++; tr.tdays[d] = 1;
-          if (x.station) { tr.tsecs[x.station] = (tr.tsecs[x.station] || 0) + 1; tickSec[x.station] = (tickSec[x.station] || 0) + 1; var td2 = tr.tsecDay[d] = tr.tsecDay[d] || {}; td2[x.station] = (td2[x.station] || 0) + 1; }
+          if (xs) { tr.tsecs[xs] = (tr.tsecs[xs] || 0) + 1; tickSec[xs] = (tickSec[xs] || 0) + 1; var td2 = tr.tsecDay[d] = tr.tsecDay[d] || {}; td2[xs] = (td2[xs] || 0) + 1; }
         }
       });
     });
@@ -6061,7 +6070,7 @@
     });
   }
   function psSectionId(name) {
-    var key = String(name || '').trim().toLowerCase(), found = kitSecs().filter(function (s) { return s.name.trim().toLowerCase() === key; });
+    var key = String(secNow(String(name || '')) || '').trim().toLowerCase(), found = kitSecs().filter(function (s) { return s.name.trim().toLowerCase() === key; });
     return key && found.length === 1 ? found[0].id : '';
   }
   function psInputSection() { return psSectionId(S.section || (S.secTyped ? '' : mySec())); }
@@ -6131,7 +6140,7 @@
     function key(v) { return String(v || '').trim().toLowerCase().replace(/\s+/g, ' '); }
     var names = [item.name].concat(item.aliases || []).map(key);
     return S.items.filter(function (x) { return !x.deleted && !x.done && !x.fn &&
-      (x.station === sec.name || (x.also || []).indexOf(sec.name) >= 0) && names.indexOf(key(x.text)) >= 0; });
+      (lineSec(x) === sec.name || alsoNow(x).indexOf(sec.name) >= 0) && names.indexOf(key(x.text)) >= 0; });
   }
   function psAdapter() {
     return { canRead: psCanRead, canEdit: psCanEdit, canAdd: psCanAdd, identity: stableIdentity, workLock: workLock,
@@ -6270,7 +6279,7 @@
     var m = dashModule();
     if (m) return m.render({
       view: view === 'inbox' ? 'inbox' : 'dashboard',
-      allowed: intelligenceAllowed, context: intelligenceContext, draw: draw, reasonName: reasonName,
+      allowed: intelligenceAllowed, context: intelligenceContext, draw: draw, reasonName: reasonName, secNow: secNow,
       wait: function (text) { return inkWait(text, 'chef', 3); },
       clock: function (at) { return dayShort(T.day(at)) + ' at ' + hhmm(T.mins(at)); },
       // lk.dash.intro: the Dashboard has opened once on this device. Never out of date.
@@ -6339,7 +6348,7 @@
         S.atab = tab; S.agLast = S.agLast || {}; S.agLast[adminGroupOf(tab)[0]] = tab; lsSet('lk.prep.atab', tab); draw(); adminToTop();
       }
     });
-    if (!dashLoading && !dashError) dashLoading = window.LK_APP.load('js/admin-dashboard.js?v=4').then(function () { if (!dashModule()) throw { code: 'workspace-version' }; dashLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { dashLoading = null; dashError = true; if (intelligenceAllowed()) draw(); });
+    if (!dashLoading && !dashError) dashLoading = window.LK_APP.load('js/admin-dashboard.js?v=5').then(function () { if (!dashModule()) throw { code: 'workspace-version' }; dashLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { dashLoading = null; dashError = true; if (intelligenceAllowed()) draw(); });
     return '<section class="set-block"><h3 class="label">Dashboard</h3><p class="hint" role="status">' + (dashError ? 'Could not load the dashboard. Check the connection and reload this page.' : inkLabel('Loading...', 'chef')) + '</p></section>';
   }
   function dashWeek() {
@@ -6377,7 +6386,7 @@
   function intelligenceReady() {
     if (window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3 && window.LK_ANALYSIS && window.LK_ANALYSIS.linkQueue) return true;
     if (!intelligenceLoading && !intelligenceError) {
-      intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=4').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=7'); }).then(function () { if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS || !window.LK_ANALYSIS.linkQueue) throw { code: 'workspace-version' }; }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
+      intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=4').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=8'); }).then(function () { if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS || !window.LK_ANALYSIS.linkQueue) throw { code: 'workspace-version' }; }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
     }
     return false;
   }
@@ -6420,6 +6429,7 @@
       },
       people: function () { return people().filter(function (p) { return p.active !== false; }); },
       sections: function () { return ((S.config || {}).kitSecs || []).filter(function (s) { return !s.off; }).map(function (s) { return s.name; }); },
+      secNow: secNow,
       recipes: function () { return (D.recipes || []).map(function (r) { return { id: r.id, name: r.name }; }); },
       loadGuides: loadGuides, guides: function () { return gLive().map(function (g) { return { id: g.id, title: g.title }; }); }
     };
@@ -6584,8 +6594,8 @@
     var lines = st.lines || [], active = lines.filter(function (x) { return !x.deleted; }), done = active.filter(function (x) { return order ? x.ordered : x.done; }).length;
     return head + '<p class="hint">' + esc(longDate(st.day)) + ': ' + done + ' of ' + active.length + (order ? ' ordered.' : ' ticked.') + ' Removed lines keep their record. Changes are made on the ' + (order ? '<a href="#/orders">order list</a>.' : '<a href="#/prep">prep list</a>.') + '</p>' +
       lvHTML({ key: 'chef-' + (order ? 'orders' : 'prep'), items: lines, step: 20, noun: ['line', 'lines'], ph: 'Search this day',
-        find: function (x) { return [x.text, x.station, x.qty, x.addedBy].join(' '); },
-        card: function (x) { return '<div class="c-history-line"><strong>' + esc(x.text) + '</strong><span>' + esc(x.qty || '') + '</span><p class="hint">' + esc([x.station, x.addedBy, x.deleted ? 'Removed' : (order ? x.ordered : x.done) ? (order ? 'Ordered' : 'Ticked') : 'Open'].filter(Boolean).join(' · ')) + '</p></div>'; },
+        find: function (x) { return [x.text, x.station, lineSec(x), x.qty, x.addedBy].join(' '); },
+        card: function (x) { return '<div class="c-history-line"><strong>' + esc(x.text) + '</strong><span>' + esc(x.qty || '') + '</span><p class="hint">' + esc([lineSec(x), x.addedBy, x.deleted ? 'Removed' : (order ? x.ordered : x.done) ? (order ? 'Ordered' : 'Ticked') : 'Open'].filter(Boolean).join(' · ')) + '</p></div>'; },
         empty: 'No lines were recorded for this day.' }) + '</section>';
   }
   function chefKitchenHTML(tab) {
@@ -7574,7 +7584,7 @@
   }
   function wOften() {
     return (S.wSum || []).filter(function (x) { return x.n >= 2 && x.t; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 8)
-      .map(function (x) { return { text: x.t, n: x.n, unit: x.unit || '', reason: x.reason || '', sec: x.sec || '', amt: wAmt(x.amt) }; });
+      .map(function (x) { return { text: x.t, n: x.n, unit: x.unit || '', reason: x.reason || '', sec: secNow(x.sec || ''), amt: wAmt(x.amt) }; });
   }
   // an amount read from summary/waste goes into the box only as a plain number in range (coding rules, text on screen)
   function wAmt(v) { return typeof v === 'number' && v > 0 && v < 100000 ? String(Math.round(v * 100) / 100) : ''; }
@@ -7589,7 +7599,7 @@
      the usual amount (the one logged most, else the last one) */
   function wLast(t) {
     var k = okey(t), x = (S.wSum || []).filter(function (e) { return okey(e.t) === k; })[0], l = x && x.last;
-    return l ? { unit: l.unit || '', reason: l.reason || '', station: l.sec || '', amt: wAmt(x.amt) || wAmt(l.amt) } : null;
+    return l ? { unit: l.unit || '', reason: l.reason || '', station: secNow(l.sec || ''), amt: wAmt(x.amt) || wAmt(l.amt) } : null;
   }
   function addWaste() {
     var f = S.wf, p = me();
@@ -7702,7 +7712,7 @@
     var rs = '<span class="w-rs' + (rk ? ' w-' + rk : '') + '">' + (rk ? '<span class="w-dot w-c-' + rk + '" aria-hidden="true"></span>' : '') + esc(reasonName(x.reason)) + '</span>';
     return '<li class="nb-row w-row' + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '"><span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + '</span>' +
       '<span class="nb-main"><span class="nb-t"><strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span>' + unsentMark(x) + justStamp(x.id) +
-      (x.action ? '<span class="w-act">' + esc(x.action) + '</span>' : '') + '</span>' + metaHTML([x.station ? esc(x.station) : ''], esc(x.addedBy || '')).replace('<span class="nb-meta">', '<span class="nb-meta">' + rs + ' ') + '</span>' + wAgainHTML(x) +
+      (x.action ? '<span class="w-act">' + esc(x.action) + '</span>' : '') + '</span>' + metaHTML([lineSec(x) ? esc(lineSec(x)) : ''], esc(x.addedBy || '')).replace('<span class="nb-meta">', '<span class="nb-meta">' + rs + ' ') + '</span>' + wAgainHTML(x) +
       (del ? '<button type="button" class="p-x" data-p="wdel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
       (x.deleted && wAll() ? '<button type="button" class="p-x" data-p="wrestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') +
       // the line's ⋯ (4 Nov 2026, S4): Change amount, and on a phone Remove or Put back
@@ -7720,7 +7730,7 @@
   function wAgain(date, id) {
     var x = (S.wLines || []).filter(function (l) { return l.id === id && l.date === date; })[0], k = date + '/' + id;
     if (!x || !wAgainOk(x) || S.wAgain[k]) return;
-    var dte = dayNow(), t = String(x.text || '').slice(0, 160), sec = x.station || '', rm = matchRecipe(t);
+    var dte = dayNow(), t = String(x.text || '').slice(0, 160), sec = lineSec(x), rm = matchRecipe(t);
     var made = newItem({ text: t, station: sec, recipe: rm ? rm.id : '', qty: usualQty(t) || '' }, dte);
     S.wAgain[k] = made.id;
     made.catch(function (e) { delete S.wAgain[k]; failed(e); draw(); });
@@ -7814,7 +7824,7 @@
      units: the total above the list keeps each unit apart (totalsText()). */
   function wCountHTML(live) {
     var secs = [];
-    live.forEach(function (x) { var s = String(x.station || '').trim(); if (s && secs.indexOf(s) < 0) secs.push(s); });
+    live.forEach(function (x) { var s = String(lineSec(x)).trim(); if (s && secs.indexOf(s) < 0) secs.push(s); });
     var prog = '<div class="nb-prog">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div>';
     return secs.length ? '<div class="nb-pw is-day w-pw">' + prog + '<span class="w-secs">' + esc(secs.join(', ')) + '</span></div>' : prog;
   }
@@ -9503,13 +9513,13 @@
     return out;
   }
   function whTag() { return S.pin + '|' + dayNow() + '|' + pastStamp('w'); }
-  function whText(x) { return [x.text, x.station, x.addedBy, reasonName(x.reason), x.action].join(' ').toLowerCase(); }
+  function whText(x) { return [x.text, x.station, lineSec(x), x.addedBy, reasonName(x.reason), x.action].join(' ').toLowerCase(); }
   function whLines(r, removed) {
     var h = whState(), a = AF(), words = h.q.toLowerCase().trim().split(/\s+/).filter(Boolean), person = okey(h.who);
     return ((S.wStats && S.wStats.lines) || []).filter(function (x) {
       return (removed || !x.deleted) && x.date >= r.from && x.date <= r.to
         && (a.dow === '' || String(parseYmd(x.date).getDay()) === a.dow)
-        && (!a.sec || (x.station || 'General') === a.sec) && (!a.reason || x.reason === a.reason)
+        && (!a.sec || (lineSec(x) || 'General') === a.sec) && (!a.reason || x.reason === a.reason)
         && (!h.unit || (x.unit === 'g' ? 'kg' : x.unit) === h.unit)
         && (!person || okey(x.addedBy).indexOf(person) >= 0)
         && words.every(function (w) { return whText(x).indexOf(w) >= 0; });
@@ -9685,7 +9695,7 @@
     var r = whRange(), ws = S.wStats, h = whState();
     if (r.error || !ws || ws.loading || ws.error || ws.tag !== whTag() || ws.from > r.from || ws.to < r.to) { toast('Load the complete period before exporting.'); return; }
     var rows = [['Date', 'Weekday', 'Time', 'Section', 'Item', 'Amount', 'Unit', 'Reason', 'Action', 'Logged by', 'Status', 'Removed by', 'Removed at']];
-    whSorted(whLines(r, h.removed)).forEach(function (x) { rows.push([x.date, DOWN[DOW.indexOf(parseYmd(x.date).getDay())], hm(x.addedAt), x.station || '', x.text, x.amount, x.unit, reasonName(x.reason), x.action || '', x.addedBy || '', x.deleted ? 'Removed' : 'Logged', x.deleted ? x.deletedBy || '' : '', x.deleted && x.deletedAt ? T.day(x.deletedAt) + ' ' + clock(x.deletedAt) : '']); });
+    whSorted(whLines(r, h.removed)).forEach(function (x) { rows.push([x.date, DOWN[DOW.indexOf(parseYmd(x.date).getDay())], hm(x.addedAt), lineSec(x), x.text, x.amount, x.unit, reasonName(x.reason), x.action || '', x.addedBy || '', x.deleted ? 'Removed' : 'Logged', x.deleted ? x.deletedBy || '' : '', x.deleted && x.deletedAt ? T.day(x.deletedAt) + ' ' + clock(x.deletedAt) : '']); });
     downloadCSV('leichhardt-wastage-' + r.from + '-to-' + r.to + '.csv', rows);
   }
   function wasteStatsHTML() {
@@ -9716,7 +9726,7 @@
     });
     var prepN = Object.create(null), prepAvailable = S.stats && !S.stats.loading && r.from >= shift(dayNow(), -59), chosen = {};
     whDates(r).forEach(function (d) { chosen[d] = 1; });
-    if (prepAvailable) Object.keys(S.stats.days).forEach(function (d) { if (!chosen[d]) return; S.stats.days[d].forEach(function (x) { if (!x.deleted && !x.rolled && (!AF().sec || (x.station || 'General') === AF().sec)) { var k = okey(x.text); prepN[k] = (prepN[k] || 0) + 1; } }); });
+    if (prepAvailable) Object.keys(S.stats.days).forEach(function (d) { if (!chosen[d]) return; S.stats.days[d].forEach(function (x) { if (!x.deleted && !x.rolled && (!AF().sec || (lineSec(x) || 'General') === AF().sec)) { var k = okey(x.text); prepN[k] = (prepN[k] || 0) + 1; } }); });
     Object.keys(items).forEach(function (k) {
       var item = items[k], reasons = Object.create(null); item.lines.forEach(function (x) { reasons[x.reason] = (reasons[x.reason] || 0) + 1; });
       item.reason = Object.keys(reasons).sort(function (a, b) { return reasons[b] - reasons[a]; })[0];
@@ -9748,7 +9758,7 @@
         { h: 'Item', th: true, html: function (x) { return esc(x.text) + (x.deleted ? ' <span class="o-who-i">Removed' + (x.deletedBy ? ' by ' + esc(x.deletedBy) : '') + '</span>' : '') + (x.action ? '<details class="wh-note"><summary>Action / note</summary><p>' + esc(x.action) + '</p></details>' : ''); } },
         { h: 'Amount', html: function (x) { return esc(num(+x.amount || 0) + ' ' + x.unit) + wasHTML(x); } },
         { h: 'Reason', html: function (x) { return esc(reasonName(x.reason)); } },
-        { h: 'Section', html: function (x) { return esc(x.station || 'General'); } },
+        { h: 'Section', html: function (x) { return esc(lineSec(x) || 'General'); } },
         { h: 'Logged by', html: function (x) { return esc(x.addedBy || 'Unknown'); } },
         { h: '', html: function (x) { if (!del || !x.id) return ''; return '<button type="button" class="p-x" data-p="' + (x.deleted ? 'wrestore' : 'wdel') + '" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc((x.deleted ? 'Put back ' : 'Remove ') + x.text) + '">' + (x.deleted ? 'Put back' : 'Remove') + '</button>'; } }
       ]
@@ -11300,7 +11310,7 @@
     var head = function (r) { return '<div class="hm-ph"><h3 class="hm-pt">Prep by section</h3>' + (r || '') + '</div>'; };
     if (!lines.length) return head() + '<p class="hm-pnone">Nothing on today\'s prep list yet.</p><a class="hm-go" href="#/prep">Open the prep list</a>';
     var by = {}, order = [];
-    lines.forEach(function (x) { var n = x.station || ''; if (!by[n]) { by[n] = { n: 0, d: 0 }; order.push(n); } by[n].n++; if (x.done) by[n].d++; });
+    lines.forEach(function (x) { var n = lineSec(x); if (!by[n]) { by[n] = { n: 0, d: 0 }; order.push(n); } by[n].n++; if (x.done) by[n].d++; });
     var done = lines.filter(function (x) { return x.done; }).length;
     return head('<span class="hm-pc">' + done + ' of ' + lines.length + ' done</span>') + '<ul class="hm-secs">' + order.map(function (n) {
       var s = by[n], pct = Math.round(s.d / s.n * 100), left = s.n - s.d;
@@ -11806,6 +11816,31 @@
   var KS_AUTO = { head: 'Head chef', sous: 'Sous chef' };
   var ksPop = null, ksPrev = null, ksAsked = {};
   function kitSecs() { return ((S.config && S.config.kitSecs) || []).filter(function (x) { return x && x.id && String(x.name || '').trim() && !x.off; }); }
+  /* Old section names (head chef, 13 Nov 2026, docs/section-renames.md). A section renamed in its box keeps its old names
+     in kitSecs[].was (newest first, at most 6), saved by the owner's Save (ksClean()). Lines keep the name they were
+     written under; secNow() gives the name now, so old lines, counts and suggestions go under the new name. An old name
+     that a section has now (removed ones included), or that two sections once had, stays as written: never a guess. With
+     no renames it gives every name back as it is. No reads: the config is already loaded. Rebuilt when it changes. */
+  var secFoldOf = null, secFoldMap = null, SEC_NONE = [];
+  function secFold() {
+    var list = (S.config && S.config.kitSecs) || SEC_NONE;
+    if (list === secFoldOf && secFoldMap) return secFoldMap;
+    var m = Object.create(null), mine = Object.create(null), two = Object.create(null), key = function (v) { return typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().toLowerCase() : ''; };
+    if (Array.isArray(list)) {
+      list.forEach(function (x) { var k = x && key(x.name); if (k) mine[k] = 1; });
+      list.forEach(function (x) {
+        var name = x && typeof x.name === 'string' ? x.name.replace(/\s+/g, ' ').trim() : '';
+        if (!name || !Array.isArray(x.was)) return;
+        x.was.slice(0, 6).forEach(function (o) { var k = key(o); if (!k || k.length > 40 || mine[k]) return; if (m[k] && m[k] !== name) two[k] = 1; else m[k] = name; });
+      });
+      Object.keys(two).forEach(function (k) { delete m[k]; });
+    }
+    secFoldOf = list; secFoldMap = m;
+    return m;
+  }
+  function secNow(n) { if (typeof n !== 'string' || !n) return n; var v = secFold()[n.replace(/\s+/g, ' ').trim().toLowerCase()]; return v || n; }
+  // a line's section as it is called now ('' for none)
+  function lineSec(x) { return secNow((x && x.station) || ''); }
   /* who picks a section: staff and leads, once the head chef has set some up */
   function ksPicks(p) { return !!p && (p.role === 'staff' || p.role === 'lead') && kitSecs().length > 0; }
   function ksGet(id) { try { var v = JSON.parse(lsGet('lk.sec.' + id) || 'null'); return v && v.d === dayNow() ? v : null; } catch (e) { return null; } }
@@ -11914,9 +11949,22 @@
   /* Admin, Kitchen, the Kitchen sections row (on Team, People until 5 Nov 2026): the sections themselves (part of the staff
      draft, saved with Save changes), who is on which today and who worked where over the last 14 days (one small query
      when the row opens, once a day per page load). */
-  function ksClean(list) {
-    var on = {};
-    var out = (list || []).map(function (x) { return { id: String(x.id || ''), name: String(x.name || '').replace(/\s+/g, ' ').trim().slice(0, 40), off: !!x.off }; })
+  /* saved: the sections as stored before this Save. A section whose name changed keeps the name it had in was (newest
+     first, at most 6, never its own name now), so its history follows it (secNow()). */
+  function ksClean(list, saved) {
+    var on = {}, before = Object.create(null);
+    (Array.isArray(saved) ? saved : []).forEach(function (x) { if (x && x.id) before[String(x.id)] = x; });
+    var out = (list || []).map(function (x) {
+      var name = String(x.name || '').replace(/\s+/g, ' ').trim().slice(0, 40), b = before[String(x.id || '')], seen = {}, was = [];
+      seen[name.toLowerCase()] = 1;
+      [b && typeof b.name === 'string' && b.name !== name ? b.name : ''].concat(b && Array.isArray(b.was) ? b.was : [], Array.isArray(x.was) ? x.was : []).forEach(function (v) {
+        var t = typeof v === 'string' ? v.replace(/\s+/g, ' ').trim() : '', k = t.toLowerCase();
+        if (t && t.length <= 40 && !seen[k] && was.length < 6) { seen[k] = 1; was.push(t); }
+      });
+      var o = { id: String(x.id || ''), name: name, off: !!x.off };
+      if (was.length) o.was = was;
+      return o;
+    })
       .filter(function (x) { if (!x.id || !x.name) return false; if (x.off) return true; var k = x.name.toLowerCase(); if (on[k]) return false; on[k] = 1; return true; });
     return out.filter(function (x) { return !x.off || !on[x.name.toLowerCase()]; }).slice(0, 30);
   }
@@ -11938,7 +11986,23 @@
       S.shiftsErr = true; retrySoon('shifts', function () { loadShifts(); }, e); draw();
     });
   }
+  // a section pick's section as it is called now: by its id, else the name it was picked under
+  function ksSecNow(x) { return tmSecName(x.sec) || secNow(String(x.name || '')); }
   function ksName(id) { var p = ((S.config && S.config.people) || []).filter(function (x) { return x.id === id; })[0]; return p ? p.name : ''; }
+  // the old names a renamed section keeps, in words: "Old names: Pans is now Saute." (saved ones only)
+  function ksWasHTML(list) {
+    var l = (list || []).filter(function (s) { return s && !s.off && String(s.name || '').trim() && Array.isArray(s.was) && s.was.some(function (v) { return typeof v === 'string' && v.trim(); }); });
+    if (!l.length) return '';
+    l = l.map(function (s) {
+      var w = s.was.filter(function (v) { return typeof v === 'string' && v.trim(); }).slice(0, 6).map(function (v) { return v.trim().slice(0, 40); });
+      return [s, w];
+    }).map(function (o) {
+      // only an old name that moves here: one two sections once had, or one a section has now, stays as written
+      var w = o[1].filter(function (v) { return secNow(v) === String(o[0].name).replace(/\s+/g, ' ').trim(); });
+      return w.length ? esc(andList(w)) + (w.length === 1 ? ' is' : ' are') + ' now ' + esc(String(o[0].name).trim()) : '';
+    }).filter(Boolean);
+    return l.length ? '<p class="hint">Old names: ' + l.join('. ') + '. Lines written under an old name count under the new one.</p>' : '';
+  }
   function ksAdminHTML(d) {
     var list = d.kitSecs || [], t = dayNow();
     var rows = list.map(function (s, i) {
@@ -11946,14 +12010,15 @@
         '<button type="button" class="p-x" data-p="ks-rm" data-i="' + i + '" aria-label="' + esc((s.off ? 'Put back: ' : 'Remove: ') + (s.name || 'this section')) + '">' + (s.off ? 'Put back' : armed('ks-rm:' + s.id) ? 'Tap again to remove' : 'Remove') + '</button></li>';
     }).join('');
     // in its Kitchen row, under the row's own name (5 Nov 2026), so no label of its own
-    var out = '<section class="set-block a-ks"><span class="hint">Staff and leads pick one of these straight after their PIN, once a day. Their prep lines and wastage go under it unless they write another section. You and the sous chefs are not asked: your section is your role. Renaming a section keeps its history. Save changes at the bottom to put them live.</span>' +
+    var out = '<section class="set-block a-ks"><span class="hint">Staff and leads pick one of these straight after their PIN, once a day. Their prep lines and wastage go under it unless they write another section. You and the sous chefs are not asked: your section is your role. To rename a section, change its name in its box: its old lines and counts then go under the new name. Save changes at the bottom to put them live.</span>' +
       (rows ? '<ul class="a-ks-list">' + rows + '</ul>' : '<p class="hint">No sections yet, so nobody is asked.</p>') +
+      ksWasHTML(list) +
       '<div class="btn-row"><button type="button" class="btn" data-p="ks-add">Add a section</button>' + (list.length ? '' : '<button type="button" class="btn" data-p="ks-usual">Add ' + esc(KS_USUAL.join(', ')) + '</button>') + '</div>';
     if (!kitSecs().length && !(S.shifts || []).length) return out + '</section>';
     loadShifts();
     if (!S.shifts) return out + (S.shiftsErr ? '<p class="hint" role="status">Could not load who is on today. Check the signal. The book tries again by itself in a few minutes.</p>' : '<p class="hint">Reading who is on today...</p>') + '</section>';
     var today = S.shifts.filter(function (x) { return x.day === t && x.sec; }), by = {};
-    today.forEach(function (x) { (by[x.name] = by[x.name] || []).push(ksName(x.by) || x.by); });
+    today.forEach(function (x) { var n = ksSecNow(x); (by[n] = by[n] || []).push(ksName(x.by) || x.by); });
     var names = kitSecs().map(function (s) { return s.name; }).concat([KS_AUTO.head, KS_AUTO.sous]);
     Object.keys(by).forEach(function (n) { if (names.indexOf(n) < 0) names.push(n); });
     out += '<h3 class="a-ks-h">On today</h3><ul class="a-ks-today">' + names.filter(function (n) { return by[n] || (n !== KS_AUTO.head && n !== KS_AUTO.sous); }).map(function (n) {
@@ -11967,7 +12032,7 @@
       var r = per[id] = per[id] || { id: id, name: ksName(id) || id, days: 0, secs: Object.create(null), last: '' };
       r.days++; r.secs[sec] = (r.secs[sec] || 0) + 1; if (day > r.last) r.last = day;
     };
-    S.shifts.forEach(function (x) { if (x.sec && (!past || x.day === t)) addSec(x.by, x.day, x.name); });
+    S.shifts.forEach(function (x) { if (x.sec && (!past || x.day === t)) addSec(x.by, x.day, ksSecNow(x)); });
     if (past) past.days.forEach(function (d) { if (d.day >= from && d.day < t) d.s.forEach(function (v) { addSec(v.p, d.day, v.sec); }); });
     var items = Object.keys(per).map(function (k) { return per[k]; });
     out += '<h3 class="a-ks-h">Who worked where, last 14 days</h3>' + lvHTML({
@@ -13448,7 +13513,7 @@
     var out = Object.create(null), r = tsum.rec;
     if (!tmf || !tsCan() || tsum.st !== 'ok' || !r || !r.day || r.day < shift(dayNow(), -1)) return out;
     var cnt = Object.create(null), ppl = Object.create(null), tot = Object.create(null);
-    r.days.forEach(function (d) { d.s.forEach(function (v) { var c = cnt[v.p] = cnt[v.p] || Object.create(null); if (!c[v.sec]) ppl[v.sec] = (ppl[v.sec] || 0) + 1; c[v.sec] = (c[v.sec] || 0) + 1; tot[v.p] = (tot[v.p] || 0) + 1; }); });
+    r.days.forEach(function (d) { d.s.forEach(function (v) { var vs = secNow(v.sec), c = cnt[v.p] = cnt[v.p] || Object.create(null); if (!c[vs]) ppl[vs] = (ppl[vs] || 0) + 1; c[vs] = (c[vs] || 0) + 1; tot[v.p] = (tot[v.p] || 0) + 1; }); });
     var of = function (id, k) { return (cnt[id] && cnt[id][k]) || 0; }, names = kitSecs().map(function (x) { return x.name; });
     kitShifts().forEach(function (sh) {
       var on = tmDayPeople().filter(function (p) { return tmOnShift(p.id, sh.id); }).map(function (p) { return p.id; }), sec = Object.create(null);
@@ -14216,7 +14281,7 @@
   /* Admin, Reports, Team: Who has worked where (head chef, 10 Nov 2026, docs/cross-training-options/brief.md). Shifts
      worked on each section the kitchen has now, from teamsum/main (read once a kitchen day, tsLoad()), the report's
      last 7, 14 or 30 days to yesterday. Counts only, never a verdict. teamsum keeps section names, so a section taken off
-     or renamed drops out of the table and its shifts are said by name; a count that stops before yesterday says how many
+     drops out of the table and its shifts are said by name (a renamed one counts under its name now: secNow(), 13 Nov); a count that stops before yesterday says how many
      days are missing (12 Nov 2026). tsCount() works the counts out once for At a glance and the table, so they agree. */
   function tsCount(n) {
     tsLoad();
@@ -14225,7 +14290,7 @@
     if (!tsum.rec) return { st: 'none', n: n };
     var secs = kitSecs().map(function (x) { return String(x.name).trim(); }).filter(function (k, i, a) { return k && a.indexOf(k) === i; });
     var from = shift(dayNow(), -n), c = Object.create(null), gone = Object.create(null);
-    tsum.rec.days.forEach(function (d) { if (d.day < from) return; d.s.forEach(function (v) { if (secs.indexOf(v.sec) < 0) { gone[v.sec] = (gone[v.sec] || 0) + 1; return; } var p = c[v.p] = c[v.p] || Object.create(null); p[v.sec] = (p[v.sec] || 0) + 1; }); });
+    tsum.rec.days.forEach(function (d) { if (d.day < from) return; d.s.forEach(function (v) { var vs = secNow(v.sec); if (secs.indexOf(vs) < 0) { gone[vs] = (gone[vs] || 0) + 1; return; } var p = c[v.p] = c[v.p] || Object.create(null); p[vs] = (p[vs] || 0) + 1; }); });
     // A record that stops before yesterday (the nightly run has not finished since) says how many days are missing
     var yday = shift(dayNow(), -1), to = tsum.rec.to || (tsum.rec.day ? shift(tsum.rec.day, -1) : ''), lost = to && to < yday ? Math.round((parseYmd(yday) - parseYmd(to)) / 86400000) : 0;
     var rows = Object.keys(c).map(function (id) { var t = 0; secs.forEach(function (k) { t += c[id][k] || 0; }); return { id: id, name: mnName(id), t: t }; }).sort(function (a, b) { return b.t - a.t || a.name.localeCompare(b.name); });
@@ -14239,7 +14304,7 @@
     if (x.st === 'none') return '<p class="hint">Nothing counted yet. The nightly job counts the shifts from Today\'s team.</p>';
     var h = x.lost ? '<p class="hint" role="status"><span class="a-flag">Old counts</span> Shift counts only go to ' + esc(dayShort(x.to)) + '. The nightly run has not finished since, so the last ' + x.lost + (x.lost === 1 ? ' day is' : ' days are') + ' missing.</p>'
       : '<p class="hint">' + (x.to ? 'Shift counts to ' + esc(dayShort(x.to)) + ', from the nightly run. ' : '') + 'A count of shifts is activity, not a sign someone can run a section alone.</p>';
-    if (x.gone.length) h += '<p class="hint">Not counted: shifts under names no longer on the section list: ' + x.gone.map(function (g) { return esc(g[0]) + ' (' + g[1] + ')'; }).join(', ') + '. A renamed section starts again from 0 under its new name.</p>';
+    if (x.gone.length) h += '<p class="hint">Not counted: shifts under names no longer on the section list: ' + x.gone.map(function (g) { return esc(g[0]) + ' (' + g[1] + ')'; }).join(', ') + '. Rename a section in its box to keep its count.</p>';
     return h;
   }
   // a list of names in words: "Ann and Sam", "Ann, Bo and Sam", the first four and how many more

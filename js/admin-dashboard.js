@@ -30,12 +30,18 @@
     if (o && typeof o === 'object') Object.keys(o).slice(0, 60).forEach(function (k) { if (Array.isArray(o[k])) out[str(k)] = o[k].filter(function (m) { return n(m) > 0; }).slice(0, 2000); });
     return out;
   }
+  /* A renamed section's old name counts under its name now (head chef, 13 Nov 2026, docs/section-renames.md): the
+     nightly record keeps the names lines were written under, and the book's api.secNow() folds them here. An older
+     book sends no secNow, and every name stays as written. */
+  function fold(k) { var f = api && typeof api.secNow === 'function' ? api.secNow(k) : k; return str(f) || k; }
+  function secCounts(o) { var c = counts(o), out = {}; Object.keys(c).forEach(function (k) { var f = fold(k); out[f] = (out[f] || 0) + c[k]; }); return out; }
+  function secMins(o) { var m = mins(o), out = {}; Object.keys(m).forEach(function (k) { var f = fold(k); out[f] = (out[f] || []).concat(m[k]).slice(0, 2000); }); return out; }
   function clean(d) {
     if (!d || !Array.isArray(d.days)) return null;
     var days = d.days.filter(function (r) { return r && /^\d{4}-\d{2}-\d{2}$/.test(r.day); }).map(function (r) {
       var p = r.p || {}, w = r.w || {}, x = r.x || {};
-      return { day: r.day, p: { n: n(p.n), w: n(p.w), t: n(p.t), r: n(p.r), sec: counts(p.sec), mins: mins(p.mins), who: counts(p.who) },
-        w: { n: n(w.n), reason: counts(w.reason), sec: counts(w.sec), items: (Array.isArray(w.items) ? w.items : []).slice(0, 400).filter(function (i) { return i && str(i.t); }).map(function (i) { return { t: str(i.t), u: str(i.u, 40), a: n(i.a), n: n(i.n) }; }) },
+      return { day: r.day, p: { n: n(p.n), w: n(p.w), t: n(p.t), r: n(p.r), sec: secCounts(p.sec), mins: secMins(p.mins), who: counts(p.who) },
+        w: { n: n(w.n), reason: counts(w.reason), sec: secCounts(w.sec), items: (Array.isArray(w.items) ? w.items : []).slice(0, 400).filter(function (i) { return i && str(i.t); }).map(function (i) { return { t: str(i.t), u: str(i.u, 40), a: n(i.a), n: n(i.n) }; }) },
         x: { out: n(x.out), in: n(x.in) } };
     }).sort(function (a, b) { return a.day < b.day ? -1 : a.day > b.day ? 1 : 0; });
     var nd = d.needs && typeof d.needs === 'object' ? { links: n(d.needs.links) } : null;
@@ -334,7 +340,7 @@
     list.forEach(function (k) { if (typeof k === 'string' && k.length <= 200 && /^(sec|item|person):./.test(k) && out.indexOf(k) < 0 && out.length < WATCH_MAX) out.push(k); });
     return { list: out, v: d && typeof d.v === 'number' && d.v >= 0 ? Math.floor(d.v) : 0 };
   }
-  function watchParts(k) { var i = k.indexOf(':'); return { t: k.slice(0, i), v: k.slice(i + 1) }; }
+  function watchParts(k) { var i = k.indexOf(':'), t = k.slice(0, i), v = k.slice(i + 1); return { t: t, v: t === 'sec' ? fold(v) : v }; }
   function personName(id) { var p = (api.people ? api.people() : []).filter(function (x) { return x.id === id; })[0]; return p ? p.name : ''; }
   function itemKey(i) { return (i.t.toLowerCase() + '|' + i.u.toLowerCase()).slice(0, 190); }
   function itemOptions() {
