@@ -48,6 +48,31 @@ const said = async p => ((await txt(p, 'main')) || '').replace(/\s+/g, ' ');
   ok(p.errors.length === 0, 'Supplier order: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // A live list that was refused comes back by itself (13 Nov 2026): the listener was left dead, and the list stayed
+  // empty until a reload. The prep list starts again after the 5-minute wait, the order list as soon as the phone says
+  // it is back online.
+  const today = L.ymd(new Date(L.NOW)), fsKey = q => ['kitchens', L.PIN].concat(q).join('/'), live = {};
+  live[fsKey(['days', today, 'items', 'lv1'])] = { text: 'Slice onions', station: 'Larder', qty: '', recipe: '', addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - 3600000, done: false, deleted: false };
+  live[fsKey(['orders', today, 'lines', 'lo1'])] = { text: 'Cream', qty: '4 L', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - 3600000, ordered: false, deleted: false };
+  const st = (q, k) => q.evaluate(n => window.LK_PREP.state[n], k);
+  p = await L.open(b, '#/prep', { who: 'sam', exhausted: '/(days|orders)/' + today + '/(items|lines)$', extra: live, wait: 1500 });
+  await L.waitFor(p, () => window.LK_PREP.state.itemsState === 'error', null, 8000).catch(() => {});
+  ok(await st(p, 'itemsState') === 'error', 'live list refused: the prep list shows it could not load (' + await st(p, 'itemsState') + ')');
+  await p.evaluate(() => { window.__fake.exhausted = null; });
+  await p.clock.fastForward(5 * 60000 + 1000);
+  await L.waitFor(p, () => window.LK_PREP.state.itemsState === 'ok', null, 8000).catch(() => {});
+  ok(await st(p, 'itemsState') === 'ok' && /Slice onions/.test(await said(p)), 'live list refused: the prep list comes back by itself after the wait, no reload (' + await st(p, 'itemsState') + ')');
+  ok(p.errors.length === 0, 'live list refused, prep: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  p = await L.open(b, '#/orders', { who: 'sam', exhausted: '/(days|orders)/' + today + '/(items|lines)$', extra: live, wait: 1500 });
+  await L.waitFor(p, () => window.LK_PREP.state.ordState === 'error', null, 8000).catch(() => {});
+  ok(await st(p, 'ordState') === 'error', 'live list refused: the order list shows it could not load (' + await st(p, 'ordState') + ')');
+  await p.evaluate(() => { window.__fake.exhausted = null; window.dispatchEvent(new Event('online')); });
+  await L.waitFor(p, () => window.LK_PREP.state.ordState === 'ok', null, 8000).catch(() => {});
+  ok(await st(p, 'ordState') === 'ok' && /Cream/.test(await said(p)), 'live list refused: the order list comes back once the phone is online again (' + await st(p, 'ordState') + ')');
+  ok(p.errors.length === 0, 'live list refused, orders: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // the time comes from California's midnight, worked out on the phone
   p = await L.open(b, '#/', { who: 'sam', wait: 800 });
   const back = await p.evaluate(() => { const T = window.LK_TIME; if (typeof T.quotaBack !== 'function') return ['missing']; const t0 = T.at('2026-11-05', 14 * 60), t1 = T.at('2026-07-05', 14 * 60), t2 = T.at('2026-11-05', 19 * 60); return [T.clock(T.quotaBack(t0)), T.day(T.quotaBack(t0)), T.clock(T.quotaBack(t1)), T.day(T.quotaBack(t2))]; });

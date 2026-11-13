@@ -491,7 +491,20 @@
   function stopLive() {
     [unsubCfg, unsubItems, unsubAct, unsubOrd, unsubW, unsubX, unsubXO].forEach(function (u) { if (u) u(); });
     unsubCfg = unsubItems = unsubAct = unsubOrd = unsubW = unsubX = unsubXO = null; S.xOpen = []; S.xOpenState = 'idle'; cfgKey = itemsKey = ordKey = wKey = xKey = '';
+    Object.keys(liveT).forEach(function (k) { clearTimeout(liveT[k]); retryDone(k); }); liveT = {};
     cutStop();
+  }
+  /* A live list whose listener failed (13 Nov 2026: the free reads used up, a refused read, a connection the SDK gave
+     up on) hears nothing ever again. Its caller clears it and its key, and this starts it again by itself: after the
+     5-minute wait or once the phone is back online, whichever comes first (retrySoon()). One timer per list (k), time
+     passing on the phone. Each try costs what opening that list costs (one read per line, one for an empty list), at
+     most once in 5 minutes per list while it keeps failing; a refused try reads nothing. */
+  var liveT = {};
+  function liveRetry(k, fn, e) {
+    clearTimeout(liveT[k]); delete liveT[k];
+    if (e && e.code === 'cancelled') return;   // the person on the phone changed: their own lists start afresh
+    retrySoon(k, function () { clearTimeout(liveT[k]); delete liveT[k]; fn(); }, e);
+    liveT[k] = setTimeout(function () { delete liveT[k]; retryDone(k); fn(); }, RETRY_WAIT);
   }
   /* "Not sent": a line this phone changed that the server has not confirmed yet, from the listener's own
      hasPendingWrites (no reads; metadata changes are not billed). Since 26 Oct 2026 (#387) such a change waits only in
@@ -599,7 +612,7 @@
     if (key === itemsKey && unsubItems) return;
     if (unsubItems) unsubItems();
     itemsKey = key; S.itemsState = 'loading'; itemsLast = {}; itemsCold = false;
-    unsubItems = fb.fs.onSnapshot(itemsCol(S.date), { includeMetadataChanges: true }, function (snap) {
+    var u = unsubItems = fb.fs.onSnapshot(itemsCol(S.date), { includeMetadataChanges: true }, function (snap) {
       // no signal and this day not loaded yet (a day the phone moved to, or today again after another day): 'offline',
       // with only the lines this phone wrote since, never "nothing written"
       var k = listSnap(snap, S.itemsState, itemsLast), coldTurn = cacheOnly(snap) !== itemsCold;
@@ -617,7 +630,10 @@
       // and when only the list's touch with the server changed, the finished words on a wide screen decide again
       if (k === 'same') { patchOrDraw(function () { patchUnsent(); if (finDue() || secDue()) draw(); else if (coldTurn) { finFit(); finPaint(); } }); return; }
       S.itemsState = k === 'wait' ? 'offline' : 'ok'; draw();
-    }, function () { S.itemsState = 'error'; draw(); });
+    }, function (e) {
+      if (unsubItems !== u) return;
+      unsubItems(); unsubItems = null; itemsKey = ''; S.itemsState = 'error'; liveRetry('items', watchItems, e); draw();
+    });
   }
   /* What the prep list learned, for suggestions, Quick add and the Learning tab: the 500 most used items. The collection
      gains a record for every distinct line ever written and nothing prunes it, so the read is bounded here (the
@@ -7020,13 +7036,16 @@
     if (key === ordKey && unsubOrd) return;
     if (unsubOrd) unsubOrd();
     ordKey = key; S.ordState = 'loading'; ordSnap = {};
-    unsubOrd = fb.fs.onSnapshot(ordCol(S.ordDate), { includeMetadataChanges: true }, function (snap) {
+    var u = unsubOrd = fb.fs.onSnapshot(ordCol(S.ordDate), { includeMetadataChanges: true }, function (snap) {
       // 'wait': no signal and not loaded yet, so only this phone's unsent lines (see listSnap)
       var k = listSnap(snap, S.ordState, ordSnap);
       S.ordLines = snapLines(snap, S.ordDate);
       if (k === 'same') { patchOrDraw(function () { patchLines(S.ordLines); }); return; }
       S.ordState = k === 'wait' ? 'offline' : 'ok'; draw();
-    }, function () { S.ordState = 'error'; draw(); });
+    }, function (e) {
+      if (unsubOrd !== u) return;
+      unsubOrd(); unsubOrd = null; ordKey = ''; S.ordState = 'error'; liveRetry('orders', watchOrders, e); draw();
+    });
   }
 
   /* Everything to order is read once (14 days) and then kept in step on the phone: today's lines come from the live list,
@@ -7412,12 +7431,15 @@
     if (key === wKey && unsubW) return;
     if (unsubW) unsubW();
     wKey = key; S.wState = 'loading'; wSnap = {};
-    unsubW = fb.fs.onSnapshot(wCol(S.wDate), { includeMetadataChanges: true }, function (snap) {
+    var u = unsubW = fb.fs.onSnapshot(wCol(S.wDate), { includeMetadataChanges: true }, function (snap) {
       var k = listSnap(snap, S.wState, wSnap);   // 'wait': only this phone's unsent lines (see listSnap)
       S.wLines = snapLines(snap, S.wDate);
       if (k === 'same') { patchOrDraw(function () { patchLines(S.wLines); }); return; }
       S.wState = k === 'wait' ? 'offline' : 'ok'; draw();
-    }, function () { S.wState = 'error'; draw(); });
+    }, function (e) {
+      if (unsubW !== u) return;
+      unsubW(); unsubW = null; wKey = ''; S.wState = 'error'; liveRetry('waste', watchWaste, e); draw();
+    });
     loadWSum();
   }
   /* Past days hardly change, so these reads are kept on the phone for the day (like lk.past): tag is kitchen PIN and day. */
@@ -7813,14 +7835,17 @@
     if (unsubXO || !fb) return;
     S.xOpenState = 'loading'; xoSnap = {};
     var col = fb.fs.collection.apply(null, [fb.db].concat(base(), ['transferOpen']));
-    unsubXO = fb.fs.onSnapshot(fb.fs.query(col, fb.fs.where('open', '==', true)), { includeMetadataChanges: true }, function (snap) {
+    var u = unsubXO = fb.fs.onSnapshot(fb.fs.query(col, fb.fs.where('open', '==', true)), { includeMetadataChanges: true }, function (snap) {
       // 'wait': no signal and not loaded yet. A transfer logged now writes its open record too (xWrite), so the copy
       // holds today's unsent loans only: Still outstanding keeps its no-signal note until the server answers
       var k = listSnap(snap, S.xOpenState, xoSnap);
       if (k === 'same') return;
       S.xOpen = snap.docs.map(function (d) { var v = d.data(); return Object.assign({}, v.record, { date: v.date, id: v.lineId }); });
       S.xOpenState = k === 'wait' ? 'offline' : 'ok'; draw();
-    }, function () { S.xOpenState = 'error'; draw(); });
+    }, function (e) {
+      if (unsubXO !== u) return;
+      unsubXO(); unsubXO = null; S.xOpenState = 'error'; liveRetry('xopen', watchXOpen, e); draw();
+    });
   }
   function returnXfer(date, id, undo, original) {
     if ((!can('tick') && !wAll()) || !fb) return;
@@ -7846,12 +7871,15 @@
     if (unsubX) unsubX();
     // a new day starts empty, so yesterday's lines never show under today's date while the read comes in
     xKey = key; S.xState = 'loading'; S.xLines = []; xSnap = {};
-    unsubX = fb.fs.onSnapshot(xCol(S.xDate), { includeMetadataChanges: true }, function (snap) {
+    var u = unsubX = fb.fs.onSnapshot(xCol(S.xDate), { includeMetadataChanges: true }, function (snap) {
       var k = listSnap(snap, S.xState, xSnap);   // 'wait': only this phone's unsent lines (see listSnap)
       S.xLines = snapLines(snap, S.xDate);
       if (k === 'same') { patchOrDraw(function () { patchLines(S.xLines); }); return; }
       S.xState = k === 'wait' ? 'offline' : 'ok'; draw();
-    }, function () { S.xState = 'error'; draw(); });
+    }, function (e) {
+      if (unsubX !== u) return;
+      unsubX(); unsubX = null; xKey = ''; S.xState = 'error'; liveRetry('xfer', watchXfer, e); draw();
+    });
     watchXOpen(); loadXSum();
   }
   function xSumDoc() { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['summary', 'transfers'])); }
