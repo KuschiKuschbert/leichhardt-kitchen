@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **14 November 2026, the release window stays open until 09:30.** At 02:50, with the publisher fix (#692) waiting for the next window, the owner said: "Keep the window open until 9:30 am today bne time." `RELEASE_UNTIL` in `.github/workflows/auto-merge.yml` is `2026-11-13T23:30:00Z` and expires by itself ([auto-merge](auto-merge.md)).
+
 - **13 November 2026, a supplier order after its cut-off counts for the next order cycle.** The bug hunt found that the supplier sheet linked an order recorded after today's cut-off had closed to that closed cut-off, ticked it and left the next one's reminder open. Asked whether a late order is for today's delivery or the next cycle, the owner said: "after cutoff it counts for next order cycle." `occurrence()` in `js/suppliers.js` now picks the next open cut-off, also when the sheet was opened from a reminder for the closed one. The order list's Closed, not confirmed tick for today's cut-off is unchanged. `tests/supplier-late-order.test.js`.
 
 - **13 November 2026, updates are silent.** The owner asked: "can't we just silently update?" Told the trade-off (a screen used without a 2-minute break stays on the older version until it rests or 04:00), the owner said yes. A new version found by itself shows no band; the book updates when nothing is typed, unsaved or unsent, as before. Settings, About and help says Update ready and its button says Update now. [Site publishing](site-publishing.md#silent-updates-13-nov-2026).
