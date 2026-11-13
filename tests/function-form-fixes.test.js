@@ -130,6 +130,20 @@ const saved = async (p, name) => Object.values(await store(p)).filter(x => x && 
   ok(p.errors.length === 0, 'guests: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // 5. Check before confirming shows what the kitchen sees, without the sheet's own Print, Change and Cancel buttons
+  const draftDo = fn({ name: 'Draft do', date: day2, status: 'draft' });
+  const offDo = Object.assign(fn({ name: 'Off do', date: day2, status: 'cancelled' }), { canBy: 'fay', canAt: L.NOW - 600000 });
+  for (const [id, label] of [['draftDo', 'draft'], ['offDo', 'cancelled']]) {
+    p = await L.open(b, '#/functions/' + id, { who: 'fay', extra: extra({ draftDo, offDo }), wait: 1500 });
+    await L.waitFor(p, () => !!document.querySelector('[data-fe="review"]'));
+    await tap(p, '[data-fe="review"]'); await L.settle(p, 200);
+    const rv = await txt(p, '.fe-review') || '';
+    ok(!!(await p.$('.fe-review .fn-sub')) && !(await p.$('.fe-review [data-fn]')) && !/Change this function|Cancel function|Undo cancel/.test(rv) && (await p.$$('.fe-review [data-fe="print"]')).length === 1 && !!(await p.$('.fe-review [data-fe="confirm"]')),
+      label + ': the review has the sheet, one Print and Confirm, and none of the sheet\'s own buttons (' + (await p.$$eval('.fe-review [data-fn]', e => e.map(x => x.getAttribute('data-fn')).join(','))) + ')');
+    ok(p.errors.length === 0, label + ' review: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });

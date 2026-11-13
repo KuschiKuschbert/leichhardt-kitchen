@@ -401,7 +401,9 @@
     var f = toDoc(e);
     f.id = e.id; f.kcBy = B().who(); f.kcAt = now(); f.by = B().who(); f.upd = now(); f.chg = [];
     return '<section class="set-block fe-review" aria-labelledby="fe-rv-h"><h3 id="fe-rv-h" tabindex="-1">Check before confirming</h3><p class="hint">This is what the kitchen will see. Confirming puts it in the band under the top bar from 00:00 on ' + esc(M.dayName(f.date)) + '.</p>' +
-      FN.sheetHTML(f, false).replace(/<div class="btn-row">[\s\S]*?<\/div>$/, '') + msgHTML(e) +
+      // only what the kitchen sees: the sheet without its own buttons (an older js/functions.js ignores bare, so its
+      // buttons are cut off from the button row on, 13 Nov 2026)
+      FN.sheetHTML(f, false, true).replace(/<div class="btn-row(?: fn-acts)?">[\s\S]*$/, '') + msgHTML(e) +
       '<div class="btn-row"><button type="button" class="btn dark ink-busy-button" data-fe="confirm"' + (e.saving ? ' disabled aria-busy="true"' : '') + '>' + (e.saving ? inkLabel('Saving...') : e.status === 'cancelled' ? 'Put it back on' : 'Confirm function') + '</button><button type="button" class="btn" data-fe="print">Print function</button></div></section>';
   }
   function editHTML() {

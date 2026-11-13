@@ -986,7 +986,8 @@
         return '<li><b>' + l.qty + '</b> \u00d7 ' + (r ? '<a href="#/r/' + encodeURIComponent(l.rid) + '">' + esc(l.name) + '</a>' : esc(l.name)) + '</li>';
       }).join('') + '</ul></section>';
   }
-  function sheetHTML(f, inPop) {
+  // bare: leave out the sheet's own buttons (Print, Change this function, Cancel), for the form's Check before confirming
+  function sheetHTML(f, inPop, bare) {
     var t = now(), c = f.chg || [];
     var status = f.status === 'cancelled' ? '<p class="fn-banner is-off" role="note"><b>Cancelled.</b> Do not send these platters.' + (f.canAt ? ' Cancelled by ' + esc(nameOf(f.canBy)) + ', ' + esc(dayName(kday(f.canAt)) + ' ' + kclock(f.canAt)) + '.' : '') + '</p>' :
       f.was && f.was.until && f.was.from <= t && t < f.was.until && !(f.from <= t && t < f.until) ? '<p class="fn-banner is-moved" role="note"><b>Rescheduled.</b> Not on ' + esc(dayName(kday(f.was.start || f.was.first))) + ' any more: now ' + esc(dayName(f.date)) + '.</p>' :
@@ -1001,6 +1002,7 @@
     if (f.notes) out += '<h3 class="fn-h">Service and dietary notes</h3><p class="fn-text">' + esc(f.notes) + '</p>';
     if (c.length) out += '<h3 class="fn-h">Changes</h3><ul class="fn-chg">' + c.slice(0, 5).map(function (x) { return '<li><span>' + esc(dayName(kday(x.at)) + ' ' + kclock(x.at)) + ', ' + esc(nameOf(x.by)) + '</span> ' + esc(x.what) + '</li>'; }).join('') + '</ul>';
     out += '<p class="fn-by fn-last">Last changed by ' + esc(nameOf(f.by)) + ', ' + esc(dayName(kday(f.upd)) + ' ' + kclock(f.upd)) + '.</p>';
+    if (bare) return out;
     var can = P() && P().fnOK && P().fnOK();
     out += '<div class="btn-row fn-acts"><button type="button" class="btn" data-fn="print" data-id="' + esc(f.id) + '">Print function</button>' +
       (inPop ? '<a class="btn dark" href="#/fn/' + encodeURIComponent(f.id) + '" data-fn="go">Open the full sheet</a>' : '') +
