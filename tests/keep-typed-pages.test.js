@@ -340,11 +340,12 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
     p.on('dialog', d => { asked++; d.dismiss().catch(() => {}); });
     await p.clock.fastForward(10000);
     await p.evaluate(() => navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: 'lk-new' })));
-    await L.waitFor(p, () => !!document.querySelector('.upd-bar'), null, 3000);
+    // a new version found by itself is silent (13 Nov 2026): the book knows of it, and no band asks
+    await L.waitFor(p, () => LK_UPDATE.state() === 'ready', null, 3000);
     await mark(p);
     await p.fill('#p-text', 'Half a line');
     ok(await asks(p), 'update now: half a line typed, a reload asks first');
-    await p.click('.upd-bar button'); await L.settle(p, 1500);
+    await L.updateNow(p); await L.settle(p, 1500);
     ok(!(await reloaded(p)) && await p.locator('#lk-update-confirm[open]').count() === 1, 'update now: the draft receives an explicit discard decision');
     await p.click('#lk-update-confirm [data-update="discard"]');
     await waitReload(p);

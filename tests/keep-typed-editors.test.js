@@ -695,9 +695,10 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
       ok(await asks(p), label + ': a change here makes a reload ask first');
       await p.clock.fastForward(10000);
       await S(p, () => navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: 'lk-new' })));
-      await wait(p, () => !!document.querySelector('.upd-bar'), null, 3000);
+      // silent since 13 Nov 2026: no band for a version found by itself, so Update now is asked for (Settings, Reload)
+      await wait(p, () => LK_UPDATE.state() === 'ready', null, 3000);
       await S(p, () => { window.__mark = 1; });
-      await p.click('.upd-bar button'); await L.settle(p, 1500);
+      await L.updateNow(p); await L.settle(p, 1500);
       ok(await p.locator('#lk-update-confirm[open]').count() === 1, label + ': Update now offers Keep working or Discard and update');
       await p.click('#lk-update-confirm [data-update="discard"]');
       await L.waitFor(p, () => window.__mark !== 1, null, 15000).catch(() => {});

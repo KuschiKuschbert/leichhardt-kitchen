@@ -5,10 +5,12 @@ const marked = p => p.evaluate(() => { window.__updateMark = 1; });
 const reloaded = p => p.evaluate(() => window.__updateMark !== 1).catch(() => true);
 const waitReload = p => L.waitFor(p, () => window.__updateMark !== 1, null, 10000).catch(() => {}).then(() => reloaded(p));
 const confirm = '#lk-update-confirm';
+// the service worker has saved a new version, more than 8 seconds after opening. Silent since 13 Nov 2026: the book
+// knows of it and shows no band; the band comes with the update someone asks for (L.updateNow, LK_UPDATE.now())
 async function offer(p) {
   await p.clock.fastForward(10000);
   await p.evaluate(() => navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: 'lk-new' })));
-  await L.waitFor(p, () => !!document.querySelector('.upd-bar'));
+  await L.waitFor(p, () => LK_UPDATE.state() === 'ready');
 }
 async function gate(p, kind) {
   let release;
@@ -30,6 +32,8 @@ async function gate(p, kind) {
   const b = await L.start();
   let p = await L.open(b, '#/prep', { who: 'ann', wait: 1500 });
   await offer(p);
+  await L.settle(p, 500);
+  ok(await p.evaluate(() => !document.querySelector('.upd-bar.is-on') && LK_UPDATE.state() === 'ready'), 'a new version found by itself shows no band, and the book knows of it');
   await p.click('[data-p="recipe-toggle"]');
   ok(await p.locator('dialog.ux-picker[open]').isVisible() && await p.evaluate(() => LK_PREP.unsavedHere() && !LK_PREP.dirtyForUpdate()), 'an empty native recipe picker is open under the existing navigation guard, with no dirty work');
   await marked(p);
@@ -46,7 +50,7 @@ async function gate(p, kind) {
     await offer(p);
     await p.fill('#p-text', 'Keep this unfinished prep line');
     await marked(p);
-    await p.click('.upd-bar button');
+    await L.updateNow(p);
     await L.waitFor(p, () => !!document.querySelector('#lk-update-confirm[open]'));
     await L.settle(p, 300);
     const geometry = await p.evaluate(() => {
@@ -97,7 +101,7 @@ async function gate(p, kind) {
   await p.press('#p-text', 'Enter');
   await L.waitFor(p, () => LK_PREP.unsent());
   await marked(p);
-  await p.click('.upd-bar button');
+  await L.updateNow(p);
   await p.click('.upd-bar button');
   ok(!(await reloaded(p)) && await p.locator(confirm).count() === 0 && /updates.once.sent/.test(await L.txt(p, '.upd-bar')), 'pending writes offer no discard path and repeated taps cannot bypass them');
   await p.clock.fastForward('11:00');
@@ -112,7 +116,7 @@ async function gate(p, kind) {
   await offer(p);
   const head = await gate(p, 'head');
   await marked(p);
-  await p.click('.upd-bar button');
+  await L.updateNow(p);
   await p.fill('#p-text', 'Typed while the signal check waits');
   head.release();
   await L.waitFor(p, () => !!document.querySelector('#lk-update-confirm[open]'));
@@ -126,7 +130,7 @@ async function gate(p, kind) {
   const files = await gate(p, 'files');
   await p.fill('#p-text', 'Original draft');
   await marked(p);
-  await p.click('.upd-bar button');
+  await L.updateNow(p);
   await p.click(confirm + ' [data-update="discard"]');
   await L.waitFor(p, () => /Updating/.test((document.querySelector('.upd-bar span') || {}).textContent || ''));
   await p.fill('#p-text', 'New words after the discard decision');
@@ -144,7 +148,7 @@ async function gate(p, kind) {
   await offer(p);
   const structural = await gate(p, 'files');
   await marked(p);
-  await p.click('.upd-bar button');
+  await L.updateNow(p);
   await p.click(confirm + ' [data-update="discard"]');
   await L.waitFor(p, () => /Updating/.test((document.querySelector('.upd-bar span') || {}).textContent || ''));
   const people = await p.evaluate(() => LK_PREP.state.draft.people.length);

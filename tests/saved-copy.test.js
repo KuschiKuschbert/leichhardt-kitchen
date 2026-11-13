@@ -1,6 +1,6 @@
 // The service worker opens the book from the copy saved on the phone (21 Oct 2026): fast on slow wifi, still there with
-// no signal, and a new version is fetched behind it and taken up by itself, or with Update now once someone has
-// touched the screen. This file starts its own copy of the test server (also with BASE set), whose files and speed it can
+// no signal, and a new version is fetched behind it and taken up by itself, silently (13 Nov 2026: no band offers it),
+// or with Update now in Settings. This file starts its own copy of the test server (also with BASE set), whose files and speed it can
 // change; the worker's own requests go through the page's routes too (tests/lib.js), so Firebase is still the stand-in.
 const L = require('./lib');
 const F = require('./supplier-fixtures');
@@ -71,7 +71,8 @@ async function swOpen(b, hash, o) {
   ok(!!d1 && d1 === d2, 'nothing new: opening again does not write the saved copy again (' + d1 + ' / ' + d2 + ')');
 
 
-  // a new version while someone is using the book: the saved copy shows first, then the bar offers Update now
+  // a new version while someone is using the book: the saved copy shows first, and the book knows of the new version
+  // without a band (silent updates, 13 Nov 2026); Update now in Settings takes it up at once
   newData(1);
   await p.evaluate(() => localStorage.setItem('lk.upd.last', String(Date.now())));   // updated a moment ago: no reload by itself
   // the server answers slowly, like kitchen wifi, so the worker's background round is still out when the book opens
@@ -80,9 +81,9 @@ async function swOpen(b, hash, o) {
   await p.reload({ waitUntil: 'load' });
   ok(await p.evaluate(() => window.__v === undefined), 'new version: the book opens from the saved copy first');
   over.delay = 0;
-  await L.waitFor(p, () => !!document.querySelector('.upd-bar'), null, 8000).catch(() => {});
-  ok(/New version available/.test(await txt(p, '.upd-bar') || ''), 'new version: the update bar shows');
-  await p.click('.upd-bar button');
+  await L.waitFor(p, () => !!(window.LK_UPDATE && LK_UPDATE.state() === 'ready'), null, 8000).catch(() => {});
+  ok(await p.evaluate(() => LK_UPDATE.state() === 'ready' && !document.querySelector('.upd-bar.is-on') && window.__v === undefined), 'new version: the book knows of it, shows no band and does not reload over the screen');
+  await L.updateNow(p);
   ok(await until(p, () => window.__v === 1, 10000), 'Update now: the new version is on the screen');
 
   // a new version found just after opening, before anyone touched the screen: the book reloads into it by itself
@@ -220,8 +221,7 @@ async function swOpen(b, hash, o) {
     if (how === 'Update now') {
       await q.clock.fastForward(10000);
       await q.evaluate(() => navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: 'lk-new' })));
-      await L.waitFor(q, () => !!document.querySelector('.upd-bar'), null, 3000).catch(() => {});
-      await q.click('.upd-bar button');
+      await L.updateNow(q, 3000);
       await L.waitFor(q, () => /^No signal\./.test((document.querySelector('.upd-bar span') || {}).textContent || ''), null, 12000).catch(() => {});
     } else {
       await q.clock.fastForward('13:58:00'); await L.settle(q, 300);
@@ -246,8 +246,9 @@ async function swOpen(b, hash, o) {
   delete over['/js/app.js']; delete over['/js/prep.js'];
 
   // Opened from the saved copy with no signal, while a new version came out (28 Oct 2026): the first look once the
-  // signal is back compares with the saved copy the page opened from, so the strip comes. It used to take that answer as
-  // the version running, and the update waited until 04:00. With nothing new, no strip.
+  // signal is back compares with the saved copy the page opened from, so the new version is found. It used to take that
+  // answer as the version running, and the update waited until 04:00. Silent since 13 Nov 2026: no strip either way, and
+  // the book takes the new version up by itself once nobody has touched it for 2 minutes. With nothing new, no update.
   for (const how of ['a new version', 'nothing new']) {
     delete over['/index.html'];
     q = await swOpen(b, '#/recipes', { base, wait: 800 });
@@ -268,11 +269,18 @@ async function swOpen(b, hash, o) {
     // the next look: back after a minute or more
     await q.clock.fastForward(61000);
     await q.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
-    const shown = await L.waitFor(q, () => !!document.querySelector('.upd-bar'), null, 4000).then(() => true, () => false);
-    if (how === 'nothing new') ok(!shown, 'opened with no signal, nothing new: no strip once the signal is back');
+    const known = await L.waitFor(q, () => !!(window.LK_UPDATE && LK_UPDATE.state() !== ''), null, 4000).then(() => true, () => false);
+    await L.settle(q, 500);
+    const seen = await q.evaluate(() => ({ state: LK_UPDATE.state(), band: !!document.querySelector('.upd-bar.is-on') }));
+    if (how === 'nothing new') ok(known && seen.state === 'current' && !seen.band, 'opened with no signal, nothing new: no strip once the signal is back, and nothing to update (' + JSON.stringify(seen) + ')');
     else {
-      ok(shown, 'opened with no signal, a new version out meanwhile: the strip comes once the signal is back');
-      ok(!(await L.overflow(q)), 'opened with no signal, a new version: no sideways scroll at 390');
+      ok(known && seen.state === 'ready' && !seen.band, 'opened with no signal, a new version out meanwhile: found once the signal is back, with no strip (' + JSON.stringify(seen) + ')');
+      // the update still comes by itself: 2 minutes untouched, then the look every 20 seconds reloads into it
+      await q.evaluate(() => { window.__mark = 1; });
+      await q.clock.fastForward('02:30');
+      let went = false;
+      for (let i = 0; i < 4 && !went; i++) { went = await until(q, () => window.__mark !== 1, 8000); if (!went) await q.clock.fastForward('00:30').catch(() => {}); }
+      ok(went, 'opened with no signal, a new version: 2 minutes untouched, the book reloads into it by itself');
     }
     await qc.close();
   }
@@ -280,9 +288,9 @@ async function swOpen(b, hash, o) {
 
   // Opened with signal while the worker's round lost a file of a new version (weak wifi, review of 28 Oct 2026): nothing
   // new is saved and the worker says nothing, but the look at opening gets the new stamp. It used to take that as the
-  // version running, so the strip never came and the update waited until 04:00. It compares with the saved copy the
-  // page opened from. And with nothing new, a saved copy whose ETag is marked weak (a zipped answer, W/) against a HEAD
-  // that is not: no strip.
+  // version running, so the update was never found and waited until 04:00. It compares with the saved copy the page
+  // opened from, and finds it silently (13 Nov 2026: no strip). And with nothing new, a saved copy whose ETag is marked
+  // weak (a zipped answer, W/) against a HEAD that is not: nothing found.
   for (const how of ['a lost file', 'a weak ETag']) {
     delete over['/index.html'];
     if (how === 'a weak ETag') over['/index.html'] = { lastModified: 'Sun, 18 Oct 2026 00:00:00 GMT', body: INDEX, etag: 'W/"lk-1"', headEtag: '"lk-1"' };
@@ -296,9 +304,11 @@ async function swOpen(b, hash, o) {
       await qc.route(drop, r => r.request().method() === 'GET' && !lost++ ? r.abort('internetdisconnected') : r.fallback());
     }
     await q.reload({ waitUntil: 'load' });
-    const shown = await L.waitFor(q, () => !!document.querySelector('.upd-bar'), null, 5000).then(() => true, () => false);
-    if (how === 'a lost file') ok(lost === 1 && shown && await q.evaluate(() => !!navigator.serviceWorker.controller), 'opened with signal, the worker\'s round lost a file of a new version: the strip comes (' + lost + ' lost)');
-    else ok(!shown, 'opened with signal, nothing new, the saved copy\'s ETag weak: no strip');
+    await L.waitFor(q, () => !!(window.LK_UPDATE && LK_UPDATE.state() !== ''), null, 5000).catch(() => {});
+    await L.settle(q, 500);
+    const seen = await q.evaluate(() => ({ state: LK_UPDATE.state(), band: !!document.querySelector('.upd-bar.is-on'), sw: !!navigator.serviceWorker.controller }));
+    if (how === 'a lost file') ok(lost === 1 && seen.state === 'ready' && !seen.band && seen.sw, 'opened with signal, the worker\'s round lost a file of a new version: it is found, with no strip (' + lost + ' lost, ' + JSON.stringify(seen) + ')');
+    else ok(seen.state === 'current' && !seen.band, 'opened with signal, nothing new, the saved copy\'s ETag weak: nothing found, no strip (' + JSON.stringify(seen) + ')');
     await qc.close();
   }
   delete over['/index.html'];
@@ -318,9 +328,8 @@ async function swOpen(b, hash, o) {
     await q.evaluate(() => { window.__mark = 1; });
     await q.clock.fastForward(10000);
     await q.evaluate(() => navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: 'lk-new' })));
-    await L.waitFor(q, () => !!document.querySelector('.upd-bar'), null, 3000).catch(() => {});
     const t0 = Date.now();
-    await q.click('.upd-bar button');
+    await L.updateNow(q, 3000);
     const re = await until(q, () => window.__v === 5, 15000);
     const said = re ? '' : await q.evaluate(() => (document.querySelector('.upd-bar span') || {}).textContent).catch(() => '');
     ok(re, 'the old worker in charge, Update now with the wifi fine: it updates (' + (Date.now() - t0) + ' ms' + (said ? ', strip: ' + said : '') + ')');
