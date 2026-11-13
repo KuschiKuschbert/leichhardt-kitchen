@@ -139,3 +139,14 @@ Take A's amount fill for Orders only: an order is a request the head chef checks
 Contract fit: both sets fit (admin only, read when opened, no listeners, every state in words). One fault: A and B show cooling for 2 to 8 Nov under "Kept from 14 Nov"; C's "Cooling not kept" for those days is correct.
 
 Not evidenced: Try again, and a print that marks a part that did not load; real month read costs against the cleaning 7-day cap; a whole month on the phone list (the preview shows 4 days); Queensland midnight for a late Pass check; the named line staying above an open keyboard; the words on a switched-off Log it; editing the name after a fill clears the filled values; Transfers, which was not drawn.
+
+# Follow-up on the combined previews
+
+Five of the same reviewers (resumed with their round 2 context) judged the combined previews ([mix-brief.md](mix-brief.md)): pictures `evidence/mix-*.png`. Under 220 words each.
+
+## The new starter
+
+1. Records: one flow (list, tap a day, back). One clash: "‹ Back to November" sits right above the "‹" previous-day arrow, two left arrows doing different things. Wastage: one rule, said once. Orders: no: the box says USUAL, the line says "Usual amount", and the old "USUAL AMOUNT: Add 2 tubs" row is still there: three "usual"s and two Add buttons.
+2. Beats my first choice: yes, both (my pick plus the word fixes I asked for).
+3. New problems (Preview, nothing tapped): "Shown: … Nothing missing." sits above "2 missed": say "All parts shown". "Ann (logged)" reads like Ann logged in; put it in the kind label, "WASTAGE, TIME LOGGED". "Clear last time" can read as "delete the last record": say "Empty these boxes". The Logged often chip still fills the amount, so chip and typing teach two rules (Not evidenced). "Write the amount first." and "Log 1.5 kg Chips" appear in no picture (Log it is below the first screen). "tubs" still matches no unit chip.
+4. First change: on Orders, drop the old usual-amount row: one "usual" and one Add.
