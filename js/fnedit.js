@@ -107,7 +107,9 @@
   }
   // everything wrong for confirming: the schedule's problems, the typed numbers and the contact
   function check(e) {
-    var d = e.d, f = toDoc(e), out = M.problems(f).concat(guestProblems(d));
+    var d = e.d, f = toDoc(e), out = M.problems(f);
+    // one guests message: the schedule's own when it has one, else the save limit (up to 2000)
+    if (!out.some(function (x) { return x.k === 'guests'; })) out = out.concat(guestProblems(d));
     d.lines.forEach(function (l, i) {
       if (int(l.qty) !== int(l.qty)) out.push({ k: 'qty' + i, t: M.short(l.name) + ': whole platters only.' });
       l.a.forEach(function (x, r) { var v = int(x); if (r < d.rounds.length && (v !== v || v < 0)) out.push({ k: 'a' + i + '_' + r, t: M.short(l.name) + ', round ' + (r + 1) + ': a whole number, 0 or more.' }); });
