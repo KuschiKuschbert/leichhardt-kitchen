@@ -131,6 +131,14 @@ const row = code => '.cln-plan-row[data-id="' + id(code) + '"]';
     await p.fill('#cln-repeat-search', task('pd-grill-03').text);
     await p.click('[data-cln="edit"][data-id="' + id('pd-grill-03') + '"]');
     ok(await p.inputValue('#cln-repeat-days') === '2' && await p.inputValue('#cln-repeat-anchor') === '2026-11-09', 'pack down setup: the two-day interval and confirmed anchor are visible for prospective editing');
+    // A blank, decimal or out of range repeat says what to fix before any write, not "Could not save".
+    for (const days of ['', '2.5', '1', '31']) {
+      await p.fill('#cln-repeat-days', days); await p.click('[data-cln="save"]');
+      await L.waitFor(p, () => /\S/.test((document.querySelector('.cln-save-note') || {}).textContent || ''));
+      const said = await p.locator('.cln-save-note').innerText();
+      ok(/Repeat every 2 to 30 days, whole days only\./.test(said), 'pack down setup: repeat every "' + days + '" days is refused with a clear message (' + said + ')');
+    }
+    await p.fill('#cln-repeat-days', '2');
     await p.click('[data-cln="cancel-edit"]');
     await p.click('[data-cln="today"]');
     await p.click('[data-cln="group"][data-group="hot"]');

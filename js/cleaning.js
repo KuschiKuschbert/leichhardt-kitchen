@@ -440,7 +440,7 @@
   function save() {
     if (!C.chef() || !M.draft || !dirtyDraft() || M.saveBusy) return;
     if (M.state !== 'ok' || M.editId && !taskById(M.editId)) { M.saveError = 'Refresh cleaning before saving this task. Your changes are kept.'; draw(); return; }
-    var d = M.draft, error = !d.text.trim() ? 'Write the cleaning task.' : !d.area.trim() ? 'Choose or write the area or equipment.' : !d.shared && !C.sections().some(function (s) { return s.id === d.section; }) ? 'Choose the responsible section.' : !d.dows.length ? 'Choose at least one repeat day.' : '';
+    var d = M.draft, error = !d.text.trim() ? 'Write the cleaning task.' : !d.area.trim() ? 'Choose or write the area or equipment.' : !d.shared && !C.sections().some(function (s) { return s.id === d.section; }) ? 'Choose the responsible section.' : !d.dows.length ? 'Choose at least one repeat day.' : d.plan && d.plan.repeat && !(Number.isInteger(d.plan.repeat.days) && d.plan.repeat.days >= 2 && d.plan.repeat.days <= 30) ? 'Repeat every 2 to 30 days, whole days only.' : '';
     if (error) { M.saveError = error; M.saveState = 'error'; draw(); return; }
     var model = M, old = M.editId ? taskById(M.editId) : null; M.saveBusy = true; M.saveError = M.savedText = ''; M.saveState = 'busy'; draw();
     C.saveTask(Object.assign({}, d, { text: d.text.trim(), area: d.area.trim(), dows: d.dows.slice() }), old).then(function (result) {
