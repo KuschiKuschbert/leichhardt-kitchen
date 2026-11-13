@@ -78,6 +78,13 @@ const save = async p => { await p.click('#dl-form button[type="submit"]'); await
     ok(await p.inputValue('#dl-day') === today && await p.inputValue('#dl-time') === '14:00', 'server clock overrides phone time and time zone: ' + offset + ' hours');
     await p.context().close();
   }
+  // A time in the next minute is allowed; the record time is never before the delivery time, or the rules refuse it.
+  p = await open(b, { who: 'ann' });
+  await p.fill('#dl-supplier', 'Next minute supplier'); await p.fill('#dl-chilled', '3'); await openTime(p); await p.fill('#dl-time', '14:01'); await save(p);
+  const nextMin = (await records(p)).find(x => x.supplier === 'Next minute supplier');
+  ok(!!nextMin && nextMin.receivedAt === L.NOW + 60000 && nextMin.recordedAt >= nextMin.receivedAt && /Delivery saved/.test(await p.locator('#dl-save-note').innerText()),
+    'a delivery time in the next minute saves with the record time not before it (' + JSON.stringify(nextMin && [nextMin.receivedAt - L.NOW, nextMin.recordedAt - L.NOW]) + ')');
+  await p.context().close();
   // Admin selects history with one query. Ordinary roles never query past days.
   p = await open(b, { who: 'head', admin: true });
   await p.fill('#dl-view-day', past); await p.dispatchEvent('#dl-view-day', 'change'); await L.settle(p, 300);
