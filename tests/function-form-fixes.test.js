@@ -119,8 +119,8 @@ const saved = async (p, name) => Object.values(await store(p)).filter(x => x && 
   for (const g of ['1.5', '-2', '1e3', '2500']) {
     await p.fill('[data-ff="guests"]', g);
     await tap(p, '[data-fe="save"]'); await L.settle(p, 300);
-    ok(await fnDocs() === 0 && /Guests: a whole number up to 2000\./.test(await txt(p, '.fe-probs') || '') && !/Functions/.test(await txt(p, '#fe-root .p-err') || ''),
-      'guests "' + g + '": Save draft says guests are a whole number up to 2000 and sends nothing (' + ((await txt(p, '.fe-probs')) || (await txt(p, '#fe-root .p-err')) || 'nothing said') + ')');
+    ok(await fnDocs() === 0 && /Guests: a whole number(, 1 or more| up to 2000)/.test(await txt(p, '.fe-probs') || '') && ((await txt(p, '.fe-probs')) || '').split('Guests:').length === 2 && !/Functions/.test(await txt(p, '#fe-root .p-err') || ''),
+      'guests "' + g + '": Save draft names the guests as wrong, once, and sends nothing (' + ((await txt(p, '.fe-probs')) || (await txt(p, '#fe-root .p-err')) || 'nothing said') + ')');
   }
   await p.fill('[data-ff="guests"]', '2000');
   await tap(p, '[data-fe="save"]');
