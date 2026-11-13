@@ -1,0 +1,29 @@
+{
+  "source": "Implemented app, click-test stand-in, synthetic data",
+  "notes": [
+    {
+      "name": "waste-exact-390",
+      "form": {
+        "amt": "",
+        "unit": "",
+        "reason": "",
+        "sugg": [
+          "Fish and Chips",
+          "Senior Fish and Chips",
+          "Chips + salad",
+          "Chips and salad",
+          "Corn chips",
+          "Sweet potato chips"
+        ]
+      }
+    },
+    {
+      "name": "orders-milk-390",
+      "qty": "6 L",
+      "sugg": [
+        "Milk bun",
+        "Full cream milk"
+      ]
+    }
+  ]
+}
