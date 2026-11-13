@@ -106,6 +106,30 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   ok(p.errors.length === 0, 'long steps: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // 6. Undo after two multipliers goes back to the amounts before the first one
+  p = await L.open(b, '#/manage/r/burger', { who: 'ann', extra: cfg(), wait: 1400 });
+  await editor(p);
+  await L.chapter(p, 'ing');
+  const amounts = () => p.evaluate(() => [...document.querySelectorAll('[data-f^="ing."][data-f$=".q"]')].map(i => i.value));
+  const start = await amounts();
+  const applyBy = async f => {
+    await L.reveal(p, '[data-mg="scale"]');
+    if (!await p.$('#mg-multiplier')) { await p.click('[data-mg="scale"]'); await wait(p, () => !!document.getElementById('mg-multiplier')); }
+    await p.fill('#mg-multiplier', f); await p.click('[data-mg="multiply"]'); await L.settle(p, 200);
+  };
+  await applyBy('2');
+  const twice = await amounts();
+  ok(twice.includes('200 g') && twice.includes('300 g'), 'multiplier: x2 doubles the amounts (' + twice.join(', ') + ')');
+  await applyBy('1.5');
+  const then = await amounts();
+  ok(then.includes('300 g') && then.includes('450 g'), 'multiplier: then x1.5 (' + then.join(', ') + ')');
+  await L.reveal(p, '[data-mg="multiply-undo"]'); await p.click('[data-mg="multiply-undo"]'); await L.settle(p, 200);
+  const back = await amounts();
+  ok(JSON.stringify(back) === JSON.stringify(start), 'multiplier: Undo after x2 and x1.5 gives the amounts before the first one (' + back.join(', ') + ' vs ' + start.join(', ') + ')');
+  ok(await p.$('[data-mg="multiply-undo"]') === null, 'multiplier: nothing left to undo');
+  ok(p.errors.length === 0, 'multiplier: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   await b.close();
   L.report(R);
 })().catch(e => { console.log(R.join('\n')); console.error(e); process.exit(1); });

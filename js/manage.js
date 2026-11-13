@@ -500,7 +500,16 @@
     });
     e.scaleSkipped = skipped;
     e.scaleMsg = changed.length ? changed.length + ' ingredient amounts multiplied by ' + factor + '. Review them, then Save.' : 'No amounts could be multiplied. Check them by hand.';
-    if (changed.length) { e.scaled = changed; e.multiplier = '1'; unarm(); keepNow(); }
+    // a second multiplier before Undo keeps each amount from before the first one, so Undo goes back to it
+    if (changed.length) {
+      var was = e.scaled || [];
+      changed.forEach(function (c) {
+        var had = was.filter(function (x) { return x.ing === c.ing; })[0];
+        if (!had) was.push(c);
+        else { if (had.after !== c.before) had.before = c.before; had.after = c.after; }
+      });
+      e.scaled = was; e.multiplier = '1'; unarm(); keepNow();
+    }
     draw();
   }
   function methodHTML(e) {
