@@ -5507,8 +5507,21 @@
       S.oqtyAuto = want;
     }
     if (oh) oh.textContent = oHintFull();
+    oFillPatch();
   }
-  function oHintFull() { return (S.oqtyAuto && S.oqty === S.oqtyAuto ? 'Usual amount filled in: ' + S.oqtyAuto + '. ' : '') + oHintText(S.otext); }
+  // the usual amount the book filled is said right under the box, with a USUAL tag in it (filled for you, 13 Nov 2026)
+  function oHintFull() { return oHintText(S.otext); }
+  function oFilled() { return !!S.oqtyAuto && S.oqty === S.oqtyAuto; }
+  function oFillNoteHTML() {
+    if (!oFilled()) return '';
+    var top = ordQtyList(S.otext)[0], n = top && top.q === S.oqtyAuto ? top.n : 0;
+    return '<p><b>Filled with the usual amount:</b> ' + esc(S.oqtyAuto) + (n >= 2 ? ' (ordered ' + n + ' times with this amount)' : '') + '. Change it if you need more or less.</p>';
+  }
+  function oFillPatch() {
+    var box = S.root && S.root.querySelector('[data-k="o-qty"]'); if (!box) return;
+    fbSet(box, oFilled()); if (oFilled()) box.setAttribute('aria-describedby', 'o-fill'); else box.removeAttribute('aria-describedby');
+    noteSet(S.root.querySelector('#o-fill'), oFillNoteHTML());
+  }
   function oHintText(t) {
     var w = t && t.trim().length > 2 ? wasteFor(t, ['expired']) : null;
     return w ? 'Expired stock logged ' + w.n + (w.n === 1 ? ' time' : ' times') + ' in 14 days. Order a little less?' : '';
@@ -6479,7 +6492,7 @@
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
-    var pane = at === 'prep-standards' ? psPanelHTML() : at === 'dashboard' || at === 'inbox' ? dashHTML(at) : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'kitchen-home' ? kitchenHomeHTML(d, saveBlock) : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' && owner && S.personId ? personPageHTML(d, S.personId, saveBlock) : at === 'people' ? (
+    var pane = at === 'prep-standards' ? psPanelHTML() : at === 'dashboard' || at === 'inbox' ? dashHTML(at) : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'kitchen-home' ? kitchenHomeHTML(d, saveBlock) : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'records' ? recordsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' && owner && S.personId ? personPageHTML(d, S.personId, saveBlock) : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Shift pings are written by you and the sous chefs. Create/edit functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it gets the kitchen and sous chef pages, and a sous chef cannot change or remove it. Function editing still has its own tick.</p></details>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       '<p class="hint">Tick Create/edit functions beside a person, then save. Their kitchen role stays the same.</p>' + peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + saveBlock
@@ -6699,7 +6712,196 @@
     return '<section class="set-block"><h2 class="p-h">Suppliers &amp; pars</h2><p>Current pars, manual items and the original supplier records are kept in the catalogue.</p>' +
       (supplierEdit() ? '<div class="btn-row"><a class="btn dark" href="#/suppliers/manage">Manage catalogue</a><a class="btn" href="#/suppliers">Supplier order</a></div>' : '<p class="hint">Only the head chef changes suppliers and pars. Sous chefs can use <a href="#/suppliers">Supplier order</a>.</p>') + '</section>';
   }
-  var A_TAB_NAMES = { 'prep-standards': 'Section standards', 'kitchen-home': 'Overview', inbox: 'Inbox', dashboard: 'Dashboard', overview: 'Review desk', analysis: 'Item evidence', references: 'Item links', training: 'Training', proofreader: 'Proofreader', 'reference-records': 'Confirmed links', 'training-records': 'Assessments', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
+  /* Records (head chef, 13 Nov 2026, docs/smart-book-options/brief.md, the council's mix): one Reports page for a
+     kitchen day's records. The month is a list of finished days from the nightly count on analysis/dashboard (each row's
+     fs, scripts/records-core.mjs): 1 read when the page opens, kept in memory for this admin session until Refresh. A
+     finished day's food safety part (deliveries with their temperatures as recorded, cleaning done, missed, not possible
+     and awaiting Pass check) comes from the same record: no read. Everything adds that day's wastage, transfers and team
+     plan and the nightly day record (supplier orders, functions), read when asked: about 10 to 30 reads, kept in memory.
+     A part that could not load says so and is never "nothing that day". Cooling is recorded in Operandio; the book keeps
+     only today's batch. Print and Export CSV use only what is on the page (Print this month: no reads). Admin only. */
+  var REC = { ctx: '', board: null, state: '', err: '', month: '', day: '', all: false, days: {}, at: 0 };
+  var REC_DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  function recCheck() { if (REC.ctx !== intelligenceContext()) REC = { ctx: intelligenceContext(), board: null, state: '', err: '', month: '', day: '', all: false, days: {}, at: 0 }; }
+  function recLoad(force) {
+    recCheck();
+    if (!intelligenceAllowed() || REC.state === 'loading' || (REC.board && !force)) return;
+    var ctx = REC.ctx; REC.state = 'loading'; REC.err = '';
+    // when: Records opens, or Refresh; cost: 1 read (analysis/dashboard); memory only
+    fb.fs.getDocFromServer(docRef('analysis', 'dashboard')).then(function (sn) {
+      if (REC.ctx !== ctx) return;
+      REC.board = sn.exists() ? sn.data() : { days: [] }; REC.state = 'ok'; REC.at = now(); if (force) REC.days = {};
+      if (S.name === 'admin' && S.atab === 'records') draw();
+    }, function (e) { if (REC.ctx !== ctx) return; REC.state = 'error'; REC.err = errMsg(e && e.code === 'permission-denied' ? 'Only the head chef\'s Google account can read the records.' : 'Could not read the records. Check the signal and tap Refresh.'); if (S.name === 'admin' && S.atab === 'records') draw(); });
+  }
+  function recRows() { var m = {}; ((REC.board && REC.board.days) || []).forEach(function (r) { if (r && typeof r.day === 'string' && /^\d{4}-\d\d-\d\d$/.test(r.day)) m[r.day] = r; }); return m; }
+  function recShort(day) { return REC_DOW[T.dow(T.at(day))] + ' ' + (+day.slice(8)); }
+  function recLong(day) { return dayName(day) === 'Yesterday' ? 'Yesterday, ' + longDate(day) : parseYmd(day).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' }); }
+  function recMonthName(m) { return parseYmd(m + '-01').toLocaleDateString('en-AU', { month: 'long', year: 'numeric' }); }
+  // the finished days of a month that the list shows: counted ones, and the days after the last count up to yesterday
+  function recDays(month) {
+    var rows = recRows(), out = [], y = shift(dayNow(), -1), first = (REC.board && REC.board.from) || y;
+    for (var d = y; d >= first && out.length < 92; d = shift(d, -1)) if (d.slice(0, 7) === month) out.push(d);
+    return out.filter(function (d) { return rows[d] || !REC.board.to || d > REC.board.to; });
+  }
+  function recClean(c) {
+    if (!c) return { short: '<span class="rec-wait">Cleaning: count not ready</span>', plain: 'Cleaning: count not ready' };
+    if (!c.due) return { short: 'Cleaning: no tasks due', plain: 'Cleaning: no tasks due' };
+    var more = (c.unableN ? ', ' + c.unableN + ' not possible' : '') + (c.waitN ? ', ' + c.waitN + ' awaiting Pass check' : '');
+    var miss = 'Cleaning: ' + (c.missN || 0) + ' missed';
+    return { short: (c.missN ? '<span class="rec-adv">' + miss + '</span>' : miss) + esc(more), plain: miss + more };
+  }
+  function recWords(day) {
+    var r = recRows()[day];
+    if (!r || !r.fs) return '<span class="rec-wait">Count not ready.</span> The nightly run counts this day at 03:00.';
+    var n = (r.fs.del || []).length;
+    return (n === 1 ? '1 delivery' : n + ' deliveries') + ' · ' + recClean(r.fs.c).short;
+  }
+  function recTemps(x) { return [typeof x.c === 'number' ? num(x.c) + ' °C chilled' : '', typeof x.f === 'number' ? num(x.f) + ' °C frozen' : ''].filter(Boolean).join(', ') || 'no temperature'; }
+  function recPart(day, k) { var dd = REC.days[day]; return dd && dd[k]; }
+  function recDayLoad(day) {
+    var dd = REC.days[day] = REC.days[day] || {}, ctx = REC.ctx, gen = REC.board && REC.board.generation, row = recRows()[day];
+    function part(k, get, use) {
+      if (dd[k]) return;   // loaded, loading or failed: a failed part waits for Try again (rec-retry), never retries by itself
+      dd[k] = { s: 'loading' };
+      get().then(function (v) { if (REC.ctx !== ctx) return; dd[k] = { s: 'ok', v: use(v) }; draw(); }, function () { if (REC.ctx !== ctx) return; dd[k] = { s: 'error' }; draw(); });
+    }
+    var live = function (sn) { return sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }).filter(function (x) { return !x.deleted && !x.tst; }); };
+    // when: Everything is opened on a day; cost: that day's wastage and transfer lines, 1 for the team plan, 1 for the day record
+    part('w', function () { return fb.fs.getDocsFromServer(wCol(day)); }, live);
+    part('x', function () { return fb.fs.getDocsFromServer(xCol(day)); }, live);
+    part('t', function () { return fb.fs.getDocFromServer(docRef('team', day)); }, function (sn) { return sn.exists() ? sn.data() : null; });
+    if (gen && row) part('a', function () { return fb.fs.getDocFromServer(docRef('analysisDaily', gen + '_' + day)); }, function (sn) { return sn.exists() ? sn.data() : null; });
+  }
+  function recTeam(t) {
+    if (!t || !Array.isArray(t.on) || !t.on.length) return '';
+    var c = S.config || {}, shifts = c.kitShifts || [], secs = c.kitSecs || [], by = {};
+    t.on.forEach(function (o) { if (!o || typeof o.id !== 'string') return; var sh = (shifts.filter(function (x) { return x.id === o.sh; })[0] || {}).name || 'On', sec = (secs.filter(function (x) { return x.id === o.sec; })[0] || {}).name || ''; (by[sh] = by[sh] || []).push((personName(o.id) || 'Someone') + (sec ? ' ' + sec : '')); });
+    return Object.keys(by).map(function (k) { return k + ': ' + by[k].join(', '); }).join('. ');
+  }
+  // the day's rows in time order; untimed parts (cleaning, the team plan, prep, supplier orders, functions) as lines
+  function recEvents(day, all) {
+    var r = recRows()[day], ev = [];
+    ((r && r.fs && r.fs.del) || []).forEach(function (x) { ev.push([x.at, 'Delivery', x.s + ' · ' + recTemps(x) + (x.by ? ' · ' + x.by : '') + (x.n ? ' · ' + x.n : '')]); });
+    if (all) {
+      var w = recPart(day, 'w'), x2 = recPart(day, 'x');
+      if (w && w.s === 'ok') w.v.forEach(function (l) { ev.push([clock(l.addedAt), 'Wastage, time logged', l.text + ' ' + num(l.amount) + ' ' + l.unit + ' · ' + ((REASONS.filter(function (q) { return q[0] === l.reason; })[0] || [])[1] || 'No reason') + (l.station ? ' · ' + l.station : '') + (l.addedBy ? ' · ' + l.addedBy : '')]); });
+      if (x2 && x2.s === 'ok') x2.v.forEach(function (l) { ev.push([clock(l.addedAt), l.dir === 'in' ? 'Transfer in' : 'Transfer out', l.text + ' ' + num(l.amount) + ' ' + l.unit + (l.venue ? ' · ' + l.venue : '') + (l.addedBy ? ' · ' + l.addedBy : '')]); });
+    }
+    return ev.sort(function (a, b) { return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0; });
+  }
+  function recCleanLines(c) {
+    if (!c) return ['Cleaning: count not ready. The Cleaning page shows the day now.'];
+    if (!c.due) return ['Cleaning: no tasks were due.'];
+    var out = ['Cleaning: ' + c.done + ' of ' + c.due + ' done.'];
+    if (c.missN) out.push('Missed: ' + c.miss.join(', ') + (c.missN > c.miss.length ? ' and ' + (c.missN - c.miss.length) + ' more' : '') + '.');
+    if (c.unableN) out.push('Not possible: ' + c.unable.map(function (u) { return u.t + (u.n ? ' (' + u.n + ')' : ''); }).join(', ') + (c.unableN > c.unable.length ? ' and ' + (c.unableN - c.unable.length) + ' more' : '') + '.');
+    if (c.waitN) out.push('Awaiting Pass check: ' + c.wait.join(', ') + (c.waitN > c.wait.length ? ' and ' + (c.waitN - c.wait.length) + ' more' : '') + '.');
+    if (c.ev) out.push('Each-service tasks: ' + c.evRec + ' of ' + c.ev + ' with something recorded.');
+    return out;
+  }
+  var REC_COOL = 'Cooling is recorded in Operandio. The book keeps only today\'s batch.';
+  function recDayHTML(day) {
+    var r = recRows()[day], all = REC.all, counted = !!(r && r.fs), c = counted ? r.fs.c : null, y = shift(dayNow(), -1);
+    var prev = shift(day, -1), next = shift(day, 1), first = (REC.board && REC.board.from) || day;
+    var parts = [], bad = [];
+    if (all) {
+      recDayLoad(day);
+      [['w', 'Wastage'], ['x', 'Transfers'], ['t', 'Team plan'], ['a', 'Supplier orders and functions']].forEach(function (k) {
+        var pt = recPart(day, k[0]); if (k[0] === 'a' && !(REC.board && REC.board.generation && r)) return;
+        if (pt && pt.s === 'error') bad.push(k[1]); else if (!pt || pt.s === 'loading') parts.push(k[1] + ' loading'); else parts.push(k[1]);
+      });
+    }
+    var status = !counted ? '<p class="rec-line"><span class="rec-wait">Count not ready.</span> The nightly run counts this day at 03:00. Delivery received and the Cleaning page show it now.</p>'
+      : '<p class="rec-line">' + (all ? 'Shown: deliveries, cleaning' + (parts.length ? ', ' + esc(parts.join(', ').toLowerCase()) : '') + '.' : 'All shown: deliveries and cleaning.' + (c ? '' : ' Cleaning: count not ready.')) + '</p>';
+    var fails = bad.map(function (b) { return '<div class="rec-bad" role="alert"><span>' + esc(b) + ' could not load. ' + esc(b) + ' may have records that are not shown.</span><button type="button" class="chip" data-p="rec-retry">Try again</button></div>'; }).join('');
+    var extra = '';
+    if (all) {
+      var t = recPart(day, 't'), a = recPart(day, 'a'), lines = [];
+      if (t && t.s === 'ok') lines.push('<b>Team (the plan):</b> ' + esc(recTeam(t.v) || 'no plan saved for this day') + '.');
+      if (r && r.p) lines.push('<b>Prep:</b> ' + r.p.n + ' lines, ' + r.p.t + ' ticked' + (r.p.r ? ', ' + r.p.r + ' rolled on from earlier days' : '') + '.');
+      if (a && a.s === 'ok' && a.v) {
+        var es = (a.v.entries || []), so = es.filter(function (e) { return e.source === 'supplierOrders'; }).length, fns = es.filter(function (e) { return e.source === 'functions'; }).map(function (e) { return e.text; });
+        lines.push('<b>Supplier orders recorded:</b> ' + (so ? so + (so === 1 ? ' line' : ' lines') : 'none') + '.' + (fns.length ? ' <b>Functions:</b> ' + esc(fns.join(', ')) + '.' : ''));
+      }
+      extra = lines.map(function (l) { return '<p class="rec-line">' + l + '</p>'; }).join('');
+    }
+    var ev = recEvents(day, all), cl = recCleanLines(c);
+    return '<div class="rec-dayv">' + '<button type="button" class="chip rec-back" data-p="rec-back">Back to ' + esc(recMonthName(day.slice(0, 7)).split(' ')[0]) + '</button>' +
+      '<div class="rec-head"><h4 class="rec-dt" tabindex="-1">' + esc(recLong(day)) + '</h4><div class="rec-acts">' +
+      '<button type="button" class="chip" data-p="rec-day" data-d="' + prev + '"' + (prev < first ? ' disabled' : '') + '>‹ ' + esc(recShort(prev)) + '</button>' +
+      '<button type="button" class="chip" data-p="rec-day" data-d="' + next + '"' + (next > y ? ' disabled' : '') + '>' + esc(recShort(next)) + ' ›</button>' +
+      '<button type="button" class="chip" data-p="rec-print" data-v="day">Print this day</button><button type="button" class="chip" data-p="rec-csv" data-v="day">Export CSV</button></div></div>' +
+      '<div class="chiprow" role="group" aria-label="Show"><button type="button" class="chip" data-p="rec-show" data-v="fs" aria-pressed="' + !all + '">Food safety</button><button type="button" class="chip" data-p="rec-show" data-v="all" aria-pressed="' + all + '">Everything</button></div>' +
+      status + fails + extra +
+      (ev.length ? '<ol class="rec-tl">' + ev.map(function (e) { return '<li><time>' + esc(e[0]) + '</time><span class="rec-k">' + esc(e[1]) + '</span><span>' + esc(e[2]) + '</span></li>'; }).join('') + '</ol>' : counted ? '<p class="rec-line">No deliveries recorded' + (all ? ', no wastage or transfers logged' : '') + '.</p>' : '') +
+      (counted ? '<div class="rec-clean"><p class="rec-line"><b>' + esc(cl[0]) + '</b></p>' + cl.slice(1).map(function (l) { return '<p class="rec-line' + (/^Missed/.test(l) ? ' rec-adv' : '') + '">' + esc(l) + '</p>'; }).join('') + '</div>' : '') +
+      '<p class="hint">' + esc(REC_COOL) + ' Temperatures as recorded: the book sets no limits until the head chef confirms them.</p></div>';
+  }
+  function recordsHTML() {
+    if (!intelligenceAllowed()) return '<section class="set-block"><h3 class="a-title">Records</h3><p class="hint">The records open with the head chef\'s Google account and PIN.</p></section>';
+    recLoad(false);
+    if (REC.state === 'error' && !REC.board) return '<section class="set-block rec-page"><h3 class="a-title">Records</h3><p class="p-err" role="alert">' + esc(REC.err) + '</p><div class="btn-row"><button type="button" class="chip" data-p="rec-refresh">Refresh</button></div></section>';
+    if (!REC.board) return '<section class="set-block rec-page"><h3 class="a-title">Records</h3>' + inkWait('Reading the records...', 'chef') + '</section>';
+    var y = shift(dayNow(), -1), month = REC.month || y.slice(0, 7), days = recDays(month), firstM = ((REC.board.from) || y).slice(0, 7);
+    var pm = shift(month + '-01', -1).slice(0, 7), nm = shift(month + '-28', 7).slice(0, 7);
+    var list = '<div class="rec-month"><div class="rec-head"><h4 class="a-ch-h">' + esc(recMonthName(month)) + '</h4><div class="rec-acts">' +
+      '<button type="button" class="chip" data-p="rec-month" data-v="' + pm + '"' + (pm < firstM ? ' disabled' : '') + '>‹ ' + esc(recMonthName(pm).split(' ')[0]) + '</button>' +
+      '<button type="button" class="chip" data-p="rec-month" data-v="' + nm + '"' + (nm > y.slice(0, 7) ? ' disabled' : '') + '>' + esc(recMonthName(nm).split(' ')[0]) + ' ›</button>' +
+      '<button type="button" class="chip" data-p="rec-print" data-v="month"' + (days.length ? '' : ' disabled') + '>Print this month</button><button type="button" class="chip" data-p="rec-csv" data-v="month"' + (days.length ? '' : ' disabled') + '>Export CSV</button><button type="button" class="chip" data-p="rec-refresh">Refresh</button></div></div>' +
+      '<p class="hint">Each finished day: deliveries recorded, and cleaning missed, not possible or awaiting Pass check. Counted by the nightly run' + (REC.board.to ? ' to ' + esc(recShort(REC.board.to)) + ' ' + esc(recMonthName(REC.board.to.slice(0, 7)).split(' ')[0]) : '') + '. Read ' + esc(clock(REC.at)) + '. ' + esc(REC_COOL) + ' Equipment temperature logs are not in the book.</p>' +
+      (days.length ? '<ul class="rec-days">' + days.map(function (d) { return '<li><button type="button" class="rec-dayrow' + (d === REC.day ? ' is-on' : '') + '" data-p="rec-day" data-d="' + d + '"' + (d === REC.day ? ' aria-current="true"' : '') + '><span class="rec-d"><b>' + esc(recShort(d)) + '</b></span><span class="rec-t">' + recWords(d) + '</span><span class="rec-go" aria-hidden="true">›</span></button></li>'; }).join('') + '</ul>'
+        : '<p class="rec-line">No finished days counted in ' + esc(recMonthName(month)) + '.</p>') + '</div>';
+    var day = REC.day && REC.day <= y ? REC.day : '';
+    return '<section class="set-block rec-page"><h3 class="a-title">Records</h3><div class="rec-wrap' + (day ? ' has-day' : '') + '">' + list +
+      (day ? recDayHTML(day) : '<div class="rec-dayv rec-pick"><p>Pick a day to read its records.</p></div>') + '</div></section>';
+  }
+  // Print this month (no reads) or this day: a plain copy of what the page holds, printed on its own
+  function recPrintText(kind) {
+    var rows = recRows(), out = [], y = shift(dayNow(), -1);
+    if (kind === 'month') {
+      var month = REC.month || y.slice(0, 7);
+      out.push(['h', 'Food safety records, ' + recMonthName(month)]);
+      out.push(['p', 'Leichhardt Hotel kitchen. From the Kitchen Book, counted by the nightly run' + (REC.board && REC.board.to ? ' to ' + recShort(REC.board.to) : '') + ', printed ' + longDate(dayNow()) + ' ' + clock(now()) + '. Temperatures as recorded; the book sets no limits. ' + REC_COOL + ' Equipment temperature logs are not in the book.']);
+      recDays(month).slice().reverse().forEach(function (d) {
+        var r = rows[d]; out.push(['d', recLong(d)]);
+        if (!r || !r.fs) { out.push(['p', 'Count not ready.']); return; }
+        var del = r.fs.del || [];
+        out.push(['p', del.length ? del.map(function (x) { return x.at + ' ' + x.s + ': ' + recTemps(x) + (x.by ? ', ' + x.by : '') + (x.n ? ' (' + x.n + ')' : ''); }).join('. ') + '.' : 'No deliveries recorded.']);
+        recCleanLines(r.fs.c).forEach(function (l) { out.push(['p', l]); });
+      });
+    } else {
+      var day = REC.day; out.push(['h', 'Kitchen records, ' + recLong(day)]);
+      out.push(['p', 'Leichhardt Hotel kitchen. From the Kitchen Book, printed ' + longDate(dayNow()) + ' ' + clock(now()) + '. ' + REC_COOL]);
+      recEvents(day, REC.all).forEach(function (e) { out.push(['p', e[0] + ' ' + e[1] + ': ' + e[2]]); });
+      if (rows[day] && rows[day].fs) recCleanLines(rows[day].fs.c).forEach(function (l) { out.push(['p', l]); });
+    }
+    return out;
+  }
+  function recPrint(kind) {
+    if (!REC.board || (kind === 'day' && !REC.day)) return;
+    var old = document.getElementById('rec-print'); if (old) old.remove();
+    var el = document.createElement('div'); el.id = 'rec-print';
+    el.innerHTML = recPrintText(kind).map(function (x) { return x[0] === 'h' ? '<h1>' + esc(x[1]) + '</h1>' : x[0] === 'd' ? '<h2>' + esc(x[1]) + '</h2>' : '<p>' + esc(x[1]) + '</p>'; }).join('');
+    document.body.appendChild(el); document.body.classList.add('rec-printing');
+    var done = function () { document.body.classList.remove('rec-printing'); el.remove(); window.removeEventListener('afterprint', done); };
+    window.addEventListener('afterprint', done);
+    try { window.print(); } catch (e) { done(); }
+  }
+  function recCSV(kind) {
+    if (!REC.board) return;
+    var rows = recRows(), out = [['Date', 'Kind', 'Time', 'What', 'Detail', 'Who']], y = shift(dayNow(), -1);
+    function day(d, all) {
+      var r = rows[d];
+      if (!r || !r.fs) { out.push([d, 'Count not ready', '', '', '', '']); return; }
+      (r.fs.del || []).forEach(function (x) { out.push([d, 'Delivery', x.at, x.s, recTemps(x) + (x.n ? '. ' + x.n : ''), x.by]); });
+      if (all) recEvents(d, true).filter(function (e) { return e[1] !== 'Delivery'; }).forEach(function (e) { out.push([d, e[1], e[0], e[2], '', '']); });
+      var cl = recCleanLines(r.fs.c); out.push([d, 'Cleaning', '', cl[0], cl.slice(1).join(' '), '']);
+    }
+    if (kind === 'month') { var m = REC.month || y.slice(0, 7); recDays(m).slice().reverse().forEach(function (d) { day(d, false); }); downloadCSV('records-' + m + '.csv', out); }
+    else if (REC.day) { day(REC.day, REC.all); downloadCSV('records-' + REC.day + '.csv', out); }
+  }
+  var A_TAB_NAMES = { records: 'Records', 'prep-standards': 'Section standards', 'kitchen-home': 'Overview', inbox: 'Inbox', dashboard: 'Dashboard', overview: 'Review desk', analysis: 'Item evidence', references: 'Item links', training: 'Training', proofreader: 'Proofreader', 'reference-records': 'Confirmed links', 'training-records': 'Assessments', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
   /* The admin heading: the room, or on the Inbox and the Dashboard the page's own name under Today (head chef,
      10 Nov 2026, docs/admin-dashboard-restyle-options/brief.md), so one place has one name. */
   function adminHeadingHTML(ag, at) {
@@ -6722,7 +6924,7 @@
     lsSet('lk.prep.atab', 'inbox');   // the page on screen, so a reload by hand stays on it
     return 'inbox';
   }
-  var A_GROUPS = [['today', 'Today', ['inbox', 'dashboard', 'overview', 'references', 'proofreader', 'mail']], ['reports', 'Reports', ['insights', 'waste', 'transfers', 'team', 'analysis', 'learning']], ['team', 'Team', ['people']], ['kitchen', 'Kitchen', ['kitchen-home', 'cutoffs', 'suppliers', 'notes', 'minutes', 'guides', 'reference-records', 'tools']], ['prep', 'Prep', ['prep-standards']]];
+  var A_GROUPS = [['today', 'Today', ['inbox', 'dashboard', 'overview', 'references', 'proofreader', 'mail']], ['reports', 'Reports', ['insights', 'records', 'waste', 'transfers', 'team', 'analysis', 'learning']], ['team', 'Team', ['people']], ['kitchen', 'Kitchen', ['kitchen-home', 'cutoffs', 'suppliers', 'notes', 'minutes', 'guides', 'reference-records', 'tools']], ['prep', 'Prep', ['prep-standards']]];
   var A_GROUP_NOTES = { prep: 'The prep each section should have ready before service.', today: 'What needs you, and how the kitchen is going.', reports: 'Read the recorded activity and follow it back to its source.', team: 'Who is in the kitchen and what each person may do.', kitchen: 'How the kitchen is set up, its records, the backup and the PIN.' };
   function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[1]; }
   /* "On this page": one chip per heading of the open page (the numbered Insights sections, otherwise each block's label
@@ -7439,7 +7641,8 @@
       (onToday ? '<a class="chip o-deliv" href="#/deliveries">Delivery received</a>' : '<button type="button" class="chip" data-p="otoday">Back to today</button>') + '</div>' : '';
     var add = can('add') && S.ordDate === today ?
       '<form class="nb-add" data-p-form="oadd"><div class="nb-add-row"><label class="visually-hidden" for="o-text">Item to order</label><input id="o-text" class="nb-in nb-in-text" data-k="o-text" enterkeyhint="done" autocomplete="off" placeholder="What do we need to order?" maxlength="120" value="' + esc(S.otext) + '">' +
-      '<label class="visually-hidden" for="o-qty">Amount</label><input id="o-qty" class="nb-in nb-in-qty" data-k="o-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"><button type="submit" class="nb-addbtn">Add</button></div>' + justHTML('o') +
+      '<label class="visually-hidden" for="o-qty">Amount</label>' + fbHTML('nb-in-qty', '<input id="o-qty" class="nb-in" data-k="o-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"' + (oFilled() ? ' aria-describedby="o-fill"' : '') + '>', 'Usual', oFilled()) + '<button type="submit" class="nb-addbtn">Add</button></div>' +
+      '<div class="lk-fillnote" id="o-fill" role="status"' + (oFilled() ? '' : ' hidden') + '>' + oFillNoteHTML() + '</div>' + justHTML('o') +
       '<div class="w-pick nb-units" id="o-units">' + unitChipsHTML('o', S.oqty) + '</div>' + needChipsHTML() + '<div class="nb-sugg" id="o-sugg">' + ordSuggHTML() + '</div><p class="nb-hint" id="o-hint" aria-live="polite">' + esc(oHintFull()) + '</p>' + oRegsHTML() + '</form>' : '';
     var byAdded = function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); };
     // Chef requests stay together: Out first, then oldest source day, then creation time. Completion is deliberately
@@ -7591,6 +7794,82 @@
     var k = okey(t), x = (S.wSum || []).filter(function (e) { return okey(e.t) === k; })[0], l = x && x.last;
     return l ? { unit: l.unit || '', reason: l.reason || '', station: l.sec || '', amt: wAmt(x.amt) || wAmt(l.amt) } : null;
   }
+  /* Filled for you (head chef, 13 Nov 2026, docs/smart-book-options/brief.md, design-patterns.md "Filled for you"):
+     the item typed in full, once the cook leaves the box, fills what describes it (section, reason, unit) from its last
+     2 weeks and today's own lines, never the amount: the cook weighs or counts it. Only empty boxes are filled, never over
+     what was typed or picked; a FILLED box carries a LAST TIME tag and one line says what came from where; a new name
+     takes the filled values away again, and Empty these boxes does the same. Everything is patched in place (no redraw),
+     so a tap that left the box still lands. 0 reads: summary/waste and today's live lines are already on the phone. */
+  function wLastAll(t) {
+    var k = okey(t); if (!k) return null;
+    var today = (S.wLines || []).filter(function (x) { return !x.deleted && okey(x.text) === k; }).sort(function (a, b) { return (b.addedAt || 0) - (a.addedAt || 0); });
+    var x = (S.wSum || []).filter(function (e) { return okey(e.t) === k; })[0], l = x && x.last, n = ((x && +x.n) || 0) + today.length;
+    var d = today[0] ? { unit: today[0].unit, reason: today[0].reason, station: today[0].station } : l ? { unit: l.unit, reason: l.reason, station: l.sec } : null;
+    if (!d) return null;
+    return { n: n, unit: UNITS.indexOf(d.unit) >= 0 ? d.unit : '', reason: REASONS.some(function (r) { return r[0] === d.reason; }) ? d.reason : '', station: typeof d.station === 'string' ? d.station.slice(0, 40) : '' };
+  }
+  function wfOn(k) { return !!(S.wf.fill && S.wf.fill[k]); }
+  function wWeigh() { return !!S.wf.fill && !String(S.wf.amt).trim(); }
+  function wTypedFill() {
+    var f = S.wf, k = okey(f.text);
+    if (S.name !== 'waste' || !S.wLog || !k || f.noFill === k || (f.fill && f.fill.from === k)) return;
+    var l = wLastAll(f.text); if (!l) return;
+    var x = { from: k, n: l.n, sec: '', reason: '', unit: '', prevSec: f.sec, prevUnit: f.unit };
+    if (l.station && !String(f.sec || '').trim() && !mySec()) { f.sec = l.station; x.sec = l.station; }
+    if (l.reason && !f.reason) { f.reason = l.reason; x.reason = l.reason; }
+    // a unit changes only before an amount is written: "2" typed in kg must not become 2 portions
+    if (l.unit && l.unit !== f.unit && !String(f.amt).trim()) { f.unit = l.unit; x.unit = l.unit; }
+    if (!x.sec && !x.reason && !x.unit) return;
+    f.fill = x; f.emptied = false; wFillPatch();
+  }
+  /* the filled values go again, where they are still what the book put there (a changed one is the cook's now). A new
+     name keeps the unit once an amount is written in it (the cook wrote "1.5" in portions); Empty these boxes does not. */
+  function wUnfill(all) {
+    var f = S.wf, x = f.fill; if (!x) return;
+    if (x.sec && f.sec === x.sec) f.sec = x.prevSec || '';
+    if (x.reason && f.reason === x.reason) f.reason = '';
+    if (x.unit && f.unit === x.unit && (all || !String(f.amt).trim())) f.unit = x.prevUnit || f.unit;
+    f.fill = null;
+  }
+  function wFillTidy() { var x = S.wf.fill; if (x && !x.sec && !x.reason && !x.unit) S.wf.fill = null; }
+  function wFillNoteHTML() {
+    var f = S.wf, x = f.fill;
+    if (!x) return f.emptied ? '<p>Emptied the boxes from last time.</p>' : '';
+    var parts = [], rn = x.reason ? (REASONS.filter(function (r) { return r[0] === x.reason; })[0] || [])[1] : '';
+    if (x.sec) parts.push(x.sec); if (rn) parts.push(rn); if (x.unit) parts.push('in ' + x.unit);
+    return '<p><b>Last time</b> (logged ' + (x.n === 1 ? 'once' : x.n + ' times') + ' in the last 2 weeks): ' + esc(parts.join(', ')) + '. ' +
+      (String(f.amt).trim() ? 'Change anything before you log it.' : 'Weigh or count it and write today\'s amount.') + '</p><button type="button" class="chip" data-p="w-unfill">Empty these boxes</button>';
+  }
+  // Log it says what it will save once there is an item and an amount ("Log 1.5 kg Chips")
+  function wLogBtn() {
+    var f = S.wf, a = parseFloat(String(f.amt).replace(',', '.')), t = f.text.trim();
+    var say = a > 0 && a < 100000 && t ? 'Log ' + num(a) + ' ' + f.unit + ' ' + (t.length > 24 ? t.slice(0, 22) + '...' : t) : 'Log it';
+    return '<button type="submit" class="nb-addbtn"' + (wWeigh() ? ' aria-disabled="true"' : '') + '>' + esc(say) + '</button>';
+  }
+  function fbHTML(cls, input, tag, on) { return '<span class="lk-fb ' + cls + (on ? ' is-filled' : '') + '">' + input + '<span class="lk-ftag" aria-hidden="true"' + (on ? '' : ' hidden') + '>' + esc(tag) + '</span></span>'; }
+  function ftagHTML(on) { return '<span class="lk-ftag"' + (on ? '' : ' hidden') + '>Last time</span>'; }
+  function fbSet(input, on) { var w = input && input.parentElement; if (!w || !w.classList.contains('lk-fb')) return; w.classList.toggle('is-filled', !!on); var t = w.querySelector('.lk-ftag'); if (t) t.hidden = !on; }
+  function noteSet(el, h) { if (!el) return; if (el.lkHtml !== h) { el.innerHTML = h; el.lkHtml = h; } el.hidden = !h; }
+  function wFillPatch() {
+    var form = S.root && S.root.querySelector('.w-add'), f = S.wf; if (!form) return;
+    var sec = form.querySelector('#w-sec'), sv = f.sec || mySec() || '';
+    if (sec) { if (sec.value !== sv && document.activeElement !== sec) sec.value = sv; fbSet(sec, wfOn('sec')); if (wfOn('sec')) sec.setAttribute('aria-describedby', 'w-fill'); else sec.removeAttribute('aria-describedby'); }
+    Array.prototype.forEach.call(form.querySelectorAll('[data-p="sec-pick"][data-sk="w-sec"]'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-v').toLowerCase() === sv.trim().toLowerCase())); });
+    Array.prototype.forEach.call(form.querySelectorAll('[data-p="wreason"]'), function (b) { b.setAttribute('aria-checked', String(b.getAttribute('data-v') === f.reason)); });
+    Array.prototype.forEach.call(form.querySelectorAll('[data-p="wunit"]'), function (b) { b.setAttribute('aria-checked', String(b.getAttribute('data-v') === f.unit)); });
+    var ut = form.querySelector('#w-unit-l .lk-ftag'), rt = form.querySelector('#w-reason-l .lk-ftag');
+    if (ut) ut.hidden = !wfOn('unit'); if (rt) rt.hidden = !wfOn('reason');
+    var amt = form.querySelector('#w-amt'); if (amt) { amt.placeholder = 'Amount (' + (f.unit || 'unit') + ')'; amt.classList.toggle('lk-weigh', wWeigh()); }
+    noteSet(form.querySelector('#w-fill'), wFillNoteHTML());
+    var why = form.querySelector('#w-why'); if (why) why.hidden = !wWeigh();
+    var btn = form.querySelector('.nb-addbtn'); if (btn) btnPatch(btn, wLogBtn());
+  }
+  /* A box left by tapping something else sends change between the finger going down and coming up: a fill then would
+     move what is under the finger. It waits for the finger to come up, after the tap has done its job. */
+  var fillPtr = false, fillLater = null;
+  function fillPtrDown() { fillPtr = true; }
+  function fillPtrUp() { fillPtr = false; if (fillLater) { var fn = fillLater; fillLater = null; setTimeout(fn, 0); } }
+  function fillAfterTap(fn) { if (fillPtr) fillLater = fn; else fn(); }
   function addWaste() {
     var f = S.wf, p = me();
     if (!can('add')) return;
@@ -7607,7 +7886,8 @@
     sset(ref, practiceOn({ text: t, amount: amt, unit: f.unit, reason: f.reason, action: f.act.trim().slice(0, 120), station: sec, recipe: rm ? rm.id : '',
       addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), deleted: false })).catch(function (e) { failed(e, function () { if (!S.wf.text.trim()) S.wf = f; }); });
     if (sec) noteSection(sec);
-    S.wf = { text: '', amt: '', unit: f.unit, reason: '', sec: sec, act: '' };
+    // a section the book filled for this item is not kept for the next one (like keptSection() on Prep); a typed one is
+    S.wf = { text: '', amt: '', unit: f.fill && f.fill.unit && f.unit === f.fill.unit ? f.fill.prevUnit || f.unit : f.unit, reason: '', sec: f.fill && f.fill.sec && f.sec === f.fill.sec ? '' : sec, act: '' };
     draw(); focusK('w-text');
     /* Undo like the other lists. The rules let only the head chef or a sous chef change a wastage entry, so staff are told who can fix it. */
     justMark(ref.id);
@@ -7771,18 +8051,18 @@
     var often = wOften();
     var add = can('add') ?
       '<form class="nb-add w-add" data-p-form="wadd">' + (often.length ? '<div class="w-often"><span class="nb-ql">Logged often</span><div class="chiprow">' + often.map(function (e, i) { return '<button type="button" class="chip sq" data-p="woften" data-i="' + i + '">' + esc(e.text) + '</button>'; }).join('') + '</div></div>' : '') +
-      '<div class="nb-add-row"><label class="visually-hidden" for="w-sec">Section</label><input id="w-sec" class="nb-in nb-in-sec" data-k="w-sec" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(f.sec || mySec()) + '">' +
+      '<div class="nb-add-row"><label class="visually-hidden" for="w-sec">Section</label>' + fbHTML('nb-in-sec', '<input id="w-sec" class="nb-in" data-k="w-sec" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(f.sec || mySec()) + '"' + (wfOn('sec') ? ' aria-describedby="w-fill"' : '') + '>', 'Last time', wfOn('sec')) +
       '<label class="visually-hidden" for="w-text">Item</label><input id="w-text" class="nb-in nb-in-text" data-k="w-text" enterkeyhint="next" autocomplete="off" placeholder="What was wasted?" maxlength="80" value="' + esc(f.text) + '">' +
-      '<label class="visually-hidden" for="w-amt">Amount</label><input id="w-amt" class="nb-in nb-in-qty" data-k="w-amt" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Amount (' + esc(f.unit || 'unit') + ')" maxlength="8" value="' + esc(f.amt) + '"></div>' + justHTML('w') +
+      '<label class="visually-hidden" for="w-amt">Amount</label><input id="w-amt" class="nb-in nb-in-qty' + (wWeigh() ? ' lk-weigh' : '') + '" data-k="w-amt" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Amount (' + esc(f.unit || 'unit') + ')" maxlength="8" value="' + esc(f.amt) + '"></div>' + '<div class="lk-fillnote" id="w-fill" role="status"' + (wFillNoteHTML() ? '' : ' hidden') + '>' + wFillNoteHTML() + '</div>' + justHTML('w') +
       secChipsHTML('w-sec', f.sec || mySec()) + '<div class="nb-sugg" id="w-sugg">' + wSuggHTML() + '</div>' +
-      '<div class="w-pick"><span class="nb-ql" id="w-unit-l">Unit</span><div class="seg" role="radiogroup" aria-labelledby="w-unit-l">' + UNITS.map(function (u) { return '<button type="button" class="seg-b" role="radio" data-p="wunit" data-v="' + u + '" aria-checked="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
+      '<div class="w-pick"><span class="nb-ql" id="w-unit-l">Unit' + ftagHTML(wfOn('unit')) + '</span><div class="seg" role="radiogroup" aria-labelledby="w-unit-l">' + UNITS.map(function (u) { return '<button type="button" class="seg-b" role="radio" data-p="wunit" data-v="' + u + '" aria-checked="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
       // the five reasons as big chips with what each means, on every screen (3 Nov 2026): no second sheet over this one,
       // and data-adaptive="fixed" keeps js/controls.js from folding them into a Choose button
-      '<div class="w-pick w-rpick"><span class="nb-ql" id="w-reason-l">Reason</span><div class="w-rbig" role="radiogroup" aria-labelledby="w-reason-l" data-adaptive="fixed">' + REASONS.map(function (r) { return '<button type="button" class="chip w-rchip" role="radio" data-p="wreason" data-v="' + r[0] + '" aria-checked="' + (f.reason === r[0]) + '"><strong>' + esc(r[1]) + '</strong><span>' + esc(REASON_HINT[r[0]] || '') + '</span></button>'; }).join('') + '</div></div>' +
+      '<div class="w-pick w-rpick"><span class="nb-ql" id="w-reason-l">Reason' + ftagHTML(wfOn('reason')) + '</span><div class="w-rbig" role="radiogroup" aria-labelledby="w-reason-l" data-adaptive="fixed">' + REASONS.map(function (r) { return '<button type="button" class="chip w-rchip" role="radio" data-p="wreason" data-v="' + r[0] + '" aria-checked="' + (f.reason === r[0]) + '"><strong>' + esc(r[1]) + '</strong><span>' + esc(REASON_HINT[r[0]] || '') + '</span></button>'; }).join('') + '</div></div>' +
       // the action is optional, so it folds until wanted (22 Oct 2026, Option B); a chip that fills it opens it
       '<div class="nb-add-row">' + (f.act || f.actOpen ? '<label class="visually-hidden" for="w-act">Action or how to stop it happening again</label><input id="w-act" class="nb-in nb-in-text" data-k="w-act" autocomplete="off" placeholder="Action or how to stop it happening again (optional)" maxlength="120" value="' + esc(f.act) + '">'
         : '<button type="button" class="w-actbtn" data-p="w-act-open">+ Add an action (optional)</button>') +
-      '<button type="submit" class="nb-addbtn">Log it</button></div></form>' : '';
+      '<span class="lk-why" id="w-why"' + (wWeigh() ? '' : ' hidden') + '>Write the amount first.</span>' + wLogBtn() + '</div></form>' : '';
     // no signal and not loaded yet: the note, then only the lines this phone wrote since (listSnap), and no totals
     var offW = S.wState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     var tot = offW ? '' : totalsText(wTotals(live));
@@ -8017,6 +8297,28 @@
     var x = ((S.xSum && S.xSum.items) || []).filter(function (e) { return e && okey(e.t) === k; })[0];
     return x ? { unit: X_UNITS.indexOf(x.unit) >= 0 ? x.unit : '', amt: wAmt(x.amt) } : null;
   }
+  /* Filled for you on Transfers (13 Nov 2026): the item typed in full fills its unit from today's lines or the summary,
+     never the amount, with the same tag, line and Put back as Wastage. 0 reads. */
+  function xWeigh() { return !!S.xf.fill && !String(S.xf.amt).trim(); }
+  function xTypedFill() {
+    var f = S.xf, k = okey(f.text);
+    if (S.name !== 'transfers' || !S.xLog || !k || f.noFill === k || (f.fill && f.fill.from === k) || String(f.amt).trim()) return;
+    var l = xLast(f.text); if (!l || !l.unit || l.unit === f.unit) return;
+    f.fill = { from: k, unit: l.unit, prevUnit: f.unit }; f.unit = l.unit; f.emptied = false; xFillPatch();
+  }
+  function xUnfill() { var f = S.xf, x = f.fill; if (!x) return; if (f.unit === x.unit) f.unit = x.prevUnit || f.unit; f.fill = null; }
+  function xFillNoteHTML() {
+    var f = S.xf, x = f.fill;
+    if (!x) return f.emptied ? '<p>Put the unit back.</p>' : '';
+    return '<p><b>Last time</b> it was in ' + esc(x.unit) + '. ' + (String(f.amt).trim() ? 'Change it before you log it if it is different today.' : 'Write today\'s amount.') + '</p><button type="button" class="chip" data-p="tr-unfill">Put back ' + esc(x.prevUnit) + '</button>';
+  }
+  function xFillPatch() {
+    var form = S.root && S.root.querySelector('.tr-add'), f = S.xf; if (!form) return;
+    Array.prototype.forEach.call(form.querySelectorAll('[data-p="tr-unit"]'), function (b) { b.setAttribute('aria-checked', String(b.getAttribute('data-v') === f.unit)); });
+    var t = form.querySelector('#tr-unit-l .lk-ftag'); if (t) t.hidden = !(f.fill && f.fill.unit);
+    var amt = form.querySelector('#tr-amt'); if (amt) { amt.placeholder = 'Amount (' + f.unit + ')'; amt.classList.toggle('lk-weigh', xWeigh()); }
+    noteSet(form.querySelector('#tr-fill'), xFillNoteHTML());
+  }
   function xFill(o) {
     var f = S.xf;
     if (!o) return;
@@ -8196,9 +8498,9 @@
       '<div class="tr-field"><label class="visually-hidden" for="tr-person">' + (out ? 'Who came for it' : 'Who gave it') + '</label><input id="tr-person" class="nb-in tr-box" data-k="tr-person" enterkeyhint="next" autocomplete="off" autocapitalize="words" placeholder="' + (out ? 'Who came for it?' : 'Who gave it? (optional)') + '" maxlength="40" value="' + esc(f.person) + '"><div id="tr-pchips">' + xPeopleChips() + '</div></div></div>' +
       '<div id="tr-often">' + xOftenHTML() + '</div>' +
       '<div class="nb-add-row"><label class="visually-hidden" for="tr-text">Item</label><input id="tr-text" class="nb-in nb-in-text" data-k="tr-text" enterkeyhint="next" autocomplete="off" placeholder="' + (out ? 'What did they take?' : 'What did we take?') + '" maxlength="80" value="' + esc(f.text) + '">' +
-      '<label class="visually-hidden" for="tr-amt">Amount</label><input id="tr-amt" class="nb-in nb-in-qty" data-k="tr-amt" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Amount (' + esc(f.unit) + ')" maxlength="8" value="' + esc(f.amt) + '"></div>' + justHTML('x') +
+      '<label class="visually-hidden" for="tr-amt">Amount</label><input id="tr-amt" class="nb-in nb-in-qty' + (xWeigh() ? ' lk-weigh' : '') + '" data-k="tr-amt" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Amount (' + esc(f.unit) + ')" maxlength="8" value="' + esc(f.amt) + '"></div>' + '<div class="lk-fillnote" id="tr-fill" role="status"' + (xFillNoteHTML() ? '' : ' hidden') + '>' + xFillNoteHTML() + '</div>' + justHTML('x') +
       '<div class="nb-sugg" id="tr-sugg">' + xSuggHTML() + '</div>' +
-      '<div class="w-pick tr-units"><span class="nb-ql" id="tr-unit-l">Unit</span><div class="seg" role="radiogroup" aria-labelledby="tr-unit-l">' + X_UNITS.map(function (u) { return '<button type="button" class="seg-b" role="radio" data-p="tr-unit" data-v="' + u + '" aria-checked="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
+      '<div class="w-pick tr-units"><span class="nb-ql" id="tr-unit-l">Unit' + ftagHTML(!!(f.fill && f.fill.unit)) + '</span><div class="seg" role="radiogroup" aria-labelledby="tr-unit-l">' + X_UNITS.map(function (u) { return '<button type="button" class="seg-b" role="radio" data-p="tr-unit" data-v="' + u + '" aria-checked="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
       // the note is optional, so it folds until wanted, like the wastage action
       '<div class="nb-add-row">' + (f.note || f.noteOpen ? '<label class="visually-hidden" for="tr-note">Note</label><input id="tr-note" class="nb-in nb-in-text tr-note" data-k="tr-note" autocomplete="off" placeholder="Note, for example: giving it back Friday (optional)" maxlength="120" value="' + esc(f.note) + '">'
         : '<button type="button" class="w-actbtn" data-p="tr-note-open">+ Add a note (optional)</button>') + '</div>' +
@@ -8251,8 +8553,13 @@
   }
   function trInput(k, el) {
     var f = S.xf;
-    if (k === 'tr-text') { f.text = el.value; var g = S.root.querySelector('#tr-sugg'); if (g) g.innerHTML = xSuggHTML(); return; }
-    if (k === 'tr-amt') { f.amt = el.value.replace(/[^0-9.,]/g, ''); f.amtAuto = false; if (el.value !== f.amt) el.value = f.amt; return; }
+    if (k === 'tr-text') {
+      f.text = el.value; var g = S.root.querySelector('#tr-sugg'); if (g) g.innerHTML = xSuggHTML();
+      var xk = okey(el.value); if (f.noFill && f.noFill !== xk) f.noFill = ''; if (f.emptied) f.emptied = false;
+      if (f.fill && f.fill.from !== xk) xUnfill();
+      xFillPatch(); return;
+    }
+    if (k === 'tr-amt') { f.amt = el.value.replace(/[^0-9.,]/g, ''); f.amtAuto = false; if (el.value !== f.amt) el.value = f.amt; xFillPatch(); return; }
     if (k === 'tr-venue') { f.venue = el.value; xChipsSync(); return; }
     if (k === 'tr-person') { f.person = el.value; var pc = S.root.querySelector('#tr-pchips'); if (pc) pc.innerHTML = xPeopleChips(); return; }
     if (k === 'tr-note') { f.note = el.value; }
@@ -8263,11 +8570,12 @@
     if (a === 'tr-bk-add') { xBasketAdd(); return; }
     if (a === 'tr-bk-del') { f.basket = (f.basket || []).filter(function (x, k) { return k !== i; }); draw(); focusK('tr-text'); return; }
     if (a === 'tr-dir') { f.dir = v === 'in' ? 'in' : 'out'; draw(); return; }
-    if (a === 'tr-unit') { if (X_UNITS.indexOf(v) >= 0) f.unit = v; draw(); return; }
+    if (a === 'tr-unit') { if (X_UNITS.indexOf(v) >= 0) f.unit = v; f.fill = null; draw(); return; }
+    if (a === 'tr-unfill') { xUnfill(); f.noFill = okey(f.text); f.emptied = true; xFillPatch(); return; }
     if (a === 'tr-vpick') { f.venue = xStr(v, 40); draw(); focusK(f.person.trim() ? (f.text.trim() ? 'tr-amt' : 'tr-text') : 'tr-person'); return; }
     if (a === 'tr-ppick') { f.person = xStr(v, 40); draw(); focusK(f.text.trim() ? 'tr-amt' : 'tr-text'); return; }
-    if (a === 'tr-sugg') { var t = (S.xsugg || [])[i]; if (t) { f.text = t; xFill(xLast(t)); draw(); focusFilled('tr-amt'); } return; }
-    if (a === 'tr-often') { var o = xOften()[i]; if (o) { f.text = o.text; xFill(o); draw(); focusFilled('tr-amt'); } return; }
+    if (a === 'tr-sugg') { var t = (S.xsugg || [])[i]; if (t) { xUnfill(); f.emptied = false; f.text = t; xFill(xLast(t)); draw(); focusFilled('tr-amt'); } return; }
+    if (a === 'tr-often') { var o = xOften()[i]; if (o) { xUnfill(); f.emptied = false; f.text = o.text; xFill(o); draw(); focusFilled('tr-amt'); } return; }
     if (a === 'tr-note-open') { f.noteOpen = true; draw(); focusSel('#tr-note'); return; }
     if (a === 'tr-unreturn') { returnXfer(dt, id, true); return; }
     if (a === 'tr-return') { returnXfer(dt, id); return; }
@@ -12176,23 +12484,24 @@
     if (a === 'close-hide') { lsSet('lk.closeout', dayNow()); draw(); return; }
     if (a === 'oreg') { var orr = (S.oregs || [])[i]; if (orr) addOrder(true, orr); return; }
     // Last 7 days always counts today from the live list, whatever day was being browsed; the past days come from the day cache
-    if (a === 'wunit') { S.wf.unit = el.getAttribute('data-v'); draw(); return; }
+    if (a === 'wunit') { S.wf.unit = el.getAttribute('data-v'); if (S.wf.fill) { S.wf.fill.unit = ''; wFillTidy(); } draw(); return; }
+    if (a === 'w-unfill') { wUnfill(true); S.wf.noFill = okey(S.wf.text); S.wf.emptied = true; wFillPatch(); return; }
     if (a === 'w-act-open') { S.wf.actOpen = true; draw(); focusSel('#w-act'); return; }
     if (a === 'w-log') { wSheetOpen('log'); return; }
     if (a === 'w-rv') { wSheetOpen('rv'); return; }
     if (a === 'w-again') { wAgain(dt, id); return; }
-    if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); if (S.sheet) wasteSheetClose(); else draw(); return; }
+    if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); if (S.wf.fill) { S.wf.fill.reason = ''; wFillTidy(); } if (S.sheet) wasteSheetClose(); else draw(); return; }
     if (a === 'sheet') {
       S.sheet = 'reason';
-      window.LK_UX.AdaptivePicker({ label: 'Why was it wasted?', trigger: el, value: [S.wf.reason], items: REASONS.map(function (r) { return { value: r[0], label: r[1] }; }), onChange: function (v) { S.sheet = ''; S.wf.reason = v[0]; draw(); }, onDismiss: function () { S.sheet = ''; } }); return;
+      window.LK_UX.AdaptivePicker({ label: 'Why was it wasted?', trigger: el, value: [S.wf.reason], items: REASONS.map(function (r) { return { value: r[0], label: r[1] }; }), onChange: function (v) { S.sheet = ''; S.wf.reason = v[0]; if (S.wf.fill) { S.wf.fill.reason = ''; wFillTidy(); } draw(); }, onDismiss: function () { S.sheet = ''; } }); return;
     }
     if (a === 'sec-pick') {
       var sk = el.getAttribute('data-sk'), sv = el.getAttribute('data-v') || '', lit = el.getAttribute('aria-pressed') === 'true';
-      if (sk === 'p-section') { S.section = lit ? '' : sv; S.secTyped = !lit; } else if (sk === 'w-sec') S.wf.sec = lit ? '' : sv;
+      if (sk === 'p-section') { S.section = lit ? '' : sv; S.secTyped = !lit; } else if (sk === 'w-sec') { S.wf.sec = lit ? '' : sv; if (S.wf.fill) { S.wf.fill.sec = ''; wFillTidy(); } }
       draw(); focusSel('[data-p="sec-pick"][data-sk="' + sk + '"][data-v="' + CSS.escape(sv) + '"]'); return;
     }
-    if (a === 'wsugg') { var wt = (S.wsugg || [])[i]; if (wt) { S.wf.text = wt; var wl = wLast(wt); if (wl) { if (wl.unit) S.wf.unit = wl.unit; if (wl.reason && !S.wf.reason) S.wf.reason = wl.reason; if (wl.station && !S.wf.sec && !mySec()) S.wf.sec = wl.station; if (wl.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wl.amt; S.wf.amtAuto = true; } } draw(); focusFilled('w-amt'); } return; }
-    if (a === 'woften') { var wo = wOften()[i]; if (wo) { S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec && !mySec()) S.wf.sec = wo.sec; if (wo.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wo.amt; S.wf.amtAuto = true; } draw(); focusFilled('w-amt'); } return; }
+    if (a === 'wsugg') { var wt = (S.wsugg || [])[i]; if (wt) { wUnfill(); S.wf.emptied = false; S.wf.text = wt; var wl = wLast(wt); if (wl) { if (wl.unit) S.wf.unit = wl.unit; if (wl.reason && !S.wf.reason) S.wf.reason = wl.reason; if (wl.station && !S.wf.sec && !mySec()) S.wf.sec = wl.station; if (wl.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wl.amt; S.wf.amtAuto = true; } } draw(); focusFilled('w-amt'); } return; }
+    if (a === 'woften') { var wo = wOften()[i]; if (wo) { wUnfill(); S.wf.emptied = false; S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec && !mySec()) S.wf.sec = wo.sec; if (wo.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wo.amt; S.wf.amtAuto = true; } draw(); focusFilled('w-amt'); } return; }
     if (a === 'wdel') { removeWaste(dt, id); return; }
     if (a === 'wrestore') { removeWaste(dt, id, true); return; }
     if (a === 'rv-day') { if (!whCanChange()) return; var rr = whRange(), rd = shift(S.rvDate || rr.to, +el.getAttribute('data-d')); if (rd <= rr.to && rd >= rr.from) { S.rvDate = rd; S.wrA = S.wrC = null; } draw(); return; }
@@ -12244,6 +12553,15 @@
     }
     if (a === 'c-refresh') { if (S.name === 'chef' && chefAllowed()) { chefHistoryLoad(true); draw(); } return; }
     if (a === 'a-group') { if (intelligenceBusy()) return; S.personId = ''; var gg = A_GROUPS.filter(function (g) { return g[0] === el.getAttribute('data-g'); })[0]; if (gg) { S.atab = (S.agLast || {})[gg[0]] || gg[2].filter(function (t) { return t !== 'mail' || mlOwner(); })[0]; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); } return; }
+    // Records (13 Nov 2026): a day, back, Food safety or Everything, another month, Refresh, Try again, print, CSV
+    if (a === 'rec-day') { var rdy = el.getAttribute('data-d') || ''; if (/^\d{4}-\d\d-\d\d$/.test(rdy)) { REC.day = rdy; REC.month = rdy.slice(0, 7); draw(); var rdh = S.root.querySelector('.rec-dt'); if (rdh) rdh.focus(); } return; }
+    if (a === 'rec-back') { var rbk = REC.day; REC.day = ''; draw(); var rbr = S.root.querySelector('.rec-dayrow[data-d="' + rbk + '"]'); if (rbr) rbr.focus(); return; }
+    if (a === 'rec-show') { REC.all = el.getAttribute('data-v') === 'all'; draw(); return; }
+    if (a === 'rec-month') { var rmv = el.getAttribute('data-v') || ''; if (/^\d{4}-\d\d$/.test(rmv)) { REC.month = rmv; REC.day = ''; draw(); } return; }
+    if (a === 'rec-refresh') { recLoad(true); draw(); return; }
+    if (a === 'rec-retry') { var rdd = REC.days[REC.day]; if (rdd) Object.keys(rdd).forEach(function (k) { if (rdd[k] && rdd[k].s === 'error') delete rdd[k]; }); draw(); return; }
+    if (a === 'rec-print') { recPrint(el.getAttribute('data-v')); return; }
+    if (a === 'rec-csv') { recCSV(el.getAttribute('data-v')); return; }
     if (a === 'a-tab') { if (intelligenceBusy()) return; S.personId = ''; S.atab = el.getAttribute('data-t'); S.agLast = S.agLast || {}; S.agLast[adminGroupOf(S.atab)[0]] = S.atab; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); return; }
     // the laptop rail's Inbox and Dashboard (redesign step 8): the same as their tabs in Today
     if (a === 'a-view') { fdPage(el.getAttribute('data-v')); return; }
@@ -12380,8 +12698,8 @@
     }
     if (k === 'pf2') { var p2 = S.pf2.length; S.pf2 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pf2; pinCells(el); if (p2 < 4 && S.pf2.length === 4 && /^\d{4}$/.test(S.pf1)) submitPin(); return; }
     if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); var suggestionBox = S.root.querySelector('#p-sugg'); if (suggestionBox) suggestionBox.innerHTML = suggestHTML(); var qs = S.root.querySelector('#p-qsugg'); if (qs) qs.innerHTML = qtyChipsHTML(); psHintPaint(); return; }
-    if (k === 'o-text') { S.otext = el.value; var og = S.root.querySelector('#o-sugg'); if (og) og.innerHTML = ordSuggHTML(); oAutoQty(); return; }
-    if (k === 'o-qty') { if (S.oqtyAuto && S.oqtyAuto !== el.value) sg('ordfill', 'e'); S.oqty = el.value; S.oqtyAuto = ''; var ou2 = S.root.querySelector('#o-units'); if (ou2) ou2.innerHTML = unitChipsHTML('o', S.oqty); return; }
+    if (k === 'o-text') { S.otext = el.value; oAutoQty(); var og = S.root.querySelector('#o-sugg'); if (og) og.innerHTML = ordSuggHTML(); return; }
+    if (k === 'o-qty') { if (S.oqtyAuto && S.oqtyAuto !== el.value) sg('ordfill', 'e'); S.oqty = el.value; S.oqtyAuto = ''; var ou2 = S.root.querySelector('#o-units'); if (ou2) ou2.innerHTML = unitChipsHTML('o', S.oqty); oFillPatch(); return; }
     if (k === 'g-q') { S.gq = el.value; var gl = S.root.querySelector('#g-list'); if (gl) gl.innerHTML = gListHTML(); var gWrap = el.closest('.g-qwrap'); if (gWrap) gWrap.classList.toggle('has-q', !!S.gq); return; }
     if (k === 'g-title' || k === 'g-sum' || k === 'g-steps' || k === 'g-kw') {
       if (!S.gf) return;
@@ -12391,9 +12709,15 @@
     }
     if (k === 'n-text') { if (S.nf) S.nf.text = el.value; var nc = S.root.querySelector('#n-count'); if (nc) nc.textContent = el.value.length + ' of 400. Ctrl+Enter saves.'; var npv = S.root.querySelector('#n-prev'); if (npv && S.nf) npv.innerHTML = draftPreviewHTML(S.nf); saveSync(); return; }
     if (k && k.indexOf('tr-') === 0) { trInput(k, el); return; }
-    if (k === 'w-text') { S.wf.text = el.value; var wg = S.root.querySelector('#w-sugg'); if (wg) wg.innerHTML = wSuggHTML(); return; }
-    if (k === 'w-amt') { S.wf.amt = el.value.replace(/[^0-9.,]/g, ''); S.wf.amtAuto = false; if (el.value !== S.wf.amt) el.value = S.wf.amt; return; }
-    if (k === 'w-sec') { S.wf.sec = el.value; return; }
+    if (k === 'w-text') {
+      S.wf.text = el.value; var wg = S.root.querySelector('#w-sugg'); if (wg) wg.innerHTML = wSuggHTML();
+      // a new name: what the book filled for the old one goes (filled for you, 13 Nov 2026)
+      var wk = okey(el.value); if (S.wf.noFill && S.wf.noFill !== wk) S.wf.noFill = ''; if (S.wf.emptied) S.wf.emptied = false;
+      if (S.wf.fill && S.wf.fill.from !== wk) wUnfill();
+      wFillPatch(); return;
+    }
+    if (k === 'w-amt') { S.wf.amt = el.value.replace(/[^0-9.,]/g, ''); S.wf.amtAuto = false; if (el.value !== S.wf.amt) el.value = S.wf.amt; wFillPatch(); return; }
+    if (k === 'w-sec') { S.wf.sec = el.value; if (S.wf.fill && S.wf.fill.sec && el.value !== S.wf.fill.sec) { S.wf.fill.sec = ''; wFillTidy(); wFillPatch(); } return; }
     if (k === 'w-act') { S.wf.act = el.value; return; }
     // the admin panel's Daily reviews form and the wastage page each keep their own (rvTyped())
     if (k === 'w-ra' || k === 'w-rc') { if (el.closest('.a-rvform')) { if (k === 'w-ra') S.wrA = el.value; else S.wrC = el.value; } else if (k === 'w-ra') S.wpA = el.value; else S.wpC = el.value; saveSync(); return; }
@@ -12435,6 +12759,8 @@
     if (k === 'n-to') { if (S.nf && !S.nf.id) { S.nf.to = el.value; } return; }
     if (k === 'n-tm') { if (S.nf) { S.nf.tm = el.value; draw(); } return; }
     if (k === 'p-section' || k === 'w-sec') { checkSectionBox(el, k); return; }
+    if (k === 'w-text') { fillAfterTap(wTypedFill); return; }
+    if (k === 'tr-text') { fillAfterTap(xTypedFill); return; }
     if (k === 'af-sec' || k === 'af-who' || k === 'af-dow' || k === 'af-reason' || k === 'af-venue') { AF()[k.slice(3)] = el.value; afSave(); draw(); return; }
     var a = el.getAttribute && el.getAttribute('data-a');
     if (!a || !S.draft) return;
@@ -12488,6 +12814,8 @@
     app.addEventListener('click', onClick);
     app.addEventListener('pointerdown', toastDown);
     app.addEventListener('pointerdown', fillTapDown, true);
+    app.addEventListener('pointerdown', fillPtrDown, true);
+    ['pointerup', 'pointercancel'].forEach(function (ev) { document.addEventListener(ev, fillPtrUp, true); });
     app.addEventListener('click', fillTap, true);
     app.addEventListener('pointermove', toastMove);
     app.addEventListener('pointerup', toastUp);

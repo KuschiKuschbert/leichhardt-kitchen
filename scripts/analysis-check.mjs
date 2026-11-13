@@ -32,7 +32,9 @@ assert.equal((await get('current')).generation, generation);
 assert.equal((await K.collection('analysisDaily').get()).size, 6);
 // Plan B 4.1 (7 Nov 2026): the empty days before the first written day are not read again, and the generation before
 // last is deleted by name, with no reads
-assert.deepEqual([r1.full, r1.first, r2.full, r1.reads - r2.reads], [true, yesterday, false, 8], 'The two empty days before the first are skipped (4 reads each): ' + JSON.stringify([r1.full, r1.first, r2.full, r1.reads, r2.reads]));
+// (the Records cleaning count is read once per day, on the first night only, so it is left out of this comparison)
+assert.deepEqual([r1.full, r1.first, r2.full, (r1.reads - r1.records.reads) - (r2.reads - r2.records.reads)], [true, yesterday, false, 8], 'The two empty days before the first are skipped (4 reads each): ' + JSON.stringify([r1.full, r1.first, r2.full, r1.reads, r2.reads, r1.records, r2.records]));
+assert.ok(r2.records.reads <= 1, 'Records: a night after the first reads no cleaning for days already counted (at most last night\'s board, 1 read): ' + r2.records.reads);
 assert.deepEqual([r2.cleanup, r3.cleanup, r3.removed], ['none', 'named', 3], 'The generation before last is deleted by name: ' + JSON.stringify([r2.cleanup, r3.cleanup, r3.removed]));
 await assert.rejects(analyse(K, { days: 91 }));
 for (let i = 0; i < 3000; i += 400) { const batch = db.batch(); for (let j = i; j < Math.min(3000, i + 400); j++) batch.set(K.collection('days').doc(yesterday).collection('items').doc('large-' + j), { text: 'x'.repeat(160), station: 's'.repeat(80), qty: 'q'.repeat(80) }); await batch.commit(); }
@@ -63,6 +65,12 @@ await K2.collection('team').doc('2026-08-01').set({ day: '2026-08-01', on: [{ id
 await K2.collection('shifts').doc('2026-10-30_dee').set({ day: '2026-10-30', sec: 'larder', name: 'Larder', auto: false, at: 1, by: 'dee', sh: 'lunch', log: [{ sh: 'lunch', sec: 'larder', at: 1 }] });
 await K2.collection('shifts').doc('2026-10-30_sam').set({ day: '2026-10-30', sec: 'sous', name: 'Sous chef', auto: true, at: 1, by: 'sam' });
 await K2.collection('shifts').doc('2026-09-01_dee').set({ day: '2026-09-01', sec: 'larder', name: 'Larder', auto: false, at: 1, by: 'dee' });
+// Records (13 Nov 2026): a day's deliveries and cleaning go on its Dashboard row (fs)
+await K2.collection('deliveries').doc('r1').set({ day: d2, receivedAt: Date.parse(d2 + 'T07:42:00+10:00'), supplier: 'Bidfood', chilled: 3.1, frozen: null, note: '', receivedBy: 'Ann' });
+const cfrom = Date.parse('2026-10-01T00:00:00+10:00'), copen = 253402178400000, cdows = [0, 1, 2, 3, 4, 5, 6];
+await K2.collection('cleaningTasks').doc('c1').set({ text: 'Wipe benches', from: cfrom, until: copen, dows: cdows });
+await K2.collection('cleaningTasks').doc('c2').set({ text: 'Cool room floor', from: cfrom, until: copen, dows: cdows });
+await K2.collection('cleaningDone').doc(d2 + '_c1').set({ day: d2, task: 'c1', done: true });
 const teamRun = await analyse(K2, { days: 3, at });
 const ts = (await K2.collection('teamsum').doc('main').get()).data();
 assert.deepEqual([ts.day, ts.from, ts.to], ['2026-10-31', '2026-10-01', '2026-10-30'], 'teamsum: built for today, from the last 30 days.');
@@ -78,6 +86,12 @@ const row = board.days[1];
 assert.deepEqual(row.p, { n: 5, w: 3, t: 2, r: 1, sec: { Larder: 1, Grill: 1, General: 1 }, mins: { Larder: [90], General: [30] }, who: { cy: 1 } }, 'Prep counts match Insights, with ticks per person.');
 assert.deepEqual(row.w, { n: 3, reason: { excess: 2, expired: 1 }, sec: { Larder: 2, General: 1 }, items: [{ t: 'Brisket', u: 'kg', a: 2, n: 2 }, { t: 'Rolls', u: 'each', a: 0, n: 1 }] }, 'Waste counts lines and amounts.');
 assert.deepEqual(row.x, { out: 1, in: 1 }, 'Transfers count out and in, not deleted lines.');
+assert.deepEqual(row.fs.del, [{ at: '07:42', s: 'Bidfood', c: 3.1, f: null, n: '', by: 'Ann' }], 'Records: the day keeps its deliveries as recorded: ' + JSON.stringify(row.fs.del));
+assert.deepEqual([row.fs.c.due, row.fs.c.done, row.fs.c.missN, row.fs.c.miss], [2, 1, 1, ['Cool room floor']], 'Records: the day counts its cleaning: ' + JSON.stringify(row.fs.c));
+assert.deepEqual(board.days[0].fs.c.missN, 2, 'Records: a day with no ticks has both tasks missed.');
+await K2.collection('cleaningDone').doc('2026-10-28_c2').set({ day: '2026-10-28', task: 'c2', done: true });
+await analyse(K2, { days: 3, at: at + 1000 });
+assert.equal((await K2.collection('analysis').doc('dashboard').get()).data().days[0].fs.c.missN, 2, 'Records: a counted day stays counted (its records cannot change after the day).');
 assert.equal(JSON.stringify(board).includes('price'), false);
 // Needs you: Slaw is linked, so 6 of 7 recorded names wait; Cy (recipe only) and Dee (in training) need a Larder review.
 assert.deepEqual(board.needs, { links: 6, training: 2, inTraining: 1 }, 'Needs you counts the Review desk queues: ' + JSON.stringify(board.needs));
