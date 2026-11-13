@@ -39,6 +39,46 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   ok(p.errors.length === 0, 'linked tags: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // 4. a js/data.js dish taken off the guest menu stays off: Chicken Adobo is a special in the book file
+  const fileMenu = (() => { const c = { window: {} }; require('vm').runInNewContext(require('fs').readFileSync(require('path').join(__dirname, '../js/data.js'), 'utf8'), c); return c.window.LK_DATA.menuOrder; })();
+  const fileSpecials = (fileMenu.find(m => m.title === 'Specials') || { ids: [] }).ids;
+  const specialsShown = p => p.evaluate(() => ((window.LK_DATA.menuOrder || []).find(m => m.title === 'Specials') || { ids: [] }).ids.slice());
+  p = await L.open(b, '#/manage/r/chicken-adobo', { who: 'ann', extra: cfg(), wait: 1400 });
+  await editor(p);
+  await L.chapter(p, 'card');
+  ok(await p.getAttribute('[data-mg="sw-special"]', 'aria-checked') === 'true', 'off the menu: Chicken Adobo starts as a special');
+  await L.reveal(p, '[data-mg="sw-special"]'); await p.click('[data-mg="sw-special"]'); await L.settle(p, 100);
+  ok(await p.inputValue('#mg-msec') === '', 'off the menu: Not on the guest menu is chosen');
+  await p.click('[data-mg="save"]');
+  await savedAt(p, 'chicken-adobo', 1);
+  s = await store(p);
+  const idx = s[fsKey(['book', 'index'])] || {};
+  ok((idx.menu || []).every(m => !(m.ids || []).includes('chicken-adobo')), 'off the menu: the saved menu does not have it');
+  ok(((idx.menu || [])[0] || {}).seen && idx.menu[0].seen.includes('chicken-adobo'), 'off the menu: the saved menu says which book file dishes it saw');
+  ok(!(await specialsShown(p)).includes('chicken-adobo'), 'off the menu: gone from Specials on this phone at once (' + (await specialsShown(p)).join(', ') + ')');
+  await p.reload(); await L.settle(p, 1000);
+  ok(!(await specialsShown(p)).includes('chicken-adobo'), 'off the menu: still gone after a reload');
+  ok(p.errors.length === 0, 'off the menu: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  // a fresh phone gets the saved menu: Adobo stays off, the other specials stay on
+  p = await L.open(b, '#/recipes', { who: 'bo', extra: Object.assign(cfg(), { [fsKey(['book', 'index'])]: idx, [fsKey(['recipes', 'chicken-adobo'])]: s[fsKey(['recipes', 'chicken-adobo'])] }), wait: 1400 });
+  await wait(p, () => !!(window.LK_RX && window.LK_RX.syncedAt()), null, 8000);
+  await L.settle(p, 300);
+  const fresh = await specialsShown(p);
+  ok(!fresh.includes('chicken-adobo') && fileSpecials.filter(id => id !== 'chicken-adobo').every(id => fresh.includes(id)), 'off the menu: a fresh phone shows the specials without Adobo (' + fresh.join(', ') + ')');
+  await p.context().close();
+  // a dish js/data.js put on the menu after the menu was saved still shows: a saved menu without lamb-nachos and
+  // that never saw it, and an older saved menu with no seen list at all
+  const without = id => fileMenu.map((m, i) => Object.assign({ title: m.title, ids: m.ids.filter(x => x !== id) }, i ? {} : { seen: [].concat(...fileMenu.map(x => x.ids)).filter(x => x !== id) }));
+  for (const [label, menu] of [['a dish new in js/data.js', without('lamb-nachos')], ['a menu saved before seen', fileMenu.map(m => ({ title: m.title, ids: m.ids.filter(x => x !== 'lamb-nachos') }))]]) {
+    p = await L.open(b, '#/recipes', { who: 'bo', extra: Object.assign(cfg(), { [fsKey(['book', 'index'])]: { r: {}, menu } }), wait: 1400 });
+    await wait(p, () => !!(window.LK_RX && window.LK_RX.syncedAt()), null, 8000);
+    await L.settle(p, 300);
+    const shown = await specialsShown(p);
+    ok(shown.includes('lamb-nachos') && shown.includes('chicken-adobo'), label + ': still shows in Specials (' + shown.join(', ') + ')');
+    await p.context().close();
+  }
+
   await b.close();
   L.report(R);
 })().catch(e => { console.log(R.join('\n')); console.error(e); process.exit(1); });

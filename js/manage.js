@@ -778,6 +778,9 @@
       if (at < 0) at = s.ids.length;
       s.ids.splice(at, 0, e.id);
     }
+    // seen: the dishes js/data.js has on the guest menu now, so one taken off here stays off (js/overlay.js tidyMenu)
+    menu.forEach(function (x) { delete x.seen; });
+    if (menu.length) menu[0].seen = [].concat.apply([], X.baseMenu().map(function (x) { return x.ids; }));
     return menu;
   }
   function lastOf(sec, id) { var s = (D.menuOrder || []).filter(function (x) { return x.title === sec; })[0]; return s && s.ids[s.ids.length - 1] === id ? (s.ids.length > 1 ? s.ids[s.ids.length - 2] : '^') : ''; }
