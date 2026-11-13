@@ -83,6 +83,34 @@ const saved = async (p, name) => Object.values(await store(p)).filter(x => x && 
   ok(p.errors.length === 0, 'staggered: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // 3. a duplicate of a late function: event 22:00, rounds 23:30 and 00:30 the next day. Picked for another date, the
+  // 00:30 round is on the day after that date, not before the event
+  const late = fn({ name: 'Night owls', date: today, start: '22:00', rounds: [[today, '23:30'], [tomorrow, '00:30']], lines: [['pizza-platter', 'Pizza Platter', [2, 2]]] });
+  p = await L.open(b, '#/functions/late', { who: 'fay', extra: extra({ late }), wait: 1500 });
+  await L.waitFor(p, () => !!document.querySelector('[data-fe="dup"]'));
+  await tap(p, '[data-fe="dup"]'); await L.settle(p, 300);
+  await setV(p, '[data-ff="date"]', day2);
+  ok(/next day/.test(await txt(p, '.fe-grid') || '') && await p.$eval('[data-ff="rt1"]', e => e.value) === '00:30', 'duplicate: round 2 at 00:30 says the next day after the new date');
+  await tap(p, '[data-fe="save"]');
+  await L.waitFor(p, () => /Version 1\./.test((document.getElementById('fe-root') || {}).textContent || ''), null, 6000).catch(() => {});
+  const copy = await saved(p, 'Night owls (copy)');
+  ok(!!copy && copy.date === day2 && JSON.stringify(copy.rounds.map(r => r.at)) === JSON.stringify([at(day2, '23:30'), at(day3, '00:30')]),
+    'duplicate: saved with 23:30 on the new date and 00:30 on the day after (' + (copy && copy.rounds.map(r => M.kday(r.at) + ' ' + M.kclock(r.at)).join(', ')) + ')');
+  ok(p.errors.length === 0, 'duplicate: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  // the same with the date taken out and a new one picked on the function itself
+  p = await L.open(b, '#/functions/late', { who: 'fay', extra: extra({ late }), wait: 1500 });
+  await L.waitFor(p, () => !!document.querySelector('[data-ff="rt1"]'));
+  await setV(p, '[data-ff="date"]', '');
+  await setV(p, '[data-ff="date"]', day2);
+  await tap(p, '[data-fe="save"]');
+  await L.waitFor(p, () => /Version 2/.test((document.getElementById('fe-root') || {}).textContent || ''), null, 6000).catch(() => {});
+  const again = (await store(p))[fsKey(['functions', 'late'])];
+  ok(again.date === day2 && JSON.stringify(again.rounds.map(r => r.at)) === JSON.stringify([at(day2, '23:30'), at(day3, '00:30')]),
+    'date taken out and picked again: 23:30 on the new date, 00:30 the day after (' + again.rounds.map(r => M.kday(r.at) + ' ' + M.kclock(r.at)).join(', ') + ')');
+  ok(p.errors.length === 0, 'date taken out: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });

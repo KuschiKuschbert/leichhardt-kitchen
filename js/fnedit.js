@@ -148,14 +148,18 @@
       else { var a = l.a.slice(0, n); while (a.length < n) a.push(0); l.a = a; }
     });
   }
-  // the date moved: every time on the function moves with it, so 18:30 stays 18:30 (a reschedule)
+  // days from one date to another (whole kitchen days)
+  function daysTo(from, to) { return Math.round((M.kat(to, 0) - M.kat(from, 0)) / M.DAY); }
+  // the date moved: every time on the function moves with it, so 18:30 stays 18:30 (a reschedule). Each round keeps its
+  // day after the event date, so food at 00:30 the next day stays on the next day. While there is no date (a copy, or the
+  // date taken out) a round keeps that day count in o until a date is picked (13 Nov 2026).
   function moveDate(e, to) {
-    var d = e.d, from = d.date;
-    if (!M.isYmd(to)) { d.date = to; return; }
-    var shift = M.isYmd(from) ? Math.round((M.kat(to, 0) - M.kat(from, 0)) / M.DAY) : 0;
+    var d = e.d, from = d.date, known = M.isYmd(from);
+    if (!M.isYmd(to)) { if (known) d.rounds.forEach(function (r) { if (M.isYmd(r.d)) r.o = daysTo(from, r.d); }); d.date = to; return; }
+    var shift = known ? daysTo(from, to) : 0;
     d.date = to;
-    d.foodDate = M.isYmd(d.foodDate) && shift ? M.addDays(d.foodDate, shift) : (M.isYmd(d.foodDate) && M.isYmd(from) ? d.foodDate : to);
-    d.rounds.forEach(function (r) { r.d = M.isYmd(r.d) && M.isYmd(from) ? M.addDays(r.d, shift) : to; });
+    d.rounds.forEach(function (r) { r.d = known && M.isYmd(r.d) ? M.addDays(r.d, shift) : M.addDays(to, +r.o || 0); delete r.o; });
+    d.foodDate = known && M.isYmd(d.foodDate) ? M.addDays(d.foodDate, shift) : d.rounds.length ? d.rounds[0].d : to;
   }
 
   /* ---------- the list (#/functions) ---------- */
@@ -270,7 +274,8 @@
     if (!e) {
       e = { id: newId(''), isNew: true, v: 0, status: 'draft', saved: null, savedC: null, d: blank() };
       if (copyOf) {
-        e.d = clone(copyOf); e.d.date = ''; e.d.foodDate = ''; e.d.rounds.forEach(function (r) { r.d = ''; }); e.d.kc = copyOf.kc; e.d.name = copyOf.name + ' (copy)';
+        // each round keeps its day after the event date (o), so the date picked next puts food after midnight on the next day
+        e.d = clone(copyOf); e.d.date = ''; e.d.foodDate = ''; e.d.rounds.forEach(function (r) { r.o = M.isYmd(copyOf.date) && M.isYmd(r.d) ? daysTo(copyOf.date, r.d) : +r.o || 0; r.d = ''; }); e.d.kc = copyOf.kc; e.d.name = copyOf.name + ' (copy)';
         toast('Copied as a new draft. Pick its date, then confirm.');
       }
     }
