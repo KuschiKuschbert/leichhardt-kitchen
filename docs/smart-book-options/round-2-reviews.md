@@ -97,3 +97,25 @@ Fixes whichever is chosen: at 390 the filled Fryer chip hides behind the fade at
 Contract fit: the Chef's Desk frame is kept, and FILLED is a neutral stamp, not green, so it does not read as Saved. Faults: "Kept from 14 Nov" in orange beside the red Could not load reads as a fault: say "Not kept before 14 Nov" in muted ink. Evidence fault: A's "3 stages confirmed" and B's 8 Nov cooling lines contradict "not kept": redraw them. C must never show "0 deliveries" for a day that was not counted.
 
 Not evidenced: rendered contrast, keyboard focus, reduced motion, line lengths in Barlow, row heights on a phone, print output, Try again, and the words shown when Log it is off.
+
+## The new starter
+
+**Set 1.** Structurally different: yes. Ranking:
+- C: the month reads at a glance. But "Cooling not kept" sits in 13 cells and reads like the food was binned.
+- B: a day reads like a story. But the status stamps fill the phone's first screen, and there is no range.
+- A: a frame the head chef already knows. But nine folds, and "3 stages confirmed" for 2 to 8 Nov contradicts "Kept from 14 Nov".
+
+Reject A's folds, because the day's order is lost (Linear). Take B's timeline for a tapped day (Airbnb). Take C's Print this month, because the gaps show (Duolingo). A blend can beat C alone: C's month, with a tapped day shown as B's timeline; cost 60 to 80 reads a day, not 40. Recommend that mix; downside two layouts to learn.
+
+Words for a reader whose first language is not English: "Loaded" is computer talk, or truck talk: use "Shown". "None": use "Nothing recorded". "Kept from" can mean "hidden from": use "Saved since". "Not kept": use "No record before 14 Nov". "Does not mean nothing moved" is a double negative: use "Transfers may have moved; not shown."
+
+**Set 2.** Structurally different: yes. Ranking:
+- C: the outlined "Weigh it" box tells me my next step; after I type, my "1.5" is upright on white and the book's "Fryer" italic on grey, so mine and the book's look different. But "Weigh it" is wrong for pieces or litres, and "Fryer · kg · Excess production" reads like a broken sentence.
+- B: nothing happens until I choose. But Orders gets two buttons, "Use the usual" and the old "Add 2 tubs": which one saves?
+- A: the fewest taps. But I can log 2 kg I never weighed, and a reason below the fold, and not notice; the italic grey "2" also looks like a hint.
+
+Take A's "Log 2 kg Chips" (Airbnb). Take B's "logged 3 times in the last 2 weeks": it says where the guess came from (Duolingo). Reject C's Orders hint inside the box: the grey "Usually 2 tubs" looks like A's filled "2 tubs", so an empty box looks full (Todoist). A blend can beat C alone, without A's silent amount, which cannot sit beside "Weigh it"; Orders keeps one usual-amount button, not two. Recommend C plus A's Log it words, B's sentence saying where the fill came from, a word tag inside the Section and Amount boxes (once filled they lose their labels, so "2" has no name or unit), and "FILLED" renamed "LAST TIME", because "filled" can read as "done". Downside: the cook types the amount every time.
+
+Contract fit: the words carry the state in both sets. Set 2 only half meets "a filled box says so in words". The orange "Kept from" stamp looks like the red failure stamp.
+
+Not evidenced: the text on Log it and what shows after the tap; "Write the amount first" when Log it is off; the tag going away when a filled value changes; editing the name keeping typed values; italic in Barlow; what "Add 2 tubs" does; "tubs" matching no unit chip; a part read from the cache never saying "Shown".
