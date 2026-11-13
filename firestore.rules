@@ -1553,7 +1553,7 @@ service cloud.firestore {
       let c = cfg();
       let blankVerification = f.verifiedBy == '' && f.verifiedAt == 0;
       return action in ['save', 'block'] ? (initial || old.flow.status in ['pending', 'blocked']) && cleanEmptyPerformance(d)
-          && blankVerification && f.status == (action == 'block' ? 'blocked' : 'pending') && (action != 'block' || f.note.matches('.*[^ ].*'))
+          && blankVerification && f.status == (action == 'block' ? 'blocked' : 'pending') && (action != 'block' || f.note.matches('(?s).*\\S.*'))
         : action == 'perform' ? (initial || old.flow.status in ['pending', 'blocked']) && f.checked.size() == p.checks.size()
           && f.status == (p.verification ? 'awaiting' : 'complete') && blankVerification && cleanRecent(d.doneAt)
           && d.doneById == d.by && d.doneBy.size() > 0 && d.worker.size() > 0 && d.workerId in c.get('staffIds', [])
@@ -1562,7 +1562,7 @@ service cloud.firestore {
           && f.status == 'complete' && f.checked == old.flow.checked && f.note == old.flow.note && cleanSamePerformance(d, old)
           && f.verifiedBy == d.by && cleanRecent(f.verifiedAt)
         : action == 'reopen' && !initial && old.flow.status in ['awaiting', 'complete'] && f.status == 'pending'
-          && f.note.matches('.*[^ ].*') && f.checked.size() == 0 && cleanEmptyPerformance(d) && blankVerification
+          && f.note.matches('(?s).*\\S.*') && f.checked.size() == 0 && cleanEmptyPerformance(d) && blankVerification
           && (chefId(d.by) || old.doneById == d.by && request.time.toMillis() >= old.doneAt && request.time.toMillis() - old.doneAt < 120000);
     }
     function cleanFlowWrite(id, d, initial) {
