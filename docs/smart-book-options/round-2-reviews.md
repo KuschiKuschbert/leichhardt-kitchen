@@ -18,3 +18,60 @@ Recommendation: C everywhere, plus A's Log it label on the button, a FILLED word
 Contract fit: words carry FILLED and Loaded, None or Could not load. Orange on "Weigh it" means attention, which is correct. C's switched-off Log it must say "Write the amount first".
 
 Not evidenced (check in the complete app): the Log it labels and the words for why it is off; filled values clearing on a mistyped name; the selected Fryer chip half off the right edge at 390 px; Undo fill; "6 of 2 ordered" behind every Orders sheet (the stand-in, or a real count fault?); 0 reads on a slow or offline phone; A's taps to pick one day.
+
+## The keeper of the book
+
+**Set 1.** Structurally different: yes; their reads differ about tenfold. Rank C, B, A.
+- C: the calendar is one nightly document (1 to 2 reads); a day about 40 reads, only when tapped; Print about 1,100, only on Print. Weakness: needs the 03:00 job; a skipped run, or a chef's edit after 03:00, leaves a cell that disagrees with the day.
+- B: about 70 reads a day and no job. Weakness: a month is about 2,100 reads and 60 taps.
+- A: one frame and one print. Weakness: the admin panel reopens on its last page and the admin device reloads 10 to 30 times a day; a 7-day default (about 350 reads) then costs 3,500 to 10,500 reads a day unless past days come from `dayCache`; a month (about 1,000 cleaning records) needs a query beyond the 7-day chef range.
+
+Take or reject: reject A's loading on open (every read says when it runs). Take B's time order for the tapped day (Airbnb); reject its cooling lines: "Batch started: Brisket, beef cheek" is invented, the book stores one batch, named Operandio, with no food. Take C's nightly month document; a missing count must say "Count not ready, open the day", never "Not yet" (Flighty); "Cleaning done" hides "1 not possible", so say "0 missed · 1 not possible". Blend: C's calendar and Print, B's order for the day, A's other kinds only on a tap of Everything (about 30 reads more); no other conflict. Recommend C with B's day list; downside a new server write and a dependency on the job.
+
+Leading risks and checks:
+- Reproduced in the previews: "Saturday 8 November" and "Sun 2 Nov" are wrong; 8 Nov 2026 is a Sunday, and C's grid is right. Check: a click test that the day label comes from `T.*` and matches the grid column.
+- Reproduced in the previews: A and B show 8 Nov cooling under "Kept from 14 Nov".
+- The job runs at 17:00 UTC, so "yesterday" by UTC date is two Queensland days back. Script test with the clock fixed at 17:00Z. Count yesterday plus any missing days up to 7; never sweep 90 days of cleaning (about 3,000 reads).
+- Cooling copy: write it in the same batch as Start or Confirm, keyed by `windowAt`, not from the job; the next 10:00 Start replaces the record, so a skipped run would lose the day. Emulator check: staff cannot read it, create only, key matches `windowAt`. Add it to backup, Export and Move PIN.
+- Late answer: tap ‹ twice with delayed reads on the stand-in; the heading and the lines must match.
+- Print: keep Print off until every part settles; a print-media test that "Transfers could not load" is printed.
+- Lazy admin script, not in SHELL; opened offline it must say it could not load.
+- `read-budget` rows: the calendar costs 2 or less; reopening the panel on this page reads no past day twice.
+
+**Set 2.** Structurally different: yes (A fills as you type, B on a tap, C never fills the amount). Rank C, B, A.
+- C: never saves an amount nobody looked at. Weakness: Log it switched off needs its own words.
+- B: nothing filled without a tap. Weakness: Undo fill must restore what was typed, not blank it; Orders then shows two "2 tubs" buttons.
+- A: fewest taps. Weakness: the reason is filled below the fold, and a quick tap during a keystroke can save a fill.
+
+Take A for Orders only: that is today's `oqtyAuto`, now named beside the box, no change in behaviour. Reject B on Orders (duplicates the Usual amount chip). Take C for Wastage and Transfers, where the amount is a measurement (Todoist). A blend of all three adds a mode the cook must learn; the blend that works is C on Wastage and Transfers, A on Orders: waste is measured, an order is an estimate. Downside: the cook still types the amount.
+
+Risks: track filled or typed per box (click test: type "Chips", type 1.5, change the name: section and reason clear, 1.5 stays). `summary/waste` is built at 03:00 and lacks today's entries, so "last time" can be false: say "last 2 weeks", or add today's live lines (0 reads). If the summary did not load (offline in the cool room), offer nothing and never claim it was never logged. E1: store the count as a field on the existing daily record, no extra write; that loosens the rules: publish first and add a `client-shapes` row.
+
+Contract fit: Set 1 C fits (admin only, no listener, honest Not kept). Set 2 costs 0 reads. Not evidenced: real Firestore timing, printing on the tablet, offline open, a real 03:00 run across Queensland midnight, late cleaning edits, Barlow fonts.
+
+## The skeptic
+
+**Set 1.** Structurally different in time model and scope. Rank C, A, B.
+- C: T2 in 3 taps from a nightly count; the only picture whose cooling status agrees with its rows. Weakness: a new calendar look and a server write; still only part of T1.
+- A: answers both tasks. Weakness: mostly the existing Reports tabs stacked on one page, 2168 px at 390; a month about 1,500 reads.
+- B: tells T1 in order. Weakness: T2 about 60 taps; the phone's first screen shows no record at all.
+
+Reject A's Prep, Team, Supplier orders and Functions folds: they repeat tabs that already exist (Things 3). Reject B's Team rows at 10:00 and 15:00: they show a plan as if it happened (Flighty). Reject C's calendar grid: use C's own phone list of days at every width, no new pattern (Linear). A blend of all three: no; three time models and nine status chips on one page; a day showing every kind costs about 80 reads instead of about 40. Recommendation: C as a dated list of days; downside "everything for last Saturday" still needs the other tabs.
+
+**Set 2.** Structurally different: yes. Rank C, B, A.
+- C: the cook writes the weight. Weakness: the Logged often chip still fills 2 kg, so the same item fills differently by path; "Last time was 2 kg" invites copying it.
+- B: nothing filled without a tap. Weakness: on Orders it sits beside today's "Add 2 tubs", two 2-tub buttons on one sheet.
+- A: fewest taps. Weakness: a 2 kg nobody weighed can be saved; Log it below the first screen.
+
+Take A's "Log 2 kg Chips" (the button names what it saves). Take B's Undo fill; reject B on Orders (duplicates a control). Reject C on Orders: "2 tubs" three times on one screen, and a chef reviews requests anyway. A blend: yes, cheap: C's filled fields, A's Log it words, B's Undo fill; conflict: B's offer cannot exist alongside filling as you type. Recommendation: that blend on Wastage and Transfers; on Orders, A's change (today's fill, its words moved under the box). Downside: one more typed box, and the chip and typed paths disagree on the amount.
+
+Try to break it:
+- S1. Status words contradict the rows. Head chef, 8 Nov. Expected: a part marked "None" or "Kept from 14 Nov" shows no rows for that day. The pictures: B shows "NONE Functions" with an 18:00 Function row, and three cooling rows under "Kept from 14 Nov"; A says "3 stages confirmed" for 2 to 8 Nov. Impact: a print handed to an inspector contradicts itself. **Reproduced (Preview).** Repair: build each chip from the same results that draw the rows; test that a None or Not kept part has zero rows, in the print too.
+- S2. Wrong weekdays. 8 Nov 2026 is a Sunday; A ("Sun 2 Nov to Sat 8 Nov"), B, and C's day detail and phone list say Saturday; C's 1280 grid correctly puts 8 under SUN. Impact: "last Saturday" opens the wrong day; a food safety record carries wrong dates. **Reproduced (Preview)**; the app's own labels Not evidenced. Repair: labels from the Queensland date helpers; a test pinning 8 Nov 2026 as Sunday at 390 and 1280 px and in the print.
+- S3. A fill that confirms itself. Bo in a rush, A: types Chips, scrolls, Log it; 2 kg saved and E1 counts it as "kept", so the counter reports the guess as right. Risk / Not evidenced. Repair: save which fields were filled and left unchanged, and count those apart from changed ones.
+
+Contract fit: status words, FILLED tags and no-limits wording fit. S1 breaks the "None" rule. C's grid would need a `design-patterns.md` entry. The Section and Amount boxes show the fill only with italic, not with a word.
+
+Not evidenced: the print; Log it's words and switched-off state below 989 px; Undo restoring what the cook typed; changing the name clearing only filled fields; C's failed nightly count saying "Not counted", never "0 deliveries" or "Cleaning done"; a Pass check after Queensland midnight landing on the right day; measured read counts; sous chef and staff refused, on the emulator.
+
+Lead's check: 8 November 2026 is a Sunday (confirmed). The preview's day labels and status chips were the lead's synthetic fixture, not the book's code; both faults are corrected in the combined preview.
