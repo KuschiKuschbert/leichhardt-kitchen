@@ -206,7 +206,7 @@ Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records
 | Admin dashboard, selected A with B's headlines (3 Nov 2026) | `docs/admin-dashboard-options/brief.md` |
 | Admin pages redesign, selected B: Four rooms on the shared page kit (4 Nov 2026), built in seven steps by 5 Nov 2026 | `docs/admin-pages-options/brief.md` |
 | Prep, Orders, Wastage, Transfers and chef hat redesign, selected: shared fixes, then A with four pieces of B (3 Nov 2026), built in steps, the last on 4 Nov 2026 | `docs/work-pages-design-options/brief.md` |
-| Keep the screen on with a recipe open (13 Nov 2026): round 1 Build smaller 3 of 5; round 2 A 44, B 34, C 20; recommended A's chip on the card + B's Settings row, off until tapped; not chosen yet | `docs/keep-screen-on-options/brief.md` |
+| Keep the screen on with a recipe open (14 Nov 2026): round 1 Build smaller 3 of 5; round 2 A 44, B 34, C 20; chosen and built: A's chip on the trail line (`koRow()`, `koSync()` in `js/app.js`, `.ko-*` in `css/app.css`) + B's Settings row, off until tapped, the trail without the recipe's own name on phones; `tests/keep-screen-on.test.js` | `docs/keep-screen-on-options/brief.md` |
 | Settings page for each role, selected A: One sorted page (3 Nov 2026) | `docs/settings-options/brief.md`, `docs/device-sessions.md` |
 | Seasonal celebration redesign, recommended set selected (3 Nov 2026) | `docs/celebration-options/brief.md` |
 | Recipe and drawing editor layout, selected A's chapters with B's full-screen studio (3 Nov 2026) | `docs/recipe-editor-options/brief.md` |

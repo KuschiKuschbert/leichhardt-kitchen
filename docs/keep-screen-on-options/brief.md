@@ -1,6 +1,6 @@
 # Keep the screen on with a recipe open
 
-Requested by the head chef on 13 November 2026: "In my app when on a mobile device can we have the option in the recipes for a leave screen on toggle? ... It's annoying having the recipes open and the screen turns off." **Not chosen yet.** Recommended: the combined design (A's chip on the card + B's Settings row), off until a cook taps it. This brief holds the council's two rounds, three designs, the mix and the recommendation. The previews are screenshots of the real recipe page in the click-test stand-in, with each design drawn into it; nothing in the book has changed.
+Requested by the head chef on 14 November 2026: "In my app when on a mobile device can we have the option in the recipes for a leave screen on toggle? ... It's annoying having the recipes open and the screen turns off." **Chosen 14 November 2026: the combined design (A's chip on the card + B's Settings row), off until a cook taps it, and the trail drops the recipe's own name on phones** ("Yeah go for gold", to both recommendations). Built in the same pull request as this brief (#698). This brief holds the council's two rounds, three designs, the mix and the recommendation. The previews are screenshots of the real recipe page in the click-test stand-in, with each design drawn into it; nothing in the book has changed.
 
 Evidence: commit `5dff5a6` (main), staff Bo signed in, 390 x 844 px unless stated, normal text, Chicken Burger (`#/r/burger`) and the longest recipe name, Salt and Szechuan Pepper Calamari (`#/r/calamari`). All measurements are **Preview** (the real app and shell with the design drawn in by a script), not an implemented feature. This is role-based analysis, not research with real staff.
 
@@ -14,7 +14,7 @@ A cook opens a recipe on a phone or the shared tablet, props it on the bench and
 
 The browser's Screen Wake Lock (`navigator.wakeLock.request('screen')`) can hold the screen on while the book is on screen. No permission prompt. Supported by Chrome and Samsung Internet on Android, Safari 16.4+ and Firefox 126+. An iPhone **home-screen app** only holds it from iOS 18.4. The browser lets go whenever the page is hidden (side button, app switch) and may refuse, for example in some battery saver modes.
 
-## Round 1: should we build it? (13 Nov 2026)
+## Round 1: should we build it? (14 Nov 2026)
 
 **Verdict: Build smaller (3 of 5).** Every reviewer agreed the problem is real and cheap to fix: no reads, writes, listeners, rules, new files or security header change.
 
@@ -109,7 +109,7 @@ A wide "Cook from this" button sits above the method's "Tap a step to tick it of
 | State shown on the recipe | Chip words | Nothing | Dark bar |
 | Remembered | On this phone | On this phone | No |
 
-## Round 2: scores (13 Nov 2026)
+## Round 2: scores (14 Nov 2026)
 
 Six fresh reviewers (the five from round 1 and the kitchen screen designer) saw all three designs, the same contract excerpts, the previews and the measurements. Scores out of 10 (10 = best for the kitchen), as each reviewer gave them. All six said the designs differ in structure (default, where the control lives, and what it covers), not just in looks.
 
@@ -244,7 +244,28 @@ Today's tab bar labels already run together at 320 px with Large text (seen in t
 - **Disagreement kept:** the Skeptic wanted no Settings row; the head chef reviewer called it optional. The cook, new starter and screen designer preferred on by itself. The screen designer would prefer the Settings row's Off and On chips in the same orange as the card; they stay like Text size beside them.
 - **Unresolved until built:** rendered contrast, reduced motion, every Break-it row above, and the real-device checks below.
 
-## Build and verification plan
+## Chosen
+
+The owner chose the recommendation on 14 November 2026 ("Yeah go for gold"): the combined design, off until a cook taps it, and the trail without the recipe's own name on phones. The session could push only to its own branch, so the build went into the same pull request as this brief (#698).
+
+### After the tap (`docs/action-feedback.md`, For a new action)
+
+| Question | Keep screen on |
+| --- | --- |
+| What changes in the tap's own frame? | The chip's edge and words turn orange while the phone is asked (`is-asking`); a tap on "Screen on" turns it back to "Keep screen on" at once |
+| What confirms it, in which words, where? | "Screen on" with a tick, on the chip itself, only once the phone has granted it |
+| What do the old words do? | "Keep screen on" is hidden in the same cell; the chip keeps one width |
+| Where is the person afterwards? | Where they were: nothing scrolls or moves |
+| What does a failure show? | "This phone will not keep the screen on. Battery saver may be on." in red under the trail, read out (`role="alert"`), until the next tap or leaving the recipe. Nothing typed to keep |
+| Can it be undone? | One tap on the chip, either way |
+
+### Built (Implemented app, click-test stand-in)
+
+`tests/keep-screen-on.test.js`, 45 checks, all passing with a stand-in screen lock: off by default and nothing asked; one tap holds and is saved; recipe to recipe keeps one lock; the recipe list and Prep let go; back on a recipe asks by itself; hidden lets go and shown asks again; a touch restarts the 15 minutes; 15 minutes without a touch lets go and the next touch holds again; remembered after a reload; tap again lets go and saves off; a refused tap says so in words and is read out; 20 touches after a refusal make no new request; two quick taps with a slow answer give one request and one lock; a shared screen's idle lock lets go; Tiles card; no chip on a laptop, without a screen lock, in an iPhone home-screen app on iOS 17.5 or an iPad home-screen app with no version (offered on 18.4 and in Safari); a tablet at 768 px keeps the whole trail; the Settings row. Measured in the full app at 390 px: the name and allergens at 301 and 408 px with and without the chip, and 188 and 410 px on a Tiles card, as in the preview. No sideways scroll at 390 and 768 px.
+
+Still to check on real devices after it is live: Android Chrome, a Samsung with battery saver on, iPhone Safari, an iPhone home-screen app on 18.4 or later (and an older one, which should show no chip), and the shared tablet through its idle lock and the 04:00 reload. Rendered contrast and reduced motion: the chip has no motion; contrast is calculated, not measured.
+
+## Build and verification plan (as planned before the choice)
 
 One pull request once the head chef chooses, so every phone reloads once.
 

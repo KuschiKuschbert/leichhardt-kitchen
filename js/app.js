@@ -877,8 +877,108 @@
       var last = i === stack.length - 1;
       parts.push(last ? '<span aria-current="page">' + esc(byId[id].name) + '</span>' : '<a href="' + href(stack.slice(0, i + 1)) + '">' + esc(byId[id].name) + '</a>');
     });
-    return '<nav class="crumbs" aria-label="Breadcrumb">' + parts.join('<span class="sep" aria-hidden="true">/</span>') + '</nav>';
+    // the / before the card's own name is .ko-sep: beside Keep screen on, a phone shows only the links (koRow())
+    return '<nav class="crumbs" aria-label="Breadcrumb">' + parts.map(function (p, i) {
+      return (i ? '<span class="sep' + (i === parts.length - 1 ? ' ko-sep' : '') + '" aria-hidden="true">/</span>' : '') + p;
+    }).join('') + '</nav>';
   }
+
+  /* ---------- Keep the screen on with a recipe open (head chef, 14 Nov 2026, docs/keep-screen-on-options/brief.md) ----------
+     A chip at the right of every recipe's trail line, on a touch screen whose browser can hold the screen on, and the
+     same switch in Settings, This phone. Off until a cook taps it. The choice is remembered on this phone
+     (settings.keepOn in lk.settings.v1: a choice, not a copy of anything, so nothing makes it out of date).
+     The chip says "Screen on" only while the browser really holds the screen on (the lock's release event), and a tap
+     does what its words said when the finger went down. One lock at a time, asked for once. It lets go on any other
+     page, when the book is hidden (the browser does that), while this device is locked (a shared screen's idle lock,
+     the 04:00 lock: LK_PREP.workLock()), and after 15 minutes without a touch, so a phone left in a pocket goes dark.
+     Waking the phone or the next touch asks again. After the phone says no, only a tap on the chip or the book coming
+     back on screen asks again, never every touch. No reads, no writes. */
+  var KO_IDLE = 15 * 60000;
+  var KO_SAY = 'This phone will not keep the screen on. Battery saver may be on.';
+  var ko = { lock: null, asking: false, paused: false, refused: false, said: false, tap: false, down: null, timer: null, at: '' };
+  // an iPhone or iPad home-screen app said yes before iOS 18.4 and still let the screen sleep: not offered there, nor
+  // where its version cannot be read (an iPad home-screen app can name a Mac and no version)
+  function koAppleApp() {
+    var n = navigator, ua = n.userAgent || '';
+    var home = n.standalone === true || !!(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    return home && (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && n.maxTouchPoints > 1));
+  }
+  function koAppleOld() {
+    var ua = navigator.userAgent || '', m = / OS (\d+)_(\d+)/.exec(ua) || /Version\/(\d+)\.(\d+)/.exec(ua);
+    return !m || +m[1] < 18 || (+m[1] === 18 && +m[2] < 4);
+  }
+  function koCan() {
+    var w = navigator.wakeLock;
+    if (!w || typeof w.request !== 'function') return false;
+    if (!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches)) return false;
+    return !(koAppleApp() && koAppleOld());
+  }
+  function koLocked() { return !!(window.LK_PREP && window.LK_PREP.workLock && window.LK_PREP.workLock()); }
+  function koWant() {
+    return !!settings.keepOn && !ko.paused && !ko.refused && document.visibilityState === 'visible' && parseRoute().name === 'recipe' && !koLocked() && koCan();
+  }
+  function koChip() {
+    if (!koCan()) return '';
+    // both words share one cell, so the chip keeps one width; the hidden one is out of the accessible name too
+    return '<button type="button" class="ko-chip' + (ko.asking ? ' is-asking' : '') + '" data-act="keepon" aria-label="Keep screen on" aria-pressed="' + !!ko.lock + '">' +
+      '<span class="ko-w"><span class="ko-off">Keep screen on</span><span class="ko-on">' + ICON.check + '<span>Screen on</span></span></span></button>';
+  }
+  function koSayHTML() { return '<p class="ko-say" role="alert">' + KO_SAY + '</p>'; }
+  // the trail with the chip at its right; where the chip is not offered, the trail as it was
+  function koRow(trail) {
+    var c = koChip();
+    return c ? '<div class="ko-row">' + trail + c + '</div>' + (ko.said ? koSayHTML() : '') : trail;
+  }
+  function koPaint() {
+    Array.prototype.forEach.call(app.querySelectorAll('.ko-chip'), function (b) { b.setAttribute('aria-pressed', String(!!ko.lock)); b.classList.toggle('is-asking', ko.asking); });
+    var row = app.querySelector('.ko-row'), say = app.querySelector('.ko-say');
+    if (ko.said && row && !say) row.insertAdjacentHTML('afterend', koSayHTML());
+    else if (!ko.said && say) say.remove();
+  }
+  function koIdle() {
+    clearTimeout(ko.timer);
+    ko.timer = settings.keepOn ? setTimeout(function () { ko.paused = true; koSync(); }, KO_IDLE) : null;
+  }
+  function koLetGo() {
+    var s = ko.lock; ko.lock = null;
+    if (s) s.release().catch(function () {});
+    koPaint();
+  }
+  function koAsk() {
+    if (ko.lock || ko.asking) return;
+    var asked;
+    ko.asking = true; koPaint();
+    try { asked = navigator.wakeLock.request('screen'); } catch (e) { asked = Promise.reject(e); }
+    asked.then(function (s) {
+      ko.asking = false; ko.tap = false;
+      // left the recipe, tapped it off or locked while the phone answered
+      if (!koWant()) { s.release().catch(function () {}); koPaint(); return; }
+      ko.lock = s; ko.said = false;
+      s.addEventListener('release', function () { if (ko.lock === s) { ko.lock = null; koPaint(); } });
+      koIdle(); koPaint();
+    }, function () {
+      // said in words only when the cook asked by tapping; a refusal on its own leaves the chip off, quietly
+      ko.asking = false; ko.refused = true; if (ko.tap) ko.said = true; ko.tap = false; koPaint();
+    });
+  }
+  function koSync() {
+    if (location.hash !== ko.at) { ko.at = location.hash; ko.said = false; }
+    if (koWant()) koAsk(); else if (ko.lock) koLetGo(); else koPaint();
+  }
+  function koTouch(e) {
+    var c = e.target && e.target.closest && e.target.closest('.ko-chip');
+    if (c) { ko.down = c.getAttribute('aria-pressed') === 'true'; return; }
+    ko.down = null;
+    if (!settings.keepOn || parseRoute().name !== 'recipe') return;
+    koIdle();
+    if (ko.paused) { ko.paused = false; koSync(); }
+  }
+  document.addEventListener('pointerdown', koTouch, true);
+  document.addEventListener('keydown', koTouch, true);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') { ko.paused = false; ko.refused = false; ko.said = false; koIdle(); }
+    koSync();
+  });
   /* Phones and tablets (the columns stack): jump straight to each part of the card. Since the redesign's step 6
      (8 Nov 2026, one scrolling card, Airbnb's section row) the row stays under the top bar while the card scrolls, so
      the allergens are one tap from the method, and after Allergens, Ingredients and Method (first, as before, so all
@@ -899,7 +999,7 @@
     if (el && route.name === 'recipe') el.outerHTML = editSlot(byId[route.stack[route.stack.length - 1]]);
   }
   function recipeCard(r, stack, withHome) {
-    return '<article class="card' + (r.done ? ' done' : '') + '">' + crumbs(stack, withHome) + cardHead(r) + editSlot(r) + jumps(r, false) + allergenBox(r) +
+    return '<article class="card' + (r.done ? ' done' : '') + '">' + koRow(crumbs(stack, withHome)) + cardHead(r) + editSlot(r) + jumps(r, false) + allergenBox(r) +
       '<div class="cols"><div class="col"><h3 class="h3" id="r-ing">Ingredients</h3>' + ingTable(r, stack, false) + tipBox(r) + guideBox(r) + usedBox(r, stack) +
       (isDish(r) && r.art && ART.plates[r.art] ? '<div class="sec" id="r-plate"><h3 class="h3">On the plate</h3>' + art(r, 'card-art') + '</div>' : '') + sideView(r) +
       (!isDish(r) && r.art && ART.pans[r.art] ? '<div class="sec" id="r-plate"><h3 class="h3">In the pan</h3>' + art(r, 'card-art') + '</div>' : '') + '</div>' +
@@ -1057,10 +1157,10 @@
         searchField('Dish, ingredient or allergen', passCount()) + kindChips() + allergenRow() + recipeStatusHTML() + '<div id="shelves" class="shelves">' + shelvesHTML() + '</div></main>' + footer() + '</div>';
     }
     var r = byId[stack[stack.length - 1]], dish = isDish(r);
-    var trail = '<nav class="trail crumbs" aria-label="Breadcrumb"><a href="#/recipes">The pass</a>' + stack.map(function (id, i) {
+    var trail = koRow('<nav class="trail crumbs" aria-label="Breadcrumb"><a href="#/recipes">The pass</a>' + stack.map(function (id, i) {
       var last = i === stack.length - 1;
-      return '<span class="sep" aria-hidden="true">/</span>' + (last ? '<span aria-current="page">' + esc(byId[id].name) + '</span>' : '<a href="' + href(stack.slice(0, i + 1)) + '">' + esc(byId[id].name) + '</a>');
-    }).join('') + '</nav>';
+      return '<span class="sep' + (last ? ' ko-sep' : '') + '" aria-hidden="true">/</span>' + (last ? '<span aria-current="page">' + esc(byId[id].name) + '</span>' : '<a href="' + href(stack.slice(0, i + 1)) + '">' + esc(byId[id].name) + '</a>');
+    }).join('') + '</nav>');
     var left;
     if (dish) {
       var pk = ui.pick !== null && r.pins[ui.pick] && !r.pins[ui.pick].link ? r.pins[ui.pick] : null;
@@ -1509,6 +1609,9 @@
         return '<button type="button" class="chip" data-act="settext" data-val="' + t[0] + '" data-k="settext:' + t[0] + '" aria-pressed="' + (settings.text === t[0]) + '">' + esc(t[1]) + '</button>';
       }).join('') + '</div>') +
       stRow('opens', 'Recipes open with', (VIEWS.filter(function (v) { return v.id === settings.view; })[0] || VIEWS[0]).name, '<p class="hint">How the recipes look when you arrive, on a computer and on a phone.</p>' + viewOptions('setview'), { aria: 'Opens with' }) +
+      // the same choice as Keep screen on at the top of every recipe (koChip()), only where this phone can do it
+      (koCan() ? stRow('keepon', 'Keep the screen on with a recipe open', settings.keepOn ? 'On' : 'Off', '<p class="hint">The same switch as Keep screen on at the top of every recipe. While a recipe is open, this phone or tablet keeps its screen on. It sleeps as normal on every other page, when you press the side button, and after 15 minutes without a touch.</p>' +
+        '<div class="chips" role="group" aria-label="Keep the screen on with a recipe open"><button type="button" class="chip" data-act="setkeepon" data-val="0" data-k="setkeepon:0" aria-pressed="' + !settings.keepOn + '">Off</button><button type="button" class="chip" data-act="setkeepon" data-val="1" data-k="setkeepon:1" aria-pressed="' + !!settings.keepOn + '">On</button></div>', { aria: 'Keep the screen on' }) : '') +
       stRow('season', 'Seasonal celebrations', stSeason(), '<div id="kb-seasonal-settings"></div>') +
       stRow('device', 'How this device is used', DEVICE_SAY[mode] ? DEVICE_SAY[mode][0] : 'Not chosen yet', deviceBody, { aria: 'This device' }) +
       stRow('install', 'Install the app', isStandalone() || installedNow ? 'Installed' : 'Not installed', installHTML(), { aria: 'Install the app' }) +
@@ -1768,6 +1871,7 @@
     else if (window.LK_PREP && window.LK_PREP.warm && !warmed) { warmed = true; setTimeout(function () { window.LK_PREP.warm(); }, 900); }
     backSync();
     mascotSync();
+    koSync();   // Keep screen on: holds on a recipe page when chosen, lets go everywhere else and while this device is locked
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
     document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'transfers' ? 'Transfers · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'todo' ? 'Chef to-do · ' : route.name === 'team' ? 'Today\'s team · ' : route.name === 'suppliers' ? 'Supplier order · ' : route.name === 'manage' ? 'Manage Recipes & Drawings · ' : route.name === 'fn' ? 'Functions · ' : route.name === 'functions' ? 'Manage functions · ' : route.name === 'cleaning' ? 'Kitchen cleaning · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : route.name === 'chef' ? 'Chef panel · ' : '')) + 'Leichhardt Kitchen Book';
     var prevRoute = lastRoute; lastRoute = route.name;
@@ -1990,6 +2094,15 @@
       render(); var fi = document.getElementById('find'); if (fi) fi.focus(); return;
     }
     if (act === 'jump') { var jt = document.getElementById(val); if (jt) jt.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    // Keep screen on: the tap does what the chip said when the finger went down (koTouch()), so a hold that lands
+    // between finger down and up cannot turn a "keep it on" into "let it sleep". The words change once the phone answers.
+    if (act === 'keepon') {
+      var wasOn = ko.down === null ? el.getAttribute('aria-pressed') === 'true' : ko.down;
+      ko.down = null; ko.said = false;
+      if (wasOn) { settings.keepOn = false; saveSettings(); clearTimeout(ko.timer); koLetGo(); return; }
+      settings.keepOn = true; saveSettings(); ko.refused = false; ko.paused = false; ko.tap = true; koIdle(); koSync();
+      return;
+    }
     // a page loaded on its own that is a different version from the book (Reload the book): Update now's own path in
     // js/upkeep.js, so it waits for a change to send, asks before half a line goes and never reloads with no signal
     if (act === 'reload') { if (window.LK_UPDATE) window.LK_UPDATE.now(); else location.reload(); return; }
@@ -2037,6 +2150,7 @@
     else if (act === 'device-choice') { if (window.LK_DEVICE) window.LK_DEVICE.settings(); return; }
     else if (act === 'device-forget') { if (window.LK_DEVICE) window.LK_DEVICE.forget(); return; }
     else if (act === 'setpractice') { settings.practice = val === '1'; saveSettings(); }
+    else if (act === 'setkeepon') { settings.keepOn = val === '1'; saveSettings(); ko.refused = false; ko.paused = false; }
     else if (act === 'installno') { settings.installNo = true; saveSettings(); }
     else if (act === 'install') {
       if (installEvt) {
