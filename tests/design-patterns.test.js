@@ -16,6 +16,7 @@ const js = jsFiles.map(read).join('\n');
 const CLASSES = [
   'hm-welcome', 'hm-welcome-long', 'hm-welcome-compact', 'mascot', 'mascot-host', 'mascot-still', 'nb-fin', 'nb-fin-art', 'nb-fin-w', 'nb-fin-say', 'nb-fin-sec', 'tm-glance', 'nb-scene', 'nb-w40', 'nb-w28', 'nb-f192', 'nb-f96', 'nb-f64', 'nb-f48', 'nb-f0', 'nb-noart', 'p-toast-two', 'p-toast-say',
   'su-last-kind', 'su-last-wide', 'su-last-dow',
+  'ko-row', 'ko-chip', 'ko-say',
   'cooling-clock', 'cooling-clock-status', 'cooling-chip', 'cooling-menu', 'cooling-row', 'cooling-start', 'cooling-status', 'cooling-error',
   'ux-swipe', 'ux-swipe-handle', 'ux-swipe-dragging',
   'ux-modal', 'ux-modal-close', 'ux-modal-head', 'ux-modal-title', 'ux-modal-grip', 'ux-modal-shade',

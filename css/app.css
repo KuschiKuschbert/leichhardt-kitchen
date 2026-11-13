@@ -251,6 +251,23 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .dish .d-sub { font-size: 0.8125rem; line-height: 1.3; color: var(--muted); }
 .trail { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
 .trail .sep { color: var(--faint); }
+/* Keep screen on (head chef, 14 Nov 2026, docs/keep-screen-on-options/brief.md): a choosing chip at the right of a
+   recipe's trail line, on a touch screen that can hold the screen on (koRow() in js/app.js). Off: the plain outline and
+   "Keep screen on". On: an orange edge and words with a tick, "Screen on", only while the phone holds it. Both words
+   share one cell, so the chip keeps its width. On a phone the trail keeps its links and drops the card's own name,
+   which is the heading right under it; a screen reader still hears it. */
+.ko-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.5rem; }
+.ko-row > .crumbs { min-width: 0; }
+.ko-chip { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 0.8rem; border-radius: var(--r-pick); border: 1.5px solid var(--ink); background: var(--paper); color: var(--ink); font: inherit; font-weight: 600; font-size: 0.875rem; white-space: nowrap; cursor: pointer; }
+.ko-chip[aria-pressed="true"], .ko-chip.is-asking { border-color: var(--small-ink); color: var(--small-ink); }
+.ko-w { display: inline-grid; }
+.ko-w > span { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; }
+.ko-chip[aria-pressed="true"] .ko-off, .ko-chip:not([aria-pressed="true"]) .ko-on { visibility: hidden; }
+.ko-say { margin: 0.2rem 0 0; font-size: 0.875rem; color: var(--bad-ink); }
+@media not all and (min-width: 600px) {
+  .ko-row .crumbs [aria-current], .ko-row .crumbs .ko-sep { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+@media print { .ko-chip, .ko-say { display: none; } }
 .stage { position: relative; width: 100%; max-width: 30rem; margin: 0 auto; }
 .stage .art { transition: opacity 0.15s; }
 .stage.lensed .art { opacity: 0.45; }

@@ -11,7 +11,7 @@ with the accessible name "Kitchen Book, home". Its tap area is at least 44 px. T
 has no Back control. The header grows no taller for
 Back. Its accessible label and tooltip name the destination, and its keyboard focus uses the book's existing
 outline. Primary Save and Record controls keep their size. No separate return row, repeated editor footer or
-floating recipe Zoom out control is added. Recipe hierarchy links stay available as quiet breadcrumbs.
+floating recipe Zoom out control is added. Recipe hierarchy links stay available as quiet breadcrumbs. Where a recipe's trail line holds Keep screen on (a phone or tablet that can keep its screen on, 14 Nov 2026), a phone below 600 px shows the links only and drops the recipe's own name, which is the heading right under it; a screen reader still hears it as the current page ([brief](keep-screen-on-options/brief.md)).
 
 ### Mobile logo, 8 November 2026
 
