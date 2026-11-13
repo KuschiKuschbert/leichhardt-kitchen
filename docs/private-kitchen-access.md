@@ -41,7 +41,7 @@ Operational Firestore records use an in-memory cache. Private screens are gated 
 
 1. Run all browser and emulator checks on the feature branch.
 2. Run `scripts/access-bootstrap.mjs` with the existing admin service account and kitchen PIN. It idempotently adds `fnOnlyIds`, builds the minimal roster and mirrors current recipe assets. No existing records are deleted, and no secrets or document contents are logged.
-3. Release the client, then publish the stricter rules with **Publish rules**. The workflow automatically runs after a successful main-branch Pages deployment when access rules or preparation code changed; it is also available manually. The workflow repeats the preparation safely and runs the updated signed-out lock probe. Stale clients may be refused until refreshed, which is preferable to leaving private data open.
+3. Release the client, then publish the stricter rules with **Publish rules**. The workflow automatically runs once **Publish site** has brought the site up to date with a main-branch commit (or after GitHub's own Pages deployment while Pages still publishes from the branch, `docs/site-publishing.md`) when access rules or preparation code changed; it is also available manually. The workflow repeats the preparation safely and runs the updated signed-out lock probe. Stale clients may be refused until refreshed, which is preferable to leaving private data open.
 4. Verify the Pages release, live lock probe, and live browser tests. Do not call source-only changes a live security fix.
 
 The browser's **Shared device** option no longer grants guest access. Google alone is not an operational login. The matching head-chef PIN and device grant are required. Shared-device locks clear Google locally without revoking other devices.

@@ -1,0 +1,101 @@
+# Publish the book to GitHub Pages, only when a file the phones load has changed (13 Nov 2026, docs/site-publishing.md).
+# Every publish gives every file a new Last-Modified and ETag, and the book reads those to decide there is a new
+# version: each phone then shows "New version available" and downloads all its startup files again. GitHub's own
+# publish from the branch ran on every merge, notes and tests included: 14 of the 50 merges from 6 to 12 November
+# changed nothing a phone loads. This compares the commit on main with the commit that is live now and publishes
+# only when scripts/site-changed.sh finds a file the site needs. Run it by hand (Run workflow) to publish anyway.
+# Needs Settings, Pages, Source: GitHub Actions. While Pages still publishes from the branch this only says so.
+# Live click tests follow the Deploy job; Publish rules follows the Published job (it also runs when nothing was published).
+name: Publish site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  deployments: read
+
+# One publish at a time, never cut short. A run waiting behind it is replaced by a newer one, which compares
+# with what is live, so it carries the replaced run's changes too.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      deploy: ${{ steps.decide.outputs.deploy }}
+      source: ${{ steps.decide.outputs.source }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - name: Decide whether the phones need a new copy
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          source=$(gh api "repos/$REPO/pages" --jq .build_type 2>/dev/null || echo unknown)
+          echo "source=$source" >> "$GITHUB_OUTPUT"
+          if [ "$source" = legacy ]; then
+            echo "::warning::Pages still publishes from the branch on every push. Set Settings, Pages, Source to GitHub Actions. Until then this workflow publishes nothing."
+            echo "deploy=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if [ "$EVENT" = workflow_dispatch ]; then
+            echo "Run by hand: publishing."; echo "deploy=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          # the commit that is live now: the newest github-pages deployment whose latest status is success
+          live=""
+          for pair in $(gh api "repos/$REPO/deployments?environment=github-pages&per_page=30" --jq '.[] | "\(.id):\(.sha)"' 2>/dev/null || true); do
+            state=$(gh api "repos/$REPO/deployments/${pair%%:*}/statuses?per_page=1" --jq '.[0].state' 2>/dev/null || true)
+            if [ "$state" = success ]; then live=${pair#*:}; break; fi
+          done
+          if [ -z "$live" ] || ! git cat-file -e "$live^{commit}" 2>/dev/null; then
+            echo "No live commit found: publishing."; echo "deploy=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          need=$(git diff --no-renames --name-only "$live" HEAD | bash scripts/site-changed.sh)
+          if [ -n "$need" ]; then
+            echo "Live is ${live:0:7}. Files the site needs changed since:"; echo "$need" | head -20
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Live is ${live:0:7}. Nothing the phones load changed since: not publishing, so no phone is asked to update."
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    name: Deploy
+    needs: check
+    if: needs.check.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      # v3 keeps dotfiles such as .nojekyll and leaves out .git and .github, like the publish from the branch
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  published:
+    name: Published
+    needs: [check, deploy]
+    if: ${{ always() && needs.check.result == 'success' && needs.check.outputs.source != 'legacy' && (needs.deploy.result == 'success' || needs.deploy.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - run: echo "The site is up to date with this commit."
