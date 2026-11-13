@@ -37,7 +37,7 @@ Supplier last-order references (9 November 2026): selecting or refreshing an ord
 | Source | Reads a day now | Notes |
 | --- | --- | --- |
 | Phones, tablets and laptops | about 44,000 by 13:00 on 5 Nov | See the next table. |
-| Nightly backup | about 2,500 to 2,800 | Reads 45 days of everything. About 4,000 once 45 days of data exist. |
+| Nightly backup | about 2,500 to 2,800 | Reads 45 days of everything. About 4,000 once 45 days of data exist. Weekly since Plan C 4.3 (Sundays): about 4,000 once a week, about 600 a day on average. |
 | Nightly analysis | about 1,770, plus about 400 for Today's team | Reads 90 days, about 280 of them empty days before the book started. Since 7 Nov 2026 also 8 weeks of `team/<day>` plans (up to 56) and 30 days of section picks (`shifts`, about 12 a day) for `teamsum/main`. |
 | Nightly learning and summaries | about 800 | Reads every learning claim ever, growing each night. |
 | Publish rules | 0 to 200, 850 on 4 Nov | Only when the rules change; 6 runs by hand on 4 Nov. |
@@ -71,12 +71,12 @@ One real risk: **Move PIN** copies every record with one read and one write each
 
 The head chef chose **Plan C**: Plan B's small reads stay, and the Firebase project moves to the pay as you go (Blaze) plan with a budget alert. A day past the free 50,000 reads then costs a cent or two instead of stopping the book until 18:00, as it did at 13:00 on 5 November. The server jobs alone grow from about 6,000 to 11,000 or 12,000 reads a day by mid-January (above), so the margin shrinks without it.
 
-What the head chef does (a session cannot: it needs the billing account):
+The owner turned it on early on 14 November 2026 (kitchen time). What the head chef did (a session cannot: it needs the billing account):
 1. Firebase console, the project, Upgrade (bottom left, under the plan's name), choose Blaze, and pick or create the billing account.
 2. Google Cloud console, Billing, Budgets and alerts, Create budget for this project only: US$5 a month (or the same in the account's currency), alerts at 50%, 90% and 100% to the head chef's email. A budget alert warns; it does not stop spending, so a runaway read loop shows as an email, not an outage.
 3. Tell the next session it is on. Nothing in the book changes for the switch itself: the free amounts still apply each day, and the read budget test (`tests/read-budget.test.js`) keeps the reads small.
 
-What follows, each its own pull request once the plan is on: Google's scheduler runs the cut-off push job (7.3), so pushes come on time; Firestore's own scheduled backups replace the read-heavy nightly backup, keeping a weekly encrypted copy (4.3); later, the twice-daily check of the real read count (6.1). Until 7.3 is built the cut-off push offer says a push can come late (`pushHTML()` in `js/prep.js`, 13 Nov 2026).
+What follows, each its own pull request once the plan is on: Google's scheduler runs the cut-off push job (7.3), so pushes come on time; Firestore's own scheduled backups replace the read-heavy nightly backup, keeping a weekly encrypted copy (4.3, built 14 Nov 2026); later, the twice-daily check of the real read count (6.1). Until 7.3 is built the cut-off push offer says a push can come late (`pushHTML()` in `js/prep.js`, 13 Nov 2026).
 
 ## The decision: Plan B now, Plan C later (head chef, 5 November 2026)
 
@@ -111,7 +111,7 @@ Saves: reads a day on a normal day. Head chef: changes how the book works for th
 | 3.2 | PIN sign-in as a claim on the account (a server function), so rules read no session records | 5,000 to 10,000 | medium to high, needs pay as you go | Plan C or later |
 | 4.1 | Trim the nightly jobs: delete old analysis without reading it, skip days before the book started, recent learning claims only, one range query for the summaries | about 1,200 now | low | built 7 Nov: the first three (`scripts/analysis.mjs`, `scripts/nightly-learn.mjs`, `scripts/analysis-check.mjs`); the summaries' one range query left out (it needs a collection-group query on `lines` and its index in production, for about 40 reads a night) |
 | 4.2 | Analysis and backup read only changed days, full run on Sundays | 1,700 now, 8,000 by January | medium | built 7 Nov: the analysis reads the last 14 days and the days a fix names, the rest taken as published (`REUSE_DAYS`, `scripts/analysis-check.mjs`); the backup takes the same older days from last night's encrypted file (`PREV_BACKUP`, `scripts/backup-reuse-check.mjs`); every day on Sundays; past wastage fixes name their days too (`wDays`, 7 Nov 2026) |
-| 4.3 | Firestore's own scheduled backups (storage, no reads) replace the read-heavy nightly backup; keep a weekly encrypted copy | 2,500 to 4,000 | medium, head chef, needs pay as you go | Plan C, chosen 13 Nov 2026: next once the plan is on |
+| 4.3 | Firestore's own scheduled backups (storage, no reads) replace the read-heavy nightly backup; keep a weekly encrypted copy | 2,500 to 4,000 | medium, head chef, needs pay as you go | Plan C: built 14 Nov 2026 (daily kept 7 days, weekly kept 14 weeks, the encrypted copy on Sundays; `docs/backup-recovery.md`) |
 | 5.1 | Visits counted once a day; adds and ticks counted nightly | about 300 writes | low | not chosen |
 | 5.2 | Stop indexing free-text fields | stored size down 50 to 70% | medium | later |
 | 5.3 | Keep 13 months of lines, older ones as monthly digests | keeps storage flat | medium, head chef | later |

@@ -64,7 +64,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Back arrow and page trail | `docs/navigation.md` |
 | Merging, the queue, `urgent` | `docs/auto-merge.md` |
 | Publishing the site: only a merge that changes a file the phones load republishes; the book then updates silently when safe (no band unless asked) | `docs/site-publishing.md` |
-| Nightly backup and recovery | `docs/backup-recovery.md` |
+| Backups (Google's own daily and weekly, the weekly encrypted copy) and recovery | `docs/backup-recovery.md` |
 | Seasonal celebrations and festival dates | `docs/seasonal-celebrations.md`, `docs/seasonal-calendar.md`, `docs/celebration-options/brief.md` |
 
 ## Service council (5 Nov 2026)
@@ -104,7 +104,7 @@ After approval, implement small reversible units under the existing shipping rul
 - **Lazy:** `js/manage.js` (`mountManage()` in `js/app.js`); `js/draw.js`, `js/library.js`, `js/lib/*.js`, then `js/smart.js`, `js/compose.js`; `js/suppliers.js`, `js/supplier-core.js`, `js/supplier-store.js` (an authorised chef only); `js/deliveries.js`; `js/fnedit.js`; `js/admin-dashboard.js`, `js/analysis-core.js`, `js/admin-intelligence.js`, `js/proofreader-admin.js` (from `js/prep.js`); `js/mascot.js` (`mascotSync()` in `js/app.js`).
 - **Rules and tests:** `firestore.rules` (a template, see Never in this repo); `tests/` (click tests, with a stand-in for Firebase in `tests/fake/`), `tests/rules/` (the rules on the emulator).
 - **Shipping:** `.github/workflows/publish-site.yml` with `scripts/site-changed.sh` (Publish site: only when the phones need it), `.github/workflows/pr-tests.yml` (Click tests), `auto-merge.yml` (the queue: `tests/auto-merge-queue.test.js` finds its step "Move the queue on by one" by name, so change the two together), `council-check.yml` and `scripts/council-check.mjs`, `flaky-report.yml`, `publish-rules.yml` with `scripts/publish-rules.sh`, `lock-probe.yml`, `live-tests.yml`; `scripts/guard-main.mjs` (the main-branch hook in `.claude/settings.json`), `scripts/pre-merge.sh`, `.github/pull_request_template.md`.
-- **Server jobs:** `nightly-learning.yml` and `scripts/nightly-*.mjs` (03:00: learning counts, summaries, the analysis, day digests, `teamsum/main`; the phones never write learning counts), `nightly-backup.yml` (03:30, reads only), `cutoff-push.yml` and `scripts/cutoff-push.mjs` (every 10 minutes); one-off index jobs (`scripts/access-bootstrap.mjs`, `scripts/*-index.mjs`, proved by `scripts/*-check.mjs`: read the matching note first); `scripts/fold-recipes.mjs` (run it without `--write` first, never commit the Backup file).
+- **Server jobs:** `nightly-learning.yml` and `scripts/nightly-*.mjs` (03:00: learning counts, summaries, the analysis, day digests, `teamsum/main`; the phones never write learning counts), `nightly-backup.yml` (Weekly backup, Sundays 03:30, reads only), `cutoff-push.yml` and `scripts/cutoff-push.mjs` (every 10 minutes); one-off index jobs (`scripts/access-bootstrap.mjs`, `scripts/*-index.mjs`, proved by `scripts/*-check.mjs`: read the matching note first); `scripts/fold-recipes.mjs` (run it without `--write` first, never commit the Backup file).
 - **Other:** `README.md` (the overview), `menu-survey.md` (the menus behind the drawing library, no prices), `icons/`, `icon.svg`, `qr.svg`, `qr.png`, `qr-sign.pdf`, `art/mascot/` (mascot sprite sheets and stills, never in the saved shell).
 - **Codex:** `AGENTS.md` points each session here for the shared working rules.
 
