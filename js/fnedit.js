@@ -76,9 +76,11 @@
     d.name = f.name || ''; d.date = f.date || ''; d.startT = f.start ? M.kclock(f.start) : ''; d.st = !!f.st; d.loc = f.loc || ''; d.guests = f.guests ? String(f.guests) : ''; d.gu = !!f.gu;
     d.cname = (c && c.cname) || ''; d.phone = (c && c.phone) || ''; d.email = (c && c.email) || '';
     d.mode = f.mode || 'all'; d.notes = f.notes || ''; d.kc = f.kc || '';
-    d.rounds = (f.rounds || []).map(function (r) { return { d: M.kday(r.at), t: M.kclock(r.at), note: r.note || '' }; });
+    // a round with no time yet (at 0: the start is TBC) comes back on the function's date with an empty time. Before, it
+    // came back as 01/01/1970 10:00 and the next Save changes was refused (13 Nov 2026).
+    d.rounds = (f.rounds || []).map(function (r) { return r.at ? { d: M.kday(r.at), t: M.kclock(r.at), note: r.note || '' } : { d: d.date, t: '', note: r.note || '' }; });
     if (d.rounds.length) { d.foodDate = d.rounds[0].d; d.foodT = d.rounds[0].t; d.foodSet = f.rounds[0].at !== f.start; }
-    d.n = String(Math.max(2, n)); d.gap = n > 1 ? String(Math.max(1, Math.round((f.rounds[1].at - f.rounds[0].at) / M.MIN))) : '30';
+    d.n = String(Math.max(2, n)); d.gap = n > 1 && f.rounds[0].at && f.rounds[1].at ? String(Math.max(1, Math.round((f.rounds[1].at - f.rounds[0].at) / M.MIN))) : '30';
     d.lines = (f.lines || []).map(function (l) { return { rid: l.rid, name: l.name, unit: l.unit || 'platter', spec: l.spec || '', fp: l.fp || '', qty: String(l.qty), a: M.fromU(l.u, Math.max(1, n)) }; });
     d.custom = d.mode === 'stag' && d.lines.some(function (l) { return JSON.stringify(l.a) !== JSON.stringify(M.even(+l.qty || 0, n)); });
     return d;
