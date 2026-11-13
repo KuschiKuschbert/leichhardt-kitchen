@@ -102,7 +102,7 @@ async function check(b, hash, o, name, see, then) {
   // Records (13 Nov 2026): the nightly count's supplier, note, receiver and task names, on the month, the day and Everything
   const yd = L.ymd(new Date(L.NOW - 2 * 86400000)), rx = Object.assign({}, extra, {
     [fsKey(['analysis', 'dashboard'])]: { v: 1, generation: 'g1', at: L.NOW - 3600000, from: yd, to: yd, days: [{ day: yd, p: { n: 1, w: 1, t: 1, r: 0 }, w: {}, x: {},
-      fs: { v: 1, del: [{ at: '07:42', s: 'Supplier ' + P, c: 3, f: null, n: 'Note ' + P, by: 'By ' + P }], c: { cv: 1, due: 2, done: 0, miss: ['Task ' + P], missN: 1, unable: [{ t: 'Unable ' + P, n: 'Why ' + P }], unableN: 1, wait: [], waitN: 0, ev: 0, evRec: 0 } } }] } });
+      fs: { v: 1, del: [{ at: '07:42', s: 'Supplier ' + P, c: 3, f: null, n: 'Note ' + P, by: 'By ' + P }], c: { cv: 1, due: 2, done: 0, miss: ['Task ' + P], missN: 1, unable: [{ t: 'Unable ' + P, n: 'Why ' + P }], unableN: 1, wait: [], waitN: 0, ev: 0, evRec: 0 }, cool: { k: 'batch', start: '14:05', by: 'Cook ' + P, s2: '', s2by: '', r1: '16:07', r1by: 'Rec ' + P, r2: '', r2by: '' } } }] } });
   await check(b, '#/admin', { admin: true, who: '', extra: rx }, 'admin records', 'Supplier', async p => {
     await L.adminTab(p, 'records'); await L.waitFor(p, () => !!document.querySelector('.rec-dayrow'), null, 5000).catch(() => {});
     // clicks in the page: the fixture's shift ping note sits over it on a phone-sized check

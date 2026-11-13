@@ -4,7 +4,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import { dashDay } from './dashboard.mjs';
-import { CLEAN_V, cleanDay, dayDeliveries, at as qldAt } from './records-core.mjs';
+import { CLEAN_V, cleanDay, dayDeliveries, coolDay, at as qldAt } from './records-core.mjs';
 const core = createRequire(import.meta.url)('../js/analysis-core.js');
 const shift = (day, n) => new Date(Date.parse(day + 'T12:00:00Z') + n * 86400000).toISOString().slice(0, 10);
 const bytes = x => Buffer.byteLength(JSON.stringify(x));
@@ -156,7 +156,16 @@ export async function analyse(K, options = {}) {
       else for (const d of need) done = done.concat(await read(K.collection('cleaningDone').where('day', '==', d)));
       recReads += reads - r0;
     }
-    dash.forEach(row => { if (row && isDay(row.day)) row.fs = { v: 1, del: dayDeliveries(deliveries, row.day), c: counted(row.day) || cleanDay(tasks, done, row.day) }; });
+    // Cooling (14 Nov 2026): the current batch and its confirmations, 2 reads; a day already decided is carried
+    const kept = day => { const f = prevRows[day] && prevRows[day].fs; return f && f.cool && f.cool.k ? f.cool : null; };
+    const firstRun = !Object.keys(prevRows).some(d => kept(d)), yday = shift(today, -1), names = {};
+    (Array.isArray(cfg.people) ? cfg.people : []).forEach(p => { if (p && typeof p.id === 'string') names[p.id] = String(p.name || '').slice(0, 60); });
+    let cur = null, rec = null;
+    if (dash.some(r => r && isDay(r.day) && !kept(r.day))) {
+      const [a, b] = await Promise.all([K.collection('cooling').doc('current').get(), K.collection('cooling').doc('recorded').get()]); reads += 2; recReads += 2;
+      cur = a.exists ? a.data() : null; rec = b.exists ? b.data() : null;
+    }
+    dash.forEach(row => { if (row && isDay(row.day)) row.fs = { v: 1, del: dayDeliveries(deliveries, row.day), c: counted(row.day) || cleanDay(tasks, done, row.day), cool: kept(row.day) || coolDay(cur, rec, row.day, names, firstRun, yday) }; });
   } catch (e) {
     console.log('Records: the cleaning count was left out tonight (' + (e && e.message ? String(e.message).slice(0, 60) : 'error') + ')');
     dash.forEach(row => { if (row && isDay(row.day) && !row.fs) row.fs = { v: 1, del: dayDeliveries(deliveries, row.day), c: null }; });
@@ -178,8 +187,8 @@ export async function analyse(K, options = {}) {
   const pub = Object.fromEntries(publications);
   const people = (Array.isArray(cfg.people) ? cfg.people : []).filter(p => p && typeof p.id === 'string' && p.active !== false).map(p => ({ id: p.id, name: String(p.name || '') }));
   const secs = (Array.isArray(cfg.kitSecs) ? cfg.kitSecs : []).filter(x => x && !x.off && typeof x.name === 'string' && x.name.trim()).map(x => x.name);
-  const queue = core.trainingQueue(pub['30'], training, people, secs);
-  board.needs = { links: core.linkQueue(pub['90'], refs).length, training: queue.length, inTraining: queue.filter(o => o.assessment && o.assessment.status === 'in-training').length };
+  // the training counts went with the written assessments (10 Nov 2026) and nothing read them (13 Nov 2026, R4)
+  board.needs = { links: core.linkQueue(pub['90'], refs).length };
   if (bytes(board) > 700000) throw new Error('analysis-dashboard-too-large');
   const teamFrom = shift(today, -7 * TEAM_WEEKS), shiftFrom = shift(today, -TEAM_DAYS);
   const plans = await read(K.collection('team').where('day', '>=', teamFrom).where('day', '<=', to));

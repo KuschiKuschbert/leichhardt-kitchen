@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import assert from 'node:assert/strict';
 import { analyse } from './analysis.mjs';
 if (!process.env.FIRESTORE_EMULATOR_HOST) throw new Error('Emulator required');
@@ -71,6 +71,9 @@ const cfrom = Date.parse('2026-10-01T00:00:00+10:00'), copen = 253402178400000, 
 await K2.collection('cleaningTasks').doc('c1').set({ text: 'Wipe benches', from: cfrom, until: copen, dows: cdows });
 await K2.collection('cleaningTasks').doc('c2').set({ text: 'Cool room floor', from: cfrom, until: copen, dows: cdows });
 await K2.collection('cleaningDone').doc(d2 + '_c1').set({ day: d2, task: 'c1', done: true });
+const ts2 = hm => { const t = Date.parse(d2 + 'T' + hm + ':00+10:00'); return new Timestamp(Math.floor(t / 1000), 0); };
+await K2.collection('cooling').doc('current').set({ v: 1, run: 'r1', rev: 2, windowAt: Date.parse(d2 + 'T10:00:00+10:00'), firstAt: ts2('14:05'), firstBy: 'cy', secondAt: ts2('16:10'), secondBy: 'cy', by: 'cy' });
+await K2.collection('cooling').doc('recorded').set({ v: 1, run: 'r1', firstAt: ts2('16:07'), firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann' });
 const teamRun = await analyse(K2, { days: 3, at });
 const ts = (await K2.collection('teamsum').doc('main').get()).data();
 assert.deepEqual([ts.day, ts.from, ts.to], ['2026-10-31', '2026-10-01', '2026-10-30'], 'teamsum: built for today, from the last 30 days.');
@@ -89,12 +92,14 @@ assert.deepEqual(row.x, { out: 1, in: 1 }, 'Transfers count out and in, not dele
 assert.deepEqual(row.fs.del, [{ at: '07:42', s: 'Bidfood', c: 3.1, f: null, n: '', by: 'Ann' }], 'Records: the day keeps its deliveries as recorded: ' + JSON.stringify(row.fs.del));
 assert.deepEqual([row.fs.c.due, row.fs.c.done, row.fs.c.missN, row.fs.c.miss], [2, 1, 1, ['Cool room floor']], 'Records: the day counts its cleaning: ' + JSON.stringify(row.fs.c));
 assert.deepEqual(board.days[0].fs.c.missN, 2, 'Records: a day with no ticks has both tasks missed.');
+assert.deepEqual(row.fs.cool, { k: 'batch', start: '14:05', by: 'Cy', s2: '16:10', s2by: 'Cy', r1: '16:07', r1by: 'Ann', r2: '', r2by: '' }, 'Records: the cooling batch is kept on its day: ' + JSON.stringify(row.fs.cool));
+assert.deepEqual([board.days[0].fs.cool.k, board.days[2].fs.cool.k], ['before', 'none'], 'Records: the first night does not guess older days; the day after the batch had none.');
 await K2.collection('cleaningDone').doc('2026-10-28_c2').set({ day: '2026-10-28', task: 'c2', done: true });
 await analyse(K2, { days: 3, at: at + 1000 });
 assert.equal((await K2.collection('analysis').doc('dashboard').get()).data().days[0].fs.c.missN, 2, 'Records: a counted day stays counted (its records cannot change after the day).');
 assert.equal(JSON.stringify(board).includes('price'), false);
 // Needs you: Slaw is linked, so 6 of 7 recorded names wait; Cy (recipe only) and Dee (in training) need a Larder review.
-assert.deepEqual(board.needs, { links: 6, training: 2, inTraining: 1 }, 'Needs you counts the Review desk queues: ' + JSON.stringify(board.needs));
+assert.deepEqual(board.needs, { links: 6 }, 'Needs you counts the item links to review (the training counts went with the assessments): ' + JSON.stringify(board.needs));
 // Day digests (Plan B 2.1, 5 Nov 2026): one record per past day with its prep and order lines, written only when they change
 const dig = async day => (await K2.collection('digest').doc(day).get()).data();
 const dg = await dig(d2);

@@ -41,5 +41,15 @@ const assert = require('node:assert/strict');
     { day, receivedAt: R.at(day, 600), supplier: 'Bad temp', chilled: 'warm', frozen: 500 }
   ], day);
   assert.deepEqual(del.map(d => [d.at, d.s, d.c, d.f]), [['07:42', 'Bidfood', 3.14, -19.55], ['09:05', 'Fresh produce', 4, null], ['10:00', 'Bad temp', null, null]], JSON.stringify(del));
+  // cooling: the current batch on its own day, decided once
+  const ts = (d, hm) => { const t = R.at(d, +hm.slice(0, 2) * 60 + +hm.slice(3)); return { seconds: Math.floor(t / 1000), nanoseconds: 0 }; };
+  const cur = { run: 'r1', windowAt: R.at(day, 600), firstAt: ts(day, '14:05'), firstBy: 'bo', secondAt: ts(day, '16:10'), secondBy: 'bo' };
+  const recd = { run: 'r1', firstAt: ts(day, '16:07'), firstBy: 'bo', secondAt: 0, secondBy: '' }, names = { bo: 'Bo' };
+  assert.deepEqual(R.coolDay(cur, recd, day, names, false, '2026-11-08'), { k: 'batch', start: '14:05', by: 'Bo', s2: '16:10', s2by: 'Bo', r1: '16:07', r1by: 'Bo', r2: '', r2by: '' });
+  assert.equal(R.coolDay(cur, recd, '2026-11-08', names, false, '2026-11-08').k, 'none', 'the day after the batch: no batch was started');
+  assert.equal(R.coolDay(cur, recd, '2026-11-06', names, false, '2026-11-08').k, 'gone', 'a day before the batch, not kept yet: replaced');
+  assert.equal(R.coolDay(cur, recd, '2026-11-05', names, true, '2026-11-08').k, 'before', 'the first night: older days were not kept');
+  assert.equal(R.coolDay(cur, { run: 'other', firstAt: ts(day, '16:07'), firstBy: 'bo' }, day, names, false, day).r1, '', 'a confirmation of another run is not this batch\'s');
+  assert.equal(R.coolDay(null, null, day, names, false, day).k, 'none', 'no batch at all: none');
   console.log('PASS records: cleaning due, done, missed, unable, awaiting Pass check and events read like the Cleaning page; deliveries in time order, temperatures as recorded');
 })().catch(e => { console.error(e); process.exit(1); });

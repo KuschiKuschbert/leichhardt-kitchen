@@ -272,7 +272,7 @@
     if (q) {
       if (q.links) rows.push(needRow('wait', 'To review', q.links + ' item link' + (q.links === 1 ? '' : 's') + ' to check', 'Recorded names with no confirmed recipe or supplier link. Counted at ' + api.clock(state.data.at) + '.', 'references', 'Item links'));
       else clear.push('item links');
-      // training reviews: retired with the written assessments on 10 Nov 2026 (needs.training is still published, unread)
+      // training reviews: retired with the written assessments on 10 Nov 2026 (needs.training is no longer published since 13 Nov 2026)
     }
     // Transfers not returned: lent or borrowed before today and still open.
     if (state.loans === undefined) rows.push(needRow('wait', 'Checking', 'Transfers', 'Still loading.', '', ''));
