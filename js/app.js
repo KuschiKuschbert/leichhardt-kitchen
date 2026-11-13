@@ -1482,6 +1482,8 @@
     if (none) { none.hidden = !q || shown > 0; none.textContent = q && !shown ? 'No setting matches \u2018' + stFind.trim() + '\u2019. Try sound, PIN or sections.' : ''; }
   }
   function stAfter() { if (stFind && app.querySelector('#st-find')) stFilter(); }
+  // the button says Update now once a new version is known (silent updates, 13 Nov 2026), Check for an update before
+  function stUpdLabel() { var U = window.LK_UPDATE; return U && U.state && U.state() === 'ready' ? 'Update now' : 'Check for an update'; }
   function stVersion() { var U = window.LK_UPDATE, st = U && U.state ? U.state() : ''; return st === 'ready' ? 'Update ready' : st === 'current' ? 'Up to date' : 'Not checked yet'; }
   function stVersionNote() { var U = window.LK_UPDATE, t = U && U.copied ? U.copied() : 0; return (t ? 'This copy of the book is from ' + stStamp(t) + '. ' : '') + 'The book updates by itself when nothing is waiting to send.'; }
   function viewSettings() {
@@ -1529,7 +1531,7 @@
         return '<div><dt>' + esc(x[0]) + '</dt><dd>' + esc(x[1]) + '</dd></div>'; }).join('') + '</dl><p class="hint">Only the head chef changes these.</p>' : '<p class="hint">The kitchen\'s settings are not in yet.</p>') : '';
     var kitchen = m.tab ? stKitchen(k) : '';
     // About and help
-    var about = stRow('version', 'Version', stVersion(), '<p class="hint st-vnote">' + esc(stVersionNote()) + '</p><div class="btn-row"><button type="button" class="btn" data-act="updcheck" data-k="updcheck">Check for an update</button></div><p class="hint st-umsg" role="status"></p>') +
+    var about = stRow('version', 'Version', stVersion(), '<p class="hint st-vnote">' + esc(stVersionNote()) + '</p><div class="btn-row"><button type="button" class="btn" data-act="updcheck" data-k="updcheck">' + stUpdLabel() + '</button></div><p class="hint st-umsg" role="status"></p>') +
       stRow('qr', 'Open on another phone', 'QR code', '<div class="qr-row"><img class="qr-img" src="qr.svg" width="180" height="180" alt="QR code that opens the Kitchen Book">' +
         '<div><p class="hint">Scan with a phone camera to open the Kitchen Book on that phone, then add it to the home screen so it is one tap away.</p><p class="qr-url">kuschikuschbert.github.io/leichhardt-kitchen</p>' +
         '<div class="btn-row"><a class="btn" href="qr-sign.pdf" target="_blank" rel="noopener">Print the A4 sign</a><a class="btn" href="qr.png" download="Leichhardt Kitchen Book QR.png">Download the QR code</a></div></div></div>', { cls: 'st-qr', aria: 'Open on a phone' }) +
@@ -2009,10 +2011,14 @@
     if (act === 'updcheck') {
       var U = window.LK_UPDATE;
       if (!U || !U.check || el.disabled) return;
+      // updates are silent (13 Nov 2026), so a new version found here is the update asked for: Update now's own path,
+      // which waits for anything not sent, asks before discarding a draft and says what it does in the band
+      if (U.state && U.state() === 'ready' && U.now) { stSay('Updating to the new version...'); U.now(); return; }
       el.disabled = true; stSay('Checking...');
       U.check().then(function (r) {
         el.disabled = false; stVersionPaint();
-        stSay(r === 'ready' ? 'A new version is ready. Tap Update now at the top.' : r === 'current' ? 'This is the newest copy.' : 'No signal. Try again later.');
+        if (r === 'ready' && U.now) { stSay('Updating to the new version...'); U.now(); return; }
+        stSay(r === 'current' ? 'This is the newest copy.' : 'No signal. Try again later.');
       });
       return;
     }
@@ -2053,6 +2059,8 @@
     var v = document.querySelector('#st-h-version .st-v span'), n = app.querySelector('.st-vnote');
     if (v) v.textContent = stVersion();
     if (n) n.textContent = stVersionNote();
+    var b = app.querySelector('[data-act="updcheck"]');
+    if (b && !b.disabled) b.textContent = stUpdLabel();
   }
   window.addEventListener('lk-upd', stVersionPaint);
   function stRedraw() { if (parseRoute().name === 'settings' && stSig() !== stSigWas) render(); }

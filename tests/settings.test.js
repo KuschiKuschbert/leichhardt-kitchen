@@ -41,6 +41,20 @@ const caps = p => p.evaluate(() => [...document.querySelectorAll('.st-caps li')]
   ok(p.errors.length === 0, 'staff: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // A new version known (silent updates, 13 Nov 2026): no band offers it, so the Settings button says Update now and
+  // a tap starts the update straight away, with the band saying what it does (or the book reloads)
+  p = await L.open(b, '#/settings', { who: 'ann', wait: 1500 });
+  await L.setRow(p, 'version');
+  await p.clock.fastForward(10000);
+  await p.evaluate(() => navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: 'lk-new' })));
+  await L.waitFor(p, () => /Update now/.test((document.querySelector('[data-act="updcheck"]') || {}).textContent || ''), null, 5000).catch(() => {});
+  ok(await L.txt(p, '[data-act="updcheck"]') === 'Update now' && await value(p, 'version') === 'Update ready' && !(await p.$('.upd-bar.is-on')), 'a new version known: the button says Update now, the row Update ready, and no band shows');
+  await p.evaluate(() => { window.__mark = 1; });
+  await p.click('[data-act="updcheck"]');
+  const started = await L.waitFor(p, () => window.__mark !== 1 || /Checking the signal|Updating/.test((document.querySelector('.upd-bar.is-on') || {}).textContent || ''), null, 5000).then(() => true, () => false);
+  ok(started, 'Update now in Settings starts the update: the band says Checking the signal... or the book reloads');
+  await p.context().close();
+
   // Sous chef: their permissions and the cut-off pushes on this phone
   p = await L.open(b, '#/settings', { who: 'sam', wait: 1500 });
   await L.setRow(p, 'can');

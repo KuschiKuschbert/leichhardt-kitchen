@@ -7,11 +7,12 @@ const { R, ok } = L.results();
 const mark = p => p.evaluate(() => { window.__mark = 1; });
 const waitReload = p => L.waitFor(p, () => window.__mark !== 1, null, 20000).then(() => true, () => false);
 const atab = p => p.evaluate(() => window.LK_PREP && window.LK_PREP.state.atab);
-// the update strip, as when the service worker has saved a new version (more than 8 seconds after opening)
-async function updBar(p) {
+// the service worker has saved a new version (more than 8 seconds after opening). Silent since 13 Nov 2026: no band,
+// the book knows of it (state ready) and updates by itself once nobody has touched it for 2 minutes
+async function newVersion(p) {
   await p.clock.fastForward(10000);
   await p.evaluate(() => navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: 'lk-new' })));
-  await L.waitFor(p, () => !!document.querySelector('.upd-bar'), null, 3000).catch(() => {});
+  await L.waitFor(p, () => !!(window.LK_UPDATE && LK_UPDATE.state() === 'ready'), null, 3000).catch(() => {});
 }
 const laptop = (page, hash) => ({ admin: true, who: '', adminPage: page, width: 1280, height: 900, wait: 2500 });
 (async () => {
@@ -21,7 +22,9 @@ const laptop = (page, hash) => ({ admin: true, who: '', adminPage: page, width: 
   let p = await L.open(b, '#/admin', laptop('insights'));
   await L.waitFor(p, () => window.LK_PREP && window.LK_PREP.state.atab === 'insights', null, 10000).catch(() => {});
   ok(await atab(p) === 'insights', 'the laptop opens on Insights, the page it was left on');
-  await updBar(p); await mark(p);
+  await newVersion(p); await mark(p);
+  await L.settle(p, 500);
+  ok(await p.evaluate(() => !document.querySelector('.upd-bar.is-on') && LK_UPDATE.state() === 'ready'), 'the new version is known and no band offers it');
   await p.clock.fastForward('02:30');   // 2 minutes untouched: the automatic update
   // it looks every 20 seconds and checks the signal first; an idle screen keeps ticking until it reloads
   let went = false;
@@ -39,8 +42,8 @@ const laptop = (page, hash) => ({ admin: true, who: '', adminPage: page, width: 
   // Update now, tapped: the head chef asked, so the panel stays on the report
   p = await L.open(b, '#/admin', laptop('team'));
   await L.waitFor(p, () => window.LK_PREP && window.LK_PREP.state.atab === 'team', null, 10000).catch(() => {});
-  await updBar(p); await mark(p);
-  await p.click('.upd-bar button').catch(() => {});
+  await newVersion(p); await mark(p);
+  await L.updateNow(p);
   await waitReload(p);
   await L.waitFor(p, () => !!(window.LK_PREP && window.LK_PREP.state), null, 15000).catch(() => {});
   await L.settle(p, 1500);

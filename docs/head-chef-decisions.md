@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **13 November 2026, updates are silent.** The owner asked: "can't we just silently update?" Told the trade-off (a screen used without a 2-minute break stays on the older version until it rests or 04:00), the owner said yes. A new version found by itself shows no band; the book updates when nothing is typed, unsaved or unsent, as before. Settings, About and help says Update ready and its button says Update now. [Site publishing](site-publishing.md#silent-updates-13-nov-2026).
+
 - **13 November 2026, the site is republished only when the phones need it.** The owner asked why the app constantly wants to update. Every merge republished the site, and every republish gives every file a new stamp, so a change to `README.md` alone (#684) asked every phone to update; 14 of the 50 merges from 6 to 12 November changed nothing a phone loads. The owner asked for the fix to run by itself. **Publish site** compares `main` with the commit that is live and publishes only when a file the phones load changed. Needs Settings, Pages, Source: GitHub Actions. [Site publishing](site-publishing.md).
 
 - **12 November 2026, Chicken Adobo and Pork Knuckle stay hidden.** The two recipes are hidden in the book but still in `js/data.js` (Chicken Adobo also first in Specials). Asked during a housekeeping pass whether to remove them, show them again or leave them, the owner chose to leave them hidden. Nothing changes; they can be shown again from the recipe list. The open-work item from 29 Oct 2026 is closed.

@@ -55,12 +55,16 @@ async function unlock(p, id, pin) {
   await p.fill('#pf1', pin);
   await L.waitFor(p, expected => LK_PREP.privateAccess() && LK_PREP.state.who === expected, id, 8000);
 }
-// the update strip, as when the service worker has saved a new version (more than 8 seconds after opening)
-async function updBar(p) {
+// a new version found, as when the service worker has saved one (more than 8 seconds after opening). Updates are silent
+// (13 Nov 2026, docs/site-publishing.md): the book knows of it (LK_UPDATE.state() is 'ready'), but no band offers it. The
+// band comes only for an update someone asks for (L.updateNow(), or a tap on its button once it is up).
+async function newVersion(p) {
   await p.clock.fastForward(10000);
   await p.evaluate(() => navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: 'lk-new' })));
-  await L.waitFor(p, () => !!document.querySelector('.upd-bar'), null, 3000).catch(() => {});
+  await L.waitFor(p, () => !!(window.LK_UPDATE && window.LK_UPDATE.state() === 'ready'), null, 3000).catch(() => {});
 }
+// silent: a new version is known, and no update band is up (none at all, or not is-on)
+const silent = p => p.evaluate(() => { const b = document.querySelector('.upd-bar'); return !(b && b.classList.contains('is-on')) && window.LK_UPDATE.state() === 'ready'; });
 // the update strip's words (no-break spaces read as spaces), its button, and whether it all fits: the words inside the
 // strip, the strip no wider than its room, and the button on the screen
 const bar = p => p.evaluate(() => { const b = document.querySelector('.upd-bar'); if (!b) return null; const s = b.querySelector('span'), n = b.querySelector('button'), r = b.getBoundingClientRect(), w = s.getBoundingClientRect(), k = n.getBoundingClientRect(); return { t: s.textContent.replace(/\u00a0/g, ' '), btn: n.textContent, fits: w.top >= r.top && w.bottom <= r.bottom && b.scrollWidth <= b.clientWidth && k.left >= 0 && k.right <= window.innerWidth }; });
@@ -370,17 +374,17 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   const WAITS = 'Not sent yet. It updates once sent.';
   await step('5', async () => {
     p = await L.open(b, '#/prep', { wait: 1500 });
-    await updBar(p);
-    let u = await bar(p);
-    ok(u && u.t === 'New version available.' && u.btn === 'Update now', 'update: the strip is up');
+    await newVersion(p);
+    ok(await silent(p), 'update: a new version found by itself, no band offers it');
     await hold(p);
     await p.fill('#p-text', 'Slice tomatoes');
     await p.press('#p-text', 'Enter');
     await L.settle(p, 300);
     await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
     await mark(p);
-    await p.click('.upd-bar button');
+    await L.updateNow(p);
     await L.settle(p, 1500);
+    let u;
     ok(!(await reloaded(p)), 'update: a write waiting, the tap does not reload');
     u = await bar(p);
     ok(u && u.t === WAITS && u.btn === 'Update now', 'update: a write waiting, it says it updates once sent, with no second tap to offer (' + JSON.stringify(u) + ')');
@@ -408,11 +412,11 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   // 5b. Update now with half a line typed: an explicit discard dialog.
   await step('5b', async () => {
     p = await L.open(b, '#/prep', { wait: 1500 });
-    await updBar(p);
+    await newVersion(p);
     await mark(p);
     let u;
     await p.fill('#p-text', 'Half a line');
-    await p.click('.upd-bar button');
+    await L.updateNow(p);
     await L.settle(p, 1500);
     ok(!(await reloaded(p)), 'update: half a line typed, opening the decision does not reload');
     u = await bar(p);
@@ -428,10 +432,10 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     p = await L.open(b, '#/prep', { who: 'ann', wait: 1500 });
     let asked = 0;
     p.on('dialog', d => { asked++; d.dismiss().catch(() => {}); });
-    await updBar(p);
+    await newVersion(p);
     await slowHead(p, 3000);
     await mark(p);
-    await p.click('.upd-bar button');
+    await L.updateNow(p);
     await L.settle(p, 200);
     let u = await bar(p);
     ok(u && u.t === 'Checking the signal...', 'update, slow server: the tap says it is checking (' + JSON.stringify(u) + ')');
@@ -456,10 +460,10 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   // 5d. Half a line typed while checking the signal receives the same explicit discard decision.
   await step('5d', async () => {
     p = await L.open(b, '#/prep', { who: 'ann', wait: 1500 });
-    await updBar(p);
+    await newVersion(p);
     await slowHead(p, 3000);
     await mark(p);
-    await p.click('.upd-bar button');
+    await L.updateNow(p);
     await L.settle(p, 200);
     let u = await bar(p);
     ok(u && u.t === 'Checking the signal...', 'update, half a line typed after the tap: it was checking (' + JSON.stringify(u) + ')');
@@ -474,14 +478,17 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   });
 
   // 6. Update now with no signal: the book stays as it is, and updates once the signal is back. On the kitchen pages the
-  // update band waits behind the No signal band (4 Nov 2026), so Update now is tapped on Recipes.
+  // update band waits behind the No signal band (4 Nov 2026), so Update now is tapped again on Recipes, where it shows.
   await step('6', async () => {
     p = await L.open(b, '#/prep', { wait: 1500 });
-    await updBar(p);
+    await newVersion(p);
     await wide(p);
     await p.context().setOffline(true);
     await L.settle(p, 600);
-    ok(await p.evaluate(() => getComputedStyle(document.querySelector('.upd-bar')).visibility === 'hidden' && !!document.querySelector('.p-sync.is-on')), 'update, no signal, on the prep list: the update band waits behind the No signal band');
+    ok(await silent(p) && await p.evaluate(() => !!document.querySelector('.p-sync.is-on')), 'update found, no signal, on the prep list: only the No signal band, no update band');
+    await L.updateNow(p);
+    await L.settle(p, 300);
+    ok(await p.evaluate(() => getComputedStyle(document.querySelector('.upd-bar')).visibility === 'hidden' && !!document.querySelector('.p-sync.is-on')), 'update asked for, no signal, on the prep list: the update band waits behind the No signal band');
     await p.evaluate(() => { location.hash = '#/recipes'; });
     await L.settle(p, 800);
     await mark(p);
@@ -501,10 +508,10 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   // 6b. Update now on wifi with no internet: the phone says it is online, but the server does not answer
   await step('6b', async () => {
     p = await L.open(b, '#/prep', { wait: 1500 });
-    await updBar(p);
+    await newVersion(p);
     await deadNet(p, true);
     await mark(p);
-    await p.click('.upd-bar button');
+    await L.updateNow(p);
     await L.settle(p, 1500);
     ok(!(await reloaded(p)), 'update, wifi with no internet: the tap does not reload into an empty book');
     const u = await bar(p);
@@ -520,10 +527,10 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   // after 8 seconds with no answer (it used to show nothing for those 8 seconds)
   await step('6c', async () => {
     p = await L.open(b, '#/prep', { wait: 1500 });
-    await updBar(p);
+    await newVersion(p);
     await p.context().route(DEAD, () => {});   // every request to the book waits, unanswered
     await mark(p);
-    await p.click('.upd-bar button');
+    await L.updateNow(p);
     await L.settle(p, 300);
     let u = await bar(p);
     ok(u && u.t === 'Checking the signal...', 'update, weak signal: the strip says it is checking (' + JSON.stringify(u) + ')');
@@ -540,13 +547,14 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   // 7. the automatic update with no signal (2 minutes untouched): it waits for the signal
   await step('7', async () => {
     p = await L.open(b, '#/prep', { touch: true, wait: 1500 });
-    await updBar(p);
+    await newVersion(p);
     await p.context().setOffline(true);
     await L.settle(p, 300);
     await mark(p);
     await p.clock.fastForward('02:30');
     await L.settle(p, 1500);
     ok(!(await reloaded(p)), 'automatic update, no signal: no reload after 2 minutes untouched');
+    ok(await silent(p), 'automatic update, no signal: nobody asked, so no update band either');
     await p.context().setOffline(false);
     await L.settle(p, 300);
     await p.clock.fastForward('00:30');
@@ -621,7 +629,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
 
   // 10. the automatic update looks again before it reloads (final review, 28 Oct 2026). It asks the server, then fetches
   // the files, up to 8 seconds each on a weak signal: someone who types, ticks a line with the write waiting, or scrolls
-  // in that time keeps what they did, and the strip stays up
+  // in that time keeps what they did. Updates are silent (13 Nov 2026): no band comes, and it goes at a later turn
   // the files the book fetches before a reload (X-LK-Fresh) held back ms on a weak signal; st.on once they are asked for
   const slowFiles = async (p, ms) => {
     const st = { on: false };
@@ -631,7 +639,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   const fetching = async st => { for (let i = 0; i < 100 && !st.on; i++) await L.sleep(50); return st.on; };
 
   const autoUpd = async p => {
-    await updBar(p);
+    await newVersion(p);
     await slowHead(p, 3000);
     await mark(p);
     await p.clock.fastForward('02:30');   // 2 minutes untouched: the automatic update starts and asks the server
@@ -659,9 +667,15 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
       // the 14 files (about 435 kB) are not fetched for an update that is not going ahead
       ok(!files.on, 'automatic update, ' + act + ' while it checked: it stops before it fetches the files');
       ok(await kept(), 'automatic update, ' + act + ' while it checked: what was done is still there');
-      ok(!!(await bar(p)), 'automatic update, ' + act + ' while it checked: the strip still offers Update now');
-      if (act === 'ticking') await release(p);
+      ok(await silent(p), 'automatic update, ' + act + ' while it checked: it stops quietly, with no update band');
+      if (act === 'ticking') { await release(p); await L.waitFor(p, () => !LK_PREP.unsent()); }
+      if (act === 'typing') { await L.clear(p, '#p-text'); await p.evaluate(() => { window.LK_PREP.state.text = ''; }); }
+      await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
       await L.settle(p, 300);
+      // left alone for 2 minutes, it still updates by itself, with no band and no tap
+      await p.clock.fastForward('02:30');
+      await waitReload(p);
+      ok(await reloaded(p), 'automatic update, ' + act + ' while it checked: left alone for 2 minutes, it updates by itself');
     });
   }
 
@@ -669,7 +683,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   // goes at its next turn (a reload that did not happen does not count towards the 10 minutes between reloads)
   await step('10a', async () => {
     p = await L.open(b, '#/prep', { who: 'ann', wait: 1500 });
-    await updBar(p);
+    await newVersion(p);
     const st = await slowFiles(p, 3000);
     await mark(p);
     await p.clock.fastForward('02:30');
@@ -690,9 +704,10 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     p = await L.open(b, '#/prep', { who: 'ann', wait: 1500 });
     let asked = 0;
     p.on('dialog', d => { asked++; d.dismiss().catch(() => {}); });
-    await updBar(p);
+    await newVersion(p);
+    ok(await silent(p), 'automatic update: a new version found, no update band');
     await p.evaluate(() => window.addEventListener('beforeunload', e => { e.preventDefault(); e.returnValue = ''; }));
-    await p.click('.upd-bar span');   // the page has been used, so the browser may ask before leaving
+    await p.click('h2.nb-title');   // the page has been used (a tap on Today's heading), so the browser may ask before leaving
     await mark(p);
     await p.clock.fastForward('02:30');
     await L.settle(p, 10000);
@@ -813,25 +828,27 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await L.settle(p, 300);
   });
 
-  // 14. Update now tapped while the automatic update runs (the strip still says New version available.): the tap takes
-  // it over, says what is happening and updates, once. The tap is a touch, but it no longer calls the update off.
+  // 14. Update now tapped while the automatic update runs: the tap takes it over, says what is happening and updates,
+  // once. The tap is a touch, but it no longer calls the update off. Updates are silent (13 Nov 2026), so no band is up
+  // while the automatic update runs, and the tap is Update now in Settings (About and help, Version).
   for (const phase of ['check', 'files']) {
     await step('14 ' + phase, async () => {
-      p = await L.open(b, '#/prep', { who: 'ann', touch: true, wait: 1500 });
+      p = await L.open(b, '#/settings', { who: 'ann', touch: true, wait: 1500 });
       let navs = 0;   // loads of the page itself from now on: a reload asks for the document once
       p.on('request', q => { if (q.isNavigationRequest() && q.frame() === p.mainFrame()) navs++; });
-      await updBar(p);
+      await L.setRow(p, 'version');
+      await newVersion(p);
       const st = phase === 'files' ? await slowFiles(p, 3000) : null;
       if (phase === 'check') await slowHead(p, 3000);
       await mark(p);
       await p.clock.fastForward('02:30');   // 2 minutes untouched: the automatic update starts
       if (st) ok(await fetching(st), 'automatic update: it fetches the files');
       else await L.settle(p, 200);
-      let u = await bar(p);
-      ok(u && u.t === 'New version available.', 'automatic update, ' + phase + ': the strip still says New version available (' + JSON.stringify(u) + ')');
-      await p.tap('.upd-bar button');
+      const btn = await p.evaluate(() => (document.querySelector('[data-act="updcheck"]') || {}).textContent || '');
+      ok(await silent(p) && btn === 'Update now', 'automatic update, ' + phase + ': no band while it runs, and Settings offers Update now (' + btn + ')');
+      await p.tap('[data-act="updcheck"]');
       await L.settle(p, 200);
-      u = await bar(p);
+      const u = await bar(p);
       const words = phase === 'files' ? 'Updating...' : 'Checking the signal...';
       ok(u && u.t === words, 'automatic update, ' + phase + ': a tap on Update now says ' + words + ' (' + JSON.stringify(u) + ')');
       await waitReload(p);
@@ -841,8 +858,9 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     });
   }
 
-  // 15. the automatic update on coming back after 5 minutes away, with no answer from the server: the strip still
-  // comes, so Update now is there to tap while the book is in use (it used to show nothing)
+  // 15. the automatic update on coming back after 5 minutes away, with no answer from the server: no reload, and no band
+  // either (silent since 13 Nov 2026; it used to offer Update now). The book still knows of the new version, and once
+  // the server answers again it updates by itself after 2 minutes untouched.
   await step('15', async () => {
     const st = { on: false, n: 0 };
     p = await L.open(b, '#/prep', { who: 'ann', touch: true, wait: 1500 });
@@ -864,8 +882,11 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await vis('visible');
     await L.settle(p, 1500);
     ok(st.n >= 2, 'back after 6 minutes: it found the new version and asked the server again (' + st.n + ' asked)');
-    const u = await bar(p);
-    ok(!(await reloaded(p)) && u && u.t === 'New version available.' && u.btn === 'Update now', 'back after 6 minutes, no answer: no reload, and the strip offers Update now (' + JSON.stringify(u) + ')');
+    ok(!(await reloaded(p)) && await silent(p), 'back after 6 minutes, no answer: no reload, and no update band (' + JSON.stringify(await bar(p)) + ')');
+    st.on = false;   // the server answers again
+    await p.clock.fastForward('02:30');
+    await waitReload(p);
+    ok(await reloaded(p), 'back after 6 minutes, no answer at first: once the server answers, left alone for 2 minutes, it updates by itself');
   });
 
   // 16. the signal goes while the files come in (the server answered first): no reload into an empty book, for the
@@ -883,17 +904,18 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   for (const how of ['automatic', 'tapped', '04:00']) {
     await step('16 ' + how, async () => {
       p = await L.open(b, how === '04:00' ? '#/recipes' : '#/prep', { who: 'ann', touch: true, wait: 1500 });
-      if (how !== '04:00') await updBar(p);
+      if (how !== '04:00') await newVersion(p);
       else { await p.clock.fastForward('13:58:00'); await L.settle(p, 300); }
       const st = await dropOnFiles(p);
       await mark(p);
       if (how === 'automatic') await p.clock.fastForward('02:30');
-      else if (how === 'tapped') await p.tap('.upd-bar button');
+      else if (how === 'tapped') await L.updateNow(p);
       else await p.clock.fastForward('00:03:00');
       ok(await fetching(st), how + ': it asked for the files');
       await L.settle(p, 1500);
       ok(!(await reloaded(p)), how + ', the signal gone while the files came in: no reload into an empty book');
       if (how === 'tapped') { const u = await bar(p); ok(u && /^No signal\./.test(u.t), how + ': the strip says No signal (' + JSON.stringify(u) + ')'); }
+      if (how === 'automatic') ok(await silent(p), how + ': nobody asked, so no update band either');
       await p.context().setOffline(false);
       await L.settle(p, 300);
       if (how === 'automatic') await p.clock.fastForward('02:30');
@@ -910,14 +932,14 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   for (const width of [344, 360]) {
     await step('17 ' + width, async () => {
       p = await L.open(b, '#/prep', { width, settings: { text: 'xlarge' }, wait: 1500 });
-      await updBar(p);
+      await newVersion(p);
       await wide(p);
       await hold(p);
       await p.fill('#p-text', 'Slice tomatoes');
       await p.press('#p-text', 'Enter');
       await L.settle(p, 300);
       await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
-      await p.click('.upd-bar button');
+      await L.updateNow(p);
       await L.settle(p, 300);
       const u = await bar(p);
       ok(u && u.t === WAITS, width + ' px, Extra large: it says it updates once sent (' + JSON.stringify(u) + ')');
@@ -1003,11 +1025,11 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await waitReload(p);
     ok(await reloaded(p), 'back after 6 minutes, a swipe 0.4 seconds in: it updates straight away');
   });
-  // 19 lk-new. The same when the strip came from the worker (lk-new: the files are already saved, and the server's
+  // 19 lk-new. The same when the new version came from the worker (lk-new: the files are already saved, and the server's
   // stamp is the one the book knew): it used to wait for 2 minutes untouched (review of 28 Oct 2026, older than this fix)
   await step('19 lk-new', async () => {
     p = await L.open(b, '#/prep', { who: 'ann', touch: true, wait: 1500 });
-    await updBar(p);
+    await newVersion(p);
     await p.evaluate(() => {
       window.__vis = 'visible';
       Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => window.__vis });
@@ -1020,7 +1042,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await L.sleep(300);
     await swipe(p);
     await waitReload(p);
-    ok(await reloaded(p), 'the strip from the worker, back after 6 minutes, a swipe 0.3 seconds in: it updates straight away');
+    ok(await reloaded(p), 'a new version from the worker, back after 6 minutes, a swipe 0.3 seconds in: it updates straight away');
   });
   await step('19 tick', async () => {
     p = await L.open(b, '#/prep', { who: 'ann', touch: true, wait: 1500 });
@@ -1032,10 +1054,12 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await L.settle(p, 4000);
     ok(!(await reloaded(p)), 'back after 6 minutes, a line ticked while it checked: no reload');
     ok(await ticked(p), 'back after 6 minutes, a line ticked while it checked: the tick is still there');
-    const u = await bar(p);
-    ok(u && u.t === 'New version available.', 'back after 6 minutes, a line ticked while it checked: the strip offers Update now (' + JSON.stringify(u) + ')');
+    ok(await silent(p), 'back after 6 minutes, a line ticked while it checked: it waits quietly, with no update band (' + JSON.stringify(await bar(p)) + ')');
     await release(p);
-    await L.settle(p, 300);
+    await L.waitFor(p, () => !LK_PREP.unsent());
+    await p.clock.fastForward('02:30');
+    await waitReload(p);
+    ok(await reloaded(p), 'back after 6 minutes, a line ticked while it checked: once sent and left alone for 2 minutes, it updates by itself');
   });
   await step('19 tap', async () => {
     p = await L.open(b, '#/prep', { who: 'ann', touch: true, wait: 1500 });
@@ -1064,14 +1088,14 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   // touch every 30 seconds it never updated)
   await step('20', async () => {
     p = await L.open(b, '#/prep', { who: 'ann', touch: true, wait: 1500 });
-    await updBar(p);
+    await newVersion(p);
     await hold(p);
     await p.fill('#p-text', 'Slice tomatoes');
     await p.press('#p-text', 'Enter');
     await L.settle(p, 300);
     await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
     await mark(p);
-    await p.tap('.upd-bar button');
+    await L.updateNow(p);
     await L.settle(p, 300);
     const u = await bar(p);
     ok(u && u.t === WAITS, 'Update now, a change waiting: it updates once sent (' + JSON.stringify(u) + ')');
@@ -1086,15 +1110,18 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     ok(await reloaded(p), 'Update now, the change sent, a touch while checking: it updates without waiting for idle');
   });
 
-  // 21. back within 10 minutes of the last update, with a newer version found on return: the strip offers Update now
-  // (the book reloads by itself at most once in 10 minutes; it used to show nothing)
+  // 21. back within 10 minutes of the last update, with a newer version found on return: no reload (the book reloads by
+  // itself at most once in 10 minutes) and no band (silent since 13 Nov 2026; before, the band offered Update now). An
+  // update nobody asked for goes at most once an hour, so left alone it updates by itself an hour after the last one.
   await step('21', async () => {
     p = await L.open(b, '#/prep', { who: 'ann', touch: true, wait: 1500 });
     await p.evaluate(() => localStorage.setItem('lk.upd.last', String(Date.now() - 60000)));   // updated a minute ago
     await back(p);
     await L.settle(p, 1500);
-    const u = await bar(p);
-    ok(!(await reloaded(p)) && u && u.t === 'New version available.' && u.btn === 'Update now', 'back 7 minutes after an update, a newer version: no reload, the strip offers Update now (' + JSON.stringify(u) + ')');
+    ok(!(await reloaded(p)) && await silent(p), 'back 7 minutes after an update, a newer version: no reload, and no update band (' + JSON.stringify(await bar(p)) + ')');
+    await p.clock.fastForward('01:00:00');
+    await waitReload(p);
+    ok(await reloaded(p), 'back 7 minutes after an update, a newer version: left alone, it updates by itself once the hour is up');
   });
 
   // 22. the update step 20 runs once the change is sent (review of the fix, 28 Oct 2026). Nobody tapped just now, so the
@@ -1116,13 +1143,13 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
         if (q.isNavigationRequest() && q.frame() === p.mainFrame()) st.navs++;
         if (q.method() === 'HEAD' && q.url() === L.BASE + 'index.html') st.heads++;
       });
-      await updBar(p);
+      await newVersion(p);
       await hold(p);
       await p.fill('#p-text', 'Slice tomatoes');
       await p.press('#p-text', 'Enter');
       await L.settle(p, 300);
       await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
-      await p.tap('.upd-bar button');
+      await L.updateNow(p);
       await L.settle(p, 300);
       let u = await bar(p);
       ok(u && u.t === WAITS, how + ': Update now, a change waiting: it updates once sent (' + JSON.stringify(u) + ')');
@@ -1206,12 +1233,13 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     p = await L.open(b, '#/prep', { touch: true, wait: 1500 });
     let heads = 0;
     p.on('request', q => { if (q.method() === 'HEAD' && q.url() === L.BASE + 'index.html') heads++; });
-    await updBar(p);
+    await newVersion(p);
     await deadNet(p, true);
     await mark(p);
     heads = 0;
     for (let i = 0; i < 30; i++) { await p.clock.fastForward(20000); await L.settle(p, 150); }
     ok(heads <= 6 && !(await reloaded(p)), 'wifi with no internet, left alone for 10 minutes: no reload, and it asked the server ' + heads + ' times (6 at most)');
+    ok(await silent(p), 'wifi with no internet, left alone for 10 minutes: nobody asked, so no update band');
     let handledHeads = heads;
     const recoveryStarted = await p.evaluate(() => Date.now());
     await deadNet(p, false);
@@ -1240,7 +1268,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     p = await L.open(b, '#/prep', { touch: true, wait: 1500 });
     let heads = 0;
     p.on('request', q => { if (q.method() === 'HEAD' && q.url() === L.BASE + 'index.html') heads++; });
-    await updBar(p);
+    await newVersion(p);
     await deadNet(p, true);
     await mark(p);
     // 15 minutes: the first look is 2 minutes in (nobody has touched it), then 20 seconds, 1, 2 and 5 minutes, so the

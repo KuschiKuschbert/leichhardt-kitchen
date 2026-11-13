@@ -156,7 +156,9 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
 // Automatic updates. After every deploy the site files carry a new Last-Modified/ETag. The book asks for just those
 // headers (a tiny request, no Firestore) when it opens, when someone comes back to it, and every 15 minutes while it is open.
 // If they changed, the book updates itself: straight away when it was just brought back from the background,
-// otherwise when nobody has touched it for 2 minutes and nothing is being typed. A bar offers "Update now" meanwhile.
+// otherwise when nobody has touched it for 2 minutes and nothing is being typed. Silently since 13 Nov 2026 (the owner:
+// "can't we just silently update?"): no band offers it meanwhile. The band shows only for an update someone asked for
+// (Update now in Settings, a Reload button) and for a saved book that cannot be used. docs/site-publishing.md.
 // The same answer carries the server's time, which keeps the book's clock right (LK_TIME, at the top).
 (function () {
   var base = null, found = false, hiddenAt = 0, lastCheck = 0, bar = null, shellUnavailable = false;
@@ -225,12 +227,12 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
      tapped: no note in the strip, and a touch does not call it off. */
   function reloadNow(tapped, back, asked) {
     if (run || confirmation) return;
-    /* Once per 10 minutes at most, so a flapping header can never cause a reload loop. The strip still offers Update now.
+    /* Once per 10 minutes at most, so a flapping header can never cause a reload loop. Silent meanwhile unless someone asked (13 Nov 2026).
        An update nobody asked for on a screen that stays open (a tablet on the pass, a laptop tab): once an hour at most
        (5 Nov 2026). Each reload reads the open page's lists again from the server, and on 4 and 5 November 48 new
        versions in a day made such a screen reload up to about 40 times; with the other phones that used up the free
        plan's 50,000 reads a day by 13:00. Update now, and coming back after 5 minutes away, still update at once. */
-    try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < (tapped || back || asked ? 600000 : 3600000)) { showBar(); return; } } catch (e) {}
+    try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < (tapped || back || asked ? 600000 : 3600000)) { if (tapped || asked) showBar(); return; } } catch (e) {}
     var me = run = { tapped: !!tapped, half: !!(tapped || asked) && lkDirty() && consentRevision === lkEdits,
       edits: lkEdits, files: false, asked: asked || 0 }, touched = lkTouch;
     /* The check and the files take up to 8 seconds each on a weak signal, so the book looks again before it reloads
@@ -251,14 +253,14 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
       } else if (me.asked) {
         if (!lkUnsent() && !lkEditing() && (!lkDirty() || me.half && me.edits === lkEdits && consentRevision === me.edits)) return false;
       } else if (!lkTyping() && (back || lkTouch === touched)) return false;
-      run = null; showBar(); keep();
+      run = null; if (me.tapped || me.asked) showBar(); keep();
       if (note === UNSENT_NOTE) { wanted = Date.now(); say(note, 'Update now'); }
       return true;
     }
     function keep() { if (me.tapped || me.asked) wanted = me.asked || Date.now(); }
     // no signal (27 Oct 2026): the book stays as it is, the strip stays up, and it updates by itself once the signal is
     // back; the look every 20 seconds waits longer each time (failedLook())
-    function noSignal() { if (run !== me) return; run = null; showBar(); keep(); failedLook(); if (me.tapped) say('No signal. It updates later.', 'Update now'); }
+    function noSignal() { if (run !== me) return; run = null; if (me.tapped || me.asked) showBar(); keep(); failedLook(); if (me.tapped) say('No signal. It updates later.', 'Update now'); }
     // the check can take up to 8 seconds on a weak signal, so a tap says what is happening meanwhile
     if (me.tapped) busy('Checking the signal...');
     lkServerUp().then(function (up) {
@@ -440,7 +442,7 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
      the book has heard of ('ready' when an update was found, 'current' after an answer, '' before one); copied() is when
      the copy running was published (its Last-Modified, ms, 0 when not known yet); check() is Check for an update: the same
      look as the automatic one (a header-only request, no Firestore) and it answers 'ready', 'current' or 'nosignal'. A new
-     version found this way shows the Update now strip like any other. */
+     version found this way shows no strip (silent, 13 Nov 2026): Settings then offers Update now. */
   window.LK_UPDATE = { now: updateNow, letGo: function () { return !!letGoAt && Date.now() - letGoAt < 3000; },
     state: function () { return found ? 'ready' : base === null ? '' : 'current'; },
     copied: function () { var t = base ? Date.parse(base.split('|')[0]) : NaN; return isFinite(t) ? t : 0; },
@@ -457,7 +459,8 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
       // untouched, so a cook who tapped straight away kept the old version.
       if (s === base) { if (found && returned && !lkTyping()) reloadNow(false, true); return found ? 'ready' : 'current'; }
       found = true;
-      if (returned && !lkTyping()) reloadNow(false, true); else showBar();
+      // silent (13 Nov 2026): no band; the look every 20 seconds updates once nobody has touched the book for 2 minutes
+      if (returned && !lkTyping()) reloadNow(false, true);
       return 'ready';
     }).then(function (r) { try { window.dispatchEvent(new Event('lk-upd')); } catch (e) {} return r; });
   }
@@ -494,9 +497,9 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
     found = true;
     try { window.dispatchEvent(new Event('lk-upd')); } catch (err) {}
     if (Date.now() - opened < 8000 && lkTouch <= opened && !lkTyping() && navigator.onLine !== false) {
-      try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < 600000) { showBar(); return; } localStorage.setItem('lk.upd.last', String(Date.now())); } catch (err) {}
+      try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < 600000) return; localStorage.setItem('lk.upd.last', String(Date.now())); } catch (err) {}
       location.reload();
-    } else showBar();
+    }
   });
 })();
 // Installable: the service worker keeps the last copy of the book, so it opens at once and with no signal.
