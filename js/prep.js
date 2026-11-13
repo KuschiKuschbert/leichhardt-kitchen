@@ -10667,7 +10667,7 @@
       S.gRetry = 0; draw(); loadGuides(true);
     }, function (e) {
       f.saving = false; f.busy = ''; f.progress = null;
-      f.msg = errMsg(e && e.code === 'permission-denied' ? 'Not saved: this sign-in may not change it. Sign in again with the head chef\'s Google account.' : 'Not saved. Check the connection and try again. Nothing typed or chosen is lost.');
+      f.msg = errMsg(e && e.code === 'permission-denied' ? 'Not saved: the book refused this sign-in. Sign in again with the head chef\'s Google account.' : 'Not saved. Check the connection and try again. Nothing typed or chosen is lost.');
       svFail('g', S.gf === f, function () { f.msg = ''; });
       draw();
     });
