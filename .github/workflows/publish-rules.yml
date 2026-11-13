@@ -18,11 +18,12 @@ on:
         type: choice
         options: [preview, verify, publish]
   workflow_run:
-    workflows: ["pages-build-deployment"]
+    workflows: ["pages-build-deployment", "Publish site"]
     types: [completed]
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: publish-rules
@@ -42,7 +43,18 @@ jobs:
       - id: access
         env:
           EVENT_NAME: ${{ github.event_name }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          FROM: ${{ github.event.workflow_run.name }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
+          # After Publish site (13 Nov 2026, docs/site-publishing.md): only once its Published job ran, so the site is up to
+          # date with this commit. It runs also when nothing needed publishing (a change to the rules alone), and not while
+          # Pages still publishes from the branch, when GitHub's own publish brings this workflow instead.
+          if [ "$EVENT_NAME" = workflow_run ] && [ "$FROM" = "Publish site" ]; then
+            ran=$(gh api "repos/$REPO/actions/runs/$RUN_ID/jobs" --jq '[.jobs[] | select(.name == "Published" and .conclusion == "success")] | length' 2>/dev/null || echo 1)
+            if [ "$ran" = 0 ]; then echo "publish=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          fi
           if [ "$EVENT_NAME" = workflow_dispatch ] || git diff-tree --no-commit-id --name-only -r HEAD | grep -Eq '^(firestore.rules|scripts/access-bootstrap.mjs|scripts/ping-index.mjs|.github/workflows/publish-rules.yml)$'; then
             echo "publish=true" >> "$GITHUB_OUTPUT"
           else

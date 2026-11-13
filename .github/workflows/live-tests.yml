@@ -1,24 +1,49 @@
 # The click tests against the live site (GitHub Pages), as CLAUDE.md asks after every merge.
-# Runs by itself once Pages has deployed a change to main, and from the Actions tab with "Run workflow".
+# Runs by itself once the site has been published (the Deploy job of Publish site, or GitHub's own publish from the
+# branch until Pages is switched to GitHub Actions), and from the Actions tab with "Run workflow". A merge that changes
+# nothing the phones load is not published, so it runs no live tests (13 Nov 2026, docs/site-publishing.md).
 # Firebase is the stand-in from tests/fake, so no real PIN or data is needed and nothing is written to the real book.
 name: Live click tests
 
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: ["pages-build-deployment"]
+    workflows: ["pages-build-deployment", "Publish site"]
     types: [completed]
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: live-tests
   cancel-in-progress: true
 
 jobs:
-  test:
+  gate:
+    name: Was the site published
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      run: ${{ steps.look.outputs.run }}
+    steps:
+      - name: Look at the publish run
+        id: look
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          FROM: ${{ github.event.workflow_run.name }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          if [ "$EVENT" = workflow_dispatch ] || [ "$FROM" = pages-build-deployment ]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          # Publish site: only when its Deploy job published (an unanswered look runs the tests anyway)
+          n=$(gh api "repos/$REPO/actions/runs/$RUN_ID/jobs" --jq '[.jobs[] | select(.name == "Deploy" and .conclusion == "success")] | length' 2>/dev/null || echo 1)
+          if [ "$n" = 0 ]; then echo "Nothing was published: no live tests."; echo "run=false" >> "$GITHUB_OUTPUT"; else echo "run=true" >> "$GITHUB_OUTPUT"; fi
+  test:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     # Five shares on five runners at once, like the pull request check (3 Nov 2026, five since 4 Nov): one runner took 24 minutes of
     # its 30. A failed file runs once more on its own (a warning if it then passes); failures are in the summary.
     name: Live ${{ matrix.shard }} of 5

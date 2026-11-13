@@ -216,6 +216,7 @@ Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records
 | Ping sound and the head chef's choice of sound | `docs/ping-sound.md` |
 | Back arrow and page trail | `docs/navigation.md` |
 | Merging: ready means merge in the next release window, the one-at-a-time queue, `urgent`, the token | `docs/auto-merge.md` |
+| Publishing the site (13 Nov 2026): Publish site compares `main` with the live commit and publishes only when `scripts/site-changed.sh` finds a file the phones or live tests load; Live click tests follow its Deploy job, Publish rules its Published job; needs Pages Source: GitHub Actions; `tests/site-publish.test.js` | `docs/site-publishing.md` |
 | Seasonal celebrations, festival dates and their sources | `docs/seasonal-celebrations.md`, `docs/seasonal-calendar.md` |
 | Admin flow baseline behind The Chef's Desk | `docs/admin-flow-spec.md` |
 | Smoker batch cards and what was left out (30 Oct 2026) | `docs/smoker-batches.md` |

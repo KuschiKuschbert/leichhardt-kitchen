@@ -44,7 +44,7 @@ Until this change the queue stopped at the first `UNKNOWN` pull request and said
 
 Until the secret exists the workflow prints a notice and does nothing; merging works as before.
 
-The merge is made in the owner's name with that token. A merge made with the built-in `GITHUB_TOKEN` would not start the Pages deploy, the Live click tests or Publish rules, which all follow the push to `main`.
+The merge is made in the owner's name with that token. A merge made with the built-in `GITHUB_TOKEN` would not start Publish site, the Live click tests or Publish rules, which all follow the push to `main` ([site publishing](site-publishing.md)).
 
 ## For sessions
 
