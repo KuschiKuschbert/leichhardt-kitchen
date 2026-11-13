@@ -1,0 +1,68 @@
+{
+  "source": "Preview over the implemented admin panel, click-test stand-in, synthetic data, test fallback fonts",
+  "notes": [
+    {
+      "design": "a",
+      "width": 1280,
+      "pageHeight": 1895,
+      "overflow": 0,
+      "firstPartTop": 786
+    },
+    {
+      "design": "a",
+      "width": 768,
+      "pageHeight": 2006,
+      "overflow": 0,
+      "firstPartTop": 876
+    },
+    {
+      "design": "a",
+      "width": 390,
+      "pageHeight": 2168,
+      "overflow": 0,
+      "firstPartTop": 858
+    },
+    {
+      "design": "b",
+      "width": 1280,
+      "pageHeight": 1517,
+      "overflow": 0,
+      "firstPartTop": 874
+    },
+    {
+      "design": "b",
+      "width": 768,
+      "pageHeight": 1649,
+      "overflow": 0,
+      "firstPartTop": 964
+    },
+    {
+      "design": "b",
+      "width": 390,
+      "pageHeight": 2296,
+      "overflow": 0,
+      "firstPartTop": 967
+    },
+    {
+      "design": "c",
+      "width": 1280,
+      "pageHeight": 1846,
+      "overflow": 0,
+      "firstPartTop": 666
+    },
+    {
+      "design": "c",
+      "width": 768,
+      "pageHeight": 1985,
+      "overflow": 0,
+      "firstPartTop": 739
+    },
+    {
+      "design": "c",
+      "width": 390,
+      "pageHeight": 1743,
+      "overflow": 0,
+      "firstPartTop": 0
+    }
+  ]
+}
