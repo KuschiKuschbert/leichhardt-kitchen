@@ -1,5 +1,15 @@
 // Measure the actual text pairings, including warning links and focus rings, rather than checking a token's spelling.
 const L = require('./lib'), { R, ok } = L.results();
+// Updates are silent (13 Nov 2026): the band shows only for an update someone asked for (LK_UPDATE.now(), Update now
+// in Settings). With no signal for it (the HEAD of index.html fails) the update waits and the band stays to be measured.
+const askedOffline = async p => {
+  p.heads = 0;
+  await p.route(u => u.href === L.BASE + 'index.html', r => { if (r.request().method() !== 'HEAD') return r.fallback(); p.heads++; return r.abort(); });
+  await L.updateNow(p);
+  await L.settle(p, 400);   // the band slides down
+};
+// the browser logs each HEAD failed above as Failed to load resource: those are expected, any other error is not
+const errs = p => { let n = p.heads || 0; return p.errors.filter(e => !(n > 0 && e === 'console: Failed to load resource: net::ERR_FAILED' && n--)); };
 async function pair(p, selector, outline) {
   return p.locator(selector).first().evaluate((e, outline) => {
     const rgba = s => (s.match(/[\d.]+/g) || []).map(Number);
@@ -64,13 +74,14 @@ async function pair(p, selector, outline) {
     ok(!p.errors.length && !await L.overflow(p), width + ': failed-ping recovery warning fits without browser errors');
     await p.keyboard.press('Escape');
     await p.evaluate(() => navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: 'lk-new' })));
-    await L.waitFor(p, () => !!document.querySelector('.upd-bar button'));
+    await askedOffline(p);
+    await L.waitFor(p, () => !!document.querySelector('.upd-bar.is-on button'));
     const update = await pair(p, '.upd-bar button');
     ok(update.ratio >= 4.5, width + ': Update now uses readable action text (' + update.ratio.toFixed(3) + ')');
     await p.focus('.upd-bar button'); await p.keyboard.press('Tab'); await p.keyboard.press('Shift+Tab');
     const updateFocus = await pair(p, '.upd-bar button', true);
     ok(updateFocus.ratio >= 3 && updateFocus.outline !== 'none' && updateFocus.width >= 2, width + ': Update now focus contrasts with its translucent strip (' + updateFocus.ratio.toFixed(3) + ')');
-    ok(!p.errors.length && !await L.overflow(p), width + ': update strip keeps its layout without browser errors');
+    ok(!errs(p).length && !await L.overflow(p), width + ': update strip keeps its layout without browser errors');
     await p.context().close();
   }
   await b.close(); L.report(R);

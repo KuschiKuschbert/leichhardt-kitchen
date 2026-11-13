@@ -4,6 +4,16 @@
 // 2026 it floats over the page just under the top bar: tests/signal-band.test.js).
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
+// Updates are silent (13 Nov 2026): the band shows only for an update someone asked for (LK_UPDATE.now(), Update now
+// in Settings). With no signal for it (the HEAD of index.html fails) the update waits and the band stays to be measured.
+const askedOffline = async p => {
+  p.heads = 0;
+  await p.route(u => u.href === L.BASE + 'index.html', r => { if (r.request().method() !== 'HEAD') return r.fallback(); p.heads++; return r.abort(); });
+  await L.updateNow(p);
+  await L.settle(p, 400);   // the band slides down
+};
+// the browser logs each HEAD failed above as Failed to load resource: those are expected, any other error is not
+const errs = p => { let n = p.heads || 0; return p.errors.filter(e => !(n > 0 && e === 'console: Failed to load resource: net::ERR_FAILED' && n--)); };
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const today = L.ymd(new Date(L.NOW));
 const item = (p, id) => p.evaluate(k => window.__fake.dump()[k] || {}, fsKey(['days', today, 'items', id]));
@@ -90,7 +100,7 @@ const seeThrough = bg => { const m = /rgba\([^)]*,\s*([\d.]+)\)/.exec(bg || '');
     p = await L.open(b, '#/prep', { wait: 1500, width: w, height: w === 390 ? 844 : 800 });
     await p.click('#nbr-i1 .nb-box'); await L.settle(p, 200); // a real tap: the book only reloads by itself before anyone touches it
     await p.evaluate(() => navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: 'lk-new' })));
-    await L.waitFor(p, () => !!document.querySelector('.upd-bar'), null, 3000).catch(() => {});
+    await askedOffline(p);
     await p.evaluate(() => window.scrollTo(0, 0)); await L.settle(p, 400);
     const bar = await box(p, '.upd-bar'), top = await box(p, '.wtop'), tt = await box(p, '.p-toast');
     ok(bar && top && Math.abs(bar.top - top.bottom) <= 1 && bar.h <= 52, w + ': the update band sits just under the top bar and is slim (' + (bar && bar.top) + ' against ' + (top && top.bottom) + ', ' + (bar && bar.h) + ' px)');
@@ -101,7 +111,7 @@ const seeThrough = bg => { const m = /rgba\([^)]*,\s*([\d.]+)\)/.exec(bg || '');
     const bar2 = await box(p, '.upd-bar'), top2 = await box(p, '.wtop');
     ok(bar2 && top2 && Math.abs(bar2.top - Math.max(0, top2.bottom)) <= 1, w + ': while the page scrolls the band stays under the top bar, then at the top of the screen (' + (bar2 && bar2.top) + ')');
     ok(!(await L.overflow(p)), w + ': no sideways scroll with the strip');
-    ok(p.errors.length === 0, w + ': no page errors ' + p.errors.join(' | '));
+    ok(errs(p).length === 0, w + ': no page errors ' + errs(p).join(' | '));
     await p.context().close();
   }
   await b.close();

@@ -2,6 +2,8 @@
 // over the page just under the top bar, instead of a box in the page that pushed the lines down 77 px. Once everything
 // is sent the band says All sent with the kitchen time for 3 seconds, then slides away. The update offer uses the same
 // band: it moves nothing on the page either (it pushed the page 48 px), and it waits while the signal band is up.
+// Updates are silent since 13 Nov 2026: a new version the book finds by itself shows no band; the band shows for an
+// update someone asked for (Update now in Settings, a Reload button: LK_UPDATE.now()).
 const L = require('./lib');
 const { R, ok } = L.results();
 
@@ -38,13 +40,28 @@ const contrast = (p, sel) => p.evaluate(s => {
   const parts = [e].concat([...e.querySelectorAll('strong, span')]);
   return Math.min(...parts.map(x => ratio(getComputedStyle(x).color, bg)));
 }, sel);
-// the update offer, as when the service worker has saved a new version (more than 8 seconds after opening)
-async function offer(p) {
+// a new version the book finds by itself, as when the service worker has saved one (more than 8 seconds after
+// opening, so it does not reload straight into it): silent since 13 Nov 2026, no band
+async function found(p) {
   await p.clock.fastForward(10000);
   await p.evaluate(() => navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: 'lk-new' })));
-  await L.waitFor(p, () => !!document.querySelector('.upd-bar'), null, 3000).catch(() => {});
+  await L.waitFor(p, () => window.LK_UPDATE.state() === 'ready', null, 3000).catch(() => {});
+}
+// no signal for the update: the HEAD of index.html fails (the book's own look at the server), so an update asked for
+// waits and the band stays up instead of the page reloading
+const noHead = p => { p.heads = 0; return p.route(u => u.href === L.BASE + 'index.html', r => { if (r.request().method() !== 'HEAD') return r.fallback(); p.heads++; return r.abort(); }); };
+// the browser logs each HEAD failed above as Failed to load resource: those are expected, any other error is not
+const errs = p => { let n = p.heads || 0; return p.errors.filter(e => !(n > 0 && e === 'console: Failed to load resource: net::ERR_FAILED' && n--)); };
+// the update band as the book shows it now: a new version found, then Update now asked for with no signal. The band
+// says No signal. It updates later. for 4 seconds, then New version available. with Update now again.
+async function offer(p) {
+  await found(p);
+  await noHead(p);
+  await L.updateNow(p);
+  await L.waitFor(p, () => /No signal\. It updates later\./.test((document.querySelector('.upd-bar') || {}).textContent || ''), null, 3000).catch(() => {});
   await L.settle(p, 500);
 }
+const offered = p => L.waitFor(p, () => /New version available\./.test((document.querySelector('.upd-bar') || {}).textContent || ''), null, 6000).catch(() => {});
 const hold = p => p.evaluate(() => { window.__fake.mode = 'hold'; });
 const release = p => p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
 // the Not sent mark on a row: 'shown' or 'none'
@@ -68,7 +85,10 @@ const unsentOn = (p, id) => p.evaluate(i => { const m = document.querySelector('
     ok(u && u.seen && u.pos === 'fixed', '390: the update offer shows as a band fixed over the page (' + JSON.stringify(u) + ')');
     ok(u && u.barBottom != null && u.want != null && Math.abs(u.top - u.want) <= 1, '390: the update band sits just under the top bar, not over it (' + JSON.stringify(u) + ')');
     ok(moved(l0, await lines(p, ids)) === 0, '390: the update band moves no line (' + moved(l0, await lines(p, ids)) + ' px)');
-    ok(/New version available\./.test(u && u.text || '') && /Update now/.test(u && u.text || ''), '390: the update band keeps its words and Update now');
+    ok(/^No signal\. It updates later\. ?Update now$/.test(u && u.text || ''), '390: Update now with no signal says so, and keeps Update now (' + (u && u.text) + ')');
+    await offered(p);
+    u = await band(p, '.upd-bar');
+    ok(u && u.seen && /New version available\./.test(u.text) && /Update now/.test(u.text), '390: then the update band keeps its words and Update now (' + (u && u.text) + ')');
 
     await hold(p);
     await p.evaluate(() => document.querySelector('#nbr-i1 .nb-box').click());
@@ -123,7 +143,31 @@ const unsentOn = (p, id) => p.evaluate(i => { const m = document.querySelector('
     await L.settle(p, 400);
     u = await band(p, '.upd-bar');
     ok(u && !u.visible, '390: a swipe up puts it away too (' + JSON.stringify(u) + ')');
-    ok(p.errors.length === 0, '390: no page errors ' + p.errors.join(' | '));
+    ok(errs(p).length === 0, '390: no page errors ' + errs(p).join(' | '));
+  });
+
+  // 1b. Silent (13 Nov 2026): a new version the book finds by itself shows no band. The page stays (no reload) and the
+  // book knows of the new version, so Update now in Settings offers it. Both ways it finds one: the service worker
+  // has saved it (lk-new), and the look at the server finds a new Last-Modified and ETag on index.html.
+  await step('silent, saved', async () => {
+    p = await L.open(b, '#/prep', { wait: 1500 });
+    await p.evaluate(() => { window.__stay = 1; });
+    await found(p);
+    await L.settle(p, 1500);
+    const r = await p.evaluate(() => ({ stay: window.__stay, state: window.LK_UPDATE.state(), on: !!document.querySelector('.upd-bar.is-on'), bar: !!document.querySelector('.upd-bar') }));
+    ok(r.stay === 1 && r.state === 'ready' && !r.on && !r.bar, 'silent: a new version saved by the service worker shows no band and the book knows of it (' + JSON.stringify(r) + ')');
+    ok(p.errors.length === 0, 'silent, saved: no page errors ' + p.errors.join(' | '));
+  });
+  await step('silent, look', async () => {
+    p = await L.open(b, '#/prep', { wait: 1500 });
+    await L.waitFor(p, () => window.LK_UPDATE.state() === 'current', null, 5000).catch(() => {});
+    await p.evaluate(() => { window.__stay = 1; });
+    await p.route(u => u.href === L.BASE + 'index.html', r => r.request().method() === 'HEAD' ? r.fulfill({ status: 200, headers: { 'last-modified': 'Fri, 13 Nov 2026 00:00:00 GMT', etag: '"silent-v2"' } }) : r.fallback());
+    const said = await p.evaluate(() => window.LK_UPDATE.check());
+    await L.settle(p, 1500);
+    const r = await p.evaluate(() => ({ stay: window.__stay, state: window.LK_UPDATE.state(), on: !!document.querySelector('.upd-bar.is-on'), bar: !!document.querySelector('.upd-bar') }));
+    ok(said === 'ready' && r.stay === 1 && r.state === 'ready' && !r.on && !r.bar, 'silent: a new version found by the look at the server shows no band (' + said + ', ' + JSON.stringify(r) + ')');
+    ok(p.errors.length === 0, 'silent, look: no page errors ' + p.errors.join(' | '));
   });
 
   // 2. a good signal that is slow: Not sent yet after 3 seconds, over the page, then All sent
@@ -181,10 +225,15 @@ const unsentOn = (p, id) => p.evaluate(i => { const m = document.querySelector('
     await step('away ' + w, async () => {
       p = await L.open(b, '#/prep', { width: w, wait: 1500 });
       const ids = await above(p, 'i1');
-      await offer(p);
+      // the update band here is Update now asked for while a tick waits to send: it waits for the tick and says so
+      await found(p);
       await hold(p);
       await p.evaluate(() => document.querySelector('#nbr-i1 .nb-box').click());
       await L.settle(p, 300);
+      await L.updateNow(p);
+      await L.settle(p, 400);   // the band slides down
+      const n = await band(p, '.upd-bar');
+      ok(n && n.seen && /^Not sent yet\. It updates once sent\. ?Update now$/.test(n.text) && n.want != null && Math.abs(n.top - n.want) <= 1, w + ': Update now with a tick waiting says Not sent yet, in the band under the top bar (' + JSON.stringify(n) + ')');
       await p.context().setOffline(true);
       await L.settle(p, 600);
       const l0 = await lines(p, ids);
@@ -206,7 +255,8 @@ const unsentOn = (p, id) => p.evaluate(i => { const m = document.querySelector('
       await p.context().setOffline(false); await L.settle(p, 500);
       s = await band(p, '.p-sync');
       ok(s && s.seen && /^Not sent yet\./.test(s.text), w + ', signal back, the tick still waiting: Not sent yet comes back (' + JSON.stringify(s) + ')');
-      // a swipe up puts it away too, and the next page brings it back
+      // a swipe up puts it away too, and the next page brings it back (from where the band rests once it has slid down)
+      await L.waitFor(p, () => getComputedStyle(document.querySelector('.p-sync')).transform === 'none', null, 2000).catch(() => {});
       const at = await p.evaluate(() => { const r = document.querySelector('.p-sync span').getBoundingClientRect(); return { x: r.left + 10, y: r.top + r.height / 2 }; });
       await p.mouse.move(at.x, at.y); await p.mouse.down(); await p.mouse.move(at.x, at.y - 20); await p.mouse.move(at.x, at.y - 45); await p.mouse.up();
       await L.settle(p, 400);
@@ -233,7 +283,7 @@ const unsentOn = (p, id) => p.evaluate(i => { const m = document.querySelector('
     ok(printed[0] && printed[1], 'print: neither band prints (' + printed.join(', ') + ')');
     await p.emulateMedia({ media: 'screen' });
     await p.context().setOffline(false);
-    ok(p.errors.length === 0, 'motion and print: no page errors ' + p.errors.join(' | '));
+    ok(errs(p).length === 0, 'motion and print: no page errors ' + errs(p).join(' | '));
   });
 
   await b.close();

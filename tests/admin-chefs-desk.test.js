@@ -1,6 +1,16 @@
 // The Chef's Desk keeps chapter navigation, focused reviews and real saves usable together.
 const L = require('./lib'), C = require('../js/analysis-core');
 const { R, ok } = L.results();
+// Updates are silent (13 Nov 2026): the band shows only for an update someone asked for (LK_UPDATE.now(), Update now
+// in Settings). With no signal for it (the HEAD of index.html fails) the update waits and the band stays to be measured.
+const askedOffline = async p => {
+  p.heads = 0;
+  await p.route(u => u.href === L.BASE + 'index.html', r => { if (r.request().method() !== 'HEAD') return r.fallback(); p.heads++; return r.abort(); });
+  await L.updateNow(p);
+  await L.settle(p, 400);   // the band slides down
+};
+// the browser logs each HEAD failed above as Failed to load resource: those are expected, any other error is not
+const errs = p => { let n = p.heads || 0; return p.errors.filter(e => !(n > 0 && e === 'console: Failed to load resource: net::ERR_FAILED' && n--)); };
 const path = (...parts) => ['kitchens', L.PIN, ...parts].join('/');
 const day = L.ymd(new Date(L.NOW - 86400000));
 const reference = { alias: 'Milk', label: 'Milk', recipeId: 'laksa', supplierId: '', itemId: '', guideId: '', v: 1, at: L.NOW, by: 'owner' };
@@ -145,7 +155,8 @@ const privateWrites = p => p.evaluate(() => window.__fake.writes.flat().filter(x
     if (width < 720) {
       await chapter(p, 'kitchen', 'tools');
       await p.evaluate(() => navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: 'lk-new' })));
-      await L.waitFor(p, () => !!document.querySelector('.upd-bar'));
+      await askedOffline(p);
+      await L.waitFor(p, () => !!document.querySelector('.upd-bar.is-on'));
       await p.evaluate(() => scrollTo(0, 700));
       await L.settle(p, 150);
       const updateClear = await p.evaluate(() => {
@@ -155,7 +166,7 @@ const privateWrites = p => p.evaluate(() => window.__fake.writes.flat().filter(x
       ok(updateClear, width + ': the sticky chapter picker remains readable below an offered app update');
     }
     ok(!(await L.overflow(p)), width + ': completed review flows fit without sideways scrolling');
-    ok(p.errors.length === 0, width + ': no browser errors ' + p.errors.join(' | '));
+    ok(errs(p).length === 0, width + ': no browser errors ' + errs(p).join(' | '));
     await p.context().close();
   }
   const queuePage = await L.open(b, '#/admin', { admin: true, adminPage: 'references', who: '', width: 390, height: 844, extra, wait: 1600 });

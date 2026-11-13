@@ -4,6 +4,16 @@
 const L = require('./lib');
 const M = require('../js/functions.js');
 const { R, ok } = L.results();
+// Updates are silent (13 Nov 2026): the band shows only for an update someone asked for (LK_UPDATE.now(), Update now
+// in Settings). With no signal for it (the HEAD of index.html fails) the update waits and the band stays to be measured.
+const askedOffline = async p => {
+  p.heads = 0;
+  await p.route(u => u.href === L.BASE + 'index.html', r => { if (r.request().method() !== 'HEAD') return r.fallback(); p.heads++; return r.abort(); });
+  await L.updateNow(p);
+  await L.settle(p, 400);   // the band slides down
+};
+// the browser logs each HEAD failed above as Failed to load resource: those are expected, any other error is not
+const errs = p => { let n = p.heads || 0; return p.errors.filter(e => !(n > 0 && e === 'console: Failed to load resource: net::ERR_FAILED' && n--)); };
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const today = L.ymd(new Date(L.NOW));
 const at = (ymd, hm) => M.kat(ymd, M.hmMin(hm));
@@ -25,14 +35,14 @@ const box = (p, sel) => p.evaluate(s => { const e = document.querySelector(s); i
   await L.waitFor(p, () => { const e = document.getElementById('fn-band'); return e && !e.hidden; }, null, 8000).catch(() => {});
   await L.choose(p, '.chip[data-act="kind"]').catch(() => {}); await L.settle(p, 200);   // a real tap: the book only reloads by itself before anyone touches it
   await p.evaluate(() => navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: 'lk-new' })));
-  await L.waitFor(p, () => !!document.querySelector('.upd-bar'), null, 3000).catch(() => {});
+  await askedOffline(p);
   await p.evaluate(() => window.scrollTo(0, 1400)); await L.settle(p, 400);
   const st = await box(p, '.fn-strip'), up = await box(p, '.upd-bar'), fb = await box(p, '.find-bar');
   ok(!!st && !!up && !!fb, 'both strips and the search are on screen (' + JSON.stringify({ st, up, fb }) + ')');
   ok(st && up && up.top >= st.bottom - 1, 'the update strip sits under the function strip');
   ok(up && fb && fb.top >= up.bottom - 1, 'the search sits under the update strip, not behind it (' + (fb && fb.top) + ' against ' + (up && up.bottom) + ')');
   ok(!(await L.overflow(p)), 'no sideways scroll with both strips');
-  ok(p.errors.length === 0, 'strips: no page errors ' + p.errors.join(' | '));
+  ok(errs(p).length === 0, 'strips: no page errors ' + errs(p).join(' | '));
   await p.context().close();
 
   // a jump on a recipe card lands below the function strip
