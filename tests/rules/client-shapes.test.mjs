@@ -431,7 +431,9 @@ row('js/prep.js maybeRoll(): a rolled line keeps its function link and keep', { 
 row('js/prep.js addToTwin() and foldDups(): a merge clears the function link', { ok: ADDS, asks: ADDS,
   prep: r => put({ [`days/${TODAY}/items/fu-${r}`]: line({ text: 'Party pies', fnFor: ['smith'] }) }),
   run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/fu-${r}`, { fnFor: [] }]]) });
-row('js/prep.js: a function link added to a line later is refused (never sent: a link takes a line off)', { ok: [], asks: [],
+// No rule limits fnFor (14 Nov 2026): a check on every prep line pushed the largest function cancellation past the rules'
+// 1000 steps. The book only writes it with a new line and only clears it later; Put back recovers a line taken off.
+row('js/prep.js: a function link added to a line later (never sent by the book; the rules allow it)', { ok: ADDS, asks: [],
   prep: r => put({ [`days/${TODAY}/items/fa-${r}`]: line({ text: 'Party pies' }) }),
   run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/fa-${r}`, { fnFor: ['smith'] }]]) });
 row('js/prep.js removeItem() Put back: keep a line a sent function took off (not removed on the server yet)', { ok: ADDS, asks: DELS,

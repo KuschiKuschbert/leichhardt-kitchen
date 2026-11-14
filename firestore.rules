@@ -488,21 +488,13 @@ service cloud.firestore {
             && (!changed.hasAny(removals) || capability(d.by, 'del') || ownAddUndo())
             && (changed.hasOnly(ticks.concat(removals).concat(['by'])) || capability(d.by, 'add'));
       }
-      // fnFor (14 Nov 2026, docs/fn-sent-tidy-options/brief.md): the functions a prep line was added for from What the
-      // platters need; the line leaves the list once they are all sent. Written with the line (at most 4 function ids); an
-      // update may only clear it, so a link is never added to a line later (a link takes a line off, like Delete).
-      function fnForOk(creating) {
-        let d = request.resource.data;
-        return creating ? (!d.keys().hasAny(['fnFor']) || (d.fnFor is list && d.fnFor.size() <= 4))
-          : (!d.diff(resource.data).affectedKeys().hasAny(['fnFor']) || (d.fnFor is list && d.fnFor.size() == 0));
-      }
       // Evaluate capability eligibility before the session chain, so a function exception does not spend that chain twice.
       // Function batches retain their own narrow booking revision authority; ordinary permitted lines add no booking lookup.
       function prepLineWrite(day, id, creating) {
         let admin = isAdmin();
         let priority = statusEffectFirst(creating);
         return (admin || (priority && functionLine(day, id, true)) || (prepCapabilities(creating) && staff()) || (!priority && request.resource.data.get('fn', '') != '' && functionLine(day, id, true))) && lineOk(160) && lineWho(day, admin) && prepAttribution(admin)
-          && fnForOk(creating) && (creating ? proofLineCreate(admin) : tickKept(admin) && proofLineKept('prep', day, id, admin) && onStampOk());
+          && (creating ? proofLineCreate(admin) : tickKept(admin) && proofLineKept('prep', day, id, admin) && onStampOk());
       }
       allow read: if kitchenRead();
       allow create: if prepLineWrite(day, item, true);

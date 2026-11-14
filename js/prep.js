@@ -3007,7 +3007,7 @@
   /* the obvious ones: amounts agree, and no line was kept apart on purpose (dupOk, from Add anyway or Undo) */
   function obviousDups(items) { return dupGroups(items.filter(function (x) { return !x.dupOk; })).filter(sameQty); }
   var DUP_BLANK = { qty: '', urgent: false, urgentBy: '', urgentById: '', urgentAt: 0, station: '', recipe: '', also: [], fnFor: [] };
-  // an Undo never links a line to a function again: the rules let an update only clear fnFor (a link takes a line off)
+  // an Undo never links a line to a function again: the book writes fnFor only with a new line, and only clears it later
   function unlinked(p) { delete p.fnFor; return p; }
   function prevOf(x, up) { var p = {}; Object.keys(up).forEach(function (k) { p[k] = x[k] === undefined ? DUP_BLANK[k] : x[k]; }); return p; }
   /* Merging a group: the line written first stays. It takes the amount, the urgent mark, a section and a recipe link if
