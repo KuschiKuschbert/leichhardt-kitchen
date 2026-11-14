@@ -2718,6 +2718,8 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
   #fn-print .fn-paper-lines b { flex: 0 0 auto; font: 700 15pt/1 var(--display); }
   #fn-print .fn-paper-lines span { overflow-wrap: anywhere; }
   #fn-print .fn-paper-sent { flex: 0 0 16mm; display: flex; align-items: center; gap: 2mm; font-size: 9pt; }
+  #fn-print .fn-paper-round { flex-wrap: wrap; }
+  #fn-print .fn-paper-trips { flex: 1 1 100%; margin: 0; font-size: 8.5pt; }
   #fn-print .fn-paper-tick { flex: 0 0 3.5mm; height: 3.5mm; border: 0.8pt solid #1C1D1F; position: relative; }
   #fn-print .fn-paper-tick.is-sent::after { content: ''; position: absolute; left: 0.7mm; top: 0.1mm; width: 1mm; height: 2mm; border: solid #1C1D1F; border-width: 0 0.6mm 0.6mm 0; transform: rotate(45deg); }
   #fn-print .fn-paper-text { white-space: pre-wrap; overflow-wrap: anywhere; orphans: 3; widows: 3; }
@@ -4274,6 +4276,62 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .fn-svc-board .fn-sent-ok small { color: rgba(251, 248, 241, 0.72); }
 .fn-svc-board .linkish { color: var(--bar-text); }
 .fn-svc-prints { margin: 0.8rem 0 0.6rem; }
+/* The two-way check on the service board (head chef, 14 Nov 2026, docs/function-handover-options/brief.md, Chosen):
+   kinds to pick, the trip's words, the shelf of trips waiting for Functions and its states. Existing tokens only:
+   pending in words with a neutral outline, named attention in the board's orange, confirmed in the dark-surface green
+   with two ticks, Not confirmed in the dark-surface red. A pick is a solid paper button with its words, never a tick. */
+.fn-i { display: inline-block; flex: 0 0 auto; vertical-align: -3px; }
+.fn-svc-sub { margin: 0.45rem 0 0; font-size: 0.95rem; color: rgba(251, 248, 241, 0.88); overflow-wrap: anywhere; }
+.fn-svc-pend { font-weight: 700; color: var(--bar-text); }
+.fn-svc-kinds { list-style: none; display: flex; flex-wrap: wrap; gap: 0.4rem 0.5rem; margin: 0.5rem 0 0; padding: 0; }
+.fn-svc-kind { display: inline-flex; align-items: center; gap: 0.3rem; max-width: 100%; }
+.fn-svc-k { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 0.35rem; min-height: 44px; max-width: 100%; padding: 0 0.7rem; border: 1.5px solid rgba(251, 248, 241, 0.75); border-radius: var(--r-act); background: transparent; color: var(--bar-text); font: inherit; font-size: 1.05rem; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.fn-svc-k b { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.fn-svc-k .fn-x { color: rgba(251, 248, 241, 0.6); }
+.fn-svc-k.is-pick { border-color: var(--paper); background: var(--paper); color: var(--ink); }
+.fn-svc-k.is-pick .fn-x, .fn-svc-kof { color: var(--muted); }
+.fn-svc-kin { font: 700 0.72rem/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; }
+.fn-svc-kslot { display: inline-block; width: 44px; height: 44px; }
+.fn-svc-kmore { flex: 0 0 auto; min-width: 44px; min-height: 44px; padding: 0; border: 1.5px solid rgba(251, 248, 241, 0.75); border-radius: var(--r-act); background: transparent; color: var(--bar-text); font: inherit; font-size: 1.3rem; cursor: pointer; }
+.fn-svc-kmore[disabled] { opacity: 0.4; cursor: default; }
+.fn-svc-knum { width: 4rem; min-height: 44px; border: 1.5px solid var(--paper); border-radius: 6px; background: var(--paper); color: var(--ink); font: 700 1.2rem/1 var(--display); text-align: center; }
+.fn-svc-k:focus-visible, .fn-svc-kmore:focus-visible, .fn-svc-knum:focus-visible, .fn-svc-board .fn-svc-link:focus-visible, .fn-svc-wl:focus-visible, .fn-svc-shelf .btn:focus-visible { outline: 3px solid var(--bar-accent); outline-offset: 2px; }
+.fn-svc-board .fn-svc-link, .fn-svc-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.4rem; }
+.fn-svc-board .fn-svc-wl { display: flex; align-items: center; gap: 0.4rem; min-height: 44px; margin: 0.15rem 0 0; color: var(--bar-text); text-align: left; }
+.fn-svc-shelf, .fn-svc-sec { margin: 0.2rem -1rem 0; padding: 0.55rem 1rem 0.3rem; border-top: 2px solid rgba(251, 248, 241, 0.32); }
+.fn-svc-shelf:focus { outline: none; }
+.fn-svc-sh { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.2rem 0.6rem; margin: 0 0 0.2rem; font: 700 0.8rem/1.2 var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--bar-text); }
+.fn-svc-sh small { font: 400 0.9rem/1.2 var(--body, inherit); letter-spacing: 0; text-transform: none; color: rgba(251, 248, 241, 0.8); }
+.fn-svc-trips { list-style: none; margin: 0; padding: 0; }
+.fn-svc-trip { display: grid; gap: 0.3rem; padding: 0.6rem 0 0.65rem; border-top: 1px solid rgba(251, 248, 241, 0.14); }
+.fn-svc-trip:first-child { border-top: 0; }
+.fn-svc-th { margin: 0; font-size: 0.92rem; color: rgba(251, 248, 241, 0.86); overflow-wrap: anywhere; }
+.fn-svc-th b { color: var(--bar-text); }
+.fn-svc-board .fn-svc-tq { margin: 0; }
+.fn-svc-tm { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.6rem; margin: 0; font-size: 0.95rem; overflow-wrap: anywhere; }
+.fn-svc-tacts { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem; }
+.fn-trip-k { font: 700 0.78rem/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; }
+.fn-ws { display: inline-flex; align-items: center; gap: 0.3rem; padding: 2px 8px; border: 1.5px solid currentColor; border-radius: 4px; font: 700 0.78rem/1.3 var(--display); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
+.fn-svc-board .fn-ws, .fn-band .fn-ws, .fn-next .fn-ws { color: var(--bar-text); border-color: rgba(251, 248, 241, 0.7); }
+.fn-ws.is-pend { font-style: italic; }
+.fn-svc-board .fn-ws.is-long, .fn-band .fn-ws.is-long, .fn-next .fn-ws.is-long { border-color: var(--bar-accent); background: var(--bar-accent); color: var(--bar); }
+.fn-svc-board .fn-ws.is-never, .fn-band .fn-ws.is-never, .fn-next .fn-ws.is-never { border-color: var(--bad-on-dark); color: var(--bad-on-dark); }
+.fn-ws.is-long { border-color: var(--small-ink); color: var(--small-ink); }
+.fn-ws.is-never { color: var(--bad-ink); }
+.fn-svc-board .fn-out-b, .fn-band .fn-out-b { min-height: 48px; padding: 0 0.9rem; border-color: var(--paper); background: var(--paper); color: var(--ink); }
+.fn-svc-board .fn-for-b { min-height: 48px; padding: 0 0.9rem; border-color: var(--bar-text); background: transparent; color: var(--bar-text); }
+.fn-svc-outs { margin: 0.3rem 0 0.6rem; color: rgba(251, 248, 241, 0.86); }
+.fn-svc-outs .fn-i, .fn-next .fn-trip-out { color: var(--done-on-dark); }
+.fn-band .fn-li-out { display: flex; align-items: center; gap: 0.5rem; border-top: 1px solid rgba(251, 248, 241, 0.16); }
+.fn-band .fn-li-out:first-child { border-top: 0; }
+.fn-band .fn-li-out > .fn-row { flex: 1 1 auto; min-width: 0; border-top: 0; }
+.fn-band .fn-out-b { flex: 0 0 auto; }
+.fn-band .fn-out-b:focus-visible { outline: 3px solid var(--bar-accent); outline-offset: 2px; }
+.fn-round-trips { list-style: none; grid-column: 1 / -1; margin: 0.3rem 0 0; padding: 0; font-size: 0.92rem; }
+.fn-round-trips li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem 0.5rem; padding: 0.15rem 0; }
+.fn-trip-what { font-size: 1.1rem; }
+.fn-trip-out { display: inline-flex; align-items: center; gap: 0.3rem; color: var(--done-ink); font-weight: 700; }
+.fn-sent-part { margin-right: 0.4rem; font-weight: 700; }
 @media (min-width: 900px) {
   .fn-list-page .fn-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
 }
