@@ -520,7 +520,7 @@
     if (k < 0) { var x = sentRec(f, n - 1); return { time: 'Sent', late: false, done: true, html: (n > 1 ? 'All ' + n + ' rounds sent, last ' : 'All sent ') + esc(kclock(x.sentAt) + ', ' + nameOf(x.sentBy)) + ' <span class="fn-of">(' + tot + ')</span>' }; }
     var at = f.rounds[k].at, late = at < t, st = roundState(f, k), rc = st ? st.left : roundCounts(f, k), q = sum(rc), lead = n > 1 ? 'Round ' + (k + 1) + ' of ' + n : 'All';
     var of = st && st.sentTot ? q + ' left of ' + st.bookedTot : q + (n > 1 ? ' of ' + tot : '');
-    return { time: when(at, kday(t)), late: late, k: k, html: (late ? '<span class="fn-late">' + lead + ' not sent yet</span>' : lead) + ': <b>' + esc(linesText(f, rc) || 'nothing') + '</b> <span class="fn-of">(' + of + ')</span>' };
+    return { time: when(at, kday(t)), late: late, k: k, html: (late ? '<span class="fn-late">' + lead + (st && st.sentTot ? ', the rest not sent yet' : ' not sent yet') + '</span>' : lead) + ': <b>' + esc(linesText(f, rc) || 'nothing') + '</b> <span class="fn-of">(' + of + ')</span>' };
   }
   // the order reminder and tomorrow's functions: one short line each
   function soonRow(x) {
@@ -531,7 +531,12 @@
   /* The band's own rows: today's functions (two, then "+1 more"), then up to two order reminders and tomorrow's
      functions; all of them once "+N more" is open. The landing card leaves out the functions drawn here (landHTML()). */
   function bandRows(t) {
-    var xs = showing(F.list, t, isSentK, keepK), ys = soon(F.list, t);
+    var xs = showing(F.list, t, isSentK, keepK), ys = soon(F.list, t), me = ahWho();
+    // for Functions people, a function with a trip waiting for them comes first, the longest waiting first (14 Nov 2026)
+    if (fnPerson(me)) {
+      var first = function (x) { var w = x.kind === 'on' ? waitingTrips(x.f.id).filter(function (y) { return y.t.sentBy !== me; }) : []; return w.length ? w[0].t.sentAt : 0; };
+      xs = xs.map(function (x, i) { return { x: x, w: first(x), i: i }; }).sort(function (a, b) { return (a.w ? 0 : 1) - (b.w ? 0 : 1) || (a.w && b.w ? a.w - b.w : 0) || a.i - b.i; }).map(function (o) { return o.x; });
+    }
     return { xs: xs, ys: ys, a: F.more ? xs : xs.slice(0, 2), b: F.more ? ys : ys.slice(0, 2) };
   }
   /* What the slot under the top bar draws: the band, or, on a day the band would draw nothing, the quiet Next function
@@ -1020,7 +1025,7 @@
   }
   // a round's Sent cell: who sent it when (with Undo for a mis-tap: the sender within 2 minutes, or a sous chef or the
   // head chef, the rules say the same), or how much went and a button that sends all that is left as one trip
-  function sentCell(f, i) {
+  function sentCell(f, i, quiet) {
     var x = sentRec(f, i), st = roundState(f, i), me = ahWho(), d = ' data-id="' + esc(f.id) + '" data-r="' + i + '"';
     if (x) {
       var undo = '', last = st && st.trips.length ? st.trips[st.trips.length - 1] : null;
@@ -1028,7 +1033,7 @@
       else if (!last && (isChef() || me && x.sentBy === me && now() - x.sentAt < 2 * MIN)) undo = '<button type="button" class="linkish" data-fn="unsent"' + d + '>Undo</button>';
       return '<span class="fn-sent-ok">' + esc(kclock(x.sentAt)) + '<small>' + esc(nameOf(x.sentBy)) + '</small></span>' + undo;
     }
-    var part = st && st.sentTot ? '<span class="fn-sent-part">' + st.sentTot + ' of ' + st.bookedTot + ' sent</span>' : '';
+    var part = st && st.sentTot && !quiet ? '<span class="fn-sent-part">' + st.sentTot + ' of ' + st.bookedTot + ' sent</span>' : '';
     if (!canSend()) return part || '<span class="fn-sent-part">Not sent yet</span>';
     var lab = st && st.sentTot ? 'Send ' + st.leftTot + ' left' : 'Send all' + (st ? ' ' + st.leftTot : '');
     return part + '<button type="button" class="btn fn-sent-b" data-fn="send" data-v="all"' + d + ' aria-label="Round ' + (i + 1) + ': ' + esc(lab) + '">' + esc(lab) + '</button>';
@@ -1195,12 +1200,12 @@
     }
     if (!f.first) return nextBox('Next out', 'Times TBC', tot + ' ' + (tot === 1 ? 'platter' : 'platters'), rows());
     var k = nextOpen(f, function (i) { return tick && !!sentRec(f, i); });
-    if (k < 0) { var last = sentRec(f, n - 1); return nextBox('Done', 'All sent', esc(n > 1 ? 'All ' + n + ' rounds, the last ' + sentText(last) : sentText(last)), '<div class="fn-next-sent">' + sentCell(f, n - 1) + '</div>'); }
+    if (k < 0) { var last = sentRec(f, n - 1); return nextBox('Done', 'All sent', esc(n > 1 ? 'All ' + n + ' rounds, the last ' + sentText(last) : sentText(last)), '<div class="fn-next-sent">' + sentCell(f, n - 1) + '</div>' + (n === 1 ? tripsList(f, 0) : '')); }
     var r = f.rounds[k], late = tick && r.at < t, st = tick ? roundState(f, k) : null, rc = st ? st.left : roundCounts(f, k), q = sum(rc);
     var head = (f.mode === 'all' ? 'All at ' : '') + when(r.at, f.date) + (n > 1 ? ' · round ' + (k + 1) + ' of ' + n : '');
     var part = st && st.sentTot ? st.sentTot + ' of ' + st.bookedTot + ' sent in ' + st.trips.length + (st.trips.length === 1 ? ' trip' : ' trips') + ', ' + q + ' left' : '';
-    var sub = (late ? '<span class="fn-late">Due ' + esc(when(r.at, f.date)) + ', not sent yet</span> · ' : '') + (part || q + ' ' + (q === 1 ? 'platter' : 'platters') + (n > 1 ? ' of ' + tot : '')) + (r.note ? ' · ' + esc(r.note) : '');
-    return nextBox('Next out', head, sub, rows(rc) + (tick ? '<div class="fn-next-sent">' + sentCell(f, k) + '</div>' : ''));
+    var sub = (late ? '<span class="fn-late">Due ' + esc(when(r.at, f.date)) + (part ? ', ' + q + ' still to send' : ', not sent yet') + '</span> · ' : '') + (part || q + ' ' + (q === 1 ? 'platter' : 'platters') + (n > 1 ? ' of ' + tot : '')) + (r.note ? ' · ' + esc(r.note) : '');
+    return nextBox('Next out', head, sub, rows(rc) + (tick ? '<div class="fn-next-sent">' + sentCell(f, k, true) + '</div>' + (n === 1 ? tripsList(f, 0) : '') : ''));
   }
   /* The whole function, straight under Next out (22 Oct 2026): every platter booked, added up over all its rounds, each
      linked to its card. One round still to go out is the whole function already, so it says so in one line instead of

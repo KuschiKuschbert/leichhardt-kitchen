@@ -4307,16 +4307,16 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .fn-svc-tw { flex: 1 1 14rem; min-width: 0; overflow-wrap: anywhere; }
 .fn-trip-k { font: 700 0.78rem/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; }
 .fn-ws { display: inline-flex; align-items: center; gap: 0.3rem; padding: 2px 8px; border: 1.5px solid currentColor; border-radius: 4px; font: 700 0.78rem/1.3 var(--display); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
-.fn-svc-board .fn-ws, .fn-band .fn-ws { color: var(--bar-text); border-color: rgba(251, 248, 241, 0.7); }
+.fn-svc-board .fn-ws, .fn-band .fn-ws, .fn-next .fn-ws { color: var(--bar-text); border-color: rgba(251, 248, 241, 0.7); }
 .fn-ws.is-pend { font-style: italic; }
-.fn-svc-board .fn-ws.is-long, .fn-band .fn-ws.is-long { border-color: var(--bar-accent); background: var(--bar-accent); color: var(--bar); }
-.fn-svc-board .fn-ws.is-never, .fn-band .fn-ws.is-never { border-color: var(--bad-on-dark); color: var(--bad-on-dark); }
+.fn-svc-board .fn-ws.is-long, .fn-band .fn-ws.is-long, .fn-next .fn-ws.is-long { border-color: var(--bar-accent); background: var(--bar-accent); color: var(--bar); }
+.fn-svc-board .fn-ws.is-never, .fn-band .fn-ws.is-never, .fn-next .fn-ws.is-never { border-color: var(--bad-on-dark); color: var(--bad-on-dark); }
 .fn-ws.is-long { border-color: var(--small-ink); color: var(--small-ink); }
 .fn-ws.is-never { color: var(--bad-ink); }
 .fn-svc-board .fn-out-b, .fn-band .fn-out-b { min-height: 48px; padding: 0 0.9rem; border-color: var(--paper); background: var(--paper); color: var(--ink); }
 .fn-svc-board .fn-for-b { min-height: 48px; padding: 0 0.9rem; border-color: var(--bar-text); background: transparent; color: var(--bar-text); }
 .fn-svc-outs { margin: 0.3rem 0 0.6rem; color: rgba(251, 248, 241, 0.86); }
-.fn-svc-outs .fn-i, .fn-trip-out .fn-i { color: var(--done-on-dark); }
+.fn-svc-outs .fn-i, .fn-next .fn-trip-out { color: var(--done-on-dark); }
 .fn-band .fn-li-out { display: flex; align-items: center; gap: 0.5rem; border-top: 1px solid rgba(251, 248, 241, 0.16); }
 .fn-band .fn-li-out:first-child { border-top: 0; }
 .fn-band .fn-li-out > .fn-row { flex: 1 1 auto; min-width: 0; border-top: 0; }

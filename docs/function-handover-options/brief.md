@@ -1,6 +1,6 @@
 # Function handover: a two-way check on what goes out
 
-Status: **chosen 14 November 2026: the recommended mix, as a trial.** Building. Role-based analysis, not research with real staff.
+Status: **chosen 14 November 2026: the recommended mix, as a trial; built the same day.** Role-based analysis, not research with real staff.
 
 ## The request
 
@@ -215,3 +215,20 @@ Implemented-app checks, none done yet:
 - The rules go first, then the screens, in this one pull request (the session has one branch); the rules are published before the client merges.
 
 After the trial, the head chef may change the words, who confirms, the 10 minutes, or take the confirm half off. Rolling back is a revert of the client: the trip records stay, and older code ignores them (it reads only each round's own Sent record, which the last trip sets).
+
+## Built (14 November 2026)
+
+What the kitchen sees is described in `docs/prep-book.md` (Trips and the two-way check); the code contract is in `docs/code-contracts.md` (Functions, Trips). Screenshots and numbers of the implemented app: [built/](built/) (`measurements.json`).
+
+Differences from the combined preview, after the build:
+
+- Each kind button keeps an empty 44 px slot for its − from the start (the screen designer's repair), so on a 390 px phone a kind sits on its own line more often: the wedding row with three kinds left is 410 px, not 363, and its Send all sits at 646 px from the top, not 617. With two kinds picked the row is 461 px and Send is at 697 px. At 768 and 1280 px all three rounds start on the first screen and two fit whole.
+- A part-sent round's late words say "Due 18:30, 5 still to send" and the band says "All, the rest not sent yet", not "not sent yet" beside "9 of 14 sent".
+- After a press the Send button rests for 1.5 seconds: "Sending trip 3..." while the server has not answered, "Sent trip 3" once it has. A refusal ends the rest at once, so a retry is never taken for a double tap. A trip waiting for the signal says Not sent yet on the shelf and never holds the button longer.
+- For Functions people the band puts the function with the longest-waiting trip first (it was last, behind "+1 more", as a function with nothing left to send).
+- A one-round function lists its trips under Next out on the sheet (Every round is not shown for one round).
+- Not done, kept for after the trial: typed counts are offered from 10 of a kind (not measured with real counts); the nightly backup still reads every `fnsent` record ever kept; no push or sound tells a coordinator a trip is waiting (no new listener or polling).
+
+Implemented-app measurements (click-test stand-in, synthetic night at 18:35, 390 x 844, the tab bar taken off): cook 3 rounds to go, 2 start in the first screen, 1 fits whole; the waiting line at 250 px; first kind button at 418 px. Fay: the shelf first, her first Confirm out at 361 px, no send or pick buttons. Not measured: dark and high-contrast themes, keyboard focus order, a screen reader's words for a picked kind.
+
+Checks run: `tests/fn-handover.test.js` (41 checks: picks, double tap, another phone's send, Clear, Send all with the round's tick, Undo, a refusal keeping the picks, no signal, Fay's band and shelf, the chef's fallback, after the window, 390, 768 and 1280 px, no explicit reads; the layout check fails on the first build, where the Not sent yet line did not wrap); `tests/rules/rules.test.mjs` (37 trip checks, 11 of them fail on `main`'s rules); `tests/rules/client-shapes.test.mjs` (6 rows, 9 sign-ins each); the existing function tests with Send and Undo in place of Sent.

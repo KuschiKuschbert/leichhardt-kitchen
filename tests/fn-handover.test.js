@@ -156,6 +156,16 @@ const pick = (p, rid, less) => p.click(wedRow + ' [data-fn="' + (less ? 'pick-le
   await L.waitFor(p, () => !!document.querySelector('#fn-band [data-fn="trip-out"]')).catch(() => {});
   ok(/Wedding reception/.test(flat(await txt(p, '#fn-band'))) && /Not confirmed/.test(flat(await txt(p, '#fn-band'))), 'after its window: the wedding stays on the band while a trip waits, and says Not confirmed (' + flat(await txt(p, '#fn-band')).slice(0, 160) + ')');
   await p.context().close();
+  // a damaged trip (another phone, or a bad record): words only, no markup; a count that is not a whole number is left out
+  const P = 'Zz<i id="pwn"></i><img src=x onerror="window.__pwn=1">" data-pwn="1';
+  const bad = Object.assign({}, s, { [TRIP(7)]: { fid: 'wed', at: RA, day: today, k: 7, n: { [P]: 2, 'fruit-platter': '1" data-pwn="1' }, sentAt: at(today, '18:38'), sentBy: P, by: P } });
+  p = await L.open(b, '#/fn/now', { who: 'fay', extra: bad, clock: at(today, '18:40'), width: 390, wait: 1500 });
+  await L.waitFor(p, () => !!document.querySelector('.fn-svc-shelf'));
+  await p.goto(L.BASE + '#/'); await L.settle(p, 900);
+  ok(await p.evaluate(() => !document.getElementById('pwn') && !document.querySelector('[data-pwn]') && !window.__pwn), 'a damaged trip shows no markup on the shelf or the band');
+  await p.goto(L.BASE + '#/fn/now'); await L.settle(p, 600);
+  ok(/Trip 7 2 no longer booked · /.test(flat(await txt(p, '.fn-svc-shelf'))) && await p.evaluate(() => !document.getElementById('pwn') && !document.querySelector('[data-pwn]') && !window.__pwn), 'a damaged trip: an unknown platter is counted as no longer booked, its bad count left out (' + flat(await txt(p, '.fn-svc-shelf')).slice(0, 200) + ')');
+  await p.context().close();
 
   // 5. every size: no sideways scroll, no errors, picks and the shelf on screen
   for (const w of [768, 1280]) {
