@@ -1154,8 +1154,8 @@
   }
 
   /* ---------- the picks: what goes in the next trip, on the service view (14 Nov 2026) ----------
-     Held in this page's memory only, per person: a tap on a kind picks all that is left of it, − takes one off, a big
-     count can be typed. Never saved until Send. Each redraw cuts them to what is still left (another phone sent some)
+     Held in this page's memory only, per person: each tap on a kind puts one more platter in the trip, up to what is
+     left (head chef, 14 Nov 2026), − takes one out, a kind of 10 or more has a box to type how many. Never saved until Send. Each redraw cuts them to what is still left (another phone sent some)
      and says so; leaving the service view, a different person, the daily lock or a handover clears them. */
   var PK = { who: '', r: {}, note: {} };
   function pickOf(f, i, st) {
@@ -1571,7 +1571,7 @@
       .map(function (x) { return '<span class="fn-svc-q"><b>' + x.q + '</b> <span class="fn-x">\u00d7</span> ' + esc(short(x.l.name)) + '</span>'; }).join('');
   }
   /* The two-way check (head chef, 14 Nov 2026, docs/function-handover-options/brief.md, Chosen): the kitchen taps what
-     goes now (each kind left is a button; a tap picks all of it, − takes one off) and presses one button that says what
+     goes now (each kind left is a button; each tap puts one more platter in, − takes one out) and presses one button that says what
      it sends: Send all 5, or Send 4 platters. Each send is a trip. A row says how much went; every trip waiting for
      Functions is one line on the shelf at the end of the board, counted in the board's top line. Functions people
      confirm each trip (Confirm out); a head or sous chef may confirm for Functions 10 minutes after it was sent.
@@ -1580,8 +1580,8 @@
     return '<ul class="fn-svc-kinds" aria-label="Tap what goes now">' + (f.lines || []).map(function (l, j) {
       var left = st.left[j], v = pk[l.rid] || 0, nm = esc(short(l.name)), d = ' data-id="' + esc(f.id) + '" data-r="' + i + '|' + esc(l.rid) + '"';
       if (left <= 0) return '';
-      if (!v) return '<li class="fn-svc-kind"><button type="button" class="fn-svc-k" data-fn="pick"' + d + ' aria-pressed="false">' + I_BOX + '<b>' + left + '</b> <span class="fn-x">×</span> ' + nm + '</button><span class="fn-svc-kslot" aria-hidden="true"></span></li>';
-      return '<li class="fn-svc-kind"><button type="button" class="fn-svc-k is-pick" data-fn="pick"' + d + ' aria-pressed="true"><b>' + v + '</b> <span class="fn-x">×</span> ' + nm +
+      if (!v) return '<li class="fn-svc-kind"><button type="button" class="fn-svc-k" data-fn="pick"' + d + ' aria-pressed="false" aria-label="' + left + ' ' + nm + ' left. Put one in this trip">' + I_BOX + '<b>' + left + '</b> <span class="fn-x">\u00d7</span> ' + nm + '</button><span class="fn-svc-kslot" aria-hidden="true"></span></li>';
+      return '<li class="fn-svc-kind"><button type="button" class="fn-svc-k is-pick" data-fn="pick"' + d + ' aria-pressed="true" aria-label="' + v + ' of ' + left + ' ' + nm + ' in this trip' + (v < left ? '. Put one more in' : '') + '"><b>' + v + '</b> <span class="fn-x">\u00d7</span> ' + nm +
         (v < left ? ' <span class="fn-svc-kof">of ' + left + '</span>' : '') + ' <span class="fn-svc-kin">In this trip</span></button>' +
         (left >= 10 ? '<input class="fn-svc-knum" type="number" inputmode="numeric" min="1" max="' + left + '" value="' + v + '" data-fn="pick-num"' + d + ' aria-label="How many ' + nm + ' in this trip">' : '') +
         '<button type="button" class="fn-svc-kless" data-fn="pick-less"' + d + ' aria-label="One fewer ' + nm + '">−</button></li>';
@@ -1619,7 +1619,7 @@
        about its time: how long until it goes, or how late it is. */
     function left(at) { var m = Math.round((at - t) / MIN); return m < 0 ? -m + ' min late' : !m ? 'Now' : m < 60 ? 'In ' + m + ' min' : 'In ' + Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + m % 60 + ' min' : ''); }
     var out = '<section class="set-block fn-page fn-svc-page"><div class="fn-page-head"><h2 id="rtitle" tabindex="-1">Service</h2></div><p class="hint">' +
-      (coord ? 'What the kitchen has sent, waiting for you to confirm, then every round still to go out.' : 'Every round still to go out, in order. Tap what goes now, then Send. Functions confirms each trip.') + '</p>' + (known() ? '' : waitHTML());
+      (coord ? 'What the kitchen has sent, waiting for you to confirm, then every round still to go out.' : 'Every round still to go out, in order. Tap what goes now, one tap a platter, then Send. Functions confirms each trip.') + '</p>' + (known() ? '' : waitHTML());
     if (known() && !sv.all.length && !wt.length) out += '<p class="hint">Nothing to send: no function has a round still to go out.</p>';
     var rows = sv.all.length ? '<ul class="fn-svc-rows">' + sv.all.map(function (r) {
       var n = r.f.rounds.length, st = roundState(r.f, r.k), key = r.f.id + '_' + r.f.rounds[r.k].at, pk = cook ? pickOf(r.f, r.k, st) : {}, pq = sum(Object.keys(pk).map(function (x) { return pk[x]; }));
@@ -1857,7 +1857,11 @@
       var pr = String(el.getAttribute('data-r') || '').split('|'), pf = byId(el.getAttribute('data-id')), pi = +pr[0], prid = pr.slice(1).join('|');
       var pst = pf && roundState(pf, pi), pk0 = pf && pst ? pickOf(pf, pi, pst) : {}, pj = pf ? (pf.lines || []).map(function (l) { return l.rid; }).indexOf(prid) : -1;
       if (!pst || pj < 0) return;
-      pickSet(pf.id, pi, prid, a === 'pick-less' ? (pk0[prid] || 0) - 1 : pk0[prid] ? 0 : pst.left[pj]);
+      // one tap puts one more platter of the kind in the trip, up to what is left (head chef, 14 Nov 2026, after trying
+      // it: a cook may send one Fruit with another kind first); − takes one out
+      var had = pk0[prid] || 0, want = a === 'pick-less' ? had - 1 : Math.min(had + 1, pst.left[pj]);
+      if (a === 'pick' && want === had) { var api0 = P() && P().book && P().book(); if (api0 && api0.say) api0.say('All ' + had + ' ' + short((pf.lines || [])[pj].name) + ' are in this trip.'); return; }
+      pickSet(pf.id, pi, prid, want);
       changed(); return;
     }
     if (a === 'pick-clear') { var cf = byId(el.getAttribute('data-id')), cr = cf && (cf.rounds || [])[+el.getAttribute('data-r')]; if (cr) { delete PK.r[cf.id + '_' + cr.at]; delete PK.note[cf.id + '_' + cr.at]; } changed(); return; }

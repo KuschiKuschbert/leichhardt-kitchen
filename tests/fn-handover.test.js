@@ -41,17 +41,20 @@ const pick = (p, rid, less) => p.click(wedRow + ' [data-fn="' + (less ? 'pick-le
   await L.waitFor(p, () => !!document.querySelector('.fn-svc-row [data-fn="pick"]'));
   const bill = await reads(p), asked = await p.evaluate(() => window.__fake.reads.length);
   ok(await p.$$eval(wedRow + ' [data-fn="pick"]', l => l.length) === 5 && await sendText(p) === 'Send all 14', 'cook: every kind left is a button, and Send all 14 (' + await sendText(p) + ')');
+  // one tap, one platter (head chef, 14 Nov 2026, after trying it): the first tap on 4 Antipasto puts one in the trip
   await pick(p, 'antipasto-platter'); await L.settle(p, 100);
-  await pick(p, 'pizza-platter'); await L.settle(p, 100);
+  ok(/^1 × Antipasto of 4 In this trip$/.test(flat(await txt(p, wedRow + ' [data-r="0|antipasto-platter"].is-pick'))) && await sendText(p) === 'Send 1 platter', 'pick: the first tap puts one platter in the trip, not the whole kind (' + await sendText(p) + ')');
+  for (let i = 0; i < 4; i++) { await pick(p, 'antipasto-platter'); await L.settle(p, 60); }
+  for (let i = 0; i < 3; i++) { await pick(p, 'pizza-platter'); await L.settle(p, 60); }
   const picked = await p.$$eval(wedRow + ' .fn-svc-k.is-pick', l => l.map(e => e.textContent.replace(/\s+/g, ' ').trim() + '|' + e.getAttribute('aria-pressed')));
-  ok(picked.join() === '4 × Antipasto In this trip|true,3 × Pizza In this trip|true' && await sendText(p) === 'Send 7 platters', 'pick: a tap takes all of a kind, in words, and the button says what it sends (' + picked.join() + ' / ' + await sendText(p) + ')');
+  ok(picked.join() === '4 × Antipasto In this trip|true,3 × Pizza In this trip|true' && await sendText(p) === 'Send 7 platters', 'pick: one tap a platter, never past what is left, in words, and the button says what it sends (' + picked.join() + ' / ' + await sendText(p) + ')');
   ok(/In this trip: 4 Antipasto, 3 Pizza\. Not sent yet\./.test(flat(await txt(p, wedRow))) && !(await p.$(wedRow + ' .fn-svc-k.is-pick .fn-i')), 'pick: the row says the picks are not sent yet, and a pick wears no tick');
   ok(await p.$eval(wedRow, r => { const B = r.closest('.fn-svc-board').getBoundingClientRect(); return [r].concat([...r.querySelectorAll('*')]).every(e => e.getBoundingClientRect().right <= B.right + 1); }), 'pick: at 390 px every word of the row stays on the board (the Not sent yet line wraps)');
   await pick(p, 'pizza-platter', true); await L.settle(p, 100);
   ok(/2 × Pizza of 3 In this trip/.test(flat(await txt(p, wedRow + ' [data-r="0|pizza-platter"].is-pick'))) && await sendText(p) === 'Send 6 platters', 'pick: − takes one off (' + await sendText(p) + ')');
-  await pick(p, 'pizza-platter'); await L.settle(p, 100);
-  ok(await sendText(p) === 'Send 4 platters', 'pick: a tap on a picked kind takes it out of the trip');
-  await pick(p, 'pizza-platter'); await L.settle(p, 100);
+  await pick(p, 'pizza-platter', true); await pick(p, 'pizza-platter', true); await L.settle(p, 100);
+  ok(await sendText(p) === 'Send 4 platters' && !(await p.$(wedRow + ' [data-r="0|pizza-platter"].is-pick')), 'pick: − down to none takes the kind out of the trip');
+  for (let i = 0; i < 3; i++) { await pick(p, 'pizza-platter'); await L.settle(p, 60); }
   await p.evaluate(() => window.dispatchEvent(new Event('lk-fn'))); await L.settle(p, 200);
   ok(await sendText(p) === 'Send 7 platters', 'pick: the picks stay through a redraw');
   ok(await p.evaluate(k => !Object.keys(window.__fake.dump()).some(x => x.startsWith(k)), key(['fnsent'])), 'pick: nothing is saved before Send');
@@ -77,7 +80,7 @@ const pick = (p, rid, less) => p.click(wedRow + ' [data-fn="' + (less ? 'pick-le
   const samAt = await p.evaluate(() => window.LK_TIME.now());
   await p.evaluate(([k, rec]) => window.__fake.write(k, rec), [TRIP(2), { fid: 'wed', at: RA, day: today, k: 2, n: { 'sliders-platter': 3 }, sentAt: samAt, sentBy: 'sam', by: 'sam' }]);
   await L.settle(p, 1600);
-  ok(await sendText(p) === 'Send 2 platters' && /Some of the picks were sent from another phone/.test(flat(await txt(p, wedRow))), 'picks: another phone sent the Sliders, so the picks shrink to the Fruit and say why (' + await sendText(p) + ')');
+  ok(await sendText(p) === 'Send 1 platter' && /Some of the picks were sent from another phone/.test(flat(await txt(p, wedRow))), 'picks: another phone sent the Sliders, so the picks shrink to the Fruit and say why (' + await sendText(p) + ')');
   // the rest in one trip ticks the round's own Sent record too (older phones read only that)
   await p.click(wedRow + ' [data-fn="pick-clear"]'); await L.settle(p, 100);
   ok(await sendText(p) === 'Send all 4', 'Clear drops the picks: Send all 4');
@@ -100,18 +103,18 @@ const pick = (p, rid, less) => p.click(wedRow + ' [data-fn="' + (less ? 'pick-le
   await pick(p, 'fruit-platter'); await L.settle(p, 100);
   await p.evaluate(() => { window.__fake.deny = /_t4$/; });
   await p.click(wedRow + ' [data-fn="send"]'); await L.settle(p, 500);
-  ok(/Not saved: trip 4 \(2 Fruit\) was not sent\. Someone may have sent trip 4 first\. Your picks are kept/.test(await txt(p, '.p-toasts') || '') && await sendText(p) === 'Send 2 platters' && !(await store(p))[TRIP(4)], 'refused: a red slip, nothing saved, and the picks are kept (' + flat(await txt(p, '.p-toasts')).slice(0, 160) + ')');
+  ok(/Not saved: trip 4 \(1 Fruit\) was not sent\. Someone may have sent trip 4 first\. Your picks are kept/.test(await txt(p, '.p-toasts') || '') && await sendText(p) === 'Send 1 platter' && !(await store(p))[TRIP(4)], 'refused: a red slip, nothing saved, and the picks are kept (' + flat(await txt(p, '.p-toasts')).slice(0, 160) + ')');
   await p.evaluate(() => { window.__fake.deny = null; });
   await p.click('.p-toast-bad .p-toast-btn').catch(() => {}); await L.settle(p, 100);
   // no signal: the trip says Not sent yet, the button rests, then the signal comes back
   await p.evaluate(() => { window.__fake.mode = 'hold'; });
   await p.click(wedRow + ' [data-fn="send"]'); await L.settle(p, 300);
-  ok(/Trip 4 2 Fruit · Not sent yet/.test(flat(await txt(p, '.fn-svc-shelf'))) && await p.$eval(wedRow + ' [data-fn="send"]', b => b.disabled && /Sending trip 4/.test(b.textContent)), 'no signal: the trip says Not sent yet and the Send rests ("Sending trip 4...")');
+  ok(/Trip 4 1 Fruit · Not sent yet/.test(flat(await txt(p, '.fn-svc-shelf'))) && await p.$eval(wedRow + ' [data-fn="send"]', b => b.disabled && /Sending trip 4/.test(b.textContent)), 'no signal: the trip says Not sent yet and the Send rests ("Sending trip 4...")');
   await L.settle(p, 1700);
-  ok(await p.$eval(wedRow + ' [data-fn="send"]', b => !b.disabled && b.textContent.trim() === 'Send all 2'), 'no signal: after 1.5 seconds the button is back for what is left');
+  ok(await p.$eval(wedRow + ' [data-fn="send"]', b => !b.disabled && b.textContent.trim() === 'Send all 3'), 'no signal: after 1.5 seconds the button is back for what is left');
   await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
   await L.waitFor(p, k => !!window.__fake.dump()[k], TRIP(4)); await L.settle(p, 400);
-  ok(/Trip 4 2 Fruit · sent 18:3\d Ann/.test(flat(await txt(p, '.fn-svc-shelf'))), 'signal back: the trip is sent and says who sent it');
+  ok(/Trip 4 1 Fruit · sent 18:3\d Ann/.test(flat(await txt(p, '.fn-svc-shelf'))), 'signal back: the trip is sent and says who sent it');
   ok(await p.evaluate(() => window.__fake.reads.length) === asked, 'the service view, picks and sends ask for no read: only the listener hears each saved trip (' + (await reads(p) - bill) + ' billed by it)');
   ok(p.errors.length === 0 && !(await L.overflow(p)), '390 px cook: no page errors, no sideways scroll ' + p.errors.join(' | '));
   s = await store(p);
