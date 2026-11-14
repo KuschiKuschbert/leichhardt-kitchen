@@ -4587,6 +4587,16 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .tm-notebook .tm-spread > span { flex: 1 1 100%; }
 .tm-notebook .tm-spread .btn { min-height: 44px; max-width: 100%; }
 .tm-notebook .tm-same { flex-wrap: wrap; margin: 0 0 .75rem; padding: .65rem .7rem; font-size: .875rem; }
+/* Fill from roster file (14 Nov 2026, admin panel only; docs/roster-import-options/brief.md): the Copy last weekday row's
+   look, then what the file filled, the people not in the book and one chip for each filled day (a chip opens that day) */
+.tm-roster { margin: 0 0 1rem; }
+.tm-roster > p, .tm-roster-missing > p { margin: .35rem 0; }
+.tm-roster-list { margin: .25rem 0 .5rem; padding-left: 1.1rem; }
+.tm-roster-list li { margin: .2rem 0; }
+.tm-roster-missing { margin: .75rem 0; padding: .65rem .7rem; border: 1.5px solid var(--edge); border-radius: var(--r-act); background: var(--paper); }
+.tm-roster-days { display: flex; flex-wrap: wrap; gap: .5rem; margin: .25rem 0 .5rem; }
+.tm-roster-days .chip { min-height: 44px; }
+.tm-roster-time { margin: .1rem 0 0; }
 .tm-notebook .tm-same > span { flex: 1 1 12rem; min-width: 0; overflow-wrap: anywhere; }
 .tm-notebook .tm-same small { display: block; margin-top: .25rem; color: var(--muted); line-height: 1.4; }
 .tm-notebook .tm-batch .tm-same { margin: 0 0 .6rem; padding: .35rem 0 .65rem; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; }
@@ -5238,7 +5248,7 @@ html:has(.tm-focus-page) {
 .tm-notebook.tm-focus-page { min-width: 0; isolation: isolate; }
 .tm-notebook.tm-focus-page .tm-nbook {
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: 'head' 'date' 'week' 'away' 'notice' 'toolbar' 'editor' 'save' 'review' 'tools' 'extra';
+  grid-template-areas: 'head' 'date' 'week' 'away' 'notice' 'toolbar' 'editor' 'save' 'review' 'tools' 'roster' 'extra';
 }
 .tm-notebook.tm-focus-page .tm-nbook::before { display: none; }
 .tm-notebook.tm-focus-page .tm-nleft, .tm-notebook.tm-focus-page .tm-nright { display: contents; }
@@ -5283,6 +5293,7 @@ html:has(.tm-focus-page) {
 .tm-focus-page .tm-future-note { grid-area: notice; margin: .35rem .85rem; }
 .tm-focus-page .tm-editor { grid-area: editor; min-width: 0; padding: 0 .85rem; }
 .tm-focus-page .tm-batch { grid-area: tools; margin: .65rem .85rem 0; }
+.tm-focus-page .tm-roster { grid-area: roster; min-width: 0; margin: .65rem .85rem 0; }
 .tm-focus-page .tm-review-action { grid-area: review; margin: .5rem .85rem; }
 .tm-focus-page .tm-focus-toolbar { grid-area: toolbar; display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .5rem; margin: .35rem .85rem .65rem; min-width: 0; }
 .tm-focus-page .tm-focus-toolbar > button { flex: 0 0 auto; min-width: 44px; min-height: 44px; max-width: 100%; }

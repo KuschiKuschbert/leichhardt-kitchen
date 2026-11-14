@@ -2,7 +2,7 @@
 
 14 November 2026, Queensland. Head chef request: fill Today's team from the Humanforce Weekly Department Roster Report (CSV export) while a read-only Humanforce API key is requested from Australian Venue Co IT. [Proposal](proposal.md), [evidence packet](evidence-packet.md). Role-based analysis, not research with staff.
 
-**Status: the combined design chosen 14 November 2026. Step 1 (the reader) built and tested; step 2 (the screen) waits on the week-to-week measurement.**
+**Status: the combined design chosen 14 November 2026. Step 1 (the reader) and step 2 (the admin panel screen) built and tested locally; draft pull request #699. The week-to-week measurement waits for a second roster.**
 
 ## Head chef answers after round 1 (14 November 2026)
 
@@ -230,3 +230,57 @@ The head chef chose **the combined design** (the recommendation) and **the reade
 Checks: `tests/roster-import.test.js`, 61 node checks on made-up rosters (reading, wiping money and roles, 22 refusals, services, names including the two-Sams case, the plan). The slipped-day check fails on the reader without the day-totals rule. Run privately against the owner's real export (kept out of the repo): 10 people and 47 shifts, identical to the same week's Excel export.
 
 **Next:** the owner adds a second week's roster CSV to the Drive folder; the reader compares the two weeks privately (how many shifts change), and step 2 is built only if that is worth it against Copy last weekday.
+
+## Step 2: the screen (built 14 November 2026)
+
+No second roster existed yet, so the head chef chose to build the screen now and judge it on the next real roster (option 1 in chat, 14 November 2026).
+
+**Where.** The admin panel's Team room gets a **Today's team** page after Manage staff. It is the same planner the chef panel embeds (`teamPageHTML()`, `teamHere()` now includes `adminPage('plan')`). The roster block shows only there, and only for the head chef's admin session (`tmRsOK()`: `S.level === 'owner'`, `ownerHere()`, `teamOK()`). Chefs' `#/team` and the chef panel never show it (checked for the head chef and a sous chef on `#/team`).
+
+**One departure from the combined preview.** The preview put the tool inside the "Copy a day or spread breaks" fold. That fold remembers its open state per date, so after the import selects another date the result would have been hidden in a closed fold. The roster block has its own grid row below the fold instead (`.tm-roster`, `grid-area: roster`), always visible on the admin page. This also answers the New starter's follow-up point that the import was hidden in the fold. The test fails without the grid row (the block jumped above the day's rows).
+
+**How it works.**
+1. Choose roster file opens the device's file picker. The reader loads on that tap (`LK_APP.load('js/roster-import.js?v=1')`); a file over 1 MB is refused.
+2. The reader wipes money cells as it splits the file and refuses anything that does not fit the report (step 1).
+3. The planner selects the first day of the roster week from today on, and reads that week from the server (`tmPlanLoad(true)`). A read that cannot start, fails, or is dropped by a lock fills nothing and says so.
+4. When the week answer comes (`tmRsWeekIn()`), each day that was read, has no saved plan, no draft and is not past is filled through `tmAddShift()` (usual sections, never a guessed one). Other days are named: already had a saved plan, already had a draft, is past, could not be checked.
+5. The block says how many days were filled as drafts and how many are saved, that breaks are not set, the people not in the book with the name looked for and their shifts (Manage staff one tap away), shifts outside every service, and one chip per filled day with the week list's own word (`tmDayStatus()`: Draft, Saved, Not set, Retry, Checking).
+6. A chip selects that date (`tmPlanSelect()`, as the week list does) and moves to the planner heading. Each row says "Roster 10:00 to 21:30". Save is the existing dated Save; its message adds how many roster days are still drafts.
+7. Memory only: a handover clears it with the other drafts (`tmReset()`); a privacy lock keeps the drafts, as for any planner draft.
+
+### Implemented app measurements (stand-in, 14 November 2026)
+
+Admin session, 390 x 844, made-up fixture (four book people, a roster of five, Wednesday already saved), fallback fonts, file picker assumed 2 taps.
+
+| Measure | Value |
+| --- | --- |
+| Taps to fill and save the 6 empty days | **15** (Choose 1, picker 2, then a chip and Save for each day) |
+| Same with the date picker at the top instead of chips | 21 (3, then 2 taps and Save for each day), no scrolling back |
+| Scrolling from a chip to that day's rows | 1,093 to 1,408 px (the preview measured 1,191 to 1,553) |
+| Before: Copy last weekday for 6 days | about 30 taps (5 a day, from source) plus edits for roster changes, breaks included |
+| Breaks after the import | not set; Spread them about 3 to 4 taps a service (not counted) |
+| Reads for the import | 1 bounded week query (counted 1 in the stand-in; up to 7 documents) |
+
+The chips save 6 taps over the date picker at the cost of scrolling; both work, as the screen designer's follow-up asked.
+
+### After the tap
+
+| Action | Immediate response | Acknowledgement and location | Failure and reversal |
+| --- | --- | --- | --- |
+| Choose roster file | The device's file picker | Button says Reading the file..., then Checking the week..., disabled | Cancel picks nothing and changes nothing |
+| A file that does not fit | Red words in the block: This file cannot be used. Nothing was filled. and the reason (the line, never a cell) | Stays until another file is chosen | Nothing filled; choose another file |
+| A file that fits | The block lists what was filled and what was not | Draft on each filled day's chip and in the week list | Each date's existing Refresh discards its draft after a second tap; nothing was saved |
+| A day chip | That date is selected; the page moves to its heading | Rows with roster times; Save names the date | The week list or another chip selects another date |
+| Save | Existing Saving, Saved with a tick and the dated message | Adds "N roster days are still drafts." | Existing refusal and retry keep the draft |
+
+### Checks
+
+- `tests/roster-import-ui.test.js` (31 checks): the admin Team room has Today's team; the block shows outside the fold and below the rows (fails without the grid row); one bounded week read; 6 days filled as drafts; Wednesday named and unchanged; unmatched people with the name looked for; breaks not set; Manage staff one tap away; no cost or award role anywhere on the page; six Draft chips; nothing saved by the import; a chip selects Thursday; Thursday's rows with roster times; Save writes exactly the services each shift touches, nobody unmatched; the band and chip follow the Save; other days stay drafts; no sideways scroll at 390 and 1280 px; a slipped file refused in words with nothing filled and no name or cost in the message; a name with quotes and & shown as plain text; no tool for the head chef or a sous chef on `#/team`.
+- Existing suites run locally, all passing: design patterns, admin navigation and hidden pages, roles (666), page roles, every Today's team file (notebook, week, quick add, quiet, row service, person, save dates, selected day, picker context, glance, header dates, shift tabs, report truth, `todays-team`), Home staff-first and roster, safe text and the read budget.
+
+### Still open
+
+- **Value:** measure on the next real roster how much changed from the week before, and whether the import beat Copy last weekday once breaks are set.
+- **04:00 refresh** (Keeper): unsaved planner drafts hold the 04:00 refresh and silent updates, as they already did for any planner draft; an import can leave up to seven. Not changed here; save or discard the roster days the same day. A rule for old drafts would be the head chef's call.
+- **Home for a day saved without breaks**, the Manage staff detour with drafts open and a chip during a privacy lock: covered by existing planner behaviour, not exercised in a dedicated test.
+- The downloaded CSV keeps its wage columns on the device; the import runs only on the head chef's admin session.
