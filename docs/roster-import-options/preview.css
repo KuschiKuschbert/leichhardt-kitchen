@@ -1,0 +1,62 @@
+/* Design previews for the roster import. Fictional data; never connects to the kitchen. Uses the book's tokens. */
+body.ri-preview { background: #d9d6cf; margin: 0; font-family: var(--body, system-ui, sans-serif); }
+.ri-frame { width: 390px; max-width: 100%; margin: 0 auto; background: var(--surface-paper, #FBF8F1); min-height: 100vh; position: relative; }
+.ri-wide .ri-frame { width: 100%; max-width: 1100px; }
+.ri-bar { background: var(--bar, #2B2B2B); color: #fff; display: flex; align-items: center; gap: 10px; padding: 10px 14px; position: sticky; top: 0; z-index: 2; }
+.ri-bar b { font-size: 1.25rem; }
+.ri-bar small { margin-left: auto; color: #ddd; font-size: .78rem; letter-spacing: .04em; }
+.ri-book { margin: 12px 14px 90px; border: 1px solid var(--surface-people-edge, #8AA391); border-radius: 10px; background: var(--surface-paper, #FBF8F1); overflow: clip; }
+.ri-head { background: var(--surface-people, #EAF5EE); border-bottom: 1px solid var(--surface-people-edge, #8AA391); padding: 12px 14px; }
+.ri-head h1 { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 1.6rem; color: var(--ink, #1f1f1f); }
+.ri-head p { margin: 4px 0 0; font-size: .9rem; color: var(--muted, #555); }
+.ri-pad { padding: 10px 14px; }
+.ri-date { display: flex; gap: 8px; }
+.ri-date span { flex: 1; border: 1px solid #555; border-radius: 22px; padding: 10px 14px; font-weight: 600; }
+.ri-date em { font-style: normal; border: 1px solid #555; border-radius: 22px; padding: 10px 14px; }
+.ri-rows { list-style: none; margin: 0; padding: 0; }
+.ri-rows li { border-bottom: 1px solid var(--line, #ddd); padding: 9px 0; display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; }
+.ri-rows li b { font-size: 1rem; }
+.ri-rows li small { grid-column: 1 / -1; color: var(--muted, #555); font-size: .86rem; }
+.ri-rows li .ri-sec { border: 1px solid #777; border-radius: 6px; padding: 4px 8px; font-size: .9rem; }
+.ri-fold { border-top: 1px solid var(--line, #ddd); margin-top: 6px; margin-bottom: 170px; }
+.ri-fold > summary { padding: 12px 14px; font-weight: 600; cursor: pointer; }
+.ri-fold-body { padding: 0 14px 14px; }
+.ri-tool { border: 1px solid var(--line, #ccc); border-radius: 8px; padding: 10px 12px; margin: 8px 0; background: var(--surface-reference, #F2EFE8); }
+.ri-tool b { display: block; }
+.ri-tool p { margin: 4px 0 8px; font-size: .9rem; color: var(--muted, #555); }
+.ri-btn { min-height: 44px; padding: 0 16px; border-radius: 22px; border: 1px solid #333; background: #fff; font: inherit; font-weight: 600; color: var(--ink, #1f1f1f); cursor: pointer; }
+.ri-btn.ri-main { background: var(--accent, #D9531E); border-color: var(--accent, #D9531E); color: #fff; }
+.ri-btn[disabled] { background: #eee; color: #888; border-color: #ccc; cursor: default; }
+.ri-btn.ri-small { min-height: 44px; padding: 0 12px; font-size: .92rem; }
+.ri-card { border: 1px solid var(--line, #ccc); border-left: 4px solid var(--accent, #D9531E); border-radius: 8px; padding: 10px 12px; margin: 10px 0; background: #fff; }
+.ri-card.ri-bad { border-left-color: var(--bad-ink, #9B2716); background: var(--bad-tint, #FBE9E5); }
+.ri-card h3 { margin: 0 0 6px; font-size: 1rem; }
+.ri-card p { margin: 4px 0; font-size: .92rem; }
+.ri-days { list-style: none; padding: 0; margin: 6px 0; }
+.ri-days li { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 8px; border-bottom: 1px solid var(--line, #ddd); padding: 8px 0; }
+.ri-days li .ri-day { font-weight: 600; }
+.ri-days li .ri-st { font-size: .9rem; }
+.ri-days li small { grid-column: 1 / -1; color: var(--muted, #555); font-size: .85rem; }
+.ri-days li .ri-acts { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
+.ri-st.is-draft::before { content: '\25CF  '; color: var(--accent, #D9531E); }
+.ri-st.is-saved { color: var(--done-ink, #1E6B3A); }
+.ri-st.is-saved::before { content: '\2713  '; }
+.ri-st.is-skip { color: var(--muted, #555); }
+.ri-stamp { display: inline-block; border: 1px solid var(--done-ink, #1E6B3A); color: var(--done-ink, #1E6B3A); border-radius: 4px; padding: 1px 6px; font-size: .82rem; font-weight: 600; }
+.ri-review details { border-bottom: 1px solid var(--line, #ddd); }
+.ri-review summary { padding: 10px 0; display: flex; gap: 8px; align-items: center; cursor: pointer; }
+.ri-review summary label { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: .9rem; min-height: 44px; }
+.ri-review summary input { width: 22px; height: 22px; }
+.ri-review .ri-rows { margin-bottom: 8px; }
+.ri-save { position: sticky; bottom: 46px; background: var(--surface-paper, #FBF8F1); border-top: 2px solid var(--bar, #2B2B2B); padding: 10px 14px; z-index: 1; }
+.ri-save p { margin: 0 0 6px; font-size: .9rem; }
+.ri-save .ri-btn { width: 100%; }
+.ri-tabs { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 390px; max-width: 100%; background: var(--bar, #2B2B2B); color: #fff; display: flex; justify-content: space-around; padding: 10px 0 12px; font-size: .7rem; font-weight: 700; letter-spacing: .03em; z-index: 3; }
+.ri-wide .ri-tabs { display: none; }
+.ri-controls { max-width: 390px; margin: 0 auto; padding: 8px 14px; font-size: .85rem; display: flex; gap: 10px; flex-wrap: wrap; }
+.ri-controls a, .ri-controls button { font: inherit; }
+.ri-note { font-size: .8rem; color: var(--muted, #555); margin: 6px 0 0; }
+.ri-unmatched li { display: block; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+.ri-date select { min-width: 0; width: 100%; text-overflow: ellipsis; }
