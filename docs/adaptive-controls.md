@@ -58,7 +58,7 @@ The first header × rollout was fine-pointer only. The owner's subsequent reques
 
 The owner requested swipe dismissal for existing bottom sheets and modals. `SwipeDismiss()` in `js/controls.js` enhances the current sheet, pings/day, chef menu, cooling menu/alert, function, mail and native picker/dialog headings and grips. The guide document viewer supports dragging its toolbar; its page keeps pinch and horizontal page turning. These are existing overlays with existing close controls, not new screens.
 
-Drag down 72 px, or flick at least 32 px at 0.5 px/ms, from a grip or heading. The panel follows the pointer. Short, sideways, upward, cancelled and multi-touch gestures return it to its resting position. Only the grip/title handles take the gesture; lists, options, form fields and other page content retain native interaction. Touch, pen and mouse use the same helper. Reduced motion removes the return transition. An accidental click after dragging is consumed; the next deliberate tap still works.
+Drag down 72 px, or flick at least 32 px at 0.5 px/ms (the speed over the last 100 ms), from a grip or heading. On a phone the grip is the full-width strip at the top of the sheet (see the fault below). The panel follows the pointer. Short, sideways, upward, cancelled and multi-touch gestures return it to its resting position. The grip and title take touch, pen and mouse. Since 15 November 2026 a touch pull on the body closes the sheet too, when everything under the finger is scrolled to its top (see below); typing boxes, sliders and guide pages keep their own gestures, and a mouse drag on the body still selects words. Reduced motion removes the return transition. An accidental click after dragging is consumed; the next deliberate tap still works.
 
 The helper clicks the original backdrop or sends the native dialog's existing Cancel event. It never saves, acknowledges or removes history directly. Pings stay unread, add-form drafts stay in memory under their existing Cancel rules, and nested picker cancellation only closes that picker. Worker-attribution sheets resist dismissal while waiting for a save. PIN and identity gates keep their existing behaviour because they are not dismissible overlay panels. Newly drawn headings are enhanced again, including reused native dialogs.
 
@@ -73,6 +73,42 @@ The initial pinned-old-source gesture tests fail 9 of 31 assertions. The expande
 All 17 selected existing test files pass, including shared adaptive controls, overlay Back, Prep attribution, Prep/Orders/Wastage/Transfers sheets, cooling behaviour and update confirmation. Changed JavaScript parses and `git diff --check` passes. These are local stand-in browser checks; physical-device and live-release behaviour remain separate from that evidence.
 
 No dependency, shell manifest, Firestore read, write, rule, stored field or persistent copy changes. Rollback is a normal revert of the client changes.
+
+### Fault on phones, found and fixed 15 November 2026
+
+The owner said swiping a sheet down did not seem to work. Measured at 390 x 844 px in Chromium with phone emulation and real touch input, on synthetic fixtures, across all 14 dismissible families: Add to prep, the line menu, Add request, Log waste, Log transfer, the chef menu, the cooling menu, the shared picker, device choice, the shift pings, the function sheet, the mail nudge, a guide page and the occasion note.
+
+| Where the drag starts | Before | After |
+| --- | --- | --- |
+| Top edge of the sheet, or just below the grip bar | Stays open on 12 of 14 (only the picker and device choice closed) | Closes on all 14 |
+| The title band | Closes on all 14 | Closes on all 14 |
+| The body (form, list, words), already at its top | Stays open (the 9 November design) | Closes on each one tried: line menu, Log waste, Log transfer, cooling, picker, device choice, function, occasion (the owner's choice, below); guide pages keep pinch and page turning |
+| A 60 px flick in 40 ms that slows in its last frame | Stays open | Closes |
+
+**Cause 1, the grip took almost no touch.** Each phone grip was drawn as a 44 x 5 px block with 10 px and 8 px margins. Margins take no touch, so the top 23 px of every sheet, where the bar invites the thumb, answered only on a 44 x 5 px spot. The drag had to start on the title band below it. The shared picker already drew its grip as a 194 x 26 px strip with the bar inside, which is why it worked. Tablets and desktop were not affected: at 768 px and above the grip is hidden and the title is the top of the modal.
+
+**Cause 2, one slow frame cancelled a flick.** The flick speed came from the last move only. A thumb slows just before it lifts, so a quick flick often ended on a slow frame (5 px in 16 ms is 0.31 px/ms) and the sheet sprang back.
+
+**Also found:** the shift pings sheet's grip was drawn in half see-through white on the paper, so it could not be seen.
+
+**Why the 36 checks passed.** Every swipe test started its drag 14 px into the middle of the title, never on the grip or the top edge. `L.open` installs a test clock that also replaces `Event.timeStamp`, so every move of a gesture read the same time: the speed was always 0 and the flick was never really tested. All drags were slow 110 px drags.
+
+**Fix.** `css/app.css`: every phone grip (`.sheet-grip`, `.nt-grip`, `.wm-grip`, `.fn-grip`, `.ux-modal-grip`) is a full-width 23 px touch strip with the 44 x 5 px bar drawn inside it, like `.ux-picker-grip`. 23 px is the old bar plus its margins, so nothing on any sheet moves: every child of all 14 families sits at the same offset as before (the mail nudge's 6 px eyebrow margin, which the old margin swallowed, is set to 0 to keep that). `js/controls.js`: the flick speed is taken over the last 100 ms; a finger held still for 100 ms is not a flick. The distances stay 72 px, or 32 px at 0.5 px/ms. No reads, writes, rules, stored fields or shell lists change.
+
+**Verification.** `tests/swipe-dismiss.test.js` adds top-edge drags on Add to prep, the line menu, the chef menu and the shift pings, the grip's size and colour, and four flicks on a plain page with timed touches (no test clock). 7 of 48 checks fail on the old code; 48 of 48 pass with the fix. The related modal, sheet and page files and their results are recorded in the pull request. These are local Chromium checks with phone emulation. Not tested: a physical iPhone or Android phone, and WebKit (Safari), which is not available here.
+
+**Pull from the body (owner, 15 November 2026).** Asked whether a sheet should also close when pulled down from its body while scrolled to the top, as phone sheets do, the owner said to build it with the fix. `SwipeDismiss()` adds a touch-only path in `js/controls.js`:
+
+- A touch on the sheet's body is a candidate only when the sheet and every box between the finger and the sheet is scrolled to its top, the finger is inside the sheet (a native dialog's dimmed page is the dialog too), and the sheet is not busy.
+- The first move of 6 px or more decides. Down takes the touch from the browser (`touchmove` is cancelled) and the sheet follows the finger. Up or sideways leaves it to the browser for the rest of that touch, so the form scrolls and chip rows slide as before. A box scrolled down scrolls back first; the sheet does not take over half way.
+- It closes on the same distances as the grip: 72 px, or a 32 px flick at 0.5 px/ms. A pull that starts on an option or button closes the sheet and does not do that option.
+- Typing boxes, selects, sliders and editable text keep their own gestures. Guide pages keep pinch and page turning: only their grip and toolbar pull. A mouse drag on the body still selects words. A second finger cancels the pull.
+
+Quick check: Build (the owner's request, an existing gesture on existing sheets). Taps for the main jobs are unchanged (Add a line, Tick and Recipes each stay one tap); lines on a 390 px phone are unchanged with the sheet closed and open. Try to break it, reproduced in Chromium touch at 390 px: a scrolled Log waste form pulled down scrolls back to its top and stays open; an upward drag scrolls it; a sideways drag, a 15 to 20 px pull and a second finger leave it open; a long picker list scrolled down scrolls back and picks nothing; a drag on the dimmed page above a picker leaves it open; a drag on the Add to prep typing box keeps the sheet and words; a pull starting on a line menu option closes the menu with no write; a guide page drag keeps the document open; a mouse drag at 1280 px keeps the line menu open. Untested risk: on an iPhone, Safari may hand a touch that starts on a box at its top to the page's bounce before the 6 px decision; to be checked on a phone after release.
+
+`tests/swipe-dismiss.test.js` holds these as checks: 3 of them fail without the body pull, and all 60 pass with it.
+
+**For next time.** A gesture test starts where people start it (the top edge, grip and body of a phone sheet), on every kind of sheet, and checks speed off the test clock. A handle smaller than 44 px is not a handle. A new gesture area inside a sheet (a canvas, a slider, a map) must be left out of the body pull in `SwipeDismiss()`. These rules are in `docs/easy-to-break.md` and `CLAUDE.md`.
 
 ## Direct unit chips and two-way choices (3 November 2026)
 

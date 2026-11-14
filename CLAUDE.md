@@ -193,6 +193,7 @@ Each rule is a bug the book shipped and then fixed. The story and the pull reque
 - **An answer from the cache is not "nothing there".** Never read an offline or pending answer as an empty list, never save it, never write from it. Every reload path goes through `lkServerUp()`.
 - **Never guess, never save nothing.** No match, or more than one: show a card that says so. A Save with nothing to save is off, and `save()` refuses it too.
 - **Prove the fix fails first.** A fix adds the check that fails on the old code, and the pull request says so.
+- **Test a gesture where the hand goes.** A swipe test starts where a thumb lands (a phone sheet's top edge and grip), not the middle of the title, and checks speed off the test clock. A handle under 44 px is not a handle (15 Nov 2026).
 - **Say which way rules change.** Looser (publish before the client) or stricter (publish after), which role each check covers, and that the Lock probe passes after publishing.
 - **Decisions move, so does this file.** When a decision or a `docs/` note supersedes a line here, change the line in the same pull request.
 

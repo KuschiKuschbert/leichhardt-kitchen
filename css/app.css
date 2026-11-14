@@ -5271,9 +5271,19 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .ux-modal .ux-modal-close:hover { background: color-mix(in srgb, currentColor 10%, transparent); }
 .ux-modal .ux-modal-close:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
 .ux-modal .ux-modal-close:disabled { opacity: .4; cursor: default; }
+/* The grip is where a thumb pulls a phone sheet down, so the whole strip takes the touch and the bar is drawn inside it,
+   like the picker's grip. A bare 44 x 5 px bar left the top of every phone sheet dead: margins take no touch (15 Nov 2026).
+   Same 23 px of height as the bar and its margins, so nothing on the sheet moves. */
 .ux-modal > :is(.sheet-grip, .nt-grip, .wm-grip, .fn-grip, .ux-modal-grip) {
-  display: block; flex: 0 0 auto; position: relative; width: 44px; height: 5px;
-  margin: 10px auto 8px; border-radius: 4px; background: var(--muted);
+  display: block; flex: 0 0 auto; align-self: stretch; position: relative; box-sizing: border-box;
+  width: auto; height: 23px; margin: 0; border-radius: 0;
+}
+.ux-modal.ux-swipe > :is(.sheet-grip, .nt-grip, .wm-grip, .fn-grip, .ux-modal-grip) { background: none; }
+.ux-modal:is(.sheet, .wm, .mlp, .cooling-menu, .fn-sheet, .kb-occasion-panel) > :is(.sheet-grip, .wm-grip, .fn-grip, .ux-modal-grip) { margin: 0 -18px; }
+.ux-modal.mlp > .ux-modal-grip + .mlp-eb { margin-top: 0; }   /* the old bar's 8 px margin swallowed this 6 px one */
+.ux-modal > :is(.sheet-grip, .nt-grip, .wm-grip, .fn-grip, .ux-modal-grip)::after {
+  content: ''; position: absolute; top: 10px; left: 50%; width: 44px; height: 5px; margin-left: -22px;
+  border-radius: 4px; background: var(--muted);
 }
 .ux-modal .ux-picker-head { padding-top: 28px; }
 .ux-modal .ux-picker-grip { display: block; position: absolute; top: 0; left: 25%; width: 50%; height: 26px; }
