@@ -51,12 +51,12 @@ permissions:
 # 4 and 5 Nov 2026, 48 merges in a day helped use up the free 50,000 reads by 13:00. So ready pull requests merge only
 # in these windows, Queensland time, between services: HHMM-HHMM, end not included. A pull request labelled "urgent"
 # merges when green at any time, and a run by hand with "Release now" opens the window for that run.
-# The night window runs 22:30 to 02:30 (head chef, 8 Nov 2026), written as two that meet at midnight, as HHMM does
-# not wrap: 2230-2400 and 0000-0230.
+# The night window runs 22:30 to 09:30 (head chef, 15 Nov 2026; to 02:30 from 8 Nov), written as two that meet at
+# midnight, as HHMM does not wrap: 2230-2400 and 0000-0930.
 env:
-  RELEASE_WINDOWS: '1500-1630 2230-2400 0000-0230'
+  RELEASE_WINDOWS: '1500-1630 2230-2400 0000-0930'
   # One-off owner request, 14 Nov 2026 (at 02:50): keep releasing until 09:30 Queensland that morning. Full UTC date,
-  # end excluded. (The one before: 9 Nov 2026, until 08:00 on 10 Nov.)
+  # end excluded. Expired; the daily night window reaches 09:30 since 15 Nov. Set a new date here for a one-off.
   RELEASE_UNTIL: '2026-11-13T23:30:00Z'
 
 # Three jobs (4 Nov 2026): a waiting run in a shared concurrency group is replaced by the next one, so one shared group
