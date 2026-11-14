@@ -179,6 +179,21 @@ const shut = async p => { if (await p.$('.nt-wrap')) { await p.keyboard.press('E
     ok(m.foot <= m.vh, w + ' px: "Cook as written" stays on the first screen (' + m.foot + ' of ' + m.vh + ')');
   }
   await p.context().close();
+  // A celebration day (head chef, 15 Nov 2026): the full-width note split the wall and the one docket stood alone on the
+  // left. Wide, the Recipes docket is a long one that ends where the note ends; a phone keeps the short docket.
+  const tihar = Date.parse('2026-11-09T04:00:00Z');
+  for (const [w, h] of [[390, 844], [768, 1024], [1004, 600], [1280, 800]]) {
+    p = await L.open(b, '#/', { who: '', deviceMode: 'shared', width: w, height: h, clock: tihar, server: tihar, seasonal: { selection: 'auto', motion: 'gentle', density: 'festive' }, wait: 1800 });
+    await L.waitFor(p, () => !!document.querySelector('.wall-main .kb-season-note'), null, 5000).catch(() => {});
+    const m = await p.evaluate(() => {
+      const r = s => document.querySelector(s).getBoundingClientRect(), note = r('.wall-main .kb-season-note'), dk = r('.dockets .docket'), sub = document.querySelector('.dockets .docket .dk-sub');
+      return { note: [Math.round(note.left), Math.round(note.right)], docket: [Math.round(dk.left), Math.round(dk.right)], wide: document.querySelector('.dockets .docket').classList.contains('dk-wide'),
+        sub: sub && getComputedStyle(sub).display !== 'none' ? sub.textContent : '', sx: document.documentElement.scrollWidth > innerWidth };
+    });
+    const lined = Math.abs(m.note[0] - m.docket[0]) <= 1 && Math.abs(m.note[1] - m.docket[1]) <= 1;
+    ok(lined && !m.sx && (w < 720 ? !m.sub : m.wide && m.sub === 'Every dish, its allergens and the method.'), w + ' px, Tihar: the Recipes docket lines up with the celebration note' + (w < 720 ? ', the short docket on a phone' : ', a long docket with its line') + ' (' + JSON.stringify(m) + ')');
+    await p.context().close();
+  }
 
   // every width: no sideways scroll, no errors, the board and prep card side by side on a laptop
   for (const w of [390, 768, 1280]) {

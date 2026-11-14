@@ -256,3 +256,18 @@ New device at 390: "New device? The kitchen PIN comes first, then your name and 
 `tests/home-board.test.js` (signed-out Home: the day, one `.btn.dark`, both help lines, the heading after `lk-cfg` and `lk-who`, sign in at least as big as Open and the footer on screen at 390 and 1280), `tests/login-home.test.js` part 11 (Not me on another cook's lock, Kitchen sign in on Home, a page chosen before signing in, yesterday's page ignored), `tests/staff-welcome-layout.test.js` (the neutral heading during Tihar is the day), `tests/design-patterns.test.js` (new names). Both changed files fail on the old code (checked against `main` at `bb89126`). Locally also green: roles, after-the-tap, live-lists, device-sessions, device-lock-handover, seasonal-shell, read-budget (no new reads), staff-personalisation, offline-open, offline-pages.
 
 **Open finding.** `tests/seasonal.test.js`, check "#/orders: Kitchen Book, the stamp and a still edge", failed in 5 of 9 local runs with six heavy test files in parallel when this branch's `js/app.js` was present, and in 0 of 9 without it (main, this worktree at main, and `js/prep.js` alone). It passes on its own (178 of 178) and in a throttled step-by-step reproduction on both branches. No mechanism found: the new names are unique, `js/app.js` is wrapped, and Home shows no repaint loop. CI retries a failed file once on its own. If it fails in CI, it gets its own look before this merges.
+
+## After release: the docket under a celebration note (15 November 2026)
+
+Live at 07:58. The head chef: on a celebration day the full-width celebration note "would split the screen in half with the bottom docket being aligned left". Measured in the stand-in during Tihar: the note ran 68 to 1212 px at 1280, the docket 68 to 332; at 1004 x 600 the note was 760 px wide (its own maximum below 1100 px, `css/celebration-ticker.css`) and the docket 436.
+
+Fix: signed out, from 720 px the Recipes docket is the book's long docket (`.dk-wide`, as Transfers and Cleaning) with the line "Every dish, its allergens and the method.", capped at 760 px below 1100 px so it ends where the note ends. The celebrations' own layout is not touched. Phones keep the short docket (its line is hidden there, like Transfers). Functions-only Home is unchanged.
+
+| Tihar, signed out | Note (left to right) | Docket before | Docket after | Footer bottom before / after |
+| --- | --- | --- | --- | --- |
+| 390 x 844 | 16 to 374 | 16 to 374 | unchanged | 604 / 604 |
+| 768 x 1024 | 48 to 720 | 48 to 366 | 48 to 720 | 911 / 705 |
+| 1004 x 600 | 48 to 808 | 48 to 484 | 48 to 808 | 875 / 669 |
+| 1280 x 800 | 68 to 1212 | 68 to 332 | 68 to 1212 | 830 / 619 |
+
+Without a celebration the long docket also fills the wall the council noted was three quarters empty, and "Cook as written" now stays on screen at 1004 x 600 (743 before, 537 after). Quick check: no tab, button, pop-up or step; taps unchanged (Recipes 1, sign in 2 + PIN); Kitchen sign in (264 x 52) stays bigger than the long docket's Open (107 x 52). Test: `tests/home-board.test.js`, the Tihar check at 390, 768, 1004 and 1280 px, which fails on the released version at 768, 1004 and 1280.
