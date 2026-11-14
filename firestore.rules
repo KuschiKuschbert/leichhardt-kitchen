@@ -1216,13 +1216,45 @@ service cloud.firestore {
         && d.fid is string && d.fid.size() > 0 && d.fid.size() <= 64 && d.at is int && sid == d.fid + '_' + string(d.at)
         && d.day is string && d.day.size() == 10 && d.sent is bool && d.sentAt is int && d.sentBy is string;
     }
+    // Functions: a trip of platters sent from the pass (14 Nov 2026, docs/function-handover-options/brief.md). One record
+    // per trip, fnsent/<function id>_<round time>_t<trip number>, in the same collection as the round's Sent tick, so the
+    // same listener carries it. n is how many of each platter (by recipe id) went in the trip. A kitchen writer (never
+    // Functions-only staff) sends a trip as themselves, once: an exact repeat (a retry) changes nothing, and a second
+    // phone sending the same trip number is refused. After that only its Out (Functions confirms it, never the sender;
+    // or a head or sous chef, for Functions, 10 minutes after it was sent) or its Undo (void: the sender within 2
+    // minutes, or a head or sous chef; only before Out). The last trip of a round also ticks the round's own Sent record
+    // above, in the same batch, so older phones see the round as sent. Never deleted.
+    function tripOk(sid) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['fid', 'at', 'day', 'k', 'n', 'sentAt', 'sentBy', 'by'])
+        && d.fid is string && d.fid.size() > 0 && d.fid.size() <= 64 && d.at is int && d.k is int && d.k > 0 && d.k < 100
+        && sid == d.fid + '_' + string(d.at) + '_t' + string(d.k)
+        && d.day is string && d.day.size() == 10 && d.n is map && d.n.size() > 0 && d.n.size() <= 12
+        && d.sentAt is int && d.sentAt <= request.time.toMillis() + 300000 && d.sentBy is string && d.sentBy == d.get('by', '');
+    }
+    function tripOut(was, d) {
+      return d.diff(was).affectedKeys().hasOnly(['outAt', 'outBy', 'outFor', 'by']) && !('outAt' in was) && !was.get('void', false)
+        && d.outAt is int && d.outAt <= request.time.toMillis() + 300000 && d.outBy is string && d.outBy == d.get('by', '') && d.outFor is bool
+        && ((d.outFor == false && session() && d.by != was.sentBy && (d.by in cfg().get('fnIds', []) || d.by in cfg().get('fnOnlyIds', [])))
+          || (d.outFor == true && lead() && request.time.toMillis() - was.sentAt >= 600000));
+    }
+    function tripVoid(was, d) {
+      return d.diff(was).affectedKeys().hasOnly(['void', 'voidAt', 'voidBy', 'by']) && !('outAt' in was) && !was.get('void', false)
+        && d.void == true && d.voidAt is int && d.voidBy is string && d.voidBy == d.get('by', '')
+        && (lead() || (staff() && was.sentBy == d.by && request.time.toMillis() - was.sentAt < 120000));
+    }
     match /kitchens/KITCHEN_PIN/fnsent/{sid} {
       allow read: if functionRead();
-      allow create: if (writer() || fnBy()) && sentOk(sid) && request.resource.data.sent == true && request.resource.data.sentBy == request.resource.data.get('by', '');
-      allow update: if (writer() || fnBy()) && sentOk(sid) && (
+      allow create: if ((writer() || fnBy()) && sentOk(sid) && request.resource.data.sent == true && request.resource.data.sentBy == request.resource.data.get('by', ''))
+        || (writer() && tripOk(sid));
+      allow update: if ((writer() || fnBy()) && sentOk(sid) && (
         (request.resource.data.sent == true && resource.data.sent == false && request.resource.data.sentBy == request.resource.data.get('by', ''))
         || (request.resource.data.sent == false && resource.data.sent == true && request.resource.data.sentBy == resource.data.sentBy
-          && (lead() || (resource.data.sentBy == request.resource.data.get('by', '') && request.time.toMillis() - resource.data.sentAt < 120000))));
+          && (lead() || (resource.data.sentBy == request.resource.data.get('by', '') && request.time.toMillis() - resource.data.sentAt < 120000)))))
+        || ('k' in resource.data && (
+          (writer() && request.resource.data == resource.data)
+          || tripOut(resource.data, request.resource.data)
+          || tripVoid(resource.data, request.resource.data)));
       allow delete: if false;
     }
     // Functions: who said Got it to a function on Home (10 Nov 2026, docs/function-ahead-options/brief.md, step 4).

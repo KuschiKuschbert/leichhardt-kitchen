@@ -1,6 +1,6 @@
 # Function handover: a two-way check on what goes out
 
-Status: council done, waiting for the head chef's choice (14 November 2026). Nothing in the app has changed. Role-based analysis, not research with real staff.
+Status: **chosen 14 November 2026: the recommended mix, as a trial.** Building. Role-based analysis, not research with real staff.
 
 ## The request
 
@@ -208,4 +208,10 @@ Implemented-app checks, none done yet:
 
 ## Chosen
 
-To come: the head chef's choice.
+**14 November 2026: the mix, as a trial.** The head chef: "Let's try this for now. Might change it later. Needs a trial run." The open questions went with the recommendation (no other answer was given; any of them can change after the trial):
+
+- Functions coordinators and the people with the Functions tick confirm each trip. The sender never confirms their own trip.
+- A head or sous chef may confirm for Functions 10 minutes after a trip was sent, saved as confirmed for Functions. On a night with no coordinator, that is the check.
+- The rules go first, then the screens, in this one pull request (the session has one branch); the rules are published before the client merges.
+
+After the trial, the head chef may change the words, who confirms, the 10 minutes, or take the confirm half off. Rolling back is a revert of the client: the trip records stay, and older code ignores them (it reads only each round's own Sent record, which the last trip sets).
