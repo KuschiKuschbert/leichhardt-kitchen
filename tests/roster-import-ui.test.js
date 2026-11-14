@@ -14,6 +14,7 @@ const people = [
   { id: 'sam', name: 'Sam K', role: 'sous', active: true, add: true, tick: true, del: true },
   { id: 'ann', name: 'Ann', role: 'staff', active: true, add: true, tick: true },
   { id: 'bo', name: 'Bo', role: 'staff', active: true, add: true, tick: true },
+  { id: 'mj', name: 'MJ', role: 'staff', active: true, add: true, tick: true },
   { id: 'fn', name: 'Functions only', role: 'fnc', active: true }
 ];
 const services = [{ id: 'lunch', name: 'Lunch', from: 600, to: 900 }, { id: 'adl', name: 'All day dining', from: 900, to: 1020 }, { id: 'dinner', name: 'Dinner', from: 1020, to: 1320 }];
@@ -21,7 +22,7 @@ const sections = [{ id: 'grill', name: 'Grill' }, { id: 'pans', name: 'Pans' }, 
 // Wednesday already has a saved plan: the roster must not change it
 const wed = { day: days[2], on: [{ id: 'ann', sh: 'lunch', sec: 'larder' }], br: [], v: 1, at: L.NOW - 3600000, upd: L.NOW - 3600000, by: 'gus' };
 const fixture = () => ({
-  [CFG]: { people, headId: 'gus', sousIds: ['sam'], staffIds: ['gus', 'sam', 'ann', 'bo', 'fn'], fnOnlyIds: ['fn'], kitShifts: services, kitSecs: sections },
+  [CFG]: { people, headId: 'gus', sousIds: ['sam'], staffIds: ['gus', 'sam', 'ann', 'bo', 'mj', 'fn'], fnOnlyIds: ['fn'], kitShifts: services, kitSecs: sections },
   [key('team', days[2])]: wed
 });
 const csv = o => ({ name: 'WeeklyDepartmentRosterReport.csv', mimeType: 'text/csv', buffer: Buffer.from(build(Object.assign({ monday }, o || {}))) });
@@ -87,8 +88,9 @@ async function choose(p, file, done) {
   ok(!/Sam Kerr|Ann Moss|\$/.test(bad), 'the refusal names the line, never a name or a cost from it');
   // a name from the file is shown as text, never as markup (the reader refuses < and >; quotes and & stay words)
   await choose(p, csv({ people: PEOPLE.concat([['Jo "Ace" & Co Smith', 'Demi Chef L5', { 4: '10:00-15:00' }]]) }), true);
-  const odd = await p.$$eval('.tm-roster-missing li', l => l.map(e => ({ t: e.textContent.replace(/\s+/g, ' ').trim(), tags: Array.from(e.querySelectorAll('*')).map(x => x.tagName).join(',') })));
-  ok(odd.some(x => x.t.startsWith('Jo "Ace" & Co Smith (looks for Jo)') && x.tags === 'SMALL,BR,SMALL'), 'a name with quotes and & shows as plain text: ' + JSON.stringify(odd[odd.length - 1]));
+  const odd = await p.$$eval('.tm-roster-missing li', l => l.map(e => ({ first: e.firstChild && e.firstChild.nodeType === 3 ? e.firstChild.textContent : '', label: (e.querySelector('label') || {}).textContent || '', tags: Array.from(new Set(Array.from(e.querySelectorAll('*')).map(x => x.tagName))).sort().join(',') })));
+  const jo = odd.filter(x => x.first.startsWith('Jo "Ace" & Co Smith'))[0];
+  ok(!!jo && jo.label === 'Who is Jo "Ace" & Co Smith in the book?' && /^(BR|BUTTON|LABEL|OPTION|SELECT|SMALL|SPAN)(,(BR|BUTTON|LABEL|OPTION|SELECT|SMALL|SPAN))*$/.test(jo.tags), 'a name with quotes and & shows as plain text, in the row and the picker label: ' + JSON.stringify(jo));
   ok(!p.errors.length, 'refused file: no browser errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -134,6 +136,54 @@ async function choose(p, file, done) {
   const mon = await dump(p, key('team', days[0]));
   ok(mon.v === 2 && mon.br.length >= 2 && mon.br.every(x => x.sh === 'dinner') && JSON.stringify(mon.on) === JSON.stringify(saved[0].on), 'the sous chef sets the Dinner breaks and saves; the imported team stays as it was (' + mon.br.length + ' breaks)');
   ok(!p.errors.length, 'sous chef breaks: no browser errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // a nickname: link the roster name to the person in the book once (head chef, 14 Nov 2026)
+  const LINKS = key('config', 'rosterLinks');
+  p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', extra: fixture(), wait: 1800 });
+  await planner(p);
+  await choose(p, csv(), true);
+  const mjAt = (await p.$$eval('.tm-roster-missing li', l => l.map(e => e.textContent))).findIndex(x => /Mary Jo Kahale/.test(x));
+  ok(mjAt >= 0 && await p.locator('select[data-k="tm-roster-pick:' + mjAt + '"] option[value="mj"]').count() === 1, 'an unmatched name offers Link to a person in the book');
+  await p.locator('[data-p="tm-roster-link"][data-i="' + mjAt + '"]').click(); await L.settle(p, 200);
+  ok(/Choose who Mary Jo Kahale is in the book first/.test(await text(p, '.tm-roster')) && !await dump(p, LINKS), 'Link with nobody chosen says what is missing and saves nothing');
+  await L.pick(p, 'select[data-k="tm-roster-pick:' + mjAt + '"]', 'mj');
+  await p.locator('[data-p="tm-roster-link"][data-i="' + mjAt + '"]').click();
+  await L.waitFor(p, k => !!__fake.dump()[k], LINKS, 8000); await L.settle(p, 300);
+  const links = await dump(p, LINKS);
+  ok(links && JSON.stringify(links.links) === JSON.stringify([{ name: 'Mary Jo Kahale', id: 'mj' }]) && typeof links.upd === 'number' && links.by === 'gus', 'the link is saved in the admin-only record: ' + JSON.stringify(links && links.links));
+  const linkedCard = await text(p, '.tm-roster');
+  ok(!/Mary Jo Kahale \(looks for/.test(linkedCard) && /Linked Mary Jo Kahale to MJ\. Added to Thu 19, Fri 20, Sat 21, Sun 22, not saved yet\./.test(linkedCard.replace(/\d+/g, n => n)) || /Linked Mary Jo Kahale to MJ\. Added to /.test(linkedCard), 'after linking she leaves the not-in-the-book list and her days are named: ' + linkedCard.slice(linkedCard.indexOf('Linked'), linkedCard.indexOf('Linked') + 130));
+  ok(/Not changed: .*(saved, past or planned before)/.test(linkedCard) && JSON.stringify(await dump(p, key('team', days[2]))) === JSON.stringify(wed), 'Wednesday, already saved, is not changed and the card says so');
+  ok(/Name links \(1\)/.test(linkedCard) && /Mary Jo Kahale is MJ/.test(await p.evaluate(() => document.querySelector('.tm-roster-links').textContent)), 'the Name links fold lists the link');
+  await p.locator('.tm-roster-days [data-day="' + days[3] + '"]').click(); await planner(p); await L.settle(p, 200);
+  ok(/Roster 10:00 to 15:00/.test(await text(p, '.tm-person-row[data-id="mj"] .tm-roster-time')), 'MJ is on Thursday\'s draft with her roster time');
+  await p.locator('[data-p="tm-save"]').click();
+  await L.waitFor(p, k => !!__fake.dump()[k], key('team', days[3]), 8000);
+  ok((await dump(p, key('team', days[3]))).on.some(o => o.id === 'mj' && o.sh === 'lunch'), 'Save writes MJ on Thursday');
+  ok(!p.errors.length, 'linking: no browser errors ' + p.errors.join(' | '));
+  const saved1 = await dump(p, LINKS);
+  await p.context().close();
+
+  // the next roster uses the link by itself; Unlink takes it away
+  p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', extra: Object.assign(fixture(), { [LINKS]: saved1 }), wait: 1800 });
+  await planner(p);
+  await choose(p, csv(), true);
+  ok(!/Mary Jo Kahale/.test(await text(p, '.tm-roster-missing')) && /Sam Lee/.test(await text(p, '.tm-roster-missing')), 'with the link saved, Mary Jo Kahale is matched to MJ by herself; Sam Lee is still listed');
+  await p.locator('.tm-roster-days [data-day="' + days[5] + '"]').click(); await planner(p); await L.settle(p, 200);
+  ok(await p.locator('.tm-person-row[data-id="mj"]').count() === 1, 'MJ is on Saturday from the roster');
+  if (!await p.locator('.tm-roster-links [data-p="tm-roster-unlink"]').isVisible()) { await p.locator('.tm-roster-links > summary').click(); await L.settle(p, 150); }
+  await p.locator('.tm-roster-links [data-p="tm-roster-unlink"]').first().click();
+  await L.waitFor(p, k => { const r = __fake.dump()[k]; return !!r && Array.isArray(r.links) && r.links.length === 0; }, LINKS, 8000); await L.settle(p, 200);
+  ok(/Unlinked Mary Jo Kahale\. Days already filled keep MJ/.test(await text(p, '.tm-roster')) && !await p.locator('.tm-roster-links').count(), 'Unlink empties the record and says filled days keep MJ');
+  ok(!p.errors.length, 'linked roster: no browser errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // links that cannot be read: nothing is filled, so a nickname never falls back to a given name
+  p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', extra: fixture(), failReads: 'rosterLinks', wait: 1800 });
+  await planner(p);
+  await choose(p, csv(), false);
+  ok(/Could not read your roster name links/.test(await text(p, '.tm-roster [role="alert"]')) && !await p.locator('.tm-roster-days').count(), 'links that cannot be read fill nothing and say so');
   await p.context().close();
 
   // only the admin panel: not on the head chef's or a sous chef's Today's team page

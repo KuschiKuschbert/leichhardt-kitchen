@@ -4655,6 +4655,11 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .tm-roster-days { display: flex; flex-wrap: wrap; gap: .5rem; margin: .25rem 0 .5rem; }
 .tm-roster-days .chip { min-height: 44px; }
 .tm-roster-time { margin: .1rem 0 0; }
+.tm-roster-link { display: flex; flex-wrap: wrap; gap: .5rem; margin: .4rem 0 .2rem; }
+.tm-roster-link select { flex: 1 1 12rem; min-width: 0; max-width: 100%; min-height: 44px; padding: .4rem .6rem; border: 1px solid var(--ink); border-radius: var(--r-pick); background: var(--paper); color: var(--ink); font: inherit; }
+.tm-roster-links { margin: .5rem 0; }
+.tm-roster-links > summary { min-height: 44px; padding: .65rem 0; font-weight: 600; cursor: pointer; }
+.tm-roster-links .p-link { min-height: 44px; }
 .tm-notebook .tm-same > span { flex: 1 1 12rem; min-width: 0; overflow-wrap: anywhere; }
 .tm-notebook .tm-same small { display: block; margin-top: .25rem; color: var(--muted); line-height: 1.4; }
 .tm-notebook .tm-batch .tm-same { margin: 0 0 .6rem; padding: .35rem 0 .65rem; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; }

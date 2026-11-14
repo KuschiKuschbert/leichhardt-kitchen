@@ -31,7 +31,7 @@ const CLASSES = [
   'tm-notebook', 'tm-nbook', 'tm-nhead', 'tm-nspine', 'tm-work', 'tm-viewbar', 'tm-shift-scroll', 'tm-dayperson', 'tm-away-slot',
   'tm-weeknav', 'tm-daypick',
   'tm-focus-page', 'tm-date-controls', 'tm-week-reveal', 'tm-row-fields', 'tm-row-summary', 'tm-detail-workbench', 'tm-focus-grid', 'tm-focus-save', 'tm-live-strip', 'tm-focus-panel',
-  'tm-person-row', 'tm-person-details', 'tm-planstate', 'tm-next-overview', 'tm-roster', 'tm-roster-days', 'tm-roster-missing', 'tm-roster-time',
+  'tm-person-row', 'tm-person-details', 'tm-planstate', 'tm-next-overview', 'tm-roster', 'tm-roster-days', 'tm-roster-missing', 'tm-roster-time', 'tm-roster-link', 'tm-roster-links',
 
 'tm-worksheet', 'tm-worksheet-head', 'tm-person-head', 'tm-person-section', 'tm-quick-add', 'tm-quick-people', 'tm-quick-services',
   'cln-page', 'cln-book', 'cln-row', 'cln-matrix', 'cln-day-pick', 'cln-form', 'cln-detail', 'cln-task-detail', 'cln-occurrence', 'cln-checks', 'cln-import', 'cln-packdown', 'cln-packdown-title', 'cln-temperature',

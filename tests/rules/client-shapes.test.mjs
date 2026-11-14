@@ -561,6 +561,16 @@ row('js/prep.js mlTick(): tick a mail done (mail and mailstat updates)', { ok: G
   prep: r => put({ ['mail/' + MINE(r)]: seed['mail/x1'], ['mailstat/' + MINE(r)]: seed['mailstat/x1'] }),
   run: (db, w, r) => { const t = Date.now(); return W(r, [['upd', 'mail/' + MINE(r), { done: true, doneAt: t, seen: true, seenAt: t }], ['upd', 'mailstat/' + MINE(r), { seen: true, done: true }]]); } });
 row('js/prep.js mlSeenAll(): config/admins mailOpened merge', { ok: GOOGLE, asks: GOOGLE, run: (db, w, r) => W(r, [['set', 'config/admins', { mailOpened: Date.now() }, true]]) });
+// Roster name links (14 Nov 2026, docs/roster-import-options/brief.md): the head chef's admin device only
+row('js/prep.js tmRsLinksRead(): config/rosterLinks get (roster name links)', { ok: GOOGLE, asks: GOOGLE,
+  prep: () => put({ 'config/rosterLinks': { links: [{ name: 'Dee Kay', id: 'ann' }], upd: 1, by: 'kit' } }),
+  run: db => getDoc(D(db, 'config/rosterLinks')) });
+row('js/prep.js tmRsLinkSave(): config/rosterLinks set (link or unlink a roster name)', { ok: GOOGLE, asks: GOOGLE,
+  run: (db, w, r) => W(r, [['set', 'config/rosterLinks', { links: [{ name: 'Dee Kay', id: 'ann' }], upd: Date.now() }]]) });
+row('rule: config/rosterLinks with any other field is refused for everyone', { ok: [], asks: [],
+  run: (db, w, r) => W(r, [['set', 'config/rosterLinks', { links: [], upd: Date.now(), wage: 1 }]]) });
+row('rule: config/rosterLinks with more than 80 links is refused for everyone', { ok: [], asks: [],
+  run: (db, w, r) => W(r, [['set', 'config/rosterLinks', { links: Array.from({ length: 81 }, (_, i) => ({ name: 'P ' + i, id: 'ann' })), upd: Date.now() }]]) });
 row('js/prep.js mlSeenAll(): the open mail marked seen (mail and mailstat updates)', { ok: GOOGLE, asks: GOOGLE,
   prep: r => put({ ['mail/s-' + r]: seed['mail/x1'], ['mailstat/s-' + r]: seed['mailstat/x1'] }),
   run: (db, w, r) => W(r, [['upd', 'mail/s-' + r, { seen: true, seenAt: Date.now() }], ['upd', 'mailstat/s-' + r, { seen: true, done: false }]]) });

@@ -12893,6 +12893,7 @@ if (list.length) sg('oreg', 's');
     if (k && k.indexOf('ml-pri:') === 0) { mlSetPri(k.slice(7), el.value); return; }
     if (k === 'ml-sous') { mlSousSet(el.checked); return; }
     if (k === 'tm-roster-file') { tmRsFile(el); return; }
+    if (k && k.indexOf('tm-roster-pick:') === 0) { if (tmRs) { tmRs.pick = tmRs.pick || {}; tmRs.pick[k.slice(15)] = el.value; } return; }
     if (k === 'ps-rollout') { psRolloutSet(el.checked); return; }
     if (k && /^cut-([tpr]\d|[oa]\d+-\d$)/.test(k)) { cutField(k, el, true); return; }
     if (k && k.indexOf('tm-') === 0) { teamField(k, el); return; }
@@ -14106,6 +14107,8 @@ if (list.length) sg('oreg', 's');
     if (a === 'tm-roster-choose') { tmRsChoose(); return; }
     if (a === 'tm-roster-day') { tmRsDay(el.getAttribute('data-day') || ''); return; }
     if (a === 'tm-roster-saveall') { tmRsSaveAll(); return; }
+    if (a === 'tm-roster-link') { tmRsLink(+el.getAttribute('data-i')); return; }
+    if (a === 'tm-roster-unlink') { tmRsUnlink(+el.getAttribute('data-i')); return; }
     if (a === 'tm-week-prev' || a === 'tm-week-next') { tmPlanSelect(shift(tmPlanDay(), a === 'tm-week-prev' ? -7 : 7)); tmDateFocus(); return; }
     if (a === 'tm-today') { tmPlanSelect(dayNow()); tmDateFocus(); return; }
     // Refresh discards only this date's draft, after a second tap. Other dates' drafts survive the week query.
@@ -14278,8 +14281,9 @@ if (list.length) sg('oreg', 's');
     draw();
     if (file.size > 1000000) { refuse('The file is too big for one week of roster.'); return; }
     // the reader loads on this tap only (fetched fresh like the other lazy files, never in the saved shell)
-    window.LK_APP.load('js/roster-import.js?v=1').then(function () {
-      if (!window.LK_ROSTER) throw { code: 'missing' };
+    window.LK_APP.load('js/roster-import.js?v=2').then(function () {
+      // api 2 knows name links; an older copy left on the device must never import without them
+      if (!window.LK_ROSTER || window.LK_ROSTER.api !== 2) throw { code: 'missing' };
       return file.text();
     }).then(function (text) {
       if (stale()) return;
@@ -14288,15 +14292,32 @@ if (list.length) sg('oreg', 's');
       if (!r.ok) { refuse(r.why); return; }
       var first = r.week.days.filter(function (d) { return d >= dayNow(); })[0];
       if (!first) { refuse('This roster week is over.'); return; }
-      job.week = r.week; job.start = tmPlanWeek(r.week.from);
-      job.plan = window.LK_ROSTER.plan(r, tmPeople().map(function (p) { return { id: p.id, name: p.name }; }), kitShifts());
-      job.st = 'checking'; job.epoch = accessEpoch;
-      // select the first day to fill, then read that week from the server; tmRsWeekIn() fills when the answer comes
-      tmPlanSelect(first); tmPlanLoad(true);
-      var read = tmPlan.weeks[job.start];
-      if (!read || read.st !== 'busy') { refuse('Could not check the plans already saved for that week. Check the signal and try again.'); return; }
-      draw();
+      job.week = r.week; job.start = tmPlanWeek(r.week.from); job.roster = r; job.first = first;
+      // the head chef's roster name links (nicknames): one read on each Choose roster file. Never guessed without
+      // them: a link that cannot be read fills nothing.
+      var noLinks = function () { if (!stale()) refuse('Could not read your roster name links. Check the signal and try again.'); };
+      return fb.fs.getDocFromServer(docRef('config', 'rosterLinks')).then(function (sn) {
+        if (stale()) return;
+        if (cacheOnly(sn)) { noLinks(); return; }
+        job.links = tmRsLinksClean(sn.exists() ? sn.data().links : []);
+        tmRsCheck(job, refuse);
+      }, noLinks);
     }).catch(function () { if (!stale()) refuse('Could not open the file. Check the signal and try again.'); });
+  }
+  // the links as stored: { name, id } pairs, short words, at most 80 (the rules allow 80)
+  function tmRsLinksClean(list) {
+    return (Array.isArray(list) ? list : []).filter(function (l) { return l && tmStr(l.id, 80) && tmStr(l.name, 80) && l.name.trim(); }).slice(0, 80)
+      .map(function (l) { return { name: l.name.replace(/\s+/g, ' ').trim(), id: l.id }; });
+  }
+  function tmRsStaff() { return tmPeople().map(function (p) { return { id: p.id, name: p.name }; }); }
+  // match with the links, then select the first day and read that week (tmRsWeekIn() fills when the answer comes)
+  function tmRsCheck(job, refuse) {
+    job.plan = window.LK_ROSTER.plan(job.roster, tmRsStaff(), kitShifts(), job.links);
+    job.st = 'checking'; job.epoch = accessEpoch;
+    tmPlanSelect(job.first); tmPlanLoad(true);
+    var read = tmPlan.weeks[job.start];
+    if (!read || read.st !== 'busy') { refuse('Could not check the plans already saved for that week. Check the signal and try again.'); return; }
+    draw();
   }
   function tmRsWeekIn(start, ok) {
     var job = tmRs;
@@ -14312,14 +14333,68 @@ if (list.length) sg('oreg', 's');
       if (e.st !== 'ok' || !e.f) { job.skip[d] = 'unread'; return; }
       if (e.rec) { job.skip[d] = 'saved'; return; }
       if (Object.keys(e.f.on).length || tmPlanDirty(e) || tmQuickPending(e.view && e.view.ui)) { job.skip[d] = 'draft'; return; }
-      // the existing helper fills this date's draft: tmAddShift() works on tmf, with the date's usual sections
-      tmPlan.day = d; tmf = e.f;
-      var times = job.times[d] = {};
-      list.forEach(function (x) { tmAddShift(x.id, x.sh); times[x.id] = tmHHMM(x.from) + ' to ' + tmHHMM(x.to); });
+      tmRsAdd(job, d, list);
       job.filled.push(d);
     });
     tmPlan.day = keepDay; tmPlanActivate();
     job.st = 'done';
+  }
+  // the existing helper fills this date's draft: tmAddShift() works on tmf, with the date's usual sections (the caller
+  // keeps and restores the selected date)
+  function tmRsAdd(job, d, list) {
+    var e = tmPlanEntry(d), times = job.times[d] = job.times[d] || {};
+    tmPlan.day = d; tmf = e.f;
+    list.forEach(function (x) { tmAddShift(x.id, x.sh); times[x.id] = tmHHMM(x.from) + ' to ' + tmHHMM(x.to); });
+  }
+  /* Link a roster name to a person in the book (head chef, 14 Nov 2026: nicknames), or take a link away. The whole list
+     is one admin-only record (config/rosterLinks), one write each time. A new link adds that person's shifts to this
+     roster's days that are still drafts from it, or still empty; a saved or past day is not changed, and says so. */
+  function tmRsLinkSave(next, done) {
+    var job = tmRs, epoch = accessEpoch, identity = stableIdentity();
+    if (!job || job.linking || !tmRsOK()) return;
+    job.linking = true; job.linkMsg = ''; draw();
+    W([['set', docRef('config', 'rosterLinks'), { links: next, upd: now() }]]).then(function () {
+      job.linking = false;
+      if (tmRs !== job || accessEpoch !== epoch || identity !== stableIdentity()) return;
+      job.links = next; done(); draw();
+    }, function (e) {
+      job.linking = false;
+      if (tmRs !== job) return;
+      job.linkMsg = errMsg('Not saved. ' + (e && e.code === 'permission-denied' ? 'Only the head chef\'s admin account can change name links.' : 'Check the signal, then try again.'));
+      draw();
+    });
+  }
+  function tmRsLink(i) {
+    var job = tmRs, u = job && job.st === 'done' && job.plan.unmatched[i], id = job && job.pick && job.pick[i];
+    var person = tmPeople().filter(function (p) { return p.id === id; })[0];
+    if (!u || !person) { if (job) { job.linkMsg = errMsg('Choose who ' + (u ? u.name : 'this person') + ' is in the book first.'); draw(); } return; }
+    var k = window.LK_ROSTER.key, next = job.links.filter(function (l) { return k(l.name) !== k(u.name); }).concat([{ name: u.name, id: person.id }]);
+    tmRsLinkSave(next, function () {
+      job.pick = {};
+      tmPlanKeep();
+      var keepDay = tmPlan.day, today = dayNow(), added = [], kept = [];
+      var fresh = window.LK_ROSTER.plan(job.roster, tmRsStaff(), kitShifts(), job.links);
+      job.week.days.forEach(function (d) {
+        var mine = (fresh.days[d] || []).filter(function (x) { return x.id === person.id; }), e = tmPlanEntry(d);
+        if (!mine.length) return;
+        var fromThis = job.filled.indexOf(d) >= 0 && tmDayStatus(d) === 'Draft', empty = e.st === 'ok' && e.f && !e.rec && !Object.keys(e.f.on).length && !tmPlanDirty(e);
+        if (d < today || e.rec || !(fromThis || empty)) { kept.push(d); return; }
+        tmRsAdd(job, d, mine); added.push(d);
+        if (job.filled.indexOf(d) < 0) { job.filled.push(d); job.filled.sort(); delete job.skip[d]; }
+      });
+      tmPlan.day = keepDay; tmPlanActivate();
+      job.plan = fresh;
+      var day = function (d) { return parseYmd(d).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric' }); };
+      job.linkMsg = 'Linked ' + u.name + ' to ' + person.name + '.' + (added.length ? ' Added to ' + added.map(day).join(', ') + ', not saved yet.' : '') + (kept.length ? ' Not changed: ' + kept.map(day).join(', ') + ' (saved, past or planned before). Add ' + person.name + ' there with Add staff.' : '');
+    });
+  }
+  function tmRsUnlink(j) {
+    var job = tmRs, l = job && job.links && job.links[j];
+    if (!l) return;
+    var who = tmPeople().filter(function (p) { return p.id === l.id; })[0];
+    tmRsLinkSave(job.links.filter(function (x, n) { return n !== j; }), function () {
+      job.linkMsg = 'Unlinked ' + l.name + '. Days already filled keep ' + (who ? who.name : 'that person') + '; change them by hand if needed.';
+    });
   }
   // a roster day: the same selection as the week list, then the day's rows
   function tmRsDay(day) {
@@ -14396,9 +14471,23 @@ if (list.length) sg('oreg', 's');
     var when = function (s) { return short(s.day) + ' ' + tmHHMM(s.from) + ' to ' + tmHHMM(s.to); };
     var head = '<p role="status"><b>Roster ' + esc(range(job.week)) + '.</b> ' + (drafts ? drafts + (drafts === 1 ? ' day' : ' days') + ' filled as drafts, not saved yet.' + (saved ? ' ' + saved + ' saved.' : '') : saved ? (saved === job.filled.length ? 'All ' + saved + ' filled ' + (saved === 1 ? 'day is' : 'days are') + ' saved.' : saved + ' filled ' + (saved === 1 ? 'day is' : 'days are') + ' saved.') : job.filled.length ? 'The filled days are not drafts any more.' : 'Nothing was filled.') + '</p>' +
       (skipped ? '<ul class="tm-roster-list">' + skipped + '</ul>' : '') + (job.filled.length ? '<p class="hint">Breaks are not set on the filled days. Set them with Spread them, then Save.</p>' : '');
-    var missing = job.plan.unmatched.length ? '<div class="tm-roster-missing"><p><b>Not in the book, not filled</b></p><ul class="tm-roster-list">' + job.plan.unmatched.map(function (u) {
-      return '<li>' + esc(u.name) + ' <small>(looks for ' + esc(u.looksFor) + (u.why === 'many' ? '; more than one person fits' : u.why === 'shared' ? '; two people in the file fit the same person' : '') + ')</small><br><small>' + esc(u.shifts.map(when).join(', ') || 'No shifts') + '</small></li>';
-    }).join('') + '</ul><p class="hint">Add them in Manage staff with the name it looks for, or check the name they already have. Then put them on these days with Add staff.</p><div class="btn-row"><button type="button" class="btn" data-p="a-tab" data-t="people"' + (off ? ' disabled' : '') + '>Manage staff</button></div></div>' : '';
+    var linkedIds = {}, linkOff = off || !!job.linking;
+    (job.links || []).forEach(function (l) { linkedIds[l.id] = 1; });
+    var choices = tmPeople().filter(function (p) { return !linkedIds[p.id]; });
+    var missing = job.plan.unmatched.length ? '<div class="tm-roster-missing"><p><b>Not in the book, not filled</b></p><ul class="tm-roster-list">' + job.plan.unmatched.map(function (u, i) {
+      var pick = job.pick && job.pick[i] || '';
+      return '<li>' + esc(u.name) + ' <small>(looks for ' + esc(u.looksFor) + (u.why === 'many' ? '; more than one person fits' : u.why === 'shared' ? '; two people in the file fit the same person' : '') + ')</small><br><small>' + esc(u.shifts.map(when).join(', ') || 'No shifts') + '</small>' +
+        '<span class="tm-roster-link"><label class="visually-hidden" for="tm-rl-' + i + '">' + esc('Who is ' + u.name + ' in the book?') + '</label><select id="tm-rl-' + i + '" class="tm-roster-pick" data-k="tm-roster-pick:' + i + '"' + (linkOff ? ' disabled' : '') + '><option value="">Link to a person in the book</option>' +
+        choices.map(function (p) { return '<option value="' + esc(p.id) + '"' + (p.id === pick ? ' selected' : '') + '>' + esc(p.name) + '</option>'; }).join('') + '</select>' +
+        '<button type="button" class="btn" data-p="tm-roster-link" data-i="' + i + '"' + (linkOff ? ' disabled' : '') + '>' + (job.linking ? 'Linking...' : 'Link') + '</button></span></li>';
+    }).join('') + '</ul><p class="hint">A nickname in the book? Link the roster name to the person once, and every roster after uses it. Someone new: add them in Manage staff, then put them on these days with Add staff.</p><div class="btn-row"><button type="button" class="btn" data-p="a-tab" data-t="people"' + (off ? ' disabled' : '') + '>Manage staff</button></div></div>' : '';
+    missing += job.linkMsg ? msgHTML(job.linkMsg) : '';
+    if ((job.links || []).length) {
+      missing += '<details class="tm-roster-links"><summary>Name links (' + job.links.length + ')</summary><ul class="tm-roster-list">' + job.links.map(function (l, j) {
+        var who = tmPeople().filter(function (p) { return p.id === l.id; })[0];
+        return '<li>' + esc(l.name) + ' is ' + (who ? esc(who.name) : 'no longer in the book') + ' <button type="button" class="p-link" data-p="tm-roster-unlink" data-i="' + j + '"' + (linkOff ? ' disabled' : '') + '>Unlink</button></li>';
+      }).join('') + '</ul><p class="hint">Every roster you choose uses these links. Only your admin account can see or change them.</p></details>';
+    }
     var idle = job.plan.idle.length ? '<p class="hint">Not on any service, not filled: ' + esc(job.plan.idle.map(function (x) { return name(x.id) + ' ' + when(x); }).join(', ')) + '.</p>' : '';
     var n = tmRsDrafts().length, rsBusy = svOf('rs') === 'busy';
     var saveAll = n || svOf('rs') ? '<div class="btn-row tm-roster-save">' + svButton({ k: 'rs', p: 'tm-roster-saveall', idle: 'Save the ' + n + ' filled ' + (n === 1 ? 'day' : 'days'), off: !n || off && !rsBusy, busy: rsBusy }) + '</div>' +

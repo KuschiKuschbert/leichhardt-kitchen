@@ -267,6 +267,16 @@ service cloud.firestore {
       allow get: if isAdmin() || ownerIdentity();
       allow list, write: if isAdmin();
     }
+    // Roster name links (head chef, 14 Nov 2026; docs/roster-import-options/brief.md): which person in the book a name
+    // on the Humanforce roster is, for nicknames. Only the head chef's admin device reads or writes it; no kitchen device
+    // reads it. One small list of at most 80 links, each checked by the admin panel before it is sent.
+    match /kitchens/KITCHEN_PIN/config/rosterLinks {
+      allow get, delete: if isAdmin();
+      allow list: if false;
+      allow create, update: if isAdmin() && request.resource.data.keys().hasOnly(['links', 'upd', 'by'])
+        && request.resource.data.links is list && request.resource.data.links.size() <= 80
+        && request.resource.data.upd is number && request.resource.data.by is string && request.resource.data.by.size() <= 80;
+    }
     match /kitchens/KITCHEN_PIN/adminDevices/{uid} {
       // The primary device can inspect or discard only its own grant. A remembered Google identity may issue a
       // grant only for a live daily head-chef PIN session, with exact session identity and expiry.
