@@ -25,6 +25,8 @@ The panel reuses existing editors, drafts and saves. Chef tab and room memory is
 
 `login/roster` is the minimal sign-in bootstrap document: names, role/permission ids and active membership, with no kitchen settings, contact details, PIN hashes or operational records. It is readable by an authenticated Firebase client that knows the kitchen path. Only the admin, or a sous chef's matching staff-list batch with unchanged canonical permission ids, may update it.
 
+`config/rosterLinks` (14 Nov 2026, `docs/roster-import-options/brief.md`) holds the head chef's roster name links: a name on the Humanforce roster and the id of the person in the book it is (a nickname). Only the admin (`isAdmin()`) may get, write or delete it; no kitchen device, sous chef or staff session reads it, and it cannot be listed. At most 80 links; only `links`, `upd` and `by`.
+
 All operational reads require a valid personal session (or admin). `fnOnlyIds` is admin-controlled and excludes functions-only accounts from other kitchen reads and writes. Delivery receipts are the explicit all-login exception; they do not grant access to config, orders or supplier catalogues. Function-generated prep/order updates remain possible only for their own function in the same booking revision batch; the coordinator cannot read or edit unrelated lists. History subcollections are explicitly protected.
 
 `publicBook/index`, `publicBook/matches`, `publicRecipes` and `publicDrawings` mirror current public recipe assets. Saves mirror the canonical kitchen documents in the same batch; rules require equality with those canonical documents. Histories and kitchen settings are never mirrored. The fixed public address lets a fresh visitor see edited/new recipes without knowing the kitchen PIN.

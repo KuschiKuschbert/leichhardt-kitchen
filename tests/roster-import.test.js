@@ -79,6 +79,15 @@ ok(ids(['Mary Jo Kahale'], ['Mary Jo']) === 'none', 'names: a two-word given nam
 const lf = X.match(people(['Sam Kerr', 'Sam Lee', 'Mary Jo Kahale']), []);
 ok(lf.map(m => m.looksFor).join('|') === 'Sam K|Sam L|Mary', 'names: each listed person says the name the book looks for');
 
+// ---- name links: a nickname in the book (head chef, 14 Nov 2026) ----
+const lk = (roster, book, links) => X.match(people(roster), book.map((name, i) => ({ id: 'p' + i, name })), links).map(m => (m.id || m.why) + (m.linked ? '*' : '')).join(' ');
+ok(lk(['Daniel Kuschmierz', 'Ann Moss'], ['Kuschi', 'Ann'], [{ name: 'Daniel Kuschmierz', id: 'p0' }]) === 'p0* p1', 'links: a linked roster name goes to the person in the book');
+ok(lk(['daniel  kuschmierz'], ['Kuschi'], [{ name: 'Daniel Kuschmierz', id: 'p0' }]) === 'p0*', 'links: case and spaces do not matter');
+ok(lk(['Sam Lee'], ['Sam'], [{ name: 'Samantha Kerr', id: 'p0' }]) === 'none', 'links: a book person with a link is never found by a given name (the book\'s Sam is Samantha Kerr, so Sam Lee is listed)');
+ok(lk(['Daniel Kuschmierz'], ['Kuschi'], [{ name: 'Daniel Kuschmierz', id: 'gone' }]) === 'none', 'links: a link to someone no longer in the book is left out');
+ok(lk(['Daniel Kuschmierz', 'Danny Kay'], ['Kuschi'], [{ name: 'Daniel Kuschmierz', id: 'p0' }, { name: 'Danny Kay', id: 'p0' }]) === 'shared shared', 'links: two roster names linked to one person are both listed, never guessed');
+ok(lk(['Ann Moss'], ['Ann'], null) === 'p1'.replace('p1', 'p0'), 'links: no links still match by given name');
+
 // ---- the plan for each day ----
 const BOOK = [{ id: 'sk', name: 'Sam K' }, { id: 'ann', name: 'Ann' }, { id: 'bo', name: 'Bo' }];
 const p = X.plan(good, BOOK, KIT);
@@ -87,6 +96,8 @@ ok(JSON.stringify(p.days['2026-11-16'].map(x => x.id + ':' + x.sh)) === JSON.str
 ok(p.days['2026-11-19'].filter(x => x.id === 'sk').map(x => x.sh).join(' ') === 'lunch adl dinner', 'plan: Sam Kerr is on Thursday as Sam K');
 ok(p.unmatched.map(u => u.name + ':' + u.looksFor + ':' + u.shifts.length).join(' ') === 'Sam Lee:Sam L:5 Mary Jo Kahale:Mary:5', 'plan: unmatched people are listed with the name looked for and their shifts');
 ok(!Object.values(p.days).some(l => l.some(x => !x.id)), 'plan: nobody unmatched is ever put on a day');
+const linked = X.plan(good, BOOK.concat([{ id: 'mj', name: 'MJ' }]), KIT, [{ name: 'Mary Jo Kahale', id: 'mj' }]);
+ok(linked.unmatched.map(u => u.name).join(',') === 'Sam Lee' && linked.days['2026-11-19'].some(x => x.id === 'mj' && x.sh === 'lunch'), 'plan: a linked nickname (Mary Jo Kahale as MJ) is filled on her days');
 const early = X.plan(X.read(build({ people: [['Ann Moss', 'Demi Chef L5', { 1: '06:00-09:00' }]] })), BOOK, KIT);
 ok(early.idle.length === 1 && early.days['2026-11-17'].length === 0, 'plan: a shift outside every service is kept aside in idle, not put on a service');
 
