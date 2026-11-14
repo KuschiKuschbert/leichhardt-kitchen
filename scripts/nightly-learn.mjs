@@ -29,6 +29,7 @@
   For a test run against the Firestore emulator: FIRESTORE_EMULATOR_HOST=127.0.0.1:8089 KITCHEN_PIN=000000 node nightly-learn.mjs
 */
 import { syncTransfers } from './transfer-index.mjs';
+import { tidySentFunctions } from './fn-sent-tidy.mjs';
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore, FieldValue, FieldPath } from 'firebase-admin/firestore';
 import { createRequire } from 'module';
@@ -199,6 +200,12 @@ try {
   const [tItems, tVenues] = await transferSummary(today);
   console.log('Transfer summary: ' + tItems + ' items, ' + tVenues + ' venues from ' + TR_DAYS + ' days.');
 } catch (e) { console.error('Transfer summary failed (' + String((e && (e.code || e.name)) || 'error') + '). The log leaves out the message: it can hold a typed name.'); process.exitCode = 1; }
+// a sent function's open lines come off the lists for good (14 Nov 2026, scripts/fn-sent-tidy.mjs), before the learning,
+// on their own: a problem there is logged (counts and the error only) and the learning goes on
+try {
+  const r = await tidySentFunctions(K, today);
+  console.log('Function sent, lines off: ' + r.functions + ' functions, ' + r.prep + ' prep lines, ' + r.orders + ' order lines' + (r.kept ? ', ' + r.kept + ' kept' : '') + (r.skipped ? ', ' + r.skipped + ' changed meanwhile (left for tomorrow)' : '') + '.');
+} catch (e) { console.error('Function sent, lines off failed (' + String((e && (e.code || e.name)) || 'error') + ').'); process.exitCode = 1; }
 /* The claims of the days this run can learn, the last DAYS finished days: learnlog/<day> and learnlog/o-<day>, by id
    range, 2 a day at most (Plan B 4.1, 7 Nov 2026). It read every claim ever made, 2 more reads every night. */
 const cFrom = shift(today, -DAYS), cTo = shift(today, -1), ID = FieldPath.documentId();

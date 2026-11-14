@@ -289,8 +289,45 @@
     if (String(x.text || '').indexOf(', ' + dayName(f.date) + ':') < 0) return null;
     return { id: f.id, kind: f.od === today ? 'today' : 'late', day: dayName(f.date), od: dayName(f.od) };
   }
+  /* Function sent, lines off (head chef, 14 Nov 2026, docs/fn-sent-tidy-options/brief.md). A function is all sent once
+     every round has a Sent tick the server holds (never this phone's own pending one, _pending), made on the function's
+     day and no more than 4 hours before the round: a tick days ahead by mistake never takes a stock order off. Then its
+     open lines leave the prep and order lists. The phones (js/prep.js) and the 03:00 job (scripts/fn-sent-tidy.mjs) ask
+     the same three questions here, so the screen and the server never disagree.
+     allSentAt(f, rec): the time of the last round's tick, or 0. rec(key) gives fnsent/<function id>_<round time>. */
+  var SENT_EARLY = 4 * HOUR;
+  function roundSent(f, r, x) {
+    return !!(r && x && x.sent === true && !x._pending && x.at === r.at && typeof x.sentAt === 'number' && kday(x.sentAt) >= f.date && x.sentAt >= r.at - SENT_EARLY);
+  }
+  function allSentAt(f, rec) {
+    var R = (f && f.rounds) || [], last = 0, i, x;
+    if (!f || !f.id || f.status !== 'confirmed' || f.removed || !isYmd(f.date) || !R.length) return 0;
+    for (i = 0; i < R.length; i++) { x = rec(f.id + '_' + R[i].at); if (!roundSent(f, R[i], x)) return 0; last = Math.max(last, x.sentAt); }
+    return last;
+  }
+  /* Whether a line is one of function fid's. Prep (kind 'p'): a platter line's fn, or an ingredient line added from What
+     the platters need, fnFor (a list: one line can serve two functions). Orders: the function's stock line and its
+     notices, by root, which every rolled copy keeps (it drops fn): fn-<id>, or fn-<id>- and a day (-20261114 changed,
+     -x20261114 cancelled, -r20261114 restored). The same ids as orderOps() and orderTag(). */
+  function lineOf(x, kind, fid) {
+    if (!x || !fid) return false;
+    if (kind === 'p') return x.fn === fid || (Array.isArray(x.fnFor) && x.fnFor.indexOf(fid) >= 0);
+    var key = ('fn-' + fid).slice(0, 120), r = String(x.root || x.id || '');
+    return r === key || (r.indexOf(key + '-') === 0 && /^[xr]?\d{8}$/.test(r.slice(key.length + 1)));
+  }
+  /* A line that comes off: open (not ticked, not ordered), not removed, not kept (Put back after it came off sets keep),
+     and every function it belongs to (in fns) all sent. A line for two functions waits for both; a function not in fns
+     is never guessed. { fid, name, at } (the last function's last tick) or null. */
+  function lineOff(x, kind, fns, rec) {
+    if (!x || x.deleted || x.keep || (kind === 'p' ? x.done : x.ordered)) return null;
+    var mine = (fns || []).filter(function (f) { return f && f.id && lineOf(x, kind, f.id); }), at = 0, names = [], i, t;
+    if (!mine.length) return null;
+    if (kind === 'p' && !x.fn && Array.isArray(x.fnFor) && mine.length < x.fnFor.length) return null;
+    for (i = 0; i < mine.length; i++) { t = allSentAt(mine[i], rec); if (!t) return null; at = Math.max(at, t); names.push(mine[i].name || 'Function'); }
+    return { fid: mine[0].id, name: names.join(' and '), at: at };
+  }
   var M = {
-    MIN: MIN, HOUR: HOUR, DAY: DAY, MAX_LINES: MAX_LINES, MAX_ROUNDS: MAX_ROUNDS, MAX_QTY: MAX_QTY, MAX_PER: MAX_PER,
+    MIN: MIN, HOUR: HOUR, DAY: DAY, MAX_LINES: MAX_LINES, SENT_EARLY: SENT_EARLY, roundSent: roundSent, allSentAt: allSentAt, lineOf: lineOf, lineOff: lineOff, MAX_ROUNDS: MAX_ROUNDS, MAX_QTY: MAX_QTY, MAX_PER: MAX_PER,
     kday: kday, kat: kat, kclock: kclock, dayStart: dayStart, addDays: addDays, isYmd: isYmd, hmMin: hmMin, dayName: dayName, when: when,
     even: even, toU: toU, fromU: fromU, sum: sum, roundTimes: roundTimes, windowOf: windowOf, derive: derive, counts: counts,
     short: short, unitOf: unitOf, totalQty: totalQty, guestsText: guestsText, problems: problems, changes: changes, dayTotals: dayTotals,
@@ -373,7 +410,7 @@
       }, function (e) { F.state = 'error'; F.err = e && e.code || ''; F.unsub = null; F.key = ''; changed(); });
     }, function () { if (F.wait === key) F.wait = ''; F.state = 'error'; changed(); });
   }
-  function stop() { if (F.unsub) F.unsub(); if (F.unsub2) F.unsub2(); F.unsub = F.unsub2 = null; F.key = F.wait = ''; }
+  function stop() { if (F.unsub) F.unsub(); if (F.unsub2) F.unsub2(); F.unsub = F.unsub2 = null; F.key = F.wait = ''; F.sentState = ''; }
   /* Rounds ticked as sent (fnsent/<function>_<round time>): one more small listener, on yesterday and later, so an
      overnight round is still there after midnight. A round whose time was changed after it was ticked shows as not sent.
      No signal (28 Oct 2026): started again at midnight, the listener answers at once from the copy in memory, which holds
@@ -383,12 +420,14 @@
   F.sent = {};
   function watchSent(api, fs) {
     if (F.unsub2) F.unsub2();
-    var state = 'loading', last = {};
+    var state = 'loading', last = {}; F.sentState = 'loading';
     F.unsub2 = fs.onSnapshot(fs.query(api.colRef('fnsent'), fs.where('day', '>=', kday(now() - DAY))), { includeMetadataChanges: true }, function (snap) {
       var k = api.listSnap ? api.listSnap(snap, state, last) : 'new';
       if (k === 'same') return;
-      var m = k === 'wait' ? Object.assign({}, F.sent) : {}; snap.docs.forEach(function (d) { m[d.id] = d.data(); }); F.sent = m;
-      state = k === 'wait' ? 'offline' : 'ok';
+      // _pending: a tick the server does not hold yet (this phone's own, still sending); it shows, but takes no line off
+      var m = k === 'wait' ? Object.assign({}, F.sent) : {};
+      snap.docs.forEach(function (d) { m[d.id] = Object.assign(d.data(), d.metadata && d.metadata.hasPendingWrites ? { _pending: true } : {}); }); F.sent = m;
+      state = k === 'wait' ? 'offline' : 'ok'; F.sentState = state;
       changed();
     }, function () { F.unsub2 = null; });
   }
@@ -929,19 +968,48 @@
     var undo = lead || (me && x.sentBy === me && now() - x.sentAt < 2 * MIN);
     return '<span class="fn-sent-ok">' + esc(kclock(x.sentAt)) + '<small>' + esc(nameOf(x.sentBy)) + '</small></span>' + (undo ? '<button type="button" class="linkish" data-fn="unsent"' + d + '>Undo</button>' : '');
   }
+  // the last Sent tap on each function: a second within 1 s is a double tap (the next round's Sent takes the same place
+  // as the box redraws), never the next round going out (14 Nov 2026: with the last round, lines leave every list)
+  var sentTap = {};
+  function sentNow(k) { return F.sent[k]; }
   function tickSent(id, i, on) {
     var f = byId(id), prep = P(); if (!f || !prep) return;
+    if (on) { if (Date.now() - (sentTap[id] || 0) < 1000) return; sentTap[id] = Date.now(); }
     var r = f.rounds[i], api = prep.book(), me = api.who();
     if (!me && !(prep.state && prep.state.user)) { sheetClose(false, true); prep.signIn(location.hash || '#/'); return; }   // who is ticking: sign in first
-    var x = F.sent[f.id + '_' + r.at], rec = on ? { fid: f.id, at: r.at, day: kday(r.at), sent: true, sentAt: now(), sentBy: me } : { fid: f.id, at: r.at, day: kday(r.at), sent: false, sentAt: x.sentAt, sentBy: x.sentBy };
-    F.sent[f.id + '_' + r.at] = rec; changed();   // shows at once; the listener brings the saved copy
-    api.ready().then(function () { return api.W([['set', api.docRef('fnsent', f.id + '_' + r.at), rec, true]]); }).then(function () {
+    var key = f.id + '_' + r.at, x = F.sent[key], rec = on ? { fid: f.id, at: r.at, day: kday(r.at), sent: true, sentAt: now(), sentBy: me } : { fid: f.id, at: r.at, day: kday(r.at), sent: false, sentAt: x.sentAt, sentBy: x.sentBy };
+    var wasAll = allSentAt(f, sentNow);
+    // shows at once, as not on the server yet (_pending): no line leaves until the server holds it; the listener brings the saved copy
+    F.sent[key] = Object.assign({ _pending: true }, rec); changed();
+    api.ready().then(function () { return api.W([['set', api.docRef('fnsent', key), rec, true]]); }).then(function () {
+      var cur = F.sent[key];
+      if (cur && cur._pending && cur.sent === rec.sent && cur.sentAt === rec.sentAt) { F.sent[key] = rec; changed(); }
+      var g = byId(id) || f, nowAll = allSentAt(g, sentNow);
+      if (on && !wasAll && nowAll) { offSlip(g, i, rec); return; }
+      if (!on && wasAll && !nowAll) { statusNotice('Undone: ' + (g.rounds.length > 1 ? 'round ' + (i + 1) + ' of ' : '') + (g.name || 'the function') + ' not sent. Its open lines are back on the lists.'); return; }
       api.say((f.rounds.length > 1 ? 'Round ' + (i + 1) : 'The platters') + (on ? ' ticked as sent.' : ' not sent after all.'));
     }, function () {
+      delete sentTap[id];   // a tap that did not save is no double tap: the next one tries again
       if (x) F.sent[f.id + '_' + r.at] = x; else delete F.sent[f.id + '_' + r.at]; changed();
       // the tick went back: say why on screen too, not only to a screen reader (5 Nov 2026, the audit found nothing showed)
       var why = on ? 'Not saved: ' + (f.rounds.length > 1 ? 'round ' + (i + 1) : 'the platters') + ' not ticked as sent. Check the signal and try again.' : 'Not saved. Only the person who ticked it, within 2 minutes, or a chef can take a tick back.';
       if (prep.toast) prep.toast(why, { label: 'OK', fn: function () {} }, 0, 'bad'); else api.say(why);
+    });
+  }
+  /* The last round ticked and the server holds every tick (14 Nov 2026, docs/fn-sent-tidy-options/brief.md): the phone
+     that ticked it says by name what came off the lists (LK_PREP.fnOffNames(): from the lists on the phone, or one read
+     of today's lines when one is not loaded), with Undo while the rules still let this person take the tick back
+     (2 minutes from the tap: 90 s, and never past 110 s from the tap). Undo takes the round back, and the lines return. */
+  F.offSaid = {};
+  function offSlip(f, i, rec) {
+    var prep = P(), names = prep && prep.fnOffNames ? prep.fnOffNames(f) : Promise.resolve(null);
+    names.then(null, function () { return null; }).then(function (ns) {
+      F.offSaid[f.id] = ns;
+      var words = (f.name || 'Function') + ' all sent. ' + (ns === null ? 'Its open lines are off the prep and order lists.' : ns.length ? 'Taken off the lists: ' + ns.join(', ') + '.' : 'Nothing was left open on the lists.');
+      var left = Math.min(90000, rec.sentAt + 110000 - now());
+      if (left > 3000 && prep && prep.toast) prep.toast(words, { label: 'Undo', fn: function () { tickSent(f.id, i, false); } }, left);
+      else statusNotice(words);
+      changed();   // the All sent box (the sheet and #/fn/<id>) now names them too
     });
   }
   /* The sheet leads with what goes out next (22 Oct 2026): the first round not ticked as sent, its time, each platter with
@@ -956,6 +1024,14 @@
     return '<li class="fn-next-row"><span class="fn-next-n">' + q + '<span class="fn-x">\u00d7</span></span><span class="fn-next-name">' +
       (r ? '<a href="#/r/' + encodeURIComponent(rid) + '">' + nm + '</a>' : nm) + '</span></li>';
   }
+  // the All sent box says what came off the lists (no second Undo: the slip has it, and the round's own Undo stays):
+  // by name when this phone knows (its slip, or today's lists loaded), else the rule; nothing until the server holds
+  // every tick
+  function offLine(f) {
+    if (!allSentAt(f, sentNow)) return '';
+    var prep = P(), ns = F.offSaid[f.id] || (prep && prep.fnOffKnown ? prep.fnOffKnown(f) : null);
+    return '<p class="fn-next-s fn-next-off">' + (ns && ns.length ? '<b>Taken off the lists:</b> ' + esc(ns.join(', ')) + '.' : ns ? 'Nothing was left open on the lists.' : 'Lines not ticked or ordered come off the prep and order lists.') + '</p>';
+  }
   function nextHTML(f) {
     var n = (f.rounds || []).length, L = f.lines || [], t = now(), tot = totalQty(f), tick = f.status === 'confirmed' && !!f.first;
     if (!n || !L.length || f.status === 'cancelled') return '';
@@ -966,7 +1042,7 @@
     }
     if (!f.first) return nextBox('Next out', 'Times TBC', tot + ' ' + (tot === 1 ? 'platter' : 'platters'), rows());
     var k = nextOpen(f, function (i) { return tick && !!sentRec(f, i); });
-    if (k < 0) { var last = sentRec(f, n - 1); return nextBox('Done', 'All sent', esc(n > 1 ? 'All ' + n + ' rounds, the last ' + sentText(last) : sentText(last)), '<div class="fn-next-sent">' + sentCell(f, n - 1) + '</div>'); }
+    if (k < 0) { var last = sentRec(f, n - 1); return nextBox('Done', 'All sent', esc(n > 1 ? 'All ' + n + ' rounds, the last ' + sentText(last) : sentText(last)), '<div class="fn-next-sent">' + sentCell(f, n - 1) + '</div>' + offLine(f)); }
     var r = f.rounds[k], late = tick && r.at < t, rc = roundCounts(f, k), q = sum(rc);
     var head = (f.mode === 'all' ? 'All at ' : '') + when(r.at, f.date) + (n > 1 ? ' · round ' + (k + 1) + ' of ' + n : '');
     var sub = (late ? '<span class="fn-late">Due ' + esc(when(r.at, f.date)) + ', not sent yet</span> · ' : '') + q + ' ' + (q === 1 ? 'platter' : 'platters') + (n > 1 ? ' of ' + tot : '') + (r.note ? ' · ' + esc(r.note) : '');
@@ -1651,7 +1727,14 @@
     hatLine: hatLine, page: pageHTML, watch: watch, paint: paint, catalogue: catalogue, recipeOf: recipeOf, nameOf: nameOf, sheetHTML: sheetHTML, print: printFunctions, esc: esc,
     // the Orders tag for an order line, from the functions this phone already holds (M.orderTag()): no read
     orderTag: function (x, today) { return orderTag(F.list, x, today || kday(now())); },
-    statusHTML: statusHTML, setStatus: setStatus, statusBusy: function (id) { return !!F.jobs[id]; }, prepOps: prepOps, orderOps: orderOps
+    statusHTML: statusHTML, setStatus: setStatus, statusBusy: function (id) { return !!F.jobs[id]; }, prepOps: prepOps, orderOps: orderOps,
+    // function sent, lines off (js/prep.js fnOffMark()): whether a prep ('p') or order ('o') line comes off now, from the
+    // functions and Sent ticks this phone holds; only once both came from the server, never a guess while they load
+    offReady: function () { return F.state === 'ok' && F.sentState === 'ok'; },
+    off: function (x, kind) { return lineOff(x, kind, F.list, sentNow); },
+    allSent: function (f) { return allSentAt(f, sentNow); },
+    // a finger on the screen, or lifted under 400 ms ago: a leaving line holds its place meanwhile
+    fingerBusy: function () { if (touchDown && Date.now() - touchAt > 15000) touchDown = false; return touchDown || Date.now() - touchUp < 400; }
   };
   watch();
 })();

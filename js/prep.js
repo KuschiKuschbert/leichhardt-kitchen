@@ -592,6 +592,99 @@
   function snapLines(snap, date) {
     return snap.docs.map(function (d) { var x = d.data(); x.id = d.id; if (date) x.date = date; x._unsent = !!(d.metadata && d.metadata.hasPendingWrites); return x; });
   }
+  /* ---------- Function sent, lines off (head chef, 14 Nov 2026, docs/fn-sent-tidy-options/brief.md) ----------
+     Once every round of a function is ticked Sent and the server holds the ticks, its open lines leave the prep and
+     order lists on every phone: its platter lines, its Function stock order line and notices, and lines added for it from
+     What the platters need. Worked out here from the two function listeners already running (LK_FN.off(), the same
+     maths as the 03:00 job): no reads, no writes. The line is marked in memory as removed by "Function sent" (x._fnOff
+     keeps what the server has), so every count, tab and Removed lines treat it as removed; scripts/fn-sent-tidy.mjs
+     removes it for good at 03:00. A line that leaves while its list is on screen holds its place for FN_LEAVE (x._leaving),
+     longer while a finger is on the screen but never more than FN_HOLD, so the next line does not slide under a thumb.
+     Put back writes keep, which the maths and the job honour. */
+  var FN_LEAVE = 2500, FN_HOLD = 10000, fnLeave = {}, fnWasOpen = {}, fnLeaveT = 0;
+  function fnOffMark(lines, kind) {
+    var F = window.LK_FN, ready = !!(F && F.offReady && F.offReady()), t = Date.now(), held = !!(F && F.fingerBusy && F.fingerBusy()), wait = 0;
+    var page = !!(S.root && document.body.contains(S.root)) && S.name === (kind === 'p' ? 'prep' : 'orders');
+    (lines || []).forEach(function (x) {
+      if (x._fnOff) { x.deleted = x._fnOff.d; x.deletedBy = x._fnOff.by; x.deletedAt = x._fnOff.at0; }
+      delete x._fnOff; delete x._leaving;
+      var k = kind + '/' + (x.date || S.date) + '/' + x.id, o = ready ? F.off(x, kind) : null;
+      if (!o) { if (ready && !x.deleted) fnWasOpen[k] = 1; delete fnLeave[k]; return; }
+      x._fnOff = { fid: o.fid, name: o.name, at: o.at, d: !!x.deleted, by: x.deletedBy || '', at0: x.deletedAt || 0 };
+      if (fnWasOpen[k] && page && !fnLeave[k]) fnLeave[k] = t;   // open on this screen a moment ago: it leaves in place
+      delete fnWasOpen[k];
+      var since = fnLeave[k];
+      if (since && (t - since >= FN_HOLD || (t - since >= FN_LEAVE && !held))) { delete fnLeave[k]; since = 0; }
+      if (since) { x._leaving = true; wait = Math.max(wait, held ? 450 : FN_LEAVE - (t - since)); }
+      x.deleted = true; x.deletedBy = 'Function sent'; x.deletedAt = o.at;
+    });
+    if (wait) { clearTimeout(fnLeaveT); fnLeaveT = setTimeout(fnOffAgain, wait + 50); }
+    return lines;
+  }
+  function fnOffSig(lines) { return (lines || []).map(function (x) { return x._fnOff ? x.id + (x._leaving ? '~' : '') : ''; }).join('|'); }
+  function fnOffAgain() {
+    var a = fnOffSig(S.items), b = fnOffSig(S.ordLines);
+    fnOffMark(S.items, 'p'); fnOffMark(S.ordLines, 'o');
+    if ((a !== fnOffSig(S.items) || b !== fnOffSig(S.ordLines)) && (S.name === 'prep' || S.name === 'orders') && S.root && document.body.contains(S.root)) draw();
+  }
+  // the functions or their Sent ticks changed (js/functions.js changed()): decide again, and draw only if a line moved
+  window.addEventListener('lk-fn', fnOffAgain);
+  // a line leaving in place: its words stay, its box and buttons fade, the reason is under it; a tap on it says why
+  function fnLeavingRow(x, date) {
+    var why = 'Not needed: ' + x._fnOff.name + ' all sent';
+    return '<li id="nbr-' + esc(x.id) + '" class="nb-row is-leaving" data-ln="' + esc(date + '/' + x.id) + '">' +
+      '<button type="button" class="nb-box" data-p="fnoff" data-id="' + esc(x.id) + '" aria-disabled="true" aria-label="' + esc(x.text + '. ' + why) + '">' + BOX + '</button>' +
+      '<span class="nb-main" data-p="fnoff" data-id="' + esc(x.id) + '"><span class="nb-t">' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + '</span>' +
+      metaHTML([], '<b class="nb-offw">' + esc(why) + '</b>') + '</span></li>';
+  }
+  function fnOffWhy(id) {
+    var x = (S.items || []).concat(S.ordLines || []).filter(function (y) { return y.id === id && y._fnOff; })[0];
+    if (x) toast('Not needed: ' + x._fnOff.name + ' all sent ' + clock(x._fnOff.at) + '. ' + slipName(x.text) + ' is off the list.');
+  }
+  // what a line is called when it comes off: a platter line or the stock line by the words before the colon
+  // ("Pizza Platter", "Function stock"), any other line by its words
+  function fnOffShort(x) { var t = String(x.text || ''), i = t.indexOf(':'); return i > 0 ? t.slice(0, i) : t; }
+  function fnOffOf(lines, kind, fid) {
+    var F = window.LK_FN;
+    return (lines || []).filter(function (x) { return F && F.M && F.M.lineOf(x, kind, fid) && (x._fnOff || F.off(x, kind)); });
+  }
+  function fnOffNamesOf(prep, ord) {
+    var seen = {}, out = [];
+    prep.concat(ord).forEach(function (x) { var n = fnOffShort(x); if (n && !seen[n]) { seen[n] = 1; out.push(n); } });
+    return out;
+  }
+  /* The names for the slip on the phone that ticked the last round (js/functions.js offSlip()). From the lists on this
+     phone when today's are loaded; a list that is not costs one read of today's lines from the server (once, on that
+     tap only: about 10 to 30 documents). null when a read failed, so the slip never names less than came off. */
+  function fnOffNames(f) {
+    var today = dayNow();
+    function list(have, ok, col, kind) {
+      if (have && ok) return Promise.resolve(fnOffOf(have, kind, f.id));
+      // a Functions-only account may tick Sent but never reads the kitchen's lists: it says the rule instead
+      if (!fb || !kitchenAccess()) return Promise.reject(new Error('no lists'));
+      return fb.fs.getDocsFromServer(col).then(function (sn) { return fnOffOf(sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }), kind, f.id); });
+    }
+    return Promise.all([list(S.items, S.date === today && S.itemsState === 'ok', itemsCol(today), 'p'), list(S.ordLines, S.ordDate === today && S.ordState === 'ok', ordCol(today), 'o')])
+      .then(function (v) { return fnOffNamesOf(v[0], v[1]); }, function () { return null; });
+  }
+  // the same names from what this phone holds, without a read (the function page's All sent box): null when a list is not
+  // today's, so the box says the rule instead of naming less than came off
+  function fnOffKnown(f) {
+    var today = dayNow();
+    if (!(S.date === today && S.itemsState === 'ok' && S.ordDate === today && S.ordState === 'ok')) return null;
+    return fnOffNamesOf(fnOffOf(S.items, 'p', f.id), fnOffOf(S.ordLines, 'o', f.id));
+  }
+  /* Prep's Functions tab after a function went out: one sentence each, naming every prep line that came off and where
+     ("Smith 60th all sent 12:48. Taken off the list: Pizza Platter (Functions), Party pies and Sausage rolls (Larder).") */
+  function fnOffSay(items) {
+    var by = {}, order = [];
+    (items || []).forEach(function (x) { if (!x._fnOff || x._leaving) return; var o = x._fnOff; if (!by[o.fid]) { by[o.fid] = { o: o, secs: {}, sOrder: [] }; order.push(o.fid); }
+      var g = by[o.fid], sec = x.fn ? 'Functions' : lineSec(x) || 'No section'; if (!g.secs[sec]) { g.secs[sec] = []; g.sOrder.push(sec); } g.secs[sec].push(fnOffShort(x)); });
+    return order.map(function (fid) {
+      var g = by[fid], parts = g.sOrder.map(function (s) { var n = g.secs[s]; return (n.length > 1 ? n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1] : n[0]) + ' (' + s + ')'; });
+      return '<p class="nb-fnoff"><b>' + esc(g.o.name + ' all sent ' + clock(g.o.at) + '.') + '</b> Taken off the list: ' + esc(parts.join(', ')) + '.</p>';
+    }).join('');
+  }
   /* listSnap() said 'same': the lines are the same, so only the Not sent marks can differ (the server confirmed a
      change). Those are patched in the rows while the page is up, not the whole page drawn; otherwise it is drawn. */
   function patchOrDraw(patch) {
@@ -628,6 +721,7 @@
         pt.latest = Object.assign({}, x);pt.latestServer = !cacheOnly(snap) && !x._unsent;
         return Object.assign({}, x, { done: pt.before.done || false, doneBy: pt.before.doneBy || '', doneById: pt.before.doneById || '', doneAt: pt.before.doneAt || 0, preparedBy: pt.before.preparedBy || '', preparedById: pt.before.preparedById || '', preparedAt: pt.before.preparedAt || 0 });
       });
+      fnOffMark(S.items, 'p');   // a sent function's open lines are off the list (no read)
       if (pt && pt.uncertain && pt.latestServer) { var confirming = pt;Promise.resolve().then(function () { ptReconcile(confirming); }); }
       // the server's answer changes no line, so the page is only patched: draw it when that answer is the one
       // the finished list was waiting for (finDue(), 10 Nov 2026), or the card would wait for some later draw;
@@ -2631,8 +2725,11 @@
   function removeItem(date, id, restore) {
     var p = me(), it = S.items.filter(function (x) { return x.id === id; })[0];
     if (!can('del')) return;
+    // a sent function's line put back is kept: the book and the 03:00 job never take it off again (fnOffMark())
+    var kept = restore && it && (it._fnOff || it.deletedBy === 'Function sent');
     // a merged double up that is put back is kept apart, so it is not merged again
-    supd(itemRef(date, id), Object.assign({ deleted: !restore, deletedBy: restore ? '' : p.name, deletedAt: restore ? 0 : now() }, restore && it && it.mergedInto ? { mergedInto: '', dupOk: true } : {})).then(function () { markPast('p', date); }, failed);
+    supd(itemRef(date, id), Object.assign(kept && it._fnOff && !it._fnOff.d ? { keep: true } : { deleted: !restore, deletedBy: restore ? '' : p.name, deletedAt: restore ? 0 : now() }, kept ? { keep: true } : {}, restore && it && it.mergedInto ? { mergedInto: '', dupOk: true } : {})).then(function () { markPast('p', date); }, failed);
+    if (kept) { it.keep = true; fnOffMark(S.items, 'p'); draw(); }
     if (!restore) toast('Removed ' + (it ? slipName(it.text) : 'the line'), { label: 'Undo', fn: function () { removeItem(date, id, true); } });
     else toast('Put back ' + (it ? slipName(it.text) : 'the line'));
   }
@@ -2707,12 +2804,12 @@
         var root = x.root || x.id, id = 'r' + today.replace(/-/g, '') + '-' + root;
         if (have[id] || gone[root]) return;
         have[id] = true;
-        jobs.push(['set', itemRef(today, id), {
+        jobs.push(['set', itemRef(today, id), Object.assign({
           text: x.text, station: lineSec(x), qty: x.qty || '', recipe: x.recipe || '',
           addedBy: 'Rolled over', addedById: '', addedAt: now(), done: false, deleted: false,
           rolled: (x.rolled || 0) + 1, root: root, from: x.id, rolledFrom: src.date, origBy: x.origBy || x.addedBy || '', origAt: x.origAt || (x.rolled ? 0 : x.addedAt || 0), urgent: !!x.urgent,
           ahead: !!(x.ahead || writtenLate(x, src.date, cut))
-        }]);
+        }, Array.isArray(x.fnFor) && x.fnFor.length ? { fnFor: x.fnFor.slice(0, 4) } : {}, x.keep ? { keep: true } : {})]);   // a function's link and a kept line roll with it
       });
       if (!jobs.length) { lsSet('lk.prep.rolled', today); return; }
       return Wall(jobs).then(function () { lsSet('lk.prep.rolled', today); toast(jobs.length + (jobs.length === 1 ? ' line' : ' lines') + ' rolled over from ' + dayName(src.date).toLowerCase()); });
@@ -2922,7 +3019,9 @@
   function sameQty(g) { var q = {}; g.forEach(function (x) { if (qtyKey(x.qty)) q[qtyKey(x.qty)] = 1; }); return Object.keys(q).length <= 1; }
   /* the obvious ones: amounts agree, and no line was kept apart on purpose (dupOk, from Add anyway or Undo) */
   function obviousDups(items) { return dupGroups(items.filter(function (x) { return !x.dupOk; })).filter(sameQty); }
-  var DUP_BLANK = { qty: '', urgent: false, urgentBy: '', urgentById: '', urgentAt: 0, station: '', recipe: '', also: [] };
+  var DUP_BLANK = { qty: '', urgent: false, urgentBy: '', urgentById: '', urgentAt: 0, station: '', recipe: '', also: [], fnFor: [] };
+  // an Undo never links a line to a function again: the rules let an update only clear fnFor (a link takes a line off)
+  function unlinked(p) { delete p.fnFor; return p; }
   function prevOf(x, up) { var p = {}; Object.keys(up).forEach(function (k) { p[k] = x[k] === undefined ? DUP_BLANK[k] : x[k]; }); return p; }
   /* Merging a group: the line written first stays. It takes the amount, the urgent mark, a section and a recipe link if
      it had none, and the other sections (also), so it still shows on their tabs. The others are removed (mergedInto). */
@@ -2937,6 +3036,7 @@
     });
     also = also.filter(function (s) { return s !== sec; }).slice(0, 8);
     if (also.join('|') !== (keep.also || []).join('|')) up.also = also;
+    if (Array.isArray(keep.fnFor) && keep.fnFor.length) up.fnFor = [];   // merged: the kitchen's line now, not a function's
     return { keep: keep, rest: g.slice(1), up: up, sec: sec };
   }
   /* Obvious double ups on today's list are merged by themselves, with Undo. Each phone waits a moment at random, so
@@ -2965,7 +3065,7 @@
         gs.forEach(function (g) {
           var f = foldDups(g);
           last = f;
-          if (Object.keys(f.up).length) { ops.push(['upd', itemRef(dte, f.keep.id), f.up]); undo.push(['upd', itemRef(dte, f.keep.id), prevOf(f.keep, f.up)]); }
+          if (Object.keys(f.up).length) { ops.push(['upd', itemRef(dte, f.keep.id), f.up]); var back = unlinked(prevOf(f.keep, f.up)); if (Object.keys(back).length) undo.push(['upd', itemRef(dte, f.keep.id), back]); }
           f.rest.forEach(function (x) {
             ops.push(['upd', itemRef(dte, x.id), { deleted: true, deletedBy: p ? p.name : '', deletedAt: now(), mergedInto: f.keep.id }]);
             undo.push(['upd', itemRef(dte, x.id), { deleted: false, deletedBy: '', deletedAt: 0, mergedInto: '', dupOk: true }]);
@@ -2992,11 +3092,13 @@
     var dte = S.date, up = {};
     if (data.qty && !tw.qty) up.qty = data.qty;
     if (data.station && secNow(data.station) !== lineSec(tw) && alsoNow(tw).indexOf(secNow(data.station)) < 0) up.also = (tw.also || []).concat([data.station]).slice(0, 8);
-    var prev = prevOf(tw, up), changed = Object.keys(up).length;
+    // a line added for a function that now holds another need too is the kitchen's: it no longer leaves with the function
+    if (Array.isArray(tw.fnFor) && tw.fnFor.length) up.fnFor = [];
+    var prev = unlinked(prevOf(tw, up)), changed = Object.keys(up).length;
     if (changed) supd(itemRef(dte, tw.id), up).catch(failed);
     toast('On the list: ' + tw.text + (up.qty || tw.qty ? ', ' + (up.qty || tw.qty) : '') + '.', { label: 'Add anyway', fn: function () {
-      if (changed) supd(itemRef(dte, tw.id), prev).catch(failed);
-      var made = newItem(Object.assign({}, data, { dupOk: true }));
+      if (Object.keys(prev).length) supd(itemRef(dte, tw.id), prev).catch(failed);
+      var made = newItem(Object.assign({}, data, { dupOk: true }));   // kept apart, so it keeps its own link (fnFor) if it had one
       made.catch(failed);
       if (after) after();
       addedToast(data.station, dte, made.id, data.text);
@@ -4910,11 +5012,18 @@
     var l = (parts || []).filter(Boolean); if (w) l.push(w);
     return '<span class="nb-meta">' + (l.length ? l.join(' · ') : '&nbsp;') + '</span>';
   }
+  // a line added for a function from What the platters need says which (fnFor), so nobody wonders when it leaves
+  function fnForTag(x) {
+    if (!Array.isArray(x.fnFor) || !x.fnFor.length || x.deleted || !window.LK_FN) return '';
+    var names = (window.LK_FN.list() || []).filter(function (f) { return x.fnFor.indexOf(f.id) >= 0; }).map(function (f) { return f.name; });
+    return names.length ? '<span class="fn-tag nb-forfn">For ' + esc(names.join(' and ')) + '</span>' : '';
+  }
   function rowHTML(x, date, readonly, also) {
+    if (x._leaving) return fnLeavingRow(x, date);
     var tickOk = can('tick') && !x.deleted && (!x.done || canUntick(x)), delOk = can('del');
-    var by = x.done && preparedWorker(x).name ? esc(preparedWorker(x).name) + (x.doneAt ? ' ' + clock(x.doneAt) : '') : (rolledN(x) ? (x.origBy ? 'from ' + esc(x.origBy) + (firstDay(x) ? ', ' + firstDay(x) : '') : '') : x.rolled ? esc(x.origBy || '') : (x.addedBy ? esc(x.addedBy) + (x.addedAt ? ' ' + clock(x.addedAt) : '') : ''));
+    var by = x._fnOff ? '<b class="nb-offw">' + esc('Not needed: ' + x._fnOff.name + ' all sent ' + clock(x._fnOff.at)) + '</b>' : x.done && preparedWorker(x).name ? esc(preparedWorker(x).name) + (x.doneAt ? ' ' + clock(x.doneAt) : '') : (rolledN(x) ? (x.origBy ? 'from ' + esc(x.origBy) + (firstDay(x) ? ', ' + firstDay(x) : '') : '') : x.rolled ? esc(x.origBy || '') : (x.addedBy ? esc(x.addedBy) + (x.addedAt ? ' ' + clock(x.addedAt) : '') : ''));
     var on = !readonly && onOf(x), onOther = on && !onMine(x) && !shared();
-    var marks = (x.urgent ? '<span class="nb-urg">Urgent</span>' : '') + (rolledN(x) ? '<span class="nb-roll" title="Not finished earlier, so it rolled over">Rolled' + (rolledN(x) > 1 ? ' x' + rolledN(x) : '') + '</span>' : '') +
+    var marks = (x.urgent ? '<span class="nb-urg">Urgent</span>' : '') + fnForTag(x) + (rolledN(x) ? '<span class="nb-roll" title="Not finished earlier, so it rolled over">Rolled' + (rolledN(x) > 1 ? ' x' + rolledN(x) : '') + '</span>' : '') +
       (x.deleted && x.mergedInto ? '<span class="nb-also">Double up</span>' : (also || ''));
     // Start here, numbered in place (startNums()): the number before the words, and why when the line does not show it
     var sn = !readonly && (!x.done || lingers(x)) && !x.deleted && date === dayNow() && S.startN && S.startN[x.id];
@@ -5454,7 +5563,7 @@
     /* ticked lines leave the list and show under Done today in Handy. Sections with nothing left to do are hidden.
        board: the wall board (wallOn()): every section, each in its own column, function platters in theirs, no removed
        lines */
-    var shown = items.filter(function (x) { return board ? !x.deleted : (S.showRemoved || !x.deleted) && inTab(x); });
+    var shown = items.filter(function (x) { return board ? !x.deleted || x._leaving : (S.showRemoved || !x.deleted || x._leaving) && inTab(x); });
     shown.sort(sortItems);
     var order = [], seen = {}, twins = {};
     dupGroups(items).forEach(function (g) { twins[dupKey(g[0].text)] = g; });
@@ -5586,24 +5695,27 @@
   function fnNeeds() {
     var today = dayNow(), tmr = shift(today, 1), A = window.LK_AMT, days = {}, hid = fnNeedHidden();
     if (!A) return [];
-    function addPlatter(day, fname, rid, plat) {
+    // fid: the function, so a line added from here is linked to it (fnFor) and leaves the list once it is all sent
+    function addPlatter(day, fname, rid, plat, fid) {
       var r = recipeById(rid); if (!r || !(plat > 0)) return;
       var d = days[day] = days[day] || { day: day, items: {} };
       (r.ingredients || []).forEach(function (i) {
         if (!i || !i.name) return;
         var a = A.parse(i.q), k = dupKey(i.name) + '|' + (a ? a.u : '?');
         if (hid[day] && hid[day].indexOf(k) >= 0) return;
-        var e = d.items[k] = d.items[k] || { k: k, name: i.name, link: i.link || '', u: a ? a.u : '', n: 0, read: !!a, fns: {} };
+        var e = d.items[k] = d.items[k] || { k: k, name: i.name, link: i.link || '', u: a ? a.u : '', n: 0, read: !!a, fns: {}, fids: {} };
         if (a) e.n += a.n * plat;
         e.fns[fname] = (e.fns[fname] || 0) + plat;
+        if (fid) e.fids[fid] = 1;
       });
     }
     S.items.filter(function (x) { return x.fn && !x.deleted && x.recipe; }).forEach(function (x) {
       var a = A.parse(x.qty), f = window.LK_FN ? (window.LK_FN.list() || []).filter(function (y) { return y.id === x.fn; })[0] : null;
-      addPlatter(today, f ? f.name : 'Function', x.recipe, a ? a.n : 0);
+      if (f && window.LK_FN.allSent && window.LK_FN.allSent(f)) return;   // all sent: its platters need nothing more
+      addPlatter(today, f ? f.name : 'Function', x.recipe, a ? a.n : 0, x.fn);
     });
     if (window.LK_FN) (window.LK_FN.list() || []).filter(function (f) { return f.status === 'confirmed' && f.date === tmr; }).forEach(function (f) {
-      (f.lines || []).forEach(function (l) { addPlatter(tmr, f.name, l.rid, +l.qty || 0); });
+      (f.lines || []).forEach(function (l) { addPlatter(tmr, f.name, l.rid, +l.qty || 0, f.id); });
     });
     return [today, tmr].filter(function (d) { return days[d]; }).map(function (d) {
       var xs = Object.keys(days[d].items).map(function (k) { return days[d].items[k]; }).sort(function (a, b) { return a.name < b.name ? -1 : 1; });
@@ -5631,7 +5743,7 @@
     return '<h3 class="nb-sh">For the functions</h3><button type="button" class="fnn-sum" data-p="fnneed-fold" aria-expanded="' + !!S.fnnOpen + '">What the platters need: ' + esc(count) + ' <span aria-hidden="true">' + (S.fnnOpen ? '▴' : '▾') + '</span></button>' +
       (S.fnnOpen ? '<div class="fnn-box">' + ds.map(function (d) {
       return '<p class="fnn-day">' + (d.day === dayNow() ? 'Today' : 'Tomorrow') + '</p><ul class="fnn">' + d.items.map(function (e) {
-        var qty = e.read ? window.LK_AMT.say(e.n, e.u) : '', i = S.fnNeed.push({ text: e.name, qty: qty, recipe: e.link, k: e.k, day: d.day }) - 1;
+        var qty = e.read ? window.LK_AMT.say(e.n, e.u) : '', i = S.fnNeed.push({ text: e.name, qty: qty, recipe: e.link, k: e.k, day: d.day, fids: Object.keys(e.fids || {}).slice(0, 4) }) - 1;
         var who = Object.keys(e.fns).map(function (f) { return f + ': ' + e.fns[f] + (e.fns[f] === 1 ? ' platter' : ' platters'); }).join(', ');
         var on = openTwin(e.name, qty);
         return '<li><span class="fnn-t"><strong>' + esc(e.name) + '</strong> ' + (qty ? '<span class="fnn-q">' + esc(qty) + '</span>' : '<span class="fnn-tc">amount to come</span>') + '<span class="fnn-w">' + esc(who) + '</span></span>' +
@@ -5645,8 +5757,11 @@
     if (!x || !can('add')) return;
     sg('fnneed', 't');
     var sec = mySec() || 'Functions', dte = S.date, tw = openTwin(x.text, x.qty);
-    if (tw) { addToTwin(tw, { text: x.text.slice(0, 160), station: sec, recipe: x.recipe, qty: x.qty }, function () { noteSection(sec); bump({ added: 1, lastAdded: now() }); }); return; }
-    var made = newItem({ text: x.text.slice(0, 160), station: sec, recipe: x.recipe || (matchRecipe(x.text) || {}).id || '', qty: x.qty });
+    // linked to the functions it is for (fnFor, 14 Nov 2026): it leaves the list once they are all sent. An open line for
+    // the same thing takes it instead, and that line, the kitchen's own, is never linked
+    var link = x.fids && x.fids.length ? { fnFor: x.fids.slice(0, 4) } : {};
+    if (tw) { addToTwin(tw, Object.assign({ text: x.text.slice(0, 160), station: sec, recipe: x.recipe, qty: x.qty }, link), function () { noteSection(sec); bump({ added: 1, lastAdded: now() }); }); return; }
+    var made = newItem(Object.assign({ text: x.text.slice(0, 160), station: sec, recipe: x.recipe || (matchRecipe(x.text) || {}).id || '', qty: x.qty }, link));
     made.catch(failed);
     noteSection(sec); bump({ added: 1, lastAdded: now() });
     addedToast(sec, dte, made.id, x.text);
@@ -5679,14 +5794,17 @@
     // the day's own lines and a function's platter lines (their own tab) are counted apart
     var fnLive = S.items.filter(function (x) { return !x.deleted && x.fn; }), fnOpen = fnLive.filter(function (x) { return !x.done; }).length;
     var daily = S.items.filter(function (x) { return !x.deleted && !x.fn; });
-    if (S.tab === FN_TAB && !fnLive.length) S.tab = '';
+    // a function that went out keeps the Functions tab for the day, saying what came off (fnOffSay()), even when none of
+    // its platter lines were ticked, so a cook on that tab is never sent back to All
+    var fnGone = S.date === today ? fnOffSay(S.items) : '';
+    if (S.tab === FN_TAB && !fnLive.length && !fnGone) S.tab = '';
     var wall = wallOn();
     if (wall) S.tab = '';
     var live = S.tab === FN_TAB ? fnLive : daily, doneN = live.filter(function (x) { return x.done; }).length;
     var removed = S.items.filter(function (x) { return x.deleted; });
     var secs = {}, tabs = [];
     daily.forEach(function (x) { [lineSec(x)].concat(alsoNow(x)).forEach(function (n) { if (n && !secs[n]) { secs[n] = 1; tabs.push(n); } }); });
-    var fnTab = fnLive.length ? '<button type="button" class="nb-tab nb-tab-fn" data-p="tab" data-v="' + FN_TAB + '" aria-pressed="' + (S.tab === FN_TAB) + '">Functions' + (fnOpen ? ' <span class="nb-tab-n">' + fnOpen + '</span>' : '') + '</button>' : '';
+    var fnTab = fnLive.length || fnGone ? '<button type="button" class="nb-tab nb-tab-fn" data-p="tab" data-v="' + FN_TAB + '" aria-pressed="' + (S.tab === FN_TAB) + '">Functions' + (fnOpen ? ' <span class="nb-tab-n">' + fnOpen + '</span>' : '') + '</button>' : '';
     var tabHTML = tabs.length || fnTab ? '<nav class="nb-tabs" aria-label="Sections"><button type="button" class="nb-tab" data-p="tab" data-v="" aria-pressed="' + !S.tab + '">All</button>' +
       tabs.map(function (t) { return '<button type="button" class="nb-tab" data-p="tab" data-v="' + esc(t) + '" aria-pressed="' + (S.tab === t) + '">' + esc(t) + '</button>'; }).join('') + fnTab +
       (S.date === today && tabs.length > 1 ? '<button type="button" class="nb-tab nb-tab-wall" data-p="wall" data-v="1">Wall board</button>' : '') + '</nav>' : '';
@@ -5723,7 +5841,7 @@
       // Done today sits behind the count (3 Nov 2026, work pages redesign A): a tap on "3 of 13 done" goes to it
       tmWrap(S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : doneN ? '<button type="button" class="nb-prog nb-progbtn" data-p="donejump" aria-label="' + doneN + ' of ' + live.length + ' done. Show Done today">' + doneN + ' of ' + live.length + ' done</button>' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>', S.date) + (add ? dockBtn('nb-addline', 'write', 'Add a line') : '') + '</header>' +
       (S.itemsState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' : '') +
-      '<div class="nb-body">' + (flags ? '<div class="nb-lc">' + flags + '</div>' : '') + offNote + pageBody(S.items, S.date) + todayEmpty + '</div>' +
+      '<div class="nb-body">' + (flags ? '<div class="nb-lc">' + flags + '</div>' : '') + offNote + (S.tab === FN_TAB ? fnGone : '') + pageBody(S.items, S.date) + todayEmpty + '</div>' +
       (addNote || removed.length && can('del') ? '<div class="nb-foot">' + addNote + (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div>' : '') + '</section>';
     // the add form as a sheet (3 Nov 2026), drawn with the page from S.pLog like Log waste, so a redraw keeps what is typed
     var pSheet = add && S.pLog ? '<div class="sheet-bg" data-p="p-log-close"></div><div class="sheet p-sheet" role="dialog" aria-modal="true" aria-labelledby="p-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="p-log-h">Add to prep</h3>' + add +
@@ -7353,7 +7471,7 @@
     var u = unsubOrd = fb.fs.onSnapshot(ordCol(S.ordDate), { includeMetadataChanges: true }, function (snap) {
       // 'wait': no signal and not loaded yet, so only this phone's unsent lines (see listSnap)
       var k = listSnap(snap, S.ordState, ordSnap);
-      S.ordLines = snapLines(snap, S.ordDate);
+      S.ordLines = fnOffMark(snapLines(snap, S.ordDate), 'o');
       if (k === 'same') { patchOrDraw(function () { patchLines(S.ordLines); }); return; }
       S.ordState = k === 'wait' ? 'offline' : 'ok'; draw();
     }, function (e) {
@@ -7409,11 +7527,11 @@
         var root = x.root || x.id, id = 'r' + today.replace(/-/g, '') + '-' + root;
         if (have[id] || gone[root]) return;
         have[id] = true;
-        jobs.push(['set', ordRef(today, id), {
+        jobs.push(['set', ordRef(today, id), Object.assign({
           text: x.text, qty: x.qty || '', need: needOf(x), recipes: x.recipes || [], addedBy: 'Rolled over', addedById: '', addedAt: now(), ordered: false, deleted: false,
           rolled: (x.rolled || 0) + 1, root: root, from: x.id, rolledFrom: src.date, origBy: x.origBy || x.addedBy || '', origAt: x.origAt || (x.rolled ? 0 : x.addedAt || 0),
           ahead: !!(x.ahead || writtenLate(x, src.date, cut)), since: x.since || (writtenLate(x, src.date, cut) ? today : src.date)
-        }]);
+        }, x.keep ? { keep: true } : {})]);
       });
       if (!jobs.length) { S.ordRolling = false; lsSet('lk.ord.rolled', today); return; }
       return Wall(jobs).then(function () {
@@ -7547,7 +7665,11 @@
   function removeOrderLine(date, id, restore) {
     if (!canBrowse() || !can('del')) return;
     var it = (S.ordLines || []).concat(S.ordAll || []).filter(function (x) { return x.id === id; })[0];
-    supd(ordRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : now() }).then(function () { ordPatch(date, id, { deleted: !restore }); markPast('o', date); }, failed);
+    // a sent function's line put back is kept: the book and the 03:00 job never take it off again (fnOffMark())
+    var kept = restore && it && (it._fnOff || it.deletedBy === 'Function sent');
+    var ch = kept && it._fnOff && !it._fnOff.d ? { keep: true } : Object.assign({ deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : now() }, kept ? { keep: true } : {});
+    supd(ordRef(date, id), ch).then(function () { ordPatch(date, id, ch); markPast('o', date); }, failed);
+    if (kept) { it.keep = true; fnOffMark(S.ordLines, 'o'); draw(); }
     if (!restore) toast('Removed ' + (it ? slipName(it.text) : 'the line') + ' from the order list', { label: 'Undo', fn: function () { removeOrderLine(date, id, true); } });
     else toast('Put back ' + (it ? slipName(it.text) : 'the line') + ' on the order list');
   }
@@ -7617,10 +7739,11 @@
     };
   }
   function ordRow(x) {
+    if (x._leaving) return fnLeavingRow(x, x.date);
     var canTick = canBrowse() && !x.deleted, keep = lineMenuOk(x, x.date), fr = fnOrdRoom(x), fo = fnOrdHTML(fr);
     // an ordered line keeps the ⋯'s room with nothing in it, so ticking Ordered moves no row
     var held = '<span class="nb-more nb-more-held' + (keep ? ' nb-more-fix' : '') + '" aria-hidden="true"></span>';
-    var by = x.ordered && x.orderedBy ? 'Ordered by ' + esc(x.orderedBy) + (x.orderedAt ? ' ' + clock(x.orderedAt) : '') : (x.rolled ? (x.origBy ? 'from ' + esc(x.origBy) : '') : x.addedBy ? esc(x.addedBy) + (canBrowse() && x.addedAt ? ' ' + clock(x.addedAt) : '') : '');
+    var by = x._fnOff ? '<b class="nb-offw">' + esc('Not needed: ' + x._fnOff.name + ' all sent ' + clock(x._fnOff.at)) + '</b>' : x.ordered && x.orderedBy ? 'Ordered by ' + esc(x.orderedBy) + (x.orderedAt ? ' ' + clock(x.orderedAt) : '') : (x.rolled ? (x.origBy ? 'from ' + esc(x.origBy) : '') : x.addedBy ? esc(x.addedBy) + (canBrowse() && x.addedAt ? ' ' + clock(x.addedAt) : '') : '');
     return '<li class="nb-row' + (x.ordered ? ' is-done' : '') + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '">' +
       '<button type="button" class="nb-box" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="' + !!x.ordered + '" aria-label="' + esc('Ordered: ' + x.text) + '"' + (canTick ? '' : ' disabled') + '>' + (x.ordered ? TICK : BOX) + '</button>' +
       '<span class="nb-main"><span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + needTag(x) + fo.tag +
@@ -7697,7 +7820,8 @@ if (list.length) sg('oreg', 's');
     var nOrd = live.filter(function (x) { return x.ordered; }).length;
     fnOrdSeen = fnOrdSig();   // the function stock tags these rows are drawn with (the lk-fn listener above)
     /* on today's list, a line that was ticked as ordered stays for 10 minutes (so a mis-tap can be undone), then leaves the list. Other days show everything. */
-    var shown = live.filter(function (x) { return !(S.ordDate === today && x.ordered && x.orderedAt && now() - x.orderedAt > ORD_HIDE); });
+    // a sent function's stock line leaving in place (fnOffMark()) keeps its row for a moment, uncounted
+    var shown = live.concat((S.ordLines || []).filter(function (x) { return x._leaving; })).filter(function (x) { return !(S.ordDate === today && x.ordered && x.orderedAt && now() - x.orderedAt > ORD_HIDE); });
     clearTimeout(ordHideTimer);
     var nextHide = Infinity;
     if (S.ordDate === today) live.forEach(function (x) { if (x.ordered && x.orderedAt) { var left = x.orderedAt + ORD_HIDE - now(); if (left > 0 && left < nextHide) nextHide = left; } });
@@ -7715,7 +7839,7 @@ if (list.length) sg('oreg', 's');
     var requestOrder = function (a, b) { return (needOf(b) === 'out') - (needOf(a) === 'out') ||
       String(a.since || a.date).localeCompare(String(b.since || b.date)) || byAdded(a, b); };
     var moved = live.filter(function (x) { return shown.indexOf(x) < 0; }).sort(function (a, b) { return (b.orderedAt || 0) - (a.orderedAt || 0); });
-    var removedO = (S.ordLines || []).filter(function (x) { return x.deleted; });
+    var removedO = (S.ordLines || []).filter(function (x) { return x.deleted && !x._leaving; });
     var removedBox = removedO.length && canBrowse() && can('del') ? '<button type="button" class="nb-link" data-p="oremoved">' + (S.oShowRemoved ? 'Hide' : 'Show') + ' removed (' + removedO.length + ')</button>' +
       (S.oShowRemoved ? '<ul class="nb-rows">' + removedO.map(ordRow).join('') + '</ul>' : '') : '';
     // Ordered today, folded (3 Nov 2026): one line with the count, open on a tap
@@ -12599,6 +12723,7 @@ if (list.length) sg('oreg', 's');
     if (a === 'tab') { S.tab = el.getAttribute('data-v') || ''; draw(); return; }
     // The wall board (wallOn()), kept for this browser; focus goes to the way back.
     if (a === 'wall') { lsSet('lk.wall', el.getAttribute('data-v') === '1' ? '1' : ''); S.tab = ''; draw(); var wb = S.root && S.root.querySelector('[data-p="wall"]'); if (wb) wb.focus(); return; }
+    if (a === 'fnoff') { fnOffWhy(id); return; }
     if (a === 'tick') { tick(dt || S.date, id); return; }
     if (a === 'onit') { onTap(dt || S.date, id); return; }
     if (a === 'del') { removeItem(dt || S.date, id, false); return; }
@@ -15161,6 +15286,8 @@ if (list.length) sg('oreg', 's');
 
   window.LK_PREP = {
     afterOverlay: ovAfterBack,
+    // a function that went out (js/functions.js offSlip() and its All sent box): what came off the lists, by name
+    fnOffNames: fnOffNames, fnOffKnown: fnOffKnown,
     // today's free reads used up (5 Nov 2026): js/functions.js leaves "check the signal" out while it is
     quota: quotaOn,
     pickerOverlay: function (close) {
