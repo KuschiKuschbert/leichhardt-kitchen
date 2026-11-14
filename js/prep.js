@@ -13865,6 +13865,18 @@ if (list.length) sg('oreg', 's');
     var busy = svOf('t') === 'busy' || tmLastBusy;
     return '<div class="tm-date-controls"><button type="button" class="chip" data-p="tm-date-toggle" aria-expanded="' + !!tmUi.datesOpen + '" aria-controls="tm-week-dates"' + (busy ? ' disabled' : '') + '>' + esc(tmPlanDate(tmPlanDay())) + ' <span aria-hidden="true">▾</span><span class="visually-hidden">. Choose planning date</span></button><button type="button" class="chip" data-p="tm-today"' + (busy ? ' disabled' : '') + '>Today</button></div><div class="tm-week-reveal" id="tm-week-dates"' + (tmUi.datesOpen ? '' : ' hidden') + '>' + tmWeekHTML() + '</div>';
   }
+  /* The week arrows live inside the open date list, but each date keeps its own folds (tmPlanActivate()), so moving a
+     week closed the list under the finger and hid the days just shown (15 Nov 2026: on a Sunday, tomorrow could not be
+     picked without opening it again). The open list goes with the week. */
+  function tmWeekGo(day) { tmDatesOpen(day, !!tmUi.datesOpen); tmPlanSelect(day); tmDateFocus(); }
+  // a date's own folds (tmPlanActivate() reads them on every draw until the date has loaded): whether its date list is open
+  function tmDatesOpen(day, open) {
+    var e = tmPlanEntry(day);
+    if (!open && !(e.view && e.view.ui && e.view.ui.datesOpen)) return;
+    e.view = e.view || { sh: '', whole: false, find: '', off: false, sp: { from: null, len: null, mode: null }, ui: null };
+    e.view.ui = e.view.ui || { shifts: 0, sections: 0, people: {}, batch: false, overview: false };
+    e.view.ui.datesOpen = open;
+  }
   function tmDateFocus() {
     if (!S.root) return;
     var day = S.root.querySelector('.tm-daypick[aria-pressed="true"]'), toggle = S.root.querySelector('[data-p="tm-date-toggle"]');
@@ -14215,13 +14227,13 @@ if (list.length) sg('oreg', 's');
     if (a === 'tm-setup') { adminOpen('kitchen-home:shifts'); return; }
     if (!teamOK() || svOf('t') === 'busy' || tmLastBusy) return;
     if (a === 'tm-date-toggle') { tmUi.datesOpen = !tmUi.datesOpen; draw(); return; }
-    if (a === 'tm-day') { tmPlanSelect(el.getAttribute('data-day') || ''); tmDateFocus(); return; }
+    if (a === 'tm-day') { var pickDay = el.getAttribute('data-day') || ''; if (/^\d{4}-\d{2}-\d{2}$/.test(pickDay)) tmDatesOpen(pickDay, false); tmPlanSelect(pickDay); tmDateFocus(); return; }   // a pick closes the list
     if (a === 'tm-roster-choose') { tmRsChoose(); return; }
     if (a === 'tm-roster-day') { tmRsDay(el.getAttribute('data-day') || ''); return; }
     if (a === 'tm-roster-saveall') { tmRsSaveAll(); return; }
     if (a === 'tm-roster-link') { tmRsLink(+el.getAttribute('data-i')); return; }
     if (a === 'tm-roster-unlink') { tmRsUnlink(+el.getAttribute('data-i')); return; }
-    if (a === 'tm-week-prev' || a === 'tm-week-next') { tmPlanSelect(shift(tmPlanDay(), a === 'tm-week-prev' ? -7 : 7)); tmDateFocus(); return; }
+    if (a === 'tm-week-prev' || a === 'tm-week-next') { tmWeekGo(shift(tmPlanDay(), a === 'tm-week-prev' ? -7 : 7)); return; }
     if (a === 'tm-today') { tmPlanSelect(dayNow()); tmDateFocus(); return; }
     // Refresh discards only this date's draft, after a second tap. Other dates' drafts survive the week query.
     if (a === 'tm-refresh') {

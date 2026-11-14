@@ -26,11 +26,12 @@ const countReads = p => p.evaluate(() => __fake.reads.filter(k => /\/(team|teams
 async function ready(p) { await L.waitFor(p, () => !!document.querySelector('.tm-work [data-p="tm-whole"]'), null, 7000); }
 async function details(p, id) { if (!await p.locator('.tm-detail-workbench[data-id="' + id + '"]').count()) await click(p, '[data-p="tm-focus"][data-id="' + id + '"]'); }
 async function membership(p, id, sh) { await service(p, id, sh); await details(p, id); await click(p, '[data-p="tm-on"][data-id="' + id + '"][data-sh="' + sh + '"]'); }
-async function day(p, date) { if (!await p.locator('.tm-weeknav').isVisible()) await click(p, '[data-p="tm-date-toggle"]'); await click(p, '[data-p="tm-day"][data-day="' + date + '"]'); await ready(p); }
+async function day(p, date) { await L.teamDay(p, date); await ready(p); }
 
 (async () => {
   const b = await L.start();
   let p = await L.open(b, '#/team', { who: 'sam', extra: fixture(), wait: 900 }); await ready(p);
+  await L.teamWarm(p, tomorrow, ready);   // tomorrow's week read first: on a Sunday it is next week
   const original = await read(p), reads = await countReads(p), writes = await p.evaluate(() => __fake.writes.length);
   ok(await expected(p, ['ann', 'bo', 'sam']), 'day membership: only people on an active configured service appear in the worksheet');
   ok(await p.locator('select[data-k="tm-row-sh:bo"]').inputValue() === 'dinner' && await section(p, 'bo').inputValue() === 'pans' && await p.locator('.tm-person-row[data-id="bo"]').isVisible(), 'day membership: Dinner-only Bo starts on his actual Dinner service and section');
@@ -67,5 +68,18 @@ async function day(p, date) { if (!await p.locator('.tm-weeknav').isVisible()) a
   await click(p, '[data-p="c-group"][data-g="team"]');
   const tab = p.locator('[data-p="c-tab"][data-t="plan"]'); if (await tab.getAttribute('aria-pressed') !== 'true') await tab.click(); await ready(p);
   ok(await expected(p, ['ann', 'bo', 'sam']) && !p.errors.length, 'embedded chef panel: the shared worksheet uses the same selected-day filter');
+  await p.context().close();
+
+  // on a Sunday (15 Nov 2026) tomorrow is in next week: the week arrows keep the open date list open, so its days can be
+  // picked (before, Next week closed the list under the finger and hid the days it had just shown)
+  const dow = new Date(L.NOW).getUTCDay(), sun = L.NOW + ((7 - dow) % 7) * 86400000, sunDay = L.ymd(new Date(sun)), mon = L.ymd(new Date(sun + 86400000));
+  p = await L.open(b, '#/team', { who: 'sam', extra: fixture(), clock: sun, width: 1280, wait: 900 }); await ready(p);
+  await click(p, '[data-p="tm-date-toggle"]');
+  ok(await p.locator('[data-p="tm-day"][data-day="' + sunDay + '"]').isVisible() && !await p.locator('[data-p="tm-day"][data-day="' + mon + '"]').count(), 'Sunday: this week ends today, so tomorrow is not in it');
+  await click(p, '[data-p="tm-week-next"]');
+  ok(await p.locator('.tm-weeknav').isVisible() && await p.locator('[data-p="tm-day"][data-day="' + mon + '"]').isVisible(), 'Sunday: Next week keeps the date list open, with Monday to pick');
+  await click(p, '[data-p="tm-day"][data-day="' + mon + '"]'); await ready(p);
+  ok((await p.locator('[data-p="tm-date-toggle"]').innerText()).length > 0 && await p.locator('[data-p="tm-day"][aria-pressed="true"]').getAttribute('data-day') === mon, 'Sunday: tomorrow is picked from next week');
+  ok(!p.errors.length, 'Sunday: no browser errors ' + p.errors.join(' | '));
   await p.context().close(); await b.close(); L.report(R);
 })().catch(e => { console.log(R.join('\n')); console.error(e); process.exit(1); });

@@ -22,12 +22,13 @@ const read = (p, path = TEAM) => p.evaluate(k => __fake.dump()[k], path);
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const pane = p => p.locator('.tm-detail-workbench[data-id]');
 async function ready(p) { await L.waitFor(p, () => document.querySelectorAll('select[data-k^="tm-row-sh:"]').length > 0, null, 7000); }
-async function day(p, d) { if (!await p.locator('.tm-weeknav').isVisible()) await click(p, '[data-p="tm-date-toggle"]'); await click(p, '[data-p="tm-day"][data-day="' + d + '"]'); await ready(p); }
+async function day(p, d) { await L.teamDay(p, d); await ready(p); }
 async function focus(p, id) { await click(p, '[data-p="tm-focus"][data-id="' + id + '"]'); }
 
 (async () => {
   const b = await L.start();
   const p = await L.open(b, '#/team', { who: 'sam', extra: fixture(), width: 1280, wait: 900 }); await ready(p);
+  await L.teamWarm(p, tomorrow, ready);   // tomorrow's week read first: on a Sunday it is next week
   const original = await read(p), nextOriginal = await read(p, NEXT), board = await p.locator('.tm-away').innerText();
   const reads = await p.evaluate(() => __fake.reads.length), writes = await p.evaluate(() => __fake.writes.length);
   ok(await p.locator('.tm-person-row').count() === 3 && await p.locator('select[data-k^="tm-row-sh:"]').count() === 3 && !await p.locator('[data-p="tm-sh"]:not([data-id])').count(), 'row context: every selected person has one Service to edit and no global roster service tabs');
