@@ -1,0 +1,176 @@
+{
+  "source": "Preview: static snapshots of the implemented app (main 6f706fe) edited per design, synthetic data, 390 x 844. Not the implemented change.",
+  "notes": [
+    {
+      "design": "before",
+      "screen": "prep-all",
+      "openRowsInView": 8,
+      "notNeededRowsInView": 0,
+      "rowsTotal": 8,
+      "fnTab": "Functions 1",
+      "overflow": 0
+    },
+    {
+      "design": "a",
+      "screen": "function-page",
+      "openRowsInView": 0,
+      "notNeededRowsInView": 0,
+      "rowsTotal": 0,
+      "fnTab": null,
+      "overflow": 0
+    },
+    {
+      "design": "a",
+      "screen": "prep-all",
+      "openRowsInView": 6,
+      "notNeededRowsInView": 0,
+      "rowsTotal": 6,
+      "fnTab": "Functions",
+      "overflow": 0
+    },
+    {
+      "design": "a",
+      "screen": "prep-functions",
+      "openRowsInView": 0,
+      "notNeededRowsInView": 0,
+      "rowsTotal": 0,
+      "fnTab": "Functions",
+      "overflow": 0
+    },
+    {
+      "design": "a",
+      "screen": "orders-sous",
+      "openRowsInView": 2,
+      "notNeededRowsInView": 0,
+      "rowsTotal": 2,
+      "fnTab": null,
+      "overflow": 0
+    },
+    {
+      "design": "b",
+      "screen": "function-page",
+      "openRowsInView": 0,
+      "notNeededRowsInView": 0,
+      "rowsTotal": 0,
+      "fnTab": null,
+      "overflow": 0
+    },
+    {
+      "design": "b",
+      "screen": "prep-all",
+      "openRowsInView": 6,
+      "notNeededRowsInView": 2,
+      "rowsTotal": 8,
+      "fnTab": "Functions",
+      "overflow": 0
+    },
+    {
+      "design": "b",
+      "screen": "prep-functions",
+      "openRowsInView": 0,
+      "notNeededRowsInView": 1,
+      "rowsTotal": 1,
+      "fnTab": "Functions",
+      "overflow": 0
+    },
+    {
+      "design": "b",
+      "screen": "orders-sous",
+      "openRowsInView": 2,
+      "notNeededRowsInView": 1,
+      "rowsTotal": 3,
+      "fnTab": null,
+      "overflow": 0
+    },
+    {
+      "design": "c",
+      "screen": "function-page",
+      "openRowsInView": 0,
+      "notNeededRowsInView": 0,
+      "rowsTotal": 0,
+      "fnTab": null,
+      "overflow": 0
+    },
+    {
+      "design": "c",
+      "screen": "prep-all",
+      "openRowsInView": 6,
+      "notNeededRowsInView": 0,
+      "rowsTotal": 6,
+      "fnTab": "Functions",
+      "overflow": 0
+    },
+    {
+      "design": "c",
+      "screen": "prep-functions",
+      "openRowsInView": 0,
+      "notNeededRowsInView": 0,
+      "rowsTotal": 0,
+      "fnTab": "Functions",
+      "overflow": 0
+    },
+    {
+      "design": "c",
+      "screen": "orders-sous",
+      "openRowsInView": 2,
+      "notNeededRowsInView": 0,
+      "rowsTotal": 2,
+      "fnTab": null,
+      "overflow": 0
+    },
+    {
+      "design": "mix",
+      "screen": "before",
+      "openRowsInView": 8,
+      "notNeededRowsInView": 0,
+      "rowsTotal": 8,
+      "fnTab": "Functions 1",
+      "overflow": 0
+    },
+    {
+      "design": "mix",
+      "screen": "function-page",
+      "openRowsInView": 0,
+      "notNeededRowsInView": 0,
+      "rowsTotal": 0,
+      "fnTab": null,
+      "overflow": 0
+    },
+    {
+      "design": "mix",
+      "screen": "prep-all",
+      "openRowsInView": 8,
+      "notNeededRowsInView": 0,
+      "rowsTotal": 8,
+      "fnTab": "Functions",
+      "overflow": 0
+    },
+    {
+      "design": "mix",
+      "screen": "prep-all-after",
+      "openRowsInView": 6,
+      "notNeededRowsInView": 0,
+      "rowsTotal": 6,
+      "fnTab": "Functions",
+      "overflow": 0
+    },
+    {
+      "design": "mix",
+      "screen": "prep-functions",
+      "openRowsInView": 0,
+      "notNeededRowsInView": 0,
+      "rowsTotal": 0,
+      "fnTab": "Functions",
+      "overflow": 0
+    },
+    {
+      "design": "mix",
+      "screen": "orders-sous",
+      "openRowsInView": 2,
+      "notNeededRowsInView": 0,
+      "rowsTotal": 2,
+      "fnTab": null,
+      "overflow": 0
+    }
+  ]
+}

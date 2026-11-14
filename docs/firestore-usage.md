@@ -1,5 +1,9 @@
 # Firestore reads and writes: audit, 5 November 2026
 
+## Function sent, lines off, 14 November 2026
+
+[Function sent, lines off](fn-sent-tidy-options/brief.md): the phones decide from the functions and Sent listeners they already run, so no new listener and no read while a list shows. The slip on the phone that sends the last trip names what came off from the lists that phone holds, with no read (the service view reads nothing); when Orders is not loaded there it says "the Function stock line if it was not ordered". The 03:00 job reads the last 7 days' Sent ticks (one query), each function that has them, and four small queries a day from an all-sent function's day to today: about 8 to 36 reads a function a night, for 7 nights. It writes only the lines that come off, and stamps `config/main.pastEdit` when a past day changed (every phone's config listener hears it once).
+
 ## Fill from roster file, 14 November 2026
 
 [Fill from roster file](roster-import-options/brief.md) (admin panel, Today's team, head chef's admin session only): reading the CSV costs nothing (the device reads the file). Choosing a file also reads the head chef's name links once (`config/rosterLinks`, 1 read; Link and Unlink write that one record). It reads that roster week's saved plans once from the server: the planner's existing bounded week query (`tmPlanLoad(true)`), up to 7 reads, 1 for an empty week. Each day is then saved with the existing dated Save (one write each, as by hand), or all at once with Save the filled days: one batch of one `team/<day>` write per filled day (up to 7), plus today's team stamp when today is one of them. No listener, no poll, no saved copy; the file is never sent or kept.

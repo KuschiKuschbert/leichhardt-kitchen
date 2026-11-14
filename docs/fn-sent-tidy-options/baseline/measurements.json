@@ -1,0 +1,70 @@
+{
+  "source": "Implemented app (main 6f706fe), click-test stand-in, synthetic data, 390 x 844, 2026-11-14 14:00 Queensland",
+  "notes": [
+    {
+      "name": "prep-all",
+      "hash": "#/prep",
+      "who": "ann",
+      "rowsInView": 8,
+      "rowsTotal": 8,
+      "fnTab": "Functions 1",
+      "text": [
+        "Portion rump 20. Start here, 1 UrgentSam 13:02On itUrgent⋯",
+        "Party pies 50. Start here, 3 Rolledfrom Ann, yesterdayOn itUrgent⋯",
+        "Sausage rolls 50 Rolledfrom Ann, yesterdayOn itUrgent⋯",
+        "Slice onions 2 tubsSam 13:00On itUrgent⋯",
+        "Pick corianderSam 13:01On itUrgent⋯",
+        "Wash bok choySam 13:05On itUrgent⋯",
+        "Make gravy 5 L. Start here, 2 Rolled On itUrgentRecipe⋯",
+        "Laksa 1 batchSam 13:04On itUrgentRecipe⋯"
+      ],
+      "overflow": 0
+    },
+    {
+      "name": "prep-functions",
+      "hash": "#/prep",
+      "who": "ann",
+      "rowsInView": 1,
+      "rowsTotal": 1,
+      "fnTab": "Functions 1",
+      "text": [
+        "Pizza Platter: Smith 60th, from 12:00 5 platters Also FunctionsSam 14:00On itUrgentRecipe"
+      ],
+      "overflow": 0
+    },
+    {
+      "name": "orders-sous",
+      "hash": "#/orders",
+      "who": "sam",
+      "rowsInView": 3,
+      "rowsTotal": 3,
+      "fnTab": null,
+      "text": [
+        "Function stock: Smith 60th, Sat 14 Nov: 5 Aussie, 5 Pizza 10 platters Not ordered yetUsed ",
+        "Milk 6 LAnn 13:00⋯Remove",
+        "Brioche buns 4 packsAnn 13:10⋯Remove"
+      ],
+      "overflow": 0
+    },
+    {
+      "name": "service-view",
+      "hash": "#/fn/now",
+      "who": "ann",
+      "rowsInView": 0,
+      "rowsTotal": 0,
+      "fnTab": null,
+      "text": [],
+      "overflow": 0
+    },
+    {
+      "name": "function-page",
+      "hash": "#/fn/smith",
+      "who": "ann",
+      "rowsInView": 0,
+      "rowsTotal": 0,
+      "fnTab": null,
+      "text": [],
+      "overflow": 0
+    }
+  ]
+}

@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Function sent, lines off, 14 November 2026
+
+The head chef asked that a function's prep and order tasks come off once it is prepped and sent out (trigger: the last round ticked Sent; all three kinds of line). Council: Build smaller 4 of 5, round 2 A 3.4, C 3.1, B 2.3; the mix chosen. The maths is in `js/functions.js` (`roundSent()`, `allSentAt()`, `lineOf()`, `lineOff()`, run by node), used by the phones (`fnOffMark()` and the `fnOff*` helpers in `js/prep.js`, `offSlip()` and `offLine()` in `js/functions.js`) and by the 03:00 job (`scripts/fn-sent-tidy.mjs`, from `nightly-learn.mjs`). The ingredient link is `fnFor` on a prep line (written with the line, only cleared later; no rule, the cancellation budget); Put back writes `keep`. Tests: `tests/fn-sent-tidy.test.js` (25 checks), `scripts/fn-sent-tidy-check.mjs` (emulator), rows in `tests/rules/client-shapes.test.mjs`. Brief: `docs/fn-sent-tidy-options/brief.md`.
+
 ## Shifts by section on a person's page, 14 November 2026
 
 From the same staff-data audit as the section renames: the person page showed only prep lines. Quick check Build (small); the owner said yes. `personShiftsHTML()` in `js/prep.js` uses `tsCount()` (Who has worked where), so no new read shape: `teamsum/main` once a kitchen day. `tests/team-person.test.js`: the line, a person with none, a failed read, late counts and one read for two pages (10 of 36 fail on the old code). Note: `docs/admin-pages-options/brief.md`, step 5, part 3.
