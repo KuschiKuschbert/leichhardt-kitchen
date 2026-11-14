@@ -1,0 +1,47 @@
+{
+  "cook": {
+    "rows": 4,
+    "rowsStarted": 3,
+    "rowsWhole": 2,
+    "rowHeights": [
+      248,
+      176,
+      249,
+      249
+    ],
+    "sentButton": [
+      84,
+      48
+    ]
+  },
+  "afterSent": {
+    "rows": 3,
+    "rowsStarted": 3,
+    "rowsWhole": 2,
+    "rowHeights": [
+      175,
+      249,
+      249
+    ],
+    "sentButton": [
+      84,
+      48
+    ]
+  },
+  "cook1280": {
+    "rows": 4,
+    "rowsStarted": 3,
+    "rowsWhole": 2,
+    "rowHeights": [
+      204,
+      153,
+      205,
+      205
+    ],
+    "sentButton": [
+      84,
+      48
+    ]
+  },
+  "note": "Implemented app, commit 5d92379, click-test stand-in, synthetic fixture, kitchen clock 18:10, cook Ann (staff) and Fay (Functions coordinator). The 64 px tab bar is taken off the visible height."
+}
