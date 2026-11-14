@@ -335,7 +335,7 @@ eq(r.merged, [611], 'switching auto-merge off is tried once and never fails the 
 
 // 9. Release windows (head chef, Plan B, 5 Nov 2026): every merge reloads the screens left open, which read their lists
 // again, so ready pull requests merge only between services. Outside a window auto-merge goes off, except "urgent".
-ok(WINDOWS === '1500-1630 2230-2400 0000-0230', 'the windows are 15:00 to 16:30 and 22:30 to 02:30, Queensland time (head chef, 8 Nov 2026: ' + WINDOWS + ')');
+ok(WINDOWS === '1500-1630 2230-2400 0000-0930', 'the windows are 15:00 to 16:30 and 22:30 to 09:30, Queensland time (head chef, 15 Nov 2026: ' + WINDOWS + ')');
 ok(spawnSync('bash', ['-n', windowScript]).status === 0 && windowBody.indexOf('${{') < 0, 'the window step is valid bash with no GitHub expressions');
 const lbl = (...names) => names.map(name => ({ name }));
 const off = { autoMergeRequest: null };
@@ -351,10 +351,12 @@ r = pass('window open at 23:59', { list: [pr(706, 'BEHIND', null, off)] }, win('
 eq(r.on, [706], 'the night window is open at 23:59');
 r = pass('window open at 00:30', { list: [pr(708, 'BEHIND', null, off)] }, win('0030'));
 eq(r.on, [708], 'and past midnight (8 Nov 2026)');
-r = pass('window open at 02:29', { list: [pr(709, 'BEHIND', null, off)] }, win('0229'));
-eq(r.on, [709], 'until 02:30');
-r = pass('window closed at 02:30', { list: [pr(710, 'BEHIND')] }, win('0230'));
-eq(r.off, [710], 'the night window ends at 02:30');
+r = pass('window open at 02:30', { list: [pr(711, 'BEHIND', null, off)] }, win('0230'));
+eq(r.on, [711], 'still open at 02:30, where it ended until 15 Nov 2026');
+r = pass('window open at 09:29', { list: [pr(709, 'BEHIND', null, off)] }, win('0929'));
+eq(r.on, [709], 'until 09:30');
+r = pass('window closed at 09:30', { list: [pr(710, 'BEHIND')] }, win('0930'));
+eq(r.off, [710], 'the night window ends at 09:30 (head chef, 15 Nov 2026)');
 r = pass('window closed at 16:30', { list: [pr(707, 'BEHIND')] }, win('1630'));
 eq(r.off, [707], 'the afternoon window ends at 16:30');
 r = pass('Release now by hand at 10:00', { list: [pr(708, 'BEHIND', null, off)] }, win('1000', { RELEASE_NOW: 'true' }));
@@ -377,47 +379,49 @@ ok(crons.indexOf('3 5 * * *') >= 0 && crons.indexOf('33 12 * * *') >= 0, 'the qu
 // was undone a minute later by the run its own update of #565 started, which found the window shut.
 const run = (id, title, minsAgo, status) => ({ id, display_title: title, status: status || 'completed', created_at: ago(minsAgo * 60) });
 const RN = 'Release now', WT = 'Waiting for the release window';
-r = pass('window shut at 08:00, one ready, no run waiting', { list: [pr(720, 'BEHIND')], wfRuns: [] }, win('0800', { RUN_ID: '9' }));
+r = pass('window shut at 10:00, one ready, no run waiting', { list: [pr(720, 'BEHIND')], wfRuns: [] }, win('1000', { RUN_ID: '9' }));
 eq([r.off, r.dispatched], [[720], 1], 'auto-merge goes off and a run is started that waits for the window');
 ok(/Started a run that waits for the next window/.test(r.out), 'the log says so');
-r = pass('window shut, a run already waits', { list: [pr(721, 'BEHIND')], wfRuns: [run(5, WT, 90, 'in_progress')] }, win('0800', { RUN_ID: '9' }));
+r = pass('window shut, a run already waits', { list: [pr(721, 'BEHIND')], wfRuns: [run(5, WT, 90, 'in_progress')] }, win('1000', { RUN_ID: '9' }));
 eq(r.dispatched, 0, 'no second waiting run');
 ok(/A run already waits/.test(r.out), 'the log says one already waits');
 r = pass('window shut, the waiting run is this one (woke after 5 h 45 min)', { list: [pr(722, 'BEHIND')], wfRuns: [run(9, WT, 345, 'in_progress')] }, win('0945', { RUN_ID: '9' }));
 eq(r.dispatched, 1, 'it starts the next wait');
-r = pass('window shut, an old waiting run has finished', { list: [pr(723, 'BEHIND')], wfRuns: [run(4, WT, 600)] }, win('0800', { RUN_ID: '9' }));
+r = pass('window shut, an old waiting run has finished', { list: [pr(723, 'BEHIND')], wfRuns: [run(4, WT, 600)] }, win('1000', { RUN_ID: '9' }));
 eq(r.dispatched, 1, 'a finished waiting run does not count');
-r = pass('window shut, only urgent and held ones', { list: [pr(724, 'BEHIND', null, { labels: lbl('urgent') }), pr(725, 'BEHIND', null, { labels: lbl('hold') })], wfRuns: [] }, win('0800', { RUN_ID: '9' }));
+r = pass('window shut, only urgent and held ones', { list: [pr(724, 'BEHIND', null, { labels: lbl('urgent') }), pr(725, 'BEHIND', null, { labels: lbl('hold') })], wfRuns: [] }, win('1000', { RUN_ID: '9' }));
 eq(r.dispatched, 0, 'nothing waits for a window, so no waiting run');
 r = pass('window open at 15:01', { list: [pr(726, 'BEHIND', null, off)], wfRuns: [] }, win('1501', { RUN_ID: '9' }));
 eq([r.on, r.dispatched], [[726], 0], 'in a window nothing waits');
-r = pass('window shut, the runs cannot be read', { list: [pr(727, 'BEHIND')], runsFail: true }, win('0800', { RUN_ID: '9' }));
+r = pass('window shut, the runs cannot be read', { list: [pr(727, 'BEHIND')], runsFail: true }, win('1000', { RUN_ID: '9' }));
 eq(r.dispatched, 0, 'it does not start a run it cannot see is needed');
 ok(/::warning::Could not look for the run that waits/.test(r.out), 'a warning says so, and the next pass looks again');
-r = pass('window shut, starting the waiting run fails', { list: [pr(728, 'BEHIND')], wfRuns: [], dispatchFail: true }, win('0800', { RUN_ID: '9' }));
+r = pass('window shut, starting the waiting run fails', { list: [pr(728, 'BEHIND')], wfRuns: [], dispatchFail: true }, win('1000', { RUN_ID: '9' }));
 ok(r.dispatched === 3 && /::warning::Could not start the run that waits/.test(r.out), 'three tries, then a warning; the step does not fail');
 // Release now lasts 30 minutes
-r = pass('08:05, Release now at 07:53', { list: [pr(730, 'BEHIND', null, off), pr(731, 'BEHIND')], wfRuns: [run(8, RN, 12)] }, win('0805', { RUN_ID: '9' }));
+r = pass('10:05, Release now at 09:53', { list: [pr(730, 'BEHIND', null, off), pr(731, 'BEHIND')], wfRuns: [run(8, RN, 12)] }, win('1005', { RUN_ID: '9' }));
 eq([r.on, r.off, r.dispatched], [[730], [], 0], 'the next run keeps the window open: auto-merge on, none switched off, no waiting run');
 ok(/Released by hand in the last 30 minutes/.test(r.out), 'the log says why the window is open');
-r = pass('08:30, Release now at 07:53', { list: [pr(732, 'BEHIND')], wfRuns: [run(8, RN, 37)] }, win('0830', { RUN_ID: '9' }));
+r = pass('10:30, Release now at 09:53', { list: [pr(732, 'BEHIND')], wfRuns: [run(8, RN, 37)] }, win('1030', { RUN_ID: '9' }));
 eq(r.off, [732], 'after 30 minutes the window is shut again');
-r = pass('switch at 07:54, Release now a minute before', { wfRuns: [run(8, RN, 1)] }, swAt('0754', false, 733));
+r = pass('switch at 09:54, Release now a minute before', { wfRuns: [run(8, RN, 1)] }, swAt('0954', false, 733));
 eq([r.on, r.off], [[733], []], 'the switch keeps auto-merge on (it switched #565 off on 6 Nov)');
-r = pass('switch at 07:54, the runs cannot be read', { runsFail: true }, swAt('0754', false, 734));
+r = pass('switch at 09:54, the runs cannot be read', { runsFail: true }, swAt('0954', false, 734));
 eq([r.on, r.off], [[], [734]], 'unread runs mean no Release now: it waits for the window');
-r = pass('switch at 07:54, an older Release now', { wfRuns: [run(7, RN, 45), run(6, WT, 3, 'in_progress')] }, swAt('0754', false, 735));
+r = pass('switch at 09:54, an older Release now', { wfRuns: [run(7, RN, 45), run(6, WT, 3, 'in_progress')] }, swAt('0954', false, 735));
 eq(r.off, [735], 'a Release now 45 minutes ago, or a waiting run, does not open the window');
 // the waiting run's sleep: until a minute after the next window opens, at most 5 hours 45 minutes
 ok(spawnSync('bash', ['-n', waitScript]).status === 0 && waitBody.indexOf('${{') < 0, 'the wait step is valid bash with no GitHub expressions');
 const sleepAt = hhmm => pass('wait from ' + hhmm, {}, { script: waitScript, env: { RELEASE_WINDOWS: WINDOWS, NOW_HHMM: hhmm } }).slept;
 eq(sleepAt('1230'), 151 * 60, 'from 12:30 it sleeps until 15:01');
 eq(sleepAt('2200'), 31 * 60, 'from 22:00 it sleeps until 22:31');
-eq(sleepAt('0800'), 20700, 'from 08:00 (7 hours to go) it sleeps 5 hours 45 minutes, then the queue starts the next wait');
+eq(sleepAt('1000'), 301 * 60, 'from 10:00 it sleeps until 15:01');
+eq(sleepAt('0930'), 331 * 60, 'from 09:30, as the night window ends, it sleeps until 15:01');
 eq(sleepAt('1630'), 20700, 'from 16:30 (the night window is 6 hours away) the same');
 eq(sleepAt('1510'), 0, 'in a window it does not sleep');
 eq(sleepAt('0001'), 0, 'just after midnight the night window is still open (8 Nov 2026)');
-eq(sleepAt('0230'), 20700, 'from 02:30 (the afternoon window is 12 and a half hours away) it sleeps 5 hours 45 minutes');
+eq(sleepAt('0230'), 0, 'at 02:30 the night window is still open (15 Nov 2026)');
+eq(sleepAt('0929'), 0, 'and at 09:29');
 const job = name => { const m = yml.match(new RegExp('\\n  ' + name + ':\\n([\\s\\S]*?)(?=\\n  [a-z]+:\\n|$)')); return m ? m[1] : ''; };
 ok(/if: github\.event_name == 'workflow_dispatch' && inputs\.wait/.test(job('wait')) && /timeout-minutes: 350/.test(job('wait')), 'the wait job runs only for the waiting run, under GitHub\'s 6 hour limit');
 ok(/needs: \[switch, backfill, wait\]/.test(job('queue')) && /actions: write/.test(job('queue')), 'the queue runs after the wait, and may start the waiting run');
@@ -426,15 +430,18 @@ ok(/run-name: .*'Release now'.*'Waiting for the release window'/.test(yml), 'Rel
 
 // 11. The owner's one-off extension ends at 09:30 Queensland on 14 Nov 2026 (the one before ended 08:00 on 10 Nov). A full date keeps it from reopening
 // the next morning. NOW_EPOCH stands in for the runner's UTC clock; the normal-window cases above have no override.
+// The daily night window reaches 09:30 since 15 Nov 2026, so NOW_HHMM here sits in the late morning gap (11:00 to 12:01),
+// where only the dated extension can open a window.
 const cutoff = '2026-11-13T23:30:00Z', cutoffEpoch = Date.parse(cutoff) / 1000;
 ok(RELEASE_UNTIL === cutoff, 'the one-off release ends at 09:30 Queensland on 14 November 2026');
+const toAfternoon = hhmm => (15 * 60 + 1 - (+hhmm.slice(0, 2) * 60 + +hhmm.slice(2))) * 60; // the wait from a late morning time to 15:01
 const extended = (hhmm, epoch, value) => ({ NOW_HHMM: hhmm, NOW_EPOCH: String(epoch), RELEASE_UNTIL: value == null ? cutoff : value });
 for (const [name, hhmm, epoch, open] of [
-  ['5 h 30 min before expiry', '0230', cutoffEpoch - 19800, true],
-  ['1 second before expiry', '0759', cutoffEpoch - 1, true],
-  ['exactly at expiry', '0800', cutoffEpoch, false],
-  ['a minute after expiry', '0801', cutoffEpoch + 60, false],
-  ['a day later, 1 second before the same time', '0759', cutoffEpoch + 86399, false]
+  ['5 h 30 min before expiry', '1100', cutoffEpoch - 19800, true],
+  ['1 second before expiry', '1159', cutoffEpoch - 1, true],
+  ['exactly at expiry', '1200', cutoffEpoch, false],
+  ['a minute after expiry', '1201', cutoffEpoch + 60, false],
+  ['a day later, 1 second before the same time', '1159', cutoffEpoch + 86399, false]
 ]) {
   const env = extended(hhmm, epoch);
   r = pass('dated window: ' + name, { list: [pr(740, 'BEHIND', null, open ? off : {})] }, win(hhmm, env));
@@ -442,34 +449,34 @@ for (const [name, hhmm, epoch, open] of [
   r = pass('dated switch: ' + name, {}, { script: switchScript, env: Object.assign({}, swAt(hhmm, false, 741).env, env) });
   eq([r.on, r.off], open ? [[741], []] : [[], [741]], 'switch ' + name + ': ' + (open ? 'open' : 'ordinary window rules'));
   r = pass('dated wait: ' + name, {}, { script: waitScript, env: Object.assign({ RELEASE_WINDOWS: WINDOWS }, env) });
-  eq(r.slept, open ? 0 : 20700, 'waiting run ' + name + ': ' + (open ? 'moves straight to the queue' : 'waits for the normal window'));
+  eq(r.slept, open ? 0 : toAfternoon(hhmm), 'waiting run ' + name + ': ' + (open ? 'moves straight to the queue' : 'waits for the normal window'));
 }
 for (const value of ['', 'not-a-date', 'tomorrow', '2026-11-99T22:00:00Z']) {
-  const env = extended('0759', cutoffEpoch - 1, value);
-  r = pass('dated window with missing/invalid expiry: ' + JSON.stringify(value), { list: [pr(742, 'BEHIND')] }, win('0759', env));
+  const env = extended('1159', cutoffEpoch - 1, value);
+  r = pass('dated window with missing/invalid expiry: ' + JSON.stringify(value), { list: [pr(742, 'BEHIND')] }, win('1159', env));
   eq([r.on, r.off], [[], [742]], 'missing/invalid expiry does not open the queue');
-  r = pass('dated switch with missing/invalid expiry: ' + JSON.stringify(value), {}, { script: switchScript, env: Object.assign({}, swAt('0759', false, 743).env, env) });
+  r = pass('dated switch with missing/invalid expiry: ' + JSON.stringify(value), {}, { script: switchScript, env: Object.assign({}, swAt('1159', false, 743).env, env) });
   eq([r.on, r.off], [[], [743]], 'missing/invalid expiry does not open the switch');
   r = pass('dated wait with missing/invalid expiry: ' + JSON.stringify(value), {}, { script: waitScript, env: Object.assign({ RELEASE_WINDOWS: WINDOWS }, env) });
-  eq(r.slept, 20700, 'missing/invalid expiry keeps the ordinary wait');
+  eq(r.slept, toAfternoon('1159'), 'missing/invalid expiry keeps the ordinary wait');
 }
 // An expired override must not shut a normal daily window or change draft, hold and fork protection.
-for (const hhmm of ['1500', '2230', '0030']) {
+for (const hhmm of ['1500', '2230', '0030', '0929']) {
   const env = extended(hhmm, cutoffEpoch + 86400);
   r = pass('normal window after dated expiry at ' + hhmm, { list: [pr(744, 'BEHIND', null, off)] }, win(hhmm, env));
   eq(r.on, [744], 'the queue keeps the normal ' + hhmm + ' window');
   r = pass('normal switch after dated expiry at ' + hhmm, {}, { script: switchScript, env: Object.assign({}, swAt(hhmm, false, 745).env, env) });
   eq(r.on, [745], 'the switch keeps the normal ' + hhmm + ' window');
 }
-const activeEnv = extended('0759', cutoffEpoch - 1);
-r = pass('dated window keeps ready/hold/draft/fork guards', { list: [...mixed, pr(746, 'BEHIND', null, Object.assign({ isCrossRepository: true }, off))] }, win('0759', activeEnv));
+const activeEnv = extended('1159', cutoffEpoch - 1);
+r = pass('dated window keeps ready/hold/draft/fork guards', { list: [...mixed, pr(746, 'BEHIND', null, Object.assign({ isCrossRepository: true }, off))] }, win('1159', activeEnv));
 eq([r.on, r.off], [[701, 703], []], 'the extension opens only ready same-repository pull requests without hold');
 for (const [guard, changes, expected] of [
   ['draft', { DRAFT: 'true' }, [[], [747]]],
   ['held', { HOLD: 'true' }, [[], [747]]],
   ['fork', { SAME: 'false' }, [[], []]]
 ]) {
-  r = pass('dated switch keeps ' + guard + ' guard', {}, { script: switchScript, env: Object.assign({}, swAt('0759', false, 747).env, activeEnv, changes) });
+  r = pass('dated switch keeps ' + guard + ' guard', {}, { script: switchScript, env: Object.assign({}, swAt('1159', false, 747).env, activeEnv, changes) });
   eq([r.on, r.off], expected, 'the extension keeps the ' + guard + ' switch guard');
 }
 
