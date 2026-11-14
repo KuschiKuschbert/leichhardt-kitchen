@@ -155,8 +155,29 @@ const shut = async p => { if (await p.$('.nt-wrap')) { await p.keyboard.press('E
   ok(await p.locator('#hm-board').evaluate(e => e.hidden) && !(await p.$('#hm-board .hm-a')), 'nothing to come: the work board is hidden rather than competing with the personal day');
   ok(await p.$eval('.hm-up', e => getComputedStyle(e).display === 'none').catch(() => false), 'nothing coming up: no Coming up card');
   await p.context().close();
+  // Signed out (chosen mix, 15 Nov 2026, docs/signed-out-home-options/brief.md): the day as the heading, never "Pick a
+  // docket" over one docket, Kitchen sign in as the one main button with its line, and the Recipes docket as before
+  const weekday = new Date(L.NOW).toLocaleDateString('en-AU', { weekday: 'long', timeZone: 'Australia/Brisbane' });
+  const signedOut = async (p, line) => !(await p.$('#hm-board')) && (await p.$$('.dockets .docket')).length === 1 && /Recipes/i.test(await txt(p, '.dockets') || '') &&
+    await txt(p, '#rtitle') === weekday && !/day /.test(await txt(p, '.wall-date') || '') &&
+    (await p.$$('.wall-main .btn.dark')).length === 1 && await txt(p, '.wall-sign .btn.dark') === 'Kitchen sign in' && line.test(await txt(p, '.wall-sign .wall-hint') || '');
   p = await L.open(b, '#/', { noPin: true, who: '', wait: 1400 });
-  ok(!(await p.$('#hm-board')) && (await p.$$('.dockets .docket')).length === 1 && /Recipes/i.test(await txt(p, '.dockets') || '') && await txt(p, '#rtitle') === 'Pick a docket', 'signed out: the Recipes docket, as before');
+  ok(await signedOut(p, /^New device\? The kitchen PIN comes first, then your name and PIN\. Recipes need no sign in\.$/), 'signed out on a new device: the day, Kitchen sign in as the main button, the kitchen PIN first, the Recipes docket (' + await txt(p, '#rtitle') + ' / ' + await txt(p, '.wall-sign') + ')');
+  // the repaints that run on the kitchen settings and the person must not paint the old words back
+  await p.evaluate(() => { window.dispatchEvent(new Event('lk-cfg')); window.dispatchEvent(new Event('lk-who')); }); await L.settle(p, 300);
+  ok(await txt(p, '#rtitle') === weekday, 'signed out: the heading stays the day after lk-cfg and lk-who (' + await txt(p, '#rtitle') + ')');
+  await p.context().close();
+  p = await L.open(b, '#/', { who: '', deviceMode: 'shared', wait: 1400 });
+  ok(await signedOut(p, /^Your name and PIN open the kitchen pages\. Recipes need no sign in\.$/), 'signed out with the kitchen PIN on the device: your name and PIN (' + await txt(p, '.wall-sign') + ')');
+  for (const [w, h] of [[390, 844], [1280, 800]]) {
+    await p.setViewportSize({ width: w, height: h }); await L.settle(p, 200);
+    const m = await p.evaluate(() => {
+      const r = e => e.getBoundingClientRect(), s = r(document.querySelector('.wall-sign .btn')), go = document.querySelector('.docket .dk-go'), g = go && getComputedStyle(go).display !== 'none' ? r(go) : null;
+      return { sw: Math.round(s.width), sh: Math.round(s.height), gw: g ? Math.round(g.width) : 0, gh: g ? Math.round(g.height) : 0, foot: Math.round(r(document.querySelector('.wall-foot')).bottom), vh: innerHeight, sx: document.documentElement.scrollWidth > innerWidth };
+    });
+    ok(m.sh >= 48 && m.sw >= m.gw && m.sh >= m.gh && !m.sx, w + ' px: Kitchen sign in is at least as big as the docket\'s Open, no sideways scroll (' + JSON.stringify(m) + ')');
+    ok(m.foot <= m.vh, w + ' px: "Cook as written" stays on the first screen (' + m.foot + ' of ' + m.vh + ')');
+  }
   await p.context().close();
 
   // every width: no sideways scroll, no errors, the board and prep card side by side on a laptop

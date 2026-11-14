@@ -127,6 +127,40 @@ async function signOutTo(p, route) {
   ok(!p.errors.length, 'new starter: no browser errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // 11. Back to your own page later the same day (head chef, 15 Nov 2026): a sign-in that did not start on a page the
+  // person chose (Not me on someone else's lock, Kitchen sign in on Home) goes back to the page they last had open here
+  p = await L.open(b, '#/prep', { who: '', deviceMode: 'shared', wait: 700 });
+  await pin(p, 'ann', '2222');
+  await p.evaluate(() => { location.hash = '#/orders'; }); await L.settle(p, 300);
+  await p.clock.runFor(11 * 60000); await L.waitFor(p, () => !LK_PREP.privateAccess()); await L.settle(p, 300);
+  await p.click('[data-p="who-change"]'); await L.settle(p, 300);
+  await pin(p, 'bo', '3333');
+  ok(await hash(p) === '#/', 'Not me on Ann\'s lock: Bo\'s first PIN of the day still opens Home');
+  await p.evaluate(() => { location.hash = '#/waste'; }); await L.settle(p, 300);
+  await p.clock.runFor(11 * 60000); await L.waitFor(p, () => !LK_PREP.privateAccess()); await L.settle(p, 300);
+  await p.click('[data-p="who-change"]'); await L.settle(p, 300);
+  await p.click('.p-name[data-id="ann"]'); await L.settle(p, 400);
+  ok(await button(p) === 'Open the order list', 'on Bo\'s Wastage, Ann\'s PIN button names her own page (' + await button(p) + ')');
+  await pin(p, 'ann', '2222');
+  ok(await hash(p) === '#/orders', 'Ann goes back to the order list she left, not Bo\'s Wastage (' + await hash(p) + ')');
+  // from the signed-out Home: Kitchen sign in, then back to the page
+  await signOutTo(p, '#/');
+  await p.click('.wall-sign .btn'); await L.settle(p, 400);
+  await p.click('.p-name[data-id="ann"]'); await L.settle(p, 400);
+  ok(await button(p) === 'Open the order list', 'Kitchen sign in on Home: the PIN button names Ann\'s page (' + await button(p) + ')');
+  await pin(p, 'ann', '2222');
+  ok(await hash(p) === '#/orders', 'Kitchen sign in on Home goes back to Ann\'s order list (' + await hash(p) + ')');
+  // a page the person chose before signing in stays (the signed-out Wastage), and yesterday's page is never used
+  await signOutTo(p, '#/waste'); await pin(p, 'ann', '2222');
+  ok(await hash(p) === '#/waste', 'a page Ann opened herself before signing in stays');
+  await p.evaluate(() => localStorage.setItem('lk.prep.last.ann', JSON.stringify({ h: '#/transfers', x: Number(localStorage.getItem('lk.prep.home.ann')) - 86400000 })));
+  await signOutTo(p, '#/');
+  await p.click('.wall-sign .btn'); await L.settle(p, 400);
+  await pin(p, 'ann', '2222');
+  ok(await hash(p) === '#/prep', 'a page kept from yesterday is out of date: the sign-in keeps its page (' + await hash(p) + ')');
+  ok(!p.errors.length, 'back to your own page: no browser errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // 10. The welcome on Home fits a phone with a long name on a shared screen, through the whole animation
   const longName = { [key('config', 'main')]: Object.assign({}, L.seed()[key('config', 'main')], { people: people.map(x => x.id === 'ann' ? Object.assign({}, x, { name: 'Alexandertheverylongname' }) : x) }) };
   p = await L.open(b, '#/prep', { who: '', deviceMode: 'shared', extra: longName, wait: 700 });
