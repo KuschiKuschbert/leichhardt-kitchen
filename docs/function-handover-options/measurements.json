@@ -24,7 +24,11 @@
    "kindSent": null,
    "stageCount": null,
    "trip": null,
-   "secHint": null
+   "secHint": null,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
   },
   "errors": []
  },
@@ -52,7 +56,11 @@
    "kindSent": null,
    "stageCount": null,
    "trip": null,
-   "secHint": null
+   "secHint": null,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
   },
   "errors": []
  },
@@ -76,7 +84,11 @@
    "kindSent": null,
    "stageCount": null,
    "trip": null,
-   "secHint": null
+   "secHint": null,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
   },
   "errors": []
  },
@@ -104,7 +116,11 @@
    "kindSent": 11.12,
    "stageCount": null,
    "trip": null,
-   "secHint": 8.83
+   "secHint": 8.83,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
   },
   "errors": []
  },
@@ -132,7 +148,11 @@
    "kindSent": 11.12,
    "stageCount": null,
    "trip": null,
-   "secHint": 8.83
+   "secHint": 8.83,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
   },
   "errors": []
  },
@@ -160,7 +180,11 @@
    "kindSent": 11.12,
    "stageCount": null,
    "trip": null,
-   "secHint": 8.83
+   "secHint": 8.83,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
   },
   "errors": []
  },
@@ -188,7 +212,11 @@
    "kindSent": 11.12,
    "stageCount": null,
    "trip": null,
-   "secHint": 8.83
+   "secHint": 8.83,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
   },
   "errors": []
  },
@@ -212,7 +240,11 @@
    "kindSent": null,
    "stageCount": null,
    "trip": null,
-   "secHint": null
+   "secHint": null,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
   },
   "errors": []
  },
@@ -236,7 +268,11 @@
    "kindSent": 10.39,
    "stageCount": null,
    "trip": null,
-   "secHint": null
+   "secHint": null,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
   },
   "errors": []
  },
@@ -264,7 +300,11 @@
    "kindSent": null,
    "stageCount": 9.37,
    "trip": null,
-   "secHint": 8.83
+   "secHint": 8.83,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
   },
   "errors": []
  },
@@ -292,7 +332,11 @@
    "kindSent": null,
    "stageCount": 9.37,
    "trip": null,
-   "secHint": 8.83
+   "secHint": 8.83,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
   },
   "errors": []
  },
@@ -320,7 +364,11 @@
    "kindSent": null,
    "stageCount": 9.37,
    "trip": null,
-   "secHint": 8.83
+   "secHint": 8.83,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
   },
   "errors": []
  },
@@ -348,7 +396,11 @@
    "kindSent": null,
    "stageCount": 9.37,
    "trip": null,
-   "secHint": 8.83
+   "secHint": 8.83,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
   },
   "errors": []
  },
@@ -372,7 +424,11 @@
    "kindSent": null,
    "stageCount": null,
    "trip": null,
-   "secHint": null
+   "secHint": null,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
   },
   "errors": []
  },
@@ -396,7 +452,11 @@
    "kindSent": null,
    "stageCount": null,
    "trip": null,
-   "secHint": null
+   "secHint": null,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
   },
   "errors": []
  },
@@ -425,7 +485,11 @@
    "kindSent": null,
    "stageCount": null,
    "trip": 10.64,
-   "secHint": null
+   "secHint": null,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
   },
   "errors": []
  },
@@ -454,7 +518,11 @@
    "kindSent": null,
    "stageCount": null,
    "trip": 10.64,
-   "secHint": null
+   "secHint": null,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
   },
   "errors": []
  },
@@ -483,7 +551,11 @@
    "kindSent": null,
    "stageCount": null,
    "trip": 10.64,
-   "secHint": null
+   "secHint": null,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
   },
   "errors": []
  },
@@ -512,7 +584,11 @@
    "kindSent": null,
    "stageCount": null,
    "trip": 10.64,
-   "secHint": null
+   "secHint": null,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
   },
   "errors": []
  },
@@ -536,7 +612,11 @@
    "kindSent": null,
    "stageCount": null,
    "trip": null,
-   "secHint": null
+   "secHint": null,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
   },
   "errors": []
  },
@@ -560,7 +640,11 @@
    "kindSent": null,
    "stageCount": null,
    "trip": 10.64,
-   "secHint": null
+   "secHint": null,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
   },
   "errors": []
  },
@@ -589,7 +673,227 @@
    "kindSent": null,
    "stageCount": null,
    "trip": 10.64,
-   "secHint": null
+   "secHint": null,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
+  },
+  "errors": []
+ },
+ "design-mix/service-cook-390": {
+  "rowsToGo": 3,
+  "rowsStarted": 2,
+  "rowsWhole": 1,
+  "rowHeights": [
+   363,
+   242,
+   242
+  ],
+  "firstActionTop": 438,
+  "pageHeight": 2310,
+  "buttonsUnder44": [],
+  "overflowX": false,
+  "contrast": {
+   "wait": 13.53,
+   "waitLong": 5.77,
+   "sent": null,
+   "out": 9.59,
+   "sub": null,
+   "confirm": null,
+   "kind": 14.59,
+   "kindSent": null,
+   "stageCount": null,
+   "trip": null,
+   "secHint": 8.83,
+   "never": null,
+   "waitLine": 13.53,
+   "minus": null,
+   "picked": null
+  },
+  "errors": []
+ },
+ "design-mix/service-cook-768": {
+  "rowsToGo": 3,
+  "rowsStarted": 3,
+  "rowsWhole": 2,
+  "rowHeights": [
+   247,
+   218,
+   218
+  ],
+  "firstActionTop": 431,
+  "pageHeight": 1853,
+  "buttonsUnder44": [],
+  "overflowX": false,
+  "contrast": {
+   "wait": 13.53,
+   "waitLong": 5.77,
+   "sent": null,
+   "out": 9.59,
+   "sub": null,
+   "confirm": null,
+   "kind": 14.59,
+   "kindSent": null,
+   "stageCount": null,
+   "trip": null,
+   "secHint": 8.83,
+   "never": null,
+   "waitLine": 13.53,
+   "minus": null,
+   "picked": null
+  },
+  "errors": []
+ },
+ "design-mix/service-cook-1280": {
+  "rowsToGo": 3,
+  "rowsStarted": 3,
+  "rowsWhole": 2,
+  "rowHeights": [
+   247,
+   218,
+   218
+  ],
+  "firstActionTop": 431,
+  "pageHeight": 1853,
+  "buttonsUnder44": [],
+  "overflowX": false,
+  "contrast": {
+   "wait": 13.53,
+   "waitLong": 5.77,
+   "sent": null,
+   "out": 9.59,
+   "sub": null,
+   "confirm": null,
+   "kind": 14.59,
+   "kindSent": null,
+   "stageCount": null,
+   "trip": null,
+   "secHint": 8.83,
+   "never": null,
+   "waitLine": 13.53,
+   "minus": null,
+   "picked": null
+  },
+  "errors": []
+ },
+ "design-mix/service-coordinator-390": {
+  "rowsToGo": 3,
+  "rowsStarted": 1,
+  "rowsWhole": 0,
+  "rowHeights": [
+   223,
+   174,
+   174
+  ],
+  "firstActionTop": 362,
+  "pageHeight": 2102,
+  "buttonsUnder44": [],
+  "overflowX": false,
+  "contrast": {
+   "wait": 13.53,
+   "waitLong": 5.77,
+   "sent": null,
+   "out": 9.59,
+   "sub": null,
+   "confirm": 16.87,
+   "kind": null,
+   "kindSent": null,
+   "stageCount": null,
+   "trip": null,
+   "secHint": 8.83,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
+  },
+  "errors": []
+ },
+ "design-mix/home-coordinator-390": {
+  "rowsToGo": 0,
+  "rowsStarted": 0,
+  "rowsWhole": 0,
+  "rowHeights": [],
+  "firstActionTop": null,
+  "pageHeight": 899,
+  "buttonsUnder44": [],
+  "overflowX": false,
+  "contrast": {
+   "wait": 13.53,
+   "waitLong": 5.77,
+   "sent": null,
+   "out": null,
+   "sub": null,
+   "confirm": null,
+   "kind": null,
+   "kindSent": null,
+   "stageCount": null,
+   "trip": null,
+   "secHint": null,
+   "never": null,
+   "waitLine": null,
+   "minus": null,
+   "picked": null
+  },
+  "errors": []
+ },
+ "design-mix/states-390": {
+  "rowsToGo": 0,
+  "rowsStarted": 0,
+  "rowsWhole": 0,
+  "rowHeights": [],
+  "firstActionTop": 287,
+  "pageHeight": 1616,
+  "buttonsUnder44": [],
+  "overflowX": false,
+  "contrast": {
+   "wait": 13.53,
+   "waitLong": 5.77,
+   "sent": null,
+   "out": 9.59,
+   "sub": null,
+   "confirm": null,
+   "kind": 13.53,
+   "kindSent": null,
+   "stageCount": null,
+   "trip": null,
+   "secHint": null,
+   "never": 7.09,
+   "waitLine": null,
+   "minus": 13.53,
+   "picked": 8.23
+  },
+  "errors": []
+ },
+ "design-mix/service-cook-picked-390": {
+  "rowsToGo": 3,
+  "rowsStarted": 2,
+  "rowsWhole": 1,
+  "rowHeights": [
+   363,
+   242,
+   242
+  ],
+  "firstActionTop": 438,
+  "pageHeight": 2310,
+  "buttonsUnder44": [],
+  "overflowX": false,
+  "contrast": {
+   "wait": 13.53,
+   "waitLong": 5.77,
+   "sent": null,
+   "out": 9.59,
+   "sub": null,
+   "confirm": null,
+   "kind": 14.59,
+   "kindSent": null,
+   "stageCount": null,
+   "trip": null,
+   "secHint": 8.83,
+   "never": null,
+   "waitLine": 13.53,
+   "minus": 14.59,
+   "picked": 8.88
   },
   "errors": []
  },

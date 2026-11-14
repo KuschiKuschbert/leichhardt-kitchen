@@ -103,3 +103,30 @@ Contrast (Preview, rendered colours composited over the charcoal board, light th
 | Main risk | No part of a kind; a part-sent round cannot be confirmed until all of it goes | Longest rows: 1 round starts on the first screen; most buttons (10 on the wedding) | A new idea to learn; Send part is a disclosure inside the row; the folded round stays at the top in time order |
 
 Shared risks for every design (round 1 Break-it, to carry into the build): an Undo of Sent must clear the Out fields, and a new Sent must not inherit an old Out; one check (`isSentK`) drives the board, To plate now, Late and the band, so Sent and Out must be two checks; a held write needs a Not sent yet state on both sides; booking edits after ticks must key by the platter's recipe id (the editor allows each platter once per booking, `js/fnedit.js`), and a lowered count shows "4 sent, 3 booked" rather than guessing; phones on the old code during the release window still drop a round at Sent.
+
+## The mix: trips, a shelf and tap-what-goes (combined preview)
+
+After round 2 (C 39, A 37, B 23 of 60; first choice C 4 of 6, A 2 of 6), five of six reviewers proposed a blend led by C. This is the lead's combined preview of it. One part is the lead's own synthesis, not a reviewer's: A's kind buttons used as the trip picker. It goes back to the relevant reviewers for a focused check.
+
+- **Kitchen:** each kind still to send is a button ("☐ 2 Fruit"). A tap picks all of that kind, and − takes one off ("☑ 1 Cheese of 2"). The one button always says what it sends: **Send all 5** with nothing picked, **Send 4 platters** once something is picked; **Clear** (44 px) drops the picks. Nothing is saved until Send. Each Send is a trip.
+- **Where sent food shows:** a row with something still to send says "✓ 9 of 14 sent in 2 trips. 5 left". Every trip waiting for Functions is one line on the **Waiting for Functions** shelf at the end of the board, so a round with nothing left to send leaves the rows. One place for waiting trips, not two. The board's top line says "⌛ 2 trips waiting for Functions, 1 for 11 min", as a link to the shelf, so a stuck trip is never only below the fold.
+- **Functions (Fay):** her service view puts the shelf first ("Functions service": Waiting for Functions, then Still to go out, the kitchen sends these). She sees no send buttons or kind buttons, only what is left, as words. One **Confirm out** per trip, on the shelf or on her Home band ("Trip 1: 4 × Antipasto, sent 18:24 Ann ⌛ Waiting 11 min [Confirm out]").
+- **Names:** Send (kitchen), Confirm out (Functions), Confirm for Functions (a chef after 10 minutes, saved as "confirmed by Sam for Functions"). Waiting, then Waiting 11 min, then the final **Never confirmed** (red outline, an exclamation mark, kept on the function's page and run sheet), never an hourglass.
+- **Records (repairs from the keeper and skeptic):** each trip is a record in `fnsent` with a fixed id, the round plus the trip number, created once; only its Out fields change later, once. A second phone sending the same trip number is refused and says so ("Not saved: Ben just sent trip 3 (1 Sliders). Check what is left and send again."). A double tap repeats the same id, so it changes nothing. In the same write, the round's old record gets `sent: true` when nothing is left to send, so phones on the old code see the round as sent. Out only after Sent, never on a voided trip; Undo (sender within 2 minutes, or a chef) only before Out. The sender cannot confirm their own trip, except a chef's fallback after 10 minutes. Coordinator-only staff cannot send. A function with a waiting trip stays on the board after its window until the trip is confirmed or Queensland midnight. The picks live in the page's memory, so the 20-second redraw and a listener change never clear them.
+
+Screens: `design-mix/service-cook-390.png`, `design-mix/service-cook-390-full.png`, `design-mix/service-cook-picked-390-full.png` (Fruit and Cheese picked), `design-mix/service-coordinator-390-full.png` (Fay), `design-mix/home-coordinator-390.png`, `design-mix/states-390-full.png`, `design-mix/service-cook-768.png`, `design-mix/service-cook-1280.png`.
+
+| Measure (Preview, same method) | Baseline | A | C | Mix |
+| --- | --- | --- | --- | --- |
+| Rounds to go: start in first screen / fit whole | 3 / 2 (of 4) | 2 / 1 (of 3) | 3 / 2 (of 4, one folded with no kitchen work) | 2 / 1 (of 3) |
+| First kitchen button (px from top) | 419 (Sent) | 349 | 592 | 438 (first kind); Send all 5 at 617 |
+| Waiting line visible in the first screen | n/a | no (shelf below) | yes (folded row) | yes (top line, 271 px) |
+| Fay's first Confirm out (px) | none | below the first screen | 333 | 362 |
+| Page height at 390 | 1755 | 2184 | 2154 | 2310 |
+| Cook: whole round | 1 | 1 | 1 | 1 |
+| Cook: wedding in 3 trips | not possible | 5 | 9 | 7 |
+| Cook: 2 of 3 Sliders | not possible | not possible | 4 | 3 |
+| Fay: wedding in 3 trips | none | 1, at the end | 3 | 3 |
+| Text links under 44 px | n/a | Undo Pizza (24 px) | Send part, Cancel (24 px) | none (Clear and Undo are 44 px) |
+
+Contrast (Preview, composited, light theme): as in the designs above, plus the waiting top line 13.5:1, a picked kind 8.2 to 8.9:1 (light words on the lighter picked fill, with a thicker edge and a ticked box), − 13.5 to 14.6:1, Never confirmed (`--bad-on-dark` on charcoal) 7.1:1. Dark/high-contrast variants and keyboard focus: Not evidenced.

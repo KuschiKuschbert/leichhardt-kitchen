@@ -252,6 +252,75 @@ C.states = () => [
   ['Function over with a trip never confirmed', '<p class="ho-done-line"><span class="ho-wait is-long">' + I.wait + ' Never confirmed</span> Rotary dinner trip 1, sent 18:24 Ann. Kept on the function\'s page and the run sheet.</p>']
 ];
 
+
+/* ================= The mix: C's trips, A's shelf and kind buttons, B's order for Functions =================
+   Recommended by the council's round 2 (14 Nov 2026). The kitchen taps what is going (each kind left is a button;
+   a tap puts all of it in, − takes one off), and the one button says exactly what it sends: Send all 5, or Send 4
+   platters once something is picked. Each send is a trip. A trip for a round with something still to send shows as one
+   line in the row; a round with nothing left to send leaves the rows for the Waiting for Functions shelf at the end of
+   the board, where every waiting trip sits, one line each. Fay sees the shelf first and no send buttons; she confirms
+   each trip. The board's top line says how many trips wait, as a link to the shelf. */
+const M = {};
+M.css = A.css + C.css + `
+.fn-svc-board .ho-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.4rem; }
+.m-waitline { display: flex; align-items: center; gap: 0.4rem; min-height: 44px; margin: 0.15rem 0 0; color: var(--bar-text); text-decoration: underline; text-underline-offset: 3px; }
+.ho-k.is-pick { border-style: solid; border-width: 2.5px; border-color: var(--bar-text); background: rgba(251, 248, 241, 0.16); }
+.ho-k .m-of { font-size: 0.9rem; color: rgba(251, 248, 241, 0.82); }
+.m-kind { display: inline-flex; align-items: center; gap: 0.3rem; }
+.m-minus { min-width: 44px; min-height: 44px; padding: 0; border: 1.5px solid rgba(251, 248, 241, 0.75); border-radius: var(--r-act); background: transparent; color: var(--bar-text); font: inherit; font-size: 1.3rem; cursor: pointer; }
+.m-minus:focus-visible { outline: 3px solid var(--bar-accent); outline-offset: 2px; }
+.m-left { margin: 0.45rem 0 0; font-size: 0.95rem; color: rgba(251, 248, 241, 0.86); }
+.ho-never { display: inline-flex; align-items: center; gap: 0.3rem; padding: 2px 8px; border: 1.5px solid var(--bad-on-dark); border-radius: 4px; font: 700 0.78rem/1.3 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--bad-on-dark); white-space: nowrap; }
+.a-shelf .c-tn { font: 700 0.78rem/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; margin-right: 0.2rem; }
+`;
+const NEVER = '<svg class="ho-i" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 7v6M12 16.5v.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
+const mKind = (n, nm, pick, take) => pick
+  ? '<li class="m-kind"><button type="button" class="ho-k is-pick" aria-pressed="true">' + I.boxt + '<b>' + take + '</b> ' + esc(nm) + (take < n ? ' <span class="m-of">of ' + n + '</span>' : '') + '</button><button type="button" class="m-minus" aria-label="One fewer ' + esc(nm) + '">−</button></li>'
+  : '<li><button type="button" class="ho-k" aria-pressed="false">' + I.box + '<b>' + n + '</b> ' + esc(nm) + '</button></li>';
+const mKinds = (list) => '<ul class="a-kinds" aria-label="Tap what goes now">' + list.map(k => mKind(k[1], k[0], k[2], k[3])).join('') + '</ul>';
+const mRead = (list) => '<p class="fn-svc-what">' + list.map(k => q(k[1], k[0])).join('') + '</p>';
+M.btn = (tot, ...kinds) => '<div class="c-acts"><button type="button" class="btn ho-act">Send all ' + tot + '</button></div>';
+M.board = (who, sel) => {
+  const coord = who === 'fay';
+  const conf = coord ? '<button type="button" class="btn ho-act ho-conf">' + I.ticks + ' Confirm out</button>' : '';
+  const wedLeft = sel ? [['Sliders', 1, false], ['Fruit', 2, true, 2], ['Cheese', 2, true, 2]] : [['Sliders', 1], ['Fruit', 2], ['Cheese', 2]];
+  const wedActs = coord ? '' : sel ? '<div class="c-acts"><button type="button" class="btn ho-act">Send 4 platters</button><button type="button" class="linkish ho-link">Clear</button></div>' : '<div class="c-acts"><button type="button" class="btn ho-act">Send all 5</button></div>';
+  const wed = '<li class="fn-svc-row is-late">' + top({ at: '18:30', late: true, name: 'Wedding reception', id: 'wed', loc: 'Marquee', round: 'all at once', cd: '5 min late' }) +
+    '<p class="m-left">' + I.tick + ' 9 of 14 sent in 2 trips. <b>5 left</b>' + (coord ? '' : ', tap what goes now') + ':</p>' + (coord ? mRead(wedLeft) : mKinds(wedLeft)) + diet(DIET_WED) + wedActs + '</li>';
+  const later = [
+    '<li class="fn-svc-row">' + top({ at: '18:45', name: 'Birthday 60th', id: 'b60', loc: 'Function room', round: 'round 2 of 3', cd: 'In 10 min' }) +
+      (coord ? mRead([['Antipasto', 1], ['Pizza', 2]]) : mKinds([['Antipasto', 1], ['Pizza', 2]])) + diet(DIET_B60) + (coord ? '' : M.btn(3)) + '</li>',
+    '<li class="fn-svc-row is-later">' + top({ at: '19:30', name: 'Birthday 60th', id: 'b60', loc: 'Function room', round: 'round 3 of 3', cd: 'In 55 min' }) +
+      (coord ? mRead([['Pizza', 1]]) : mKinds([['Pizza', 1]])) + diet(DIET_B60) + (coord ? '' : M.btn(1)) + '</li>'
+  ];
+  const shelf = '<div class="ho-sec" id="ho-shelf"><h4 class="ho-sec-h">Waiting for Functions <small>' + (coord ? 'confirm each trip when it is out' : 'sent, not confirmed yet') + '</small></h4><ul class="a-shelf">' +
+    '<li><span class="a-what"><b>18:20 Rotary dinner</b> · Beer garden · <span class="c-tn">Trip 1</span> 4 Antipasto · ' + I.tick + ' sent 18:24 Ann</span><span class="ho-wait is-long">' + I.wait + ' Waiting 11 min</span>' + conf + '</li>' +
+    '<li><span class="a-what"><b>18:30 Wedding reception</b> · Marquee · <span class="c-tn">Trip 2</span> 2 Sliders · ' + I.tick + ' sent 18:34 Ann</span><span class="ho-wait">' + I.wait + ' Waiting</span>' + conf + '</li></ul>' +
+    '<p class="ho-done-line">' + I.ticks + ' Out today: 2 trips. Last: Wedding reception trip 1, 18:33 Fay.</p></div>';
+  const head = '<div class="fn-svc-bh"><h3 class="fn-svc-bt">' + (coord ? 'Functions service' : 'Still to go out') + '</h3><b class="fn-svc-clock">18:35</b></div>' +
+    (coord ? '' : '<a class="m-waitline" href="#ho-shelf">' + I.wait + ' 2 trips waiting for Functions, 1 for 11 min</a>');
+  const rows = '<ul class="fn-svc-rows">' + [wed].concat(later).join('') + '</ul>';
+  const rowsBlock = coord ? '<div class="ho-sec"><h4 class="ho-sec-h">Still to go out <small>the kitchen sends these</small></h4>' + rows + '</div>' : rows;
+  return '<div class="fn-svc-board">' + head + (coord ? shelf + rowsBlock : rowsBlock + shelf) + '</div>' +
+    toPlate(sel ? [[2, 'Pizza'], [2, 'Fruit'], [2, 'Cheese'], [1, 'Sliders'], [1, 'Antipasto']] : [[2, 'Pizza'], [2, 'Fruit'], [2, 'Cheese'], [1, 'Sliders'], [1, 'Antipasto']]);
+};
+M.hint = 'Every round still to go out, in order. Tap what goes now, then Send. Each send is a trip; Functions confirms each trip when it is out.';
+M.hintFay = 'What the kitchen has sent, waiting for you to confirm, then every round still to go out.';
+M.band = () => bandWrap([
+  bandRow('18:20', 'Rotary dinner', 'Beer garden', 'Trip 1: <b>4 × Antipasto</b>, sent 18:24 Ann <span class="ho-wait is-long">' + I.wait + ' Waiting 11 min</span>', 'Confirm out'),
+  bandRow('18:30', 'Wedding reception', 'Marquee', 'Trip 2: <b>2 × Sliders</b>, sent 18:34 Ann <span class="ho-wait">' + I.wait + ' Waiting</span>. 5 still to send.', 'Confirm out'),
+  bandRow('18:45', 'Birthday 60th', 'Function room', 'Round 2 of 3: <b>1 × Antipasto, 2 × Pizza</b> <span class="fn-of">(3 of 8)</span>')
+], '3 on today');
+M.states = () => [
+  ['Picked, not sent: nothing is saved until Send', mKinds([['Sliders', 1, false], ['Fruit', 2, true, 2], ['Cheese', 2, true, 1]]) + '<div class="c-acts"><button type="button" class="btn ho-act">Send 3 platters</button><button type="button" class="linkish ho-link">Clear</button></div>'],
+  ['Sent with no signal: no tick yet', '<ul class="a-shelf"><li><span class="a-what"><span class="c-tn">Trip 3</span> 2 Fruit, 1 Cheese · <span class="ho-pend">' + I.clock + ' Not sent yet</span></span></li></ul>'],
+  ['Refused: another phone sent first', '<p class="ho-bad" role="alert"><b>Not saved:</b> Ben just sent trip 3 (1 Sliders). Check what is left and send again.</p>'],
+  ['Saved, waiting (kitchen view, with Undo for 2 minutes)', '<ul class="a-shelf"><li><span class="a-what"><span class="c-tn">Trip 3</span> 2 Fruit, 1 Cheese · ' + I.tick + ' sent 18:36 Ann</span><span class="ho-wait">' + I.wait + ' Waiting</span><button type="button" class="linkish ho-link">Undo</button></li></ul>'],
+  ['10 minutes, nobody confirmed (sous chef view)', '<ul class="a-shelf"><li><span class="a-what"><span class="c-tn">Trip 1</span> 4 Antipasto · ' + I.tick + ' sent 18:24 Ann</span><span class="ho-wait is-long">' + I.wait + ' Waiting 11 min</span><button type="button" class="btn ho-act ho-chef">Confirm for Functions</button></li></ul>'],
+  ['Confirmed by Functions, or by a chef for them', '<p class="ho-done-line">' + I.ticks + ' Trip 1, 4 Antipasto: out 18:36, Fay.</p><p class="ho-done-line">' + I.ticks + ' Trip 1, 4 Antipasto: out 18:37, confirmed by Sam for Functions.</p>'],
+  ['The function is over and a trip was never confirmed (final, kept)', '<p class="ho-done-line"><span class="ho-never">' + NEVER + ' Never confirmed</span> Rotary dinner trip 1, sent 18:24 Ann. On the function\'s page and the run sheet.</p>']
+];
+
 /* ---------- the band on the coordinator's Home ---------- */
 function bandRow(at, nm, loc, r2, act) {
   const row = '<button type="button" class="fn-row" data-fn="open" aria-haspopup="dialog"><span class="fn-r1"><span class="fn-due">' + at + '</span> <b>' + esc(nm) + '</b> · ' + esc(loc) + '</span><span class="fn-r2">' + r2 + '</span></button>';
@@ -266,7 +335,7 @@ const svc = read('service-cook.html'), home = read('home-coordinator.html');
 function servicePage(D, who, comp) {
   const s = svc.indexOf('<p class="hint">Every round still'), e = svc.indexOf('<p class="hint fn-fresh">');
   if (s < 0 || e < 0) throw new Error('baseline service markup moved');
-  let out = svc.slice(0, s) + '<p class="hint">' + D.hint + '</p>' + D.board(who, comp) + svc.slice(e);
+  let out = svc.slice(0, s) + '<p class="hint">' + (who === 'fay' && D.hintFay ? D.hintFay : D.hint) + '</p>' + D.board(who, comp) + svc.slice(e);
   out = out.replace('Up to date, 18:10.', 'Up to date, 18:35.');
   if (who === 'fay') out = out.replace(/<span class="tb-badge"[^>]*>[^<]*<\/span>/, '');
   return withCss(out, D);
@@ -284,7 +353,7 @@ function statesPage(D, key) {
 }
 function withCss(html, D) { return html.replace('</head>', '<style id="ho-preview">' + SHARED + D.css + '</style></head>'); }
 
-const designs = { a: A, b: B, c: C };
+const designs = { a: A, b: B, c: C, mix: M };
 for (const k of Object.keys(designs)) {
   const D = designs[k], dir = path.join(here, 'design-' + k);
   fs.mkdirSync(dir, { recursive: true });
@@ -293,6 +362,7 @@ for (const k of Object.keys(designs)) {
   fs.writeFileSync(path.join(dir, 'home-coordinator.html'), homePage(D));
   fs.writeFileSync(path.join(dir, 'states.html'), statesPage(D, k));
   if (k === 'c') fs.writeFileSync(path.join(dir, 'service-cook-part.html'), servicePage(D, 'ann', true));
+  if (k === 'mix') fs.writeFileSync(path.join(dir, 'service-cook-picked.html'), servicePage(D, 'ann', true));
 }
-module.exports = { A, B, C, SHARED, I, esc, top, q, diet, name, toPlate, LATER, WED, DIET_B60, DIET_WED, bandRow, bandWrap, kindBtn, bKind, servicePage, homePage, statesPage, withCss };
-console.log('built design-a, design-b, design-c');
+module.exports = { M, A, B, C, SHARED, I, esc, top, q, diet, name, toPlate, LATER, WED, DIET_B60, DIET_WED, bandRow, bandWrap, kindBtn, bKind, servicePage, homePage, statesPage, withCss };
+console.log('built design-a, design-b, design-c, design-mix');

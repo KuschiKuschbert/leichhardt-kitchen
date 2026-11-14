@@ -58,4 +58,83 @@ The designs, the night they show, the measurements, taps, costs and risks: [desi
 - **B, Three stages** (rethinks the flow): the board grouped by where the food is (To send, With the runners, Out) with counts; each kind is a line with +1 and Rest; Functions confirms each kind or All out.
 - **C, Trips** (removes the most friction): what leaves the pass together is a trip; Send all is one trip, Send part sets a trip inside the row; each trip is a slip under its round; Functions confirms each trip.
 
-Scores, the mix and the recommendation: below, once the council has scored.
+### How they differ
+
+| | A Waiting shelf | B Three stages | C Trips |
+| --- | --- | --- | --- |
+| Board layout | Today's rows, a shelf at the end | Grouped by stage, counts at the top | Today's rows, trip slips inside each row |
+| Kitchen unit | A whole kind | A count per kind (+1, Rest) | A trip (Send all, or Send part) |
+| Functions unit | A whole round | A kind, or All out | A trip |
+| Part of a kind | No | Yes | Yes |
+
+### Scores (1 to 10, six fresh reviewers, the same evidence)
+
+| Reviewer | A | B | C | First choice | Recommended |
+| --- | --- | --- | --- | --- | --- |
+| Cook | 6 | 4 | 7 | C | C with A's shelf (and B's order for Fay) |
+| Head chef | 6 | 4 | 7 | C | C; trips first, then the Out check once the night with no coordinator is named |
+| Skeptic | 5 | 3 | 6 | C | C-led blend: a round moves to A's shelf once nothing is left; B's order for Fay only |
+| New starter | 6 | 4 | 7 | C | C with word fixes; a blend does not beat C |
+| Keeper | 7 | 4 | 6 | A | A; A with C's records could beat A |
+| Screen designer | 7 | 4 | 6 | A | A-led blend: A's board, kind buttons and shelf, C's trip slips |
+| **Total (of 60)** | **37** | **23** | **39** | C 4, A 2 | |
+
+What decided it:
+
+- **B last for everyone.** Only 1 round starts on the first screen and none fits whole; the wedding row has 10 buttons with +1 beside Rest; about twice the reads; increments can overshoot. Its words ("2 of 3 sent, 1 to go") and its order for Fay (what she must confirm first) were the parts worth taking.
+- **C:** matches how runners work; Fay confirms what one runner carried; each trip a record that never changes. Against it: the waiting Rotary row held the top above the late wedding, so Send all sat at 592 px; 9 taps for three trips; Send part and Cancel were 24 px links.
+- **A:** least to learn, the highest first action (349 px), the shelf keeps the first screen for work. Against it: no part of a kind, and Fay can confirm nothing until a whole round has gone, which is the head chef's addendum case.
+- **Every reviewer** caught that the three coordinator previews still showed Fay the kitchen's send buttons, against round 1. The mix fixes it.
+
+### Reference fit
+
+| Principle | A | B | C |
+| --- | --- | --- | --- |
+| Flighty: now and next first | Works: the shelf keeps the top for work | Needs work: counts strip and stages push work down | Needs work: a waiting row above a late one |
+| Things 3: open work apart from done | Works (shelf) | Needs work: sent kinds stay under To send | Works: a row shows only what is left |
+| Airbnb: status and next action together | Needs work: a part-sent round has no confirm | Works for Fay (by kind) | Works: who, what, when and status on one slip |
+| Duolingo: each tap answers truthfully | Needs work: Not sent yet drawn as a ticked box | Needs work: "3 of 3, not sent yet" | Works in the preview; double send Not evidenced |
+| Headspace: one name, plain words | Works | Needs work: "Rest", "Out", "All out" | Needs work: "Send trip 3 (3)" |
+| Linear: one frame, consistent actions | Works | Needs work: a second board order | Works |
+
+### Contract fit (all three, before the mix)
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Surface purpose | Works | The charcoal live board and band stay; no new surface |
+| State meaning | Needs work | Waiting is words and an hourglass, never green (works); Never confirmed wore the waiting hourglass though it is final; A's Not sent yet showed a ticked box |
+| Words and non-colour cues | Needs work | One tick sent, two ticks out, hourglass waiting; names varied (Out, All out, Confirm out); the band's "11 MIN" had no word |
+| Contrast | Works (Preview) | Lowest 5.8:1 (charcoal on orange, Waiting 11 min); others 8.8 to 16.9:1; dark mode and focus Not evidenced |
+| Tap targets | Needs work | Buttons 44 px or more; text links (Undo, Send part, Cancel) 24 px |
+| Roles | Fails round 1 | Fay's previews showed send controls |
+| Service continuity | Needs work | Rows started in the first screen: A 2, B 1, C 3 (one with no kitchen work), today 3 |
+
+### Break-it findings from round 2
+
+All **Risk / Not evidenced** unless marked; previews are static.
+
+| Scenario | Expected | Hypothesis | Impact | Repair or check |
+| --- | --- | --- | --- | --- |
+| Fay on the service view (all three previews) | Confirm out only | Send controls visible to her (**Checked in the static previews**); she mis-taps Send all | Platters still on the pass marked sent; the bride's Fruit platter never plated | Draw each role's controls; rules: coordinator-only staff cannot send, the sender cannot confirm their own trip except a chef's fallback; rows in `tests/roles.test.js` and `tests/rules/client-shapes.test.mjs` |
+| Two phones send the same part at once (B, C) | One send | C: two trip records (id from time and person); B: two increments | 10 sent of 5; Fay asked to confirm a trip that never left | Trip id = round plus trip number, create only; the second phone gets Not saved; emulator test with two writers |
+| The board redraws while a part trip is being set (C, and any picker) | Picks and focus kept | The `lk-fn` redraw in `js/app.js` replaces `#main` on each listener change and the 20-second timer (**checked in source**) | A lost tap, picks reset | Keep picks in module state, patch the row in place; a click test that fires `lk-fn` with picks set |
+| Phones on the old code during the release (C) | The round shows sent | Old `sentRec()` reads only `fid_at` and cannot see trip records (**checked in source**) | Plated and sent twice | Write the round's old record `sent: true` in the same batch once nothing is left |
+| Fay taps Out with no signal, a chef confirms, then Fay's write lands | One Out stands | Refused, or it overwrites who confirmed | Wrong name on the record | Out once in the rules; the later write is refused and says who confirmed |
+| A late last round sent near the window's end | Waiting, then attention | The function leaves the board at `until` and shows Never confirmed early (**checked in source**) | A false Never confirmed | Keep a function with a waiting trip on the board until confirmed or Queensland midnight; fake-clock tests at `until` and midnight |
+| Big counts (60 of one kind) | Quick to set | − and + cost one tap a platter | Slow part trips | A tap on a kind takes all of it; test a 60-platter fixture |
+
+### Mix of all three
+
+| From | Part | Take or reject | Why, and the principle |
+| --- | --- | --- | --- |
+| A | Shelf at the end of the board for what waits on Functions | Take | The first screen stays for work (Things 3, Flighty). Cook, skeptic, head chef, keeper, designer |
+| A | Kind buttons, high in the row | Take, as the trip picker (the lead's synthesis) | One tap per kind, 44 px, plain checkbox (Things 3). Designer and keeper valued them |
+| A | All or nothing per kind, confirm per round | Reject | Cannot send part of a kind; Fay cannot confirm early trips (the addendum case) |
+| B | Fay's view: what she must confirm first | Take, for Fay only | Now and next for this person (Flighty). Cook, skeptic, designer |
+| B | "2 of 3 sent, 1 to go" words | Take the wording | Plain (Headspace). Head chef, new starter |
+| B | Stages, counts strip, +1 and Rest, increments | Reject | Fewest visible rounds, most buttons, double reads, counts can overshoot (Linear, Flighty) |
+| C | Trips as the unit, a record each, Confirm out per trip | Take | Matches runners; Fay confirms what one runner carried (Airbnb, Duolingo) |
+| C | Waiting slips in place at the top in time order | Reject | Holds the top above live work (Flighty). Moved to the shelf |
+| C | Send part as a separate panel | Replace | The kind buttons pick a trip with one tap less; no panel to open |
+
+Could all three beat the best single design? Yes, but only as "C's trips + A's shelf and kind buttons + B's order for Fay". B's board and increments cannot join: they fight the time order and C's records. The blend's conflict, sent food in two places, is settled by one rule: every waiting trip is on the shelf, and a row only says how much has gone.

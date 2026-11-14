@@ -40,15 +40,15 @@ function measure() {
     rowsToGo: rows.length, rowsStarted: rows.filter(x => r(x).top < vis).length, rowsWhole: rows.filter(x => r(x).bottom <= vis).length,
     rowHeights: rows.map(x => Math.round(r(x).height)), firstActionTop: firstAction, pageHeight: document.documentElement.scrollHeight,
     buttonsUnder44: small, overflowX: document.documentElement.scrollWidth > innerWidth,
-    contrast: { wait: contrast('.ho-wait:not(.is-long)'), waitLong: contrast('.ho-wait.is-long'), sent: contrast('.ho-sent, .b-kc'), out: contrast('.ho-done-line, .ho-out'), sub: contrast('.ho-sub'), confirm: contrast('.ho-conf'), kind: contrast('.ho-k:not(.is-sent)'), kindSent: contrast('.ho-k.is-sent'), stageCount: contrast('.b-stages li'), trip: contrast('.c-trips .c-tw'), secHint: contrast('.ho-sec-h small') }
+    contrast: { wait: contrast('.ho-wait:not(.is-long)'), waitLong: contrast('.ho-wait.is-long'), sent: contrast('.ho-sent, .b-kc'), out: contrast('.ho-done-line, .ho-out'), sub: contrast('.ho-sub'), confirm: contrast('.ho-conf'), kind: contrast('.ho-k:not(.is-sent)'), kindSent: contrast('.ho-k.is-sent'), stageCount: contrast('.b-stages li'), trip: contrast('.c-trips .c-tw'), secHint: contrast('.ho-sec-h small'), never: contrast('.ho-never'), waitLine: contrast('.m-waitline'), minus: contrast('.m-minus'), picked: contrast('.ho-k.is-pick') }
   };
 }
 (async () => {
   await new Promise(res => server.listen(PORT, '127.0.0.1', res));
   const b = await chromium.launch({ executablePath: EXE, headless: true, args: ['--hide-scrollbars'] });
   const out = {}, jobs = [];
-  for (const d of ['baseline', 'design-a', 'design-b', 'design-c']) {
-    const pages = d === 'baseline' ? ['service-cook', 'service-cook-after-sent', 'home-coordinator'] : ['service-cook', 'service-coordinator', 'home-coordinator', 'states'].concat(d === 'design-c' ? ['service-cook-part'] : []);
+  for (const d of ['baseline', 'design-a', 'design-b', 'design-c', 'design-mix']) {
+    const pages = d === 'baseline' ? ['service-cook', 'service-cook-after-sent', 'home-coordinator'] : ['service-cook', 'service-coordinator', 'home-coordinator', 'states'].concat(d === 'design-c' ? ['service-cook-part'] : d === 'design-mix' ? ['service-cook-picked'] : []);
     for (const pg of pages) for (const w of (pg === 'service-cook' && d !== 'baseline' ? [390, 768, 1280] : [390])) jobs.push([d, pg, w]);
   }
   for (const [d, pg, w] of jobs) {
