@@ -11,10 +11,10 @@ const M = createRequire(import.meta.url)('../js/functions.js');
 if (!process.env.FIRESTORE_EMULATOR_HOST) throw new Error('Run on the Firestore emulator only.');
 const app = initializeApp({ projectId: 'demo-test' }, 'fn-sent-tidy-check');
 try {
-  const db = getFirestore(app), K = db.collection('kitchens').doc('424242');
+  const db = getFirestore(app), K = db.collection('kitchens').doc('424242'), doc = p => db.doc(K.path + '/' + p);
   const today = kitchenDay(Date.now()), D = M.addDays(today, -1), at = (d, hm) => M.kat(d, M.hmMin(hm));
   const r1 = at(D, '12:00'), r2 = at(D, '12:45'), e1 = at(D, '18:00');
-  const put = (p, v) => K.doc(p).set(v);
+  const put = (p, v) => doc(p).set(v);
   await put('functions/smith-x', { status: 'confirmed', name: 'Smith 60th', date: D, rounds: [{ at: r1 }, { at: r2 }] });
   await put('functions/jones-x', { status: 'confirmed', name: 'Jones', date: D, rounds: [{ at: e1 }] });
   await put('functions/early-x', { status: 'confirmed', name: 'Early', date: D, rounds: [{ at: e1 }] });
@@ -40,7 +40,7 @@ try {
 
   const first = await tidySentFunctions(K, today);
   assert.deepEqual({ f: first.functions, p: first.prep, o: first.orders, k: first.kept }, { f: 1, p: 2, o: 3, k: 1 }, 'first run');
-  const gone = async p => { const x = (await K.doc(p).get()).data(); return !!x.deleted && x.deletedBy === 'Function sent'; };
+  const gone = async p => { const x = (await doc(p).get()).data(); return !!x.deleted && x.deletedBy === 'Function sent'; };
   assert.equal(await gone(P('fn-smith-x-aussie')), true, 'the open platter line comes off');
   assert.equal(await gone(P('fn-smith-x-pizza')), false, 'a ticked platter line stays');
   assert.equal(await gone(P('need1')), true, 'a linked ingredient line comes off');
@@ -54,7 +54,7 @@ try {
   assert.equal(await gone(O(D, 'fn-smith-xy')), false, 'another function\'s line stays');
   assert.equal(await gone(O(D, 'milk')), false, 'an ordinary order line stays');
   assert.equal(await gone(O(D, 'ord-done')), false, 'an ordered line stays');
-  const pe = ((await K.doc('config/main').get()).data() || {}).pastEdit || {};
+  const pe = ((await doc('config/main').get()).data() || {}).pastEdit || {};
   assert.ok(pe.p && pe.o, 'a past day changed: both stamps');
   const second = await tidySentFunctions(K, today);
   assert.deepEqual({ p: second.prep, o: second.orders }, { p: 0, o: 0 }, 'a second run changes nothing');
