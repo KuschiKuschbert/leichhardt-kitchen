@@ -19,6 +19,9 @@
   the file. Two people in the file with the same given name are looked for with the first letter of the family name as
   well ("Sam K"). Exactly one person in the book must fit, and no two people in the file may land on the same person in
   the book; anything else is listed for the chef, never guessed. The import never adds people.
+  Name links (head chef, 14 Nov 2026: "sometimes we're given nicknames"): the head chef can link a name on the roster
+  to a person in the book ("Daniel Kuschmierz" is "Kuschi"). A linked name goes to that person first; a person in the
+  book who has a link is found only through it, never by a given name.
 */
 (function () {
   'use strict';
@@ -160,30 +163,34 @@
   }
 
   function key(s) { return String(s || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
-  /* Who each person in the file is in the book. staff: the people who can be on Today's team { id, name }.
-     Gives [{ name, id, looksFor, why }]: id '' with why 'none' (nobody fits), 'many' (more than one fits) or 'shared'
-     (another person in the file lands on the same person in the book). */
-  function match(people, staff) {
-    var count = {};
+  /* Who each person in the file is in the book. staff: the people who can be on Today's team { id, name }. links:
+     [{ name, id }], a roster name linked to a person in the book. Gives [{ name, id, looksFor, why, linked }]: id ''
+     with why 'none' (nobody fits), 'many' (more than one fits) or 'shared' (another person in the file lands on the
+     same person in the book). A link to someone no longer in staff is left out. */
+  function match(people, staff, links) {
+    var count = {}, ids = {}, byName = {}, linkedIds = {};
+    (staff || []).forEach(function (s) { if (s && s.id) ids[s.id] = 1; });
+    (links || []).forEach(function (l) { if (l && l.id && ids[l.id] && key(l.name)) { byName[key(l.name)] = l.id; linkedIds[l.id] = 1; } });
     people.forEach(function (p) { var g = key(p.given); count[g] = (count[g] || 0) + 1; });
     var out = people.map(function (p) {
       var twins = count[key(p.given)] > 1, initial = p.family ? p.family[0] : '';
       var looksFor = twins && initial ? p.given + ' ' + initial : p.given;
+      if (byName[key(p.name)]) return { name: p.name, id: byName[key(p.name)], looksFor: looksFor, why: '', linked: true };
       var keys = twins ? [key(looksFor)] : [key(p.given)].concat(initial ? [key(p.given + ' ' + initial)] : []);
-      var fit = (staff || []).filter(function (s) { return s && s.id && keys.indexOf(key(s.name)) >= 0; });
-      return { name: p.name, id: fit.length === 1 ? fit[0].id : '', looksFor: looksFor, why: fit.length === 1 ? '' : fit.length ? 'many' : 'none' };
+      var fit = (staff || []).filter(function (s) { return s && s.id && !linkedIds[s.id] && keys.indexOf(key(s.name)) >= 0; });
+      return { name: p.name, id: fit.length === 1 ? fit[0].id : '', looksFor: looksFor, why: fit.length === 1 ? '' : fit.length ? 'many' : 'none', linked: false };
     });
     var landed = {};
     out.forEach(function (m) { if (m.id) landed[m.id] = (landed[m.id] || 0) + 1; });
-    out.forEach(function (m) { if (m.id && landed[m.id] > 1) { m.id = ''; m.why = 'shared'; } });
+    out.forEach(function (m) { if (m.id && landed[m.id] > 1) { m.id = ''; m.why = 'shared'; m.linked = false; } });
     return out;
   }
 
   /* What the roster puts on each day: { days: { 'YYYY-MM-DD': [{ id, sh, from, to }] }, unmatched: [{ name, looksFor,
      why, shifts }] }. A shift that touches none of the kitchen's shifts is listed in idle. Filling the book's drafts
      (only empty days that were read from the server) is the admin panel's job, not this file's. */
-  function plan(roster, staff, kit) {
-    var who = match(roster.people, staff), days = {}, unmatched = [], idle = [];
+  function plan(roster, staff, kit, links) {
+    var who = match(roster.people, staff, links), days = {}, unmatched = [], idle = [];
     roster.week.days.forEach(function (d) { days[d] = []; });
     roster.people.forEach(function (p, i) {
       var m = who[i];
@@ -197,7 +204,8 @@
     return { days: days, unmatched: unmatched, idle: idle };
   }
 
-  var R = { read: read, services: services, match: match, plan: plan, cells: cells };
+  // api: 2 since name links (14 Nov 2026); the admin panel refuses any other copy
+  var R = { api: 2, read: read, services: services, match: match, plan: plan, cells: cells, key: key };
   if (typeof module === 'object' && module.exports) { module.exports = R; return; }
   window.LK_ROSTER = R;
 })();

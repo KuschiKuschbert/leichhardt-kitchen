@@ -20,6 +20,15 @@ service cloud.firestore {
     function kitchenRead() { return isAdmin() || (sessOk(reader()) && !functionOnly(reader())); }
     function functionRead() { return isAdmin() || sessOk(reader()); }
     match /kitchens/KITCHEN_PIN/login/roster {
+      function ownerRosterBootstrap() {
+        let c = getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data;
+        return ownerIdentity() && ((!exists(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main) && ownerFresh())
+            || cfg().get('headId', '') == '' || (resource == null && ownerFresh())) && c.get('headId', '') != ''
+          && request.resource.data.keys().hasOnly(['people', 'staffIds', 'sousIds', 'headId', 'fnIds', 'fnOnlyIds', 'by'])
+          && request.resource.data.people == c.people && request.resource.data.staffIds == c.staffIds
+          && request.resource.data.sousIds == c.get('sousIds', []) && request.resource.data.headId == c.headId
+          && request.resource.data.fnIds == c.get('fnIds', []) && request.resource.data.fnOnlyIds == c.get('fnOnlyIds', []);
+      }
       // Minimal names and permission ids for the PIN screen, never kitchen settings or operational data.
       allow get: if request.auth != null;
       allow list: if false;
@@ -59,7 +68,6 @@ service cloud.firestore {
     function pinDoc(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/staffpins/$(id); }
     function setDoc(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/pinset/$(id); }
     function sessDoc() { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/sessions/$(request.auth.uid); }
-    function triesDoc(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/tries/$(id); }
     // this phone has a session for this person: opened with their PIN, not run out, and their PIN not reset since (pinAt
     // is the pinset time it was opened with; Reset PIN deletes pinset and a new PIN gives a new time)
     // Brisbane is UTC+10 without daylight saving. Its 04:00 boundary is 18:00 UTC on the previous date.
@@ -101,59 +109,11 @@ service cloud.firestore {
         && request.auth.token.auth_time * 1000 <= request.time.toMillis() + 60000
         && request.auth.token.auth_time * 1000 >= request.time.toMillis() - 300000;
     }
-    function ownerBootstrap() {
-      let d = request.resource.data;
-      return ownerIdentity() && resource.data.get('headId', '') == ''
-        && d.diff(resource.data).affectedKeys().hasOnly(['people', 'headId', 'staffIds', 'sousIds', 'pingIds', 'fnIds', 'fnOnlyIds', 'addIds', 'tickIds', 'delIds', 'pinOpen', 'updated', 'updatedBy', 'by'])
-        && d.people is list && d.people.size() <= 80
-        && d.staffIds is list && d.staffIds.size() <= 80 && d.sousIds is list && d.sousIds.size() <= 80
-        && d.get('headId', '') is string && d.headId.size() > 0 && d.headId.size() <= 80
-        && d.headId in d.staffIds && d.headId in d.sousIds && !(d.headId in d.get('fnOnlyIds', []))
-        && d.get('pinOpen', {}) is map && d.get('pinOpen', {}).size() <= 80;
-    }
-    function capabilityLists(d) {
-      return d.get('addIds', []) is list && d.get('addIds', []).size() <= 80
-        && d.get('tickIds', []) is list && d.get('tickIds', []).size() <= 80
-        && d.get('delIds', []) is list && d.get('delIds', []).size() <= 80;
-    }
-    function capabilitiesKept() {
-      return capabilityLists(request.resource.data)
-        && (!resource.data.keys().hasAny(['addIds', 'tickIds', 'delIds'])
-          || request.resource.data.keys().hasAll(['addIds', 'tickIds', 'delIds']));
-    }
     function capability(id, kind) {
       return id != '' && (id == cfg().get('headId', '') || id in cfg().get(kind + 'Ids', []));
     }
-    function ownerInitialConfig() {
-      let d = request.resource.data;
-      return ownerFresh() && resource == null
-        && d.get('people', []) is list && d.get('people', []).size() <= 80
-        && d.get('staffIds', []) is list && d.get('staffIds', []).size() <= 80
-        && d.get('sousIds', []) is list && d.get('sousIds', []).size() <= 80
-        && d.get('headId', '') is string && d.headId.size() > 0 && d.headId.size() <= 80
-        && d.headId in d.staffIds && d.headId in d.sousIds && !(d.headId in d.get('fnOnlyIds', []));
-    }
     function setupHead() {
       return getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data.get('headId', '');
-    }
-    function ownerRosterBootstrap() {
-      let c = getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data;
-      return ownerIdentity() && ((!exists(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main) && ownerFresh())
-          || cfg().get('headId', '') == '' || (resource == null && ownerFresh())) && c.get('headId', '') != ''
-        && request.resource.data.keys().hasOnly(['people', 'staffIds', 'sousIds', 'headId', 'fnIds', 'fnOnlyIds', 'by'])
-        && request.resource.data.people == c.people && request.resource.data.staffIds == c.staffIds
-        && request.resource.data.sousIds == c.get('sousIds', []) && request.resource.data.headId == c.headId
-        && request.resource.data.fnIds == c.get('fnIds', []) && request.resource.data.fnOnlyIds == c.get('fnOnlyIds', []);
-    }
-    function ownerHeadRecovery() {
-      let head = resource.data.get('headId', '');
-      let d = request.resource.data;
-      return ownerFresh() && head != ''
-        && d.diff(resource.data).affectedKeys().hasOnly(['pinOpen', 'updated', 'updatedBy', 'by'])
-        && d.get('pinOpen', {}) is map && d.pinOpen.size() <= 80
-        && d.pinOpen.diff(resource.data.get('pinOpen', {})).affectedKeys().hasOnly([head])
-        && d.pinOpen.get(head, 0) is number && d.pinOpen.get(head, 0) > request.time.toMillis()
-        && d.pinOpen.get(head, 0) <= request.time.toMillis() + 1800000;
     }
     // a write: the writer (by) has a session on this phone
     function session() { return request.resource.data.by is string && sessOk(request.resource.data.by); }
@@ -168,39 +128,16 @@ service cloud.firestore {
     // The head chef or a sous chef, writing as themselves (own PIN session). staff() checks the session: a sous chef's id
     // on its own proves nothing (22 Oct 2026, a ping could be changed with no PIN at all).
     function lead() { return isAdmin() || (staff() && sousBy()); }
-    // A picture the book made itself (a data URL), not a link to somewhere else.
-    function picture(s) { return s is string && (s.size() == 0 || s.matches('data:image/(png|jpeg|webp);base64,.*')); }
     // The fields a write may set: all of them on a new record, only the changed ones on an old one (so an older
     // record with a field the book no longer writes can still be updated).
     function onlyKeys(list) { return (resource == null ? request.resource.data.keys() : request.resource.data.diff(resource.data).affectedKeys()).hasOnly(list); }
     // A ticked prep line stays ticked. Only the head chef, a sous chef, or the person who ticked it
     // (within 2 minutes, for a mis-tap) may undo it. A tick time cannot be re-stamped by anyone else.
     function sousBy() { return request.resource.data.by in cfg().get('sousIds', []); }
-    // People the head chef ticked for Pings (and every sous chef) may write shift pings. The head chef keeps pingIds in step.
-    function pingBy() { return request.resource.data.by in cfg().get('pingIds', []); }
-    function tickKept(admin) {
-      return resource.data.get('done', false) != true
-        || (request.resource.data.get('done', false) == true && request.resource.data.get('doneAt', 0) == resource.data.get('doneAt', 0))
-        || admin || sousBy()
-        || (request.resource.data.get('done', false) != true && resource.data.get('doneById', '') == request.resource.data.by
-            && request.time.toMillis() - resource.data.get('doneAt', 0) < 120000);
-    }
 
-    // A sous chef's save keeps the head chef, every sous chef and every function manager on staffIds, so nobody can
-    // stop the other chefs' PINs from working (22 Oct 2026). Only the head chef's Google account takes a chef off.
-    function keepsChefs() {
-      return request.resource.data.get('staffIds', []).hasAll(resource.data.get('sousIds', []))
-        && request.resource.data.get('staffIds', []).hasAll(resource.data.get('fnIds', []))
-        && (resource.data.get('headId', '') == '' || resource.data.get('headId', '') in request.resource.data.get('staffIds', []));
-    }
     // Shared words travel on the existing config listener. Private spelling history never travels to staff phones.
     // A copied state may be created by admin during a PIN move. Later edits need a fresh matching history event.
     function proofId(id) { return id is string && id.matches('[a-zA-Z0-9_-]{1,160}'); }
-    function proofState(d) {
-      return d.get('proofWords', []) is list && d.get('proofWords', []).size() <= 200
-        && d.get('proofV', 0) is int && d.get('proofV', 0) >= 0
-        && (d.get('proofEvent', '') == '' || proofId(d.proofEvent));
-    }
     function proofBase(d) {
       return d.v is int && d.v >= 1 && d.at is number && d.at >= 0
         && d.at <= request.time.toMillis() + 300000 && d.by is string && d.by.size() <= 160;
@@ -210,23 +147,74 @@ service cloud.firestore {
         && proofBase(d) && d.kind == 'word' && d.action in ['keep', 'release']
         && d.word is string && d.word.matches('[a-z]{2,40}');
     }
-    function proofConfigChange() {
-      let d = request.resource.data;
-      let old = resource.data.get('proofWords', []);
-      let eventPath = /databases/$(database)/documents/kitchens/KITCHEN_PIN/proofHistory/$(d.proofEvent);
-      let e = getAfter(eventPath).data;
-      return proofState(d) && proofId(d.proofEvent) && !exists(eventPath)
-        && d.proofV == resource.data.get('proofV', 0) + 1
-        && d.diff(resource.data).affectedKeys().hasOnly(['proofWords', 'proofV', 'proofEvent', 'by'])
-        && proofWordValue(e) && e.v == d.proofV && e.by == d.by
-        && ((e.action == 'keep' && !(e.word in old) && d.proofWords == old.concat([e.word]))
-          || (e.action == 'release' && e.word in old && d.proofWords == old.removeAll([e.word])));
-    }
-    function proofConfigKept() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['proofWords', 'proofV', 'proofEvent'])
-        || proofConfigChange();
-    }
     match /kitchens/KITCHEN_PIN/config/main {
+      function ownerBootstrap() {
+        let d = request.resource.data;
+        return ownerIdentity() && resource.data.get('headId', '') == ''
+          && d.diff(resource.data).affectedKeys().hasOnly(['people', 'headId', 'staffIds', 'sousIds', 'pingIds', 'fnIds', 'fnOnlyIds', 'addIds', 'tickIds', 'delIds', 'pinOpen', 'updated', 'updatedBy', 'by'])
+          && d.people is list && d.people.size() <= 80
+          && d.staffIds is list && d.staffIds.size() <= 80 && d.sousIds is list && d.sousIds.size() <= 80
+          && d.get('headId', '') is string && d.headId.size() > 0 && d.headId.size() <= 80
+          && d.headId in d.staffIds && d.headId in d.sousIds && !(d.headId in d.get('fnOnlyIds', []))
+          && d.get('pinOpen', {}) is map && d.get('pinOpen', {}).size() <= 80;
+      }
+      function capabilityLists(d) {
+        return d.get('addIds', []) is list && d.get('addIds', []).size() <= 80
+          && d.get('tickIds', []) is list && d.get('tickIds', []).size() <= 80
+          && d.get('delIds', []) is list && d.get('delIds', []).size() <= 80;
+      }
+      function capabilitiesKept() {
+        return capabilityLists(request.resource.data)
+          && (!resource.data.keys().hasAny(['addIds', 'tickIds', 'delIds'])
+            || request.resource.data.keys().hasAll(['addIds', 'tickIds', 'delIds']));
+      }
+      function ownerInitialConfig() {
+        let d = request.resource.data;
+        return ownerFresh() && resource == null
+          && d.get('people', []) is list && d.get('people', []).size() <= 80
+          && d.get('staffIds', []) is list && d.get('staffIds', []).size() <= 80
+          && d.get('sousIds', []) is list && d.get('sousIds', []).size() <= 80
+          && d.get('headId', '') is string && d.headId.size() > 0 && d.headId.size() <= 80
+          && d.headId in d.staffIds && d.headId in d.sousIds && !(d.headId in d.get('fnOnlyIds', []));
+      }
+      function ownerHeadRecovery() {
+        let head = resource.data.get('headId', '');
+        let d = request.resource.data;
+        return ownerFresh() && head != ''
+          && d.diff(resource.data).affectedKeys().hasOnly(['pinOpen', 'updated', 'updatedBy', 'by'])
+          && d.get('pinOpen', {}) is map && d.pinOpen.size() <= 80
+          && d.pinOpen.diff(resource.data.get('pinOpen', {})).affectedKeys().hasOnly([head])
+          && d.pinOpen.get(head, 0) is number && d.pinOpen.get(head, 0) > request.time.toMillis()
+          && d.pinOpen.get(head, 0) <= request.time.toMillis() + 1800000;
+      }
+      // A sous chef's save keeps the head chef, every sous chef and every function manager on staffIds, so nobody can
+      // stop the other chefs' PINs from working (22 Oct 2026). Only the head chef's Google account takes a chef off.
+      function keepsChefs() {
+        return request.resource.data.get('staffIds', []).hasAll(resource.data.get('sousIds', []))
+          && request.resource.data.get('staffIds', []).hasAll(resource.data.get('fnIds', []))
+          && (resource.data.get('headId', '') == '' || resource.data.get('headId', '') in request.resource.data.get('staffIds', []));
+      }
+      function proofState(d) {
+        return d.get('proofWords', []) is list && d.get('proofWords', []).size() <= 200
+          && d.get('proofV', 0) is int && d.get('proofV', 0) >= 0
+          && (d.get('proofEvent', '') == '' || proofId(d.proofEvent));
+      }
+      function proofConfigChange() {
+        let d = request.resource.data;
+        let old = resource.data.get('proofWords', []);
+        let eventPath = /databases/$(database)/documents/kitchens/KITCHEN_PIN/proofHistory/$(d.proofEvent);
+        let e = getAfter(eventPath).data;
+        return proofState(d) && proofId(d.proofEvent) && !exists(eventPath)
+          && d.proofV == resource.data.get('proofV', 0) + 1
+          && d.diff(resource.data).affectedKeys().hasOnly(['proofWords', 'proofV', 'proofEvent', 'by'])
+          && proofWordValue(e) && e.v == d.proofV && e.by == d.by
+          && ((e.action == 'keep' && !(e.word in old) && d.proofWords == old.concat([e.word]))
+            || (e.action == 'release' && e.word in old && d.proofWords == old.removeAll([e.word])));
+      }
+      function proofConfigKept() {
+        return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['proofWords', 'proofV', 'proofEvent'])
+          || proofConfigChange();
+      }
       allow get: if kitchenRead() || (ownerIdentity() && resource.data.get('headId', '') == '');
       allow list: if kitchenRead();
       allow create: if (isAdmin() || ownerInitialConfig()) && proofState(request.resource.data) && capabilityLists(request.resource.data);
@@ -279,6 +267,16 @@ service cloud.firestore {
       allow get: if isAdmin() || ownerIdentity();
       allow list, write: if isAdmin();
     }
+    // Roster name links (head chef, 14 Nov 2026; docs/roster-import-options/brief.md): which person in the book a name
+    // on the Humanforce roster is, for nicknames. Only the head chef's admin device reads or writes it; no kitchen device
+    // reads it. One small list of at most 80 links, each checked by the admin panel before it is sent.
+    match /kitchens/KITCHEN_PIN/config/rosterLinks {
+      allow get, delete: if isAdmin();
+      allow list: if false;
+      allow create, update: if isAdmin() && request.resource.data.keys().hasOnly(['links', 'upd', 'by'])
+        && request.resource.data.links is list && request.resource.data.links.size() <= 80
+        && request.resource.data.upd is number && request.resource.data.by is string && request.resource.data.by.size() <= 80;
+    }
     match /kitchens/KITCHEN_PIN/adminDevices/{uid} {
       // The primary device can inspect or discard only its own grant. A remembered Google identity may issue a
       // grant only for a live daily head-chef PIN session, with exact session identity and expiry.
@@ -317,47 +315,6 @@ service cloud.firestore {
       return admin || ((nearDay(day) || chefId(request.resource.data.by) || request.resource.data.by in cfg().get('fnIds', [])) && request.resource.data.size() <= 60
         && (resource != null || request.resource.data.get('addedById', '') in ['', request.resource.data.by])
         && (request.resource.data.get('done', false) != true || resource.data.get('done', false) == true || request.resource.data.get('doneById', '') == request.resource.data.by));
-    }
-    // Prep only: preparedBy is a reported worker, never a login or permission. The authenticated recorder remains
-    // doneById/by. Old clients may omit the pair; a new completion can only name active kitchen staff. The pair
-    // stays fixed while done. preparedAt ties the report to this completion: an older client can Undo or re-tick
-    // while carrying an unchanged old report, but readers ignore it when its stamp no longer matches doneAt.
-    function preparedEmpty(d) { return d.get('preparedBy', '') == '' && d.get('preparedById', '') == '' && d.get('preparedAt', 0) == 0; }
-    function preparedSame(a, b) {
-      return a.get('preparedBy', '') == b.get('preparedBy', '') && a.get('preparedById', '') == b.get('preparedById', '')
-        && a.get('preparedAt', 0) == b.get('preparedAt', 0);
-    }
-    // I'm on it (5 Nov 2026, head chef, round 2 of the work pages redesign): the first tap on a prep line stamps who is on
-    // it, the second ticks it. The stamp is a reported cook, like preparedBy: an active kitchen person, not functions
-    // only, with the time it was put on. It is empty on a new line and cleared with the tick; changing it takes Tick.
-    function onEmpty(d) { return d.get('onBy', '') == '' && d.get('onById', '') == '' && d.get('onAt', 0) == 0; }
-    function onPerson(d) {
-      return d.get('onBy', '') is string && d.onBy.size() > 0 && d.onBy.size() <= 80 && d.onBy.matches('.*[^ ].*')
-        && d.get('onById', '') is string && d.onById.size() > 0 && d.onById.size() <= 80
-        && d.onById in cfg().get('staffIds', []) && !functionOnly(d.onById)
-        && d.get('onAt', 0) is number && d.onAt > 0 && d.onAt <= request.time.toMillis() + 60000;
-    }
-    function onStampOk() {
-      let d = request.resource.data;
-      return !d.diff(resource.data).affectedKeys().hasAny(['onBy', 'onById', 'onAt'])
-        || onEmpty(d) || (d.get('done', false) != true && onPerson(d));
-    }
-    function preparedPerson(d) {
-      return d.get('preparedBy', '') is string && d.preparedBy.size() > 0 && d.preparedBy.size() <= 80 && d.preparedBy.matches('.*[^ ].*')
-        && d.get('preparedById', '') is string && d.preparedById.size() > 0 && d.preparedById.size() <= 80
-        && d.preparedById in cfg().get('staffIds', []) && !functionOnly(d.preparedById)
-        && d.get('preparedAt', 0) is number && d.preparedAt > 0 && d.preparedAt == d.get('doneAt', 0);
-    }
-    function prepAttribution(admin) {
-      let next = request.resource.data;
-      let old = resource == null ? {} : resource.data;
-      let unchanged = preparedSame(next, old);
-      let inert = resource != null && unchanged && next.get('preparedAt', 0) != next.get('doneAt', 0);
-      return admin || (next.get('done', false) != true ? preparedEmpty(next) || inert
-        : old.get('done', false) == true
-          ? unchanged
-            && next.get('doneBy', '') == old.get('doneBy', '') && next.get('doneById', '') == old.get('doneById', '')
-          : preparedEmpty(next) || preparedPerson(next) || inert);
     }
     function effectBody(body) {
       let d = request.resource.data;
@@ -456,57 +413,11 @@ service cloud.firestore {
     function recorderKept() {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['addedById', 'addedBy', 'addedAt']);
     }
-    function prepCapabilities(creating) {
-      let d = request.resource.data;
-      let changed = creating ? d.keys() : d.diff(resource.data).affectedKeys();
-      let ticks = ['done', 'doneAt', 'doneBy', 'doneById', 'preparedBy', 'preparedById', 'preparedAt', 'onBy', 'onById', 'onAt'];
-      let removals = ['deleted', 'deletedBy', 'deletedAt', 'mergedInto'];
-      return creating ? capability(d.by, 'add') && d.get('done', false) != true && d.get('deleted', false) != true && onEmpty(d)
-          && d.get('addedAt', 0) is number && d.get('addedAt', 0) <= request.time.toMillis() + 60000
-        : recorderKept()
-          && (!changed.hasAny(ticks) || capability(d.by, 'tick'))
-          && (!changed.hasAny(removals) || capability(d.by, 'del') || ownAddUndo())
-          && (changed.hasOnly(ticks.concat(removals).concat(['by'])) || capability(d.by, 'add'));
-    }
-    function orderCapabilities(creating) {
-      let d = request.resource.data;
-      let changed = creating ? d.keys() : d.diff(resource.data).affectedKeys();
-      let ticks = ['ordered', 'orderedAt', 'orderedBy'];
-      let removals = ['deleted', 'deletedBy', 'deletedAt'];
-      return creating ? capability(d.by, 'add') && d.get('ordered', false) != true && d.get('deleted', false) != true
-          && d.get('addedAt', 0) is number && d.get('addedAt', 0) <= request.time.toMillis() + 60000
-        : recorderKept()
-          && (!changed.hasAny(ticks) || chefId(d.by))
-          && (!changed.hasAny(removals) || (chefId(d.by) && capability(d.by, 'del')) || ownAddUndo())
-          && (changed.hasOnly(ticks.concat(removals).concat(['by'])) || capability(d.by, 'add'));
-    }
     function statusEffectFirst(creating) {
       let d = request.resource.data;
       return d.get('fn', '') != '' && (d.by in cfg().get('fnIds', []) || chefId(d.by))
         && (creating || d.diff(resource.data).affectedKeys().hasAny(['addedBy', 'addedById', 'addedAt'])
           || (!capability(d.by, 'del') && d.diff(resource.data).affectedKeys().hasAny(['deleted', 'deletedBy', 'deletedAt'])));
-    }
-    // Evaluate capability eligibility before the session chain, so a function exception does not spend that chain twice.
-    // Function batches retain their own narrow booking revision authority; ordinary permitted lines add no booking lookup.
-    // fnFor (14 Nov 2026, docs/fn-sent-tidy-options/brief.md): the functions a prep line was added for from What the
-    // platters need; the line leaves the list once they are all sent. Written with the line (at most 4 function ids); an
-    // update may only clear it, so a link is never added to a line later (a link takes a line off, like Delete).
-    function fnForOk(creating) {
-      let d = request.resource.data;
-      return creating ? (!d.keys().hasAny(['fnFor']) || (d.fnFor is list && d.fnFor.size() <= 4))
-        : (!d.diff(resource.data).affectedKeys().hasAny(['fnFor']) || (d.fnFor is list && d.fnFor.size() == 0));
-    }
-    function prepLineWrite(day, id, creating) {
-      let admin = isAdmin();
-      let priority = statusEffectFirst(creating);
-      return (admin || (priority && functionLine(day, id, true)) || (prepCapabilities(creating) && staff()) || (!priority && request.resource.data.get('fn', '') != '' && functionLine(day, id, true))) && lineOk(160) && lineWho(day, admin) && prepAttribution(admin)
-        && fnForOk(creating) && (creating ? proofLineCreate(admin) : tickKept(admin) && proofLineKept('prep', day, id, admin) && onStampOk());
-    }
-    function orderLineWrite(day, id, creating) {
-      let admin = isAdmin();
-      let priority = statusEffectFirst(creating);
-      return (admin || (priority && functionLine(day, id, false)) || (orderCapabilities(creating) && staff()) || (!priority && request.resource.data.get('fn', '') != '' && functionLine(day, id, false))) && lineOk(120) && lineWho(day, admin)
-        && (creating ? proofLineCreate(admin) : proofLineKept('orders', day, id, admin));
     }
     match /kitchens/KITCHEN_PIN/proofHistory/{event} {
       allow read: if isAdmin();
@@ -517,6 +428,82 @@ service cloud.firestore {
       allow delete: if false;
     }
     match /kitchens/KITCHEN_PIN/days/{day}/items/{item} {
+      function tickKept(admin) {
+        return resource.data.get('done', false) != true
+          || (request.resource.data.get('done', false) == true && request.resource.data.get('doneAt', 0) == resource.data.get('doneAt', 0))
+          || admin || sousBy()
+          || (request.resource.data.get('done', false) != true && resource.data.get('doneById', '') == request.resource.data.by
+              && request.time.toMillis() - resource.data.get('doneAt', 0) < 120000);
+      }
+      // Prep only: preparedBy is a reported worker, never a login or permission. The authenticated recorder remains
+      // doneById/by. Old clients may omit the pair; a new completion can only name active kitchen staff. The pair
+      // stays fixed while done. preparedAt ties the report to this completion: an older client can Undo or re-tick
+      // while carrying an unchanged old report, but readers ignore it when its stamp no longer matches doneAt.
+      function preparedEmpty(d) { return d.get('preparedBy', '') == '' && d.get('preparedById', '') == '' && d.get('preparedAt', 0) == 0; }
+      function preparedSame(a, b) {
+        return a.get('preparedBy', '') == b.get('preparedBy', '') && a.get('preparedById', '') == b.get('preparedById', '')
+          && a.get('preparedAt', 0) == b.get('preparedAt', 0);
+      }
+      // I'm on it (5 Nov 2026, head chef, round 2 of the work pages redesign): the first tap on a prep line stamps who is on
+      // it, the second ticks it. The stamp is a reported cook, like preparedBy: an active kitchen person, not functions
+      // only, with the time it was put on. It is empty on a new line and cleared with the tick; changing it takes Tick.
+      function onEmpty(d) { return d.get('onBy', '') == '' && d.get('onById', '') == '' && d.get('onAt', 0) == 0; }
+      function onPerson(d) {
+        return d.get('onBy', '') is string && d.onBy.size() > 0 && d.onBy.size() <= 80 && d.onBy.matches('.*[^ ].*')
+          && d.get('onById', '') is string && d.onById.size() > 0 && d.onById.size() <= 80
+          && d.onById in cfg().get('staffIds', []) && !functionOnly(d.onById)
+          && d.get('onAt', 0) is number && d.onAt > 0 && d.onAt <= request.time.toMillis() + 60000;
+      }
+      function onStampOk() {
+        let d = request.resource.data;
+        return !d.diff(resource.data).affectedKeys().hasAny(['onBy', 'onById', 'onAt'])
+          || onEmpty(d) || (d.get('done', false) != true && onPerson(d));
+      }
+      function preparedPerson(d) {
+        return d.get('preparedBy', '') is string && d.preparedBy.size() > 0 && d.preparedBy.size() <= 80 && d.preparedBy.matches('.*[^ ].*')
+          && d.get('preparedById', '') is string && d.preparedById.size() > 0 && d.preparedById.size() <= 80
+          && d.preparedById in cfg().get('staffIds', []) && !functionOnly(d.preparedById)
+          && d.get('preparedAt', 0) is number && d.preparedAt > 0 && d.preparedAt == d.get('doneAt', 0);
+      }
+      function prepAttribution(admin) {
+        let next = request.resource.data;
+        let old = resource == null ? {} : resource.data;
+        let unchanged = preparedSame(next, old);
+        let inert = resource != null && unchanged && next.get('preparedAt', 0) != next.get('doneAt', 0);
+        return admin || (next.get('done', false) != true ? preparedEmpty(next) || inert
+          : old.get('done', false) == true
+            ? unchanged
+              && next.get('doneBy', '') == old.get('doneBy', '') && next.get('doneById', '') == old.get('doneById', '')
+            : preparedEmpty(next) || preparedPerson(next) || inert);
+      }
+      function prepCapabilities(creating) {
+        let d = request.resource.data;
+        let changed = creating ? d.keys() : d.diff(resource.data).affectedKeys();
+        let ticks = ['done', 'doneAt', 'doneBy', 'doneById', 'preparedBy', 'preparedById', 'preparedAt', 'onBy', 'onById', 'onAt'];
+        let removals = ['deleted', 'deletedBy', 'deletedAt', 'mergedInto'];
+        return creating ? capability(d.by, 'add') && d.get('done', false) != true && d.get('deleted', false) != true && onEmpty(d)
+            && d.get('addedAt', 0) is number && d.get('addedAt', 0) <= request.time.toMillis() + 60000
+          : recorderKept()
+            && (!changed.hasAny(ticks) || capability(d.by, 'tick'))
+            && (!changed.hasAny(removals) || capability(d.by, 'del') || ownAddUndo())
+            && (changed.hasOnly(ticks.concat(removals).concat(['by'])) || capability(d.by, 'add'));
+      }
+      // fnFor (14 Nov 2026, docs/fn-sent-tidy-options/brief.md): the functions a prep line was added for from What the
+      // platters need; the line leaves the list once they are all sent. Written with the line (at most 4 function ids); an
+      // update may only clear it, so a link is never added to a line later (a link takes a line off, like Delete).
+      function fnForOk(creating) {
+        let d = request.resource.data;
+        return creating ? (!d.keys().hasAny(['fnFor']) || (d.fnFor is list && d.fnFor.size() <= 4))
+          : (!d.diff(resource.data).affectedKeys().hasAny(['fnFor']) || (d.fnFor is list && d.fnFor.size() == 0));
+      }
+      // Evaluate capability eligibility before the session chain, so a function exception does not spend that chain twice.
+      // Function batches retain their own narrow booking revision authority; ordinary permitted lines add no booking lookup.
+      function prepLineWrite(day, id, creating) {
+        let admin = isAdmin();
+        let priority = statusEffectFirst(creating);
+        return (admin || (priority && functionLine(day, id, true)) || (prepCapabilities(creating) && staff()) || (!priority && request.resource.data.get('fn', '') != '' && functionLine(day, id, true))) && lineOk(160) && lineWho(day, admin) && prepAttribution(admin)
+          && fnForOk(creating) && (creating ? proofLineCreate(admin) : tickKept(admin) && proofLineKept('prep', day, id, admin) && onStampOk());
+      }
       allow read: if kitchenRead();
       allow create: if prepLineWrite(day, item, true);
       allow update: if prepLineWrite(day, item, false);
@@ -524,6 +511,24 @@ service cloud.firestore {
     }
     // An order line is ticked as ordered (or not) only by the head chef or a sous chef, as the page shows (22 Oct 2026).
     match /kitchens/KITCHEN_PIN/orders/{day}/lines/{line} {
+      function orderCapabilities(creating) {
+        let d = request.resource.data;
+        let changed = creating ? d.keys() : d.diff(resource.data).affectedKeys();
+        let ticks = ['ordered', 'orderedAt', 'orderedBy'];
+        let removals = ['deleted', 'deletedBy', 'deletedAt'];
+        return creating ? capability(d.by, 'add') && d.get('ordered', false) != true && d.get('deleted', false) != true
+            && d.get('addedAt', 0) is number && d.get('addedAt', 0) <= request.time.toMillis() + 60000
+          : recorderKept()
+            && (!changed.hasAny(ticks) || chefId(d.by))
+            && (!changed.hasAny(removals) || (chefId(d.by) && capability(d.by, 'del')) || ownAddUndo())
+            && (changed.hasOnly(ticks.concat(removals).concat(['by'])) || capability(d.by, 'add'));
+      }
+      function orderLineWrite(day, id, creating) {
+        let admin = isAdmin();
+        let priority = statusEffectFirst(creating);
+        return (admin || (priority && functionLine(day, id, false)) || (orderCapabilities(creating) && staff()) || (!priority && request.resource.data.get('fn', '') != '' && functionLine(day, id, false))) && lineOk(120) && lineWho(day, admin)
+          && (creating ? proofLineCreate(admin) : proofLineKept('orders', day, id, admin));
+      }
       allow read: if kitchenRead();
       allow create: if orderLineWrite(day, line, true);
       allow update: if orderLineWrite(day, line, false);
@@ -536,26 +541,26 @@ service cloud.firestore {
         && request.time >= timestamp.date(int(day.split('-')[0]), int(day.split('-')[1]), int(day.split('-')[2])) - duration.value(615, 'm')
         && request.time < timestamp.date(int(day.split('-')[0]), int(day.split('-')[1]), int(day.split('-')[2])) + duration.value(855, 'm');
     }
-    // Delivery temperatures: every personal login, including function-only and view-only roles, may record and read
-    // today's receipts. The verified admin reads history and copies receipts during a PIN move. No other access changes.
-    function deliveryTemp(t) { return t == null || (t is number && t >= -100 && t <= 100); }
-    function deliveryOk() {
-      let d = request.resource.data;
-      let start = timestamp.date(int(d.day.split('-')[0]), int(d.day.split('-')[1]), int(d.day.split('-')[2])).toMillis() - 36000000;
-      return d.keys().hasOnly(['day', 'receivedAt', 'recordedAt', 'supplier', 'chilled', 'frozen', 'note', 'receivedBy', 'receivedById', 'by'])
-        && d.keys().hasAll(['day', 'receivedAt', 'recordedAt', 'supplier', 'chilled', 'frozen', 'note', 'receivedBy', 'receivedById', 'by'])
-        && d.day is string && d.day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
-        && d.supplier is string && d.supplier.size() > 0 && d.supplier.size() <= 80 && d.supplier.matches('.*[^ ].*')
-        && d.note is string && d.note.size() <= 300
-        && deliveryTemp(d.chilled) && deliveryTemp(d.frozen) && (d.chilled != null || d.frozen != null)
-        && d.receivedBy is string && d.receivedBy.size() > 0 && d.receivedBy.size() <= 80
-        && d.by is string && d.by.size() > 0 && d.by.size() <= 80 && d.receivedById == d.by
-        && d.receivedAt is number && d.receivedAt >= start && d.receivedAt < start + 86400000
-        && d.recordedAt is number && d.recordedAt >= d.receivedAt
-        && (isAdmin() || (isToday(d.day) && d.receivedAt <= request.time.toMillis() + 60000
-          && d.recordedAt <= request.time.toMillis() + 60000 && d.recordedAt >= request.time.toMillis() - 86400000));
-    }
     match /kitchens/KITCHEN_PIN/deliveries/{receipt} {
+      // Delivery temperatures: every personal login, including function-only and view-only roles, may record and read
+      // today's receipts. The verified admin reads history and copies receipts during a PIN move. No other access changes.
+      function deliveryTemp(t) { return t == null || (t is number && t >= -100 && t <= 100); }
+      function deliveryOk() {
+        let d = request.resource.data;
+        let start = timestamp.date(int(d.day.split('-')[0]), int(d.day.split('-')[1]), int(d.day.split('-')[2])).toMillis() - 36000000;
+        return d.keys().hasOnly(['day', 'receivedAt', 'recordedAt', 'supplier', 'chilled', 'frozen', 'note', 'receivedBy', 'receivedById', 'by'])
+          && d.keys().hasAll(['day', 'receivedAt', 'recordedAt', 'supplier', 'chilled', 'frozen', 'note', 'receivedBy', 'receivedById', 'by'])
+          && d.day is string && d.day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+          && d.supplier is string && d.supplier.size() > 0 && d.supplier.size() <= 80 && d.supplier.matches('.*[^ ].*')
+          && d.note is string && d.note.size() <= 300
+          && deliveryTemp(d.chilled) && deliveryTemp(d.frozen) && (d.chilled != null || d.frozen != null)
+          && d.receivedBy is string && d.receivedBy.size() > 0 && d.receivedBy.size() <= 80
+          && d.by is string && d.by.size() > 0 && d.by.size() <= 80 && d.receivedById == d.by
+          && d.receivedAt is number && d.receivedAt >= start && d.receivedAt < start + 86400000
+          && d.recordedAt is number && d.recordedAt >= d.receivedAt
+          && (isAdmin() || (isToday(d.day) && d.receivedAt <= request.time.toMillis() + 60000
+            && d.recordedAt <= request.time.toMillis() + 60000 && d.recordedAt >= request.time.toMillis() - 86400000));
+      }
       // The initial id check may read an absent document. Existing records still require today's date for staff.
       allow get: if isAdmin() || (functionRead() && (resource == null || isToday(resource.data.day)));
       allow list: if isAdmin() || (functionRead() && isToday(resource.data.day));
@@ -610,64 +615,6 @@ service cloud.firestore {
         && request.resource.data.get('change', '') is string && request.resource.data.get('change', '').size() <= 300;
       allow delete: if false;
     }
-    // Stock transfers between venues (#/transfers, 23 Oct 2026): one record per transfer, transfers/<day>/lines/<id>.
-    // dir is out (another venue took it from us) or in (we took it from them), then the venue, who came for it or gave
-    // it, the item, the amount and unit, and a note. Names and amounts only, never a price.
-    // Like the wastage log: anyone signed in logs a line, as themselves (addedById is the writer), on yesterday's, today's
-    // or tomorrow's list, so a line saved with no signal near midnight still lands. addedAt is at most 15 minutes ahead
-    // of the server's time, so nobody can stretch the 2 minute Undo.
-    // With the kitchen PIN only today's lines can be read. Past days are for the head chef's Google account (the admin
-    // panel's Transfers report); the phones get venue and item names from summary/transfers.
-    // Only that account removes or puts one back. A sous chef may Undo their own line straight after logging it
-    // (2 minutes on the server's time). Either way only the removed fields change. Never deleted.
-    // The head chef may also create one when moving everything to a new kitchen PIN (an exact copy of the old record).
-    function xferOk() {
-      let d = request.resource.data;
-      return d.keys().hasOnly(['dir', 'venue', 'person', 'text', 'amount', 'unit', 'note', 'addedBy', 'addedById', 'addedAt', 'deleted', 'tst', 'by'])
-        && d.dir in ['out', 'in']
-        && d.venue is string && d.venue.size() > 0 && d.venue.size() <= 40
-        && d.get('person', '') is string && d.get('person', '').size() <= 40
-        && d.text is string && d.text.size() > 0 && d.text.size() <= 80
-        && d.amount is number && d.amount > 0 && d.amount < 100000
-        && d.unit in ['g', 'kg', 'L', 'pieces', 'packs', 'boxes']
-        && d.get('note', '') is string && d.get('note', '').size() <= 120
-        && d.get('addedBy', '') is string && d.get('addedBy', '').size() <= 80
-        && d.addedById == d.by
-        && d.addedAt is number && d.addedAt <= request.time.toMillis() + 900000
-        && d.deleted == false
-        && d.get('tst', false) is bool;
-    }
-    // Remove, Put back and Undo: only the removed fields (and the writer), each of the right type.
-    // a transfer line update that changes the amount, its unit or the record of a change (Change amount, 4 Nov 2026)
-    function xferAmt() { return request.resource.data.diff(resource.data).affectedKeys().hasAny(['amount', 'unit', 'was']); }
-    function xferDel() {
-      let d = request.resource.data;
-      return onlyKeys(['deleted', 'deletedBy', 'deletedAt', 'by'])
-        && d.deleted is bool
-        && d.get('deletedBy', '') is string && d.get('deletedBy', '').size() <= 80
-        && d.get('deletedAt', 0) is number;
-    }
-    // A return closes a loan in full. Only return fields change, never its amount or venue.
-    // The writer may undo a mis-tap for two minutes; a chef may reopen it later.
-    function xferReturn(day, line) {
-      let d = request.resource.data;
-      return getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/transferOpen/$(day + '_' + line)).data.record == d
-        && onlyKeys(['returned', 'returnedBy', 'returnedById', 'returnedAt', 'by'])
-        && resource.data.get('deleted', false) == false
-        && d.returned is bool
-        && d.returnedBy is string && d.returnedBy.size() <= 80
-        && d.returnedById is string
-        && d.returnedAt is number
-        && (d.returned == true
-          ? resource.data.get('returned', false) == false
-            && (isAdmin() || d.returnedById == d.get('by', ''))
-            && d.returnedAt <= request.time.toMillis() + 60000
-            && d.returnedAt >= request.time.toMillis() - 300000
-          : resource.data.get('returned', false) == true
-            && d.returnedBy == '' && d.returnedById == '' && d.returnedAt == 0
-            && (isAdmin() || sousBy() || (resource.data.get('returnedById', '') == d.by
-              && request.time.toMillis() - resource.data.get('returnedAt', 0) < 120000)));
-    }
     // The open index is an exact copy of its dated line in the same atomic write.
     // Staff can query open loans across all dates without reading the private history.
     match /kitchens/KITCHEN_PIN/transferOpen/{key} {
@@ -683,6 +630,64 @@ service cloud.firestore {
       allow delete: if false;
     }
     match /kitchens/KITCHEN_PIN/transfers/{day}/lines/{line} {
+      // Stock transfers between venues (#/transfers, 23 Oct 2026): one record per transfer, transfers/<day>/lines/<id>.
+      // dir is out (another venue took it from us) or in (we took it from them), then the venue, who came for it or gave
+      // it, the item, the amount and unit, and a note. Names and amounts only, never a price.
+      // Like the wastage log: anyone signed in logs a line, as themselves (addedById is the writer), on yesterday's, today's
+      // or tomorrow's list, so a line saved with no signal near midnight still lands. addedAt is at most 15 minutes ahead
+      // of the server's time, so nobody can stretch the 2 minute Undo.
+      // With the kitchen PIN only today's lines can be read. Past days are for the head chef's Google account (the admin
+      // panel's Transfers report); the phones get venue and item names from summary/transfers.
+      // Only that account removes or puts one back. A sous chef may Undo their own line straight after logging it
+      // (2 minutes on the server's time). Either way only the removed fields change. Never deleted.
+      // The head chef may also create one when moving everything to a new kitchen PIN (an exact copy of the old record).
+      function xferOk() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['dir', 'venue', 'person', 'text', 'amount', 'unit', 'note', 'addedBy', 'addedById', 'addedAt', 'deleted', 'tst', 'by'])
+          && d.dir in ['out', 'in']
+          && d.venue is string && d.venue.size() > 0 && d.venue.size() <= 40
+          && d.get('person', '') is string && d.get('person', '').size() <= 40
+          && d.text is string && d.text.size() > 0 && d.text.size() <= 80
+          && d.amount is number && d.amount > 0 && d.amount < 100000
+          && d.unit in ['g', 'kg', 'L', 'pieces', 'packs', 'boxes']
+          && d.get('note', '') is string && d.get('note', '').size() <= 120
+          && d.get('addedBy', '') is string && d.get('addedBy', '').size() <= 80
+          && d.addedById == d.by
+          && d.addedAt is number && d.addedAt <= request.time.toMillis() + 900000
+          && d.deleted == false
+          && d.get('tst', false) is bool;
+      }
+      // Remove, Put back and Undo: only the removed fields (and the writer), each of the right type.
+      // a transfer line update that changes the amount, its unit or the record of a change (Change amount, 4 Nov 2026)
+      function xferAmt() { return request.resource.data.diff(resource.data).affectedKeys().hasAny(['amount', 'unit', 'was']); }
+      function xferDel() {
+        let d = request.resource.data;
+        return onlyKeys(['deleted', 'deletedBy', 'deletedAt', 'by'])
+          && d.deleted is bool
+          && d.get('deletedBy', '') is string && d.get('deletedBy', '').size() <= 80
+          && d.get('deletedAt', 0) is number;
+      }
+      // A return closes a loan in full. Only return fields change, never its amount or venue.
+      // The writer may undo a mis-tap for two minutes; a chef may reopen it later.
+      function xferReturn(day, line) {
+        let d = request.resource.data;
+        return getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/transferOpen/$(day + '_' + line)).data.record == d
+          && onlyKeys(['returned', 'returnedBy', 'returnedById', 'returnedAt', 'by'])
+          && resource.data.get('deleted', false) == false
+          && d.returned is bool
+          && d.returnedBy is string && d.returnedBy.size() <= 80
+          && d.returnedById is string
+          && d.returnedAt is number
+          && (d.returned == true
+            ? resource.data.get('returned', false) == false
+              && (isAdmin() || d.returnedById == d.get('by', ''))
+              && d.returnedAt <= request.time.toMillis() + 60000
+              && d.returnedAt >= request.time.toMillis() - 300000
+            : resource.data.get('returned', false) == true
+              && d.returnedBy == '' && d.returnedById == '' && d.returnedAt == 0
+              && (isAdmin() || sousBy() || (resource.data.get('returnedById', '') == d.by
+                && request.time.toMillis() - resource.data.get('returnedAt', 0) < 120000)));
+      }
       allow read: if isAdmin() || (kitchenRead() && isToday(day));
       allow create: if isAdmin() || (staff() && capability(request.resource.data.by, 'add') && nearDay(day) && xferOk());
       // Change amount (4 Nov 2026): an open loan, today's line, as the person on this phone's PIN (the head chef's
@@ -735,40 +740,30 @@ service cloud.firestore {
       allow update: if isAdmin() && request.resource.data == resource.data;
       allow delete: if false;
     }
-    function referenceValue(d) {
-      return d.keys().hasOnly(['alias', 'label', 'recipeId', 'supplierId', 'itemId', 'guideId', 'v', 'at', 'by'])
-        && d.alias is string && d.alias.size() > 0 && d.alias.size() <= 160 && d.alias.matches('.*[^ ].*')
-        && d.label is string && d.label.size() > 0 && d.label.size() <= 160
-        && d.recipeId is string && d.recipeId.size() <= 160
-        && d.supplierId is string && d.supplierId.size() <= 160 && d.itemId is string && d.itemId.size() <= 160
-        && ((d.supplierId == '' && d.itemId == '') || (d.supplierId != '' && d.itemId != ''))
-        && (d.recipeId != '' || d.itemId != '')
-        && d.guideId is string && d.guideId.size() <= 160
-        && d.v is int && d.v >= 1 && d.at is number && d.by is string;
-    }
-    function trainingValue(d) {
-      return d.keys().hasOnly(['personId', 'section', 'recipeId', 'guideId', 'status', 'assessorId', 'day', 'v', 'at', 'by'])
-        && d.personId is string && d.personId.size() > 0 && d.personId.size() <= 160
-        && d.section is string && d.section.size() <= 160 && d.recipeId is string && d.recipeId.size() <= 160
-        && (d.section != '' || d.recipeId != '') && d.guideId is string && d.guideId.size() <= 160
-        && d.status in ['not-assessed', 'in-training', 'confirmed']
-        && d.assessorId is string && d.assessorId.size() > 0 && d.assessorId.size() <= 160
-        && d.day is string && d.day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
-        && d.v is int && d.v >= 1 && d.at is number && d.by is string;
-    }
-    // The admin Dashboard's watch list (4 Nov 2026, docs/admin-dashboard-options/brief.md): one record, main, with up to
-    // 12 short keys (sec:<section>, item:<name>|<unit>, person:<id>). Only the verified admin reads or saves it; the
-    // Dashboard checks every key by type before it is shown.
-    function watchValue(d) {
-      return d.keys().hasOnly(['list', 'v', 'at', 'by']) && d.list is list && d.list.size() <= 12
-        && d.v is int && d.v >= 1 && d.at is number && d.by is string;
-    }
     match /kitchens/KITCHEN_PIN/dashwatch/{id} {
+      // The admin Dashboard's watch list (4 Nov 2026, docs/admin-dashboard-options/brief.md): one record, main, with up to
+      // 12 short keys (sec:<section>, item:<name>|<unit>, person:<id>). Only the verified admin reads or saves it; the
+      // Dashboard checks every key by type before it is shown.
+      function watchValue(d) {
+        return d.keys().hasOnly(['list', 'v', 'at', 'by']) && d.list is list && d.list.size() <= 12
+          && d.v is int && d.v >= 1 && d.at is number && d.by is string;
+      }
       allow read: if isAdmin();
       allow create, update: if isAdmin() && id == 'main' && watchValue(request.resource.data);
       allow delete: if false;
     }
     match /kitchens/KITCHEN_PIN/references/{id} {
+      function referenceValue(d) {
+        return d.keys().hasOnly(['alias', 'label', 'recipeId', 'supplierId', 'itemId', 'guideId', 'v', 'at', 'by'])
+          && d.alias is string && d.alias.size() > 0 && d.alias.size() <= 160 && d.alias.matches('.*[^ ].*')
+          && d.label is string && d.label.size() > 0 && d.label.size() <= 160
+          && d.recipeId is string && d.recipeId.size() <= 160
+          && d.supplierId is string && d.supplierId.size() <= 160 && d.itemId is string && d.itemId.size() <= 160
+          && ((d.supplierId == '' && d.itemId == '') || (d.supplierId != '' && d.itemId != ''))
+          && (d.recipeId != '' || d.itemId != '')
+          && d.guideId is string && d.guideId.size() <= 160
+          && d.v is int && d.v >= 1 && d.at is number && d.by is string;
+      }
       allow read: if isAdmin();
       allow create: if isAdmin() && referenceValue(request.resource.data);
       allow update: if isAdmin() && referenceValue(request.resource.data)
@@ -783,6 +778,16 @@ service cloud.firestore {
       }
     }
     match /kitchens/KITCHEN_PIN/training/{id} {
+      function trainingValue(d) {
+        return d.keys().hasOnly(['personId', 'section', 'recipeId', 'guideId', 'status', 'assessorId', 'day', 'v', 'at', 'by'])
+          && d.personId is string && d.personId.size() > 0 && d.personId.size() <= 160
+          && d.section is string && d.section.size() <= 160 && d.recipeId is string && d.recipeId.size() <= 160
+          && (d.section != '' || d.recipeId != '') && d.guideId is string && d.guideId.size() <= 160
+          && d.status in ['not-assessed', 'in-training', 'confirmed']
+          && d.assessorId is string && d.assessorId.size() > 0 && d.assessorId.size() <= 160
+          && d.day is string && d.day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+          && d.v is int && d.v >= 1 && d.at is number && d.by is string;
+      }
       allow read: if isAdmin();
       allow create: if isAdmin() && trainingValue(request.resource.data);
       allow update: if isAdmin() && trainingValue(request.resource.data)
@@ -828,6 +833,8 @@ service cloud.firestore {
     // A ping is changed or removed by the person who wrote it (author, kept from the first save; older pings have only by),
     // the head chef, or a sous chef. A sous chef's edit does not take the ping over: the writer can still change it.
     match /kitchens/KITCHEN_PIN/notes/{id} {
+      // People the head chef ticked for Pings (and every sous chef) may write shift pings. The head chef keeps pingIds in step.
+      function pingBy() { return request.resource.data.by in cfg().get('pingIds', []); }
       allow read: if kitchenRead();
       allow create: if (isAdmin() || (staff() && (sousBy() || pingBy()))) && noteOk();
       allow update: if (lead() || (staff() && pingBy() && resource.data.get('author', resource.data.get('by', '')) == request.resource.data.by)) && noteOk();
@@ -838,16 +845,16 @@ service cloud.firestore {
       return isAdmin() || (kitchenRead() && (reader() in cfg().get('sousIds', [])
         || reader() == cfg().get('headId', '')));
     }
-    function directWriter() { return isAdmin() || (staff() && (sousBy() || request.resource.data.by == cfg().get('headId', ''))); }
-    function directRead(d) { return pingManager() || (kitchenRead() && d.to == reader()); }
-    function directOk() {
-      return noteOk() && request.resource.data.keys().hasOnly(['text', 'tag', 'start', 'until', 'dows', 'tm', 'removed', 'upd', 'at', 'author', 'by', 'to'])
-        && request.resource.data.to is string && request.resource.data.to.size() > 0 && request.resource.data.to.size() <= 80
-        && request.resource.data.at is number && request.resource.data.upd is number
-        && request.resource.data.author is string && request.resource.data.author.size() <= 80
-        && request.resource.data.by is string && request.resource.data.by.size() <= 80;
-    }
     match /kitchens/KITCHEN_PIN/directnotes/{id} {
+      function directWriter() { return isAdmin() || (staff() && (sousBy() || request.resource.data.by == cfg().get('headId', ''))); }
+      function directRead(d) { return pingManager() || (kitchenRead() && d.to == reader()); }
+      function directOk() {
+        return noteOk() && request.resource.data.keys().hasOnly(['text', 'tag', 'start', 'until', 'dows', 'tm', 'removed', 'upd', 'at', 'author', 'by', 'to'])
+          && request.resource.data.to is string && request.resource.data.to.size() > 0 && request.resource.data.to.size() <= 80
+          && request.resource.data.at is number && request.resource.data.upd is number
+          && request.resource.data.author is string && request.resource.data.author.size() <= 80
+          && request.resource.data.by is string && request.resource.data.by.size() <= 80;
+      }
       allow read: if directRead(resource.data);
       allow create: if directWriter() && directOk()
         // The verified owner can preserve historical recipients/authors during a kitchen-PIN move.
@@ -867,36 +874,36 @@ service cloud.firestore {
         && request.resource.data.at is number && sid == request.resource.data.day + '_' + request.resource.data.by;
       allow update, delete: if false;
     }
-    // Kitchen meeting minutes. Only the head chef (Google account) writes them (draft, then published). Everyone signed in
-    // with their own PIN (not functions only) reads the published ones. The chefs read the register of sign-offs.
-    // Minutes are never deleted, only flagged as removed. "v" is the version: a change after publishing makes version 2 and everyone signs again.
-    // Every earlier version is kept in minutes/<id>/hist/<v> and cannot be changed.
-    // A person signs once per version, as themselves (their own PIN session): minutes/<id>/signs/<v>_<staffId>. A sign-off cannot be changed or deleted.
-    // Drafts are for the head chef's Google account only (22 Oct 2026, review S9). A draft never carries pubAt (the time it
-    // was published), so the kitchen's list of minutes asks for pubAt from a date on, which the rules can check; reading
-    // one record needs it published.
-    function minutesOk() {
-      return request.resource.data.status in ['draft', 'published']
-        && (request.resource.data.status == 'published' || !('pubAt' in request.resource.data))
-        && request.resource.data.v is int && request.resource.data.v >= 1 && request.resource.data.v <= 50
-        && request.resource.data.no is int && request.resource.data.no >= 1
-        && request.resource.data.date is string && request.resource.data.date.size() == 10
-        && request.resource.data.get('start', '') is string && request.resource.data.get('start', '').size() <= 5
-        && request.resource.data.get('loc', '') is string && request.resource.data.get('loc', '').size() <= 60
-        && request.resource.data.get('guests', '') is string && request.resource.data.get('guests', '').size() <= 120
-        && request.resource.data.get('chair', '') is string && request.resource.data.get('chair', '').size() <= 80
-        && request.resource.data.get('taker', '') is string && request.resource.data.get('taker', '').size() <= 80
-        && request.resource.data.get('next', '') is string && request.resource.data.get('next', '').size() <= 10
-        && request.resource.data.get('decisions', '') is string && request.resource.data.get('decisions', '').size() <= 1200
-        && request.resource.data.get('menu', '') is string && request.resource.data.get('menu', '').size() <= 1200
-        && request.resource.data.get('safety', '') is string && request.resource.data.get('safety', '').size() <= 1200
-        && request.resource.data.get('dates', '') is string && request.resource.data.get('dates', '').size() <= 1200
-        && request.resource.data.get('other', '') is string && request.resource.data.get('other', '').size() <= 1200
-        && request.resource.data.get('att', []) is list && request.resource.data.get('att', []).size() <= 80
-        && request.resource.data.get('acts', []) is list && request.resource.data.get('acts', []).size() <= 40
-        && request.resource.data.get('removed', false) is bool;
-    }
     match /kitchens/KITCHEN_PIN/minutes/{id} {
+      // Kitchen meeting minutes. Only the head chef (Google account) writes them (draft, then published). Everyone signed in
+      // with their own PIN (not functions only) reads the published ones. The chefs read the register of sign-offs.
+      // Minutes are never deleted, only flagged as removed. "v" is the version: a change after publishing makes version 2 and everyone signs again.
+      // Every earlier version is kept in minutes/<id>/hist/<v> and cannot be changed.
+      // A person signs once per version, as themselves (their own PIN session): minutes/<id>/signs/<v>_<staffId>. A sign-off cannot be changed or deleted.
+      // Drafts are for the head chef's Google account only (22 Oct 2026, review S9). A draft never carries pubAt (the time it
+      // was published), so the kitchen's list of minutes asks for pubAt from a date on, which the rules can check; reading
+      // one record needs it published.
+      function minutesOk() {
+        return request.resource.data.status in ['draft', 'published']
+          && (request.resource.data.status == 'published' || !('pubAt' in request.resource.data))
+          && request.resource.data.v is int && request.resource.data.v >= 1 && request.resource.data.v <= 50
+          && request.resource.data.no is int && request.resource.data.no >= 1
+          && request.resource.data.date is string && request.resource.data.date.size() == 10
+          && request.resource.data.get('start', '') is string && request.resource.data.get('start', '').size() <= 5
+          && request.resource.data.get('loc', '') is string && request.resource.data.get('loc', '').size() <= 60
+          && request.resource.data.get('guests', '') is string && request.resource.data.get('guests', '').size() <= 120
+          && request.resource.data.get('chair', '') is string && request.resource.data.get('chair', '').size() <= 80
+          && request.resource.data.get('taker', '') is string && request.resource.data.get('taker', '').size() <= 80
+          && request.resource.data.get('next', '') is string && request.resource.data.get('next', '').size() <= 10
+          && request.resource.data.get('decisions', '') is string && request.resource.data.get('decisions', '').size() <= 1200
+          && request.resource.data.get('menu', '') is string && request.resource.data.get('menu', '').size() <= 1200
+          && request.resource.data.get('safety', '') is string && request.resource.data.get('safety', '').size() <= 1200
+          && request.resource.data.get('dates', '') is string && request.resource.data.get('dates', '').size() <= 1200
+          && request.resource.data.get('other', '') is string && request.resource.data.get('other', '').size() <= 1200
+          && request.resource.data.get('att', []) is list && request.resource.data.get('att', []).size() <= 80
+          && request.resource.data.get('acts', []) is list && request.resource.data.get('acts', []).size() <= 40
+          && request.resource.data.get('removed', false) is bool;
+      }
       allow get: if isAdmin() || (kitchenRead() && resource.data.status == 'published');
       allow list: if isAdmin() || (kitchenRead() && resource.data.pubAt >= 1);
       allow create, update: if isAdmin() && minutesOk();
@@ -926,25 +933,27 @@ service cloud.firestore {
         allow update, delete: if false;
       }
     }
-    // How-to guides (#/guides). Everyone with the kitchen PIN reads them; only the head chef (Google account) writes them.
-    // Each PDF page or photo is one picture in guides/<id>/pages/<n> (a Firestore record holds at most 1 MB).
-    // "v" goes up when the file is replaced. Guides are never deleted, only flagged as removed. Page pictures may be
-    // replaced or deleted by the head chef (a new file with fewer pages deletes the pages it no longer needs).
-    function guideOk() {
-      return request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 80
-        && request.resource.data.cat in ['equipment', 'cleaning', 'safety', 'prep', 'stock', 'shift', 'other']
-        && request.resource.data.get('sum', '') is string && request.resource.data.get('sum', '').size() <= 200
-        && request.resource.data.get('steps', '') is string && request.resource.data.get('steps', '').size() <= 3000
-        && request.resource.data.get('kw', '') is string && request.resource.data.get('kw', '').size() <= 200
-        && request.resource.data.get('text', '') is string && request.resource.data.get('text', '').size() <= 8000
-        && picture(request.resource.data.get('thumb', '')) && request.resource.data.get('thumb', '').size() <= 60000
-        && request.resource.data.get('file', '') is string && request.resource.data.get('file', '').size() <= 120
-        && request.resource.data.pages is int && request.resource.data.pages >= 0 && request.resource.data.pages <= 20
-        && request.resource.data.get('dims', []) is list && request.resource.data.get('dims', []).size() <= 20
-        && request.resource.data.v is int && request.resource.data.v >= 1
-        && request.resource.data.get('removed', false) is bool;
-    }
     match /kitchens/KITCHEN_PIN/guides/{id} {
+      // A picture the book made itself (a data URL), not a link to somewhere else.
+      function picture(s) { return s is string && (s.size() == 0 || s.matches('data:image/(png|jpeg|webp);base64,.*')); }
+      // How-to guides (#/guides). Everyone with the kitchen PIN reads them; only the head chef (Google account) writes them.
+      // Each PDF page or photo is one picture in guides/<id>/pages/<n> (a Firestore record holds at most 1 MB).
+      // "v" goes up when the file is replaced. Guides are never deleted, only flagged as removed. Page pictures may be
+      // replaced or deleted by the head chef (a new file with fewer pages deletes the pages it no longer needs).
+      function guideOk() {
+        return request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 80
+          && request.resource.data.cat in ['equipment', 'cleaning', 'safety', 'prep', 'stock', 'shift', 'other']
+          && request.resource.data.get('sum', '') is string && request.resource.data.get('sum', '').size() <= 200
+          && request.resource.data.get('steps', '') is string && request.resource.data.get('steps', '').size() <= 3000
+          && request.resource.data.get('kw', '') is string && request.resource.data.get('kw', '').size() <= 200
+          && request.resource.data.get('text', '') is string && request.resource.data.get('text', '').size() <= 8000
+          && picture(request.resource.data.get('thumb', '')) && request.resource.data.get('thumb', '').size() <= 60000
+          && request.resource.data.get('file', '') is string && request.resource.data.get('file', '').size() <= 120
+          && request.resource.data.pages is int && request.resource.data.pages >= 0 && request.resource.data.pages <= 20
+          && request.resource.data.get('dims', []) is list && request.resource.data.get('dims', []).size() <= 20
+          && request.resource.data.v is int && request.resource.data.v >= 1
+          && request.resource.data.get('removed', false) is bool;
+      }
       allow read: if kitchenRead();
       allow create, update: if isAdmin() && guideOk();
       allow delete: if false;
@@ -968,25 +977,6 @@ service cloud.firestore {
     function bookBy() { return (isAdmin() && request.resource.data.get('by', '') in ['', cfg().get('headId', '')]) || recipeWrite(); }
     function bookIndex() { return getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/book/index).data; }
     function nextVersion() { return request.resource.data.v is int && request.resource.data.v == (resource == null ? 1 : resource.data.v + 1); }
-    function recipeOk(id) {
-      let d = request.resource.data;
-      let r = d.r;
-      return id.matches('[a-z0-9][a-z0-9-]{0,47}')
-        && d.keys().hasOnly(['r', 'v', 'upd', 'by', 'src', 'base', 'removed', 'off'])
-        && d.v is int && d.v >= 1 && d.upd is int
-        && d.get('src', 'book') in ['book', 'new'] && d.get('base', '') is string && d.get('base', '').size() <= 16
-        && d.get('removed', false) is bool && d.get('off', false) is bool
-        && r is map && r.id == id
-        && r.keys().hasOnly(['id', 'no', 'kind', 'forLine', 'name', 'short', 'avc', 'menu', 'yield', 'art', 'side', 'diagram', 'ingredients', 'pins', 'sections', 'contains', 'check', 'labelNote', 'tip', 'safety', 'done', 'aka'])
-        && r.name is string && r.name.size() > 0 && r.name.size() <= 80
-        && r.kind in ['main', 'snack', 'side', 'dessert', 'batch', 'component']
-        && r.get('no', '') is string && r.get('no', '').size() <= 8
-        && r.get('yield', '') is string && r.get('yield', '').size() <= 300
-        && r.get('menu', '') is string && r.get('menu', '').size() <= 400
-        && r.get('ingredients', []) is list && r.get('ingredients', []).size() <= 100
-        && r.get('pins', []) is list && r.get('pins', []).size() <= 60
-        && r.get('sections', []) is list && r.get('sections', []).size() <= 30;
-    }
     match /kitchens/KITCHEN_PIN/book/index {
       allow read: if true;
       allow create, update: if (isAdmin() || recipeWrite())
@@ -1007,6 +997,25 @@ service cloud.firestore {
       allow delete: if false;
     }
     match /kitchens/KITCHEN_PIN/recipes/{id} {
+      function recipeOk(id) {
+        let d = request.resource.data;
+        let r = d.r;
+        return id.matches('[a-z0-9][a-z0-9-]{0,47}')
+          && d.keys().hasOnly(['r', 'v', 'upd', 'by', 'src', 'base', 'removed', 'off'])
+          && d.v is int && d.v >= 1 && d.upd is int
+          && d.get('src', 'book') in ['book', 'new'] && d.get('base', '') is string && d.get('base', '').size() <= 16
+          && d.get('removed', false) is bool && d.get('off', false) is bool
+          && r is map && r.id == id
+          && r.keys().hasOnly(['id', 'no', 'kind', 'forLine', 'name', 'short', 'avc', 'menu', 'yield', 'art', 'side', 'diagram', 'ingredients', 'pins', 'sections', 'contains', 'check', 'labelNote', 'tip', 'safety', 'done', 'aka'])
+          && r.name is string && r.name.size() > 0 && r.name.size() <= 80
+          && r.kind in ['main', 'snack', 'side', 'dessert', 'batch', 'component']
+          && r.get('no', '') is string && r.get('no', '').size() <= 8
+          && r.get('yield', '') is string && r.get('yield', '').size() <= 300
+          && r.get('menu', '') is string && r.get('menu', '').size() <= 400
+          && r.get('ingredients', []) is list && r.get('ingredients', []).size() <= 100
+          && r.get('pins', []) is list && r.get('pins', []).size() <= 60
+          && r.get('sections', []) is list && r.get('sections', []).size() <= 30;
+      }
       allow read: if true;
       // the head chef's Google account may also copy a recipe as it is (move to a new kitchen PIN)
       allow create: if recipeOk(id) && bookBy() && (isAdmin() || (nextVersion() && bookIndex().get('r', {}).get(id, 0) == request.resource.data.v));
@@ -1019,31 +1028,31 @@ service cloud.firestore {
         allow update, delete: if false;
       }
     }
-    // The head chef's drawings (Manage Recipes & Drawings, 21 Oct 2026): what the editor needs to open a drawing again
-    // (servingware, elements, a copy of each library piece used) and the flat SVG the book shows. Same lock and versions
-    // as the recipes: book/index d says each drawing's version in the same batch. Never deleted; earlier versions kept.
-    function drawingOk(id) {
-      let d = request.resource.data;
-      return id.matches('[a-z0-9][a-z0-9-]{0,63}')
-        && d.keys().hasOnly(['rid', 'slot', 'name', 'vb', 'k', 'surf', 'els', 'layout', 'defs', 'svgS', 'svgF', 'alt', 'title', 'from', 'v', 'upd', 'by', 'removed'])
-        && d.v is int && d.v >= 1 && d.upd is int
-        && d.slot in ['plate', 'pan', 'side', 'build']
-        && d.get('rid', '') is string && d.get('rid', '').size() <= 48
-        && d.get('name', '') is string && d.get('name', '').size() <= 80
-        && d.vb is string && d.vb.size() <= 60
-        && d.get('k', 1) is number
-        && d.get('surf', {}) is map
-        && d.get('els', []) is list && d.get('els', []).size() <= 600
-        && d.get('layout', {}) is map
-        && d.get('defs', '') is string && d.get('defs', '').size() <= 300000
-        && d.svgS is string && d.svgS.size() <= 200000
-        && d.svgF is string && d.svgF.size() <= 300000
-        && d.get('alt', '') is string && d.get('alt', '').size() <= 600
-        && d.get('title', '') is string && d.get('title', '').size() <= 60
-        && d.get('from', '') is string && d.get('from', '').size() <= 80
-        && d.get('removed', false) is bool;
-    }
     match /kitchens/KITCHEN_PIN/drawings/{id} {
+      // The head chef's drawings (Manage Recipes & Drawings, 21 Oct 2026): what the editor needs to open a drawing again
+      // (servingware, elements, a copy of each library piece used) and the flat SVG the book shows. Same lock and versions
+      // as the recipes: book/index d says each drawing's version in the same batch. Never deleted; earlier versions kept.
+      function drawingOk(id) {
+        let d = request.resource.data;
+        return id.matches('[a-z0-9][a-z0-9-]{0,63}')
+          && d.keys().hasOnly(['rid', 'slot', 'name', 'vb', 'k', 'surf', 'els', 'layout', 'defs', 'svgS', 'svgF', 'alt', 'title', 'from', 'v', 'upd', 'by', 'removed'])
+          && d.v is int && d.v >= 1 && d.upd is int
+          && d.slot in ['plate', 'pan', 'side', 'build']
+          && d.get('rid', '') is string && d.get('rid', '').size() <= 48
+          && d.get('name', '') is string && d.get('name', '').size() <= 80
+          && d.vb is string && d.vb.size() <= 60
+          && d.get('k', 1) is number
+          && d.get('surf', {}) is map
+          && d.get('els', []) is list && d.get('els', []).size() <= 600
+          && d.get('layout', {}) is map
+          && d.get('defs', '') is string && d.get('defs', '').size() <= 300000
+          && d.svgS is string && d.svgS.size() <= 200000
+          && d.svgF is string && d.svgF.size() <= 300000
+          && d.get('alt', '') is string && d.get('alt', '').size() <= 600
+          && d.get('title', '') is string && d.get('title', '').size() <= 60
+          && d.get('from', '') is string && d.get('from', '').size() <= 80
+          && d.get('removed', false) is bool;
+      }
       allow read: if true;
       // the head chef's Google account may also copy a drawing as it is (move to a new kitchen PIN)
       allow create: if drawingOk(id) && bookBy() && (isAdmin() || (nextVersion() && bookIndex().get('d', {}).get(id, 0) == request.resource.data.v));
@@ -1056,44 +1065,44 @@ service cloud.firestore {
         allow update, delete: if false;
       }
     }
-    // Reuse (21 Oct 2026): the head chef's plating templates (drawtpl) and own library pieces and servingware (drawlib).
-    // Read by the drawing editor only. Only the head chef writes them; each change is the next version; never deleted
-    // (removed hides one). The head chef's Google account may also copy one as it is (move to a new kitchen PIN).
-    function tplOk(id) {
-      let d = request.resource.data;
-      return id.matches('[a-z0-9][a-z0-9-]{0,63}')
-        && d.keys().hasOnly(['name', 'slot', 'surf', 'els', 'defs', 'vb', 'svgS', 'svgF', 'v', 'upd', 'by', 'removed'])
-        && d.v is int && d.v >= 1 && d.upd is int
-        && d.name is string && d.name.size() > 0 && d.name.size() <= 80
-        && d.slot in ['plate', 'pan', 'side', 'build']
-        && d.get('surf', {}) is map
-        && d.els is list && d.els.size() <= 600
-        && d.get('defs', '') is string && d.get('defs', '').size() <= 300000
-        && d.get('vb', '') is string && d.get('vb', '').size() <= 60
-        && d.get('svgS', '') is string && d.get('svgS', '').size() <= 200000
-        && d.get('svgF', '') is string && d.get('svgF', '').size() <= 300000
-        && d.get('removed', false) is bool;
-    }
-    function libOk(id) {
-      let d = request.resource.data;
-      return id.matches('[a-z0-9][a-z0-9-]{0,63}')
-        && d.keys().hasOnly(['type', 'name', 'cat', 'kw', 'role', 'form', 'g', 'n', 'w', 'h', 'body', 'side', 'p', 'v', 'upd', 'by', 'removed'])
-        && d.v is int && d.v >= 1 && d.upd is int
-        && d.type in ['item', 'surf']
-        && d.name is string && d.name.size() > 0 && d.name.size() <= 60
-        && d.get('kw', '') is string && d.get('kw', '').size() <= 300
-        && d.get('body', '') is string && d.get('body', '').size() <= 100000
-        && d.get('side', {}) is map && d.get('p', {}) is map
-        && (d.type == 'surf' || (d.body.size() > 0 && d.w is number && d.h is number && d.w > 0 && d.h > 0))
-        && d.get('removed', false) is bool;
-    }
     match /kitchens/KITCHEN_PIN/drawtpl/{id} {
+      // Reuse (21 Oct 2026): the head chef's plating templates (drawtpl) and own library pieces and servingware (drawlib).
+      // Read by the drawing editor only. Only the head chef writes them; each change is the next version; never deleted
+      // (removed hides one). The head chef's Google account may also copy one as it is (move to a new kitchen PIN).
+      function tplOk(id) {
+        let d = request.resource.data;
+        return id.matches('[a-z0-9][a-z0-9-]{0,63}')
+          && d.keys().hasOnly(['name', 'slot', 'surf', 'els', 'defs', 'vb', 'svgS', 'svgF', 'v', 'upd', 'by', 'removed'])
+          && d.v is int && d.v >= 1 && d.upd is int
+          && d.name is string && d.name.size() > 0 && d.name.size() <= 80
+          && d.slot in ['plate', 'pan', 'side', 'build']
+          && d.get('surf', {}) is map
+          && d.els is list && d.els.size() <= 600
+          && d.get('defs', '') is string && d.get('defs', '').size() <= 300000
+          && d.get('vb', '') is string && d.get('vb', '').size() <= 60
+          && d.get('svgS', '') is string && d.get('svgS', '').size() <= 200000
+          && d.get('svgF', '') is string && d.get('svgF', '').size() <= 300000
+          && d.get('removed', false) is bool;
+      }
       allow read: if true;
       allow create: if tplOk(id) && bookBy() && (isAdmin() || nextVersion());
       allow update: if tplOk(id) && bookBy() && nextVersion();
       allow delete: if false;
     }
     match /kitchens/KITCHEN_PIN/drawlib/{id} {
+      function libOk(id) {
+        let d = request.resource.data;
+        return id.matches('[a-z0-9][a-z0-9-]{0,63}')
+          && d.keys().hasOnly(['type', 'name', 'cat', 'kw', 'role', 'form', 'g', 'n', 'w', 'h', 'body', 'side', 'p', 'v', 'upd', 'by', 'removed'])
+          && d.v is int && d.v >= 1 && d.upd is int
+          && d.type in ['item', 'surf']
+          && d.name is string && d.name.size() > 0 && d.name.size() <= 60
+          && d.get('kw', '') is string && d.get('kw', '').size() <= 300
+          && d.get('body', '') is string && d.get('body', '').size() <= 100000
+          && d.get('side', {}) is map && d.get('p', {}) is map
+          && (d.type == 'surf' || (d.body.size() > 0 && d.w is number && d.h is number && d.w > 0 && d.h > 0))
+          && d.get('removed', false) is bool;
+      }
       allow read: if true;
       allow create: if libOk(id) && bookBy() && (isAdmin() || nextVersion());
       allow update: if libOk(id) && bookBy() && nextVersion();
@@ -1108,83 +1117,83 @@ service cloud.firestore {
     // A confirmed function must add up: every platter line's rounds sum to its booked number, rounds in time order.
     // Rules cannot loop, so the checks are written out for up to 8 platter lines and 8 rounds.
     function fnBy() { return isAdmin() || (session() && request.resource.data.by in cfg().get('fnIds', [])); }
-    // Chefs can cancel a saved booking without permission to edit its food, time or contact. Undo is their own
-    // most recent cancellation, for two minutes, restoring status and ordering from the immutable history.
-    function fnStatusBy() { return isAdmin() || (session() && (chefId(request.resource.data.by) || request.resource.data.by in cfg().get('fnIds', []))); }
-    function fnCancelChange(was, d) {
-      return was.status == 'confirmed' && d.status == 'cancelled'
-        && d.diff(was).affectedKeys().hasOnly(['status', 'v', 'upd', 'by', 'canBy', 'canAt', 'od', 'chg'])
-        && d.canBy == d.by && d.canAt == d.upd && d.od == ''
-        && d.canAt >= request.time.toMillis() - 60000 && d.canAt <= request.time.toMillis() + 15000;
-    }
-    function fnUndoChange(id, was, d) {
-      let old = get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/functions/$(id)/hist/$(string(was.v - 1))).data.was;
-      return was.status == 'cancelled' && d.status == 'confirmed'
-        && was.canBy == d.by && was.upd == was.canAt && request.time.toMillis() - was.canAt < 120000
-        && d.diff(was).affectedKeys().hasOnly(['status', 'v', 'upd', 'by', 'od', 'kq', 'chg'])
-        && old.status == 'confirmed' && d.kq == old.kq && d.od == old.get('od', '') && fnConfirmed(d);
-    }
-    function fnStatusChange(id, was, d) {
-      return d.upd is int && d.chg is list && d.chg.size() <= 8
-        && (was.status == 'confirmed' && d.status == 'cancelled' ? fnCancelChange(was, d)
-          : was.status == 'cancelled' && d.status == 'confirmed' ? fnUndoChange(id, was, d) : false);
-    }
-    function fnStatusAudit(id, was, d) {
-      let hist = getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/functions/$(id)/hist/$(string(was.v))).data;
-      return hist.was == was && hist.by == d.by && hist.at == d.upd;
-    }
-    function fnStatusHistory(id, v) {
-      let was = get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/functions/$(id)).data;
-      let next = getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/functions/$(id)).data;
-      // The next function must pass its own update rule in this same batch. Do not re-run all booking checks here:
-      // Firestore caps a save at 1000 expressions, including its history copy.
-      return was.v == int(v) && next.v == was.v + 1 && next.status != was.status
-        && request.resource.data.was == was && request.resource.data.at == next.upd && request.resource.data.by == next.by;
-    }
-    // A platter line: what was booked (qty, whole platters) and which round each platter goes out in (u, one round number
-    // per platter, 0 for the first round). So 5 platters over 3 rounds as 2, 2 and 1 is u [0, 0, 1, 1, 2]. A confirmed line
-    // has exactly as many entries as platters booked, and every entry is a round that exists: the rounds add up to the
-    // booking, with no half or minus platters, by construction. Rules cannot loop, so the 6 lines are written out.
-    // Up to 12 platter lines (22 Oct 2026). A line that is there has exactly as many entries as platters booked, and
-    // every entry is a round that exists. The page keeps the rounds in time order; the rules check the first and last.
-    function fnAdd(l, n) { return l.u.size() == l.qty && l.qty >= 1; }
-    // a confirmed function: a name, date, start and guests (or guests ticked Not known yet, gu; the start may be TBC, st), at least one platter line, one round for all at once or two
-    // or more for staggered, first and last the same as the rounds say (the page keeps the rounds in time order)
-    function fnConfirmed(d) {
-      let lines = d.lines;
-      let rounds = d.rounds;
-      let count = lines.size();
-      let n = rounds.size();
-      return d.name.size() > 0 && d.date.size() == 10 && (d.start > 0 || d.get('st', false) == true) && (d.guests >= 1 || d.get('gu', false) == true)
-        && count >= 1 && n >= 1 && (d.mode == 'all' ? n == 1 : n >= 2)
-        && fnAdd(lines[0], n) && (count < 2 || fnAdd(lines[1], n)) && (count < 3 || fnAdd(lines[2], n)) && (count < 4 || fnAdd(lines[3], n))
-        && (count < 5 || fnAdd(lines[4], n)) && (count < 6 || fnAdd(lines[5], n)) && (count < 7 || fnAdd(lines[6], n)) && (count < 8 || fnAdd(lines[7], n))
-        && (count < 9 || fnAdd(lines[8], n)) && (count < 10 || fnAdd(lines[9], n)) && (count < 11 || fnAdd(lines[10], n)) && (count < 12 || fnAdd(lines[11], n))
-        && rounds[0].at is int && d.first == rounds[0].at && d.last == rounds[n - 1].at && d.first <= d.last && d.until > d.last;
-    }
-    function fnOk(id) { return fnCheck(id, request.resource.data, resource == null ? {} : resource.data); }
-    // (the version is checked by nextVersion; a field's size() also refuses a number in place of text)
-    function fnCheck(id, d, was) {
-      return id.matches('[a-z0-9][a-z0-9-]{0,47}')
-        && d.keys().hasOnly(['v', 'status', 'name', 'date', 'start', 'st', 'loc', 'guests', 'gu', 'mode', 'lines', 'rounds', 'notes', 'kc', 'kcBy', 'kcAt', 'od',
-          'first', 'last', 'from', 'until', 'kq', 'was', 'chg', 'cBy', 'cAt', 'confBy', 'confAt', 'canBy', 'canAt', 'by', 'upd', 'removed', 'effects'])
-        && (!('effects' in was) || 'effects' in d)
-        && (!('effects' in d) || (d.effects is map && d.effects.keys().hasOnly(['prep', 'order', 'cancel', 'restore'])
-          && d.effects.prep is map && d.effects.prep.size() <= 12 && d.effects.order is map && d.effects.cancel is map && d.effects.restore is map))
-        && d.get('removed', false) is bool && (d.get('removed', false) == false || (d.status == 'cancelled' && d.kq == 0))
-        && d.upd is int && d.status in ['draft', 'confirmed', 'cancelled']
-        && d.name.size() <= 80 && (d.date.size() == 0 || d.date.size() == 10)
-        && d.start is int && d.guests is int && d.guests >= 0 && d.guests <= 2000 && d.get('gu', false) is bool && d.get('st', false) is bool && d.get('od', '').size() <= 10
-        && d.mode in ['all', 'stag']
-        && d.loc.size() <= 60 && d.notes.size() <= 1000 && d.kc.size() <= 2000
-        // the kitchen comment's author is whoever changed it, never someone else's name
-        && (d.kc == was.get('kc', '') || d.kcBy == d.get('by', ''))
-        && d.chg is list && d.chg.size() <= 8 && d.was is map
-        && d.until is int && d.kq is int
-        && d.lines is list && d.lines.size() <= 12 && d.rounds is list && d.rounds.size() <= 8
-        && (d.status != 'confirmed' || fnConfirmed(d));
-    }
     match /kitchens/KITCHEN_PIN/functions/{id} {
+      // Chefs can cancel a saved booking without permission to edit its food, time or contact. Undo is their own
+      // most recent cancellation, for two minutes, restoring status and ordering from the immutable history.
+      function fnStatusBy() { return isAdmin() || (session() && (chefId(request.resource.data.by) || request.resource.data.by in cfg().get('fnIds', []))); }
+      function fnCancelChange(was, d) {
+        return was.status == 'confirmed' && d.status == 'cancelled'
+          && d.diff(was).affectedKeys().hasOnly(['status', 'v', 'upd', 'by', 'canBy', 'canAt', 'od', 'chg'])
+          && d.canBy == d.by && d.canAt == d.upd && d.od == ''
+          && d.canAt >= request.time.toMillis() - 60000 && d.canAt <= request.time.toMillis() + 15000;
+      }
+      function fnUndoChange(id, was, d) {
+        let old = get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/functions/$(id)/hist/$(string(was.v - 1))).data.was;
+        return was.status == 'cancelled' && d.status == 'confirmed'
+          && was.canBy == d.by && was.upd == was.canAt && request.time.toMillis() - was.canAt < 120000
+          && d.diff(was).affectedKeys().hasOnly(['status', 'v', 'upd', 'by', 'od', 'kq', 'chg'])
+          && old.status == 'confirmed' && d.kq == old.kq && d.od == old.get('od', '') && fnConfirmed(d);
+      }
+      function fnStatusChange(id, was, d) {
+        return d.upd is int && d.chg is list && d.chg.size() <= 8
+          && (was.status == 'confirmed' && d.status == 'cancelled' ? fnCancelChange(was, d)
+            : was.status == 'cancelled' && d.status == 'confirmed' ? fnUndoChange(id, was, d) : false);
+      }
+      function fnStatusAudit(id, was, d) {
+        let hist = getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/functions/$(id)/hist/$(string(was.v))).data;
+        return hist.was == was && hist.by == d.by && hist.at == d.upd;
+      }
+      function fnStatusHistory(id, v) {
+        let was = get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/functions/$(id)).data;
+        let next = getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/functions/$(id)).data;
+        // The next function must pass its own update rule in this same batch. Do not re-run all booking checks here:
+        // Firestore caps a save at 1000 expressions, including its history copy.
+        return was.v == int(v) && next.v == was.v + 1 && next.status != was.status
+          && request.resource.data.was == was && request.resource.data.at == next.upd && request.resource.data.by == next.by;
+      }
+      // A platter line: what was booked (qty, whole platters) and which round each platter goes out in (u, one round number
+      // per platter, 0 for the first round). So 5 platters over 3 rounds as 2, 2 and 1 is u [0, 0, 1, 1, 2]. A confirmed line
+      // has exactly as many entries as platters booked, and every entry is a round that exists: the rounds add up to the
+      // booking, with no half or minus platters, by construction. Rules cannot loop, so the 6 lines are written out.
+      // Up to 12 platter lines (22 Oct 2026). A line that is there has exactly as many entries as platters booked, and
+      // every entry is a round that exists. The page keeps the rounds in time order; the rules check the first and last.
+      function fnAdd(l) { return l.u.size() == l.qty && l.qty >= 1; }
+      // a confirmed function: a name, date, start and guests (or guests ticked Not known yet, gu; the start may be TBC, st), at least one platter line, one round for all at once or two
+      // or more for staggered, first and last the same as the rounds say (the page keeps the rounds in time order)
+      function fnConfirmed(d) {
+        let lines = d.lines;
+        let rounds = d.rounds;
+        let count = lines.size();
+        let n = rounds.size();
+        return d.name.size() > 0 && d.date.size() == 10 && (d.start > 0 || d.get('st', false) == true) && (d.guests >= 1 || d.get('gu', false) == true)
+          && count >= 1 && n >= 1 && (d.mode == 'all' ? n == 1 : n >= 2)
+          && fnAdd(lines[0]) && (count < 2 || fnAdd(lines[1])) && (count < 3 || fnAdd(lines[2])) && (count < 4 || fnAdd(lines[3]))
+          && (count < 5 || fnAdd(lines[4])) && (count < 6 || fnAdd(lines[5])) && (count < 7 || fnAdd(lines[6])) && (count < 8 || fnAdd(lines[7]))
+          && (count < 9 || fnAdd(lines[8])) && (count < 10 || fnAdd(lines[9])) && (count < 11 || fnAdd(lines[10])) && (count < 12 || fnAdd(lines[11]))
+          && rounds[0].at is int && d.first == rounds[0].at && d.last == rounds[n - 1].at && d.first <= d.last && d.until > d.last;
+      }
+      function fnOk(id) { return fnCheck(id, request.resource.data, resource == null ? {} : resource.data); }
+      // (the version is checked by nextVersion; a field's size() also refuses a number in place of text)
+      function fnCheck(id, d, was) {
+        return id.matches('[a-z0-9][a-z0-9-]{0,47}')
+          && d.keys().hasOnly(['v', 'status', 'name', 'date', 'start', 'st', 'loc', 'guests', 'gu', 'mode', 'lines', 'rounds', 'notes', 'kc', 'kcBy', 'kcAt', 'od',
+            'first', 'last', 'from', 'until', 'kq', 'was', 'chg', 'cBy', 'cAt', 'confBy', 'confAt', 'canBy', 'canAt', 'by', 'upd', 'removed', 'effects'])
+          && (!('effects' in was) || 'effects' in d)
+          && (!('effects' in d) || (d.effects is map && d.effects.keys().hasOnly(['prep', 'order', 'cancel', 'restore'])
+            && d.effects.prep is map && d.effects.prep.size() <= 12 && d.effects.order is map && d.effects.cancel is map && d.effects.restore is map))
+          && d.get('removed', false) is bool && (d.get('removed', false) == false || (d.status == 'cancelled' && d.kq == 0))
+          && d.upd is int && d.status in ['draft', 'confirmed', 'cancelled']
+          && d.name.size() <= 80 && (d.date.size() == 0 || d.date.size() == 10)
+          && d.start is int && d.guests is int && d.guests >= 0 && d.guests <= 2000 && d.get('gu', false) is bool && d.get('st', false) is bool && d.get('od', '').size() <= 10
+          && d.mode in ['all', 'stag']
+          && d.loc.size() <= 60 && d.notes.size() <= 1000 && d.kc.size() <= 2000
+          // the kitchen comment's author is whoever changed it, never someone else's name
+          && (d.kc == was.get('kc', '') || d.kcBy == d.get('by', ''))
+          && d.chg is list && d.chg.size() <= 8 && d.was is map
+          && d.until is int && d.kq is int
+          && d.lines is list && d.lines.size() <= 12 && d.rounds is list && d.rounds.size() <= 8
+          && (d.status != 'confirmed' || fnConfirmed(d));
+      }
       allow read: if functionRead();
       // the head chef's Google account may also copy one as it is (move to a new kitchen PIN)
       allow create: if resource == null && (request.resource.data.v == 1 || isAdmin())
@@ -1215,42 +1224,74 @@ service cloud.firestore {
         && request.resource.data.upd is int;
       allow delete: if false;
     }
-    // Functions: a round ticked as sent in the kitchen (22 Oct 2026). One record per round, fnsent/<function id>_<round time>.
-    // Anyone signed in with their own PIN ticks a round, as themselves. Taking a tick back (a mis-tap) is for the person who
-    // ticked it within 2 minutes, a sous chef or the head chef, like a prep line. A tick is never deleted.
-    function sentOk(sid) {
-      let d = request.resource.data;
-      return d.keys().hasOnly(['fid', 'at', 'day', 'sent', 'sentAt', 'sentBy', 'by'])
-        && d.fid is string && d.fid.size() > 0 && d.fid.size() <= 64 && d.at is int && sid == d.fid + '_' + string(d.at)
-        && d.day is string && d.day.size() == 10 && d.sent is bool && d.sentAt is int && d.sentBy is string;
-    }
     match /kitchens/KITCHEN_PIN/fnsent/{sid} {
+      // Functions: a round ticked as sent in the kitchen (22 Oct 2026). One record per round, fnsent/<function id>_<round time>.
+      // Anyone signed in with their own PIN ticks a round, as themselves. Taking a tick back (a mis-tap) is for the person who
+      // ticked it within 2 minutes, a sous chef or the head chef, like a prep line. A tick is never deleted.
+      function sentOk(sid) {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['fid', 'at', 'day', 'sent', 'sentAt', 'sentBy', 'by'])
+          && d.fid is string && d.fid.size() > 0 && d.fid.size() <= 64 && d.at is int && sid == d.fid + '_' + string(d.at)
+          && d.day is string && d.day.size() == 10 && d.sent is bool && d.sentAt is int && d.sentBy is string;
+      }
+      // Functions: a trip of platters sent from the pass (14 Nov 2026, docs/function-handover-options/brief.md). One record
+      // per trip, fnsent/<function id>_<round time>_t<trip number>, in the same collection as the round's Sent tick, so the
+      // same listener carries it. n is how many of each platter (by recipe id) went in the trip. A kitchen writer (never
+      // Functions-only staff) sends a trip as themselves, once: an exact repeat (a retry) changes nothing, and a second
+      // phone sending the same trip number is refused. After that only its Out (Functions confirms it, never the sender;
+      // or a head or sous chef, for Functions, 10 minutes after it was sent) or its Undo (void: the sender within 2
+      // minutes, or a head or sous chef; only before Out). The last trip of a round also ticks the round's own Sent record
+      // above, in the same batch, so older phones see the round as sent. Never deleted.
+      function tripOk(sid) {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['fid', 'at', 'day', 'k', 'n', 'sentAt', 'sentBy', 'by'])
+          && d.fid is string && d.fid.size() > 0 && d.fid.size() <= 64 && d.at is int && d.k is int && d.k > 0 && d.k < 100
+          && sid == d.fid + '_' + string(d.at) + '_t' + string(d.k)
+          && d.day is string && d.day.size() == 10 && d.n is map && d.n.size() > 0 && d.n.size() <= 12
+          && d.sentAt is int && d.sentAt <= request.time.toMillis() + 300000 && d.sentBy is string && d.sentBy == d.get('by', '');
+      }
+      function tripOut(was, d) {
+        return d.diff(was).affectedKeys().hasOnly(['outAt', 'outBy', 'outFor', 'by']) && !('outAt' in was) && !was.get('void', false)
+          && d.outAt is int && d.outAt <= request.time.toMillis() + 300000 && d.outBy is string && d.outBy == d.get('by', '') && d.outFor is bool
+          && ((d.outFor == false && session() && d.by != was.sentBy && (d.by in cfg().get('fnIds', []) || d.by in cfg().get('fnOnlyIds', [])))
+            || (d.outFor == true && lead() && request.time.toMillis() - was.sentAt >= 600000));
+      }
+      function tripVoid(was, d) {
+        return d.diff(was).affectedKeys().hasOnly(['void', 'voidAt', 'voidBy', 'by']) && !('outAt' in was) && !was.get('void', false)
+          && d.void == true && d.voidAt is int && d.voidBy is string && d.voidBy == d.get('by', '')
+          && (lead() || (staff() && was.sentBy == d.by && request.time.toMillis() - was.sentAt < 120000));
+      }
       allow read: if functionRead();
-      allow create: if (writer() || fnBy()) && sentOk(sid) && request.resource.data.sent == true && request.resource.data.sentBy == request.resource.data.get('by', '');
-      allow update: if (writer() || fnBy()) && sentOk(sid) && (
+      allow create: if ((writer() || fnBy()) && sentOk(sid) && request.resource.data.sent == true && request.resource.data.sentBy == request.resource.data.get('by', ''))
+        || (writer() && tripOk(sid));
+      allow update: if ((writer() || fnBy()) && sentOk(sid) && (
         (request.resource.data.sent == true && resource.data.sent == false && request.resource.data.sentBy == request.resource.data.get('by', ''))
         || (request.resource.data.sent == false && resource.data.sent == true && request.resource.data.sentBy == resource.data.sentBy
-          && (lead() || (resource.data.sentBy == request.resource.data.get('by', '') && request.time.toMillis() - resource.data.sentAt < 120000))));
+          && (lead() || (resource.data.sentBy == request.resource.data.get('by', '') && request.time.toMillis() - resource.data.sentAt < 120000)))))
+        || ('k' in resource.data && (
+          (writer() && request.resource.data == resource.data)
+          || tripOut(resource.data, request.resource.data)
+          || tripVoid(resource.data, request.resource.data)));
       allow delete: if false;
     }
-    // Functions: who said Got it to a function on Home (10 Nov 2026, docs/function-ahead-options/brief.md, step 4).
-    // One record per person, function, card (week, tom or off) and what the kitchen needed then (g, kitchenSig()):
-    // fnseen/<function id>_<staff id>_<s>_<g>. Written by that person on their own PIN session; a later Got it to the
-    // same card and version (after a cancel and restore, or an edit and its undo) moves only its time (at, day) forward.
-    // Never deleted. The verified admin may copy one as it is (a kitchen PIN move); an exact retry changes nothing.
-    // Read by the head chef, the sous chefs (own PIN) and the verified admin: one query by fid, when a chef asks.
-    function fnSeenOk(sid) {
-      let d = request.resource.data;
-      return d.keys().hasOnly(['fid', 'g', 's', 'day', 'at', 'by'])
-        && d.fid is string && d.fid.matches('[a-z0-9][a-z0-9-]{0,63}')
-        && d.g is string && d.g.matches('[0-9a-z]{1,24}')
-        && d.s in ['week', 'tom', 'off']
-        && d.day is string && d.day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
-        && d.at is int && d.at > 0 && d.at <= request.time.toMillis() + 300000
-        && d.by is string && d.by.size() > 0 && d.by.size() <= 80
-        && sid == d.fid + '_' + d.by + '_' + d.s + '_' + d.g;
-    }
     match /kitchens/KITCHEN_PIN/fnseen/{sid} {
+      // Functions: who said Got it to a function on Home (10 Nov 2026, docs/function-ahead-options/brief.md, step 4).
+      // One record per person, function, card (week, tom or off) and what the kitchen needed then (g, kitchenSig()):
+      // fnseen/<function id>_<staff id>_<s>_<g>. Written by that person on their own PIN session; a later Got it to the
+      // same card and version (after a cancel and restore, or an edit and its undo) moves only its time (at, day) forward.
+      // Never deleted. The verified admin may copy one as it is (a kitchen PIN move); an exact retry changes nothing.
+      // Read by the head chef, the sous chefs (own PIN) and the verified admin: one query by fid, when a chef asks.
+      function fnSeenOk(sid) {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['fid', 'g', 's', 'day', 'at', 'by'])
+          && d.fid is string && d.fid.matches('[a-z0-9][a-z0-9-]{0,63}')
+          && d.g is string && d.g.matches('[0-9a-z]{1,24}')
+          && d.s in ['week', 'tom', 'off']
+          && d.day is string && d.day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+          && d.at is int && d.at > 0 && d.at <= request.time.toMillis() + 300000
+          && d.by is string && d.by.size() > 0 && d.by.size() <= 80
+          && sid == d.fid + '_' + d.by + '_' + d.s + '_' + d.g;
+      }
       allow read: if isAdmin() || (kitchenRead() && chefId(reader()));
       allow create: if (isAdmin() || staff()) && fnSeenOk(sid);
       allow update: if ((isAdmin() || staff()) && request.resource.data == resource.data)
@@ -1267,23 +1308,23 @@ service cloud.firestore {
         && sid == request.resource.data.day + '_' + request.resource.data.by;
       allow update, delete: if false;
     }
-    // Kitchen mail: a person writes to the head chef from their name chip (#/mail). Only the head chef reads it (and the
-    // sous chefs, while switched on: sousMail below).
-    // "from" is the sender, kept from the first save ("by" changes when the head chef ticks one on a phone where a person
-    // is signed in). The head chef ticks it done, marks it seen and may change how soon it matters. Never deleted.
-    function mailOk() {
-      return request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 600
-        && request.resource.data.cat in ['equipment', 'stock', 'safety', 'recipe', 'roster', 'idea', 'other']
-        && request.resource.data.pri in ['today', 'week', 'any']
-        && request.resource.data.seen is bool && request.resource.data.done is bool;
-    }
     // Sous chefs may read and tick off kitchen mail while the head chef has it switched on (config/main sousMail, off
     // until then; only the head chef's Google account writes it, 23 Oct 2026). Read: this phone's PIN session is a sous
     // chef's. Write: the writer is a sous chef with a session on this phone.
     function sousMail() { return cfg().get('sousMail', false) == true; }
-    function sousMailRead() { return sousMail() && sessOk(reader()) && reader() in cfg().get('sousIds', []); }
     function sousMailBy() { return sousMail() && staff() && sousBy(); }
     match /kitchens/KITCHEN_PIN/mail/{id} {
+      // Kitchen mail: a person writes to the head chef from their name chip (#/mail). Only the head chef reads it (and the
+      // sous chefs, while switched on: sousMail below).
+      // "from" is the sender, kept from the first save ("by" changes when the head chef ticks one on a phone where a person
+      // is signed in). The head chef ticks it done, marks it seen and may change how soon it matters. Never deleted.
+      function mailOk() {
+        return request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 600
+          && request.resource.data.cat in ['equipment', 'stock', 'safety', 'recipe', 'roster', 'idea', 'other']
+          && request.resource.data.pri in ['today', 'week', 'any']
+          && request.resource.data.seen is bool && request.resource.data.done is bool;
+      }
+      function sousMailRead() { return sousMail() && sessOk(reader()) && reader() in cfg().get('sousIds', []); }
       allow read: if isAdmin() || sousMailRead();
       // The head chef may also create one when moving everything to a new kitchen PIN (an exact copy of the old record).
       allow create: if isAdmin() || (staff() && mailOk()
@@ -1319,98 +1360,98 @@ service cloud.firestore {
     // the last 30 days. from (who wrote it) and at never change; a tick names the chef who ticked (doneBy == by).
     // Nothing is deleted. The head chef's Google account may also copy one as it is (the move to a new kitchen PIN).
     function chefId(id) { return id is string && id != '' && (id in cfg().get('sousIds', []) || id == cfg().get('headId', '')); }
-    function todoBy() { return isAdmin() || (staff() && chefId(request.resource.data.by)); }
-    function todoStr(k, n) { return request.resource.data.get(k, '') is string && request.resource.data.get(k, '').size() <= n; }
-    function todoOk() {
-      return request.resource.data.keys().hasOnly(['text', 'st', 'due', 'for', 'from', 'at', 'doneAt', 'doneBy', 'upd', 'by'])
-        && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 300
-        && request.resource.data.st in ['open', 'done', 'gone']
-        && todoStr('due', 10) && (request.resource.data.get('due', '') == '' || request.resource.data.get('due', '').matches('[0-9]{4}-[0-9]{2}-[0-9]{2}'))
-        && todoStr('for', 80) && todoStr('from', 80) && todoStr('doneBy', 80)
-        && request.resource.data.get('at', 0) is number && request.resource.data.get('doneAt', 0) is number && request.resource.data.get('upd', 0) is number;
-    }
-    // Who ticked a job is only ever the writer, or left as it was (review, 23 Oct 2026). A tick names the writer. An open
-    // job names no one (an untick clears it). Removed, or done and changed, a job keeps who ticked it and when, so Undo
-    // puts it back exactly as it was. The head chef's Google account (no PIN session) may name the head chef.
-    function todoTickOk() {
-      let st = request.resource.data.st;
-      let nb = request.resource.data.get('doneBy', '');
-      let ob = resource == null ? '' : resource.data.get('doneBy', '');
-      return isAdmin()
-        || (st == 'done' && nb == request.resource.data.by)
-        || (st != 'done' && nb == '')
-        || (st != 'open' && resource != null && nb != '' && nb == ob
-          && request.resource.data.get('doneAt', 0) == resource.data.get('doneAt', 0));
-    }
     match /kitchens/KITCHEN_PIN/todos/{id} {
+      function todoBy() { return isAdmin() || (staff() && chefId(request.resource.data.by)); }
+      function todoStr(k, n) { return request.resource.data.get(k, '') is string && request.resource.data.get(k, '').size() <= n; }
+      function todoOk() {
+        return request.resource.data.keys().hasOnly(['text', 'st', 'due', 'for', 'from', 'at', 'doneAt', 'doneBy', 'upd', 'by'])
+          && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 300
+          && request.resource.data.st in ['open', 'done', 'gone']
+          && todoStr('due', 10) && (request.resource.data.get('due', '') == '' || request.resource.data.get('due', '').matches('[0-9]{4}-[0-9]{2}-[0-9]{2}'))
+          && todoStr('for', 80) && todoStr('from', 80) && todoStr('doneBy', 80)
+          && request.resource.data.get('at', 0) is number && request.resource.data.get('doneAt', 0) is number && request.resource.data.get('upd', 0) is number;
+      }
+      // Who ticked a job is only ever the writer, or left as it was (review, 23 Oct 2026). A tick names the writer. An open
+      // job names no one (an untick clears it). Removed, or done and changed, a job keeps who ticked it and when, so Undo
+      // puts it back exactly as it was. The head chef's Google account (no PIN session) may name the head chef.
+      function todoTickOk() {
+        let st = request.resource.data.st;
+        let nb = request.resource.data.get('doneBy', '');
+        let ob = resource == null ? '' : resource.data.get('doneBy', '');
+        return isAdmin()
+          || (st == 'done' && nb == request.resource.data.by)
+          || (st != 'done' && nb == '')
+          || (st != 'open' && resource != null && nb != '' && nb == ob
+            && request.resource.data.get('doneAt', 0) == resource.data.get('doneAt', 0));
+      }
       allow read: if isAdmin() || (sessOk(reader()) && !functionOnly(reader()) && chefId(reader()));
       allow create: if todoBy() && todoOk() && todoTickOk() && (isAdmin() || request.resource.data.get('from', '') == request.resource.data.by);
       allow update: if todoBy() && todoOk() && todoTickOk()
         && request.resource.data.get('from', '') == resource.data.get('from', '') && request.resource.data.get('at', 0) == resource.data.get('at', 0);
       allow delete: if false;
     }
-    // Shared Operandio timing uses server timestamps and a revision compare-and-set. Every current kitchen PIN,
-    // including View only, can start a stage; this grants no ordinary Prep capability or shift-ping permission.
-    // Queensland has no daylight-saving shift: today's UTC midnight is its 10:00 opening.
-    // Compare timestamps directly so the 21:00 close is exclusive down to the nanosecond.
-    function coolingOpens() { return (request.time + duration.value(10, 'h')).date(); }
-    function coolingOpen() { return request.time >= coolingOpens() && request.time < coolingOpens() + duration.value(11, 'h'); }
-    function coolingToday(at) { return at is timestamp && at >= coolingOpens() && at < coolingOpens() + duration.value(11, 'h'); }
-    function coolingOk() {
-      let d = request.resource.data;
-      return d.keys().hasAll(['v', 'run', 'rev', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by'])
-        && d.keys().hasOnly(['v', 'run', 'rev', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by', 'windowAt'])
-        && (!d.keys().hasAny(['windowAt']) || (d.windowAt is int && d.windowAt >= 0 && d.windowAt % 86400000 == 0))
-        && d.v == 1 && d.run is string && d.run.matches('[a-zA-Z0-9_-]{16,80}')
-        && d.rev is int && d.rev >= 1
-        && d.firstAt is timestamp && d.firstBy is string && d.firstBy.size() > 0 && d.firstBy.size() <= 80
-        && (d.secondAt == 0 || d.secondAt is timestamp) && d.secondBy is string && d.secondBy.size() <= 80;
-    }
-    function coolingFirst() {
-      let d = request.resource.data;
-      return d.windowAt == coolingOpens().toMillis()
-        && d.firstAt == request.time && d.firstBy == d.by && d.secondAt == 0 && d.secondBy == '';
-    }
-    function coolingNext() {
-      let d = request.resource.data;
-      let old = resource.data;
-      return d.rev == old.rev + 1 && (
-        (d.run == old.run && d.firstAt == old.firstAt && d.firstBy == old.firstBy
-          && d.keys().hasAny(['windowAt']) == old.keys().hasAny(['windowAt']) && d.get('windowAt', 0) == old.get('windowAt', 0)
-          && coolingToday(old.firstAt) && old.secondAt == 0 && old.secondBy == ''
-          && request.time >= old.firstAt + duration.value(2, 'h')
-          && d.secondAt == request.time && d.secondBy == d.by)
-        || (d.run != old.run && old.firstAt is timestamp && old.firstAt < coolingOpens()
-          && coolingFirst()));
-    }
-    // First starts carry their intended daily window, so an overnight queued write cannot begin tomorrow.
-    // Legacy records without windowAt may finish today's stages; declarations keep the same v1 contract.
-    // One canonical timer lookup per confirmation proves the exact run and elapsed stage.
-    function coolingRecordedOk() {
-      let d = request.resource.data;
-      return d.keys().hasAll(['v', 'run', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by'])
-        && d.keys().hasOnly(['v', 'run', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by'])
-        && d.v == 1 && d.run is string && d.run.matches('[a-zA-Z0-9_-]{16,80}')
-        && ((d.firstAt == 0 && d.firstBy == '') || (d.firstAt is timestamp && d.firstBy is string && d.firstBy.size() > 0 && d.firstBy.size() <= 80))
-        && ((d.secondAt == 0 && d.secondBy == '') || (d.secondAt is timestamp && d.secondBy is string && d.secondBy.size() > 0 && d.secondBy.size() <= 80));
-    }
-    function coolingRecordedStep(old, timer) {
-      let d = request.resource.data;
-      return (old.firstAt == 0 && old.firstBy == '' && d.firstAt == request.time && d.firstBy == d.by
-          && d.secondAt == old.secondAt && d.secondBy == old.secondBy
-          && timer.firstAt is timestamp && request.time >= timer.firstAt + duration.value(2, 'h'))
-        || (old.secondAt == 0 && old.secondBy == '' && d.secondAt == request.time && d.secondBy == d.by
-          && d.firstAt == old.firstAt && d.firstBy == old.firstBy
-          && timer.secondAt is timestamp && request.time >= timer.secondAt + duration.value(4, 'h'));
-    }
-    function coolingRecordedNext() {
-      let d = request.resource.data;
-      let timer = get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/cooling/current).data;
-      let prior = resource == null || resource.data.run != d.run
-        ? {'firstAt': 0, 'firstBy': '', 'secondAt': 0, 'secondBy': ''} : resource.data;
-      return coolingToday(timer.firstAt) && d.run == timer.run && coolingRecordedStep(prior, timer);
-    }
     match /kitchens/KITCHEN_PIN/cooling/{id} {
+      // Shared Operandio timing uses server timestamps and a revision compare-and-set. Every current kitchen PIN,
+      // including View only, can start a stage; this grants no ordinary Prep capability or shift-ping permission.
+      // Queensland has no daylight-saving shift: today's UTC midnight is its 10:00 opening.
+      // Compare timestamps directly so the 21:00 close is exclusive down to the nanosecond.
+      function coolingOpens() { return (request.time + duration.value(10, 'h')).date(); }
+      function coolingOpen() { return request.time >= coolingOpens() && request.time < coolingOpens() + duration.value(11, 'h'); }
+      function coolingToday(at) { return at is timestamp && at >= coolingOpens() && at < coolingOpens() + duration.value(11, 'h'); }
+      function coolingOk() {
+        let d = request.resource.data;
+        return d.keys().hasAll(['v', 'run', 'rev', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by'])
+          && d.keys().hasOnly(['v', 'run', 'rev', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by', 'windowAt'])
+          && (!d.keys().hasAny(['windowAt']) || (d.windowAt is int && d.windowAt >= 0 && d.windowAt % 86400000 == 0))
+          && d.v == 1 && d.run is string && d.run.matches('[a-zA-Z0-9_-]{16,80}')
+          && d.rev is int && d.rev >= 1
+          && d.firstAt is timestamp && d.firstBy is string && d.firstBy.size() > 0 && d.firstBy.size() <= 80
+          && (d.secondAt == 0 || d.secondAt is timestamp) && d.secondBy is string && d.secondBy.size() <= 80;
+      }
+      function coolingFirst() {
+        let d = request.resource.data;
+        return d.windowAt == coolingOpens().toMillis()
+          && d.firstAt == request.time && d.firstBy == d.by && d.secondAt == 0 && d.secondBy == '';
+      }
+      function coolingNext() {
+        let d = request.resource.data;
+        let old = resource.data;
+        return d.rev == old.rev + 1 && (
+          (d.run == old.run && d.firstAt == old.firstAt && d.firstBy == old.firstBy
+            && d.keys().hasAny(['windowAt']) == old.keys().hasAny(['windowAt']) && d.get('windowAt', 0) == old.get('windowAt', 0)
+            && coolingToday(old.firstAt) && old.secondAt == 0 && old.secondBy == ''
+            && request.time >= old.firstAt + duration.value(2, 'h')
+            && d.secondAt == request.time && d.secondBy == d.by)
+          || (d.run != old.run && old.firstAt is timestamp && old.firstAt < coolingOpens()
+            && coolingFirst()));
+      }
+      // First starts carry their intended daily window, so an overnight queued write cannot begin tomorrow.
+      // Legacy records without windowAt may finish today's stages; declarations keep the same v1 contract.
+      // One canonical timer lookup per confirmation proves the exact run and elapsed stage.
+      function coolingRecordedOk() {
+        let d = request.resource.data;
+        return d.keys().hasAll(['v', 'run', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by'])
+          && d.keys().hasOnly(['v', 'run', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by'])
+          && d.v == 1 && d.run is string && d.run.matches('[a-zA-Z0-9_-]{16,80}')
+          && ((d.firstAt == 0 && d.firstBy == '') || (d.firstAt is timestamp && d.firstBy is string && d.firstBy.size() > 0 && d.firstBy.size() <= 80))
+          && ((d.secondAt == 0 && d.secondBy == '') || (d.secondAt is timestamp && d.secondBy is string && d.secondBy.size() > 0 && d.secondBy.size() <= 80));
+      }
+      function coolingRecordedStep(old, timer) {
+        let d = request.resource.data;
+        return (old.firstAt == 0 && old.firstBy == '' && d.firstAt == request.time && d.firstBy == d.by
+            && d.secondAt == old.secondAt && d.secondBy == old.secondBy
+            && timer.firstAt is timestamp && request.time >= timer.firstAt + duration.value(2, 'h'))
+          || (old.secondAt == 0 && old.secondBy == '' && d.secondAt == request.time && d.secondBy == d.by
+            && d.firstAt == old.firstAt && d.firstBy == old.firstBy
+            && timer.secondAt is timestamp && request.time >= timer.secondAt + duration.value(4, 'h'));
+      }
+      function coolingRecordedNext() {
+        let d = request.resource.data;
+        let timer = get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/cooling/current).data;
+        let prior = resource == null || resource.data.run != d.run
+          ? {'firstAt': 0, 'firstBy': '', 'secondAt': 0, 'secondBy': ''} : resource.data;
+        return coolingToday(timer.firstAt) && d.run == timer.run && coolingRecordedStep(prior, timer);
+      }
       allow get: if id in ['current', 'recorded'] && kitchenRead();
       allow list, delete: if false;
       allow create: if id == 'current' && staff() && request.resource.data.by in cfg().get('staffIds', [])
@@ -1429,24 +1470,8 @@ service cloud.firestore {
         && cfg().get('staffSee', {}).get('cleaning', false) == true);
     }
     function cleanRead() { return kitchenRead() && cleanEnabled(reader()); }
-    function cleanWriter() {
-      let c = cfg();
-      let id = request.resource.data.by;
-      return session() && !(id in c.get('fnOnlyIds', []))
-        && (id == c.get('headId', '') || id in c.get('sousIds', []) || c.get('staffSee', {}).get('cleaning', false) == true)
-        && (id == c.get('headId', '') || id in c.get('tickIds', []));
-    }
-    function cleanChefWriter() {
-      let c = cfg();
-      let id = request.resource.data.by;
-      return session() && !(id in c.get('fnOnlyIds', []))
-        && (id == c.get('headId', '') || id in c.get('sousIds', []));
-    }
     function cleanId(id) { return id is string && id.matches('[a-zA-Z0-9_-]{1,80}'); }
-    function cleanText(value, n) { return value is string && value.size() <= n; }
-    function cleanName(value) { return cleanText(value, 80) && value.size() > 0 && value.matches('.*[^ ].*'); }
     function cleanStart() { return request.time.toMillis() - (request.time.toMillis() + 36000000) % 86400000; }
-    function cleanMid(value) { return value is int && value >= 0 && (value + 36000000) % 86400000 == 0; }
     function cleanRecent(value) { return value is number && value >= request.time.toMillis() - 60000 && value <= request.time.toMillis() + 60000; }
     function cleanDay(day) { return day is string && day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}'); }
     function cleanDayStart(day) {
@@ -1454,53 +1479,57 @@ service cloud.firestore {
     }
     function cleanToday(day) { return cleanDay(day) && cleanDayStart(day) == cleanStart(); }
     function cleanTaskPath(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/cleaningTasks/$(id); }
-    function cleanDonePath(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/cleaningDone/$(id); }
-    function cleanActionPath(id, version) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/cleaningActions/$(id + '_v' + string(version)); }
-    // Bounded text checks share their count, keeping the complete editable plan inside the rule budget.
-    function cleanChecks(checks) {
-      let n = checks.size();
-      return checks is list && n <= 12 && checks.toSet().size() == n
-        && (n < 1 || checks[0].matches('.{0,159}[^ ]')) && (n < 2 || checks[1].matches('.{0,159}[^ ]'))
-        && (n < 3 || checks[2].matches('.{0,159}[^ ]')) && (n < 4 || checks[3].matches('.{0,159}[^ ]'))
-        && (n < 5 || checks[4].matches('.{0,159}[^ ]')) && (n < 6 || checks[5].matches('.{0,159}[^ ]'))
-        && (n < 7 || checks[6].matches('.{0,159}[^ ]')) && (n < 8 || checks[7].matches('.{0,159}[^ ]'))
-        && (n < 9 || checks[8].matches('.{0,159}[^ ]')) && (n < 10 || checks[9].matches('.{0,159}[^ ]'))
-        && (n < 11 || checks[10].matches('.{0,159}[^ ]')) && (n < 12 || checks[11].matches('.{0,159}[^ ]'));
-    }
-    function cleanPlan(p) {
-      return p is map && p.keys().hasOnly(['template', 'method', 'responsibility', 'checks', 'timing', 'verification', 'verifiers', 'review', 'repeat'])
-        && p.template.matches('[a-zA-Z0-9_-]{0,40}')
-        && p.method.matches('(?s).{0,1000}') && p.responsibility.matches('(?s).{0,120}') && p.review.matches('(?s).{0,500}')
-        && p.timing in ['daily', 'service', 'prep-service', 'food', 'use', 'close'] && p.verification is bool
-        && cleanChecks(p.checks)
-        && p.verifiers is list && p.verifiers.size() <= 30 && p.verifiers.toSet().size() == p.verifiers.size()
-        && (!('repeat' in p) || p.repeat is map && p.repeat.keys().hasOnly(['days', 'anchor']) && p.repeat.days is int && p.repeat.days >= 2 && p.repeat.days <= 30
-          && (p.repeat.anchor == '' || cleanDay(p.repeat.anchor) && cleanDayStart(p.repeat.anchor) >= 0));
-    }
-    function cleanTaskShape(d) {
-      return d.keys().hasOnly(['root', 'prev', 'next', 'text', 'area', 'section', 'sectionName', 'shared', 'dows', 'guide', 'from', 'until', 'at', 'by', 'plan'])
-        && cleanId(d.root) && (d.prev == '' || cleanId(d.prev)) && (d.next == '' || cleanId(d.next))
-        && d.text.matches('.{0,159}[^ ]') && d.area.matches('.{0,79}[^ ]')
-        && d.section.matches('(?s).{0,80}') && d.sectionName.matches('(?s).{0,80}') && d.shared is bool && d.guide.matches('(?s).{0,80}')
-        && d.dows is list && d.dows.size() > 0 && d.dows.size() <= 7 && d.dows.toSet().size() == d.dows.size()
-        && d.dows.toSet().hasOnly([0, 1, 2, 3, 4, 5, 6])
-        // Create/replacement/close below already require the exact authoritative effective dates.
-        && d.at is number && (!('plan' in d) || cleanPlan(d.plan));
-    }
-    function cleanReplacement(id, d) {
-      let old = get(cleanTaskPath(d.prev)).data;
-      let closed = getAfter(cleanTaskPath(d.prev)).data;
-      return d.prev != id && old.root == d.root && old.until == 253402178400000 && old.from <= d.from
-        && d.from == cleanStart() + 86400000 && closed.until == d.from && closed.next == id;
-    }
-    function cleanClose(id, d) {
-      return resource.data.until == 253402178400000 && d.until == cleanStart() + 86400000 && d.until >= d.from
-        && d.diff(resource.data).affectedKeys().hasOnly(['until', 'by', 'next'])
-        && (d.next == '' || (d.next != id && !exists(cleanTaskPath(d.next))
-          && getAfter(cleanTaskPath(d.next)).data.prev == id && getAfter(cleanTaskPath(d.next)).data.root == d.root
-          && getAfter(cleanTaskPath(d.next)).data.from == d.until));
-    }
     match /kitchens/KITCHEN_PIN/cleaningTasks/{id} {
+      function cleanChefWriter() {
+        let c = cfg();
+        let id = request.resource.data.by;
+        return session() && !(id in c.get('fnOnlyIds', []))
+          && (id == c.get('headId', '') || id in c.get('sousIds', []));
+      }
+      // Bounded text checks share their count, keeping the complete editable plan inside the rule budget.
+      function cleanChecks(checks) {
+        let n = checks.size();
+        return checks is list && n <= 12 && checks.toSet().size() == n
+          && (n < 1 || checks[0].matches('.{0,159}[^ ]')) && (n < 2 || checks[1].matches('.{0,159}[^ ]'))
+          && (n < 3 || checks[2].matches('.{0,159}[^ ]')) && (n < 4 || checks[3].matches('.{0,159}[^ ]'))
+          && (n < 5 || checks[4].matches('.{0,159}[^ ]')) && (n < 6 || checks[5].matches('.{0,159}[^ ]'))
+          && (n < 7 || checks[6].matches('.{0,159}[^ ]')) && (n < 8 || checks[7].matches('.{0,159}[^ ]'))
+          && (n < 9 || checks[8].matches('.{0,159}[^ ]')) && (n < 10 || checks[9].matches('.{0,159}[^ ]'))
+          && (n < 11 || checks[10].matches('.{0,159}[^ ]')) && (n < 12 || checks[11].matches('.{0,159}[^ ]'));
+      }
+      function cleanPlan(p) {
+        return p is map && p.keys().hasOnly(['template', 'method', 'responsibility', 'checks', 'timing', 'verification', 'verifiers', 'review', 'repeat'])
+          && p.template.matches('[a-zA-Z0-9_-]{0,40}')
+          && p.method.matches('(?s).{0,1000}') && p.responsibility.matches('(?s).{0,120}') && p.review.matches('(?s).{0,500}')
+          && p.timing in ['daily', 'service', 'prep-service', 'food', 'use', 'close'] && p.verification is bool
+          && cleanChecks(p.checks)
+          && p.verifiers is list && p.verifiers.size() <= 30 && p.verifiers.toSet().size() == p.verifiers.size()
+          && (!('repeat' in p) || p.repeat is map && p.repeat.keys().hasOnly(['days', 'anchor']) && p.repeat.days is int && p.repeat.days >= 2 && p.repeat.days <= 30
+            && (p.repeat.anchor == '' || cleanDay(p.repeat.anchor) && cleanDayStart(p.repeat.anchor) >= 0));
+      }
+      function cleanTaskShape(d) {
+        return d.keys().hasOnly(['root', 'prev', 'next', 'text', 'area', 'section', 'sectionName', 'shared', 'dows', 'guide', 'from', 'until', 'at', 'by', 'plan'])
+          && cleanId(d.root) && (d.prev == '' || cleanId(d.prev)) && (d.next == '' || cleanId(d.next))
+          && d.text.matches('.{0,159}[^ ]') && d.area.matches('.{0,79}[^ ]')
+          && d.section.matches('(?s).{0,80}') && d.sectionName.matches('(?s).{0,80}') && d.shared is bool && d.guide.matches('(?s).{0,80}')
+          && d.dows is list && d.dows.size() > 0 && d.dows.size() <= 7 && d.dows.toSet().size() == d.dows.size()
+          && d.dows.toSet().hasOnly([0, 1, 2, 3, 4, 5, 6])
+          // Create/replacement/close below already require the exact authoritative effective dates.
+          && d.at is number && (!('plan' in d) || cleanPlan(d.plan));
+      }
+      function cleanReplacement(id, d) {
+        let old = get(cleanTaskPath(d.prev)).data;
+        let closed = getAfter(cleanTaskPath(d.prev)).data;
+        return d.prev != id && old.root == d.root && old.until == 253402178400000 && old.from <= d.from
+          && d.from == cleanStart() + 86400000 && closed.until == d.from && closed.next == id;
+      }
+      function cleanClose(id, d) {
+        return resource.data.until == 253402178400000 && d.until == cleanStart() + 86400000 && d.until >= d.from
+          && d.diff(resource.data).affectedKeys().hasOnly(['until', 'by', 'next'])
+          && (d.next == '' || (d.next != id && !exists(cleanTaskPath(d.next))
+            && getAfter(cleanTaskPath(d.next)).data.prev == id && getAfter(cleanTaskPath(d.next)).data.root == d.root
+            && getAfter(cleanTaskPath(d.next)).data.from == d.until));
+      }
       allow read: if cleanRead();
       allow create: if cleanChefWriter() && cleanId(id) && cleanTaskShape(request.resource.data)
         && request.resource.data.next == '' && request.resource.data.until == 253402178400000 && cleanRecent(request.resource.data.at)
@@ -1513,84 +1542,94 @@ service cloud.firestore {
         && (request.resource.data.next == '' || cleanId(request.resource.data.next));
       allow delete: if false;
     }
-    // One record per revision and date, with a compare-and-set version. A late competing tick cannot replace
-    // someone else's stamp. Undo keeps that stamp for audit and belongs to its recorder for two minutes only.
-    function cleanDoneShape(id, d) {
-      return d.keys().hasAll(['day', 'task', 'version', 'done', 'doneAt', 'doneById', 'doneBy', 'workerId', 'worker', 'by'])
-        && d.keys().hasOnly(['day', 'task', 'version', 'done', 'doneAt', 'doneById', 'doneBy', 'workerId', 'worker', 'by'])
-        && cleanDay(d.day) && cleanId(d.task) && id == d.day + '_' + d.task && d.version is int && d.version > 0
-        && d.done is bool && d.doneAt is number && d.doneAt > 0 && cleanId(d.doneById) && cleanName(d.doneBy)
-        && cleanId(d.workerId) && cleanName(d.worker);
-    }
-    function cleanDue(d) {
-      let task = get(cleanTaskPath(d.task)).data;
-      let start = cleanDayStart(d.day);
-      return task.from <= start && task.until > start && ((start + 36000000) / 86400000 + 4) % 7 in task.dows
-        && (!('repeat' in task.get('plan', {})) || cleanInterval(task.plan.repeat, start));
-    }
-    function cleanInterval(repeat, start) { return repeat.anchor != '' && start >= cleanDayStart(repeat.anchor) && ((start - cleanDayStart(repeat.anchor)) / 86400000) % repeat.days == 0; }
-    function cleanLegacy(d) { return !('plan' in get(cleanTaskPath(d.task)).data); }
-    function cleanSlot(p, f) {
-      return cleanId(f.slot) && (f.kind == 'daily' ? p.timing == 'daily' && f.slot == 'daily'
-        : f.kind == 'start' ? p.timing == 'food' && f.slot == 'start'
-        : f.kind == 'close' ? p.timing in ['food', 'close'] && f.slot == 'close'
-        : f.kind == 'service' ? p.timing in ['service', 'prep-service'] && f.slot.matches('service-[a-zA-Z0-9_-]+')
-        : f.kind == 'prep' ? p.timing in ['prep-service', 'food'] && f.slot.matches('prep-[a-zA-Z0-9_-]+')
-        : f.kind == 'use' && p.timing == 'use' && f.slot.matches('use-[a-zA-Z0-9_-]+'));
-    }
-    function cleanFlowShape(id, d, p) {
-      let f = d.flow;
-      return d.keys().hasAll(['day', 'task', 'version', 'done', 'doneAt', 'doneById', 'doneBy', 'workerId', 'worker', 'by', 'flow'])
-        && d.keys().hasOnly(['day', 'task', 'version', 'done', 'doneAt', 'doneById', 'doneBy', 'workerId', 'worker', 'by', 'flow'])
-        && d.version is int && d.version > 0 && d.done is bool && d.doneAt is number
-        && f is map && f.keys().hasAll(['slot', 'kind', 'status', 'checked', 'note', 'verifiedBy', 'verifiedAt'])
-        && f.keys().hasOnly(['slot', 'kind', 'status', 'checked', 'note', 'verifiedBy', 'verifiedAt'])
-        && cleanSlot(p, f) && id == d.day + '_' + d.task + '__' + f.slot
-        && f.status in ['pending', 'blocked', 'awaiting', 'complete'] && d.done == (f.status == 'complete')
-        && f.checked is list && f.checked.size() <= 12 && f.checked.toSet().size() == f.checked.size()
-        && f.checked.toSet().difference(p.checks.toSet()).size() == 0 && cleanText(f.note, 500)
-        && cleanText(f.verifiedBy, 80) && f.verifiedAt is number
-        && cleanText(d.doneById, 80) && cleanText(d.doneBy, 80) && cleanText(d.workerId, 80) && cleanText(d.worker, 80);
-    }
-    function cleanEmptyPerformance(d) { return d.doneAt == 0 && d.doneById == '' && d.doneBy == '' && d.workerId == '' && d.worker == ''; }
-    function cleanSamePerformance(d, old) {
-      return d.doneAt == old.doneAt && d.doneById == old.doneById && d.doneBy == old.doneBy && d.workerId == old.workerId && d.worker == old.worker;
-    }
-    function cleanFlowStep(d, old, initial, action, p) {
-      let f = d.flow;
-      let c = cfg();
-      let blankVerification = f.verifiedBy == '' && f.verifiedAt == 0;
-      return action in ['save', 'block'] ? (initial || old.flow.status in ['pending', 'blocked']) && cleanEmptyPerformance(d)
-          && blankVerification && f.status == (action == 'block' ? 'blocked' : 'pending') && (action != 'block' || f.note.matches('(?s).*\\S.*'))
-        : action == 'perform' ? (initial || old.flow.status in ['pending', 'blocked']) && f.checked.size() == p.checks.size()
-          && f.status == (p.verification ? 'awaiting' : 'complete') && blankVerification && cleanRecent(d.doneAt)
-          && d.doneById == d.by && d.doneBy.size() > 0 && d.worker.size() > 0 && d.workerId in c.get('staffIds', [])
-          && !(d.workerId in c.get('fnOnlyIds', [])) && (get(sessDoc()).data.mode == 'shared' || d.workerId == d.by)
-        : action == 'verify' ? !initial && old.flow.status == 'awaiting' && p.verification && d.by in p.verifiers
-          && f.status == 'complete' && f.checked == old.flow.checked && f.note == old.flow.note && cleanSamePerformance(d, old)
-          && f.verifiedBy == d.by && cleanRecent(f.verifiedAt)
-        : action == 'reopen' && !initial && old.flow.status in ['awaiting', 'complete'] && f.status == 'pending'
-          && f.note.matches('(?s).*\\S.*') && f.checked.size() == 0 && cleanEmptyPerformance(d) && blankVerification
-          && (chefId(d.by) || old.doneById == d.by && request.time.toMillis() >= old.doneAt && request.time.toMillis() - old.doneAt < 120000);
-    }
-    function cleanFlowWrite(id, d, initial) {
-      let p = get(cleanTaskPath(d.task)).data.plan;
-      let event = getAfter(cleanActionPath(id, d.version)).data;
-      let old = initial ? {} : resource.data;
-      return cleanFlowShape(id, d, p) && (initial ? d.version == 1 : d.task == old.task && d.day == old.day
-          && d.flow.slot == old.flow.slot && d.flow.kind == old.flow.kind && d.version == old.version + 1)
-        && event.snapshot == d && event.occurrence == id && event.at == request.time && event.by == d.by
-        && cleanFlowStep(d, old, initial, event.action, p);
-    }
-    function cleanTick(d) {
-      return d.done && cleanRecent(d.doneAt) && d.doneById == d.by && d.workerId in cfg().get('staffIds', [])
-        && !functionOnly(d.workerId) && (get(sessDoc()).data.mode == 'shared' || d.workerId == d.by);
-    }
-    function cleanUndo(d) {
-      return !d.done && resource.data.doneById == d.by && request.time.toMillis() - resource.data.doneAt < 120000
-        && d.diff(resource.data).affectedKeys().hasOnly(['done', 'version', 'by']);
-    }
     match /kitchens/KITCHEN_PIN/cleaningDone/{id} {
+      function cleanWriter() {
+        let c = cfg();
+        let id = request.resource.data.by;
+        return session() && !(id in c.get('fnOnlyIds', []))
+          && (id == c.get('headId', '') || id in c.get('sousIds', []) || c.get('staffSee', {}).get('cleaning', false) == true)
+          && (id == c.get('headId', '') || id in c.get('tickIds', []));
+      }
+      function cleanText(value, n) { return value is string && value.size() <= n; }
+      function cleanName(value) { return cleanText(value, 80) && value.size() > 0 && value.matches('.*[^ ].*'); }
+      function cleanActionPath(id, version) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/cleaningActions/$(id + '_v' + string(version)); }
+      // One record per revision and date, with a compare-and-set version. A late competing tick cannot replace
+      // someone else's stamp. Undo keeps that stamp for audit and belongs to its recorder for two minutes only.
+      function cleanDoneShape(id, d) {
+        return d.keys().hasAll(['day', 'task', 'version', 'done', 'doneAt', 'doneById', 'doneBy', 'workerId', 'worker', 'by'])
+          && d.keys().hasOnly(['day', 'task', 'version', 'done', 'doneAt', 'doneById', 'doneBy', 'workerId', 'worker', 'by'])
+          && cleanDay(d.day) && cleanId(d.task) && id == d.day + '_' + d.task && d.version is int && d.version > 0
+          && d.done is bool && d.doneAt is number && d.doneAt > 0 && cleanId(d.doneById) && cleanName(d.doneBy)
+          && cleanId(d.workerId) && cleanName(d.worker);
+      }
+      function cleanDue(d) {
+        let task = get(cleanTaskPath(d.task)).data;
+        let start = cleanDayStart(d.day);
+        return task.from <= start && task.until > start && ((start + 36000000) / 86400000 + 4) % 7 in task.dows
+          && (!('repeat' in task.get('plan', {})) || cleanInterval(task.plan.repeat, start));
+      }
+      function cleanInterval(repeat, start) { return repeat.anchor != '' && start >= cleanDayStart(repeat.anchor) && ((start - cleanDayStart(repeat.anchor)) / 86400000) % repeat.days == 0; }
+      function cleanLegacy(d) { return !('plan' in get(cleanTaskPath(d.task)).data); }
+      function cleanSlot(p, f) {
+        return cleanId(f.slot) && (f.kind == 'daily' ? p.timing == 'daily' && f.slot == 'daily'
+          : f.kind == 'start' ? p.timing == 'food' && f.slot == 'start'
+          : f.kind == 'close' ? p.timing in ['food', 'close'] && f.slot == 'close'
+          : f.kind == 'service' ? p.timing in ['service', 'prep-service'] && f.slot.matches('service-[a-zA-Z0-9_-]+')
+          : f.kind == 'prep' ? p.timing in ['prep-service', 'food'] && f.slot.matches('prep-[a-zA-Z0-9_-]+')
+          : f.kind == 'use' && p.timing == 'use' && f.slot.matches('use-[a-zA-Z0-9_-]+'));
+      }
+      function cleanFlowShape(id, d, p) {
+        let f = d.flow;
+        return d.keys().hasAll(['day', 'task', 'version', 'done', 'doneAt', 'doneById', 'doneBy', 'workerId', 'worker', 'by', 'flow'])
+          && d.keys().hasOnly(['day', 'task', 'version', 'done', 'doneAt', 'doneById', 'doneBy', 'workerId', 'worker', 'by', 'flow'])
+          && d.version is int && d.version > 0 && d.done is bool && d.doneAt is number
+          && f is map && f.keys().hasAll(['slot', 'kind', 'status', 'checked', 'note', 'verifiedBy', 'verifiedAt'])
+          && f.keys().hasOnly(['slot', 'kind', 'status', 'checked', 'note', 'verifiedBy', 'verifiedAt'])
+          && cleanSlot(p, f) && id == d.day + '_' + d.task + '__' + f.slot
+          && f.status in ['pending', 'blocked', 'awaiting', 'complete'] && d.done == (f.status == 'complete')
+          && f.checked is list && f.checked.size() <= 12 && f.checked.toSet().size() == f.checked.size()
+          && f.checked.toSet().difference(p.checks.toSet()).size() == 0 && cleanText(f.note, 500)
+          && cleanText(f.verifiedBy, 80) && f.verifiedAt is number
+          && cleanText(d.doneById, 80) && cleanText(d.doneBy, 80) && cleanText(d.workerId, 80) && cleanText(d.worker, 80);
+      }
+      function cleanEmptyPerformance(d) { return d.doneAt == 0 && d.doneById == '' && d.doneBy == '' && d.workerId == '' && d.worker == ''; }
+      function cleanSamePerformance(d, old) {
+        return d.doneAt == old.doneAt && d.doneById == old.doneById && d.doneBy == old.doneBy && d.workerId == old.workerId && d.worker == old.worker;
+      }
+      function cleanFlowStep(d, old, initial, action, p) {
+        let f = d.flow;
+        let c = cfg();
+        let blankVerification = f.verifiedBy == '' && f.verifiedAt == 0;
+        return action in ['save', 'block'] ? (initial || old.flow.status in ['pending', 'blocked']) && cleanEmptyPerformance(d)
+            && blankVerification && f.status == (action == 'block' ? 'blocked' : 'pending') && (action != 'block' || f.note.matches('(?s).*\\S.*'))
+          : action == 'perform' ? (initial || old.flow.status in ['pending', 'blocked']) && f.checked.size() == p.checks.size()
+            && f.status == (p.verification ? 'awaiting' : 'complete') && blankVerification && cleanRecent(d.doneAt)
+            && d.doneById == d.by && d.doneBy.size() > 0 && d.worker.size() > 0 && d.workerId in c.get('staffIds', [])
+            && !(d.workerId in c.get('fnOnlyIds', [])) && (get(sessDoc()).data.mode == 'shared' || d.workerId == d.by)
+          : action == 'verify' ? !initial && old.flow.status == 'awaiting' && p.verification && d.by in p.verifiers
+            && f.status == 'complete' && f.checked == old.flow.checked && f.note == old.flow.note && cleanSamePerformance(d, old)
+            && f.verifiedBy == d.by && cleanRecent(f.verifiedAt)
+          : action == 'reopen' && !initial && old.flow.status in ['awaiting', 'complete'] && f.status == 'pending'
+            && f.note.matches('(?s).*\\S.*') && f.checked.size() == 0 && cleanEmptyPerformance(d) && blankVerification
+            && (chefId(d.by) || old.doneById == d.by && request.time.toMillis() >= old.doneAt && request.time.toMillis() - old.doneAt < 120000);
+      }
+      function cleanFlowWrite(id, d, initial) {
+        let p = get(cleanTaskPath(d.task)).data.plan;
+        let event = getAfter(cleanActionPath(id, d.version)).data;
+        let old = initial ? {} : resource.data;
+        return cleanFlowShape(id, d, p) && (initial ? d.version == 1 : d.task == old.task && d.day == old.day
+            && d.flow.slot == old.flow.slot && d.flow.kind == old.flow.kind && d.version == old.version + 1)
+          && event.snapshot == d && event.occurrence == id && event.at == request.time && event.by == d.by
+          && cleanFlowStep(d, old, initial, event.action, p);
+      }
+      function cleanTick(d) {
+        return d.done && cleanRecent(d.doneAt) && d.doneById == d.by && d.workerId in cfg().get('staffIds', [])
+          && !functionOnly(d.workerId) && (get(sessDoc()).data.mode == 'shared' || d.workerId == d.by);
+      }
+      function cleanUndo(d) {
+        return !d.done && resource.data.doneById == d.by && request.time.toMillis() - resource.data.doneAt < 120000
+          && d.diff(resource.data).affectedKeys().hasOnly(['done', 'version', 'by']);
+      }
       allow get: if cleanRead() && (chefId(reader()) || resource == null || cleanToday(resource.data.day));
       allow list: if cleanRead() && (chefId(reader()) || cleanToday(resource.data.day));
       allow create: if cleanWriter()
@@ -1608,6 +1647,7 @@ service cloud.firestore {
     }
     // Every enhanced transition has an immutable, server-stamped snapshot in the same batch.
     match /kitchens/KITCHEN_PIN/cleaningActions/{id} {
+      function cleanDonePath(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/cleaningDone/$(id); }
       allow read: if cleanRead() && (chefId(reader()) || cleanToday(resource.data.day));
       // The exact before/after version below requires an accompanying state write. Its rule checks this
       // session, capability and release gate once; repeating them here exceeds the atomic request budget.
@@ -1625,62 +1665,62 @@ service cloud.firestore {
           : get(cleanDonePath(request.resource.data.occurrence)).data.version == request.resource.data.version - 1);
       allow update, delete: if false;
     }
-    // Phone pushes for order cut-offs (24 Oct 2026): a chef's phone keeps its push address in push/<hash of it>
-    // { tok, at, ua, by }. Only the server reads them (scripts/cutoff-push.mjs, with the service account, which these
-    // rules do not cover), so no phone can read anyone's address. A chef writes their own phone's, and removes only one
-    // of their own (or one already gone: the server removes an address Firebase says is dead, and Turn pushes off still
-    // has to work); the head chef's Google account writes as 'owner' and removes any.
-    function pushOk() {
-      return request.resource.data.keys().hasOnly(['tok', 'at', 'ua', 'by'])
-        && request.resource.data.tok is string && request.resource.data.tok.size() > 0 && request.resource.data.tok.size() <= 500
-        && request.resource.data.at is number && request.resource.data.get('ua', '') is string && request.resource.data.get('ua', '').size() <= 20;
-    }
     match /kitchens/KITCHEN_PIN/push/{id} {
+      // Phone pushes for order cut-offs (24 Oct 2026): a chef's phone keeps its push address in push/<hash of it>
+      // { tok, at, ua, by }. Only the server reads them (scripts/cutoff-push.mjs, with the service account, which these
+      // rules do not cover), so no phone can read anyone's address. A chef writes their own phone's, and removes only one
+      // of their own (or one already gone: the server removes an address Firebase says is dead, and Turn pushes off still
+      // has to work); the head chef's Google account writes as 'owner' and removes any.
+      function pushOk() {
+        return request.resource.data.keys().hasOnly(['tok', 'at', 'ua', 'by'])
+          && request.resource.data.tok is string && request.resource.data.tok.size() > 0 && request.resource.data.tok.size() <= 500
+          && request.resource.data.at is number && request.resource.data.get('ua', '') is string && request.resource.data.get('ua', '').size() <= 20;
+      }
       allow read: if false;
       allow create, update: if pushOk() && ((isAdmin() && request.resource.data.by == 'owner') || (staff() && chefId(request.resource.data.by)));
       allow delete: if isAdmin() || (sessOk(reader()) && !functionOnly(reader()) && chefId(reader()) && (resource == null || resource.data.by == reader()));
     }
-    // Supplier orders (24 Oct 2026): the chefs' shared tick list of supplier orders placed, one record per supplier and
-    // cut-off day: cutdone/<day>_<supplier id> { day, sid, on, at, by }. The server sends no more pushes for one that is on.
-    // Read by a chef (own PIN session) or the Google account; staff never see it. A chef's tick names that chef (their
-    // PIN session); the Google account writes as 'owner', or copies ticks as they are (the move to a new kitchen PIN).
-    function cutDoneOk(id) {
-      return request.resource.data.keys().hasOnly(['day', 'sid', 'on', 'at', 'by'])
-        && request.resource.data.day is string && request.resource.data.day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
-        && request.resource.data.sid is string && request.resource.data.sid.matches('[a-z0-9-]{1,40}')
-        && id == request.resource.data.day + '_' + request.resource.data.sid
-        && request.resource.data.on is bool && request.resource.data.at is number;
-    }
     match /kitchens/KITCHEN_PIN/cutdone/{id} {
+      // Supplier orders (24 Oct 2026): the chefs' shared tick list of supplier orders placed, one record per supplier and
+      // cut-off day: cutdone/<day>_<supplier id> { day, sid, on, at, by }. The server sends no more pushes for one that is on.
+      // Read by a chef (own PIN session) or the Google account; staff never see it. A chef's tick names that chef (their
+      // PIN session); the Google account writes as 'owner', or copies ticks as they are (the move to a new kitchen PIN).
+      function cutDoneOk(id) {
+        return request.resource.data.keys().hasOnly(['day', 'sid', 'on', 'at', 'by'])
+          && request.resource.data.day is string && request.resource.data.day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+          && request.resource.data.sid is string && request.resource.data.sid.matches('[a-z0-9-]{1,40}')
+          && id == request.resource.data.day + '_' + request.resource.data.sid
+          && request.resource.data.on is bool && request.resource.data.at is number;
+      }
       allow read: if isAdmin() || (sessOk(reader()) && !functionOnly(reader()) && chefId(reader()));
       allow create, update: if cutDoneOk(id) && (isAdmin() || (staff() && chefId(request.resource.data.by)));
       allow delete: if false;
     }
-    // Section prep standards: one item per document so every value is checked and a stale editor cannot replace
-    // another item. Staff read the head chef's standards; only the current head recorder changes them. No stock or
-    // service-check state is stored here. A section query is bounded by the client and adds no listener.
-    function prepStandardId(id) { return id is string && id.matches('[a-zA-Z0-9_-]{1,80}'); }
-    function prepStandardText(value, size) { return value is string && value.size() > 0 && value.size() <= size && value.matches('.*\\S.*'); }
-    function prepStandardAlias(aliases, index) { return aliases.size() <= index || prepStandardText(aliases[index], 160); }
-    function prepStandardOk(id) {
-      let d = request.resource.data;
-      return prepStandardId(id)
-        && d.keys().hasOnly(['sectionId', 'name', 'aliases', 'minimum', 'unit', 'instruction', 'recipe', 'archived', 'v', 'at', 'by'])
-        && d.keys().hasAll(['sectionId', 'name', 'aliases', 'minimum', 'unit', 'instruction', 'recipe', 'archived', 'v', 'at', 'by'])
-        && prepStandardId(d.sectionId) && prepStandardText(d.name, 160)
-        && d.aliases is list && d.aliases.size() <= 12
-        && prepStandardAlias(d.aliases, 0) && prepStandardAlias(d.aliases, 1) && prepStandardAlias(d.aliases, 2)
-        && prepStandardAlias(d.aliases, 3) && prepStandardAlias(d.aliases, 4) && prepStandardAlias(d.aliases, 5)
-        && prepStandardAlias(d.aliases, 6) && prepStandardAlias(d.aliases, 7) && prepStandardAlias(d.aliases, 8)
-        && prepStandardAlias(d.aliases, 9) && prepStandardAlias(d.aliases, 10) && prepStandardAlias(d.aliases, 11)
-        && (d.minimum == null || (d.minimum is number && d.minimum >= 0 && d.minimum <= 1000000))
-        && prepStandardText(d.unit, 40) && d.instruction is string && d.instruction.size() <= 500
-        && d.recipe is string && (d.recipe == '' || d.recipe.matches('[a-zA-Z0-9_-]{1,160}'))
-        && d.archived is bool && d.v is int && d.v > 0
-        && d.at is number && d.at >= 0 && d.at <= request.time.toMillis() + 300000
-        && d.by is string && d.by == reader();
-    }
     match /kitchens/KITCHEN_PIN/prepStandards/{id} {
+      // Section prep standards: one item per document so every value is checked and a stale editor cannot replace
+      // another item. Staff read the head chef's standards; only the current head recorder changes them. No stock or
+      // service-check state is stored here. A section query is bounded by the client and adds no listener.
+      function prepStandardId(id) { return id is string && id.matches('[a-zA-Z0-9_-]{1,80}'); }
+      function prepStandardText(value, size) { return value is string && value.size() > 0 && value.size() <= size && value.matches('.*\\S.*'); }
+      function prepStandardAlias(aliases, index) { return aliases.size() <= index || prepStandardText(aliases[index], 160); }
+      function prepStandardOk(id) {
+        let d = request.resource.data;
+        return prepStandardId(id)
+          && d.keys().hasOnly(['sectionId', 'name', 'aliases', 'minimum', 'unit', 'instruction', 'recipe', 'archived', 'v', 'at', 'by'])
+          && d.keys().hasAll(['sectionId', 'name', 'aliases', 'minimum', 'unit', 'instruction', 'recipe', 'archived', 'v', 'at', 'by'])
+          && prepStandardId(d.sectionId) && prepStandardText(d.name, 160)
+          && d.aliases is list && d.aliases.size() <= 12
+          && prepStandardAlias(d.aliases, 0) && prepStandardAlias(d.aliases, 1) && prepStandardAlias(d.aliases, 2)
+          && prepStandardAlias(d.aliases, 3) && prepStandardAlias(d.aliases, 4) && prepStandardAlias(d.aliases, 5)
+          && prepStandardAlias(d.aliases, 6) && prepStandardAlias(d.aliases, 7) && prepStandardAlias(d.aliases, 8)
+          && prepStandardAlias(d.aliases, 9) && prepStandardAlias(d.aliases, 10) && prepStandardAlias(d.aliases, 11)
+          && (d.minimum == null || (d.minimum is number && d.minimum >= 0 && d.minimum <= 1000000))
+          && prepStandardText(d.unit, 40) && d.instruction is string && d.instruction.size() <= 500
+          && d.recipe is string && (d.recipe == '' || d.recipe.matches('[a-zA-Z0-9_-]{1,160}'))
+          && d.archived is bool && d.v is int && d.v > 0
+          && d.at is number && d.at >= 0 && d.at <= request.time.toMillis() + 300000
+          && d.by is string && d.by == reader();
+      }
       allow read: if kitchenRead();
       allow create, update: if (isAdmin() || headWrite()) && prepStandardOk(id) && nextVersion()
         && (resource == null || request.resource.data.sectionId == resource.data.sectionId);
@@ -1691,115 +1731,97 @@ service cloud.firestore {
     // validates each item and snapshot line, while these rules bound the arrays and enforce roles, revisions and the
     // writes that must be together. The owner may copy valid records unchanged when moving the kitchen PIN.
     function supRead() { return isAdmin() || (sessOk(reader()) && !functionOnly(reader()) && chefId(reader())); }
-    function supEdit() { return isAdmin() || headWrite(); }
     function supChef() { return isAdmin() || (staff() && chefId(request.resource.data.by)); }
     function supId(id) { return id is string && id.matches('[a-zA-Z0-9_-]{1,80}'); }
-    function supString(d, k, n) { return d.get(k, '') is string && d.get(k, '').size() <= n; }
     function supDay(day) { return day is string && day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}'); }
-    function supDoc(sid) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/suppliers/$(sid); }
-    function supAuditDoc(sid, v) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/suppliers/$(sid)/audit/$(string(v)); }
-    function supOrderDoc(sid, id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/suppliers/$(sid)/orders/$(id); }
-    function supLinkDoc(day, cid) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/supplierlinks/$(day + '_' + cid); }
     function supCutDoc(day, cid) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/cutdone/$(day + '_' + cid); }
-    function supHistoryOk(sid, d) {
-      return !d.keys().hasAny(['historyFrom', 'historyBefore', 'historyItems'])
-        || (d.keys().hasAll(['historyFrom', 'historyBefore']) && supId(d.historyFrom) && d.historyFrom != sid
-          && d.historyBefore is number && d.historyBefore > 0 && d.historyBefore < 9007199254740991
-          && d.historyBefore <= d.at && (!d.keys().hasAny(['historyItems'])
-            || (d.historyItems is map && d.historyItems.size() > 0 && d.historyItems.size() <= 600)));
-    }
-    // A first split has one immutable parent, cutoff and optional item map. Both revisions and audits commit together.
-    function supSplitPair() {
-      let d = request.resource.data;
-      let p = supDoc(d.historyFrom);
-      let old = get(p).data;
-      let next = getAfter(p).data;
-      return exists(p) && !old.keys().hasAny(['historyFrom', 'historyBefore', 'historyItems']) && next.v == old.v + 1
-        && !next.keys().hasAny(['historyFrom', 'historyBefore', 'historyItems'])
-        && next.at == d.at && next.by == d.by && d.historyBefore == d.at;
-    }
-    function supHistoryUnchanged() {
-      let d = request.resource.data;
-      return d.get('historyFrom', '') == resource.data.get('historyFrom', '')
-        && d.get('historyBefore', 0) == resource.data.get('historyBefore', 0)
-        && d.get('historyItems', {}) == resource.data.get('historyItems', {});
-    }
-    function supHistoryAttach() {
-      return !resource.data.keys().hasAny(['historyFrom', 'historyBefore', 'historyItems'])
-        && request.resource.data.keys().hasAll(['historyFrom', 'historyBefore']) && supSplitPair();
-    }
-    function supCatalogueOk(sid) {
-      let d = request.resource.data;
-      return supId(sid) && d.keys().hasOnly(['name', 'cutoffId', 'v', 'items', 'at', 'by', 'historyFrom', 'historyBefore', 'historyItems'])
-        && d.name is string && d.name.size() > 0 && d.name.size() <= 80
-        && supString(d, 'cutoffId', 40) && (d.cutoffId == '' || d.cutoffId.matches('[a-z0-9-]{1,40}'))
-        && d.v is int && d.v > 0 && d.items is list && d.items.size() <= 600
-        && d.at is number && d.at >= 0 && d.by is string && d.by.size() > 0 && d.by.size() <= 80
-        && supHistoryOk(sid, d);
-    }
-    function supCatalogueAudit(sid) {
-      let d = request.resource.data;
-      let a = getAfter(supAuditDoc(sid, d.v)).data;
-      return !exists(supAuditDoc(sid, d.v)) && a.v == d.v && a.by == d.by && a.at == d.at;
-    }
-    function supAuditOk(revision) {
-      let d = request.resource.data;
-      return d.keys().hasOnly(['v', 'itemId', 'action', 'before', 'after', 'at', 'by'])
-        && d.v is int && d.v > 0 && revision == string(d.v)
-        && supString(d, 'itemId', 80) && d.action is string && d.action.size() > 0 && d.action.size() <= 80
-        && (d.before == null || d.before is map) && (d.after == null || d.after is map)
-        && d.at is number && d.at >= 0 && d.by is string && d.by.size() > 0 && d.by.size() <= 80;
-    }
-    function supAuditPair(sid) {
-      let d = request.resource.data;
-      let c = getAfter(supDoc(sid)).data;
-      return (!exists(supDoc(sid)) || get(supDoc(sid)).data.v < d.v)
-        && c.v == d.v && c.by == d.by && c.at == d.at;
-    }
-    function supOrderOk(sid, id) {
-      let d = request.resource.data;
-      return supId(sid) && id is string && id.matches('[a-zA-Z0-9_-]{1,100}')
-        && d.keys().hasOnly(['sid', 'supplierName', 'v', 'at', 'day', 'deliveryDay', 'cutoffDay', 'cutoffId', 'by', 'lines'])
-        && d.sid == sid && d.supplierName is string && d.supplierName.size() > 0 && d.supplierName.size() <= 80
-        && d.v is int && d.v > 0 && d.at is number && d.at >= 0 && supDay(d.day)
-        && d.deliveryDay is string && (d.deliveryDay == '' || supDay(d.deliveryDay))
-        && d.cutoffDay is string && (d.cutoffDay == '' || supDay(d.cutoffDay))
-        && d.cutoffId is string && (d.cutoffId == '' || d.cutoffId.matches('[a-z0-9-]{1,40}'))
-        && ((d.cutoffId == '' && d.cutoffDay == '') || (d.cutoffId != '' && d.cutoffDay != ''))
-        && d.by is string && d.by.size() > 0 && d.by.size() <= 80
-        && d.lines is list && d.lines.size() > 0 && d.lines.size() <= 300;
-    }
-    function supOrderCurrent(sid) {
-      let d = request.resource.data;
-      let c = getAfter(supDoc(sid)).data;
-      return d.v == c.v && d.at > c.at && d.supplierName == c.name && (d.cutoffId == '' || d.cutoffId == c.cutoffId);
-    }
-    function supOrderPair(sid, id) {
-      let d = request.resource.data;
-      let l = getAfter(supLinkDoc(d.cutoffDay, d.cutoffId)).data;
-      let c = getAfter(supCutDoc(d.cutoffDay, d.cutoffId)).data;
-      return d.cutoffId == '' || (l.sid == sid && l.orderId == id && l.cutoffId == d.cutoffId
-        && l.day == d.cutoffDay && l.by == d.by && l.at == d.at
-        && c.sid == d.cutoffId && c.day == d.cutoffDay && c.on == true && c.by == d.by && c.at == d.at);
-    }
-    function supLinkOk(id) {
-      let d = request.resource.data;
-      return d.keys().hasOnly(['sid', 'cutoffId', 'day', 'v', 'orderId', 'at', 'by'])
-        && supId(d.sid) && d.cutoffId is string && d.cutoffId.matches('[a-z0-9-]{1,40}')
-        && supDay(d.day) && id == d.day + '_' + d.cutoffId
-        && d.v is int && d.v > 0 && d.orderId is string && d.orderId.matches('[a-zA-Z0-9_-]{1,100}')
-        && d.at is number && d.at >= 0 && d.by is string && d.by.size() > 0 && d.by.size() <= 80;
-    }
-    function supLinkPair() {
-      let d = request.resource.data;
-      let p = supOrderDoc(d.sid, d.orderId);
-      let o = getAfter(p).data;
-      let c = getAfter(supCutDoc(d.day, d.cutoffId)).data;
-      return !exists(p) && o.sid == d.sid && o.cutoffId == d.cutoffId && o.cutoffDay == d.day
-        && o.by == d.by && o.at == d.at
-        && c.sid == d.cutoffId && c.day == d.day && c.on == true && c.by == d.by && c.at == d.at;
-    }
     match /kitchens/KITCHEN_PIN/suppliers/{sid} {
+      function supEdit() { return isAdmin() || headWrite(); }
+      function supString(d, k, n) { return d.get(k, '') is string && d.get(k, '').size() <= n; }
+      function supDoc(sid) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/suppliers/$(sid); }
+      function supAuditDoc(sid, v) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/suppliers/$(sid)/audit/$(string(v)); }
+      function supLinkDoc(day, cid) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/supplierlinks/$(day + '_' + cid); }
+      function supHistoryOk(sid, d) {
+        return !d.keys().hasAny(['historyFrom', 'historyBefore', 'historyItems'])
+          || (d.keys().hasAll(['historyFrom', 'historyBefore']) && supId(d.historyFrom) && d.historyFrom != sid
+            && d.historyBefore is number && d.historyBefore > 0 && d.historyBefore < 9007199254740991
+            && d.historyBefore <= d.at && (!d.keys().hasAny(['historyItems'])
+              || (d.historyItems is map && d.historyItems.size() > 0 && d.historyItems.size() <= 600)));
+      }
+      // A first split has one immutable parent, cutoff and optional item map. Both revisions and audits commit together.
+      function supSplitPair() {
+        let d = request.resource.data;
+        let p = supDoc(d.historyFrom);
+        let old = get(p).data;
+        let next = getAfter(p).data;
+        return exists(p) && !old.keys().hasAny(['historyFrom', 'historyBefore', 'historyItems']) && next.v == old.v + 1
+          && !next.keys().hasAny(['historyFrom', 'historyBefore', 'historyItems'])
+          && next.at == d.at && next.by == d.by && d.historyBefore == d.at;
+      }
+      function supHistoryUnchanged() {
+        let d = request.resource.data;
+        return d.get('historyFrom', '') == resource.data.get('historyFrom', '')
+          && d.get('historyBefore', 0) == resource.data.get('historyBefore', 0)
+          && d.get('historyItems', {}) == resource.data.get('historyItems', {});
+      }
+      function supHistoryAttach() {
+        return !resource.data.keys().hasAny(['historyFrom', 'historyBefore', 'historyItems'])
+          && request.resource.data.keys().hasAll(['historyFrom', 'historyBefore']) && supSplitPair();
+      }
+      function supCatalogueOk(sid) {
+        let d = request.resource.data;
+        return supId(sid) && d.keys().hasOnly(['name', 'cutoffId', 'v', 'items', 'at', 'by', 'historyFrom', 'historyBefore', 'historyItems'])
+          && d.name is string && d.name.size() > 0 && d.name.size() <= 80
+          && supString(d, 'cutoffId', 40) && (d.cutoffId == '' || d.cutoffId.matches('[a-z0-9-]{1,40}'))
+          && d.v is int && d.v > 0 && d.items is list && d.items.size() <= 600
+          && d.at is number && d.at >= 0 && d.by is string && d.by.size() > 0 && d.by.size() <= 80
+          && supHistoryOk(sid, d);
+      }
+      function supCatalogueAudit(sid) {
+        let d = request.resource.data;
+        let a = getAfter(supAuditDoc(sid, d.v)).data;
+        return !exists(supAuditDoc(sid, d.v)) && a.v == d.v && a.by == d.by && a.at == d.at;
+      }
+      function supAuditOk(revision) {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['v', 'itemId', 'action', 'before', 'after', 'at', 'by'])
+          && d.v is int && d.v > 0 && revision == string(d.v)
+          && supString(d, 'itemId', 80) && d.action is string && d.action.size() > 0 && d.action.size() <= 80
+          && (d.before == null || d.before is map) && (d.after == null || d.after is map)
+          && d.at is number && d.at >= 0 && d.by is string && d.by.size() > 0 && d.by.size() <= 80;
+      }
+      function supAuditPair(sid) {
+        let d = request.resource.data;
+        let c = getAfter(supDoc(sid)).data;
+        return (!exists(supDoc(sid)) || get(supDoc(sid)).data.v < d.v)
+          && c.v == d.v && c.by == d.by && c.at == d.at;
+      }
+      function supOrderOk(sid, id) {
+        let d = request.resource.data;
+        return supId(sid) && id is string && id.matches('[a-zA-Z0-9_-]{1,100}')
+          && d.keys().hasOnly(['sid', 'supplierName', 'v', 'at', 'day', 'deliveryDay', 'cutoffDay', 'cutoffId', 'by', 'lines'])
+          && d.sid == sid && d.supplierName is string && d.supplierName.size() > 0 && d.supplierName.size() <= 80
+          && d.v is int && d.v > 0 && d.at is number && d.at >= 0 && supDay(d.day)
+          && d.deliveryDay is string && (d.deliveryDay == '' || supDay(d.deliveryDay))
+          && d.cutoffDay is string && (d.cutoffDay == '' || supDay(d.cutoffDay))
+          && d.cutoffId is string && (d.cutoffId == '' || d.cutoffId.matches('[a-z0-9-]{1,40}'))
+          && ((d.cutoffId == '' && d.cutoffDay == '') || (d.cutoffId != '' && d.cutoffDay != ''))
+          && d.by is string && d.by.size() > 0 && d.by.size() <= 80
+          && d.lines is list && d.lines.size() > 0 && d.lines.size() <= 300;
+      }
+      function supOrderCurrent(sid) {
+        let d = request.resource.data;
+        let c = getAfter(supDoc(sid)).data;
+        return d.v == c.v && d.at > c.at && d.supplierName == c.name && (d.cutoffId == '' || d.cutoffId == c.cutoffId);
+      }
+      function supOrderPair(sid, id) {
+        let d = request.resource.data;
+        let l = getAfter(supLinkDoc(d.cutoffDay, d.cutoffId)).data;
+        let c = getAfter(supCutDoc(d.cutoffDay, d.cutoffId)).data;
+        return d.cutoffId == '' || (l.sid == sid && l.orderId == id && l.cutoffId == d.cutoffId
+          && l.day == d.cutoffDay && l.by == d.by && l.at == d.at
+          && c.sid == d.cutoffId && c.day == d.cutoffDay && c.on == true && c.by == d.by && c.at == d.at);
+      }
       allow read: if supRead();
       allow create: if supEdit() && supCatalogueOk(sid)
         && (isAdmin() || (request.resource.data.v == 1 && supCatalogueAudit(sid)
@@ -1822,6 +1844,24 @@ service cloud.firestore {
       }
     }
     match /kitchens/KITCHEN_PIN/supplierlinks/{id} {
+      function supOrderDoc(sid, id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/suppliers/$(sid)/orders/$(id); }
+      function supLinkOk(id) {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['sid', 'cutoffId', 'day', 'v', 'orderId', 'at', 'by'])
+          && supId(d.sid) && d.cutoffId is string && d.cutoffId.matches('[a-z0-9-]{1,40}')
+          && supDay(d.day) && id == d.day + '_' + d.cutoffId
+          && d.v is int && d.v > 0 && d.orderId is string && d.orderId.matches('[a-zA-Z0-9_-]{1,100}')
+          && d.at is number && d.at >= 0 && d.by is string && d.by.size() > 0 && d.by.size() <= 80;
+      }
+      function supLinkPair() {
+        let d = request.resource.data;
+        let p = supOrderDoc(d.sid, d.orderId);
+        let o = getAfter(p).data;
+        let c = getAfter(supCutDoc(d.day, d.cutoffId)).data;
+        return !exists(p) && o.sid == d.sid && o.cutoffId == d.cutoffId && o.cutoffDay == d.day
+          && o.by == d.by && o.at == d.at
+          && c.sid == d.cutoffId && c.day == d.day && c.on == true && c.by == d.by && c.at == d.at;
+      }
       allow read: if supRead();
       allow create: if supChef() && supLinkOk(id) && (isAdmin() || (request.resource.data.v == 1 && supLinkPair()));
       allow update: if supChef() && supLinkOk(id) && ((isAdmin() && request.resource.data == resource.data)
@@ -1829,12 +1869,12 @@ service cloud.firestore {
           && request.resource.data.day == resource.data.day && request.resource.data.cutoffId == resource.data.cutoffId && supLinkPair()));
       allow delete: if false;
     }
-    // pushsent (what the server has sent) has no rule: only the server reads and writes it.
-    // The drinks run: each person's usual coffee or drink, one record per person (the record id is their id).
-    // Everyone with the kitchen PIN reads them; only that person writes their own (own PIN session).
-    // The head chef may also create one when moving everything to a new kitchen PIN (an exact copy of the old record).
-    function dkStr(k, n) { return request.resource.data.get(k, '') is string && request.resource.data.get(k, '').size() <= n; }
     match /kitchens/KITCHEN_PIN/drinks/{id} {
+      // pushsent (what the server has sent) has no rule: only the server reads and writes it.
+      // The drinks run: each person's usual coffee or drink, one record per person (the record id is their id).
+      // Everyone with the kitchen PIN reads them; only that person writes their own (own PIN session).
+      // The head chef may also create one when moving everything to a new kitchen PIN (an exact copy of the old record).
+      function dkStr(k, n) { return request.resource.data.get(k, '') is string && request.resource.data.get(k, '').size() <= n; }
       allow read: if kitchenRead();
       allow create, update: if isAdmin() || (staff() && id == request.resource.data.by
         && request.resource.data.keys().hasOnly(['by', 'kind', 'size', 'milk', 'shot', 'sugar', 'note', 'cold', 'other', 'at'])
@@ -1861,23 +1901,23 @@ service cloud.firestore {
         && request.resource.data.at is number);
       allow delete: if isAdmin();
     }
-    // Today's team (7 Nov 2026, docs/todays-team-options/brief.md): the day's plan, team/<day> { day, on: [{ id, sh, sec }],
-    // br: [{ id, sh, at, len }], v, at, upd, by }. on puts a person on a shift with a section; br is a break (at: minutes
-    // after midnight, len: minutes). Every signed-in kitchen session reads it (staff see their own day and who is on a
-    // break); only the head chef, the sous chefs (own PIN) and the verified admin write it. v counts the saves: a save
-    // must carry the next number after the stored one, so a chef never writes over another chef's newer save unread.
-    // The lists are checked for size here and entry by entry on every phone that reads them (teamClean in js/prep.js).
-    function teamBy() { return isAdmin() || (staff() && chefId(request.resource.data.by)); }
-    function teamOk(day) {
-      let d = request.resource.data;
-      return d.keys().hasOnly(['day', 'on', 'br', 'v', 'at', 'upd', 'by'])
-        && d.day == day && day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
-        && d.on is list && d.on.size() <= 120 && d.br is list && d.br.size() <= 120
-        && d.v is int && d.v == (resource == null ? 1 : resource.data.v + 1)
-        && d.at is number && d.upd is number
-        && (resource == null || d.at == resource.data.at);
-    }
     match /kitchens/KITCHEN_PIN/team/{day} {
+      // Today's team (7 Nov 2026, docs/todays-team-options/brief.md): the day's plan, team/<day> { day, on: [{ id, sh, sec }],
+      // br: [{ id, sh, at, len }], v, at, upd, by }. on puts a person on a shift with a section; br is a break (at: minutes
+      // after midnight, len: minutes). Every signed-in kitchen session reads it (staff see their own day and who is on a
+      // break); only the head chef, the sous chefs (own PIN) and the verified admin write it. v counts the saves: a save
+      // must carry the next number after the stored one, so a chef never writes over another chef's newer save unread.
+      // The lists are checked for size here and entry by entry on every phone that reads them (teamClean in js/prep.js).
+      function teamBy() { return isAdmin() || (staff() && chefId(request.resource.data.by)); }
+      function teamOk(day) {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['day', 'on', 'br', 'v', 'at', 'upd', 'by'])
+          && d.day == day && day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+          && d.on is list && d.on.size() <= 120 && d.br is list && d.br.size() <= 120
+          && d.v is int && d.v == (resource == null ? 1 : resource.data.v + 1)
+          && d.at is number && d.upd is number
+          && (resource == null || d.at == resource.data.at);
+      }
       allow read: if kitchenRead();
       allow create, update: if teamBy() && teamOk(day);
       allow delete: if isAdmin();
@@ -1935,29 +1975,30 @@ service cloud.firestore {
         && (resource == null || request.time > resource.data.at + duration.value(20, 's'));
       allow delete: if isAdmin();
     }
-    // A policy-v2 session belongs to one anonymous device and ends at the next Brisbane 04:00. An old proof
-    // from before that boundary cannot unlock the next app day. Renewals keep this exact authentication cycle.
-    function freshDevicePin(d, uid) {
-      return exists(triesDoc(d.by)) && get(triesDoc(d.by)).data.uid == uid
-        && get(triesDoc(d.by)).data.at is timestamp
-        && get(triesDoc(d.by)).data.at.toMillis() >= nextFour(request.time.toMillis()) - 86400000
-        && request.time < get(triesDoc(d.by)).data.at + duration.value(2, 'm')
-        && exists(pinDoc(d.by)) && get(triesDoc(d.by)).data.tok == get(pinDoc(d.by)).data.hash;
-    }
-    function deviceSessionWrite(uid) {
-      let d = request.resource.data;
-      return anonymousDevice() && request.auth.uid == uid
-        && d.keys().hasOnly(['by', 'pinAt', 'exp', 'at', 'issuedAt', 'mode', 'v'])
-        && d.keys().hasAll(['by', 'pinAt', 'exp', 'at', 'issuedAt', 'mode', 'v'])
-        && d.by is string && onList(d.by) && d.at == request.time && dailySession(d) && d.issuedAt <= request.time
-        && d.exp > request.time.toMillis()
-        && exists(setDoc(d.by)) && d.pinAt == get(setDoc(d.by)).data.at
-        && ((d.issuedAt == request.time && freshDevicePin(d, uid))
-          || (resource != null && dailySession(resource.data) && resource.data.by == d.by
-            && resource.data.pinAt == d.pinAt && resource.data.mode == d.mode && resource.data.issuedAt == d.issuedAt
-            && resource.data.exp > request.time.toMillis()));
-    }
     match /kitchens/KITCHEN_PIN/sessions/{uid} {
+      function triesDoc(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/tries/$(id); }
+      // A policy-v2 session belongs to one anonymous device and ends at the next Brisbane 04:00. An old proof
+      // from before that boundary cannot unlock the next app day. Renewals keep this exact authentication cycle.
+      function freshDevicePin(d, uid) {
+        return exists(triesDoc(d.by)) && get(triesDoc(d.by)).data.uid == uid
+          && get(triesDoc(d.by)).data.at is timestamp
+          && get(triesDoc(d.by)).data.at.toMillis() >= nextFour(request.time.toMillis()) - 86400000
+          && request.time < get(triesDoc(d.by)).data.at + duration.value(2, 'm')
+          && exists(pinDoc(d.by)) && get(triesDoc(d.by)).data.tok == get(pinDoc(d.by)).data.hash;
+      }
+      function deviceSessionWrite(uid) {
+        let d = request.resource.data;
+        return anonymousDevice() && request.auth.uid == uid
+          && d.keys().hasOnly(['by', 'pinAt', 'exp', 'at', 'issuedAt', 'mode', 'v'])
+          && d.keys().hasAll(['by', 'pinAt', 'exp', 'at', 'issuedAt', 'mode', 'v'])
+          && d.by is string && onList(d.by) && d.at == request.time && dailySession(d) && d.issuedAt <= request.time
+          && d.exp > request.time.toMillis()
+          && exists(setDoc(d.by)) && d.pinAt == get(setDoc(d.by)).data.at
+          && ((d.issuedAt == request.time && freshDevicePin(d, uid))
+            || (resource != null && dailySession(resource.data) && resource.data.by == d.by
+              && resource.data.pinAt == d.pinAt && resource.data.mode == d.mode && resource.data.issuedAt == d.issuedAt
+              && resource.data.exp > request.time.toMillis()));
+      }
       allow read: if request.auth != null && request.auth.uid == uid;
       allow create, update: if deviceSessionWrite(uid);
       allow delete: if (request.auth != null && request.auth.uid == uid) || isAdmin();
@@ -1976,9 +2017,9 @@ service cloud.firestore {
         && onlyKeys(['name', 'visits', 'lastSeen', 'added', 'lastAdded', 'ticked', 'by']));
       allow delete: if isAdmin();
     }
-    // Sections and what the prep list learned: anyone with a PIN counts a use; hiding one is for the head chef or a sous chef.
-    function hideOk() { return sousBy() || request.resource.data.get('hidden', false) == resource.data.get('hidden', false); }
     match /kitchens/KITCHEN_PIN/sections/{id} {
+      // Sections and what the prep list learned: anyone with a PIN counts a use; hiding one is for the head chef or a sous chef.
+      function hideOk() { return sousBy() || request.resource.data.get('hidden', false) == resource.data.get('hidden', false); }
       allow read: if kitchenRead();
       allow create: if isAdmin() || (staff() && request.resource.data.name is string && request.resource.data.name.size() <= 40
         && onlyKeys(['name', 'uses', 'lastUsed', 'lastBy', 'hidden', 'by']) && (sousBy() || request.resource.data.get('hidden', false) == false));

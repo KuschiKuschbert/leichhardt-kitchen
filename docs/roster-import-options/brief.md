@@ -2,7 +2,7 @@
 
 14 November 2026, Queensland. Head chef request: fill Today's team from the Humanforce Weekly Department Roster Report (CSV export) while a read-only Humanforce API key is requested from Australian Venue Co IT. [Proposal](proposal.md), [evidence packet](evidence-packet.md). Role-based analysis, not research with staff.
 
-**Status: the combined design chosen 14 November 2026. Step 1 (the reader), step 2 (the admin panel screen) and step 3 (Save the filled days) built and tested; draft pull request #699. The week-to-week measurement waits for a second roster.**
+**Status: the combined design chosen 14 November 2026. Steps 1 to 3 merged in #699 (live 14 November 2026). Step 4 (name links for nicknames) built and tested, rules first. The week-to-week measurement waits for a second roster.**
 
 ## Head chef answers after round 1 (14 November 2026)
 
@@ -298,3 +298,20 @@ The owner asked to "let the sous chef see the imported team as well and let him 
 | Save the N filled days | Saving..., the button and chips off | Saved with a tick, then the dated list of days saved; chips say Saved | Red words stay: none saved, drafts kept, Try again. A saved day is changed later by opening it and saving again |
 
 **Checks** (`tests/roster-import-ui.test.js`, now 43): the button names the 6 days; a refused write saves none and offers Try again with every day still Draft; Try again saves all six, each `v: 1` with its services and no breaks; Wednesday unchanged; Monday holds every service each shift touches; the block says All 6 filled days are saved and what was saved; every chip says Saved; then a sous chef on `#/team` opens Monday, sees the imported team without the roster tool, spreads the Dinner breaks and saves `v: 2` with the team unchanged. Screenshots: `built-saveall-390.png`, `built-saved-390.png`.
+
+## Step 4: name links for nicknames (built 14 November 2026)
+
+After #699 merged, the owner found "a big problem, sometimes we're given nicknames": a person in the book as "Kuschi" is on the roster under their full name, so the given-name rule never finds them. Offered three places to keep links (a private admin record; the staff list, which every kitchen phone reads; this device only), the owner chose the recommended private admin record.
+
+**Quick check (small change on the admin-only roster block, plus one admin-only record).** No new page, tab or pop-up. Main task, linking a nickname: choose the person, Link (2 taps), once per person ever; every later roster then needs no taps for them. Contract fit: never guess (a link is the head chef's explicit choice; a person in the book with a link is found only through it); who sees what is locked in the rules, not only hidden. Break-it: links that cannot be read fill nothing (else a nickname could fall back to a given name and land on the wrong person); two roster names linked to one person are both listed; a link to someone taken off the staff list is ignored; an old cached reader without links refuses to run (`api: 2`).
+
+**Data and rules.** `config/rosterLinks { links: [{ name, id }], upd, by }`, at most 80 links. Rules: `get`, `delete`, `create` and `update` only for `isAdmin()`, `list` never; only those three keys, `links` a list of at most 80. Looser for the admin only (a new record), so the rules are published before the code. Emulator: `tests/rules/client-shapes.test.mjs` rows for the read and the write (admin devices only, every other sign-in refused) and two refused shapes (another field; 81 links); `tests/rules/access.test.mjs` adds it to the private matrix (232 checks pass).
+
+**How it works.**
+1. Choose roster file now also reads the links (1 read). A read that fails, or answers only from the device's cache, fills nothing and says "Could not read your roster name links."
+2. `LK_ROSTER.match(people, staff, links)`: a linked roster name goes to its person first; people in the book with a link are left out of given-name matching; two names on one person are both listed.
+3. On the Not in the book card each name has a picker, "Link to a person in the book" (people already linked are not offered), and Link. Link with nobody chosen says so and saves nothing.
+4. Link saves the whole list (one write) and adds that person's shifts to this roster's days that are still drafts from it, or still empty: "Linked Mary Jo Kahale to MJ. Added to Thu 19, Fri 20, Sat 21, Sun 22, not saved yet. Not changed: Wed 18 (saved, past or planned before). Add MJ there with Add staff."
+5. Name links (N) folds the saved links, each with Unlink. Unlinking keeps days already filled: "Unlinked Mary Jo Kahale. Days already filled keep MJ; change them by hand if needed."
+
+**Checks.** `tests/roster-import.test.js` (68): linked names, case and spaces, a linked book person not found by a given name, a link to someone gone, two names on one person, the plan with a link. `tests/roster-import-ui.test.js` (57): Link with nobody chosen; Link saves the record (`links`, `upd`, `by`); she leaves the list and her days are named; Wednesday unchanged; the fold lists the link; MJ on Thursday with her roster time and saved; the next roster matches her by the link; Unlink empties the record; links that cannot be read fill nothing.

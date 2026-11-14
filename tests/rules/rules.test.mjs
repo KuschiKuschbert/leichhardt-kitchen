@@ -605,6 +605,55 @@ await ok(W([[sid, sent({ sent: false, sentBy: 'bo' })]], { id: 'sam' }), true, '
 await ok(W([['fnsent/f1_' + (T0 + 5400000), sent({ at: T0 + 5400000, price: 1 })]], { id: 'ann' }), false, 'sent: no other fields');
 await ok(setDoc(doc(anon, K + 'fnsent/f1_' + (T0 + 5400000)), sent({ at: T0 + 5400000, by: 'ann' })), false, 'sent: no tick without a PIN');
 await ok(deleteDoc(doc(owner, K + sid)), false, 'sent: never deleted');
+// Functions: trips sent from the pass, and Functions confirming each (14 Nov 2026, docs/function-handover-options/brief.md).
+// For this part Fay has the Functions tick and works in the kitchen too; Finn is Functions only (fnOnlyIds).
+await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'config/main'), { fnIds: ['finn', 'fay'], fnOnlyIds: ['finn'] }, { merge: true }); });
+const TA = T0 + 7200000, tid = (k, at) => 'fnsent/f1_' + (at || TA) + '_t' + k;
+const trip = x => Object.assign({ fid: 'f1', at: TA, day: '2026-10-24', k: 1, n: { 'antipasto-platter': 4, 'pizza-platter': 3 }, sentAt: Date.now(), sentBy: 'ann' }, x || {});
+const t1 = trip();
+await ok(W([[tid(1), t1]], { id: 'ann' }), true, 'trip: Ann sends trip 1, as herself');
+await ok(W([[tid(1), t1]], { id: 'ann' }), true, 'trip: the same trip again (a retry or a double tap) changes nothing and is let through');
+await ok(W([[tid(1), trip({ n: { 'sliders-platter': 2 }, sentBy: 'bo' })]], { id: 'bo' }), false, 'trip: a second phone sending the same trip number is refused');
+await ok(W([[tid(1), Object.assign({}, t1, { n: { 'antipasto-platter': 5, 'pizza-platter': 3 } })]], { id: 'ann' }), false, 'trip: a sent trip cannot be changed, even by its sender');
+await ok(W([[tid(2), trip({ k: 3 })]], { id: 'ann' }), false, 'trip: the record id must be the round and the trip number');
+await ok(W([[tid(2), trip({ k: 2, sentBy: 'bo' })]], { id: 'ann' }), false, 'trip: Ann cannot send a trip in Bo\'s name');
+await ok(W([[tid(2), trip({ k: 2, sentBy: 'finn' })]], { id: 'finn' }), false, 'trip: Functions-only staff cannot send');
+await ok(W([[tid(2), trip({ k: 2, price: 1 })]], { id: 'ann' }), false, 'trip: no other fields');
+await ok(W([[tid(2), trip({ k: 2, n: {} })]], { id: 'ann' }), false, 'trip: a trip with nothing in it is refused');
+await ok(W([[tid(2), trip({ k: 2, n: Object.fromEntries(Array.from({ length: 13 }, (_, i) => ['p' + i, 1])) })]], { id: 'ann' }), false, 'trip: at most 12 kinds of platter');
+await ok(W([[tid(2), trip({ k: 2, sentAt: Date.now() + 3600000 })]], { id: 'ann' }), false, 'trip: a send time an hour ahead of the server is refused');
+await ok(setDoc(doc(anon, K + tid(2)), trip({ k: 2, by: 'ann' })), false, 'trip: no trip without a PIN');
+const out = (who, x) => Object.assign({ outAt: Date.now(), outBy: who, outFor: false }, x || {});
+await ok(W([[tid(1), out('ann'), true]], { id: 'ann' }), false, 'trip out: the sender cannot confirm their own trip');
+await ok(W([[tid(1), out('bo'), true]], { id: 'bo' }), false, 'trip out: kitchen staff without Functions cannot confirm');
+await ok(W([[tid(1), out('finn'), true]], { id: 'fay' }), false, 'trip out: Fay cannot confirm in Finn\'s name');
+await ok(W([[tid(1), out('fay', { k: 9 }), true]], { id: 'fay' }), false, 'trip out: nothing but the Out fields may change');
+await ok(W([[tid(1), out('fay'), true]], { id: 'fay' }), true, 'trip out: Fay (Functions tick) confirms Ann\'s trip');
+await ok(W([[tid(1), out('finn'), true]], { id: 'finn' }), false, 'trip out: confirmed once only');
+await ok(W([[tid(1), { void: true, voidAt: Date.now(), voidBy: 'ann' }, true]], { id: 'ann' }), false, 'trip undo: not after Out, by the sender');
+await ok(W([[tid(1), { void: true, voidAt: Date.now(), voidBy: 'sam' }, true]], { id: 'sam' }), false, 'trip undo: not after Out, even by a sous chef');
+await ok(W([[tid(2), trip({ k: 2, sentBy: 'bo' })]], { id: 'bo' }), true, 'trip: Bo sends trip 2');
+await ok(W([[tid(2), { void: true, voidAt: Date.now(), voidBy: 'ann' }, true]], { id: 'ann' }), false, 'trip undo: Ann cannot undo Bo\'s trip');
+await ok(W([[tid(2), { void: true, voidAt: Date.now(), voidBy: 'bo' }, true]], { id: 'bo' }), true, 'trip undo: Bo undoes his own trip within 2 minutes');
+await ok(W([[tid(2), out('finn'), true]], { id: 'finn' }), false, 'trip out: an undone trip cannot be confirmed');
+await ok(W([[tid(2), { void: true, voidAt: Date.now(), voidBy: 'sam' }, true]], { id: 'sam' }), false, 'trip undo: an undone trip cannot be undone again');
+await ok(W([[tid(3), trip({ k: 3 })]], { id: 'ann' }), true, 'trip: Ann sends trip 3');
+await ok(W([[tid(3), out('sam', { outFor: true }), true]], { id: 'sam' }), false, 'trip out: a sous chef cannot confirm for Functions before 10 minutes');
+await ok(W([[tid(3), out('sam'), true]], { id: 'sam' }), false, 'trip out: a sous chef without Functions cannot confirm as Functions');
+await ok(W([[tid(3), out('finn'), true]], { id: 'finn' }), true, 'trip out: Finn (Functions only) confirms a trip');
+await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + tid(4)), Object.assign(trip({ k: 4, sentAt: Date.now() - 11 * 60000 }), { by: 'ann' })); });
+await ok(W([[tid(4), out('ann', { outFor: true }), true]], { id: 'ann' }), false, 'trip out: staff cannot confirm for Functions, even after 10 minutes');
+await ok(W([[tid(4), out('sam', { outFor: true }), true]], { id: 'sam' }), true, 'trip out: a sous chef confirms for Functions 10 minutes after it was sent');
+await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + tid(5)), Object.assign(trip({ k: 5, sentAt: Date.now() - 5 * 60000 }), { by: 'ann' })); });
+await ok(W([[tid(5), { void: true, voidAt: Date.now(), voidBy: 'ann' }, true]], { id: 'ann' }), false, 'trip undo: the sender cannot undo after 2 minutes');
+await ok(W([[tid(5), { void: true, voidAt: Date.now(), voidBy: 'sam' }, true]], { id: 'sam' }), true, 'trip undo: a sous chef undoes a trip still waiting');
+await ok(deleteDoc(doc(owner, K + tid(1))), false, 'trip: never deleted');
+// the last trip of a round also ticks the round's own Sent record, in one batch (older phones read only that)
+const TB = T0 + 9000000, legacy = x => Object.assign({ fid: 'f1', at: TB, day: '2026-10-24', sent: true, sentAt: Date.now(), sentBy: 'ann' }, x || {});
+await ok(W([[tid(1, TB), trip({ at: TB })], ['fnsent/f1_' + TB, legacy(), true]], { id: 'ann' }), true, 'trip: the last trip and the round\'s Sent tick in one batch');
+await ok(W([[tid(2, TB), trip({ at: TB, k: 2 })], ['fnsent/f1_' + TB, legacy(), true]], { id: 'ann' }), false, 'trip: a batch that ticks a round already ticked is refused whole (the book leaves the tick out then)');
+await ok(W([[tid(1, TB), { void: true, voidAt: Date.now(), voidBy: 'ann' }, true], ['fnsent/f1_' + TB, legacy({ sent: false }), true]], { id: 'ann' }), true, 'trip undo: the sender undoes the last trip and the round\'s tick together');
+await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'config/main'), { fnIds: ['finn'], fnOnlyIds: [] }, { merge: true }); });
 // A change to a past day stamps config/main.pastEdit (22 Oct 2026), so other phones read their saved past days again
 await ok(W([['config/main', { pastEdit: { p: Date.now() } }, true]], { id: 'sam' }), true, 'pastEdit: a sous chef stamps a past prep change');
 await ok(W([['config/main', { pastEdit: { p: Date.now(), o: Date.now() } }, true]], { id: 'hd' }), true, 'pastEdit: the head chef with their PIN stamps prep and orders');

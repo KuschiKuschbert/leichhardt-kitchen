@@ -274,23 +274,23 @@ function hasPrivateContact(value) {
   // a Sent tick the server refuses goes back and says so in red, above the sheet where its OK can be tapped (5 Nov 2026,
   // docs/action-feedback.md: before, only a screen reader heard it)
   await p.evaluate(() => { window.__fake.mode = 'fail'; });
-  await tap(p, '.fn-next [data-fn="sent"]'); await L.settle(p, 400);
+  await tap(p, '.fn-next [data-fn="send"]'); await L.settle(p, 400);
   ok(await p.evaluate(() => { const t = document.querySelector('.p-toast.p-toast-bad'), b = t && t.querySelector('.p-toast-btn'); if (!b || !/Not saved: round 1 not ticked as sent/.test(t.textContent)) return false; const r = b.getBoundingClientRect(); return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === b; }), 'sent failed: a red slip says round 1 is not ticked, above the sheet where OK can be tapped (' + (await txt(p, '.p-toast') || '') + ')');
   ok(/Next out 18:30 · round 1 of 3/.test((await txt(p, '.fn-next') || '').replace(/\s+/g, ' ')), 'sent failed: round 1 is still next out');
   await p.evaluate(() => { window.__fake.mode = 'ok'; });
   await tap(p, '.p-toast-bad .p-toast-btn'); await L.settle(p, 150);
   ok(!(await p.$('.p-toast-bad')), 'sent failed: OK puts the red slip away');
-  await tap(p, '.fn-next [data-fn="sent"]'); await L.settle(p, 400);
+  await tap(p, '.fn-next [data-fn="send"]'); await L.settle(p, 400);
   ok(/19:00 · round 2 of 3/.test(await txt(p, '.fn-next') || ''), 'sheet: Sent in the next box moves it on to round 2');
   s = await store(p);
   const st = s[fsKey(['fnsent', 'smith_' + at(today, '18:30')])];
   ok(!!st && st.sent === true && st.sentBy === 'ann' && st.by === 'ann' && st.day === today, 'sent: the tick is saved as Ann\'s');
-  ok(/Ann/.test(await txt(p, '.fn-sheet .fn-sent') || '') && !!(await p.$('.fn-sheet [data-fn="unsent"]')), 'sent: the sheet shows who ticked it, with Undo');
+  ok(/Ann/.test(await txt(p, '.fn-sheet .fn-sent') || '') && !!(await p.$('.fn-sheet [data-fn="trip-undo"]')), 'sent: the sheet shows who ticked it, with Undo');
   await p.keyboard.press('Escape'); await L.settle(p, 100);
   const bs = await txt(p, '#fn-band') || '';
   ok(/19:00 Smith 50th/.test(bs) && /Round 2 of 3: 2 × Aussie, 2 × Pizza \(4 of 12\)/.test(bs), 'sent: the band moves on to round 2 (' + bs.replace(/\s+/g, ' ').slice(0, 200) + ')');
   await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
-  await tap(p, '.fn-sheet [data-fn="unsent"]'); await L.settle(p, 400);
+  await tap(p, '.fn-sheet [data-fn="trip-undo"]'); await L.settle(p, 400);
   ok((await store(p))[fsKey(['fnsent', 'smith_' + at(today, '18:30')])].sent === false, 'sent: Undo takes the tick back');
   ok(p.errors.length === 0, 'sent: no page errors ' + p.errors.join(' | '));
   s = await store(p);
@@ -300,7 +300,7 @@ function hasPrivateContact(value) {
   p = await L.open(b, '#/recipes', { who: '', admin: true, extra: s, clock: at(today, '18:33'), wait: 1200 });
   await L.waitFor(p, () => /Smith 50th/.test((document.getElementById('fn-band') || {}).textContent || ''));
   await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
-  await tap(p, '.fn-next [data-fn="sent"]');
+  await tap(p, '.fn-next [data-fn="send"]');
   await L.waitFor(p, k => { const v = window.__fake.dump()[k]; return !!v && v.sent === true; }, fsKey(['fnsent', 'smith_' + at(today, '18:30')]), 6000).catch(() => {});
   const ot = (await store(p))[fsKey(['fnsent', 'smith_' + at(today, '18:30')])];
   const ownerHead = (await store(p))[fsKey(['config', 'main'])].headId;
@@ -327,10 +327,12 @@ function hasPrivateContact(value) {
   ok(/18:30 Late Smith 50th · Beer garden · round 1 of 3/.test(sv[0]) && /3 × Antipasto/.test(sv[0]) && /18:40 Jones 40th · Function room/.test(sv[1]) && /2 × Pizza/.test(sv[1]), 'service: the late round first, then the one due at 18:40 (' + sv.join(' / ').slice(0, 260) + ')');
   const tp = (await txt(p, '.fn-svc-page .fn-next') || '').replace(/\s+/g, ' ');
   ok(/To plate now 8 platters/.test(tp) && /4 ?× ?Antipasto Platter ?2 ?× ?Aussie Platter ?2 ?× ?Pizza Platter/.test(tp), 'service: to plate now adds both functions up, most first (' + tp.slice(0, 200) + ')');
-  await tap(p, '.fn-svc-row [data-fn="sent"][data-id="smith"]'); await L.settle(p, 400);
+  await tap(p, '.fn-svc-row [data-fn="send"][data-id="smith"]'); await L.settle(p, 400);
   sv = await p.$$eval('.fn-svc-row', els => els.map(e => e.textContent.replace(/\s+/g, ' ')));
   ok(sv.length === 3 && /18:40 Jones 40th/.test(sv[0]) && /19:00 Smith 50th · Beer garden · round 2 of 3/.test(sv[1]) && /19:30 Smith 50th · Beer garden · round 3 of 3/.test(sv[2]) && !/Later/.test(sv.join(' ')), 'service: Sent takes Smith round 1 off; Jones, then Smith rounds 2 and 3, one time each (' + sv.join(' / ').slice(0, 260) + ')');
-  ok(/Smith 50th round 1 sent 18:3\d, Ann/.test(await txt(p, '.fn-svc-just') || '') && !!(await p.$('.fn-svc-just [data-fn="unsent"]')), 'service: just sent shows who, with Undo');
+  // since 14 Nov 2026 (the two-way check) the sent round waits on the shelf for Functions, with who sent it and Undo
+  const shelf = (await txt(p, '.fn-svc-shelf') || '').replace(/\s+/g, ' ');
+  ok(/Trip 1 · 18:30 Smith 50th · Beer garden ?3 × Antipasto ?2 × Aussie ?sent 18:3\d Ann/.test(shelf) && /Waiting/.test(shelf) && !!(await p.$('.fn-svc-shelf [data-fn="trip-undo"]')), 'service: the sent round waits on the shelf with who sent it, and Undo (' + shelf.slice(0, 160) + ')');
   ok(await p.$eval('#fn-band', e => e.hidden), 'service: no band above the service view (it shows the same rounds)');
   await p.goto(L.BASE + '#/recipes'); await L.settle(p, 600);
   await L.waitFor(p, () => /Jones 40th/.test((document.getElementById('fn-band') || {}).textContent || ''));

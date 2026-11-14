@@ -22,7 +22,7 @@ const CLASSES = [
   'ux-modal', 'ux-modal-close', 'ux-modal-head', 'ux-modal-title', 'ux-modal-grip', 'ux-modal-shade',
   'nb-prog', 'p-card', 'p-h', 'hint', 'btn-row', 'btn', 'dark', 'p-link', 'p-err', 'chip', 'ux-picker', 'hm-team-staff', 'hm-staff-first', 'hm-rota',
   'nt-wrap', 'nt-bg', 'nt', 'nt-grip', 'nt-in', 'nt-head', 'nt-eb', 'nt-h', 'nt-date', 'nt-body', 'nt-foot', 'nt-got',
-  'tm-chip', 'wtop-icons', 'is-due', 'nb-pw', 'nb-tmset', 'nb-tmday', 'tm-fold', 'nb-ai', 'nb-aw', 'nb-onslot', 'nb-hbar', 'wb-list', 'nb-sgr', 'nb-sgadd', 'o-cut-fold', 'o-cut-cue', 'o-cut-action', 'dl-at', 'dl-dot', 'dl-rb', 'hm-board', 'hm-a', 'hm-paper', 'hm-sec', 'w-secs', 'tr-card', 'tr-cv', 'tr-ret', 'fn-c0', 'fn-cnext', 'fn-end', 'fn-quiet', 'fn-svc-board', 'fn-svc-cd', 'fn-svc-diet', 'jumps', 'ch-grid', 'ch-line', 'find-i',
+  'tm-chip', 'wtop-icons', 'is-due', 'nb-pw', 'nb-tmset', 'nb-tmday', 'tm-fold', 'nb-ai', 'nb-aw', 'nb-onslot', 'nb-hbar', 'wb-list', 'nb-sgr', 'nb-sgadd', 'o-cut-fold', 'o-cut-cue', 'o-cut-action', 'dl-at', 'dl-dot', 'dl-rb', 'hm-board', 'hm-a', 'hm-paper', 'hm-sec', 'w-secs', 'tr-card', 'tr-cv', 'tr-ret', 'fn-c0', 'fn-cnext', 'fn-end', 'fn-quiet', 'fn-svc-board', 'fn-svc-cd', 'fn-svc-diet', 'fn-svc-k', 'fn-svc-kin', 'fn-svc-kslot', 'fn-svc-kmore', 'fn-svc-shelf', 'fn-svc-trip', 'fn-ws', 'fn-svc-wl', 'jumps', 'ch-grid', 'ch-line', 'find-i',
   'set-block', 'label', 'a-ch-h', 'a-tablewrap', 'a-table', 'a-plain', 'sk-c', 'a-legend', 'dsh-inbox', 'dsh-dtile', 'dsh-cmp', 'dsh-charts-btn', 'tm-learn', 'a-find', 'fd-sheet', 'a-quick', 'wm-tile', 'wm-due',
   'ps-viewbar', 'ps-minimum', 'ps-grid', 'ps-section', 'ps-fields', 'ps-form-grid', 'ps-catalogue-row', 'ps-standard',
   'ad-admin', 'ad-layout', 'a-nav', 'ad-main', 'ad-heading', 'a-tabs', 'a-pane',
@@ -31,7 +31,7 @@ const CLASSES = [
   'tm-notebook', 'tm-nbook', 'tm-nhead', 'tm-nspine', 'tm-work', 'tm-viewbar', 'tm-shift-scroll', 'tm-dayperson', 'tm-away-slot',
   'tm-weeknav', 'tm-daypick',
   'tm-focus-page', 'tm-date-controls', 'tm-week-reveal', 'tm-row-fields', 'tm-row-summary', 'tm-detail-workbench', 'tm-focus-grid', 'tm-focus-save', 'tm-live-strip', 'tm-focus-panel',
-  'tm-person-row', 'tm-person-details', 'tm-planstate', 'tm-next-overview', 'tm-roster', 'tm-roster-days', 'tm-roster-missing', 'tm-roster-time',
+  'tm-person-row', 'tm-person-details', 'tm-planstate', 'tm-next-overview', 'tm-roster', 'tm-roster-days', 'tm-roster-missing', 'tm-roster-time', 'tm-roster-link', 'tm-roster-links',
 
 'tm-worksheet', 'tm-worksheet-head', 'tm-person-head', 'tm-person-section', 'tm-quick-add', 'tm-quick-people', 'tm-quick-services',
   'cln-page', 'cln-book', 'cln-row', 'cln-matrix', 'cln-day-pick', 'cln-form', 'cln-detail', 'cln-task-detail', 'cln-occurrence', 'cln-checks', 'cln-import', 'cln-packdown', 'cln-packdown-title', 'cln-temperature',

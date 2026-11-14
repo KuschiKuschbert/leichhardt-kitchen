@@ -62,7 +62,7 @@ const flat = s => (s || '').replace(/\s+/g, ' ').trim();
   await p.click('.fn-card a[href="#/fn/b60"]'); await L.settle(p, 500);
   await L.waitFor(p, () => !!document.querySelector('.fn-cardbox'));
   const card = await p.evaluate(() => {
-    const box = document.querySelector('.fn-cardbox'), end = box.lastElementChild, print = box.querySelector('[data-fn="print"]'), sent = box.querySelector('.fn-next [data-fn="sent"]');
+    const box = document.querySelector('.fn-cardbox'), end = box.lastElementChild, print = box.querySelector('[data-fn="print"]'), sent = box.querySelector('.fn-next [data-fn="send"]');
     const cs = sent && getComputedStyle(sent), lum = c => { const m = c.match(/\d+/g).map(Number); return (m[0] * 299 + m[1] * 587 + m[2] * 114) / 1000; };
     return { end: end.className, cancelAtEnd: !!end.querySelector('[data-fn="status"][data-v="cancel"]'), printRow: print.closest('.btn-row') && !print.closest('.btn-row').querySelector('[data-fn="status"]'),
       parts: ['.fn-sub', '.fn-next', '.fn-whole', '.fn-rounds', '.fn-acts'].every(s => !!box.querySelector(s)), sentReadable: !!cs && Math.abs(lum(cs.color) - lum(cs.backgroundColor)) > 100 };
@@ -85,8 +85,8 @@ const flat = s => (s || '').replace(/\s+/g, ' ').trim();
   const ends = await p.evaluate(() => { const bd = document.querySelector('.fn-svc-board'), pr = document.querySelector('.fn-svc-prints'); return !!pr && !!(bd.compareDocumentPosition(pr) & Node.DOCUMENT_POSITION_FOLLOWING) && !!pr.querySelector('[data-fn="print-prep"]') && !!pr.querySelector('[data-fn="print-day"]'); });
   ok(ends, 'service: both prints at the end, after the board');
   ok(await reads(p) === bill, 'the service view reads nothing (before a tick: its own record comes back through the listener, as before)');
-  await p.click('.fn-svc-row [data-fn="sent"][data-id="b60"]'); await L.settle(p, 500);
-  ok(await p.evaluate(k => !!(window.__fake.dump()[k] || {}).sent, key(['fnsent', 'b60_' + F.b60.rounds[0].at])) && /^14:30 /.test(flat(await txt(p, '.fn-svc-board .fn-svc-row'))), 'service: Sent ticks the round as before, and the next one leads');
+  await p.click('.fn-svc-row [data-fn="send"][data-id="b60"]'); await L.settle(p, 500);
+  ok(await p.evaluate(k => !!(window.__fake.dump()[k] || {}).sent, key(['fnsent', 'b60_' + F.b60.rounds[0].at])) && /^14:30 /.test(flat(await txt(p, '.fn-svc-board .fn-svc-row'))), 'service: Send all ticks the round as before (the round\'s own Sent record), and the next one leads');
   ok(p.errors.length === 0 && !(await L.overflow(p)), '390 px service: no page errors, no sideways scroll ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -102,7 +102,7 @@ const flat = s => (s || '').replace(/\s+/g, ' ').trim();
   p = await L.open(b, '#/fn/now', { who: 'sam', extra: extra(night), clock: at(today, '18:10'), width: 390, wait: 1500 });
   await L.waitFor(p, () => document.querySelectorAll('.fn-svc-board .fn-svc-row').length === 3).catch(() => {});
   const nr = await p.$$eval('.fn-svc-board .fn-svc-row', l => l.map(r => ({ t: r.querySelector('.fn-due').textContent, cd: r.querySelector('.fn-svc-cd').textContent, top: r.querySelector('.fn-svc-top').textContent,
-    diet: ((r.querySelector('.fn-svc-dt') || {}).textContent || ''), sent: !!r.querySelector('[data-fn="sent"]') })));
+    diet: ((r.querySelector('.fn-svc-dt') || {}).textContent || ''), sent: !!r.querySelector('[data-fn="send"]') })));
   ok(nr.map(r => r.t).join() === '18:30,19:15,20:00' && nr.map(r => r.cd).join() === 'In 20 min,In 1 h 5 min,In 1 h 50 min', 'service at 18:10: all three rounds in order, each with its time left (' + JSON.stringify(nr.map(r => [r.t, r.cd])) + ')');
   ok(nr.every(r => r.diet === '3 gluten free, 1 vegan.' && r.sent), 'service at 18:10: the dietaries and a Sent on every round');
   ok(nr.every(r => !(/Later/.test(r.top) && /In \d/.test(r.cd))) && !(await p.$('.fn-svc-page .fn-rounds')), 'service at 18:10: no row says Later and In N min; no second list of the next hour');

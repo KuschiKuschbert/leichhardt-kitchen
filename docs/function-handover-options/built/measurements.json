@@ -1,0 +1,78 @@
+{
+ "note": "Implemented app in the click-test stand-in (tests/fake), synthetic night at 18:35, viewport less the 64 px tab bar. Made by the session shot script; see brief, Built.",
+ "cook": {
+  "rows": 3,
+  "started": 2,
+  "whole": 1,
+  "heights": [
+   410,
+   310,
+   259
+  ],
+  "send": 665,
+  "kind": 437,
+  "confirm": null,
+  "waitLine": 269,
+  "page": 2468
+ },
+ "picked": {
+  "rows": 3,
+  "started": 2,
+  "whole": 1,
+  "heights": [
+   439,
+   310,
+   259
+  ],
+  "send": 694,
+  "kind": 466,
+  "confirm": null,
+  "waitLine": 269,
+  "page": 2565
+ },
+ "fay": {
+  "rows": 3,
+  "started": 1,
+  "whole": 0,
+  "heights": [
+   245,
+   192,
+   192
+  ],
+  "send": null,
+  "kind": null,
+  "confirm": 403,
+  "waitLine": null,
+  "page": 2146
+ },
+ "cook768": {
+  "rows": 3,
+  "started": 3,
+  "whole": 2,
+  "heights": [
+   244,
+   215,
+   215
+  ],
+  "send": 534,
+  "kind": 428,
+  "confirm": null,
+  "waitLine": 307,
+  "page": 2014
+ },
+ "cook1280": {
+  "rows": 3,
+  "started": 3,
+  "whole": 2,
+  "heights": [
+   244,
+   215,
+   215
+  ],
+  "send": 534,
+  "kind": 428,
+  "confirm": null,
+  "waitLine": 307,
+  "page": 2014
+ }
+}

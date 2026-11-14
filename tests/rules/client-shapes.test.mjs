@@ -582,6 +582,16 @@ row('js/prep.js mlTick(): tick a mail done (mail and mailstat updates)', { ok: G
   prep: r => put({ ['mail/' + MINE(r)]: seed['mail/x1'], ['mailstat/' + MINE(r)]: seed['mailstat/x1'] }),
   run: (db, w, r) => { const t = Date.now(); return W(r, [['upd', 'mail/' + MINE(r), { done: true, doneAt: t, seen: true, seenAt: t }], ['upd', 'mailstat/' + MINE(r), { seen: true, done: true }]]); } });
 row('js/prep.js mlSeenAll(): config/admins mailOpened merge', { ok: GOOGLE, asks: GOOGLE, run: (db, w, r) => W(r, [['set', 'config/admins', { mailOpened: Date.now() }, true]]) });
+// Roster name links (14 Nov 2026, docs/roster-import-options/brief.md): the head chef's admin device only
+row('js/prep.js tmRsLinksRead(): config/rosterLinks get (roster name links)', { ok: GOOGLE, asks: GOOGLE,
+  prep: () => put({ 'config/rosterLinks': { links: [{ name: 'Dee Kay', id: 'ann' }], upd: 1, by: 'kit' } }),
+  run: db => getDoc(D(db, 'config/rosterLinks')) });
+row('js/prep.js tmRsLinkSave(): config/rosterLinks set (link or unlink a roster name)', { ok: GOOGLE, asks: GOOGLE,
+  run: (db, w, r) => W(r, [['set', 'config/rosterLinks', { links: [{ name: 'Dee Kay', id: 'ann' }], upd: Date.now() }]]) });
+row('rule: config/rosterLinks with any other field is refused for everyone', { ok: [], asks: [],
+  run: (db, w, r) => W(r, [['set', 'config/rosterLinks', { links: [], upd: Date.now(), wage: 1 }]]) });
+row('rule: config/rosterLinks with more than 80 links is refused for everyone', { ok: [], asks: [],
+  run: (db, w, r) => W(r, [['set', 'config/rosterLinks', { links: Array.from({ length: 81 }, (_, i) => ({ name: 'P ' + i, id: 'ann' })), upd: Date.now() }]]) });
 row('js/prep.js mlSeenAll(): the open mail marked seen (mail and mailstat updates)', { ok: GOOGLE, asks: GOOGLE,
   prep: r => put({ ['mail/s-' + r]: seed['mail/x1'], ['mailstat/s-' + r]: seed['mailstat/x1'] }),
   run: (db, w, r) => W(r, [['upd', 'mail/s-' + r, { seen: true, seenAt: Date.now() }], ['upd', 'mailstat/s-' + r, { seen: true, done: false }]]) });
@@ -754,6 +764,26 @@ row('js/functions.js tickSent(): take back my own tick within 2 minutes', { ok: 
   prep: (r, w) => { const a = T0 + 200 + ALL.indexOf(r), t = Date.now() - 30000; return put({ [`fnsent/f1_${a}`]: { fid: 'f1', at: a, day: TODAY, sent: true, sentAt: t, sentBy: w, by: w } }); },
   run: async (db, w, r) => { const a = T0 + 200 + ALL.indexOf(r), cur = await serverRec(`fnsent/f1_${a}`);
     return W(r, [['set', `fnsent/f1_${a}`, { fid: 'f1', at: a, day: TODAY, sent: false, sentAt: cur.sentAt, sentBy: cur.sentBy }, true]]); } });
+// trips sent from the pass and Functions confirming each (14 Nov 2026, docs/function-handover-options/brief.md):
+// fnsent/<fid>_<round time>_t<k>; the last trip of a round ticks the round's own Sent record in the same batch
+const TRIP = (a, k) => `fnsent/f1_${a}_t${k || 1}`;
+const tripRec = (a, w, x) => Object.assign({ fid: 'f1', at: a, day: TODAY, k: 1, n: { 'antipasto-platter': 2 }, sentAt: Date.now(), sentBy: w }, x || {});
+row('js/functions.js sendTrip(): send a trip (part of a round)', { ok: KITCHEN, asks: KITCHEN,
+  run: (db, w, r) => { const a = T0 + 300 + ALL.indexOf(r); return W(r, [['set', TRIP(a), tripRec(a, w)]]); } });
+row('js/functions.js sendTrip(): the last trip with the round\'s Sent tick, one batch', { ok: KITCHEN, asks: KITCHEN,
+  run: (db, w, r) => { const a = T0 + 400 + ALL.indexOf(r); return W(r, [['set', TRIP(a), tripRec(a, w)], ['set', `fnsent/f1_${a}`, { fid: 'f1', at: a, day: TODAY, sent: true, sentAt: Date.now(), sentBy: w }, true]]); } });
+row('js/functions.js confirmTrip(): Functions confirms a trip someone else sent', { ok: ['fay'], asks: ['fay'],
+  prep: r => { const a = T0 + 500 + ALL.indexOf(r); return put({ [TRIP(a)]: Object.assign(tripRec(a, 'zed'), { by: 'zed' }) }); },
+  run: (db, w, r) => { const a = T0 + 500 + ALL.indexOf(r); return W(r, [['set', TRIP(a), { outAt: Date.now(), outBy: w, outFor: false }, true]]); } });
+row('js/functions.js confirmTrip(): a chef confirms for Functions after 10 minutes', { ok: CHEFS, asks: CHEFS,
+  prep: r => { const a = T0 + 600 + ALL.indexOf(r); return put({ [TRIP(a)]: Object.assign(tripRec(a, 'zed', { sentAt: Date.now() - 11 * MIN }), { by: 'zed' }) }); },
+  run: (db, w, r) => { const a = T0 + 600 + ALL.indexOf(r); return W(r, [['set', TRIP(a), { outAt: Date.now(), outBy: w, outFor: true }, true]]); } });
+row('js/functions.js undoTrip(): take back my own trip within 2 minutes', { ok: KITCHEN, asks: KITCHEN,
+  prep: (r, w) => { const a = T0 + 700 + ALL.indexOf(r); return put({ [TRIP(a)]: Object.assign(tripRec(a, w, { sentAt: Date.now() - 30000 }), { by: w }) }); },
+  run: (db, w, r) => { const a = T0 + 700 + ALL.indexOf(r); return W(r, [['set', TRIP(a), { void: true, voidAt: Date.now(), voidBy: w }, true]]); } });
+row('js/functions.js undoTrip(): a chef takes back a trip someone else sent', { ok: CHEFS, asks: CHEFS,
+  prep: r => { const a = T0 + 800 + ALL.indexOf(r); return put({ [TRIP(a)]: Object.assign(tripRec(a, 'zed', { sentAt: Date.now() - 10 * MIN }), { by: 'zed' }) }); },
+  run: (db, w, r) => { const a = T0 + 800 + ALL.indexOf(r); return W(r, [['set', TRIP(a), { void: true, voidAt: Date.now(), voidBy: w }, true]]); } });
 // who said Got it to a function on Home (fnseen, 10 Nov 2026): once, as myself; never changed or deleted
 const SEEN = (w, s, g) => `fnseen/f1_${w}_${s || 'week'}_${g || '1abc2'}`;
 const seenRec = (s, at, by) => Object.assign({ fid: 'f1', g: '1abc2', s: s || 'week', day: TODAY, at: at || Date.now() }, by ? { by } : {});

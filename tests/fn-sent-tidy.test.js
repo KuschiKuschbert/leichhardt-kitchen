@@ -37,6 +37,7 @@ function docs(sent) {
   if (sent >= 2) e[fsKey(['fnsent', 'smith_' + R2])] = sentRec('smith', R2, R2 + 180000);
   return e;
 }
+let s;
 const rowText = p => p.evaluate(() => [...document.querySelectorAll('.nb-row')].map(r => r.textContent.replace(/\s+/g, ' ').trim()));
 
 (async () => {
@@ -73,12 +74,12 @@ const rowText = p => p.evaluate(() => [...document.querySelectorAll('.nb-row')].
   ok(p.errors.length === 0, 'orders: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // 3. the last round's Sent, held (no signal): nothing comes off and nothing says so; once the server has it, the slip
+  // 3. the last round's Send, held (no signal): nothing comes off and nothing says so; once the server has it, the slip
   // names every line that came off, with Undo, and the All sent box says the same
   p = await L.open(b, '#/fn/smith', { who: 'ann', extra: docs(1), wait: 1500 });
-  await L.waitFor(p, () => !!document.querySelector('.fn-next [data-fn="sent"]'), null, 6000).catch(() => {});
+  await L.waitFor(p, () => !!document.querySelector('.fn-next [data-fn="send"]'), null, 6000).catch(() => {});
   await p.evaluate(() => { window.__fake.mode = 'hold'; });
-  await tap(p, '.fn-next [data-fn="sent"]'); await L.settle(p, 600);
+  await tap(p, '.fn-next [data-fn="send"]'); await L.settle(p, 600);
   ok(!/all sent/i.test(await txt(p, '.p-toasts') || '') && !/Taken off/.test(await txt(p, '.fn-next') || ''), 'sent, held: no line comes off and no slip says so before the server has the tick');
   await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
   await L.waitFor(p, () => /all sent/.test((document.querySelector('.p-toasts') || {}).textContent || ''), null, 6000).catch(() => {});
@@ -87,18 +88,19 @@ const rowText = p => p.evaluate(() => [...document.querySelectorAll('.nb-row')].
   ok(/Taken off the lists:/.test(await txt(p, '.fn-next') || ''), 'sent: the All sent box names it too');
   ok((await p.$$('.p-toasts .p-toast-btn')).length === 1 && !(await p.$('.fn-next .fn-next-off button')), 'sent: one Undo, on the slip');
   await tap(p, '.p-toasts .p-toast-btn'); await L.settle(p, 600);
-  ok((await store(p))[fsKey(['fnsent', 'smith_' + R2])].sent === false, 'sent: Undo on the slip takes the last round back');
-  ok(/Undone: round 2 of Smith 60th not sent\. Its open lines are back on the lists\./.test((await txt(p, '.p-toasts') || '').replace(/\s+/g, ' ')), 'sent: Undo says what it undid');
+  s = await store(p);
+  ok(s[fsKey(['fnsent', 'smith_' + R2])].sent === false && s[fsKey(['fnsent', 'smith_' + R2 + '_t1'])].void === true, 'sent: Undo on the slip takes the last trip back, and the round with it');
+  ok(/Undone: trip 1 of Smith 60th .*It is to send again\. Its open lines are back on the lists\./.test((await txt(p, '.p-toasts') || '').replace(/\s+/g, ' ')), 'sent: Undo says what it undid, and that the lines are back');
   ok(p.errors.length === 0, 'sent: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // 4. a double tap on Sent ticks one round, not the next one that took its place
+  // 4. a double tap on Send all sends round 1, not round 2 that took its place
   p = await L.open(b, '#/fn/smith', { who: 'ann', extra: docs(0), wait: 1500 });
-  await L.waitFor(p, () => !!document.querySelector('.fn-next [data-fn="sent"]'), null, 6000).catch(() => {});
-  await p.evaluate(() => { const b = document.querySelector('.fn-next [data-fn="sent"]'); b.click(); setTimeout(() => { const c = document.querySelector('.fn-next [data-fn="sent"]'); if (c) c.click(); }, 150); });
+  await L.waitFor(p, () => !!document.querySelector('.fn-next [data-fn="send"]'), null, 6000).catch(() => {});
+  await p.evaluate(() => { const b = document.querySelector('.fn-next [data-fn="send"]'); b.click(); setTimeout(() => { const c = document.querySelector('.fn-next [data-fn="send"]'); if (c) c.click(); }, 150); });
   await L.settle(p, 900);
-  let s = await store(p);
-  ok(!!s[fsKey(['fnsent', 'smith_' + R1])] && !s[fsKey(['fnsent', 'smith_' + R2])], 'sent: a double tap ticks round 1 only');
+  s = await store(p);
+  ok(!!s[fsKey(['fnsent', 'smith_' + R1 + '_t1'])] && !s[fsKey(['fnsent', 'smith_' + R2 + '_t1'])] && !s[fsKey(['fnsent', 'smith_' + R2])], 'sent: a double tap sends round 1 only');
   await p.context().close();
 
   // 5. another phone ticks the last round while this one shows the prep list: the line leaves in place, says why, and a
