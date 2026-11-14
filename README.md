@@ -223,7 +223,7 @@ Drawings for The Pass are in `js/art.js`. A recipe with no drawing still shows, 
 | `js/learn.js` | Clocks when tomorrow's prep list was written on a night (`LK_LEARN.listStart`) and the usual time (`.usual`), for the phone and the nightly learning. Loaded before `js/prep.js`, in `SHELL`. `tests/learn.test.js` |
 | `js/chime.js` | Ping sounds: the five sounds the head chef picks from, made on the phone with Web Audio (`LK_CHIME`), played by `js/prep.js` when the pings sheet pops up. Loaded before `js/prep.js`, in `SHELL` and both `js/upkeep.js` lists. [Ping sound](docs/ping-sound.md) |
 | `js/cutoffs.js` | Order cut-offs: when each supplier's order closes, a line per delivery day since 5 Nov 2026, and when its reminder and heads-up start (`LK_CUT`), for the phone (the bar, the admin page) and the server's pushes (`scripts/cutoff-push.mjs`). Loaded before `js/prep.js`, in `SHELL` and both `js/upkeep.js` lists |
-| `js/functions.js` | Functions: the schedule maths (node runs it in `tests/functions-maths.test.js`), the band under the top bar, the function sheet, `#/fn`, the service view (`#/fn/now`) and the landing card. In `SHELL` |
+| `js/functions.js` | Functions: the schedule maths (node runs it in `tests/functions-maths.test.js`), the band under the top bar, the function sheet, `#/fn`, the service view (`#/fn/now`) with the two-way check (trips sent from the pass, the Waiting for Functions shelf, Confirm out; `docs/function-handover-options/brief.md`) and the landing card. In `SHELL` |
 | `js/fnedit.js` | Manage functions (`#/functions`): the function managers' list and form. Loaded only when the page opens for a function manager, not in `SHELL` |
 | `js/app.js` | Recipe book: routing, top bar, views, search, links, allergens, settings, install, QR |
 | `js/mascot.js`, `art/mascot/` | The kitchen mascot: on Home, loaded only for a named person, and under a finished prep list. See [kitchen mascot](docs/kitchen-mascot.md) |
@@ -231,7 +231,8 @@ Drawings for The Pass are in `js/art.js`. A recipe with no drawing still shows, 
 | `js/cleaning.js`, `js/cleaning-schedule.js` | Cleaning notebook, optional unbranded 26-task schedule and ordered 25-step pack down. Lazy, API 2 workspace; explicit chef import, required checks, anchored intervals, event records and Pass verification. [Contract](docs/cleaning-schedule.md) |
 | `js/proofreader-admin.js` | Admin Proofreader: review saved spelling corrections, restore or edit wording, manage shared protected words and view private history. Loaded only on the admin page |
 | `js/firebase-config.js` | Public Firebase web config |
-| `firestore.rules` | Security rules template (`KITCHEN_PIN` and `OWNER_EMAIL` are placeholders) |
+| `firestore.rules` | Security rules template (`KITCHEN_PIN` and `OWNER_EMAIL` are placeholders). A helper one collection uses lives inside its match block, so Google compiles the rules in time (14 Nov 2026, `docs/rules-publication.md`) |
+| `scripts/rules-weight.cjs` | Checks the rules stay light enough to compile: helper placement, top-level helper count and size (`tests/rules-weight.test.js`) |
 | `.claude/settings.json`, `scripts/guard-main.mjs` | The main-branch guard: a Claude Code hook that refuses edits and commits on `main`, so every change starts in a worktree on its own branch |
 | `scripts/sync-on-start.sh` | Runs when a Claude Code session starts: brings a clean main checkout up to date with GitHub, and only fetches in a worktree, so the Mac never drifts behind the cloud sessions |
 | `scripts/pre-merge.sh` | Run from a worktree before marking a pull request ready: shows the open pull requests, every worktree, and whether `main` moved, so only one merge happens at a time |
