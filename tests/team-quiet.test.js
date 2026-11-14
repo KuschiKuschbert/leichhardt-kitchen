@@ -30,11 +30,7 @@ async function pick(p, k, v) { if (!k.startsWith('tm-sec:') && !k.startsWith('tm
 const service = async (p, id, sh) => { if (await p.locator('[data-p="tm-whole"]').getAttribute('aria-pressed') === 'true') await click(p, '[data-p="tm-whole"]'); await pick(p, 'tm-row-sh:' + id, sh); };
 async function membership(p, id, sh) { await service(p, id, sh); await details(p, id); await click(p, '[data-p="tm-on"][data-id="' + id + '"][data-sh="' + sh + '"]'); }
 async function chefPlan(p) { await click(p, '[data-p="c-group"][data-g="team"]'); const tab = p.locator('[data-p="c-tab"][data-t="plan"]'); if (await tab.getAttribute('aria-pressed') !== 'true') await tab.click(); await ready(p); }
-async function day(p, d) {
-  if (!await p.locator('.tm-weeknav').isVisible()) await click(p, '[data-p="tm-date-toggle"]');
-  for (let n = 0; n < 3 && !await p.locator('[data-p="tm-day"][data-day="' + d + '"]').count(); n++) await click(p, '[data-p="tm-week-next"]');
-  await click(p, '[data-p="tm-day"][data-day="' + d + '"]'); await ready(p);
-}
+async function day(p, d) { await L.teamDay(p, d); await ready(p); }
 async function assertQuiet(p, label) {
   const roster = await p.locator('.tm-people').evaluateAll(lists => lists.map(e => ({ names: [...e.querySelectorAll('.tm-person-name')].map(n => n.textContent), open: e.querySelectorAll('details[open]').length, text: e.innerText })));
   ok(roster.length === 1 && roster[0].names.slice().sort().join() === 'Ann,Bo,Sam' && roster[0].open === 0, label + ': one collapsed roster contains each person once');
@@ -62,6 +58,7 @@ async function layouts(p, label) {
   let p = await L.open(b, '#/team', { who: 'sam', extra: fixture(), wait: 1000 }); await ready(p);
   await assertQuiet(p, 'Direct sous-chef');
   ok(await value(p, 'tm-sec:ann') === 'grill' && /13:45|14:30/.test(await p.locator('.tm-person-row[data-id="ann"]').innerText()), 'collapsed row: the current section and planned break remain legible');
+  await L.teamWarm(p, tomorrow, ready);   // tomorrow's week read first: on a Sunday it is next week
   const reads = await readCount(p), original = await saved(p);
   await pick(p, 'tm-sec:ann', 'pans');
   ok(await value(p, 'tm-sec:ann') === 'pans' && !await focused(p, 'ann'), 'section move: the inline picker changes the draft without opening detailed controls');
