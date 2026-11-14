@@ -681,27 +681,33 @@
     }
     return homeWelcomePrefix + ', ' + n;
   }
+  /* The words over Home, one helper for the first draw and every repaint (homeWelcomePaint() runs again on lk-cfg, lk-who
+     and the celebrations' state, so two copies would paint each other's words back). With a name: the welcome over the
+     weekday and date. Without one, signed out included: the day over the date (15 Nov 2026, it said "Pick a docket" over a
+     single docket; docs/signed-out-home-options/brief.md). Never a person's name when nobody is signed in. */
+  function homeWords(dt, n) {
+    return { words: homeWelcomeWords(n) || dt.toLocaleDateString('en-AU', { weekday: 'long' }),
+      date: dt.toLocaleDateString('en-AU', { weekday: n ? 'long' : undefined, day: 'numeric', month: 'long' }) };
+  }
   function homeHeading(dt, board) {
     var P = window.LK_PREP, n = P && P.whoName ? P.whoName() : '';
-    var welcome = homeWelcomeWords(n), words = welcome || (board ? dt.toLocaleDateString('en-AU', { weekday: 'long' }) : 'Pick a docket');
+    var hw = homeWords(dt, n), words = hw.words, date = hw.date;
     var size = Math.max(Array.from(words).length, Array.from(n).length + 9);
-    var date = dt.toLocaleDateString('en-AU', { weekday: n || !board ? 'long' : undefined, day: 'numeric', month: 'long' });
     return '<h2 class="wall-h' + (board ? ' hm-day' : '') + (n ? ' hm-welcome' : '') + (n && size > 21 ? ' hm-welcome-long' : '') + (n && size > 37 ? ' hm-welcome-compact' : '') + '" id="rtitle" tabindex="-1" data-home-heading="' + (board ? 'board' : 'dockets') + '">' + esc(words) + '</h2><p class="wall-date"><span data-home-date>' + esc(date) + '</span>' + (board ? ' · <span id="hm-time">' + esc(window.LK_TIME.clock(window.LK_TIME.now())) + '</span>' : '') + '</p>';
   }
   function homeWelcomePaint() {
     if (parseRoute().name !== 'landing') return;
     var h = app.querySelector('[data-home-heading]'), date = app.querySelector('[data-home-date]');
     if (!h || !date) return;
-    var P = window.LK_PREP, n = P && P.whoName ? P.whoName() : '', board = h.getAttribute('data-home-heading') === 'board';
+    var P = window.LK_PREP, n = P && P.whoName ? P.whoName() : '';
     var parts = window.LK_TIME.day().split('-'), dt = new Date(+parts[0], +parts[1] - 1, +parts[2], 12);
-    var words = homeWelcomeWords(n) || (board ? dt.toLocaleDateString('en-AU', { weekday: 'long' }) : 'Pick a docket');
+    var hw = homeWords(dt, n), words = hw.words;
     var size = Math.max(Array.from(words).length, Array.from(n).length + 9);
     // The seasonal bridge observes child changes. Leave settled text alone so its state event cannot repaint forever.
     if (h.textContent !== words) h.textContent = words;
     h.classList.toggle('hm-welcome', !!n); h.classList.toggle('hm-welcome-long', !!n && size > 21);
     h.classList.toggle('hm-welcome-compact', !!n && size > 37);
-    var dateWords = dt.toLocaleDateString('en-AU', { weekday: n || !board ? 'long' : undefined, day: 'numeric', month: 'long' });
-    if (date.textContent !== dateWords) date.textContent = dateWords;
+    if (date.textContent !== hw.date) date.textContent = hw.date;
   }
   /* Home (redesign step 2, 8 Nov 2026, head chef; docs/whole-app-redesign-options/brief.md): on the kraft board, the day as
      the heading, then personal section/shift and break/return, scheduled coworkers, work and Prep by section
@@ -718,13 +724,21 @@
       '<div class="hm kb-home">' + P.homeSlot() + '<section class="hm-paper hm-up" aria-labelledby="hm-up-h"><div class="hm-ph"><h3 class="hm-pt" id="hm-up-h">Coming up</h3></div><div class="hm-kb" data-kb-coming-slot></div>' + (P.homeCutSlot ? P.homeCutSlot() : '') + (window.LK_FN ? window.LK_FN.landSlot(true) : '') + '</section></div>' +
       installCard() + '<p class="wall-foot">Cook as written. Check with the head chef or sous chef before changing anything.</p></main>' + tabBar() + '</div>';
   }
+  /* Signed out (chosen mix, 15 Nov 2026, docs/signed-out-home-options/brief.md): Kitchen sign in is the page's one main
+     button, with one line on what it opens. A device without the kitchen PIN says that comes first. No read: the kitchen
+     PIN is already on the device or not (LK_PREP.kitchenPin()). */
+  function signInBlock() {
+    var P = window.LK_PREP, fresh = P && P.kitchenPin && !P.kitchenPin();
+    return '<div class="wall-sign"><a class="btn dark" href="#/prep">Kitchen sign in</a><p class="hint wall-hint">' +
+      (fresh ? 'New device? The kitchen PIN comes first, then your name and PIN.' : 'Your name and PIN open the kitchen pages.') + ' Recipes need no sign in.</p></div>';
+  }
   function viewLanding() {
     var d = window.LK_TIME.day().split('-'), dt = new Date(+d[0], d[1] - 1, +d[2], 12);
     if (window.LK_PREP && window.LK_PREP.homeOn && window.LK_PREP.homeOn()) return homeBoard(dt);
     return '<div class="wall">' + topBar() + fnBand() +
       '<main id="main" class="wall-main">' + homeHeading(dt, false) + minCard() + (window.LK_FN && window.LK_FN.checkSlot ? window.LK_FN.checkSlot() : '') + (window.LK_FN ? window.LK_FN.landSlot() : '') + installCard() +
       // with no signal before the kitchen's settings are in: the no-signal sentence, not Kitchen sign in (28 Oct 2026)
-      (window.LK_PREP && window.LK_PREP.functionOnly() ? '<p><a class="btn dark" href="#/functions">Manage functions</a></p>' : offline() ? '<p class="hint" role="status">' + esc(offline()) + '</p>' : window.LK_PREP && !window.LK_PREP.privateAccess() ? '<p><a class="btn" href="#/prep">Kitchen sign in</a></p>' : '') + '<div class="dockets kb-home">' + DOCKETS.filter(function (d) { if (window.LK_PREP && (!window.LK_PREP.privateAccess() || window.LK_PREP.functionOnly())) return d[3] === 'recipes'; return d[3] !== 'cleaning' || cleaningOK(); }).map(function (d) {
+      (window.LK_PREP && window.LK_PREP.functionOnly() ? '<p><a class="btn dark" href="#/functions">Manage functions</a></p>' : offline() ? '<p class="hint wall-hint" role="status">' + esc(offline()) + '</p>' : window.LK_PREP && !window.LK_PREP.privateAccess() ? signInBlock() : '') + '<div class="dockets kb-home">' + DOCKETS.filter(function (d) { if (window.LK_PREP && (!window.LK_PREP.privateAccess() || window.LK_PREP.functionOnly())) return d[3] === 'recipes'; return d[3] !== 'cleaning' || cleaningOK(); }).map(function (d) {
         // Transfers and Cleaning are the long ones under the other four (a docket with a line under its name)
         return '<a class="docket' + (d[4] ? ' dk-wide' : '') + '" href="' + d[2] + '"><span class="dk-pin" aria-hidden="true"></span><span class="dk-top"><span class="dk-name">' + d[1] + '</span><span class="dk-no">No. ' + d[0] + '</span></span>' +
           (d[4] ? '<span class="dk-sub">' + esc(d[4]) + '</span>' : '') +

@@ -58,6 +58,7 @@
   --bg: #FBFAF7;
   --paper: #FFFFFF;
   --ink: #1C1D1F;
+  --wall-ink: #4a4231;   /* quiet words on the kraft wall: 4.9:1 on #C9B48F (--muted is 3.5:1 there) */
   --muted: #55585E;
   --faint: #6B7077;   /* 4.9:1 on the page colour (was #8A8F96, 3.1:1) */
   --accent: #E2602A;
@@ -734,7 +735,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .wtop-btn { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 2px solid var(--bar-text); border-radius: 50%; color: var(--bar-text); }
 .wall-main { max-width: 1240px; margin: 0 auto; padding: 1.5rem 1rem 2rem; }
 .wall-h { margin: 0; font-family: 'Caveat', cursive; font-weight: 700; font-size: 2.2rem; color: var(--bar); }
-.wall-date { margin: 0 0 1.4rem; color: #4a4231; font-weight: 600; }
+.wall-date { margin: 0 0 1.4rem; color: var(--wall-ink); font-weight: 600; }
 .dockets { display: grid; grid-template-columns: 1fr; gap: 1.6rem; }
 .docket { position: relative; display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 1rem; padding: 1.5rem 1.1rem 1.7rem; background: #FFFEFA; color: var(--ink); text-decoration: none; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.18)); clip-path: polygon(0 0, 100% 0, 100% calc(100% - 9px), 95.8% 100%, 91.6% calc(100% - 9px), 87.5% 100%, 83.3% calc(100% - 9px), 79.1% 100%, 75% calc(100% - 9px), 70.8% 100%, 66.6% calc(100% - 9px), 62.5% 100%, 58.3% calc(100% - 9px), 54.1% 100%, 50% calc(100% - 9px), 45.8% 100%, 41.6% calc(100% - 9px), 37.5% 100%, 33.3% calc(100% - 9px), 29.1% 100%, 25% calc(100% - 9px), 20.8% 100%, 16.6% calc(100% - 9px), 12.5% 100%, 8.3% calc(100% - 9px), 4.1% 100%, 0 calc(100% - 9px)); }
 .docket .dk-pin { position: absolute; left: 50%; top: 6px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--accent-ink); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25); }
@@ -745,7 +746,19 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .dk-icon svg { width: 44px; height: 44px; }
 .dk-go { grid-column: 2; grid-row: 2; justify-self: start; margin-top: 0.7rem; display: inline-flex; align-items: center; height: 44px; padding: 0 1.3rem; border-radius: 8px; background: var(--accent-ink); color: var(--bar-text); font-weight: 700; }
 .docket:hover .dk-go, .docket:focus-visible .dk-go { background: var(--ink); }
-.wall-foot { margin: 2rem 0 0; font-size: 0.8125rem; color: #4a4231; }
+.wall-foot { margin: 2rem 0 0; font-size: 0.8125rem; color: var(--wall-ink); }
+/* Signed out (chosen mix, 15 Nov 2026, docs/signed-out-home-options/brief.md): Kitchen sign in is the one main button,
+   full width on a phone and at least as big as the docket's Open from 720 px, with its one line under it on a phone and
+   beside it wider. The wall's quiet words use --wall-ink; its focus ring is ink (the orange ring is 1.75:1 on kraft). */
+.wall-sign { display: grid; gap: 0.5rem; margin: 0 0 1.6rem; }
+.wall-sign .btn { width: 100%; }
+.wall-hint { margin: 0; color: var(--wall-ink); font-size: 0.9375rem; }
+.wall-main > .wall-hint { margin: 0 0 1.6rem; }
+.wall-sign :focus-visible, .wall-main .dockets .docket:focus-visible { outline-color: var(--ink); }
+@media (min-width: 720px) {
+  .wall-sign { grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 1rem; }
+  .wall-sign .btn { width: auto; min-width: 16.5rem; min-height: 52px; font-size: 1.0625rem; }
+}
 /* Install card on the landing page (phones and tablets that have not installed the book) */
 .wall-install { display: flex; flex-direction: column; gap: 0.5rem; margin: 0 0 1.6rem; padding: 0.9rem 1rem; background: #FFFEFA; border: 1.5px solid var(--ink); border-left: 6px solid var(--accent); border-radius: 8px; }
 .wall-install p { margin: 0; }
@@ -1603,7 +1616,7 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 /* ---------- guides (#/guides, the admin Guides tab, and the guides box on recipe cards) ---------- */
 /* the fifth and sixth dockets (Transfers, Guides) are the long ones under the other four */
 .dk-sub { display: none; }
-.dk-wide .dk-sub { display: block; grid-column: 2; grid-row: 2; margin-top: 0.4rem; font-weight: 600; color: #4a4231; }
+.dk-wide .dk-sub { display: block; grid-column: 2; grid-row: 2; margin-top: 0.4rem; font-weight: 600; color: var(--wall-ink); }
 .dk-wide .dk-icon { grid-row: 1 / span 3; }
 .dk-wide .dk-go { grid-row: 3; }
 @media (min-width: 720px) {
