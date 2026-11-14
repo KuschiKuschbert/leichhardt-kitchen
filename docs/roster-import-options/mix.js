@@ -15,13 +15,17 @@
   function fresh() { return { phase: 'start', fold: false, sel: -1, saved: {}, saving: {}, bad: false }; }
   var st = fresh();
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  // Matched against the names already in the book: the given name, or the given name and the family initial.
-  // Exactly one book name must fit; anything else is listed, never guessed.
-  function bookName(p) {
+  // Head chef rule: the given name; two roster people with the same given name are looked for with the family
+  // initial ("Sam K"). Matched against the names already in the book: exactly one book name must fit, and no two
+  // roster people may land on the same book person. Anything else is listed, never guessed.
+  function want(p) {
     var parts = p.full.split(' '), given = parts[0], fam = parts[parts.length - 1];
-    var fits = BOOK.filter(function (n) { return n === given || n === given + ' ' + fam[0]; });
-    return fits.length === 1 ? fits[0] : '';
+    var twins = ROSTER.filter(function (q) { return q.full.split(' ')[0] === given; }).length > 1;
+    return { name: twins ? given + ' ' + fam[0] : given, alt: twins ? '' : given + ' ' + fam[0] };
   }
+  function fit(p) { var w = want(p), f = BOOK.filter(function (n) { return n === w.name || n === w.alt; }); return f.length === 1 ? f[0] : ''; }
+  var FIT = {}; ROSTER.forEach(function (p) { var n = fit(p); if (n) FIT[n] = (FIT[n] || 0) + 1; });
+  function bookName(p) { var n = fit(p); return n && FIT[n] === 1 ? n : ''; }
   var unmatched = ROSTER.filter(function (p) { return !bookName(p); });
   function onDay(d) { return ROSTER.filter(function (p) { return p.shifts[d] && bookName(p); }).map(function (p) { return { name: bookName(p), time: p.shifts[d][0], sv: p.shifts[d][1] }; }); }
   function isDraft(d) { return st.phase === 'read' && d !== SAVED_BEFORE && !st.saved[d]; }
@@ -40,14 +44,15 @@
     var drafts = [0, 1, 3, 4, 5, 6].filter(isDraft).length, saved = [0, 1, 3, 4, 5, 6].filter(function (d) { return st.saved[d]; }).length;
     var head = '<div class="ri-card"><h3>Roster 16 to 22 November</h3><p>' + (drafts ? drafts + ' day' + (drafts === 1 ? '' : 's') + ' filled as drafts, not saved yet.' : 'All filled days are saved.') + (saved ? ' ' + saved + ' saved.' : '') + '</p><p>Wednesday 18 November already had a saved plan. Not changed.</p><p>Breaks are not set on the filled days. Set them with Spread them below, then Save.</p></div>';
     var unm = '<div class="ri-card"><h3>Not in the book, not filled</h3><ul class="ri-rows mx-unm">' + unmatched.map(function (p) {
-      return '<li>' + esc(p.full) + '<span>' + Object.keys(p.shifts).map(function (d) { return DAY3[d] + ' ' + time(p.shifts[d][0]); }).join(', ') + '</span></li>';
-    }).join('') + '</ul><p>Add them in Manage staff. Then put them on these days with Add staff.</p><button type="button" class="btn" data-a="staff">Manage staff</button></div>';
+      return '<li>' + esc(p.full) + ' <small>(looks for ' + esc(want(p).name) + ')</small><span>' + Object.keys(p.shifts).map(function (d) { return DAY3[d] + ' ' + time(p.shifts[d][0]); }).join(', ') + '</span></li>';
+    }).join('') + '</ul><p>Add them in Manage staff with the name it looks for, or check the name they already have. Then put them on these days with Add staff.</p><button type="button" class="btn" data-a="staff">Manage staff</button></div>';
     var days = '<p><b>Check each day, then Save it:</b></p><div class="mx-days" role="group" aria-label="Days from the roster">' + DAYS.map(function (_, d) {
       if (d === SAVED_BEFORE) return '<button type="button" disabled>' + SHORT[d] + ' <small>· not changed</small></button>';
       return '<button type="button" data-a="day" data-d="' + d + '"' + (d === st.sel ? ' aria-current="date"' : '') + '>' + SHORT[d] + ' <small>· ' + (st.saved[d] ? '&#10003; Saved' : 'Draft') + '</small></button>';
     }).join('') + '</div>';
     return head + unm + days;
   }
+  function left() { var n = [0, 1, 3, 4, 5, 6].filter(isDraft).length; return n ? ' ' + n + ' day' + (n === 1 ? '' : 's') + ' still drafts.' : ' No drafts left.'; }
   function bad() { return '<div class="ri-card ri-bad" role="alert"><h3>This file cannot be used. Nothing was filled.</h3><p>The days in the file do not line up with the week it names.</p><p>Export the Weekly Department Roster Report from Humanforce again as CSV, then choose it here.</p></div>'; }
   function render() {
     var d = st.sel, name = d < 0 ? TODAY : DAYS[d], w = word(d), canSave = d >= 0 && isDraft(d) && !st.saving[d];
@@ -64,7 +69,7 @@
       (st.bad ? bad() : st.phase === 'read' ? result() : '') +
       '<div class="ri-tool"><b>Spread them</b><p>Breaks for one service, one or two at a time.</p><button type="button" class="btn" disabled>Spread breaks</button></div></details>' +
       '<details class="mx-fold"><summary>Next planned breaks today</summary></details></div></div>' +
-      '<div class="mx-band"><p>' + esc(name) + ' · ' + esc(w) + '</p>' + (d >= 0 && st.saved[d] ? '<span class="ri-stamp">Saved 10:02</span> <span class="ri-note">' + esc(DAYS[d]) + ' is saved.</span>' : '<button type="button" class="btn dark" data-a="save"' + (canSave ? '' : ' disabled') + '>' + (st.saving[d] ? 'Saving...' : 'Save ' + esc(name)) + '</button>') + '</div></div>' +
+      '<div class="mx-band"><p>' + esc(name) + ' · ' + esc(w) + '</p>' + (d >= 0 && st.saved[d] ? '<span class="ri-stamp">Saved 10:02</span> <span class="ri-note">' + esc(DAYS[d]) + ' is saved.' + left() + '</span>' : '<button type="button" class="btn dark" data-a="save"' + (canSave ? '' : ' disabled') + '>' + (st.saving[d] ? 'Saving...' : 'Save ' + esc(name)) + '</button>') + '</div></div>' +
       '<nav class="ri-tabs" aria-hidden="true"><span>RECIPES</span><span>PREP</span><span>ORDERS</span><span>WASTAGE</span><span>TRANSFERS</span></nav>';
   }
   root.addEventListener('click', function (e) {

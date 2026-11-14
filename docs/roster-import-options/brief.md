@@ -2,7 +2,7 @@
 
 14 November 2026, Queensland. Head chef request: fill Today's team from the Humanforce Weekly Department Roster Report (CSV export) while a read-only Humanforce API key is requested from Australian Venue Co IT. [Proposal](proposal.md), [evidence packet](evidence-packet.md). Role-based analysis, not research with staff.
 
-**Status: round 2 designs drawn and measured on previews. Council scoring next. Nothing built.**
+**Status: council done. Recommendation below, waiting on the head chef's choice. Nothing built.**
 
 ## Head chef answers after round 1 (14 November 2026)
 
@@ -177,4 +177,39 @@ Six fresh agents (the five council roles and the kitchen screen designer) scored
 | Day chips visible at the top of the result | 2 of 7 (the unmatched card comes first) | 7 day rows (not tappable) |
 | Page height after reading | 2,630 px | 2,154 px (schematic) |
 
-Review status: focused follow-up requested from the New starter, Keeper, Screen designer and Skeptic on the combined preview.
+After the follow-up (below) the preview's matcher and Save band were corrected and remeasured: 16 taps for 6 days; scrolling back to the chips 275 px the first time, then 1,234 to 1,553 px; no chips show at the top of the result because the two cards come first; page height 2,672 px.
+
+### Focused follow-up on the combined preview
+
+Review status: lead synthesis, then a focused follow-up from the four reviewers whose findings it answers. **All four prefer it to plain A**, with conditions.
+
+| Reviewer | Verdict on the mix | Condition or remaining issue |
+| --- | --- | --- |
+| New starter | Better than A | Say how many days are still drafts after a Save (fixed in the preview); the import still sits in the bottom fold; a chip can say Saved with no breaks; no chip state for a failed Save |
+| Kitchen screen designer | Better than A; contrast and corners fixed (5.05:1 computed, not rendered) | The chips are a second date picker. Move between days with the week list and keep the chips as status only. Two orange-edged cards compete |
+| Keeper of the book | Better than A, on one condition | Chips must call the existing day selection (`tmPlanSelect`) and use the week list's words, including Checking and Retry; otherwise drop them and use the date picker |
+| Skeptic | Better than A once the naming rule is back | The matcher had dropped the head chef's rule 3 (reproduced, now fixed in the preview); Manage staff can invite a nickname duplicate; still not shown to beat Copy last weekday |
+
+**Disagreement.** The screen designer would move between days only with the existing week list (22 taps, little scrolling) and keep the chips as a status line. The New starter, Keeper and Skeptic accept the chips as a jump if they reuse the planner's own selection and words.
+
+### Break-it findings from the follow-up
+
+| Scenario | Evidence | Disposition |
+| --- | --- | --- |
+| Two roster Sams land on the book's one "Sam" | **Reproduced** in the preview's matcher (node, made-up names) | Fixed in the preview: rule 3 restored and no two roster rows may land on one book person; checked in node with a one-Sam book. The converter needs the same test |
+| Unsaved roster drafts hold the 04:00 refresh on a shared tablet for days (`tmAnyDirty` counts every date) | Risk / Not evidenced, read in source | Carry into the build: a fake-clock test past two 04:00s; a rule for old drafts may need the head chef |
+| The shared idle lock or a refused week read leaves chips saying Draft | Risk / Not evidenced | Chips use the week list's Checking and Retry; click test for lock, unlock, chip and Save |
+| The Manage staff detour loses the drafts or adds a nickname twice | Risk / Not evidenced (the preview button does nothing) | The card names the book name it looks for (in the preview); click test import, Manage staff, Back |
+| Days saved without breaks show no break board | Risk / Not evidenced | Check Home and the break board on the stand-in for a day saved with no breaks |
+
+## Recommendation
+
+**Recommend the combined design: A's fill into the dated drafts and one Save band, plus C's tap-a-day chips, plus B's unmatched-first card**, with the fixes above: the head chef's naming rule against the book's names with no double landing, chips that call the planner's own day selection and words (Draft, Saved, Checking, Retry), "N days still drafts" after a Save, "Breaks are not set", and the exact name each unmatched person is looked for under.
+
+It beats A because one tap takes the chef to the day's real rows with roster times, and the card says what is left; it beats B and C because it keeps one review (the worksheet) and one dated Save. Relevant principles: Airbnb (who, when and status together), Duolingo (Draft is never Saved, in words), Todoist (never guess a name).
+
+**Main downside.** Breaks are still set by hand, and scrolling back to the chips after each Save costs about 1,200 to 1,550 px (Preview). Against Copy last weekday, which brings breaks, it may not save time unless the roster changes a lot week to week, which is still not measured.
+
+**Build order.** 1: the reader and converter alone, with node tests (no screen change). Use it privately on two real weeks to measure the week-to-week change; stop if the weeks mostly match. 2: the fill, card and chips in Today's team, with the click tests above and a complete-app measurement at 390, 768 and 1280 px.
+
+**Open for the head chef.** Choose the combined design, plain A, or stop. Whether the import may run on the shared tablet (the downloaded file keeps its wages). The file as a new data source is a change to the Team page C contract ("no new data source") and needs the head chef's OK. Chips as a jump or as status only.
