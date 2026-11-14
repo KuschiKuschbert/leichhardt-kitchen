@@ -112,7 +112,7 @@
     var handle = e.target.closest('.ux-swipe-handle'), panel = handle && handle.closest('.ux-swipe');
     if (!panel || !swipePanels.has(panel) || panel.getAttribute('aria-busy') === 'true' || panel.inert ||
         e.target.closest('button, a, input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="button"], [role="slider"]')) return;
-    swipeDrag = { panel: panel, id: e.pointerId, x: e.clientX, y: e.clientY, lastY: e.clientY, at: e.timeStamp, speed: 0, moved: false };
+    swipeDrag = { panel: panel, id: e.pointerId, x: e.clientX, y: e.clientY, trail: [[e.timeStamp, e.clientY]], moved: false };
   }, true);
   document.addEventListener('pointermove', function (e) {
     var drag = swipeDrag; if (!drag || drag.id !== e.pointerId) return;
@@ -124,14 +124,17 @@
       drag.moved = true; drag.panel.classList.add('ux-swipe-dragging'); drag.panel.setPointerCapture(e.pointerId);
     }
     if (e.cancelable) e.preventDefault();
-    if (e.timeStamp > drag.at) drag.speed = (e.clientY - drag.lastY) / (e.timeStamp - drag.at);
-    drag.lastY = e.clientY; drag.at = e.timeStamp;
+    drag.trail.push([e.timeStamp, e.clientY]); if (drag.trail.length > 16) drag.trail.shift();
     drag.panel.style.setProperty('--ux-swipe-y', Math.max(0, Math.min(innerHeight, dy)) + 'px');
   }, { capture: true, passive: false });
   document.addEventListener('pointerup', function (e) {
     var drag = swipeDrag; if (!drag || drag.id !== e.pointerId) return;
     var dy = e.clientY - drag.y, dx = Math.abs(e.clientX - drag.x);
-    var dismiss = drag.moved && dy > dx * 1.3 && (dy >= 72 || dy >= 32 && drag.speed >= 0.5 && e.timeStamp - drag.at < 80);
+    // A flick's speed is taken over its last 100 ms, not its last frame: a thumb slows just before it lifts, and one
+    // slow last frame turned real flicks away (14 Nov 2026). A finger held still for 100 ms is not a flick.
+    var from = drag.trail.filter(function (s) { return e.timeStamp - s[0] <= 100; })[0];
+    var speed = from && e.timeStamp > from[0] ? (e.clientY - from[1]) / (e.timeStamp - from[0]) : 0;
+    var dismiss = drag.moved && dy > dx * 1.3 && (dy >= 72 || dy >= 32 && speed >= 0.5);
     var close = swipePanels.get(drag.panel); swipeReset();
     if (dismiss && close && drag.panel.isConnected && drag.panel.getAttribute('aria-busy') !== 'true') {
       e.preventDefault(); close();
