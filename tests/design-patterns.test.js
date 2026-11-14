@@ -14,6 +14,7 @@ const js = jsFiles.map(read).join('\n');
 
 // the names docs/design-patterns.md uses, by section
 const CLASSES = [
+  'wall-sign', 'wall-hint',
   'hm-welcome', 'hm-welcome-long', 'hm-welcome-compact', 'mascot', 'mascot-host', 'mascot-still', 'nb-fin', 'nb-fin-art', 'nb-fin-w', 'nb-fin-say', 'nb-fin-sec', 'tm-glance', 'nb-scene', 'nb-w40', 'nb-w28', 'nb-f192', 'nb-f96', 'nb-f64', 'nb-f48', 'nb-f0', 'nb-noart', 'p-toast-two', 'p-toast-say',
   'su-last-kind', 'su-last-wide', 'su-last-dow',
   'ko-row', 'ko-chip', 'ko-say',
@@ -43,11 +44,11 @@ const CLASSES = [
   'o-fn-tag', 'o-fn-when', 'o-fn-for', 'o-fn-held',
   'lk-fb', 'lk-ftag', 'lk-fillnote', 'lk-weigh', 'lk-why'
 ];
-const TOKENS = ['--ink', '--paper', '--bg', '--muted', '--faint', '--line', '--accent', '--accent-ink', '--tag', '--done', '--done-ink',
+const TOKENS = ['--ink', '--wall-ink', '--paper', '--bg', '--muted', '--faint', '--line', '--accent', '--accent-ink', '--tag', '--done', '--done-ink',
   '--bar', '--bar-text', '--display', '--body', '--r-act', '--r-pick', '--small-ink', '--hit',
   '--bad-ink', '--bad-tint', '--bad-on-dark', '--done-on-dark',
   '--surface-work', '--surface-work-edge', '--surface-people', '--surface-people-edge', '--surface-paper', '--surface-reference'];
-const HELPERS = ['homeHeading', 'homeWelcomeWords', 'homeWelcomePaint', 'whoNamePaint', 'tmIcon', 'retrySoon', 'waiting', 'cacheOnly', 'inkLabel', 'inkWait', 'mnName', 'AdaptivePicker', 'SwipeDismiss', 'ModalFrame', 'enhance',
+const HELPERS = ['homeHeading', 'homeWords', 'signInBlock', 'lastNext', 'homeWelcomeWords', 'homeWelcomePaint', 'whoNamePaint', 'tmIcon', 'retrySoon', 'waiting', 'cacheOnly', 'inkLabel', 'inkWait', 'mnName', 'AdaptivePicker', 'SwipeDismiss', 'ModalFrame', 'enhance',
   'svButton', 'svStart', 'svDone', 'svFail', 'svLine', 'errMsg', 'failed', 'toast', 'slipName', 'arm', 'armed', 'W', 'canW',
   'ovPush', 'ovDone', 'trapTab', 'sheetOpen', 'sheetBusy', 'sheetNext', 'lvHTML', 'homeSlot', 'homePaint', 'homeRotaHTML', 'tmAwayHTML', 'tmNextHTML', 'tmAwayPaint', 'tmAwayHidden', 'dkRunHTML', 'dkTeamHTML', 'dkFormHTML', 'panelShellHTML', 'psPanelHTML', 'psHintHTML', 'psReferenceHTML', 'psRolloutHTML',
   'fnOrdTag', 'orderTag', 'fbHTML', 'ftagHTML', 'fillAfterTap'];

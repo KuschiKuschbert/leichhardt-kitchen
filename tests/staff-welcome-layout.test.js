@@ -141,7 +141,7 @@ const homeGeometry = p => p.evaluate(() => {
     const tiharDay = Date.parse('2026-11-09T04:00:00Z');
     p = await L.open(browser, '#/', { who: '', width: 390, height: 844, clock: tiharDay, server: tiharDay, seasonal: { selection: 'auto', motion: 'gentle', density: 'festive' }, wait: 1200 });
     await L.waitFor(p, () => document.querySelector('#app')?.dataset.kbTheme === 'np-tihar');
-    ok(await p.evaluate(() => !document.querySelector('#rtitle.hm-welcome') && document.querySelector('#rtitle').textContent === 'Pick a docket' &&
+    ok(await p.evaluate(() => !document.querySelector('#rtitle.hm-welcome') && document.querySelector('#rtitle').textContent === 'Monday' &&
       [...document.querySelectorAll('.kb-hang-item')].filter(e => e.getClientRects().length).length > 0 &&
       !!document.querySelector('.kb-season-note') && KB_EFFECTS.status().ambientCount > 0), 'neutral Home keeps its anchored ornaments, explanation and ambience');
   });

@@ -1437,6 +1437,8 @@
     if (!deviceReady() || !window.LK_DEVICE.verify(id)) { S.authed = false; S.pinMsg = 'This personal device is assigned to another person. Change it in Settings first.'; draw(); return; }
     // asked before the PIN screen's state is cleared: unsent work, a waiting tap and the drink question keep their page
     var toHome = homeNext(id) && S.drinkAsk !== 'first';
+    var backTo = !toHome && S.drinkAsk !== 'first' ? lastNext(id) : '';   // later today: the person's own page (lastNext)
+    S.signFrom = '';
     setTimeout(dailyFlush, 3000);   // yesterday's counts, once someone is signed in (W writes as them)
     S.privacyLocked = false; S.unlocking = false; S.lockHasDraft = false; S.lockIdentity = ''; S.lockRecorder = ''; S.authed = true; S.tok = hash; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = '';
     lsSet('lk.prep.tok', ''); lsSet('lk.prep.seen', String(Date.now())); lsSet('lk.prep.day', dayNow()); lastAct = Date.now(); startIdle();
@@ -1449,6 +1451,8 @@
     // The first PIN of the person's day opens Home (10 Nov 2026, docs/home-staff-first.md); later PINs keep the page.
     homeLoginKeep(id, S.sessExp);
     if (toHome) { pend = null; location.hash = '#/'; }
+    else if (backTo) { pend = null; location.hash = backTo; }
+    lastKeep();
     recoverWrites(id); loadAdmins(); accessChanged(); draw(); whoSync(true);
     if (pend) guestReplay(pend);
     dkCheck(); ksCheck(); noteMaybePop();
@@ -1462,6 +1466,39 @@
      nothing and saves nothing on the server. */
   function homeLoginSeen(id) { return !!id && Number(lsGet('lk.prep.home.' + id)) === nextUnlock(now()); }
   function homeLoginKeep(id, exp) { if (id && exp > now()) lsSet('lk.prep.home.' + id, String(exp)); }
+  /* Back to where you were (head chef, 15 Nov 2026, docs/home-staff-first.md "Later sign-ins that day"). lk.prep.last.<person>
+     keeps the page the person last had open on this device while signed in: { h: its address, x: their session's end, the
+     next 04:00 Queensland }. Out of date at that 04:00 (x is no longer nextUnlock(now())), so the first PIN of a new day
+     still opens Home. A screen hint only, like lk.prep.home: it holds no work, grants nothing (the page still checks who
+     may see it) and is never sent to the server. A later PIN that day goes back to it when the sign-in did not start on a
+     page the person chose (S.signFrom, set by Kitchen sign in on Home, Not me and Sign out; any other move clears it). */
+  var LAST_RX = /^#\/[A-Za-z0-9_\-\/.%]*$/;
+  function lastKeep() {
+    if (!S.authed || !S.who || !privateAccess() || !LAST_RX.test(location.hash) || !(S.sessExp > now())) return;
+    lsSet('lk.prep.last.' + S.who, JSON.stringify({ h: location.hash, x: S.sessExp }));
+  }
+  function lastFor(id) {
+    try { var v = JSON.parse(lsGet('lk.prep.last.' + id) || 'null'); return v && Number(v.x) === nextUnlock(now()) && typeof v.h === 'string' && LAST_RX.test(v.h) ? v.h : ''; } catch (e) { return ''; }
+  }
+  // Where a later PIN today goes instead of this page, or '' to keep it. Never over a tap waiting here (S.pending without
+  // back), work to finish here, the chef hat's Sign in from a page other than Home (back), or the head chef on Admin.
+  function lastNext(id) {
+    var c = S.config || {}, p = S.pending;
+    if (!id || homeNext(id) || S.signFrom !== 'start' && !(p && p.back === '#/')) return '';
+    if (p && p.back !== '#/' || dirtyForUpdate() || sendingNow() || S.name === 'admin' && id === c.headId) return '';
+    var h = lastFor(id); return h && h !== location.hash ? h : '';
+  }
+  // The PIN button's words for that page (docs/action-feedback.md: the button names where the tap goes)
+  function lastLabel(h) {
+    var n = (h.split('/')[1] || '').split('?')[0];
+    return n === '' ? 'Open Home' : n === 'r' ? 'Back to your recipe' : n === 'recipes' ? 'Open the recipes' : OPEN_WORDS[n] || 'Back to where you were';
+  }
+  window.addEventListener('hashchange', function (e) {
+    if (S.authed && privateAccess()) { lastKeep(); return; }
+    // nobody signed in: Kitchen sign in from Home starts a sign-in that goes back to the person's own page; any other
+    // move is the person choosing this page
+    S.signFrom = /#\/?$/.test(e.oldURL || '') && location.hash === '#/prep' ? 'start' : '';
+  });
   // Home first, unless the person has work to finish here: kept or unsent work, a tap waiting on a shared screen (not the
   // chef hat's Sign in, which only came back), a Functions-only account, which stays on its functions, or the head chef
   // unlocking on Admin, which keeps Admin (owner, 10 Nov 2026).
@@ -1875,7 +1912,7 @@
     if (sendingNow()) { if (force) privacyLock('handover'); toast('Not sent yet. Sign in as the same person to finish sending.'); return false; }
     if (!force && window.LK_PREP.unsaved()) return false;
     forgetMine(S.who);
-    S.picking = true; S.pending = null; leave(); dropGoogle().then(accessChanged).catch(function () { toast('Sign-out could not finish. Close this tab before handing over the device.', { label: 'OK', fn: function () {} }, 0, 'bad'); }); if (!quiet) toast('Signed out. Hand the phone over.');
+    S.picking = true; S.pending = null; leave(); S.signFrom = 'start'; dropGoogle().then(accessChanged).catch(function () { toast('Sign-out could not finish. Close this tab before handing over the device.', { label: 'OK', fn: function () {} }, 0, 'bad'); }); if (!quiet) toast('Signed out. Hand the phone over.');
     return true;
   }
   /* "Not you?" next to "Writing as" (and Change person on the admin card) hands the phone over the way Sign out does
@@ -1919,7 +1956,7 @@
     // the PIN screens' Not me: nobody is signed in yet (picking a name signs Google out first), so it goes in one tap.
     // The head chef's Google account handing over (the lone Not you?, the admin card's Sign in) takes what it left on
     // the device, like Sign out (29 Oct 2026: function, recipe and drawing drafts stayed for the next person)
-    if (!S.authed) { if (S.user || workLock()) forgetMine(S.lockRecorder || S.who); S.picking = true; S.pending = null; leave(); dropGoogle().then(accessChanged).catch(function () { toast('Sign-out could not finish. Close this tab before handing over the device.', { label: 'OK', fn: function () {} }, 0, 'bad'); }); return; }
+    if (!S.authed) { if (S.user || workLock()) forgetMine(S.lockRecorder || S.who); S.picking = true; S.pending = null; leave(); S.signFrom = 'start'; dropGoogle().then(accessChanged).catch(function () { toast('Sign-out could not finish. Close this tab before handing over the device.', { label: 'OK', fn: function () {} }, 0, 'bad'); }); return; }
     signOutPerson(true, true);
   }
   /* Manage Recipes & Drawings (#/manage, 21 Oct 2026): the head chef only. With their own PIN as Head chef on any device,
@@ -4946,10 +4983,11 @@
   var AI_ON = '<svg class="nb-ai" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6 8-6s7.2 2 8 6"/></svg>';
   var TICK = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M5 14 L11 20 L22 5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  function openLabel() { return { orders: 'Open the order list', waste: 'Open the wastage log', transfers: 'Open the transfer list', minutes: 'Open the minutes', guides: 'Open the guides', cleaning: 'Open the cleaning list', mail: 'Open kitchen mail', drinks: 'Open the drinks run', admin: 'Open the admin panel' }[S.name] || 'Open the prep list'; }
+  var OPEN_WORDS = { prep: 'Open the prep list', orders: 'Open the order list', waste: 'Open the wastage log', transfers: 'Open the transfer list', minutes: 'Open the minutes', guides: 'Open the guides', cleaning: 'Open the cleaning list', mail: 'Open kitchen mail', drinks: 'Open the drinks run', admin: 'Open the admin panel' };
+  function openLabel() { return OPEN_WORDS[S.name] || 'Open the prep list'; }
   // The personal PIN button names where the tap goes (docs/action-feedback.md): kept work, Home on the first sign-in of
-  // the day (homeNext), or this page
-  function pinGoLabel() { return blockedRecorder() ? 'Resume your work' : homeNext(S.who) ? 'Open Home' : openLabel(); }
+  // the day (homeNext), the person's own page from earlier today (lastNext), or this page
+  function pinGoLabel() { var back = !blockedRecorder() && !homeNext(S.who) && lastNext(S.who); return blockedRecorder() ? 'Resume your work' : homeNext(S.who) ? 'Open Home' : back ? lastLabel(back) : openLabel(); }
   function gateHTML() {
     return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen PIN</h2><p class="hint">' + (S.name === 'admin' ? 'The admin panel needs the kitchen PIN on this device once, then the head chef\'s Google sign-in.' : 'Enter the kitchen PIN to open the prep list, orders, wastage, transfers, minutes and guides. This device remembers it.') + '</p>' +
       '<div class="field"><label class="label" for="p-pin">PIN</label>' + pinField('p-pin', 'p-pin', S.pinInput, true) + '</div>' +
@@ -15390,6 +15428,8 @@ if (list.length) sg('oreg', 's');
     blockedRecorder: blockedRecorder,
     canChangeDevice: canChangeDevice,
     changeDevice: changeDevice,
+    // the kitchen PIN is on this device (js/app.js: the signed-out Home says a new device enters it first)
+    kitchenPin: function () { return !!S.pin; },
     privateAccess: privateAccess, kitchenAccess: kitchenAccess, routeAccess: routeAccess, functionOnly: functionOnly,
     back: function () { if (localBackBusy()) return true; var a = localBackAction(); return !!a && localReturn(a.action); },
     backLabel: function () { var a = localBackAction(); return a ? a.label : ''; },
