@@ -122,3 +122,59 @@ All three need breaks set afterwards (Spread them, about 3 to 4 taps for each se
 1. **Saving unseen days (C).** A sous chef taps five row Saves without opening a day. Expected: each Save names its date; nothing hides a wrong fill. Hypothesis: a day-shifted file would be saved five times in a few seconds. Mitigated only by fail-closed parsing. Evidence: Risk / Not evidenced.
 2. **Saving one day and leaving (A, B).** A chef saves today and leaves the page. Expected: the four other filled days stay as Filled, not saved, and Update or handover warns. Hypothesis: memory drafts are lost on the 04:00 refresh. Evidence: Risk / Not evidenced; the existing dirty-date guard (`tmAnyDirty`) is read in source.
 3. **A second import after edits.** The chef sets sections and breaks on Thursday (not saved), then chooses the file again. Expected: a day with a draft is not empty, so it is not changed. Evidence: Risk / Not evidenced in all three.
+
+## Round 2 scores
+
+Six fresh agents (the five council roles and the kitchen screen designer) scored A, B and C out of 10 from the brief, the packet and the preview screenshots. All six said the designs differ structurally.
+
+| Reviewer | A | B | C | Recommends |
+| --- | --- | --- | --- | --- |
+| Cook mid-service | 7 | 6 | 4 | A, with "Breaks not set" on each day |
+| Head chef | 7 | 5 | 4 | A + B's unmatched-first order + C's day-row jump; measure the change rate before going further |
+| Skeptic | 6 | 4 | 5 | A, built only after the week-to-week change is measured; a two-way A + C rows mix might beat it |
+| New starter | 7 | 5 | 6 | A with C's rows as the way to choose each day |
+| Keeper of the book | 7 | 6 | 4 | A, reusing the week list's status words and reading the file's week first |
+| Kitchen screen designer | 7 | 5 | 4 | A + C's tap-a-day jump, no Save on the row |
+| **Total** | **41** | **31** | **27** | |
+
+**Agreed weaknesses.** A: the day list could not be tapped; the fold sits far below the date picker in the real page. B: the review is a rubber stamp (days come ticked) and the chef checks each day twice; the Fill tick shares a row with the fold header. C: row Saves publish days nobody opened, two Saves show at once, Save sits 8 px from Open, Open is read only, and `teamSave` has one save slot, so row Saves need a second save path.
+
+**Faults found in all three (fixed in the combined preview):**
+- The unmatched card said "pair them, then choose the file again". Pairing does not exist, and a second import only fills empty days, so it led nowhere.
+- A and B kept "Filled 5 days, not saved" and the orange edge after every day was saved (`filled()` ignored saved).
+- "Does not check out" is an idiom a new starter may not know.
+- White on `--accent` measured 3.54:1 by token calculation (16 px bold needs 4.5:1). The book's dark Save (`.btn.dark`, `--accent-ink`) is 5.05:1. Round action buttons broke `--r-act` (8 px rectangles do something).
+- The "Sam K" rule depended on who was in that week's file. Match the book's names instead: the given name, or the given name plus the family initial, exactly one.
+- Next week's file needs that week read from the server before filling (up to 7 reads, one bounded query).
+
+**Value is still open.** Breaks are not in the file. Spread them adds about 45 to 60 taps a week (estimate, not counted), so the import can cost more than Copy last weekday (about 25 plus edits, breaks included) unless the roster changes a lot from week to week. Not measured yet: no second week's file.
+
+## Mix of A, B and C
+
+| Source and part | Take or reject | Principle | Kitchen benefit | Conflict or cost | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| A: fill into the existing dated drafts, one Save band | Take | Linear | Save stays where it is; uses `tmPlan`, `teamSave`, `svButton` | Day switching | All six reviewers |
+| A: result card with counts | Take, fixed | Duolingo | Says what was filled and what was not | Must update when days are saved | New starter, Skeptic |
+| B: review step with Fill ticks | Reject | Todoist, Linear | None over the worksheet | A second review; rubber stamp | Five of six |
+| B: unmatched names first, with their days and roster times | Take | Todoist, Airbnb | The chef sees who is missing before checking days | Pushes the day chips down | Head chef, New starter |
+| C: Save on each row | Reject | Linear, Duolingo | Fewer taps | Saves unseen days; second save path | All six |
+| C: tap a day to open that date | Take | Airbnb | Replaces the date picker trip | Scrolling back to the chips | Five of six |
+| Cook: "Breaks not set" | Take | Flighty | Nobody saves a day and thinks breaks are done | One line | Cook |
+
+**All three blended** loses: B's review-first sequence is the opposite of A's and C's fill-first, and C's row Saves duplicate the band. The two-way blend, A plus C's day jump plus B's unmatched-first order, keeps one sequence and one Save.
+
+## Combined preview
+
+[mix.html](mix.html), lead synthesis of the reviewers' suggestions. The page follows the real Today's team order at 390 px (date picker, break board, Add staff, the day's rows, Whole day review, then the folds). Today is Friday 13 November and the file is next week, so the preview shows "Checking 16 to 22 November..." first. Book status words (Draft, Saved), the book's `.btn` and `.btn.dark` Save, round day chips for choosing a day.
+
+**Preview** measurements (390 x 844, made-up data, file picker assumed 2 taps), scripted 14 November 2026:
+
+| Measure | Combined | A |
+| --- | --- | --- |
+| Taps to fill and save the empty days | **16 for 6 days** (2 a day + 4) | 19 for 5 days (3 a day + 4) |
+| Scrolling back to the day chips after each Save | 232 px the first time, then 1,191 to 1,511 px | Not measured (date picker at the top) |
+| Date picker instead of chips | 22 taps for 6 days, little scrolling | n/a |
+| Day chips visible at the top of the result | 2 of 7 (the unmatched card comes first) | 7 day rows (not tappable) |
+| Page height after reading | 2,630 px | 2,154 px (schematic) |
+
+Review status: focused follow-up requested from the New starter, Keeper, Screen designer and Skeptic on the combined preview.
