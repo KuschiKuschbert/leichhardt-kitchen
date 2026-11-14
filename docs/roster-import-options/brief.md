@@ -2,7 +2,7 @@
 
 14 November 2026, Queensland. Head chef request: fill Today's team from the Humanforce Weekly Department Roster Report (CSV export) while a read-only Humanforce API key is requested from Australian Venue Co IT. [Proposal](proposal.md), [evidence packet](evidence-packet.md). Role-based analysis, not research with staff.
 
-**Status: council done. Recommendation below, waiting on the head chef's choice. Nothing built.**
+**Status: the combined design chosen 14 November 2026. Step 1 (the reader) built and tested; step 2 (the screen) waits on the week-to-week measurement.**
 
 ## Head chef answers after round 1 (14 November 2026)
 
@@ -213,3 +213,20 @@ It beats A because one tap takes the chef to the day's real rows with roster tim
 **Build order.** 1: the reader and converter alone, with node tests (no screen change). Use it privately on two real weeks to measure the week-to-week change; stop if the weeks mostly match. 2: the fill, card and chips in Today's team, with the click tests above and a complete-app measurement at 390, 768 and 1280 px.
 
 **Open for the head chef.** Choose the combined design, plain A, or stop. Whether the import may run on the shared tablet (the downloaded file keeps its wages). The file as a new data source is a change to the Team page C contract ("no new data source") and needs the head chef's OK. Chips as a jump or as status only.
+
+## Chosen (14 November 2026)
+
+The head chef chose **the combined design** (the recommendation) and **the reader first, then measure**. Asked where the import may run, the head chef answered: **only on the admin account, in the admin panel**. So the import is not offered in the sous chefs' Today's team or on the shared tablet; step 2 places the combined design's card and day chips in the admin panel and fills the planner's dated drafts there. The file as a new data source for Today's team is accepted by that choice.
+
+## Step 1: the reader (built 14 November 2026)
+
+`js/roster-import.js`, shared by the phone (`window.LK_ROSTER`) and node, loaded by nothing in the book yet (not in `SHELL`, no route). It:
+
+- splits the CSV into cells and **blanks every money cell as each cell is finished**, before anything else reads it; returns only names, dates and times, never a cost, award role or hours;
+- **fails closed**: the 37 fixed column names, the title, a Monday to Sunday week whose seven day labels line up, the location and department (Leichhardt Hotel, Food), every row's report cells the same, each shift group under one of the seven known day names in day order, exactly one time in the right cell, no shift past midnight, no person twice, and line 1's names used up exactly; a refusal names the line, never a cell;
+- **checks each day's total hours**: the shifts on a day must add up to at least the report's total for that day (breaks only take hours away). This catches a shift that slipped to another valid day (council's leading finding); the totals are used for the check only;
+- puts each shift on **every kitchen shift it touches** (`services()`), and matches names to the book (`match()`): the given name, the family initial when two in the file share a given name, exactly one book person, never two file people on one book person; `plan()` lists each day's people and services, the unmatched people with the name looked for and their shifts, and shifts outside every service.
+
+Checks: `tests/roster-import.test.js`, 61 node checks on made-up rosters (reading, wiping money and roles, 22 refusals, services, names including the two-Sams case, the plan). The slipped-day check fails on the reader without the day-totals rule. Run privately against the owner's real export (kept out of the repo): 10 people and 47 shifts, identical to the same week's Excel export.
+
+**Next:** the owner adds a second week's roster CSV to the Drive folder; the reader compares the two weeks privately (how many shifts change), and step 2 is built only if that is worth it against Copy last weekday.
