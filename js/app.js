@@ -735,13 +735,18 @@
   function viewLanding() {
     var d = window.LK_TIME.day().split('-'), dt = new Date(+d[0], d[1] - 1, +d[2], 12);
     if (window.LK_PREP && window.LK_PREP.homeOn && window.LK_PREP.homeOn()) return homeBoard(dt);
+    // Signed out, the one Recipes docket is a long one across the wall from 720 px, so it lines up under a full-width
+    // celebration note instead of standing alone on the left (head chef, 15 Nov 2026). Phones keep the short docket.
+    // Functions-only Home is unchanged.
+    var solo = !!(window.LK_PREP && !window.LK_PREP.privateAccess() && !window.LK_PREP.functionOnly());
     return '<div class="wall">' + topBar() + fnBand() +
       '<main id="main" class="wall-main">' + homeHeading(dt, false) + minCard() + (window.LK_FN && window.LK_FN.checkSlot ? window.LK_FN.checkSlot() : '') + (window.LK_FN ? window.LK_FN.landSlot() : '') + installCard() +
       // with no signal before the kitchen's settings are in: the no-signal sentence, not Kitchen sign in (28 Oct 2026)
       (window.LK_PREP && window.LK_PREP.functionOnly() ? '<p><a class="btn dark" href="#/functions">Manage functions</a></p>' : offline() ? '<p class="hint wall-hint" role="status">' + esc(offline()) + '</p>' : window.LK_PREP && !window.LK_PREP.privateAccess() ? signInBlock() : '') + '<div class="dockets kb-home">' + DOCKETS.filter(function (d) { if (window.LK_PREP && (!window.LK_PREP.privateAccess() || window.LK_PREP.functionOnly())) return d[3] === 'recipes'; return d[3] !== 'cleaning' || cleaningOK(); }).map(function (d) {
         // Transfers and Cleaning are the long ones under the other four (a docket with a line under its name)
-        return '<a class="docket' + (d[4] ? ' dk-wide' : '') + '" href="' + d[2] + '"><span class="dk-pin" aria-hidden="true"></span><span class="dk-top"><span class="dk-name">' + d[1] + '</span><span class="dk-no">No. ' + d[0] + '</span></span>' +
-          (d[4] ? '<span class="dk-sub">' + esc(d[4]) + '</span>' : '') +
+        var sub = d[4] || (solo && d[3] === 'recipes' ? 'Every dish, its allergens and the method.' : '');
+        return '<a class="docket' + (sub ? ' dk-wide' : '') + '" href="' + d[2] + '"><span class="dk-pin" aria-hidden="true"></span><span class="dk-top"><span class="dk-name">' + d[1] + '</span><span class="dk-no">No. ' + d[0] + '</span></span>' +
+          (sub ? '<span class="dk-sub">' + esc(sub) + '</span>' : '') +
           '<span class="dk-icon">' + NAV_ICON[d[3]].replace(/width="26" height="26"/, 'width="72" height="72"') + '</span><span class="dk-go">Open</span></a>';
       }).join('') + '</div>' +
       '<p class="wall-foot">Cook as written. Check with the head chef or sous chef before changing anything.</p></main>' + tabBar() + '</div>';

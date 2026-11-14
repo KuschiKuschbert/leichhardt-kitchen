@@ -786,8 +786,9 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
   .dk-go { display: none; }
   .docket { min-height: 64px; }
   .dk-wide .dk-sub { font-size: 0.9375rem; margin-top: 0.25rem; }
-  /* the Transfers docket keeps to one line on a phone, so Guides still ends above the tab bar */
-  .docket[href="#/transfers"] .dk-sub { display: none; }
+  /* the Transfers docket keeps to one line on a phone, so Guides still ends above the tab bar; the signed-out Recipes
+     docket too (its line is for the long docket on wide screens, 15 Nov 2026) */
+  .docket[href="#/transfers"] .dk-sub, .docket[href="#/recipes"] .dk-sub { display: none; }
 }
 /* "No. 05" stays in one piece next to TRANSFERS on a phone, also in the fallback font (on the narrowest phones it may wrap) */
 @media (min-width: 360px) and (max-width: 719px) { .dk-no { white-space: nowrap; } }
@@ -1627,6 +1628,9 @@ html.ks-open, html.ks-open body { overflow: hidden; }
   .dk-wide .dk-sub { grid-column: 2; grid-row: 2; margin: 0.2rem 0 0; font-size: 1.05rem; }
   .dk-wide .dk-go { grid-column: 3; grid-row: 1 / span 2; align-self: center; justify-self: end; margin: 0; padding: 0 2rem; }
 }
+/* The signed-out Recipes docket (15 Nov 2026) ends where a celebration note ends: the note is at most 760 px wide below
+   1100 px (css/celebration-ticker.css) and the whole wall from there */
+@media (min-width: 720px) and (max-width: 1099px) { .dockets > .docket.dk-wide[href="#/recipes"] { max-width: 760px; } }
 /* six menu items (Transfers, 23 Oct 2026): tighter pills on a tablet and a small laptop, and the phone tab bar fits six */
 @media (min-width: 720px) and (max-width: 1199px) { .wtop .pnav { gap: 0.35rem; } .wtop .pnav a { padding: 0 0.75rem; } }
 @media (min-width: 720px) and (max-width: 899px) { .wtop-brand .rb-eb { display: none; } .wtop { padding: 0 0.9rem; gap: 0.5rem; } .wtop .pnav a { padding: 0 0.55rem; white-space: nowrap; } .wtop-icons { gap: 0.35rem; } }
