@@ -76,7 +76,7 @@ async function closePrep(p) {
   ok(!!(await p.$('.p-sheet')), 'phone: a cancelled touch returns the sheet without dismissing');
   await swipe(p, '#p-text', 0, 100);
   ok(!!(await p.$('.p-sheet')) && await p.inputValue('#p-text') === 'Zest limes', 'phone: dragging a form field preserves the sheet and typed words');
-  // 14 Nov 2026: the grip was a bare 44 x 5 px bar, so the top of every phone sheet took no touch. A thumb pulls from there.
+  // 15 Nov 2026: the grip was a bare 44 x 5 px bar, so the top of every phone sheet took no touch. A thumb pulls from there.
   const grip = await p.locator('.p-sheet > .sheet-grip').evaluate(g => { const r = g.getBoundingClientRect(), s = g.closest('.sheet').getBoundingClientRect(); return { w: r.width, h: r.height, top: r.top - s.top }; });
   ok(grip.w >= 300 && grip.h >= 22 && grip.top <= 2, 'phone: the grip is a strip across the top of the sheet that takes the touch (' + Math.round(grip.w) + ' x ' + Math.round(grip.h) + ' px)');
   await swipe(p, '.p-sheet', 0, 110, { at: [0.3, 4] });
@@ -102,9 +102,10 @@ async function closePrep(p) {
   ok(!(await p.$('.ux-picker')) && !!(await p.$('.p-sheet')), 'phone: swiping a replaced nested picker heading closes only that picker');
   ok(await p.inputValue('#p-text') === 'Zest limes' && await p.evaluate(() => window.swipeSelection === undefined), 'phone: picker swipe discards uncommitted choices and keeps the parent draft');
   if (await p.$('.ux-picker')) { await p.keyboard.press('Escape'); await L.settle(p, 200); }
+  // 15 Nov 2026 (owner): a pull down on a sheet's body closes it when everything under the finger is at its top.
   await picker(p);
   await swipe(p, '.ux-picker-option', 0, 100);
-  ok(!!(await p.$('.ux-picker')), 'phone: dragging an option does not dismiss or select the picker');
+  ok(!(await p.$('.ux-picker')) && await p.evaluate(() => window.swipeSelection === undefined) && await p.inputValue('#p-text') === 'Zest limes', 'phone: pulling a short choice list down from its top closes the picker without choosing, the draft kept');
   if (await p.$('.ux-picker')) { await p.keyboard.press('Escape'); await L.settle(p, 200); }
   await closePrep(p);
   await p.click('#nbr-i1 .nb-more'); await L.settle(p, 200);
@@ -115,9 +116,19 @@ async function closePrep(p) {
   await swipe(p, '#lm-sheet .sheet', 0, 110, { at: [0.8, 4] });
   ok(!(await p.$('#lm-sheet')) && !!(await p.$('#nbr-i1')), 'phone: a drag from the top edge of the line menu closes it');
   if (await p.$('#lm-sheet')) { await p.keyboard.press('Escape'); await L.settle(p, 200); }
+  await p.click('#nbr-i1 .nb-more'); await L.settle(p, 200);
+  const writes = await p.evaluate(() => window.__fake.writes.length);
+  await swipe(p, '#lm-sheet .sheet button:not(.ux-modal-close)', 0, 110);
+  ok(!(await p.$('#lm-sheet')) && !!(await p.$('#nbr-i1')) && !(await p.$('.sheet')) && await p.evaluate(n => window.__fake.writes.length === n, writes), 'phone: a pull down from the line menu body, starting on an option, closes it and does not do the option');
+  if (await p.$('#lm-sheet')) { await p.keyboard.press('Escape'); await L.settle(p, 200); }
   await picker(p, false, true);
   await swipe(p, '.ux-picker-option:nth-child(3)', 0, -160);
   ok(!!(await p.$('.ux-picker')) && await p.locator('.ux-picker-options').evaluate(el => el.scrollTop > 0), 'phone: touching the choice list scrolls it and keeps the picker open');
+  await p.locator('.ux-picker-options').evaluate(el => { el.scrollTop = 150; });
+  await swipe(p, '.ux-picker-options', 0, 100, { at: [0.5, 200] });
+  ok(!!(await p.$('.ux-picker')) && await p.locator('.ux-picker-options').evaluate(el => el.scrollTop < 150) && await p.evaluate(() => window.swipeSelection === undefined), 'phone: a pull down on a list scrolled down scrolls it back up and keeps the picker open');
+  await swipe(p, 'dialog.ux-picker', 0, 100, { at: [0.5, -120] });
+  ok(!!(await p.$('.ux-picker')), 'phone: a drag on the dimmed page above a picker does not pull the picker');
   if (await p.$('.ux-picker')) { await p.keyboard.press('Escape'); await L.settle(p, 200); }
   await L.pLog(p);
   await p.keyboard.press('Escape'); await L.settle(p, 200);
@@ -130,6 +141,36 @@ async function closePrep(p) {
   ok(!(await p.$('.wm-wrap')), 'phone: a drag from the top edge of the chef menu closes it');
   if (await p.$('.wm-wrap')) { await p.keyboard.press('Escape'); await L.settle(p, 200); }
   ok(!(await L.overflow(p)) && p.errors.length === 0, 'phone: no sideways scroll or browser errors ' + p.errors.join('|'));
+  await p.context().close();
+
+  // The body pull leaves a scrolled form, an upward or sideways drag and a short pull to the browser.
+  p = await L.open(b, '#/waste', { touch: true, wait: 1500 });
+  await L.wLog(p);
+  await p.locator('.w-sheet').evaluate(el => { el.scrollTop = 200; });
+  const scrolled = await p.locator('.w-sheet').evaluate(el => el.scrollTop);
+  await swipe(p, '.w-sheet', 0, 110, { at: [0.5, 260] });
+  ok(scrolled > 0 && !!(await p.$('.w-sheet')) && await p.locator('.w-sheet').evaluate(el => el.scrollTop === 0), 'waste: a pull down on a scrolled form scrolls it back to the top and keeps Log waste open');
+  await swipe(p, '.w-sheet .w-rule', 0, -110);
+  ok(!!(await p.$('.w-sheet')) && await p.locator('.w-sheet').evaluate(el => el.scrollTop > 0), 'waste: an upward drag at the top scrolls the form and keeps it open');
+  await p.locator('.w-sheet').evaluate(el => { el.scrollTop = 0; });
+  await swipe(p, '.w-sheet .w-rule', 110, 10);
+  ok(!!(await p.$('.w-sheet')), 'waste: a sideways drag on the body keeps it open');
+  await swipe(p, '.w-sheet .w-rule', 0, 20);
+  ok(!!(await p.$('.w-sheet')), 'waste: a short 20 px pull keeps it open');
+  await swipe(p, '.w-sheet .w-rule', 0, 110, { multitouch: true });
+  ok(!!(await p.$('.w-sheet')), 'waste: a second finger cancels a body pull');
+  await swipe(p, '.w-sheet .w-rule', 0, 110);
+  ok(!(await p.$('.w-sheet')) && p.errors.length === 0, 'waste: a pull down on the body at the top closes Log waste ' + p.errors.join('|'));
+  await p.context().close();
+
+  // Guide pages keep pinch and page turning: only the grip and the toolbar pull.
+  p = await L.open(b, '#/guides/combi', { who: 'ann', touch: true, extra: L.guides(), wait: 1200 });
+  await L.waitFor(p, () => !!document.querySelector('[data-p="g-zoom"][data-i="0"]'));
+  await p.click('[data-p="g-zoom"][data-i="0"]');
+  await swipe(p, '.gz-body', 0, 110);
+  ok(!!(await p.$('.gz-wrap')), 'guide: a drag on the page itself keeps the document open');
+  await swipe(p, '.gz-wrap', 0, 110, { at: [0.3, 4] });
+  ok(!(await p.$('.gz-wrap, .ux-modal-shade')) && p.errors.length === 0, 'guide: a drag from the top edge closes the document ' + p.errors.join('|'));
   await p.context().close();
 
   p = await L.open(b, '#/orders', { touch: true, wait: 1500 });
@@ -167,6 +208,12 @@ async function closePrep(p) {
     await picker(p, true); await p.locator('.ux-picker-option').nth(1).click();
     await swipe(p, '.ux-picker-head h2', 0, 110, { mouse: width === 1280 });
     ok(!(await p.$('.ux-picker')) && await p.evaluate(() => window.swipeSelection === undefined), width + ': downward picker drag dismisses without applying choices');
+    if (width === 1280) {
+      await p.click('#nbr-i1 .nb-more'); await L.settle(p, 200);
+      await swipe(p, '#lm-sheet .lm-who', 0, 110, { mouse: true });
+      ok(!!(await p.$('#lm-sheet')), '1280: a mouse drag on the body selects words and keeps the menu open');
+      if (await p.$('#lm-sheet')) { await p.keyboard.press('Escape'); await L.settle(p, 200); }
+    }
     ok(!(await L.overflow(p)) && p.errors.length === 0, width + ': no sideways scroll or browser errors ' + p.errors.join('|'));
     await p.context().close();
   }
@@ -177,7 +224,7 @@ async function closePrep(p) {
   ok(p.errors.length === 0, 'sign in: no browser errors ' + p.errors.join('|'));
   await p.context().close();
 
-  // Flick speed on a real clock (14 Nov 2026). L.open installs a test clock that also replaces Event.timeStamp, so no
+  // Flick speed on a real clock (15 Nov 2026). L.open installs a test clock that also replaces Event.timeStamp, so no
   // flick can be measured there (every move reads the same time). This plain page loads only the shared controls and
   // the book's styles, and the touches carry the times a phone would give them.
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, serviceWorkers: 'block' });

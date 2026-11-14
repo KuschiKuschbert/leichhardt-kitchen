@@ -5272,7 +5272,7 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .ux-modal .ux-modal-close:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
 .ux-modal .ux-modal-close:disabled { opacity: .4; cursor: default; }
 /* The grip is where a thumb pulls a phone sheet down, so the whole strip takes the touch and the bar is drawn inside it,
-   like the picker's grip. A bare 44 x 5 px bar left the top of every phone sheet dead: margins take no touch (14 Nov 2026).
+   like the picker's grip. A bare 44 x 5 px bar left the top of every phone sheet dead: margins take no touch (15 Nov 2026).
    Same 23 px of height as the bar and its margins, so nothing on the sheet moves. */
 .ux-modal > :is(.sheet-grip, .nt-grip, .wm-grip, .fn-grip, .ux-modal-grip) {
   display: block; flex: 0 0 auto; align-self: stretch; position: relative; box-sizing: border-box;

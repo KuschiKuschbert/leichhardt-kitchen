@@ -45,6 +45,7 @@
     var viewer = panel.matches('.gz-wrap');
     if (!dialog && !viewer && (!backdrop || !backdrop.matches('.sheet-bg, .nt-bg, .wm-bg, .fn-pop-bg, .mlp-bg'))) return;
     panel.classList.add('ux-swipe', 'ux-modal');
+    panel.addEventListener('touchmove', swipeTouchMove, { capture: true, passive: false });   // the same listener is added once
     swipePanels.set(panel, function () {
       if (dialog) panel.dispatchEvent(new Event('cancel', { cancelable: true }));
       else if (viewer) { var close = panel.querySelector('[data-gz="close"]'); if (close) close.click(); }
@@ -102,7 +103,7 @@
     var drag = swipeDrag; swipeDrag = null; if (!drag) return;
     drag.panel.classList.remove('ux-swipe-dragging');
     drag.panel.style.removeProperty('--ux-swipe-y');
-    if (drag.panel.hasPointerCapture(drag.id)) drag.panel.releasePointerCapture(drag.id);
+    if (drag.id != null && drag.panel.hasPointerCapture(drag.id)) drag.panel.releasePointerCapture(drag.id);
     if (drag.moved) swipeClickUntil = performance.now() + 400;
   }
   document.addEventListener('pointerdown', function (e) {
@@ -127,24 +128,61 @@
     drag.trail.push([e.timeStamp, e.clientY]); if (drag.trail.length > 16) drag.trail.shift();
     drag.panel.style.setProperty('--ux-swipe-y', Math.max(0, Math.min(innerHeight, dy)) + 'px');
   }, { capture: true, passive: false });
-  document.addEventListener('pointerup', function (e) {
-    var drag = swipeDrag; if (!drag || drag.id !== e.pointerId) return;
-    var dy = e.clientY - drag.y, dx = Math.abs(e.clientX - drag.x);
+  function swipeEnd(drag, e, x, y) {
+    var dy = y - drag.y, dx = Math.abs(x - drag.x);
     // A flick's speed is taken over its last 100 ms, not its last frame: a thumb slows just before it lifts, and one
-    // slow last frame turned real flicks away (14 Nov 2026). A finger held still for 100 ms is not a flick.
+    // slow last frame turned real flicks away (15 Nov 2026). A finger held still for 100 ms is not a flick.
     var from = drag.trail.filter(function (s) { return e.timeStamp - s[0] <= 100; })[0];
-    var speed = from && e.timeStamp > from[0] ? (e.clientY - from[1]) / (e.timeStamp - from[0]) : 0;
+    var speed = from && e.timeStamp > from[0] ? (y - from[1]) / (e.timeStamp - from[0]) : 0;
     var dismiss = drag.moved && dy > dx * 1.3 && (dy >= 72 || dy >= 32 && speed >= 0.5);
     var close = swipePanels.get(drag.panel); swipeReset();
     if (dismiss && close && drag.panel.isConnected && drag.panel.getAttribute('aria-busy') !== 'true') {
-      e.preventDefault(); close();
+      if (e.cancelable) e.preventDefault();
+      close();
     }
+  }
+  document.addEventListener('pointerup', function (e) {
+    var drag = swipeDrag; if (!drag || drag.id !== e.pointerId) return;
+    swipeEnd(drag, e, e.clientX, e.clientY);
   }, true);
   document.addEventListener('pointercancel', swipeReset, true);
   document.addEventListener('lostpointercapture', function (e) {
     // Touch starts with implicit capture on the heading. Moving that capture to the panel is not a cancellation.
     if (swipeDrag && swipeDrag.id === e.pointerId && e.target === swipeDrag.panel) swipeReset();
   }, true);
+  // A pull down on a sheet's body closes it too when everything under the finger is scrolled to its top, as phone sheets
+  // do (owner, 15 Nov 2026). Touch only, so a mouse still selects words. The first move decides: down takes the touch
+  // from the browser; sideways or up, or any box under the finger scrolled down, leaves it to scroll as before. Fields,
+  // sliders and the guide page (pinch and page turning) keep their own gestures.
+  function swipeTouch(e, drag) { return drag && drag.touch != null ? slice(e.changedTouches).filter(function (t) { return t.identifier === drag.touch; })[0] : null; }
+  document.addEventListener('touchstart', function (e) {
+    if (swipeDrag) { if (swipeDrag.touch != null) swipeReset(); return; }
+    var t = e.touches.length === 1 && e.touches[0], el = e.target, panel = t && el.closest && el.closest('.ux-swipe');
+    if (!panel || !swipePanels.has(panel) || panel.matches('.gz-wrap') || panel.getAttribute('aria-busy') === 'true' || panel.inert ||
+        el.closest('.ux-swipe-handle, input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="slider"]')) return;
+    var r = panel.getBoundingClientRect();   // a native dialog's backdrop is the dialog too: only the sheet itself pulls
+    if (t.clientX < r.left || t.clientX > r.right || t.clientY < r.top || t.clientY > r.bottom) return;
+    for (var n = el; n && n !== panel.parentNode; n = n.parentNode) if (n.scrollTop > 0) return;
+    swipeDrag = { panel: panel, id: null, touch: t.identifier, x: t.clientX, y: t.clientY, trail: [[e.timeStamp, t.clientY]], moved: false };
+  }, { capture: true, passive: true });
+  // On each sheet, not the document: a blocking touchmove listener on the document would make every page scroll wait.
+  function swipeTouchMove(e) {
+    var drag = swipeDrag, t = swipeTouch(e, drag); if (!t) return;
+    if (e.touches.length > 1 || !drag.panel.isConnected || drag.panel.getAttribute('aria-busy') === 'true') { swipeReset(); return; }
+    var dx = t.clientX - drag.x, dy = t.clientY - drag.y;
+    if (!drag.moved) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 6) return;   // too small to tell the way; the browser waits too
+      if (dy <= 0 || Math.abs(dx) > dy / 1.3 || !e.cancelable) { swipeDrag = null; return; }
+      drag.moved = true; drag.panel.classList.add('ux-swipe-dragging');
+    }
+    e.preventDefault();
+    drag.trail.push([e.timeStamp, t.clientY]); if (drag.trail.length > 16) drag.trail.shift();
+    drag.panel.style.setProperty('--ux-swipe-y', Math.max(0, Math.min(innerHeight, dy)) + 'px');
+  }
+  document.addEventListener('touchend', function (e) {
+    var drag = swipeDrag, t = swipeTouch(e, drag); if (t) swipeEnd(drag, e, t.clientX, t.clientY);
+  }, true);
+  document.addEventListener('touchcancel', function (e) { if (swipeTouch(e, swipeDrag)) swipeReset(); }, true);
   // A completed/cancelled drag must not tap an option or the page exposed underneath it.
   document.addEventListener('click', function (e) {
     if (e.isTrusted && e.detail && performance.now() < swipeClickUntil) { e.preventDefault(); e.stopImmediatePropagation(); swipeClickUntil = 0; }
