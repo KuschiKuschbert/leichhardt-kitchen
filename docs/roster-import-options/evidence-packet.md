@@ -14,7 +14,7 @@ Read in full: [proposal.md](proposal.md), this packet, and `.claude/skills/servi
 
 | Measure | Value | How |
 | --- | --- | --- |
-| Taps to enter a 47-shift week by hand | about 130 | Counted from the stand-in controls for the synthetic week (date picker 2 per day; per service group Add staff 1, one tick per person, service ticks from preselected Lunch, Add 1; Save 1 per day). Not timed. |
+| Taps to enter a 47-shift week through Who's working? (the round 1 reviewers found this is not the fair baseline: Copy last weekday already fills an empty day in about 5 taps; see [brief.md](brief.md#correction-to-the-baseline)) | about 130 | Counted from the stand-in controls for the synthetic week (date picker 2 per day; per service group Add staff 1, one tick per person, service ticks from preselected Lunch, Add 1; Save 1 per day). Not timed. |
 | Taps per day | 13 to 24 | Same count. Days with mixed services cost most. |
 | Service groups per day | 1 to 4 | Most people work all three services; one or two do Dinner only, Lunch only or Lunch and All day dining. |
 | Page height at 390 | 1488 px with Who's working? open | Stand-in, empty plan. |
