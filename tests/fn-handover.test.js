@@ -32,7 +32,8 @@ const reads = p => p.evaluate(() => window.__fake.bill.reduce((n, x) => n + x.n,
 const flat = s => (s || '').replace(/\s+/g, ' ').trim();
 const wedRow = '.fn-svc-row:has([data-id="wed"])';
 const sendText = p => p.$eval(wedRow + ' [data-fn="send"]', b => b.textContent.trim()).catch(() => '');
-const pick = (p, rid, less) => p.click(wedRow + ' [data-fn="' + (less ? 'pick-less' : 'pick') + '"][data-r="0|' + rid + '"]');
+const pick = (p, rid, more) => p.click(wedRow + ' [data-fn="' + (more ? 'pick-more' : 'pick') + '"][data-r="0|' + rid + '"]');
+const moreOff = (p, rid) => p.$eval(wedRow + ' [data-fn="pick-more"][data-r="0|' + rid + '"]', b => b.disabled).catch(() => null);
 (async () => {
   const b = await L.start();
 
@@ -41,20 +42,21 @@ const pick = (p, rid, less) => p.click(wedRow + ' [data-fn="' + (less ? 'pick-le
   await L.waitFor(p, () => !!document.querySelector('.fn-svc-row [data-fn="pick"]'));
   const bill = await reads(p), asked = await p.evaluate(() => window.__fake.reads.length);
   ok(await p.$$eval(wedRow + ' [data-fn="pick"]', l => l.length) === 5 && await sendText(p) === 'Send all 14', 'cook: every kind left is a button, and Send all 14 (' + await sendText(p) + ')');
-  // one tap, one platter (head chef, 14 Nov 2026, after trying it): the first tap on 4 Antipasto puts one in the trip
+  // a tap puts one platter in (head chef, 14 Nov 2026, after trying it), + one more; a tap on a picked kind takes it out
   await pick(p, 'antipasto-platter'); await L.settle(p, 100);
-  ok(/^1 × Antipasto of 4 In this trip$/.test(flat(await txt(p, wedRow + ' [data-r="0|antipasto-platter"].is-pick'))) && await sendText(p) === 'Send 1 platter', 'pick: the first tap puts one platter in the trip, not the whole kind (' + await sendText(p) + ')');
-  for (let i = 0; i < 4; i++) { await pick(p, 'antipasto-platter'); await L.settle(p, 60); }
-  for (let i = 0; i < 3; i++) { await pick(p, 'pizza-platter'); await L.settle(p, 60); }
+  ok(/^1 × Antipasto of 4 In this trip$/.test(flat(await txt(p, wedRow + ' [data-r="0|antipasto-platter"].is-pick'))) && await sendText(p) === 'Send 1 platter' && await moreOff(p, 'antipasto-platter') === false, 'pick: the first tap puts one platter in the trip, not the whole kind, with + beside it (' + await sendText(p) + ')');
+  for (let i = 0; i < 3; i++) { await pick(p, 'antipasto-platter', true); await L.settle(p, 60); }
+  ok(await moreOff(p, 'antipasto-platter') === true, 'pick: + rests once all 4 Antipasto are in the trip');
+  await pick(p, 'pizza-platter'); await pick(p, 'pizza-platter', true); await L.settle(p, 100);
+  ok(/2 × Pizza of 3 In this trip/.test(flat(await txt(p, wedRow + ' [data-r="0|pizza-platter"].is-pick'))) && await sendText(p) === 'Send 6 platters', 'pick: + puts one more in (' + await sendText(p) + ')');
+  await pick(p, 'pizza-platter', true); await L.settle(p, 100);
   const picked = await p.$$eval(wedRow + ' .fn-svc-k.is-pick', l => l.map(e => e.textContent.replace(/\s+/g, ' ').trim() + '|' + e.getAttribute('aria-pressed')));
-  ok(picked.join() === '4 × Antipasto In this trip|true,3 × Pizza In this trip|true' && await sendText(p) === 'Send 7 platters', 'pick: one tap a platter, never past what is left, in words, and the button says what it sends (' + picked.join() + ' / ' + await sendText(p) + ')');
+  ok(picked.join() === '4 × Antipasto In this trip|true,3 × Pizza In this trip|true' && await sendText(p) === 'Send 7 platters', 'pick: never past what is left, in words, and the button says what it sends (' + picked.join() + ' / ' + await sendText(p) + ')');
   ok(/In this trip: 4 Antipasto, 3 Pizza\. Not sent yet\./.test(flat(await txt(p, wedRow))) && !(await p.$(wedRow + ' .fn-svc-k.is-pick .fn-i')), 'pick: the row says the picks are not sent yet, and a pick wears no tick');
   ok(await p.$eval(wedRow, r => { const B = r.closest('.fn-svc-board').getBoundingClientRect(); return [r].concat([...r.querySelectorAll('*')]).every(e => e.getBoundingClientRect().right <= B.right + 1); }), 'pick: at 390 px every word of the row stays on the board (the Not sent yet line wraps)');
-  await pick(p, 'pizza-platter', true); await L.settle(p, 100);
-  ok(/2 × Pizza of 3 In this trip/.test(flat(await txt(p, wedRow + ' [data-r="0|pizza-platter"].is-pick'))) && await sendText(p) === 'Send 6 platters', 'pick: − takes one off (' + await sendText(p) + ')');
-  await pick(p, 'pizza-platter', true); await pick(p, 'pizza-platter', true); await L.settle(p, 100);
-  ok(await sendText(p) === 'Send 4 platters' && !(await p.$(wedRow + ' [data-r="0|pizza-platter"].is-pick')), 'pick: − down to none takes the kind out of the trip');
-  for (let i = 0; i < 3; i++) { await pick(p, 'pizza-platter'); await L.settle(p, 60); }
+  await pick(p, 'pizza-platter'); await L.settle(p, 100);
+  ok(await sendText(p) === 'Send 4 platters' && !(await p.$(wedRow + ' [data-r="0|pizza-platter"].is-pick')), 'pick: a tap on a picked kind takes it out of the trip');
+  await pick(p, 'pizza-platter'); await pick(p, 'pizza-platter', true); await pick(p, 'pizza-platter', true); await L.settle(p, 100);
   await p.evaluate(() => window.dispatchEvent(new Event('lk-fn'))); await L.settle(p, 200);
   ok(await sendText(p) === 'Send 7 platters', 'pick: the picks stay through a redraw');
   ok(await p.evaluate(k => !Object.keys(window.__fake.dump()).some(x => x.startsWith(k)), key(['fnsent'])), 'pick: nothing is saved before Send');
