@@ -500,6 +500,14 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .nb-x { flex: 0 0 auto; min-height: 44px; padding: 0 0.5rem; border: 0; background: none; font-family: var(--body); font-weight: 600; font-size: 0.8125rem; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .nb-row.is-done .nb-t { text-decoration: line-through; text-decoration-thickness: 2px; color: #6b665c; }
 .nb-row.is-removed { opacity: 0.5; }
+/* Function sent, lines off (14 Nov 2026, docs/fn-sent-tidy-options/brief.md): a line leaving in place keeps its words in
+   full ink, its box fades and the reason sits under it in the body font; the Functions tab's sentence likewise. No motion. */
+.nb-row.is-leaving .nb-box { opacity: 0.4; }
+.nb-row.is-leaving .nb-meta, .nb-row.is-leaving .nb-wrote { white-space: normal; overflow: visible; text-overflow: clip; }
+.nb-offw { font-family: var(--body); font-weight: 700; color: var(--ink); }
+.nb-fnoff { margin: 0.6rem 0 0.25rem; font-family: var(--body); font-size: 1rem; line-height: 1.4; color: var(--ink); }
+.fn-next-off { margin-top: 0.5rem; }
+.nb-forfn { font-family: var(--body); font-size: 0.75rem; font-weight: 700; }
 .nb-empty { margin: 1rem 0; font-family: 'Caveat', cursive; font-weight: 700; font-size: 1.6rem; color: #8a8478; }
 .nb-foot { position: relative; display: flex; flex-direction: column; gap: 0.5rem; padding: 0.7rem 0 1rem; border-top: 2px solid var(--ink); }
 .nb-who { margin: 0; }

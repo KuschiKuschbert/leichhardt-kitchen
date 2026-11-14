@@ -422,6 +422,29 @@ row('js/prep.js tickNow(): untick my own tick within 2 minutes, and off my tally
 row('js/prep.js removeItem(): remove a prep line', { ok: DELS, asks: DELS,
   prep: r => put({ [`days/${TODAY}/items/${MINE(r)}`]: line() }),
   run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/${MINE(r)}`, { deleted: true, deletedBy: NAME[r], deletedAt: Date.now() }]]) });
+// Function sent, lines off (14 Nov 2026, docs/fn-sent-tidy-options/brief.md): a line added from What the platters need
+// carries fnFor (the functions it is for); the rollover copies it; a merge only clears it; Put back writes keep
+row('js/prep.js fnNeedAdd(): a line added for a function (fnFor)', { ok: ADDS, asks: ADDS,
+  run: (db, w, r) => W(r, [['set', `days/${TODAY}/items/ff-${r}`, newLine({ text: 'Party pies', qty: '50', addedBy: NAME[r], addedById: w, addedAt: Date.now(), fnFor: ['smith'] })]]) });
+row('js/prep.js maybeRoll(): a rolled line keeps its function link and keep', { ok: ADDS, asks: not('owner', 'vic', 'fay'),
+  run: (db, w, r) => W(r, [['set', `days/${TODAY}/items/rf-${r}`, newLine({ text: 'Party pies', addedBy: 'Rolled over', addedById: '', addedAt: Date.now(), rolled: 1, root: 'l0', from: 'l0', rolledFrom: YDAY, origBy: 'Ann', origAt: NOW - DAY, urgent: false, ahead: false, fnFor: ['smith'], keep: true })]]) });
+row('js/prep.js addToTwin() and foldDups(): a merge clears the function link', { ok: ADDS, asks: ADDS,
+  prep: r => put({ [`days/${TODAY}/items/fu-${r}`]: line({ text: 'Party pies', fnFor: ['smith'] }) }),
+  run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/fu-${r}`, { fnFor: [] }]]) });
+// No rule limits fnFor (14 Nov 2026): a check on every prep line pushed the largest function cancellation past the rules'
+// 1000 steps. The book only writes it with a new line and only clears it later; Put back recovers a line taken off.
+row('js/prep.js: a function link added to a line later (never sent by the book; the rules allow it)', { ok: ADDS, asks: [],
+  prep: r => put({ [`days/${TODAY}/items/fa-${r}`]: line({ text: 'Party pies' }) }),
+  run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/fa-${r}`, { fnFor: ['smith'] }]]) });
+row('js/prep.js removeItem() Put back: keep a line a sent function took off (not removed on the server yet)', { ok: ADDS, asks: DELS,
+  prep: r => put({ [`days/${TODAY}/items/fk-${r}`]: line({ text: 'Party pies', fnFor: ['smith'] }) }),
+  run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/fk-${r}`, { keep: true }]]) });
+row('js/prep.js removeItem() Put back: keep a line the 03:00 job took off', { ok: DELS, asks: DELS,
+  prep: r => put({ [`days/${TODAY}/items/fj-${r}`]: line({ text: 'Party pies', fnFor: ['smith'], deleted: true, deletedBy: 'Function sent', deletedAt: NOW - 3600000 }) }),
+  run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/fj-${r}`, { deleted: false, deletedBy: '', deletedAt: 0, keep: true }]]) });
+row('js/prep.js removeOrderLine() Put back: keep a function\'s stock line', { ok: ADDS, asks: CHEFS,
+  prep: r => put({ [`orders/${TODAY}/lines/r-fn-smith-${r}`]: { text: 'Function stock: Smith 60th, Sat 14 Nov: 5 Pizza', qty: '5 platters', recipes: [], addedBy: 'Rolled over', addedById: '', addedAt: NOW - 3600000, ordered: false, deleted: false, rolled: 1, root: 'fn-smith', by: 'ann' } }),
+  run: (db, w, r) => W(r, [['upd', `orders/${TODAY}/lines/r-fn-smith-${r}`, { keep: true }]]) });
 row('js/prep.js noteSection(): sections/<name> merge (uses + 1)', { ok: KITCHEN, asks: ADDS,
   run: (db, w, r) => W(r, [['set', 'sections/' + MINE(r), { name: 'Grill ' + r, uses: increment(1), lastUsed: Date.now(), lastBy: NAME[r] }, true]]) });
 row('js/prep.js dailyFlush(): daily/<day>_<tag> (usage counts)', { ok: KITCHEN, asks: KPINS,
