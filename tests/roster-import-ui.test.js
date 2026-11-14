@@ -92,6 +92,50 @@ async function choose(p, file, done) {
   ok(!p.errors.length, 'refused file: no browser errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // Save the filled days (head chef, 14 Nov 2026): one tap saves every filled day; a refused write saves none
+  p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', extra: fixture(), wait: 1800 });
+  await planner(p);
+  await choose(p, csv(), true);
+  ok(/Save the 6 filled days/.test(await text(p, '[data-p="tm-roster-saveall"]')), 'the block offers Save the 6 filled days');
+  await p.evaluate(() => { __fake.mode = 'deny'; });
+  await p.locator('[data-p="tm-roster-saveall"]').click();
+  await L.waitFor(p, () => /none of the days were saved/.test((document.querySelector('.tm-roster') || {}).textContent || ''), null, 8000);
+  ok(!(await Promise.all(days.map(d => dump(p, key('team', d))))).filter((r, i) => i !== 2).some(Boolean) && /Try again/.test(await text(p, '[data-p="tm-roster-saveall"]')), 'a refused save saves none of the days and offers Try again');
+  ok((await p.$$eval('.tm-roster-days .chip', l => l.map(e => e.textContent))).every(c => / · Draft$/.test(c)), 'after a refusal every filled day is still a draft');
+  await p.evaluate(() => { __fake.mode = 'ok'; });
+  await p.locator('[data-p="tm-roster-saveall"]').click();
+  await L.waitFor(p, ks => ks.every(k => !!__fake.dump()[k]), [0, 1, 3, 4, 5, 6].map(i => key('team', days[i])), 8000); await L.settle(p, 300);
+  const saved = await Promise.all(days.map(d => dump(p, key('team', d))));
+  ok([0, 1, 3, 4, 5, 6].every(i => saved[i] && saved[i].v === 1 && saved[i].on.length && saved[i].br.length === 0 && saved[i].day === days[i]), 'one tap saves the six filled days, each its own dated plan without breaks');
+  ok(JSON.stringify(saved[2]) === JSON.stringify(wed), 'Wednesday, already saved, stays as it was');
+  ok(JSON.stringify(saved[0].on.map(o => o.id + ':' + o.sh)) === JSON.stringify(['ann:adl', 'ann:dinner', 'bo:adl', 'bo:dinner', 'bo:lunch']), 'Monday holds every service each roster shift touches (' + saved[0].on.map(o => o.id + ':' + o.sh).join(' ') + ')');
+  const said = await text(p, '.tm-roster');
+  ok(/All 6 filled days are saved\./.test(said) && /Saved 6 days at \d\d:\d\d/.test(said) && /sous chefs see them in Today's team and set the breaks/.test(said) && !await p.locator('[data-p="tm-roster-saveall"]:not([disabled])').count(), 'the block says what was saved and the button is off: ' + said.slice(said.indexOf('Saved 6'), said.indexOf('Saved 6') + 90));
+  ok((await p.$$eval('.tm-roster-days .chip', l => l.map(e => e.textContent))).every(c => / · Saved$/.test(c)), 'every filled day\'s chip now says Saved');
+  ok(!p.errors.length, 'save the filled days: no browser errors ' + p.errors.join(' | '));
+  const week = {}; [0, 1, 3, 4, 5, 6].forEach(i => { week[key('team', days[i])] = saved[i]; });
+  await p.context().close();
+
+  // a sous chef sees the imported team on the day and sets the breaks
+  p = await L.open(b, '#/team', { who: 'sam', extra: Object.assign(fixture(), week), wait: 1500 });
+  await L.waitFor(p, () => !!document.querySelector('.tm-notebook .tm-work [data-p="tm-whole"]'), null, 9000);
+  const dates = async () => { if (!await p.locator('.tm-weeknav').isVisible()) { await p.locator('[data-p="tm-date-toggle"]').click(); await L.settle(p, 200); } };
+  await dates();
+  for (let n = 0; n < 3 && !await p.locator('[data-p="tm-day"][data-day="' + days[0] + '"]').count(); n++) { await p.locator('[data-p="tm-week-next"]').click(); await L.settle(p, 400); await dates(); }
+  await p.locator('[data-p="tm-day"][data-day="' + days[0] + '"]').click();
+  await L.waitFor(p, d => (document.querySelector('.tm-notebook') || {}).getAttribute && document.querySelector('.tm-notebook').getAttribute('data-day') === d && !!document.querySelector('.tm-person-row'), days[0], 9000);
+  const seen = await p.$$eval('.tm-person-row', l => l.map(e => e.getAttribute('data-id')));
+  ok(seen.includes('ann') && seen.includes('bo') && !await p.locator('.tm-roster').count(), 'the sous chef sees Monday\'s imported team (' + seen.join(', ') + '), without the roster tool');
+  if (!await p.locator('[data-p="tm-spread"]').isVisible()) { await p.locator('[data-p="tm-batch-toggle"]').click(); await L.settle(p, 150); }
+  await L.pick(p, 'select[data-k="tm-tool-sh"]', 'dinner'); await L.settle(p, 150);
+  await p.locator('[data-p="tm-spread"]').click(); await L.settle(p, 200);
+  await p.locator('[data-p="tm-save"]').click();
+  await L.waitFor(p, k => { const r = __fake.dump()[k]; return !!r && r.v === 2; }, key('team', days[0]), 8000);
+  const mon = await dump(p, key('team', days[0]));
+  ok(mon.v === 2 && mon.br.length >= 2 && mon.br.every(x => x.sh === 'dinner') && JSON.stringify(mon.on) === JSON.stringify(saved[0].on), 'the sous chef sets the Dinner breaks and saves; the imported team stays as it was (' + mon.br.length + ' breaks)');
+  ok(!p.errors.length, 'sous chef breaks: no browser errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // only the admin panel: not on the head chef's or a sous chef's Today's team page
   for (const [label, o] of [['head chef on #/team', { admin: true }], ['sous chef on #/team', { who: 'sam' }]]) {
     p = await L.open(b, '#/team', Object.assign({ extra: fixture(), wait: 1500 }, o));

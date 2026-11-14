@@ -2,7 +2,7 @@
 
 14 November 2026, Queensland. Head chef request: fill Today's team from the Humanforce Weekly Department Roster Report (CSV export) while a read-only Humanforce API key is requested from Australian Venue Co IT. [Proposal](proposal.md), [evidence packet](evidence-packet.md). Role-based analysis, not research with staff.
 
-**Status: the combined design chosen 14 November 2026. Step 1 (the reader) and step 2 (the admin panel screen) built and tested locally; draft pull request #699. The week-to-week measurement waits for a second roster.**
+**Status: the combined design chosen 14 November 2026. Step 1 (the reader), step 2 (the admin panel screen) and step 3 (Save the filled days) built and tested; draft pull request #699. The week-to-week measurement waits for a second roster.**
 
 ## Head chef answers after round 1 (14 November 2026)
 
@@ -284,3 +284,17 @@ The chips save 6 taps over the date picker at the cost of scrolling; both work, 
 - **04:00 refresh** (Keeper): unsaved planner drafts hold the 04:00 refresh and silent updates, as they already did for any planner draft; an import can leave up to seven. Not changed here; save or discard the roster days the same day. A rule for old drafts would be the head chef's call.
 - **Home for a day saved without breaks**, the Manage staff detour with drafts open and a chip during a privacy lock: covered by existing planner behaviour, not exercised in a dedicated test.
 - The downloaded CSV keeps its wage columns on the device; the import runs only on the head chef's admin session.
+
+## Step 3: Save the filled days (built 14 November 2026)
+
+The owner asked to "let the sous chef see the imported team as well and let him edit the breaks on the day". Saved days were already visible and editable for the sous chefs; only the unsaved drafts were not. Offered two options (one tap to save every filled day; show roster times to the sous chefs, which needs a rules change), the owner asked what made most sense and accepted the recommendation: the button now, roster times later if the sous chefs need them.
+
+**Quick check (small change on the admin-only roster block, no new page, tab or pop-up).** Main task, fill and publish the week from the file: 15 taps before (a chip and Save for each of 6 days), **4 after** (Choose 1, picker 2, Save the 6 filled days 1); Implemented app, stand-in, 390 px. Contract fit: a departure from the week planning contract's "no ambiguous Save week", chosen by the head chef for the roster only. The button names the count ("Save the 6 filled days"), says it saves without breaks, and the block names every saved day after the write (Duolingo: Saved only after the server answers; Linear: one place). Break-it: saving days nobody opened (the council's C finding) is accepted by the head chef; the reader fails closed, names are never guessed, only empty days are filled, staff see only their own day, and the sous chef checks the day before setting breaks. A refused or failed batch saves none of the days and keeps every draft.
+
+**How it works.** `tmRsSaveAll()` sends one `W()` batch: a `team/<day>` record for each filled day that is still a new draft (not past, read, no saved plan, someone on it), each with the next version exactly as its own Save sends it, so the rules check every day as usual; plus today's team stamp when today is one of them, and one follow-up stamp when the save is acknowledged after midnight for the new day (as `teamSave()`). The single-day Save waits while it runs. Uses the shared Save button (`svButton()`, form key `rs`): Saving..., then Saved with a tick; then "Saved 6 days at 14:00: Mon 16, Tue 17, ... The sous chefs see them in Today's team and set the breaks." A failure says "Not saved: none of the days were saved, and the drafts are kept." with Try again.
+
+| Action | Immediate response | Acknowledgement | Failure and reversal |
+| --- | --- | --- | --- |
+| Save the N filled days | Saving..., the button and chips off | Saved with a tick, then the dated list of days saved; chips say Saved | Red words stay: none saved, drafts kept, Try again. A saved day is changed later by opening it and saving again |
+
+**Checks** (`tests/roster-import-ui.test.js`, now 43): the button names the 6 days; a refused write saves none and offers Try again with every day still Draft; Try again saves all six, each `v: 1` with its services and no breaks; Wednesday unchanged; Monday holds every service each shift touches; the block says All 6 filled days are saved and what was saved; every chip says Saved; then a sous chef on `#/team` opens Monday, sees the imported team without the roster tool, spreads the Dinner breaks and saves `v: 2` with the team unchanged. Screenshots: `built-saveall-390.png`, `built-saved-390.png`.

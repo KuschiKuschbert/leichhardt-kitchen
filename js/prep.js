@@ -14105,6 +14105,7 @@ if (list.length) sg('oreg', 's');
     if (a === 'tm-day') { tmPlanSelect(el.getAttribute('data-day') || ''); tmDateFocus(); return; }
     if (a === 'tm-roster-choose') { tmRsChoose(); return; }
     if (a === 'tm-roster-day') { tmRsDay(el.getAttribute('data-day') || ''); return; }
+    if (a === 'tm-roster-saveall') { tmRsSaveAll(); return; }
     if (a === 'tm-week-prev' || a === 'tm-week-next') { tmPlanSelect(shift(tmPlanDay(), a === 'tm-week-prev' ? -7 : 7)); tmDateFocus(); return; }
     if (a === 'tm-today') { tmPlanSelect(dayNow()); tmDateFocus(); return; }
     // Refresh discards only this date's draft, after a second tap. Other dates' drafts survive the week query.
@@ -14326,6 +14327,52 @@ if (list.length) sg('oreg', 's');
     var head = S.root && S.root.querySelector('.tm-nhead');
     if (head) { head.scrollIntoView({ block: 'start' }); var h = head.querySelector('.p-h'); if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); } }
   }
+  // the filled days still waiting as new drafts: not past, read, no saved plan, someone on them
+  function tmRsDrafts() {
+    var today = dayNow();
+    return tmRs && tmRs.st === 'done' ? tmRs.filled.filter(function (d) { var e = tmPlanEntry(d); return d >= today && e.st === 'ok' && !e.rec && e.f && tmPlanDirty(e) && tmOut(e.f).on.length > 0; }) : [];
+  }
+  /* Save the filled days (head chef, 14 Nov 2026: the sous chefs see the imported team and set the breaks on the day).
+     One batch, all or nothing: a dated team record for each filled day that is still a new draft, each with the next
+     version exactly as its own Save sends it, so the rules check every day as usual. A refusal saves none and keeps
+     every draft. A day saved for today sends today's team stamp, as teamSave() does. */
+  function tmRsSaveAll() {
+    if (!tmRsOK() || !tmRs || tmRs.st !== 'done' || svOf('t') === 'busy' || svOf('rs') === 'busy' || tmLastBusy) return;
+    tmPlanKeep();
+    var job = tmRs, mine = tmPlan, identity = stableIdentity(), t = now(), today = dayNow(), list = tmRsDrafts(), ops = [];
+    if (!list.length) return;
+    list.forEach(function (d) {
+      var f = tmPlanEntry(d).f, out = tmOut(f);
+      ops.push(['set', docRef('team', d), { day: d, on: out.on, br: out.br, v: f.base + 1, at: f.base ? f.at : t, upd: t }]);
+    });
+    var current = list.indexOf(today) >= 0;
+    if (current) { ops.push(['set', cfgDoc(), { pastEdit: { t: t } }, true]); tmOwn = t; }
+    var named = list.map(function (d) { return parseYmd(d).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric' }); }).join(', ');
+    svStart('rs'); job.saveMsg = ''; draw();
+    W(ops).then(function () {
+      if (tmPlan !== mine || identity !== stableIdentity()) return;
+      list.forEach(function (d, i) {
+        var e = tmPlanEntry(d), data = ops[i][2], clean = teamClean(Object.assign({ by: tmMe() }, data), d);
+        e.rec = clean; e.st = 'ok'; e.checkedAt = Date.now(); e.f.base = data.v; e.f.at = data.at; e.snap = tmSig(e.f);
+        if (tmf === e.f) tmSnap = e.snap;
+        if (d === today) tm = { day: d, rec: clean, st: 'ok', at: Date.now(), retry: 0, epoch: accessEpoch, stamp: t };
+      });
+      job.saveMsg = 'Saved ' + list.length + (list.length === 1 ? ' day' : ' days') + ' at ' + clock(t) + ': ' + named + '. The sous chefs see them in Today\'s team and set the breaks.';
+      // acknowledged after midnight for the day that is now today: one stamp so staff phones read it (as teamSave())
+      if (!current && list.indexOf(dayNow()) >= 0) {
+        var later = now(); tmOwn = later;
+        W([['set', cfgDoc(), { pastEdit: { t: later } }, true]]).then(function () { if (tm.day === dayNow()) tm.stamp = later; }, function () {});
+      }
+      svDone('rs', true, function () {}); draw(); tmPaint();
+    }, function (e) {
+      if (tmPlan !== mine || identity !== stableIdentity()) return;
+      svFail('rs', true);
+      var refused = e && e.code === 'permission-denied';
+      job.saveMsg = errMsg('Not saved: none of the days were saved, and the drafts are kept. ' + (refused ? 'Another chef may have saved one of them since. Refresh that day in the week list, then try again.' : 'Check the signal, then try again.'));
+      if (!refused) failed(e);
+      draw();
+    });
+  }
   function tmRsLeft() {
     if (!tmRs || tmRs.st !== 'done' || !tmRs.filled.length) return '';
     var n = tmRs.filled.filter(function (d) { return tmDayStatus(d) === 'Draft'; }).length;
@@ -14333,7 +14380,7 @@ if (list.length) sg('oreg', 's');
   }
   function tmRsHTML() {
     if (!tmRsOK()) return '';
-    var job = tmRs, busy = tmRsBusy(), off = busy || svOf('t') === 'busy' || tmLastBusy;
+    var job = tmRs, busy = tmRsBusy(), off = busy || svOf('t') === 'busy' || svOf('rs') === 'busy' || tmLastBusy;
     var short = function (d) { return parseYmd(d).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric' }); };
     var range = function (w) { return parseYmd(w.from).toLocaleDateString('en-AU', { day: 'numeric', month: 'long' }) + ' to ' + parseYmd(w.to).toLocaleDateString('en-AU', { day: 'numeric', month: 'long' }); };
     var tool = '<div class="tm-same"><span><b>Fill from roster file</b><small>Fills empty days with the Humanforce Weekly Department Roster Report (CSV). Money columns are wiped as it is read. Check, then Save each day.</small></span>' +
@@ -14347,21 +14394,25 @@ if (list.length) sg('oreg', 's');
     var skipped = job.week.days.filter(function (d) { return why[job.skip[d]]; }).map(function (d) { return '<li>' + esc(tmPlanDate(d)) + ' ' + why[job.skip[d]] + '</li>'; }).join('');
     var name = function (id) { var p = tmPeople().filter(function (x) { return x.id === id; })[0]; return p ? p.name : id; };
     var when = function (s) { return short(s.day) + ' ' + tmHHMM(s.from) + ' to ' + tmHHMM(s.to); };
-    var head = '<p role="status"><b>Roster ' + esc(range(job.week)) + '.</b> ' + (drafts ? drafts + (drafts === 1 ? ' day' : ' days') + ' filled as drafts, not saved yet.' : job.filled.length ? 'Every filled day is saved.' : 'Nothing was filled.') + (saved ? ' ' + saved + ' saved.' : '') + '</p>' +
+    var head = '<p role="status"><b>Roster ' + esc(range(job.week)) + '.</b> ' + (drafts ? drafts + (drafts === 1 ? ' day' : ' days') + ' filled as drafts, not saved yet.' + (saved ? ' ' + saved + ' saved.' : '') : saved ? (saved === job.filled.length ? 'All ' + saved + ' filled ' + (saved === 1 ? 'day is' : 'days are') + ' saved.' : saved + ' filled ' + (saved === 1 ? 'day is' : 'days are') + ' saved.') : job.filled.length ? 'The filled days are not drafts any more.' : 'Nothing was filled.') + '</p>' +
       (skipped ? '<ul class="tm-roster-list">' + skipped + '</ul>' : '') + (job.filled.length ? '<p class="hint">Breaks are not set on the filled days. Set them with Spread them, then Save.</p>' : '');
     var missing = job.plan.unmatched.length ? '<div class="tm-roster-missing"><p><b>Not in the book, not filled</b></p><ul class="tm-roster-list">' + job.plan.unmatched.map(function (u) {
       return '<li>' + esc(u.name) + ' <small>(looks for ' + esc(u.looksFor) + (u.why === 'many' ? '; more than one person fits' : u.why === 'shared' ? '; two people in the file fit the same person' : '') + ')</small><br><small>' + esc(u.shifts.map(when).join(', ') || 'No shifts') + '</small></li>';
     }).join('') + '</ul><p class="hint">Add them in Manage staff with the name it looks for, or check the name they already have. Then put them on these days with Add staff.</p><div class="btn-row"><button type="button" class="btn" data-p="a-tab" data-t="people"' + (off ? ' disabled' : '') + '>Manage staff</button></div></div>' : '';
     var idle = job.plan.idle.length ? '<p class="hint">Not on any service, not filled: ' + esc(job.plan.idle.map(function (x) { return name(x.id) + ' ' + when(x); }).join(', ')) + '.</p>' : '';
-    var days = job.filled.length ? '<p class="hint"><b>Check each day, then Save it:</b></p><div class="tm-roster-days" role="group" aria-label="Days filled from the roster">' + job.filled.map(function (d) {
+    var n = tmRsDrafts().length, rsBusy = svOf('rs') === 'busy';
+    var saveAll = n || svOf('rs') ? '<div class="btn-row tm-roster-save">' + svButton({ k: 'rs', p: 'tm-roster-saveall', idle: 'Save the ' + n + ' filled ' + (n === 1 ? 'day' : 'days'), off: !n || off && !rsBusy, busy: rsBusy }) + '</div>' +
+      (n ? '<p class="hint">Saves each filled day as it is, without breaks. The sous chefs then see them in Today\'s team and set the breaks on the day.</p>' : '') : '';
+    saveAll += svLine('rs', rsBusy, job.saveMsg || '');
+    var days = job.filled.length ? '<p class="hint"><b>' + (n ? 'Or open a day to check it first:' : 'Filled days:') + '</b></p><div class="tm-roster-days" role="group" aria-label="Days filled from the roster">' + job.filled.map(function (d) {
       return '<button type="button" class="chip" data-p="tm-roster-day" data-day="' + d + '" aria-pressed="' + (d === tmPlanDay()) + '" aria-label="' + esc(tmPlanDate(d) + ', ' + tmDayStatus(d)) + '"' + (off ? ' disabled' : '') + '>' + esc(short(d)) + ' · ' + tmDayStatus(d) + '</button>';
     }).join('') + '</div>' : '';
-    return out + head + missing + idle + days + '</section>';
+    return out + head + saveAll + missing + idle + days + '</section>';
   }
   /* Save: the plan with the next version, and the team stamp for the other phones, in one batch. Refused when another
      chef saved since this page read it: the page says so and keeps the changes, and Refresh reads theirs. */
   function teamSave() {
-    if (!tmPlanEditable() || svOf('t') === 'busy') return;
+    if (!tmPlanEditable() || svOf('t') === 'busy' || svOf('rs') === 'busy') return;
     if (!tmDirty()) { draw(); return; }
     var keep = tmf, mine = tmPlan, entry = tmPlanEntry(keep.day), identity = stableIdentity(), out = tmOut(keep), t = now(), v = keep.base + 1;
     var d = { day: keep.day, on: out.on, br: out.br, v: v, at: keep.base ? keep.at : t, upd: t };
