@@ -274,7 +274,8 @@ Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records
 | `js/fnedit.js` | Manage functions (`#/functions`). Lazy, for someone ticked for Functions |
 | `js/admin-dashboard.js` | The admin Dashboard (`LK_DASH`): headlines, tiles and charts from the nightly `analysis/dashboard` record. Lazy, from `js/prep.js` when the page opens. `docs/admin-dashboard-options/brief.md` |
 | `js/analysis-core.js`, `js/admin-intelligence.js`, `js/proofreader-admin.js` | Admin Review desk: analysis maths (shared with node), the analysis workspace, the proofreader. Lazy, from `js/prep.js`, admin only. `docs/admin-intelligence.md`, `docs/proofreader-admin.md` |
-| `firestore.rules` | Rules template (see Never in this repo) |
+| `firestore.rules` | Rules template (see Never in this repo). A helper one collection uses lives inside its match block (14 Nov 2026) |
+| `scripts/rules-weight.cjs`, `tests/rules-weight.test.js` | How heavy the rules are for Google's compile check (14 Nov 2026): fails on a top-level helper only one match block uses, an unused one, more than 110 top-level helpers or 200 KB. Plain node, in the Click tests. `docs/rules-publication.md` |
 | `manifest.webmanifest`, `sw.js`, `icons/`, `icon.svg` | Installable app: manifest, service worker (saved shell generations), rope KB logo |
 | `qr.svg`, `qr.png`, `qr-sign.pdf` | QR code to open the book, and the A4 sign |
 | `README.md` | What the app does, for people and for the next session: the overview, with the long parts in `docs/head-chef-decisions.md`, `docs/prep-book.md` and `docs/open-work.md` |
