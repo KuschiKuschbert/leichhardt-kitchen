@@ -1,0 +1,22 @@
+/* Combined preview: A's flow, C's tap-a-day jump, B's unmatched-first order. Uses the book's .btn shapes. */
+.mx-frame { padding-bottom: 150px; }
+.mx-band { position: fixed; left: 50%; transform: translateX(-50%); bottom: 46px; width: 390px; max-width: 100%; background: var(--surface-paper, #FBF8F1); border-top: 2px solid var(--bar, #2B2B2B); padding: 8px 14px 10px; z-index: 2; box-sizing: border-box; }
+.mx-band p { margin: 0 0 6px; font-size: .9rem; }
+.mx-band .btn { width: 100%; }
+.mx-board { background: var(--bar, #2B2B2B); color: #fff; border-left: 5px solid var(--accent, #D9531E); border-radius: 8px; padding: 10px 12px; margin: 10px 0; font-size: .92rem; }
+.mx-board b { letter-spacing: .04em; }
+.mx-tools { display: flex; gap: 8px; margin: 10px 0; }
+.mx-tools .btn { flex: 0 0 auto; }
+.mx-tools input { flex: 1; min-width: 0; min-height: 44px; border: 1.5px solid var(--edge, #555); border-radius: var(--r-act, 8px); padding: 0 10px; font: inherit; }
+.mx-fold { border-top: 1px solid var(--line, #ddd); }
+.mx-fold > summary { padding: 12px 0; font-weight: 600; cursor: pointer; min-height: 44px; box-sizing: border-box; }
+.mx-days { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.mx-days button { min-height: 44px; padding: 0 12px; border-radius: var(--r-pick, 999px); border: 1.5px solid var(--ink, #1f1f1f); background: var(--paper, #fff); font: inherit; font-weight: 600; color: var(--ink, #1f1f1f); cursor: pointer; }
+.mx-days button[aria-current="date"] { background: var(--ink, #1f1f1f); color: #fff; }
+.mx-days button[disabled] { border-color: var(--faint, #aaa); color: var(--muted, #555); background: transparent; cursor: default; font-weight: 400; }
+.mx-days small { font-weight: 400; }
+.mx-unm li { padding: 6px 0; border-bottom: 1px solid var(--line, #ddd); }
+.mx-unm li span { display: block; font-size: .86rem; color: var(--muted, #555); }
+.mx-sel { min-height: 44px; border-radius: var(--r-act, 8px); border: 1.5px solid var(--ink, #1f1f1f); background: var(--paper, #fff); font: inherit; font-weight: 600; padding: 0 10px; width: 100%; }
+.mx-dh { margin: 12px 0 2px; font-size: 1.15rem; }
+.mx-unm li { display: block; }

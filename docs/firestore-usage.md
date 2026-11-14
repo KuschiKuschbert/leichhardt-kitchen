@@ -1,5 +1,9 @@
 # Firestore reads and writes: audit, 5 November 2026
 
+## Fill from roster file, 14 November 2026
+
+[Fill from roster file](roster-import-options/brief.md) (admin panel, Today's team, head chef's admin session only): reading the CSV costs nothing (the device reads the file). Choosing a file reads that roster week's saved plans once from the server: the planner's existing bounded week query (`tmPlanLoad(true)`), up to 7 reads, 1 for an empty week. Each day is then saved with the existing dated Save (one write each, as by hand), or all at once with Save the filled days: one batch of one `team/<day>` write per filled day (up to 7), plus today's team stamp when today is one of them. No listener, no poll, no saved copy; the file is never sent or kept.
+
 ## Records and Filled for you, 13 November 2026
 
 Since 14 November 2026 Reports, Transfers also reads the loans still out (`transferOpen`, open) once a session and on Refresh, 1 read a loan, at least 1, to list those older than its days. Counting every suggestion (E1) adds no read and no write: the counts ride the daily record each phone already sends. The nightly job reads `cooling/current` and `cooling/recorded` (2 reads a night) to keep each day's cooling batch for Records.
