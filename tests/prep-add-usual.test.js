@@ -46,6 +46,10 @@ const bill = p => p.evaluate(() => window.__fake.bill.reduce((n, x) => n + x.n, 
   await p.type('[data-k="p-text"]', 'pickled', { delay: 30 }); await L.settle(p, 300);
   await p.click('#p-sugg .nb-sg'); await L.settle(p, 300);
   ok(await p.$eval('#p-text', e => e.value) === 'Pickled red onion' && (await todays(p)).length === n0 + 1, 'a tap on the words fills the box and adds nothing');
+  // a slip still finds the line (15 Nov 2026, as recipe search does): "pikcled" offers Pickled red onion
+  await p.fill('[data-k="p-text"]', ''); await p.type('[data-k="p-text"]', 'pikcled', { delay: 30 }); await L.settle(p, 300);
+  r = await rows(p);
+  ok(r.length >= 1 && r[0].t === 'Pickled red onion', 'a slip (pikcled) still offers Pickled red onion (' + JSON.stringify(r.map(x => x.t)) + ')');
   ok(p.errors.length === 0 && !(await L.overflow(p)), '390 px: no page errors, no sideways scroll ' + p.errors.join(' | '));
   await p.context().close();
 

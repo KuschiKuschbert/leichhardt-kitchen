@@ -54,6 +54,12 @@ async function log(p, text, amt, unit, before) {
   if (sg) { await sg.click(); await L.settle(p, 250); }
   ok(await p.evaluate(() => (document.querySelector('[data-p="wunit"][aria-checked="true"]') || {}).textContent) === 'portions' && await p.inputValue('#w-sec') === 'Pans', 'waste: the suggestion fills the unit and section used last time');
 
+  // a slip in the item still offers it (15 Nov 2026, as recipe search does); nothing is filled until it is tapped
+  await p.fill('#w-text', 'Rcie'); await L.settle(p, 250);
+  ok(await p.$('[data-p="wsugg"]:text-is("Rice")') !== null && await p.inputValue('#w-text') === 'Rcie', 'waste: a slip (Rcie) still suggests Rice, and the box keeps what was typed');
+  await p.fill('#w-text', 'Qzxv'); await L.settle(p, 250);
+  ok(!(await p.$('[data-p="wsugg"]')), 'waste: nothing near Qzxv: no suggestions');
+
   ok(p.errors.length === 0, 'waste: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -74,6 +80,8 @@ async function log(p, text, amt, unit, before) {
 
   // orders: a suggestion fills the usual amount; the tick keeps its name; the date chip and Delivery arrived on one row
   p = await L.open(b, '#/orders', { wait: 1500, extra });
+  await p.fill('#o-text', 'Dukc fat'); await L.settle(p, 250);
+  ok(!!(await p.$('[data-p="osugg"]:has-text("Duck fat")')), 'orders: a slip (Dukc fat) still suggests Duck fat');
   await p.fill('#o-text', 'Duck'); await L.settle(p, 250);
   const os = await p.$('[data-p="osugg"]:has-text("Duck fat")');
   ok(!!os && /2 tubs/.test(await os.textContent()), 'orders: typing Duck suggests Duck fat with its usual 2 tubs');
