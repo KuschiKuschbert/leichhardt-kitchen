@@ -138,3 +138,74 @@ All **Risk / Not evidenced** unless marked; previews are static.
 | C | Send part as a separate panel | Replace | The kind buttons pick a trip with one tap less; no panel to open |
 
 Could all three beat the best single design? Yes, but only as "C's trips + A's shelf and kind buttons + B's order for Fay". B's board and increments cannot join: they fight the time order and C's records. The blend's conflict, sent food in two places, is settled by one rule: every waiting trip is on the shelf, and a row only says how much has gone.
+
+### The combined preview and its review
+
+[design-mix/](design-mix/), described in [designs.md](designs.md#the-mix-trips-a-shelf-and-tap-what-goes-combined-preview). Review status: **the lead's synthesis, checked by a focused follow-up from five of the six round 2 reviewers** (the head chef reviewer was not asked again; the mix adds no cost or need question). One part is the lead's own, not a reviewer's: A's kind buttons as the trip picker.
+
+| Reviewer | Mix | Their best single design | Their remaining point (all applied in the preview unless marked) |
+| --- | --- | --- | --- |
+| Cook | 8 | C 7 | A pick must not wear a tick: a pressed button saying "In this trip". Send all at 617 px against today's 419 stays (not applied: the row is the late wedding) |
+| New starter | 8 | C 7 | Words on the row while picked; clear picks at the daily lock and handover |
+| Skeptic | 7 | C 6 | Double tap after a part send; stale picks shrink to what is left; the legacy write must not be refused true-over-true; big counts typed |
+| Keeper | 8 | A 7 | "Created once" lives in the update rule (an identical repeat accepted, any change refused); the legacy write and Undo need their own rule paths; back up recent days only |
+| Screen designer | 8 | A 7 | Keep the − slot from the start; a much stronger picked fill (now ink on paper, 16.9:1); Fay's real screen (now her own snapshot) |
+
+Agreement: every reviewer who saw it scored the mix above their best single design.
+
+## Recommendation
+
+**Recommend the mix: C's trips + A's shelf and kind buttons + B's order for Functions.** The kitchen taps what goes and presses one button that says what it sends; each send is a trip; every trip waiting for Functions sits on one shelf at the end of the board, counted in the board's top line; Fay sees that shelf first, no send buttons, and one Confirm out per trip, also on her Home band.
+
+Why it beats the others: it is the only option that does both halves of the request. It ticks platters off as runners take them, including part of a kind, which A cannot do. And Fay confirms each runner's trip as it lands, where A waits for the whole round. It keeps the late round at the top of the board, which C did not. B's layout lost on every count. Principles that help: Flighty (the work first, the waiting count visible but quiet), Things 3 (what is left apart from what is sent), Airbnb (who, what, when and status on one shelf line), Duolingo (the button says what it will send; nothing looks saved before it is).
+
+Main downside: the first Send drops from 419 px today to 617 px on a late wedding row at 390 px, and only 1 round fits whole on the first screen (3 rounds to go, 2 start there). A whole round is still 1 tap. "Trip" is a new word for the team.
+
+Also the head chef's choice:
+
+- **Who confirms.** Recommended: the Functions coordinators and the people with the Functions tick; a head or sous chef after 10 minutes, saved as "confirmed by Sam for Functions". The sender never confirms their own trip.
+- **No coordinator on.** Recommended: on a night with no coordinator, the chef fallback is the check. Otherwise trips stay orange and leave a "Never confirmed" mark.
+- **The live board's contract** (`docs/design-patterns.md`: "the rows still to go") gains a waiting shelf. This is a deliberate change for the head chef's OK, not an accident.
+- **Build order** (the head chef reviewer's advice): trips and part sends first, then the Out check, as two pull requests after the rules.
+
+## Verification before it is ready
+
+Implemented-app checks, none done yet:
+
+- **Rules emulator**, every role (signed out, staff, lead, view only, Functions only, sous chef, head chef on a PIN, admin, shared tablet):
+  - create a trip
+  - an identical repeat is accepted; any change is refused
+  - a second phone's same trip number is refused
+  - coordinator-only staff cannot send
+  - Out once, never on a void trip, never by the sender
+  - a chef's Out only after 10 minutes by server time
+  - Undo only before Out
+  - the legacy round write: true over true, and Undo by someone other than its sender
+  - the largest booking (12 kinds, 8 rounds)
+  - old-client record shapes
+- **Client shapes:** a row each in `tests/rules/client-shapes.test.mjs`. `tests/roles.test.js` opens the page for each role.
+- **Click tests**, in `tests/functions-board.test.js` or a new file:
+  - picks survive an `lk-fn` redraw and shrink when another phone sends
+  - a double tap sends one trip
+  - Not sent yet with no signal, on both sides
+  - a refusal keeps the picks
+  - Undo
+  - Fay sees no send controls
+  - To plate now leaves out what was sent
+  - the band moves on
+  - a round sent only by an old phone
+  - the fake clock at the window's end, 10 minutes and midnight
+  - a 60-platter kind
+  - 390, 768 and 1280 px with no sideways scroll
+  - the read budget
+- **Remeasure the full app:** at 390, 768 and 1280 px as the cook and as Fay, with the real shell, against this preview. Say any difference.
+- **Not evidenced in the previews:**
+  - dark and high-contrast themes
+  - keyboard focus
+  - reduced motion
+  - screen reader words for a picked kind
+  - the nightly backup's cost as `fnsent` grows (back up recent days only)
+
+## Chosen
+
+To come: the head chef's choice.

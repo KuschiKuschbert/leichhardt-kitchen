@@ -68,6 +68,12 @@ async function measure(p) {
   await p.screenshot({ path: path.join(out, 'home-coordinator-390.png') });
   await snap(p, 'home-coordinator');
   await p.context().close();
+  // the Functions coordinator's own service view: her shell (Recipes only, no chef hat menu), for the coordinator previews
+  p = await L.open(b, '#/fn/now', { who: 'fay', extra: extra(), clock, width: 390, height: 844, wait: 1500 });
+  await L.waitFor(p, () => document.querySelectorAll('.fn-svc-board .fn-svc-row').length >= 4); await L.settle(p, 400);
+  await p.screenshot({ path: path.join(out, 'service-coordinator-390.png') });
+  await snap(p, 'service-coordinator');
+  await p.context().close();
   p = await L.open(b, '#/fn/now', { who: 'ann', extra: extra(), clock, width: 1280, height: 900, wait: 1500 });
   await L.waitFor(p, () => document.querySelectorAll('.fn-svc-board .fn-svc-row').length >= 4); await L.settle(p, 400);
   await p.screenshot({ path: path.join(out, 'service-cook-1280.png') });

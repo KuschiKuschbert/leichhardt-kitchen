@@ -687,11 +687,11 @@
   "rowsWhole": 1,
   "rowHeights": [
    363,
-   242,
+   292,
    242
   ],
   "firstActionTop": 438,
-  "pageHeight": 2310,
+  "pageHeight": 2361,
   "buttonsUnder44": [],
   "overflowX": false,
   "contrast": {
@@ -842,8 +842,8 @@
   "rowsStarted": 0,
   "rowsWhole": 0,
   "rowHeights": [],
-  "firstActionTop": 287,
-  "pageHeight": 1616,
+  "firstActionTop": 319,
+  "pageHeight": 2186,
   "buttonsUnder44": [],
   "overflowX": false,
   "contrast": {
@@ -861,7 +861,7 @@
    "never": 7.09,
    "waitLine": null,
    "minus": 13.53,
-   "picked": 8.23
+   "picked": 16.87
   },
   "errors": []
  },
@@ -870,12 +870,12 @@
   "rowsStarted": 2,
   "rowsWhole": 1,
   "rowHeights": [
-   363,
-   242,
+   444,
+   292,
    242
   ],
-  "firstActionTop": 438,
-  "pageHeight": 2310,
+  "firstActionTop": 469,
+  "pageHeight": 2442,
   "buttonsUnder44": [],
   "overflowX": false,
   "contrast": {
@@ -893,7 +893,7 @@
    "never": null,
    "waitLine": 13.53,
    "minus": 14.59,
-   "picked": 8.88
+   "picked": 16.87
   },
   "errors": []
  },

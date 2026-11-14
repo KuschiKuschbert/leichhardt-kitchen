@@ -264,7 +264,11 @@ const M = {};
 M.css = A.css + C.css + `
 .fn-svc-board .ho-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.4rem; }
 .m-waitline { display: flex; align-items: center; gap: 0.4rem; min-height: 44px; margin: 0.15rem 0 0; color: var(--bar-text); text-decoration: underline; text-underline-offset: 3px; }
-.ho-k.is-pick { border-style: solid; border-width: 2.5px; border-color: var(--bar-text); background: rgba(251, 248, 241, 0.16); }
+.ho-k.is-pick { border-color: var(--paper); background: var(--paper); color: var(--ink); }
+.ho-k.is-pick .m-of { color: var(--muted); }
+.m-in { font: 700 0.72rem/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; }
+.m-slot { display: inline-block; width: 44px; height: 44px; }
+.m-num { width: 3.2rem; min-height: 44px; border: 1.5px solid var(--ink); border-radius: 6px; font: 700 1.2rem/1 var(--display); text-align: center; }
 .ho-k .m-of { font-size: 0.9rem; color: rgba(251, 248, 241, 0.82); }
 .m-kind { display: inline-flex; align-items: center; gap: 0.3rem; }
 .m-minus { min-width: 44px; min-height: 44px; padding: 0; border: 1.5px solid rgba(251, 248, 241, 0.75); border-radius: var(--r-act); background: transparent; color: var(--bar-text); font: inherit; font-size: 1.3rem; cursor: pointer; }
@@ -274,10 +278,10 @@ M.css = A.css + C.css + `
 .a-shelf .c-tn { font: 700 0.78rem/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; margin-right: 0.2rem; }
 `;
 const NEVER = '<svg class="ho-i" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 7v6M12 16.5v.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
-const mKind = (n, nm, pick, take) => pick
-  ? '<li class="m-kind"><button type="button" class="ho-k is-pick" aria-pressed="true">' + I.boxt + '<b>' + take + '</b> ' + esc(nm) + (take < n ? ' <span class="m-of">of ' + n + '</span>' : '') + '</button><button type="button" class="m-minus" aria-label="One fewer ' + esc(nm) + '">−</button></li>'
-  : '<li><button type="button" class="ho-k" aria-pressed="false">' + I.box + '<b>' + n + '</b> ' + esc(nm) + '</button></li>';
-const mKinds = (list) => '<ul class="a-kinds" aria-label="Tap what goes now">' + list.map(k => mKind(k[1], k[0], k[2], k[3])).join('') + '</ul>';
+const mKind = (n, nm, pick, take, typed) => pick
+  ? '<li class="m-kind"><button type="button" class="ho-k is-pick" aria-pressed="true">' + (typed ? '<input class="m-num" inputmode="numeric" value="' + take + '" aria-label="How many ' + esc(nm) + ' in this trip">' : '<b>' + take + '</b>') + ' ' + esc(nm) + (take < n ? ' <span class="m-of">of ' + n + '</span>' : '') + ' <span class="m-in">In this trip</span></button><button type="button" class="m-minus" aria-label="One fewer ' + esc(nm) + '">−</button></li>'
+  : '<li class="m-kind"><button type="button" class="ho-k" aria-pressed="false">' + I.box + '<b>' + n + '</b> ' + esc(nm) + '</button><span class="m-slot" aria-hidden="true"></span></li>';
+const mKinds = (list) => '<ul class="a-kinds" aria-label="Tap what goes now">' + list.map(k => mKind(k[1], k[0], k[2], k[3], k[4])).join('') + '</ul>';
 const mRead = (list) => '<p class="fn-svc-what">' + list.map(k => q(k[1], k[0])).join('') + '</p>';
 M.btn = (tot, ...kinds) => '<div class="c-acts"><button type="button" class="btn ho-act">Send all ' + tot + '</button></div>';
 M.board = (who, sel) => {
@@ -286,7 +290,7 @@ M.board = (who, sel) => {
   const wedLeft = sel ? [['Sliders', 1, false], ['Fruit', 2, true, 2], ['Cheese', 2, true, 2]] : [['Sliders', 1], ['Fruit', 2], ['Cheese', 2]];
   const wedActs = coord ? '' : sel ? '<div class="c-acts"><button type="button" class="btn ho-act">Send 4 platters</button><button type="button" class="linkish ho-link">Clear</button></div>' : '<div class="c-acts"><button type="button" class="btn ho-act">Send all 5</button></div>';
   const wed = '<li class="fn-svc-row is-late">' + top({ at: '18:30', late: true, name: 'Wedding reception', id: 'wed', loc: 'Marquee', round: 'all at once', cd: '5 min late' }) +
-    '<p class="m-left">' + I.tick + ' 9 of 14 sent in 2 trips. <b>5 left</b>' + (coord ? '' : ', tap what goes now') + ':</p>' + (coord ? mRead(wedLeft) : mKinds(wedLeft)) + diet(DIET_WED) + wedActs + '</li>';
+    '<p class="m-left">' + I.tick + ' 9 of 14 sent in 2 trips. <b>5 left</b>' + (coord ? '' : ', tap what goes now') + ':</p>' + (sel && !coord ? '<p class="m-left"><span class="ho-pend">' + I.clock + ' In this trip: 2 Fruit, 2 Cheese. Not sent yet.</span></p>' : '') + (coord ? mRead(wedLeft) : mKinds(wedLeft)) + diet(DIET_WED) + wedActs + '</li>';
   const later = [
     '<li class="fn-svc-row">' + top({ at: '18:45', name: 'Birthday 60th', id: 'b60', loc: 'Function room', round: 'round 2 of 3', cd: 'In 10 min' }) +
       (coord ? mRead([['Antipasto', 1], ['Pizza', 2]]) : mKinds([['Antipasto', 1], ['Pizza', 2]])) + diet(DIET_B60) + (coord ? '' : M.btn(3)) + '</li>',
@@ -312,9 +316,12 @@ M.band = () => bandWrap([
   bandRow('18:45', 'Birthday 60th', 'Function room', 'Round 2 of 3: <b>1 × Antipasto, 2 × Pizza</b> <span class="fn-of">(3 of 8)</span>')
 ], '3 on today');
 M.states = () => [
-  ['Picked, not sent: nothing is saved until Send', mKinds([['Sliders', 1, false], ['Fruit', 2, true, 2], ['Cheese', 2, true, 1]]) + '<div class="c-acts"><button type="button" class="btn ho-act">Send 3 platters</button><button type="button" class="linkish ho-link">Clear</button></div>'],
+  ['Picked, not sent: nothing is saved until Send', '<p class="m-left"><span class="ho-pend">' + I.clock + ' In this trip: 2 Fruit, 1 Cheese. Not sent yet.</span></p>' + mKinds([['Sliders', 1, false], ['Fruit', 2, true, 2], ['Cheese', 2, true, 1]]) + '<div class="c-acts"><button type="button" class="btn ho-act">Send 3 platters</button><button type="button" class="linkish ho-link">Clear</button></div>'],
+  ['Just tapped Send: the button rests until the answer (a second tap does nothing)', '<div class="c-acts"><button type="button" class="btn ho-act" disabled aria-disabled="true">Sending trip 3...</button></div>'],
+  ['Another phone sent some of the picks: the picks shrink, in words', '<p class="m-left"><span class="ho-pend">' + I.clock + ' Ben sent 2 Fruit (trip 3). In this trip now: 1 Cheese. Not sent yet.</span></p>' + mKinds([['Cheese', 2, true, 1]]) + '<div class="c-acts"><button type="button" class="btn ho-act">Send 1 platter</button><button type="button" class="linkish ho-link">Clear</button></div>'],
+  ['A big count: type how many', mKinds([['Sliders', 60, true, 15, true]]) + '<div class="c-acts"><button type="button" class="btn ho-act">Send 15 platters</button><button type="button" class="linkish ho-link">Clear</button></div>'],
   ['Sent with no signal: no tick yet', '<ul class="a-shelf"><li><span class="a-what"><span class="c-tn">Trip 3</span> 2 Fruit, 1 Cheese · <span class="ho-pend">' + I.clock + ' Not sent yet</span></span></li></ul>'],
-  ['Refused: another phone sent first', '<p class="ho-bad" role="alert"><b>Not saved:</b> Ben just sent trip 3 (1 Sliders). Check what is left and send again.</p>'],
+  ['Refused: another phone sent first (the picks are kept)', '<p class="ho-bad" role="alert"><b>Not saved:</b> Ben just sent trip 3 (1 Sliders). Your picks are kept: check them and send again.</p>'],
   ['Saved, waiting (kitchen view, with Undo for 2 minutes)', '<ul class="a-shelf"><li><span class="a-what"><span class="c-tn">Trip 3</span> 2 Fruit, 1 Cheese · ' + I.tick + ' sent 18:36 Ann</span><span class="ho-wait">' + I.wait + ' Waiting</span><button type="button" class="linkish ho-link">Undo</button></li></ul>'],
   ['10 minutes, nobody confirmed (sous chef view)', '<ul class="a-shelf"><li><span class="a-what"><span class="c-tn">Trip 1</span> 4 Antipasto · ' + I.tick + ' sent 18:24 Ann</span><span class="ho-wait is-long">' + I.wait + ' Waiting 11 min</span><button type="button" class="btn ho-act ho-chef">Confirm for Functions</button></li></ul>'],
   ['Confirmed by Functions, or by a chef for them', '<p class="ho-done-line">' + I.ticks + ' Trip 1, 4 Antipasto: out 18:36, Fay.</p><p class="ho-done-line">' + I.ticks + ' Trip 1, 4 Antipasto: out 18:37, confirmed by Sam for Functions.</p>'],
@@ -331,8 +338,9 @@ function bandWrap(rows, n) {
 }
 
 /* ---------- pages ---------- */
-const svc = read('service-cook.html'), home = read('home-coordinator.html');
+const svcCook = read('service-cook.html'), svc = svcCook, svcFay = read('service-coordinator.html'), home = read('home-coordinator.html');
 function servicePage(D, who, comp) {
+  const svc = who === 'fay' ? svcFay : svcCook;
   const s = svc.indexOf('<p class="hint">Every round still'), e = svc.indexOf('<p class="hint fn-fresh">');
   if (s < 0 || e < 0) throw new Error('baseline service markup moved');
   let out = svc.slice(0, s) + '<p class="hint">' + (who === 'fay' && D.hintFay ? D.hintFay : D.hint) + '</p>' + D.board(who, comp) + svc.slice(e);
