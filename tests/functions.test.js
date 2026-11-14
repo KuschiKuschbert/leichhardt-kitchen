@@ -332,7 +332,7 @@ function hasPrivateContact(value) {
   ok(sv.length === 3 && /18:40 Jones 40th/.test(sv[0]) && /19:00 Smith 50th · Beer garden · round 2 of 3/.test(sv[1]) && /19:30 Smith 50th · Beer garden · round 3 of 3/.test(sv[2]) && !/Later/.test(sv.join(' ')), 'service: Sent takes Smith round 1 off; Jones, then Smith rounds 2 and 3, one time each (' + sv.join(' / ').slice(0, 260) + ')');
   // since 14 Nov 2026 (the two-way check) the sent round waits on the shelf for Functions, with who sent it and Undo
   const shelf = (await txt(p, '.fn-svc-shelf') || '').replace(/\s+/g, ' ');
-  ok(/18:30 Smith 50th · Beer garden · Trip 1 3 Antipasto, 2 Aussie · sent 18:3\d Ann/.test(shelf) && /Waiting/.test(shelf) && !!(await p.$('.fn-svc-shelf [data-fn="trip-undo"]')), 'service: the sent round waits on the shelf with who sent it, and Undo (' + shelf.slice(0, 160) + ')');
+  ok(/Trip 1 · 18:30 Smith 50th · Beer garden ?3 × Antipasto ?2 × Aussie ?sent 18:3\d Ann/.test(shelf) && /Waiting/.test(shelf) && !!(await p.$('.fn-svc-shelf [data-fn="trip-undo"]')), 'service: the sent round waits on the shelf with who sent it, and Undo (' + shelf.slice(0, 160) + ')');
   ok(await p.$eval('#fn-band', e => e.hidden), 'service: no band above the service view (it shows the same rounds)');
   await p.goto(L.BASE + '#/recipes'); await L.settle(p, 600);
   await L.waitFor(p, () => /Jones 40th/.test((document.getElementById('fn-band') || {}).textContent || ''));

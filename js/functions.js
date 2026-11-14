@@ -450,6 +450,14 @@
     if (gone) out.push(gone + ' no longer booked');
     return out.join(', ');
   }
+  function tripQs(f, n) {
+    var seen = {}, out = (f.lines || []).filter(function (l) { return n[l.rid] > 0; }).map(function (l) {
+      seen[l.rid] = 1; return '<span class="fn-svc-q"><b>' + n[l.rid] + '</b> <span class="fn-x">\u00d7</span> ' + esc(short(l.name)) + '</span>';
+    });
+    var gone = Object.keys(n).filter(function (r) { return !seen[r]; }).reduce(function (s, r) { return s + n[r]; }, 0);
+    if (gone) out.push('<span class="fn-svc-q"><b>' + gone + '</b> no longer booked</span>');
+    return out.join('');
+  }
   // every trip waiting for Functions (sent, not confirmed, not taken back), oldest first; a confirm not sent yet stays
   function waitingTrips(fid) {
     var out = [];
@@ -1020,7 +1028,7 @@
     if (!st || !st.trips.length) return '';
     return '<ul class="fn-round-trips">' + st.trips.map(function (x) {
       var said = F.pend[x.id] ? '<span class="fn-ws is-pend">' + I_CLOCK + ' Not sent yet</span>' : x.outAt ? '<span class="fn-trip-out">' + I_TICKS + ' out ' + esc(kclock(x.outAt)) + ', ' + esc(x.outFor ? 'confirmed by ' + nameOf(x.outBy) + ' for Functions' : nameOf(x.outBy)) + '</span>' : waitPill(f, x, t);
-      return '<li><span class="fn-trip-k">Trip ' + x.k + '</span> ' + esc(tripText(f, x.n)) + ' · sent ' + esc(kclock(x.sentAt)) + ', ' + esc(nameOf(x.sentBy)) + ' ' + said + '</li>';
+      return '<li><span class="fn-trip-k">Trip ' + x.k + '</span> <b class="fn-trip-what">' + esc(tripText(f, x.n, true)) + '</b> · sent ' + esc(kclock(x.sentAt)) + ', ' + esc(nameOf(x.sentBy)) + ' ' + said + '</li>';
     }).join('') + '</ul>';
   }
   // a round's Sent cell: who sent it when (with Undo for a mis-tap: the sender within 2 minutes, or a sous chef or the
@@ -1599,8 +1607,11 @@
         else if (chef && age >= 10 * MIN) acts += '<button type="button" class="btn fn-for-b" data-fn="trip-for" data-id="' + esc(x.id) + '">Confirm for Functions</button>';
         if (canSend() && (chef || mine && age < 2 * MIN)) acts += '<button type="button" class="linkish fn-svc-link" data-fn="trip-undo" data-id="' + esc(x.id) + '">Undo</button>';
       }
-      return '<li class="fn-svc-trip"><span class="fn-svc-tw"><b>' + esc(kclock(f.rounds[w.i].at)) + ' ' + esc(f.name) + '</b>' + (f.loc ? ' · ' + esc(f.loc) : '') + ' · <span class="fn-trip-k">Trip ' + x.k + '</span> ' + esc(tripText(f, x.n)) +
-        ' · ' + (pend && !x.outAt ? '' : I_TICK + ' sent ' + esc(kclock(x.sentAt)) + ' ' + esc(nameOf(x.sentBy))) + '</span>' + waitPill(f, x, t) + acts + '</li>';
+      // what went leads, large like the board's rows (head chef, 14 Nov 2026, after trying it); the trip, the function and
+      // who sent it are the small lines around it
+      return '<li class="fn-svc-trip"><p class="fn-svc-th"><span class="fn-trip-k">Trip ' + x.k + '</span> · ' + esc(kclock(f.rounds[w.i].at)) + ' <b>' + esc(f.name) + '</b>' + (f.loc ? ' · ' + esc(f.loc) : '') + '</p>' +
+        '<p class="fn-svc-what fn-svc-tq">' + tripQs(f, x.n) + '</p>' +
+        '<p class="fn-svc-tm">' + (pend && !x.outAt ? '' : I_TICK + ' sent ' + esc(kclock(x.sentAt)) + ' ' + esc(nameOf(x.sentBy)) + ' ') + waitPill(f, x, t) + '</p>' + (acts ? '<div class="fn-svc-tacts">' + acts + '</div>' : '') + '</li>';
     }).join('') + '</ul>';
     if (outs.length) {
       var o = outs[0];

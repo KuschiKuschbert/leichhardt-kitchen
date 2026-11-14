@@ -70,8 +70,9 @@ const moreOff = (p, rid) => p.$eval(wedRow + ' [data-fn="pick-more"][data-r="0|'
   const row1 = flat(await txt(p, wedRow));
   ok(/7 of 14 sent in 1 trip\. 7 left, tap what goes now:/.test(row1) && await p.$$eval(wedRow + ' [data-fn="pick"]', l => l.length) === 3, 'send: the row says how much went, and only what is left can be picked (' + row1.slice(0, 160) + ')');
   const shelf1 = flat(await txt(p, '.fn-svc-shelf'));
-  ok(/Waiting for Functions/.test(shelf1) && /18:30 Wedding reception · Marquee · Trip 1 4 Antipasto, 3 Pizza · sent 18:3\d Ann/.test(shelf1) && /Waiting/.test(shelf1) && !!(await p.$('.fn-svc-shelf [data-fn="trip-undo"]')) && !(await p.$('.fn-svc-shelf [data-fn="trip-out"]')),
+  ok(/Waiting for Functions/.test(shelf1) && /Trip 1 · 18:30 Wedding reception · Marquee ?4 × Antipasto ?3 × Pizza ?sent 18:3\d Ann/.test(shelf1) && /Waiting/.test(shelf1) && !!(await p.$('.fn-svc-shelf [data-fn="trip-undo"]')) && !(await p.$('.fn-svc-shelf [data-fn="trip-out"]')),
     'shelf: the trip waits for Functions with who sent it, Undo for the sender, and no Confirm out for the kitchen (' + shelf1.slice(0, 200) + ')');
+  ok(await p.$eval('.fn-svc-trip', li => { const q = li.querySelector('.fn-svc-tq .fn-svc-q b'), th = li.querySelector('.fn-svc-th'); return !!q && parseFloat(getComputedStyle(q).fontSize) >= 1.4 * parseFloat(getComputedStyle(th).fontSize) && q.closest('p').previousElementSibling === th; }), 'shelf: the platters lead the trip line, larger than the trip, the function and who sent it');
   ok(/^1 trip waiting for Functions$/.test(flat(await txt(p, '.fn-svc-wl'))), 'board: its top line counts the trips waiting, as a link to the shelf (' + flat(await txt(p, '.fn-svc-wl')) + ')');
   // the wedding's 7 left and the Rotary dinner's 4 Antipasto (due 18:50); the 4 Antipasto and 3 Pizza sent are not counted
   const plate = flat(await txt(p, '.fn-svc-page .fn-next'));
@@ -111,12 +112,12 @@ const moreOff = (p, rid) => p.$eval(wedRow + ' [data-fn="pick-more"][data-r="0|'
   // no signal: the trip says Not sent yet, the button rests, then the signal comes back
   await p.evaluate(() => { window.__fake.mode = 'hold'; });
   await p.click(wedRow + ' [data-fn="send"]'); await L.settle(p, 300);
-  ok(/Trip 4 1 Fruit · Not sent yet/.test(flat(await txt(p, '.fn-svc-shelf'))) && await p.$eval(wedRow + ' [data-fn="send"]', b => b.disabled && /Sending trip 4/.test(b.textContent)), 'no signal: the trip says Not sent yet and the Send rests ("Sending trip 4...")');
+  ok(/Trip 4 · 18:30 Wedding reception · Marquee ?1 × Fruit ?Not sent yet/.test(flat(await txt(p, '.fn-svc-shelf'))) && await p.$eval(wedRow + ' [data-fn="send"]', b => b.disabled && /Sending trip 4/.test(b.textContent)), 'no signal: the trip says Not sent yet and the Send rests ("Sending trip 4...")');
   await L.settle(p, 1700);
   ok(await p.$eval(wedRow + ' [data-fn="send"]', b => !b.disabled && b.textContent.trim() === 'Send all 3'), 'no signal: after 1.5 seconds the button is back for what is left');
   await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
   await L.waitFor(p, k => !!window.__fake.dump()[k], TRIP(4)); await L.settle(p, 400);
-  ok(/Trip 4 1 Fruit · sent 18:3\d Ann/.test(flat(await txt(p, '.fn-svc-shelf'))), 'signal back: the trip is sent and says who sent it');
+  ok(/Trip 4 · 18:30 Wedding reception · Marquee ?1 × Fruit ?sent 18:3\d Ann/.test(flat(await txt(p, '.fn-svc-shelf'))), 'signal back: the trip is sent and says who sent it');
   ok(await p.evaluate(() => window.__fake.reads.length) === asked, 'the service view, picks and sends ask for no read: only the listener hears each saved trip (' + (await reads(p) - bill) + ' billed by it)');
   ok(p.errors.length === 0 && !(await L.overflow(p)), '390 px cook: no page errors, no sideways scroll ' + p.errors.join(' | '));
   s = await store(p);
@@ -169,7 +170,7 @@ const moreOff = (p, rid) => p.$eval(wedRow + ' [data-fn="pick-more"][data-r="0|'
   await p.goto(L.BASE + '#/'); await L.settle(p, 900);
   ok(await p.evaluate(() => !document.getElementById('pwn') && !document.querySelector('[data-pwn]') && !window.__pwn), 'a damaged trip shows no markup on the shelf or the band');
   await p.goto(L.BASE + '#/fn/now'); await L.settle(p, 600);
-  ok(/Trip 7 2 no longer booked · /.test(flat(await txt(p, '.fn-svc-shelf'))) && await p.evaluate(() => !document.getElementById('pwn') && !document.querySelector('[data-pwn]') && !window.__pwn), 'a damaged trip: an unknown platter is counted as no longer booked, its bad count left out (' + flat(await txt(p, '.fn-svc-shelf')).slice(0, 200) + ')');
+  ok(/Trip 7 · .*?2 no longer booked ?sent 18:38/.test(flat(await txt(p, '.fn-svc-shelf'))) && await p.evaluate(() => !document.getElementById('pwn') && !document.querySelector('[data-pwn]') && !window.__pwn), 'a damaged trip: an unknown platter is counted as no longer booked, its bad count left out (' + flat(await txt(p, '.fn-svc-shelf')).slice(0, 200) + ')');
   await p.context().close();
 
   // 5. every size: no sideways scroll, no errors, picks and the shelf on screen

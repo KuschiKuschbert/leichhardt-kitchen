@@ -4303,9 +4303,13 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .fn-svc-sh { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.2rem 0.6rem; margin: 0 0 0.2rem; font: 700 0.8rem/1.2 var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--bar-text); }
 .fn-svc-sh small { font: 400 0.9rem/1.2 var(--body, inherit); letter-spacing: 0; text-transform: none; color: rgba(251, 248, 241, 0.8); }
 .fn-svc-trips { list-style: none; margin: 0; padding: 0; }
-.fn-svc-trip { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.6rem; padding: 0.55rem 0; border-top: 1px solid rgba(251, 248, 241, 0.14); }
+.fn-svc-trip { display: grid; gap: 0.3rem; padding: 0.6rem 0 0.65rem; border-top: 1px solid rgba(251, 248, 241, 0.14); }
 .fn-svc-trip:first-child { border-top: 0; }
-.fn-svc-tw { flex: 1 1 14rem; min-width: 0; overflow-wrap: anywhere; }
+.fn-svc-th { margin: 0; font-size: 0.92rem; color: rgba(251, 248, 241, 0.86); overflow-wrap: anywhere; }
+.fn-svc-th b { color: var(--bar-text); }
+.fn-svc-board .fn-svc-tq { margin: 0; }
+.fn-svc-tm { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.6rem; margin: 0; font-size: 0.95rem; overflow-wrap: anywhere; }
+.fn-svc-tacts { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem; }
 .fn-trip-k { font: 700 0.78rem/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; }
 .fn-ws { display: inline-flex; align-items: center; gap: 0.3rem; padding: 2px 8px; border: 1.5px solid currentColor; border-radius: 4px; font: 700 0.78rem/1.3 var(--display); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
 .fn-svc-board .fn-ws, .fn-band .fn-ws, .fn-next .fn-ws { color: var(--bar-text); border-color: rgba(251, 248, 241, 0.7); }
@@ -4325,6 +4329,7 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .fn-band .fn-out-b:focus-visible { outline: 3px solid var(--bar-accent); outline-offset: 2px; }
 .fn-round-trips { list-style: none; grid-column: 1 / -1; margin: 0.3rem 0 0; padding: 0; font-size: 0.92rem; }
 .fn-round-trips li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem 0.5rem; padding: 0.15rem 0; }
+.fn-trip-what { font-size: 1.1rem; }
 .fn-trip-out { display: inline-flex; align-items: center; gap: 0.3rem; color: var(--done-ink); font-weight: 700; }
 .fn-sent-part { margin-right: 0.4rem; font-weight: 700; }
 @media (min-width: 900px) {

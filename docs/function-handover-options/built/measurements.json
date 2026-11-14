@@ -9,26 +9,26 @@
    310,
    259
   ],
-  "send": 646,
-  "kind": 418,
+  "send": 665,
+  "kind": 437,
   "confirm": null,
-  "waitLine": 250,
-  "page": 2390
+  "waitLine": 269,
+  "page": 2468
  },
  "picked": {
   "rows": 3,
   "started": 2,
   "whole": 1,
   "heights": [
-   461,
+   439,
    310,
    259
   ],
-  "send": 697,
-  "kind": 470,
+  "send": 694,
+  "kind": 466,
   "confirm": null,
-  "waitLine": 250,
-  "page": 2509
+  "waitLine": 269,
+  "page": 2565
  },
  "fay": {
   "rows": 3,
@@ -41,9 +41,9 @@
   ],
   "send": null,
   "kind": null,
-  "confirm": 361,
+  "confirm": 403,
   "waitLine": null,
-  "page": 2059
+  "page": 2146
  },
  "cook768": {
   "rows": 3,
@@ -58,7 +58,7 @@
   "kind": 428,
   "confirm": null,
   "waitLine": 307,
-  "page": 1877
+  "page": 2014
  },
  "cook1280": {
   "rows": 3,
@@ -73,6 +73,6 @@
   "kind": 428,
   "confirm": null,
   "waitLine": 307,
-  "page": 1851
+  "page": 2014
  }
 }
