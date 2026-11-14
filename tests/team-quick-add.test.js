@@ -33,11 +33,7 @@ const readCount = p => p.evaluate(() => __fake.reads.filter(k => /\/(?:team|team
 const saveOff = p => p.locator('[data-p="tm-save"]').isDisabled();
 const selected = p => p.locator('[data-p="tm-day"][aria-pressed="true"]').getAttribute('data-day');
 const ready = p => L.waitFor(p, () => !!document.querySelector('.tm-work [data-p="tm-whole"]'), null, 7000);
-async function goDay(p, day) {
-  if (!await p.locator('.tm-weeknav').isVisible()) await click(p, '[data-p="tm-date-toggle"]');
-  for (let n = 0; n < 3 && !await p.locator('[data-p="tm-day"][data-day="' + day + '"]').count(); n++) await click(p, '[data-p="tm-week-next"]');
-  await click(p, '[data-p="tm-day"][data-day="' + day + '"]'); await ready(p);
-}
+async function goDay(p, day) { await L.teamDay(p, day); await ready(p); }
 async function quickOpen(p) {
   if (!await p.locator('.tm-quick-add').isVisible()) await click(p, '.tm-focus-toolbar [data-p="tm-add-staff"]');
 }

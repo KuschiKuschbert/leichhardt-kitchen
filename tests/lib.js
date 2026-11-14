@@ -631,4 +631,22 @@ async function updateNow(page, ms) {
   await page.evaluate(() => window.LK_UPDATE.now());
   await waitFor(page, () => !!document.querySelector('.upd-bar.is-on'), null, 3000).catch(() => {});
 }
-module.exports = { updateNow, docked, oLog, pLog, whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, dwShow, dwAdd, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, kitchenRow, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+/* Today's team (15 Nov 2026): open the date list if it is shut, page back or on to the week holding day (YYYY-MM-DD),
+   then pick it. On a Sunday, tomorrow is in next week; the week arrows keep the list open (tmWeekGo() in js/prep.js). */
+// The week holding day read once, then back on the date that was showing: a test that counts reads while moving between
+// dates starts from weeks already loaded (on a Sunday, tomorrow's week is not). Does nothing when day's week is showing.
+async function teamWarm(page, day, ready) {
+  if (await page.locator('[data-p="tm-day"][data-day="' + day + '"]').count()) return;
+  const back = await page.locator('[data-p="tm-day"][aria-pressed="true"]').getAttribute('data-day');
+  await teamDay(page, day); if (ready) await ready(page);
+  await teamDay(page, back); if (ready) await ready(page);
+}
+async function teamDay(page, day) {
+  if (!await page.locator('.tm-weeknav').isVisible()) { await page.locator('[data-p="tm-date-toggle"]').first().click(); await settle(page, 160); }
+  for (let n = 0; n < 4 && !await page.locator('[data-p="tm-day"][data-day="' + day + '"]').count(); n++) {
+    const first = await page.locator('[data-p="tm-day"]').first().getAttribute('data-day');
+    await page.locator('[data-p="' + (day < first ? 'tm-week-prev' : 'tm-week-next') + '"]').first().click(); await settle(page, 160);
+  }
+  await page.locator('[data-p="tm-day"][data-day="' + day + '"]').first().click(); await settle(page, 160);
+}
+module.exports = { teamDay, teamWarm, updateNow, docked, oLog, pLog, whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, dwShow, dwAdd, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, kitchenRow, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
