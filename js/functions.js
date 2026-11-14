@@ -182,11 +182,13 @@
   }
   /* What the band shows at a moment: confirmed functions in their window, and notices for a function cancelled or
      moved while its old window is still on (so the change is not missed). Sorted by when food is next due. */
-  // isSent(f, i), when given, says round i of f was ticked as sent: the order then follows what is still to go out
-  function showing(list, now, isSent) {
+  // isSent(f, i), when given, says round i of f was ticked as sent: the order then follows what is still to go out.
+  // keep(f), when given, keeps a confirmed function on after its window while a trip still waits for Functions (14 Nov
+  // 2026); the kitchen's list drops it at midnight
+  function showing(list, now, isSent, keep) {
     var out = [];
     list.forEach(function (f) {
-      if (f.status === 'confirmed' && f.from <= now && now < f.until) out.push({ f: f, kind: 'on' });
+      if (f.status === 'confirmed' && f.from <= now && (now < f.until || keep && keep(f))) out.push({ f: f, kind: 'on' });
       else if (f.status === 'cancelled' && f.confAt && f.from <= now && now < f.until) out.push({ f: f, kind: 'cancelled' });
       if (f.status === 'confirmed' && f.was && f.was.until && f.was.from <= now && now < f.was.until && !(f.from <= now && now < f.until)) out.push({ f: f, kind: 'moved' });
     });
@@ -205,14 +207,15 @@
   var DUE_SOON = 15 * MIN;
   /* all (8 Nov 2026, the service view's board as drawn, every-page.html e-service): every round of every function on now
      that is not sent yet, in time order, so the board shows the whole night with its dietaries and its tick. */
-  function service(list, now, isSent) {
+  // leftOf(f, i), when given, is what is still to send of round i by line (trips, 14 Nov 2026); otherwise all of it
+  function service(list, now, isSent, leftOf, keep) {
     var rows = [], ahead = [], plate = {}, all = [];
-    showing(list, now, isSent).forEach(function (x) {
+    showing(list, now, isSent, keep).forEach(function (x) {
       var f = x.f;
       if (x.kind !== 'on' || !f.first) return;
       var n = f.rounds.length, k = nextOpen(f, function (i) { return isSent(f, i); });
       if (k < 0) return;
-      function at(j) { return (f.lines || []).map(function (l) { return counts(l, n)[j]; }); }
+      function at(j) { return leftOf ? leftOf(f, j) : (f.lines || []).map(function (l) { return counts(l, n)[j]; }); }
       var r = { f: f, k: k, at: f.rounds[k].at, a: at(k) };
       r.late = r.at < now; r.due = r.at <= now + DUE_SOON;
       rows.push(r);
@@ -332,7 +335,7 @@
   }
   function watch() {
     var prep = P(); if (!prep || !prep.state) return;
-    if (!prep.privateAccess()) { stop(); sheetClose(false, true); SEEN = { who: '', by: {} }; var printed = document.getElementById('fn-print'); if (printed) printed.remove(); F.list = []; F.all = null; F.sent = {}; F.state = 'idle'; lsSet('lk.fn', null); changed(); return; }
+    if (!prep.privateAccess()) { stop(); sheetClose(false, true); SEEN = { who: '', by: {} }; PK = { who: '', r: {}, note: {} }; F.pend = {}; F.sv++; var printed = document.getElementById('fn-print'); if (printed) printed.remove(); F.list = []; F.all = null; F.sent = {}; F.state = 'idle'; lsSet('lk.fn', null); changed(); return; }
     var st = prep.state;
     if (!/^\d{4,6}$/.test(st.pin || '') || st.configState !== 'ok') return;
     var key = st.pin + '|' + T.day();
@@ -380,20 +383,96 @@
      at most this phone's own unsent ticks (LK_PREP.book().listSnap says 'wait'). The rounds already read stay sent, with
      this phone's ticks on top, until the server answers; before, every round showed as not sent and could go out twice.
      includeMetadataChanges: the server's first answer comes in even when nothing changed (not billed). */
-  F.sent = {};
+  F.sent = {}; F.sv = 0; F.pend = {};
   function watchSent(api, fs) {
     if (F.unsub2) F.unsub2();
     var state = 'loading', last = {};
     F.unsub2 = fs.onSnapshot(fs.query(api.colRef('fnsent'), fs.where('day', '>=', kday(now() - DAY))), { includeMetadataChanges: true }, function (snap) {
       var k = api.listSnap ? api.listSnap(snap, state, last) : 'new';
       if (k === 'same') return;
-      var m = k === 'wait' ? Object.assign({}, F.sent) : {}; snap.docs.forEach(function (d) { m[d.id] = d.data(); }); F.sent = m;
+      var m = k === 'wait' ? Object.assign({}, F.sent) : {}; snap.docs.forEach(function (d) { m[d.id] = d.data(); }); F.sent = m; F.sv++;
       state = k === 'wait' ? 'offline' : 'ok';
       changed();
     }, function () { F.unsub2 = null; });
   }
-  function sentRec(f, i) { var r = (f.rounds || [])[i], x = r && r.at ? F.sent[f.id + '_' + r.at] : null; return x && x.sent ? x : null; }
+  /* A round is sent when its own Sent record says so (an older phone, or the last trip), or when its trips add up to what
+     is booked in it (14 Nov 2026). For a round sent in trips the time and the name are the last trip's. */
+  function sentRec(f, i) {
+    var r = (f.rounds || [])[i], x = r && r.at ? F.sent[f.id + '_' + r.at] : null;
+    if (x && x.sent) return x;
+    var st = r && r.at ? roundState(f, i) : null, last = st && st.all && st.trips.length ? st.trips[st.trips.length - 1] : null;
+    return last ? { sent: true, sentAt: last.sentAt, sentBy: last.sentBy, trip: true } : null;
+  }
   function sentText(x) { return 'sent ' + kclock(x.sentAt) + ', ' + nameOf(x.sentBy); }
+
+  /* ---------- trips: the two-way check (head chef, 14 Nov 2026, docs/function-handover-options/brief.md) ----------
+     What leaves the pass together is a trip, fnsent/<fid>_<round time>_t<k>: { fid, at, day, k, n: { recipe id: how
+     many }, sentAt, sentBy }, then outAt, outBy, outFor (Functions confirmed it; outFor: a head or sous chef did, for
+     Functions) or void, voidAt, voidBy (Undo). The same listener as the Sent ticks brings them: no read of its own. Lines
+     are matched by recipe id (a booking holds each platter once, js/fnedit.js). A round whose time changed after a trip
+     shows as not sent, like a Sent tick. */
+  var TRIP_RX = /^(.+)_(\d+)_t(\d+)$/;
+  function tripRec(id, x) {
+    var m = TRIP_RX.exec(id || '');
+    if (!m || !x || typeof x !== 'object' || x.fid !== m[1] || x.at !== +m[2] || x.k !== +m[3] || !x.n || typeof x.n !== 'object') return null;
+    var n = {};
+    Object.keys(x.n).forEach(function (r) { var v = x.n[r]; if (typeof v === 'number' && v >= 1 && v <= MAX_QTY && Math.floor(v) === v) n[r] = v; });
+    return { id: id, fid: x.fid, at: x.at, k: x.k, n: n, sentAt: +x.sentAt || 0, sentBy: typeof x.sentBy === 'string' ? x.sentBy : '',
+      outAt: typeof x.outAt === 'number' ? x.outAt : 0, outBy: typeof x.outBy === 'string' ? x.outBy : '', outFor: x.outFor === true, void: x.void === true };
+  }
+  // the trips of each round, worked out again only when the records changed (F.sv)
+  var TI = { v: -1, by: {} };
+  function tripsOf(fid, at) {
+    if (TI.v !== F.sv) {
+      TI = { v: F.sv, by: {} };
+      Object.keys(F.sent).forEach(function (id) { var t = tripRec(id, F.sent[id]); if (t) (TI.by[t.fid + '_' + t.at] = TI.by[t.fid + '_' + t.at] || []).push(t); });
+      Object.keys(TI.by).forEach(function (k) { TI.by[k].sort(function (a, b) { return a.k - b.k; }); });
+    }
+    return TI.by[fid + '_' + at] || [];
+  }
+  /* A round now: what is booked in it, sent in trips and left, by line; its live trips; the next trip number (undone
+     ones count, so a number is never used twice); all: nothing left to send. */
+  function roundState(f, i) {
+    var r = (f.rounds || [])[i];
+    if (!r || !r.at) return null;
+    var L = f.lines || [], booked = roundCounts(f, i), every = tripsOf(f.id, r.at), live = every.filter(function (t) { return !t.void; });
+    var sent = L.map(function (l) { return live.reduce(function (s, t) { return s + (t.n[l.rid] || 0); }, 0); });
+    var leg = F.sent[f.id + '_' + r.at], legSent = !!(leg && leg.sent), bookedTot = sum(booked);
+    var left = booked.map(function (b, j) { return legSent ? 0 : Math.max(0, b - sent[j]); });
+    return { booked: booked, sent: sent, left: left, bookedTot: bookedTot, sentTot: legSent ? bookedTot : Math.min(sum(sent), bookedTot), leftTot: sum(left),
+      trips: live, nextK: every.reduce(function (m, t) { return Math.max(m, t.k); }, 0) + 1, legacy: legSent ? leg : null, all: legSent || (bookedTot > 0 && !sum(left)) };
+  }
+  function leftK(f, i) { var st = roundState(f, i); return st ? st.left : roundCounts(f, i); }
+  // "4 Antipasto, 3 Pizza": a trip's platters in the booking's order; one no longer booked is still counted
+  function tripText(f, n, x) {
+    var seen = {}, out = (f.lines || []).filter(function (l) { return n[l.rid] > 0; }).map(function (l) { seen[l.rid] = 1; return n[l.rid] + (x ? ' × ' : ' ') + short(l.name); });
+    var gone = Object.keys(n).filter(function (r) { return !seen[r]; }).reduce(function (s, r) { return s + n[r]; }, 0);
+    if (gone) out.push(gone + ' no longer booked');
+    return out.join(', ');
+  }
+  // every trip waiting for Functions (sent, not confirmed, not taken back), oldest first; a confirm not sent yet stays
+  function waitingTrips(fid) {
+    var out = [];
+    F.list.forEach(function (f) {
+      if (fid && f.id !== fid || f.status !== 'confirmed' && f.status !== 'cancelled') return;
+      (f.rounds || []).forEach(function (r, i) { tripsOf(f.id, r.at).forEach(function (t) { if (!t.void && (!t.outAt || F.pend[t.id])) out.push({ f: f, i: i, t: t }); }); });
+    });
+    return out.sort(function (a, b) { return a.t.sentAt - b.t.sentAt || a.t.k - b.t.k; });
+  }
+  // trips confirmed out today, newest first
+  function outTrips(t) {
+    var day = kday(t), out = [];
+    F.list.forEach(function (f) { (f.rounds || []).forEach(function (r, i) { tripsOf(f.id, r.at).forEach(function (x) { if (!x.void && x.outAt && !F.pend[x.id] && kday(x.outAt) === day) out.push({ f: f, i: i, t: x }); }); }); });
+    return out.sort(function (a, b) { return b.t.outAt - a.t.outAt; });
+  }
+  // a function with a trip still waiting stays on the board after its window, until the trip is confirmed or midnight
+  function keepK(f) { return waitingTrips(f.id).length > 0; }
+  function fnIds(k) { var p = P(), c = p && p.state && p.state.config; return c && Array.isArray(c[k]) ? c[k] : []; }
+  // Functions people confirm: the coordinators and the people with the Functions tick
+  function fnPerson(id) { return !!id && (fnIds('fnIds').indexOf(id) >= 0 || fnIds('fnOnlyIds').indexOf(id) >= 0); }
+  // Functions-only staff never send (the rules refuse it): they see what is left as words
+  function canSend() { var p = P(); return !(p && p.functionOnly && p.functionOnly()); }
+  function isChef() { var p = P(); return !!(p && p.chefMenu && p.chefMenu().chef); }
   // tell the pages: the band and the landing card redraw themselves, #/fn redraws through js/app.js
   function changed() { ahFirst(); huFirst(); paint(); try { window.dispatchEvent(new Event('lk-fn')); } catch (e) {} }
 
@@ -416,6 +495,15 @@
       return out + '<span class="fn-r1"><span class="fn-tag fn-t-moved">Rescheduled</span><b>' + esc(f.name) + '</b></span>' +
         '<span class="fn-r2">Not today any more: now ' + esc(dayName(f.date)) + ', event ' + esc(when(f.start, f.date)) + ', food ' + esc(when(f.first, f.date)) + '.</span></button></li>';
     }
+    // Functions people (14 Nov 2026): a trip the kitchen sent waits here with Confirm out beside the row (never their own)
+    var me = ahWho(), wt = fnPerson(me) ? waitingTrips(f.id).filter(function (y) { return y.t.sentBy !== me; }) : [];
+    if (wt.length) {
+      var w0 = wt[0].t;
+      return '<li class="fn-li fn-li-out">' + out.slice('<li class="fn-li">'.length) + '<span class="fn-r1"><span class="fn-due">' + esc(when(f.rounds[wt[0].i].at, kday(t))) + '</span> <b>' + esc(f.name) + '</b>' + (f.loc ? ' · ' + esc(f.loc) : '') + '</span>' +
+        '<span class="fn-r2">Trip ' + w0.k + ': <b>' + esc(tripText(f, w0.n, true)) + '</b>, sent ' + esc(kclock(w0.sentAt)) + ' ' + esc(nameOf(w0.sentBy)) + ' ' + waitPill(f, w0, t) +
+        (wt.length > 1 ? ' <span class="fn-of">+' + (wt.length - 1) + ' more waiting</span>' : '') + '</span></button>' +
+        (F.pend[w0.id] ? '' : '<button type="button" class="btn fn-out-b" data-fn="trip-out" data-id="' + esc(w0.id) + '">' + I_TICKS + ' Confirm out</button>') + '</li>';
+    }
     // two lines (22 Oct 2026): the time of the next round not sent, the name and place; then what goes in it
     var c = recent(f), w = nowOf(f, t);
     return out + '<span class="fn-r1"><span class="fn-due' + (w.late ? ' is-late' : '') + '">' + esc(w.time) + '</span> <b>' + esc(f.name) + '</b>' + (f.loc ? ' · ' + esc(f.loc) : '') +
@@ -430,8 +518,9 @@
     if (!f.first) return { time: 'TBC', late: false, html: 'Times TBC: <b>' + esc(linesText(f)) + '</b> <span class="fn-of">(' + tot + ')</span>' };
     var k = nextOpen(f, function (i) { return isSentK(f, i); });
     if (k < 0) { var x = sentRec(f, n - 1); return { time: 'Sent', late: false, done: true, html: (n > 1 ? 'All ' + n + ' rounds sent, last ' : 'All sent ') + esc(kclock(x.sentAt) + ', ' + nameOf(x.sentBy)) + ' <span class="fn-of">(' + tot + ')</span>' }; }
-    var at = f.rounds[k].at, late = at < t, rc = roundCounts(f, k), q = sum(rc), lead = n > 1 ? 'Round ' + (k + 1) + ' of ' + n : 'All';
-    return { time: when(at, kday(t)), late: late, k: k, html: (late ? '<span class="fn-late">' + lead + ' not sent yet</span>' : lead) + ': <b>' + esc(linesText(f, rc) || 'nothing') + '</b> <span class="fn-of">(' + q + (n > 1 ? ' of ' + tot : '') + ')</span>' };
+    var at = f.rounds[k].at, late = at < t, st = roundState(f, k), rc = st ? st.left : roundCounts(f, k), q = sum(rc), lead = n > 1 ? 'Round ' + (k + 1) + ' of ' + n : 'All';
+    var of = st && st.sentTot ? q + ' left of ' + st.bookedTot : q + (n > 1 ? ' of ' + tot : '');
+    return { time: when(at, kday(t)), late: late, k: k, html: (late ? '<span class="fn-late">' + lead + ' not sent yet</span>' : lead) + ': <b>' + esc(linesText(f, rc) || 'nothing') + '</b> <span class="fn-of">(' + of + ')</span>' };
   }
   // the order reminder and tomorrow's functions: one short line each
   function soonRow(x) {
@@ -442,7 +531,7 @@
   /* The band's own rows: today's functions (two, then "+1 more"), then up to two order reminders and tomorrow's
      functions; all of them once "+N more" is open. The landing card leaves out the functions drawn here (landHTML()). */
   function bandRows(t) {
-    var xs = showing(F.list, t, isSentK), ys = soon(F.list, t);
+    var xs = showing(F.list, t, isSentK, keepK), ys = soon(F.list, t);
     return { xs: xs, ys: ys, a: F.more ? xs : xs.slice(0, 2), b: F.more ? ys : ys.slice(0, 2) };
   }
   /* What the slot under the top bar draws: the band, or, on a day the band would draw nothing, the quiet Next function
@@ -917,32 +1006,172 @@
       var rc = roundCounts(f, i), q = sum(rc), next = i === nx && f.status === 'confirmed';
       return '<li class="fn-round' + (next ? ' is-next' : '') + (tick && sentRec(f, i) ? ' is-sent' : '') + '"><span class="fn-round-t">' + esc(when(r.at, f.date)) + (next ? ' <span class="fn-tag">Next</span>' : '') + '</span>' +
         '<span class="fn-round-w">' + (r.note ? '<i>' + esc(r.note) + '</i> ' : '') + esc(linesText(f, rc) || 'Nothing') + ' <b>(' + q + ')</b></span>' +
-        (tick ? '<span class="fn-sent">' + sentCell(f, i) + '</span>' : '') + '</li>';
+        (tick ? '<span class="fn-sent">' + sentCell(f, i) + '</span>' + tripsList(f, i) : '') + '</li>';
     }).join('') + '</ol>';
   }
-  // a round's Sent cell: a button to tick it, or who ticked it when, with Undo for a mis-tap (the same person within
-  // 2 minutes, or a sous chef or the head chef: the rules say the same)
-  function sentCell(f, i) {
-    var x = sentRec(f, i), d = ' data-id="' + esc(f.id) + '" data-r="' + i + '"';
-    if (!x) return '<button type="button" class="btn fn-sent-b" data-fn="sent"' + d + ' aria-label="Round ' + (i + 1) + ' sent">Sent</button>';
-    var prep = P(), me = prep && prep.book ? prep.book().who() : '', lead = !!(prep && prep.chefMenu && prep.chefMenu().chef);
-    var undo = lead || (me && x.sentBy === me && now() - x.sentAt < 2 * MIN);
-    return '<span class="fn-sent-ok">' + esc(kclock(x.sentAt)) + '<small>' + esc(nameOf(x.sentBy)) + '</small></span>' + (undo ? '<button type="button" class="linkish" data-fn="unsent"' + d + '>Undo</button>' : '');
+  // a round's trips on the sheet (14 Nov 2026): what went, who sent it when, and whether Functions has it
+  function tripsList(f, i) {
+    var st = roundState(f, i), t = now();
+    if (!st || !st.trips.length) return '';
+    return '<ul class="fn-round-trips">' + st.trips.map(function (x) {
+      var said = F.pend[x.id] ? '<span class="fn-ws is-pend">' + I_CLOCK + ' Not sent yet</span>' : x.outAt ? '<span class="fn-trip-out">' + I_TICKS + ' out ' + esc(kclock(x.outAt)) + ', ' + esc(x.outFor ? 'confirmed by ' + nameOf(x.outBy) + ' for Functions' : nameOf(x.outBy)) + '</span>' : waitPill(f, x, t);
+      return '<li><span class="fn-trip-k">Trip ' + x.k + '</span> ' + esc(tripText(f, x.n)) + ' · sent ' + esc(kclock(x.sentAt)) + ', ' + esc(nameOf(x.sentBy)) + ' ' + said + '</li>';
+    }).join('') + '</ul>';
   }
+  // a round's Sent cell: who sent it when (with Undo for a mis-tap: the sender within 2 minutes, or a sous chef or the
+  // head chef, the rules say the same), or how much went and a button that sends all that is left as one trip
+  function sentCell(f, i) {
+    var x = sentRec(f, i), st = roundState(f, i), me = ahWho(), d = ' data-id="' + esc(f.id) + '" data-r="' + i + '"';
+    if (x) {
+      var undo = '', last = st && st.trips.length ? st.trips[st.trips.length - 1] : null;
+      if (last && !last.outAt && !F.pend[last.id] && (isChef() || last.sentBy === me && now() - last.sentAt < 2 * MIN)) undo = '<button type="button" class="linkish fn-svc-link" data-fn="trip-undo" data-id="' + esc(last.id) + '">Undo</button>';
+      else if (!last && (isChef() || me && x.sentBy === me && now() - x.sentAt < 2 * MIN)) undo = '<button type="button" class="linkish" data-fn="unsent"' + d + '>Undo</button>';
+      return '<span class="fn-sent-ok">' + esc(kclock(x.sentAt)) + '<small>' + esc(nameOf(x.sentBy)) + '</small></span>' + undo;
+    }
+    var part = st && st.sentTot ? '<span class="fn-sent-part">' + st.sentTot + ' of ' + st.bookedTot + ' sent</span>' : '';
+    if (!canSend()) return part || '<span class="fn-sent-part">Not sent yet</span>';
+    var lab = st && st.sentTot ? 'Send ' + st.leftTot + ' left' : 'Send all' + (st ? ' ' + st.leftTot : '');
+    return part + '<button type="button" class="btn fn-sent-b" data-fn="send" data-v="all"' + d + ' aria-label="Round ' + (i + 1) + ': ' + esc(lab) + '">' + esc(lab) + '</button>';
+  }
+  // the older Sent tick, still read for rounds an older phone ticked: taking it back (Undo on the sheet)
   function tickSent(id, i, on) {
     var f = byId(id), prep = P(); if (!f || !prep) return;
     var r = f.rounds[i], api = prep.book(), me = api.who();
     if (!me && !(prep.state && prep.state.user)) { sheetClose(false, true); prep.signIn(location.hash || '#/'); return; }   // who is ticking: sign in first
     var x = F.sent[f.id + '_' + r.at], rec = on ? { fid: f.id, at: r.at, day: kday(r.at), sent: true, sentAt: now(), sentBy: me } : { fid: f.id, at: r.at, day: kday(r.at), sent: false, sentAt: x.sentAt, sentBy: x.sentBy };
-    F.sent[f.id + '_' + r.at] = rec; changed();   // shows at once; the listener brings the saved copy
+    F.sent[f.id + '_' + r.at] = rec; F.sv++; changed();   // shows at once; the listener brings the saved copy
     api.ready().then(function () { return api.W([['set', api.docRef('fnsent', f.id + '_' + r.at), rec, true]]); }).then(function () {
       api.say((f.rounds.length > 1 ? 'Round ' + (i + 1) : 'The platters') + (on ? ' ticked as sent.' : ' not sent after all.'));
     }, function () {
-      if (x) F.sent[f.id + '_' + r.at] = x; else delete F.sent[f.id + '_' + r.at]; changed();
+      if (x) F.sent[f.id + '_' + r.at] = x; else delete F.sent[f.id + '_' + r.at]; F.sv++; changed();
       // the tick went back: say why on screen too, not only to a screen reader (5 Nov 2026, the audit found nothing showed)
       var why = on ? 'Not saved: ' + (f.rounds.length > 1 ? 'round ' + (i + 1) : 'the platters') + ' not ticked as sent. Check the signal and try again.' : 'Not saved. Only the person who ticked it, within 2 minutes, or a chef can take a tick back.';
       if (prep.toast) prep.toast(why, { label: 'OK', fn: function () {} }, 0, 'bad'); else api.say(why);
     });
+  }
+
+  /* ---------- sending a trip, confirming it, taking it back (14 Nov 2026) ----------
+     Each shows at once and says Not sent yet until the server answers (F.pend); a refusal puts it back and says why in
+     red, and a refused send keeps the picks. One button press is one trip: for 1.5 seconds after a press, and while it
+     waits, the round's Send button rests ("Sending trip 3..."), so a double tap never sends a second trip. */
+  var I_TICK = '<svg class="fn-i" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var I_TICKS = '<svg class="fn-i" width="22" height="16" viewBox="0 0 30 24" aria-hidden="true"><path d="M2 12.5l5 5L18 6.5M12 17.5L23 6.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var I_WAIT = '<svg class="fn-i" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10M7 21h10M8 3c0 5 8 6 8 9s-8 4-8 9M16 3c0 5-8 6-8 9s8 4 8 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  var I_CLOCK = '<svg class="fn-i" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
+  var I_BANG = '<svg class="fn-i" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 7v6M12 16.5v.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
+  var I_BOX = '<svg class="fn-i" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>';
+  // a waiting trip's state, in words beside its icon: Not sent yet (this phone's write), Waiting, Waiting N min (10 or
+  // more: named attention), Not confirmed (the function's window is over)
+  function waitPill(f, x, t) {
+    if (F.pend[x.id]) return '<span class="fn-ws is-pend">' + I_CLOCK + ' Not sent yet</span>';
+    if (f.until && t >= f.until) return '<span class="fn-ws is-never">' + I_BANG + ' Not confirmed</span>';
+    var m = Math.floor((t - x.sentAt) / MIN);
+    return m >= 10 ? '<span class="fn-ws is-long">' + I_WAIT + ' Waiting ' + m + ' min</span>' : '<span class="fn-ws">' + I_WAIT + ' Waiting</span>';
+  }
+  function bad(prep, api, why) { if (prep.toast) prep.toast(why, { label: 'OK', fn: function () {} }, 0, 'bad'); else api.say(why); }
+  var SEND = {};   // a round's Send at rest after a press: SEND['<fid>_<round time>'] = { k, at }
+  // resting for 1.5 seconds after a press (a double tap lands here), unless that trip was taken back; a trip still
+  // waiting for the signal says Not sent yet on the shelf and never holds the round's button longer
+  function sendBusy(key) { var b = SEND[key], x = b && F.sent[key + '_t' + b.k]; return !!b && now() - b.at < 1500 && !(x && x.void); }
+  function sendRest(key) { var b = SEND[key]; return F.pend[key + '_t' + b.k] ? 'Sending trip ' + b.k + '...' : 'Sent trip ' + b.k; }
+  // all: the sheet's Send (everything left); otherwise the picks on the service view, or everything left with none
+  function sendTrip(fid, i, all) {
+    var f = byId(fid), prep = P(); if (!f || !prep) return;
+    var r = (f.rounds || [])[i], api = prep.book(), me = api.who();
+    if (!me && !(prep.state && prep.state.user)) { sheetClose(false, true); prep.signIn(location.hash || '#/'); return; }
+    if (!r || !r.at || !canSend()) return;
+    var key = f.id + '_' + r.at, st = roundState(f, i);
+    if (!st || st.all || sendBusy(key)) return;
+    var pk = all ? {} : pickOf(f, i, st), picked = Object.keys(pk).length > 0, n = {}, q = 0;
+    (f.lines || []).forEach(function (l, j) { var v = picked ? (pk[l.rid] || 0) : st.left[j]; if (v > 0) { n[l.rid] = v; q += v; } });
+    if (!q) return;
+    var k = st.nextK, id = key + '_t' + k, t = now(), rec = { fid: f.id, at: r.at, day: kday(r.at), k: k, n: n, sentAt: t, sentBy: me };
+    var done = (f.lines || []).every(function (l, j) { return st.left[j] - (n[l.rid] || 0) <= 0; }), whole = done && !st.sentTot;
+    var leg = F.sent[key], legRec = done && !(leg && leg.sent) ? { fid: f.id, at: r.at, day: kday(r.at), sent: true, sentAt: t, sentBy: me } : null;
+    var ops = [['set', api.docRef('fnsent', id), rec]];
+    if (legRec) ops.push(['set', api.docRef('fnsent', key), legRec, true]);   // the round's own Sent: older phones read only this
+    var keep = PK.r[key]; delete PK.r[key]; delete PK.note[key];
+    F.sent[id] = rec; if (legRec) F.sent[key] = Object.assign({}, leg || {}, legRec); F.pend[id] = true; F.sv++;
+    SEND[key] = { k: k, at: t }; setTimeout(changed, 1600);
+    changed();
+    var lead = f.rounds.length > 1 ? 'Round ' + (i + 1) : 'The platters', what = tripText(f, n);
+    api.ready().then(function () { return api.W(ops); }).then(function () {
+      delete F.pend[id]; F.sv++; changed();
+      api.say(whole ? lead + ' ticked as sent. Waiting for Functions to confirm.' : 'Trip ' + k + ' sent: ' + what + '. Waiting for Functions to confirm.');
+    }, function (e) {
+      delete F.pend[id]; delete SEND[key];   // the answer came: a retry is a new press, not a double tap
+      if (F.sent[id] === rec) delete F.sent[id];
+      if (legRec) { if (leg) F.sent[key] = leg; else delete F.sent[key]; }
+      if (keep && !PK.r[key]) PK.r[key] = keep;
+      F.sv++; changed();
+      var refused = e && e.code === 'permission-denied';
+      bad(prep, api, refused ? 'Not saved: trip ' + k + ' (' + what + ') was not sent. Someone may have sent trip ' + k + ' first. ' + (keep ? 'Your picks are kept: check what is left and send again.' : 'Check what is left and send again.') :
+        'Not saved: ' + (whole ? lead.toLowerCase() + ' not ticked as sent' : 'trip ' + k + ' (' + what + ') not sent') + '. Check the signal and try again.');
+    });
+  }
+  // Functions confirms a trip (forFn: a head or sous chef, for Functions, 10 minutes after it was sent)
+  function tripOut(id, forFn) {
+    var prep = P(), api = prep && prep.book(), x = F.sent[id], t0 = tripRec(id, x), f = t0 && byId(t0.fid);
+    if (!api || !t0 || !f || t0.outAt || t0.void || F.pend[id]) return;
+    var me = api.who();
+    if (!me) { prep.signIn(location.hash || '#/'); return; }
+    var up = { outAt: now(), outBy: me, outFor: !!forFn }, what = f.name + ' trip ' + t0.k + ' (' + tripText(f, t0.n) + ')';
+    F.sent[id] = Object.assign({}, x, up); F.pend[id] = true; F.sv++; changed();
+    api.ready().then(function () { return api.W([['set', api.docRef('fnsent', id), up, true]]); }).then(function () {
+      delete F.pend[id]; F.sv++; changed();
+      api.say('Confirmed out: ' + what + '.');
+    }, function (e) {
+      delete F.pend[id]; F.sent[id] = x; F.sv++; changed();
+      bad(prep, api, 'Not saved: ' + what + ' not confirmed. ' + (e && e.code === 'permission-denied' ? 'It may have been confirmed or taken back already.' : 'Check the signal and try again.'));
+    });
+  }
+  // Undo a trip still waiting (the sender within 2 minutes, or a head or sous chef). If it ticked its round's own Sent
+  // and the round is no longer all sent, that tick goes back in the same write.
+  function tripUndo(id) {
+    var prep = P(), api = prep && prep.book(), x = F.sent[id], t0 = tripRec(id, x), f = t0 && byId(t0.fid);
+    if (!api || !t0 || !f || t0.outAt || t0.void || F.pend[id]) return;
+    var me = api.who(); if (!me) { prep.signIn(location.hash || '#/'); return; }
+    var key = t0.fid + '_' + t0.at, leg = F.sent[key], i = (f.rounds || []).map(function (r) { return r.at; }).indexOf(t0.at), st = i >= 0 ? roundState(f, i) : null;
+    var stillAll = st && (f.lines || []).every(function (l, j) { return st.sent[j] - (t0.n[l.rid] || 0) >= st.booked[j]; });
+    var t = now(), up = { void: true, voidAt: t, voidBy: me }, ops = [['set', api.docRef('fnsent', id), up, true]];
+    var legBack = leg && leg.sent && !stillAll ? { fid: t0.fid, at: t0.at, day: kday(t0.at), sent: false, sentAt: leg.sentAt, sentBy: leg.sentBy } : null;
+    if (legBack) ops.push(['set', api.docRef('fnsent', key), legBack, true]);
+    F.sent[id] = Object.assign({}, x, up); if (legBack) F.sent[key] = Object.assign({}, leg, legBack); F.pend[id] = true; F.sv++; changed();
+    var what = 'trip ' + t0.k + ' of ' + f.name + ' (' + tripText(f, t0.n) + ')';
+    if (SEND[key] && SEND[key].k === t0.k) delete SEND[key];
+    api.ready().then(function () { return api.W(ops); }).then(function () {
+      delete F.pend[id]; F.sv++; changed();
+      if (prep.toast) prep.toast('Undone: ' + what + '. It is to send again.'); else api.say('Undone: ' + what + '.');
+    }, function () {
+      delete F.pend[id]; F.sent[id] = x; if (legBack) F.sent[key] = leg; F.sv++; changed();
+      bad(prep, api, 'Not saved: ' + what + ' not taken back. Only the sender within 2 minutes, or a chef, can take a trip back, and not once Functions has it.');
+    });
+  }
+
+  /* ---------- the picks: what goes in the next trip, on the service view (14 Nov 2026) ----------
+     Held in this page's memory only, per person: a tap on a kind picks all that is left of it, − takes one off, a big
+     count can be typed. Never saved until Send. Each redraw cuts them to what is still left (another phone sent some)
+     and says so; leaving the service view, a different person, the daily lock or a handover clears them. */
+  var PK = { who: '', r: {}, note: {} };
+  function pickOf(f, i, st) {
+    if (PK.who !== ahWho()) PK = { who: ahWho(), r: {}, note: {} };
+    var r = (f.rounds || [])[i], key = r && f.id + '_' + r.at, pk = key && PK.r[key];
+    if (!pk) return {};
+    var out = {}, cut = false;
+    (f.lines || []).forEach(function (l, j) { var v = pk[l.rid] || 0; if (!v) return; var m = Math.min(v, st ? st.left[j] : v); if (m < v) cut = true; if (m > 0) out[l.rid] = m; });
+    if (cut) PK.note[key] = 'Some of the picks were sent from another phone.';
+    if (Object.keys(out).length) PK.r[key] = out; else delete PK.r[key];
+    return out;
+  }
+  function pickSet(fid, i, rid, v) {
+    var f = byId(fid), r = f && (f.rounds || [])[i]; if (!r) return;
+    var key = f.id + '_' + r.at, st = roundState(f, i), j = (f.lines || []).map(function (l) { return l.rid; }).indexOf(rid);
+    if (!st || j < 0) return;
+    if (PK.who !== ahWho()) PK = { who: ahWho(), r: {}, note: {} };
+    var pk = PK.r[key] = PK.r[key] || {};
+    v = Math.max(0, Math.min(st.left[j], Math.floor(+v) || 0));
+    if (v) pk[rid] = v; else delete pk[rid];
+    if (!Object.keys(pk).length) { delete PK.r[key]; delete PK.note[key]; }
   }
   /* The sheet leads with what goes out next (22 Oct 2026): the first round not ticked as sent, its time, each platter with
      a big number, and its Sent button. The kitchen does not need the guests here, only the platters and when. */
@@ -967,9 +1196,10 @@
     if (!f.first) return nextBox('Next out', 'Times TBC', tot + ' ' + (tot === 1 ? 'platter' : 'platters'), rows());
     var k = nextOpen(f, function (i) { return tick && !!sentRec(f, i); });
     if (k < 0) { var last = sentRec(f, n - 1); return nextBox('Done', 'All sent', esc(n > 1 ? 'All ' + n + ' rounds, the last ' + sentText(last) : sentText(last)), '<div class="fn-next-sent">' + sentCell(f, n - 1) + '</div>'); }
-    var r = f.rounds[k], late = tick && r.at < t, rc = roundCounts(f, k), q = sum(rc);
+    var r = f.rounds[k], late = tick && r.at < t, st = tick ? roundState(f, k) : null, rc = st ? st.left : roundCounts(f, k), q = sum(rc);
     var head = (f.mode === 'all' ? 'All at ' : '') + when(r.at, f.date) + (n > 1 ? ' · round ' + (k + 1) + ' of ' + n : '');
-    var sub = (late ? '<span class="fn-late">Due ' + esc(when(r.at, f.date)) + ', not sent yet</span> · ' : '') + q + ' ' + (q === 1 ? 'platter' : 'platters') + (n > 1 ? ' of ' + tot : '') + (r.note ? ' · ' + esc(r.note) : '');
+    var part = st && st.sentTot ? st.sentTot + ' of ' + st.bookedTot + ' sent in ' + st.trips.length + (st.trips.length === 1 ? ' trip' : ' trips') + ', ' + q + ' left' : '';
+    var sub = (late ? '<span class="fn-late">Due ' + esc(when(r.at, f.date)) + ', not sent yet</span> · ' : '') + (part || q + ' ' + (q === 1 ? 'platter' : 'platters') + (n > 1 ? ' of ' + tot : '')) + (r.note ? ' · ' + esc(r.note) : '');
     return nextBox('Next out', head, sub, rows(rc) + (tick ? '<div class="fn-next-sent">' + sentCell(f, k) + '</div>' : ''));
   }
   /* The whole function, straight under Next out (22 Oct 2026): every platter booked, added up over all its rounds, each
@@ -1206,11 +1436,16 @@
     if (probs.length) out += '<section class="fn-paper-warning"><h2>Still to check</h2><ul>' + probs.map(function (p) { return '<li>' + esc(p.t) + '</li>'; }).join('') + '</ul></section>';
     out += '<section><h2>Send in this order</h2><ol class="fn-paper-rounds">' + R.map(function (r, i) {
       var a = roundCounts(f, i), sent = !opts.unsaved && sentRec(f, i), otherDay = r.at && kday(r.at) !== f.date;
+      // the trips this round went out in (14 Nov 2026): who sent what when, and whether Functions confirmed it
+      var st = !opts.unsaved && f.id && r.at ? roundState(f, i) : null, part = st && !sent && st.sentTot ? st.sentTot + ' of ' + st.bookedTot + ' sent' : '';
+      var trips = st && st.trips.length ? '<p class="fn-paper-text fn-paper-trips">' + st.trips.map(function (x) {
+        return 'Trip ' + x.k + ', ' + esc(kclock(x.sentAt)) + ' ' + esc(nameOf(x.sentBy)) + ': ' + esc(tripText(f, x.n)) + '. ' + (x.outAt ? 'Out ' + esc(kclock(x.outAt)) + ', ' + esc(nameOf(x.outBy)) + (x.outFor ? ' for Functions' : '') + '.' : 'Not confirmed.');
+      }).join(' ') + '</p>' : '';
       return '<li class="fn-paper-round"><div class="fn-paper-time"><b>' + esc(r.at ? kclock(r.at) : 'TBC') + '</b>' +
         (otherDay ? '<small>' + esc(when(r.at, f.date)) + '</small>' : '') + '<span>' + sum(a) + ' platters</span></div><div class="fn-paper-send"><h3>Round ' + (i + 1) + '</h3><ul class="fn-paper-lines">' +
         L.map(function (l, j) { return a[j] > 0 ? '<li><b>' + a[j] + '</b><span>' + esc(l.name) + '</span></li>' : ''; }).join('') + '</ul>' +
         (r.note ? '<p class="fn-paper-text fn-paper-round-note">' + esc(r.note) + '</p>' : '') + '</div><div class="fn-paper-sent">' +
-        (f.status === 'cancelled' ? 'Cancelled' : '<span class="fn-paper-tick' + (sent ? ' is-sent' : '') + '" aria-hidden="true"></span><span>' + (sent ? 'Sent ' + esc(kclock(sent.sentAt)) : 'Sent') + '</span>') + '</div></li>';
+        (f.status === 'cancelled' ? 'Cancelled' : '<span class="fn-paper-tick' + (sent ? ' is-sent' : '') + '" aria-hidden="true"></span><span>' + (sent ? 'Sent ' + esc(kclock(sent.sentAt)) : part ? esc(part) : 'Sent') + '</span>') + '</div>' + trips + '</li>';
     }).join('') + '</ol>' + (!R.length ? '<p>No rounds entered yet.</p>' : '') + '</section>';
     out += '<section class="fn-paper-totals"><h2>Total booked / ' + esc(printQty(totalQty(f))) + ' platters</h2><ul class="fn-paper-lines">' + L.map(function (l) {
       return '<li><b>' + esc(printQty(l.qty)) + '</b><span>' + esc(l.name) + (l.unit && l.unit !== 'platter' ? ' (' + esc(unitOf(l, l.qty)) + ')' : '') + '</span></li>';
@@ -1330,34 +1565,79 @@
     return (f.lines || []).map(function (l, i) { return { l: l, q: a[i] }; }).filter(function (x) { return x.q > 0; })
       .map(function (x) { return '<span class="fn-svc-q"><b>' + x.q + '</b> <span class="fn-x">\u00d7</span> ' + esc(short(x.l.name)) + '</span>'; }).join('');
   }
+  /* The two-way check (head chef, 14 Nov 2026, docs/function-handover-options/brief.md, Chosen): the kitchen taps what
+     goes now (each kind left is a button; a tap picks all of it, − takes one off) and presses one button that says what
+     it sends: Send all 5, or Send 4 platters. Each send is a trip. A row says how much went; every trip waiting for
+     Functions is one line on the shelf at the end of the board, counted in the board's top line. Functions people
+     confirm each trip (Confirm out); a head or sous chef may confirm for Functions 10 minutes after it was sent.
+     Functions-only staff see the shelf first and no send buttons. No reads: the same list and records as the band. */
+  function kindsHTML(f, i, st, pk) {
+    return '<ul class="fn-svc-kinds" aria-label="Tap what goes now">' + (f.lines || []).map(function (l, j) {
+      var left = st.left[j], v = pk[l.rid] || 0, nm = esc(short(l.name)), d = ' data-id="' + esc(f.id) + '" data-r="' + i + '|' + esc(l.rid) + '"';
+      if (left <= 0) return '';
+      if (!v) return '<li class="fn-svc-kind"><button type="button" class="fn-svc-k" data-fn="pick"' + d + ' aria-pressed="false">' + I_BOX + '<b>' + left + '</b> <span class="fn-x">×</span> ' + nm + '</button><span class="fn-svc-kslot" aria-hidden="true"></span></li>';
+      return '<li class="fn-svc-kind"><button type="button" class="fn-svc-k is-pick" data-fn="pick"' + d + ' aria-pressed="true"><b>' + v + '</b> <span class="fn-x">×</span> ' + nm +
+        (v < left ? ' <span class="fn-svc-kof">of ' + left + '</span>' : '') + ' <span class="fn-svc-kin">In this trip</span></button>' +
+        (left >= 10 ? '<input class="fn-svc-knum" type="number" inputmode="numeric" min="1" max="' + left + '" value="' + v + '" data-fn="pick-num"' + d + ' aria-label="How many ' + nm + ' in this trip">' : '') +
+        '<button type="button" class="fn-svc-kless" data-fn="pick-less"' + d + ' aria-label="One fewer ' + nm + '">−</button></li>';
+    }).join('') + '</ul>';
+  }
+  function shelfHTML(t, me, coord) {
+    var wt = waitingTrips(), outs = outTrips(t), chef = isChef();
+    if (!wt.length && !outs.length) return '';
+    var out = '<section class="fn-svc-shelf" id="fn-shelf" aria-label="Waiting for Functions"><h4 class="fn-svc-sh">Waiting for Functions <small>' + (coord ? 'confirm each trip when it is out' : 'sent, not confirmed yet') + '</small></h4>';
+    if (wt.length) out += '<ul class="fn-svc-trips">' + wt.map(function (w) {
+      var f = w.f, x = w.t, pend = !!F.pend[x.id], age = t - x.sentAt, mine = x.sentBy === me, acts = '';
+      if (!pend) {
+        if (fnPerson(me) && !mine) acts += '<button type="button" class="btn fn-out-b" data-fn="trip-out" data-id="' + esc(x.id) + '">' + I_TICKS + ' Confirm out</button>';
+        else if (chef && age >= 10 * MIN) acts += '<button type="button" class="btn fn-for-b" data-fn="trip-for" data-id="' + esc(x.id) + '">Confirm for Functions</button>';
+        if (canSend() && (chef || mine && age < 2 * MIN)) acts += '<button type="button" class="linkish fn-svc-link" data-fn="trip-undo" data-id="' + esc(x.id) + '">Undo</button>';
+      }
+      return '<li class="fn-svc-trip"><span class="fn-svc-tw"><b>' + esc(kclock(f.rounds[w.i].at)) + ' ' + esc(f.name) + '</b>' + (f.loc ? ' · ' + esc(f.loc) : '') + ' · <span class="fn-trip-k">Trip ' + x.k + '</span> ' + esc(tripText(f, x.n)) +
+        ' · ' + (pend && !x.outAt ? '' : I_TICK + ' sent ' + esc(kclock(x.sentAt)) + ' ' + esc(nameOf(x.sentBy))) + '</span>' + waitPill(f, x, t) + acts + '</li>';
+    }).join('') + '</ul>';
+    if (outs.length) {
+      var o = outs[0];
+      out += '<p class="fn-svc-outs">' + I_TICKS + ' Out today: ' + outs.length + (outs.length === 1 ? ' trip' : ' trips') + '. Last: ' + esc(o.f.name) + ' trip ' + o.t.k + ', ' + esc(kclock(o.t.outAt)) + ' ' +
+        esc(o.t.outFor ? nameOf(o.t.outBy) + ' for Functions' : nameOf(o.t.outBy)) + '.</p>';
+    }
+    return out + '</section>';
+  }
   function serviceHTML(t) {
-    var sv = service(F.list, t, isSentK), q = sum(sv.plate.map(function (p) { return p.qty; }));
-    var just = F.list.filter(function (f) { return f.status === 'confirmed'; }).map(function (f) {
-      return (f.rounds || []).map(function (r, i) { var x = sentRec(f, i); return x && t - x.sentAt < 2 * MIN ? { f: f, i: i } : null; }).filter(Boolean);
-    }).reduce(function (a, b) { return a.concat(b); }, []);
+    var sv = service(F.list, t, isSentK, leftK, keepK), q = sum(sv.plate.map(function (p) { return p.qty; }));
+    var me = ahWho(), cook = canSend(), coord = !cook, wt = waitingTrips(), long = wt.filter(function (w) { return !F.pend[w.t.id] && t - w.t.sentAt >= 10 * MIN; }).length;
     /* Redesign step 5 (8 Nov 2026, Flighty's live board, every-page.html e-service): the rounds still to go out on the
        dark board, each with how long until it goes (or how late it is), the platters, the function's service and
-       dietary notes on every round, and its Sent tick, as before. Both prints moved to the end. The page is drawn again
+       dietary notes on every round, and its Send, as before. Both prints moved to the end. The page is drawn again
        every 20 seconds while open (no reads), so the minutes keep up. Since 8 Nov 2026 (the audit against the drawing) the
        board holds every round of the night still to go, not only each function's next one, and each row says one thing
-       about its time: how long until it goes, or how late it is (it said "Later" and "In 20 min" at once). The next hour's
-       plain list went: those rounds are on the board, with their dietaries and their tick. */
+       about its time: how long until it goes, or how late it is. */
     function left(at) { var m = Math.round((at - t) / MIN); return m < 0 ? -m + ' min late' : !m ? 'Now' : m < 60 ? 'In ' + m + ' min' : 'In ' + Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + m % 60 + ' min' : ''); }
-    var out = '<section class="set-block fn-page fn-svc-page"><div class="fn-page-head"><h2 id="rtitle" tabindex="-1">Service</h2></div><p class="hint">Every round still to go out, in order. Tick each round as it goes out.</p>' + (known() ? '' : waitHTML());
-    if (known() && !sv.all.length) out += '<p class="hint">Nothing to send: no function has a round still to go out.</p>';
-    if (sv.all.length) out += '<div class="fn-svc-board"><div class="fn-svc-bh"><h3 class="fn-svc-bt">Still to go out</h3><b class="fn-svc-clock">' + esc(kclock(t)) + '</b></div><ul class="fn-svc-rows">' + sv.all.map(function (r) {
-      var n = r.f.rounds.length;
+    var out = '<section class="set-block fn-page fn-svc-page"><div class="fn-page-head"><h2 id="rtitle" tabindex="-1">Service</h2></div><p class="hint">' +
+      (coord ? 'What the kitchen has sent, waiting for you to confirm, then every round still to go out.' : 'Every round still to go out, in order. Tap what goes now, then Send. Functions confirms each trip.') + '</p>' + (known() ? '' : waitHTML());
+    if (known() && !sv.all.length && !wt.length) out += '<p class="hint">Nothing to send: no function has a round still to go out.</p>';
+    var rows = sv.all.length ? '<ul class="fn-svc-rows">' + sv.all.map(function (r) {
+      var n = r.f.rounds.length, st = roundState(r.f, r.k), key = r.f.id + '_' + r.f.rounds[r.k].at, pk = cook ? pickOf(r.f, r.k, st) : {}, pq = sum(Object.keys(pk).map(function (x) { return pk[x]; }));
+      var busy = cook && sendBusy(key), lab = busy ? sendRest(key) : pq ? 'Send ' + pq + (pq === 1 ? ' platter' : ' platters') : 'Send all ' + st.leftTot;
       return '<li class="fn-svc-row' + (r.late ? ' is-late' : r.due ? '' : ' is-later') + '"><p class="fn-svc-top"><b class="fn-due' + (r.late ? ' is-late' : '') + '">' + esc(when(r.at, kday(t))) + '</b>' +
         (r.late ? ' <span class="fn-late">Late</span>' : '') + ' <button type="button" class="linkish fn-svc-name" data-fn="open" data-id="' + esc(r.f.id) + '" aria-haspopup="dialog">' + esc(r.f.name) + '</button>' +
         (r.f.loc ? ' · ' + esc(r.f.loc) : '') + (n > 1 ? ' · round ' + (r.k + 1) + ' of ' + n : '') + ' <span class="fn-svc-cd">' + esc(left(r.at)) + '</span></p>' +
-        '<p class="fn-svc-what">' + svcLine(r.f, r.a) + ' <span class="fn-of">(' + sum(r.a) + ')</span></p>' +
+        (st.sentTot ? '<p class="fn-svc-sub">' + I_TICK + ' ' + st.sentTot + ' of ' + st.bookedTot + ' sent in ' + st.trips.length + (st.trips.length === 1 ? ' trip' : ' trips') + '. <b>' + st.leftTot + ' left</b>' + (cook ? ', tap what goes now:' : ':') + '</p>' : '') +
+        (pq ? '<p class="fn-svc-sub fn-svc-pend">' + I_CLOCK + ' <i>In this trip: ' + esc(tripText(r.f, pk)) + '. Not sent yet.</i>' + (PK.note[key] ? ' ' + esc(PK.note[key]) : '') + '</p>' : '') +
+        (cook ? kindsHTML(r.f, r.k, st, pk) : '<p class="fn-svc-what">' + svcLine(r.f, r.a) + ' <span class="fn-of">(' + sum(r.a) + ')</span></p>') +
         (r.f.rounds[r.k].note ? '<p class="fn-svc-note">' + esc(r.f.rounds[r.k].note) + '</p>' : '') +
         (r.f.notes ? '<p class="fn-svc-diet"><span class="fn-svc-dl">Dietaries and notes</span><span class="fn-svc-dt">' + esc(r.f.notes) + '</span></p>' : '') +
-        '<div class="fn-next-sent">' + sentCell(r.f, r.k) + '</div></li>';
-    }).join('') + '</ul></div>';
-    if (just.length) out += '<p class="fn-svc-just">' + just.map(function (j) { var x = sentRec(j.f, j.i); return esc(j.f.name) + (j.f.rounds.length > 1 ? ' round ' + (j.i + 1) : '') + ' sent ' + esc(kclock(x.sentAt) + ', ' + nameOf(x.sentBy)) + ' ' + sentCell(j.f, j.i).replace(/^<span class="fn-sent-ok">[\s\S]*?<\/small><\/span>/, ''); }).join('<br>') + '</p>';
+        (cook ? '<div class="fn-next-sent"><button type="button" class="btn fn-sent-b" data-fn="send" data-id="' + esc(r.f.id) + '" data-r="' + r.k + '"' + (busy ? ' disabled aria-disabled="true"' : '') + '>' + esc(lab) + '</button>' +
+          (pq && !busy ? '<button type="button" class="linkish fn-svc-link" data-fn="pick-clear" data-id="' + esc(r.f.id) + '" data-r="' + r.k + '">Clear</button>' : '') + '</div>' : '') + '</li>';
+    }).join('') + '</ul>' : '';
+    var shelf = shelfHTML(t, me, coord);
+    if (sv.all.length || shelf) {
+      out += '<div class="fn-svc-board"><div class="fn-svc-bh"><h3 class="fn-svc-bt">' + (coord ? 'Functions service' : 'Still to go out') + '</h3><b class="fn-svc-clock">' + esc(kclock(t)) + '</b></div>' +
+        (cook && wt.length && sv.all.length ? '<button type="button" class="linkish fn-svc-wl" data-fn="shelf">' + I_WAIT + ' ' + wt.length + (wt.length === 1 ? ' trip' : ' trips') + ' waiting for Functions' + (long ? ', ' + long + ' over 10 min' : '') + '</button>' : '') +
+        (coord ? shelf + (rows ? '<div class="fn-svc-sec"><h4 class="fn-svc-sh">Still to go out <small>the kitchen sends these</small></h4>' + rows + '</div>' : '') : rows + shelf) + '</div>';
+    }
     if (sv.plate.length) out += '<section class="fn-next" aria-label="To plate now"><p class="fn-next-h"><span class="fn-next-l">To plate now</span> <b>' + q + ' ' + (q === 1 ? 'platter' : 'platters') + '</b></p>' +
-      '<p class="fn-next-s">Late and due in the next 15 minutes, all functions together.</p><ul class="fn-next-list">' + sv.plate.map(function (p) {
+      '<p class="fn-next-s">Late and due in the next 15 minutes, all functions together. What was sent is not counted.</p><ul class="fn-next-list">' + sv.plate.map(function (p) {
         return bigRow(p.qty, p.name, p.rid);
       }).join('') + '</ul></section>';
     return out + stateNote() + '<div class="btn-row fn-svc-prints">' + prepButton(kday(t), t) + '<button type="button" class="btn" data-fn="print-day"' + (!known() || !printDayList(t).length ? ' disabled' : '') + '>Print run sheet</button></div>' +
@@ -1485,7 +1765,7 @@
       var w = nowOf(f, t);
       if (w.done) return;   // every round sent: nothing still to come
       var n = (f.rounds || []).length, k = w.k, at = f.first && k >= 0 ? f.rounds[k].at : 0, left = at ? Math.round((at - t) / MIN) : null;
-      var what = f.first ? linesText(f, roundCounts(f, k)) : linesText(f);
+      var what = f.first ? linesText(f, leftK(f, k)) : linesText(f);
       out.push({ id: f.id, kind: 'on', name: f.name, sub: (!f.first ? 'Times TBC' : n > 1 ? 'Round ' + (k + 1) + ' of ' + n : 'All') + (what ? ' · ' + what : ''), time: w.time, at: at,
         note: w.late ? 'Not sent yet' : left != null && left <= 60 ? 'In ' + left + ' min' : n > 1 ? 'Round ' + (k + 1) : '', hot: !!w.late || (left != null && left <= 15) });
     });
@@ -1566,6 +1846,19 @@
     if (a === 'open') { sheetOpen(el.getAttribute('data-id'), el); return; }
     if (a === 'close') { sheetClose(true); return; }
     if (a === 'sent' || a === 'unsent') { tickSent(el.getAttribute('data-id'), +el.getAttribute('data-r'), a === 'sent'); return; }
+    // the two-way check (14 Nov 2026): pick what goes, send it as a trip, Functions confirms it
+    if (a === 'send') { if (!el.disabled) sendTrip(el.getAttribute('data-id'), +el.getAttribute('data-r'), el.getAttribute('data-v') === 'all'); return; }
+    if (a === 'pick' || a === 'pick-less') {
+      var pr = String(el.getAttribute('data-r') || '').split('|'), pf = byId(el.getAttribute('data-id')), pi = +pr[0], prid = pr.slice(1).join('|');
+      var pst = pf && roundState(pf, pi), pk0 = pf && pst ? pickOf(pf, pi, pst) : {}, pj = pf ? (pf.lines || []).map(function (l) { return l.rid; }).indexOf(prid) : -1;
+      if (!pst || pj < 0) return;
+      pickSet(pf.id, pi, prid, a === 'pick-less' ? (pk0[prid] || 0) - 1 : pk0[prid] ? 0 : pst.left[pj]);
+      changed(); return;
+    }
+    if (a === 'pick-clear') { var cf = byId(el.getAttribute('data-id')), cr = cf && (cf.rounds || [])[+el.getAttribute('data-r')]; if (cr) { delete PK.r[cf.id + '_' + cr.at]; delete PK.note[cf.id + '_' + cr.at]; } changed(); return; }
+    if (a === 'trip-out' || a === 'trip-for') { tripOut(el.getAttribute('data-id'), a === 'trip-for'); return; }
+    if (a === 'trip-undo') { tripUndo(el.getAttribute('data-id')); return; }
+    if (a === 'shelf') { var sh = document.getElementById('fn-shelf'); if (sh) { sh.scrollIntoView({ block: 'start' }); sh.setAttribute('tabindex', '-1'); sh.focus({ preventScroll: true }); } return; }
     if (a === 'go') { sheetClose(false, true); return; }
     if (a === 'ckhide') { try { localStorage.setItem('lk.fn.ckhide', kday(now())); } catch (x) {} if (window.LK_PREP && window.LK_PREP.sg) window.LK_PREP.sg('checks', 'd'); paint(); return; }
     if (a === 'fold') { lsSet('lk.fn.fold', lsGet('lk.fn.fold') === kday(now()) ? null : kday(now())); lastBand = null; paint(); var fb = document.querySelector('#fn-band [data-fn="fold"]'); if (fb) fb.focus({ preventScroll: true }); return; }
@@ -1590,6 +1883,16 @@
     if (a === 'more') { F.more = !F.more; lastBand = null; paint(); var mb = document.querySelector('#fn-band [data-fn="more"]'); if (mb) mb.focus({ preventScroll: true }); return; }
     if (a === 'days') { pageDays = +el.getAttribute('data-v') || 7; try { window.dispatchEvent(new Event('lk-fn')); } catch (x) {} }
   });
+  document.addEventListener('input', function (e) {
+    var el = e.target && e.target.closest && e.target.closest('[data-fn="pick-num"]');
+    if (!el) return;
+    var pr = String(el.getAttribute('data-r') || '').split('|'), f = byId(el.getAttribute('data-id')), i = +pr[0];
+    if (!f) return;
+    pickSet(f.id, i, pr.slice(1).join('|'), el.value);
+    var st = roundState(f, i), pk = st ? pickOf(f, i, st) : {}, q = sum(Object.keys(pk).map(function (x) { return pk[x]; }));
+    var b = el.closest('.fn-svc-row') && el.closest('.fn-svc-row').querySelector('[data-fn="send"]');
+    if (b && !b.disabled) b.textContent = q ? 'Send ' + q + (q === 1 ? ' platter' : ' platters') : 'Send all ' + (st ? st.leftTot : '');
+  });
   document.addEventListener('keydown', function (e) {
     if (!sheetEl) return;
     if (e.key === 'Escape') { e.preventDefault(); sheetClose(true); return; }
@@ -1600,7 +1903,7 @@
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     }
   });
-  window.addEventListener('hashchange', function () { sheetClose(false, true); });
+  window.addEventListener('hashchange', function () { sheetClose(false, true); if (location.hash !== '#/fn/now') PK = { who: '', r: {}, note: {} }; });
   // the band comes and goes on time with the screen left open: every 20 seconds it is worked out again (no reads)
   var lastDay = T.day();
   setInterval(function () {

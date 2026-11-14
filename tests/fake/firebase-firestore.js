@@ -628,6 +628,27 @@ function commitOps(ops) {
   const fieldsChanged = (a, b) => [...new Set(Object.keys(a || {}).concat(Object.keys(b || {})))].filter(k => !equalField((a || {})[k], (b || {})[k]));
   const hasCap = (c, cap) => !!actor && !(c.fnOnlyIds || []).includes(actor) && (actor === c.headId || Array.isArray(c[cap + 'Ids']) && c[cap + 'Ids'].includes(actor));
   const chef = c => !!actor && !(c.fnOnlyIds || []).includes(actor) && (actor === c.headId || (c.sousIds || []).includes(actor));
+  // trips sent from the pass (14 Nov 2026), like the rules: created once by a kitchen writer as themselves (an exact
+  // repeat changes nothing, another phone's same trip number is refused); then only Out (Functions people, never the
+  // sender; a head or sous chef for Functions 10 minutes after it was sent) or Undo (the sender within 2 minutes, or a
+  // head or sous chef), and neither after Out or Undo
+  const tripRefused = ops.some(o => {
+    const k = key(o.ref.path);
+    if (!/\/fnsent\/[^/]+_t\d+$/.test(k)) return false;
+    if (o.kind === 'delete') return true;
+    const old = store[k], next = after(o), c = cfgOf(o.ref), t = requestNow(), lead = admin || chef(c), fnPeople = (c.fnIds || []).concat(c.fnOnlyIds || []);
+    if (!old) return !admin && (c.fnOnlyIds || []).includes(actor) || next.sentBy !== next.by || !next.n || !Object.keys(next.n).length;
+    if (equalField(old, next)) return false;
+    if (old.outAt || old.void) return true;
+    const changes = fieldsChanged(old, next);
+    if (changes.every(x => ['outAt', 'outBy', 'outFor', 'by'].includes(x))) {
+      if (next.outBy !== next.by) return true;
+      return next.outFor === true ? !lead || t - old.sentAt < 600000 : next.by === old.sentBy || !fnPeople.includes(next.by);
+    }
+    if (changes.every(x => ['void', 'voidAt', 'voidBy', 'by'].includes(x))) return !(lead || old.sentBy === next.by && t - old.sentAt < 120000);
+    return true;
+  });
+  if (tripRefused) return Promise.reject({ code: 'permission-denied' });
   const ownUndo = (old, next, changes, c) => hasCap(c, 'add') && old.addedById === actor && Number.isFinite(old.addedAt) && old.addedAt <= requestNow() && requestNow() - old.addedAt < 120000 &&
     old.done !== true && old.ordered !== true && old.deleted !== true && next.deleted === true && changes.every(k => ['deleted', 'deletedBy', 'deletedAt', 'by'].includes(k));
   const fnLine = (op, old, next, changes, c) => {

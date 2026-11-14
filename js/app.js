@@ -2277,6 +2277,9 @@
       // drawn again only when something shows differently, and the button in use keeps the focus
       var m = document.getElementById('main'), y = window.scrollY, h = window.LK_FN.page(r.fid), a = document.activeElement, k = a && a.getAttribute && a.getAttribute('data-fn');
       if (!m || m.lkFn === h) return;
+      // a count being typed on the service view (a big platter kind, 14 Nov 2026) is not replaced under the finger:
+      // the next redraw after it comes
+      if (a && a.tagName === 'INPUT' && m.contains(a)) return;
       k = k ? '[data-fn="' + k + '"][data-id="' + a.getAttribute('data-id') + '"]' + (a.hasAttribute('data-r') ? '[data-r="' + a.getAttribute('data-r') + '"]' : '') : '';
       var had = k && m.contains(a);
       m.innerHTML = h; m.lkFn = h; window.scrollTo(0, y);
