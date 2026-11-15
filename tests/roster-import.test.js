@@ -101,6 +101,11 @@ ok(JSON.stringify(p.days['2026-11-16'].map(x => x.id + ':' + x.sh)) === JSON.str
 ok(p.days['2026-11-19'].filter(x => x.id === 'sk').map(x => x.sh).join(' ') === 'lunch adl dinner', 'plan: Sam Kerr is on Thursday as Sam K');
 ok(p.unmatched.map(u => u.name + ':' + u.looksFor + ':' + u.shifts.length).join(' ') === 'Sam Lee:Sam L:5 Mary Jo Kahale:Mary:5', 'plan: unmatched people are listed with the name looked for and their shifts');
 ok(!Object.values(p.days).some(l => l.some(x => !x.id)), 'plan: nobody unmatched is ever put on a day');
+// each service gets its own part of the roster time (head chef, 16 Nov 2026), and day keeps the whole time to show once
+const mon = p.days['2026-11-16'], part = (id, sh) => { const x = mon.find(e => e.id === id && e.sh === sh); return x ? [x.from, x.to, x.day[0], x.day[1]].join(',') : ''; };
+ok(part('bo', 'lunch') === [mins('10:30'), 900, mins('10:30'), mins('22:00')].join(',') && part('bo', 'adl') === [900, 1020, mins('10:30'), mins('22:00')].join(',') && part('bo', 'dinner') === [1020, 1320, mins('10:30'), mins('22:00')].join(','), 'plan: Bo 10:30 to 22:00 is cut to Lunch 10:30 to 15:00, All day dining 15:00 to 17:00 and Dinner 17:00 to 22:00, each with the whole time as day');
+ok(part('ann', 'adl') === [mins('16:00'), 1020, mins('16:00'), mins('21:30')].join(',') && part('ann', 'dinner') === [1020, mins('21:30'), mins('16:00'), mins('21:30')].join(','), 'plan: Ann 16:00 to 21:30 is All day dining 16:00 to 17:00 and Dinner 17:00 to 21:30');
+ok(!Object.values(p.days).some(l => l.some(x => x.from >= x.to || x.from < KIT.find(k => k.id === x.sh).from || x.to > KIT.find(k => k.id === x.sh).to)), 'plan: no part runs outside its own service or is empty');
 const linked = X.plan(good, BOOK.concat([{ id: 'mj', name: 'MJ' }]), KIT, [{ name: 'Mary Jo Kahale', id: 'mj' }]);
 ok(linked.unmatched.map(u => u.name).join(',') === 'Sam Lee' && linked.days['2026-11-19'].some(x => x.id === 'mj' && x.sh === 'lunch'), 'plan: a linked nickname (Mary Jo Kahale as MJ) is filled on her days');
 const early = X.plan(X.read(build({ people: [['Ann Moss', 'Demi Chef L5', { 1: '06:00-09:00' }]] })), BOOK, KIT);

@@ -5,7 +5,7 @@
 1. "When I add shifts like lunch, all day etc. I'd like them to show up in order when their service times are so. ... And I'd like a remove all shifts for the shown day in the today's team for the admin."
 2. Then, widening it: "We really need to rethink this workflow, now that I can import a CSV. It's super complicated to add someone to a shift and then set their breaks without seeing when they work on that day so maybe even have a bar in line from start time to end time? Mostly this workflow will be done on a computer but it needs to also be considered for phone and tablet sizes."
 
-**Status: round 1a Build smaller (5 of 5); round 1b Build smaller (5 of 5); round 2 C 18, B 10, A 8; the combined preview D (the mix) reviewed by the designer, the skeptic and the new starter and repaired. Recommendation: D, built in three pull requests. Waiting for the head chef's choice.** Role-based analysis, not research with staff. [First proposal](proposal.md), [widened proposal](proposal-timeline.md), [evidence packet](evidence-packet.md).
+**Status: round 1a Build smaller (5 of 5); round 1b Build smaller (5 of 5); round 2 C 18, B 10, A 8; the combined preview D (the mix) reviewed by the designer, the skeptic and the new starter and repaired. Recommendation: D, built in three pull requests. The head chef chose D, cutting roster times to each service, and roster hours for a service added by hand (16 November 2026).** Role-based analysis, not research with staff. [First proposal](proposal.md), [widened proposal](proposal-timeline.md), [evidence packet](evidence-packet.md).
 
 ## Round 1a: time order and Clear this day
 
@@ -300,3 +300,18 @@ Contrast computed from tokens, not rendered (designer): Take off 7.35:1 at rest;
 1. How a roster time maps to services: the roster now saves the whole time on every service it touches (Mo 10:00 to 21:00 on Lunch and on Dinner). Cut it to each service's hours?
 2. A service added by hand (Bea onto Smoker): take that day's roster hours, or the service's hours?
 3. The 9 November rule (Lunch, then Dinner, then saved order) changes to time order.
+
+## Chosen
+
+16 November 2026: the head chef chose **D, the mix (Recommended)**. On the open questions:
+1. **How a roster time maps to services:** the head chef pointed out that All day dining runs 15:00 to 17:00, between Lunch and Dinner, and chose **cut to each service** (Recommended): a 10:00 to 21:00 cook is saved as Lunch 10:00 to 15:00, All day dining 15:00 to 17:00 and Dinner 17:00 to 21:00, and the bar still reads as one day. This changes the 14 November rule (every service a roster time touches, saved with the whole time) to: every service it touches, saved with its own part.
+2. **A service added by hand:** **their roster hours that day** (Recommended), cut to the service's hours; with no roster hours, the service's own hours.
+3. The 9 November order rule gives way to time order.
+
+Recorded in `docs/head-chef-decisions.md`.
+
+## Build plan
+
+1. **Pull request 1, on the current grid:** time order (one comparator for the planner and Home's rota); one helper for a person's hours on a service; break times, + Break's default and Spread inside those hours, with Spread naming who it moved; the hours in words where breaks are set; Clear this day for the head chef in the fold, the arm cancelled by a date pick; a plan with nobody on reads as Not set (week list, chip, To do, roster fill, the page's lead line, Save's words); the roster file cuts each roster time to each service; a service added by hand takes that day's roster hours.
+2. **Pull request 2, the restyle:** D's rows replace the grid, the details panel and its chips, and Whole day review, with Take off and Undo, in one go.
+3. **Pull request 3, after the head chef has used it:** the saved overview and the past day on the same bar and hours helper; dead code and CSS out; design pattern entries.

@@ -364,3 +364,5 @@ The working screen has the service heads stuck at the top, and rows under them d
   - `update-confirmation`: lost its test stand-in mid-reload under load, and passed on a rerun.
   - `function-print` and `function-prep-print`: failed the same way on an untouched copy of `main` in this container, so the cause is the container's print engine. Both pass on GitHub.
 - **Not evidenced:** real phones with real fonts; the live book with real staff and sections; how many cells the nightly usual sections leave empty; wet-hand use of 101 px pills.
+
+**Later (16 November 2026):** the head chef chose D in [the time line brief](../team-order-clear-options/brief.md): services run in time order (this replaces Lunch, then Dinner, then the saved order), break times sit inside each person's hours, and step two replaces this grid with each person's bar on one clock.

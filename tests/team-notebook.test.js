@@ -84,21 +84,22 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
 
   // An unsaved break move cannot change staff\'s published status, including when another chef wins the save.
   await shift(p, 'lunch', 'ann'); await details(p, 'ann');
-  ok(await pick(p, 'tm-at:ann:0', 900), 'draft: Ann\'s break remains editable through the existing controls');
+  // 14:15 (855): the last start a 45 minute break has inside Ann's Lunch to 15:00 (break times inside her hours, 16 Nov 2026)
+  ok(await pick(p, 'tm-at:ann:0', 855), 'draft: Ann\'s break remains editable through the existing controls');
   await L.settle(p, 150);
   ok((await rows(p)).some(r => r.name === 'Ann'), 'draft break: Ann remains scheduled away according to the saved break');
   await press(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k].v === 3, TEAM, 6000);
-  ok(!(await rows(p)).some(r => r.name === 'Ann') && (await saved(p)).br.some(x => x.id === 'ann' && x.at === 900), 'saved break: only a successful Save publishes the moved break to scheduled status');
-  await pick(p, 'tm-at:ann:0', 885); await L.settle(p, 150);
+  ok(!(await rows(p)).some(r => r.name === 'Ann') && (await saved(p)).br.some(x => x.id === 'ann' && x.at === 855), 'saved break: only a successful Save publishes the moved break to scheduled status');
+  await pick(p, 'tm-at:ann:0', 780); await L.settle(p, 150);
   const beforeConflict = await away(p);
   const newer = Object.assign({}, await saved(p), { v: 4, upd: L.NOW + 60000, br: out.br.map(x => x.id === 'ann' ? Object.assign({}, x, { at: 840 }) : x) });
   await p.evaluate(([k, r]) => window.__fake.write(k, r), [TEAM, newer]);
   await press(p, '[data-p="tm-save"]'); await L.settle(p, 700);
   ok(/Not saved:/.test(await txt(p, '.tm-save') || '') && (await saved(p)).v === 4, 'conflict: another chef\'s newer version is protected');
-  ok(await away(p) === beforeConflict && await p.$eval('select[data-k="tm-at:ann:0"]', e => e.value) === '885', 'conflict: saved status stays on the loaded plan and the unfinished break edit remains recoverable');
+  ok(await away(p) === beforeConflict && await p.$eval('select[data-k="tm-at:ann:0"]', e => e.value) === '780', 'conflict: saved status stays on the loaded plan and the unfinished break edit remains recoverable');
   await press(p, '[data-p="tm-refresh"]');
-  ok(await p.$eval('select[data-k="tm-at:ann:0"]', e => e.value) === '885', 'Refresh: the first tap keeps the unsaved draft until discard is confirmed');
+  ok(await p.$eval('select[data-k="tm-at:ann:0"]', e => e.value) === '780', 'Refresh: the first tap keeps the unsaved draft until discard is confirmed');
   await press(p, '[data-p="tm-refresh"]'); await L.settle(p, 250);
   ok(/14:45/.test(await away(p) || '') && await p.$eval('[data-p="tm-save"]', e => e.disabled), 'Refresh: confirmation loads the newer saved break and resets the draft');
   ok(p.errors.length === 0, 'assignment and conflict: no page errors ' + p.errors.join(' | '));
@@ -150,7 +151,8 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   const overlapText = await away(p) || '';
   ok((await rows(p)).length === 1 && /Check break times/.test(overlapText) && /13:45/.test(overlapText) && /15:00/.test(overlapText), 'overlap: conflicting times produce one named warning with the explicit scheduled ranges');
   ok(!/\bback\s+14:30/i.test(overlapText) && !/\bback\s+15:00/i.test(overlapText), 'overlap: the summary does not present one guessed return as reliable');
-  await refresh(p, plan({ v: 3, on: [], br: [{ id: 'ann', sh: 'lunch', at: 825, len: 45 }, { id: 'gone', sh: 'full', at: 750, len: 150 }, { id: 'bo', sh: 'removed', at: 825, len: 45 }] }));
+  // Sam stays on with no break: a plan with nobody on reads as Not set (16 Nov 2026), so this checks orphans on a set day
+  await refresh(p, plan({ v: 3, on: [{ id: 'sam', sh: 'dinner', sec: 'grill' }], br: [{ id: 'ann', sh: 'lunch', at: 825, len: 45 }, { id: 'gone', sh: 'full', at: 750, len: 150 }, { id: 'bo', sh: 'removed', at: 825, len: 45 }] }));
   ok(!(await rows(p)).length && /Nobody scheduled away/.test(await away(p) || ''), 'membership: orphan breaks, removed people and removed shifts do not imply someone is away');
   await refresh(p, plan({ v: 4, on: [{ id: 'ann', sh: 'lunch', sec: 'grill' }], br: [{ id: 'ann', sh: 'lunch', at: 825, len: 40 }] }));
   ok(/Some times could not be checked/.test(await away(p) || '') && !/Nobody scheduled away/.test(await away(p) || ''), 'malformed saved break: a discarded current-member interval warns instead of claiming zero');
@@ -180,7 +182,8 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   await p.context().close();
 
   // Staleness uses elapsed read age, while an old calendar day must never claim the current break count.
-  p = await L.open(b, '#/team', { who: 'sam', extra: fixture(plan({ on: [], br: [] })), clock: L.NOW - 9.5 * 3600000, wait: 1200 }); await ready(p);
+  // a set day with nobody on a break (a plan with nobody on reads as Not set since 16 Nov 2026)
+  p = await L.open(b, '#/team', { who: 'sam', extra: fixture(plan({ on: [{ id: 'sam', sh: 'dinner', sec: 'grill' }], br: [] })), clock: L.NOW - 9.5 * 3600000, wait: 1200 }); await ready(p);
   const beforeAge = await readCount(p);
   ok(await boardHidden(p), 'fresh empty plan: its checked zero is hidden before authority or time becomes unknown');
   await p.evaluate(() => { window.__teamClockReady = window.LK_TIME.ready; window.LK_TIME.ready = () => false; window.dispatchEvent(new Event('focus')); });
@@ -211,7 +214,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
       return { services, columns, whole: !!whole, small: targets.filter(r => r.width < 43.5 || r.height < 43.5), saves: document.querySelectorAll('[data-p="tm-save"]').length };
     });
     const label = width + ' ' + text, over = await L.overflow(p);
-    ok(JSON.stringify(m.services) === JSON.stringify(manyShifts.map(s => s.id)) && m.columns === 3 && m.whole, label + ': the grid has a column only for the 3 services worked; the details offer every configured service; Whole day remains available');
+    ok(JSON.stringify(m.services) === JSON.stringify(manyShifts.slice().sort((x, y) => x.from - y.from || x.to - y.to).map(s => s.id)) && m.columns === 3 && m.whole, label + ': the grid has a column only for the 3 services worked; the details offer every configured service; Whole day remains available');
     ok(!over && m.small.length === 0 && m.saves === 1, label + ': long names and three breaks fit the page, controls are 44 px and Save remains single (' + (over || JSON.stringify(m.small)) + ')');
   }
   await p.focus('.tm-bench-shifts [data-p="tm-sh"][data-v="extra8"]'); await p.keyboard.press('Enter'); await L.settle(p, 150);

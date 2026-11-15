@@ -66,7 +66,7 @@ const dump = p => p.evaluate(k => __fake.dump()[k], TEAM);
 
   // three services on a phone in the admin panel: name and Breaks on their own line, heads in view under the room tabs
   p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', extra: fixture(three), wait: 1800 }); await ready(p);
-  ok(await p.$$eval('.tm-grid-head .tm-grid-sh > b', l => l.map(e => e.textContent).join()) === 'Lunch,Dinner,All day dining', 'three services: Lunch and Dinner first, then the configured order');
+  ok(await p.$$eval('.tm-grid-head .tm-grid-sh > b', l => l.map(e => e.textContent).join()) === 'Lunch,All day dining,Dinner', 'three services: in time order, Lunch 10:00, All day dining 15:00, Dinner 17:00 (head chef, 16 Nov 2026)');
   const layout = await p.evaluate(() => { const row = document.querySelector('.tm-person-row[data-id="ari"]'), who = row.querySelector('.tm-grid-who').getBoundingClientRect(), cell = row.querySelector('.tm-grid-cell').getBoundingClientRect(); return { whoAbove: who.bottom <= cell.top + 1, fullWidth: who.width > row.getBoundingClientRect().width * 0.9 }; });
   ok(layout.whoAbove && layout.fullWidth && !(await L.overflow(p)), 'three services at 390 px: the name and Breaks take their own line above the three sections');
   await p.evaluate(() => { const r = document.querySelector('.tm-person-row[data-id="eli"]'); window.scrollTo(0, r.getBoundingClientRect().top + scrollY - 200); }); await L.settle(p, 250);

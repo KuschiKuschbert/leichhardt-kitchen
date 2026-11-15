@@ -73,7 +73,9 @@ async function choose(p, file, done) {
   ok(thu && thu.v === 1 && JSON.stringify(thu.on.map(o => o.id + ':' + o.sh)) === JSON.stringify(['ann:adl', 'ann:dinner', 'ann:lunch', 'bo:dinner', 'sam:adl', 'sam:dinner', 'sam:lunch']), 'Save writes Thursday: every service each roster shift touches, nobody unmatched (' + (thu ? thu.on.map(o => o.id + ':' + o.sh).join(' ') : 'nothing') + ')');
   // roster hours (15 Nov 2026): saved with the plan on each entry, so they outlive this phone's memory
   const hrs = (rec, id) => (rec.on.filter(o => o.id === id)).map(o => o.sh + ':' + o.from + '-' + o.to).join(' ');
-  ok(thu.on.filter(o => o.id === 'sam').every(o => o.from === 600 && o.to === 1260) && thu.on.filter(o => o.id === 'bo').every(o => o.from === 1020 && o.to === 1320), 'Save keeps each person\'s roster hours on their entries (Sam ' + hrs(thu, 'sam') + ', Bo ' + hrs(thu, 'bo') + ')');
+  // each entry keeps its own service's part of the roster time (head chef, 16 Nov 2026: cut to each service)
+  const part = (o, a, z) => { const k = services.find(x => x.id === o.sh); return o.from === Math.max(a, k.from) && o.to === Math.min(z, k.to); };
+  ok(thu.on.filter(o => o.id === 'sam').length > 1 && thu.on.filter(o => o.id === 'sam').every(o => part(o, 600, 1260)) && thu.on.filter(o => o.id === 'bo').every(o => part(o, 1020, 1320)), 'Save keeps each person\'s roster hours on their entries, cut to each service (Sam ' + hrs(thu, 'sam') + ', Bo ' + hrs(thu, 'bo') + ')');
   ok(/5 roster days are still drafts/.test(await text(p, '.tm-focus-save')), 'after Save, the band says how many roster days are still drafts');
   ok(/5 days filled as drafts, not saved yet\. 1 saved\./.test(await text(p, '.tm-roster')) && / · Saved$/.test(await text(p, '.tm-roster-days [data-day="' + days[3] + '"]')), 'the card and Thursday\'s chip follow the Save');
   ok(!await dump(p, key('team', days[0])) && !await dump(p, key('team', days[4])), 'the other filled days stay drafts until each is saved');
@@ -132,8 +134,8 @@ async function choose(p, file, done) {
   await L.waitFor(p, d => (document.querySelector('.tm-notebook') || {}).getAttribute && document.querySelector('.tm-notebook').getAttribute('data-day') === d && !!document.querySelector('.tm-person-row'), days[0], 9000);
   const seen = await p.$$eval('.tm-person-row', l => l.map(e => e.getAttribute('data-id')));
   ok(seen.includes('ann') && seen.includes('bo') && !await p.locator('.tm-roster').count(), 'the sous chef sees Monday\'s imported team (' + seen.join(', ') + '), without the roster tool');
-  const boHours = saved[0].on.filter(o => o.id === 'bo')[0], boWords = await text(p, '.tm-person-row[data-id="bo"] .tm-roster-time');
-  ok(new RegExp('Roster ' + [boHours.from, boHours.to].map(m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0')).join(' to ')).test(boWords), 'on another phone, after the import\'s memory is gone, the sous chef sees Bo\'s saved roster hours (' + boWords + ')');
+  const boParts = saved[0].on.filter(o => o.id === 'bo'), boHours = { from: Math.min(...boParts.map(o => o.from)), to: Math.max(...boParts.map(o => o.to)) }, boWords = await text(p, '.tm-person-row[data-id="bo"] .tm-roster-time');
+  ok(new RegExp('Roster ' + [boHours.from, boHours.to].map(m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0')).join(' to ')).test(boWords), 'on another phone, after the import\'s memory is gone, the sous chef sees Bo\'s saved roster hours as one time, the parts joined (' + boWords + ')');
   if (!await p.locator('[data-p="tm-spread"]').isVisible()) { await p.locator('[data-p="tm-batch-toggle"]').click(); await L.settle(p, 150); }
   await L.pick(p, 'select[data-k="tm-tool-sh"]', 'dinner'); await L.settle(p, 150);
   await p.locator('[data-p="tm-spread"]').click(); await L.settle(p, 200);

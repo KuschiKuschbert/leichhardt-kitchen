@@ -187,9 +187,12 @@
     return out;
   }
 
-  /* What the roster puts on each day: { days: { 'YYYY-MM-DD': [{ id, sh, from, to }] }, unmatched: [{ name, looksFor,
-     why, shifts }] }. A shift that touches none of the kitchen's shifts is listed in idle. Filling the book's drafts
-     (only empty days that were read from the server) is the admin panel's job, not this file's. */
+  /* What the roster puts on each day: { days: { 'YYYY-MM-DD': [{ id, sh, from, to, day }] }, unmatched: [{ name,
+     looksFor, why, shifts }] }. Each kitchen shift a roster time touches gets its own part of that time (head chef,
+     16 Nov 2026: cut to each service, so 10:00 to 21:00 is Lunch 10:00 to 15:00, All day dining 15:00 to 17:00 and
+     Dinner 17:00 to 21:00); day is the whole roster time, to show once. A shift that touches none of the kitchen's
+     shifts is listed in idle. Filling the book's drafts (only empty days that were read from the server) is the admin
+     panel's job, not this file's. */
   function plan(roster, staff, kit, links) {
     var who = match(roster.people, staff, links), days = {}, unmatched = [], idle = [];
     roster.week.days.forEach(function (d) { days[d] = []; });
@@ -199,13 +202,17 @@
       p.shifts.forEach(function (s) {
         var sh = services(s, kit);
         if (!sh.length) idle.push({ id: m.id, day: s.day, from: s.from, to: s.to });
-        sh.forEach(function (id) { days[s.day].push({ id: m.id, sh: id, from: s.from, to: s.to }); });
+        sh.forEach(function (id) {
+          var k = (kit || []).filter(function (x) { return x && x.id === id; })[0];
+          days[s.day].push({ id: m.id, sh: id, from: Math.max(s.from, k.from), to: Math.min(s.to, k.to), day: [s.from, s.to] });
+        });
       });
     });
     return { days: days, unmatched: unmatched, idle: idle };
   }
 
-  // api: 2 since name links (14 Nov 2026); the admin panel refuses any other copy
+  // api: 2 since name links (14 Nov 2026); the admin panel refuses any other copy. Each service's own part of a roster
+  // time (16 Nov 2026) keeps the same shape, with day added, so the api stays 2 (the file is loaded as ?v=3).
   var R = { api: 2, read: read, services: services, match: match, plan: plan, cells: cells, key: key };
   if (typeof module === 'object' && module.exports) { module.exports = R; return; }
   window.LK_ROSTER = R;
