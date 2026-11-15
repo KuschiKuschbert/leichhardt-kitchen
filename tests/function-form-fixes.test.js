@@ -158,6 +158,15 @@ const saved = async (p, name) => Object.values(await store(p)).filter(x => x && 
   ok(p.errors.length === 0, 'moved, times TBC: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // The status tag in the form's head keeps its own height beside Print function at every width: from 768 px the row
+  // stretched it to the button's 48 px with its words at the top (audit, 15 Nov 2026)
+  for (const w of [390, 768, 1280]) {
+    p = await L.open(b, '#/functions/stag', { who: 'fay', extra: extra({ stag }), wait: 1500, width: w });
+    await L.waitFor(p, () => !!document.querySelector('.fe-head .fn-tag'), null, 8000).catch(() => {});
+    const th = await p.evaluate(() => { const t = document.querySelector('.fe-head .fn-tag'); return t ? Math.round(t.getBoundingClientRect().height) : -1; });
+    ok(th > 0 && th <= 24, w + ' px: the status tag is its own height beside Print function (' + th + ' px)');
+    await p.context().close();
+  }
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });

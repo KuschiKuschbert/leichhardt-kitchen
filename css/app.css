@@ -2642,6 +2642,8 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fe-wrap { display: flex; flex-direction: column; gap: 1rem; }
 .fe-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem; }
 .fe-head h2 { margin: 0; font: 700 2rem var(--display); overflow-wrap: anywhere; }
+/* the status tag keeps its own height beside Print function: the row stretched it to 48 px from 768 px (audit, 15 Nov 2026) */
+.fe-head .btn-row { align-items: center; }
 .fe-row2 { display: grid; grid-template-columns: 1fr; gap: 0.6rem; }
 @media (min-width: 600px) { .fe-row2 { grid-template-columns: 1fr 1fr; } }
 .fe-f { min-width: 0; }
