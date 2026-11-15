@@ -322,7 +322,7 @@ const withoutViewChoice = async p => {
   p = await L.open(b, '#/team', { who: 'sam', extra: Object.assign(cfg(), { [TSUM]: learnSum, [TEAM]: learnPlan }), wait: 1800 });
   await L.waitFor(p, () => !!document.querySelector('.tm-learn'), null, 8000).catch(() => {});
   let hints = await learnHints(p);
-  ok(JSON.stringify(hints.filter(h => h[1])) === JSON.stringify([['bo', 'Lunch: Not on Pans in 30 days. Ann is on Pans in this plan.']]), 'learn: only Bo gets a hint, pairing him with Ann on Pans, named by service in the day grid (' + JSON.stringify(hints) + ')');
+  ok(JSON.stringify(hints.filter(h => h[1])) === JSON.stringify([['bo', 'Not on Pans in 30 days. Ann is on Pans in this plan.']]), 'learn: only Bo gets a hint, pairing him with Ann on Pans (one service column, so no service name before it) (' + JSON.stringify(hints) + ')');
   ok(!(await L.overflow(p)) && p.errors.length === 0, 'learn: no sideways scroll or page errors ' + p.errors.join(' | '));
   await p.context().close();
   p = await L.open(b, '#/team', { who: 'sam', extra: Object.assign(cfg(), { [TSUM]: learnSum, [TEAM]: learnPlan }), failReads: '/teamsum/', wait: 1800 });
