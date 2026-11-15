@@ -575,7 +575,13 @@
         var bels = push(elsFor(d, r, base, [a.cx - 0.085 * a.rx, a.cy + 0.085 * a.ry], 0, { rnd: rng(base) }));
         bels.forEach(function (e) { e._base = 1; });
       }
-      var ring = bOrder.filter(function (p) { return p !== base; }), t0 = LIB.P.rng('layout:' + d.rid + ':' + seed + ':bowl')() * Math.PI * 2;
+      // bread sits on the rim at about 4 o'clock, as the book's carbonara and bolognese have it, never on the salad
+      bOrder.filter(function (p) { return p !== base && p.it.role === 'bread'; }).forEach(function (p, k) {
+        var sh0 = areaShare(p.it, p.scale, a) * p.count; if (sh0 > 0.1) p.scale *= Math.sqrt(0.1 / sh0);
+        var t4 = (120 + 40 * (seed % 3) + k * 25) * Math.PI / 180;   // Try another moves it round the rim
+        push(elsFor(d, r, p, [a.cx + Math.sin(t4) * a.rx * 0.85, a.cy - Math.cos(t4) * a.ry * 0.85], Math.round(rng(p)() * 30 - 15) + 30, { rnd: rng(p, 1) })).forEach(function (e) { e._rim = 1; });
+      });
+      var ring = bOrder.filter(function (p) { return p !== base && p.it.role !== 'bread'; }), t0 = LIB.P.rng('layout:' + d.rid + ':' + seed + ':bowl')() * Math.PI * 2;
       ring.forEach(function (p, k) {
         var ang = -Math.PI / 2 + t0 + k / Math.max(1, ring.length) * Math.PI * 2, rr = Math.min(a.rx, a.ry) * (base ? 0.3 : 0.38);
         var sh = areaShare(p.it, p.scale, a) * p.count; if (sh < 0.06 || sh > 0.15) p.scale *= Math.sqrt(Math.max(0.06, Math.min(0.15, sh)) / Math.max(1e-6, sh));
@@ -674,8 +680,9 @@
        board; the biggest part no more than the style's share; the middle of the food in the middle of the plate. Ramekins,
        kept parts and a wave across the plate keep their size. */
     var solidEls = function () { return els.filter(function (e) { return !riderEl(e); }); };
-    // a bowl's base is sized to the bowl already (the one thing that fills a side bowl, the caesar's cos)
-    var growable = function (e) { return !e._ram && !e._line && !e._base; };
+    // a bowl's base and what lies on it are sized to the bowl already (the caesar's cos, its toast at most 15% of the bowl)
+    // (and what rides on a part that keeps its size keeps its size too: the caesar's egg on its cos)
+    var growable = function (e) { return !e._ram && !e._line && !e._base && !e._over && !e._rim && !(e._h && e._h !== e && !growable(e._h)) && !(e._h && e._h._still); };
     /* a lone main (a beef cheek, wings) covers less of its plate in the book than a full pub plate does, and a main on a
        sweep of purée stays small, so the sweep shows (the book's beef cheek: about 13% of the plate) */
     var nSolid = els.filter(function (e) { return !riderEl(e) && !e._ram; }).length, swept = els.some(function (e) { return e._line; });
@@ -723,7 +730,7 @@
     // layers: sauce, base pieces, mains, toppings, garnish (the order js/draw.js keeps when adding by hand)
     els.forEach(function (e, k) { e._k = k; });
     els.sort(function (x, y) { return (layEl(x) - layEl(y)) || (x._k - y._k); });
-    els.forEach(function (e) { e.x = n1(e.x); e.y = n1(e.y); ['_k', '_h', '_o', '_on', '_bed', '_bo', '_bedPart', '_over', '_base', '_loose', '_grp', '_ram', '_line'].forEach(function (f) { delete e[f]; }); });
+    els.forEach(function (e) { e.x = n1(e.x); e.y = n1(e.y); ['_k', '_h', '_o', '_on', '_bed', '_bo', '_bedPart', '_over', '_base', '_loose', '_grp', '_ram', '_line', '_rim'].forEach(function (f) { delete e[f]; }); });
     still.forEach(function (e) { delete e._still; });
     return els;
   }
