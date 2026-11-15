@@ -558,6 +558,10 @@ row('js/prep.js ksPick() with Today\'s team: my section moved mid-shift, with th
 const TEAM_DAY = r => '2027-01-' + String(10 + ALL.indexOf(r));
 row('js/prep.js teamSave(): set the day\'s team (version 1)', { ok: CHEFS, asks: CHEFS,
   run: (db, w, r) => W(r, [['set', 'team/' + TEAM_DAY(r), { day: TEAM_DAY(r), on: [{ id: 'ann', sh: 'lunch', sec: 'grill' }], br: [{ id: 'ann', sh: 'lunch', at: 870, len: 30 }], v: 1, at: NOW, upd: NOW }]]) });
+// roster hours (15 Nov 2026): each person's start and finish ride on their entry; the rules check the list's size only
+row('js/prep.js teamSave(): a day with roster hours on each entry (from, to in minutes)', { ok: CHEFS, asks: CHEFS,
+  run: (db, w, r) => { const day = '2027-03-' + String(10 + ALL.indexOf(r));   // a fresh day per role: version 1
+    return W(r, [['set', 'team/' + day, { day, on: [{ id: 'ann', sh: 'lunch', sec: 'grill', from: 600, to: 1290 }, { id: 'ann', sh: 'dinner', sec: '', from: 600, to: 1290 }], br: [], v: 1, at: NOW, upd: NOW }]]); } });
 row('js/prep.js teamSave(): change it (the next version) and stamp pastEdit.t in one batch', { ok: CHEFS, asks: CHEFS,
   prep: r => put({ ['team/2027-02-' + String(10 + ALL.indexOf(r))]: { day: '2027-02-' + String(10 + ALL.indexOf(r)), on: [], br: [], v: 1, at: NOW, upd: NOW, by: 'sam' } }),
   run: (db, w, r) => { const day = '2027-02-' + String(10 + ALL.indexOf(r));

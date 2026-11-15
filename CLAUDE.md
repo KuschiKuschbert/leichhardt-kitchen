@@ -48,7 +48,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Head-set section minimums, Prep room, smart matching and Before service | `docs/prep-standards.md`, `docs/prep-par-options/brief.md` |
 | Renaming a kitchen section: old names kept, lines and counts under the name now (`secNow()`) | `docs/section-renames.md` |
 | Today's team and its chosen notebook, council and build record | `docs/todays-team-options/brief.md`, `docs/team-notebook-options/brief.md` (Chosen, Build, council), `docs/prep-book.md` (Today's team) |
-| Fill from roster file: the Humanforce roster CSV fills Today's team drafts, admin panel Team room only, nickname links in admin-only `config/rosterLinks` (chosen combined, built 14 Nov 2026; `js/roster-import.js`) | `docs/roster-import-options/brief.md` |
+| Fill from roster file: the Humanforce roster CSV fills Today's team drafts, admin panel Team room only, nickname links in admin-only `config/rosterLinks` (chosen combined, built 14 Nov 2026; `js/roster-import.js`); roster hours saved per shift with the plan and shown to everyone on the day (15 Nov 2026) | `docs/roster-import-options/brief.md` |
 | Today's team day grid: a section picker per person and service, no Service to edit switch (the mix chosen and built 15 Nov 2026) | `docs/team-sections-options/brief.md` |
 | Smarter section suggestions: Often from the 30-day counts in the picker, one freshness rule (Build smaller, built 15 Nov 2026; Fill held until real counts) | `docs/team-smart-sections-options/brief.md` |
 | Planning staff sections ahead, dated drafts, week picker and read costs | `docs/team-week-options/brief.md` (chosen A, implementation and verification) |
