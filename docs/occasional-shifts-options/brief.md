@@ -2,7 +2,7 @@
 
 15 November 2026, Queensland. Head chef request: "can we have the option to hide some shifts like smoker in the todays team admin part if needed and then add them when needed?" Clarified: "I would like to have the option to still have the shift in the whole system, but unless I put someone on smoker it is hidden." The pain: Today's team clutter (the Smoker tick box under Add staff, the Smoker chip in a person's details). Not the roster file, not Home.
 
-**Status: round 1 Build smaller (5 of 5); round 2 designs in progress.** Role-based analysis, not research with staff. [Proposal](proposal.md), [evidence packet](evidence-packet.md).
+**Status: round 1 Build smaller (5 of 5); round 2 B 16, A 14, C 6; recommended: B repaired (combined preview below). Waiting for the head chef's choice.** Role-based analysis, not research with staff. [Proposal](proposal.md), [evidence packet](evidence-packet.md).
 
 ## Round 1
 
@@ -127,3 +127,74 @@ Taps count every tap from the planner as it opens, including opening and choosin
 | The roster fill puts Lunch cooks on Smoker | Unchanged in all three; Smoker then shows | Reproduced in node (round 1); a head chef question |
 | C: a sous chef opens Add staff to put Gus on Smoker | Finds no Smoker on a day with people on it | Risk / Not evidenced (role-based) |
 | An older saved copy saves Kitchen settings | Strips the setting; Smoker shows again | Checked in source (round 1); the safe failure |
+
+## Round 2 scores
+
+Six fresh agents (the five reviewers and the kitchen screen designer) saw all three designs, the same evidence packet and screenshots. Points: 3 for first place, 2 for second, 1 for third.
+
+| Reviewer | Rank | Decisive point |
+| --- | --- | --- |
+| Head chef | B > A > C | B clears both places named, adds no tap in Add staff and saves one in the details. Make the chip solid like "+ Break". Reject C's third place for a rare job. |
+| Cook mid-service | B > A > C | B: nothing costs more taps than today. C puts a rare action in the sticky head read every two seconds, and the head's Who cell is hidden below 600 px with three or more services (`css/app.css`), so C has no way back there. |
+| New starter | B > A > C | "+ Smoker" is where a new sous chef looks, and its words say what the tap does. A keeps "Smoker (off)", read as a day off. C's button sits in a row that reads as labels. Idea: a Smoker-alone start in Add staff. |
+| Screen designer | B > A > C | B's target stays put: "+ Smoker" turns into the pressed Smoker chip in place. Drop the dashed edge (it means No section here). Admin tick box: name the shift, keep it inside its own shift's group. |
+| Keeper of the book | A > B > C | A is the least code and keeps the approved rule. B adds a second way onto a shift beside `tm-on`, without its date and service guards: if built, send it through `tm-on`. Move focus after the tap. |
+| Skeptic | A > B > C | The gain is small (28 or 48 px in an open panel, nothing in the details). B puts an action in a row of view chips. Admin tick box sits nearer the next shift than its own. |
+
+**Totals: B 16, A 14, C 6.** B first for 4 of 6, A first for 2 of 6, C last for all 6.
+
+**Agreed by all six:** the designs differ structurally (the skeptic and designer: A and B share Add staff, C is the real outlier); reject C's grid-head start; drop the dashed edge; no blend of all three.
+
+**Disagreement:** whether the details chip should act. Four want B's "+ Smoker" that puts the person on Smoker; the keeper and the skeptic would keep "Smoker (off)" (A) so a row of view chips holds no action, and the keeper asks that any action go through the existing `tm-on`.
+
+**Break-it findings from the scorers:**
+- C has no way back on a phone with three or more services worked: `css/app.css` hides the grid head's Who cell there. Checked in source (cook, keeper, skeptic). C is not recommended.
+- C's start wipes people already ticked in Add staff (`tmUi.quick` replaced). Checked in source (keeper, skeptic).
+- A and B lose keyboard focus when "+ Smoker" disappears on its own tap; B's action skips `tm-on`'s date guard. Checked in source (keeper). Repaired in the combined preview.
+- The admin tick box reads as the next shift's and its label does not name a shift (skeptic, designer). Repaired in the combined preview.
+
+## Mix of A, B and C
+
+| Part | Take or reject | Why | Principle |
+| --- | --- | --- | --- |
+| A: "+ Smoker" in Add staff that shows the box ticked | Take | The tap answers truthfully and nothing is guessed | Duolingo, Todoist |
+| A: "Smoker (off)" kept in the details | Reject | Half the clutter the head chef named; "off" read as a day off | Headspace |
+| B: "+ Smoker" in the details that puts the person on | Take, repaired | 4 taps, not 5; words on the action; sent through `tm-on` with its guards and words; solid edge; focus to the pressed chip | Duolingo, Linear |
+| C: "+ Smoker" in the grid head | Reject | Third place for a rare job, sticky head +13 px, hidden on phones with three services, wipes ticks | Things 3, Linear |
+| C: Smoker-alone start | Reject for now | Saves a tap for a Smoker-only cook but costs one for Lunch and Smoker; changes the pre-tick rule. Not evidenced which is more common | Todoist |
+| Designer: "+ Smoker" after Dinner, not before | Take, with a layout fix | Reads in order; sized by its words so it fits the row on a phone | Linear |
+
+**All three blended:** three "+ Smoker" controls doing three things (all six reject). **Recommended: B repaired**, which already holds A's part.
+
+## Combined preview: B repaired
+
+Lead's repair of B from the scorers' own fixes; **not re-scored by the council** (no new flow: the details action now uses the existing `tm-on` path). Patched real app, stand-in, fallback fonts ([`preview-prep.patch`](preview-prep.patch) variant `R`, runner [`preview-run-mix.cjs`](preview-run-mix.cjs), raw [`measured-mix.json`](measured-mix.json)).
+
+- Add staff: "+ Smoker" after Dinner in the same row, solid edge (`mix-addstaff-390.png`). Tapping it shows the Smoker box ticked and moves focus to it (`mix-addstaff-shown-390.png`).
+- A person's details: Lunch, Dinner, **+ Smoker** (`mix-details-390.png`). The tap is the existing Add button's action (`tm-on`, same date and service checks): Ann goes on Smoker, the chip becomes the pressed Smoker chip in the same place with focus on it, the line says "Ann added to Smoker. Not saved yet." and the grid gains its Smoker column (`mix-added-390.png`, `mix-page-1280.png`).
+- A mistaken Remove leaves "Smoker (off)" and Add Smoker for that date (shown stays shown).
+- Admin, Kitchen, Shifts: "Hide Smoker on Today's team until someone is on it", inside its own shift's group with a line between shifts (`mix-admin-shifts-390.png`, `mix-admin-shifts-1280.png`).
+
+| Measure (Preview) | Today | B repaired |
+| --- | ---: | ---: |
+| Add staff service boxes, 390 / 768 / 1280 px | 116 / 68 / 68 px | **68 / 68 / 68 px** |
+| Details chips for Ann | Lunch, Dinner, Smoker (off) | Lunch, Dinner, + Smoker |
+| Ann onto Smoker with a section, 390 px | 5 taps | **4** |
+| Gus onto Smoker only with a section, 390 px | 7 taps | 7 |
+| Break tools on Smoker, then Add staff | Lunch ticked, Smoker box shown | Lunch ticked, "+ Smoker" |
+| Empty day, Add staff | Lunch ticked, Smoker box | Lunch ticked, "+ Smoker" |
+| Long names (four services, a 30-letter hidden one), 390 px | not measured | no sideways scroll; long name on its own line (`mix-long-addstaff-390.png`, `mix-long-details-390.png`) |
+| Admin, Kitchen, Shifts, three shifts, 390 / 1280 px | 687 / 364 px | 882 / 559 px |
+| Browser errors at 390, 768, 1280 px | none | none |
+
+**Contract fit:** surface (sage) and 44 px targets Work; the dashed edge repaired (Works); words on actions Work. Real contrast and keyboard focus rings Not evidenced in the preview (existing chip tokens; checked on the implemented app before release). Proposed change to the approved rule "the details panel still offers every service" (15 Nov 2026): it still offers every service, a hidden one as a named "+ Smoker" action. Head chef's call.
+
+**Not evidenced:** real fonts; how often Smoker runs; whether Save names a Smoker cook with no section (`teamSave()` names who still has no section on any service: checked in source only).
+
+## Recommendation
+
+**Recommend B repaired.** One tick box per shift in Admin, Kitchen, Shifts. On Today's team a hidden shift shows as "+ Smoker" in Add staff and in each person's details until someone is on it that day; then it shows as now. It clears both places the head chef named, Add staff is as short as with no Smoker at all on every screen, and putting someone on Smoker takes 4 taps instead of 5. It beats A because A leaves "Smoker (off)" in every person's details, and C because its only way back hides on phones and costs the sticky head.
+
+**Main downside:** one chip in the details row is an action, not a view: a stray tap puts a person on Smoker in the draft (said in words, undone with Remove in place, nothing saved until Save). The keeper and the skeptic preferred A for that reason.
+
+**Open question for the head chef (separate change):** the roster file fills every shift a rostered time overlaps (head chef, 14 Nov 2026). Should it skip a shift set to hide until someone is on it?
