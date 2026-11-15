@@ -1,7 +1,8 @@
 // Today's team, step one of the chosen design D (head chef, 16 Nov 2026, docs/team-order-clear-options/brief.md): services
-// in time order; break times, + Break and Spread inside each person's own hours on a service; the hours in words where
-// breaks are set; a service added by hand takes that day's roster hours; Clear this day for the head chef, its second tap
-// keyed by the date; a plan saved with nobody on reads as Not set. Made-up people and the stand-in only.
+// in time order; break times, + Break and Spread inside each person's own hours on a service; the hours in words in each
+// row; a service added by hand takes that day's roster hours; Clear this day for the head chef, its second tap keyed by
+// the date; a plan saved with nobody on reads as Not set. Step two's row actions: Add a service, Take off with a second
+// tap and Undo in place, and + Break's focus. Made-up people and the stand-in only.
 const L = require('./lib');
 const { R, ok } = L.results();
 const key = (...p) => ['kitchens', L.PIN, ...p].join('/');

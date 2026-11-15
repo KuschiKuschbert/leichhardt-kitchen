@@ -29,7 +29,8 @@ const csv = o => ({ name: 'WeeklyDepartmentRosterReport.csv', mimeType: 'text/cs
 const dump = (p, k) => p.evaluate(x => __fake.dump()[x], k);
 const reads = p => p.evaluate(() => __fake.reads.filter(k => /\/team(\/|$)/.test(k)).length);
 const text = (p, sel) => p.evaluate(s => { const e = document.querySelector(s); return e ? e.textContent.replace(/\s+/g, ' ').trim() : ''; }, sel);
-const planner = p => L.waitFor(p, () => !!document.querySelector('.a-pane .tm-notebook .tm-work [data-p="tm-whole"]'), null, 9000);
+// the dated Save drawn in the work area means the day loaded and is editable (Whole day review, the old signal, is gone)
+const planner = p => L.waitFor(p, () => !!document.querySelector('.a-pane .tm-notebook .tm-work [data-p="tm-save"]'), null, 9000);
 async function choose(p, file, done) {
   await p.setInputFiles('[data-k="tm-roster-file"]', file);
   await L.waitFor(p, d => { const s = document.querySelector(d ? '.tm-roster [role="status"]' : '.tm-roster [role="alert"]'); return !!s && s.textContent.length > 10; }, done, 9000);
@@ -63,7 +64,7 @@ async function choose(p, file, done) {
   // a chip opens that day: the same selection as the week list
   await p.locator('.tm-roster-days [data-day="' + days[3] + '"]').click(); await planner(p); await L.settle(p, 200);
   ok(await p.locator('.tm-notebook').getAttribute('data-day') === days[3], 'a day chip selects that date in the planner');
-  const rows = await p.$$eval('.tm-person-row', l => l.map(e => e.getAttribute('data-id')));
+  const rows = await p.$$eval('.tm-tlrow', l => l.map(e => e.getAttribute('data-id')));
   ok(['sam', 'ann', 'bo'].every(id => rows.includes(id)) && !rows.includes('gus'), 'Thursday has Sam K, Ann and Bo from the roster: ' + rows.join(', '));
   const o2 = await order(); ok(o2[0] < o2[2], 'after a day chip, the day\'s rows come before the roster block again (' + o2.join(' < ') + ')');
   ok(/Roster 10:00 to 21:00/.test(await text(p, '.tm-person-row[data-id="sam"] .tm-roster-time')) && /Roster 17:00 to 22:00/.test(await text(p, '.tm-person-row[data-id="bo"] .tm-roster-time')), 'each row says its roster time');
@@ -126,13 +127,13 @@ async function choose(p, file, done) {
 
   // a sous chef sees the imported team on the day and sets the breaks
   p = await L.open(b, '#/team', { who: 'sam', extra: Object.assign(fixture(), week), wait: 1500 });
-  await L.waitFor(p, () => !!document.querySelector('.tm-notebook .tm-work [data-p="tm-whole"]'), null, 9000);
+  await L.waitFor(p, () => !!document.querySelector('.tm-notebook .tm-work [data-p="tm-save"]'), null, 9000);
   const dates = async () => { if (!await p.locator('.tm-weeknav').isVisible()) { await p.locator('[data-p="tm-date-toggle"]').click(); await L.settle(p, 200); } };
   await dates();
   for (let n = 0; n < 3 && !await p.locator('[data-p="tm-day"][data-day="' + days[0] + '"]').count(); n++) { await p.locator('[data-p="tm-week-next"]').click(); await L.settle(p, 400); await dates(); }
   await p.locator('[data-p="tm-day"][data-day="' + days[0] + '"]').click();
   await L.waitFor(p, d => (document.querySelector('.tm-notebook') || {}).getAttribute && document.querySelector('.tm-notebook').getAttribute('data-day') === d && !!document.querySelector('.tm-person-row'), days[0], 9000);
-  const seen = await p.$$eval('.tm-person-row', l => l.map(e => e.getAttribute('data-id')));
+  const seen = await p.$$eval('.tm-tlrow', l => l.map(e => e.getAttribute('data-id')));
   ok(seen.includes('ann') && seen.includes('bo') && !await p.locator('.tm-roster').count(), 'the sous chef sees Monday\'s imported team (' + seen.join(', ') + '), without the roster tool');
   const boParts = saved[0].on.filter(o => o.id === 'bo'), boHours = { from: Math.min(...boParts.map(o => o.from)), to: Math.max(...boParts.map(o => o.to)) }, boWords = await text(p, '.tm-person-row[data-id="bo"] .tm-roster-time');
   ok(new RegExp('Roster ' + [boHours.from, boHours.to].map(m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0')).join(' to ')).test(boWords), 'on another phone, after the import\'s memory is gone, the sous chef sees Bo\'s saved roster hours as one time, the parts joined (' + boWords + ')');
@@ -199,7 +200,7 @@ async function choose(p, file, done) {
   // only the admin panel: not on the head chef's or a sous chef's Today's team page
   for (const [label, o] of [['head chef on #/team', { admin: true }], ['sous chef on #/team', { who: 'sam' }]]) {
     p = await L.open(b, '#/team', Object.assign({ extra: fixture(), wait: 1500 }, o));
-    await L.waitFor(p, () => !!document.querySelector('.tm-notebook .tm-work [data-p="tm-whole"]'), null, 9000);
+    await L.waitFor(p, () => !!document.querySelector('.tm-notebook .tm-work [data-p="tm-save"]'), null, 9000);
     ok(!await p.locator('.tm-roster, [data-k="tm-roster-file"]').count(), label + ': no roster file tool');
     await p.context().close();
   }
