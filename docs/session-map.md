@@ -233,7 +233,7 @@ Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records
 | Supplier order and Delivery received redesign, selected A: The Order Sheet (3 Nov 2026) | `docs/receiving-design-options/brief.md` |
 | Wastage history, ranges, CSV | `docs/wastage-history.md` |
 | CSV text, quoting and numeric values across reports | `docs/report-exports.md` |
-| Transfer storage and returns | `docs/transfer-returns.md` (publish rules from the feature branch first: it indexes loans) |
+| Transfer storage and returns | `docs/transfer-returns.md`: 16 November 2026, phone card width repair in `css/app.css`, verified by `tests/transfer-overflow.test.js`. The original index migration needs rules published first; this CSS repair needs no rule or data change. |
 | Function cancel, Undo, delete | `docs/function-cancellation.md` |
 | Function print copy | `docs/function-printing.md` |
 | Delivery temperatures | `docs/delivery-received.md` |
