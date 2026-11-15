@@ -49,6 +49,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Renaming a kitchen section: old names kept, lines and counts under the name now (`secNow()`) | `docs/section-renames.md` |
 | Today's team and its chosen notebook, council and build record | `docs/todays-team-options/brief.md`, `docs/team-notebook-options/brief.md` (Chosen, Build, council), `docs/prep-book.md` (Today's team) |
 | Fill from roster file: the Humanforce roster CSV fills Today's team drafts, admin panel Team room only, nickname links in admin-only `config/rosterLinks` (chosen combined, built 14 Nov 2026; `js/roster-import.js`) | `docs/roster-import-options/brief.md` |
+| Giving staff their sections faster: every service a person works on their row, no Service to edit switch (council 15 Nov 2026, recommended the mix of B's day grid, A's Breaks and C's "Same as Lunch"; head chef to choose) | `docs/team-sections-options/brief.md` |
 | Planning staff sections ahead, dated drafts, week picker and read costs | `docs/team-week-options/brief.md` (chosen A, implementation and verification) |
 | Earlier Today's team worksheet and selected-day filtering | `docs/team-tidy-options/brief.md` (9 November C, retained behaviour and historical verification) |
 | Today's team: row service/section, focused details and reachable Save | `docs/team-page-options/brief.md` (C chosen 10 November), `docs/team-page-options/implementation.md` |

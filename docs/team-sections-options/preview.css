@@ -1,6 +1,7 @@
 /* Section previews (docs/team-sections-options/brief.md). Made-up data; never connects to the kitchen.
    Uses the book's tokens from ../../css/app.css and imitates the admin panel shell around Today's team so the
    first row starts about where it does in the app (612 px at 390 px in the stand-in). Preview only. */
+html { scroll-padding-top: 170px; scroll-padding-bottom: 200px; }
 body.ts { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); }
 .ts-top { position: sticky; top: 0; z-index: 5; height: 66px; background: var(--bar); color: var(--bar-text); display: flex; align-items: center; gap: 12px; padding: 0 14px; }
 .ts-top b { font: italic 700 1.6rem/1 var(--display); color: var(--bar-text); }

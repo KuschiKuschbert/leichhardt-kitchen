@@ -42,12 +42,18 @@
     set: function (pid, sh, sec) { on[pid][sh] = sec; if (st === 'done' || st === 'fail') { st = ''; said = ''; } },
     // the shared picker frame: open (1 tap) then choose (1 tap)
     pick: function (title, opts, cur, done) {
+      // focus goes back to the control that opened the picker; a tap within 350 ms of opening is ignored (a double tap
+      // must not choose the option that appeared under the finger); Escape closes without a change
+      var opener = document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute('data-focus'), opened = Date.now();
       var back = document.createElement('div'); back.className = 'ts-sheet-back';
+      var shut = function () { back.remove(); TS.closedAt = Date.now(); var o = opener && document.querySelector('[data-focus="' + opener + '"]'); if (o) o.focus({ preventScroll: true }); };
+      back.addEventListener('keydown', function (e) { if (e.key === 'Escape') shut(); });
       back.innerHTML = '<div class="ts-sheet" role="dialog" aria-label="' + title + '"><h3>' + title + '</h3>' + opts.map(function (o, i) { return '<button type="button" data-i="' + i + '" aria-selected="' + (String(o[0]) === String(cur)) + '">' + o[1] + '</button>'; }).join('') + '</div>';
       back.addEventListener('click', function (e) {
         var b = e.target.closest('button[data-i]');
-        if (b) { back.remove(); done(opts[+b.getAttribute('data-i')][0]); TS.redraw(); return; }
-        if (e.target === back) back.remove();
+        if (Date.now() - opened < 350) { e.stopPropagation(); return; }
+        if (b) { TS.closedXY = [e.clientX, e.clientY]; back.remove(); done(opts[+b.getAttribute('data-i')][0]); TS.redraw(); shut(); return; }
+        if (e.target === back) shut();
       });
       document.body.appendChild(back);
       var sel = back.querySelector('[aria-selected="true"]') || back.querySelector('button'); if (sel) sel.focus();
@@ -114,6 +120,8 @@
       };
       // every tap on a control inside the preview is counted for the measured task paths
       window.__taps = 0;
+      // the second half of a double tap on a picker option must not open the picker of the cell underneath
+      document.addEventListener('click', function (e) { var xy = TS.closedXY; if (e.target.closest('[data-a="pick"]') && Date.now() - (TS.closedAt || 0) < 350 && xy && Math.abs(e.clientX - xy[0]) < 40 && Math.abs(e.clientY - xy[1]) < 40) { e.stopPropagation(); e.preventDefault(); } }, true);
       document.addEventListener('click', function (e) { if (e.target.closest('button, a, summary, input')) window.__taps++; }, true);
       root.addEventListener('click', function (e) {
         var b = e.target.closest('[data-a]'); if (!b) return;

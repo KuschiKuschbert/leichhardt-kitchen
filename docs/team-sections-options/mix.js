@@ -10,7 +10,7 @@
     var cur = TS.on[p.id][s.id];
     if (cur === undefined) return '<span class="tx-off">Off</span>';
     var none = p.chef || 'No section';
-    return '<button type="button" class="tx-cell' + (cur || p.chef ? '' : ' is-empty') + '" data-a="pick" data-id="' + p.id + '" data-sh="' + s.id + '" data-focus="m:' + p.id + ':' + s.id + '" aria-label="Section for ' + p.name + ' on ' + s.name + ': ' + (TS.sec(cur) || none) + '"' + (TS.busy() ? ' disabled' : '') + '>' + (TS.sec(cur) || none) + '</button>';
+    return '<button type="button" class="tx-cell' + (cur ? '' : ' is-empty') + '" data-a="pick" data-id="' + p.id + '" data-sh="' + s.id + '" data-focus="m:' + p.id + ':' + s.id + '" aria-label="Section for ' + p.name + ' on ' + s.name + ': ' + (TS.sec(cur) || none) + '"' + (TS.busy() ? ' disabled' : '') + '>' + (TS.sec(cur) || none) + '</button>';
   }
   function head() {
     return '<li class="tx-ghead" aria-hidden="true"><span class="tx-who">Who</span>' + TS.services.map(function (s) {

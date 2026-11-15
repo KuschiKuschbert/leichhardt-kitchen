@@ -33,8 +33,9 @@ async function working(p) {
 const state = p => p.evaluate(() => JSON.parse(JSON.stringify(window.TS.on)));
 const want = p => p.evaluate(() => window.TS.want);
 async function chooseIn(p, label) {
+  await p.waitForTimeout(360);   // the picker ignores taps for 350 ms after it opens (the double-tap guard)
   const b = p.locator('.ts-sheet button[data-i]').filter({ hasText: new RegExp('^' + label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$') }).first();
-  await b.click(); await p.waitForTimeout(30);
+  await b.click(); await p.waitForTimeout(360);   // a person's pace: the next tap is not part of a double tap
 }
 async function sectionsTask(p, d) {
   const w = await want(p), names = await p.evaluate(() => Object.fromEntries(window.TS.sections.map(s => [s.id, s.name])));
@@ -172,7 +173,19 @@ async function fixOne(p, d) {
     const first = await p.locator('.ts-sheet button[data-i]').first().innerText();
     ok(first === 'Same as Lunch: Grill', 'mix: the Dinner picker offers Same as Lunch: Grill first (' + first + ')');
     await p.screenshot({ path: path.join(__dirname, 'mix-same-390.png') });
-    await p.locator('.ts-sheet button[data-i]').first().click(); await p.waitForTimeout(40);
+    await p.waitForTimeout(360); await p.locator('.ts-sheet button[data-i]').first().click(); await p.waitForTimeout(40);
+    ok(await p.evaluate(() => document.activeElement && document.activeElement.getAttribute('data-sh') === 'dinner' && document.activeElement.getAttribute('data-id') === 'ari'), 'mix: after a pick, focus returns to the cell that opened it');
+    // a double tap on a cell must not choose the option that appears under the finger
+    const cell = p.locator('[data-a="pick"][data-id="hal"][data-sh="lunch"]'); await cell.scrollIntoViewIfNeeded(); const box = await cell.boundingBox();
+    await p.mouse.click(box.x + box.width / 2, box.y + box.height / 2); await p.waitForTimeout(110); await p.mouse.click(box.x + box.width / 2, box.y + box.height / 2); await p.waitForTimeout(80);
+    ok((await state(p)).hal.lunch === '' && await p.locator('.ts-sheet').count() === 1, 'mix: a double tap 110 ms apart opens the picker and chooses nothing');
+    await p.keyboard.press('Escape'); await p.waitForTimeout(400);
+    // a double tap on an option chooses once; the second tap does not open the cell underneath
+    await p.click('[data-a="pick"][data-id="hal"][data-sh="dinner"]'); await p.waitForTimeout(360);
+    const opt = await p.locator('.ts-sheet button[data-i]').filter({ hasText: /^Pans$/ }).boundingBox();
+    await p.mouse.click(opt.x + opt.width / 2, opt.y + opt.height / 2); await p.waitForTimeout(110); await p.mouse.click(opt.x + opt.width / 2, opt.y + opt.height / 2); await p.waitForTimeout(80);
+    ok((await state(p)).hal.dinner === 'pans' && await p.locator('.ts-sheet').count() === 0, 'mix: a double tap on an option chooses once and opens nothing underneath');
+    ok(await p.locator('.ts-sheet').count() === 0 && (await state(p)).hal.lunch === '', 'mix: Escape closes the picker with no change');
     ok((await state(p)).ari.dinner === 'grill', 'mix: Same as Lunch sets only Ari Dinner, when chosen');
     const greens = await p.evaluate(() => { const done = getComputedStyle(document.documentElement).getPropertyValue('--done-ink').trim(); const probe = document.createElement('i'); probe.style.color = done; document.body.appendChild(probe); const c = getComputedStyle(probe).color; probe.remove();
       return [...document.querySelectorAll('.ts-book *')].filter(e => e.childNodes.length && [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()) && getComputedStyle(e).color === c && !e.closest('.ts-bhead')).map(e => e.textContent.trim()); });

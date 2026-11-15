@@ -61,7 +61,7 @@
 .tx-n1 { --n: 1; } .tx-n2 { --n: 2; } .tx-n3 { --n: 3; } .tx-n4 { --n: 4; }
 .tx-ghead { position: sticky; top: 66px; z-index: 2; background: var(--surface-paper); border-bottom: 2px solid var(--ink); padding: 6px 0 4px; }
 .tx-sh b { display: block; font: 700 1.05rem/1.1 var(--display); }
-.tx-sh small { display: block; font-size: .74rem; line-height: 1.25; color: var(--muted); }
+.tx-sh small { display: block; font-size: .875rem; line-height: 1.25; color: var(--muted); }
 .tx-sh .tx-count { color: var(--ink); }
 .tx-sh .tx-count b { display: inline; font: inherit; font-weight: 700; }
 .tx-ghead .tx-who { font: 700 1rem var(--display); }

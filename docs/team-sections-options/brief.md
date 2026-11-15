@@ -2,7 +2,7 @@
 
 15 November 2026, Queensland. Head chef request: "a simpler way of applying sections to staff. At this point I have to physically tap the picker for lunch then assign lunch shift. Tap the picker go to dinner assign shift there. There must be a more user friendly way especially now with the uploaded roster that we know the times someone is working."
 
-**Status: council round 2 in progress. Nothing in the app has changed.** [Proposal](proposal.md), [evidence packet](evidence-packet.md), [previews](index.html) ([A](a.html), [B](b.html), [C](c.html)). Role-based analysis, not research with staff.
+**Status: council done, waiting for the head chef's choice. Nothing in the app has changed.** Round 1 Build smaller (5 of 5); round 2 B 15, C 13, A 8; **recommended: the mix** (B's day grid, A's worded Breaks, C's "Same as Lunch" inside the picker, neutral counts). [Proposal](proposal.md), [evidence packet](evidence-packet.md), [previews](index.html) ([A](a.html), [B](b.html), [C](c.html), [the mix](mix.html)). Role-based analysis, not research with staff.
 
 ## Round 1
 
@@ -200,6 +200,100 @@ Screenshots: `mix-double-admin-390.png`, `mix-double-done-390.png`, `mix-same-39
 
 **Review status.** This is the lead's synthesis from the six reviews. A focused follow-up by the screen designer and the Skeptic on this combined preview is recorded below.
 
+### Focused follow-up on the combined preview
+
+The screen designer and the Skeptic each looked at the combined preview alone. Neither rescored A, B or C.
+
+**Screen designer: now recommends the mix over C** (in round 2 they put C first). Faults from round 2 that are fixed:
+- Breaks has words: 44 px tall, contrast 15.9:1, "not set" 6.7:1.
+- No green before Save; green shows only after the server answers (Checked).
+- "Same as Lunch" is plain, offered and never applied.
+- Names break only at spaces.
+- Pills are 101 px wide and 8 px apart (B: 85 px and 6 px). Better, but still tight for wet hands.
+
+New faults the designer reproduced:
+- Focus went to the top of the page after every pick.
+- Escape did not close the picker.
+- A double tap on a low cell picked the option under the finger.
+- The head counts were 11.8 px.
+- At the largest text a long section name makes a 98 x 127 px oval pill.
+
+The designer also asks for break details beside the roster from 768 px.
+
+**Skeptic: recommends the mix over C, narrowly, with two repairs.**
+
+The case against the mix:
+- 13 more taps than C on a cold day.
+- "Same as Lunch" saves no taps, and on the measured day it is right for only 1 of 6 doubles.
+- The row drops the app's "Usually Grill, 3 of the last 4 Tuesdays" hint, which is the better default.
+- The sticky head and the Save dock cover 292 of 844 px.
+- Keyboard focus hid under the Save dock in 16 of 42 Tab steps.
+- Opening another person's Breaks moved the row 300 px.
+
+Checked clean by the Skeptic:
+- "Same as Lunch" then a Lunch change leaves Dinner as chosen, with no stale tag.
+- Chef rows are left out of the counts.
+
+Break-it findings from the follow-up:
+
+| Scenario and state | Expected | Observed | Evidence | Repair and status |
+| --- | --- | --- | --- | --- |
+| Head chef at 390 px double-taps a low Dinner cell | The picker opens; nothing changes | The second tap chose the option under the finger (Dev's Dinner became Grill, Fen's Pans), and a double tap on an option opened the cell underneath | **Reproduced** in the preview. The book's own picker has no guard either (Skeptic, `js/controls.js`) | Preview repaired: taps in the first 350 ms after the picker opens are ignored, and so is a second tap in the same spot within 350 ms of closing. **Checked**: a double tap 110 ms apart opens the picker and chooses nothing; a double tap on an option chooses once and opens nothing. The book's picker needs the same guard and test (its own fix pull request: it touches every picker). |
+| Focus after a pick, Escape | Focus back on the cell; Escape closes with no change | Focus went to the page top; Escape did nothing | **Reproduced**, preview stand-in | Repaired and **Checked** in the preview. Check the book's picker does the same. |
+| Tab through the grid | The focused cell is never under the Save dock or the head | Hidden in 16 of 42 steps | **Reproduced** | Preview given scroll padding (not re-measured). The app's own `tmFocusEnsureVisible()` must also clear the sticky head. |
+| A picker open when the page redraws, locks or is handed over | No change to another service | Not testable in a preview; the app today refuses a section for any service but the row's Service to edit | Risk / Not evidenced | Key each cell `tm-sec:<id>:<sh>` with the date in the picker id; close an open picker on lock; extend `tests/team-picker-context.test.js` to fail on the old key |
+| Opening Hal's Breaks while Ari's are open | Hal's row stays where the finger is | Hal's row jumped 300 px up | **Reproduced** | Keep the tapped row in place when the panel moves (implementation check) |
+
+Also repaired in the preview after the follow-up:
+- the head counts at 14 px;
+- a chef's unset cell dashed, like any unset cell.
+
+The shared picker stand-in (focus return, Escape, double-tap guard) is used by the A and B previews too. Their 136 checks still pass, and their scores are unchanged.
+
 ## Recommendation
 
-To come after the follow-up.
+**Recommend the mix: B's day grid + A's worded Breaks on each row + C's "Same as Lunch" inside the later service's own picker + neutral counts in the service heads. Hold C's guided pass.**
+
+**Why it beats the alternatives.**
+- It removes the hidden Service to edit switch the head chef complained about. Every service a person works is a cell under its own heading, with the hours from the saved services.
+- Setting a two-service day drops from 41 taps to 29, and three services from 53 to 35.
+- One correction stays 3 taps, where C needs 4 to 5.
+- 6 people fit on a 390 px phone while working instead of 4, and 8 on a tablet or laptop.
+- Breaks open on the service on now: 1 tap at 18:00 instead of 3.
+- Nothing is filled in that the chef did not choose, and nothing new pops up over the page.
+
+It was the council's first choice (B 15 points, 3 firsts). After the follow-up, both reviewers who had put C first or second now prefer it.
+
+**Principles:**
+- Airbnb: who, when and which section together.
+- Linear: one kind of control.
+- Todoist: show the default, never apply it.
+- Things 3: the frequent fix stays on the page.
+- Headspace: words on Breaks.
+- Duolingo: no green before the server answers.
+
+**Main downside.** On a day with no usual sections, it is still 29 taps against C's 16. The nightly usual sections should fill part of the day before the chef starts, but how much is not measured. If a real week shows many cells still empty after the import, C's pass can be added later, for empty cells only, with the double-tap guard.
+
+**Departures the head chef must choose.**
+- The grid replaces the C design's "Service to edit and Section pair", chosen on 10 November 2026.
+- The grid is a new pattern for `docs/design-patterns.md`.
+
+**Before the build is ready** (Implemented app, not Preview):
+- Key each cell `tm-sec:<id>:<sh>`. The test must fail on the old key.
+- Show the usual section first in the picker ("Usually Grill, 3 of the last 4 Tuesdays"), then "Same as Lunch".
+- Keep search, Whole day review and the cross-training hints working for every service.
+- Keep focus clear of the sticky head and the Save dock.
+- Put break details beside the roster from 768 px.
+- Keep the tapped row in place when break details move.
+- Measure again in the full app at 390, 768 and 1280 px with real fonts, real service names and both chef roles: taps, rows and every Save state.
+
+The book-wide double-tap guard in the shared picker is a separate fix pull request.
+
+**Unresolved:**
+- How many cells stay empty after the nightly usual sections fill in.
+- Whether wet hands manage 101 px pills 8 px apart.
+- The oval pill for a long section name at the largest text.
+
+## Chosen
+
+To come: the head chef chooses.
