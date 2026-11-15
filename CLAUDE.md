@@ -26,6 +26,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | The finished words on wide screens (from 900 px): a finished section's own tab and the finished list, said large with the mascot under his words | `docs/kitchen-mascot.md` (the contract), `docs/mascot-desktop-options/brief.md` (the study: round 1 Build smaller; the chosen blend, built) |
 | Named staff welcome, current identity and personalisation audit | `docs/staff-personalisation-options/brief.md` (chosen A, long-name treatment and implementation checks) |
 | Login, who can read or write what, recipes, function writes | `docs/private-kitchen-access.md` (wins over anything older in this file) |
+| Opening the installed app again with an address (the kitchen tablet's Home button, links): the open book moves there, no reload (`launch_handler`, `launchQueue`, 16 Nov 2026) | `docs/app-launch.md` |
 | Device choice, Google, daily PIN unlock, Update, Settings | `docs/device-sessions.md` (replaces earlier session wording), `docs/settings-options/brief.md` |
 | Staff Add/Tick/Delete and capability lists | `docs/staff-capabilities.md` |
 | Publishing the rules from GitHub | `docs/rules-publication.md` |

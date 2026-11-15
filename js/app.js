@@ -2355,6 +2355,19 @@
   document.addEventListener('submit', checkPickers, true);
   window.addEventListener('hashchange', render);
   render();
+  // The installed app opened again with an address (the kitchen tablet's Home button, a shared link): the manifest's
+  // launch_handler keeps the open book instead of loading it again (no reload, no sign-in check, no fresh reads), and
+  // the book moves to that page itself. The tablet's kiosk sends #/kiosk-home, which means the book's Home (#/).
+  // A plain launch of the start page (#/) leaves the book where it is. Another page of the site loads in full.
+  if (window.launchQueue && typeof window.launchQueue.setConsumer === 'function') window.launchQueue.setConsumer(function (p) {
+    var u; try { u = new URL(p && p.targetURL); } catch (e) { return; }
+    if (u.origin !== location.origin) return;
+    if (u.pathname !== location.pathname) { location.href = u.href; return; }
+    var to = u.hash === '#/kiosk-home' ? '#/' : u.hash;
+    if (location.hash === '#/kiosk-home') { location.replace(to); return; }
+    if (!to || (to === '#/' && u.hash !== '#/kiosk-home') || to === location.hash) return;
+    location.hash = to;
+  });
   // the book drew with the recipe changes laid over it, so they are safe to use at the next start too
   if (window.LK_RX) window.LK_RX.drawn();
 })();
