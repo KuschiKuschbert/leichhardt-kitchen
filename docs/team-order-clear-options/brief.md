@@ -327,3 +327,25 @@ The head chef, after step one was built: "If a roster is imported that's the sin
 - **Contract fit:** the Too few mark's orange words (`--small-ink`, attention, with words), not red (nothing failed), never blocking. Flighty: a true status from data already in the draft, no read. Todoist: nothing changed or guessed by itself. Headspace: plain words.
 - **Try to break it:** a Copy last weekday day has no roster hours, so no flags (checked: a day without roster hours flags nobody). Clear takes the roster hours with the services, so a day rebuilt by hand after Clear flags nobody until the roster file fills it again (Risk, by design; said in the brief). A break outside the roster hours already reads "(outside their hours)" in its picker.
 - **Evidence:** `tests/team-hours.test.js` section 7, 8 checks in the stand-in; `.tm-roster-flag` in `docs/design-patterns.md` and `tests/design-patterns.test.js`.
+
+## Built: step two, the day on one clock (16 November 2026)
+
+D's rows replace the day grid, the details panel with its service chips, and Whole day review (`js/prep.js`: `tmPlanHeadHTML()`, `tmPlanRowHTML()`, `tmSpans()`, `tmDayRange()`, `tmBarHTML()`, `tmTicksHTML()`, `tmDayWords()`, `tmAddSvcHTML()`, `tmUndoHTML()`; Take off `tm-off` with Undo `tm-off-undo`; break pickers keyed by person, service and number; `css/app.css`: the `.tm-plan` block). Retired: `tmRow()`, `tmFocusHTML()`, `tmWholeHTML()`, `tmGridHeadHTML()`, `tmGridRowHTML()`, `tmWorkbenchPlace()`, `tmRowService()`, the details view state and the Too few hold. No new read, listener, rule or saved field.
+
+**Implemented app measurements** (stand-in, fallback fonts, admin session, the roster-day fixture; runner `built-run.cjs`, raw `measured-built.txt`, screenshots `built-*.png`):
+
+| Measure | Today (grid) | D preview | **Built** |
+| --- | ---: | ---: | ---: |
+| Dev: section and a break, taps (390, 768, 1280) | 4 | 3 | **3** |
+| The day: 7 cooks, a section and a break each, then Save, 1280 | 29 | 22 | **22** |
+| Add a service (Ari onto Dinner), 390 | 3 | 1 | **1** |
+| Take off (Cal off Lunch), 390 | 2 | 2 | **2**, Undo 1 |
+| Rows wholly in one screen from the first row, 390 / 768 / 1280 | 3 / 7 / 6 | 1 / 5 / 5 | **2 / 6 / 6** |
+| Rows wholly in one screen from Ari (one service each), 390 / 768 / 1280 | | 2 / 6 / 6 | **2 / 6 / 6** |
+| Median row px, 390 / 768 / 1280 | 123 / 104 / 104 | 202 / 118 / 111 | **207 / 129 / 109** |
+| Sideways scroll, browser errors (390, 768, 1280) | none | none | **none** |
+| A sous chef on `#/team`, 390 | | 9 rows, no Clear | **9 rows, no Clear, no errors** |
+
+Checked in the built app: Add a service says "Ari added to Dinner. Not saved yet. Not on the roster for Dinner: rostered 10:00 to 15:00."; Take off asks "Tap again to take off", then "Cal taken off Lunch and its breaks. Not saved yet." with the focus on Undo; Undo puts Cal back with "Roster 10:00 to 14:30"; Spread names who it moved; Clear asks again by date. The differences from the preview are a few pixels of row height from the final styles.
+
+**Not evidenced:** real fonts on a real phone; rendered contrast and keyboard focus rings on the new controls (computed from tokens in the follow-up: Take off 7.35:1, the break block 4.77:1 on the bar); the live site until it is merged.
