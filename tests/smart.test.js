@@ -56,6 +56,26 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   q = oc('pumpkin-salad');
   ok(!q.d.els.some(e => /^fusilli/.test(e.a)) && /^pesto-dollop@/.test((q.by('Basil pesto')[0] || {}).a || ''), 'plating: basil pesto on the pumpkin salad is a pesto dollop, not a bowl of pasta');
   ok(['beef-schnitzel', 'senior-schnitzel'].every(id => /^sauce-ramekin@/.test((oc(id).by('Gravy')[0] || {}).a || '')) && !/ramekin/.test((oc('lamb-nachos').by('Sour cream')[0] || {}).a || ''), 'plating: the schnitzels\' gravy in a ramekin; the nachos\' sour cream, spread "on the other side", is not');
+  /* What the dish's own plating steps say is drawn (head chef, 15 Nov 2026; js/compose.js plating()). The rissoles' card:
+     "mash on one half of the bowl. seasonal vegetables on the other half. 3 lamb rissoles on the mash. gravy over the
+     rissoles." The butcher's board: "back row, left to right: cornbread on coleslaw, pulled pork, pulled lamb, texas
+     sausages, brisket". */
+  const said = id => m.win.LK_COMPOSE.plating(m.win.LK_DATA.recipes.find(x => x.id === id));
+  const lr = said('lamb-rissoles');
+  ok(lr.ware === 'bowl' && lr.how['Potato mash'].half === 'one' && lr.how['Seasonal vegetables'].half === 'other' && lr.how['Lamb rissoles'].on === 'Potato mash' && lr.how.Gravy.over === 'Lamb rissoles', 'plating words: the rissoles\' card is read (in a bowl, mash on one half, vegetables on the other, rissoles on the mash, gravy over them)');
+  ok(said('chicken-adobo').how['Chicken thigh'].on === 'Jasmine rice' && said('pork-knuckle').how['Pork sauce'].around === 'Potato mash' && said('wings').how['Cowboy candy'].on === 'Chicken wings', 'plating words: the adobo on its rice, the pork sauce round the mash, the cowboy candy on the wings');
+  ok(JSON.stringify(said('butchers-board').rows.back) === JSON.stringify(['Cornbread', 'New slaw', 'Pulled pork', 'Pulled lamb', 'Texas sausages', 'Smoked brisket']) && said('butchers-board').how.Cornbread.on === 'New slaw', 'plating words: the butcher\'s board\'s back row, left to right, the cornbread on the slaw');
+  q = oc('lamb-rissoles');
+  const mashE = q.by('Potato mash')[0], vegE = q.by('Seasonal vegetables')[0], mo2 = q.R.oval(mashE);
+  ok(q.d.surf.fam === 'bowl' && mashE.x < q.area.cx && vegE.x > q.area.cx && q.by('Lamb rissoles').every(e => q.R.inOval(mo2, e.x, e.y)), 'plating words: the rissoles drawn as the card says: a bowl, mash on one half, vegetables on the other, the rissoles on the mash');
+  q = oc('butchers-board');
+  const rowX = ['New slaw', 'Pulled pork', 'Pulled lamb', 'Texas sausages', 'Smoked brisket'].map(n => (q.by(n)[0] || {}).x);
+  ok(rowX.every((x, k) => k === 0 || x > rowX[k - 1]), 'plating words: the butcher\'s board\'s back row is drawn left to right in the card\'s order (' + rowX.join(', ') + ')');
+  q = oc('pork-knuckle');
+  const ps = q.d.els.findIndex(e => e.ing === 'Pork sauce'), pm = q.d.els.findIndex(e => e.ing === 'Potato mash');
+  ok(ps >= 0 && ps < pm && q.R.oval(q.d.els[ps]).a > q.R.oval(q.d.els[pm]).a, 'plating words: the pork sauce is round the mash: under it and wider');
+  q = oc('wings');
+  ok(q.d.els.findIndex(e => e.ing === 'Cowboy candy') > q.d.els.findIndex(e => e.ing === 'Chicken wings'), 'plating words: the cowboy candy is on top of the wings');
   // a part the head chef moved by hand to the middle stays there, and nothing new is laid over it
   q = oc('eye-fillet');
   const handChips = q.by('Chips')[0]; handChips.x = 0; handChips.y = 0; handChips.fixed = true;
