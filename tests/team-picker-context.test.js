@@ -122,7 +122,10 @@ const forge = (p, list) => p.evaluate(list => {
     await p.context().close();
 
     // Add a service is held open while the chef's date moves on: today's choice reaches neither tomorrow nor today.
-    p = await open(browser, base);
+    // Tomorrow has the same plan, so Bo's Add a service there offers Lunch too: only the date tells them apart.
+    const twoDays = fixture();
+    twoDays[key('team', tomorrow)] = Object.assign({}, twoDays[TEAM], { day: tomorrow });
+    p = await open(browser, base, { extra: twoDays });
     if (!await p.locator('.tm-weeknav').isVisible()) await click(p, '[data-p="tm-date-toggle"]');
     // the week holding tomorrow on show, today still chosen (on a Sunday tomorrow is in next week)
     for (let n = 0; n < 4 && !await p.locator('[data-p="tm-day"][data-day="' + tomorrow + '"]').count(); n++) await click(p, '[data-p="tm-week-next"]');
@@ -133,9 +136,11 @@ const forge = (p, list) => p.evaluate(list => {
     ok(/Add a service for Bo/.test(await p.locator('dialog.ux-picker').innerText()), 'held Add a service: the picker names Bo');
     await p.evaluate(d => document.querySelector('[data-p="tm-day"][data-day="' + d + '"]').click(), tomorrow);
     await L.waitFor(p, d => (document.querySelector('.tm-notebook') || {}).getAttribute && document.querySelector('.tm-notebook').getAttribute('data-day') === d, tomorrow, 7000);
+    await L.waitFor(p, () => !!document.querySelector('select[data-k="tm-addsvc:bo"]'), null, 7000);
+    ok(await field(p, 'tm-addsvc:bo').getAttribute('data-day') === tomorrow && await field(p, 'tm-addsvc:bo').evaluate(e => [...e.options].some(o => o.value === 'lunch')), 'tomorrow: Bo\'s own Add a service offers Lunch, drawn for tomorrow');
     if (await p.locator(addOption).count()) await p.locator(addOption).click();
     await L.settle(p, 250);
-    ok(!await p.locator('.tm-tlrow').count() && await saveOff(p), 'held Add a service: today\'s choice puts nobody on tomorrow (' + await p.locator('.tm-tlrow').count() + ' rows)');
+    ok(!await field(p, 'tm-sec:bo:lunch').count() && await p.locator('.tm-tlrow').count() === 3 && await saveOff(p), 'held Add a service: today\'s choice does not put Bo on tomorrow\'s Lunch');
     await L.teamDay(p, today); await ready(p);
     ok(!await field(p, 'tm-sec:bo:lunch').count() && await saveOff(p) && same(await read(p), beforeAdd), 'held Add a service: nor on today once the date has moved');
     // stray Add a service changes: another date, a person not on the list, a service that is not set up, one already worked
@@ -171,19 +176,32 @@ const forge = (p, list) => p.evaluate(list => {
     await p.context().close();
 
     // The details panel's Close and reopen went with the rows. The focus still lands on the next thing to do, for the
-    // same person and service, and the unsaved break is kept until Save.
+    // same person and service, and the unsaved break is kept until Save. These two focus checks fail on the 16 Nov
+    // build: draw() puts the focus back by data-p and data-id only, so it lands on Ann's first service (Lunch).
     for (const width of [390, 1280]) {
       p = await open(browser, base, { width });
       await p.locator('[data-p="tm-addbr"][data-id="ann"][data-sh="dinner"]').focus(); await p.keyboard.press('Enter'); await L.settle(p, 200);
       const focused = await p.evaluate(() => {
         const el = document.activeElement, s = el && (el.matches('select') ? el : el.previousElementSibling);
-        return s && s.matches && s.matches('select') ? s.getAttribute('data-k') + ' ' + s.getAttribute('data-day') + ' ' + s.getAttribute('data-sh') : el && el.outerHTML.slice(0, 80);
+        return s && s.matches && s.matches('select') ? s.getAttribute('data-k') + ' ' + s.getAttribute('data-day') + ' ' + s.getAttribute('data-sh') : el && [el.tagName, el.getAttribute('data-p'), el.getAttribute('data-id'), el.getAttribute('data-sh')].join(' ');
       });
       ok(focused === 'tm-at:ann:dinner:1 ' + today + ' dinner', width + ': keyboard + Break on Ann\'s Dinner puts the focus on that new break\'s time (' + focused + ')');
       await L.pick(p, 'select[data-k="tm-at:ann:dinner:1"]', '1230');
-      ok(await value(p, 'tm-at:ann:dinner:1') === '1230' && await value(p, 'tm-at:ann:dinner:0') === '1140' && await value(p, 'tm-at:ann:lunch:0') === '825' && !await field(p, 'tm-at:bo:dinner:0').count() && !await saveOff(p),
-        width + ': the new break holds the time picked; Ann\'s other breaks and Bo are as they were');
-      ok((await read(p)).v === 1 && !p.errors.length, width + ': the break draft does not save or produce browser errors ' + p.errors.join(' | '));
+      ok(await value(p, 'tm-at:ann:dinner:1') === '1230' && await value(p, 'tm-at:ann:dinner:0') === '1140' && await value(p, 'tm-at:ann:lunch:0') === '825' && !await field(p, 'tm-at:bo:dinner:0').count() && !await saveOff(p) && (await read(p)).v === 1,
+        width + ': the new break holds the time picked, unsaved; Ann\'s other breaks and Bo are as they were');
+      // Take off is armed by person, service and date. The second tap must reach the same button: Enter on Take off
+      // Dinner keeps the focus on Ann's armed Dinner button, never her Lunch one.
+      const offDinner = '[data-p="tm-off"][data-id="ann"][data-sh="dinner"]';
+      await p.locator(offDinner).focus(); await p.keyboard.press('Enter'); await L.settle(p, 200);
+      const armedFocus = await p.evaluate(() => { const a = document.activeElement; return [a.getAttribute('data-p'), a.getAttribute('data-id'), a.getAttribute('data-sh'), a.classList.contains('is-armed')].join(' '); });
+      ok(armedFocus === 'tm-off ann dinner true', width + ': keyboard Take off Dinner keeps the focus on Ann\'s armed Dinner button (' + armedFocus + ')');
+      await p.locator(offDinner).click(); await L.settle(p, 200);
+      ok(JSON.stringify(await p.$$eval('.tm-tlrow[data-id="ann"] .tm-tlsvc', l => l.map(e => e.dataset.sh))) === '["lunch"]' && await value(p, 'tm-sec:ann:lunch') === 'grill' && await value(p, 'tm-at:ann:lunch:0') === '825' && await value(p, 'tm-sec:bo:dinner') === 'grill',
+        width + ': Take off Dinner takes Ann off Dinner only; her Lunch and Bo are as they were');
+      await p.keyboard.press('Enter'); await L.settle(p, 200);
+      ok(await value(p, 'tm-sec:ann:dinner') === 'pans' && await value(p, 'tm-at:ann:dinner:0') === '1140' && await value(p, 'tm-at:ann:dinner:1') === '1230' && (await read(p)).v === 1,
+        width + ': Undo from the keyboard puts back Ann\'s Dinner with its section and both breaks, unsaved');
+      ok(!p.errors.length, width + ': the break and Take off drafts raise no browser errors ' + p.errors.join(' | '));
       await p.context().close();
     }
   } finally {

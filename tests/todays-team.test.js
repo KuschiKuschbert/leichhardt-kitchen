@@ -90,7 +90,9 @@ const withoutViewChoice = async p => {
   ok(await onShift(p, 'sam'), 'page: Sam is ticked onto Lunch');
   ok(await p.$eval('select[data-k="tm-sec:sam:lunch"]', e => e.value === '' && [...e.options].some(o => o.value === '' && o.textContent === 'Sous chef')), 'page: a sous chef has a section picker too, starting on their role');
   await tap(p, '[data-p="tm-addbr"][data-id="ann"][data-sh="lunch"]'); await L.settle(p, 200);
-  ok(await p.evaluate(() => !!document.activeElement && document.activeElement.matches('select[data-k="tm-at:ann:lunch:0"]')), 'page: + Break puts the focus on the new break\'s time, the next thing to choose');
+  // the time picker shows as its enhanced button when the book draws one, so either one holding the focus counts
+  const brFocus = await p.evaluate(() => { const a = document.activeElement, s = document.querySelector('select[data-k="tm-at:ann:lunch:0"]'); return { ok: !!a && !!s && (a === s || a === s.nextElementSibling && a.classList.contains('ux-picker-trigger')), at: a ? a.tagName + '.' + a.className : 'none' }; });
+  ok(brFocus.ok, 'page: + Break puts the focus on the new break\'s time, the next thing to choose (focus on ' + brFocus.at + ')');
   ok(await pick(p, 'tm-at:ann:lunch:0', 870) && await pick(p, 'tm-len:ann:lunch:0', 45), 'page: Ann gets a break at 14:30 for 45 minutes');
   await L.settle(p, 150);
   ok((await p.$eval('[data-p="tm-save"]', e => e.disabled)) === false, 'page: Save is on once something changed');
@@ -155,7 +157,7 @@ const withoutViewChoice = async p => {
   p = await L.open(b, '#/team', { who: 'sam', extra: cfg(), failReads: '/team(?:/|$)', wait: 1800 });
   ok((await txt(p, '.tm-page') || '').includes('Could not load the team for ' + dayTitle) && !/Not set yet/.test(await txt(p, '.tm-page') || ''), 'no signal: the page says which date could not load, not "not set yet"');
   const tries = await p.evaluate(() => window.__fake.reads.filter(r => /\/team\//.test(r)).length);
-  // a tap that draws the page again (the date list; the details' Add it once tapped is gone) still reads nothing
+  // a tap that draws the page again still reads nothing (the date list; the details' Add tapped here before is gone)
   await L.settle(p, 1500); await tap(p, '[data-p="tm-date-toggle"]'); await L.settle(p, 500);
   ok(await p.evaluate(() => window.__fake.reads.filter(r => /\/team\//.test(r)).length) === tries && tries <= 2, 'no signal: it does not read again by itself before 5 minutes (' + tries + ' tries)');
   c = await chip(p);
@@ -332,7 +334,7 @@ const withoutViewChoice = async p => {
   p = await L.open(b, '#/team', { who: 'sam', extra: Object.assign(cfg(), { [TSUM]: learnSum, [TEAM]: learnPlan }), wait: 1800 });
   await L.waitFor(p, () => !!document.querySelector('.tm-tlhint'), null, 8000).catch(() => {});
   let hints = await learnHints(p);
-  ok(JSON.stringify(hints.filter(h => h[1])) === JSON.stringify([['bo', 'Not on Pans in 30 days. Ann is on Pans in this plan.']]), 'learn: only Bo gets a hint, pairing him with Ann on Pans (one service column, so no service name before it) (' + JSON.stringify(hints) + ')');
+  ok(JSON.stringify(hints.filter(h => h[1])) === JSON.stringify([['bo', 'Not on Pans in 30 days. Ann is on Pans in this plan.']]), 'learn: only Bo gets a hint, pairing him with Ann on Pans (one service on the day, so no service name before it) (' + JSON.stringify(hints) + ')');
   ok(!(await L.overflow(p)) && p.errors.length === 0, 'learn: no sideways scroll or page errors ' + p.errors.join(' | '));
   await p.context().close();
   p = await L.open(b, '#/team', { who: 'sam', extra: Object.assign(cfg(), { [TSUM]: learnSum, [TEAM]: learnPlan }), failReads: '/teamsum/', wait: 1800 });

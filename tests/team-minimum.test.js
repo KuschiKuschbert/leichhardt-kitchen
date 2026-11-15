@@ -75,6 +75,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   // 3. A half-done fix: Sam K's Dinner break moves to 19:30 in his own row. The line follows at once and says Unsaved.
   //    The Breaks panel and its hold went with the rows (16 Nov 2026): Sam K's mark goes on the same draw, in his name
   //    column, and the picker he just used stays where his thumb is (the hold's reason: a row never moves under a thumb).
+  //    The thumb check fails on the 16 Nov build at 390 px: the mark's line goes and the picker moves up 19 px.
   const samAt = 'select[data-k="tm-at:sam:dinner:0"]';
   const thumb = () => p.$eval(samAt, e => Math.round(e.nextElementSibling.getBoundingClientRect().top + scrollY));
   const thumbBefore = await thumb();

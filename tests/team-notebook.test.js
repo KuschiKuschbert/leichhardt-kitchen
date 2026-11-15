@@ -67,9 +67,11 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   ok(await val(p, 'tm-sec:sam:dinner') === 'grill' && await val(p, 'tm-sec:sam:lunch') === 'grill', 'each service: Dinner keeps its own section beside Lunch, without a selected assignment mode');
   await assign(p, 'sam', 'pans', 'dinner');
   // Whole day review went (16 Nov 2026): Sam's row is his whole day, its sentence his hours and breaks
-  const samLine = sh => txt(p, '.tm-tlrow[data-id="sam"] .tm-tlsvc[data-sh="' + sh + '"]');
-  const samDay = await txt(p, '.tm-tlrow[data-id="sam"] .tm-roster-time') || '';
-  ok(/Unsaved changes/.test(await txt(p, '.tm-draftstate') || '') && /Lunch/.test(await samLine('lunch') || '') && /Grill/.test(await samLine('lunch') || '') && /Dinner/.test(await samLine('dinner') || '') && /Pans/.test(await samLine('dinner') || ''), 'Sam\'s row: the same draft shows Lunch Grill and Dinner Pans');
+  // what the chef sees on each of Sam's lines: its service name and the section its picker shows (visible text only,
+  // so the picker's other options never count)
+  const samLine = sh => p.$eval('.tm-tlrow[data-id="sam"] .tm-tlsvc[data-sh="' + sh + '"]', e => e.querySelector('.tm-tlsvc-head b').innerText + ' | ' + e.querySelector('.tm-tlsvc-sec').innerText.replace(/\s+/g, ' '));
+  const samDay = await txt(p, '.tm-tlrow[data-id="sam"] .tm-roster-time') || '', lunchSeen = await samLine('lunch'), dinnerSeen = await samLine('dinner');
+  ok(/Unsaved changes/.test(await txt(p, '.tm-draftstate') || '') && /^Lunch \|.*Grill/.test(lunchSeen) && !/Pans|Larder/.test(lunchSeen) && /^Dinner \|.*Pans/.test(dinnerSeen) && !/Grill|Larder/.test(dinnerSeen), 'Sam\'s row: the same draft shows Lunch Grill and Dinner Pans (' + lunchSeen + '; ' + dinnerSeen + ')');
   ok(/14:30/.test(samDay) && /19:00/.test(samDay) && /21:30/.test(samDay) && /[Ss]plit/.test(samDay), 'Sam\'s row: his meal break, split and return time remain in the draft (' + samDay + ')');
   ok(await p.$$eval('[data-p="tm-save"]', all => all.length) === 1 && (await saved(p)).v === 1 && await away(p) === initialAway, 'draft: one Save, no automatic write, and the saved away panel stays unchanged');
   ok(await readCount(p) === before, 'reads: section and break changes in the rows reuse the loaded plan and training data');

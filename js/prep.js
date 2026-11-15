@@ -14653,7 +14653,7 @@ if (list.length) sg('oreg', 's');
       tmf.br.push({ id: id, sh: sh, at: at, len: split ? TM_SPLIT : 30 }); tmClearMsg(); draw();
       // the new break's time picker takes the focus, so the next move is to choose its time
       var nb = tmBreaks(id, sh).length - 1;
-      requestAnimationFrame(function () { var t = S.root && S.root.querySelector('select[data-k="tm-at:' + id + ':' + sh + ':' + nb + '"]'); if (t) { t.focus({ preventScroll: true }); tmFocusEnsureVisible(t); } });
+      requestAnimationFrame(function () { var t = S.root && S.root.querySelector('select[data-k="tm-at:' + id + ':' + sh + ':' + nb + '"]'); if (t && t._uxTrigger) t = t._uxTrigger; if (t) { t.focus({ preventScroll: true }); tmFocusEnsureVisible(t); } });
       return;
     }
     if (a === 'tm-spread') { tmSpread(); return; }
@@ -14695,7 +14695,10 @@ if (list.length) sg('oreg', 's');
       if (!ap || !as || tmOnShift(id, v)) return;
       var hidden = !tmShown(as);
       tmAddShift(id, v); if (hidden) tmOccShow(v);
-      tmClearMsg(); tmAssignMsg = ap.name + ' added to ' + as.name + '. Not saved yet.' + (tmRosterFlag(id) ? ' ' + tmRosterFlag(id) + '.' : ''); draw(); return;
+      tmClearMsg(); tmAssignMsg = ap.name + ' added to ' + as.name + '. Not saved yet.' + (tmRosterFlag(id) ? ' ' + tmRosterFlag(id) + '.' : ''); draw();
+      // the new service's section picker takes the focus, so the next move is to give the section (the picker may be gone)
+      requestAnimationFrame(function () { var t = S.root && S.root.querySelector('select[data-k="tm-sec:' + id + ':' + v + '"]'); if (t && t._uxTrigger) t = t._uxTrigger; if (t) { t.focus({ preventScroll: true }); tmFocusEnsureVisible(t); } });
+      return;
     }
     // a break's time or length: tm-at:<id>:<sh>:<n>, so a held picker can only reach its own person, service and break
     if (p[0] === 'tm-at' || p[0] === 'tm-len') {
