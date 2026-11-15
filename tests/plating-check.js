@@ -122,7 +122,7 @@ function measure(G, parts, extraPrims) {
     if (o > ov) { ov = o; ovPair = A.name + ' / ' + B.name; }
     if (!isBed(A) && !isBed(B) && !(GROUP[A.role] === 'vegsalad' && GROUP[B.role] === 'vegsalad') && o > ovHard) { ovHard = o; hardPair = A.name + ' / ' + B.name; } }
   const main = vis.filter(p => /^(protein|dessert)$/.test(GROUP[p.role])).sort((x, y) => y.n-x.n)[0] || null;
-  const sauces = vis.filter(p => GROUP[p.role] === 'sauce').map(s => { const um = main && main !== s ? inter(s.mask, main.mask)/s.n : 0; let uo = 0, on = ''; solid.forEach(q => { if (q === main) return; const o = inter(s.mask, q.mask)/s.n; if (o > uo) { uo = o; on = q.name; } }); return { name: s.name, share: s.share, underMain: um, underOther: uo, other: on, p: s }; });
+  const sauces = vis.filter(p => GROUP[p.role] === 'sauce').map(s => { const um = main && main !== s ? inter(s.mask, main.mask)/s.n : 0; let uo = 0, on = ''; solid.forEach(q => { if (q === main || s.z != null && q.z != null && q.z < s.z) return; const o = inter(s.mask, q.mask)/s.n; if (o > uo) { uo = o; on = q.name; } }); return { name: s.name, share: s.share, underMain: um, underOther: uo, other: on, p: s }; });
   const beds = vis.filter(p => p !== main && isBed(p)), onBed = main && beds.length ? Math.max(...beds.map(b => inter(main.mask, b.mask)/main.n)) : null;
   const BINS = 36, tot = new Array(BINS).fill(0), food = new Array(BINS).fill(0);
   for (let k = 0; k < N; k++) { if (!G.inA[k]) continue; const [x0, y0] = XY(k), x = (x0-a.cx)/a.rx, y = (y0-a.cy)/a.ry; if (Math.hypot(x, y) < 0.3) continue; const b = Math.floor(((Math.atan2(x, -y)*180/Math.PI+360) % 360)/(360/BINS)) % BINS; tot[b]++; if (uni[k]) food[b]++; }
@@ -172,8 +172,9 @@ function auto(r, seed) {
   const d = DR.blank(r.id, 'plate'); let res = null;
   DR.withDrawing(d, () => { res = S.drawIt(seed || 0); });
   const a = LIB.surface(d.surf).area, G = grid(a), by = {};
-  DR.withDrawing(d, () => d.els.forEach(e => { if (e.t !== 'item' && e.t !== 'raw') return; const it = e.t === 'item' ? LIB.get(e.a.split('@')[0]) : null, role = it ? it.role : e.role || 'main', key = e.ing || e.a;
-    const p = by[key] = by[key] || { name: key, role, prims: [], els: 0, ids: {} }; p.els++; p.ids[it ? it.id : 'raw:' + (e.made || e.dr || '')] = it ? it.form || '' : 'card'; p.prims.push(...flatten(Rn.elSVG(e))); }));
+  // z: where the part is first drawn; a sauce drawn over a part (a dollop on a salad) is not under it
+  DR.withDrawing(d, () => d.els.forEach((e, z) => { if (e.t !== 'item' && e.t !== 'raw') return; const it = e.t === 'item' ? LIB.get(e.a.split('@')[0]) : null, role = it ? it.role : e.role || 'main', key = e.ing || e.a;
+    const p = by[key] = by[key] || { name: key, role, prims: [], els: 0, ids: {}, z }; p.els++; p.ids[it ? it.id : 'raw:' + (e.made || e.dr || '')] = it ? it.form || '' : 'card'; p.prims.push(...flatten(Rn.elSVG(e))); }));
   const parts = Object.values(by), m = measure(G, parts, []);
   m.style = res && res.style; m.kind = d.surf.fam + (d.surf.size || '') + (d.surf.shape && d.surf.shape !== 'round' ? d.surf.shape : ''); m.parts = parts.length; m.els = d.els.length; m.area = a; m.unsure = (res && res.unsure || []).map(u => u.ing);
   m.sauceHow = m.sauces.map(s => { const ids = Object.keys(s.p.ids), ram = ids.some(x => /ramekin/.test(x)), ing = (r.ingredients || []).find(i => Rn.ingName(i) === s.name), want = WANT_SIDE.test(s.name + ' ' + (ing && ing.note || ''));
@@ -228,7 +229,7 @@ const RULES = [
   ['the food sits in the middle (off by 0.18 or less on a plate, 0.30 on a board)', x => x.off > (fam(x.kind) === 'board' ? 0.30 : 0.18)],
   ['on a bed, the main is at least half on it', x => x.style === 'bed' && x.onBed != null && x.onBed < 0.5],
   ['a sauce the recipe serves on the side is in a ramekin', x => x.sauces.some(s => s.missingRamekin)],
-  ['garnish and toppings together are under 0.6 of the main (parmy toppers apart)', x => !/parm|schnit/i.test(x.r.name) && x.garnTotal > 0.6],
+  ['garnish and toppings together are under 0.6 of the main (parmy toppers, tacos and boards apart: there the toppings are the dish)', x => !/parm|schnit|taco|nacho/i.test(x.r.name) && fam(x.kind) !== 'board' && x.garnTotal > 0.6],
   ['at most 3 extra copies on a plate', x => fam(x.kind) !== 'board' && x.els - x.parts > 3],
   ['the drawing carries the layout version (layout.lv 2)', x => x.lv !== 2],
   ['a board is the book\'s size (36)', x => fam(x.kind) === 'board' && x.surf.size !== 36],
