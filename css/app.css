@@ -4910,6 +4910,7 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .hm-tp b { font-weight: 600; }
 .hm-tp small { display: block; font-size: 0.75rem; line-height: 1.25; color: var(--muted); }
 .hm-tp.is-away small { font-weight: 700; color: var(--ink); }
+.hm-tp.is-away small.hm-tp-hrs { font-weight: 400; color: var(--muted); }   /* roster hours stay quiet; only "back 15:00" stands out */
 .hm-full-team > summary { display: flex; align-items: center; gap: 0.35rem; min-height: 44px; font-size: 0.8125rem; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .hm-full-team > summary::before { content: '+'; text-decoration: none; }
 .hm-full-team[open] > summary::before { content: '−'; }
