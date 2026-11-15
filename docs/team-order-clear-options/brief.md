@@ -168,3 +168,27 @@ The grid's service columns and "Off" cells go. The head lists each service with 
 | B and C redraw the bars on every picker change; an open picker elsewhere must keep its value and place. | Risk / Not evidenced | A click test before release. |
 | On a phone, C's row is 211 px: 1 row a screen. | **Reproduced** (measured) | Accept, or C on a phone keeps the grid (a second render path, the keeper's concern). |
 | How the roster maps a time to services (Mo 10:00 to 21:00 on Lunch and Dinner with the same hours). | Reproduced in round 1b | The head chef's question; no design fixes it alone. |
+
+## Head chef's direction during round 2 (16 November 2026)
+
+"You can completely restyle the whole today's team room in the admin panel if needed, refactor what needs to be refactored to get the best UI/UX and DX. Make it easier but keep the functionality. If those chips are too complicated get rid of them or replace them."
+
+So replacing the 15 November day grid, the details panel and its service chips ("Lunch", "Dinner (off)", "+ Smoker") is the head chef's own direction, not a departure to ask about. The scorers were told while scoring. The same page serves the sous chefs' chef panel and `#/team`, so a restyle reaches them too.
+
+### What the room does today (every function to keep)
+
+Each must still be possible after a restyle, at 390, 768 and 1280 px, for the head chef (admin) and a sous chef (chef panel) where they have it today. Source: `teamPageHTML()` and its handlers in `js/prep.js`.
+
+| Part | Functions today (`data-p` / `data-k`) |
+| --- | --- |
+| Date | The date and its week list with each day's state (Saved, Draft, Not set, Checking, Retry), week back and forward, Today (`tm-date-toggle`, `tm-day`, `tm-week-prev`, `tm-week-next`, `tm-today`); "Planning Monday 16 November. The live board still shows today's saved breaks." |
+| State | Unsaved changes, Saved 13:00 · Gus, Not saved. Changes kept., Refresh (a second tap when there is a draft) (`tm-refresh`) |
+| Who is on | Add staff: Who's working? with people ticks and service ticks, a hidden shift as "+ Smoker", Add selected staff (`tm-add-staff`, `tm-quick-person`, `tm-quick-shift`, `tm-occ-show`, `tm-quick-add`); Find a person by name or section (`tm-q`) |
+| Each person | A section per service with Usually, Often and Same as offered first, chefs read Head chef or Sous chef (`tm-sec`); add or remove a service, a hidden one as "+ Smoker" (`tm-on`, `tm-sh`); up to three breaks a service, each a time and a length, splits of 150 minutes or more (`tm-addbr`, `tm-at`, `tm-len`); overlap warnings between a person's breaks; roster hours; "break when too few" marks; Usually and Also on hints |
+| Each service | Its hours and how many have no section (the grid heads) |
+| Whole day | Whole day review: each person's services, sections, hours and breaks in words with Edit links (`tm-whole`) |
+| Tools | Copy last weekday (`tm-use`); Spread them for one service: from, one/two/all, length, gap (`tm-tool-sh`, `tm-spfrom`, `tm-spmode`, `tm-splen`, `tm-spgap`, `tm-spread`); overlap review |
+| Roster file (admin) | Choose roster file, fill the week's empty days, link roster names, save each day or all (`tm-roster-choose`, `tm-roster-file`, `tm-roster-day`, `tm-roster-link`, `tm-roster-unlink`, `tm-roster-pick`, `tm-roster-saveall`) |
+| Save | The dated, versioned Save with its words ("Team for Monday 16 November saved at 13:00: 9 people on. Still no section: ..."), the Too few line (`tm-save`) |
+| Today only | On break now (the charcoal live strip) and its Saved details, Next planned breaks today, the Saved shift overview (`tm-live-toggle`, `tm-next-toggle`, `tm-overview-toggle`) |
+| Other | No shifts yet: Set up the shifts (`tm-setup`); PIN again (`tm-pin`); a past day read-only with its saved timeline |
