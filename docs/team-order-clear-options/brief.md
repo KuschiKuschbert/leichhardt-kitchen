@@ -5,7 +5,7 @@
 1. "When I add shifts like lunch, all day etc. I'd like them to show up in order when their service times are so. ... And I'd like a remove all shifts for the shown day in the today's team for the admin."
 2. Then, widening it: "We really need to rethink this workflow, now that I can import a CSV. It's super complicated to add someone to a shift and then set their breaks without seeing when they work on that day so maybe even have a bar in line from start time to end time? Mostly this workflow will be done on a computer but it needs to also be considered for phone and tablet sizes."
 
-**Status: round 1 on the first proposal, Build smaller (5 of 5). Round 1 on the widened proposal running.** Role-based analysis, not research with staff. [First proposal](proposal.md), [widened proposal](proposal-timeline.md), [evidence packet](evidence-packet.md).
+**Status: round 1a Build smaller (5 of 5); round 1b Build smaller (5 of 5); round 2 C 18, B 10, A 8; the combined preview D (the mix) reviewed by the designer, the skeptic and the new starter and repaired. Recommendation: D, built in three pull requests. Waiting for the head chef's choice.** Role-based analysis, not research with staff. [First proposal](proposal.md), [widened proposal](proposal-timeline.md), [evidence packet](evidence-packet.md).
 
 ## Round 1a: time order and Clear this day
 
@@ -242,10 +242,10 @@ A blend of all three layouts is not possible: A and B keep the grid that C remov
 
 ## Combined preview: D, the mix
 
-Lead's synthesis of the scorers' own parts; **review status: focused follow-up requested from the designer, the skeptic and the new starter on the new flows (Add a service, Take off) and the phone layout.** Same patch (`window.__tl = 'D'`), runner `preview-run-mix.cjs`, raw `measured-mix.txt`.
+Lead's synthesis of the scorers' own parts; **review status: focused follow-up by the designer, the skeptic and the new starter on the new flows (Add a service, Take off) and the phone layout; their must-fix items were repaired in the preview (below). Not re-scored by the whole council.** Same patch (`window.__tl = 'D'`), runner `preview-run-mix.cjs`, raw `measured-mix.txt`.
 
 - **Head (sticky):** each service in time order with its hours and how many have no section (on a phone, only the counts), then the hour marks (every hour from 600 px, every third on a phone).
-- **Each person, from 600 px:** a name column (the name, Head chef or Sous chef, and **Add a service** listing the services they are not on, in time order, a hidden one as "Smoker 06:00 to 15:00 (shows only when someone is on it)"); beside it their bar on the day's scale with the break as a taller orange block edged in paper, the sentence under it, then one line per service: the service with **Take off** ("Tap again to take Cal off Lunch"), the Section picker (Usually, Often and Same as first, as now), the break pickers ("Break 13:30", "Length 30 min") and **+ Break**; then the cross-training hint and any overlap warning. On a phone the name and Add a service share a line, and + Break sits beside the section.
+- **Each person, from 600 px:** a name column (the name, and Head chef or Sous chef); beside it their bar on the day's scale (6 px, the break a taller orange block edged in paper), the sentence under it ("Roster 12:00 to 15:00 · Break 13:30 to 14:00"; two roster times say their services: "Roster: Lunch 08:00 to 15:00, Dinner 17:00 to 21:00"), then one line per service: the service with **Take off Lunch** (ink at rest; "Tap again to take off" in red once armed), the Section picker (Usually, Often and Same as first, as now; a chef's reads Head chef with a solid edge), the break pickers ("Break 13:30", "Length 30 min") and **+ Break** straight after them; at the spare end of the last line, **Add a service** (a quiet solid picker listing the services they are not on, in time order, a hidden one as "Smoker 06:00 to 15:00 (hidden until someone is on it)"); then the cross-training hint, any overlap warning and, after a Take off, "Cal taken off Lunch and its breaks. Not saved yet. **Undo**". Below 1100 px the breaks take their own line; on a phone + Break sits beside the section and Add a service ends the row.
 - **Gone:** the day grid's columns and "Off" cells, the details panel and its chips, the Breaks link, Whole day review.
 - **Kept:** Add staff (Who's working?, with "+ Smoker"), Find, the date and its week list, Refresh, the dated Save and its words, the Too few line and marks, the fold (Copy last weekday, Clear, Spread), Fill from roster file, On break now, Next planned breaks, the Saved shift overview, the past day's read-only view.
 
@@ -254,11 +254,11 @@ Lead's synthesis of the scorers' own parts; **review status: focused follow-up r
 | Dev: section and a break, taps (390, 768, 1280) | 4 | 3 | **3** |
 | The day: 7 cooks, a section and a break each, then Save, 1280 | 29 | 22 | **22** |
 | Break times offered to Dev | 21 | 11 | **11** |
-| Rows wholly in one screen from the first row, 390 / 768 / 1280 | 3 / 7 / 6 | 1 / 6 / 5 | **2 / 6 / 5** |
+| Rows wholly in one screen from the first row, 390 / 768 / 1280 | 3 / 7 / 6 | 1 / 6 / 5 | **1 / 5 / 5** (Gus, two services, is tall) |
 | Rows wholly in one screen from Ari (one service each), 390 / 768 / 1280 | not measured reliably | not measured | **2 / 6 / 6** |
-| Median row px, 390 / 768 / 1280 | 123 / 104 / 104 | 211 / 117 / 117 | **172 / 114 / 114** |
+| Median row px, 390 / 768 / 1280 | 123 / 104 / 104 | 211 / 117 / 117 | **202 / 118 / 111** |
 | Add a service (Ari onto Dinner), 390 | Breaks, Dinner (off), Add Dinner: 3 | Services, then the chip: 3 | **1** |
-| Take someone off a service (Cal off Lunch), 390 | Breaks, Remove Lunch and its breaks: 2 | 3 | **2** (Take off, Tap again) |
+| Take someone off a service (Cal off Lunch), 390 | Breaks, Remove Lunch and its breaks: 2 | 3 | **2** (Take off Lunch, Tap again); **Undo** in place puts back the service, section, breaks and roster hours (1) |
 | Clear the whole day, 390 | 30, then Save | 3, then Save | **3, then Save** |
 | A sous chef on `#/team`, 390 | grid | | **9 rows, no Clear, no sideways scroll, no errors** |
 | Sideways scroll, browser errors (390, 768, 1280) | none | none | **none** |
@@ -268,3 +268,35 @@ Screenshots: `D-plan-390.png`, `D-dev-390.png`, `D-dev-768.png`, `D-dev-1280.png
 **Contract fit:** sage book and paper: Works. Words on every state ("No break yet", "Not saved yet", "Tap again to take Cal off Lunch"): Works. The break as a shape and colour with words: Works by precedent; the bar track is gone (the 1.08:1 finding). Real contrast, keyboard focus on the new picker and links, reduced motion: Not evidenced. A failed Save, a lock and a second writer: unchanged code paths, Not evidenced. "Nobody on reads as Not set": not in the preview; pull request 1.
 
 **Not evidenced:** real fonts on a phone; a day with no roster hours (the sentence then says "Lunch hours 10:00 to 15:00"); five services in the sticky head on a phone; about 20 people; a picker held open while bars redraw; the roster-to-service mapping (the head chef's question).
+
+### Follow-up on D (designer, skeptic, new starter) and the repairs
+
+| Finding | Who | Evidence | Repaired in the preview |
+| --- | --- | --- | --- |
+| "Take off" alone is vague; red at rest on ten lines competes with Save; the armed words wrapped to three lines at 390 px | New starter, designer | Screenshots | "Take off Lunch" in ink; red "Tap again to take off" once armed; the full words for a screen reader |
+| "(shows only when someone is on it)": "it" is unclear | New starter | Words | "(hidden until someone is on it)" |
+| Take off drops the service's breaks and roster hours without a word; the message pointed to a picker that had gone with the row; focus fell to the page | New starter, skeptic | **Reproduced** at 390 px (skeptic) | "Cal taken off Lunch and its breaks. Not saved yet. Undo", in the row or where the row was; Undo puts back the service, section, breaks and roster hours ("Undone: Cal is back on Lunch ..."); focus moves to Undo. Checked in the preview: Cal's words read "Roster 10:00 to 14:30" again |
+| Add a service's dashed edge reads as No section; at the row's top corner it is the first thing seen | Designer | Screenshots | A quiet solid picker at the spare end of the last service line (its own line at the end on a phone) |
+| Add a service did not carry the date | Skeptic | Checked in source | It carries the date like the other row controls |
+| A chef's "Head chef" picker looked empty (dashed) | New starter | Screenshot | Solid edge, ink words |
+| + Break sat 340 px from its section at 1280; break pickers wrapped at 768 | Designer | Screenshots | + Break straight after the breaks; below 1100 px the breaks take their own line; at 1280 the line wraps whole items |
+| The bars outweigh the controls; Eli's bar read as an underline at 390 | Designer | Screenshots | 6 px bars with space above |
+| Spread "one at a time" can put several on break together once breaks are kept inside hours, and says nothing | Skeptic | **Reproduced** at 1280 px | Spread names who it moved: "Moved inside their hours: Cal 14:00, Dev 14:30" (checked in the preview) |
+| Two roster times in the sentence did not say their services | Skeptic | Words | "Roster: Lunch 08:00 to 15:00, Dinner 17:00 to 21:00" |
+| A hidden shift added by hand (Bea onto Smoker 06:00 to 15:00) takes the service's hours, gets a split at 10:30 before she starts, and widens the day's scale to 06:00 | Skeptic | **Reproduced** at 1280 px | Not repaired: a question for the head chef (should a service added by hand take that day's roster hours?) |
+| Take off armed, then a date change | Skeptic | Checked in source: the arm is keyed by date | Safe |
+
+Contrast computed from tokens, not rendered (designer): Take off 7.35:1 at rest; the break block 4.77:1 on the bar, its paper edge 15.9:1. Keyboard focus on the new controls, a picker held open while bars redraw, a failed Save, a lock and a second writer: **Not evidenced**; click tests before release.
+
+## Recommendation
+
+**Recommend D, the mix: C's rows on one clock, A's words and fixes, B's single scale, with the chips and the Breaks panel replaced by Add a service and Take off (with Undo).** It is what all six scorers asked for, it fits the head chef's direction to restyle the room, and it keeps every function on the keep list. A cook's section and break take 3 taps, not 4; a day of 7 cooks 22, not 29; adding someone to a service 1, not 3; clearing a day 3 and Save, not 30. Break times sit inside each person's hours (Dev: 11 times from 12:00, not 21 from 10:00). The time, the section and the break are on one line next to the bar (Airbnb, Things 3), one scale reads the day (Flighty), one place for each job (Linear), plain words on every state (Headspace, Duolingo).
+
+**Main downside:** everyone relearns the room a day after the grid was chosen, and a phone shows two one-service people a screen, not three (202 px rows against 123). The test files for the grid, the panel and Whole day review are rewritten.
+
+**Build in three pull requests** (keeper): (1) on the current grid: time order, one hours helper, break times, + Break and Spread inside each person's hours with the moved names said, Clear this day, and a plan with nobody on reads as Not set everywhere; (2) the restyle: D's rows replace the grid, the panel and its chips, and Whole day review, in one go with no switch; (3) after the head chef has used it: the saved overview and the past day on the same bar and hours helper, dead code and CSS out, design pattern entries.
+
+**Open for the head chef:**
+1. How a roster time maps to services: the roster now saves the whole time on every service it touches (Mo 10:00 to 21:00 on Lunch and on Dinner). Cut it to each service's hours?
+2. A service added by hand (Bea onto Smoker): take that day's roster hours, or the service's hours?
+3. The 9 November rule (Lunch, then Dinner, then saved order) changes to time order.

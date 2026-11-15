@@ -119,7 +119,20 @@ const breakSel = (v, id, sh) => v === 'C' || v === 'D' ? 'select[data-k="tm-bat:
   await p.screenshot({ path: OUT + 'D-takeoff-390.png' });
   await tap(p, '[data-p="tm-off2"][data-id="cal"][data-sh="lunch"]');
   log(tag + ' 390 take Cal off Lunch', { taps, armedOff, msg: await p.evaluate(() => (document.body.innerText.match(/Cal taken off[^\n]*/) || [''])[0]), calRow: await p.evaluate(() => !!document.querySelector('.tm-person-row[data-id="cal"]')) });
+  log(tag + ' 390 after take off: focus and Undo', { focus: await p.evaluate(() => document.activeElement && document.activeElement.getAttribute('data-p')), undoLine: await p.evaluate(() => { const e = document.querySelector('.tm-tlundo'); return e ? e.innerText : ''; }) });
+  await tap(p, '[data-p="tm-off-undo"]');
+  log(tag + ' 390 Undo', { msg: await p.evaluate(() => (document.body.innerText.match(/Undone:[^\n]*/) || [''])[0]), calWords: await p.evaluate(() => { const r = document.querySelector('.tm-person-row[data-id="cal"] .tm-roster-time'); return r ? r.textContent : ''; }) });
   log(tag + ' 390 add and take off: errors', p.errors);
+  await p.context().close();
+  // Spread Lunch from 13:30, one at a time: who was moved inside their hours is named
+  p = await open(b, v, 1280); await ready(p);
+  await tap(p, 'details.tm-batch > summary');
+  await L.pick(p, 'select[data-k="tm-tool-sh"]', 'lunch'); await L.settle(p, 150);
+  await L.pick(p, 'select[data-k="tm-spfrom"]', String(H(13, 30))); await L.settle(p, 150);
+  await L.pick(p, 'select[data-k="tm-spmode"]', '1'); await L.settle(p, 150);
+  await tap(p, '[data-p="tm-spread"]');
+  log(tag + ' 1280 Spread Lunch from 13:30 one at a time', await p.evaluate(() => (document.body.innerText.match(/\d+ breaks? from[^\n]*/) || [''])[0]));
+  log(tag + ' 1280 Gus words', await p.$eval('.tm-person-row[data-id="gus"] .tm-roster-time', e => e.textContent));
   await p.context().close();
   // Clear
   p = await open(b, v, 390); await ready(p); taps = 0;

@@ -1,37 +1,41 @@
-D 390 rows in one screen, median row px, list px, head px: {"rows":2,"rowPx":172,"list":1720,"headPx":75}
+D 390 rows in one screen, median row px, list px, head px: {"rows":1,"rowPx":202,"list":1995,"headPx":75}
 D 390 rows in one screen from Ari (one service each): {"rows":2,"room":544}
 today 390 rows in one screen from Ari (one service each): {"rows":1,"room":241}
 D 390 services in the head: ["Lunch 4 no section","All day 1 no section","Dinner 2 no section"]
-D 390 Add a service for Ari: ["Add a service","Smoker 06:00 to 15:00 (shows only when someone is on it)","All day 10:00 to 21:00","Dinner 17:00 to 21:00"]
+D 390 Add a service for Ari: ["Add a service","Smoker 06:00 to 15:00 (hidden until someone is on it)","All day 10:00 to 21:00","Dinner 17:00 to 21:00"]
 D 390 Dev: section and a break at 13:30, taps: 3
 D 390 Dev break times offered: {"first":"Break 12:00","last":"Break 14:30","count":11}
-D 390 Dev row words: "Dev | Add a service | Add a service ▾ | Roster 12:00 to 15:00 · Break 13:30 to 14:00 | Lunch | Take off | Section | Larder ▾ | Break 1 | Break 13:30 ▾ | Length | Length 30 min ▾ | + Break"
-D 390 Gus row words: "Gus | Head chef | Add a service | Add a service ▾ | Roster 08:00 to 15:00, Roster 17:00 to 21:00 · No break yet | Lunch | Take off | Section | Head chef ▾ | + Break | Dinner | Take off | Section | Head chef ▾ | + Break"
+D 390 Dev row words: "Dev | Roster 12:00 to 15:00 · Break 13:30 to 14:00 | Lunch | Take off Lunch | Section | Larder ▾ | Break 1 | Break 13:30 ▾ | Length | Length 30 min ▾ | + Break | Add a service | Add a service ▾"
+D 390 Gus row words: "Gus | Head chef | Roster: Lunch 08:00 to 15:00, Dinner 17:00 to 21:00 · No break yet | Lunch | Take off Lunch | Section | Head chef ▾ | + Break | Dinner | Take off Dinner | Section | Head chef ▾ | + Break | Add a service | Add a service ▾"
 D 390 sideways scroll, errors: {"over":false,"errors":[]}
-D 768 rows in one screen, median row px, list px, head px: {"rows":6,"rowPx":114,"list":1152,"headPx":76}
+D 768 rows in one screen, median row px, list px, head px: {"rows":5,"rowPx":118,"list":1194,"headPx":76}
 D 768 rows in one screen from Ari (one service each): {"rows":6,"room":815}
 today 768 rows in one screen from Ari (one service each): {"rows":3,"room":374}
 D 768 services in the head: ["Lunch 10:00 to 15:00 · 4 no section","All day 10:00 to 21:00 · 1 no section","Dinner 17:00 to 21:00 · 2 no section"]
-D 768 Add a service for Ari: ["Add a service","Smoker 06:00 to 15:00 (shows only when someone is on it)","All day 10:00 to 21:00","Dinner 17:00 to 21:00"]
+D 768 Add a service for Ari: ["Add a service","Smoker 06:00 to 15:00 (hidden until someone is on it)","All day 10:00 to 21:00","Dinner 17:00 to 21:00"]
 D 768 Dev: section and a break at 13:30, taps: 3
 D 768 Dev break times offered: {"first":"Break 12:00","last":"Break 14:30","count":11}
-D 768 Dev row words: "Dev | Add a service | Add a service ▾ | Roster 12:00 to 15:00 · Break 13:30 to 14:00 | Lunch | Take off | Section | Larder ▾ | Break 1 | Break 13:30 ▾ | Length | Length 30 min ▾ | + Break"
-D 768 Gus row words: "Gus | Head chef | Add a service | Add a service ▾ | Roster 08:00 to 15:00, Roster 17:00 to 21:00 · No break yet | Lunch | Take off | Section | Head chef ▾ | + Break | Dinner | Take off | Section | Head chef ▾ | + Break"
+D 768 Dev row words: "Dev | Roster 12:00 to 15:00 · Break 13:30 to 14:00 | Lunch | Take off Lunch | Section | Larder ▾ | Break 1 | Break 13:30 ▾ | Length | Length 30 min ▾ | + Break | Add a service | Add a service ▾"
+D 768 Gus row words: "Gus | Head chef | Roster: Lunch 08:00 to 15:00, Dinner 17:00 to 21:00 · No break yet | Lunch | Take off Lunch | Section | Head chef ▾ | + Break | Dinner | Take off Dinner | Section | Head chef ▾ | + Break | Add a service | Add a service ▾"
 D 768 sideways scroll, errors: {"over":false,"errors":[]}
-D 1280 rows in one screen, median row px, list px, head px: {"rows":5,"rowPx":114,"list":1129,"headPx":53}
+D 1280 rows in one screen, median row px, list px, head px: {"rows":5,"rowPx":111,"list":1107,"headPx":53}
 D 1280 rows in one screen from Ari (one service each): {"rows":6,"room":780}
 today 1280 rows in one screen from Ari (one service each): {"rows":2,"room":304}
 D 1280 services in the head: ["Lunch 10:00 to 15:00 · 4 no section","All day 10:00 to 21:00 · 1 no section","Dinner 17:00 to 21:00 · 2 no section"]
-D 1280 Add a service for Ari: ["Add a service","Smoker 06:00 to 15:00 (shows only when someone is on it)","All day 10:00 to 21:00","Dinner 17:00 to 21:00"]
+D 1280 Add a service for Ari: ["Add a service","Smoker 06:00 to 15:00 (hidden until someone is on it)","All day 10:00 to 21:00","Dinner 17:00 to 21:00"]
 D 1280 Dev: section and a break at 13:30, taps: 3
 D 1280 Dev break times offered: {"first":"Break 12:00","last":"Break 14:30","count":11}
-D 1280 Dev row words: "Dev | Add a service | Add a service ▾ | Roster 12:00 to 15:00 · Break 13:30 to 14:00 | Lunch | Take off | Section | Larder ▾ | Break 1 | Break 13:30 ▾ | Length | Length 30 min ▾ | + Break"
-D 1280 Gus row words: "Gus | Head chef | Add a service | Add a service ▾ | Roster 08:00 to 15:00, Roster 17:00 to 21:00 · No break yet | Lunch | Take off | Section | Head chef ▾ | + Break | Dinner | Take off | Section | Head chef ▾ | + Break"
+D 1280 Dev row words: "Dev | Roster 12:00 to 15:00 · Break 13:30 to 14:00 | Lunch | Take off Lunch | Section | Larder ▾ | Break 1 | Break 13:30 ▾ | Length | Length 30 min ▾ | + Break | Add a service | Add a service ▾"
+D 1280 Gus row words: "Gus | Head chef | Roster: Lunch 08:00 to 15:00, Dinner 17:00 to 21:00 · No break yet | Lunch | Take off Lunch | Section | Head chef ▾ | + Break | Dinner | Take off Dinner | Section | Head chef ▾ | + Break | Add a service | Add a service ▾"
 D 1280 sideways scroll, errors: {"over":false,"errors":[]}
 D 1280 whole day: 7 cooks, then Save: {"taps":22,"saved":true}
 D 390 Ari add Dinner: {"taps":1,"msg":"Ari added to Dinner. Not saved yet.","lines":["Lunch","Dinner"]}
 D 390 Bea add hidden Smoker: {"msg":"Bea added to Smoker. Not saved yet.","head":["Smoker 1 no section","Lunch 4 no section","All day 1 no section","Dinner 3 no section"]}
-D 390 take Cal off Lunch: {"taps":2,"armedOff":"Tap again to take Cal off Lunch","msg":"Cal taken off Lunch, so Cal is not on this day. Not saved yet. Add a service or Add staff puts them back.","calRow":false}
+D 390 take Cal off Lunch: {"taps":2,"armedOff":"Tap again to take off","msg":"Cal taken off Lunch and its breaks. Not saved yet. Undo","calRow":true}
+D 390 after take off: focus and Undo: {"focus":"tm-off-undo","undoLine":"Cal taken off Lunch and its breaks. Not saved yet. Undo"}
+D 390 Undo: {"msg":"Undone: Cal is back on Lunch with their section and breaks. Not saved yet.","calWords":"Roster 10:00 to 14:30 · No break yet"}
 D 390 add and take off: errors: []
+D 1280 Spread Lunch from 13:30 one at a time: "5 breaks from 13:30, one per group, starting every 30 min. Moved inside their hours: Cal 14:00, Dev 14:30. Check them, then Save."
+D 1280 Gus words: "Roster: Lunch 08:00 to 15:00, Dinner 17:00 to 21:00 · Break 13:30 to 14:00"
 D 390 clear: {"armedWords":"Tap again to clear Monday 16 November","rowsLeft":0,"tapsBeforeSave":3}
 D 390 sous chef: {"rows":9,"clear":false,"over":false,"errors":[]}

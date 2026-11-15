@@ -1,8 +1,8 @@
 diff --git a/css/app.css b/css/app.css
-index b8217d0..446ed4c 100644
+index b8217d0..f2a976b 100644
 --- a/css/app.css
 +++ b/css/app.css
-@@ -5705,3 +5705,76 @@ html:has(.tm-focus-page) {
+@@ -5705,3 +5705,115 @@ html:has(.tm-focus-page) {
    #rec-print h2 { font: 700 12pt var(--display); margin: 10pt 0 2pt; break-after: avoid; }
    #rec-print p { margin: 0 0 2pt; }
  }
@@ -79,3 +79,42 @@ index b8217d0..446ed4c 100644
 +}
 +@media (min-width: 1100px) { .tm-focus-page .tm-focus-grid.tm-tl-d { grid-template-columns: minmax(0, 1fr); } }
 +@media (min-width: 600px) { .tm-notebook .tm-tl-d .tm-tlrow > .tm-grid-who .tm-pick { flex: none; width: 100%; } }
++/* D, after the follow-up review (designer, new starter, skeptic) */
++.tm-tl-d .tm-rowbar { height: 6px; margin-top: .45rem; }
++.tm-tl-d .tm-rowbar .sh { border-radius: 3px; }
++.tm-notebook.tm-focus-page .tm-tl-d .tm-tloff { color: var(--ink); text-decoration: underline; }
++.tm-notebook.tm-focus-page .tm-tl-d .tm-tloff.is-armed { color: var(--bad-ink); font-weight: 700; }
++.tm-tl-d .tm-tladd { margin-top: .25rem; }
++.tm-tl-d .tm-tladd .tm-pick { display: inline-flex; flex: none; width: auto; margin: 0; }
++.tm-notebook.tm-focus-page .tm-tl-d .tm-tladd :is(select, .ux-picker-trigger) { width: auto; min-height: 44px; border: 1px solid var(--faint); border-style: solid; color: var(--muted); font-weight: 600; font-size: .875rem; }
++.tm-notebook.tm-focus-page .tm-tl-d .tm-grid-cell.is-chef .tm-pick:has(option[value=""]:checked) :is(.ux-picker-trigger, select) { border-style: solid; color: var(--ink); }
++.tm-tl-d .tm-tlundo { margin: .3rem 0; font-size: .875rem; }
++.tm-tl-d .tm-tlundo .p-link { min-height: 44px; font-weight: 700; }
++.tm-tl-d .tm-tlplan > .tm-tlgone { padding: .35rem 0; border-bottom: 1px solid var(--line); }
++/* the service line: + Break straight after the breaks on a laptop; breaks on their own line below 1100 px */
++.tm-tl-d .tm-tlsvc.tm-tlsvc-d { grid-template-columns: minmax(7rem, 10rem) minmax(8rem, 12rem) auto auto minmax(0, 1fr); grid-template-areas: "name sec brs add ."; }
++@media (max-width: 1099px) { .tm-tl-d .tm-tlsvc.tm-tlsvc-d { grid-template-columns: minmax(7rem, 10rem) minmax(8rem, 12rem) auto minmax(0, 1fr); grid-template-areas: "name sec add ." ". brs brs brs"; } }
++@media (max-width: 599px) {
++  .tm-tl-d .tm-tlsvc.tm-tlsvc-d { grid-template-columns: minmax(0, .9fr) minmax(0, 1.2fr) auto; grid-template-areas: "name sec add" "brs brs brs"; }
++  .tm-tl-d .tm-rowbar { margin-top: .5rem; margin-bottom: .25rem; }
++}
++.tm-tl-d .tm-tlsvc-brs { flex-wrap: nowrap; }
++@media (max-width: 599px) { .tm-tl-d .tm-tlsvc-brs { flex-wrap: wrap; } }
++/* Add a service sits in the spare end of the last service line; on a phone, its own line at the end */
++.tm-tl-d .tm-tlsvc.tm-tlsvc-d { grid-template-columns: minmax(7rem, 10rem) minmax(8rem, 12rem) auto auto minmax(0, 1fr); grid-template-areas: "name sec brs add more"; }
++.tm-tlsvc-d > .tm-tlsvc-more { grid-area: more; justify-self: end; min-width: 0; }
++.tm-tl-d .tm-tlsvc-more .tm-pick { display: inline-flex; flex: none; width: auto; margin: 0; }
++.tm-notebook.tm-focus-page .tm-tl-d .tm-tlsvc-more :is(select, .ux-picker-trigger) { width: auto; min-height: 44px; border: 1px solid var(--faint); border-style: solid; color: var(--muted); font-weight: 600; font-size: .875rem; }
++@media (max-width: 1099px) { .tm-tl-d .tm-tlsvc.tm-tlsvc-d { grid-template-columns: minmax(7rem, 10rem) minmax(8rem, 12rem) auto minmax(0, 1fr); grid-template-areas: "name sec add more" ". brs brs brs"; } }
++@media (max-width: 599px) {
++  .tm-tl-d .tm-tlsvc.tm-tlsvc-d { grid-template-columns: minmax(0, .9fr) minmax(0, 1.2fr) auto; grid-template-areas: "name sec add" "brs brs brs" "more more more"; }
++  .tm-tlsvc-d > .tm-tlsvc-more { justify-self: start; }
++}
++@media (min-width: 1100px) {
++  .tm-tl-d .tm-tlsvc.tm-tlsvc-d { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; }
++  .tm-tlsvc-d > .tm-tlsvc-name { flex: 0 0 10rem; }
++  .tm-tlsvc-d > .tm-tlsvc-sec { flex: 0 0 12rem; }
++  .tm-tlsvc-d > .tm-tlsvc-more { margin-left: auto; }
++}
++.tm-tl-d .tm-tlsvc-brs .tm-pick { flex: none; width: auto; }
++.tm-notebook.tm-focus-page .tm-tl-d :is(.tm-tlsvc-brs, .tm-tlsvc-more) .ux-picker-trigger { white-space: nowrap; width: auto; }
