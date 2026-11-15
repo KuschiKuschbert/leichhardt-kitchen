@@ -1,0 +1,142 @@
+{
+  "admin-390": {
+    "before": {
+      "first": {
+        "dockH": 96,
+        "boardNames": "3 of 4",
+        "rows": 0,
+        "line": "",
+        "lineOnScreen": false,
+        "marks": "",
+        "overflow": false
+      },
+      "working": {
+        "rows": 6,
+        "dockH": 96
+      },
+      "errors": 0
+    },
+    "built": {
+      "first": {
+        "dockH": 114,
+        "boardNames": "2 of 4",
+        "rows": 0,
+        "line": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
+        "lineOnScreen": true,
+        "marks": "sam,dev,fen,hal",
+        "overflow": false
+      },
+      "working": {
+        "rows": 5,
+        "dockH": 114
+      },
+      "errors": 0
+    }
+  },
+  "team-390": {
+    "before": {
+      "first": {
+        "dockH": 98,
+        "boardNames": "4 of 4",
+        "rows": 1,
+        "line": "",
+        "lineOnScreen": false,
+        "marks": "",
+        "overflow": false
+      },
+      "working": {
+        "rows": 7,
+        "dockH": 98
+      },
+      "errors": 0
+    },
+    "built": {
+      "first": {
+        "dockH": 116,
+        "boardNames": "4 of 4",
+        "rows": 1,
+        "line": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
+        "lineOnScreen": true,
+        "marks": "sam,dev,fen,hal",
+        "overflow": false
+      },
+      "working": {
+        "rows": 6,
+        "dockH": 116
+      },
+      "errors": 0
+    }
+  },
+  "admin-768": {
+    "before": {
+      "first": {
+        "dockH": 67,
+        "boardNames": "4 of 4",
+        "rows": 0,
+        "line": "",
+        "lineOnScreen": false,
+        "marks": "",
+        "overflow": false
+      },
+      "working": {
+        "rows": 8,
+        "dockH": 67
+      },
+      "errors": 0
+    },
+    "built": {
+      "first": {
+        "dockH": 96,
+        "boardNames": "4 of 4",
+        "rows": 0,
+        "line": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
+        "lineOnScreen": true,
+        "marks": "sam,dev,fen,hal",
+        "overflow": false
+      },
+      "working": {
+        "rows": 7,
+        "dockH": 96
+      },
+      "errors": 0
+    }
+  },
+  "admin-1280": {
+    "before": {
+      "first": {
+        "dockH": 67,
+        "boardNames": "4 of 4",
+        "rows": 0,
+        "line": "",
+        "lineOnScreen": false,
+        "marks": "",
+        "overflow": false
+      },
+      "working": {
+        "rows": 8,
+        "dockH": 67
+      },
+      "errors": 0
+    },
+    "built": {
+      "first": {
+        "dockH": 67,
+        "boardNames": "4 of 4",
+        "rows": 0,
+        "line": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
+        "lineOnScreen": true,
+        "marks": "sam,dev,fen,hal",
+        "overflow": false
+      },
+      "working": {
+        "rows": 8,
+        "dockH": 67
+      },
+      "errors": 0
+    }
+  },
+  "setting": {
+    "overflow": false,
+    "errors": 0
+  }
+}
