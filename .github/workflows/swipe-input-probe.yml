@@ -24,27 +24,4 @@ jobs:
           BASE: http://127.0.0.1:8777/
         run: |
           node serve.js 8777 > /tmp/swipe-server.log 2>&1 &
-          node - <<'NODE'
-          const fs = require('fs');
-          const source = fs.readFileSync('swipe-pages.test.js', 'utf8');
-          const body = `(async () => {
-            const b = await L.start();
-            console.log('Browser', await b.version());
-            const p = await L.open(b, '#/prep', { touch: true, wait: 1400 });
-            for (const [name, dx, dy, opt] of [
-              ['short', -40, 0, {}], ['vertical', 10, -120, {}], ['diagonal', -90, 90, {}],
-              ['cancelled', -110, 0, { cancel: true }], ['two fingers', -110, 0, { multi: true }],
-              ['mouse selection', -110, 0, { mouse: true }], ['screen edge', 110, 0, { x: 8 }]
-            ]) {
-              await go(p, '#/prep');
-              try { await swipe(p, '#rtitle', dx, dy, opt); } catch (e) { console.log('GUARD ERROR', name, e.message); }
-              console.log('GUARD', name, JSON.stringify(await gestureState(p)));
-              await go(p, '#/prep');
-              try { await swipe(p, '#nbr-i3', -110); } catch (e) { console.log('RECOVERY ERROR', name, e.message); }
-              console.log('RECOVERY', name, JSON.stringify(await gestureState(p)));
-            }
-            await b.close();
-          })().catch(e => { console.error(e); process.exit(1); });`;
-          fs.writeFileSync('swipe-probe.cjs', source.slice(0, source.indexOf('(async () => {')) + body);
-          require('./swipe-probe.cjs');
-          NODE
+          node swipe-pages.test.js

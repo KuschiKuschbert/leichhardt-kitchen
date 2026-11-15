@@ -2,7 +2,7 @@
 const L = require('./lib');
 const { R, ok } = L.results();
 const hash = p => p.evaluate(() => location.hash);
-// Keep one input source per page. Detaching after a native edge gesture can leave a synthetic finger held in Linux Chrome.
+// Keep one touch input source per page. Mixed mouse and touch emulation can retain synthetic fingers in Linux Chrome.
 const touchSessions = new WeakMap();
 async function touchSession(p) {
   if (!touchSessions.has(p)) touchSessions.set(p, await p.context().newCDPSession(p));
@@ -107,11 +107,17 @@ async function gestureState(p) {
     ok(!(await L.overflow(p)) && !p.errors.length, width + ': no overflow or browser errors ' + p.errors.join('|'));
     await p.context().close();
   }
+  // Mouse selection runs on its own desktop input context, not Chrome's emulated touchscreen.
+  const mouse = await L.open(b, '#/prep', { width: 1280, wait: 1400 });
+  await swipe(mouse, '#rtitle', -110, 0, { mouse: true });
+  ok(await hash(mouse) === '#/prep', 'mouse selection stays on the current page');
+  ok(await mouse.evaluate(() => !!getSelection().toString()), 'mouse drag still selects text');
+  await mouse.context().close();
   const p = await L.open(b, '#/prep', { touch: true, wait: 1400 });
   for (const [name, dx, dy, opt] of [
     ['short', -40, 0, {}], ['vertical', 10, -120, {}], ['diagonal', -90, 90, {}],
     ['cancelled', -110, 0, { cancel: true }], ['two fingers', -110, 0, { multi: true }],
-    ['mouse selection', -110, 0, { mouse: true }], ['screen edge', 110, 0, { x: 8 }]
+    ['screen edge', 110, 0, { x: 8 }]
   ]) {
     await go(p, '#/prep'); await swipe(p, '#rtitle', dx, dy, opt);
     ok(await hash(p) === '#/prep', name + ': stays on the current tab');
@@ -147,17 +153,17 @@ async function gestureState(p) {
   ok(await hash(p) === '#/prep', 'a same-page redraw cancels the gesture on the replaced page');
   await swipe(p, '#nbr-i3', -110);
   ok(await hash(p) === '#/orders', 'the first swipe after a same-page redraw works');
-  await go(p, '#/prep'); await p.click('.nb-addline'); await L.settle(p, 250);
+  await go(p, '#/prep'); await p.tap('.nb-addline'); await L.settle(p, 250);
   await p.fill('#p-text', 'Keep this swipe draft'); await p.locator('#p-text').blur();
   await swipe(p, '.p-sheet h3', -110);
   ok(await hash(p) === '#/prep' && await p.inputValue('#p-text') === 'Keep this swipe draft', 'open Add sheet keeps its page and unsaved text');
   await p.keyboard.press('Escape'); await L.settle(p, 250);
   await swipe(p, '#rtitle', -110); await go(p, '#/prep');
   ok(await p.evaluate(() => LK_PREP.state.text === 'Keep this swipe draft'), 'a main-tab round trip keeps the existing prep draft');
-  await p.click('.nb-addline'); await L.settle(p, 200);
+  await p.tap('.nb-addline'); await L.settle(p, 200);
   ok(await p.locator('#p-text').isVisible(), 'Add a prep line remains one tap from its page');
   await p.keyboard.press('Escape'); await L.settle(p, 200);
-  await p.click('.wtop-who'); await L.settle(p, 250); await swipe(p, '.wm-me', -110);
+  await p.tap('.wtop-who'); await L.settle(p, 250); await swipe(p, '.wm-me', -110);
   ok(await hash(p) === '#/prep' && !!(await p.$('.wm-wrap')), 'chef menu owns its gestures');
   await p.keyboard.press('Escape'); await L.settle(p, 250);
   await p.evaluate(() => { document.querySelector('#rtitle').insertAdjacentHTML('afterend', '<div id="swipe-scroll" style="width:250px;overflow-x:auto"><div style="width:900px;height:50px">Scrollable content</div></div>'); });

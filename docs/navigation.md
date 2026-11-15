@@ -58,10 +58,10 @@ scenarios now clear any zoom and text selection left by the pinch and mouse case
 zooming and selected text block navigation and ordinary swipes resume afterwards. A separate reproduction showed
 an empty, non-collapsed selection leaving the page on Prep. The guard now checks for actual selected text. The
 empty-selection regression and all 66 gesture checks pass with that correction, together with the four existing
-swipe-dismissal, Back and parent-return test files. Seven further checks verify ordinary navigation after each rejected gesture.
-Linux CI traces identified an additional synthetic finger after the screen-edge test detached its input session.
-The test now retains one CDP input source per page and waits for every finger to lift before its next gesture.
-This corrects the test input, preserving the app's two-finger guard. A separate same-page redraw reproduction
+swipe-dismissal, Back and parent-return test files. Further checks verify ordinary navigation after each rejected touch gesture and native mouse text selection.
+Linux CI traces identified an additional synthetic finger after mouse selection and native touch panning shared
+an emulated touchscreen. Mouse selection now uses its own desktop context; touch flows use taps and one CDP
+input source per page, waiting for released touches before the next gesture. The app's two-finger guard remains. A separate same-page redraw reproduction
 left the first following swipe ignored. Rendering now clears the old gesture and motion before replacing its
 page; two regression checks cover the interruption and immediate recovery. The complete GitHub gate remains required.
 
