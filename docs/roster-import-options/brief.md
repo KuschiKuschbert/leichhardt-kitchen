@@ -8,7 +8,7 @@
 
 1. Go on to designs, and measure the week-to-week change when a second week's roster is available (privately, never in the repo).
 2. **Unmatched roster names are listed on a card with a link to Manage staff.** The import never adds people.
-3. **Every book service a roster shift touches** is filled (the head chef's original rule stands; the Cook's leave-unticked option was declined). Since 15 November 2026 a shift set to hide on Today's team until someone is on it is never filled ([occasional shifts](../occasional-shifts-options/brief.md)).
+3. **Every book service a roster shift touches** is filled (the head chef's original rule stands; the Cook's leave-unticked option was declined). Since 15 November 2026 a shift set to hide on Today's team until someone is on it is never filled ([occasional shifts](../occasional-shifts-options/brief.md)). Since 16 November 2026 (head chef, [time line brief](../team-order-clear-options/brief.md)) each service gets **its own part** of the roster time: with All day dining 15:00 to 17:00, a 10:00 to 21:00 shift is Lunch 10:00 to 15:00, All day dining 15:00 to 17:00 and Dinner 17:00 to 21:00 (`plan()` adds `day`, the whole time, to show once), and a day saved with nobody on counts as empty.
 4. **No wages processed.** The import takes the CSV and wipes every money cell in memory before anything else reads the file. The Excel export (no wage figures, real dates) was offered and declined. The downloaded file itself stays on the device; where the import may run was not answered and stays open.
 
 ## Round 1

@@ -75,7 +75,8 @@ const noRows = p => p.$$eval('#hm-with .hm-tp', l => l.length === 0);
     await p.context().close();
   }
   p = await L.open(b, '#/', { who: 'ann', extra: fixture(plan({ on: [], br: [] })), wait: 1200 });
-  ok(/Nobody is rostered today/.test(await text(p)) && await noRows(p), 'a successfully read empty saved plan can explicitly say nobody is rostered');
+  // a plan saved with nobody on reads as Not set (head chef, 16 Nov 2026, docs/team-order-clear-options/brief.md)
+  ok(/has not been set yet/.test(await text(p)) && !/Nobody is rostered/.test(await text(p)) && await noRows(p), 'a successfully read plan saved with nobody on reads as not set yet (' + await text(p) + ')');
   await p.context().close();
 
   // Read-only visibility does not change the kitchen's existing session or Functions-only boundaries.

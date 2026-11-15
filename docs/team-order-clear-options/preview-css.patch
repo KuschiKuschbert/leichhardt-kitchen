@@ -1,0 +1,120 @@
+diff --git a/css/app.css b/css/app.css
+index b8217d0..f2a976b 100644
+--- a/css/app.css
++++ b/css/app.css
+@@ -5705,3 +5705,115 @@ html:has(.tm-focus-page) {
+   #rec-print h2 { font: 700 12pt var(--display); margin: 10pt 0 2pt; break-after: avoid; }
+   #rec-print p { margin: 0 0 2pt; }
+ }
++/* PREVIEW ONLY (docs/team-order-clear-options, council round 2): window.__tl = A, B or C. Not for release. */
++.tm-focus-page .tm-rowbar { display: block; height: 10px; margin: .35rem .9rem .15rem; }
++.tm-focus-page .tm-rowticks { display: block; margin: 0 .9rem; }
++.tm-focus-page .tm-rowline .tm-roster-time { margin: .1rem 0 0; }
++.tm-focus-page .tm-grid > .tm-grid-head > .tm-rowscale { grid-column: 1 / -1; display: block; margin-top: .25rem; contain: inline-size; }
++.tm-focus-page .tm-people.tm-tlplan { list-style: none; margin: 0; padding: 0; }
++.tm-tlplan > .tm-tlplan-head { position: sticky; top: var(--tm-grid-top, 0px); z-index: 4; background: var(--surface-paper); border-bottom: 2px solid var(--ink); padding: .4rem 0 .3rem; }
++.tm-tlplan-svcs { display: flex; flex-wrap: wrap; gap: .15rem 1rem; font-size: .875rem; color: var(--muted); }
++.tm-tlplan-svcs b { color: var(--ink); font: 700 1rem/1.2 var(--display); }
++.tm-tlplan-head .tm-rowticks { margin-top: .3rem; }
++.tm-tlplan > .tm-tlrow { padding: .5rem 0; border-bottom: 1px solid var(--line); }
++.tm-notebook.tm-focus-page .tm-tlrow .tm-person-name { font-size: 1.5rem; line-height: 1.05; }
++.tm-tlrow > .tm-grid-who { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
++.tm-tlrow-day .tm-roster-time { margin: .1rem 0 .3rem; }
++.tm-tlsvc { display: grid; grid-template-columns: minmax(7rem, 11rem) minmax(8rem, 12rem) minmax(0, 1fr); gap: .4rem .6rem; align-items: center; padding: .25rem 0; }
++.tm-tlsvc-name { min-width: 0; }
++.tm-tlsvc-name b { display: block; font: 700 1rem/1.2 var(--display); }
++.tm-tlsvc-name small { display: block; font-size: .8125rem; color: var(--muted); }
++.tm-tlsvc-brs { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; min-width: 0; }
++.tm-tlsvc-brs .tm-pick { margin: 0; }
++.tm-tlsvc-brs :is(select, .ux-picker-trigger) { min-height: 44px; }
++.tm-tlsvc-brs .chip { min-height: 44px; }
++.tm-tlplan > .tm-person-row > .tm-detail-workbench { margin: .4rem 0 .2rem; contain: inline-size; }
++@media (max-width: 599px) { .tm-tlsvc { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .tm-tlsvc-brs { grid-column: 1 / -1; } }
++@media (min-width: 1100px) {
++  .tm-focus-page .tm-focus-grid.tm-tl-c:has(> .tm-detail-workbench.is-empty) { grid-template-columns: minmax(0, 1fr); }
++  .tm-focus-page .tm-focus-grid.tm-tl-c > .tm-detail-workbench.is-empty { display: none; }
++}
++@media (min-width: 600px) {
++  .tm-tlplan > .tm-tlrow, .tm-tlplan > .tm-tlplan-head { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); column-gap: .75rem; align-items: start; }
++  .tm-tlplan > .tm-tlrow > .tm-grid-who { flex-direction: column; align-items: flex-start; gap: 0; }
++  .tm-tlplan > .tm-tlrow > :is(.tm-tlrow-day, .tm-tlsvc, .tm-detail-workbench), .tm-tlplan-head > :is(.tm-tlplan-svcs, .tm-rowticks) { grid-column: 2; }
++}
++@media (max-width: 599px) { .tm-focus-page .tm-rowticks .tk1 { display: none; } }
++@media (min-width: 600px) { .tm-tlplan > .tm-tlrow > .tm-grid-who { grid-row: span 4; } }
++/* D, the mix (preview only) */
++.tm-tl-d .tm-rowbar .br, .tm-tl-d .tm-rowbar .sp { top: -4px; bottom: -4px; border: 2px solid var(--surface-paper); border-radius: 3px; }
++.tm-tl-d .tm-rowbar .br { background: var(--accent); }
++.tm-tl-d .tm-tlrole { color: var(--muted); font-size: .8125rem; }
++.tm-tl-d .tm-tlrow > .tm-grid-who .tm-pick { margin: .25rem 0 0; }
++.tm-tl-d .tm-tlrow > .tm-grid-who :is(select, .ux-picker-trigger) { min-height: 44px; font-size: .875rem; border-style: dashed; }
++.tm-notebook.tm-focus-page .tm-tl-d .tm-tloff { display: inline-flex; align-items: center; min-height: 44px; padding: 0; font-size: .8125rem; color: var(--bad-ink); text-align: left; white-space: normal; }
++@media (max-width: 599px) {
++  .tm-tl-d .tm-tlrow > .tm-grid-who { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; }
++  .tm-tl-d .tm-tlsvc { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); }
++}
++.tm-tl-d .tm-tlsvc { align-items: start; }
++.tm-tl-d .tm-rowbar { background: transparent; }
++.tm-tlplan-svcs small { font-size: inherit; }
++@media (max-width: 599px) { .tm-tl-d .tm-tlplan-svcs small { display: none; } .tm-tl-d .tm-tlplan-svcs { gap: .1rem .75rem; } }
++/* D: the service line by areas: the service, its section, its breaks, + Break; on a phone + Break sits beside the section */
++.tm-tl-d .tm-tlsvc.tm-tlsvc-d { grid-template-columns: minmax(6.5rem, 10rem) minmax(8rem, 12rem) minmax(0, 1fr) auto; grid-template-areas: "name sec brs add"; }
++.tm-tlsvc-d > .tm-tlsvc-name { grid-area: name; } .tm-tlsvc-d > .tm-tlsvc-sec { grid-area: sec; } .tm-tlsvc-d > .tm-tlsvc-brs { grid-area: brs; } .tm-tlsvc-d > .tm-tlsvc-add { grid-area: add; }
++.tm-tl-d .tm-tlhint { display: block; color: var(--muted); font-size: .8125rem; line-height: 1.3; }
++.tm-tl-d .tm-tlrow-day .tm-roster-time { margin-bottom: .1rem; }
++@media (max-width: 599px) {
++  .tm-tl-d .tm-tlsvc.tm-tlsvc-d { grid-template-columns: minmax(0, .9fr) minmax(0, 1.2fr) auto; grid-template-areas: "name sec add" "brs brs brs"; gap: .3rem .4rem; }
++  .tm-tl-d .tm-tlrow > .tm-grid-who { flex-wrap: nowrap; }
++  .tm-tl-d .tm-tlrow > .tm-grid-who > .tm-person-name { flex: 1 1 auto; min-width: 0; }
++  .tm-tl-d .tm-tlrow > .tm-grid-who .tm-pick { margin: 0; flex: 0 1 11rem; min-width: 0; }
++  .tm-tl-d .tm-tlplan > .tm-tlrow { padding: .35rem 0; }
++}
++/* D: two columns from 600 px (the name, then the day and its services); the list takes the whole width */
++.tm-tl-d .tm-tlplan > .tm-tlrow { display: block; }
++.tm-tl-d .tm-tlsvc-head { display: flex; flex-wrap: wrap; align-items: center; column-gap: .6rem; }
++.tm-notebook.tm-focus-page .tm-tl-d .tm-tloff { min-height: 44px; }
++@media (min-width: 600px) {
++  .tm-tl-d .tm-tlplan > .tm-tlrow { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); column-gap: .75rem; align-items: start; }
++  .tm-tl-d .tm-tlplan > .tm-tlrow > .tm-grid-who { grid-row: auto; }
++  .tm-tl-d .tm-tlplan > .tm-tlrow > .tm-tlrow-main { grid-column: 2; min-width: 0; }
++}
++@media (min-width: 1100px) { .tm-focus-page .tm-focus-grid.tm-tl-d { grid-template-columns: minmax(0, 1fr); } }
++@media (min-width: 600px) { .tm-notebook .tm-tl-d .tm-tlrow > .tm-grid-who .tm-pick { flex: none; width: 100%; } }
++/* D, after the follow-up review (designer, new starter, skeptic) */
++.tm-tl-d .tm-rowbar { height: 6px; margin-top: .45rem; }
++.tm-tl-d .tm-rowbar .sh { border-radius: 3px; }
++.tm-notebook.tm-focus-page .tm-tl-d .tm-tloff { color: var(--ink); text-decoration: underline; }
++.tm-notebook.tm-focus-page .tm-tl-d .tm-tloff.is-armed { color: var(--bad-ink); font-weight: 700; }
++.tm-tl-d .tm-tladd { margin-top: .25rem; }
++.tm-tl-d .tm-tladd .tm-pick { display: inline-flex; flex: none; width: auto; margin: 0; }
++.tm-notebook.tm-focus-page .tm-tl-d .tm-tladd :is(select, .ux-picker-trigger) { width: auto; min-height: 44px; border: 1px solid var(--faint); border-style: solid; color: var(--muted); font-weight: 600; font-size: .875rem; }
++.tm-notebook.tm-focus-page .tm-tl-d .tm-grid-cell.is-chef .tm-pick:has(option[value=""]:checked) :is(.ux-picker-trigger, select) { border-style: solid; color: var(--ink); }
++.tm-tl-d .tm-tlundo { margin: .3rem 0; font-size: .875rem; }
++.tm-tl-d .tm-tlundo .p-link { min-height: 44px; font-weight: 700; }
++.tm-tl-d .tm-tlplan > .tm-tlgone { padding: .35rem 0; border-bottom: 1px solid var(--line); }
++/* the service line: + Break straight after the breaks on a laptop; breaks on their own line below 1100 px */
++.tm-tl-d .tm-tlsvc.tm-tlsvc-d { grid-template-columns: minmax(7rem, 10rem) minmax(8rem, 12rem) auto auto minmax(0, 1fr); grid-template-areas: "name sec brs add ."; }
++@media (max-width: 1099px) { .tm-tl-d .tm-tlsvc.tm-tlsvc-d { grid-template-columns: minmax(7rem, 10rem) minmax(8rem, 12rem) auto minmax(0, 1fr); grid-template-areas: "name sec add ." ". brs brs brs"; } }
++@media (max-width: 599px) {
++  .tm-tl-d .tm-tlsvc.tm-tlsvc-d { grid-template-columns: minmax(0, .9fr) minmax(0, 1.2fr) auto; grid-template-areas: "name sec add" "brs brs brs"; }
++  .tm-tl-d .tm-rowbar { margin-top: .5rem; margin-bottom: .25rem; }
++}
++.tm-tl-d .tm-tlsvc-brs { flex-wrap: nowrap; }
++@media (max-width: 599px) { .tm-tl-d .tm-tlsvc-brs { flex-wrap: wrap; } }
++/* Add a service sits in the spare end of the last service line; on a phone, its own line at the end */
++.tm-tl-d .tm-tlsvc.tm-tlsvc-d { grid-template-columns: minmax(7rem, 10rem) minmax(8rem, 12rem) auto auto minmax(0, 1fr); grid-template-areas: "name sec brs add more"; }
++.tm-tlsvc-d > .tm-tlsvc-more { grid-area: more; justify-self: end; min-width: 0; }
++.tm-tl-d .tm-tlsvc-more .tm-pick { display: inline-flex; flex: none; width: auto; margin: 0; }
++.tm-notebook.tm-focus-page .tm-tl-d .tm-tlsvc-more :is(select, .ux-picker-trigger) { width: auto; min-height: 44px; border: 1px solid var(--faint); border-style: solid; color: var(--muted); font-weight: 600; font-size: .875rem; }
++@media (max-width: 1099px) { .tm-tl-d .tm-tlsvc.tm-tlsvc-d { grid-template-columns: minmax(7rem, 10rem) minmax(8rem, 12rem) auto minmax(0, 1fr); grid-template-areas: "name sec add more" ". brs brs brs"; } }
++@media (max-width: 599px) {
++  .tm-tl-d .tm-tlsvc.tm-tlsvc-d { grid-template-columns: minmax(0, .9fr) minmax(0, 1.2fr) auto; grid-template-areas: "name sec add" "brs brs brs" "more more more"; }
++  .tm-tlsvc-d > .tm-tlsvc-more { justify-self: start; }
++}
++@media (min-width: 1100px) {
++  .tm-tl-d .tm-tlsvc.tm-tlsvc-d { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; }
++  .tm-tlsvc-d > .tm-tlsvc-name { flex: 0 0 10rem; }
++  .tm-tlsvc-d > .tm-tlsvc-sec { flex: 0 0 12rem; }
++  .tm-tlsvc-d > .tm-tlsvc-more { margin-left: auto; }
++}
++.tm-tl-d .tm-tlsvc-brs .tm-pick { flex: none; width: auto; }
++.tm-notebook.tm-focus-page .tm-tl-d :is(.tm-tlsvc-brs, .tm-tlsvc-more) .ux-picker-trigger { white-space: nowrap; width: auto; }

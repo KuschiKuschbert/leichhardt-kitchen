@@ -34,7 +34,7 @@ const CLASSES = [
   'tm-weeknav', 'tm-daypick',
   'tm-focus-page', 'tm-date-controls', 'tm-week-reveal', 'tm-row-fields', 'tm-row-summary', 'tm-detail-workbench', 'tm-focus-grid', 'tm-focus-save', 'tm-live-strip', 'tm-focus-panel',
   'tm-grid', 'tm-grid-head', 'tm-grid-row', 'tm-grid-who', 'tm-grid-sh', 'tm-grid-count', 'tm-grid-cell', 'tm-grid-off', 'tm-grid-brk', 'tm-grid-note', 'tm-bench-shifts', 'tm-occ-add', 'tm-occ-row', 'a-sh-occ',
-  'tm-short-line', 'tm-short-mark', 'a-sh-busy', 'a-sh-need', 'a-sh-bnote',
+  'tm-short-line', 'tm-short-mark', 'tm-roster-flag', 'a-sh-busy', 'a-sh-need', 'a-sh-bnote',
   'tm-person-row', 'tm-person-details', 'tm-planstate', 'tm-next-overview', 'tm-roster', 'tm-roster-days', 'tm-roster-missing', 'tm-roster-time', 'tm-roster-link', 'tm-roster-links',
 
 'tm-worksheet', 'tm-worksheet-head', 'tm-person-head', 'tm-person-section', 'tm-quick-add', 'tm-quick-people', 'tm-quick-services',

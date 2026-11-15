@@ -45,7 +45,7 @@ const state = p => p.evaluate(([configKey, teamKey]) => ({
 
   await p.locator('[data-p="tm-focus"][data-id="ann"]').click(); await L.settle(p, 150);
   const chips = await p.$$eval('.tm-bench-shifts [data-p="tm-sh"]', l => l.map(e => e.dataset.v));
-  ok(JSON.stringify(chips) === JSON.stringify(['lunch', 'dinner', 'smoker', 'prep']), 'details: every configured service is offered in the book\'s order, ready to add (' + chips.join(', ') + ')');
+  ok(JSON.stringify(chips) === JSON.stringify(['lunch', 'smoker', 'prep', 'dinner']), 'details: every configured service is offered in time order (start, then finish; head chef, 16 Nov 2026), ready to add (' + chips.join(', ') + ')');
   await L.pick(p, cell('dinner'), 'grill');
   await L.pick(p, cell('lunch'), 'pans');
   ok(await p.$eval(cell('dinner'), e => e.value) === 'grill', 'each service: Dinner keeps its own unsaved Grill assignment');

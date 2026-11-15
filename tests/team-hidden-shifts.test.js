@@ -39,11 +39,11 @@ const click = async (p, sel) => { await p.locator(sel).first().click(); await L.
   ok(JSON.stringify(await plus(p)) === JSON.stringify(['+ Smoker']), 'empty day: Smoker is offered as + Smoker after the boxes');
   ok(await p.$eval('[data-p="tm-occ-show"]', e => e.getAttribute('aria-label')) === 'Add Smoker to the services for this group', 'empty day: + Smoker says what it does to a screen reader');
   await click(p, '[data-p="tm-occ-show"]');
-  ok(JSON.stringify(await boxes(p)) === JSON.stringify(['Lunch [x]', 'Dinner', 'Smoker [x]']), '+ Smoker in Add staff: the Smoker box shows, ticked, and Lunch stays ticked (' + (await boxes(p)).join(', ') + ')');
+  ok(JSON.stringify(await boxes(p)) === JSON.stringify(['Smoker [x]', 'Lunch [x]', 'Dinner']), '+ Smoker in Add staff: the Smoker box shows, ticked, in time order (06:00 first), and Lunch stays ticked (' + (await boxes(p)).join(', ') + ')');
   ok(await p.evaluate(() => document.activeElement && document.activeElement.getAttribute('data-k')) === 'tm-quick-shift:smoker', '+ Smoker in Add staff: the focus moves to the new Smoker box');
   await p.locator(field('tm-quick-shift:lunch')).setChecked(false); await L.settle(p, 150);
   await p.locator(field('tm-quick-person:cam')).setChecked(true); await L.settle(p, 150);
-  ok(JSON.stringify(await boxes(p)) === JSON.stringify(['Lunch', 'Dinner', 'Smoker [x]']), 'Add staff: Smoker stays shown once unticked Lunch leaves it the only service');
+  ok(JSON.stringify(await boxes(p)) === JSON.stringify(['Smoker [x]', 'Lunch', 'Dinner']), 'Add staff: Smoker stays shown once unticked Lunch leaves it the only service');
   await click(p, '[data-p="tm-quick-add"]');
   await L.waitFor(p, () => !!document.querySelector('select[data-k="tm-sec:cam:smoker"]'), null, 4000);
   ok(await p.locator('select[data-k^="tm-sec:cam:"]').count() === 1, 'Add selected staff: Cam is on Smoker only, from the boxes on screen');
@@ -60,22 +60,22 @@ const click = async (p, sel) => { await p.locator(sel).first().click(); await L.
     ok(JSON.stringify(await plus(p)) === JSON.stringify(['+ Smoker']) && !(await boxes(p)).some(t => /Smoker/.test(t)), width + ': Add staff offers + Smoker, not a Smoker box');
     await click(p, '.tm-focus-toolbar [data-p="tm-add-staff"]');
     await click(p, '[data-p="tm-focus"][data-id="ann"]');
-    ok(JSON.stringify(await chips(p)) === JSON.stringify(['Lunch', 'Dinner', '+ Smoker']), width + ': Ann\'s details offer Lunch, Dinner and + Smoker (' + (await chips(p)).join(', ') + ')');
+    ok(JSON.stringify(await chips(p)) === JSON.stringify(['+ Smoker', 'Lunch', 'Dinner']), width + ': Ann\'s details offer + Smoker, Lunch and Dinner, in time order (' + (await chips(p)).join(', ') + ')');
     const before = await writes(p);
     await click(p, '[data-p="tm-on"][data-occ="1"][data-id="ann"]');
     ok(await p.locator('select[data-k="tm-sec:ann:smoker"]').count() === 1, width + ': + Smoker puts Ann on Smoker; the grid gains its Smoker column');
-    ok(JSON.stringify(await chips(p)) === JSON.stringify(['Lunch', 'Dinner', 'Smoker']), width + ': the tapped chip is now the Smoker chip in the same place');
+    ok(JSON.stringify(await chips(p)) === JSON.stringify(['Smoker', 'Lunch', 'Dinner']), width + ': the tapped chip is now the Smoker chip in the same place');
     ok(await p.evaluate(() => { const a = document.activeElement; return !!a && a.getAttribute('data-p') === 'tm-sh' && a.getAttribute('data-v') === 'smoker' && a.getAttribute('aria-pressed') === 'true'; }), width + ': the focus stays on the pressed Smoker chip');
     ok(/Ann added to Smoker\. Not saved yet\./.test(await L.txt(p, '.tm-page') || ''), width + ': the page says in words who was added and that it is not saved');
     ok(await p.$eval('.tm-detail-workbench', e => e.dataset.sh) === 'smoker', width + ': the details are on Ann\'s Smoker');
     ok(await writes(p) === before, width + ': nothing is saved until Save');
     await click(p, '[data-p="tm-focus"][data-id="bo"]');
-    ok(JSON.stringify(await chips(p)) === JSON.stringify(['Lunch', 'Dinner', 'Smoker (off)']), width + ': with Ann on it, Smoker shows as usual for Bo (' + (await chips(p)).join(', ') + ')');
+    ok(JSON.stringify(await chips(p)) === JSON.stringify(['Smoker (off)', 'Lunch', 'Dinner']), width + ': with Ann on it, Smoker shows as usual for Bo (' + (await chips(p)).join(', ') + ')');
     // a mistaken Remove is undone in place: Smoker stays shown for this date
     await click(p, '[data-p="tm-focus"][data-id="ann"]');
     await click(p, '[data-p="tm-sh"][data-id="ann"][data-v="smoker"]');
     await click(p, '[data-p="tm-on"][data-id="ann"][data-sh="smoker"]');
-    ok(!await p.locator('select[data-k="tm-sec:ann:smoker"]').count() && JSON.stringify(await chips(p)) === JSON.stringify(['Lunch', 'Dinner', 'Smoker (off)']), width + ': after Remove, Smoker stays shown for this date, as Smoker (off)');
+    ok(!await p.locator('select[data-k="tm-sec:ann:smoker"]').count() && JSON.stringify(await chips(p)) === JSON.stringify(['Smoker (off)', 'Lunch', 'Dinner']), width + ': after Remove, Smoker stays shown for this date, as Smoker (off)');
     ok(await p.locator('[data-p="tm-on"][data-id="ann"][data-sh="smoker"]').textContent() === 'Add Smoker', width + ': Add Smoker is still there to undo it');
     ok(!(await L.overflow(p)), width + ': no sideways scroll');
     ok(p.errors.length === 0, width + ': no browser errors ' + p.errors.join(' | '));
@@ -89,7 +89,7 @@ const click = async (p, sel) => { await p.locator(sel).first().click(); await L.
   ok((await boxes(p)).some(t => /^Smoker/.test(t)) && !(await plus(p)).length, 'someone on it: Add staff shows the Smoker box, no + Smoker');
   await click(p, '.tm-focus-toolbar [data-p="tm-add-staff"]');
   await click(p, '[data-p="tm-focus"][data-id="ann"]');
-  ok(JSON.stringify(await chips(p)) === JSON.stringify(['Lunch', 'Dinner', 'Smoker (off)']), 'someone on it: Ann\'s details show Smoker (off) as before');
+  ok(JSON.stringify(await chips(p)) === JSON.stringify(['Smoker (off)', 'Lunch', 'Dinner']), 'someone on it: Ann\'s details show Smoker (off) as before, in time order');
   await p.context().close();
 
   // 4. Home: Ann on the hidden Smoker this morning still sees it as her shift (only Today's team's choices hide it)
