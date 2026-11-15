@@ -293,7 +293,7 @@ The extra height and the lost row apply only while the plan is too few. With eno
 `tests/design-patterns.test.js` has the new class and helper names. Run locally with 26 related files: every team test, `todays-team`, `admin-kit`, `roles`, `safe-text`, `read-budget`, `sticky-bars` and the roster tests. All pass.
 
 **Before ready, from the recommendation:**
-1. **Board above the dock on the admin phone: not met.** It was 3 of 4 before (round 1's finding 1). While the plan is too few it is now 2 of 4. Stepping the dock's own saved words aside was not enough, because the warning takes two lines. The sous chefs' `#/team` keeps all 4, and the line itself says the short time in words. Offered to the head chef as its own fix pull request, since the overlap is older than this feature.
+1. **Board above the dock on the admin phone: not met in this build.** It was 3 of 4 before (round 1's finding 1). While the plan is too few it is now 2 of 4. Stepping the dock's own saved words aside was not enough, because the warning takes two lines. The sous chefs' `#/team` keeps all 4, and the line itself says the short time in words. Offered to the head chef as its own fix pull request, since the overlap is older than this feature. **Repaired in that pull request: 4 of 4 with and without the line** ([Board above the dock](#board-above-the-dock-16-november-2026)).
 2. Carry the busy time through every save path: done and tested.
 3. One pure count with node-style cases: done through the page tests above, not a separate node file. `js/prep.js` is not loaded by node.
 4. Repaint only on the existing paths, with the hold rule and the clock test: done.
@@ -304,3 +304,50 @@ The extra height and the lost row apply only while the plan is too few. With eno
 ## Merge compatibility, 15 November 2026
 
 Combined with the occasional-shift setting from #711: the shift editor shows both controls, and `shClean()` retains both `occ` and a valid `busy` value. `tests/team-minimum.test.js` now saves both together and checks that a later People save keeps both. Dropping `occ` from the combined save reproduced 2 failures of 38 checks; the corrected save passes all 38. The combined settings were opened with synthetic data at 390, 768 and 1280 px, with both controls present, no sideways overflow and no browser errors.
+
+## Board above the dock, 16 November 2026
+
+The fix for round 1's finding 1 and Before ready item 1, in its own pull request. **Waiting for the head chef's OK** on the look (the before and after below); the pull request stays a draft until then.
+
+**The fault, remeasured on `main` at `a67f126`** (after the rows on one clock, #721). Implemented app, click-test stand-in, fallback fonts, the study's made-up day at 18:30 with four on a break, the head chef on `#/admin`, Team, Today's team, 390 x 844, scroll 0. Script [`board-dock.cjs`](board-dock.cjs), raw [`board-dock-before.json`](board-dock-before.json).
+- With enough on: the dock starts at 680 px; Sam K, the fourth name, sits at 677 to 694 px. 3 of 4 names show ([screenshot](board-dock-before-admin-390-enough.png)).
+- While the plan is too few: the dock is 114 px and starts at 662 px. 2 of 4 show ([screenshot](board-dock-before-admin-390-short.png)).
+- The sous chefs' `#/team` at 390 (the board ends at 398 px), the chef panel's Today's team at 390 (554 px) and the admin at 768 and 1280 px keep all 4.
+
+**Why only the admin phone.** Above the board it has the Google account line (54 px), the rooms, a full room heading ("KITCHEN ADMINISTRATION" over a 48 px "Team", 93 px with a rule under it), the page tabs, the notebook head and the date. The chef panel's Today's team already shows the same heading on one line (`.tm-focus-panel`, from the chosen C, 10 November 2026, [brief](../team-page-options/brief.md)), which is why its board ends 151 px higher.
+
+**Quick check (small change: no new tab, button, pop-up or step).**
+- *Needed?* Yes. The board is the live answer to "who is away now"; on the head chef's phone the last name was cut by the bar that holds Save, and the too few warning made it worse exactly when the head chef needs the names.
+- *Options measured or ruled out:*
+
+| Option | Board names above the dock, admin 390 (enough / too few) | What it costs |
+| --- | --- | --- |
+| **1. The chef panel's one-line Team heading on the admin's Today's team, phone only** | **4 of 4 / 4 of 4**: the board ends at 633 px (was 705) | The room heading is smaller on that one page below 720 px. "Kitchen administration" stays, in small grey words beside Team; Find stays top right. Nothing else moves. |
+| 2. The board above the date picker on a phone | likely 4 of 4 / 4 of 4, estimated, not built: the date row is 44 px plus margins, so about 53 px higher and the board's own edge about 10 px above the dock while too few | Changes the order of Today's team (today's live board before the day being planned) and is tight; the admin and `#/team` would differ, or `#/team` changes for no gain. |
+| 3. A shorter dock | not reached | The dock's words and its full-width Save are the contract; at 390 px Save cannot sit beside the line without cutting words. |
+
+- *Recommended: option 1.* It reuses a heading the head chef already chose for the same page in the chef panel, so the admin and the chef panel match on a phone, and it frees the most space without hiding a word.
+- *Design references.* Linear: one page frame for Today's team in both panels, with the work (the board) above the navigation's fold. Flighty: what matters now (who is away, until when) is on the first screen with real times. Headspace: same words, same names. The rest are not relevant (no new action or step).
+- *Contract fit.* Surface purpose: Works, the charcoal board, the paper dock and the sage notebook are unchanged. State meaning: Works, the dock's "Saved plan" or "Saved 13:00 · Gus" and the board's Until times are unchanged. Words: Works, nothing hidden; the heading's small words measure 6.83:1 on the paper (`--muted`, 13 px). Service continuity: Works, see the measures; no tap added, no person row lost (0 on the first screen before and after, the working screen below the heading is the same). Relevant states: enough on, too few, five to seven away and 320 to 720 px measured; loading, refused and planning states keep the same heading and are Not evidenced separately.
+- *Try to break it.* (1) **Six or more away while the plan is too few** (reproduced): 5 of 6 names show, 5 of 7 (7 away with enough on: 6 of 7). Before the fix it was 2 of 5, 2 of 6 and 2 of 7. Six at once on this kitchen's day is unusual; the line still says the short time in words. (2) **A narrow phone** (reproduced): at 320 px Find covered "Team" until the heading kept a Find-wide space on its right; the title now wraps under its small words. No sideways scroll from 320 to 720 px. On a short phone (360 x 740 or 320 x 640) the board is under the dock before and after; the 390 x 844 phone is the one measured here. (3) **The change leaking to wider screens or other pages** (tested): the class is set only on Today's team and its rules sit below 720 px; at 768 and 1280 px the heading on Today's team matches the People page exactly.
+
+**Built.** `js/prep.js`: the admin panel gives its shell the class `tm-admin-plan` on Today's team only (`adminHTML()`). `css/app.css`: below 720 px, `.tm-admin-plan` lays the Team heading out like the chef panel's (eyebrow, title and Find on one line, no rule under it, the tabs closer), with room on the right for Find. No read, write, rule, listener or timer.
+
+**Implemented app measurements** (same conditions as above; raw [`board-dock-after.json`](board-dock-after.json)):
+
+| Measure, admin | Before | After |
+| --- | ---: | ---: |
+| On break now names above the dock at 390 px, enough on / too few | 3 of 4 / 2 of 4 | **4 of 4 / 4 of 4** |
+| Where the board ends / the dock starts at 390 px (enough; too few) | 705 / 680 px; 705 / 662 px | 633 / 680 px; 633 / 662 px |
+| Five away, enough on / too few | 3 of 5 / 2 of 5 | 5 of 5 / 5 of 5 |
+| Six away | 3 of 6 / 2 of 6 | 6 of 6 / 5 of 6 |
+| The dock (height, its words, Save on screen) | 96 or 114 px, all shown | the same |
+| 768 / 1280 px: board names, dock height, heading | 4 of 4, 67 to 96 px, full heading | the same, to the pixel |
+| `#/team` at 390 px | 4 of 4 | the same |
+| Taps for the main task | | unchanged: no control added or moved |
+| Sideways scroll, page errors | none | none |
+
+Screenshots: before [enough](board-dock-before-admin-390-enough.png), [too few](board-dock-before-admin-390-short.png); after [enough](board-dock-after-admin-390-enough.png), [too few](board-dock-after-admin-390-short.png).
+
+**Tests.** `tests/team-minimum.test.js` part 10: on the admin at 390 x 844 and scroll 0, all four names end above the dock, and the board's words, the dock's words and Save show, with the too few line and without it; at 768 and 1280 px the Team heading on Today's team is the same as on People. On the old code it fails 2 of 46 ("Dev, Fen, Hal": the last name ends at 694 px, the dock starts at 680 px; "Dev, Fen" while too few); with the fix 0 of 46. `tests/design-patterns.test.js` names `tm-admin-plan`.
+

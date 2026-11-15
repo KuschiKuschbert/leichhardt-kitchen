@@ -1,0 +1,122 @@
+{
+  "admin-390": {
+    "enough": {
+      "dockTop": 680,
+      "dockH": 96,
+      "boardBottom": 705,
+      "boardNames": "3 of 4",
+      "lastName": "Sam K Meal break Until 19:00 677 to 694",
+      "rows": 0,
+      "line": "",
+      "state": "Saved 13:00 · Gus",
+      "saveOnScreen": true,
+      "overflow": false,
+      "errors": 0
+    },
+    "short": {
+      "dockTop": 662,
+      "dockH": 114,
+      "boardBottom": 705,
+      "boardNames": "2 of 4",
+      "lastName": "Sam K Meal break Until 19:00 677 to 694",
+      "rows": 0,
+      "line": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
+      "state": "",
+      "saveOnScreen": true,
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "team-390": {
+    "enough": {
+      "dockTop": 678,
+      "dockH": 98,
+      "boardBottom": 398,
+      "boardNames": "4 of 4",
+      "lastName": "Sam K Meal break Until 19:00 370 to 387",
+      "rows": 0,
+      "line": "",
+      "state": "Saved 13:00 · Gus",
+      "saveOnScreen": true,
+      "overflow": false,
+      "errors": 0
+    },
+    "short": {
+      "dockTop": 660,
+      "dockH": 116,
+      "boardBottom": 398,
+      "boardNames": "4 of 4",
+      "lastName": "Sam K Meal break Until 19:00 370 to 387",
+      "rows": 0,
+      "line": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
+      "state": "",
+      "saveOnScreen": true,
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "admin-768": {
+    "enough": {
+      "dockTop": 777,
+      "dockH": 67,
+      "boardBottom": 730,
+      "boardNames": "4 of 4",
+      "lastName": "Sam K Meal break Until 19:00 701 to 718",
+      "rows": 0,
+      "line": "",
+      "state": "Saved 13:00 · Gus",
+      "saveOnScreen": true,
+      "overflow": false,
+      "errors": 0
+    },
+    "short": {
+      "dockTop": 748,
+      "dockH": 96,
+      "boardBottom": 730,
+      "boardNames": "4 of 4",
+      "lastName": "Sam K Meal break Until 19:00 701 to 718",
+      "rows": 0,
+      "line": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
+      "state": "",
+      "saveOnScreen": true,
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "admin-1280": {
+    "enough": {
+      "dockTop": 777,
+      "dockH": 67,
+      "boardBottom": 652,
+      "boardNames": "4 of 4",
+      "lastName": "Sam K Meal break Until 19:00 623 to 641",
+      "rows": 0,
+      "line": "",
+      "state": "Saved 13:00 · Gus",
+      "saveOnScreen": true,
+      "overflow": false,
+      "errors": 0
+    },
+    "short": {
+      "dockTop": 777,
+      "dockH": 67,
+      "boardBottom": 652,
+      "boardNames": "4 of 4",
+      "lastName": "Sam K Meal break Until 19:00 623 to 641",
+      "rows": 0,
+      "line": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
+      "state": "",
+      "saveOnScreen": true,
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "more": {
+    "5 away, enough": "3 of 5 (last name ends 717 px, dock from 680 px)",
+    "5 away, short": "2 of 5 (last name ends 717 px, dock from 662 px)",
+    "6 away, enough": "3 of 6 (last name ends 740 px, dock from 680 px)",
+    "6 away, short": "2 of 6 (last name ends 740 px, dock from 662 px)",
+    "7 away, enough": "3 of 7 (last name ends 764 px, dock from 680 px)",
+    "7 away, short": "2 of 7 (last name ends 764 px, dock from 662 px)"
+  }
+}
