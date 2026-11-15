@@ -23,8 +23,10 @@ const fixture = (x, more) => Object.assign({ [CFG]: Object.assign({ people, head
 const store = p => p.evaluate(() => window.__fake.dump());
 const reads = p => p.evaluate(() => window.__fake.reads.filter(k => /\/(team|teamsum|config)\//.test(k)).length);
 const line = p => p.evaluate(() => { const e = document.querySelector('.tm-short-line'); return e && !e.hidden ? e.innerText.replace(/\s+/g, ' ').trim() : ''; });
-const marks = p => p.$$eval('.tm-short-mark:not([hidden])', l => l.map(e => e.dataset.id));
-const ready = p => L.waitFor(p, () => document.querySelectorAll('.tm-grid-row').length >= 7, null, 9000);
+// the marks sit in each row's name column (rows on one clock, 16 Nov 2026); a mark in another person's row reads as "!"
+const marks = p => p.$$eval('.tm-short-mark:not([hidden])', l => l.map(e => { const row = e.closest('.tm-tlrow'); return row && e.closest('.tm-grid-who') && row.dataset.id === e.dataset.id ? e.dataset.id : '!' + e.dataset.id; }));
+const rows = n => p => L.waitFor(p, n => document.querySelectorAll('.tm-tlrow').length >= n, n, 9000);
+const ready = rows(7);
 async function focusAt(p, time) { await p.context().clock.setSystemTime(time); await p.evaluate(() => window.dispatchEvent(new Event('focus'))); await L.settle(p, 150); }
 
 (async () => {
@@ -70,20 +72,21 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   ok(await p.$eval('.tm-short-line b', e => getComputedStyle(e).color) !== await p.$eval('.tm-short-line', e => getComputedStyle(e).color), 'line: its first words stand out (attention orange), the rest in ink');
   const r0 = await reads(p);
 
-  // 3. A half-done fix: Sam K's break moves to 19:30. The line follows at once and says Unsaved; Sam K's mark holds
-  //    while his panel is open and goes on Close details.
-  await p.locator('[data-p="tm-focus"][data-id="sam"]').click(); await L.settle(p, 200);
-  await L.pick(p, 'select[data-k="tm-at:sam:0"]', '1170'); await L.settle(p, 200);
+  // 3. A half-done fix: Sam K's Dinner break moves to 19:30 in his own row. The line follows at once and says Unsaved.
+  //    The Breaks panel and its hold went with the rows (16 Nov 2026): Sam K's mark goes on the same draw, in his name
+  //    column, and the picker he just used stays where his thumb is (the hold's reason: a row never moves under a thumb).
+  //    The thumb check fails on the 16 Nov build at 390 px: the mark's line goes and the picker moves up 19 px.
+  const samAt = 'select[data-k="tm-at:sam:dinner:0"]';
+  const thumb = () => p.$eval(samAt, e => Math.round(e.nextElementSibling.getBoundingClientRect().top + scrollY));
+  const thumbBefore = await thumb();
+  await L.pick(p, samAt, '1170'); await L.settle(p, 200);
   ok(await line(p) === 'Unsaved plan: too few now until 18:45. 5 now, 6 needed. Move a marked break.', 'half-done fix: still too few until 18:45, said as Unsaved (' + await line(p) + ')');
-  ok(JSON.stringify(await marks(p)) === JSON.stringify(['sam', 'dev', 'fen', 'hal']), 'hold: the marks stay still while a Breaks panel is open');
-  await p.locator('[data-p="tm-focus-close"]').click(); await L.settle(p, 200);
-  ok(JSON.stringify(await marks(p)) === JSON.stringify(['dev', 'fen', 'hal']), 'hold: Close details brings the marks up to date (' + (await marks(p)).join(',') + ')');
+  ok(JSON.stringify(await marks(p)) === JSON.stringify(['dev', 'fen', 'hal']), 'marks: Sam K\'s mark goes with his moved break; the others stay in their own rows (' + (await marks(p)).join(',') + ')');
+  ok(await thumb() === thumbBefore, 'marks: Sam K\'s break picker stays where it was when his mark goes (' + thumbBefore + ' to ' + await thumb() + ')');
   ok(!await p.$eval('.tm-focus-save .tm-save-state', e => e.hidden), 'dock: with unsaved changes its own words show again');
   // the rest of the fix and Save: the line goes, no marks
-  await p.locator('[data-p="tm-focus"][data-id="hal"]').click(); await L.settle(p, 200);
-  await L.pick(p, 'select[data-k="tm-at:hal:0"]', '1140'); await L.settle(p, 200);
+  await L.pick(p, 'select[data-k="tm-at:hal:dinner:0"]', '1140'); await L.settle(p, 200);
   ok(await line(p) === '', 'full fix: the line goes as soon as the draft has enough');
-  await p.locator('[data-p="tm-focus-close"]').click(); await L.settle(p, 150);
   await p.locator('[data-p="tm-save"]').click();
   await L.waitFor(p, k => window.__fake.dump()[k].v === 2, TEAM, 8000);
   ok(!(await marks(p)).length && await line(p) === '' && !await p.$eval('.tm-focus-save .tm-save-state', e => e.hidden), 'Save: no line, no marks, the dock says Saved');
@@ -97,11 +100,12 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   await ready(p); await L.settle(p, 300);
   ok(/too few now until 19:00\. 5 now, 6 needed/.test(await line(p)), 'sous chef at 18:59: the line shows on #/team too (' + await line(p) + ')');
   await L.pick(p, 'select[data-k="tm-sec:cal:lunch"]', 'grill'); await L.settle(p, 150);
-  await p.evaluate(() => { window.__saveProbe = document.querySelector('[data-p="tm-save"]'); window.__cellProbe = document.querySelector('select[data-k="tm-sec:ari:dinner"]'); });
+  // a section picker and a break picker in the rows: the minute paint must not rebuild either
+  await p.evaluate(() => { window.__saveProbe = document.querySelector('[data-p="tm-save"]'); window.__cellProbe = document.querySelector('select[data-k="tm-sec:ari:dinner"]'); window.__breakProbe = document.querySelector('select[data-k="tm-at:hal:dinner:0"]'); });
   const r1 = await reads(p);
   await p.clock.fastForward(60000); await L.settle(p, 200);
   ok(await line(p) === '' && !(await marks(p)).length, 'clock: at 19:00 the short time is over, the line and the marks go by themselves');
-  ok(await p.evaluate(() => window.__saveProbe === document.querySelector('[data-p="tm-save"]') && window.__cellProbe === document.querySelector('select[data-k="tm-sec:ari:dinner"]')), 'clock: the minute paint leaves the Save button and the pickers in place');
+  ok(await p.evaluate(() => window.__saveProbe === document.querySelector('[data-p="tm-save"]') && window.__cellProbe === document.querySelector('select[data-k="tm-sec:ari:dinner"]') && !!window.__breakProbe && window.__breakProbe === document.querySelector('select[data-k="tm-at:hal:dinner:0"]')), 'clock: the minute paint leaves the Save button, the section and the break pickers in place');
   ok(await p.$eval('select[data-k="tm-sec:cal:lunch"]', e => e.value) === 'grill' && !await p.$eval('[data-p="tm-save"]', e => e.disabled), 'clock: the unsaved draft is kept');
   ok(await reads(p) === r1, 'clock: no read');
   ok(p.errors.length === 0, 'sous chef: no page errors ' + p.errors.join(' | '));
@@ -122,13 +126,13 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   //    with no busy time say nothing.
   const quiet = ON.filter(o => o.sh === 'lunch' || ['sam', 'dev', 'hal'].includes(o.id)), quietBr = BR.filter(x => ['sam', 'dev', 'hal', 'eli'].includes(x.id));
   p = await L.open(b, '#/team', { who: 'sam', width: 390, extra: fixture({}, { [TEAM]: plan(today, quiet, quietBr) }), clock: AT(1110), wait: 1800 });
-  await ready(p).catch(() => {}); await L.waitFor(p, () => document.querySelectorAll('.tm-grid-row').length >= 4, null, 9000); await L.settle(p, 300);
+  await rows(4)(p); await L.settle(p, 300);
   ok(await line(p) === 'Saved plan: too few now until 20:30. Only 3 on Dinner (0 now with breaks), 6 needed. Add people or move a marked break.', 'short roster: said as such, with the lowest count (' + await line(p) + ')');
   await L.teamDay(p, tomorrow); await L.settle(p, 300);
   ok(await line(p) === '', 'planned day with nobody on it: nothing to warn');
   await p.context().close();
   p = await L.open(b, '#/team', { who: 'sam', width: 390, extra: fixture({}, { [key('team', tomorrow)]: plan(tomorrow) }), clock: AT(840), wait: 1800 });
-  await ready(p); await L.teamDay(p, tomorrow); await L.waitFor(p, () => document.querySelectorAll('.tm-grid-row').length >= 7, null, 9000); await L.settle(p, 300);
+  await ready(p); await L.teamDay(p, tomorrow); await ready(p); await L.settle(p, 300);
   ok(await line(p) === 'Saved plan: too few 18:30 to 19:00. 4 from 18:30, 5 from 18:45, 6 needed. Move a marked break.', 'planned day: the whole day, with real times (' + await line(p) + ')');
   await p.context().close();
   p = await L.open(b, '#/team', { who: 'sam', width: 390, extra: fixture({ kitShifts: PLAIN }), clock: AT(1110), wait: 1800 });
@@ -153,8 +157,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   // 8. A refused Save keeps the draft and the line says Unsaved
   p = await L.open(b, '#/team', { who: 'sam', width: 390, extra: fixture(), clock: AT(1110), wait: 1800, fakeMode: 'fail' });
   await ready(p); await L.settle(p, 300);
-  await p.locator('[data-p="tm-focus"][data-id="sam"]').click(); await L.settle(p, 200);
-  await L.pick(p, 'select[data-k="tm-at:sam:0"]', '1170'); await L.settle(p, 200);
+  await L.pick(p, 'select[data-k="tm-at:sam:dinner:0"]', '1170'); await L.settle(p, 200);
   await p.locator('[data-p="tm-save"]').click(); await L.settle(p, 1500);
   ok(/^Unsaved plan: too few now until 18:45/.test(await line(p)) && /Not saved/.test(await txt(p, '.tm-focus-save') || '') && !await p.$eval('.tm-focus-save .tm-save-state', e => e.hidden), 'refused Save: the draft is kept, the dock says Not saved and the line says Unsaved (' + await line(p) + ')');
   await p.context().close();
@@ -163,7 +166,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   const odd = BUSY.map(s => s.id === 'dinner' ? Object.assign({}, s, { name: '<img src=x onerror=window.__x=1>Dinner' }) : s);
   const quiet2 = ON.filter(o => o.sh === 'lunch' || ['sam', 'dev', 'hal'].includes(o.id));
   p = await L.open(b, '#/team', { who: 'sam', width: 390, extra: fixture({ kitShifts: odd }, { [TEAM]: plan(today, quiet2, []) }), clock: AT(1110), wait: 1800 });
-  await L.waitFor(p, () => document.querySelectorAll('.tm-grid-row').length >= 4, null, 9000); await L.settle(p, 300);
+  await rows(4)(p); await L.settle(p, 300);
   ok(/Only 3 on <img src=x onerror=window.__x=1>Dinner, 6 needed\. Add people\.$/.test(await line(p)) && !await p.evaluate(() => window.__x) && !await p.locator('.tm-short-line img').count(), 'safe text: a shift name is shown as typed, never run (' + await line(p) + ')');
   await p.context().close();
 

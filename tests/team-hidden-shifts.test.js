@@ -1,6 +1,7 @@
 // A shift hidden on Today's team until someone is on it (head chef, 15 Nov 2026, docs/occasional-shifts-options/brief.md,
-// B repaired): Admin, Kitchen, Shifts sets it; Add staff and a person's details show it as "+ Smoker" until someone on
-// that date's draft is on it; the roster never fills it; Home and the grid do not change. Made-up staff, the stand-in.
+// B repaired): Admin, Kitchen, Shifts sets it; Add staff shows it as "+ Smoker" and a person's Add a service lists it
+// "(hidden until someone is on it)" (step two, 16 Nov 2026) until someone on that date's draft is on it; the roster never
+// fills it; Home and the rows do not change. Made-up staff, the stand-in.
 const L = require('./lib');
 const { R, ok } = L.results();
 const key = (...p) => ['kitchens', L.PIN, ...p].join('/');
@@ -25,7 +26,11 @@ const DOUBLES = ['ann', 'bo'].flatMap(id => [{ id, sh: 'lunch', sec: 'grill' }, 
 const field = k => '[data-k="' + k + '"]';
 const boxes = p => p.$$eval('.tm-quick-services label', l => l.map(e => e.textContent.trim() + (e.querySelector('input').checked ? ' [x]' : '')));
 const plus = p => p.$$eval('.tm-quick-services [data-p="tm-occ-show"]', l => l.map(e => e.textContent.trim()));
-const chips = p => p.$$eval('.tm-bench-shifts button', l => l.map(e => e.textContent.trim()));
+// a person's row: the services they are on (the lines) and the ones they are not (Add a service), both in time order
+const lines = (p, id) => p.$$eval('.tm-tlrow[data-id="' + id + '"] .tm-tlsvc', l => l.map(e => e.dataset.sh));
+const adds = (p, id) => p.$$eval('select[data-k="tm-addsvc:' + id + '"] option', l => l.map(e => e.textContent).filter(t => t !== 'Add a service'));
+const heads = p => p.$$eval('.tm-planhead .tm-grid-sh > b', l => l.map(e => e.textContent));
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const writes = p => p.evaluate(() => window.__fake.writes.filter(batch => batch.some(op => /\/team\//.test(op.path))).length);
 const click = async (p, sel) => { await p.locator(sel).first().click(); await L.settle(p, 200); };
 
@@ -51,32 +56,32 @@ const click = async (p, sel) => { await p.locator(sel).first().click(); await L.
   ok(p.errors.length === 0, 'empty day: no browser errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // 2. A day with Ann and Bo on Lunch and Dinner: + Smoker in Ann's details puts her on Smoker in one tap
+  // 2. A day with Ann and Bo on Lunch and Dinner: Add a service puts Ann on the hidden Smoker in one pick
   for (const width of [390, 1280]) {
     p = await L.open(b, '#/team', { who: 'sam', width, extra: { [CFG]: config(), [TEAM]: plan(DOUBLES) }, wait: 1500 });
     await L.waitFor(p, () => !!document.querySelector('select[data-k="tm-sec:ann:dinner"]'), null, 7000);
-    ok(!await p.locator('select[data-k^="tm-sec:"][data-k$=":smoker"]').count(), width + ': nobody is on Smoker, so the grid has no Smoker column');
+    ok(!await p.locator('select[data-k^="tm-sec:"][data-k$=":smoker"]').count() && same(await heads(p), ['Lunch', 'Dinner']), width + ': nobody is on Smoker, so no row has a Smoker line and the head has no Smoker');
     await click(p, '.tm-focus-toolbar [data-p="tm-add-staff"]');
     ok(JSON.stringify(await plus(p)) === JSON.stringify(['+ Smoker']) && !(await boxes(p)).some(t => /Smoker/.test(t)), width + ': Add staff offers + Smoker, not a Smoker box');
     await click(p, '.tm-focus-toolbar [data-p="tm-add-staff"]');
-    await click(p, '[data-p="tm-focus"][data-id="ann"]');
-    ok(JSON.stringify(await chips(p)) === JSON.stringify(['+ Smoker', 'Lunch', 'Dinner']), width + ': Ann\'s details offer + Smoker, Lunch and Dinner, in time order (' + (await chips(p)).join(', ') + ')');
+    // the chips "+ Smoker, Lunch, Dinner" became the lines (on) and Add a service (not on), both in time order
+    ok(same(await lines(p, 'ann'), ['lunch', 'dinner']) && same(await adds(p, 'ann'), ['Smoker 06:00 to 11:00 (hidden until someone is on it)']), width + ': Ann is on Lunch and Dinner, and her Add a service offers Smoker, saying it is hidden until someone is on it (' + (await adds(p, 'ann')).join(', ') + ')');
     const before = await writes(p);
-    await click(p, '[data-p="tm-on"][data-occ="1"][data-id="ann"]');
-    ok(await p.locator('select[data-k="tm-sec:ann:smoker"]').count() === 1, width + ': + Smoker puts Ann on Smoker; the grid gains its Smoker column');
-    ok(JSON.stringify(await chips(p)) === JSON.stringify(['Smoker', 'Lunch', 'Dinner']), width + ': the tapped chip is now the Smoker chip in the same place');
-    ok(await p.evaluate(() => { const a = document.activeElement; return !!a && a.getAttribute('data-p') === 'tm-sh' && a.getAttribute('data-v') === 'smoker' && a.getAttribute('aria-pressed') === 'true'; }), width + ': the focus stays on the pressed Smoker chip');
+    await L.pick(p, 'select[data-k="tm-addsvc:ann"]', 'smoker');
+    ok(await p.locator('select[data-k="tm-sec:ann:smoker"]').count() === 1 && same(await heads(p), ['Smoker', 'Lunch', 'Dinner']), width + ': one pick puts Ann on Smoker; the head gains Smoker, first in time order');
+    ok(same(await lines(p, 'ann'), ['smoker', 'lunch', 'dinner']) && !await p.locator('select[data-k="tm-addsvc:ann"]').count(), width + ': Ann\'s Smoker line comes first, in time order, and Add a service goes, as she is on every service');
+    // the chip that kept the focus is gone: the focus lands on Ann's new Smoker line, never on the page
+    const focus = await p.evaluate(() => { const a = document.activeElement, line = a && a.closest('.tm-tlrow[data-id="ann"] .tm-tlsvc'); return line ? 'smoker line: ' + line.dataset.sh : a === document.body ? 'page' : a.className; });
+    ok(focus === 'smoker line: smoker', width + ': the focus lands on Ann\'s new Smoker line (' + focus + ')');
     ok(/Ann added to Smoker\. Not saved yet\./.test(await L.txt(p, '.tm-page') || ''), width + ': the page says in words who was added and that it is not saved');
-    ok(await p.$eval('.tm-detail-workbench', e => e.dataset.sh) === 'smoker', width + ': the details are on Ann\'s Smoker');
+    ok(await p.locator('.tm-tlrow[data-id="ann"] [data-p="tm-off"][data-sh="smoker"]').count() === 1 && await p.locator('.tm-tlrow[data-id="ann"] [data-p="tm-addbr"][data-sh="smoker"]').count() === 1, width + ': Ann\'s Smoker line has its own Take off and + Break');
     ok(await writes(p) === before, width + ': nothing is saved until Save');
-    await click(p, '[data-p="tm-focus"][data-id="bo"]');
-    ok(JSON.stringify(await chips(p)) === JSON.stringify(['Smoker (off)', 'Lunch', 'Dinner']), width + ': with Ann on it, Smoker shows as usual for Bo (' + (await chips(p)).join(', ') + ')');
-    // a mistaken Remove is undone in place: Smoker stays shown for this date
-    await click(p, '[data-p="tm-focus"][data-id="ann"]');
-    await click(p, '[data-p="tm-sh"][data-id="ann"][data-v="smoker"]');
-    await click(p, '[data-p="tm-on"][data-id="ann"][data-sh="smoker"]');
-    ok(!await p.locator('select[data-k="tm-sec:ann:smoker"]').count() && JSON.stringify(await chips(p)) === JSON.stringify(['Smoker (off)', 'Lunch', 'Dinner']), width + ': after Remove, Smoker stays shown for this date, as Smoker (off)');
-    ok(await p.locator('[data-p="tm-on"][data-id="ann"][data-sh="smoker"]').textContent() === 'Add Smoker', width + ': Add Smoker is still there to undo it');
+    ok(same(await adds(p, 'bo'), ['Smoker 06:00 to 11:00']), width + ': with Ann on it, Smoker shows as usual in Bo\'s Add a service (' + (await adds(p, 'bo')).join(', ') + ')');
+    // a mistaken Take off is undone in place: Smoker stays shown for this date
+    const off = '[data-p="tm-off"][data-id="ann"][data-sh="smoker"]';
+    await click(p, off); await click(p, off);
+    ok(!await p.locator('select[data-k="tm-sec:ann:smoker"]').count() && same(await adds(p, 'ann'), ['Smoker 06:00 to 11:00']), width + ': after Take off, Smoker stays shown for this date, in Ann\'s Add a service without the hidden words');
+    ok(await p.locator('.tm-tlrow[data-id="ann"] [data-p="tm-off-undo"]').count() === 1 && /Ann taken off Smoker and its breaks\. Not saved yet\./.test(await L.txt(p, '.tm-page') || ''), width + ': Undo is there to put it back');
     ok(!(await L.overflow(p)), width + ': no sideways scroll');
     ok(p.errors.length === 0, width + ': no browser errors ' + p.errors.join(' | '));
     await p.context().close();
@@ -88,8 +93,7 @@ const click = async (p, sel) => { await p.locator(sel).first().click(); await L.
   await click(p, '.tm-focus-toolbar [data-p="tm-add-staff"]');
   ok((await boxes(p)).some(t => /^Smoker/.test(t)) && !(await plus(p)).length, 'someone on it: Add staff shows the Smoker box, no + Smoker');
   await click(p, '.tm-focus-toolbar [data-p="tm-add-staff"]');
-  await click(p, '[data-p="tm-focus"][data-id="ann"]');
-  ok(JSON.stringify(await chips(p)) === JSON.stringify(['Smoker (off)', 'Lunch', 'Dinner']), 'someone on it: Ann\'s details show Smoker (off) as before, in time order');
+  ok(same(await adds(p, 'ann'), ['Smoker 06:00 to 11:00']) && same(await heads(p), ['Smoker', 'Lunch', 'Dinner']), 'someone on it: Ann\'s Add a service offers Smoker as usual, and the head shows it in time order');
   await p.context().close();
 
   // 4. Home: Ann on the hidden Smoker this morning still sees it as her shift (only Today's team's choices hide it)

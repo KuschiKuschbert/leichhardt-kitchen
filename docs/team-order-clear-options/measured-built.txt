@@ -1,0 +1,41 @@
+built 390 rows in one screen, median row px, list px, head px: {"rows":2,"rowPx":207,"list":2080,"headPx":0}
+built 390 rows in one screen from Ari (one service each): {"rows":2,"room":540}
+today 390 rows in one screen from Ari (one service each): {"rows":1,"room":540}
+built 390 services in the head: []
+built 390 Add a service for Ari: ["Add a service","Smoker 06:00 to 15:00 (hidden until someone is on it)","All day 10:00 to 21:00","Dinner 17:00 to 21:00"]
+built 390 Dev: section and a break at 13:30, taps: 3
+built 390 Dev break times offered: {"first":"Break 12:00","last":"Break 14:30","count":11}
+built 390 Dev row words: "Dev | Roster 12:00 to 15:00 · Break 13:30 to 14:00 | Lunch | Take off Lunch | Section | Larder ▾ | Break 1 | Break 13:30 ▾ | Length | Length 30 min ▾ | + Break | Add a service | Add a service ▾"
+built 390 Gus row words: "Gus | Head chef | Roster: Lunch 08:00 to 15:00, Dinner 17:00 to 21:00 · No break yet | Lunch | Take off Lunch | Section | Head chef ▾ | + Break | Dinner | Take off Dinner | Section | Head chef ▾ | + Break | Add a service | Add a 
+built 390 sideways scroll, errors: {"over":false,"errors":[]}
+built 768 rows in one screen, median row px, list px, head px: {"rows":6,"rowPx":129,"list":1296,"headPx":0}
+built 768 rows in one screen from Ari (one service each): {"rows":6,"room":813}
+today 768 rows in one screen from Ari (one service each): {"rows":3,"room":473}
+built 768 services in the head: []
+built 768 Add a service for Ari: ["Add a service","Smoker 06:00 to 15:00 (hidden until someone is on it)","All day 10:00 to 21:00","Dinner 17:00 to 21:00"]
+built 768 Dev: section and a break at 13:30, taps: 3
+built 768 Dev break times offered: {"first":"Break 12:00","last":"Break 14:30","count":11}
+built 768 Dev row words: "Dev | Roster 12:00 to 15:00 · Break 13:30 to 14:00 | Lunch | Take off Lunch | Section | Larder ▾ | Break 1 | Break 13:30 ▾ | Length | Length 30 min ▾ | + Break | Add a service | Add a service ▾"
+built 768 Gus row words: "Gus | Head chef | Roster: Lunch 08:00 to 15:00, Dinner 17:00 to 21:00 · No break yet | Lunch | Take off Lunch | Section | Head chef ▾ | + Break | Dinner | Take off Dinner | Section | Head chef ▾ | + Break | Add a service | Add a 
+built 768 sideways scroll, errors: {"over":false,"errors":[]}
+built 1280 rows in one screen, median row px, list px, head px: {"rows":6,"rowPx":109,"list":1089,"headPx":0}
+built 1280 rows in one screen from Ari (one service each): {"rows":6,"room":777}
+today 1280 rows in one screen from Ari (one service each): {"rows":3,"room":381}
+built 1280 services in the head: []
+built 1280 Add a service for Ari: ["Add a service","Smoker 06:00 to 15:00 (hidden until someone is on it)","All day 10:00 to 21:00","Dinner 17:00 to 21:00"]
+built 1280 Dev: section and a break at 13:30, taps: 3
+built 1280 Dev break times offered: {"first":"Break 12:00","last":"Break 14:30","count":11}
+built 1280 Dev row words: "Dev | Roster 12:00 to 15:00 · Break 13:30 to 14:00 | Lunch | Take off Lunch | Section | Larder ▾ | Break 1 | Break 13:30 ▾ | Length | Length 30 min ▾ | + Break | Add a service | Add a service ▾"
+built 1280 Gus row words: "Gus | Head chef | Roster: Lunch 08:00 to 15:00, Dinner 17:00 to 21:00 · No break yet | Lunch | Take off Lunch | Section | Head chef ▾ | + Break | Dinner | Take off Dinner | Section | Head chef ▾ | + Break | Add a service | Add a
+built 1280 sideways scroll, errors: {"over":false,"errors":[]}
+built 1280 whole day: 7 cooks, then Save: {"taps":22,"saved":true}
+built 390 Ari add Dinner: {"taps":1,"msg":"Ari added to Dinner. Not saved yet. Not on the roster for Dinner: rostered 10:00 to 15:00.","lines":["Lunch","Dinner"]}
+built 390 Bea add hidden Smoker: {"msg":"Bea added to Smoker. Not saved yet.","head":[]}
+built 390 take Cal off Lunch: {"taps":2,"armedOff":"Tap again to take off","msg":"Cal taken off Lunch and its breaks. Not saved yet. Undo","calRow":true}
+built 390 after take off: focus and Undo: {"focus":"tm-off-undo","undoLine":"Cal taken off Lunch and its breaks. Not saved yet. Undo"}
+built 390 Undo: {"msg":"Undone: Cal is back on Lunch with their section and breaks. Not saved yet.","calWords":"Roster 10:00 to 14:30 · No break yet"}
+built 390 add and take off: errors: []
+built 1280 Spread Lunch from 13:30 one at a time: "5 breaks from 13:30, one per group, starting every 30 min. Moved inside their hours: Cal 14:00, Dev 14:30. Check them, then Save."
+built 1280 Gus words: "Roster: Lunch 08:00 to 15:00, Dinner 17:00 to 21:00 · Break 13:30 to 14:00"
+built 390 clear: {"armedWords":"Tap again to clear Monday 16 November","rowsLeft":0,"tapsBeforeSave":3}
+built 390 sous chef: {"rows":9,"clear":false,"over":false,"errors":[]}

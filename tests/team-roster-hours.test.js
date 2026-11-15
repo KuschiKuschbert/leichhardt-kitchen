@@ -1,7 +1,7 @@
 // Roster hours saved with the day's plan (head chef, 15 Nov 2026: "everyone on the day sees who's coming in when";
 // docs/team-sections-options/brief.md, Roster hours). Each entry of team/<day>.on may carry the person's own start and
 // finish for that shift (from, to in minutes). Everyone on the day sees them: Home's On today board and Your day, and
-// the chefs' Today's team, Whole day review and saved overview. Old or broken values are dropped. Copy last weekday
+// the chefs' Today's team (each row's sentence, since 16 Nov 2026 in place of Whole day review) and saved overview. Old or broken values are dropped. Copy last weekday
 // never copies last week's hours. Made-up people and the stand-in only.
 const L = require('./lib');
 const { R, ok, txt } = Object.assign(L.results(), { txt: L.txt });
@@ -41,22 +41,25 @@ const cells = p => p.$$eval('#hm-with-body .hm-tp', l => l.map(e => e.textConten
   ok(!(await p.content()).includes('<b>9</b>') && !p.errors.length, 'Home: a broken time is never drawn and no browser errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // a chef: the grid, Whole day and the saved overview
+  // a chef: the rows on one clock (each person's sentence of hours and breaks) and the saved overview
   p = await L.open(b, '#/team', { who: 'sam', extra: fixture(), wait: 1500 });
-  await L.waitFor(p, () => document.querySelectorAll('.tm-grid-row').length >= 6, null, 9000);
-  ok(/Roster 10:00 to 21:30/.test(await txt(p, '.tm-person-row[data-id="ann"] .tm-roster-time') || '') && /Roster 10:00 to 14:00, 17:00 to 21:00/.test(await txt(p, '.tm-person-row[data-id="bea"] .tm-roster-time') || ''), 'grid: each person\'s saved roster hours, a split in order');
-  ok(['cal', 'dev', 'eli', 'fen'].every(async () => true) && !(await p.$$eval('.tm-roster-time', l => l.map(e => e.closest('.tm-person-row').dataset.id))).some(id => ['cal', 'dev', 'eli', 'fen'].includes(id)), 'grid: no roster line without valid saved hours');
+  await L.waitFor(p, () => document.querySelectorAll('.tm-tlrow').length >= 6, null, 9000);
+  const said = id => txt(p, '.tm-tlrow[data-id="' + id + '"] .tm-roster-time').then(x => x || '');
+  ok(/^Roster 10:00 to 21:30 · No break yet$/.test(await said('ann')) && /^Roster: Lunch 10:00 to 14:00, Dinner 17:00 to 21:00 · No break yet$/.test(await said('bea')), 'rows: each person\'s saved roster hours, a split in order with its services (' + await said('ann') + ' | ' + await said('bea') + ')');
+  const plain = await Promise.all(['cal', 'dev', 'eli', 'fen'].map(said));
+  ok(plain.every(x => /^Lunch hours 10:00 to 15:00 · No break yet$/.test(x)), 'rows: no roster hours without valid saved hours; the service\'s own hours say so (' + plain.join(' | ') + ')');
   const glance = (await p.$$eval('.tm-tlr', l => l.map(e => e.textContent.replace(/\s+/g, ' ').trim()))).find(x => /^Ann/.test(x)) || '';
   ok(/Lunch, roster 10:00 to 21:30/.test(glance), 'saved overview: Ann\'s line says his roster hours (' + glance + ')');
-  await p.locator('[data-p="tm-whole"]').click(); await L.settle(p, 200);
-  const whole = (await p.$$eval('.tm-dayperson', l => l.map(e => e.textContent.replace(/\s+/g, ' ').trim()))).join(' | ');
-  ok(/Ann.*Lunch · Grill\s*Roster 10:00 to 21:30/.test(whole) && /Cal.*Lunch · Pans\s*10:00 to 15:00/.test(whole), 'Whole day: roster hours where saved, the service hours where not');
-  // a Save keeps the hours; removing a service removes its hours
-  await p.locator('[data-p="tm-whole"]').click(); await L.settle(p, 150);
+  // Whole day review is gone: each row is the whole day, the hours in its sentence and the section on each service line
+  ok(await p.locator('select[data-k="tm-sec:ann:lunch"]').inputValue() === 'grill' && await p.locator('select[data-k="tm-sec:cal:lunch"]').inputValue() === 'pans' && !await p.locator('[data-p="tm-whole"], .tm-dayperson').count(), 'rows: the section beside the hours, roster hours where saved, the service hours where not');
+  // a Save keeps the hours; taking off a service takes its hours, and Undo puts them back
   await L.pick(p, 'select[data-k="tm-sec:ann:dinner"]', 'larder');
-  await p.locator('[data-p="tm-focus"][data-id="bea"]').click(); await L.settle(p, 150);
-  await p.locator('.tm-detail-workbench [data-p="tm-sh"][data-v="dinner"]').click(); await L.settle(p, 150);
-  await p.locator('[data-p="tm-on"][data-id="bea"][data-sh="dinner"]').click(); await L.settle(p, 150);
+  const off = '[data-p="tm-off"][data-id="bea"][data-sh="dinner"]';
+  await p.locator(off).click(); await L.settle(p, 150); await p.locator(off).click(); await L.settle(p, 150);
+  ok(/^Roster 10:00 to 14:00 · No break yet$/.test(await said('bea')), 'Take off: Bea\'s Dinner hours go with the service (' + await said('bea') + ')');
+  await p.locator('.tm-tlrow[data-id="bea"] [data-p="tm-off-undo"]').click(); await L.settle(p, 150);
+  ok(/^Roster: Lunch 10:00 to 14:00, Dinner 17:00 to 21:00/.test(await said('bea')) && await p.locator('select[data-k="tm-sec:bea:dinner"]').inputValue() === 'larder', 'Undo: Bea is back on Dinner with her section and roster hours (' + await said('bea') + ')');
+  await p.locator(off).click(); await L.settle(p, 150); await p.locator(off).click(); await L.settle(p, 150);
   await p.locator('[data-p="tm-save"]').click();
   await L.waitFor(p, k => (__fake.dump()[k] || {}).v === 2, TEAM, 8000);
   const saved = await p.evaluate(k => __fake.dump()[k].on, TEAM);
@@ -67,8 +70,9 @@ const cells = p => p.$$eval('#hm-with-body .hm-tp', l => l.map(e => e.textConten
   await L.teamDay(p, tomorrow); await L.waitFor(p, () => !!document.querySelector('[data-p="tm-use"]'), null, 8000);
   if (!await p.locator('[data-p="tm-use"]').isVisible()) { await p.locator('[data-p="tm-batch-toggle"]').click(); await L.settle(p, 150); }
   await p.locator('[data-p="tm-use"]').click();
-  await L.waitFor(p, () => !!document.querySelector('.tm-person-row[data-id="ann"]'), null, 8000);
-  ok(!await p.locator('.tm-roster-time').count(), 'Copy last weekday: last week\'s roster hours are not copied');
+  await L.waitFor(p, () => !!document.querySelector('.tm-tlrow[data-id="ann"]'), null, 8000);
+  // every row has its sentence now: Ann's says Lunch's own hours, never last week's roster 11:00 to 15:00
+  ok(/^Lunch hours 10:00 to 15:00 · No break yet$/.test(await said('ann')) && !(await p.$$eval('.tm-roster-time', l => l.map(e => e.textContent))).some(x => /Roster|11:00/.test(x)), 'Copy last weekday: last week\'s roster hours are not copied (' + await said('ann') + ')');
   ok(!p.errors.length, 'chef: no browser errors ' + p.errors.join(' | '));
   await p.context().close();
   await b.close();

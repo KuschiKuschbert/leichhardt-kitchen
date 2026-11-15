@@ -5540,7 +5540,7 @@ html:has(.tm-focus-page) {
 .p-admin.ad-admin.tm-focus-panel .tm-chef-identity .p-link { display: inline-flex; align-items: center; min-width: 44px; min-height: 44px; max-width: 100%; white-space: normal; }
 .p-admin.ad-admin.tm-focus-panel .a-tabs { margin-bottom: .65rem; gap: 1rem; }
 @media (min-width: 1100px) {
-  .tm-focus-page .tm-focus-grid { grid-template-columns: minmax(0, 1.5fr) minmax(16rem, 1fr); }
+  .tm-focus-page .tm-focus-grid { grid-template-columns: minmax(0, 1fr); }
   .tm-focus-page .tm-focus-grid > .tm-detail-workbench { position: sticky; top: 1rem; }
 }
 @media (max-width: 1099px) {
@@ -5711,4 +5711,65 @@ html:has(.tm-focus-page) {
   #rec-print h1 { font: 700 18pt var(--display); margin: 0 0 6pt; }
   #rec-print h2 { font: 700 12pt var(--display); margin: 10pt 0 2pt; break-after: avoid; }
   #rec-print p { margin: 0 0 2pt; }
+}
+
+/* Today's team, the day on one clock (head chef, 16 Nov 2026, docs/team-order-clear-options/brief.md, D, the mix): a row
+   for each person with their bar on one scale for the page, one sentence of hours and breaks, and one line for each
+   service. One structure at every width, laid out by CSS only. The bar is the approved .tm-tlbar; a break is a taller
+   orange block edged in paper, with the words beside it, never colour alone. */
+.tm-focus-page .tm-people.tm-plan { margin: 0; padding: 0; list-style: none; min-width: 0; }
+.tm-focus-page .tm-plan > .tm-grid-head { position: sticky; top: var(--tm-grid-top, 0px); z-index: 4; padding: .45rem 0 .35rem; background: var(--surface-paper); border-bottom: 2px solid var(--ink); }
+.tm-plan-svcs { display: flex; flex-wrap: wrap; gap: .15rem 1rem; min-width: 0; font-size: .875rem; color: var(--muted); }
+.tm-planhead .tm-grid-sh b { display: inline; font: 700 1rem/1.2 var(--display); color: var(--ink); }
+.tm-planhead .tm-grid-sh small { display: inline; font-size: .875rem; }
+.tm-planhead .tm-grid-count b { display: inline; font: inherit; font-weight: 700; }
+.tm-focus-page .tm-rowticks { display: block; margin: .3rem .9rem 0; }
+.tm-focus-page .tm-plan > :is(.tm-tlrow, .tm-tlgone) { padding: .45rem 0; border-bottom: 1px solid var(--line); }
+.tm-plan > .tm-tlrow > .tm-grid-who { display: flex; flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: .6rem; min-width: 0; }
+/* a long name wraps between words, and inside a word only when one word is wider than the column */
+.tm-notebook.tm-focus-page .tm-tlrow .tm-person-name { min-width: 0; max-width: 100%; font-size: 1.5rem; line-height: 1.05; overflow-wrap: anywhere; word-break: normal; }
+.tm-tlrole { color: var(--muted); font-size: .8125rem; }
+/* "break when too few" sits beside the name on a phone, so it coming and going never moves the row under a thumb */
+.tm-plan > .tm-tlrow > .tm-grid-who > .tm-short-mark { margin-top: 0; }
+.tm-plan > .tm-tlrow > .tm-grid-who > .tm-roster-flag { flex-basis: 100%; margin-top: .1rem; }
+.tm-tlrow-main { min-width: 0; }
+.tm-focus-page .tm-rowbar { display: block; height: 6px; margin: .5rem .9rem .2rem; background: transparent; }
+.tm-rowbar .sh { border-radius: 3px; }
+.tm-rowbar .br, .tm-rowbar .sp { top: -4px; bottom: -4px; border: 2px solid var(--surface-paper); border-radius: 3px; }
+.tm-tlrow-day .tm-roster-time { margin: .1rem 0 .2rem; }
+.tm-tlsvc { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.2fr) auto; grid-template-areas: "name sec add" "brs brs brs" "more more more"; gap: .3rem .4rem; align-items: start; padding: .25rem 0; }
+.tm-tlsvc > .tm-tlsvc-name { grid-area: name; min-width: 0; }
+.tm-tlsvc > .tm-tlsvc-sec { grid-area: sec; min-width: 0; }
+.tm-tlsvc > .tm-tlsvc-brs { grid-area: brs; }
+.tm-tlsvc > .tm-tlsvc-add { grid-area: add; }
+.tm-tlsvc > .tm-tlsvc-more { grid-area: more; min-width: 0; }
+.tm-tlsvc-head { display: flex; flex-wrap: wrap; align-items: center; column-gap: .6rem; }
+.tm-tlsvc-head b { font: 700 1rem/1.2 var(--display); overflow-wrap: break-word; }
+.tm-notebook.tm-focus-page .tm-tloff { display: inline-flex; align-items: center; min-height: 44px; padding: 0; font-size: .8125rem; color: var(--ink); text-align: left; white-space: normal; text-decoration: underline; }
+.tm-notebook.tm-focus-page .tm-tloff.is-armed { color: var(--bad-ink); font-weight: 700; }
+.tm-tlhint { display: block; color: var(--muted); font-size: .8125rem; line-height: 1.3; }
+.tm-tlsvc-brs { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; min-width: 0; }
+.tm-notebook .tm-tlsvc :is(.tm-tlsvc-brs, .tm-tlsvc-more) .tm-pick { display: inline-flex; flex: none; width: auto; max-width: 100%; margin: 0; }
+.tm-notebook.tm-focus-page .tm-tlsvc :is(.tm-tlsvc-brs, .tm-tlsvc-more) :is(select, .ux-picker-trigger) { width: auto; max-width: 100%; min-height: 44px; }
+.tm-notebook.tm-focus-page .tm-tlsvc-more :is(select, .ux-picker-trigger) { border: 1px solid var(--faint); color: var(--muted); font-size: .875rem; }
+.tm-tlsvc-add .chip { min-height: 44px; }
+.tm-notebook.tm-focus-page .tm-grid-cell.is-chef .tm-pick:has(option[value=""]:checked) :is(.ux-picker-trigger, select) { border-style: solid; color: var(--ink); }
+.tm-tlundo { margin: .3rem 0; font-size: .875rem; overflow-wrap: break-word; }
+.tm-tlundo .p-link { min-height: 44px; font-weight: 700; }
+@media (max-width: 599px) {
+  .tm-focus-page .tm-rowticks .tk1 { display: none; }
+  .tm-planhead .tm-grid-sh .tm-plan-hours { display: none; }
+}
+@media (min-width: 600px) {
+  .tm-focus-page .tm-plan > :is(.tm-tlrow, .tm-grid-head) { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); column-gap: .75rem; align-items: start; }
+  .tm-plan > .tm-grid-head > :is(.tm-plan-svcs, .tm-rowticks) { grid-column: 2; }
+  .tm-plan > .tm-tlrow > .tm-grid-who { flex-direction: column; align-items: flex-start; }
+  .tm-tlsvc { grid-template-columns: minmax(7rem, 10rem) minmax(8rem, 12rem) auto minmax(0, 1fr); grid-template-areas: "name sec add more" ". brs brs brs"; }
+  .tm-tlsvc > .tm-tlsvc-more { justify-self: end; }
+}
+@media (min-width: 1100px) {
+  .tm-tlsvc { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; }
+  .tm-tlsvc > .tm-tlsvc-name { flex: 0 0 10rem; }
+  .tm-tlsvc > .tm-tlsvc-sec { flex: 0 0 12rem; }
+  .tm-tlsvc > .tm-tlsvc-more { margin-left: auto; }
 }

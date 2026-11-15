@@ -26,15 +26,16 @@ const fixture = () => Object.assign({ [CFG]: { people, staffIds: ['sam', 'ann', 
 const fullDate = d => new Date(d + 'T12:00:00+10:00').toLocaleDateString('en-AU', { timeZone: 'Australia/Brisbane', weekday: 'long', day: 'numeric', month: 'long' });
 const click = async (p, s) => { const found = await tap(p, s); await L.settle(p, 120); return found; };
 const read = (p, d) => p.evaluate(k => window.__fake.dump()[k], key(['team', d]));
-// the day grid (15 Nov 2026): each person and service has its own section picker, tm-sec:<id>:<sh>
-const service = async p => { if (await p.locator('[data-p="tm-whole"]').getAttribute('aria-pressed') === 'true') await click(p, '[data-p="tm-whole"]'); };
-const assignment = async (p, person, sh, sec) => { await service(p); await L.pick(p, 'select[data-k="tm-sec:' + person + ':' + sh + '"]', sec); };
+// the rows on one clock (16 Nov 2026): each person and service has its own section picker, tm-sec:<id>:<sh>
+const assignment = (p, person, sh, sec) => L.pick(p, 'select[data-k="tm-sec:' + person + ':' + sh + '"]', sec);
 const rowSection = (p, id, sh = 'lunch') => p.$eval('select[data-k="tm-sec:' + id + ':' + sh + '"]', e => e.value);
 const savedSection = (rec, id, sh) => (rec.on.find(x => x.id === id && x.sh === sh) || {}).sec;
 const selected = p => p.$eval('[data-p="tm-day"][aria-pressed="true"]', e => e.getAttribute('data-day'));
-async function ready(p) { await L.waitFor(p, () => !!document.querySelector('.tm-weeknav') && !!document.querySelector('.tm-work [data-p="tm-whole"]'), null, 7000); }
+// the dated Save drawn in the work area means the day loaded and is editable (Whole day review, the old signal, is gone)
+async function ready(p) { await L.waitFor(p, () => !!document.querySelector('.tm-weeknav') && !!document.querySelector('.tm-work [data-p="tm-save"]'), null, 7000); }
 async function dates(p) { if (!await p.locator('.tm-weeknav').isVisible()) await click(p, '[data-p="tm-date-toggle"]'); }
-async function details(p, id) { if (!await p.locator('.tm-detail-workbench[data-id="' + id + '"]').count()) await click(p, '[data-p="tm-focus"][data-id="' + id + '"]'); }
+// a planner row or any of its pickers: what a past or unknown day must not offer
+const ROW_CONTROLS = '.tm-tlrow, select[data-k^="tm-sec:"], select[data-k^="tm-at:"], [data-p="tm-off"], [data-p="tm-addbr"], select[data-k^="tm-addsvc:"]';
 async function goDate(p, d, edit = true) {
   await dates(p);
   for (let tries = 0; tries < 12; tries++) {
@@ -68,16 +69,16 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
   await goDate(p, tomorrow);
   ok((await txt(p, '.tm-page') || '').includes(fullDate(tomorrow)) && (await txt(p, '[data-p="tm-save"]') || '').includes(fullDate(tomorrow)), 'future date: editor and Save identify the full selected date');
   ok(await txt(p, '.tm-away-slot') === originalAway, 'future date: the current break board retains today\'s acknowledged plan independently of the future editor');
-  await details(p, 'sam');
+  // the details panel is gone: Sam's own Lunch section picker offers the usual first
   ok(/Usually Larder/.test(await txt(p, '.tm-work') || '') && !/Usually Grill/.test(await txt(p, '.tm-work') || ''), 'usual sections: future hints use the selected weekday rather than today');
   await assignment(p, 'ann', 'lunch', 'grill');
   await assignment(p, 'ann', 'dinner', 'larder');
   await goDate(p, later);
   await assignment(p, 'bo', 'lunch', 'pans');
   await goDate(p, tomorrow);
-  await click(p, '[data-p="tm-whole"]');
+  // Whole day review is gone: Ann's row holds both service lines, so the edits are read from her two pickers
   const whole = await txt(p, '.tm-work') || '';
-  ok(/Ann/.test(whole) && /Grill/.test(whole) && /Larder/.test(whole) && /Draft|not saved/i.test(whole), 'drafts: tomorrow retains Lunch and Dinner edits through another date and Whole day');
+  ok(/Ann/.test(whole) && await rowSection(p, 'ann') === 'grill' && await rowSection(p, 'ann', 'dinner') === 'larder' && /Unsaved|not saved/i.test(whole), 'drafts: tomorrow retains Lunch and Dinner edits through another date');
   await click(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k].v === 2, key(['team', tomorrow]), 6000);
   const out = await read(p, tomorrow);
@@ -85,7 +86,6 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
   ok((await txt(p, '.tm-save') || '').includes(fullDate(tomorrow)) && /saved/i.test(await txt(p, '.tm-save') || ''), 'Save acknowledgement names the future date after the server answers');
   ok(JSON.stringify(await read(p, today)) === JSON.stringify(originalToday) && await p.evaluate(([k, value]) => window.__fake.dump()[k].pastEdit.t === value, [CFG, originalCfg.pastEdit.t]), 'isolation: saving a future date preserves today and its live-team stamp');
   await goDate(p, later);
-  await service(p);
   ok(await rowSection(p, 'bo') === 'pans' && !await p.$eval('[data-p="tm-save"]', e => e.disabled), 'drafts: saving tomorrow does not discard the other date\'s unsaved section');
   await click(p, '.tm-date-controls [data-p="tm-today"]');
   await ready(p);
@@ -102,10 +102,9 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
   await goDate(p, later); await click(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k].v === 2, key(['team', later]), 6000);
   await p.reload(); await ready(p); await goDate(p, tomorrow);
-  await click(p, '[data-p="tm-whole"]');
-  ok(/Grill/.test(await txt(p, '.tm-work') || '') && /Larder/.test(await txt(p, '.tm-work') || '') && (await read(p, tomorrow)).v === 2, 'reload: the future plan survives a fresh page and is read from its own dated record');
+  ok(await rowSection(p, 'ann') === 'grill' && await rowSection(p, 'ann', 'dinner') === 'larder' && (await read(p, tomorrow)).v === 2, 'reload: the future plan survives a fresh page and is read from its own dated record');
   await goDate(p, yesterday, false);
-  ok(/read.only|past|saved/i.test(await txt(p, '.tm-page') || '') && !(await p.$('[data-p="tm-save"]')) && !(await p.$('.tm-person-section')), 'past dates: the saved plan is browsable without editing or Save controls');
+  ok(/read.only|past|saved/i.test(await txt(p, '.tm-page') || '') && !(await p.$('[data-p="tm-save"]')) && !(await p.$(ROW_CONTROLS)), 'past dates: the saved plan is browsable without editing or Save controls');
   ok(p.errors.length === 0, 'dated planning: no browser errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -153,7 +152,7 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
     await L.waitFor(p, () => !!document.querySelector('.tm-weeknav'), null, 6000);
     await goDate(p, tomorrow, false);
     const words = await txt(p, '.tm-page') || '';
-    ok(/Could not|could not|Check|Try again/.test(words) && !(await p.$('.tm-person-section')), (failure.cold ? 'offline' : 'failed') + ' week: unknown dates have an error and no assignment controls');
+    ok(/Could not|could not|Check|Try again/.test(words) && !(await p.$(ROW_CONTROLS)), (failure.cold ? 'offline' : 'failed') + ' week: unknown dates have an error and no assignment controls');
     ok(!(await p.$('[data-p="tm-save"]')) || await p.$eval('[data-p="tm-save"]', e => e.disabled), 'unknown future plan cannot be saved as empty');
     ok(p.errors.length === 0, 'failed week: no browser errors ' + p.errors.join(' | '));
     await p.context().close();
@@ -207,15 +206,14 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
   p = await L.open(browser, '#/team', { who: 'sam', extra: fixture(), fakeSDK: { 'firebase-firestore.js': heldWeekSDK }, wait: 900 }); await ready(p);
   await L.waitFor(p, () => typeof window.__fake.releaseInitialWeek === 'function', null, 6000);
   await assignment(p, 'ann', 'lunch', 'pans');
-  await details(p, 'ann');
-  await p.evaluate(() => {
-    const field = document.querySelector('select[data-k="tm-at:ann:0"]');
-    field.value = '870'; field.dispatchEvent(new Event('change', { bubbles: true }));
-  }); await L.settle(p, 120);
+  // Ann's break moves from 13:45 to 14:15, after now: 14:30 (the old pick) is no longer offered, as a 45 minute break
+  // must end by her 15:00 finish (16 Nov 2026), and a value outside the list would have cleared the break instead
+  await L.pick(p, 'select[data-k="tm-at:ann:lunch:0"]', '855');
   await click(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k].v === 2, TEAM, 6000);
+  ok(JSON.stringify((await read(p, today)).br.filter(b => b.id === 'ann')) === JSON.stringify([{ id: 'ann', sh: 'lunch', at: 855, len: 45 }]), 'late week read: the moved break is saved first');
   await p.evaluate(() => window.__fake.releaseInitialWeek()); await L.settle(p, 200);
-  ok(await rowSection(p, 'ann') === 'pans' && !/Ann/.test(await txt(p, '.tm-away-slot') || ''), 'late week read: an older snapshot cannot replace the saved section or restore an old current break');
+  ok(await rowSection(p, 'ann') === 'pans' && await p.$eval('select[data-k="tm-at:ann:lunch:0"]', e => e.value) === '855' && !/Ann/.test(await txt(p, '.tm-away-slot') || ''), 'late week read: an older snapshot cannot replace the saved section or break, or restore an old current break');
   await assignment(p, 'ann', 'lunch', 'larder'); await click(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k].v === 3, TEAM, 6000);
   ok(savedSection(await read(p, today), 'ann', 'lunch') === 'larder', 'late week read: the next Save retains the acknowledged version and advances to version three');

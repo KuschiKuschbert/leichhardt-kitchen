@@ -32,7 +32,8 @@ const read = (p, day = today) => p.evaluate(k => __fake.dump()[k], key('team', d
 const readCount = p => p.evaluate(() => __fake.reads.filter(k => /\/(?:team|teamsum)(?:\/|$)/.test(k)).length);
 const saveOff = p => p.locator('[data-p="tm-save"]').isDisabled();
 const selected = p => p.locator('[data-p="tm-day"][aria-pressed="true"]').getAttribute('data-day');
-const ready = p => L.waitFor(p, () => !!document.querySelector('.tm-work [data-p="tm-whole"]'), null, 7000);
+// the dated Save drawn in the work area means the day loaded and is editable (Whole day review, the old signal, is gone)
+const ready = p => L.waitFor(p, () => !!document.querySelector('.tm-work [data-p="tm-save"]'), null, 7000);
 async function goDay(p, day) { await L.teamDay(p, day); await ready(p); }
 async function quickOpen(p) {
   if (!await p.locator('.tm-quick-add').isVisible()) await click(p, '.tm-focus-toolbar [data-p="tm-add-staff"]');
