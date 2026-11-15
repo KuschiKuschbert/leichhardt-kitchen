@@ -276,7 +276,7 @@ Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records
 | `js/firebase-config.js`, `css/app.css` | Public Firebase web config; the Leichhardt look |
 | `js/manage.js` | Manage Recipes & Drawings (`#/manage`). Lazy: `mountManage()` in `js/app.js`, for the head chef, sous chefs and the admin |
 | `js/draw.js`, `js/library.js`, `js/lib/*.js` | The drawing editor (`#/manage/draw/...`) and its library. Lazy, with the editor. `tests/library-check.js`, `tests/contact.js` |
-| `js/smart.js`, `js/compose.js` | Draw it for me (`book/matches`) and the recipe reader that draws a card in the book's look. Lazy, after `js/draw.js`. `tests/smart-match.js`, `tests/compose-read.js`, `tests/style-check.js` |
+| `js/smart.js`, `js/compose.js` | Draw it for me (`book/matches`) and the recipe reader that draws a card in the book's look. Lazy, after `js/draw.js`. Plates laid out from the book's own and kept until redrawn (`layout.lv`, 15 Nov 2026). `tests/smart-match.js`, `tests/compose-read.js`, `tests/style-check.js`, `tests/plating-check.js` (every dish's plate against the book's own, and the rules each keeps) |
 | `menu-survey.md` | The 120 Queensland menus behind the library (inspiration only, no prices) |
 | `js/suppliers.js`, `js/supplier-core.js`, `js/supplier-store.js` | Supplier workspace (`#/suppliers`). Lazy, for an authorised chef. `docs/supplier-workspace.md` |
 | `js/deliveries.js` | Delivery received (`#/deliveries`). Lazy. `docs/delivery-received.md` |

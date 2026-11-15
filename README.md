@@ -220,7 +220,7 @@ Drawings for The Pass are in `js/art.js`. A recipe with no drawing still shows, 
 | `js/manage.js` | Manage Recipes & Drawings (`#/manage`): the head chef's recipe list and recipe form. Loaded only when the page opens on the head chef's device |
 | `js/draw.js` | The drawing editor (`#/manage/draw/...`): plates, pans, side views and build drawings from the library. Loaded only when a drawing opens |
 | `js/library.js`, `js/lib/*.js` | The drawing library: the drawing helpers, servingware and search (`library.js`), and the pieces by category (`js/lib/`). Our own drawings, in code. Loaded only with the drawing editor |
-| `js/smart.js` | Draw it for me: draws the plate, the side view and the build drawing from the recipe, and remembers the head chef's picks. Loaded only with the drawing editor |
+| `js/smart.js` | Draw it for me: draws the plate, the side view and the build drawing from the recipe, lays the plate out the way the book's own plates are laid out (15 Nov 2026), and remembers the head chef's picks. A plate laid out before 15 Nov 2026 is kept as it is until the head chef redraws it. Loaded only with the drawing editor |
 | `js/compose.js` | The recipe reader: an ingredient with its own card is drawn from what that card makes and how it is prepped, in the book's own look. Loaded only with the drawing editor |
 | `menu-survey.md` | The 120 Queensland menus the library's components came from (inspiration only, no prices) |
 | `js/amounts.js` | Reads a typed amount ("2 L", "2l", "2 litres", "1/2 tub") into a number and one unit, for the phone and node. Loaded before `js/prep.js`, in `SHELL`. `tests/amounts.test.js` |
