@@ -14156,8 +14156,8 @@ if (list.length) sg('oreg', 's');
      for someone who is the only cook on this service with 5 or more shifts on their own section. Counts come from
      teamsum/main (by section name, read once a day); with no count, a failed or stale one, there are no hints. */
   function tmLearnHints() {
-    var out = Object.create(null), r = tsum.rec;
-    if (!tmf || !tsCan() || tsum.st !== 'ok' || !r || !r.day || r.day < shift(dayNow(), -1)) return out;
+    var out = Object.create(null), r = tsFresh();
+    if (!tmf || !r) return out;
     var cnt = Object.create(null), ppl = Object.create(null), tot = Object.create(null);
     r.days.forEach(function (d) { d.s.forEach(function (v) { var vs = secNow(v.sec), c = cnt[v.p] = cnt[v.p] || Object.create(null); if (!c[vs]) ppl[vs] = (ppl[vs] || 0) + 1; c[vs] = (c[vs] || 0) + 1; tot[v.p] = (tot[v.p] || 0) + 1; }); });
     var of = function (id, k) { return (cnt[id] && cnt[id][k]) || 0; }, names = kitSecs().map(function (x) { return x.name; });
@@ -14193,6 +14193,31 @@ if (list.length) sg('oreg', 's');
   // The grid's columns: the services someone on this date's draft works, in the book's order (Lunch, Dinner, then the
   // configured order). A service nobody works has no column; the details panel still offers every service to add.
   function tmGridShifts() { var ps = tmDayPeople(); return tmServiceChoices().filter(function (s) { return ps.some(function (p) { return tmOnShift(p.id, s.id); }); }); }
+  /* Often (head chef, 15 Nov 2026, docs/team-smart-sections-options/brief.md, council Build smaller 5 of 5): the section a
+     person worked most on a service in the nightly 30 days, offered first in that cell's picker only when they have no
+     usual section for that weekday and service. At least 3 days on it, a clear top (a tie offers nothing), sections by
+     their name now (secNow) matched to exactly one section on the list. Days are counted once each, so a move within a
+     service does not count twice. The counts are worked out once per record and kept with it; never applied by itself. */
+  var tmOftenMemo = { rec: null, map: null };
+  function tmOften(id, sh) {
+    var r = tsFresh(); if (!r) return null;
+    if (tmOftenMemo.rec !== r) {
+      var map = Object.create(null);
+      r.days.forEach(function (d) { d.s.forEach(function (v) {
+        if (!v.sh) return;
+        var c = map[v.p + '|' + v.sh] = map[v.p + '|' + v.sh] || { days: Object.create(null), by: Object.create(null) };
+        c.days[d.day] = 1; (c.by[v.sec] = c.by[v.sec] || Object.create(null))[d.day] = 1;
+      }); });
+      tmOftenMemo = { rec: r, map: map };
+    }
+    var c = tmOftenMemo.map[id + '|' + sh]; if (!c) return null;
+    var low = function (x) { return String(x).replace(/\s+/g, ' ').trim().toLowerCase(); }, per = Object.create(null);
+    Object.keys(c.by).forEach(function (name) { var k = low(secNow(name)), seen = per[k] = per[k] || Object.create(null); Object.keys(c.by[name]).forEach(function (day) { seen[day] = 1; }); });
+    var names = Object.keys(per).map(function (k) { return [k, Object.keys(per[k]).length]; }).sort(function (a, b) { return b[1] - a[1]; });
+    if (!names.length || names[0][1] < 3 || (names[1] && names[1][1] === names[0][1])) return null;
+    var match = kitSecs().filter(function (x) { return low(x.name) === names[0][0]; });
+    return match.length === 1 ? { sec: match[0].id, n: names[0][1], of: Object.keys(c.days).length } : null;
+  }
   function tmChefRole(p) { return chefP(p) ? (p.role === 'head' ? 'Head chef' : 'Sous chef') : ''; }
   function tmGridHeadHTML(shs) {
     var ps = tmDayPeople();
@@ -14205,6 +14230,8 @@ if (list.length) sg('oreg', 's');
     if (!tmOnShift(p.id, s.id)) return '<span class="tm-grid-off">Off</span>';
     var cur = tmf.on[p.id][s.id], first = [], u = tmUsual(p.id, s.id);
     if (u && u.sec !== cur) first.push([u.sec, 'Usually ' + tmSecName(u.sec) + ', ' + u.n + ' of the last ' + u.of + ' ' + tmWeekday(tmPlanDay()) + 's']);
+    var often = !u && tmOften(p.id, s.id);
+    if (often && often.sec !== cur) first.push([often.sec, 'Often ' + tmSecName(often.sec) + ', ' + often.n + ' of ' + often.of + ' ' + s.name + ' shifts in 30 days']);
     var before = shs.slice(0, shs.indexOf(s)).filter(function (o) { return tmOnShift(p.id, o.id) && tmSecName(tmf.on[p.id][o.id]); }).pop();
     if (before) { var same = tmf.on[p.id][before.id]; if (same !== cur && !first.some(function (o) { return o[0] === same; })) first.push([same, 'Same as ' + before.name + ': ' + tmSecName(same)]); }
     var opts = first.concat([['', tmChefRole(p) || 'No section']]).concat(kitSecs().map(function (x) { return [x.id, x.name]; }));
@@ -15187,6 +15214,11 @@ if (list.length) sg('oreg', 's');
      training. A failed read waits 5 minutes; no record yet (the job has not run) is none, never an error. */
   var tsum = { day: '', rec: null, st: '', retry: 0, epoch: -1 };
   function tsCan() { return teamOK() && tmCanRead(); }
+  /* One freshness rule for the planner's suggestions (head chef, 15 Nov 2026, docs/team-smart-sections-options/brief.md):
+     the nightly counts (teamsum/main, read once a kitchen day by tsLoad()) are used only when read from the server and
+     made today or yesterday. A late or failed nightly job gives no Usually, no Often and no cross-training hint, rather
+     than suggesting from old plans without saying so. */
+  function tsFresh() { var r = tsum.rec; return tsCan() && tsum.st === 'ok' && r && r.day && r.day >= shift(dayNow(), -1) ? r : null; }
   function tsLoad() {
     var day = dayNow();
     if (tsum.day !== day || tsum.epoch !== accessEpoch) tsum = { day: day, rec: null, st: '', retry: 0, epoch: accessEpoch };
@@ -15217,7 +15249,7 @@ if (list.length) sg('oreg', 's');
   }
   // a cook's usual section on today's weekday and this shift, while that section is still on the list
   function tmUsual(id, sh) {
-    var r = tsum.rec, u = r && r.usual[parseYmd(tmPlanDay()).getDay() + '|' + sh], v = u && u[id];
+    var r = tsFresh(), u = r && r.usual[parseYmd(tmPlanDay()).getDay() + '|' + sh], v = u && u[id];
     return v && kitSecs().some(function (x) { return x.id === v.sec; }) ? v : null;
   }
   /* Admin, Reports, Team: Who has worked where (head chef, 10 Nov 2026, docs/cross-training-options/brief.md). Shifts
