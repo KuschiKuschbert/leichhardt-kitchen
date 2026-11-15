@@ -2891,6 +2891,41 @@
     }
     return d[a.length][b.length];
   }
+  /* Suggestions forgive a slip (15 Nov 2026), as recipe search does: when nothing matches what was typed, items whose
+     words start one slip away (two in a typed word of 8 letters or more) are offered, closest first, then in the usual
+     order. "chiken" still offers Chicken wings. Typed words under 4 letters are never put right, and nothing is filled
+     in until a suggestion is tapped. slipOff says how far off an item is (0 is every word found as typed), or -1. */
+  function slipOff(t, q) {
+    var ws = String(q || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean), cs = String(t || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean), sum = 0;
+    if (!ws.length || !cs.length) return -1;
+    for (var i = 0; i < ws.length; i++) {
+      var w = ws[i], best = -1, maxd = w.length >= 8 ? 2 : 1;
+      for (var j = 0; j < cs.length && best !== 0; j++) {
+        var c = cs[j];
+        if (c.indexOf(w) === 0) { best = 0; break; }
+        if (w.length < 4 || c.length < w.length - maxd) continue;
+        // the typed word against the start of the item's word: as long as it, a little longer, or the whole word
+        for (var n = w.length; n <= w.length + maxd; n++) {
+          var d = osa(w, c.slice(0, n));
+          if (d <= maxd && (best < 0 || d < best)) best = d;
+          if (n >= c.length) break;
+        }
+      }
+      if (best < 0) return -1;
+      sum += best;
+    }
+    return sum;
+  }
+  // the near ones from a pool of suggestion words (best first), for when nothing matched as typed
+  function nearTexts(pool, q, max) {
+    var seen = {}, hits = [];
+    pool.forEach(function (t, i) {
+      var k = okey(t); if (!k || seen[k] || k === q) return;
+      seen[k] = 1;
+      var d = slipOff(k, q); if (d >= 0) hits.push({ t: t, d: d, i: i });
+    });
+    return hits.sort(function (a, b) { return a.d - b.d || a.i - b.i; }).slice(0, max).map(function (h) { return h.t; });
+  }
   var KEEP = (function () { try { return JSON.parse(lsGet('lk.prep.keep') || '{}'); } catch (e) { return {}; } })();
   function keepWords(list) { list.forEach(function (c) { KEEP[c[0].toLowerCase()] = 1; }); lsSet('lk.prep.keep', JSON.stringify(KEEP)); }
   function fixWord(w) {
@@ -3155,6 +3190,16 @@
       var t = r.short || r.name, k = lkey(t);
       if (!seen[k] && !have[k] && ok(t)) { seen[k] = 1; out.push({ text: t, section: '', uses: 0 }); }
     });
+    if (!out.length) {
+      // nothing as typed: the lines and recipes one slip away (slipOff), closest first, then the most used
+      var near = [];
+      S.learned.forEach(function (x) { if (x.hidden || !x.text || have[x.id]) return; var d = slipOff(x.text, q); if (d >= 0) near.push({ d: d, u: x.uses || 0, x: { text: x.text, section: bestSection(x), uses: x.uses || 0 } }); });
+      D.recipes.filter(function (r) { return r.kind === 'batch' || r.kind === 'component'; }).forEach(function (r) {
+        var t = r.short || r.name, k = lkey(t); if (have[k]) return;
+        var d = slipOff(t, q); if (d >= 0) near.push({ d: d, u: -1, x: { text: t, section: '', uses: 0 } });
+      });
+      near.sort(function (a, b) { return a.d - b.d || b.u - a.u; }).forEach(function (n) { var k = lkey(n.x.text); if (!seen[k]) { seen[k] = 1; out.push(n.x); } });
+    }
     return out.slice(0, 6);
   }
   /* Typing suggestions (redesign step 1, 8 Nov 2026, Todoist's quick add, as drawn in every-page.html): right under the
@@ -7700,12 +7745,12 @@
   }
   function ordSuggest() {
     var q = okey(S.otext); if (q.length < 2) return [];
-    var seen = {}, out = [];
-    function add(t) { var k = okey(t); if (k && !seen[k] && k !== q && (k.indexOf(q) === 0 || k.indexOf(' ' + q) >= 0)) { seen[k] = 1; out.push(t); } }
+    var seen = {}, out = [], pool = [];
+    function add(t) { var k = okey(t); if (k) pool.push(t); if (k && !seen[k] && k !== q && (k.indexOf(q) === 0 || k.indexOf(' ' + q) >= 0)) { seen[k] = 1; out.push(t); } }
     (S.ordLearned || []).filter(function (x) { return !x.hidden; }).slice().sort(function (a, b) { return b.uses - a.uses; }).forEach(function (x) { add(x.text); });
     (S.ordLines || []).concat(S.ordAll || []).forEach(function (x) { add(x.text); });
     var idx = ingIndex(); Object.keys(idx).forEach(function (k) { add(idx[k].name); });
-    return out.slice(0, 6);
+    return out.length ? out.slice(0, 6) : nearTexts(pool, q, 6);
   }
   function ordSuggHTML() {
     var l = ordSuggest(); S.osugg = l; if (l.length) sg('otype', 's');
@@ -7977,13 +8022,13 @@ if (list.length) sg('oreg', 's');
   }
   function wSuggest() {
     var q = okey(S.wf.text); if (q.length < 2) return [];
-    var seen = {}, out = [];
-    function add(t) { var k = okey(t); if (k && !seen[k] && k !== q && (k.indexOf(q) === 0 || k.indexOf(' ' + q) >= 0)) { seen[k] = 1; out.push(t); } }
+    var seen = {}, out = [], pool = [];
+    function add(t) { var k = okey(t); if (k) pool.push(t); if (k && !seen[k] && k !== q && (k.indexOf(q) === 0 || k.indexOf(' ' + q) >= 0)) { seen[k] = 1; out.push(t); } }
     (S.wSum || []).forEach(function (x) { add(x.t); });
     S.learned.forEach(function (x) { if (!x.hidden && x.text) add(x.text); });
     D.recipes.forEach(function (r) { add(r.short || r.name); });
     var idx = ingIndex(); Object.keys(idx).forEach(function (k) { add(idx[k].name); });
-    return out.slice(0, 6);
+    return out.length ? out.slice(0, 6) : nearTexts(pool, q, 6);
   }
   function wSuggHTML() {
     var l = wSuggest(); S.wsugg = l; if (l.length) sg('wchip', 's');
@@ -8485,13 +8530,13 @@ if (list.length) sg('oreg', 's');
   }
   function xSuggest() {
     var q = okey(S.xf.text); if (q.length < 2) return [];
-    var seen = Object.create(null), out = [];
-    function add(t) { t = xStr(t, 80); var k = okey(t); if (k && !seen[k] && k !== q && (k.indexOf(q) === 0 || k.indexOf(' ' + q) >= 0)) { seen[k] = 1; out.push(t); } }
+    var seen = Object.create(null), out = [], pool = [];
+    function add(t) { t = xStr(t, 80); var k = okey(t); if (k) pool.push(t); if (k && !seen[k] && k !== q && (k.indexOf(q) === 0 || k.indexOf(' ' + q) >= 0)) { seen[k] = 1; out.push(t); } }
     ((S.xSum && S.xSum.items) || []).forEach(function (x) { add(x && x.t); });
     xLive().forEach(function (x) { add(x.text); });
     (S.ordLearned || []).forEach(function (x) { if (!x.hidden && x.text) add(x.text); });
     var idx = ingIndex(); Object.keys(idx).forEach(function (k) { add(idx[k].name); });
-    return out.slice(0, 6);
+    return out.length ? out.slice(0, 6) : nearTexts(pool, q, 6);
   }
   function xSuggHTML() {
     var l = xSuggest(); S.xsugg = l; if (l.length) sg('xchip', 's');
