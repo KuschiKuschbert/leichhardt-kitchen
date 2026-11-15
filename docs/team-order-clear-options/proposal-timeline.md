@@ -26,6 +26,12 @@ A day as the roster file leaves it: everyone on their service with their own ros
 5. **The roster file starts the flow:** fill the week, then each day's bars, sections and breaks, then Save.
 6. **Laptop first, tablet and phone must work.** Most planning is at a computer. On a phone a bar across the whole day is narrow (about 300 px for 08:00 to 22:00, about 21 px an hour): the phone may need its own shape (one service at a time, or the bar as a strip with the times in words).
 
+## Carried from round 1a (the first proposal, Build smaller 5 of 5)
+
+- **Order:** one comparator (earliest start, then earliest finish, then saved order; a shift missing a time after the timed ones), used by the planner (`tmServiceChoices()`) and Home's rota (`homeRotaHTML()`), not inside `kitShifts()`.
+- **Clear this day:** inside an existing fold, a second tap in place keyed by the date and cancelled by a date pick; it takes each person off each service through `tmRemoveShift()` (roster hours and shown hidden shifts go too); the words say nothing is saved yet. Save writes the normal versioned plan with nobody on, never a delete. A plan with nobody on reads as **Not set** everywhere: the week list, the chip, To do, Fill from roster file and Copy last weekday.
+- **Reproduced (node, `services()` in `js/roster-import.js`, synthetic shifts):** the roster file puts a cook on every service their hours touch. With an All day shift 10:00 to 21:00 not hidden: a 10:00 to 15:00 cook gets Lunch and All day; 17:00 to 21:00 gets Dinner and All day; 10:00 to 21:00 gets Lunch, Dinner and All day. A time line shows each person's real hours once, whichever services they are on; how the roster should treat overlapping services is open for the designs (today's rule is the head chef's, 14 Nov 2026).
+
 ## What this replaces or keeps (approved designs it touches)
 
 - The **day grid** (head chef, 15 Nov 2026, `docs/team-sections-options/brief.md`): people down, services across, one Section picker per service. A bar per service would replace the "Off" cells and could replace the columns. Changing it is a proposed departure from a design chosen yesterday.
