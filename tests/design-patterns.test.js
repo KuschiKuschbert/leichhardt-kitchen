@@ -14,6 +14,7 @@ const js = jsFiles.map(read).join('\n');
 
 // the names docs/design-patterns.md uses, by section
 const CLASSES = [
+  'page-swiping', 'page-swipe-surface',
   'wall-sign', 'wall-hint',
   'hm-welcome', 'hm-welcome-long', 'hm-welcome-compact', 'mascot', 'mascot-host', 'mascot-still', 'nb-fin', 'nb-fin-art', 'nb-fin-w', 'nb-fin-say', 'nb-fin-sec', 'tm-glance', 'nb-scene', 'nb-w40', 'nb-w28', 'nb-f192', 'nb-f96', 'nb-f64', 'nb-f48', 'nb-f0', 'nb-noart', 'p-toast-two', 'p-toast-say',
   'su-last-kind', 'su-last-wide', 'su-last-dow',
@@ -55,6 +56,7 @@ const HELPERS = ['tmShortPaint', 'tmShortOf', 'tmBusy', 'homeHeading', 'homeWord
   'ovPush', 'ovDone', 'trapTab', 'sheetOpen', 'sheetBusy', 'sheetNext', 'lvHTML', 'homeSlot', 'homePaint', 'homeRotaHTML', 'tmAwayHTML', 'tmNextHTML', 'tmGridShifts', 'tmGridRowHTML', 'tmGridCellHTML', 'tmAwayPaint', 'tmAwayHidden', 'dkRunHTML', 'dkTeamHTML', 'dkFormHTML', 'panelShellHTML', 'psPanelHTML', 'psHintHTML', 'psReferenceHTML', 'psRolloutHTML',
   'fnOrdTag', 'orderTag', 'fbHTML', 'ftagHTML', 'fillAfterTap'];
 const GLOBALS = ['ICON', 'LK_UX', 'LK_PREP_STANDARDS'];
+HELPERS.push('pageSwipeFrom', 'navList');
 
 const missing = [];
 CLASSES.forEach(c => { if (!new RegExp('\\.' + c.replace(/[-]/g, '\\-') + '(?![A-Za-z0-9_-])').test(css)) missing.push('.' + c); });
