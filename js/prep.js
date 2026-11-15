@@ -11796,7 +11796,7 @@ if (list.length) sg('oreg', 's');
     // A person's own valid choice for today stays known independently of the roster. An automatic plan pick does not.
     var pick = ksPicks(p) && ksGet(p.id), manual = pick && pick.self === true && pick.auto !== true ? kitSecs().filter(function (s) { return s.id === pick.sec; })[0] : null;
     var sec = n ? tmSecWords(p, n) : manual ? manual.name : '';
-    var title = 'Your section', sub = n ? n.s.name + ' · ' + homeShiftHours(n.s) : ready ? 'No shift has been allocated to you' : homePlanNote(d);
+    var title = 'Your section', sub = n ? n.s.name + ' · ' + (n.from != null ? tmHHMM(n.from) + ' to ' + tmHHMM(n.to) : homeShiftHours(n.s)) : ready ? 'No shift has been allocated to you' : homePlanNote(d);
     var value = sec || (ready || d.state === 'unset' ? 'Not assigned' : d.state === 'error' ? 'Unavailable' : 'Checking...');
     if (unavailable) { sub = 'Your saved shift is unavailable. Check with the chef.'; value = sec || 'Unavailable'; }
     if (manual && !n) sub = 'Your pick today · ' + sub;
@@ -11877,7 +11877,9 @@ if (list.length) sg('oreg', 's');
     var bs = tmShiftBreaks(rec, o), away = bs.filter(function (b) { return tmOnBreak(b, m); })[0];
     var words = away ? 'back ' + tmAwayTime(away.at + away.len) :
       bs.map(function (b) { return (tmIsSplit(b.len) ? 'split ' : 'break ') + tmAwayTime(b.at) + ' to ' + tmAwayTime(b.at + b.len); }).join(', ');
-    return '<span class="hm-tp' + (away ? ' is-away' : '') + '"><b>' + esc(mnName(o.id)) + '</b>' + (words ? ' <small>' + esc(words) + '</small>' : '') + '</span>';
+    // who comes in when (15 Nov 2026): the person's roster hours, on their own line, never bold like "back 15:00"
+    var hours = o.from != null && o.to != null ? ' <small class="hm-tp-hrs">' + esc(tmHHMM(o.from) + ' to ' + tmHHMM(o.to)) + '</small>' : '';
+    return '<span class="hm-tp' + (away ? ' is-away' : '') + '"><b>' + esc(mnName(o.id)) + '</b>' + hours + (words ? ' <small>' + esc(words) + '</small>' : '') + '</span>';
   }
   function homeBoardHTML() {
     var head = '<div class="hm-bh"><h3 class="hm-bt" id="hm-board-h">Now and next</h3><b class="hm-clock">' + esc(T.clock(now())) + '</b></div>';
@@ -13759,7 +13761,12 @@ if (list.length) sg('oreg', 's');
   function teamClean(x, day) {
     if (!x || x.day !== day) return null;
     var on = (Array.isArray(x.on) ? x.on : []).filter(function (o) { return o && tmStr(o.id, 80) && tmStr(o.sh, 40) && tmStr(o.sec == null ? '' : o.sec, 40) !== null; })
-      .map(function (o) { return { id: o.id, sh: o.sh, sec: o.sec || '' }; });
+      .map(function (o) {
+        // roster hours (15 Nov 2026): the person's own start and finish for this shift, checked minutes, from before to
+        var r = { id: o.id, sh: o.sh, sec: o.sec || '' }, f = tmMin(o.from), t = tmMin(o.to);
+        if (f !== null && t !== null && f < t && f === o.from && t === o.to) { r.from = f; r.to = t; }
+        return r;
+      });
     // Keep only an in-memory warning for dropped or normalised times. The saved-status panel must not call them zero.
     var uncheckedBr = [];
     var br = (Array.isArray(x.br) ? x.br : []).filter(function (b) {
@@ -13819,15 +13826,19 @@ if (list.length) sg('oreg', 's');
   }
   /* the plan being changed: on[person][shift] = section id ('' for none), br: [{ id, sh, at, len }] */
   function tmFrom(rec, day) {
-    var on = {}, br = [];
-    (rec ? rec.on : []).forEach(function (o) { (on[o.id] = on[o.id] || {})[o.sh] = o.sec; });
+    var on = {}, br = [], hrs = {};
+    (rec ? rec.on : []).forEach(function (o) { (on[o.id] = on[o.id] || {})[o.sh] = o.sec; if (o.from != null) (hrs[o.id] = hrs[o.id] || {})[o.sh] = [o.from, o.to]; });
     (rec ? rec.br : []).forEach(function (b) { br.push({ id: b.id, sh: b.sh, at: b.at, len: b.len }); });
-    return { day: day, base: rec ? rec.v : 0, at: rec ? rec.at : 0, on: on, br: br };
+    return { day: day, base: rec ? rec.v : 0, at: rec ? rec.at : 0, on: on, br: br, hrs: hrs };
   }
   // the plan as saved: sorted, so the same plan always reads the same; a break of someone not on that shift goes
   function tmOut(f) {
     var on = [];
-    Object.keys(f.on).sort().forEach(function (id) { Object.keys(f.on[id]).sort().forEach(function (sh) { on.push({ id: id, sh: sh, sec: f.on[id][sh] || '' }); }); });
+    Object.keys(f.on).sort().forEach(function (id) { Object.keys(f.on[id]).sort().forEach(function (sh) {
+      var e = { id: id, sh: sh, sec: f.on[id][sh] || '' }, h = f.hrs && f.hrs[id] && f.hrs[id][sh];
+      if (h) { e.from = h[0]; e.to = h[1]; }   // the roster hours, saved with the plan (15 Nov 2026)
+      on.push(e);
+    }); });
     var br = f.br.filter(function (b) { return f.on[b.id] && f.on[b.id][b.sh] !== undefined && tmMin(b.at) !== null; })
       .map(function (b) { return { id: b.id, sh: b.sh, at: b.at, len: b.len }; })
       .sort(function (a, b) { return a.at - b.at || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0); });
@@ -14020,6 +14031,7 @@ if (list.length) sg('oreg', 's');
     var o = tmf.on[id];
     if (!o || o[sh] === undefined) return;
     delete o[sh]; if (!Object.keys(o).length) delete tmf.on[id];
+    if (tmf.hrs && tmf.hrs[id]) { delete tmf.hrs[id][sh]; if (!Object.keys(tmf.hrs[id]).length) delete tmf.hrs[id]; }
     tmf.br = tmf.br.filter(function (b) { return !(b.id === id && b.sh === sh); });
   }
   function tmBreaks(id, sh) { return tmf ? tmf.br.filter(function (b) { return b.id === id && b.sh === sh; }).sort(function (a, b) { return a.at - b.at; }) : []; }
@@ -14259,7 +14271,7 @@ if (list.length) sg('oreg', 's');
     return '<li class="tm-person-row tm-grid-row' + (tmUi.focus === p.id ? ' is-focused' : '') + '" data-id="' + esc(p.id) + '" data-sh="' + esc(tmRowService(p.id)) + '"><div class="tm-grid-who"><span class="tm-person-name">' + esc(p.name) + '</span>' +
       '<button type="button" class="tm-grid-brk" data-p="tm-focus" data-id="' + esc(p.id) + '" aria-expanded="' + (tmUi.focus === p.id) + '" aria-label="' + esc('Breaks for ' + p.name + ': ' + (bs.length ? brk : 'not set')) + '"' + (svOf('t') === 'busy' ? ' disabled' : '') + '>Breaks <span>' + esc(brk) + '</span></button></div>' +
       shs.map(function (s) { return '<div class="tm-grid-cell">' + tmGridCellHTML(p, s, shs) + '</div>'; }).join('') +
-      (tmRsTime(p.id) ? '<p class="tm-learn tm-roster-time tm-grid-note">Roster ' + esc(tmRsTime(p.id)) + '</p>' : '') +
+      (tmf.hrs && tmf.hrs[p.id] ? '<p class="tm-learn tm-roster-time tm-grid-note">Roster ' + esc(tmHoursWords(tmf.hrs[p.id])) + '</p>' : '') +
       notes.map(function (n) { return '<p class="tm-learn tm-grid-note">' + esc(n) + '</p>'; }).join('') + '</li>';
   }
   function tmPersonListHTML() {
@@ -14304,7 +14316,8 @@ if (list.length) sg('oreg', 's');
     var body = ps.map(function (p) {
       return '<section class="tm-dayperson"><h4 class="tm-dayname">' + esc(p.name) + '</h4>' + shs.filter(function (s) { return tmOnShift(p.id, s.id); }).map(function (s) {
         var sec = tmSecName(tmf.on[p.id][s.id]) || (chefP(p) ? p.role === 'head' ? 'Head chef' : 'Sous chef' : 'No section');
-        var hours = s.from != null && s.to != null ? tmHHMM(s.from) + ' to ' + tmHHMM(s.to) : 'Hours not set';
+        var own = tmf.hrs && tmf.hrs[p.id] && tmf.hrs[p.id][s.id];
+        var hours = own ? 'Roster ' + tmHHMM(own[0]) + ' to ' + tmHHMM(own[1]) : s.from != null && s.to != null ? tmHHMM(s.from) + ' to ' + tmHHMM(s.to) : 'Hours not set';
         var breaks = tmShiftBreaks(out, { id: p.id, sh: s.id }).map(function (b) { return (tmIsSplit(b.len) ? 'Split ' : 'Break ') + tmHHMM(b.at) + ' to ' + tmHHMM(b.at + b.len) + (tmIsSplit(b.len) ? '' : ', ' + b.len + ' min'); });
         return '<div class="tm-dayline"><div><b>' + esc(s.name) + ' · ' + esc(sec) + '</b><span>' + esc(hours) + '</span><small>' + esc(breaks.length ? breaks.join('; ') : 'Break not set') + '</small></div>' +
           '<button type="button" class="p-link" data-p="tm-sh" data-id="' + esc(p.id) + '" data-v="' + esc(s.id) + '">Edit ' + esc(s.name) + '</button></div>';
@@ -14370,7 +14383,9 @@ if (list.length) sg('oreg', 's');
   // one person's shift on the plan in words: "Lunch 10:00 to 15:00 · break 14:30" (HTML-safe); Today at a glance
   function tmShiftBreaks(rec, o) { return rec.br.filter(function (b) { return b.id === o.id && b.sh === o.sh; }).sort(function (a, b) { return a.at - b.at; }); }
   function tmShiftWords(rec, o, sh) {
-    return esc(sh.name) + (sh.from != null && sh.to != null ? ' ' + tmHHMM(sh.from) + ' to ' + tmHHMM(sh.to) : '') +
+    // the person's roster hours when the plan has them (15 Nov 2026), else the shift's own (the bar keeps the shift's)
+    var own = o.from != null, f = own ? o.from : sh.from, t = own ? o.to : sh.to;
+    return esc(sh.name) + (f != null && t != null ? (own ? ', roster ' : ' ') + tmHHMM(f) + ' to ' + tmHHMM(t) : '') +
       tmShiftBreaks(rec, o).map(function (b) { return tmIsSplit(b.len) ? ' · split ' + tmHHMM(b.at) + ', back ' + tmHHMM(b.at + b.len) : ' · break ' + tmHHMM(b.at) + (b.len !== 30 ? ', ' + b.len + ' min' : ''); }).join('');
   }
   function tmTimelineHTML(rec) {
@@ -14567,6 +14582,7 @@ if (list.length) sg('oreg', 's');
       if (!on.length) { tmLastJob = null; tmMsg = 'No team was saved last ' + wd + '.'; draw(); return; }
       destination.on = {}; on.forEach(function (o) { (destination.on[o.id] = destination.on[o.id] || {})[o.sh] = kitSecs().some(function (x) { return x.id === o.sec; }) ? o.sec : ''; });
       destination.br = rec.br.filter(function (b) { return destination.on[b.id] && destination.on[b.id][b.sh] !== undefined; }).map(function (b) { return { id: b.id, sh: b.sh, at: b.at, len: b.len }; });
+      destination.hrs = {};   // last week's roster hours are not this week's: never copied
       var n = Object.keys(destination.on).length;
       tmLastJob = null;
       tmMsg = 'Filled in from last ' + wd + ': ' + n + (n === 1 ? ' person' : ' people') + '. Check each shift, then Save ' + tmPlanDate(destination.day) + '.'; draw();
@@ -14592,7 +14608,12 @@ if (list.length) sg('oreg', 's');
     if (tmRs && tmRs.st === 'checking' && tmRs.epoch !== accessEpoch) { tmRs.st = 'bad'; tmRs.why = 'The book locked before the week was checked.'; }
     return !!tmRs && (tmRs.st === 'reading' || tmRs.st === 'checking');
   }
-  function tmRsTime(id) { var t = tmRs && tmRs.times && tmf && tmRs.times[tmf.day]; return t && t[id] || ''; }
+  // a person's roster hours in words from { shift: [from, to] }: "10:00 to 21:30", or "10:00 to 14:00, 17:00 to 22:00"
+  function tmHoursWords(hrs) {
+    var seen = {}, list = [];
+    Object.keys(hrs || {}).forEach(function (sh) { var h = hrs[sh], k = h && h[0] + '-' + h[1]; if (h && !seen[k]) { seen[k] = 1; list.push(h); } });
+    return list.sort(function (a, b) { return a[0] - b[0]; }).map(function (h) { return tmHHMM(h[0]) + ' to ' + tmHHMM(h[1]); }).join(', ');
+  }
   function tmRsChoose() {
     var input = S.root && S.root.querySelector('[data-k="tm-roster-file"]');
     if (input && tmRsOK() && !tmRsBusy() && svOf('t') !== 'busy' && !tmLastBusy) input.click();
@@ -14670,7 +14691,11 @@ if (list.length) sg('oreg', 's');
   function tmRsAdd(job, d, list) {
     var e = tmPlanEntry(d), times = job.times[d] = job.times[d] || {};
     tmPlan.day = d; tmf = e.f;
-    list.forEach(function (x) { tmAddShift(x.id, x.sh); times[x.id] = tmHHMM(x.from) + ' to ' + tmHHMM(x.to); });
+    list.forEach(function (x) {
+      tmAddShift(x.id, x.sh); times[x.id] = tmHHMM(x.from) + ' to ' + tmHHMM(x.to);
+      // kept with the plan, so every phone on the day sees who comes in when (15 Nov 2026)
+      if (tmMin(x.from) !== null && tmMin(x.to) !== null && x.from < x.to) { var h = tmf.hrs = tmf.hrs || {}; (h[x.id] = h[x.id] || {})[x.sh] = [x.from, x.to]; }
+    });
   }
   /* Link a roster name to a person in the book (head chef, 14 Nov 2026: nicknames), or take a link away. The whole list
      is one admin-only record (config/rosterLinks), one write each time. A new link adds that person's shifts to this
@@ -14970,7 +14995,7 @@ if (list.length) sg('oreg', 's');
   function tmMy(id) {
     if (!tm.rec || tm.day !== dayNow() || !id) return [];
     var on = tm.rec.on.filter(function (o) { return o.id === id; });
-    return kitShifts().map(function (s) { var o = on.filter(function (x) { return x.sh === s.id; })[0]; return o ? { s: s, sec: o.sec } : null; }).filter(Boolean);
+    return kitShifts().map(function (s) { var o = on.filter(function (x) { return x.sh === s.id; })[0]; return o ? { s: s, sec: o.sec, from: o.from, to: o.to } : null; }).filter(Boolean);
   }
   function tmMyBreaks(id) { return tm.rec && tm.day === dayNow() ? tm.rec.br.filter(function (b) { return b.id === id && tmShift(b.sh); }).sort(function (a, b) { return a.at - b.at; }) : []; }
   /* the shift of mine that counts now (head chef, 7 Nov 2026): the one that is on; when two are on, the one that started
@@ -15016,7 +15041,7 @@ if (list.length) sg('oreg', 's');
   function tmDayLine(p) {
     var m = T.mins(), n = tmNow(tmMy(p.id), m); if (!n) return '';
     var sec = tmSecWords(p, n), b = tmNextBreak(p.id, m);
-    var head = n.s.from != null && n.s.from > m ? n.s.name + ' from ' + tmHHMM(n.s.from) : n.s.name;
+    var from = n.from != null ? n.from : n.s.from, head = from != null && from > m ? n.s.name + ' from ' + tmHHMM(from) : n.s.name;
     return head + (sec ? ': ' + sec : '') + (b ? ' · ' + tmBreakWords(b, m) : '');
   }
   // the shifts of mine after the one that counts now
