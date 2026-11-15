@@ -1,0 +1,315 @@
+{
+ "saved": {
+  "line": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
+  "marked": [
+   "Sam K [18:30]",
+   "Dev [18:15]",
+   "Fen [18:15]",
+   "Hal [18:30]"
+  ],
+  "spells": [
+   [
+    "18:30",
+    "19:00",
+    "low 4",
+    "roster 8",
+    "4@18:30 5@18:45",
+    "Sam K,Dev,Fen,Hal"
+   ]
+  ],
+  "dockH": 141
+ },
+ "halfFix": {
+  "line": "Unsaved plan: too few now until 18:45. 5 now, 6 needed. Move a marked break.",
+  "marked": [
+   "Dev [18:15]",
+   "Fen [18:15]",
+   "Hal [18:30]"
+  ],
+  "spells": [
+   [
+    "18:30",
+    "18:45",
+    "low 5",
+    "roster 8",
+    "5@18:30",
+    "Dev,Fen,Hal"
+   ]
+  ],
+  "dockH": 141
+ },
+ "fullFix": {
+  "line": "",
+  "marked": [],
+  "spells": [],
+  "dockH": 98
+ },
+ "long": {
+  "line": "Unsaved plan: too few now until 19:00. 3 now, 4 from 18:45, 6 needed. Move a marked break.",
+  "marked": [
+   "Samantha Kowalczyk-Brown [18:30]",
+   "Devendra Ramasubramanian [18:15]",
+   "Elisabetta Montgomery [18:30]",
+   "Fenella Ashworth-Lloyd [18:15]",
+   "Halvard Christophersen [18:30]"
+  ],
+  "spells": [
+   [
+    "18:30",
+    "19:00",
+    "low 3",
+    "roster 8",
+    "3@18:30 4@18:45",
+    "Samantha Kowalczyk-Brown,Devendra Ramasubramanian,Elisabetta Montgomery,Fenella Ashworth-Lloyd,Halvard Christophersen"
+   ]
+  ],
+  "dockH": 141,
+  "board": [
+   "Samantha:true",
+   "Devendra:false",
+   "Fenella :false",
+   "Halvard :false"
+  ],
+  "rows": "5 rows; heights 102,77,77,77,102,102,102,77,102"
+ },
+ "quiet1830": {
+  "line": "Saved plan: too few now until 20:30. Only 3 on Dinner (0 now with breaks), 6 needed. Add people or move a marked break.",
+  "marked": [
+   "Sam K [18:30]",
+   "Dev [18:15]",
+   "Hal [18:30]"
+  ],
+  "spells": [
+   [
+    "18:30",
+    "20:30",
+    "low 0",
+    "roster 3",
+    "0@18:30 1@18:45 3@19:00",
+    "Sam K,Dev,Hal"
+   ]
+  ],
+  "dockH": 159
+ },
+ "quietCountAt1110": 0,
+ "quiet1730": {
+  "line": "Saved plan: too few now until 20:30. Only 3 on Dinner (0 from 18:30 with breaks), 6 needed. Add people or move a marked break.",
+  "marked": [
+   "Sam K [18:30]",
+   "Dev [18:15]",
+   "Hal [18:30]"
+  ],
+  "spells": [
+   [
+    "17:30",
+    "20:30",
+    "low 0",
+    "roster 3",
+    "3@17:30 2@18:15 0@18:30 1@18:45 3@19:00",
+    "Dev,Sam K,Hal"
+   ]
+  ],
+  "dockH": 159
+ },
+ "newLater": {
+  "line": "Unsaved plan: too few 19:30 to 20:00. 5 from 19:30, 6 needed. Move a marked break.",
+  "marked": [
+   "Sam K [19:30]",
+   "Fen [19:30]",
+   "Hal [19:30]"
+  ],
+  "spells": [
+   [
+    "19:30",
+    "20:00",
+    "low 5",
+    "roster 8",
+    "5@19:30",
+    "Sam K,Fen,Hal"
+   ]
+  ],
+  "dockH": 141
+ },
+ "twoShort": {
+  "line": "Unsaved plan: too few 18:30 to 19:00. 4 from 18:30, 5 from 18:45, 6 needed. Move a marked break. Next: 19:45 to 20:15.",
+  "marked": [
+   "Sam K [18:30]",
+   "Dev [18:15]",
+   "Fen [18:15]",
+   "Hal [18:30]"
+  ],
+  "spells": [
+   [
+    "18:30",
+    "19:00",
+    "low 4",
+    "roster 8",
+    "4@18:30 5@18:45",
+    "Sam K,Dev,Fen,Hal"
+   ],
+   [
+    "19:45",
+    "20:15",
+    "low 5",
+    "roster 8",
+    "5@19:45",
+    "Ari,Bea,Gia"
+   ]
+  ],
+  "dockH": 159
+ },
+ "threeShort": {
+  "line": "Unsaved plan: too few 18:15 to 19:00. As few as 4 from 18:30, 6 needed. Move a marked break. Next: 19:45 to 20:15.",
+  "marked": [
+   "Sam K [18:30]",
+   "Dev [18:15]",
+   "Eli [18:00]",
+   "Fen [18:15]",
+   "Hal [18:30]"
+  ],
+  "spells": [
+   [
+    "18:15",
+    "19:00",
+    "low 4",
+    "roster 8",
+    "5@18:15 4@18:30 5@18:45",
+    "Dev,Eli,Fen,Sam K,Hal"
+   ],
+   [
+    "19:45",
+    "20:15",
+    "low 5",
+    "roster 8",
+    "5@19:45",
+    "Ari,Bea,Gia"
+   ]
+  ],
+  "dockH": 159
+ },
+ "twoBreaks": {
+  "line": "Unsaved plan: too few now until 19:00. 3 now, 4 from 18:45, 6 needed. Move a marked break.",
+  "marked": [
+   "Sam K [18:30]",
+   "Ari [Split 14:30, 18:30]",
+   "Dev [18:15]",
+   "Fen [18:15]",
+   "Hal [18:30]"
+  ],
+  "spells": [
+   [
+    "18:30",
+    "19:00",
+    "low 3",
+    "roster 8",
+    "3@18:30 4@18:45",
+    "Sam K,Ari,Dev,Fen,Hal"
+   ]
+  ],
+  "dockH": 141
+ },
+ "overlap": {
+  "line": "Unsaved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
+  "marked": [
+   "Sam K [18:30]",
+   "Dev [18:15]",
+   "Fen [18:15]",
+   "Hal [18:30]"
+  ],
+  "spells": [
+   [
+    "18:30",
+    "19:00",
+    "low 4",
+    "roster 8",
+    "4@18:30 5@18:45",
+    "Sam K,Dev,Fen,Hal"
+   ]
+  ],
+  "dockH": 141,
+  "dinnerOnly": "Ari,Bea,Eli,Gia,Cal"
+ },
+ "fnWindow": {
+  "line": "Unsaved plan: too few 18:00 to 20:00. Only 9 on Dinner (5 from 18:30 with breaks), 10 needed. Add people or move a marked break.",
+  "marked": [
+   "Sam K [18:30]",
+   "Dev [18:15]",
+   "Fen [18:15]",
+   "Hal [18:30]"
+  ],
+  "spells": [
+   [
+    "18:00",
+    "20:00",
+    "low 5",
+    "roster 9",
+    "9@18:00 7@18:15 5@18:30 6@18:45 9@19:00",
+    "Dev,Fen,Sam K,Hal"
+   ]
+  ],
+  "dockH": 159
+ },
+ "at1845": {
+  "line": "Saved plan: too few now until 19:00. 5 now, 6 needed. Move a marked break.",
+  "marked": [
+   "Sam K [18:30]",
+   "Fen [18:15]",
+   "Hal [18:30]"
+  ],
+  "spells": [
+   [
+    "18:45",
+    "19:00",
+    "low 5",
+    "roster 8",
+    "5@18:45",
+    "Sam K,Fen,Hal"
+   ]
+  ],
+  "dockH": 141
+ },
+ "manySteps": {
+  "line": "Unsaved plan: too few 18:00 to 19:15. As few as 3 from 18:45, 6 needed. Move a marked break.",
+  "marked": [
+   "Sam K [18:45]",
+   "Ari [18:00]",
+   "Bea [18:00]",
+   "Dev [18:15]",
+   "Fen [18:45]",
+   "Gia [18:00]",
+   "Hal [18:45]"
+  ],
+  "spells": [
+   [
+    "18:00",
+    "19:15",
+    "low 3",
+    "roster 8",
+    "5@18:00 4@18:15 5@18:30 3@18:45",
+    "Ari,Bea,Gia,Dev,Sam K,Fen,Hal"
+   ]
+  ],
+  "dockH": 141
+ },
+ "fail": "Not saved. Changes kept. Unsaved plan: too few now until 18:45. 5 now, 6 needed. Move a marked break. Try again: Save Sunday 15 November Not saved. The plan for Sunday 15 November is kept on this phone. Try again.",
+ "failMarks": [
+  "Dev [18:15]",
+  "Fen [18:15]",
+  "Hal [18:30]"
+ ],
+ "loading": {
+  "line": "Loading the saved plan. Busy times are checked after.",
+  "marked": [],
+  "spells": [
+   [
+    "18:30",
+    "19:00",
+    "low 4",
+    "roster 8",
+    "4@18:30 5@18:45",
+    "Sam K,Dev,Fen,Hal"
+   ]
+  ],
+  "dockH": 141
+ }
+}

@@ -1,0 +1,815 @@
+{
+  "a": {
+    "admin-390": {
+      "first": {
+        "dockH": 98,
+        "rowsVisible": 0,
+        "warn": null,
+        "pageH": 1807,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": 605,
+            "bottom": 631,
+            "onScreen": true
+          },
+          {
+            "top": 631,
+            "bottom": 657,
+            "onScreen": true
+          },
+          {
+            "top": 657,
+            "bottom": 683,
+            "onScreen": false
+          },
+          null
+        ]
+      },
+      "working": {
+        "dockH": 98,
+        "rowsVisible": 7,
+        "warn": null,
+        "pageH": 1807,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": -82,
+            "bottom": -56,
+            "onScreen": false
+          },
+          {
+            "top": -56,
+            "bottom": -30,
+            "onScreen": false
+          },
+          {
+            "top": -30,
+            "bottom": -4,
+            "onScreen": false
+          },
+          null
+        ]
+      },
+      "errors": []
+    },
+    "team-390": {
+      "first": {
+        "dockH": 98,
+        "rowsVisible": 2,
+        "warn": null,
+        "pageH": 1496,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": 295,
+            "bottom": 321,
+            "onScreen": true
+          },
+          {
+            "top": 321,
+            "bottom": 347,
+            "onScreen": true
+          },
+          {
+            "top": 347,
+            "bottom": 373,
+            "onScreen": true
+          },
+          null
+        ]
+      },
+      "working": {
+        "dockH": 98,
+        "rowsVisible": 7,
+        "warn": null,
+        "pageH": 1496,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": -82,
+            "bottom": -56,
+            "onScreen": false
+          },
+          {
+            "top": -56,
+            "bottom": -30,
+            "onScreen": false
+          },
+          {
+            "top": -30,
+            "bottom": -4,
+            "onScreen": false
+          },
+          null
+        ]
+      },
+      "errors": []
+    },
+    "admin-1280": {
+      "first": {
+        "dockH": 98,
+        "rowsVisible": 0,
+        "warn": null,
+        "pageH": 1587,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": 605,
+            "bottom": 631,
+            "onScreen": true
+          },
+          {
+            "top": 631,
+            "bottom": 657,
+            "onScreen": true
+          },
+          {
+            "top": 657,
+            "bottom": 683,
+            "onScreen": true
+          },
+          null
+        ]
+      },
+      "working": {
+        "dockH": 98,
+        "rowsVisible": 9,
+        "warn": null,
+        "pageH": 1587,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": -82,
+            "bottom": -56,
+            "onScreen": false
+          },
+          {
+            "top": -56,
+            "bottom": -30,
+            "onScreen": false
+          },
+          {
+            "top": -30,
+            "bottom": -4,
+            "onScreen": false
+          },
+          null
+        ]
+      },
+      "errors": []
+    },
+    "find": {
+      "taps": 1,
+      "onScreen": true,
+      "text": "Short while Sam K is away 18:30 to 19:00: 4 to 5 on Dinner and not on break. Need 6. Also away then: Dev, Fen, Hal. Saved plan."
+    },
+    "fix": {
+      "taps": 6,
+      "warnAfterEdit": "Hal's break is in the dinner rush (17:30 to 20:30, need 6). This draft keeps 6 or more on the plan then. Draft, not saved.",
+      "warnAfterSave": {
+        "sel": ".ta-warn",
+        "text": "Hal's break is in the dinner rush (17:30 to 20:30, need 6). The saved plan keeps 6 or more on the plan then.",
+        "top": 350,
+        "bottom": 428,
+        "onScreen": true
+      }
+    },
+    "loading": {
+      "dockH": 98,
+      "rowsVisible": 0,
+      "warn": {
+        "sel": ".ta-warn",
+        "text": "Can't check the minimum yet: the saved plan is not ready.",
+        "top": 1045,
+        "bottom": 1108,
+        "onScreen": false
+      },
+      "pageH": 2096,
+      "overflow": false,
+      "boardRows": []
+    },
+    "quiet": {
+      "dockH": 98,
+      "rowsVisible": 0,
+      "warn": {
+        "sel": ".ta-warn",
+        "text": "Short while Sam K is away 17:30 to 20:30: 0 to 3 on Dinner and not on break. Need 6. Also away then: Dev, Hal. Saved plan.",
+        "top": 1078,
+        "bottom": 1193,
+        "onScreen": false
+      },
+      "pageH": 2182,
+      "overflow": false,
+      "boardRows": [
+        {
+          "top": 605,
+          "bottom": 631,
+          "onScreen": true
+        },
+        {
+          "top": 631,
+          "bottom": 657,
+          "onScreen": true
+        },
+        null
+      ]
+    },
+    "nomin": {
+      "dockH": 98,
+      "rowsVisible": 0,
+      "warn": {
+        "sel": ".ta-warn",
+        "text": "No minimum set for Dinner. The head chef sets it in Admin, Kitchen, Shifts.",
+        "top": 1105,
+        "bottom": 1161,
+        "onScreen": false
+      },
+      "pageH": 2150,
+      "overflow": false,
+      "boardRows": [
+        {
+          "top": 605,
+          "bottom": 631,
+          "onScreen": true
+        },
+        {
+          "top": 631,
+          "bottom": 657,
+          "onScreen": true
+        },
+        {
+          "top": 657,
+          "bottom": 683,
+          "onScreen": false
+        },
+        null
+      ]
+    },
+    "kitchen": {
+      "pageH": 1255,
+      "overflow": false,
+      "errors": []
+    }
+  },
+  "b": {
+    "admin-390": {
+      "first": {
+        "dockH": 159,
+        "rowsVisible": 0,
+        "warn": {
+          "sel": ".tb-line",
+          "text": "Saved plan: short 18:30 to 19:00. 4 to 5 on Dinner and not on break, need 6. Away: Sam K, Dev, Fen, Hal.",
+          "top": 655,
+          "bottom": 710,
+          "onScreen": true
+        },
+        "pageH": 1867,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": 605,
+            "bottom": 631,
+            "onScreen": false
+          },
+          {
+            "top": 631,
+            "bottom": 657,
+            "onScreen": false
+          },
+          {
+            "top": 657,
+            "bottom": 683,
+            "onScreen": false
+          },
+          null
+        ]
+      },
+      "working": {
+        "dockH": 159,
+        "rowsVisible": 6,
+        "warn": {
+          "sel": ".tb-line",
+          "text": "Saved plan: short 18:30 to 19:00. 4 to 5 on Dinner and not on break, need 6. Away: Sam K, Dev, Fen, Hal.",
+          "top": 655,
+          "bottom": 710,
+          "onScreen": true
+        },
+        "pageH": 1867,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": -82,
+            "bottom": -56,
+            "onScreen": false
+          },
+          {
+            "top": -56,
+            "bottom": -30,
+            "onScreen": false
+          },
+          {
+            "top": -30,
+            "bottom": -4,
+            "onScreen": false
+          },
+          null
+        ]
+      },
+      "errors": []
+    },
+    "team-390": {
+      "first": {
+        "dockH": 159,
+        "rowsVisible": 1,
+        "warn": {
+          "sel": ".tb-line",
+          "text": "Saved plan: short 18:30 to 19:00. 4 to 5 on Dinner and not on break, need 6. Away: Sam K, Dev, Fen, Hal.",
+          "top": 655,
+          "bottom": 710,
+          "onScreen": true
+        },
+        "pageH": 1557,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": 295,
+            "bottom": 321,
+            "onScreen": true
+          },
+          {
+            "top": 321,
+            "bottom": 347,
+            "onScreen": true
+          },
+          {
+            "top": 347,
+            "bottom": 373,
+            "onScreen": true
+          },
+          null
+        ]
+      },
+      "working": {
+        "dockH": 159,
+        "rowsVisible": 6,
+        "warn": {
+          "sel": ".tb-line",
+          "text": "Saved plan: short 18:30 to 19:00. 4 to 5 on Dinner and not on break, need 6. Away: Sam K, Dev, Fen, Hal.",
+          "top": 655,
+          "bottom": 710,
+          "onScreen": true
+        },
+        "pageH": 1557,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": -82,
+            "bottom": -56,
+            "onScreen": false
+          },
+          {
+            "top": -56,
+            "bottom": -30,
+            "onScreen": false
+          },
+          {
+            "top": -30,
+            "bottom": -4,
+            "onScreen": false
+          },
+          null
+        ]
+      },
+      "errors": []
+    },
+    "admin-1280": {
+      "first": {
+        "dockH": 123,
+        "rowsVisible": 0,
+        "warn": {
+          "sel": ".tb-line",
+          "text": "Saved plan: short 18:30 to 19:00. 4 to 5 on Dinner and not on break, need 6. Away: Sam K, Dev, Fen, Hal.",
+          "top": 760,
+          "bottom": 778,
+          "onScreen": true
+        },
+        "pageH": 1612,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": 605,
+            "bottom": 631,
+            "onScreen": true
+          },
+          {
+            "top": 631,
+            "bottom": 657,
+            "onScreen": true
+          },
+          {
+            "top": 657,
+            "bottom": 683,
+            "onScreen": true
+          },
+          null
+        ]
+      },
+      "working": {
+        "dockH": 123,
+        "rowsVisible": 9,
+        "warn": {
+          "sel": ".tb-line",
+          "text": "Saved plan: short 18:30 to 19:00. 4 to 5 on Dinner and not on break, need 6. Away: Sam K, Dev, Fen, Hal.",
+          "top": 719,
+          "bottom": 738,
+          "onScreen": true
+        },
+        "pageH": 1612,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": -82,
+            "bottom": -56,
+            "onScreen": false
+          },
+          {
+            "top": -56,
+            "bottom": -30,
+            "onScreen": false
+          },
+          {
+            "top": -30,
+            "bottom": -4,
+            "onScreen": false
+          },
+          null
+        ]
+      },
+      "errors": []
+    },
+    "find": {
+      "taps": 0,
+      "onScreen": true,
+      "text": "Saved plan: short 18:30 to 19:00. 4 to 5 on Dinner and not on break, need 6. Away: Sam K, Dev, Fen, Hal."
+    },
+    "fix": {
+      "taps": 7,
+      "warnAfterEdit": null,
+      "warnAfterSave": null
+    },
+    "loading": {
+      "dockH": 141,
+      "rowsVisible": 0,
+      "warn": {
+        "sel": ".tb-line",
+        "text": "Minimum not checked: the saved plan is not ready.",
+        "top": 673,
+        "bottom": 710,
+        "onScreen": true
+      },
+      "pageH": 2068,
+      "overflow": false,
+      "boardRows": []
+    },
+    "quiet": {
+      "dockH": 159,
+      "rowsVisible": 0,
+      "warn": {
+        "sel": ".tb-line",
+        "text": "Saved plan: short 17:30 to 20:30. 0 to 3 on Dinner and not on break, need 6. Away: Dev, Sam K, Hal.",
+        "top": 655,
+        "bottom": 710,
+        "onScreen": true
+      },
+      "pageH": 2120,
+      "overflow": false,
+      "boardRows": [
+        {
+          "top": 605,
+          "bottom": 631,
+          "onScreen": false
+        },
+        {
+          "top": 631,
+          "bottom": 657,
+          "onScreen": false
+        },
+        null
+      ]
+    },
+    "nomin": {
+      "dockH": 98,
+      "rowsVisible": 0,
+      "warn": null,
+      "pageH": 2085,
+      "overflow": false,
+      "boardRows": [
+        {
+          "top": 605,
+          "bottom": 631,
+          "onScreen": true
+        },
+        {
+          "top": 631,
+          "bottom": 657,
+          "onScreen": true
+        },
+        {
+          "top": 657,
+          "bottom": 683,
+          "onScreen": false
+        },
+        null
+      ]
+    },
+    "kitchen": {
+      "pageH": 1438,
+      "overflow": false,
+      "errors": []
+    }
+  },
+  "c": {
+    "admin-390": {
+      "first": {
+        "dockH": 98,
+        "rowsVisible": 0,
+        "warn": {
+          "sel": ".tc-now",
+          "text": "SHORT NOW · 4 on Dinner and not on break. Need 6.",
+          "top": 689,
+          "bottom": 737,
+          "onScreen": false
+        },
+        "pageH": 1897,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": 605,
+            "bottom": 631,
+            "onScreen": true
+          },
+          {
+            "top": 631,
+            "bottom": 657,
+            "onScreen": true
+          },
+          {
+            "top": 657,
+            "bottom": 683,
+            "onScreen": false
+          },
+          null
+        ]
+      },
+      "working": {
+        "dockH": 98,
+        "rowsVisible": 6,
+        "warn": {
+          "sel": ".tc-now",
+          "text": "SHORT NOW · 4 on Dinner and not on break. Need 6.",
+          "top": -54,
+          "bottom": -6,
+          "onScreen": false
+        },
+        "pageH": 1897,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": -138,
+            "bottom": -112,
+            "onScreen": false
+          },
+          {
+            "top": -112,
+            "bottom": -86,
+            "onScreen": false
+          },
+          {
+            "top": -86,
+            "bottom": -60,
+            "onScreen": false
+          },
+          null
+        ]
+      },
+      "errors": []
+    },
+    "team-390": {
+      "first": {
+        "dockH": 98,
+        "rowsVisible": 1,
+        "warn": {
+          "sel": ".tc-now",
+          "text": "SHORT NOW · 4 on Dinner and not on break. Need 6.",
+          "top": 379,
+          "bottom": 427,
+          "onScreen": true
+        },
+        "pageH": 1587,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": 295,
+            "bottom": 321,
+            "onScreen": true
+          },
+          {
+            "top": 321,
+            "bottom": 347,
+            "onScreen": true
+          },
+          {
+            "top": 347,
+            "bottom": 373,
+            "onScreen": true
+          },
+          null
+        ]
+      },
+      "working": {
+        "dockH": 98,
+        "rowsVisible": 6,
+        "warn": {
+          "sel": ".tc-now",
+          "text": "SHORT NOW · 4 on Dinner and not on break. Need 6.",
+          "top": -54,
+          "bottom": -6,
+          "onScreen": false
+        },
+        "pageH": 1587,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": -138,
+            "bottom": -112,
+            "onScreen": false
+          },
+          {
+            "top": -112,
+            "bottom": -86,
+            "onScreen": false
+          },
+          {
+            "top": -86,
+            "bottom": -60,
+            "onScreen": false
+          },
+          null
+        ]
+      },
+      "errors": []
+    },
+    "admin-1280": {
+      "first": {
+        "dockH": 98,
+        "rowsVisible": 0,
+        "warn": {
+          "sel": ".tc-now",
+          "text": "SHORT NOW · 4 on Dinner and not on break. Need 6.",
+          "top": 689,
+          "bottom": 717,
+          "onScreen": true
+        },
+        "pageH": 1623,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": 605,
+            "bottom": 631,
+            "onScreen": true
+          },
+          {
+            "top": 631,
+            "bottom": 657,
+            "onScreen": true
+          },
+          {
+            "top": 657,
+            "bottom": 683,
+            "onScreen": true
+          },
+          null
+        ]
+      },
+      "working": {
+        "dockH": 98,
+        "rowsVisible": 9,
+        "warn": {
+          "sel": ".tc-now",
+          "text": "SHORT NOW · 4 on Dinner and not on break. Need 6.",
+          "top": -34,
+          "bottom": -6,
+          "onScreen": false
+        },
+        "pageH": 1623,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": -118,
+            "bottom": -92,
+            "onScreen": false
+          },
+          {
+            "top": -92,
+            "bottom": -66,
+            "onScreen": false
+          },
+          {
+            "top": -66,
+            "bottom": -40,
+            "onScreen": false
+          },
+          null
+        ]
+      },
+      "errors": []
+    },
+    "find": {
+      "taps": 0,
+      "onScreen": true,
+      "text": "Short 18:30 to 19:00: 4 to 5 of 6"
+    },
+    "fix": {
+      "taps": 7,
+      "warnAfterEdit": "SHORT NOW · 4 on Dinner and not on break. Need 6.",
+      "warnAfterSave": {
+        "sel": ".tc-now",
+        "text": "NOW · 6 on Dinner and not on break. Need 6.",
+        "top": -666,
+        "bottom": -618,
+        "onScreen": false
+      }
+    },
+    "loading": {
+      "dockH": 98,
+      "rowsVisible": 0,
+      "warn": {
+        "sel": ".tc-now",
+        "text": "Count now: not known until the saved plan is checked.",
+        "top": 626,
+        "bottom": 674,
+        "onScreen": true
+      },
+      "pageH": 2112,
+      "overflow": false,
+      "boardRows": []
+    },
+    "quiet": {
+      "dockH": 98,
+      "rowsVisible": 0,
+      "warn": {
+        "sel": ".tc-now",
+        "text": "SHORT NOW · 0 on Dinner and not on break. Need 6.",
+        "top": 663,
+        "bottom": 711,
+        "onScreen": false
+      },
+      "pageH": 2150,
+      "overflow": false,
+      "boardRows": [
+        {
+          "top": 605,
+          "bottom": 631,
+          "onScreen": true
+        },
+        {
+          "top": 631,
+          "bottom": 657,
+          "onScreen": true
+        },
+        null
+      ]
+    },
+    "nomin": {
+      "dockH": 98,
+      "rowsVisible": 0,
+      "warn": null,
+      "pageH": 2085,
+      "overflow": false,
+      "boardRows": [
+        {
+          "top": 605,
+          "bottom": 631,
+          "onScreen": true
+        },
+        {
+          "top": 631,
+          "bottom": 657,
+          "onScreen": true
+        },
+        {
+          "top": 657,
+          "bottom": 683,
+          "onScreen": false
+        },
+        null
+      ]
+    },
+    "kitchen": {
+      "pageH": 1458,
+      "overflow": false,
+      "errors": []
+    }
+  }
+}

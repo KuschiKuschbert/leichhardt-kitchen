@@ -3868,10 +3868,21 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .a-sh-head { display: grid; grid-template-columns: minmax(0, 1fr) 7.5rem 7.5rem 5.5rem; gap: 0.5rem; margin: 0.5rem 0 -0.25rem; font: 700 0.75rem var(--body); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .a-sh-row { display: grid; grid-template-columns: minmax(0, 1fr) 7.5rem 7.5rem 5.5rem; }
 .a-sh-row .a-sh-t { min-width: 0; min-height: 44px; }
+/* the shift's busy time (15 Nov 2026, docs/team-minimum-options/brief.md): its own line under the shift's times */
+.a-sh-busy { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.5rem; margin: -0.1rem 0 0.35rem; font: 600 0.875rem var(--body); }
+.a-sh-busy .a-sh-t { width: 9rem; }
+.a-sh-nl { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.5rem; }
+.a-sh-need { min-height: 44px; }
+.a-sh-bnote { flex: 1 1 100%; margin: 0; color: var(--small-ink); font-weight: 600; }
 @media (max-width: 560px) {
   .a-sh-head { display: none; }
   .a-sh-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .a-sh-row > input:first-of-type { grid-column: 1 / -1; }
+  /* a phone: Busy time over its two boxes, laid out like the shift's own From and To */
+  .a-sh-busy { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .a-sh-busy > .a-sh-bl, .a-sh-busy > .a-sh-nl, .a-sh-busy > .a-sh-bnote { grid-column: 1 / -1; }
+  .a-sh-busy > .a-sh-bto { display: none; }
+  .a-sh-busy .a-sh-t { width: auto; }
 }
 
 /* ---------- Redesign step 1 (8 Nov 2026, head chef): the prep line in one row on a phone, Urgent in one tap with its word,
@@ -5466,7 +5477,8 @@ html:has(.tm-focus-page) {
 @media (max-width: 599px) {
   .tm-focus-page .tm-people.tm-grid.tm-grid-wide { grid-template-columns: repeat(var(--tm-n, 3), minmax(0, 1fr)); }
   .tm-focus-page .tm-grid-wide > .tm-grid-head > .tm-grid-who { display: none; }
-  .tm-focus-page .tm-grid-wide > .tm-grid-row > .tm-grid-who { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: space-between; gap: .5rem; }
+  .tm-focus-page .tm-grid-wide > .tm-grid-row > .tm-grid-who { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
+  .tm-focus-page .tm-grid-wide > .tm-grid-row > .tm-grid-who > .tm-short-mark { flex-basis: 100%; margin-top: -.5rem; }
   .tm-notebook.tm-focus-page .tm-grid-wide .tm-grid-row .tm-person-name { max-width: none; }
 }
 @supports not (grid-template-columns: subgrid) {
@@ -5491,6 +5503,14 @@ html:has(.tm-focus-page) {
 .tm-notebook.tm-focus-page .tm-focus-save .btn { flex: 0 1 auto; width: auto; max-width: 100%; min-height: 44px; margin-left: auto; }
 .tm-notebook.tm-focus-page .tm-save-state { flex: 1 1 10rem; min-width: 0; margin: 0; font-size: .8125rem; line-height: 1.4; overflow-wrap: break-word; }
 .tm-notebook.tm-focus-page .tm-focus-save .sv-line { order: -1; flex: 1 1 14rem; min-width: 0; max-width: 100%; margin: 0; white-space: normal; overflow-wrap: break-word; }
+/* Too few on the plan at a busy time (15 Nov 2026, docs/team-minimum-options/brief.md): one line in the Save dock, its
+   first words in the attention orange with the rest in ink; under a person's Breaks, the words that mark whose break */
+.tm-notebook.tm-focus-page .tm-short-line { flex: 1 1 100%; min-width: 0; margin: 0; font-size: .8125rem; line-height: 1.4; overflow-wrap: break-word; }
+.tm-notebook.tm-focus-page .tm-short-line b { color: var(--small-ink); }
+.tm-short-mark { display: block; margin-top: -.35rem; font: 700 .8125rem/1.3 var(--body); color: var(--small-ink); overflow-wrap: break-word; }
+.tm-short-mark[hidden] { display: none; }
+/* a laptop: the line beside Save, so the dock keeps its height */
+@media (min-width: 1100px) { .tm-notebook.tm-focus-page .tm-short-line { flex-basis: 16rem; } }
 .tm-focus-page .tm-extra { padding: .75rem .85rem 1rem; margin: 0; }
 .p-admin.ad-admin.tm-focus-panel .ad-heading { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .75rem; margin: 0 0 .35rem; padding: .2rem 0 .3rem; border: 0; }
 .p-admin.ad-admin.tm-focus-panel .ad-title { font-size: 1.65rem; line-height: 1.15; }
