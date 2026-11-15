@@ -469,7 +469,8 @@
   /* ---------- the plate's layout, measured from the book's own plates (15 Nov 2026) ---------- */
   // a sauce the recipe serves on the side, or a dip that comes with fried food: in a ramekin, as the book draws every one
   var SIDE_W = /on the side|side sauce|\bramekin|sauce of choice|\bchoice\b|\bchoose\b|\bguests?\b|in a (small )?pot\b/;
-  var ON_W = /\b(over|on top|under|underneath|drizzl\w*|spoon\w* over|pour\w* over|smother\w*|across|swoop\w*|swoosh\w*|smear\w*|squiggl\w*|wav\w*)\b/;
+  // words that put a sauce on the dish itself ("on the other side" of the nachos is on the nachos, not a ramekin)
+  var ON_W = /\b(over|on top|under|underneath|drizzl\w*|spoon\w* over|pour\w* over|smother\w*|across|swoop\w*|swoosh\w*|smear\w*|squiggl\w*|wav\w*|(one|other|each|either) side)\b/;
   var DIP_W = /\b(aioli|mayo|mayonnaise|tartare|sour cream|sweet chilli|ketchup|tomato sauce|ranch|dip|relish|syrup)\b/;
   var FRIED_W = /chip|fries|wedge|batter|tempura|calamari|spring roll|nacho|donut|doughnut|fried|schnit|parm|crumbed|panko/;
   function sideSauce(p, style, dishT, small) {
@@ -799,9 +800,15 @@
     }
     return out;
   }
-  function autoDraw(rid) {
-    var r = R.recipeOf(rid), res = { drawn: [], redrawn: [], sideLeft: [] }, made = {}, plate = null, cur = X.change(rid);
+  /* o (js/manage.js, 15 Nov 2026): { ingsChanged, added } what the save did to the recipe's ingredients. A plate drawn the
+     older way is kept as it is (LV above); res.older names those the change reaches, res.unlabelled a new ingredient
+     with no Pass label on one. */
+  function autoDraw(rid, o) {
+    var r = R.recipeOf(rid), res = { drawn: [], redrawn: [], sideLeft: [], older: [], unlabelled: [] }, made = {}, plate = null, cur = X.change(rid);
+    o = o || {};
     if (!r) return Promise.resolve(res);
+    // a part of the drawing editor out of date on this phone: nothing drawn with half the new rules; the save says so
+    if (!fresh()) { res.reload = true; return Promise.resolve(res); }
     // worked out before its own slots are drawn, as drawing them saves the recipe again (version 2)
     var first = !X.pristine(rid) && !!cur && cur.v === 1 && /\btopper\b/i.test(rid + ' ' + (r.name || ''));
     // the head chef's picks first (a read only when the last one failed). Not read (no signal, a lost read, 28 Oct
@@ -817,7 +824,7 @@
           return DR.persist(d).then(function (done) { if (done && !done.conflict) { res.drawn.push(slot); made[d.id] = 1; if (slot === 'plate' || slot === 'pan') plate = d; } });
         });
       });
-      return chain.then(function () { return first ? firstCard(rid, res, made) : null; }).then(function () { return redrawFrom(rid, res, made); }).then(function () { return res; });
+      return chain.then(function () { return first ? firstCard(rid, res, made) : null; }).then(function () { return redrawFrom(rid, res, made, o); }).then(function () { return res; });
     });
   }
   /* A topper card to come written for the first time (the French, Mexican and Americana toppers, head chef 22 Oct 2026):
@@ -838,7 +845,21 @@
     });
     return chain;
   }
-  function redrawFrom(rid, res, skip) {
+  // a plate drawn the older way, kept: named when the save changed ingredients, and any new one that has no Pass label on it
+  function keptOlder(a, d, rid, res, o) {
+    var rr = R.recipeOf(a.rid), nm = rr ? rr.name : a.rid;
+    if (o && o.ingsChanged && res.older.indexOf(nm) < 0) res.older.push(nm);
+    if (a.rid !== rid || !rr || !o || !o.added || !o.added.length) return;
+    var have = {};
+    d.els.forEach(function (e) { if (e.ing) have[e.ing.toLowerCase()] = 1; String(e.also || '').split('|').forEach(function (x) { if (x) have[x.toLowerCase()] = 1; }); });
+    o.added.forEach(function (n) {
+      var i = (rr.ingredients || []).filter(function (x) { return x.name === n; })[0];
+      if (!i || !shown(i, rr)) return;
+      var on = split(i).every(function (h) { return have[R.ingName(h).toLowerCase()]; }), lab = R.ingName(i) + ' on ' + nm;
+      if (!on && res.unlabelled.indexOf(lab) < 0) res.unlabelled.push(lab);
+    });
+  }
+  function redrawFrom(rid, res, skip, o) {
     var A = window.LK_APP, ids = [], todo = [rid], seen = {}, api = B(), chain = Promise.resolve(), plateDone = {};
     // the card and every dish that uses it, through the cards between (a dish using the slaw that uses the aioli)
     while (todo.length) { var x = todo.shift(); if (seen[x]) continue; seen[x] = 1; ids.push(x); ((A && A.usedIn && A.usedIn(x)) || []).forEach(function (u) { if (!seen[u]) todo.push(u); }); }
@@ -854,6 +875,8 @@
           var flat = d.slot === 'side' || d.slot === 'build';
           if (a.rid !== rid && !(flat ? plateDone[a.rid] : d.els.some(function (e) { return e.made && ids.indexOf(e.made) >= 0; }))) return null;
           if ((d.slot === 'side' || d.slot === 'build') && d.els.some(function (e) { return e.fixed || e.pick; })) return null;
+          // a plate laid out the older way stays exactly as it is until the head chef taps Draw it again (15 Nov 2026)
+          if (d.slot === 'plate' && !(x.layout.lv >= LV)) { keptOlder(a, d, rid, res, o); return null; }
           // a side view stands on the dish's plate drawing as it is now (drawn again just before)
           var pl = d.slot === 'side' ? X.arts().filter(function (y) { return y.rid === a.rid && (y.slot === 'plate' || y.slot === 'pan') && !y.removed; })[0] : null;
           // the plate could not be read (no signal, a lost read): this side view is left as it is, never drawn from a
@@ -1039,6 +1062,7 @@
   /* ---------- the buttons and the panel on the drawing page (js/draw.js asks for them) ---------- */
   function esc(t) { return window.LK_APP.esc(t); }
   function run(W, seed) {
+    if (!fresh()) { DR.say(RELOAD_SAY); return; }
     loadLearned();   // read again only if the read when the editor opened failed, for the next tap
     DR.before();
     var res = drawIt(seed);

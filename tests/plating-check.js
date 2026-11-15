@@ -262,5 +262,11 @@ function print(res, all) {
   console.log('\nRules:');
   res.rules.forEach(rl => console.log('  ' + (rl.fails.length ? 'BROKEN ' : 'kept   ') + rl.rule + (rl.fails.length ? ' (' + rl.fails.length + ': ' + rl.fails.slice(0, 12).join(', ') + (rl.fails.length > 12 ? ', ...' : '') + ')' : '')));
 }
-module.exports = { check, print, RULES, OBSERVED };
+// one dish drawn as the button draws it, for the checks in smart.test.js: the drawing and the editor's helpers
+function draw(id, seed, d0) {
+  const e = bind(), d = d0 || DR.blank(id, 'plate'); let res = null;
+  DR.withDrawing(d, () => { res = S.drawIt(seed || 0); });
+  return { d, res, area: LIB.surface(d.surf).area, R: Rn, LIB, DR, S: e.S, r: e.D.recipes.find(x => x.id === id) };
+}
+module.exports = { check, print, draw, RULES, OBSERVED };
 if (require.main === module) print(check(), process.argv[2] === 'all');

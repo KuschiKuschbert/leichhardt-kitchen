@@ -7,7 +7,7 @@
 // their slots. With SHOTS=1 each drawing is saved to tests/shots/ to look at by eye.
 const L = require('./lib');
 const { R, ok } = L.results();
-const M = require('./smart-match'), CR = require('./compose-read'), SC = require('./style-check');
+const M = require('./smart-match'), CR = require('./compose-read'), SC = require('./style-check'), PC = require('./plating-check');
 const path = require('path'), fs = require('fs'), SHOTS = process.env.SHOTS ? path.join(__dirname, 'shots') : '';
 if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
@@ -35,6 +35,33 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   ok(!cr.errs.length && cr.formShare >= 0.95 && cr.share >= 0.9, 'reader: ' + Math.round(cr.formShare * 100) + '% of ' + cr.cards + ' cards read into what they make, ' + Math.round(cr.share * 100) + '% of their lines; expected readings ' + (cr.errs.join('; ') || 'all match'));
   const sc = SC.check();
   ok(!sc.errs.length && sc.palShare >= 0.9 && Math.abs(sc.ratio - 0.74) < 0.05, 'look: ' + sc.parts + ' parts drawn from their cards, outlines at ' + sc.ratio.toFixed(2) + ' of their fill (the book: 0.74), ' + Math.round(sc.palShare * 100) + '% of fills the book\'s own colours ' + sc.errs.slice(0, 5).join('; '));
+  /* Plates laid out like the book's own (15 Nov 2026, tests/plating-check.js): every dish against its hand-made plate.
+     Before: score median 1.42, 26 of 77 over 2, worst 9.6 (pizza platter), and every rule below broken somewhere. */
+  const pc = PC.check();
+  ok(pc.median <= 0.8 && pc.worst.score <= 4, 'plating: score median ' + pc.median.toFixed(2) + ' (0.8 or less), worst ' + pc.worst.id + ' ' + pc.worst.score.toFixed(1) + ' (4 or less), ' + pc.over2 + ' over 2');
+  pc.rules.forEach(rl => ok(!rl.fails.length, 'plating: ' + rl.rule + (rl.fails.length ? ' (broken on ' + rl.fails.join(', ') + ')' : '')));
+  const oc = id => { const o = PC.draw(id, 0); return Object.assign(o, { by: ing => o.d.els.filter(e => e.ing === ing) }); };
+  const ang = (e, a) => (Math.atan2(e.x - a.cx, -(e.y - a.cy)) * 180 / Math.PI + 360) % 360;
+  let q = oc('eye-fillet'), ram = q.by('Mushroom sauce')[0] || {};
+  const ram1 = (PC.draw('eye-fillet', 1).d.els.find(e => e.ing === 'Mushroom sauce') || {});
+  ok(/^sauce-ramekin@/.test(ram.a || '') && ram.made === 'mushroom-sauce' && ang(ram, q.area) > 30 && ang(ram, q.area) < 105 && ram1.x < 0, 'plating: the eye fillet\'s sauce of choice is a ramekin at about 2 o\'clock, still drawn from its card, on the other side on Try another');
+  ok((q.d.els.find(e => e.ing === 'Eye fillet') || {}).y < q.area.cy && (q.by('Chips')[0] || {}).x < 0 && (q.by('Salad')[0] || {}).x > 0, 'plating: the steak at the back, the chips front left and the salad front right, as the book\'s pub plates');
+  q = oc('pork-belly');
+  const wave = q.by('Spinach purée')[0], wo = wave && q.R.oval(wave);
+  ok(!!wo && wo.a * 2 >= 0.7 * 2 * Math.sqrt(q.area.rx * q.area.ry), 'plating: the pork belly\'s spinach purée is a wave across the plate, as its note says');
+  q = oc('beef-cheek');
+  ok(q.by('Herb oil').length >= 2, 'plating: the beef cheek\'s herb oil is drizzled round the plate (' + q.by('Herb oil').length + ' places)');
+  q = oc('chicken-adobo');
+  ok(q.res.style === 'bed', 'plating: the chicken adobo sits on its rice');
+  q = oc('pumpkin-salad');
+  ok(!q.d.els.some(e => /^fusilli/.test(e.a)) && /^pesto-dollop@/.test((q.by('Basil pesto')[0] || {}).a || ''), 'plating: basil pesto on the pumpkin salad is a pesto dollop, not a bowl of pasta');
+  ok(['beef-schnitzel', 'senior-schnitzel'].every(id => /^sauce-ramekin@/.test((oc(id).by('Gravy')[0] || {}).a || '')) && !/ramekin/.test((oc('lamb-nachos').by('Sour cream')[0] || {}).a || ''), 'plating: the schnitzels\' gravy in a ramekin; the nachos\' sour cream, spread "on the other side", is not');
+  // a part the head chef moved by hand to the middle stays there, and nothing new is laid over it
+  q = oc('eye-fillet');
+  const handChips = q.by('Chips')[0]; handChips.x = 0; handChips.y = 0; handChips.fixed = true;
+  const kept = PC.draw('eye-fillet', 0, q.d), ch2 = kept.d.els.find(e => e.ing === 'Chips'), co = kept.R.oval(ch2);
+  const over = kept.d.els.filter(e => e !== ch2 && !/^(sauce|dsauce|topping|garnish)$/.test((kept.LIB.get(String(e.a).split('@')[0]) || {}).role || e.role || '') && (e.t === 'item' || e.t === 'raw')).filter(e => { const o = kept.R.oval(e), dx = o.x - co.x, dy = o.y - co.y, dd = Math.hypot(dx, dy) || 0.01; return dd < 0.85 * (kept.R.reach(o, -dx / dd, -dy / dd) + kept.R.reach(co, dx / dd, dy / dd)); });
+  ok(ch2.x === 0 && ch2.y === 0 && !over.length, 'plating: chips moved by hand to the middle stay there, nothing laid over them (' + over.map(e => e.ing).join(', ') + ')');
   const X = m.S;
   ok(X.matchIng({ name: 'Fried shallots' }, { name: 'x' }).id === 'crispy-shallots' && X.matchIng({ name: 'Tartare sauce' }, { name: 'x' }).id === 'tartare-dollop', 'matcher: fried shallots are crispy shallots, tartare sauce a dollop of tartare');
   ok(X.matchIng({ name: 'Roasted honey pumpkin purée', note: 'big kitchen spoon swoop and smear' }, { name: 'x' }).id === 'pumpkin-puree-swoosh', 'matcher: the recipe\'s words for the shape (swoop and smear) pick the swoosh');
@@ -102,7 +129,9 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   w = await S(p);
   const r250 = w.els.find(e => e.id === 'rump'), sauce250 = w.els.find(e => e.ing === 'Mushroom sauce');
   ok(w.style === 'pub' && !!r250 && w.els.some(e => e.ing === 'Chips') && w.els.some(e => e.ing === 'Salad'), 'rump 250: pub split, steak with chips and salad');
-  ok(!!sauce250 && sauce250.k < r250.k && inside(sauce250, r250), 'rump 250: the sauce under the steak');
+  // the guests choose their sauce: in a ramekin beside the steak, as the book draws every sauce of choice (15 Nov 2026;
+  // before, a pool that only by chance sat under the steak)
+  ok(!!sauce250 && sauce250.id === 'sauce-ramekin' && sauce250.made === 'mushroom-sauce' && !inside(sauce250, r250) && w.onWare, 'rump 250: the sauce of choice in a ramekin beside the steak, still drawn from its card');
   ok(!w.els.some(e => /salt/.test(e.id)), 'rump 250: the salt flakes are not drawn');
   await p.context().close();
   p = await drawn('rump-500/plate');
@@ -225,7 +254,7 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   w = await S(p);
   const fish = w.els.find(e => e.ing === 'Fish fillet');
   ok(!!fish && /batter/.test(fish.id) && /Beer batter/.test(fish.also || '') && !w.els.some(e => e.ing === 'Beer batter'), 'fish and chips: the beer batter makes the fish battered, not a part of its own');
-  ok(w.els.some(e => e.ing === 'Tartare sauce' && e.k > fish.k) && w.els.some(e => e.ing === 'Lemon'), 'fish and chips: tartare beside the fish, a lemon wedge');
+  ok(w.els.some(e => e.ing === 'Tartare sauce' && e.id === 'sauce-ramekin' && !inside(e, fish)) && w.els.some(e => e.ing === 'Lemon'), 'fish and chips: tartare in a ramekin beside the fish, as the book draws it, a lemon wedge');
   await p.context().close();
   // a topper whose card is still to come is drawn from its note (brie, avocado, bacon, béarnaise), on the schnitzel
   p = await drawn('schnitzel-french/plate');
