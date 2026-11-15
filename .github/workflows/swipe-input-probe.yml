@@ -1,0 +1,46 @@
+name: Temporary swipe input probe
+on:
+  push:
+    branches: [feat/swipe-pages]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tests/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: tests
+      - name: Trace native edge touches
+        working-directory: tests
+        env:
+          CHROME: /usr/bin/google-chrome
+          BASE: http://127.0.0.1:8777/
+        run: |
+          node serve.js 8777 > /tmp/swipe-server.log 2>&1 &
+          node - <<'NODE'
+          const fs = require('fs');
+          const source = fs.readFileSync('swipe-pages.test.js', 'utf8');
+          const body = `(async () => {
+            const b = await L.start();
+            console.log('Browser', await b.version());
+            for (const x of [8, 16, 20, 23, 30]) {
+              const p = await L.open(b, '#/prep', { touch: true, wait: 1400 });
+              try { await swipe(p, '#rtitle', 110, 0, { x }); } catch (e) { console.log('EDGE ERROR', x, e.message); }
+              console.log('EDGE', x, JSON.stringify(await gestureState(p)));
+              await go(p, '#/prep');
+              try { await swipe(p, '#nbr-i3', -110); } catch (e) { console.log('RECOVERY ERROR', x, e.message); }
+              console.log('RECOVERY', x, JSON.stringify(await gestureState(p)));
+              await p.context().close();
+            }
+            await b.close();
+          })().catch(e => { console.error(e); process.exit(1); });`;
+          fs.writeFileSync('swipe-probe.cjs', source.slice(0, source.indexOf('(async () => {')) + body);
+          require('./swipe-probe.cjs');
+          NODE
