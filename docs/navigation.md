@@ -62,7 +62,8 @@ swipe-dismissal, Back and parent-return test files. Further checks verify ordina
 Linux CI traces identified an additional synthetic finger carried between unrelated emulated gesture cases.
 Each guard fixture now owns its browser context, with immediate recovery checked in that same page. Mouse
 selection uses a desktop context; touch flows use taps and one CDP input source per page, waiting for released
-touches before the next gesture. The app's two-finger guard remains. A separate same-page redraw reproduction
+touches before the next gesture. The app's two-finger guard remains. All 75 checks passed on Linux Chrome 157
+in the isolated diagnostic job as well as local Chrome; the temporary diagnostic workflow was then removed. A separate same-page redraw reproduction
 left the first following swipe ignored. Rendering now clears the old gesture and motion before replacing its
 page; two regression checks cover the interruption and immediate recovery. The complete GitHub gate remains required.
 
