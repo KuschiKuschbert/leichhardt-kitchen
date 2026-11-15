@@ -31,3 +31,13 @@ Revert the app commit on its own branch and PR. Original transfer logging and da
 ## Working rules (moved from CLAUDE.md, 3 Nov 2026)
 
 Dated lines now allow return updates through `xWrite()`, which atomically maintains `transferOpen`. Staff read older outstanding loans through one open-only listener, never the private dated history. Return fields must stay in backups, PIN moves and CSV exports. Run the Publish rules workflow on the feature branch before merging this app change; it indexes all existing loans before deploying rules. `scripts/transfer-index-check.mjs` verifies the migration on the emulator.
+
+## Phone card width, 16 November 2026
+
+The owner reported cards running off the right edge after main-tab swipes shipped. The same fault reproduces with the pre-swipe `9697fd8` app and stylesheet: `.tr-cards` had an implicit automatic grid column, so a long metadata line or venue word made every loan card wider than the notebook. This repair sets one `minmax(0, 1fr)` column, allows the venue heading to shrink and wrap, and lets quantities wrap before the return button. It does not clip the page to hide the fault.
+
+Verdict: Not needed (bug fix). The approved loan cards, order, colours, type sizes, return buttons, More controls and dock stay. Mark returned remains one tap, with Undo, and all controls retain 44 px targets. Long entries may take more lines because their words now fit inside the screen. No Firestore reads, writes, fields, rules or saved copies change.
+
+Implemented-app verification uses synthetic loans, a signed-in head chef, the complete shell and actual Caveat/Barlow fonts at 360, 390, 768 and 1280 px, with normal, large and extra-large text. The same regression fails 11 of 60 checks on the pre-swipe code and passes all 60 with the repair; fallback-font checks pass all 48. It checks notebook/card edges, visible return targets, quantities not overlapping buttons and page errors. Existing transfer logging/return/Undo and main-tab swipe tests also run before release. Physical-device feel remains unverified.
+
+Synthetic 390 px captures with large text: [before](images/transfer-width-before.png), [after](images/transfer-width-after.png). The single-word sample venue deliberately exercises the widest allowed heading. Revert this CSS repair to roll back; there is no data migration.

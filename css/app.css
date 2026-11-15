@@ -4079,17 +4079,18 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .w-secs { display: block; max-width: min(16rem, 52vw); margin: 0.1rem 0 0; font: 600 0.8125rem/1.3 var(--body); color: var(--muted); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Transfers: Still out as cards, one a pick-up (after Airbnb's trips): who has it, since when and how long, then each item
    with its own Mark returned. Old loans (7 days or more) get a red edge and a red tag. */
-.tr-cards { display: grid; gap: 10px; margin: 6px 0 4px; }
+.tr-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin: 6px 0 4px; }
 .tr-card { padding: 10px 12px 4px; border: 1.5px solid var(--ink); border-radius: 12px; background: var(--paper); box-shadow: 0 2px 0 rgba(28,29,31,0.08); }
 .tr-card.is-old { border-color: var(--tag); box-shadow: inset 4px 0 0 var(--tag); }
 .tr-ch { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.tr-cv { margin: 0; font: 700 0.8125rem/1.3 var(--body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); }
+.tr-cv { min-width: 0; overflow-wrap: anywhere; margin: 0; font: 700 0.8125rem/1.3 var(--body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); }
 .tr-ch .tr-age { flex: 0 0 auto; vertical-align: 0; }
 .tr-age.is-today { border-color: var(--line); color: var(--muted); }
 .tr-card .tr-cs { display: block; margin: 2px 0 2px; }
 .tr-card .nb-rows { margin: 0; }
 .tr-card .tr-item { align-items: center; border-bottom: 0; border-top: 1px solid var(--rule); }
 .tr-card .tr-item .nb-main { min-width: 0; }
+.tr-card .w-amt { white-space: normal; }
 .tr-ret { flex: 0 0 auto; min-height: 44px; padding: 0 12px; gap: 6px; font: 700 0.875rem/1 var(--body); white-space: nowrap; }
 .tr-ret[disabled] { opacity: 0.6; }
 .tr-tick { flex: 0 0 auto; }
