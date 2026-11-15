@@ -146,6 +146,59 @@ No blend of all three beats A: B and C both remove the room A keeps, so a blend 
 
 After building, remeasure the complete app at 390, 768 and 1280 px as both chef roles with real data shapes, and record any difference from the preview here.
 
+
+
+## The mix: A's room with C's rows (previewed 15 November 2026)
+
+The head chef asked for the one mix round 2 left open. The Kitchen room stays as one page with no tab row (A). The five tools are full-width rows: the tool's name, the sentence about what your role can do, a chevron (C's row form). Each row opens its tool. On wide screens the list is capped at 44rem, so there is one layout at every width. Nothing from B.
+
+| Phone | Tablet | Laptop |
+| --- | --- | --- |
+| [mix-390](mix-390.png), head chef [mix-head-390](mix-head-390.png) | [mix-768](mix-768.png) | [mix-1280](mix-1280.png), head chef [mix-head-1280](mix-head-1280.png) |
+
+**Preview**, Sam (sous chef) unless stated, stand-in font, a fixture with no function band showing. A and Today are from the same fixture.
+
+| | Today | A | Mix |
+| --- | --- | --- | --- |
+| Taps to Guides through the panel | 5 | 4 | 4 |
+| Controls that lead to a tool | 10 | 5 | 5 |
+| First tool, px from the top, 390 px phone | 299 | 459 | 378 (head chef 405) |
+| Last tool ends, px, 390 px phone (tab bar starts at 776) | 1,025 | 993 | 727 (head chef 753) |
+| All five tools on the first phone screen | no | no | yes, by 49 px (head chef by 23 px) |
+| All five on the first screen at 768 and 1280 px | yes | yes | yes |
+| Tool target height, phone | 44 | 145 | 62 to 81 |
+| Page height, phone | 1,156 | 1,125 | 850 |
+| Sentence contrast on the page (rendered) | | not measured | 6.73 to 1 (needs 4.5) |
+| Sideways scroll | none | none | none |
+
+Limits: the function band was not showing. With two functions on, the band is about 190 px tall, so on a phone the last one or two rows would sit under the tab bar, as A's lower tiles already do. Real fonts, keyboard focus, Back after a row, Find and a held-back Guides page are Not evidenced, as for A. The row is the same shape as a Settings row (name, value, chevron), not the approved Overview tile, so it moves a little further from the 8 November look than A does.
+
+### Focused follow-up on the mix
+
+The three reviewers who raised the mix in round 2 saw its own preview and measurements beside A. Fresh agents, same 1 to 5 scale. This is not a full council round: the head chef, skeptic and keeper reviewers did not score the mix.
+
+| Reviewer | A | Mix | Recommends |
+| --- | --- | --- | --- |
+| Cook mid-service | 4 | 4 | The Mix, if remeasured with real fonts and the function band showing |
+| New starter | 4 | 4 | The Mix, only if the whole row is tappable and that is click tested |
+| Kitchen screen designer | 3 | 4 | The Mix, with the block capped to the list width |
+
+What they found:
+
+- **Better on a phone, about equal elsewhere.** All five tools above the tab bar on a 390 px phone; in A the fourth tile is cut by the tab bar and Guides needs a scroll.
+- **The word "Open" is gone.** A bare chevron is the only cue that a row opens something. The fault round 1 found was a tile whose words did not match what it did, and A's fix said "Open" in words. All three raised this. Repair: end each row with "Open ›" in words.
+- **The margin is thin:** 49 px for a sous chef, 23 px for the head chef, with a stand-in font and no function band. Real fonts, a sentence that wraps to three lines or a band on a function day can push the last rows under the tab bar. Not evidenced.
+- **A row may read as a setting or a line of information, not a door.** Whether the whole row is the tap target is Not evidenced in a preview. Required check: a click test on the name, the sentence and the chevron.
+- **On a laptop it looks unfinished:** the rows stop at 44rem but the cream block runs full width, leaving about 310 px empty. Repair: cap the block, not only the list.
+- **Pattern:** `docs/design-patterns.md` has an entry for the dashboard tile but none for this row. The row must be recorded there with its names in `tests/design-patterns.test.js`.
+- The Guides gate, Find, remembered tab and Back risks are the same as A's.
+
+**Recommendation after the follow-up: the mix, with "Open ›" in words on each row and the block capped on wide screens.** It beats A where the panel is used most, on a phone, and keeps one layout at every width. Its main downside: it moves further from the 8 November tile look than A, for a first-screen gain that may not hold on a function day until it is remeasured in the built app. A stays the fully reviewed fallback.
+
+Review status: the mix is endorsed by the three reviewers who saw it, each with a condition. It was not scored by the full council.
+
+Before ready, for either A or the mix: the four checks listed under round 2, plus for the mix a whole-row click test, the remeasure at 390, 768 and 1280 px with a function band showing, and keyboard focus on a row.
+
 ## Question for the head chef
 
-Do you want to change your 8 November choice this far: the Kitchen room keeps its Overview, each tile opens its tool, and the five one-button tabs go? If yes, A is built in one pull request with the role-worded purpose line. If no, nothing changes and this brief records why.
+The five one-button tabs go in both. Which Kitchen room do you want: the mix (rows that say Open, all five tools on the first phone screen), A (tiles that open, closest to the 8 November look), or the panel as it is? Either build is one pull request with the role-worded purpose line.
