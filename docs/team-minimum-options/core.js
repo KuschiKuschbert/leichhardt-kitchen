@@ -17,21 +17,26 @@ window.TM_CORE = (function () {
     });
     return { inn: inn, away: away };
   }
-  // short spells inside each minimum window: a run of minutes below the minimum, with the lowest count and who is away
+  // short spells inside each minimum window: a run of minutes below the minimum, with the lowest and highest count, the
+  // count's steps ("4, then 5 from 18:45"), the fewest on the plan even with nobody on a break (a short roster) and who
+  // is away. opts.from (today: the kitchen clock's minute) leaves out what is already over.
   function spells(plan, mins, opts) {
+    opts = opts || {};
     var out = [];
     mins.forEach(function (w) {
-      var cur = null;
-      for (var m = w.from; m <= w.to; m++) {
+      var cur = null, start = Math.max(w.from, opts.from == null ? w.from : opts.from);
+      for (var m = start; m <= w.to; m++) {
         var c = m < w.to ? inAt(plan, m, opts) : null, low = c && c.inn.length < w.n;
         if (low) {
-          if (!cur) cur = { w: w, from: m, to: m + 1, low: c.inn.length, high: c.inn.length, away: {} };
-          cur.to = m + 1; cur.low = Math.min(cur.low, c.inn.length); cur.high = Math.max(cur.high, c.inn.length);
+          var n = c.inn.length, onPlan = c.inn.length + c.away.length;
+          if (!cur) cur = { w: w, from: m, to: m + 1, low: n, high: n, roster: onPlan, steps: [{ at: m, n: n }], away: {} };
+          cur.to = m + 1; cur.low = Math.min(cur.low, n); cur.high = Math.max(cur.high, n); cur.roster = Math.min(cur.roster, onPlan);
+          if (cur.steps[cur.steps.length - 1].n !== n) cur.steps.push({ at: m, n: n });
           c.away.forEach(function (a) { cur.away[a.p.id] = a.p.name; });
         } else if (cur) { out.push(cur); cur = null; }
       }
     });
-    out.forEach(function (s) { s.awayNames = Object.keys(s.away).map(function (k) { return s.away[k]; }); });
+    out.forEach(function (s) { s.awayNames = Object.keys(s.away).map(function (k) { return s.away[k]; }); s.awayIds = Object.keys(s.away); });
     return out.sort(function (a, b) { return a.from - b.from; });
   }
   // the minimum that applies at minute m (the highest when two windows overlap), or null

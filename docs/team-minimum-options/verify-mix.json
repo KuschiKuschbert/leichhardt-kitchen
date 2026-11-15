@@ -1,0 +1,344 @@
+{
+  "mix": {
+    "admin-390": {
+      "first": {
+        "dockH": 141,
+        "rowsVisible": 0,
+        "warn": {
+          "sel": ".tb-line",
+          "text": "Saved plan: short now until 19:00. 4 on Dinner and not on a break, then 5 from 18:45. Need 6.",
+          "top": 673,
+          "bottom": 710,
+          "onScreen": true
+        },
+        "pageH": 1857,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": 605,
+            "bottom": 631,
+            "onScreen": true
+          },
+          {
+            "top": 631,
+            "bottom": 657,
+            "onScreen": false
+          },
+          {
+            "top": 657,
+            "bottom": 683,
+            "onScreen": false
+          },
+          null
+        ]
+      },
+      "working": {
+        "dockH": 141,
+        "rowsVisible": 6,
+        "warn": {
+          "sel": ".tb-line",
+          "text": "Saved plan: short now until 19:00. 4 on Dinner and not on a break, then 5 from 18:45. Need 6.",
+          "top": 673,
+          "bottom": 710,
+          "onScreen": true
+        },
+        "pageH": 1857,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": -82,
+            "bottom": -56,
+            "onScreen": false
+          },
+          {
+            "top": -56,
+            "bottom": -30,
+            "onScreen": false
+          },
+          {
+            "top": -30,
+            "bottom": -4,
+            "onScreen": false
+          },
+          null
+        ]
+      },
+      "errors": []
+    },
+    "team-390": {
+      "first": {
+        "dockH": 141,
+        "rowsVisible": 1,
+        "warn": {
+          "sel": ".tb-line",
+          "text": "Saved plan: short now until 19:00. 4 on Dinner and not on a break, then 5 from 18:45. Need 6.",
+          "top": 673,
+          "bottom": 710,
+          "onScreen": true
+        },
+        "pageH": 1546,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": 295,
+            "bottom": 321,
+            "onScreen": true
+          },
+          {
+            "top": 321,
+            "bottom": 347,
+            "onScreen": true
+          },
+          {
+            "top": 347,
+            "bottom": 373,
+            "onScreen": true
+          },
+          null
+        ]
+      },
+      "working": {
+        "dockH": 141,
+        "rowsVisible": 6,
+        "warn": {
+          "sel": ".tb-line",
+          "text": "Saved plan: short now until 19:00. 4 on Dinner and not on a break, then 5 from 18:45. Need 6.",
+          "top": 673,
+          "bottom": 710,
+          "onScreen": true
+        },
+        "pageH": 1546,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": -82,
+            "bottom": -56,
+            "onScreen": false
+          },
+          {
+            "top": -56,
+            "bottom": -30,
+            "onScreen": false
+          },
+          {
+            "top": -30,
+            "bottom": -4,
+            "onScreen": false
+          },
+          null
+        ]
+      },
+      "errors": []
+    },
+    "admin-1280": {
+      "first": {
+        "dockH": 123,
+        "rowsVisible": 0,
+        "warn": {
+          "sel": ".tb-line",
+          "text": "Saved plan: short now until 19:00. 4 on Dinner and not on a break, then 5 from 18:45. Need 6.",
+          "top": 760,
+          "bottom": 778,
+          "onScreen": true
+        },
+        "pageH": 1612,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": 605,
+            "bottom": 631,
+            "onScreen": true
+          },
+          {
+            "top": 631,
+            "bottom": 657,
+            "onScreen": true
+          },
+          {
+            "top": 657,
+            "bottom": 683,
+            "onScreen": true
+          },
+          null
+        ]
+      },
+      "working": {
+        "dockH": 123,
+        "rowsVisible": 9,
+        "warn": {
+          "sel": ".tb-line",
+          "text": "Saved plan: short now until 19:00. 4 on Dinner and not on a break, then 5 from 18:45. Need 6.",
+          "top": 719,
+          "bottom": 738,
+          "onScreen": true
+        },
+        "pageH": 1612,
+        "overflow": false,
+        "boardRows": [
+          {
+            "top": -82,
+            "bottom": -56,
+            "onScreen": false
+          },
+          {
+            "top": -56,
+            "bottom": -30,
+            "onScreen": false
+          },
+          {
+            "top": -30,
+            "bottom": -4,
+            "onScreen": false
+          },
+          null
+        ]
+      },
+      "errors": []
+    },
+    "find": {
+      "taps": 0,
+      "onScreen": true,
+      "text": "Saved plan: short now until 19:00. 4 on Dinner and not on a break, then 5 from 18:45. Need 6."
+    },
+    "fix": {
+      "taps": 7,
+      "warnAfterEdit": null,
+      "warnAfterSave": null
+    },
+    "loading": {
+      "dockH": 141,
+      "rowsVisible": 0,
+      "warn": {
+        "sel": ".tb-line",
+        "text": "Busy times not checked yet: the saved plan is not ready.",
+        "top": 673,
+        "bottom": 710,
+        "onScreen": true
+      },
+      "pageH": 2068,
+      "overflow": false,
+      "boardRows": []
+    },
+    "quiet": {
+      "dockH": 141,
+      "rowsVisible": 0,
+      "warn": {
+        "sel": ".tb-line",
+        "text": "Saved plan: short now until 20:30. Only 3 on Dinner, fewer during breaks. Need 6.",
+        "top": 673,
+        "bottom": 710,
+        "onScreen": true
+      },
+      "pageH": 2101,
+      "overflow": false,
+      "boardRows": [
+        {
+          "top": 605,
+          "bottom": 631,
+          "onScreen": true
+        },
+        {
+          "top": 631,
+          "bottom": 657,
+          "onScreen": false
+        },
+        null
+      ]
+    },
+    "nomin": {
+      "dockH": 98,
+      "rowsVisible": 0,
+      "warn": null,
+      "pageH": 2085,
+      "overflow": false,
+      "boardRows": [
+        {
+          "top": 605,
+          "bottom": 631,
+          "onScreen": true
+        },
+        {
+          "top": 631,
+          "bottom": 657,
+          "onScreen": true
+        },
+        {
+          "top": 657,
+          "bottom": 683,
+          "onScreen": false
+        },
+        null
+      ]
+    },
+    "past": {
+      "dockH": 98,
+      "rowsVisible": 0,
+      "warn": null,
+      "pageH": 1727,
+      "overflow": false,
+      "boardRows": []
+    },
+    "halfFix": {
+      "dockH": 141,
+      "rowsVisible": 2,
+      "warn": {
+        "sel": ".tb-line",
+        "text": "Draft: short now until 18:45. 5 on Dinner and not on a break. Need 6.",
+        "top": 673,
+        "bottom": 710,
+        "onScreen": true
+      },
+      "pageH": 2127,
+      "overflow": false,
+      "boardRows": [
+        {
+          "top": -63,
+          "bottom": -37,
+          "onScreen": false
+        },
+        {
+          "top": -37,
+          "bottom": -11,
+          "onScreen": false
+        },
+        {
+          "top": -11,
+          "bottom": 15,
+          "onScreen": false
+        },
+        null
+      ],
+      "tags": [
+        "dev",
+        "fen",
+        "hal"
+      ]
+    },
+    "tags": [
+      "sam",
+      "dev",
+      "fen",
+      "hal"
+    ],
+    "boardVisible": 1,
+    "quietEarly": {
+      "dockH": 141,
+      "rowsVisible": 0,
+      "warn": {
+        "sel": ".tb-line",
+        "text": "Saved plan: short now until 20:30. Only 3 on Dinner, fewer during breaks. Need 6.",
+        "top": 673,
+        "bottom": 710,
+        "onScreen": true
+      },
+      "pageH": 1775,
+      "overflow": false,
+      "boardRows": []
+    },
+    "kitchen": {
+      "pageH": 1296,
+      "overflow": false,
+      "errors": []
+    }
+  }
+}

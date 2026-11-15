@@ -104,3 +104,80 @@ Taps to set "Dinner rush 17:30 to 20:30, need 6" (counted from the drawn forms, 
 | Headspace: plain words | Works | Works | Needs work: "short then" is terse |
 | Duolingo: honest feedback | Works: Draft or Saved plan | Works: Draft or Saved plan | Works: board saved, heads draft (two meanings) |
 | Todoist: known defaults visible | Not relevant | Not relevant | Works: each head shows the need |
+
+## Round 2 scores
+
+Six fresh agents (the five reviewers and the kitchen screen designer) read this brief, the evidence packet and the screenshots; the skeptic and the designer also ran the previews. Points: 3 for a first place, 2 for a second, 1 for a third.
+
+| Reviewer | First | Second | Third | Recommendation |
+| --- | --- | --- | --- | --- |
+| Cook mid-service | A | C | B | A plus C's board line, once the board ends above the dock and past short times are dropped |
+| Head chef | B | A | C | B's dock line plus A's setting; fix finding 1 in the same build |
+| Skeptic | B | A | C | B's line capped, plus A's setting; nothing on the board; no all-clear line |
+| New starter | B | C | A | B, plus A's line in the details, with plainer counts |
+| Keeper of the book | A | B | C | A; add B's words if the head chef wants it found with 0 taps |
+| Kitchen screen designer | B | A | C | The lean blend: B's line cut short, C's mark beside Breaks, A's setting |
+
+**Totals: B 15 (4 firsts), A 13 (2 firsts), C 8.** All six say the designs differ structurally. All six reject a blend of all three: four places for one fact, saved and draft counts side by side, two rows lost.
+
+**What each reviewer took and rejected.**
+- *A's setting* (a busy time and need beside each service in Shifts): taken by the head chef, skeptic, keeper and designer. No name to make up, cannot cross two services, 12 taps against 14; a picker or number box instead of the stepper saves about 5.
+- *A's line in the details*: taken by the cook and the new starter (the answer where the break is moved). Its all-clear ("keeps 6 or more") is rejected by the skeptic and the designer: it misleads on a half-done fix (Break-it below).
+- *B's dock line*: taken by the head chef, skeptic, new starter and designer, and its "Draft" or "Saved plan" first word by the keeper. Rejected by the cook: three lines over the list, the board cut to one and a half names.
+- *C's board line*: taken by the cook only. Rejected by five: a second meaning on the charcoal board, under the dock on the admin phone, and the board hides itself when nobody is away.
+- *C's service heads*: rejected by all who named them: they lose the "no section" count built on 15 November and change height while editing.
+- *C's "short then" beside Breaks*: taken by the designer and liked by the new starter (it says whose break to open); the cook and new starter find the words too terse.
+
+**Contract fit and contrast** (designer, measured on the previews): the warning words pass, A 5.59:1, B 5.27:1, C's board line 5.77:1 (`--bar-accent` on charcoal). No motion; no target under 44 px. Not evidenced: 768 px, the real app shell, a screen reader.
+
+### Break-it findings from round 2
+
+| # | Scenario | Evidence | Disposition |
+| --- | --- | --- | --- |
+| 8 | **A, half-done fix.** Only Sam K's break moves to 19:30. Still short 18:30 to 18:45 (5 of 6), but Sam K's details say "This draft keeps 6 or more on the plan then" and nothing else warns. | **Reproduced** by the skeptic on the A preview ([screenshot](breakit-a-partial.png), [script](breakit.cjs)). | No all-clear line anywhere. The mix keeps the whole-draft line on screen. **Checked** in the mix preview: "Draft: short now until 18:45. 5 on Dinner and not on a break. Need 6." |
+| 9 | **B, five away with long names.** The dock grows to 196 px and covers all four board names; visible rows drop from 5 to 4. | **Reproduced** by the skeptic ([screenshot](breakit-b-long.png)). | The mix's line carries no names (the rows are marked instead). |
+| 10 | **Quiet night** (3 on Dinner, need 6). A blames a break ("Short while Sam K is away") for a short roster; with the breaks moved out, B says "Away: .". | **Reproduced** by the skeptic. | Say a short roster as such: "Only 3 on Dinner, fewer during breaks. Need 6." **Checked** in the mix preview. |
+| 11 | **A short time already over.** At 19:30 the only short time (18:30 to 19:00) is past, but all three still warn. | **Checked** by the cook in node and the code. | Today counts from the kitchen clock on. **Checked** in the mix preview (`?at=1170`): nothing shown. |
+| 12 | **Failed Save.** | **Checked** by the skeptic on all three previews (`?fail=1`): the draft is kept and says Not saved. | Repeat in the stand-in. |
+| 13 | **The dock line or the marks change with the minute.** Counting from now means a short time can end while the chef is editing: the line changes and a mark disappears, so a row can shrink under a thumb. | **Risk / Not evidenced** (keeper, from the code: B's `sp[0]` and the minute repaint). | Repaint them only on the existing draw paths and the clock repaint that already updates status slots, never while a picker is open; the Save button stays put (the dock grows upward). A client test with the clock crossing a short time's end. |
+| 14 | **`shClean()` drops fields it does not know**, so a busy time on a service is lost on the next Shifts save; and the admin's whole-record config save already drops other fields (keeper, read in the source, not reproduced). | **Risk / Not evidenced.** | Carry the busy time in `shClean()`, `draftOf()` and `saveConfig()`; a node test and a client test that a People save keeps it. Check the other fields in their own fix pull request. |
+
+## Mix of A, B and C
+
+| Source and part | Take or reject | Principle | Kitchen benefit | Conflict or cost | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| A, busy time and need on each service in Shifts | **Take**, with pickers (15-minute steps, need 1 to 20) | Todoist (known default visible), Linear (one shape) | Set once beside the hours it belongs to; 8 taps; cannot cross services | `shClean()` and every save path must keep it (finding 14) | Head chef, skeptic, keeper, designer |
+| A, the line inside Breaks details | **Reject** | Linear (one place) | The dock line is on screen while the break is moved, so the answer still comes at the tap | Its all-clear misleads (finding 8) | Skeptic, designer; cook and new starter disagree |
+| B, one line in the Save dock | **Take**, cut short: no names, "Draft" or "Saved plan" first, only when short or not checked, today from now on | Flighty (real times), Duolingo (honest), Linear | 0 taps to find; catches a half-done fix | Dock grows 43 px (not 61); finding 1 must be repaired | Four of six |
+| B, "Away: names" in the line | **Reject** | Airbnb (who and when together, but on the rows) | The rows carry the names | Long names grow the dock (finding 9) | Designer, skeptic |
+| C, the mark beside Breaks | **Take**, worded "away when short" | Airbnb (who, beside the control to tap) | Says whose break to open: no hunting (A's 1 to 9 taps) | A mark can come and go with the clock (finding 13); a second line on those rows | Designer; new starter liked the idea |
+| C, the board line | **Reject** | Flighty (no confusing status), Duolingo (one meaning) | | Saved count beside a draft line; hidden under the dock on the admin phone; hidden when nobody is away | Five of six |
+| C, the service heads | **Reject** | Linear | | Loses the "no section" count; heads change height | All who named them |
+
+**Why not all three:** four places for one fact, a saved count beside a draft count, and two rows lost. **Why not pure B:** it names people in the dock (finding 9) and leaves "whose break do I open?" to the chef. **Why not pure A:** nothing shows until the right person is opened, and its all-clear can hide a half-done fix.
+
+## Combined preview
+
+[The mix](mix.html) ([its setting](mix.html?page=kitchen)). **Preview**, the same frame, data and conditions as A, B and C; raw [`verify-mix.json`](verify-mix.json).
+
+- **The Save dock line**, only when the plan is short or cannot be checked: "Saved plan: short now until 19:00. 4 on Dinner and not on a break, then 5 from 18:45. Need 6." After an edit the first word is "Draft". A later short time adds "1 more short time later." No names.
+- **The mark** "away when short" under the Breaks words of each person away during a short time still to come (today: Sam K, Dev, Fen, Hal).
+- **The setting** in Admin, Kitchen, Shifts: under each shift's hours, Busy time from, to and need, each a picker.
+- Unchanged: the On break now board, the service heads, the Breaks details, Save.
+
+| Measure | Mix | B | A | C |
+| --- | ---: | ---: | ---: | ---: |
+| Find the short time (taps) | **0** | 0 | 1 to 9 | 0 |
+| Whose break to open | **marked on the row** | named in the dock | open each person | marked on the row |
+| Fix (move Sam K and Hal) and Save | 7 | 7 | 7 | 7 |
+| Half-done fix (only Sam K moved) | "Draft: short now until 18:45. 5 on Dinner and not on a break. Need 6." Dev, Fen, Hal stay marked | says short | **says it is fine** (finding 8) | heads say short |
+| At 19:30, the short time over | nothing | still short | still short | still short |
+| Quiet night | "Only 3 on Dinner, fewer during breaks. Need 6." | "0 to 3 ... Away: ..." | blames Sam K's break | heads and board |
+| Save dock, 390 px | 141 px | 159 px | 98 px | 98 px |
+| Person rows in the working screen, admin 390 / sous chef 390 / 1280 | 6 / 6 / 9 | 6 / 6 / 9 | 7 / 7 / 9 | 6 / 6 / 9 |
+| Board names above the dock on the first screen, admin 390 / sous chef 390 | 2 of 4 / 4 of 4 | 1 of 4 | 3 of 4 | 3 of 4 |
+| The same with the dock's own "Saved 13:00 · Gus" line left out while nothing is unsaved (the notebook head already says it) | 3 of 4 / 4 of 4 | | | |
+| Setting "Dinner busy time 17:30 to 20:30, need 6" (counted from the drawn form) | 8 taps | 14 | 12 | 14 |
+| Sideways scroll, page errors | none | none | none | none |
+
+Screenshots: [first screen](mix-admin-390.png), [working screen](mix-working-390.png), [half-done fix](mix-halffix-390.png), [quiet night at 17:30](mix-quiet-early-390.png), [sous chef](mix-team-390.png), [1280](mix-admin-1280.png), [the setting](mix-kitchen-390.png), [loading](mix-loading-390.png).

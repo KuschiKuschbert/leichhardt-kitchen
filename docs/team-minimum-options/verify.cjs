@@ -65,6 +65,16 @@ async function pickIn(p, sel, label) { await p.locator(sel).click(); await p.wai
     for (const [label, qs] of [['loading', 'state=loading&open=sam'], ['quiet', 'quiet=1&open=sam'], ['nomin', 'nomin=1&open=sam']]) {
       const p = await page(b, d, qs, 390); r[label] = await measure(p); await p.screenshot({ path: path.join(OUT, d + '-' + label + '-390.png'), fullPage: true }); await p.context().close();
     }
+    // the combined preview only: a short time already over (19:30), a half-done fix (only Sam K moved), the rows marked
+    if (d === 'mix') {
+      { const p = await page(b, d, 'at=1170', 390); r.past = await measure(p); await p.context().close(); }
+      { const p = await page(b, d, 'open=sam', 390); await pickIn(p, '.ts-bench [data-a="br-at"][data-i="0"]', '19:30'); r.halfFix = await measure(p);
+        r.halfFix.tags = await p.evaluate(() => [...document.querySelectorAll('.tx-tag')].map(e => e.closest('.tx-row').dataset.id));
+        await p.evaluate(() => { const h = document.querySelector('.tx-ghead'); window.scrollTo(0, h.getBoundingClientRect().top + scrollY - 66); }); await p.waitForTimeout(100);
+        await p.screenshot({ path: path.join(OUT, 'mix-halffix-390.png') }); await p.context().close(); }
+      { const p = await page(b, d, '', 390); r.tags = await p.evaluate(() => [...document.querySelectorAll('.tx-tag')].map(e => e.closest('.tx-row').dataset.id)); r.boardVisible = (await measure(p)).boardRows.filter(x => x && x.onScreen).length; await p.context().close(); }
+      { const p = await page(b, d, 'quiet=1&at=1050', 390); r.quietEarly = await measure(p); await p.screenshot({ path: path.join(OUT, 'mix-quiet-early-390.png') }); await p.context().close(); }
+    }
     { const p = await page(b, d, 'page=kitchen', 390); r.kitchen = { pageH: await p.evaluate(() => document.documentElement.scrollHeight), overflow: await p.evaluate(() => document.documentElement.scrollWidth > innerWidth), errors: p.errs };
       await p.screenshot({ path: path.join(OUT, d + '-kitchen-390.png'), fullPage: true }); await p.context().close(); }
   }

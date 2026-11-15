@@ -148,7 +148,7 @@
     switcher: function () {
       var s = location.search.replace(/([?&])page=kitchen&?/, '$1').replace(/[?&]$/, '');
       var k = (s ? s + '&' : '?') + 'page=kitchen';
-      return '<div class="ts-design-switch">Preview: <a href="a.html' + s + '">A</a><a href="b.html' + s + '">B</a><a href="c.html' + s + '">C</a> · <a href="' + location.pathname.split('/').pop() + k + '">Setting</a></div>';
+      return '<div class="ts-design-switch">Preview: <a href="a.html' + s + '">A</a><a href="b.html' + s + '">B</a><a href="c.html' + s + '">C</a><a href="mix.html' + s + '">Mix</a> · <a href="' + location.pathname.split('/').pop() + k + '">Setting</a></div>';
     },
     mount: function (draw) {
       var root = document.getElementById('ts');
