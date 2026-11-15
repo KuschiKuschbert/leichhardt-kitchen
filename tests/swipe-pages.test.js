@@ -13,6 +13,15 @@ async function go(p, h) {
 }
 async function swipe(p, selector, dx, dy = 0, opt = {}) {
   await L.settle(p, 300);
+  await p.evaluate(() => {
+    window.swipeTrace = [];
+    if (window.swipeTraceInstalled) return;
+    window.swipeTraceInstalled = true;
+    ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(type => document.addEventListener(type, e => {
+      const t = e.changedTouches[0];
+      window.swipeTrace.push([type, t && Math.round(t.clientX), t && Math.round(t.clientY), e.touches.length, e.cancelable, e.defaultPrevented, e.target.id || e.target.className]);
+    }, { passive: true }));
+  });
   const r = await p.locator(selector).first().boundingBox();
   if (!r) throw new Error('Missing touch target: ' + selector);
   const x = opt.x == null ? r.x + r.width * (dx < 0 ? .7 : .3) : opt.x;
@@ -55,7 +64,8 @@ async function fixedFrame(p) {
 }
 async function gestureState(p) {
   return p.evaluate(() => ({ hash: location.hash, scale: visualViewport.scale, selection: getSelection().toString(),
-    focused: document.activeElement.tagName + '#' + document.activeElement.id, sending: LK_PREP.sendFirst() }));
+    focused: document.activeElement.tagName + '#' + document.activeElement.id, sending: LK_PREP.sendFirst(),
+    access: LK_PREP.privateAccess(), lock: LK_PREP.workLock(), hidden: document.visibilityState, trace: window.swipeTrace }));
 }
 (async () => {
   const b = await L.start();
@@ -97,6 +107,9 @@ async function gestureState(p) {
   ]) {
     await go(p, '#/prep'); await swipe(p, '#rtitle', dx, dy, opt);
     ok(await hash(p) === '#/prep', name + ': stays on the current tab');
+    await go(p, '#/prep'); await swipe(p, '#nbr-i3', -110);
+    const resumed = await gestureState(p);
+    ok(resumed.hash === '#/orders', name + ': ordinary touch navigation resumes ' + (resumed.hash === '#/orders' ? '' : JSON.stringify(resumed)));
   }
   await go(p, '#/prep');
   await p.evaluate(() => { const r = document.createRange(); r.selectNodeContents(document.querySelector('#rtitle')); getSelection().addRange(r); });
