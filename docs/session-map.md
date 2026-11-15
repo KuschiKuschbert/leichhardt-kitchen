@@ -224,6 +224,7 @@ Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records
 | Recipe and drawing editor layout, selected A's chapters with B's full-screen studio (3 Nov 2026) | `docs/recipe-editor-options/brief.md` |
 | Drawing studio, selected B: quiet canvas, with more servingware colours (4 Nov 2026) | `docs/studio-options/brief.md` |
 | Shared controls, deferred search, table interactions and council audit | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
+| Long amounts and recipe headings | `docs/responsive-overflow.md`: 16 November 2026, broader overflow audit and CSS wrapping repair; `tests/line-amount-wrap.test.js`, `tests/recipe-title-wrap.test.js`. |
 | Loading, saving, measured progress and reduced motion | `docs/loading-motion.md` (current), `docs/loading-feedback-options/brief.md` (recommended set chosen 4 Nov 2026, findings and build steps) |
 | What a tap shows after it: a save, add, tick, Undo or Refresh, its words, where the person is left (5 Nov 2026) | `docs/action-feedback.md` (the rule), `docs/action-feedback-options/brief.md` (audit of 307 actions, designs, scores) |
 | What reads and writes Firestore, what each page costs, and the plan to stay inside the free plan (audit, 5 Nov 2026) | `docs/firestore-usage.md` |

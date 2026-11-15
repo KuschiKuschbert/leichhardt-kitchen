@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **16 November 2026, check the rest of the book after the transfer overflow.** The owner asked for wider checks. The audit reproduced long amounts crossing Orders and Prep controls, plus long recipe titles crossing the card number or illustration at enlarged text. Repair wrapping inside the existing columns and retain short quantities, controls, fonts and workflows. [Measured audit and repairs](responsive-overflow.md).
+
 - **16 November 2026, repair transfer cards overflowing the phone.** The owner reported cards moving and running off the right edge after the swipe release. The same overflow reproduces before swipes: the loan grid expands to its content width. Keep the existing card and return controls, constrain the grid to the notebook, and let long venue words and quantities wrap. No service step changes. [Evidence](transfer-returns.md#phone-card-width-16-november-2026).
 
 - **15 November 2026, swipe between the main tabs.** The owner requested left/right gestures, chose main-tab order over browser Back/Forward, then asked for smooth, modern motion and the repository's agent instructions to be followed. Left opens the next permitted tab and right the previous one, without wrapping. The page follows the finger slightly and settles in 180 ms; reduced motion removes sliding. Existing buttons, drafts, forms, sheets, scroll gestures and access boundaries remain. Small-change service check and verification: [navigation](navigation.md#main-tab-swipes-15-november-2026).
