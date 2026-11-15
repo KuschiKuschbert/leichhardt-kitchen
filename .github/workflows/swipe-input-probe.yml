@@ -30,14 +30,18 @@ jobs:
           const body = `(async () => {
             const b = await L.start();
             console.log('Browser', await b.version());
-            for (const x of [8, 16, 20, 23, 30]) {
-              const p = await L.open(b, '#/prep', { touch: true, wait: 1400 });
-              try { await swipe(p, '#rtitle', 110, 0, { x }); } catch (e) { console.log('EDGE ERROR', x, e.message); }
-              console.log('EDGE', x, JSON.stringify(await gestureState(p)));
+            const p = await L.open(b, '#/prep', { touch: true, wait: 1400 });
+            for (const [name, dx, dy, opt] of [
+              ['short', -40, 0, {}], ['vertical', 10, -120, {}], ['diagonal', -90, 90, {}],
+              ['cancelled', -110, 0, { cancel: true }], ['two fingers', -110, 0, { multi: true }],
+              ['mouse selection', -110, 0, { mouse: true }], ['screen edge', 110, 0, { x: 8 }]
+            ]) {
               await go(p, '#/prep');
-              try { await swipe(p, '#nbr-i3', -110); } catch (e) { console.log('RECOVERY ERROR', x, e.message); }
-              console.log('RECOVERY', x, JSON.stringify(await gestureState(p)));
-              await p.context().close();
+              try { await swipe(p, '#rtitle', dx, dy, opt); } catch (e) { console.log('GUARD ERROR', name, e.message); }
+              console.log('GUARD', name, JSON.stringify(await gestureState(p)));
+              await go(p, '#/prep');
+              try { await swipe(p, '#nbr-i3', -110); } catch (e) { console.log('RECOVERY ERROR', name, e.message); }
+              console.log('RECOVERY', name, JSON.stringify(await gestureState(p)));
             }
             await b.close();
           })().catch(e => { console.error(e); process.exit(1); });`;
