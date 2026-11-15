@@ -43,6 +43,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Reports, Team: At a glance cards and when the counts run to (chosen A in Look 1, 12 Nov 2026) | `docs/team-glance-options/brief.md` |
 | A smarter book (13 Nov 2026): Filled for you on Wastage, Transfers and Orders; Reports, Records with the nightly food safety count; the audit's other ideas | `docs/smart-book-options/brief.md` (chosen and built), its `audit.md`, `scripts/records-core.mjs` |
 | Head chef / sous chef panel, chosen dedicated admin-style panel | `docs/chef-panel-options/brief.md` (Chosen implementation, permissions, reads and verification) |
+| Chef panel Kitchen room: one page of rows that open each tool, and the panel's purpose line worded for the role (the mix chosen and built 15 Nov 2026) | `docs/chef-kitchen-options/brief.md` (Chosen and built) |
 | Prep, Orders, Wastage, Transfers and the chef hat; who did a Prep line on a shared screen | `docs/work-pages-design-options/brief.md`, `docs/shared-prep-attribution.md` |
 | Orders as a shared request list with compact supplier cut-offs (chosen C) | `docs/order-list-options/brief.md` |
 | Head-set section minimums, Prep room, smart matching and Before service | `docs/prep-standards.md`, `docs/prep-par-options/brief.md` |

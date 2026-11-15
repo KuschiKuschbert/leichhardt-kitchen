@@ -3861,7 +3861,6 @@
   function recipeById(id) { return D.recipes.filter(function (r) { return r.id === id; })[0] || null; }
 
   /* ---------- who is the owner: only the owner's Google account may read config/admins, so a successful read proves it ---------- */
-  function adminsRef() { return docRef('config', 'admins'); }
   function bootstrapHTML() {
     var c = S.bootstrapConfig || {}, names = (c.people || []).filter(function (p) { return p.active !== false; });
     return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Set up the head chef</h2><p class="hint">Your Google account is verified. Choose the head chef name, then set its personal PIN to unlock this device.</p><div class="p-names">' + names.map(function (p) { return '<button type="button" class="chip" data-p="owner-head" data-id="' + esc(p.id) + '">' + esc(p.name) + '</button>'; }).join('') + '</div><div class="field"><label class="label" for="owner-name">Or add the head chef name</label><input class="search" id="owner-name" maxlength="40" autocomplete="name"></div><button type="button" class="btn dark" data-p="owner-create">Add head chef</button>' + (S.saveMsg ? msgHTML(S.saveMsg) : '') + '</section>';
@@ -6736,13 +6735,17 @@
     ['today', 'Today', ['dashboard', 'todo', 'notes', 'mail']],
     ['reports', 'Reports', ['prep-history', 'order-history']],
     ['team', 'Team', ['plan', 'people', 'minutes']],
-    ['kitchen', 'Kitchen', ['kitchen-home', 'recipes', 'suppliers', 'functions', 'deliveries', 'guides']],
+    ['kitchen', 'Kitchen', ['kitchen-home']],
     ['prep', 'Prep', ['prep-standards']]
   ];
   var C_NAMES = { dashboard: 'Dashboard', todo: 'Chef to-do', notes: 'Shift pings', mail: 'Kitchen mail',
     'prep-history': 'Prep history', 'order-history': 'Order history', plan: "Today's team", people: 'Manage staff',
-    minutes: 'Meeting minutes', 'kitchen-home': 'Overview', recipes: 'Recipes & drawings', suppliers: 'Supplier order',
-    functions: 'Functions', deliveries: 'Delivery received', guides: 'Guides', 'prep-standards': 'Section standards' };
+    minutes: 'Meeting minutes', 'kitchen-home': 'Overview',
+    'prep-standards': 'Section standards' };
+  /* The Kitchen room's tools are rows that open the tool's own page (the mix chosen 15 Nov 2026,
+     docs/chef-kitchen-options/brief.md): no tab that holds one Open button. Guides keeps its held-back switch here. */
+  var C_TOOLS = ['recipes', 'suppliers', 'functions', 'deliveries', 'guides'];
+  function chefToolAllowed(t) { return chefAllowed() && C_TOOLS.indexOf(t) >= 0 && (t !== 'guides' || featOn('guides')); }
   function chefAllowed() {
     var p = me(), c = S.config || {};
     return !!(kitchenAccess() && S.configState === 'ok' && S.configFull && p &&
@@ -6820,33 +6823,36 @@
         card: function (x) { return '<div class="c-history-line"><strong>' + esc(x.text) + '</strong><span>' + esc(x.qty || '') + '</span><p class="hint">' + esc([lineSec(x), x.addedBy, x.deleted ? 'Removed' : (order ? x.ordered : x.done) ? (order ? 'Ordered' : 'Ticked') : 'Open'].filter(Boolean).join(' · ')) + '</p></div>'; },
         empty: 'No lines were recorded for this day.' }) + '</section>';
   }
-  function chefKitchenHTML(tab) {
-    var cards = {
-      recipes: ['Recipes & drawings', 'Change recipes and their plating drawings.', '#/manage', 'Open recipes & drawings'],
-      suppliers: ['Supplier order', supplierEdit() ? 'Place orders, check earlier orders and change the catalogue.' : 'Read the catalogue, place orders and check earlier orders. The head chef changes the catalogue.', '#/suppliers', 'Open supplier order'],
-      functions: ['Functions', fnOK() ? 'Create or change a booking with your Functions permission.' : 'Read the bookings and run the service. Booking changes need the separate Functions permission.', fnOK() ? '#/functions' : '#/fn', fnOK() ? 'Manage functions' : 'View functions'],
-      deliveries: ['Delivery received', 'Record and read today’s delivery temperatures.', '#/deliveries', 'Open delivery received'],
-      guides: ['Guides', 'Read the guides available to your role.', '#/guides', 'Open guides']
+  function chefTools() {
+    return {
+      recipes: ['Recipes & drawings', 'Change recipes and their plating drawings.', '#/manage'],
+      suppliers: ['Supplier order', supplierEdit() ? 'Place orders, check earlier orders and change the catalogue.' : 'Read the catalogue, place orders and check earlier orders. The head chef changes the catalogue.', '#/suppliers'],
+      functions: ['Functions', fnOK() ? 'Create or change a booking with your Functions permission.' : 'Read the bookings and run the service. Booking changes need the separate Functions permission.', fnOK() ? '#/functions' : '#/fn'],
+      deliveries: ['Delivery received', 'Record and read today’s delivery temperatures.', '#/deliveries'],
+      guides: ['Guides', 'Read the guides available to your role.', '#/guides']
     };
-    if (tab !== 'kitchen-home') {
-      var c = cards[tab];
-      return '<section class="set-block"><h3 class="a-ch-h">' + c[0] + '</h3><p class="hint">' + c[1] + '</p><div class="btn-row"><a class="btn dark" href="' + c[2] + '">' + c[3] + '</a></div></section>';
-    }
-    return '<section class="set-block"><h3 class="a-ch-h">Kitchen tools</h3><p class="hint">The same book, suppliers and records, with your current permissions.</p><div class="dsh-dtiles c-tiles">' +
-      Object.keys(cards).filter(chefTabAllowed).map(function (t) { return chefTile(t, cards[t][0], cards[t][3]); }).join('') +
-      '</div></section>';
+  }
+  // One row per tool the chef may open: its name, what this role can do there, and Open in words. The whole row is the link.
+  function chefKitchenHTML() {
+    var tools = chefTools();
+    return '<section class="set-block c-tools"><h3 class="a-ch-h">Kitchen tools</h3>' +
+      C_TOOLS.filter(chefToolAllowed).map(function (t) {
+        var c = tools[t];
+        return '<a class="c-tool" href="' + c[2] + '" data-tool="' + t + '"><strong>' + esc(c[0]) + '</strong><span class="c-tool-go">Open <span aria-hidden="true">›</span></span><small>' + esc(c[1]) + '</small></a>';
+      }).join('') + '</section>';
   }
   function chefHTML() {
     if (!chefAllowed()) {
       chefHistoryClear(); S.ctab = 'dashboard'; fdClose(true, true); fdLast = [];
       return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Chef panel</h2><p class="hint">Only head chefs and sous chefs can open this panel. Sign in with your own chef PIN.</p><a class="btn" href="#/prep">Open the prep list</a></section>';
     }
-    if (!chefTabAllowed(S.ctab)) S.ctab = 'dashboard';
+    if (!chefTabAllowed(S.ctab)) S.ctab = C_TOOLS.indexOf(S.ctab) >= 0 ? 'kitchen-home' : 'dashboard';   // a tool's old tab lands on Kitchen
     var at = S.ctab, group = chefGroupOf(at), tabs = group[2].filter(chefTabAllowed), title = whoHead() ? 'Head chef panel' : 'Sous chef panel';
     var find = function (cls) { return '<button type="button" class="a-find ' + cls + '" data-p="a-find" aria-haspopup="dialog" aria-keyshortcuts="/"><span>Find</span><kbd aria-hidden="true">/</kbd></button>'; };
     var rail = '<aside class="a-nav">' + find('a-find-rail') + '<div class="a-quick-list"><button type="button" class="a-quick" data-p="c-tab" data-t="dashboard" aria-current="' + (at === 'dashboard') + '">Dashboard</button></div><p class="ad-nav-label">' + title + '</p><nav class="a-groups" aria-label="Chef rooms">' +
       C_GROUPS.map(function (g) { return '<button type="button" class="a-group" data-p="c-group" data-g="' + g[0] + '" aria-current="' + (group[0] === g[0] ? 'page' : 'false') + '"><span>' + g[1] + '</span></button>'; }).join('') + '</nav></aside>';
-    var nav = '<nav class="a-tabs" aria-label="' + group[1] + ' pages">' + tabs.map(function (t) { return '<button type="button" class="a-tab" data-p="c-tab" data-t="' + t + '" aria-pressed="' + (at === t) + '">' + C_NAMES[t] + '</button>'; }).join('') + '</nav><nav class="a-onpage" aria-label="On this page" hidden></nav>';
+    // Kitchen is one page: its tab row is not shown
+    var nav = '<nav class="a-tabs" aria-label="' + group[1] + ' pages"' + (group[0] === 'kitchen' ? ' hidden' : '') + '>' + tabs.map(function (t) { return '<button type="button" class="a-tab" data-p="c-tab" data-t="' + t + '" aria-pressed="' + (at === t) + '">' + C_NAMES[t] + '</button>'; }).join('') + '</nav><nav class="a-onpage" aria-label="On this page" hidden></nav>';
     var pane;
     if (at === 'dashboard') pane = chefDashboardHTML();
     else if (at === 'prep-standards') pane = psPanelHTML();
@@ -6857,10 +6863,10 @@
     else if (at === 'minutes') pane = minAdminHTML();
     else if (at === 'mail') pane = mlListHTML('Kitchen mail', mlSousSay());
     else if (at === 'prep-history' || at === 'order-history') pane = chefHistoryHTML();
-    else pane = chefKitchenHTML(at);
+    else pane = chefKitchenHTML();
     pane = pane.replace(/ id="rtitle"/g, '');
     var bar = '<div class="p-bar"><span><strong>' + title + '</strong> · ' + esc(whoName()) + '</span><span class="p-links">' + (adminTabs() ? '<a class="p-link" href="#/admin">Admin panel</a>' : '') + '</span></div>';
-    var heading = find('a-find-head') + '<p class="ad-eyebrow">' + title + '</p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + group[1] + '</h2><p class="ad-intro">' + ({today:'Run the shift with the team.',reports:'Read the prep and order records for a day.',team:'Plan the team and look after the people.',kitchen:'The recipe book and the kitchen tools.',prep:'The prep each section should have ready before service.'})[group[0]] + '</p>';
+    var heading = find('a-find-head') + '<p class="ad-eyebrow">' + title + '</p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + group[1] + '</h2><p class="ad-intro">' + ({today:'Run the shift with the team. ' + (adminTabs() ? 'Owner reports, permissions and settings are in the Admin panel.' : whoHead() ? 'Owner reports, permissions and settings need the Admin panel’s Google sign-in.' : 'Owner reports, permissions and settings are the head chef’s.'),reports:'Read the prep and order records for a day.',team:'Plan the team and look after the people.',kitchen:'The recipe book and the kitchen tools.',prep:'The prep each section should have ready before service.'})[group[0]] + '</p>';
     if (at === 'plan') {
       bar = '';
       heading = find('a-find-head') + '<div class="tm-chef-identity"><p><strong>' + title + '</strong> · ' + esc(whoName()) + '</p>' + (adminTabs() ? '<a class="p-link" href="#/admin">Admin panel</a>' : '') + '</div><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + group[1] + '</h2>';
@@ -7292,6 +7298,8 @@
     });
     if (S.name === 'chef') {
       if (chefAllowed()) C_GROUPS.forEach(function (g) { g[2].filter(chefTabAllowed).forEach(function (t) { out.push({ k: 'page', v: t, name: C_NAMES[t], where: g[1] }); }); });
+      var tools = chefTools();
+      C_TOOLS.filter(chefToolAllowed).forEach(function (t) { out.push({ k: 'tool', v: tools[t][2], name: tools[t][0], where: 'Kitchen' }); });
       return out;
     }
     A_GROUPS.forEach(function (g) {
@@ -7330,6 +7338,8 @@
     fdClose(true);
     ovAfterBack(function () {
       if (x.k === 'part') { adminJumpTo(x.v); return; }
+      // a Kitchen tool has its own page: only an address from this file's own list
+      if (x.k === 'tool') { if (S.name === 'chef' && /^#\/[a-z]+$/.test(x.v)) location.hash = x.v; return; }
       if (x.k === 'page') fdPage(x.v);
       else { if (intelligenceBusy()) return; S.atab = 'people'; S.personId = x.v; S.agLast = S.agLast || {}; S.agLast.team = 'people'; lsSet('lk.prep.atab', 'people'); draw(); adminToTop(); }
       var h = S.root && S.root.querySelector('#rtitle'); if (h) h.focus({ preventScroll: true });
@@ -7461,9 +7471,10 @@
      laptop's page tabs lit Prep while they were open (audit, 8 Nov 2026). They light nothing then, like the other chef hat
      pages. Two small lists, no reads. */
   function navMark() {
-    var sub = S.name === 'prep' && !!(S.staffOpen || S.notesOpen || S.minOpen);
+    // Only while the prep list is on screen: S.name starts as 'prep', so Home lit Prep too (audit, 15 Nov 2026)
+    var here = S.name === 'prep' && !!S.root && document.body.contains(S.root), sub = here && !!(S.staffOpen || S.notesOpen || S.minOpen);
     document.querySelectorAll('.tabbar a[href="#/prep"], .pnav a[href="#/prep"]').forEach(function (a) {
-      if (sub) a.removeAttribute('aria-current'); else if (S.name === 'prep') a.setAttribute('aria-current', 'page');
+      if (sub) a.removeAttribute('aria-current'); else if (here) a.setAttribute('aria-current', 'page');
     });
   }
   function draw() {
@@ -7554,10 +7565,6 @@
      and a tick or remove on an older line is applied to the copy here. No re-reading after every tap. */
   function ordReload() { draw(); }
   function ordPatch(date, id, ch) { (S.ordAll || []).forEach(function (x) { if (x.date === date && x.id === id) Object.assign(x, ch); }); draw(); }
-  function ordAllLines() {
-    var t = dayNow();
-    return S.ordDate === t && S.ordState === 'ok' ? (S.ordAll || []).filter(function (x) { return x.date !== t; }).concat(S.ordLines || []) : (S.ordAll || []);
-  }
   /* Like the prep list: anything not ordered on the last written day rolls onto today's order list by itself, every day
      until someone ticks it as ordered. The copy's id comes from the first line (root), so two phones rolling at once
      write the same line once. Each phone tries once a day (lk.ord.rolled), so the reads stay small. */
@@ -9562,7 +9569,6 @@ if (list.length) sg('oreg', 's');
      Staff ids only are stored in att and acts (names are looked up from the staff list). No listener, no polling. */
   var MN_DAYS = 90, MN_OPEN = 30, MN_LATE = 3, MN_STALE = 30 * 60000;
   var MN_ATT = [['present', 'Present'], ['apology', 'Apology'], ['absent', 'Absent']];
-  var MN_ALL = { decisions: 'Decisions', menu: 'Menu changes', safety: 'Safety', dates: 'Dates ahead', other: 'Other' };
   function mnName(id) { var p = ((S.config && S.config.people) || []).filter(function (x) { return x.id === id; })[0]; return p ? p.name : (id ? 'Former staff' : ''); }
   function mnLines(t) { return String(t || '').split(/\n/).map(function (s) { return s.trim(); }).filter(Boolean); }
   /* only the head chef (Google account) writes and publishes minutes. Sous chefs read the register. */
@@ -9665,7 +9671,6 @@ if (list.length) sg('oreg', 's');
   function mnBox(num, title, inner, cls) {
     return '<section class="mn-box' + (cls ? ' ' + cls : '') + '"><h3 class="mn-bh">' + (num ? '<span class="mn-bn">' + num + '</span>' : '') + esc(title) + '</h3>' + inner + '</section>';
   }
-  function mnList(t, link) { return mnUl(mnLines(t), link); }
   function mnUl(lines, link) { return '<ul class="mn-ul">' + lines.map(function (l) { return '<li>' + (link ? linkNote(l) : esc(l)) + '</li>'; }).join('') + '</ul>'; }
   /* a section's lines in parts: a line starting with "# " is a heading and starts a new part (the team notes template uses them) */
   function mnParts(t) {

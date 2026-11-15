@@ -12,8 +12,8 @@
   .wall-main>.kb-season-note.kb-season-with-ticker>.kb-season-heading>.kb-season-language-slot{inline-size:auto;text-align:left}
 }
 .kb-season-heading{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:8px;margin:0 0 6px;min-width:0}
-.kb-season-heading .kb-season-note-art,.kb-season-heading .kb-season-work-art{display:block;width:44px;flex:0 0 44px;background:none}
-.kb-season-heading .kb-season-note-art>svg,.kb-season-heading .kb-season-work-art>svg{display:block;width:44px;height:44px}
+.kb-season-heading .kb-season-note-art{display:block;width:44px;flex:0 0 44px;background:none}
+.kb-season-heading .kb-season-note-art>svg{display:block;width:44px;height:44px}
 .kb-season-with-ticker .kb-season-heading h3{font:700 1.25rem/1.1 var(--display);text-transform:uppercase;color:var(--bar-text);margin:0;overflow-wrap:anywhere}
 .kb-season-language-slot{display:block;min-width:0;min-block-size:1.3125rem}
 .kb-season-heading>.kb-season-language-slot{inline-size:4.8rem;text-align:right}

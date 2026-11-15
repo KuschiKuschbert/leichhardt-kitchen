@@ -15,7 +15,7 @@ The chef hat adds Head chef panel or Sous chef panel at #/chef. A current person
 | Today | Dashboard from today's already loaded lists, Chef to-do, Shift pings, conditional shared Kitchen mail |
 | Reports | Prep history and Order history, one selected day, with search and recorded status |
 | Team | Today's team planner, Manage staff and Meeting minutes sign-off register |
-| Kitchen | Overview and the existing recipe, supplier, function, delivery and guide workspaces |
+| Kitchen | One page of rows that open the existing recipe, supplier, function, delivery and guide workspaces (changed 15 November 2026 from an Overview and five one-button tabs: [brief](../chef-kitchen-options/brief.md)) |
 
 Chef to-do, Today's team, staff, pings, the register and shared mail use their existing renderers, state and writes inside the panel. There are no copied editors or second drafts. Team and to-do refresh, clock and view-restoration hooks recognise their chef subpages. Lazy recipe, supplier, function, delivery and guide tools keep their current routes and return through the normal page trail.
 

@@ -159,6 +159,11 @@ async function waitForJump(p, id, allowEnd) {
   ok(!/\|true$/.test(notFound), 'odd address: an unknown id shows no recipe card (' + notFound + ')');
   ok(p.errors.length === 0, 'odd address: no page errors ' + p.errors.join(' | '));
   await p.context().close();
+  // A card names each linked card once: Barramundi's four greens all link Asian Greens (audit, 15 Nov 2026)
+  p = await L.open(b, '#/recipes', { who: '', wait: 1200 });
+  const twice = await p.evaluate(() => [...document.querySelectorAll('a.dish')].map(a => a.textContent.replace(/\s+/g, ' ').trim()).filter(t => { const m = t.match(/(?:With|Goes on) (.*)$/); if (!m) return false; const parts = m[1].split(', '); return new Set(parts).size < parts.length; }));
+  ok(twice.length === 0, 'recipe cards: no linked card is named twice in With or Goes on (' + twice.join(' | ').slice(0, 160) + ')');
+  await p.context().close();
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); console.log(R.join('\n')); process.exit(1); });

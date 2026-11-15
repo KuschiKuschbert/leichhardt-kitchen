@@ -76,7 +76,6 @@
   function median(list) { if (!list.length) return null; var v = list.slice().sort(function (a, b) { return a - b; }); return v[Math.floor(v.length / 2)]; }
   function allMins(rows, sec) { var out = []; rows.forEach(function (r) { Object.keys(r.p.mins).forEach(function (k) { if (!sec || k === sec) out = out.concat(r.p.mins[k]); }); }); return out; }
   function dur(m) { if (m == null) return 'No ticks'; m = Math.round(m); var h = Math.floor(m / 60), r = m % 60; return h ? h + ' h' + (r ? ' ' + r + ' min' : '') : r + ' min'; }
-  function tileDur(m) { if (m == null) return 'No ticks'; m = Math.round(m); var h = Math.floor(m / 60), r = m % 60; return (h ? h + '<small>h</small> ' : '') + (h && !r ? '' : r + '<small>m</small>'); }
   function dow(day) { return new Date(day + 'T12:00:00Z').getUTCDay(); }
   function dayLabel(day) { var d = new Date(day + 'T12:00:00Z'); return DAYS[d.getUTCDay()].slice(0, 3) + ' ' + d.getUTCDate() + ' ' + MON[d.getUTCMonth()]; }
   function shortDay(day) { var d = new Date(day + 'T12:00:00Z'); return d.getUTCDate() + ' ' + MON[d.getUTCMonth()]; }

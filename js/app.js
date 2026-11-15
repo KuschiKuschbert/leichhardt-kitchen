@@ -69,7 +69,7 @@
       byId[r.id] = r;
     });
     D.recipes.forEach(function (r) {
-      r.ingredients.forEach(function (i) { if (i.link && byId[i.link]) { (usedIn[i.link] = usedIn[i.link] || []).push(r.id); } });
+      r.ingredients.forEach(function (i) { if (i.link && byId[i.link]) { var u = usedIn[i.link] = usedIn[i.link] || []; if (u.indexOf(r.id) < 0) u.push(r.id); } });
     });
 
     /* ---------- menu sections: the guest menu in its printed order, then the prep recipes ---------- */
@@ -1140,7 +1140,9 @@
       var items = shown.map(function (r) {
         var h = hitId(r.id), m = passOk(r), dish = isDish(r);
         if (s && m) n++;
-        var links = r.ingredients.filter(function (i) { return i.link && byId[i.link]; }).map(function (i) { return byId[i.link].short || byId[i.link].name; });
+        // each card named once: four lines of one dish can link the same card (Barramundi's Asian greens, audit 15 Nov 2026)
+        var once = function (v, k, a) { return a.indexOf(v) === k; };
+        var links = r.ingredients.filter(function (i) { return i.link && byId[i.link]; }).map(function (i) { return byId[i.link].short || byId[i.link].name; }).filter(once);
         var used = (usedIn[r.id] || []).map(function (id) { return byId[id].name; });
         var sub = dish ? (r.forLine === 'Template' ? 'Template' : (links.length ? 'With ' + links.join(', ') : 'Card ' + r.no)) : (used.length ? 'Goes on ' + used.join(', ') : KIND[r.kind]);
         var faded = (ui.lens && !h) || (s && !m);
@@ -1413,7 +1415,7 @@
     if (st === 'wait') { root.innerHTML = mgNote('Supplier order', 'Checking your kitchen sign-in...', ' ', 'chef'); if (P && P.warm) P.warm(); return; }
     if (st !== 'yes' || (route.mode === 'manage' && !B.edit())) {
       if (window.LK_SUP) window.LK_SUP.reset();
-      root.innerHTML = mgNote(st === 'nopin' ? 'Sign in to the kitchen' : 'Chef access needed', st === 'nopin' ? 'Open the Prep list, enter the kitchen PIN and sign in.' : route.mode === 'manage' ? 'Only the head chef or admin can change suppliers and pars.' : 'The head chef and sous chefs can open supplier orders with their own PIN.', '<div class="btn-row"><a class="btn dark" href="#/prep">Open the Prep list</a></div>'); return;
+      root.innerHTML = mgNote(st === 'nopin' ? 'Sign in to the kitchen' : route.mode === 'manage' ? 'Head chef access needed' : 'Chef access needed', st === 'nopin' ? 'Open the Prep list, enter the kitchen PIN and sign in.' : route.mode === 'manage' ? 'Only the head chef or admin can change suppliers and pars.' : 'The head chef and sous chefs can open supplier orders with their own PIN.', '<div class="btn-row"><a class="btn dark" href="#/prep">Open the Prep list</a></div>'); return;
     }
     if (window.LK_SUP) {
       if (window.LK_SUP.api === SUP_API) window.LK_SUP.mount(root, route);
