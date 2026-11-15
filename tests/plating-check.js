@@ -164,8 +164,9 @@ function bookPlate(r) {
   return m;
 }
 // ---------- Draw it for me, as the button does it on a fresh drawing (seed 0, js/smart.js:772) ----------
-// a sauce the recipe serves on the side: in a ramekin, as the book draws every one of them
-const WANT_SIDE = /\bside\b|ramekin|choice|choose/i;
+/* A sauce the recipe serves on the side: in a ramekin, as the book draws every one of them. Phrases, not the word side:
+   the nachos' sour cream "on the other side" is spread on the nachos (15 Nov 2026). */
+const WANT_SIDE = /on the side|side sauce|\bramekin|sauce of choice|\bchoice\b|\bchoose\b|\bguests?\b/i;
 // Draw it for me, as the button does it on a fresh drawing (seed 0 is the button's own, js/smart.js ui.cmd)
 function auto(r, seed) {
   const d = DR.blank(r.id, 'plate'); let res = null;
@@ -218,7 +219,7 @@ function score(x, band) {
   return s;
 }
 // a sauce that is meant to be a line or a swoosh across the plate (its own words say so) is not a stick
-const LINE_OK = /^$/;
+const LINE_OK = /wav|squiggl|zigzag|\bline\b|across|swoop|swoosh|smear|swipe/i;
 /* The rules every auto plate keeps (each one was broken by Draw it for me before 15 Nov 2026). Each returns the dishes
    that break it. */
 const RULES = [
