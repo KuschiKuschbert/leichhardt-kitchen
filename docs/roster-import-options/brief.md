@@ -315,3 +315,35 @@ After #699 merged, the owner found "a big problem, sometimes we're given nicknam
 5. Name links (N) folds the saved links, each with Unlink. Unlinking keeps days already filled: "Unlinked Mary Jo Kahale. Days already filled keep MJ; change them by hand if needed."
 
 **Checks.** `tests/roster-import.test.js` (68): linked names, case and spaces, a linked book person not found by a given name, a link to someone gone, two names on one person, the plan with a link. `tests/roster-import-ui.test.js` (57): Link with nobody chosen; Link saves the record (`links`, `upd`, `by`); she leaves the list and her days are named; Wednesday unchanged; the fold lists the link; MJ on Thursday with her roster time and saved; the next roster matches her by the link; Unlink empties the record; links that cannot be read fill nothing.
+
+## Step 5: roster hours saved with the plan (15 November 2026)
+
+The owner said: "We seem to have somehow lost the working hours for imported rosters in Today's team". The hours had never been saved. They lived in the importing device's memory (`tmRs.times`), so a reload, the 04:00 refresh, an update or a lock lost them, and sous chefs never saw them; a split roster kept only its last shift. Asked who should see saved hours, the owner answered: "I thought we agreed that everyone on the day sees who's coming in when" (8 Nov 2026: staff see who is on today, with shift times, from Home).
+
+**Quick check (small change to existing pages: no new tab, button, pop-up or step).**
+- **Where the hours go:** each person's roster hours are saved per shift on their plan entry: `team/<day>.on[] = { id, sh, sec, from, to }`, from the import (`tmRsAdd()`).
+- **Where they show:**
+  - the grid's "Roster 10:00 to 21:30" line, now from the saved or draft plan (`tmHoursWords()`), with a split shown in order;
+  - Whole day review;
+  - the saved overview ("Lunch, roster 10:00 to 21:30");
+  - Your day ("Lunch · 10:00 to 21:30", and "Lunch from 11:00" before the start);
+  - each On today cell, as a quiet line under the name. Only "back 15:00" stays bold.
+- **What changes nothing:** Copy last weekday never copies last week's hours. Removing a service removes its hours. A chef's later Save keeps them.
+- **Contract fit:**
+  - No new read, listener or rule: the rules check the list sizes only, confirmed on the emulator (`client-shapes.test.mjs`: chefs and admin allowed, staff refused, all 291 rows pass).
+  - Every value is checked as whole minutes before it is drawn or saved.
+  - Older code ignores the extra fields, so a revert loses nothing saved.
+  - Reference fit: Flighty and Airbnb (real times with the person and place).
+- **Lines:** the On today card on a 390 px phone, eight people on a double, all with hours: head chef 476 to 581 px, staff 396 to 486 px. Each cell gains one quiet line; this is the cost of "everyone sees who's coming in when". Taps are unchanged.
+- **Break-it:**
+  - A broken stored value (text, from after to, a fraction) is dropped, never shown or written back: checked.
+  - A sous chef's Save after the import keeps every hour: checked.
+  - Split shifts show each part: checked.
+  - Old code: the new checks fail 8 of 8 on the code before this change.
+
+**Checks:**
+- `tests/team-roster-hours.test.js`: Home On today and its whole-day fold, Your day, the grid, the saved overview, Whole day, a Save keeping hours, removing a service, broken values, and Copy last weekday. It fails 8 times on the old code.
+- `tests/roster-import-ui.test.js`: hours saved on Thursday and on all six days, seen on another phone by a sous chef, and kept through that sous chef's Save.
+- 38 related files pass locally.
+
+Screenshots: `roster-hours-home-head-390.png`, `roster-hours-home-staff-390.png`.
