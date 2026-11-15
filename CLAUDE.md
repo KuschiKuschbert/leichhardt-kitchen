@@ -36,6 +36,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Firestore reads and writes, what each page costs | `docs/firestore-usage.md` |
 | What a tap shows after it | `docs/action-feedback.md` (the rule), `docs/action-feedback-options/brief.md` (the audit) |
 | Loading, saving, progress and motion | `docs/loading-motion.md` (current), `docs/loading-feedback-options/brief.md` |
+| Long amounts, recipe headings and phone overflow repairs (16 Nov 2026) | `docs/responsive-overflow.md` |
 | Shared controls, search and tables | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
 | A whole-app audit | `docs/whole-app-audit.md`, `docs/ux-council-audit.md`, `docs/whole-app-inventory.md` |
 | Shared surface and operational colours, banners and category exceptions | `docs/surface-colours.md` (chosen hybrid), `docs/colour-coding.md`, `docs/design-patterns.md` |

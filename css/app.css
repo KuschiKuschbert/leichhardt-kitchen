@@ -159,7 +159,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .card { display: flex; flex-direction: column; gap: 1.4rem; padding: 1.6rem; background: var(--surface-paper); border: 1.5px solid var(--edge); border-radius: 14px; min-width: 0; }
 .card-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; border-bottom: 3px solid var(--ink); padding-bottom: 0.75rem; background: var(--surface-paper); }
 .card-head > div { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
-.card-head h2 { margin: 0; font-family: var(--display); font-weight: 700; font-size: 3rem; line-height: 1; }
+.card-head h2 { margin: 0; overflow-wrap: anywhere; font-family: var(--display); font-weight: 700; font-size: 3rem; line-height: 1; }
 .card-head h2:focus { outline: none; }
 .yield { color: var(--muted); }
 .menu-line { font-size: 0.875rem; color: var(--muted); }
@@ -228,7 +228,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .tile .t-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; }
 .tile .t-kind { font-family: var(--display); font-weight: 700; font-size: 0.8125rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-ink); padding-top: 0.25rem; }
 .tile .t-no { font-family: var(--display); font-weight: 700; font-size: 2.1rem; line-height: 1; color: var(--accent); }
-.tile .t-name { font-family: var(--display); font-weight: 700; font-size: 1.75rem; line-height: 1.05; }
+.tile .t-name { overflow-wrap: anywhere; font-family: var(--display); font-weight: 700; font-size: 1.75rem; line-height: 1.05; }
 .tile .t-yield { font-size: 0.875rem; color: var(--muted); }
 .tile .chips { margin-top: auto; gap: 0.35rem; }
 .tile .tag { font-size: 0.75rem; }
@@ -1935,10 +1935,10 @@ button.wm-a.wm-tile { text-align: left; }
   .dr-chips .chip { padding: 0 0.7rem; }
 }
 /* ---------- readability (20 Oct 2026) ----------
-   The amount is what a cook acts on, so it reads in ink, bold, in the body font, on one line. Allergen words are never
+   The amount is what a cook acts on, so it reads in ink, bold, in the body font, wrapping within its row. Allergen words are never
    the smallest text on a card, and "may have" tags get a tint as well as the dashed border. Small buttons use the body
    font, not the notebook script. A phone's top bar is one slim line. */
-.nb-q { font: 700 1.05rem var(--body); color: var(--ink); white-space: nowrap; margin-left: 0.4rem; }
+.nb-q { display: inline-block; max-width: calc(100% - 0.4rem); font: 700 1.05rem var(--body); color: var(--ink); white-space: normal; margin-left: 0.4rem; }
 .tag { font-size: 0.9375rem; }
 .tag.maybe { background: var(--hit); }
 .allergen-row .from { font-size: 0.9375rem; color: var(--ink); }
