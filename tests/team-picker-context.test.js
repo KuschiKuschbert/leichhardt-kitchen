@@ -1,9 +1,11 @@
-// A held picker keeps its original person/service context when a configuration update redraws the roster.
+// A held picker keeps its own date, person and service when the page redraws under it. Rows on one clock (16 Nov 2026):
+// each row control's key names its person and service (tm-sec:ID:SH, tm-at:ID:SH:N, tm-len:ID:SH:N, tm-addsvc:ID) and
+// carries the date it was drawn for, so an old choice can never land on another person, service or date.
 // Every person, time and Firebase record here is synthetic. The server belongs to this test only.
 const L = require('./lib');
 const { R, ok } = L.results();
 const key = (...parts) => ['kitchens', L.PIN, ...parts].join('/');
-const today = L.ymd(new Date(L.NOW)), CFG = key('config', 'main'), TEAM = key('team', today);
+const today = L.ymd(new Date(L.NOW)), tomorrow = L.ymd(new Date(L.NOW + 86400000)), CFG = key('config', 'main'), TEAM = key('team', today);
 const people = [
   { id: 'sam', name: 'Sam', role: 'sous', active: true, add: true, tick: true },
   { id: 'ann', name: 'Ann', role: 'staff', active: true, add: true, tick: true },
@@ -23,6 +25,8 @@ const fixture = overlap => ({
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const read = p => p.evaluate(k => __fake.dump()[k], TEAM);
 const field = (p, name) => p.locator('select[data-k="' + name + '"]');
+const value = (p, name) => p.evaluate(k => { const e = document.querySelector('select[data-k="' + k + '"]'); return e ? e.value : null; }, name);
+const saveOff = p => p.locator('[data-p="tm-save"]').isDisabled();
 const click = async (p, selector) => { await p.locator(selector).click(); await L.settle(p, 150); };
 async function ready(p) { await L.waitFor(p, () => !!document.querySelector('select[data-k="tm-sec:ann:lunch"]'), null, 7000); }
 async function open(browser, base, options) {
@@ -48,6 +52,17 @@ async function save(p) {
   await click(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => __fake.dump()[k].v === 2 && !/Saving/.test(document.querySelector('[data-p="tm-save"]').textContent), TEAM, 6000);
 }
+// A change from a picker the page did not draw this way: [key, data-sh (null for none), value, data-day (default: the
+// page's)]. Each goes in the rows' list, as a held or stray picker would, and is taken out again.
+const forge = (p, list) => p.evaluate(list => {
+  const root = document.querySelector('.tm-plan'), day = document.querySelector('.tm-notebook').getAttribute('data-day');
+  list.forEach(([k, sh, v, d]) => {
+    const el = document.createElement('select'), o = document.createElement('option');
+    el.setAttribute('data-k', k); el.setAttribute('data-day', d || day); if (sh !== null) el.setAttribute('data-sh', sh);
+    o.value = v; o.textContent = v; o.selected = true; el.appendChild(o);
+    root.appendChild(el); el.dispatchEvent(new Event('change', { bubbles: true })); el.remove();
+  });
+}, list);
 
 (async () => {
   const server = require('./serve').make();
@@ -58,49 +73,83 @@ async function save(p) {
     browser = await L.start();
     let p = await open(browser, base);
     const beforeSection = await read(p);
-    // The day grid (15 Nov 2026): each cell's key names its own service, tm-sec:<id>:<sh>
+    // Each service line's section picker names its own service: tm-sec:<id>:<sh>
     const sectionOption = await holdPicker(p, 'tm-sec:ann:lunch', 'pans');
     ok(/Section for Ann on Lunch/.test(await p.locator('dialog.ux-picker').innerText()), 'held section: picker identifies the original Ann Lunch context');
     await removeLunch(p);
-    ok(await field(p, 'tm-sec:ann:dinner').inputValue() === 'pans' && !await field(p, 'tm-sec:ann:lunch').count(), 'configuration change: the Lunch column goes and Ann\'s Dinner section stays');
+    ok(await field(p, 'tm-sec:ann:dinner').inputValue() === 'pans' && !await field(p, 'tm-sec:ann:lunch').count(), 'configuration change: Ann\'s Lunch line goes and her Dinner section stays');
     if (await p.locator(sectionOption).count()) await p.locator(sectionOption).click();
     await L.settle(p, 180);
-    ok(await field(p, 'tm-sec:ann:dinner').inputValue() === 'pans' && await p.locator('[data-p="tm-save"]').isDisabled(), 'held section: choosing the old Lunch option cannot create a Dinner draft change');
+    ok(await field(p, 'tm-sec:ann:dinner').inputValue() === 'pans' && await saveOff(p), 'held section: choosing the old Lunch option cannot create a Dinner draft change');
     ok(same(await read(p), beforeSection), 'held section: no acknowledged roster or break changes before Save');
     // A picker keyed the old way (no service in its key), or one whose captured service does not match its key, is
     // refused. This fails on the row-picker code, which took the service from the row's Service to edit.
-    const refused = await p.evaluate(() => {
-      const root = document.querySelector('.tm-grid'), make = (k, sh) => { const el = document.createElement('select'); el.setAttribute('data-k', k); el.setAttribute('data-day', document.querySelector('.tm-notebook').getAttribute('data-day')); el.setAttribute('data-sh', sh); el.innerHTML = '<option value="grill" selected>Grill</option>'; root.appendChild(el); el.dispatchEvent(new Event('change', { bubbles: true })); el.remove(); };
-      make('tm-sec:ann', 'dinner'); make('tm-sec:ann:dinner', 'lunch');
-      return document.querySelector('select[data-k="tm-sec:ann:dinner"]').value;
-    });
-    ok(refused === 'pans' && await p.locator('[data-p="tm-save"]').isDisabled(), 'old key: a section picker without its service, or with a service that does not match its key, changes nothing');
+    await forge(p, [['tm-sec:ann', 'dinner', 'grill'], ['tm-sec:ann:dinner', 'lunch', 'grill'], ['tm-sec:ann:dinner', 'dinner', 'grill', tomorrow]]);
+    await L.settle(p, 150);
+    ok(await value(p, 'tm-sec:ann:dinner') === 'pans' && await saveOff(p), 'old key: a section picker without its service, with a service that does not match its key, or from another date changes nothing');
     await L.pick(p, 'select[data-k="tm-sec:ann:dinner"]', 'grill'); await save(p);
     const afterSection = await read(p);
     ok(afterSection.on.some(x => x.id === 'ann' && x.sh === 'dinner' && x.sec === 'grill') &&
       afterSection.on.some(x => x.id === 'ann' && x.sh === 'lunch' && x.sec === 'grill') && same(afterSection.br, beforeSection.br),
-    'fresh section: the Dinner cell changes only Dinner and retains the earlier breaks');
+    'fresh section: the Dinner line changes only Dinner and retains the earlier breaks');
     ok(!p.errors.length, 'held section: no browser errors ' + p.errors.join(' | '));
     await p.context().close();
 
     // Both services offer 14:00. Option compatibility alone cannot make an old service's picker safe to rebind.
     p = await open(browser, base, { extra: fixture(true) });
-    await click(p, '[data-p="tm-focus"][data-id="ann"]');
-    const beforeBreak = await read(p), breakOption = await holdPicker(p, 'tm-at:ann:0', '840');
+    const beforeBreak = await read(p), breakOption = await holdPicker(p, 'tm-at:ann:lunch:0', '840');
+    ok(/Break 1 for Ann on Lunch/.test(await p.locator('dialog.ux-picker').innerText()), 'held break: the picker names Ann, Lunch and the break');
     await removeLunch(p);
-    ok(await p.locator('.tm-detail-workbench[data-id="ann"]').getAttribute('data-sh') === 'dinner' &&
-      await field(p, 'tm-at:ann:0').inputValue() === '1140', 'configuration change: the named editor now shows the existing Dinner break');
+    ok(!await field(p, 'tm-at:ann:lunch:0').count() && await field(p, 'tm-at:ann:dinner:0').inputValue() === '1140', 'configuration change: Ann\'s Lunch line goes and her Dinner break shows as saved');
     if (await p.locator(breakOption).count()) await p.locator(breakOption).click();
     await L.settle(p, 180);
-    ok(await field(p, 'tm-at:ann:0').inputValue() === '1140' && await p.locator('[data-p="tm-save"]').isDisabled(),
+    ok(await field(p, 'tm-at:ann:dinner:0').inputValue() === '1140' && await saveOff(p),
       'held break: a valid 14:00 Lunch option cannot replace the Dinner break after redraw');
     ok(same(await read(p), beforeBreak), 'held break: the earlier selection writes no acknowledged data');
-    await L.pick(p, 'select[data-k="tm-at:ann:0"]', '1155'); await save(p);
+    // the break keys: no service in the key (the old details panel's), another service, another date, or a person
+    // with no such break
+    await forge(p, [['tm-at:ann:0', 'dinner', '1155'], ['tm-at:ann:dinner:0', 'lunch', '1155'], ['tm-at:ann:dinner:0', null, '1155'], ['tm-at:ann:dinner:0', 'dinner', '1155', tomorrow],
+      ['tm-len:ann:0', 'dinner', '45'], ['tm-len:ann:dinner:0', 'lunch', '45'], ['tm-len:ann:dinner:0', 'dinner', '45', tomorrow], ['tm-at:bo:dinner:0', 'dinner', '1155']]);
+    await L.settle(p, 150);
+    ok(await value(p, 'tm-at:ann:dinner:0') === '1140' && await value(p, 'tm-len:ann:dinner:0') === '30' && !await field(p, 'tm-at:bo:dinner:0').count() && await saveOff(p),
+      'old key: a break picker without its service, with another service, from another date or for a break that is not there changes nothing');
+    await L.pick(p, 'select[data-k="tm-at:ann:dinner:0"]', '1155'); await save(p);
     const afterBreak = await read(p);
     ok(afterBreak.br.some(x => x.id === 'ann' && x.sh === 'lunch' && x.at === 825 && x.len === 45) &&
-      afterBreak.br.some(x => x.id === 'ann' && x.sh === 'dinner' && x.at === 1155 && x.len === 30),
+      afterBreak.br.some(x => x.id === 'ann' && x.sh === 'dinner' && x.at === 1155 && x.len === 30) && afterBreak.br.length === 2,
     'fresh break: a new Dinner picker saves only the intended service and retains Lunch');
     ok(!p.errors.length, 'held break: no browser errors ' + p.errors.join(' | '));
+    await p.context().close();
+
+    // Add a service is held open while the chef's date moves on: today's choice reaches neither tomorrow nor today.
+    p = await open(browser, base);
+    if (!await p.locator('.tm-weeknav').isVisible()) await click(p, '[data-p="tm-date-toggle"]');
+    // the week holding tomorrow on show, today still chosen (on a Sunday tomorrow is in next week)
+    for (let n = 0; n < 4 && !await p.locator('[data-p="tm-day"][data-day="' + tomorrow + '"]').count(); n++) await click(p, '[data-p="tm-week-next"]');
+    ok(await p.locator('.tm-notebook').getAttribute('data-day') === today && await field(p, 'tm-addsvc:bo').getAttribute('data-day') === today,
+      'Add a service: Bo\'s picker carries the date it was drawn for');
+    ok(same(await field(p, 'tm-addsvc:bo').evaluate(e => [...e.options].map(o => o.value)), ['', 'lunch']), 'Add a service: Bo is offered only the service he is not on');
+    const beforeAdd = await read(p), addOption = await holdPicker(p, 'tm-addsvc:bo', 'lunch');
+    ok(/Add a service for Bo/.test(await p.locator('dialog.ux-picker').innerText()), 'held Add a service: the picker names Bo');
+    await p.evaluate(d => document.querySelector('[data-p="tm-day"][data-day="' + d + '"]').click(), tomorrow);
+    await L.waitFor(p, d => (document.querySelector('.tm-notebook') || {}).getAttribute && document.querySelector('.tm-notebook').getAttribute('data-day') === d, tomorrow, 7000);
+    if (await p.locator(addOption).count()) await p.locator(addOption).click();
+    await L.settle(p, 250);
+    ok(!await p.locator('.tm-tlrow').count() && await saveOff(p), 'held Add a service: today\'s choice puts nobody on tomorrow (' + await p.locator('.tm-tlrow').count() + ' rows)');
+    await L.teamDay(p, today); await ready(p);
+    ok(!await field(p, 'tm-sec:bo:lunch').count() && await saveOff(p) && same(await read(p), beforeAdd), 'held Add a service: nor on today once the date has moved');
+    // stray Add a service changes: another date, a person not on the list, a service that is not set up, one already worked
+    await forge(p, [['tm-addsvc:bo', null, 'lunch', tomorrow], ['tm-addsvc:zed', null, 'lunch'], ['tm-addsvc:bo', null, 'nope'], ['tm-addsvc:ann', null, 'dinner'], ['tm-sec:bo:dinner', 'dinner', 'pans', tomorrow]]);
+    await L.settle(p, 150);
+    ok(!await field(p, 'tm-sec:bo:lunch').count() && await value(p, 'tm-sec:bo:dinner') === 'grill' && await p.locator('.tm-tlrow').count() === 3 && await saveOff(p),
+      'old key: Add a service from another date, for someone not on the list, for no such service or one already worked changes nothing');
+    await L.pick(p, 'select[data-k="tm-addsvc:bo"]', 'lunch');
+    ok(await field(p, 'tm-sec:bo:lunch').count() === 1 && /Bo added to Lunch\. Not saved yet\./.test(await L.txt(p, '.tm-focus-save') || ''), 'fresh Add a service: Bo goes on Lunch, said by name');
+    await save(p);
+    const afterAdd = await read(p);
+    ok(afterAdd.on.some(x => x.id === 'bo' && x.sh === 'lunch') && afterAdd.on.filter(x => x.id !== 'bo' || x.sh !== 'lunch').length === beforeAdd.on.length && same(afterAdd.br, beforeAdd.br),
+      'fresh Add a service: only Bo\'s Lunch is added; everyone else and the breaks are as they were');
+    ok(!p.errors.length, 'held Add a service: no browser errors ' + p.errors.join(' | '));
     await p.context().close();
 
     const overlap = fixture();
@@ -109,36 +158,32 @@ async function save(p) {
     overlap[TEAM].br = [{ id: 'ann', sh: 'lunch', at: 825, len: 30 }, { id: 'ann', sh: 'full', at: 750, len: 150 },
       { id: 'bo', sh: 'lunch', at: 825, len: 30 }];
     p = await open(browser, base, { extra: overlap });
-    const beforeOverlap = await read(p);
-    await click(p, '[data-p="tm-focus"][data-id="ann"]');
-    ok(await p.locator('.tm-detail-workbench .tm-overlap-warning').isVisible() &&
-      /Ann/.test(await p.locator('.tm-detail-workbench .tm-overlap-warning').innerText()),
-    'cross-service review: Ann\'s Lunch meal overlapping her Full day split is visible in her details');
-    ok(same(await read(p), beforeOverlap) && await p.locator('[data-p="tm-save"]').isDisabled(),
+    const beforeOverlap = await read(p), annWarn = p.locator('.tm-tlrow[data-id="ann"] .tm-overlap-warning');
+    // the rows are the whole day (the details panel and Whole day review went, 16 Nov 2026): nothing to open
+    ok(await annWarn.count() === 1 && await annWarn.isVisible() && /Ann/.test(await annWarn.innerText()) && /Lunch/.test(await annWarn.innerText()) && /Full day/.test(await annWarn.innerText()),
+      'cross-service review: Ann\'s Lunch meal overlapping her Full day split is visible in her row without a tap');
+    ok(same(await read(p), beforeOverlap) && await saveOff(p),
       'cross-service review: showing a warning neither corrects nor saves the plan automatically');
-    await click(p, '[data-p="tm-focus"][data-id="bo"]'); await click(p, '.tm-detail-workbench [data-p="tm-sh"][data-id="bo"][data-v="lunch"]');
-    ok(!await p.locator('.tm-detail-workbench .tm-overlap-warning').count(), 'different people: Bo\'s simultaneous meal does not create a personal overlap warning');
-    await click(p, '[data-p="tm-whole"]');
-    const wholeReview = p.locator('.tm-editor .tm-overlap-review');
-    const wholeWarnings = await wholeReview.count() ? await wholeReview.innerText() : '';
-    ok(/Ann/.test(wholeWarnings), 'Whole day: the same cross-service overlap remains discoverable without opening a person');
+    ok(!await p.locator('.tm-tlrow[data-id="bo"] .tm-overlap-warning').count(), 'different people: Bo\'s simultaneous meal does not create a personal overlap warning');
+    const review = await p.locator('.tm-batch .tm-overlap-review').evaluateAll(l => l.map(e => e.textContent).join(' '));
+    ok(/Ann/.test(review) && !/for Bo/.test(review), 'tools fold: the day\'s overlap review names Ann, not Bo');
     ok(!p.errors.length, 'overlap review: no browser errors ' + p.errors.join(' | '));
     await p.context().close();
 
+    // The details panel's Close and reopen went with the rows. The focus still lands on the next thing to do, for the
+    // same person and service, and the unsaved break is kept until Save.
     for (const width of [390, 1280]) {
       p = await open(browser, base, { width });
-      await click(p, '[data-p="tm-focus"][data-id="ann"]');
-      await L.pick(p, 'select[data-k="tm-at:ann:0"]', '840');
-      await p.locator('[data-p="tm-focus-close"]').focus(); await p.keyboard.press('Enter'); await L.settle(p, 160);
-      const returned = await p.evaluate(() => {
-        const el = document.activeElement; return el && el.getAttribute('data-p') === 'tm-focus' && el.getAttribute('data-id') === 'ann';
+      await p.locator('[data-p="tm-addbr"][data-id="ann"][data-sh="dinner"]').focus(); await p.keyboard.press('Enter'); await L.settle(p, 200);
+      const focused = await p.evaluate(() => {
+        const el = document.activeElement, s = el && (el.matches('select') ? el : el.previousElementSibling);
+        return s && s.matches && s.matches('select') ? s.getAttribute('data-k') + ' ' + s.getAttribute('data-day') + ' ' + s.getAttribute('data-sh') : el && el.outerHTML.slice(0, 80);
       });
-      ok(returned, width + ': keyboard Close details returns focus to Ann\'s Breaks action');
-      if (returned) await p.keyboard.press('Enter'); else await p.locator('[data-p="tm-focus"][data-id="ann"]').click();
-      await L.settle(p, 160);
-      ok(await field(p, 'tm-at:ann:0').inputValue() === '840' && await p.locator('[data-p="tm-save"]').isEnabled(),
-        width + ': reopening details retains the exact unsaved break draft');
-      ok((await read(p)).v === 1 && !p.errors.length, width + ': closing details does not save or produce browser errors ' + p.errors.join(' | '));
+      ok(focused === 'tm-at:ann:dinner:1 ' + today + ' dinner', width + ': keyboard + Break on Ann\'s Dinner puts the focus on that new break\'s time (' + focused + ')');
+      await L.pick(p, 'select[data-k="tm-at:ann:dinner:1"]', '1230');
+      ok(await value(p, 'tm-at:ann:dinner:1') === '1230' && await value(p, 'tm-at:ann:dinner:0') === '1140' && await value(p, 'tm-at:ann:lunch:0') === '825' && !await field(p, 'tm-at:bo:dinner:0').count() && !await saveOff(p),
+        width + ': the new break holds the time picked; Ann\'s other breaks and Bo are as they were');
+      ok((await read(p)).v === 1 && !p.errors.length, width + ': the break draft does not save or produce browser errors ' + p.errors.join(' | '));
       await p.context().close();
     }
   } finally {

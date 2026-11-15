@@ -20,27 +20,28 @@ const SHIFTS = [{ id: 'lunch', name: 'Lunch', from: 600, to: 900, off: false }, 
 const cfg = x => ({ [CFG]: Object.assign({ people, sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], showBadges: true, prepStandardsEnabled: true, kitSecs: SECS, kitShifts: SHIFTS }, x || {}) });
 const dayTitle = new Date(today + 'T12:00:00+10:00').toLocaleDateString('en-AU', { timeZone: 'Australia/Brisbane', weekday: 'long', day: 'numeric', month: 'long' });
 const store = p => p.evaluate(() => window.__fake.dump());
-// Open the person's named workbench and use the same visible picker as a chef.
-async function details(p, id) {
-  if (!await p.locator('.tm-detail-workbench[data-id="' + id + '"]').count()) await p.locator('[data-p="tm-focus"][data-id="' + id + '"]').click();
-  await L.settle(p, 120);
-}
+// The rows on one clock (16 Nov 2026): every person's pickers sit in their row, so only the tools fold needs opening.
 async function tools(p) { const d = p.locator('details.tm-batch'); if (!await d.evaluate(e => e.open)) await d.locator(':scope > summary').click(); await L.settle(p, 120); }
-const pick = async (p, k, v) => { if (k.includes(':') && !k.startsWith('tm-sec:') && !k.startsWith('tm-row-sh:')) await details(p, k.split(':')[1]); else if (!k.includes(':')) await tools(p); await L.pick(p, 'select[data-k="' + k + '"]', String(v)); return true; };
+const pick = async (p, k, v) => { if (!k.includes(':')) await tools(p); await L.pick(p, 'select[data-k="' + k + '"]', String(v)); return true; };
+const saveWords = p => txt(p, '.tm-save').then(x => x || '');
 const chip = p => p.evaluate(() => { const c = document.querySelector('.wtop .tm-slot .tm-chip'); return c ? { due: c.classList.contains('is-due'), label: c.getAttribute('aria-label'), href: c.getAttribute('href') } : null; });
 const titleCut = p => p.evaluate(() => { const b = document.querySelector('.wtop-brand b'), i = document.querySelector('.wtop-icons'); return !b || b.scrollWidth > b.clientWidth + 1 || b.getBoundingClientRect().right > i.getBoundingClientRect().left + 1; });
-// Empty days start with the inline staff chooser; later membership stays in the person's details.
+// Empty days start with the inline staff chooser; someone already on the day joins another service with Add a service
+// in their row (the details chip and its Add are gone)
 const onShift = async (p, id, sh) => {
-  if (!await p.locator('.tm-person-row[data-id="' + id + '"]').count()) {
+  if (!await p.locator('.tm-tlrow[data-id="' + id + '"]').count()) {
     if (!await p.locator('.tm-quick-add').isVisible()) await p.locator('.tm-focus-toolbar [data-p="tm-add-staff"]').click();
     if (sh) for (const choice of await p.locator('input[data-k^="tm-quick-shift:"]').all()) await choice.setChecked(await choice.getAttribute('data-k') === 'tm-quick-shift:' + sh);
     await p.locator('input[data-k="tm-quick-person:' + id + '"]').check();
-    await tap(p, '[data-p="tm-quick-add"]'); await L.settle(p, 200); await details(p, id); return true;
+    await tap(p, '[data-p="tm-quick-add"]'); await L.settle(p, 200); return true;
   }
-  // the details panel picks its own service with a chip (the day grid has no Service to edit switch)
-  await details(p, id);
-  if (sh) { await tap(p, '.tm-detail-workbench [data-p="tm-sh"][data-id="' + id + '"][data-v="' + sh + '"]'); await L.settle(p, 150); }
-  const done = await tap(p, '[data-p="tm-on"][data-id="' + id + '"]'); await L.settle(p, 200); return done;
+  await L.pick(p, 'select[data-k="tm-addsvc:' + id + '"]', sh);
+  return !!await p.locator('.tm-tlrow[data-id="' + id + '"] .tm-tlsvc[data-sh="' + sh + '"]').count();
+};
+// Take off replaced Remove Lunch and its breaks: the first tap arms it in place, the second takes them off
+const takeOff = async (p, id, sh) => {
+  const off = '[data-p="tm-off"][data-id="' + id + '"][data-sh="' + sh + '"]';
+  await p.locator(off).click(); await L.settle(p, 150); await p.locator(off).click(); await L.settle(p, 200);
 };
 const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.nb-addline').getBoundingClientRect().top; return [...document.querySelectorAll('[id^="nbr-"]')].filter(e => { const q = e.getBoundingClientRect(); return q.top >= 0 && q.bottom <= bar; }).length; });
 // Measure the approved local view choice separately from the unchanged team header and work rows.
@@ -88,8 +89,9 @@ const withoutViewChoice = async p => {
   ok(await pick(p, 'tm-sec:ann:lunch', 'grill'), 'page: Ann on Lunch gets a section picker');
   ok(await onShift(p, 'sam'), 'page: Sam is ticked onto Lunch');
   ok(await p.$eval('select[data-k="tm-sec:sam:lunch"]', e => e.value === '' && [...e.options].some(o => o.value === '' && o.textContent === 'Sous chef')), 'page: a sous chef has a section picker too, starting on their role');
-  await details(p, 'ann'); await tap(p, '[data-p="tm-addbr"][data-id="ann"]'); await L.settle(p, 200);
-  ok(await pick(p, 'tm-at:ann:0', 870) && await pick(p, 'tm-len:ann:0', 45), 'page: Ann gets a break at 14:30 for 45 minutes');
+  await tap(p, '[data-p="tm-addbr"][data-id="ann"][data-sh="lunch"]'); await L.settle(p, 200);
+  ok(await p.evaluate(() => !!document.activeElement && document.activeElement.matches('select[data-k="tm-at:ann:lunch:0"]')), 'page: + Break puts the focus on the new break\'s time, the next thing to choose');
+  ok(await pick(p, 'tm-at:ann:lunch:0', 870) && await pick(p, 'tm-len:ann:lunch:0', 45), 'page: Ann gets a break at 14:30 for 45 minutes');
   await L.settle(p, 150);
   ok((await p.$eval('[data-p="tm-save"]', e => e.disabled)) === false, 'page: Save is on once something changed');
   ok(TEAM in (await store(p)) === false, 'page: nothing is saved before Save');
@@ -98,10 +100,13 @@ const withoutViewChoice = async p => {
   await pick(p, 'tm-spfrom', 720); await L.settle(p, 100);
   await tap(p, '[data-p="tm-spread"]'); await L.settle(p, 200);
   ok(/3 breaks from 12:00/.test(await txt(p, '.tm-save') || ''), 'page: Spread them sets 3 breaks from 12:00, one at a time (' + (await txt(p, '.tm-save')) + ')');
-  await onShift(p, 'ann', 'dinner');
+  ok(await onShift(p, 'ann', 'dinner') && /Ann added to Dinner\. Not saved yet\./.test(await saveWords(p)), 'page: Add a service puts Ann on Dinner in one pick and says so (' + await saveWords(p) + ')');
   ok(await p.$eval('select[data-k="tm-sec:ann:dinner"]', e => e.value) === 'grill', 'page: Ann on Dinner starts with her Lunch section');
   await pick(p, 'tm-sec:ann:dinner', 'pans'); await L.settle(p, 150);
-  ok(/Also on Lunch: Grill/.test(await txt(p, '.tm-detail-workbench') || ''), 'page: Ann\'s workbench says she is also on Lunch, on Grill');
+  // the workbench's "Also on Lunch: Grill" is gone: her row holds both services in time order, and Dinner's picker
+  // offers her Lunch section first
+  const annLines = await p.$$eval('.tm-tlrow[data-id="ann"] .tm-tlsvc', l => l.map(e => e.dataset.sh));
+  ok(JSON.stringify(annLines) === '["lunch","dinner"]' && await p.$eval('select[data-k="tm-sec:ann:lunch"]', e => e.value) === 'grill' && await p.$eval('select[data-k="tm-sec:ann:dinner"]', e => e.options[0].textContent) === 'Same as Lunch: Grill', 'page: Ann\'s row shows she is also on Lunch, on Grill (' + annLines.join(', ') + ')');
   await tap(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => !!window.__fake.dump()[k], TEAM, 8000);
   s = await store(p);
@@ -122,7 +127,8 @@ const withoutViewChoice = async p => {
 
   // another chef saves meanwhile: this page's save is refused and says so, the changes stay, Refresh reads theirs
   await p.evaluate(([k, d]) => window.__fake.write(k, d), [TEAM, Object.assign({}, t, { v: 2, upd: t.upd + 60000, by: 'sam', on: t.on.slice(0, 2) })]);
-  await onShift(p, 'bo', 'lunch');
+  await takeOff(p, 'bo', 'lunch');
+  ok(!await p.locator('.tm-tlrow[data-id="bo"]').count() && /Bo taken off Lunch and its breaks\. Not saved yet\. Bo is not on this day now: Undo, or Add staff, puts them back\./.test(await saveWords(p)), 'Take off: two taps take Bo off his only service, and the words say so (' + await saveWords(p) + ')');
   await tap(p, '[data-p="tm-save"]'); await L.settle(p, 1500);
   ok((await txt(p, '.tm-save') || '').includes('Not saved: Sam saved the team for ' + dayTitle + ' at ') && /\d\d:\d\d\. Your changes are still here/.test(await txt(p, '.tm-save') || ''), 'conflict: a save over a newer one names its date and keeps the draft (' + (await txt(p, '.tm-save')) + ')');
   ok((await store(p))[TEAM].v === 2, 'conflict: the newer save stays as it is');
@@ -149,7 +155,8 @@ const withoutViewChoice = async p => {
   p = await L.open(b, '#/team', { who: 'sam', extra: cfg(), failReads: '/team(?:/|$)', wait: 1800 });
   ok((await txt(p, '.tm-page') || '').includes('Could not load the team for ' + dayTitle) && !/Not set yet/.test(await txt(p, '.tm-page') || ''), 'no signal: the page says which date could not load, not "not set yet"');
   const tries = await p.evaluate(() => window.__fake.reads.filter(r => /\/team\//.test(r)).length);
-  await L.settle(p, 1500); await tap(p, '[data-p="tm-on"]'); await L.settle(p, 500);
+  // a tap that draws the page again (the date list; the details' Add it once tapped is gone) still reads nothing
+  await L.settle(p, 1500); await tap(p, '[data-p="tm-date-toggle"]'); await L.settle(p, 500);
   ok(await p.evaluate(() => window.__fake.reads.filter(r => /\/team\//.test(r)).length) === tries && tries <= 2, 'no signal: it does not read again by itself before 5 minutes (' + tries + ' tries)');
   c = await chip(p);
   ok(!!c && !c.due && /could not check/.test(c.label), 'no signal: the chip is plain and says it could not check');
@@ -250,16 +257,16 @@ const withoutViewChoice = async p => {
   ok(await pick(p, 'tm-sec:sam:day', 'pans'), 'chef section: Sam puts himself on Pans');
   await tools(p);
   ok(await p.$eval('select[data-k="tm-spfrom"]', e => e.value) === '870' && await p.$eval('select[data-k="tm-splen"]', e => e.value) === '150' && await p.$eval('select[data-k="tm-spmode"]', e => e.value) === '0', 'split: on a 10:00 to 22:00 shift Spread them starts on a 2.5 hour split at 14:30, all together');
-  await tap(p, '[data-p="tm-addbr"][data-id="sam"]'); await L.settle(p, 200);
-  ok(await p.$eval('select[data-k="tm-len:sam:0"]', e => e.value) === '150' && await p.$eval('select[data-k="tm-at:sam:0"]', e => e.value) === '870', '+ Break: on a long shift the first one is the split');
+  await tap(p, '[data-p="tm-addbr"][data-id="sam"][data-sh="day"]'); await L.settle(p, 200);
+  ok(await p.$eval('select[data-k="tm-len:sam:day:0"]', e => e.value) === '150' && await p.$eval('select[data-k="tm-at:sam:day:0"]', e => e.value) === '870', '+ Break: on a long shift the first one is the split');
   await tap(p, '[data-p="tm-spread"]'); await L.settle(p, 200);
   ok(/3 splits from 14:30, all together/.test(await txt(p, '.tm-save') || ''), 'split: Spread them, all together (' + (await txt(p, '.tm-save')) + ')');
   await pick(p, 'tm-spfrom', 1080); await pick(p, 'tm-splen', 30); await pick(p, 'tm-spmode', '2'); await L.settle(p, 100);
   await tap(p, '[data-p="tm-spread"]'); await L.settle(p, 200);
   ok(/3 breaks from 18:00, two per group, starting every 30 min/.test(await txt(p, '.tm-save') || ''), 'split: then the meal breaks, two at a time, keeping the splits (' + (await txt(p, '.tm-save')) + ')');
   let thirdBreaks = 0;
-  for (const id of ['ann', 'bo', 'sam']) { await details(p, id); thirdBreaks += await p.locator('[data-p="tm-addbr"][data-id="' + id + '"]').count(); }
-  ok(thirdBreaks === 3, 'split: every person can still add a third break through their workbench');
+  for (const id of ['ann', 'bo', 'sam']) thirdBreaks += await p.locator('.tm-tlrow[data-id="' + id + '"] [data-p="tm-addbr"][data-id="' + id + '"][data-sh="day"]:not([disabled])').count();
+  ok(thirdBreaks === 3, 'split: every person can still add a third break in their row');
   await tap(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => !!window.__fake.dump()[k], TEAM, 8000);
   s = (await store(p))[TEAM];
@@ -300,8 +307,10 @@ const withoutViewChoice = async p => {
   p = await L.open(b, '#/team', { who: 'sam', extra: withSum(), wait: 1800 });
   ok(await onShift(p, 'ann'), 'usual: Ann is ticked onto Lunch');
   ok(await p.$eval('select[data-k="tm-sec:ann:lunch"]', e => e.value) === 'grill', 'usual: she starts on her usual section, Grill');
-  const annRow = await txt(p, '.tm-detail-workbench') || '';
-  ok(annRow.includes('Usually Grill, 6 of the last 8 ' + wdName + 's') && !/In training/.test(annRow), 'usual: her workbench says her usual section, and no In training line though the record has one (' + annRow + ')');
+  // the workbench's usual line is gone with the panel: once she is moved off it, her Lunch picker offers it first
+  await pick(p, 'tm-sec:ann:lunch', 'pans');
+  const usualFirst = await p.$eval('select[data-k="tm-sec:ann:lunch"]', e => [e.options[0].value, e.options[0].textContent]), annRow = await txt(p, '.tm-tlrow[data-id="ann"]') || '';
+  ok(usualFirst[0] === 'grill' && usualFirst[1] === 'Usually Grill, 6 of the last 8 ' + wdName + 's' && !/In training/.test(annRow), 'usual: her Lunch picker offers her usual section first, and no In training line though the record has one (' + usualFirst.join(': ') + ')');
   await onShift(p, 'bo');
   ok(await p.$eval('select[data-k="tm-sec:bo:lunch"]', e => e.value) === '', 'usual: a section taken off the list is not filled in');
   ok(await p.evaluate(() => window.__fake.reads.filter(r => /\/teamsum\//.test(r)).length) === 1, 'usual: the numbers are read once');
@@ -318,20 +327,21 @@ const withoutViewChoice = async p => {
   const learnDays = [0, 1, 2, 3, 4, 5].map(i => ({ day: L.ymd(new Date(L.NOW - (i + 2) * 86400000)), s: [{ p: 'ann', sec: 'Pans', sh: 'lunch' }].concat(i < 2 ? [{ p: 'bo', sec: 'Grill', sh: 'lunch' }] : []) }));
   const learnSum = { ...tsumRec, days: learnDays, usual: {} };
   const learnPlan = { day: today, on: [{ id: 'ann', sh: 'lunch', sec: 'pans' }, { id: 'bo', sh: 'lunch', sec: 'grill' }], br: [], v: 1, at: L.NOW - 3600000, upd: L.NOW - 3600000, by: 'sam' };
-  const learnHints = async q => q.$$eval('.tm-person-row', rows => rows.map(r => [r.getAttribute('data-id'), (r.querySelector('.tm-learn') || {}).textContent || '']));
+  // the hint is a note on the person's service line now (.tm-tlhint); the hours sentence shares the .tm-learn look
+  const learnHints = async q => q.$$eval('.tm-tlrow', rows => rows.map(r => [r.getAttribute('data-id'), (r.querySelector('.tm-tlhint') || {}).textContent || '']));
   p = await L.open(b, '#/team', { who: 'sam', extra: Object.assign(cfg(), { [TSUM]: learnSum, [TEAM]: learnPlan }), wait: 1800 });
-  await L.waitFor(p, () => !!document.querySelector('.tm-learn'), null, 8000).catch(() => {});
+  await L.waitFor(p, () => !!document.querySelector('.tm-tlhint'), null, 8000).catch(() => {});
   let hints = await learnHints(p);
   ok(JSON.stringify(hints.filter(h => h[1])) === JSON.stringify([['bo', 'Not on Pans in 30 days. Ann is on Pans in this plan.']]), 'learn: only Bo gets a hint, pairing him with Ann on Pans (one service column, so no service name before it) (' + JSON.stringify(hints) + ')');
   ok(!(await L.overflow(p)) && p.errors.length === 0, 'learn: no sideways scroll or page errors ' + p.errors.join(' | '));
   await p.context().close();
   p = await L.open(b, '#/team', { who: 'sam', extra: Object.assign(cfg(), { [TSUM]: learnSum, [TEAM]: learnPlan }), failReads: '/teamsum/', wait: 1800 });
   await L.settle(p, 1200);
-  ok(await p.locator('.tm-learn').count() === 0 && await p.locator('.tm-person-row').count() > 0, 'learn: no hint when the counts could not load');
+  ok(await p.locator('.tm-tlhint').count() === 0 && await p.locator('.tm-tlrow').count() > 0, 'learn: no hint when the counts could not load');
   await p.context().close();
   p = await L.open(b, '#/team', { who: 'sam', extra: Object.assign(cfg(), { [TSUM]: { ...learnSum, day: L.ymd(new Date(L.NOW - 3 * 86400000)) }, [TEAM]: learnPlan }), wait: 1800 });
   await L.settle(p, 1200);
-  ok(await p.locator('.tm-learn').count() === 0, 'learn: no hint from counts older than yesterday');
+  ok(await p.locator('.tm-tlhint').count() === 0 && await p.locator('.tm-tlrow').count() > 0, 'learn: no hint from counts older than yesterday');
   await p.context().close();
 
   // the admin: Who worked where counts the shifts, Reports, Team has a shifts table (Training retired 10 Nov 2026)
