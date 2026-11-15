@@ -70,6 +70,10 @@ async function pickIn(p, sel, label) { await p.locator(sel).click(); await p.wai
       { const p = await page(b, d, 'at=1170', 390); r.past = await measure(p); await p.context().close(); }
       { const p = await page(b, d, 'open=sam', 390); await pickIn(p, '.ts-bench [data-a="br-at"][data-i="0"]', '19:30'); r.halfFix = await measure(p);
         r.halfFix.tags = await p.evaluate(() => [...document.querySelectorAll('.tx-tag')].map(e => e.closest('.tx-row').dataset.id));
+        // the marks hold still while the Breaks panel is open, then catch up on Close details
+        await p.locator('[data-a="bench-close"]').click(); await p.waitForTimeout(100);
+        r.halfFix.tagsAfterClose = await p.evaluate(() => [...document.querySelectorAll('.tx-tag')].map(e => e.closest('.tx-row').dataset.id));
+        await p.locator('[data-a="bench-open"][data-id="sam"]').click(); await p.waitForTimeout(100);
         await p.evaluate(() => { const h = document.querySelector('.tx-ghead'); window.scrollTo(0, h.getBoundingClientRect().top + scrollY - 66); }); await p.waitForTimeout(100);
         await p.screenshot({ path: path.join(OUT, 'mix-halffix-390.png') }); await p.context().close(); }
       { const p = await page(b, d, '', 390); r.tags = await p.evaluate(() => [...document.querySelectorAll('.tx-tag')].map(e => e.closest('.tx-row').dataset.id)); r.boardVisible = (await measure(p)).boardRows.filter(x => x && x.onScreen).length; await p.context().close(); }

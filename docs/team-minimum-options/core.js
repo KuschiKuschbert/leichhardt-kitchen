@@ -11,6 +11,7 @@ window.TM_CORE = (function () {
       var s = svc(plan, o.sh), p = plan.people.filter(function (x) { return x.id === o.id; })[0];
       if (!s || !p || s.from == null || s.to == null || !(s.from <= m && m < s.to) || seen[p.id]) return;
       if (opts.noChefs && p.chef) return;
+      if (opts.sh && o.sh !== opts.sh) return;   // a busy time set on a shift counts only that shift's people
       seen[p.id] = 1;
       var b = plan.br.filter(function (x) { return x.id === p.id && x.at <= m && m < x.at + x.len; })[0];
       if (b) away.push({ p: p, b: b }); else inn.push(p);
@@ -26,7 +27,7 @@ window.TM_CORE = (function () {
     mins.forEach(function (w) {
       var cur = null, start = Math.max(w.from, opts.from == null ? w.from : opts.from);
       for (var m = start; m <= w.to; m++) {
-        var c = m < w.to ? inAt(plan, m, opts) : null, low = c && c.inn.length < w.n;
+        var c = m < w.to ? inAt(plan, m, opts.byShift && w.sh ? Object.assign({}, opts, { sh: w.sh }) : opts) : null, low = c && c.inn.length < w.n;
         if (low) {
           var n = c.inn.length, onPlan = c.inn.length + c.away.length;
           if (!cur) cur = { w: w, from: m, to: m + 1, low: n, high: n, roster: onPlan, steps: [{ at: m, n: n }], away: {} };

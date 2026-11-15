@@ -19,7 +19,7 @@ window.TM_DATA = (function () {
     ['dev', 'dinner', 1095, 30], ['fen', 'dinner', 1095, 45], ['hal', 'dinner', 1110, 30], ['sam', 'dinner', 1110, 30]
   ].map(function (x) { return { id: x[0], sh: x[1], at: x[2], len: x[3] }; });
   // the head chef's minimums (made up for the preview; the real numbers are the head chef's to set)
-  var mins = [{ id: 'm1', name: 'Lunch rush', from: 720, to: 840, n: 3 }, { id: 'm2', name: 'Dinner rush', from: 1050, to: 1230, n: 6 }];
+  var mins = [{ id: 'm1', name: 'Lunch rush', sh: 'lunch', from: 720, to: 840, n: 3 }, { id: 'm2', name: 'Dinner rush', sh: 'dinner', from: 1050, to: 1230, n: 6 }];
   function hhmm(m) { return ('0' + Math.floor(m / 60)).slice(-2) + ':' + ('0' + (m % 60)).slice(-2); }
   return { services: services, sections: sections, people: people, on: on, br: br, mins: mins, hhmm: hhmm, date: 'Sunday 15 November', clock: 1110 };
 })();

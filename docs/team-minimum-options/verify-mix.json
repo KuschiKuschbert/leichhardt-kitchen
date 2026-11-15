@@ -6,7 +6,7 @@
         "rowsVisible": 0,
         "warn": {
           "sel": ".tb-line",
-          "text": "Saved plan: short now until 19:00. 4 on Dinner and not on a break, then 5 from 18:45. Need 6.",
+          "text": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
           "top": 673,
           "bottom": 710,
           "onScreen": true
@@ -37,7 +37,7 @@
         "rowsVisible": 6,
         "warn": {
           "sel": ".tb-line",
-          "text": "Saved plan: short now until 19:00. 4 on Dinner and not on a break, then 5 from 18:45. Need 6.",
+          "text": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
           "top": 673,
           "bottom": 710,
           "onScreen": true
@@ -71,7 +71,7 @@
         "rowsVisible": 1,
         "warn": {
           "sel": ".tb-line",
-          "text": "Saved plan: short now until 19:00. 4 on Dinner and not on a break, then 5 from 18:45. Need 6.",
+          "text": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
           "top": 673,
           "bottom": 710,
           "onScreen": true
@@ -102,7 +102,7 @@
         "rowsVisible": 6,
         "warn": {
           "sel": ".tb-line",
-          "text": "Saved plan: short now until 19:00. 4 on Dinner and not on a break, then 5 from 18:45. Need 6.",
+          "text": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
           "top": 673,
           "bottom": 710,
           "onScreen": true
@@ -136,7 +136,7 @@
         "rowsVisible": 0,
         "warn": {
           "sel": ".tb-line",
-          "text": "Saved plan: short now until 19:00. 4 on Dinner and not on a break, then 5 from 18:45. Need 6.",
+          "text": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
           "top": 760,
           "bottom": 778,
           "onScreen": true
@@ -167,7 +167,7 @@
         "rowsVisible": 9,
         "warn": {
           "sel": ".tb-line",
-          "text": "Saved plan: short now until 19:00. 4 on Dinner and not on a break, then 5 from 18:45. Need 6.",
+          "text": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
           "top": 719,
           "bottom": 738,
           "onScreen": true
@@ -198,7 +198,7 @@
     "find": {
       "taps": 0,
       "onScreen": true,
-      "text": "Saved plan: short now until 19:00. 4 on Dinner and not on a break, then 5 from 18:45. Need 6."
+      "text": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break."
     },
     "fix": {
       "taps": 7,
@@ -210,7 +210,7 @@
       "rowsVisible": 0,
       "warn": {
         "sel": ".tb-line",
-        "text": "Busy times not checked yet: the saved plan is not ready.",
+        "text": "Loading the saved plan. Busy times are checked after.",
         "top": 673,
         "bottom": 710,
         "onScreen": true
@@ -220,22 +220,22 @@
       "boardRows": []
     },
     "quiet": {
-      "dockH": 141,
+      "dockH": 159,
       "rowsVisible": 0,
       "warn": {
         "sel": ".tb-line",
-        "text": "Saved plan: short now until 20:30. Only 3 on Dinner, fewer during breaks. Need 6.",
-        "top": 673,
+        "text": "Saved plan: too few now until 20:30. Only 3 on Dinner (0 now with breaks), 6 needed. Add people or move a marked break.",
+        "top": 655,
         "bottom": 710,
         "onScreen": true
       },
-      "pageH": 2101,
+      "pageH": 2120,
       "overflow": false,
       "boardRows": [
         {
           "top": 605,
           "bottom": 631,
-          "onScreen": true
+          "onScreen": false
         },
         {
           "top": 631,
@@ -283,7 +283,7 @@
       "rowsVisible": 2,
       "warn": {
         "sel": ".tb-line",
-        "text": "Draft: short now until 18:45. 5 on Dinner and not on a break. Need 6.",
+        "text": "Unsaved plan: too few now until 18:45. 5 now, 6 needed. Move a marked break.",
         "top": 673,
         "bottom": 710,
         "onScreen": true
@@ -309,6 +309,12 @@
         null
       ],
       "tags": [
+        "sam",
+        "dev",
+        "fen",
+        "hal"
+      ],
+      "tagsAfterClose": [
         "dev",
         "fen",
         "hal"
@@ -322,16 +328,16 @@
     ],
     "boardVisible": 1,
     "quietEarly": {
-      "dockH": 141,
+      "dockH": 159,
       "rowsVisible": 0,
       "warn": {
         "sel": ".tb-line",
-        "text": "Saved plan: short now until 20:30. Only 3 on Dinner, fewer during breaks. Need 6.",
-        "top": 673,
+        "text": "Saved plan: too few now until 20:30. Only 3 on Dinner (0 from 18:30 with breaks), 6 needed. Add people or move a marked break.",
+        "top": 655,
         "bottom": 710,
         "onScreen": true
       },
-      "pageH": 1775,
+      "pageH": 1794,
       "overflow": false,
       "boardRows": []
     },

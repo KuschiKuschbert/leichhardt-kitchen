@@ -2,7 +2,7 @@
 
 15 November 2026, Queensland. Head chef request: "In the today's team admin area, can we have a visual warning when not enough people are in the kitchen, like when too many people are on breaks? And maybe have a setting where chefs can set the minimum chefs for a time frame."
 
-**Status: designs drawn and scored, waiting for the head chef's choice. Nothing in the app has changed.** Round 1 Build smaller (5 of 5). [Proposal](proposal.md), [evidence packet](evidence-packet.md), [previews](index.html) ([A](a.html), [B](b.html), [C](c.html)). Role-based analysis, not research with staff.
+**Status: waiting for the head chef's choice. Nothing in the app has changed.** Round 1 Build smaller (5 of 5); round 2 B 15, A 13, C 8; **recommended: the mix** (B's Save dock line, C's mark on Breaks, A's busy time per shift), reviewed again by four of the six (all Recommend with a change, every change made). [Proposal](proposal.md), [evidence packet](evidence-packet.md), [previews](index.html) ([A](a.html), [B](b.html), [C](c.html), [the mix](mix.html)). Role-based analysis, not research with staff.
 
 ## Round 1
 
@@ -148,9 +148,9 @@ Six fresh agents (the five reviewers and the kitchen screen designer) read this 
 | --- | --- | --- | --- | --- | --- |
 | A, busy time and need on each service in Shifts | **Take**, with pickers (15-minute steps, need 1 to 20) | Todoist (known default visible), Linear (one shape) | Set once beside the hours it belongs to; 8 taps; cannot cross services | `shClean()` and every save path must keep it (finding 14) | Head chef, skeptic, keeper, designer |
 | A, the line inside Breaks details | **Reject** | Linear (one place) | The dock line is on screen while the break is moved, so the answer still comes at the tap | Its all-clear misleads (finding 8) | Skeptic, designer; cook and new starter disagree |
-| B, one line in the Save dock | **Take**, cut short: no names, "Draft" or "Saved plan" first, only when short or not checked, today from now on | Flighty (real times), Duolingo (honest), Linear | 0 taps to find; catches a half-done fix | Dock grows 43 px (not 61); finding 1 must be repaired | Four of six |
+| B, one line in the Save dock | **Take**, cut short: no names, "Unsaved plan" or "Saved plan" first, only when too few or not checked, today from now on | Flighty (real times), Duolingo (honest), Linear | 0 taps to find; catches a half-done fix | Dock grows 43 px (not 61); finding 1 must be repaired | Four of six |
 | B, "Away: names" in the line | **Reject** | Airbnb (who and when together, but on the rows) | The rows carry the names | Long names grow the dock (finding 9) | Designer, skeptic |
-| C, the mark beside Breaks | **Take**, worded "away when short" | Airbnb (who, beside the control to tap) | Says whose break to open: no hunting (A's 1 to 9 taps) | A mark can come and go with the clock (finding 13); a second line on those rows | Designer; new starter liked the idea |
+| C, the mark beside Breaks | **Take**, worded "break when too few", only for the short time the line names | Airbnb (who, beside the control to tap) | Says whose break to open: no hunting (A's 1 to 9 taps) | A mark can come and go with the clock (finding 13); a second line on those rows | Designer; new starter liked the idea |
 | C, the board line | **Reject** | Flighty (no confusing status), Duolingo (one meaning) | | Saved count beside a draft line; hidden under the dock on the admin phone; hidden when nobody is away | Five of six |
 | C, the service heads | **Reject** | Linear | | Loses the "no section" count; heads change height | All who named them |
 
@@ -158,26 +158,84 @@ Six fresh agents (the five reviewers and the kitchen screen designer) read this 
 
 ## Combined preview
 
-[The mix](mix.html) ([its setting](mix.html?page=kitchen)). **Preview**, the same frame, data and conditions as A, B and C; raw [`verify-mix.json`](verify-mix.json).
+[The mix](mix.html) ([its setting](mix.html?page=kitchen)). **Preview**, the same frame, data and conditions as A, B and C, after the focused follow-up below; raw [`verify-mix.json`](verify-mix.json), break-it run [`mixbreak.cjs`](mixbreak.cjs) with [`mixbreak.json`](mixbreak.json).
 
-- **The Save dock line**, only when the plan is short or cannot be checked: "Saved plan: short now until 19:00. 4 on Dinner and not on a break, then 5 from 18:45. Need 6." After an edit the first word is "Draft". A later short time adds "1 more short time later." No names.
-- **The mark** "away when short" under the Breaks words of each person away during a short time still to come (today: Sam K, Dev, Fen, Hal).
-- **The setting** in Admin, Kitchen, Shifts: under each shift's hours, Busy time from, to and need, each a picker.
-- Unchanged: the On break now board, the service heads, the Breaks details, Save.
+- **One line in the Save dock**, only when the plan is too few or cannot be checked: "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break." After an edit it starts "Unsaved plan". A later short time adds "Next: 19:45 to 20:15." A short roster says so: "Only 3 on Dinner (0 now with breaks), 6 needed. Add people or move a marked break." The shift is named only when two shifts have a busy time at once. No names in the line. Nothing once the short time is over, and nothing when the plan has enough.
+- **The mark** "break when too few" under the Breaks words of each person away in the short time the line names (Sam K, Dev, Fen, Hal). While a Breaks panel is open the marks hold still, so a row never shrinks under a thumb; they catch up on Close details or Save. The line stays live.
+- **The setting** in Admin, Kitchen, Shifts: under each shift's hours, Busy time from and to, and People needed then, each a picker. A busy time counts only its own shift's people.
+- Unchanged: the On break now board (saved plan), the service heads and their section counts, the Breaks details, Save.
 
 | Measure | Mix | B | A | C |
 | --- | ---: | ---: | ---: | ---: |
 | Find the short time (taps) | **0** | 0 | 1 to 9 | 0 |
 | Whose break to open | **marked on the row** | named in the dock | open each person | marked on the row |
 | Fix (move Sam K and Hal) and Save | 7 | 7 | 7 | 7 |
-| Half-done fix (only Sam K moved) | "Draft: short now until 18:45. 5 on Dinner and not on a break. Need 6." Dev, Fen, Hal stay marked | says short | **says it is fine** (finding 8) | heads say short |
+| Half-done fix (only Sam K moved) | "Unsaved plan: too few now until 18:45. 5 now, 6 needed." Dev, Fen, Hal marked | short | **says it is fine** | heads short |
 | At 19:30, the short time over | nothing | still short | still short | still short |
-| Quiet night | "Only 3 on Dinner, fewer during breaks. Need 6." | "0 to 3 ... Away: ..." | blames Sam K's break | heads and board |
-| Save dock, 390 px | 141 px | 159 px | 98 px | 98 px |
+| Quiet night (3 on Dinner, need 6) | "Only 3 on Dinner (0 now with breaks), 6 needed. Add people or move a marked break." | "0 to 3 ... Away: ..." | blames Sam K's break | heads and board |
+| A Function shift over Dinner | counts Dinner only | counts both | counts both | counts both |
+| Save dock, 390 px | 141 px (159 with a second short time or a short roster) | 159 (196 with long names) | 98 | 98 |
 | Person rows in the working screen, admin 390 / sous chef 390 / 1280 | 6 / 6 / 9 | 6 / 6 / 9 | 7 / 7 / 9 | 6 / 6 / 9 |
-| Board names above the dock on the first screen, admin 390 / sous chef 390 | 2 of 4 / 4 of 4 | 1 of 4 | 3 of 4 | 3 of 4 |
-| The same with the dock's own "Saved 13:00 · Gus" line left out while nothing is unsaved (the notebook head already says it) | 3 of 4 / 4 of 4 | | | |
-| Setting "Dinner busy time 17:30 to 20:30, need 6" (counted from the drawn form) | 8 taps | 14 | 12 | 14 |
+| Board names fully above the dock on the first screen, admin 390 / sous chef 390 | 2 of 4 / 4 of 4 | 1 of 4 | 3 of 4 | 3 of 4 |
+| The same with the dock's own "Saved 13:00 · Gus" left out while nothing is unsaved (the notebook head already says it) | 3 of 4 / 4 of 4 | | | |
+| Setting "Dinner busy time 17:30 to 20:30, 6 needed" (counted from the drawn form) | 8 taps | 14 | 12 | 14 |
 | Sideways scroll, page errors | none | none | none | none |
 
-Screenshots: [first screen](mix-admin-390.png), [working screen](mix-working-390.png), [half-done fix](mix-halffix-390.png), [quiet night at 17:30](mix-quiet-early-390.png), [sous chef](mix-team-390.png), [1280](mix-admin-1280.png), [the setting](mix-kitchen-390.png), [loading](mix-loading-390.png).
+Screenshots: [first screen](mix-admin-390.png), [working screen](mix-working-390.png), [half-done fix](mix-halffix-390.png), [quiet night at 17:30](mix-quiet-early-390.png), [sous chef](mix-team-390.png), [1280](mix-admin-1280.png), [the setting](mix-kitchen-390.png), [loading](mix-loading-390.png), [long names](breakit-mix-long.png), [many steps](breakit-mix-steps.png).
+
+### Focused follow-up on the combined preview
+
+The combined preview brought in a flow none of the six had seen together (a mark that comes and goes, counting from now), so four of them looked at it again. **Review status: all four Recommend with a change; every change is now in the preview above.** The designer and the head chef did not review it again.
+
+| Reviewer | Verdict | What they found | Done |
+| --- | --- | --- | --- |
+| Cook (put A first) | Recommend with a change | The mix beats A for the job: A's half-done fix hides a short time, the mix does not, and as sous chef all four board names show. But when a break moves, its two-line mark goes and the row shrinks about 30 px while the panel is open: the next wet tap lands on the wrong pill. Hold the marks while a panel is open. | Marks hold while a Breaks panel is open, catch up on Close details or Save. **Checked** in the preview. |
+| New starter | Recommend with a change | "short" of what? "then" reads as after 19:00. "away when short" wraps badly. "not ready" sounds unfinished. "need" wraps from its picker. No next step. | "too few", "4 now, 5 from 18:45", "break when too few", "Loading the saved plan. Busy times are checked after.", "People needed then", "Move a marked break." / "Add people or move a marked break." "Unsaved plan" instead of "Draft", which the break details already use. |
+| Skeptic | Recommend with a change | Repairs to round 2 hold. Three new faults, all **Reproduced** on the earlier mix: a quiet night hid the lowest count (0 working at 18:30); two short times marked 7 of 9 rows and gave no time for the second; a Function shift over Dinner counted Cal as on Dinner. | Always the lowest count and when; marks only for the short time named, "Next: 19:45 to 20:15."; a busy time counts its own shift only. **Checked** in `mixbreak.json`. |
+| Keeper | Recommend with a change | Repaint the line and the marks on the existing minute, focus and clock paint (`tmAwayPaint()`'s own slots), never `draw()`, never while a picker is open or someone is typing; the next tick catches up. Storing the busy time on each `kitShifts` entry is safer than a separate field: `kitShifts()`, `recTeam()` and the roster reader read only their own keys, no nightly script reads it, the sous chef save never sends it; only `shClean()` drops it. | In the build contract below. |
+
+The keeper's test: a draft edit at 18:59, the clock past 19:00, then the line and marks are gone, the Save button and inputs are the same nodes, the draft is kept and no read was made. It must fail on the old code.
+
+## Recommendation
+
+**Recommend the mix: B's line in the Save dock (short, "Saved plan" or "Unsaved plan" first, only when too few) + C's "break when too few" mark on the Breaks button of the people away then + A's busy time and people needed on each shift in Admin, Kitchen, Shifts. Reject C's board line and service heads, and A's line in the details.**
+
+**Why it beats the alternatives.**
+- 0 taps to find the short time, where today it is 1 tap and counting 14 lines by hand, and A needs 1 to 9 taps.
+- It says whose break to open. B alone named people in the dock and grew to 196 px with long names; A left the chef to hunt.
+- It catches a half-done fix. A told the chef the plan was fine when it was still short.
+- It says nothing once a short time is over, nothing when the plan has enough, and never "Covered".
+- The setting sits beside the hours it belongs to: 8 taps, no name to make up, and it cannot cross two shifts.
+- No new read, listener, rule or saved record. One new field on each shift in `config/main`, written only by the head chef's admin.
+- B led round 2 (15 points, 4 firsts). After the follow-up, the cook and the keeper, who had put A first, both recommend the mix.
+
+**Principles.**
+- Flighty: real times, from data already on the phone.
+- Airbnb: who, beside the control to tap.
+- Linear: one message.
+- Duolingo: Saved or Unsaved said, no all-clear.
+- Todoist: the need visible beside the shift.
+- Headspace: "too few", "6 needed", "Move a marked break".
+
+**Main downside.** On the head chef's phone the dock grows 43 px while the plan is too few, and a row is lost (7 to 6 in the preview). It also leaves only 2 of the 4 board names in view on the admin first screen, where today's app shows 3. Leaving out the dock's duplicate "Saved 13:00 · Gus" while nothing is unsaved brings it back to 3. The sous chefs' `#/team` keeps all 4.
+
+**The count only knows shift hours.** A person counts for their whole shift: a 17:00 starter on Dinner counts from 15:00. Busy times work best inside the hours when everyone on that shift is in. Personal hours would need a saved field and a rules change later.
+
+**Departures the head chef must choose.**
+- A new line in Today's team's Save dock and a new mark on the grid rows: new patterns for `docs/design-patterns.md`.
+- A new optional field on each shift in Admin, Kitchen, Shifts.
+- Spread them is unchanged. It still does not know the need. Round 1 kept its contract.
+
+**Before the build is ready** (Implemented app, not Preview):
+1. The On break now board ends above the dock on the admin phone's first screen (finding 1, reproduced in today's app): measure, and leave out the dock's duplicate status line while nothing is unsaved, or another repair.
+2. Carry the busy time in `shClean()`, `draftOf()`, the draft merge and `saveConfig()`. A node test, and a client test that a People save and a Shifts save keep it. Leave it out when unset (`tests/todays-team.test.js` checks the exact shift JSON).
+3. One pure count shared by the line and the marks, per person, per shift, from now on for today and the whole day for a planned day. Node tests for: a short roster, two short times, a busy time across a split saved under the other shift, a shift with no hours ("Dinner has no hours set"), and From after To refused in the setting.
+4. Repaint on the existing paths only, with the hold rule; the keeper's clock-boundary test, shown failing on the old code.
+5. Loading, failed, stale and wrong-day reads say "Loading the saved plan" or that it could not check, never a count.
+6. Remeasure at 390, 768 and 1280 px in the full app with real fonts, the admin and both chef roles, and a failed Save in the stand-in.
+7. Contrast of the line and the mark in the app, both themes.
+
+**Unresolved.**
+- How often the kitchen really runs short. The evidence is a made-up day.
+- Whether a busy time per shift is enough, or the head chef wants a quieter Monday need (per weekday was split in round 1; later, if it nags).
+- The admin's whole-record config save may already drop `proofWords` and `pastEdit` (keeper, read only, not reproduced): its own check and fix pull request, outside this feature.
