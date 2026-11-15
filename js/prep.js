@@ -14018,6 +14018,16 @@ if (list.length) sg('oreg', 's');
   function tmHrsWords(id, s) { var r = tmf && tmf.hrs && tmf.hrs[id] && tmf.hrs[id][s.id], h = tmHrs(tmf, id, s); return h ? (r ? 'Roster ' : s.name + ' hours ') + tmHHMM(h[0]) + ' to ' + tmHHMM(h[1]) : 'Hours not set'; }
   // a saved plan with nobody on reads as Not set everywhere (head chef, 16 Nov 2026), so the roster file can fill it again
   function tmSet(rec) { return !!(rec && rec.on && rec.on.length); }
+  /* The roster file is the source of truth for who works when (head chef, 16 Nov 2026). On a day whose plan holds roster
+     hours, a person on a service the roster did not give them is flagged in words, never blocked or changed: not on the
+     roster that day at all, or rostered for other hours. A service added by hand inside their roster time takes those
+     hours (tmAddShift()) and is not flagged. '' on a day with no roster hours, or when everything is on the roster. */
+  function tmRosterDay(f) { return !!(f && f.hrs && Object.keys(f.hrs).some(function (id) { return f.on[id] && f.hrs[id] && Object.keys(f.hrs[id]).length; })); }
+  function tmRosterOff(id) { var h = tmf.hrs && tmf.hrs[id]; return tmRosterDay(tmf) && tmf.on[id] ? tmServiceChoices().filter(function (s) { return tmOnShift(id, s.id) && !(h && h[s.id]); }) : []; }
+  function tmRosterFlag(id) {
+    var off = tmRosterOff(id), h = tmf.hrs && tmf.hrs[id]; if (!off.length) return '';
+    return h && Object.keys(h).length ? 'Not on the roster for ' + off.map(function (s) { return s.name; }).join(', ') + ': rostered ' + tmHoursWords(h) : 'Not on the roster this day';
+  }
   /* A shift hidden until someone is on it (head chef, 15 Nov 2026, docs/occasional-shifts-options/brief.md, B repaired):
      set in Admin, Kitchen, Shifts. Only the planner's choices follow it: Add staff's service boxes and a person's service
      chips, where it shows as "+ Smoker". It shows as usual when someone on this date's draft works it, when it is ticked
@@ -14315,7 +14325,7 @@ if (list.length) sg('oreg', 's');
     var notes = shs.map(function (s) { var h = learn[p.id + '|' + s.id]; return h ? (shs.length > 1 ? s.name + ': ' : '') + h : ''; }).filter(Boolean);
     return '<li class="tm-person-row tm-grid-row' + (tmUi.focus === p.id ? ' is-focused' : '') + '" data-id="' + esc(p.id) + '" data-sh="' + esc(tmRowService(p.id)) + '"><div class="tm-grid-who"><span class="tm-person-name">' + esc(p.name) + '</span>' +
       '<button type="button" class="tm-grid-brk" data-p="tm-focus" data-id="' + esc(p.id) + '" aria-expanded="' + (tmUi.focus === p.id) + '" aria-label="' + esc('Breaks for ' + p.name + ': ' + (bs.length ? brk : 'not set')) + '"' + (svOf('t') === 'busy' ? ' disabled' : '') + '>Breaks <span>' + esc(brk) + '</span></button>' +
-      tmShortMarkHTML(p.id) + '</div>' +
+      tmShortMarkHTML(p.id) + (tmRosterFlag(p.id) ? '<span class="tm-roster-flag">' + esc(tmRosterFlag(p.id)) + '</span>' : '') + '</div>' +
       shs.map(function (s) { return '<div class="tm-grid-cell">' + tmGridCellHTML(p, s, shs) + '</div>'; }).join('') +
       (tmf.hrs && tmf.hrs[p.id] ? '<p class="tm-learn tm-roster-time tm-grid-note">Roster ' + esc(tmHoursWords(tmf.hrs[p.id])) + '</p>' : '') +
       notes.map(function (n) { return '<p class="tm-learn tm-grid-note">' + esc(n) + '</p>'; }).join('') + '</li>';
@@ -14622,6 +14632,8 @@ if (list.length) sg('oreg', 's');
       tmUi.quick = null; tmUi.quickOpen = false;
       var chooser = S.root && S.root.querySelector('details.tm-quick-add'); if (chooser) chooser.open = false;
       tmClearMsg(); tmAssignMsg = staff.length + (staff.length === 1 ? ' person added to ' : ' people added to ') + services.map(function (x) { return x.name; }).join(', ') + '. Set sections and breaks, then Save.';
+      var offNames = staff.filter(function (p) { return tmRosterOff(p.id).length; }).map(function (p) { return p.name; });
+      if (offNames.length) tmAssignMsg += ' Not on the roster for this: ' + offNames.join(', ') + '.';
       draw(); return;
     }
     if (a === 'tm-showoff') { tmShowOff = !tmShowOff; draw(); return; }
@@ -14633,7 +14645,7 @@ if (list.length) sg('oreg', 's');
       var o = tmf.on[id];
       if (o && o[sh] !== undefined) tmRemoveShift(id, sh);
       else tmAddShift(id, sh);
-      tmClearMsg(); tmAssignMsg = mnName(id) + (tmOnShift(id, sh) ? ' added to ' : ' removed from ') + s.name + '. Not saved yet.'; draw();
+      tmClearMsg(); tmAssignMsg = mnName(id) + (tmOnShift(id, sh) ? ' added to ' : ' removed from ') + s.name + '. Not saved yet.' + (tmOnShift(id, sh) && tmRosterFlag(id) ? ' ' + tmRosterFlag(id) + '.' : ''); draw();
       // the chip tapped became that shift's pressed chip in the same place: the focus stays on it
       if (occ) requestAnimationFrame(function () { var chip = S.root && Array.prototype.filter.call(S.root.querySelectorAll('[data-p="tm-sh"]'), function (b) { return b.getAttribute('data-id') === id && b.getAttribute('data-v') === sh; })[0]; if (chip) chip.focus({ preventScroll: true }); });
       return;
@@ -15019,6 +15031,7 @@ if (list.length) sg('oreg', 's');
     var keep = tmf, mine = tmPlan, entry = tmPlanEntry(keep.day), identity = stableIdentity(), out = tmOut(keep), t = now(), v = keep.base + 1;
     var d = { day: keep.day, on: out.on, br: out.br, v: v, at: keep.base ? keep.at : t, upd: t };
     var people_ = {}, current = d.day === dayNow(), ops = [['set', docRef('team', d.day), d]], unset = [];
+    var offRoster = tmPeople().filter(function (pp) { return keep.on[pp.id]; }).map(function (pp) { var o = tmRosterOff(pp.id); return o.length ? pp.name + ' (' + o.map(function (x) { return x.name; }).join(', ') + ')' : ''; }).filter(Boolean);
     out.on.forEach(function (o) { people_[o.id] = 1; });
     // who still has no section, in the grid's order (person, then Lunch, Dinner, ...); a chef's role is not missing
     tmPeople().forEach(function (pp) { if (chefP(pp) || !keep.on[pp.id]) return; tmServiceChoices().forEach(function (ss) { if (keep.on[pp.id][ss.id] === '') unset.push(pp.name + ' ' + ss.name); }); });
@@ -15037,7 +15050,7 @@ if (list.length) sg('oreg', 's');
       var n = Object.keys(people_).length;
       var finish = function (noticeFailed) {
         if (tmPlan !== mine || identity !== stableIdentity()) return;
-        entry.msg = 'Team for ' + tmPlanDate(d.day) + ' saved at ' + clock(t) + ': ' + (n ? n + (n === 1 ? ' person' : ' people') + ' on.' : 'nobody on, so the day reads as Not set.') + (unset.length ? ' Still no section: ' + unset.slice(0, 6).join(', ') + (unset.length > 6 ? ' and ' + (unset.length - 6) + ' more' : '') + '.' : '') + (noticeFailed ? ' Other screens may need to reopen the book to see it.' : '') + tmRsLeft();
+        entry.msg = 'Team for ' + tmPlanDate(d.day) + ' saved at ' + clock(t) + ': ' + (n ? n + (n === 1 ? ' person' : ' people') + ' on.' : 'nobody on, so the day reads as Not set.') + (unset.length ? ' Still no section: ' + unset.slice(0, 6).join(', ') + (unset.length > 6 ? ' and ' + (unset.length - 6) + ' more' : '') + '.' : '') + (offRoster.length ? ' Not on the roster: ' + offRoster.slice(0, 6).join(', ') + (offRoster.length > 6 ? ' and ' + (offRoster.length - 6) + ' more' : '') + '.' : '') + (noticeFailed ? ' Other screens may need to reopen the book to see it.' : '') + tmRsLeft();
         if (tmf === keep) tmMsg = entry.msg;
         svDone('t', tmf === keep, function () {}); draw(); tmPaint();
       };

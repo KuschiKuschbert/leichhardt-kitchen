@@ -5494,6 +5494,7 @@ html:has(.tm-focus-page) {
   .tm-focus-page .tm-grid-wide > .tm-grid-head > .tm-grid-who { display: none; }
   .tm-focus-page .tm-grid-wide > .tm-grid-row > .tm-grid-who { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
   .tm-focus-page .tm-grid-wide > .tm-grid-row > .tm-grid-who > .tm-short-mark { flex-basis: 100%; margin-top: -.5rem; }
+  .tm-focus-page .tm-grid-wide > .tm-grid-row > .tm-grid-who > .tm-roster-flag { flex-basis: 100%; margin-top: -.25rem; }
   .tm-notebook.tm-focus-page .tm-grid-wide .tm-grid-row .tm-person-name { max-width: none; }
 }
 @supports not (grid-template-columns: subgrid) {
@@ -5523,6 +5524,8 @@ html:has(.tm-focus-page) {
 .tm-notebook.tm-focus-page .tm-short-line { flex: 1 1 100%; min-width: 0; margin: 0; font-size: .8125rem; line-height: 1.4; overflow-wrap: break-word; }
 .tm-notebook.tm-focus-page .tm-short-line b { color: var(--small-ink); }
 .tm-short-mark { display: block; margin-top: -.35rem; font: 700 .8125rem/1.3 var(--body); color: var(--small-ink); overflow-wrap: break-word; }
+/* off the roster (head chef, 16 Nov 2026): the same orange words under the name, shown only when it applies */
+.tm-roster-flag { display: block; margin-top: .1rem; font: 700 .8125rem/1.3 var(--body); color: var(--small-ink); overflow-wrap: break-word; }
 .tm-short-mark[hidden] { display: none; }
 /* a laptop: the line beside Save, so the dock keeps its height */
 @media (min-width: 1100px) { .tm-notebook.tm-focus-page .tm-short-line { flex-basis: 16rem; } }

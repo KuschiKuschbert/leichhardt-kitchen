@@ -9,7 +9,7 @@ const today = L.ymd(new Date(L.NOW)), TEAM = key('team', today), CFG = key('conf
 const tomorrow = L.ymd(new Date(L.NOW + 86400000));
 const people = [
   { id: 'sam', name: 'Sam', role: 'sous', active: true, add: true, tick: true, del: true },
-  ...['Ari', 'Bea', 'Dev', 'Mo'].map(n => ({ id: n.toLowerCase(), name: n, role: 'staff', active: true, add: true, tick: true }))
+  ...['Ari', 'Bea', 'Cy', 'Dev', 'Mo'].map(n => ({ id: n.toLowerCase(), name: n, role: 'staff', active: true, add: true, tick: true }))
 ];
 // saved in this order on purpose: time order puts Smoker (06:00) first and All day dining (15:00) before Dinner (17:00)
 const SHIFTS = [
@@ -131,6 +131,34 @@ const page = p => p.evaluate(() => document.body.innerText);
   await click(p, '[data-p="tm-date-toggle"]');
   ok(/Not set/.test(await p.$eval('[data-p="tm-day"][data-day="' + today + '"]', e => e.innerText)), 'Not set: the week list shows the cleared day as Not set, not Saved');
   ok(p.errors.length === 0 && !await L.overflow(p), 'Clear: no page errors and no sideways scroll at 390 px ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // 7. the roster is the source of truth (head chef, 16 Nov 2026): anyone on a service it did not give them is flagged, never blocked
+  p = await admin(b); await ready(p);
+  ok(!await p.locator('.tm-roster-flag').count(), 'roster: a day as the roster file left it has no flags');
+  await click(p, '[data-p="tm-focus"][data-id="ari"]');
+  await click(p, '[data-p="tm-sh"][data-id="ari"][data-v="dinner"]');
+  await click(p, '.tm-detail-workbench [data-p="tm-on"][data-id="ari"][data-sh="dinner"]');
+  const ariFlag = await p.$eval('.tm-person-row[data-id="ari"] .tm-roster-flag', e => e.textContent).catch(() => '');
+  ok(ariFlag === 'Not on the roster for Dinner: rostered 10:00 to 15:00', 'roster: Ari (rostered 10:00 to 15:00) put on Dinner is flagged under his name (' + ariFlag + ')');
+  ok(/Ari added to Dinner\. Not saved yet\. Not on the roster for Dinner: rostered 10:00 to 15:00\./.test(await page(p)), 'roster: the words say it as he is added');
+  await click(p, '[data-p="tm-add-staff"]');
+  await p.locator('[data-k="tm-quick-person:cy"]').setChecked(true); await L.settle(p, 150);
+  await p.locator('[data-k="tm-quick-shift:lunch"]').setChecked(true); await L.settle(p, 150);
+  await click(p, '[data-p="tm-quick-add"]');
+  ok(/Not on the roster for this: Cy\./.test(await page(p)) && await p.$eval('.tm-person-row[data-id="cy"] .tm-roster-flag', e => e.textContent).catch(() => '') === 'Not on the roster this day', 'roster: Cy, not on the roster at all, is added and flagged: Not on the roster this day');
+  ok(await p.locator('.tm-roster-flag').count() === 2, 'roster: only Ari and Cy are flagged');
+  await click(p, '[data-p="tm-save"]');
+  await L.waitFor(p, k => window.__fake.dump()[k].v === 2, TEAM, 6000);
+  ok(/Not on the roster: Ari \(Dinner\), Cy \(Lunch\)\./.test(await page(p)) && (await saved(p)).on.some(o => o.id === 'cy'), 'roster: Save is never stopped, and its words name who is off the roster');
+  ok(p.errors.length === 0, 'roster: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  // a day with no roster hours flags nobody
+  p = await admin(b, 1280, { on: ON.map(o => ({ id: o.id, sh: o.sh, sec: o.sec })) }); await ready(p);
+  await click(p, '[data-p="tm-focus"][data-id="ari"]');
+  await click(p, '[data-p="tm-sh"][data-id="ari"][data-v="dinner"]');
+  await click(p, '.tm-detail-workbench [data-p="tm-on"][data-id="ari"][data-sh="dinner"]');
+  ok(!await p.locator('.tm-roster-flag').count() && !/Not on the roster/.test(await page(p)), 'roster: a day planned without the roster file flags nobody');
   await p.context().close();
 
   // 6. a plan saved with nobody on: the chef is asked to set today's team again
