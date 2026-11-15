@@ -266,9 +266,6 @@
     if (r.guideId) parts.push('Guide: ' + (guide ? guide.title : r.guideId));
     return '<span class="hint">' + esc(parts.join('. ')) + '</span>';
   }
-  function referenceSearch() {
-    return '<form class="ai-queue-search" data-ai-reference-search><label class="label" for="ai-reference-query">Find an item link</label><div class="btn-row"><input class="search" type="search" id="ai-reference-query" data-k="ai-reference-query" data-ai-reference-query name="q" value="' + esc(state.referenceSearchDraft) + '"><button class="btn" type="submit">Search</button>' + button('clear-reference-search', 'Clear') + '</div></form>';
-  }
   function references() {
     // On opening this queue, reuse the same once-per-session reference, supplier and 90-day summary reads.
     var refs = data('references', true), s = data('analysis/range-90'); data('suppliers', true);

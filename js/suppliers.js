@@ -404,16 +404,6 @@
     return list;
   }
   function catalogueHeading(column, label) { return '<button type="button" class="ux-sort" data-su="sort" data-column="' + column + '">' + label + (M.tableSort && M.tableSort.column === column && M.tableSort.direction ? M.tableSort.direction === 1 ? ' ↑' : ' ↓' : ' ↕') + '</button>'; }
-  function filterBadges() {
-    var out = [];
-    function badge(text, field) { return '<button type="button" class="chip" data-su="reset-filter" data-field="' + field + '">' + esc(text) + ' ×</button>'; }
-    if (M.q) out.push(badge('Search: ' + M.q, 'q'));
-    if (M.group) out.push(badge('Group: ' + M.group, 'group'));
-    if (M.includeArchived && M.mode === 'manage') out.push(badge('Include archived', 'includeArchived'));
-    if (M.tableSort && M.tableSort.direction && M.mode === 'manage') out.push(badge('Sort: ' + M.tableSort.column, 'sort'));
-    if (out.length) out.push(badge('Reset All Filters', 'all'));
-    return '<div class="ux-active-filters">' + out.join('') + '</div>';
-  }
   function pager(list) {
     var pages = Math.ceil(list.length / 20); if (pages <= 1) return '';
     return '<div class="su-pager"><span class="hint">' + (M.page * 20 + 1) + ' to ' + Math.min(list.length, (M.page + 1) * 20) + ' of ' + list.length + ' items</span><div class="btn-row">' + button('previous', 'Previous', M.page ? '' : ' disabled') + button('next', 'Next', M.page + 1 < pages ? '' : ' disabled') + '</div></div>';

@@ -3861,7 +3861,6 @@
   function recipeById(id) { return D.recipes.filter(function (r) { return r.id === id; })[0] || null; }
 
   /* ---------- who is the owner: only the owner's Google account may read config/admins, so a successful read proves it ---------- */
-  function adminsRef() { return docRef('config', 'admins'); }
   function bootstrapHTML() {
     var c = S.bootstrapConfig || {}, names = (c.people || []).filter(function (p) { return p.active !== false; });
     return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Set up the head chef</h2><p class="hint">Your Google account is verified. Choose the head chef name, then set its personal PIN to unlock this device.</p><div class="p-names">' + names.map(function (p) { return '<button type="button" class="chip" data-p="owner-head" data-id="' + esc(p.id) + '">' + esc(p.name) + '</button>'; }).join('') + '</div><div class="field"><label class="label" for="owner-name">Or add the head chef name</label><input class="search" id="owner-name" maxlength="40" autocomplete="name"></div><button type="button" class="btn dark" data-p="owner-create">Add head chef</button>' + (S.saveMsg ? msgHTML(S.saveMsg) : '') + '</section>';
@@ -7461,9 +7460,10 @@
      laptop's page tabs lit Prep while they were open (audit, 8 Nov 2026). They light nothing then, like the other chef hat
      pages. Two small lists, no reads. */
   function navMark() {
-    var sub = S.name === 'prep' && !!(S.staffOpen || S.notesOpen || S.minOpen);
+    // Only while the prep list is on screen: S.name starts as 'prep', so Home lit Prep too (audit, 15 Nov 2026)
+    var here = S.name === 'prep' && !!S.root && document.body.contains(S.root), sub = here && !!(S.staffOpen || S.notesOpen || S.minOpen);
     document.querySelectorAll('.tabbar a[href="#/prep"], .pnav a[href="#/prep"]').forEach(function (a) {
-      if (sub) a.removeAttribute('aria-current'); else if (S.name === 'prep') a.setAttribute('aria-current', 'page');
+      if (sub) a.removeAttribute('aria-current'); else if (here) a.setAttribute('aria-current', 'page');
     });
   }
   function draw() {
@@ -7554,10 +7554,6 @@
      and a tick or remove on an older line is applied to the copy here. No re-reading after every tap. */
   function ordReload() { draw(); }
   function ordPatch(date, id, ch) { (S.ordAll || []).forEach(function (x) { if (x.date === date && x.id === id) Object.assign(x, ch); }); draw(); }
-  function ordAllLines() {
-    var t = dayNow();
-    return S.ordDate === t && S.ordState === 'ok' ? (S.ordAll || []).filter(function (x) { return x.date !== t; }).concat(S.ordLines || []) : (S.ordAll || []);
-  }
   /* Like the prep list: anything not ordered on the last written day rolls onto today's order list by itself, every day
      until someone ticks it as ordered. The copy's id comes from the first line (root), so two phones rolling at once
      write the same line once. Each phone tries once a day (lk.ord.rolled), so the reads stay small. */
@@ -9562,7 +9558,6 @@ if (list.length) sg('oreg', 's');
      Staff ids only are stored in att and acts (names are looked up from the staff list). No listener, no polling. */
   var MN_DAYS = 90, MN_OPEN = 30, MN_LATE = 3, MN_STALE = 30 * 60000;
   var MN_ATT = [['present', 'Present'], ['apology', 'Apology'], ['absent', 'Absent']];
-  var MN_ALL = { decisions: 'Decisions', menu: 'Menu changes', safety: 'Safety', dates: 'Dates ahead', other: 'Other' };
   function mnName(id) { var p = ((S.config && S.config.people) || []).filter(function (x) { return x.id === id; })[0]; return p ? p.name : (id ? 'Former staff' : ''); }
   function mnLines(t) { return String(t || '').split(/\n/).map(function (s) { return s.trim(); }).filter(Boolean); }
   /* only the head chef (Google account) writes and publishes minutes. Sous chefs read the register. */
@@ -9665,7 +9660,6 @@ if (list.length) sg('oreg', 's');
   function mnBox(num, title, inner, cls) {
     return '<section class="mn-box' + (cls ? ' ' + cls : '') + '"><h3 class="mn-bh">' + (num ? '<span class="mn-bn">' + num + '</span>' : '') + esc(title) + '</h3>' + inner + '</section>';
   }
-  function mnList(t, link) { return mnUl(mnLines(t), link); }
   function mnUl(lines, link) { return '<ul class="mn-ul">' + lines.map(function (l) { return '<li>' + (link ? linkNote(l) : esc(l)) + '</li>'; }).join('') + '</ul>'; }
   /* a section's lines in parts: a line starting with "# " is a heading and starts a new part (the team notes template uses them) */
   function mnParts(t) {

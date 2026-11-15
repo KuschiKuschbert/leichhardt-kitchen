@@ -210,6 +210,18 @@ const shut = async p => { if (await p.$('.nt-wrap')) { await p.keyboard.press('E
     await p.context().close();
   }
 
+  // On Home no page tab is lit: the prep script starts with its page named 'prep' and lit Prep there (audit, 15 Nov 2026).
+  // Open Prep and the tab is lit; back on Home it is not.
+  for (const w of [390, 1280]) {
+    p = await L.open(b, '#/', { who: 'ann', extra: full(), width: w, wait: 1800 });
+    const lit = () => p.evaluate(() => [...document.querySelectorAll('.tabbar a[aria-current], .pnav a[aria-current]')].filter(a => a.getBoundingClientRect().width > 0).map(a => a.textContent.trim()).join(','));
+    ok(await lit() === '', w + ' px: Home lights no page tab (' + await lit() + ')');
+    await p.evaluate(() => { location.hash = '#/prep'; }); await L.waitFor(p, () => !!document.querySelector('.nb-addline'), null, 8000).catch(() => {}); await L.settle(p, 600);
+    ok(await lit() === 'Prep', w + ' px: the prep list lights Prep (' + await lit() + ')');
+    await p.evaluate(() => { location.hash = '#/'; }); await L.waitFor(p, () => !!document.querySelector('#hm-board'), null, 8000).catch(() => {}); await L.settle(p, 800);
+    ok(await lit() === '', w + ' px: back on Home no page tab is lit (' + await lit() + ')');
+    await p.context().close();
+  }
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });

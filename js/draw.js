@@ -64,7 +64,6 @@
     var it = itemOf(a);
     return it && it.id + '@' + it.v === a ? LIB.body(it.id) : '';
   }
-  function sizeOf(a) { var it = itemOf(a); return it ? [it.w, it.h] : [40, 40]; }
   function isPiece(el) { return !!el && (el.t === 'item' || el.t === 'raw'); }
   function nameOfEl(el) {
     if (el.t === 'item') { var it = itemOf(el.a); return el.ing || (it ? it.name : 'Piece'); }
