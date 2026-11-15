@@ -110,10 +110,12 @@ const teamSeed = {
     return {
       secs: [...document.querySelectorAll('.tm-tls')].map(e => e.textContent),
       rows: [...document.querySelectorAll('.tm-tlr')].map(e => e.querySelector('.tm-tln').textContent),
-      bars: [...document.querySelectorAll('.tm-tlbar i')].map(e => e.getAttribute('style')),
+      // the saved overview's bars (the planner's own rows draw a bar too since 16 Nov 2026)
+      bars: [...document.querySelectorAll('.tm-tl .tm-tlbar i')].map(e => e.getAttribute('style')),
+      planBars: [...document.querySelectorAll('.tm-plan .tm-tlbar i')].map(e => e.getAttribute('style')),
       editor: document.querySelectorAll('.tm-person-row').length === expected.length && expected.every(([id, service, section]) => {
         const row = document.querySelector('.tm-person-row[data-id="' + id + '"]');
-        // the day grid: one dated section picker per service the person works, no Service to edit switch
+        // the rows on one clock: one dated section picker per service the person works, no Service to edit switch
         return row && !row.querySelector('select[data-k^="tm-row-sh:"]') && picker(row, 'tm-sec:' + id + ':' + service, section);
       })
     };
@@ -121,6 +123,7 @@ const teamSeed = {
   ok(tl.secs.join(',') === 'Grill,Larder', 'team: grouped by section (' + tl.secs.join(', ') + ')');
   ok(tl.rows[0] === 'AnnLunch 10:00 to 15:00 · break 13:00' && tl.rows[1] === 'BoLong day 10:00 to 22:00 · split 14:30, back 17:30', 'team: hours and breaks in words (' + tl.rows.join(' | ') + ')');
   ok(tl.bars.length === 4 && tl.bars.every(s => /^left:\d+(\.\d)?%;width:\d+(\.\d)?%$/.test(s)), 'team: each bar a checked number (' + tl.bars.join(' | ') + ')');
+  ok(tl.planBars.length >= 2 && tl.planBars.every(s => /^left:\d+(\.\d)?%;width:\d+(\.\d)?%$/.test(s)), 'team: the planner rows\' bars are checked numbers too, rounded once (' + tl.planBars.join(' | ') + ')');
   const beforeEdit = await p.evaluate(k => ({ saved: JSON.stringify(__fake.dump()[k]), writes: __fake.writes.length }), fsKey(['team', today]));
   if (tl.editor) await L.pick(p, 'select[data-k="tm-sec:ann:lunch"]', 'larder');
   const inlineEdit = await p.evaluate(k => {
