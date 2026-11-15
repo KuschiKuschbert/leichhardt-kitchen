@@ -2644,6 +2644,18 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fe-head h2 { margin: 0; font: 700 2rem var(--display); overflow-wrap: anywhere; }
 /* the status tag keeps its own height beside Print function: the row stretched it to 48 px from 768 px (audit, 15 Nov 2026) */
 .fe-head .btn-row { align-items: center; }
+/* The chef panel's Kitchen tools (the mix chosen 15 Nov 2026, docs/chef-kitchen-options/brief.md): one row per tool, the
+   whole row the link, its name, what this role can do there and Open in words. One layout at every width, the block
+   capped so the rows do not stop short of it on a laptop. */
+.p-admin.ad-admin .a-pane:has(> .c-tools) { max-width: 48rem; }
+.p-admin.ad-admin .a-tabs[hidden] { display: none; }
+.c-tool { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: center; align-items: baseline; column-gap: .8rem; min-height: 56px; padding: .4rem 0; border-top: 1px solid var(--line); color: inherit; text-decoration: none; }
+.c-tool strong { font-size: 1.0625rem; }
+/* the sentence runs the row's full width under the name and Open, so it wraps to two lines at most on a phone */
+.c-tool small { grid-column: 1 / -1; color: var(--muted); font-size: .875rem; line-height: 1.35; overflow-wrap: anywhere; }
+.c-tool-go { font-weight: 700; white-space: nowrap; text-decoration: underline; text-underline-offset: 3px; }
+.c-tool:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (hover: hover) { .c-tool:hover .c-tool-go { color: var(--accent-ink); } }
 .fe-row2 { display: grid; grid-template-columns: 1fr; gap: 0.6rem; }
 @media (min-width: 600px) { .fe-row2 { grid-template-columns: 1fr 1fr; } }
 .fe-f { min-width: 0; }
@@ -3341,6 +3353,8 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
   .p-admin.ad-admin .ad-heading { margin-bottom: .85rem; padding-top: .2rem; padding-bottom: .9rem; }
   .p-admin.ad-admin .ad-title { font-size: 3rem; }
   .p-admin.ad-admin .ad-intro { display: none; }
+  /* the chef panel says what it is for on a phone too, in one short line (chosen 15 Nov 2026, docs/chef-kitchen-options/brief.md) */
+  .p-admin.ad-admin.chef-panel .ad-intro { display: block; margin: .35rem 0 0; font-size: .9375rem; line-height: 1.4; }
   .p-admin.ad-admin .ad-eyebrow { font-size: .75rem; letter-spacing: .1em; }
   .p-admin.ad-admin .a-tabs { gap: 1.15rem; margin-bottom: 1.1rem; }
   .p-admin.ad-admin .a-nav { padding-block: .4rem .55rem; }

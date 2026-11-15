@@ -1,6 +1,6 @@
 # Chef panel: the Kitchen room's one-button tabs
 
-Requested 15 November 2026, after the whole-app audit of that day. **Not chosen yet. Nothing in the app has changed.** The council advises; the head chef decides.
+Requested 15 November 2026, after the whole-app audit of that day. **Chosen 15 November 2026: the mix, as recommended after the follow-up** (A's one-page Kitchen room with C's rows, "Open" in words on each row, the block capped on wide screens, and a purpose line worded for the role). Built the same day; see Chosen and built at the end. The council advises; the head chef decides.
 
 This is role-based analysis by independent agent reviewers, not research with real staff. Source: `main` at a7947a2. Every number is labelled **Implemented app** (the real panel in the click-test stand-in) or **Preview** (the real panel with the page changed in place by `previews.js`-style edits, never the live book). Both use mocked Firebase, the synthetic sous chef Sam, 390 and 1280 px, and the tests' stand-in font, not the real Barlow fonts.
 
@@ -199,6 +199,43 @@ Review status: the mix is endorsed by the three reviewers who saw it, each with 
 
 Before ready, for either A or the mix: the four checks listed under round 2, plus for the mix a whole-row click test, the remeasure at 390, 768 and 1280 px with a function band showing, and keyboard focus on a row.
 
-## Question for the head chef
+## Chosen and built (15 November 2026)
 
-The five one-button tabs go in both. Which Kitchen room do you want: the mix (rows that say Open, all five tools on the first phone screen), A (tiles that open, closest to the 8 November look), or the panel as it is? Either build is one pull request with the role-worded purpose line.
+The head chef chose the recommendation after the follow-up: the mix. This changes the 8 November choice a little: the Kitchen room and the direct chef hat links stay; the five one-button tabs and the Overview tiles go.
+
+What was built, in `js/prep.js` and `css/app.css`:
+
+- **Kitchen is one page.** `C_GROUPS` gives the room only its Overview; its tab row is not shown. `chefKitchenHTML()` draws one row per tool (`a.c-tool`): the name, what this role can do there, and "Open ›" in words. The whole row is the link to the tool's own page.
+- **The tools keep their gate.** `C_TOOLS` and `chefToolAllowed()` hold the Guides `featOn()` switch. A chef always sees Guides today, so the row cannot be hidden in practice; the check stays for the day that changes.
+- **Find still lists the five tools**, under Kitchen, and opens the tool's page.
+- **A remembered tool tab lands on Kitchen**, any other unknown tab on Dashboard, as before.
+- **The purpose line shows on a phone** for the chef panel and is worded for the role on Today: the Admin panel is named only when its link is drawn; a head chef without Google on the device reads that it needs the Admin panel's Google sign-in; a sous chef reads that owner reports, permissions and settings are the head chef's.
+- **Wide screens:** the Kitchen pane is capped at 48rem, so the rows reach the edge of their block.
+- "Run the shift" is unchanged (round 1).
+
+### Implemented app measurements
+
+The real panel in the click-test stand-in, stand-in font, 15 November 2026. `built-390.png`, `built-768.png`, `built-1280.png`, `built-head-390.png`, `built-head-768.png` and `built-head-1280.png` are beside this brief.
+
+| | Sous chef | Head chef (with the Admin link) |
+| --- | --- | --- |
+| Taps to Guides through the panel | 4 (was 5) | 4 (was 5) |
+| Controls that lead to a tool | 5 (was 10) | 5 (was 10) |
+| 390 px phone, no function on: first row, last row ends (tab bar at 776) | 376, 739: all five fit by 37 px | 403, 765: all five fit by 11 px |
+| 390 px phone, function band showing (one today, one tomorrow) | 548, 911: two of five above the tab bar | 575, 937: two of five |
+| 768 px, band showing | all five on the first screen | all five |
+| 1280 x 800 px, band showing | three of five on the first screen | three of five |
+| Row height | 57 to 76 px | 57 to 76 px |
+| Sideways scroll | none | none |
+
+Differences from the preview:
+
+- **The rows are a little lower and tighter than previewed.** The preview had no "Open" word and shorter sentences. With "Open ›" beside the name and the real sentences, the first build ended 43 px under the tab bar. The sentence now runs the row's full width under the name and Open, and the row padding is 0.4rem, so all five fit again with no function on. The head chef's margin is 11 px, not the preview's 23 px.
+- **On a function day the first-screen gain is gone on a phone.** The reviewers named this risk; it is now measured: two of five rows show before a scroll. Folding the band with its − button brings them back. Today's page showed one tile before a scroll in the same state, so it is no worse than before, but the mix's main advantage over A holds only when no function is on.
+- The Guides row cannot be held back from a chef, so that check could not be exercised.
+
+### Checks, in `tests/chef-panel.test.js`
+
+For both chef roles at 390, 768 and 1280 px: five rows with their own addresses, Open in words, at least 56 px tall, no tab row and no tiles, rows reaching their block's edge, the role wording, the purpose line per role, all five above the tab bar on a phone with no function on. Also: a tap on the name, the sentence and Open each opens the tool; Back returns to the Kitchen room; an old tool tab lands on Kitchen; Find offers Guides under Kitchen and opens it.
+
+Not evidenced: real Barlow fonts (the stand-in font is wider, so the real fit may be better or worse), a live device, and screen reader use. Keyboard focus is styled (`.c-tool:focus-visible`) but its contrast was not measured.
