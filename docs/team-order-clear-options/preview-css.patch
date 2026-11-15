@@ -1,8 +1,8 @@
 diff --git a/css/app.css b/css/app.css
-index b8217d0..bf66cc5 100644
+index b8217d0..446ed4c 100644
 --- a/css/app.css
 +++ b/css/app.css
-@@ -5705,3 +5705,38 @@ html:has(.tm-focus-page) {
+@@ -5705,3 +5705,76 @@ html:has(.tm-focus-page) {
    #rec-print h2 { font: 700 12pt var(--display); margin: 10pt 0 2pt; break-after: avoid; }
    #rec-print p { margin: 0 0 2pt; }
  }
@@ -41,3 +41,41 @@ index b8217d0..bf66cc5 100644
 +}
 +@media (max-width: 599px) { .tm-focus-page .tm-rowticks .tk1 { display: none; } }
 +@media (min-width: 600px) { .tm-tlplan > .tm-tlrow > .tm-grid-who { grid-row: span 4; } }
++/* D, the mix (preview only) */
++.tm-tl-d .tm-rowbar .br, .tm-tl-d .tm-rowbar .sp { top: -4px; bottom: -4px; border: 2px solid var(--surface-paper); border-radius: 3px; }
++.tm-tl-d .tm-rowbar .br { background: var(--accent); }
++.tm-tl-d .tm-tlrole { color: var(--muted); font-size: .8125rem; }
++.tm-tl-d .tm-tlrow > .tm-grid-who .tm-pick { margin: .25rem 0 0; }
++.tm-tl-d .tm-tlrow > .tm-grid-who :is(select, .ux-picker-trigger) { min-height: 44px; font-size: .875rem; border-style: dashed; }
++.tm-notebook.tm-focus-page .tm-tl-d .tm-tloff { display: inline-flex; align-items: center; min-height: 44px; padding: 0; font-size: .8125rem; color: var(--bad-ink); text-align: left; white-space: normal; }
++@media (max-width: 599px) {
++  .tm-tl-d .tm-tlrow > .tm-grid-who { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; }
++  .tm-tl-d .tm-tlsvc { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); }
++}
++.tm-tl-d .tm-tlsvc { align-items: start; }
++.tm-tl-d .tm-rowbar { background: transparent; }
++.tm-tlplan-svcs small { font-size: inherit; }
++@media (max-width: 599px) { .tm-tl-d .tm-tlplan-svcs small { display: none; } .tm-tl-d .tm-tlplan-svcs { gap: .1rem .75rem; } }
++/* D: the service line by areas: the service, its section, its breaks, + Break; on a phone + Break sits beside the section */
++.tm-tl-d .tm-tlsvc.tm-tlsvc-d { grid-template-columns: minmax(6.5rem, 10rem) minmax(8rem, 12rem) minmax(0, 1fr) auto; grid-template-areas: "name sec brs add"; }
++.tm-tlsvc-d > .tm-tlsvc-name { grid-area: name; } .tm-tlsvc-d > .tm-tlsvc-sec { grid-area: sec; } .tm-tlsvc-d > .tm-tlsvc-brs { grid-area: brs; } .tm-tlsvc-d > .tm-tlsvc-add { grid-area: add; }
++.tm-tl-d .tm-tlhint { display: block; color: var(--muted); font-size: .8125rem; line-height: 1.3; }
++.tm-tl-d .tm-tlrow-day .tm-roster-time { margin-bottom: .1rem; }
++@media (max-width: 599px) {
++  .tm-tl-d .tm-tlsvc.tm-tlsvc-d { grid-template-columns: minmax(0, .9fr) minmax(0, 1.2fr) auto; grid-template-areas: "name sec add" "brs brs brs"; gap: .3rem .4rem; }
++  .tm-tl-d .tm-tlrow > .tm-grid-who { flex-wrap: nowrap; }
++  .tm-tl-d .tm-tlrow > .tm-grid-who > .tm-person-name { flex: 1 1 auto; min-width: 0; }
++  .tm-tl-d .tm-tlrow > .tm-grid-who .tm-pick { margin: 0; flex: 0 1 11rem; min-width: 0; }
++  .tm-tl-d .tm-tlplan > .tm-tlrow { padding: .35rem 0; }
++}
++/* D: two columns from 600 px (the name, then the day and its services); the list takes the whole width */
++.tm-tl-d .tm-tlplan > .tm-tlrow { display: block; }
++.tm-tl-d .tm-tlsvc-head { display: flex; flex-wrap: wrap; align-items: center; column-gap: .6rem; }
++.tm-notebook.tm-focus-page .tm-tl-d .tm-tloff { min-height: 44px; }
++@media (min-width: 600px) {
++  .tm-tl-d .tm-tlplan > .tm-tlrow { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); column-gap: .75rem; align-items: start; }
++  .tm-tl-d .tm-tlplan > .tm-tlrow > .tm-grid-who { grid-row: auto; }
++  .tm-tl-d .tm-tlplan > .tm-tlrow > .tm-tlrow-main { grid-column: 2; min-width: 0; }
++}
++@media (min-width: 1100px) { .tm-focus-page .tm-focus-grid.tm-tl-d { grid-template-columns: minmax(0, 1fr); } }
++@media (min-width: 600px) { .tm-notebook .tm-tl-d .tm-tlrow > .tm-grid-who .tm-pick { flex: none; width: 100%; } }

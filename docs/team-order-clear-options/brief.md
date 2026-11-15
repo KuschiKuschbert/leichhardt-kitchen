@@ -192,3 +192,79 @@ Each must still be possible after a restyle, at 390, 768 and 1280 px, for the he
 | Save | The dated, versioned Save with its words ("Team for Monday 16 November saved at 13:00: 9 people on. Still no section: ..."), the Too few line (`tm-save`) |
 | Today only | On break now (the charcoal live strip) and its Saved details, Next planned breaks today, the Saved shift overview (`tm-live-toggle`, `tm-next-toggle`, `tm-overview-toggle`) |
 | Other | No shifts yet: Set up the shifts (`tm-setup`); PIN again (`tm-pin`); a past day read-only with its saved timeline |
+
+## Round 2 scores
+
+Six fresh agents ranked A, B and C with the same evidence; the head chef's restyle direction reached them while scoring. Points: 3 for first, 2 for second, 1 for third.
+
+| Reviewer | 1st | 2nd | 3rd | Recommends |
+| --- | --- | --- | --- | --- |
+| Cook mid-service | C | B | A | The mix on C's row; no bar below 600 px; chips become one "+ Service" picker and a "Remove" with a second tap; it beats C only if a phone shows 2 or more people |
+| Head chef | C | B | A | A's fixes first, then the restyled C once the roster-to-service mapping is decided |
+| Skeptic | C | A | B | A trimmed C after A's hours fix; keep the Saved overview (the only view of the saved plan while the draft changes); drop Whole day review instead |
+| New starter | C | B | A | C with the chips and panel gone, B's one bar picture and A's one sentence; the break mark needs a shape, not only orange |
+| Keeper of the book | C | A | B | The mix in three pull requests, A's fixes first; one hours helper and one bar renderer; one structure at every width |
+| Kitchen screen designer | C | B | A | The C-based mix; keep the Saved overview (the only by-section view once the columns go); hours said once; the bar track on paper is 1.08:1 |
+
+**Totals: C 18, B 10, A 8.** All six put C first.
+
+**Disagreement:**
+- The Saved shift overview: drop it (cook, new starter, head chef) or keep it (skeptic, keeper, designer: the only view of the saved plan and the only one grouped by section once the columns go). The mix keeps it.
+- The bar on a phone: hide it (cook) or keep it as the picture a reader without much English uses (new starter). The mix keeps it, thin.
+- B or A second: four put B second (a picture of the day); the skeptic and the keeper put A second (it fixes the fault without a second bar renderer).
+
+**Break-it findings from scoring:**
+
+| Scenario | Evidence | Repair in the mix |
+| --- | --- | --- |
+| + Break puts both breaks of a double shift (Mo on Lunch and Dinner, 10:00 to 21:00 on each) at 15:15, between services, with no overlap warning. | **Reproduced** in the preview (skeptic) | The default is the middle of the person's hours cut to that service's hours (`tmCut()`): Lunch about 12:15, Dinner about 18:45. |
+| Spread them gives Bea (11:00) and Dev (12:00) a 10:00 break. | **Reproduced** in preview A (skeptic) | Spread keeps each break inside the person's hours on that service. |
+| C's row drops the cross-training hint (`tmLearnHints`) and the overlap warning. | Checked in the patch (skeptic, keeper) | Both are in the mix's row. |
+| Two bar renderers already drift: unrounded widths ("7.1000000000000005%"); the saved bar uses service hours, the planner bar roster hours. `tests/kitchen-pages.test.js` counts `.tm-tlbar i`. | **Reproduced** in node (keeper) | Widths rounded in the preview; the build has one bar and hours helper for the planner, the saved overview and the past day. |
+| The patch broke the grid's accessible name on the default path (`aria-label=""Sections ...`). | Checked in the patch (keeper) | Fixed in the patch; an aria-label check in `tests/team-grid.test.js` at build. |
+| "Breaks not set" and "No break yet", "(off)", "+ Smoker" and "Off": several words for one state. | Checked in screenshots (new starter, designer, skeptic) | The mix has one wording: "No break yet", and "Add a service" names every service a person is not on. |
+
+## Mix of A, B and C
+
+| Source and part | Take or reject | Principle | Kitchen benefit | Conflict or cost | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| A: the hours helper, break times inside the hours, time order, Clear | Take, as pull request 1 | Todoist | Fixes the reproduced fault on the current grid, small | None | Dev 11 times, not 21 |
+| A: one sentence for hours and break ("Roster 12:00 to 15:00 · Break 13:30 to 14:00") | Take, beside every bar | Headspace | Readable at arm's length, no colour needed | None | All six |
+| A: keeping the grid and the Breaks panel | Reject | Things 3, Airbnb | | Breaks stay a hop away from the hours | 4 taps |
+| B: one hour scale in the sticky head, one structure changed by CSS only | Take | Flighty, Linear | One picture of the day at every width | None | Keeper, designer |
+| B: a bar row under an unchanged grid | Reject | Things 3 | | A second left-to-right meaning in one row; no taps saved | Designer, skeptic |
+| B: removing the Saved shift overview | Reject | Duolingo | | It is the only view of the saved plan and the only one by section | Skeptic, designer, keeper |
+| C: one line per service with section, breaks and + Break | Take | Airbnb, Things 3 | 3 taps a cook, 22 a day | Rewrites the team tests | Measured |
+| C: the Services panel and its chips | Reject; replace with an "Add a service" picker and "Take off" with a second tap | Linear, Headspace | One place and one wording for services | A new control and its design pattern entry | All six |
+| Whole day review | Retire | Linear | The rows are the whole day | | Skeptic, keeper |
+
+A blend of all three layouts is not possible: A and B keep the grid that C removes, and both together would be two render paths. The mix takes C's layout, A's words and fixes, and B's single scale.
+
+## Combined preview: D, the mix
+
+Lead's synthesis of the scorers' own parts; **review status: focused follow-up requested from the designer, the skeptic and the new starter on the new flows (Add a service, Take off) and the phone layout.** Same patch (`window.__tl = 'D'`), runner `preview-run-mix.cjs`, raw `measured-mix.txt`.
+
+- **Head (sticky):** each service in time order with its hours and how many have no section (on a phone, only the counts), then the hour marks (every hour from 600 px, every third on a phone).
+- **Each person, from 600 px:** a name column (the name, Head chef or Sous chef, and **Add a service** listing the services they are not on, in time order, a hidden one as "Smoker 06:00 to 15:00 (shows only when someone is on it)"); beside it their bar on the day's scale with the break as a taller orange block edged in paper, the sentence under it, then one line per service: the service with **Take off** ("Tap again to take Cal off Lunch"), the Section picker (Usually, Often and Same as first, as now), the break pickers ("Break 13:30", "Length 30 min") and **+ Break**; then the cross-training hint and any overlap warning. On a phone the name and Add a service share a line, and + Break sits beside the section.
+- **Gone:** the day grid's columns and "Off" cells, the details panel and its chips, the Breaks link, Whole day review.
+- **Kept:** Add staff (Who's working?, with "+ Smoker"), Find, the date and its week list, Refresh, the dated Save and its words, the Too few line and marks, the fold (Copy last weekday, Clear, Spread), Fill from roster file, On break now, Next planned breaks, the Saved shift overview, the past day's read-only view.
+
+| Measure (Preview) | Today | C | **D, the mix** |
+| --- | ---: | ---: | ---: |
+| Dev: section and a break, taps (390, 768, 1280) | 4 | 3 | **3** |
+| The day: 7 cooks, a section and a break each, then Save, 1280 | 29 | 22 | **22** |
+| Break times offered to Dev | 21 | 11 | **11** |
+| Rows wholly in one screen from the first row, 390 / 768 / 1280 | 3 / 7 / 6 | 1 / 6 / 5 | **2 / 6 / 5** |
+| Rows wholly in one screen from Ari (one service each), 390 / 768 / 1280 | not measured reliably | not measured | **2 / 6 / 6** |
+| Median row px, 390 / 768 / 1280 | 123 / 104 / 104 | 211 / 117 / 117 | **172 / 114 / 114** |
+| Add a service (Ari onto Dinner), 390 | Breaks, Dinner (off), Add Dinner: 3 | Services, then the chip: 3 | **1** |
+| Take someone off a service (Cal off Lunch), 390 | Breaks, Remove Lunch and its breaks: 2 | 3 | **2** (Take off, Tap again) |
+| Clear the whole day, 390 | 30, then Save | 3, then Save | **3, then Save** |
+| A sous chef on `#/team`, 390 | grid | | **9 rows, no Clear, no sideways scroll, no errors** |
+| Sideways scroll, browser errors (390, 768, 1280) | none | none | **none** |
+
+Screenshots: `D-plan-390.png`, `D-dev-390.png`, `D-dev-768.png`, `D-dev-1280.png`, `D-day-1280.png`, `D-takeoff-390.png`. The "from Ari" count for today's page came out short of room (the scroll stopped early), so the first-row count is the comparison.
+
+**Contract fit:** sage book and paper: Works. Words on every state ("No break yet", "Not saved yet", "Tap again to take Cal off Lunch"): Works. The break as a shape and colour with words: Works by precedent; the bar track is gone (the 1.08:1 finding). Real contrast, keyboard focus on the new picker and links, reduced motion: Not evidenced. A failed Save, a lock and a second writer: unchanged code paths, Not evidenced. "Nobody on reads as Not set": not in the preview; pull request 1.
+
+**Not evidenced:** real fonts on a phone; a day with no roster hours (the sentence then says "Lunch hours 10:00 to 15:00"); five services in the sticky head on a phone; about 20 people; a picker held open while bars redraw; the roster-to-service mapping (the head chef's question).
