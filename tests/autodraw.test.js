@@ -215,6 +215,94 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   ok(!errs(p).length, 'changed card: no page errors ' + errs(p).join(' | '));
   await p.context().close();
 
+  /* Keep until redraw (head chef, 15 Nov 2026): a plate laid out before the plates were laid out like the book's own
+     (no layout.lv) stays exactly as it is when its recipe or a card it uses is saved, until the head chef taps Draw it
+     again. The save says so when the ingredients changed, and in red when a new ingredient has no Pass label on it. */
+  ok(w2.layout && w2.layout.lv === 2 && w2.layout.tv && typeof w2.layout.tv.m === 'boolean', 'keep: a plate Draw it for me lays out now carries the layout version (lv 2) and its turn');
+  const older = JSON.parse(JSON.stringify(s)), wpk = fsKey(['drawings', 'wings-plate']);
+  delete older[wpk].layout.lv; delete older[wpk].layout.tv;
+  const vOld = older[wpk].v;
+  // a card it uses changes its ingredients: the older plate is kept, and named
+  p = await L.open(b, '#/manage/r/cowboy-candy', { who: 'ann', extra: Object.assign({}, older, cfg()), wait: 1400 });
+  await editor(p);
+  await L.reveal(p, '[data-mg="ing-add"]'); await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
+  const k3 = await p.evaluate(() => document.querySelectorAll('.mg-ing').length - 1);
+  await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + k3 + '.q"]', '100 g'); await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + k3 + '.name"]', 'Green capsicum (sliced)');
+  await L.settle(p, 200);
+  await p.click('[data-mg="save"]');
+  await wait(p, () => /Kept the older plate drawing/.test(Array.from(document.querySelectorAll('.mg-toasts .p-toast')).map(t => t.textContent).join(' ')), null, 30000);
+  s = await store(p);
+  ok(/Kept the older plate drawing: Fried Chicken Wings\. Open it and tap Draw it again/.test(await toasts(p)) && !/Redrawn/.test(await toasts(p)) && (s[wpk] || {}).v === vOld, 'keep: a card change leaves the older wings plate as it is and says so (' + await toasts(p) + ')');
+  ok(!errs(p).length, 'keep, card change: no page errors ' + errs(p).join(' | '));
+  await p.context().close();
+  // the dish itself gains an ingredient: kept, and in red, as the new ingredient has no Pass label (the allergen lens reads them)
+  p = await L.open(b, '#/manage/r/wings', { who: 'ann', extra: Object.assign({}, older, cfg()), wait: 1400 });
+  await editor(p);
+  await L.reveal(p, '[data-mg="ing-add"]'); await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
+  const k4 = await p.evaluate(() => document.querySelectorAll('.mg-ing').length - 1);
+  await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + k4 + '.q"]', '10 g'); await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + k4 + '.name"]', 'Watercress');
+  await L.settle(p, 200);
+  await p.click('[data-mg="save"]');
+  await wait(p, () => /no Pass label/.test(Array.from(document.querySelectorAll('.mg-toasts .p-toast')).map(t => t.textContent).join(' ')), null, 30000);
+  s = await store(p);
+  ok(/Watercress on Fried Chicken Wings has no Pass label yet/.test(await toasts(p)) && !!(await p.$('.mg-toasts .p-toast-bad')) && (s[wpk] || {}).v === vOld, 'keep: a new ingredient on a kept plate is said in red, the plate is left as it is (' + await toasts(p) + ')');
+  await p.context().close();
+  // a change that is not to the ingredients (the yield): the older plate is kept and nothing is said about it
+  p = await L.open(b, '#/manage/r/wings', { who: 'ann', extra: Object.assign({}, older, cfg()), wait: 1400 });
+  await editor(p);
+  await L.reveal(p, '#mg-yield'); await p.fill('#mg-yield', 'Per serve. About 400 g of wings.'); await L.settle(p, 150);
+  await p.click('[data-mg="save"]');
+  await wait(p, () => /Saved/.test(Array.from(document.querySelectorAll('.mg-toasts .p-toast')).map(t => t.textContent).join(' ')), null, 15000);
+  await L.settle(p, 2500);
+  s = await store(p);
+  ok(!/Kept the older|Redrawn|no Pass label/.test(await toasts(p)) && (s[wpk] || {}).v === vOld, 'keep: a yield change leaves the older plate as it is and says nothing about it (' + await toasts(p) + ')');
+  ok(!errs(p).length, 'keep: no page errors ' + errs(p).join(' | '));
+  await p.context().close();
+  // a row renamed in place is not a new ingredient: its Pass label follows the rename, so no red slip (review, 15 Nov 2026)
+  p = await L.open(b, '#/manage/r/wings', { who: 'ann', extra: Object.assign({}, older, cfg()), wait: 1400 });
+  await editor(p);
+  const bbqRow = await p.evaluate(() => { const f = Array.from(document.querySelectorAll('[data-f^="ing."][data-f$=".name"]')).find(x => x.value === 'Double-smoked BBQ sauce'); return f ? +f.getAttribute('data-f').split('.')[1] : -1; });
+  await L.reveal(p, '[data-f="ing.' + bbqRow + '.name"]'); await p.fill('[data-f="ing.' + bbqRow + '.name"]', 'Smoky BBQ sauce'); await L.settle(p, 200);
+  await p.click('[data-mg="save"]');
+  await wait(p, () => /Saved/.test(Array.from(document.querySelectorAll('.mg-toasts .p-toast')).map(t => t.textContent).join(' ')), null, 15000);
+  await L.settle(p, 2500);
+  ok(bbqRow >= 0 && !/no Pass label/.test(await toasts(p)) && !(await p.$('.mg-toasts .p-toast-bad')), 'keep: a renamed ingredient gives no red slip (' + await toasts(p) + ')');
+  await p.context().close();
+  // Undo after Draw it again on an older plate puts the older layout back too, so the plate is still kept (review)
+  p = await L.open(b, '#/manage/draw/wings-plate', { who: 'ann', extra: Object.assign({}, older, cfg()), wait: 1200, width: 1280, height: 900 });
+  await wait(p, () => !!(window.LK_SMART && window.LK_SMART.ui && document.querySelector('.dw-ctx')), null, 20000);
+  await L.dwShow(p, '[data-dw="sm-draw"]'); await p.click('[data-dw="sm-draw"]');
+  await wait(p, () => !!(window.LK_DRAW.state().d.layout || {}).lv, null, 10000);
+  const lvNew = await p.evaluate(() => window.LK_DRAW.state().d.layout.lv);
+  await p.click('.dw-top-acts [data-dw="undo"]'); await L.settle(p, 300);
+  const lvUndo = await p.evaluate(() => (window.LK_DRAW.state().d.layout || {}).lv);
+  ok(lvNew === 2 && lvUndo === undefined, 'keep: Undo after Draw it again on an older plate puts its older layout back (lv ' + lvNew + ' then ' + lvUndo + ')');
+  ok(!errs(p).length, 'keep, undo: no page errors ' + errs(p).join(' | '));
+  await p.context().close();
+
+  // a sauce of choice in a ramekin is still drawn from its card: a change to the mushroom sauce draws the grill board again
+  p = await L.open(b, '#/manage/draw/new/grill-board/plate', { who: 'ann', extra: cfg(), wait: 1200, width: 1280, height: 900 });
+  await wait(p, () => !!(window.LK_SMART && window.LK_SMART.ui && document.querySelector('.dw-ctx')), null, 20000);
+  await L.dwShow(p, '[data-dw="sm-draw"]'); await p.click('[data-dw="sm-draw"]');
+  await wait(p, () => window.LK_DRAW.state().d.els.length > 0 && !!document.querySelector('.dw-smart-note'), null, 10000);
+  await p.click('[data-dw="save"]');
+  await wait(p, () => /Saved/.test((document.querySelector('.mg-toasts .p-toast') || {}).textContent || ''));
+  s = await store(p);
+  const gb = s[fsKey(['drawings', 'grill-board-plate'])] || {}, gram = (gb.els || []).find(e => e.ing === 'Mushroom sauce') || {};
+  ok(/^sauce-ramekin@/.test(gram.a || '') && gram.made === 'mushroom-sauce' && !!gram.ms && (gb.layout.uses || {})['mushroom-sauce'], 'ramekin: the grill board\'s mushroom sauce is a ramekin that keeps its card (' + JSON.stringify({ a: gram.a, made: gram.made }) + ')');
+  await p.context().close();
+  p = await L.open(b, '#/manage/r/mushroom-sauce', { who: 'ann', extra: Object.assign({}, s, cfg()), wait: 1400 });
+  await editor(p);
+  await L.reveal(p, '[data-mg="ing-add"]'); await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
+  const k5 = await p.evaluate(() => document.querySelectorAll('.mg-ing').length - 1);
+  await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + k5 + '.q"]', '200 g'); await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + k5 + '.name"]', 'Button mushrooms (sliced)');
+  await L.settle(p, 200);
+  await p.click('[data-mg="save"]');
+  await wait(p, () => /Redrawn:/.test(Array.from(document.querySelectorAll('.mg-toasts .p-toast')).map(t => t.textContent).join(' ')), null, 30000);
+  ok(/Redrawn: .*Grill Maiden's Board/.test(await toasts(p)), 'ramekin: the mushroom sauce card changes and the grill board is drawn again (' + await toasts(p) + ')');
+  ok(!errs(p).length, 'ramekin: no page errors ' + errs(p).join(' | '));
+  await p.context().close();
+
   // a topper card to come written for the first time: the French schnitzel, until now the book's own drawing, is drawn
   // from the new card and links to it
   p = await L.open(b, '#/manage/new/french-topper', { who: 'ann', extra: cfg(), wait: 1400 });

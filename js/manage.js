@@ -852,6 +852,15 @@
       lsSet(draftKey(e.key), '');
       var wasNew = e.isNew;
       if (wasNew) { e.isNew = false; e.key = e.id = e.d.id = id; e.meta.src = 'new'; }
+      /* what this save did to the ingredient list, for the drawings (15 Nov 2026): a plate drawn the older way is kept
+         as it is, and the slip names it only when the ingredients changed */
+      // (a row renamed in place is the same row, not a new ingredient: its Pass label follows the rename)
+      var was0 = e.ing0 || {}, now0 = ingMap(clean), rows0 = Object.keys(was0).map(function (k) { return was0[k]; });
+      var drawO = { added: (e.d.ingredients || []).filter(function (i) { return trimStr(i.name) && rows0.indexOf(i) < 0; }).map(function (i) { return trimStr(i.name); }) };
+      drawO.ingsChanged = drawO.added.length > 0 || Object.keys(was0).some(function (k) { return !now0[k]; });
+      // what a save before could not show (no signal for the picks or a drawing) is carried to this one
+      if (e.drawPend) { e.drawPend.added.forEach(function (n) { if (drawO.added.indexOf(n) < 0) drawO.added.push(n); }); drawO.ingsChanged = drawO.ingsChanged || e.drawPend.ingsChanged; }
+      e.drawPend = drawO;
       if (!newer) { e.menu = menuOf(id); e.d.pins = clean.pins; e.ing0 = ingMap(e.d); e.snap = snapOf(e); }
       else { e.snap = submitted; keepNow(); }
       // the slip names the recipe (6 Nov 2026, docs/action-feedback.md): never "Saved" alone when the thing has a name
@@ -863,8 +872,8 @@
       }
       if (M.ed === e) draw();
       if (!savedMeta.removed && !savedMeta.off) {
-        if (M.suspended || workLock()) e.drawAfterSave = id;
-        else autoDraw(id, e);
+        if (M.suspended || workLock()) { e.drawAfterSave = id; e.drawAfterSaveO = drawO; }
+        else autoDraw(id, e, drawO);
       }
     }).catch(function (err) {
       clearTimeout(slow);
@@ -880,13 +889,15 @@
      and a second note says what was drawn. Those drawings link to the recipe and make its Pass labels, so the open form
      takes the new version and links (an edit made meanwhile stays). */
   var SLOT_WORD = { plate: 'plate', pan: 'GN pan', side: 'side view', build: 'build' };
-  function autoDraw(id, e) {
+  function autoDraw(id, e, o) {
     if (!P.bookEdit()) return;
     loadDraw().then(function () {
       var S = window.LK_SMART;
-      return S && S.autoDraw ? S.autoDraw(id) : null;
+      return S && S.autoDraw ? S.autoDraw(id, o || {}) : null;
     }).then(function (res) {
       if (!res) return;
+      // the drawings were checked with this save's ingredient changes: nothing left to carry to the next save
+      if (e && !res.nopicks && !res.reload && !(res.unread && res.unread.length)) e.drawPend = null;
       var cur = X.change(id);
       if (e && M.ed === e && cur && cur.v > e.meta.v) {
         var clean = snapOf(e) === e.snap;
@@ -901,8 +912,16 @@
       // nothing drawn for want of signal (28 Oct 2026, js/smart.js autoDraw): said, so a drawing is not taken as done
       if (res.nopicks) say.push('Drawings not drawn again: your picks could not be read. Check the signal and save again.');
       if (res.sideLeft && res.sideLeft.length) say.push('Side view not drawn again, no signal: ' + res.sideLeft.join(', ') + '.');
+      // a part of the drawing editor out of date on this phone (js/smart.js fresh()): nothing drawn, said in red
+      if (res.reload) say.push('Drawings not drawn: reload the book, a part of the drawing editor is out of date.');
+      /* plates drawn the older way are kept as they are until the head chef redraws them (15 Nov 2026): named when the
+         ingredients changed, and in red when a new ingredient has no Pass label on one (the allergen lens reads them) */
+      var names = function (L) { return L.length > 3 ? L.slice(0, 3).join(', ') + ' and ' + (L.length - 3) + ' more' : L.join(', '); };
+      if (res.older && res.older.length) say.push('Kept the older plate drawing: ' + names(res.older) + '. Open ' + (res.older.length === 1 ? 'it' : 'each') + ' and tap Draw it again to show the change.');
+      if (res.unlabelled && res.unlabelled.length) say.push(names(res.unlabelled) + (res.unlabelled.length === 1 ? ' has' : ' have') + ' no Pass label yet. Open the plate drawing and tap Draw it again.');
+      if (res.unread && res.unread.length) say.push('Drawings not checked, no signal: ' + names(res.unread) + '. They are checked again on the next save.');
       // a drawing not drawn is a failure: red until OK (6 Nov 2026)
-      if (say.length) toast(say.join(' '), false, !!(res.nopicks || res.sideLeft && res.sideLeft.length));
+      if (say.length) toast(say.join(' '), false, !!(res.nopicks || res.sideLeft && res.sideLeft.length || res.reload || res.unlabelled && res.unlabelled.length || res.unread && res.unread.length));
     }).catch(function () {});
   }
   function focusId(id) {
@@ -981,7 +1000,7 @@
     if (!drawLoad) {
       drawLoad = A.load('js/library.js').then(function () {
         // a category file that fails to load leaves its drawings out; the editor still opens
-        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=9')]));
+        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=10')]));
       }).then(function () {
         // without the smart creator the editor still works by hand; the recipe reader (js/compose.js) needs it first
         return A.load('js/smart.js').then(function () { return A.load('js/compose.js'); }).catch(function () {});
@@ -1011,8 +1030,8 @@
     if (workLock() || !P.bookEdit()) return;
     M.identity = owner; M.suspended = false;
     if (M.ed && M.ed.drawAfterSave) {
-      var saved = M.ed, recipe = saved.drawAfterSave; saved.drawAfterSave = '';
-      Promise.resolve().then(function () { if (owns(saved, owner) && !workLock() && P.bookEdit()) autoDraw(recipe, saved); else if (owns(saved, owner)) saved.drawAfterSave = recipe; });
+      var saved = M.ed, recipe = saved.drawAfterSave, drawO = saved.drawAfterSaveO; saved.drawAfterSave = ''; saved.drawAfterSaveO = null;
+      Promise.resolve().then(function () { if (owns(saved, owner) && !workLock() && P.bookEdit()) autoDraw(recipe, saved, drawO); else if (owns(saved, owner)) { saved.drawAfterSave = recipe; saved.drawAfterSaveO = drawO; } });
     }
     if (M.ed && M.ed.savedRoute && M.ed.sub === key) {
       sub = M.ed.savedRoute; key = sub.join('/'); M.ed.savedRoute = null; M.ed.sub = drawn = key;
