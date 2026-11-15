@@ -1,9 +1,20 @@
 // The On break now board and the Save dock on the first screen (docs/team-minimum-options/brief.md, Board above the dock).
 // The study's made-up day at 18:30 (four on a break), with no busy time set and with the Dinner busy time short.
-// Synthetic data only. Run from tests/:  CHROME=<headless shell> node ../docs/team-minimum-options/board-dock.cjs [label]
+// Synthetic data only. Run from tests/:  CHROME=<headless shell> node ../docs/team-minimum-options/board-dock.cjs [label] [fonts]
+// With "fonts" each page loads the book's own fonts from Google (Barlow, Barlow Condensed, Caveat), as the phones show
+// them; without it the stand-in's fallback fonts, which differ from machine to machine (wider on GitHub's runner).
 const path = require('path');
 const L = require(path.resolve(__dirname, '../../tests/lib'));
-const OUT = __dirname, LABEL = process.argv[2] || 'now';
+const OUT = __dirname, LABEL = process.argv[2] || 'now', FONTS = process.argv[3] === 'fonts';
+const FONT_CSS = 'https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@700&family=Caveat:wght@700&display=swap';
+async function bookFonts(p) {
+  if (!FONTS) return;
+  await p.context().unroute(/fonts\.(googleapis|gstatic)\.com/);
+  await p.addStyleTag({ url: FONT_CSS });
+  const got = await p.evaluate(() => Promise.all(['400 13px Barlow', '700 13px Barlow', '600 13px Barlow', '700 16px "Barlow Condensed"', '700 16px Caveat'].map(f => document.fonts.load(f))).then(r => r.every(x => x.length > 0)));
+  if (!got) throw new Error('the book\'s fonts did not load');
+  await p.evaluate(() => document.fonts.ready); await L.settle(p, 300);
+}
 const key = (...p) => ['kitchens', L.PIN, ...p].join('/');
 const today = L.ymd(new Date(L.NOW));
 global.window = {}; require('./data.js'); const D = window.TM_DATA;
@@ -31,7 +42,7 @@ const measure = p => p.evaluate(() => {
     out[label] = {};
     for (const [state, shifts] of [['enough', PLAIN], ['short', BUSY]]) {
       const p = await L.open(b, hash, Object.assign({ extra: fx(shifts), wait: 1800, clock: L.NOW + 270 * 60000 }, o));
-      await L.waitFor(p, () => document.querySelectorAll('.tm-person-row').length >= 7 && document.querySelectorAll('.tm-away-row').length >= 4, null, 9000); await L.settle(p, 400);
+      await L.waitFor(p, () => document.querySelectorAll('.tm-person-row').length >= 7 && document.querySelectorAll('.tm-away-row').length >= 4, null, 9000); await L.settle(p, 400); await bookFonts(p);
       out[label][state] = Object.assign(await measure(p), { errors: p.errors.length });
       if (label === 'admin-390') await p.screenshot({ path: path.join(OUT, 'board-dock-' + LABEL + '-' + label + '-' + state + '.png') });
       await p.context().close();
@@ -44,7 +55,7 @@ const measure = p => p.evaluate(() => {
     for (const [state, shifts] of [['enough', PLAIN], ['short', BUSY]]) {
       const f = fx(shifts); f[key('team', today)].br = br;
       const p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', width: 390, height: 844, extra: f, wait: 1800, clock: L.NOW + 270 * 60000 });
-      await L.waitFor(p, n => document.querySelectorAll('.tm-away-row').length >= n, 4 + extra.length, 9000); await L.settle(p, 400);
+      await L.waitFor(p, n => document.querySelectorAll('.tm-away-row').length >= n, 4 + extra.length, 9000); await L.settle(p, 400); await bookFonts(p);
       const m = await measure(p); out.more[(4 + extra.length) + ' away, ' + state] = m.boardNames + ' (last name ends ' + m.lastName.replace(/.* (\d+) to (\d+)$/, '$2') + ' px, dock from ' + m.dockTop + ' px)';
       await p.context().close();
     }

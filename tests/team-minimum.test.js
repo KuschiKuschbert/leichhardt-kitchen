@@ -172,8 +172,11 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
 
   // 10. The On break now board ends above the Save dock on the head chef's phone (Board above the dock, 16 Nov 2026).
   //     Admin, Team, Today's team at 390 x 844 and scroll 0, four on a break at 18:30: every name, the board's words, the
-  //     dock's words and Save show on the first screen, with the too few line and without it. On the old code the dock
-  //     covered Sam K (3 of 4 names), and 2 of 4 while the line showed. From 720 px the admin heading is as before.
+  //     dock's words and Save show on the first screen, with the too few line and without it, and all six when six are
+  //     away. Measured in the book's own fonts (Barlow, Barlow Condensed, Caveat), as the phones show them: the stand-in
+  //     fonts are wider on GitHub's runner and wrap the board (16 Nov 2026). If they cannot load here, the check says so
+  //     and measures nothing. On the old code the dock covered Sam K while the line showed (3 of 4 names; 3 of 6 with six
+  //     away). From 720 px the admin heading is as before (compared in the same fonts, so any font will do).
   const board = p => p.evaluate(() => {
     const dock = document.querySelector('.tm-focus-save').getBoundingClientRect(), save = document.querySelector('.tm-focus-save [data-p="tm-save"]').getBoundingClientRect();
     const names = [...document.querySelectorAll('.tm-away-row')], words = s => { const e = document.querySelector(s); return e && !e.hidden && e.getClientRects().length ? e.innerText.replace(/\s+/g, ' ').trim() : ''; };
@@ -182,11 +185,21 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
       lastBottom: names.length ? Math.round(names[names.length - 1].getBoundingClientRect().bottom) : 0, head: words('.tm-away .tm-away-head'),
       state: words('.tm-focus-save .tm-save-state'), line: words('.tm-focus-save .tm-short-line') };
   });
-  for (const [label, shifts] of [['with the too few line', BUSY], ['without it', PLAIN]]) {
-    p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', width: 390, height: 844, extra: fixture({ kitShifts: shifts }), clock: AT(1110), wait: 1800 });
-    await ready(p); await L.waitFor(p, () => document.querySelectorAll('.tm-away-row').length >= 4, null, 9000); await L.settle(p, 300);
+  const bookFonts = async p => {
+    await p.context().unroute(/fonts\.(googleapis|gstatic)\.com/);
+    const css = await p.addStyleTag({ url: 'https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@700&family=Caveat:wght@700&display=swap' }).then(() => true, () => false);
+    const got = css && await p.evaluate(() => Promise.race([Promise.all(['400 13px Barlow', '600 13px Barlow', '700 13px Barlow', '700 16px "Barlow Condensed"', '700 16px Caveat'].map(f => document.fonts.load(f))).then(r => r.every(x => x.length > 0)), new Promise(r => setTimeout(() => r(false), 8000))]));
+    if (got) { await p.evaluate(() => document.fonts.ready); await L.settle(p, 300); }
+    return got;
+  };
+  // six away at 18:30: Eli and Gia take their Dinner break then too
+  const six = BR.filter(x => !['eli', 'gia'].includes(x.id) || x.sh !== 'dinner').concat(['eli', 'gia'].map(id => ({ id, sh: 'dinner', at: 1110, len: 30 })));
+  for (const [label, shifts, br, names] of [['with the too few line', BUSY, BR, ['Dev', 'Fen', 'Hal', 'Sam K']], ['without it', PLAIN, BR, ['Dev', 'Fen', 'Hal', 'Sam K']], ['six away, with the too few line', BUSY, six, ['Dev', 'Eli', 'Fen', 'Gia', 'Hal', 'Sam K']]]) {
+    p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', width: 390, height: 844, extra: fixture({ kitShifts: shifts }, { [TEAM]: plan(today, ON, br) }), clock: AT(1110), wait: 1800 });
+    await ready(p); await L.waitFor(p, n => document.querySelectorAll('.tm-away-row').length >= n, names.length, 9000); await L.settle(p, 300);
+    if (!await bookFonts(p)) { ok(true, 'board above the dock, admin 390, ' + label + ': the book\'s fonts could not load here, the board was not measured'); await p.context().close(); continue; }
     const m = await board(p);
-    ok(m.scroll === 0 && JSON.stringify(m.above) === JSON.stringify(['Dev', 'Fen', 'Hal', 'Sam K']), 'board above the dock, admin 390, ' + label + ': all four names end above the Save dock (' + m.above.join(', ') + '; last name ends at ' + m.lastBottom + ' px, the dock starts at ' + m.dockTop + ' px)');
+    ok(m.scroll === 0 && JSON.stringify([...m.above].sort()) === JSON.stringify(names), 'board above the dock, admin 390, ' + label + ', in Barlow: all ' + names.length + ' names end above the Save dock (' + m.above.join(', ') + '; last name ends at ' + m.lastBottom + ' px, the dock starts at ' + m.dockTop + ' px)');
     ok(/On break now/i.test(m.head) && m.saveIn && (shifts === BUSY ? /^Saved plan: too few now until 19:00/.test(m.line) && !m.state : /^Saved 13:00/.test(m.state) && !m.line), 'board above the dock, admin 390, ' + label + ': the board\'s words, the dock\'s words and Save all show (' + (m.line || m.state) + ')');
     ok(!await L.overflow(p) && p.errors.length === 0, 'board above the dock, admin 390, ' + label + ': no sideways scroll, no page errors ' + p.errors.join(' | '));
     await p.context().close();
