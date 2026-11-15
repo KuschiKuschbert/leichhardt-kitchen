@@ -612,6 +612,8 @@
   vary('sauce-gravy-pour', 'queso-poured', 'Queso, poured', 'Savoury', 'queso cheese sauce nacho cheese poured', { c: S.queso, bits: [['jalapeno', 4], ['paprika', 12]] });
   vary('sauce-dollop', 'tartare-dollop', 'Tartare, dollop', 'Savoury', 'tartare tartar sauce fish sauce capers gherkin', { c: S.tartare, bits: [['caper', 16]] });
   vary('sauce-dollop', 'aioli-dollop', 'Aioli, dollop', 'Savoury', 'aioli garlic mayo garlic aioli', { c: S.aioli, bits: [['herb', 3]] });
+  // basil pesto as a dollop, so a pesto on a salad is a sauce and not a bowl of pasta (15 Nov 2026)
+  vary('sauce-dollop', 'pesto-dollop', 'Basil pesto, dollop', 'Savoury', 'pesto basil pesto genovese green sauce', { c: S.pesto, bits: [['herb', 6]] });
   vary('sauce-dollop', 'wholegrain-mustard-dollop', 'Wholegrain mustard, dollop', 'Savoury', 'wholegrain mustard seeded mustard grain mustard', { c: S.wholegrain, bits: [['seeds', 36]] });
   vary('sauce-dollop', 'dijon-dollop', 'Dijon mustard, dollop', 'Savoury', 'dijon mustard french mustard hot mustard', { c: '#D9B03A' });
   vary('sauce-dollop', 'horseradish-cream-dollop', 'Horseradish cream, dollop', 'Savoury', 'horseradish cream roast beef', { c: '#F4F0E2', bits: [['figseed', 10]] });

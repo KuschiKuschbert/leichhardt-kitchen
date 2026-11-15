@@ -302,7 +302,7 @@
     hollandaise: '#F2D27A', bearnaise: '#EFD27A', choron: '#EBA06A', 'beurre blanc': '#F4E9C9', 'brown butter': '#B9802F', butter: '#F4D98A',
     mustard: '#D9A62A', wholegrain: '#C99A3A', 'american mustard': '#E8C22A', honey: '#E2A93A', 'hot honey': '#D9862A', caramel: '#C99A22', 'salted caramel': '#B9802F',
     chocolate: '#5E2F1A', 'hazelnut spread': '#6B3A1E', berry: '#A3304F', raspberry: '#C02A4A', strawberry: '#D23A4A', coulis: '#A3304F', custard: '#F2D27A',
-    pesto: '#5E8C3A', 'salsa verde': '#4F7F2F', chimichurri: '#5E7F2F', herb: '#4F7F2F', 'herb oil': '#5E8C3A', pea: '#7EA453', avocado: '#9CC067', guacamole: '#8DB255',
+    pesto: '#5E8C3A', spinach: '#4F7F2F', 'salsa verde': '#4F7F2F', chimichurri: '#5E7F2F', herb: '#4F7F2F', 'herb oil': '#5E8C3A', pea: '#7EA453', avocado: '#9CC067', guacamole: '#8DB255',
     beetroot: '#A8476B', pumpkin: '#E2A93A', 'sweet potato': '#E8964A', carrot: '#EE8A2E', cauliflower: '#F1EAD6', celeriac: '#EDE6D2', parsnip: '#EFE3C4',
     satay: '#B9772E', peanut: '#B9772E', hoisin: '#4A2416', teriyaki: '#4A2416', soy: '#3A1E10', xo: '#A34A26', ponzu: '#8A5A2A', 'black bean': '#2E2420',
     'curry': '#D99A3A', 'green curry': '#9CB45A', 'red curry': '#C9562E', laksa: '#E08A3A', rendang: '#7E4726', 'piri piri': '#C9402A', peri: '#C9402A',

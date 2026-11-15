@@ -163,6 +163,29 @@
     var a = (el.r || 0) * Math.PI / 180, c = Math.abs(Math.cos(a)), sn = Math.abs(Math.sin(a)), bw = w * c + h * sn, bh = w * sn + h * c;
     return [el.x - bw / 2, el.y - bh / 2, el.x + bw / 2, el.y + bh / 2];
   }
+  /* A piece as an oval, for laying out and checking a plate (15 Nov 2026): its centre (x, y), half axes (a, b) and turn
+     (t, radians). A drawn shape does not fill the corners of its box, so the oval is 0.92 of the box. reach() is how far
+     the oval goes from its centre in a direction, so two parts touch when their centres are reach + reach apart. */
+  function oval(el) {
+    var it = el.t === 'item' ? itemOf(el.a) : null, lb = el.t === 'raw' ? rawBox(el) : it ? LIB.box(it) : [-20, -20, 20, 20];
+    var sx = (el.flip ? -1 : 1) * (el.sx || 1), sy = el.sy || 1, t = (el.r || 0) * Math.PI / 180, ox = (lb[0] + lb[2]) / 2 * sx, oy = (lb[1] + lb[3]) / 2 * sy;
+    return { x: el.x + ox * Math.cos(t) - oy * Math.sin(t), y: el.y + ox * Math.sin(t) + oy * Math.cos(t), a: Math.max(1, (lb[2] - lb[0]) / 2 * Math.abs(sx) * 0.92), b: Math.max(1, (lb[3] - lb[1]) / 2 * Math.abs(sy) * 0.92), t: t };
+  }
+  function reach(o, ux, uy) { var c = ux * Math.cos(o.t) + uy * Math.sin(o.t), s = -ux * Math.sin(o.t) + uy * Math.cos(o.t); return 1 / Math.sqrt(c * c / (o.a * o.a) + s * s / (o.b * o.b) || 1); }
+  function inOval(o, x, y) { var dx = x - o.x, dy = y - o.y, c = dx * Math.cos(o.t) + dy * Math.sin(o.t), s = -dx * Math.sin(o.t) + dy * Math.cos(o.t); return c * c / (o.a * o.a) + s * s / (o.b * o.b) <= 1; }
+  /* How much of the servingware's food area the parts cover, and where the food's middle is: { cov, cx, cy }. A grid of
+     about 36 x 36 cells over the area (whole-number steps, so every device counts the same), each cell food when a
+     part's oval covers it; the cover is rounded to 0.001. */
+  function cover(els, a) {
+    var os = els.filter(isPiece).map(oval), n = 36, sx = a.rx * 2 / n, sy = a.ry * 2 / n, all = 0, food = 0, mx = 0, my = 0;
+    for (var j = 0; j < n; j++) for (var i = 0; i < n; i++) {
+      var x = a.cx - a.rx + (i + 0.5) * sx, y = a.cy - a.ry + (j + 0.5) * sy, dx = (x - a.cx) / a.rx, dy = (y - a.cy) / a.ry;
+      if (a.shape !== 'box' && dx * dx + dy * dy > 1) continue;
+      all++;
+      for (var k = 0; k < os.length; k++) if (inOval(os[k], x, y)) { food++; mx += x; my += y; break; }
+    }
+    return { cov: all ? Math.round(food / all * 1000) / 1000 : 0, cx: food ? mx / food : a.cx, cy: food ? my / food : a.cy };
+  }
   // the frame the drawing is shown in: the servingware and everything on it, with room for the shadow
   function viewBoxOf(d) {
     if (FRAME[d.slot]) return FRAME[d.slot];
@@ -204,9 +227,12 @@
   /* ---------- the recipe the drawing belongs to ---------- */
   function recipeOf(rid) { return A.byId(rid) || (X.change(rid) || {}).r || X.pristine(rid) || null; }
   function ingName(i) { return String(i.name || '').replace(/\s*\([^)]*\)/g, '').trim(); }
-  // the ingredients that would show on the plate (not salt, oil, water and the like)
-  var HIDDEN = /^(salt|pepper|cracked pepper|black pepper|oil|olive oil|canola oil|vegetable oil|cooking oil|water|flour|plain flour|sugar|seasoning|spray|butter for the pan|stock|batter mix)$/i;
-  function plateIngs(r) { return (r && r.ingredients || []).filter(function (i) { return i.name && !HIDDEN.test(ingName(i)); }); }
+  /* The ingredients that never show on the plate: they are cooked in, or under everything. One list for the book (15 Nov
+     2026): Draw it for me (js/smart.js hidden()) and Check use the same one, so Check never asks for what the plate is
+     not meant to show. */
+  var HIDDEN = /^(salt|table salt|pepper|black pepper|white pepper|cracked pepper|cracked black pepper|oil|olive oil|canola oil|vegetable oil|cooking oil|neutral oil|neutral cooking oil|frying oil|deep frying oil|sesame oil|rice bran oil|oil spray|cooking spray|spray|water|ice|stock|chicken stock|beef stock|flour|plain flour|self raising flour|wing flour|corn flour|cornflour|panko crumb|breadcrumb|sugar|caster sugar|brown sugar|icing sugar mix|seasoning|szechuan seasoning|white cooking wine|red cooking wine|cooking wine|wine|beer|baking powder|bicarb soda|butter for the pan|batter mix|eggwash|egg wash|garlic|ginger|onion powder|garlic powder|paprika|cumin|ground cinnamon|italian herb|dried oregano|vinegar|white vinegar|lemon juice|lime juice|cream for the sauce|milk|bay leaf|bay leaves|star anise|cinnamon stick|cinnamon sticks|cloves|sea salt|sea salt flakes|salt flakes|maldon salt|flaky salt|cooking salt)$/i;
+  // what shows on the plate: Draw it for me's own test when it is loaded (it also knows a rub is cooked in), else the list
+  function plateIngs(r) { var S = window.LK_SMART; return (r && r.ingredients || []).filter(function (i) { return i.name && (S && S.shown ? S.shown(i, r) : !HIDDEN.test(ingName(i))); }); }
 
   /* ---------- making a new drawing ---------- */
   function defaultSurf(r, slot) {
@@ -1731,7 +1757,7 @@
     autoPins: autoPins, altText: altText, check: check, labelAll: labelAll, amount: amount, scaleFor: scaleFor,
     // reuse, for the tests: the book's own drawing as a starting point, and the head chef's templates and pieces
     bookSource: bookSource, mine: function () { return MINE; },
-    render: { elSVG: elSVG, svgS: svgS, svgF: svgF, viewBoxOf: viewBoxOf, bbox: bbox, surface: surface, area: area, inArea: inArea, insertAt: insertAt, layerOf: layerOf, freeSpot: freeSpot, recipeOf: recipeOf, plateIngs: plateIngs, ingName: ingName, tintMap: tintMap },
+    render: { elSVG: elSVG, svgS: svgS, svgF: svgF, viewBoxOf: viewBoxOf, bbox: bbox, oval: oval, reach: reach, inOval: inOval, cover: cover, HIDDEN: HIDDEN, surface: surface, area: area, inArea: inArea, insertAt: insertAt, layerOf: layerOf, freeSpot: freeSpot, recipeOf: recipeOf, plateIngs: plateIngs, ingName: ingName, tintMap: tintMap },
     changed: function () { if (W.d) { before(); changed(); } },
     // drawings made away from the editor (js/smart.js autoDraw): a blank one for a slot, one read from the book, and the save
     withDrawing: withDrawing, persist: persist, blank: blank, fromDoc: fromDoc

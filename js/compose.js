@@ -300,7 +300,7 @@
     if (cache[k]) return cache[k];
     depth = depth || 0;
     seen = Object.assign({}, seen || {}); seen[r.id] = 1;
-    var mo = { id: r.id, sig: P.hash(k).toString(36), name: r.name || '', kind: r.kind || '', lines: [], plating: [], cook: '', cut: '', shape: '', mixed: false, wet: false };
+    var mo = { id: r.id, sig: P.hash(k).toString(36), name: r.name || '', kind: r.kind || '', yield: String(r.yield || ''), lines: [], plating: [], cook: '', cut: '', shape: '', mixed: false, wet: false };
     (r.ingredients || []).forEach(function (i0) { S().split(i0).forEach(function (i) { mo.lines.push(lineOf(i, depth, seen)); }); });
     readSteps(r, mo);
     decide(mo, r);
@@ -550,8 +550,11 @@
       if (!(isSolid(L) && !GONE.test(L.t) && !/^(seed|speck|herb|fleck)$/.test(k)) || mo.form === 'smooth') return;
       P.spots(rnd, 5, rx, ry, 4).forEach(function (p) { bits += BIT[k](cx + p[0], cy + p[1], 0.8, snap(lineCol(L, mo, rnd)), L, rnd); });
     });
-    bits += bitsOn(mo, rnd, rx, ry);
-    return bits ? { body: body + finish(bits), box: bx, w: shape.w, h: shape.h, lib: body.length } : null;
+    // a smooth purée shows its seeds, not the pepper and nutmeg blended into it (15 Nov 2026)
+    bits += bitsOn(mo, rnd, rx, ry, mo.form === 'smooth' ? function (L) { return kindOf(L) === 'seed'; } : null);
+    // nothing on top and the library's own colour: the library piece says it all; a new colour alone is still the card's
+    if (!bits && !(col && from && col !== from)) return null;
+    return { body: body + (bits ? finish(bits) : ''), box: bx, w: shape.w, h: shape.h, lib: body.length };
   }
   function recolour(body, cm) { return cm ? body.replace(/#([0-9A-Fa-f]{6})/g, function (m, h) { return cm[h.toUpperCase()] || m; }) : body; }
   // balls (a rissole mix, a cookie dough): each with its shadow, a highlight up to the left and flecks of what is in it
@@ -702,7 +705,11 @@
         var m = S().rank(mo.name, { cat: 'sauce' })[0];
         shape = LIB.get(m && m.s >= 0.6 ? m.id : form === 'smooth' ? 'sauce-dollop' : 'sauce-pool');
       }
-      if (!/^(pool|dollop|quenelle|bowlful|smear|mound)$/.test(shape.form)) return null;
+      // the dish's own words for the shape (15 Nov 2026): "a wavy squiggle across the whole plate" is a wave, "a swoop" a
+      // swoosh, "dots" dots, in the card's colour
+      var want = { line: 'sauce-wave', swoosh: 'sauce-swoosh', dots: 'sauce-dots-arc' }[ctx.form || ''];
+      if (want && shape.form !== ctx.form && LIB.get(want)) shape = LIB.get(want);
+      if (!/^(pool|dollop|quenelle|bowlful|smear|mound|swoosh|line|dots)$/.test(shape.form)) return null;
       got = drawOnShape(mo, shape, snap((mo.form === 'liquid' && LIB.sauceColour(ctx.ing || '')) || mo.col), rnd);
       if (!got) return null;
       role = shape.role; form = shape.form; sideS = shape.side ? shape.side.s : 'sauce';
@@ -715,7 +722,11 @@
       got = { body: pb + finish(bitsOn(mo, rnd, (bb[2] - bb[0]) * 0.32, (bb[3] - bb[1]) * 0.3)), box: bb, w: pat.w, h: pat.h, lib: pb.length };
       role = 'topping'; form = 'piece'; sideS = 'slab';
     } else if (form === 'mixture') {
-      var solids = mo.lines.filter(isSolid), rx = 24, ry = 18;
+      /* drawn the same size as always, but weighed so it comes out as big as the library piece it stands for (the slaw
+         as the library's coleslaw) at the dish's amount; with no amount on the dish, the card's grams per plate size it
+         (15 Nov 2026) */
+      var solids = mo.lines.filter(isSolid), rx = 24, ry = 18, perG = +((String(mo.yield || '').match(/(\d+)\s*g\b[^.]*\bper (plate|serve|portion)\b/i) || [])[1] || 0);
+      var mixG = shape && shape.g && shape.w && shape.h && shape.role !== 'sauce' ? Math.round(shape.g * 54 * 42 / (shape.w * shape.h)) : 60;
       got = { body: finish(drawMix(mo, rnd, rx, ry)), box: [-rx - 2, -ry - 2, rx + 4, ry + 4], w: rx * 2 + 6, h: ry * 2 + 6 };
       var one = solids.length === 1 && solids[0].raw && solids[0].raw.lib ? LIB.get(solids[0].raw.lib) : null;
       role = beds(mo).length ? 'salad' : solids.length === 1 ? 'topping' : 'veg';
@@ -730,8 +741,8 @@
     var key = 'raw:made-' + mo.id + '-' + P.hash(got.body).toString(36);
     return {
       id: 'made-' + mo.id, v: 1, raw: true, made: mo.id, key: key, ms: mo.sig, lib: got.lib || 0, name: mo.name, cat: ctx.shape ? ctx.shape.cat : 'prepared', role: role || ROLE[mo.form] || 'veg', form: form,
-      g: mo.form === 'mixture' ? 60 : shape && shape.g ? shape.g : 40, n: undefined, w: n1(got.w), h: n1(got.h),
-      side: { s: sideS, h: mo.form === 'mixture' ? 8 : 4, c: mo.col }, body: got.body, box: got.box.map(n1), from: mo.from, cook: mo.cook || ''
+      g: mo.form === 'mixture' ? mixG : shape && shape.g ? shape.g : 40, n: undefined, w: n1(got.w), h: n1(got.h),
+      side: { s: sideS, h: mo.form === 'mixture' ? 8 : 4, c: mo.col }, body: got.body, box: got.box.map(n1), from: mo.from, cook: mo.cook || '', per: mo.form === 'mixture' && perG ? perG : undefined
     };
   }
   /* ---------- a topper whose card is still to come, drawn from its note ----------
@@ -783,8 +794,10 @@
     var sure = m && m.id && m.conf >= 0.6 ? LIB.get(m.id) : null;
     // a mix or a dough shows cooked, the way the dish has it ("Lamb rissoles" from the rissole mix)
     if (mo.raw && sure) return null;
-    return compose(mo, { shape: sure, ing: R.ingName(i), dish: dish });
+    return compose(mo, { shape: sure, ing: R.ingName(i), dish: dish, form: formWord(i) });
   }
+  // the shape the dish's line asks for: a wave, a swoop or dots (the rest from the card and the library)
+  function formWord(i) { var t = low(R.ingName(i) + ' ' + (i.note || '')); return /wav|squiggl|zigzag/.test(t) ? 'line' : /swoop|swoosh|swipe/.test(t) ? 'swoosh' : /\bdots?\b/.test(t) ? 'dots' : ''; }
 
   /* ---------- an ingredient with no card, cut and cooked the way the dish says ----------
      "Broccolini (charred)", "Charred corn", "Seared scallops": the library piece it matched, in that cook's colour, with

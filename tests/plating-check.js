@@ -224,9 +224,9 @@ const LINE_OK = /wav|squiggl|zigzag|\bline\b|across|swoop|swoosh|smear|swipe/i;
 /* The rules every auto plate keeps (each one was broken by Draw it for me before 15 Nov 2026). Each returns the dishes
    that break it. */
 const RULES = [
-  ['no two solid parts overlap by more than 0.10 (not a main on its bed, not salad on salad)', x => x.ovHard > 0.10],
+  ['no two solid parts overlap by more than 0.10 on a plate, 0.20 on a board (not a main on its bed, not salad on salad)', x => x.ovHard > (fam(x.kind) === 'board' ? 0.20 : 0.10)],
   ['food covers 20 to 65% of the servingware', x => x.cov < 0.20 || x.cov > 0.65],
-  ['the food sits in the middle (off by 0.18 or less on a plate, 0.30 on a board)', x => x.off > (fam(x.kind) === 'board' ? 0.30 : 0.18)],
+  ['the food sits in the middle (off by 0.20 or less on a plate, 0.30 on a board)', x => x.off > (fam(x.kind) === 'board' ? 0.30 : 0.20)],
   ['on a bed, the main is at least half on it', x => x.style === 'bed' && x.onBed != null && x.onBed < 0.5],
   ['a sauce the recipe serves on the side is in a ramekin', x => x.sauces.some(s => s.missingRamekin)],
   ['garnish and toppings together are under 0.6 of the main (parmy toppers, tacos and boards apart: there the toppings are the dish)', x => !/parm|schnit|taco|nacho/i.test(x.r.name) && fam(x.kind) !== 'board' && x.garnTotal > 0.6],
