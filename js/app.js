@@ -1967,6 +1967,7 @@
       html = topBar() + fnBand() + html + tabBar();
     }
     homeFew = false;
+    pageSwipeReset(false); pageSwipeClearMotion();
     app.innerHTML = html;
     if (pageSwipeArrival) {
       var arrival = pageSwipeArrival; pageSwipeArrival = null;

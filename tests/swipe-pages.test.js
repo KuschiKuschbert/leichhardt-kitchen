@@ -2,10 +2,16 @@
 const L = require('./lib');
 const { R, ok } = L.results();
 const hash = p => p.evaluate(() => location.hash);
+// Keep one input source per page. Detaching after a native edge gesture can leave a synthetic finger held in Linux Chrome.
+const touchSessions = new WeakMap();
+async function touchSession(p) {
+  if (!touchSessions.has(p)) touchSessions.set(p, await p.context().newCDPSession(p));
+  return touchSessions.get(p);
+}
 async function go(p, h) {
   // Pinch and mouse-selection cases can leave browser state behind, even after the hash changes.
-  const c = await p.context().newCDPSession(p);
-  await c.send('Emulation.setPageScaleFactor', { pageScaleFactor: 1 }); await c.detach();
+  const c = await touchSession(p);
+  await c.send('Emulation.setPageScaleFactor', { pageScaleFactor: 1 });
   await p.evaluate(v => { location.hash = v; }, h);
   await L.settle(p, 600);
   await p.evaluate(() => { document.activeElement.blur(); getSelection().removeAllRanges(); window.scrollTo(0, 0); });
@@ -14,11 +20,12 @@ async function go(p, h) {
 async function swipe(p, selector, dx, dy = 0, opt = {}) {
   await L.settle(p, 300);
   await p.evaluate(() => {
-    window.swipeTrace = [];
+    window.swipeTrace = []; window.swipeTarget = null;
     if (window.swipeTraceInstalled) return;
     window.swipeTraceInstalled = true;
     ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(type => document.addEventListener(type, e => {
       const t = e.changedTouches[0];
+      if (!window.swipeTarget) window.swipeTarget = e.target;
       window.swipeTrace.push([type, t && Math.round(t.clientX), t && Math.round(t.clientY), e.touches.length, e.cancelable, e.defaultPrevented, e.target.id || e.target.className]);
     }, { passive: true }));
   });
@@ -30,7 +37,7 @@ async function swipe(p, selector, dx, dy = 0, opt = {}) {
     await p.mouse.move(x, y); await p.mouse.down();
     await p.mouse.move(x + dx, y + dy, { steps: 8 }); await p.mouse.up();
   } else {
-    const c = await p.context().newCDPSession(p);
+    const c = await touchSession(p);
     const points = (xx, yy) => [{ x: xx, y: yy, id: 1, radiusX: 4, radiusY: 4, force: 1 }];
     await c.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: points(x, y) });
     for (let i = 1; i <= 8; i++) {
@@ -40,7 +47,8 @@ async function swipe(p, selector, dx, dy = 0, opt = {}) {
     }
     if (opt.beforeEnd) await opt.beforeEnd();
     await c.send('Input.dispatchTouchEvent', { type: opt.cancel ? 'touchCancel' : 'touchEnd', touchPoints: [] });
-    await c.detach();
+    // Wait for the browser to lift/cancel every finger before reusing this input source.
+    await L.waitFor(p, () => { const t = window.swipeTrace; return !t.length || !window.swipeTarget.isConnected || t[t.length - 1][3] === 0; }, null, 3000);
   }
   await L.settle(p, 400);
 }
@@ -124,16 +132,21 @@ async function gestureState(p) {
   await swipe(p, '#rtitle', -110);
   ok(await hash(p) === '#/orders', 'an empty selection does not leave swipes disabled');
   await go(p, '#/prep');
-  const zoom = await p.context().newCDPSession(p);
+  const zoom = await touchSession(p);
   await zoom.send('Emulation.setPageScaleFactor', { pageScaleFactor: 2 });
   await swipe(p, '#rtitle', -110);
   ok(await hash(p) === '#/prep', 'zoomed page keeps its own pan gesture');
-  await zoom.detach(); await go(p, '#/prep'); await swipe(p, '#rtitle', -110);
+  await go(p, '#/prep'); await swipe(p, '#rtitle', -110);
   const recovered = await gestureState(p);
   ok(recovered.hash === '#/orders', 'normal swipes resume after zoom and selection are cleared ' + JSON.stringify(recovered));
   await go(p, '#/prep');
   await swipe(p, '#rtitle', -110, 0, { beforeEnd: () => p.evaluate(() => { location.hash = '#/waste'; }) });
   ok(await hash(p) === '#/waste', 'a route change during a gesture cancels the old destination');
+  await go(p, '#/prep');
+  await swipe(p, '#nbr-i3', -110, 0, { beforeEnd: () => p.evaluate(() => { window.dispatchEvent(new Event('lk-access')); }) });
+  ok(await hash(p) === '#/prep', 'a same-page redraw cancels the gesture on the replaced page');
+  await swipe(p, '#nbr-i3', -110);
+  ok(await hash(p) === '#/orders', 'the first swipe after a same-page redraw works');
   await go(p, '#/prep'); await p.click('.nb-addline'); await L.settle(p, 250);
   await p.fill('#p-text', 'Keep this swipe draft'); await p.locator('#p-text').blur();
   await swipe(p, '.p-sheet h3', -110);
