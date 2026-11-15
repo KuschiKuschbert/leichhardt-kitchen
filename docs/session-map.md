@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Opening the installed app again, 16 November 2026
+
+The kitchen tablet's Home button reloaded the whole book on every tap. The manifest's `launch_handler` (`focus-existing`, then `auto`) keeps the open book, and the `launchQueue` consumer in `js/app.js` moves it to the address (`#/kiosk-home` is Home). Quick check: Build (no new tab, button, step or pop-up; 0 extra taps). Note: `docs/app-launch.md`. Test: `tests/launch-home.test.js`.
+
 ## Function sent, lines off, 14 November 2026
 
 The head chef asked that a function's prep and order tasks come off once it is prepped and sent out (trigger: the last round ticked Sent; all three kinds of line). Council: Build smaller 4 of 5, round 2 A 3.4, C 3.1, B 2.3; the mix chosen. The maths is in `js/functions.js` (`roundSent()`, `allSentAt()`, `lineOf()`, `lineOff()`, run by node), used by the phones (`fnOffMark()` and the `fnOff*` helpers in `js/prep.js`, `offSlip()` and `offLine()` in `js/functions.js`) and by the 03:00 job (`scripts/fn-sent-tidy.mjs`, from `nightly-learn.mjs`). The ingredient link is `fnFor` on a prep line (written with the line, only cleared later; no rule, the cancellation budget); Put back writes `keep`. Tests: `tests/fn-sent-tidy.test.js` (25 checks), `scripts/fn-sent-tidy-check.mjs` (emulator), rows in `tests/rules/client-shapes.test.mjs`. Brief: `docs/fn-sent-tidy-options/brief.md`.
