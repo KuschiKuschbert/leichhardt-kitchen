@@ -402,7 +402,7 @@ const withoutViewChoice = async p => {
   await setTime(0, 'from', '10:00'); await setTime(0, 'to', '15:00'); await L.settle(p, 300);
   await tap(p, '[data-p="a-save"]'); await L.settle(p, 1200);
   s = (await store(p))[CFG];
-  ok(JSON.stringify(s.kitShifts) === JSON.stringify([{ id: 'lunch', name: 'Lunch', from: 600, to: 900, off: false }, { id: 'dinner', name: 'Dinner', from: null, to: null, off: false }]), 'admin: the shifts saved with Lunch\'s times (' + JSON.stringify(s.kitShifts) + ')');
+  ok(JSON.stringify(s.kitShifts) === JSON.stringify([{ id: 'lunch', name: 'Lunch', from: 600, to: 900, off: false, occ: false }, { id: 'dinner', name: 'Dinner', from: null, to: null, off: false, occ: false }]), 'admin: the shifts saved with Lunch\'s times (' + JSON.stringify(s.kitShifts) + ')');
   ok(JSON.stringify(s.kitSecs) === JSON.stringify(SECS), 'admin: the sections are kept as they were');
   ok(/Lunch 10:00 to 15:00, Dinner/.test(await txt(p, '[data-p="k-row"][data-r="shifts"]') || ''), 'admin: the row says what it is set to');
   ok(p.errors.length === 0, 'admin: no page errors ' + p.errors.join(' | '));

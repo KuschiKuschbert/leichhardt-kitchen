@@ -1,0 +1,72 @@
+{
+ "base 390 services fieldset px": 116,
+ "base 390 services shown": [
+  "Lunch [x]",
+  "Dinner",
+  "Smoker"
+ ],
+ "base 390 grid head px": 70,
+ "base 390 detail chips": {
+  "h": 44,
+  "t": [
+   "Lunch",
+   "Dinner",
+   "Smoker (off)"
+  ]
+ },
+ "base 390 errors": [],
+ "base 1280 services fieldset px": 68,
+ "base 1280 services shown": [
+  "Lunch [x]",
+  "Dinner",
+  "Smoker"
+ ],
+ "base 1280 grid head px": 70,
+ "base 1280 detail chips": {
+  "h": 44,
+  "t": [
+   "Lunch",
+   "Dinner",
+   "Smoker (off)"
+  ]
+ },
+ "base 1280 errors": [],
+ "base task1 Ann onto Smoker taps": {
+  "taps": 5,
+  "ok": true
+ },
+ "base after task1 services shown": [
+  "Lunch",
+  "Dinner",
+  "Smoker"
+ ],
+ "base task2 Gus onto Smoker only taps": {
+  "taps": 7,
+  "cells": [
+   "tm-sec:gus:smoker"
+  ]
+ },
+ "base breakit default tick after tools=Smoker": {
+  "tool": true,
+  "boxes": [
+   "Lunch [x]",
+   "Dinner",
+   "Smoker"
+  ]
+ },
+ "base breakit remove then add": {
+  "chips": [
+   "Lunch",
+   "Dinner",
+   "Smoker (off)"
+  ],
+  "add": [
+   "Add Smoker"
+  ]
+ },
+ "admin 1280 shifts block px": 364,
+ "admin 1280 errors": [],
+ "admin 390 shifts block px": 687,
+ "admin 390 errors": [],
+ "home ann sees Smoker": false
+}

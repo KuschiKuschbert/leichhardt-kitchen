@@ -13120,6 +13120,7 @@ if (list.length) sg('oreg', 's');
     if (a === 'staffsee') { S.draft.staffSee[el.getAttribute('data-f')] = el.checked; return; }
     // a shift's name or times, once the box is left or a time picked: drawn again so Save changes follows
     if (a === 'shname' || a === 'shfrom' || a === 'shto' || a === 'shbfrom' || a === 'shbto' || a === 'shneed') { shAdminInput(a, el, S.draft); draw(); return; }
+    if (a === 'shocc') { var occSh = S.draft.kitShifts && S.draft.kitShifts[+el.getAttribute('data-i')]; if (occSh && !occSh.off) occSh.occ = el.checked; draw(); return; }
     var i = +el.getAttribute('data-i'), p = S.draft.people[i];
     if (a === 'role') {
       if (el.value === 'head' && S.level !== 'owner') { el.value = p.role; return; }
@@ -13749,12 +13750,13 @@ if (list.length) sg('oreg', 's');
       '<g mask="url(#' + id + ')"><circle cx="8.3" cy="7.4" r="3"' + a + '/><path d="M2.6 18.5c.6-3.1 2.9-5 5.7-5s5.1 1.9 5.7 5"' + a + '/><circle cx="16" cy="6.6" r="2.4"' + a + '/><path d="M15.2 11.4c2.4-.2 4.4 1.2 5.2 3.6"' + a + '/></g>' +
       '<circle cx="17.2" cy="17" r="5.3"' + a + '/><path d="M17.2 14.3v2.9l2 1.3"' + a + '/></svg>';
   }
-  /* the kitchen's shifts as the head chef set them, the ones not taken off, in their order */
+  /* the kitchen's shifts as the head chef set them, the ones not taken off, in their order. occ: hidden on Today's team
+     until someone is on it (tmShown()); it never leaves a shift out here, so Home and Your day keep it. */
   function kitShifts() {
     return ((S.config && S.config.kitShifts) || []).filter(function (x) { return x && tmStr(x.id, 40) && String(x.name || '').trim() && !x.off; })
-      .map(function (x) { return { id: x.id, name: String(x.name).trim().slice(0, 40), from: tmMin(x.from), to: tmMin(x.to) }; });
+      .map(function (x) { return { id: x.id, name: String(x.name).trim().slice(0, 40), from: tmMin(x.from), to: tmMin(x.to), occ: x.occ === true }; });
   }
-  // a shift's busy time as saved, or null (kitShifts() itself carries only id, name, from and to)
+  // a shift's busy time as saved, or null (kitShifts() itself carries the shift details and its hidden setting)
   function tmBusy(shId) {
     var x = ((S.config && S.config.kitShifts) || []).filter(function (s) { return s && s.id === shId && !s.off; })[0];
     return x ? tmBusyClean(x.busy) : null;
@@ -13763,7 +13765,7 @@ if (list.length) sg('oreg', 's');
     var seen = {};
     return (Array.isArray(list) ? list : []).map(function (x) {
       x = x || {};
-      var o = { id: String(x.id || '').slice(0, 40), name: String(x.name || '').replace(/\s+/g, ' ').trim().slice(0, 40), from: tmMin(x.from), to: tmMin(x.to), off: !!x.off }, b = tmBusyClean(x.busy);
+      var o = { id: String(x.id || '').slice(0, 40), name: String(x.name || '').replace(/\s+/g, ' ').trim().slice(0, 40), from: tmMin(x.from), to: tmMin(x.to), off: !!x.off, occ: x.occ === true }, b = tmBusyClean(x.busy);
       if (b) o.busy = b;   // the shift's busy time (15 Nov 2026), only when whole: left out when unset or half chosen
       return o;
     })
@@ -14006,6 +14008,19 @@ if (list.length) sg('oreg', 's');
     var rank = function (s) { return /^lunch\b/i.test(s.name) ? 0 : /^dinner\b/i.test(s.name) ? 1 : 2; };
     return kitShifts().slice().sort(function (a, b) { return rank(a) - rank(b); });
   }
+  /* A shift hidden until someone is on it (head chef, 15 Nov 2026, docs/occasional-shifts-options/brief.md, B repaired):
+     set in Admin, Kitchen, Shifts. Only the planner's choices follow it: Add staff's service boxes and a person's service
+     chips, where it shows as "+ Smoker". It shows as usual when someone on this date's draft works it, when it is ticked
+     in Add staff, or once "+ Smoker" was tapped for this date (tmUi.occShow, this date's screen memory, so a mistaken
+     Remove can be undone in place). The grid, Home, Your day and kitShifts() do not change. Nothing is read or saved. */
+  function tmShown(s) {
+    if (!s || !s.occ) return !!s;
+    if (tmUi.occShow && tmUi.occShow[s.id] || tmUi.quick && tmUi.quick.shifts[s.id]) return true;
+    return !!tmf && Object.keys(tmf.on).some(function (id) { return tmf.on[id][s.id] !== undefined; });
+  }
+  function tmServiceShown() { return tmServiceChoices().filter(tmShown); }
+  function tmServiceHidden() { return tmServiceChoices().filter(function (s) { return !tmShown(s); }); }
+  function tmOccShow(sh) { (tmUi.occShow || (tmUi.occShow = {}))[sh] = true; }
   // the people who can be put on a shift: everyone on the staff list but functions only, chefs first, then by name
   function tmPeople() {
     var rank = function (p) { return p.role === 'head' ? 0 : chefP(p) ? 1 : 2; };
@@ -14385,7 +14400,9 @@ if (list.length) sg('oreg', 's');
     if (!p) return '<aside class="tm-detail-workbench is-empty" aria-label="Service and break details"><h3>Service and break details</h3><p class="hint">Choose Breaks beside a person.</p></aside>';
     var s = tmShift(tmRowService(p.id)), busy = svOf('t') === 'busy';
     // One chip per kitchen service: the details follow the chosen one (a view choice, nothing changes)
+    // a hidden shift is "+ Smoker": the Add button's own action (tm-on), so the person goes straight on it
     var chips = '<div class="tm-bench-shifts" role="group" aria-label="' + esc('Service for ' + p.name) + '">' + tmServiceChoices().map(function (x) {
+      if (!tmShown(x) && !tmOnShift(p.id, x.id)) return '<button type="button" class="chip tm-occ-add" data-p="tm-on" data-occ="1" data-id="' + esc(p.id) + '" data-sh="' + esc(x.id) + '" data-day="' + esc(tmPlanDay()) + '" aria-label="' + esc('Put ' + p.name + ' on ' + x.name) + '"' + (busy ? ' disabled' : '') + '>+ ' + esc(x.name) + '</button>';
       return '<button type="button" class="chip" data-p="tm-sh" data-id="' + esc(p.id) + '" data-v="' + esc(x.id) + '" aria-pressed="' + (x.id === s.id) + '"' + (busy ? ' disabled' : '') + '>' + esc(x.name + (tmOnShift(p.id, x.id) ? '' : ' (off)')) + '</button>';
     }).join('') + '</div>';
     return '<aside class="tm-detail-workbench" data-id="' + esc(p.id) + '" data-sh="' + esc(s.id) + '" aria-label="' + esc('Break details for ' + p.name + ' on ' + s.name + ', ' + tmPlanDate(tmPlanDay())) + '"><header class="tm-workbench-head"><div><h3>' + esc(p.name + ' · ' + s.name) + '</h3><p>' + esc(tmPlanDate(tmPlanDay())) + ' · Draft</p></div><button type="button" class="p-link" data-p="tm-focus-close"' + (busy ? ' disabled' : '') + '>Close details</button></header>' + chips + tmRow(p, s) + '</aside>';
@@ -14398,11 +14415,13 @@ if (list.length) sg('oreg', 's');
   // This chooser only changes the existing dated draft. Names/services remain in memory with that day's UI.
   function tmQuickHTML(s) {
     var empty = !tmDayPeople().length, q = tmUi.quick;
-    if (!q) { q = tmUi.quick = { people: {}, shifts: {} }; if (s) q.shifts[s.id] = true; }
-    var busy = svOf('t') === 'busy', dis = busy ? ' disabled' : '', ps = tmPeople(), shs = tmServiceChoices();
+    // the service ticked to start with is the one in view, or the first shown one: never a hidden shift
+    if (!q) { q = tmUi.quick = { people: {}, shifts: {} }; var first = s && tmShown(s) ? s : tmServiceShown()[0]; if (first) q.shifts[first.id] = true; }
+    var busy = svOf('t') === 'busy', dis = busy ? ' disabled' : '', ps = tmPeople(), shs = tmServiceShown(), hid = tmServiceHidden();
     var count = ps.filter(function (p) { return q.people[p.id]; }).length, services = shs.filter(function (x) { return q.shifts[x.id]; }).length;
     var body = '<p class="hint">Choose the staff working this day and the services for this group. Add them, then set sections and breaks. Nothing is saved until Save.</p>' +
-      '<fieldset class="tm-quick-services"><legend>Services for this group</legend>' + shs.map(function (x) { return '<label><input type="checkbox" data-k="tm-quick-shift:' + esc(x.id) + '"' + (q.shifts[x.id] ? ' checked' : '') + dis + '><span>' + esc(x.name) + '</span></label>'; }).join('') + '</fieldset>' +
+      '<fieldset class="tm-quick-services' + (hid.length ? ' tm-occ-row' : '') + '"><legend>Services for this group</legend>' + shs.map(function (x) { return '<label><input type="checkbox" data-k="tm-quick-shift:' + esc(x.id) + '"' + (q.shifts[x.id] ? ' checked' : '') + dis + '><span>' + esc(x.name) + '</span></label>'; }).join('') +
+      hid.map(function (x) { return '<button type="button" class="chip tm-occ-add" data-p="tm-occ-show" data-v="' + esc(x.id) + '" aria-label="' + esc('Add ' + x.name + ' to the services for this group') + '"' + dis + '>+ ' + esc(x.name) + '</button>'; }).join('') + '</fieldset>' +
       '<fieldset class="tm-quick-people"><legend>Who\'s working?</legend>' + ps.map(function (p) { return '<label><input type="checkbox" data-k="tm-quick-person:' + esc(p.id) + '"' + (q.people[p.id] ? ' checked' : '') + dis + '><span>' + esc(p.name) + '</span></label>'; }).join('') + '</fieldset>' +
       '<p class="hint" role="status">' + count + (count === 1 ? ' person' : ' people') + ' selected · ' + services + (services === 1 ? ' service' : ' services') + '.</p><button type="button" class="btn" data-p="tm-quick-add"' + (!count || !services || busy ? ' disabled' : '') + '>Add selected staff</button>';
     return '<section class="tm-quick-add" aria-label="Who\'s working?"' + (!empty && !tmUi.quickOpen ? ' hidden' : '') + '><h3>Who\'s working?</h3>' + body + (!empty ? '<button type="button" class="p-link" data-p="tm-add-staff">Close staff selection</button>' : '') + '</section>';
@@ -14531,7 +14550,7 @@ if (list.length) sg('oreg', 's');
     if (a === 'tm-refresh') {
       if ((tmDirty() || tmQuickPending(tmUi)) && !arm('tm-refresh')) return;
       var entry = tmPlanEntry(tmPlanDay()); entry.f = null; entry.snap = ''; entry.msg = ''; entry.assign = ''; entry.st = '';
-      tmf = null; tmSnap = ''; tmUi.quick = null; tmClearMsg();
+      tmf = null; tmSnap = ''; tmUi.quick = null; tmUi.occShow = null; tmClearMsg();
       if (tmPlanDay() === dayNow()) teamLoad(0);
       tmPlanLoad(true); draw(); return;
     }
@@ -14564,9 +14583,16 @@ if (list.length) sg('oreg', 's');
       }
       return;
     }
+    // "+ Smoker" in Add staff: the box shows, ticked, for this date, and the focus moves to it
+    if (a === 'tm-occ-show') {
+      if (!tmShift(v) || !tmUi.quick) return;
+      tmOccShow(v); tmUi.quick.shifts[v] = true; draw();
+      requestAnimationFrame(function () { var box = S.root && Array.prototype.filter.call(S.root.querySelectorAll('[data-k^="tm-quick-shift:"]'), function (b) { return b.getAttribute('data-k') === 'tm-quick-shift:' + v; })[0]; if (box) box.focus({ preventScroll: true }); });
+      return;
+    }
     if (a === 'tm-quick-add') {
       var q = tmUi.quick, staff = tmPeople().filter(function (p) { return q && q.people[p.id]; });
-      var services = kitShifts().filter(function (x) { return q && q.shifts[x.id]; });
+      var services = tmServiceShown().filter(function (x) { return q && q.shifts[x.id]; });
       if (!staff.length || !services.length) return;
       staff.forEach(function (p) { services.forEach(function (x) { tmAddShift(p.id, x.id); }); });
       tmUi.quick = null; tmUi.quickOpen = false;
@@ -14576,11 +14602,17 @@ if (list.length) sg('oreg', 's');
     }
     if (a === 'tm-showoff') { tmShowOff = !tmShowOff; draw(); return; }
     if (a === 'tm-on') {
+      // "+ Smoker" in the details: the details move to that shift first, then the same checks and the same add
+      var occ = !!el.getAttribute('data-occ') && !!s && !tmShown(s) && !tmOnShift(id, sh) && el.getAttribute('data-day') === tmPlanDay() && tmDayPeople().some(function (p) { return p.id === id; });
+      if (occ) { tmOccShow(sh); (tmUi.rowServices || (tmUi.rowServices = {}))[id] = sh; tmUi.focus = id; }
       if (!s || el.getAttribute('data-day') && el.getAttribute('data-day') !== tmPlanDay() || sh !== tmRowService(id) || !tmDayPeople().some(function (p) { return p.id === id; })) return;
       var o = tmf.on[id];
       if (o && o[sh] !== undefined) tmRemoveShift(id, sh);
       else tmAddShift(id, sh);
-      tmClearMsg(); tmAssignMsg = mnName(id) + (tmOnShift(id, sh) ? ' added to ' : ' removed from ') + s.name + '. Not saved yet.'; draw(); return;
+      tmClearMsg(); tmAssignMsg = mnName(id) + (tmOnShift(id, sh) ? ' added to ' : ' removed from ') + s.name + '. Not saved yet.'; draw();
+      // the chip tapped became that shift's pressed chip in the same place: the focus stays on it
+      if (occ) requestAnimationFrame(function () { var chip = S.root && Array.prototype.filter.call(S.root.querySelectorAll('[data-p="tm-sh"]'), function (b) { return b.getAttribute('data-id') === id && b.getAttribute('data-v') === sh; })[0]; if (chip) chip.focus({ preventScroll: true }); });
+      return;
     }
     if (a === 'tm-addbr') {
       if (!s || el.getAttribute('data-day') && el.getAttribute('data-day') !== tmPlanDay() || sh !== tmRowService(id) || !tmOnShift(id, sh) || tmBreaks(id, sh).length >= TM_BREAKS) return;
@@ -15042,9 +15074,10 @@ if (list.length) sg('oreg', 's');
       return '<li class="a-ks-row a-sh-row' + (s.off ? ' is-off' : '') + '"><label class="visually-hidden" for="a-sh' + i + '">Shift name</label><input id="a-sh' + i + '" class="search" data-k="a-sh' + i + '" data-a="shname" data-i="' + i + '" maxlength="40" autocomplete="off" placeholder="Shift name, like Lunch" value="' + esc(s.name) + '"' + (s.off ? ' disabled' : '') + '>' +
         time(i, 'from', s.from, 'From, ' + nm) + time(i, 'to', s.to, 'To, ' + nm) +
         '<button type="button" class="p-x" data-p="sh-rm" data-i="' + i + '" aria-label="' + esc((s.off ? 'Put back: ' : 'Remove: ') + nm) + '">' + (s.off ? 'Put back' : armed('sh-rm:' + s.id) ? 'Tap again to remove' : 'Remove') + '</button>' +
+        '<label class="a-sh-occ"><input type="checkbox" data-a="shocc" data-i="' + i + '"' + (s.occ ? ' checked' : '') + (s.off ? ' disabled' : '') + '><span>' + esc('Hide ' + (String(s.name || '').trim() || 'this shift') + ' on Today\'s team until someone is on it') + '</span></label>' +
         (s.off ? '' : shBusyHTML(s, i, nm)) + '</li>';
     }).join('');
-    return '<section class="set-block a-ks a-sh"><span class="hint">The kinds of shift the chefs put people on in Today\'s team, each with its own sections. From and To are optional: with them, each person\'s section follows the shift that is on. Busy time is optional too: when a plan leaves fewer people on that shift and not on a break than needed then, the Save bar in Today\'s team says when, and marks whose break it is. It never stops a Save. Renaming a shift keeps its history. Save changes at the bottom to put them live.</span>' +
+    return '<section class="set-block a-ks a-sh"><span class="hint">The kinds of shift the chefs put people on in Today\'s team, each with its own sections. From and To are optional: with them, each person\'s section follows the shift that is on. Busy time is optional too: when a plan leaves fewer people on that shift and not on a break than needed then, the Save bar in Today\'s team says when, and marks whose break it is. It never stops a Save. Renaming a shift keeps its history. A hidden shift shows on Today\'s team as + and its name until someone is on it. Save changes at the bottom to put them live.</span>' +
       (rows ? '<div class="a-sh-head" aria-hidden="true"><span>Shift</span><span>From</span><span>To</span></div><ul class="a-ks-list">' + rows + '</ul>' : '<p class="hint">No shifts yet, so Today\'s team has nothing to put people on.</p>') +
       '<div class="btn-row"><button type="button" class="btn" data-p="sh-add">Add a shift</button>' + (list.length ? '' : '<button type="button" class="btn" data-p="sh-usual">Add Lunch and Dinner</button>') + '</div></section>';
   }

@@ -11,8 +11,8 @@ const MIN = 60000, AT = m => L.NOW + (m - 840) * MIN;   // L.NOW is 14:00 kitche
 const people = [{ id: 'gus', name: 'Gus', role: 'head', active: true, add: true, tick: true, del: true }, { id: 'sam', name: 'Sam K', role: 'sous', active: true, add: true, tick: true, del: true },
   ...['Ari', 'Bea', 'Cal', 'Dev', 'Eli', 'Fen', 'Gia', 'Hal'].map(n => ({ id: n.toLowerCase(), name: n, role: 'staff', active: true, add: true, tick: true }))];
 const secs = ['Grill', 'Pans', 'Larder', 'Fryer', 'Dessert', 'Pass'].map(n => ({ id: n.toLowerCase(), name: n }));
-const BUSY = [{ id: 'lunch', name: 'Lunch', from: 600, to: 900, off: false, busy: { from: 720, to: 840, n: 3 } }, { id: 'dinner', name: 'Dinner', from: 900, to: 1260, off: false, busy: { from: 1050, to: 1230, n: 6 } }];
-const PLAIN = BUSY.map(s => ({ id: s.id, name: s.name, from: s.from, to: s.to, off: false }));
+const BUSY = [{ id: 'lunch', name: 'Lunch', from: 600, to: 900, off: false, occ: false, busy: { from: 720, to: 840, n: 3 } }, { id: 'dinner', name: 'Dinner', from: 900, to: 1260, off: false, occ: true, busy: { from: 1050, to: 1230, n: 6 } }];
+const PLAIN = BUSY.map(s => ({ id: s.id, name: s.name, from: s.from, to: s.to, off: false, occ: false }));
 // the study's made-up day (docs/team-minimum-options/data.js): 8 on Dinner; four meal breaks overlap from 18:15
 const ON = [['sam', 'lunch', ''], ['sam', 'dinner', ''], ['ari', 'lunch', 'grill'], ['ari', 'dinner', 'grill'], ['bea', 'lunch', 'pans'], ['bea', 'dinner', 'pans'], ['cal', 'lunch', 'dessert'], ['dev', 'dinner', 'fryer'],
   ['eli', 'lunch', 'larder'], ['eli', 'dinner', 'pass'], ['fen', 'dinner', 'dessert'], ['gia', 'lunch', 'fryer'], ['gia', 'dinner', 'larder'], ['hal', 'dinner', 'larder']].map(([id, sh, sec]) => ({ id, sh, sec }));
@@ -42,9 +42,10 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   ok(/From must be before its To/.test(await txt(p, '.a-sh-bnote') || ''), 'setting: a back-to-front busy time says so');
   await setTime('shbto', 1, '20:30'); await L.settle(p, 200);
   ok(!await p.locator('.a-sh-bnote').count(), 'setting: a whole busy time has no note');
+  await p.locator('[data-a="shocc"][data-i="1"]').check();
   await p.locator('[data-p="a-save"]').click(); await L.settle(p, 1200);
   let cfg = (await store(p))[CFG];
-  ok(JSON.stringify(cfg.kitShifts) === JSON.stringify([PLAIN[0], Object.assign({}, PLAIN[1], { busy: { from: 1050, to: 1230, n: 6 } })]), 'setting: saved on Dinner only, Lunch without a busy time (' + JSON.stringify(cfg.kitShifts) + ')');
+  ok(JSON.stringify(cfg.kitShifts) === JSON.stringify([PLAIN[0], Object.assign({}, PLAIN[1], { occ: true, busy: { from: 1050, to: 1230, n: 6 } })]), 'setting: Dinner keeps its busy time and hidden setting together, Lunch without either (' + JSON.stringify(cfg.kitShifts) + ')');
   ok(/Dinner 15:00 to 21:00 \(busy 17:30 to 20:30, 6 needed\)/.test(await txt(p, '[data-p="k-row"][data-r="shifts"]') || ''), 'setting: the Shifts row says the busy time');
   ok(p.errors.length === 0, 'setting: no page errors ' + p.errors.join(' | '));
   await p.context().close();
@@ -56,6 +57,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   await L.waitFor(p, k => window.__fake.dump()[k]?.people?.[2]?.name === 'Ari B', CFG, 10000);
   cfg = (await store(p))[CFG];
   ok(JSON.stringify(cfg.kitShifts.map(s => s.busy)) === JSON.stringify(BUSY.map(s => s.busy)), 'People save: the shifts keep their busy times (' + JSON.stringify(cfg.kitShifts.map(s => s.busy)) + ')');
+  ok(JSON.stringify(cfg.kitShifts.map(s => s.occ)) === JSON.stringify(BUSY.map(s => s.occ)), 'People save: the shifts also keep their hidden settings');
   await p.context().close();
 
   // 2. The head chef's Today's team at 18:30: the line in the Save dock, the marks, and the dock's own saved words

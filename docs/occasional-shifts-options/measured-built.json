@@ -1,0 +1,165 @@
+{
+ "R 390 services fieldset px": 68,
+ "R 390 services shown": [
+  "Lunch [x]",
+  "Dinner",
+  "+ Smoker"
+ ],
+ "R 390 after + Smoker in Add staff": {
+  "focus": "tm-quick-shift:smoker",
+  "boxes": [
+   "Lunch [x]",
+   "Dinner",
+   "Smoker [x]"
+  ],
+  "px": 116
+ },
+ "R 390 detail chips": {
+  "h": 44,
+  "t": [
+   "Lunch",
+   "Dinner",
+   "+ Smoker"
+  ]
+ },
+ "R 390 after + Smoker in details": {
+  "focus": "tm-sh:smoker",
+  "chips": [
+   "Lunch",
+   "Dinner",
+   "Smoker [pressed]"
+  ],
+  "msg": "Ann added to Smoker. Not saved yet.",
+  "cell": 1
+ },
+ "R 390 remove then add": {
+  "chips": [
+   "Lunch",
+   "Dinner",
+   "Smoker (off)"
+  ],
+  "add": [
+   "Add Smoker"
+  ]
+ },
+ "R 390 errors": [],
+ "R 768 services fieldset px": 68,
+ "R 768 services shown": [
+  "Lunch [x]",
+  "Dinner",
+  "+ Smoker"
+ ],
+ "R 768 after + Smoker in Add staff": {
+  "focus": "tm-quick-shift:smoker",
+  "boxes": [
+   "Lunch [x]",
+   "Dinner",
+   "Smoker [x]"
+  ],
+  "px": 68
+ },
+ "R 768 detail chips": {
+  "h": 44,
+  "t": [
+   "Lunch",
+   "Dinner",
+   "+ Smoker"
+  ]
+ },
+ "R 768 after + Smoker in details": {
+  "focus": "tm-sh:smoker",
+  "chips": [
+   "Lunch",
+   "Dinner",
+   "Smoker [pressed]"
+  ],
+  "msg": "Ann added to Smoker. Not saved yet.",
+  "cell": 1
+ },
+ "R 768 remove then add": {
+  "chips": [
+   "Lunch",
+   "Dinner",
+   "Smoker (off)"
+  ],
+  "add": [
+   "Add Smoker"
+  ]
+ },
+ "R 768 errors": [],
+ "R 1280 services fieldset px": 68,
+ "R 1280 services shown": [
+  "Lunch [x]",
+  "Dinner",
+  "+ Smoker"
+ ],
+ "R 1280 after + Smoker in Add staff": {
+  "focus": "tm-quick-shift:smoker",
+  "boxes": [
+   "Lunch [x]",
+   "Dinner",
+   "Smoker [x]"
+  ],
+  "px": 68
+ },
+ "R 1280 detail chips": {
+  "h": 44,
+  "t": [
+   "Lunch",
+   "Dinner",
+   "+ Smoker"
+  ]
+ },
+ "R 1280 after + Smoker in details": {
+  "focus": "tm-sh:smoker",
+  "chips": [
+   "Lunch",
+   "Dinner",
+   "Smoker [pressed]"
+  ],
+  "msg": "Ann added to Smoker. Not saved yet.",
+  "cell": 1
+ },
+ "R 1280 remove then add": {
+  "chips": [
+   "Lunch",
+   "Dinner",
+   "Smoker (off)"
+  ],
+  "add": [
+   "Add Smoker"
+  ]
+ },
+ "R 1280 errors": [],
+ "R task1 Ann onto Smoker taps": {
+  "taps": 4,
+  "ok": true
+ },
+ "R task2 Gus onto Smoker only taps": {
+  "taps": 7,
+  "cells": [
+   "tm-sec:gus:smoker"
+  ]
+ },
+ "R breakit default tick after tools=Smoker": [
+  "Lunch [x]",
+  "Dinner",
+  "+ Smoker"
+ ],
+ "R empty day services": [
+  "Lunch [x]",
+  "Dinner",
+  "+ Smoker"
+ ],
+ "R long names 390 services": {
+  "px": 164,
+  "overflow": false
+ },
+ "R long names 390 chips": {
+  "h": 145,
+  "overflow": false,
+  "errors": []
+ },
+ "R admin 390 px": 933,
+ "R admin 1280 px": 591
+}

@@ -1,0 +1,125 @@
+--- js/prep.js	2026-11-15 05:39:14.898516953 +0000
++++ js/prep.js	2026-11-15 06:08:00.646578670 +0000
+@@ -13113,6 +13113,7 @@
+     if (a === 'staffsee') { S.draft.staffSee[el.getAttribute('data-f')] = el.checked; return; }
+     // a shift's name or times, once the box is left or a time picked: drawn again so Save changes follows
+     if (a === 'shname' || a === 'shfrom' || a === 'shto') { shAdminInput(a, el, S.draft); draw(); return; }
++    if (a === 'shocc') { var so = S.draft.kitShifts && S.draft.kitShifts[+el.getAttribute('data-i')]; if (so) so.occ = el.checked; draw(); return; }
+     var i = +el.getAttribute('data-i'), p = S.draft.people[i];
+     if (a === 'role') {
+       if (el.value === 'head' && S.level !== 'owner') { el.value = p.role; return; }
+@@ -13745,11 +13746,11 @@
+   /* the kitchen's shifts as the head chef set them, the ones not taken off, in their order */
+   function kitShifts() {
+     return ((S.config && S.config.kitShifts) || []).filter(function (x) { return x && tmStr(x.id, 40) && String(x.name || '').trim() && !x.off; })
+-      .map(function (x) { return { id: x.id, name: String(x.name).trim().slice(0, 40), from: tmMin(x.from), to: tmMin(x.to) }; });
++      .map(function (x) { return { id: x.id, name: String(x.name).trim().slice(0, 40), from: tmMin(x.from), to: tmMin(x.to), occ: !!x.occ }; });
+   }
+   function shClean(list) {
+     var seen = {};
+-    return (Array.isArray(list) ? list : []).map(function (x) { x = x || {}; return { id: String(x.id || '').slice(0, 40), name: String(x.name || '').replace(/\s+/g, ' ').trim().slice(0, 40), from: tmMin(x.from), to: tmMin(x.to), off: !!x.off }; })
++    return (Array.isArray(list) ? list : []).map(function (x) { x = x || {}; return { id: String(x.id || '').slice(0, 40), name: String(x.name || '').replace(/\s+/g, ' ').trim().slice(0, 40), from: tmMin(x.from), to: tmMin(x.to), off: !!x.off, occ: !!x.occ }; })
+       .filter(function (x) { if (!x.id || !x.name || seen[x.id]) return false; seen[x.id] = 1; return true; }).slice(0, 12);
+   }
+   /* A record read from Firestore, checked entry by entry (the rules check only the sizes): a person, a shift and a
+@@ -13972,6 +13973,16 @@
+     var rank = function (s) { return /^lunch\b/i.test(s.name) ? 0 : /^dinner\b/i.test(s.name) ? 1 : 2; };
+     return kitShifts().slice().sort(function (a, b) { return rank(a) - rank(b); });
+   }
++  function occV() { return window.__occ || 'B'; }
++  function tmShown(s) {
++    if (!s || !s.occ) return !!s;
++    if (tmUi.occShow && tmUi.occShow[s.id]) return true;
++    if (tmUi.quick && tmUi.quick.shifts[s.id]) return true;
++    return !!tmf && Object.keys(tmf.on).some(function (id) { return tmf.on[id][s.id] !== undefined; });
++  }
++  function tmServiceShown() { return tmServiceChoices().filter(tmShown); }
++  function tmServiceHidden() { return tmServiceChoices().filter(function (s) { return !tmShown(s); }); }
++  function tmOccBtn(s, p, id) { return '<button type="button" class="chip tm-occ-add' + (occV() === 'R' ? ' tm-occ-solid' : '') + '" data-p="' + p + '"' + (id ? ' data-id="' + esc(id) + '"' : '') + ' data-v="' + esc(s.id) + '" aria-label="' + esc((id ? 'Put ' + (personName(id) || 'this person') + ' on ' : 'Show ') + s.name) + '"' + (svOf('t') === 'busy' ? ' disabled' : '') + '>+ ' + esc(s.name) + '</button>'; }
+   // the people who can be put on a shift: everyone on the staff list but functions only, chefs first, then by name
+   function tmPeople() {
+     var rank = function (p) { return p.role === 'head' ? 0 : chefP(p) ? 1 : 2; };
+@@ -14221,7 +14232,8 @@
+   function tmChefRole(p) { return chefP(p) ? (p.role === 'head' ? 'Head chef' : 'Sous chef') : ''; }
+   function tmGridHeadHTML(shs) {
+     var ps = tmDayPeople();
+-    return '<li class="tm-grid-head" aria-hidden="true"><span class="tm-grid-who">Who</span>' + shs.map(function (s) {
++    var hidC = occV() === 'C' ? tmServiceHidden() : [];
++    return '<li class="tm-grid-head"' + (hidC.length ? '' : ' aria-hidden="true"') + '><span class="tm-grid-who"><span aria-hidden="true">Who</span>' + hidC.map(function (x) { return tmOccBtn(x, 'tm-occ-group'); }).join('') + '</span>' + shs.map(function (s) {
+       var on = ps.filter(function (p) { return !chefP(p) && tmOnShift(p.id, s.id); }), none = on.filter(function (p) { return !tmf.on[p.id][s.id]; }).length;
+       return '<span class="tm-grid-sh"><b>' + esc(s.name) + '</b><small>' + (s.from != null && s.to != null ? tmHHMM(s.from) + ' to ' + tmHHMM(s.to) : 'Hours not set') + '</small><small class="tm-grid-count">' + (none ? '<b>' + none + '</b> no section' : on.length ? 'All have one' : 'Nobody to place') + '</small></span>';
+     }).join('') + '</li>';
+@@ -14258,9 +14270,10 @@
+     if (!p) return '<aside class="tm-detail-workbench is-empty" aria-label="Service and break details"><h3>Service and break details</h3><p class="hint">Choose Breaks beside a person.</p></aside>';
+     var s = tmShift(tmRowService(p.id)), busy = svOf('t') === 'busy';
+     // One chip per kitchen service: the details follow the chosen one (a view choice, nothing changes)
+-    var chips = '<div class="tm-bench-shifts" role="group" aria-label="' + esc('Service for ' + p.name) + '">' + tmServiceChoices().map(function (x) {
++    var chipList = occV() === 'A' ? tmServiceChoices() : tmServiceChoices().filter(function (x) { return tmShown(x) || tmOnShift(p.id, x.id); });
++    var chips = '<div class="tm-bench-shifts" role="group" aria-label="' + esc('Service for ' + p.name) + '">' + chipList.map(function (x) {
+       return '<button type="button" class="chip" data-p="tm-sh" data-id="' + esc(p.id) + '" data-v="' + esc(x.id) + '" aria-pressed="' + (x.id === s.id) + '"' + (busy ? ' disabled' : '') + '>' + esc(x.name + (tmOnShift(p.id, x.id) ? '' : ' (off)')) + '</button>';
+-    }).join('') + '</div>';
++    }).join('') + (occV() === 'R' ? tmServiceChoices().filter(function (x) { return !chipList.some(function (c) { return c.id === x.id; }); }).map(function (x) { return '<button type="button" class="chip tm-occ-add tm-occ-solid" data-p="tm-on" data-occ="1" data-id="' + esc(p.id) + '" data-sh="' + esc(x.id) + '" data-day="' + esc(tmPlanDay()) + '" aria-label="' + esc('Put ' + p.name + ' on ' + x.name) + '"' + (busy ? ' disabled' : '') + '>+ ' + esc(x.name) + '</button>'; }).join('') : '') + (occV() === 'B' ? tmServiceChoices().filter(function (x) { return !chipList.some(function (c) { return c.id === x.id; }); }).map(function (x) { return tmOccBtn(x, 'tm-occ-add', p.id); }).join('') : '') + '</div>';
+     return '<aside class="tm-detail-workbench" data-id="' + esc(p.id) + '" data-sh="' + esc(s.id) + '" aria-label="' + esc('Break details for ' + p.name + ' on ' + s.name + ', ' + tmPlanDate(tmPlanDay())) + '"><header class="tm-workbench-head"><div><h3>' + esc(p.name + ' · ' + s.name) + '</h3><p>' + esc(tmPlanDate(tmPlanDay())) + ' · Draft</p></div><button type="button" class="p-link" data-p="tm-focus-close"' + (busy ? ' disabled' : '') + '>Close details</button></header>' + chips + tmRow(p, s) + '</aside>';
+   }
+   function tmAssignHTML(s) {
+@@ -14271,11 +14284,11 @@
+   // This chooser only changes the existing dated draft. Names/services remain in memory with that day's UI.
+   function tmQuickHTML(s) {
+     var empty = !tmDayPeople().length, q = tmUi.quick;
+-    if (!q) { q = tmUi.quick = { people: {}, shifts: {} }; if (s) q.shifts[s.id] = true; }
+-    var busy = svOf('t') === 'busy', dis = busy ? ' disabled' : '', ps = tmPeople(), shs = tmServiceChoices();
++    if (!q) { q = tmUi.quick = { people: {}, shifts: {} }; var pre = s && tmShown(s) ? s : tmServiceShown()[0]; if (pre) q.shifts[pre.id] = true; }
++    var busy = svOf('t') === 'busy', dis = busy ? ' disabled' : '', ps = tmPeople(), shs = tmServiceShown(), hid = tmServiceHidden();
+     var count = ps.filter(function (p) { return q.people[p.id]; }).length, services = shs.filter(function (x) { return q.shifts[x.id]; }).length;
+     var body = '<p class="hint">Choose the staff working this day and the services for this group. Add them, then set sections and breaks. Nothing is saved until Save.</p>' +
+-      '<fieldset class="tm-quick-services"><legend>Services for this group</legend>' + shs.map(function (x) { return '<label><input type="checkbox" data-k="tm-quick-shift:' + esc(x.id) + '"' + (q.shifts[x.id] ? ' checked' : '') + dis + '><span>' + esc(x.name) + '</span></label>'; }).join('') + '</fieldset>' +
++      (function () { var more = occV() !== 'R' && (occV() !== 'C' || empty) && hid.length; if (occV() === 'R') return '<fieldset class="tm-quick-services' + (hid.length ? ' tm-occ-row' : '') + '"><legend>Services for this group</legend>'; return '<fieldset class="tm-quick-services' + (more ? ' has-occ" aria-labelledby="tm-qs-l' : '') + '"><legend>' + (more ? '<span id="tm-qs-l">Services for this group</span><span class="tm-occ-more">' + hid.map(function (x) { return tmOccBtn(x, 'tm-occ-show'); }).join('') + '</span>' : 'Services for this group') + '</legend>'; })() + shs.map(function (x) { return '<label><input type="checkbox" data-k="tm-quick-shift:' + esc(x.id) + '"' + (q.shifts[x.id] ? ' checked' : '') + dis + '><span>' + esc(x.name) + '</span></label>'; }).join('') + (occV() === 'R' ? hid.map(function (x) { return tmOccBtn(x, 'tm-occ-show'); }).join('') : '') + '</fieldset>' +
+       '<fieldset class="tm-quick-people"><legend>Who\'s working?</legend>' + ps.map(function (p) { return '<label><input type="checkbox" data-k="tm-quick-person:' + esc(p.id) + '"' + (q.people[p.id] ? ' checked' : '') + dis + '><span>' + esc(p.name) + '</span></label>'; }).join('') + '</fieldset>' +
+       '<p class="hint" role="status">' + count + (count === 1 ? ' person' : ' people') + ' selected · ' + services + (services === 1 ? ' service' : ' services') + '.</p><button type="button" class="btn" data-p="tm-quick-add"' + (!count || !services || busy ? ' disabled' : '') + '>Add selected staff</button>';
+     return '<section class="tm-quick-add" aria-label="Who\'s working?"' + (!empty && !tmUi.quickOpen ? ' hidden' : '') + '><h3>Who\'s working?</h3>' + body + (!empty ? '<button type="button" class="p-link" data-p="tm-add-staff">Close staff selection</button>' : '') + '</section>';
+@@ -14433,9 +14446,17 @@
+       }
+       return;
+     }
++    if (a === 'tm-occ-show' || a === 'tm-occ-add' || a === 'tm-occ-group') {
++      var os = tmShift(v); if (!os) return;
++      (tmUi.occShow || (tmUi.occShow = {}))[v] = true;
++      if (a === 'tm-occ-show') { if (tmUi.quick) tmUi.quick.shifts[v] = true; draw(); requestAnimationFrame(function () { var b = S.root && S.root.querySelector('[data-k="tm-quick-shift:' + v + '"]'); if (b) b.focus({ preventScroll: true }); }); return; }
++      if (a === 'tm-occ-group') { tmWhole = false; tmUi.quickOpen = true; tmUi.quick = { people: {}, shifts: {} }; tmUi.quick.shifts[v] = true; draw(); return; }
++      if (!tmDayPeople().some(function (p) { return p.id === id; })) return;
++      tmAddShift(id, v); (tmUi.rowServices || (tmUi.rowServices = {}))[id] = v; tmUi.focus = id; tmClearMsg(); tmAssignMsg = (personName(id) || 'Someone') + ' added to ' + os.name + '. Set a section, then Save.'; draw(); return;
++    }
+     if (a === 'tm-quick-add') {
+       var q = tmUi.quick, staff = tmPeople().filter(function (p) { return q && q.people[p.id]; });
+-      var services = kitShifts().filter(function (x) { return q && q.shifts[x.id]; });
++      var services = tmServiceShown().filter(function (x) { return q && q.shifts[x.id]; });
+       if (!staff.length || !services.length) return;
+       staff.forEach(function (p) { services.forEach(function (x) { tmAddShift(p.id, x.id); }); });
+       tmUi.quick = null; tmUi.quickOpen = false;
+@@ -14445,11 +14466,15 @@
+     }
+     if (a === 'tm-showoff') { tmShowOff = !tmShowOff; draw(); return; }
+     if (a === 'tm-on') {
++      var occ = el.getAttribute('data-occ') && s && s.occ && !tmShown(s) && !tmOnShift(id, sh) && el.getAttribute('data-day') === tmPlanDay() && tmDayPeople().some(function (p) { return p.id === id; });
++      if (occ) { (tmUi.occShow || (tmUi.occShow = {}))[sh] = true; (tmUi.rowServices || (tmUi.rowServices = {}))[id] = sh; tmUi.focus = id; }
+       if (!s || el.getAttribute('data-day') && el.getAttribute('data-day') !== tmPlanDay() || sh !== tmRowService(id) || !tmDayPeople().some(function (p) { return p.id === id; })) return;
+       var o = tmf.on[id];
+       if (o && o[sh] !== undefined) tmRemoveShift(id, sh);
+       else tmAddShift(id, sh);
+-      tmClearMsg(); tmAssignMsg = mnName(id) + (tmOnShift(id, sh) ? ' added to ' : ' removed from ') + s.name + '. Not saved yet.'; draw(); return;
++      tmClearMsg(); tmAssignMsg = mnName(id) + (tmOnShift(id, sh) ? ' added to ' : ' removed from ') + s.name + '. Not saved yet.'; draw();
++      if (occ) requestAnimationFrame(function () { var c = S.root && Array.prototype.filter.call(S.root.querySelectorAll('[data-p="tm-sh"]'), function (b) { return b.getAttribute('data-id') === id && b.getAttribute('data-v') === sh; })[0]; if (c) c.focus({ preventScroll: true }); });
++      return;
+     }
+     if (a === 'tm-addbr') {
+       if (!s || el.getAttribute('data-day') && el.getAttribute('data-day') !== tmPlanDay() || sh !== tmRowService(id) || !tmOnShift(id, sh) || tmBreaks(id, sh).length >= TM_BREAKS) return;
+@@ -14900,7 +14925,8 @@
+       var nm = s.name || 'this shift';
+       return '<li class="a-ks-row a-sh-row' + (s.off ? ' is-off' : '') + '"><label class="visually-hidden" for="a-sh' + i + '">Shift name</label><input id="a-sh' + i + '" class="search" data-k="a-sh' + i + '" data-a="shname" data-i="' + i + '" maxlength="40" autocomplete="off" placeholder="Shift name, like Lunch" value="' + esc(s.name) + '"' + (s.off ? ' disabled' : '') + '>' +
+         time(i, 'from', s.from, 'From, ' + nm) + time(i, 'to', s.to, 'To, ' + nm) +
+-        '<button type="button" class="p-x" data-p="sh-rm" data-i="' + i + '" aria-label="' + esc((s.off ? 'Put back: ' : 'Remove: ') + nm) + '">' + (s.off ? 'Put back' : armed('sh-rm:' + s.id) ? 'Tap again to remove' : 'Remove') + '</button></li>';
++        '<button type="button" class="p-x" data-p="sh-rm" data-i="' + i + '" aria-label="' + esc((s.off ? 'Put back: ' : 'Remove: ') + nm) + '">' + (s.off ? 'Put back' : armed('sh-rm:' + s.id) ? 'Tap again to remove' : 'Remove') + '</button>' +
++        '<label class="a-sh-occ"><input type="checkbox" data-a="shocc" data-i="' + i + '"' + (s.occ ? ' checked' : '') + (s.off ? ' disabled' : '') + '><span>' + esc('Hide ' + (s.name || 'this shift') + ' on Today\'s team until someone is on it') + '</span></label></li>';
+     }).join('');
+     return '<section class="set-block a-ks a-sh"><span class="hint">The kinds of shift the chefs put people on in Today\'s team, each with its own sections. From and To are optional: with them, each person\'s section follows the shift that is on. Renaming a shift keeps its history. Save changes at the bottom to put them live.</span>' +
+       (rows ? '<div class="a-sh-head" aria-hidden="true"><span>Shift</span><span>From</span><span>To</span></div><ul class="a-ks-list">' + rows + '</ul>' : '<p class="hint">No shifts yet, so Today\'s team has nothing to put people on.</p>') +

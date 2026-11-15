@@ -300,3 +300,7 @@ The extra height and the lost row apply only while the plan is too few. With eno
 5. Unread or failed plans: the editor, and so the line, shows only once the day's plan has been read. The clock not ready says "Checking the kitchen clock". **Not evidenced in a test.**
 6. Remeasured at 390, 768 and 1280: done, above. A refused Save: tested.
 7. Contrast: measured, above.
+
+## Merge compatibility, 15 November 2026
+
+Combined with the occasional-shift setting from #711: the shift editor shows both controls, and `shClean()` retains both `occ` and a valid `busy` value. `tests/team-minimum.test.js` now saves both together and checks that a later People save keeps both. Dropping `occ` from the combined save reproduced 2 failures of 38 checks; the corrected save passes all 38. The combined settings were opened with synthetic data at 390, 768 and 1280 px, with both controls present, no sideways overflow and no browser errors.
