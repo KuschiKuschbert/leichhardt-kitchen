@@ -598,7 +598,7 @@
         var b = els.filter(function (e) { return e.ing === p.how.over; })[0]; if (!b) return;
         // drawn as a pool of it, in its colour (a bowl of laksa under the rice would be a bowl)
         if (!p.it.raw && LIB.get('sauce-pool')) { p.it = LIB.get('sauce-pool'); p.ram = { col: LIB.sauceColour(p.ing) || '#E8962E' }; }
-        p.placed = true; p.scale = Math.sqrt(1.8 * ovalArea(b) / (Math.PI / 4 * p.it.w * p.it.h)); p.count = 1;
+        p.placed = true; p.scale = Math.sqrt(2.6 * ovalArea(b) / (Math.PI / 4 * p.it.w * p.it.h)); p.count = 1;
         push(elsFor(d, r, p, [b.x, b.y], 0, { host: b })).forEach(function (e) { e._under = 1; });
       });
       // next to another part ("bacon and peas next to the mash"): beside it, towards the front right
@@ -718,7 +718,7 @@
       hostA = Ah;
       p._host = tel;
       // round a part ("pork sauce around the mash"): a pool under it, wider than it, so it shows all round
-      if (hw.around && tel) { if (!p.it.raw && /^(swoosh|smear|line|drizzle)$/.test(p.it.form) && LIB.get('sauce-pool')) { p.it = LIB.get('sauce-pool'); A1 = Math.PI / 4 * p.it.w * p.it.h; } p.scale = Math.sqrt(1.7 * Ah / A1); p.sy = 0; push(elsFor(d, r, p, [h.x, h.y], 0, { host: h })); return; }
+      if (hw.around && tel) { if (!p.it.raw && /^(swoosh|smear|line|drizzle)$/.test(p.it.form) && LIB.get('sauce-pool')) { p.it = LIB.get('sauce-pool'); A1 = Math.PI / 4 * p.it.w * p.it.h; } p.scale = Math.sqrt(2.6 * Ah / A1); p.sy = 0; push(elsFor(d, r, p, [h.x, h.y], 0, { host: h })); return; }
       // next to a part (the jus next to the mash): a pool beside it, under what sits there
       if (hw.next && tel && /sauce/.test(role)) { var nx = tv.m ? -1 : 1; p.scale = Math.min(p.scale, Math.sqrt(0.5 * Ah / A1)); push(elsFor(d, r, p, [h.x + nx * ho.a * 0.9, h.y + ho.b * 0.4], 0, { host: h })); return; }
       // on one side of the main and on the other (the nachos' avocado and sour cream)
