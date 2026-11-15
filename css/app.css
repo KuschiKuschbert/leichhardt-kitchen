@@ -118,6 +118,9 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 
 /* ---------- page frame ---------- */
 .page { max-width: 1240px; margin: 0 auto; padding: 1.5rem 1.25rem 2.5rem; display: flex; flex-direction: column; gap: 1.1rem; }
+#app.page-swiping { overflow-x: clip; }
+.page-swipe-surface { position: relative; left: var(--page-swipe-x, 0px); }
+@media (prefers-reduced-motion: reduce) { .page-swipe-surface { left: 0; } }
 .top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0.5rem 1.5rem; border-bottom: 3px solid var(--ink); padding-bottom: 0.75rem; }
 .brand { display: flex; flex-direction: column; gap: 0.1rem; text-decoration: none; }
 .eyebrow { font-family: var(--display); font-weight: 700; font-size: 0.8125rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-ink); }

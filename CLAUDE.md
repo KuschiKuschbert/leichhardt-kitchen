@@ -73,7 +73,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Operandio cooling: manual stages, shared confirmation, quiet reminders and 10:00–21:00 Queensland window with nightly expiry | `docs/operandio-cooling.md`, `docs/operandio-cooling-options/brief.md` |
 | Operandio clock motion: chosen B desktop pill and fixed mobile ring, implementation and release checks | `docs/operandio-clock-motion-options/brief.md` |
 | Pings: who gets them, the sound | `docs/ping-recipients.md`, `docs/ping-sound.md` |
-| Back arrow and page trail | `docs/navigation.md` |
+| Back arrow, page trail and left/right touch swipes between existing main tabs | `docs/navigation.md` |
 | Merging, the queue, `urgent` | `docs/auto-merge.md` |
 | Publishing the site: only a merge that changes a file the phones load republishes; the book then updates silently when safe (no band unless asked) | `docs/site-publishing.md` |
 | Nightly backup and recovery | `docs/backup-recovery.md` |
