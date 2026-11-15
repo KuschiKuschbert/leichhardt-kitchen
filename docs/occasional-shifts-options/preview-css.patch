@@ -1,0 +1,16 @@
+--- css/app.css	2026-11-15 05:39:13.870516916 +0000
++++ css/app.css	2026-11-15 05:58:40.275011042 +0000
+@@ -5693,3 +5693,13 @@
+   #rec-print h2 { font: 700 12pt var(--display); margin: 10pt 0 2pt; break-after: avoid; }
+   #rec-print p { margin: 0 0 2pt; }
+ }
++
++/* preview only: occasional shifts */
++.tm-occ-add { border-style: dashed; }
++.tm-notebook .tm-quick-services.has-occ > legend { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .25rem .5rem; width: 100%; padding: 0; }
++.tm-notebook .tm-quick-services .tm-occ-more { display: flex; flex-wrap: wrap; gap: .4rem; }
++.tm-occ-add { min-height: 44px; }
++.tm-grid-head .tm-grid-who { display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem; }
++.tm-grid-head .tm-occ-add { min-height: 44px; font-size: 0.9rem; }
++.a-ks-row.a-sh-row .a-sh-occ { grid-column: 1 / -1; display: flex; justify-content: flex-start; gap: 0.5rem; align-items: center; min-height: 44px; margin-top: -0.25rem; font: 600 0.9rem var(--body); cursor: pointer; }
++.a-ks-row.a-sh-row .a-sh-occ input { flex: 0 0 22px; width: 22px; height: 22px; min-height: 0; margin: 0; accent-color: var(--small-ink); }

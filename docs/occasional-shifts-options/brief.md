@@ -41,3 +41,89 @@ Five fresh agents read the proposal, the evidence packet and the baseline screen
 | Hidden from Home: if the setting fed `kitShifts()` or `off`, a Smoker cook's section would vanish from Home. | Checked in source (keeper) | Keep it out of `kitShifts()` filtering; a Home test with a person on a hidden shift. |
 
 **Out of scope, noted:** the stand-in's time boxes in Admin, Kitchen, Shifts show 12-hour times clipped ("03:00 PI") in the test browser's locale; the 24-hour rule says the book should show 24-hour times. Its own fix, after checking an Australian-locale phone.
+
+## Round 2: three designs
+
+Built as previews in a patched copy of the real app ([`preview-prep.patch`](preview-prep.patch), [`preview-css.patch`](preview-css.patch), runner [`preview-run.cjs`](preview-run.cjs)), never on the live book. The click-test stand-in, made-up staff, a sous chef (Sam) on `#/team`, fallback fonts. Kitchen: Lunch 10:00 to 15:00, Dinner 16:00 to 22:00, Smoker 06:00 to 11:00 set to hide; six people on Lunch and Dinner, Gus and Sam not on the day.
+
+**The same in all three (the round 1 cuts):**
+- Admin, Kitchen, Shifts: a tick box under each shift, "Hide on Today's team until someone is on it" (`admin-shifts-390.png`, `admin-shifts-1280.png`). Saved with Save changes, admin only, one true/false (`occ`) on the shift. No rules change.
+- One helper, `tmShown()`: a hidden shift shows on Today's team when someone on that date's draft works it, when it is ticked in Add staff, or once "+ Smoker" was tapped for that date. The Add staff boxes and Add selected staff use the same list. A hidden shift is never the box ticked by default.
+- Nothing else changes: the grid columns, Home, Your day, the On today board, the roster fill and Copy last weekday read `kitShifts()` as before.
+
+### A: Add staff only (changes the least)
+
+The Smoker tick box leaves Add staff. "+ Smoker" sits at the end of the "Services for this group" line and brings the box back, ticked (`A-addstaff-390.png`). The details chips stay as built: Lunch, Dinner, Smoker (off) (`A-details-390.png`).
+- **For:** keeps the approved rule "the details panel still offers every service"; nothing new to learn in the details; the head chef reviewer's version.
+- **Against:** clears only half of the clutter the head chef named; the Services line grows from about 20 px to 44 px, so Add staff is 28 px shorter on a phone but 20 px taller on a laptop.
+
+### B: a named "+ Smoker" in both places (the way back acts)
+
+Add staff as A. In a person's details the chip row shows the services they work and the shown ones; a hidden one is a "+ Smoker" chip that puts that person straight on Smoker and opens Smoker's details (`B-details-390.png`, `B-added-390.png`).
+- **For:** both places the head chef named are tidy; putting someone on Smoker is one tap shorter (4, not 5); the words say what the tap does.
+- **Against:** changes the approved rule for the details chips; two kinds of chip in one row (a view chip and an action chip); A's laptop cost in Add staff.
+
+### C: one Smoker start in the grid head (service first)
+
+On a day with people on it, Smoker leaves both the Add staff boxes and the details chips. One "+ Smoker" sits under "Who" in the grid's service head (`C-gridhead-390.png`). It opens Who's working? with only Smoker ticked, ready to tick the Smoker cooks (`C-group-390.png`). On an empty day, the "+ Smoker" sits in Add staff as in A.
+- **For:** both places tidy with no height added to Add staff (68 px, as with no Smoker at all); a Smoker start is service first, so a new person goes on Smoker alone in 5 taps (7 today); one place to look.
+- **Against:** someone who opens Add staff or a person's details to add Smoker finds nothing there; the grid head grows 13 px and stops being a hidden-from-screen-readers header; changes the approved rule for the details chips.
+
+### How they differ
+
+| | A | B | C |
+| --- | --- | --- | --- |
+| Where Smoker is hidden | Add staff only | Add staff and details | Add staff and details |
+| The way back | "+ Smoker" on the Services line, ticks the box | A's, plus "+ Smoker" in the details that adds the person | One "+ Smoker" in the grid head that starts a Smoker group |
+| Entry point | The group or the person | The group or the person | The service |
+| Task sequence, an existing person | As today | Breaks, + Smoker | + Smoker, tick, Add |
+| "Details panel offers every service" (built 15 Nov) | Kept | Changed | Changed |
+
+### Measured on the previews (Preview, patched real app; raw [`measured-preview.json`](measured-preview.json), [`measured-baseline.json`](measured-baseline.json))
+
+| Measure | Today | A | B | C |
+| --- | ---: | ---: | ---: | ---: |
+| Add staff service boxes, 390 px | 116 px | 88 px | 88 px | **68 px** |
+| Add staff service boxes, 1280 px | 68 px | 88 px | 88 px | 68 px |
+| Details chips for Ann | Lunch, Dinner, Smoker (off) | same | Lunch, Dinner, + Smoker | Lunch, Dinner |
+| Details chip row, 390 and 1280 px | 44 px | 44 px | 44 px | 44 px |
+| Grid service head, 390 px | 70 px | 70 px | 70 px | 83 px |
+| Ann (on Lunch and Dinner) onto Smoker with a section, 390 px | 5 taps | 5 | **4** | 5 |
+| Gus (not on the day) onto Smoker only with a section, 390 px | 7 taps | 7 | 7 | **5** |
+| Admin, Kitchen, Shifts, three shifts, 390 / 1280 px | 687 / 364 px | 831 / 508 | 831 / 508 | 831 / 508 |
+| Lines on the working grid | unchanged | unchanged | unchanged | one 13 px taller head |
+
+Taps count every tap from the planner as it opens, including opening and choosing in the shared section picker (2). Once someone is on Smoker for the date, Smoker shows in all three like today (box, chip, column).
+
+### Contract fit (lead's reading, for the scorers to test)
+
+| Check | A | B | C |
+| --- | --- | --- | --- |
+| Surface purpose (sage people book) | Works: no surface change | Works | Works |
+| State meaning | Needs work: the preview gives "+ Smoker" a dashed edge, which on this page already means No section | Needs work: same | Needs work: same |
+| Words and non-colour cues | Works: "+ Smoker" says the action | Works; but a view chip and an action chip share one row | Works in the head; the head's names are read aloud once it holds a button |
+| Real contrast, focus | Not evidenced (existing chip tokens) | Not evidenced | Not evidenced |
+| 44 px targets | Works (measured 44 px) | Works | Works |
+| Approved rule, details offers every service | Kept | Proposed change, head chef's call | Proposed change, head chef's call |
+| Service continuity (rows, taps) | No row lost; laptop +20 px | Same; one tap fewer | No row lost; head +13 px |
+
+### Reference comparison (lead's reading)
+
+| Principle | A | B | C |
+| --- | --- | --- | --- |
+| Things 3: tuck the occasional away, keep the frequent visible | Needs work: half tucked | Works | Works |
+| Todoist: usual choices easy, extra shown when needed, nothing guessed | Works | Works | Needs work: not where a person-first planner looks |
+| Linear: one name and one place per control | Works | Needs work: two kinds of chip in one row | Works: one place |
+| Headspace: plain words on actions | Works | Works | Works |
+| Duolingo: each tap answers truthfully | Works (box appears ticked) | Works (details move to Smoker, the grid gains its column, a line says who was added) | Works (Who's working? opens with Smoker ticked) |
+
+### Break-it findings (lead, on the previews)
+
+| Scenario | Result | Evidence |
+| --- | --- | --- |
+| Break tools set to Smoker, then Add staff | A, B, C: Lunch ticked, Smoker not offered. Today: Lunch ticked, Smoker box shown | Checked in the preview fixture. The first-draw case (an empty day with Smoker first in Kitchen order) is covered by the helper in source; Not evidenced by a click |
+| Put Ann on Smoker, then Remove Smoker by mistake | A, B: the chip stays "Smoker (off)" with Add Smoker, for that date | Checked in the preview fixture. C: not run |
+| A person on a hidden shift on Home | No change: the preview does not touch `kitShifts()` | Checked in source. The click check was inconclusive in both baseline and preview: at 14:00 Home leaves out a 06:00 to 11:00 shift that has ended |
+| The roster fill puts Lunch cooks on Smoker | Unchanged in all three; Smoker then shows | Reproduced in node (round 1); a head chef question |
+| C: a sous chef opens Add staff to put Gus on Smoker | Finds no Smoker on a day with people on it | Risk / Not evidenced (role-based) |
+| An older saved copy saves Kitchen settings | Strips the setting; Smoker shows again | Checked in source (round 1); the safe failure |
