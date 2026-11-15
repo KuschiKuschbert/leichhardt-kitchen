@@ -53,3 +53,32 @@
 .tc-sheet footer { display: flex; justify-content: space-between; gap: 10px; padding-top: 10px; }
 .tc-sheet footer .ts-btn { display: inline-block; width: auto; min-width: 110px; border: 1.5px solid var(--ink); border-radius: var(--r-act); text-align: center; }
 @media (min-width: 768px) { .tc-row { grid-template-columns: 220px 1fr auto; } .tc-line { flex-direction: column; gap: 0; } .tc-secs { grid-column: 2; grid-row: 1; } .tc-acts { grid-column: 3; grid-row: 1; flex-direction: row; } }
+/* The combined preview: B's grid from person rows, A's worded Breaks, sticky service heads */
+.tx-say { margin: 0 0 6px; }
+.tx-grid { list-style: none; margin: 0; padding: 0; display: grid; column-gap: 8px; --who: minmax(min-content, 1.1fr); grid-template-columns: var(--who) repeat(var(--n), minmax(0, 1fr)); }
+/* one set of columns for the whole day: the rows share them (subgrid), so a long name widens the name column for all */
+.tx-ghead, .tx-row { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; align-items: center; }
+.tx-n1 { --n: 1; } .tx-n2 { --n: 2; } .tx-n3 { --n: 3; } .tx-n4 { --n: 4; }
+.tx-ghead { position: sticky; top: 66px; z-index: 2; background: var(--surface-paper); border-bottom: 2px solid var(--ink); padding: 6px 0 4px; }
+.tx-sh b { display: block; font: 700 1.05rem/1.1 var(--display); }
+.tx-sh small { display: block; font-size: .74rem; line-height: 1.25; color: var(--muted); }
+.tx-sh .tx-count { color: var(--ink); }
+.tx-sh .tx-count b { display: inline; font: inherit; font-weight: 700; }
+.tx-ghead .tx-who { font: 700 1rem var(--display); }
+.tx-row { border-bottom: 1px solid var(--line); padding: 4px 0; }
+.tx-row .tx-who { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
+.tx-row .ts-name { font-size: 1.45rem; line-height: 1.05; overflow-wrap: normal; word-break: normal; hyphens: manual; max-width: 9.5em; }
+.tx-brk { min-height: 44px; padding: 0 2px; border: 0; background: none; font: 600 .82rem var(--body); color: var(--ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-align: left; }
+.tx-brk span { color: var(--muted); font-weight: 500; }
+.tx-cell { width: 100%; min-height: 44px; border: 1.5px solid var(--ink); border-radius: var(--r-pick); background: var(--paper); padding: 2px 10px; font: 600 .88rem/1.15 var(--body); color: var(--ink); text-align: left; cursor: pointer; overflow-wrap: break-word; }
+.tx-cell::after { content: ' ▾'; }
+.tx-cell.is-empty { color: var(--muted); border-style: dashed; }
+.tx-off { color: var(--faint); font-size: .86rem; padding-left: 10px; }
+.tx-row > .ts-bench { grid-column: 1 / -1; }
+/* three or more services on a phone: the name and Breaks on their own line, the sections under the service heads */
+@media (max-width: 599px) {
+  .tx-grid.tx-n3, .tx-grid.tx-n4 { grid-template-columns: repeat(var(--n), minmax(0, 1fr)); }
+  .tx-n3 .tx-ghead .tx-who, .tx-n4 .tx-ghead .tx-who { display: none; }
+  .tx-n3 .tx-row .tx-who, .tx-n4 .tx-row .tx-who { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; }
+}
+@media (min-width: 768px) { .tx-grid { --who: minmax(180px, 1fr); } .tx-row .tx-who { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; } .tx-cell { font-size: .95rem; } }

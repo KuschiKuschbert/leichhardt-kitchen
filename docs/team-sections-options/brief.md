@@ -59,7 +59,7 @@ All three keep: the saved shape (`team/<day>.on[] = { id, sh, sec }`), No sectio
 
 ### Measured on the previews
 
-**Preview**, not the implemented app: an imitation of the admin shell (first row at 577 to 666 px on a 390 px phone, against 612 px in the app), fallback fonts, made-up data, the same tasks as the baseline, scripted with Playwright and counted by a tap counter in the page. Script [`verify.cjs`](verify.cjs), raw [`verify-abc.json`](verify-abc.json); all 67 checks pass.
+**Preview**, not the implemented app: an imitation of the admin shell (first row at 577 to 666 px on a 390 px phone, against 612 px in the app), fallback fonts, made-up data, the same tasks as the baseline, scripted with Playwright and counted by a tap counter in the page. Script [`verify.cjs`](verify.cjs), raw [`verify-abc.json`](verify-abc.json); all 136 checks pass (counted by the script).
 
 | Task or measure | Today | A | B | C |
 | --- | ---: | ---: | ---: | ---: |
@@ -115,12 +115,91 @@ Screenshots at 390 px: `a-double-admin-390.png`, `b-double-admin-390.png`, `c-do
 
 ## Round 2 scores
 
-To come.
+Six fresh agents (the five reviewers and the kitchen screen designer) saw all three designs, the brief, the evidence packet, the screenshots and the live previews. Points fixed in advance: first 3, second 2, third 1. All six say the designs differ in structure, not only in look.
+
+| Reviewer | A | B | C | First | Decisive point |
+| --- | ---: | ---: | ---: | --- | --- |
+| Cook mid-service | 1 | 3 | 2 | B | Whole day in 8 rows; a fix during service stays 3 taps with no guessing. Breaks open on the first service, not the one on now. |
+| Head chef | 1 | 3 | 2 | B | Reads like the roster, gaps per service. Take C's "Same as Lunch" as the first picker option; hold the pass until usual sections show what stays empty. |
+| Skeptic | 1 | 3 | 2 | B | No new way to write, and a double tap only opens another picker. Reproduced C's double tap writing the next person's section, and A's stale SAME tag. |
+| New starter | 1 | 2 | 3 | C | One button with a count, then one plain question at a time. Found C's green "Every service has a section" before Save. |
+| Keeper of the book | 3 | 2 | 1 | A (without its fill) | Reuses the shared picker and rows; a table would break where the details panel moves. C bypasses the shared picker and the lock's sheet list. |
+| Kitchen screen designer | 1 | 2 | 3 | C | Measured contrast (all text AA, lowest 4.7:1) and targets (none under 44 px). B's pills sit 6 px apart and long names break mid-word. |
+| **Total** | **8** | **15** | **13** | B 3, C 2, A 1 | |
+
+**Unanimous:** reject A's automatic fill. It turns a visible gap into a section that looks right and is wrong when a double moves (4 of 6 doubles on the measured day), and the Save words do not catch it.
+
+**Disagreement.** The new starter and the designer prefer C's pass for the fewest taps (16 against 29 on the real day). The head chef, cook and Skeptic prefer B because corrections stay on the page and nothing new pops up during service. The Keeper prefers A's rows because they reuse the most code.
+
+**Faults the reviewers found that the lead had missed:**
+- C's start button says "Every service has a section" in green before Save. Reproduced by the new starter, the designer and the Skeptic.
+- C: a double tap 110 ms apart sets the next person's section unseen. Reproduced by the Skeptic and the designer.
+- C: Back, then choose again, counts "Set 2 sections" for one changed cell. Reproduced by the Keeper.
+- C: Escape does not close the pass sheet, and Tab leaves it. Reproduced by the designer.
+- A: the SAME tag stays after Lunch changes. Reproduced by the Keeper and the Skeptic.
+- B: long names break mid-word at the largest text. Reproduced by the new starter, the designer and the Skeptic.
+- All three: breaks open on the first service, not the one on now. Found in source by the cook.
+- All three: no chef row in any preview. Risk raised by the Skeptic.
+- The lead's largest-text rows were measured with no section chosen. With a long section chosen, rows are A 315 px, B 216 px and C 298 px (Skeptic).
+
+The original A, B and C previews are kept as they were scored; their faults are recorded here, not silently fixed.
 
 ## Mix of A, B and C
 
-To come.
+Every reviewer named parts to take and reject. The lead reconciled them after the rankings.
+
+| Source and part | Take or reject, and why | Principle | Kitchen benefit | Conflict or cost | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| B: the day grid, people down, services across with hours | **Take** as the main flow (5 of 6 take it in some form) | Airbnb: who, when, which section together | 8 rows on a phone; a missed Dinner shows as a gap | A new pattern for `docs/design-patterns.md`; built from rows, not a table, so the details panel still moves inline (Keeper) | Previews, all six reviews |
+| B: counts per service | **Take**, in neutral words, never green before Save | Duolingo: truthful; colour contract | Gaps per service while scrolling | None | Five reviews |
+| B: the name as the only way into breaks | **Reject**: no word on the action | Headspace: words on actions | | | Five reviews |
+| A: a worded Breaks button with the break line | **Take** | Headspace; Things 3 | Break status stays on the row | Adds height | Cook, head chef, Skeptic |
+| A: one picker per service, the shared picker | **Take** (B's cells are the same thing) | Linear: one kind of control | Reuses `LK_UX.enhance` | Keyed `tm-sec:<id>:<sh>` | Keeper |
+| A: the automatic fill | **Reject** (6 of 6) | Todoist: never guess | | Writes a section the chef did not choose | Reproduced twice |
+| C: "Same as Lunch: Grill" | **Take**, as the first option inside the later service's own picker, in ink, never applied by itself | Todoist: show the default, do not apply it | Less hunting for doubles who stay put | Does not save taps | Head chef, Keeper, Skeptic, designer |
+| C: the guided pass | **Hold** as a later option, not part of this build | Things 3: frequent fixes stay on the page | Would cut a cold day from 29 to about 16 taps | A pop-up on a page used in service (rule 2), a second way to set one cell, a double-tap guard, the lock's sheet list | Four reviewers reject or hold it; two prefer it |
+| C: read-only rows | **Reject**: a correction then needs the sheet | Things 3 | | 4 to 5 taps for one fix | Measured |
+
+**Why not all three in full.** The designer and the Skeptic both say grid pickers plus a pass would duplicate controls and give two ways to set one cell. A's fill also fights C's offered "Same as". The two-part blend below keeps one way to set a cell.
+
+**Repairs in the blend.** Breaks open on the service on now or next. Chef rows read Head chef or Sous chef and are not counted. Names wrap only between words. Pills sit 8 px apart.
+
+## Combined preview
+
+[mix.html](mix.html). Not a montage: one coherent page made from these parts:
+- B's grid, built from person rows that share one set of columns (CSS subgrid);
+- A's worded "Breaks not set" link on each row;
+- C's "Same as Lunch: Grill" as the first option in the Dinner picker;
+- neutral counts in service heads that stay in view while scrolling.
+
+With three or more services on a phone, the name and Breaks sit on their own line above the sections.
+
+**Measured** (Preview, the same script and tasks as A, B and C; all 51 mix checks pass, counted by the script, and the 136 for A, B and C still pass; raw [`verify-mix.json`](verify-mix.json)):
+
+| Task or measure | Today | Mix | C (for comparison) |
+| --- | ---: | ---: | ---: |
+| Sections, two services, doubles move (14 cells), then Save | 41 | **29** | 16 |
+| Sections, three services (17 cells), then Save | 53 | **35** | 19 |
+| One correction and Save | 3 to 5 | **3** | 4 to 5 |
+| Open Ari's Dinner breaks at 13:00 / at 18:00 | 3 / 3 | **2 / 1** | 2 / 2 |
+| Rows in the working screen, 390, two services / three | 4 / 4 | **6 / 4** | 4 / 4 |
+| Rows in the working screen, 768 and 1280 | 5 | **8** | 8 |
+| Complete rows on opening, `#/team` 390, two services | 2 | 3 | 3 |
+| Row height at 390, two services / three / largest text with a long name | 135 | 77 / 97 / 100 | 111 |
+
+Checked in the preview:
+- choosing Lunch leaves Dinner on No section;
+- the Dinner picker offers "Same as Lunch: Grill" first, and it sets only Dinner when chosen;
+- no green words in the draft before Save;
+- at 18:00 Breaks opens on Dinner in one tap;
+- chef rows read Head chef, are not counted and are not listed as missing;
+- a held Save shows Saving; a refused Save keeps the work in red words;
+- no sideways scroll and no target under 44 px at 390, 768 and 1280 px.
+
+Screenshots: `mix-double-admin-390.png`, `mix-double-done-390.png`, `mix-same-390.png`, `mix-chefs-390.png`, `mix-long-xlarge-390.png`, `mix-breaks-390.png`, `mix-fail-390.png`, `mix-three-admin-1280.png`.
+
+**Review status.** This is the lead's synthesis from the six reviews. A focused follow-up by the screen designer and the Skeptic on this combined preview is recorded below.
 
 ## Recommendation
 
-To come.
+To come after the follow-up.

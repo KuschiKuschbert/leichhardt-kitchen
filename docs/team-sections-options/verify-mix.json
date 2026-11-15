@@ -1,0 +1,205 @@
+{
+ "source": "Preview",
+ "note": "Made-up data, fallback fonts, imitation admin shell (first row about 600 px down at 390 px).",
+ "results": {
+  "mix": {
+   "three-admin-390": {
+    "complete": 0,
+    "firstTop": 703,
+    "rowH": [
+     97,
+     97,
+     97
+    ],
+    "sideways": false,
+    "small": [],
+    "pageH": 1708,
+    "working": 4,
+    "sections": {
+     "taps": 35,
+     "right": true,
+     "said": "Saved Tuesday 17 November at 13:05. The team sees it on Home. Everyone has a section."
+    },
+    "fixOne": {
+     "taps": 3,
+     "right": true
+    }
+   },
+   "three-admin-768": {
+    "complete": 3,
+    "firstTop": 664,
+    "rowH": [
+     53,
+     53,
+     53
+    ],
+    "sideways": false,
+    "small": [],
+    "pageH": 1317,
+    "working": 8
+   },
+   "three-admin-1280": {
+    "complete": 1,
+    "firstTop": 664,
+    "rowH": [
+     53,
+     53,
+     53
+    ],
+    "sideways": false,
+    "small": [],
+    "pageH": 1317,
+    "working": 8
+   },
+   "three-team-390": {
+    "complete": 2,
+    "firstTop": 392,
+    "rowH": [
+     97,
+     97,
+     97
+    ],
+    "sideways": false,
+    "small": [],
+    "pageH": 1397,
+    "working": 4
+   },
+   "three-team-768": {
+    "complete": 8,
+    "firstTop": 353,
+    "rowH": [
+     53,
+     53,
+     53
+    ],
+    "sideways": false,
+    "small": [],
+    "pageH": 1024,
+    "working": 8
+   },
+   "three-team-1280": {
+    "complete": 7,
+    "firstTop": 353,
+    "rowH": [
+     53,
+     53,
+     53
+    ],
+    "sideways": false,
+    "small": [],
+    "pageH": 1006,
+    "working": 8
+   },
+   "double-admin-390": {
+    "complete": 0,
+    "firstTop": 684,
+    "rowH": [
+     77,
+     77,
+     77
+    ],
+    "sideways": false,
+    "small": [],
+    "pageH": 1532,
+    "working": 6,
+    "sections": {
+     "taps": 29,
+     "right": true,
+     "said": "Saved Tuesday 17 November at 13:05. The team sees it on Home. Everyone has a section."
+    },
+    "fixOne": {
+     "taps": 3,
+     "right": true
+    }
+   },
+   "double-admin-768": {
+    "complete": 3,
+    "firstTop": 664,
+    "rowH": [
+     53,
+     53,
+     53
+    ],
+    "sideways": false,
+    "small": [],
+    "pageH": 1317,
+    "working": 8
+   },
+   "double-admin-1280": {
+    "complete": 1,
+    "firstTop": 664,
+    "rowH": [
+     53,
+     53,
+     53
+    ],
+    "sideways": false,
+    "small": [],
+    "pageH": 1317,
+    "working": 8
+   },
+   "double-team-390": {
+    "complete": 3,
+    "firstTop": 373,
+    "rowH": [
+     77,
+     77,
+     77
+    ],
+    "sideways": false,
+    "small": [],
+    "pageH": 1222,
+    "working": 6
+   },
+   "double-team-768": {
+    "complete": 8,
+    "firstTop": 353,
+    "rowH": [
+     53,
+     53,
+     53
+    ],
+    "sideways": false,
+    "small": [],
+    "pageH": 1024,
+    "working": 8
+   },
+   "double-team-1280": {
+    "complete": 7,
+    "firstTop": 353,
+    "rowH": [
+     53,
+     53,
+     53
+    ],
+    "sideways": false,
+    "small": [],
+    "pageH": 1006,
+    "working": 8
+   },
+   "breaks": {
+    "taps": 2,
+    "named": "Ari · Dinner"
+   },
+   "savedWords": "Saved Tuesday 17 November at 13:05. The team sees it on Home. Still no section: Ari Dinner, Bea Lunch, Bea Dinner, Cal Lunch, Dev Lunch, Dev Dinner, Eli Lunch, Eli Dinner, Fen Dinner, Gia Lunch, Gia Dinner, Hal Lunch, Hal Dinner.",
+   "long": {
+    "complete": 5,
+    "firstTop": 784,
+    "rowH": [
+     100,
+     100,
+     100
+    ],
+    "sideways": false,
+    "small": [],
+    "pageH": 1937
+   },
+   "breaksAt1800": {
+    "taps": 1,
+    "named": "Ari · Dinner"
+   }
+  }
+ },
+ "fails": 0,
+ "checks": 51
+}

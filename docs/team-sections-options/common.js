@@ -19,6 +19,8 @@
     want = { ari: { lunch: 'grill', dinner: 'pans' }, bea: { lunch: 'pans', dinner: 'grill' }, cal: { lunch: 'dessert' }, dev: { lunch: 'fryer', dinner: 'fryer' },
       eli: { lunch: 'larder', dinner: 'pass' }, fen: { dinner: 'dessert' }, gia: { lunch: 'pass', dinner: 'larder' }, hal: { lunch: 'larder', dinner: 'fryer' } };
   }
+  // ?chefs=1 puts the head chef and a sous chef on the day: their empty section reads Head chef or Sous chef, as in the app
+  if (q.get('chefs')) people = [{ id: 'gus', name: 'Gus', chef: 'Head chef', roster: [600, 1260], on: services.map(function (s) { return s.id; }) }, { id: 'sam', name: 'Sam K', chef: 'Sous chef', roster: [900, 1260], on: services.slice(-1).map(function (s) { return s.id; }) }].concat(people);
   if (q.get('long')) { people = people.concat(D.longPeople.map(function (p) { return Object.assign({}, p, { on: services.map(function (s) { return s.id; }) }); })); sections = sections.concat(D.longSections); }
   var on = {};
   people.forEach(function (p) { on[p.id] = {}; p.on.forEach(function (sh) { on[p.id][sh] = ''; }); });
@@ -33,7 +35,7 @@
     busy: function () { return st === 'busy'; },
     missing: function () {
       var out = [];
-      people.forEach(function (p) { TS.works(p.id).forEach(function (s) { if (!on[p.id][s.id]) out.push(p.name + ' ' + s.name); }); });
+      people.forEach(function (p) { if (p.chef) return; TS.works(p.id).forEach(function (s) { if (!on[p.id][s.id]) out.push(p.name + ' ' + s.name); }); });
       return out;
     },
     redraw: null,
@@ -63,7 +65,11 @@
     },
     benchClick: function (b) {
       var a = b.getAttribute('data-a');
-      if (a === 'bench-open') { var pid = b.getAttribute('data-id'), now = TS.works(pid)[0]; TS.focus = TS.focus && TS.focus.pid === pid ? null : { pid: pid, sh: now ? now.id : services[0].id }; TS.redraw(); return true; }
+      if (a === 'bench-open') {
+        // the service on now, else the next one to start, else the last (?at=1080 tries 18:00; 13:00 by default)
+        var pid = b.getAttribute('data-id'), w = TS.works(pid), m = +(q.get('at') || 780);
+        var now = w.filter(function (s) { return s.from <= m && m < s.to; })[0] || w.filter(function (s) { return s.from > m; })[0] || w[w.length - 1];
+        TS.focus = TS.focus && TS.focus.pid === pid ? null : { pid: pid, sh: now ? now.id : services[0].id }; TS.redraw(); return true; }
       if (a === 'bench-sh') { TS.focus.sh = b.getAttribute('data-sh'); TS.redraw(); return true; }
       if (a === 'bench-close') { TS.focus = null; TS.redraw(); return true; }
       return false;

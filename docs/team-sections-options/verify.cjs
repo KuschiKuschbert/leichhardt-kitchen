@@ -8,12 +8,12 @@ const server = require(path.resolve(__dirname, '../../tests/serve'));
 const PORT = 8779, BASE = 'http://127.0.0.1:' + PORT + '/docs/team-sections-options/';
 const designs = (process.argv[2] || 'a,b,c').split(',');
 const out = { source: 'Preview', note: 'Made-up data, fallback fonts, imitation admin shell (first row about 600 px down at 390 px).', results: {} };
-let fails = 0;
-const ok = (c, m) => { if (!c) { fails++; console.log('FAIL ' + m); } return !!c; };
+let fails = 0, checks = 0;
+const ok = (c, m) => { checks++; if (!c) { fails++; console.log('FAIL ' + m); } return !!c; };
 
 async function measure(p) {
   return p.evaluate(() => {
-    const rows = [...document.querySelectorAll('.ta-row, .tb-grid tbody tr:not(.tb-benchrow), .tc-row, .tm-row')];
+    const rows = [...document.querySelectorAll('.ta-row, .tb-grid tbody tr:not(.tb-benchrow), .tc-row, .tx-row')];
     const save = document.querySelector('.ts-save'), bar = document.querySelector('.ts-tabbar'), top = document.querySelector('.ts-top');
     let bottom = innerHeight;
     if (bar && getComputedStyle(bar).display !== 'none') bottom = Math.min(bottom, bar.getBoundingClientRect().top);
@@ -26,7 +26,7 @@ async function measure(p) {
 }
 async function working(p) {
   // the working screen: the first row just under the sticky top bar
-  await p.evaluate(() => { const r = document.querySelector('.ta-row, .tb-grid thead, .tc-start'); window.scrollTo(0, r.getBoundingClientRect().top + scrollY - 76); });
+  await p.evaluate(() => { const r = document.querySelector('.ta-row, .tb-grid thead, .tc-start, .tx-say'); window.scrollTo(0, r.getBoundingClientRect().top + scrollY - 76); });
   await p.waitForTimeout(80);
   return (await measure(p)).complete;
 }
@@ -105,7 +105,7 @@ async function fixOne(p, d) {
       if (shell === 'admin' && width === 390) {
         await p.evaluate(() => window.scrollTo(0, 0));
         R[k].sections = await sectionsTask(p, d); ok(R[k].sections.right, d + ' ' + k + ' sections task ends with the wanted sections');
-        await p.evaluate(() => { const r = document.querySelector('.ta-row, .tb-grid thead, .tc-start'); window.scrollTo(0, r.getBoundingClientRect().top + scrollY - 76); });
+        await p.evaluate(() => { const r = document.querySelector('.ta-row, .tb-grid thead, .tc-start, .tx-say'); window.scrollTo(0, r.getBoundingClientRect().top + scrollY - 76); });
         await p.screenshot({ path: path.join(__dirname, d + '-' + fx + '-done-390.png') });
         R[k].fixOne = await fixOne(p, d); ok(R[k].fixOne.right, d + ' ' + k + ' one correction');
       }
@@ -161,8 +161,41 @@ async function fixOne(p, d) {
     await p.screenshot({ path: path.join(__dirname, 'c-sheet-390.png') });
     await p.close();
   }
+
+  // The combined preview only: the council's conditions
+  if (designs.includes('mix')) {
+    let p = await b.newPage({ viewport: { width: 390, height: 844 } });
+    await p.goto(BASE + 'mix.html?fx=double'); await p.waitForTimeout(100);
+    await p.click('[data-a="pick"][data-id="ari"][data-sh="lunch"]'); await chooseIn(p, 'Grill');
+    ok((await state(p)).ari.dinner === '', 'mix: choosing Ari Lunch leaves Ari Dinner on No section (no automatic fill)');
+    await p.click('[data-a="pick"][data-id="ari"][data-sh="dinner"]');
+    const first = await p.locator('.ts-sheet button[data-i]').first().innerText();
+    ok(first === 'Same as Lunch: Grill', 'mix: the Dinner picker offers Same as Lunch: Grill first (' + first + ')');
+    await p.screenshot({ path: path.join(__dirname, 'mix-same-390.png') });
+    await p.locator('.ts-sheet button[data-i]').first().click(); await p.waitForTimeout(40);
+    ok((await state(p)).ari.dinner === 'grill', 'mix: Same as Lunch sets only Ari Dinner, when chosen');
+    const greens = await p.evaluate(() => { const done = getComputedStyle(document.documentElement).getPropertyValue('--done-ink').trim(); const probe = document.createElement('i'); probe.style.color = done; document.body.appendChild(probe); const c = getComputedStyle(probe).color; probe.remove();
+      return [...document.querySelectorAll('.ts-book *')].filter(e => e.childNodes.length && [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()) && getComputedStyle(e).color === c && !e.closest('.ts-bhead')).map(e => e.textContent.trim()); });
+    ok(!greens.length, 'mix: no green words in the draft before Save (' + greens.join(' | ') + ')');
+    await p.close();
+    p = await b.newPage({ viewport: { width: 390, height: 844 } });
+    await p.goto(BASE + 'mix.html?fx=double&at=1080'); await p.waitForTimeout(100);
+    await p.evaluate(() => { window.__taps = 0; }); await p.click('[data-a="bench-open"][data-id="ari"]'); await p.waitForTimeout(40);
+    out.results.mix.breaksAt1800 = { taps: await p.evaluate(() => window.__taps), named: await p.locator('.ts-bench header b').innerText() };
+    ok(out.results.mix.breaksAt1800.named === 'Ari · Dinner' && out.results.mix.breaksAt1800.taps === 1, 'mix: at 18:00 Breaks opens on Dinner in one tap');
+    await p.close();
+    p = await b.newPage({ viewport: { width: 390, height: 844 } });
+    await p.goto(BASE + 'mix.html?fx=double&chefs=1'); await p.waitForTimeout(100);
+    const chefCell = await p.locator('[data-a="pick"][data-id="gus"][data-sh="lunch"]').innerText(), say = await p.locator('.tx-say').innerText();
+    await p.click('[data-a="pick"][data-id="ari"][data-sh="lunch"]'); await chooseIn(p, 'Grill'); await p.click('[data-a="save"]');
+    await p.waitForFunction(() => /Saved Tuesday/.test((document.querySelector('.ts-said') || {}).textContent || ''));
+    const said = await p.locator('.ts-said').innerText();
+    ok(/Head chef/.test(chefCell) && /Lunch 7, Dinner 7/.test(say) && !/Gus|Sam K/.test(said), 'mix: chef rows read Head chef, are not counted and are not listed as missing (' + say + ')');
+    await p.screenshot({ path: path.join(__dirname, 'mix-chefs-390.png') });
+    await p.close();
+  }
   await b.close(); srv.close();
-  out.fails = fails;
+  out.fails = fails; out.checks = checks;
   fs.writeFileSync(path.join(__dirname, 'verify-' + designs.join('') + '.json'), JSON.stringify(out, null, 1) + '\n');
   console.log(JSON.stringify(out.results, (k, v) => k === 'small' && !v.length ? undefined : v));
   console.log(fails ? fails + ' FAILED' : 'all checks pass');
