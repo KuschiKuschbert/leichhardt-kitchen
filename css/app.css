@@ -5439,6 +5439,62 @@ html:has(.tm-focus-page) {
 .tm-focus-page .tm-overlap-warning { margin: .6rem 0; padding: .5rem .6rem; border-left: 3px solid var(--bad-ink); background: var(--bad-tint); color: var(--bad-ink); font-size: .875rem; line-height: 1.4; overflow-wrap: break-word; }
 .tm-focus-page .tm-remove-service { color: var(--bad-ink); }
 .tm-focus-page .tm-person-row > .tm-detail-workbench { margin-top: .6rem; }
+/* The day grid (head chef, 15 Nov 2026, docs/team-sections-options/brief.md, the chosen mix): people down, services
+   across. The rows share one set of columns (subgrid), so a long name widens the name column for every row. The
+   service heads stay in view under the top bar; their counts are plain ink, never green before Save. */
+.tm-grid-n1 { --tm-n: 1; } .tm-grid-n2 { --tm-n: 2; } .tm-grid-n3 { --tm-n: 3; } .tm-grid-n4 { --tm-n: 4; } .tm-grid-n5 { --tm-n: 5; } .tm-grid-n6 { --tm-n: 6; }
+.tm-grid-n7 { --tm-n: 7; } .tm-grid-n8 { --tm-n: 8; } .tm-grid-n9 { --tm-n: 9; } .tm-grid-n10 { --tm-n: 10; } .tm-grid-n11 { --tm-n: 11; } .tm-grid-n12 { --tm-n: 12; }
+.tm-focus-page .tm-people.tm-grid { display: grid; grid-template-columns: minmax(min-content, 1.1fr) repeat(var(--tm-n, 2), minmax(0, 1fr)); column-gap: .5rem; margin: 0; padding: 0; list-style: none; min-width: 0; }
+.tm-focus-page .tm-grid > li { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; align-items: center; min-width: 0; }
+.tm-focus-page .tm-grid > .hint { display: block; }
+.tm-focus-page .tm-grid > .tm-grid-head { position: sticky; top: var(--tm-grid-top, 0px); z-index: 4; padding: .45rem 0 .35rem; background: var(--surface-paper); border-bottom: 2px solid var(--ink); }
+.tm-grid-head .tm-grid-who { font: 700 1rem/1.2 var(--display); }
+.tm-grid-sh { min-width: 0; }
+.tm-grid-sh b { display: block; font: 700 1.05rem/1.15 var(--display); overflow-wrap: break-word; }
+.tm-grid-sh small { display: block; font-size: .875rem; line-height: 1.3; color: var(--muted); overflow-wrap: break-word; }
+.tm-grid-sh .tm-grid-count { color: var(--ink); }
+.tm-grid-sh .tm-grid-count b { display: inline; font: inherit; font-weight: 700; }
+.tm-focus-page .tm-people.tm-grid > .tm-person-row { padding: .3rem 0; border-top: 0; border-bottom: 1px solid var(--line); }
+.tm-focus-page .tm-people.tm-grid > .tm-person-row:last-child { border-bottom: 1px solid var(--line); }
+.tm-focus-page .tm-people.tm-grid > .tm-person-row.is-focused { border-bottom-color: var(--surface-people-edge); }
+.tm-grid-who { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
+.tm-notebook.tm-focus-page .tm-grid-row .tm-person-name { max-width: 9.5em; font-size: 1.5rem; line-height: 1.05; overflow-wrap: break-word; word-break: normal; }
+.tm-notebook.tm-focus-page .tm-grid-brk { min-width: 44px; min-height: 44px; padding: 0 .1rem; border: 0; background: none; color: var(--ink); font: 600 .875rem/1.3 var(--body); text-align: left; text-decoration: underline; text-underline-offset: 3px; white-space: normal; overflow-wrap: break-word; cursor: pointer; }
+.tm-grid-brk span { color: var(--muted); font-weight: 400; }
+.tm-grid-cell { min-width: 0; }
+.tm-grid-cell .tm-pick { display: block; min-width: 0; margin: 0; }
+.tm-notebook.tm-focus-page .tm-grid-cell .ux-picker-trigger,
+.tm-notebook.tm-focus-page .tm-grid-cell select {
+  display: block; width: 100%; max-width: 100%; min-width: 0; min-height: 44px;
+  padding: .45rem .6rem; border-color: var(--ink); border-radius: var(--r-pick);
+  font: 600 .875rem/1.25 var(--body); text-align: left;
+  white-space: normal; word-break: normal; overflow-wrap: break-word; overflow: visible; text-overflow: clip;
+}
+/* No section (or a chef's role) reads as not set yet: a dashed edge, quieter words */
+.tm-notebook.tm-focus-page .tm-grid-cell .tm-pick:has(option[value=""]:checked) :is(.ux-picker-trigger, select) { border-style: dashed; color: var(--muted); }
+.tm-grid-cell .ux-picker-trigger ~ .tm-selected-value { display: none; }
+.tm-grid-cell .tm-selected-value { display: block; font-size: .8125rem; line-height: 1.35; overflow-wrap: break-word; }
+.tm-grid-off { display: block; padding-left: .6rem; color: var(--faint); font-size: .875rem; }
+/* A full-width part of a row (a note, the moved details panel) must not widen the name column: contain its width */
+.tm-focus-page .tm-grid-row > .tm-grid-note { grid-column: 1 / -1; margin: .15rem 0 .1rem; contain: inline-size; }
+.tm-focus-page .tm-grid-row > .tm-detail-workbench { grid-column: 1 / -1; margin: .4rem 0 .2rem; contain: inline-size; }
+.tm-notebook.tm-focus-page .tm-grid-row :is(button, select, .ux-picker-trigger) { scroll-margin-top: calc(var(--tm-grid-top, 0px) + var(--tm-grid-head-h, 5.5rem) + .75rem); }
+.tm-focus-page .tm-bench-shifts { display: flex; flex-wrap: wrap; gap: .4rem; margin: .5rem 0 .2rem; }
+.tm-focus-page .tm-bench-shifts .chip { min-height: 44px; height: auto; max-width: 100%; white-space: normal; overflow-wrap: break-word; text-align: left; }
+/* Three or more services on a phone: the name and Breaks take their own line, the sections sit under the heads */
+@media (max-width: 599px) {
+  .tm-focus-page .tm-people.tm-grid.tm-grid-wide { grid-template-columns: repeat(var(--tm-n, 3), minmax(0, 1fr)); }
+  .tm-focus-page .tm-grid-wide > .tm-grid-head > .tm-grid-who { display: none; }
+  .tm-focus-page .tm-grid-wide > .tm-grid-row > .tm-grid-who { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: space-between; gap: .5rem; }
+  .tm-notebook.tm-focus-page .tm-grid-wide .tm-grid-row .tm-person-name { max-width: none; }
+}
+@supports not (grid-template-columns: subgrid) {
+  .tm-focus-page .tm-grid > li { grid-template-columns: minmax(6.5rem, 1.1fr) repeat(var(--tm-n, 2), minmax(0, 1fr)); column-gap: .5rem; }
+  .tm-focus-page .tm-grid > .hint { display: block; }
+}
+@supports not (grid-template-columns: subgrid) { @media (max-width: 599px) {
+  .tm-focus-page .tm-grid-wide > li { grid-template-columns: repeat(var(--tm-n, 3), minmax(0, 1fr)); }
+} }
 .tm-notebook.tm-focus-page :is(button, input, select, summary, .ux-picker-trigger) { scroll-margin-block: 1rem; }
 .tm-notebook.tm-focus-page :is(.btn, .chip, input, select, .ux-picker-trigger):not(:disabled) { border-color: var(--ink); }
 .tm-notebook.tm-focus-page :is(button, input, select, summary, .ux-picker-trigger):focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }

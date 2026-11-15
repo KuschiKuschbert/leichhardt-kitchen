@@ -32,6 +32,7 @@ const CLASSES = [
   'tm-notebook', 'tm-nbook', 'tm-nhead', 'tm-nspine', 'tm-work', 'tm-viewbar', 'tm-shift-scroll', 'tm-dayperson', 'tm-away-slot',
   'tm-weeknav', 'tm-daypick',
   'tm-focus-page', 'tm-date-controls', 'tm-week-reveal', 'tm-row-fields', 'tm-row-summary', 'tm-detail-workbench', 'tm-focus-grid', 'tm-focus-save', 'tm-live-strip', 'tm-focus-panel',
+  'tm-grid', 'tm-grid-head', 'tm-grid-row', 'tm-grid-who', 'tm-grid-sh', 'tm-grid-count', 'tm-grid-cell', 'tm-grid-off', 'tm-grid-brk', 'tm-grid-note', 'tm-bench-shifts',
   'tm-person-row', 'tm-person-details', 'tm-planstate', 'tm-next-overview', 'tm-roster', 'tm-roster-days', 'tm-roster-missing', 'tm-roster-time', 'tm-roster-link', 'tm-roster-links',
 
 'tm-worksheet', 'tm-worksheet-head', 'tm-person-head', 'tm-person-section', 'tm-quick-add', 'tm-quick-people', 'tm-quick-services',
@@ -50,7 +51,7 @@ const TOKENS = ['--ink', '--wall-ink', '--paper', '--bg', '--muted', '--faint', 
   '--surface-work', '--surface-work-edge', '--surface-people', '--surface-people-edge', '--surface-paper', '--surface-reference'];
 const HELPERS = ['homeHeading', 'homeWords', 'signInBlock', 'lastNext', 'homeWelcomeWords', 'homeWelcomePaint', 'whoNamePaint', 'tmIcon', 'retrySoon', 'waiting', 'cacheOnly', 'inkLabel', 'inkWait', 'mnName', 'AdaptivePicker', 'SwipeDismiss', 'ModalFrame', 'enhance',
   'svButton', 'svStart', 'svDone', 'svFail', 'svLine', 'errMsg', 'failed', 'toast', 'slipName', 'arm', 'armed', 'W', 'canW',
-  'ovPush', 'ovDone', 'trapTab', 'sheetOpen', 'sheetBusy', 'sheetNext', 'lvHTML', 'homeSlot', 'homePaint', 'homeRotaHTML', 'tmAwayHTML', 'tmNextHTML', 'tmAwayPaint', 'tmAwayHidden', 'dkRunHTML', 'dkTeamHTML', 'dkFormHTML', 'panelShellHTML', 'psPanelHTML', 'psHintHTML', 'psReferenceHTML', 'psRolloutHTML',
+  'ovPush', 'ovDone', 'trapTab', 'sheetOpen', 'sheetBusy', 'sheetNext', 'lvHTML', 'homeSlot', 'homePaint', 'homeRotaHTML', 'tmAwayHTML', 'tmNextHTML', 'tmGridShifts', 'tmGridRowHTML', 'tmGridCellHTML', 'tmAwayPaint', 'tmAwayHidden', 'dkRunHTML', 'dkTeamHTML', 'dkFormHTML', 'panelShellHTML', 'psPanelHTML', 'psHintHTML', 'psReferenceHTML', 'psRolloutHTML',
   'fnOrdTag', 'orderTag', 'fbHTML', 'ftagHTML', 'fillAfterTap'];
 const GLOBALS = ['ICON', 'LK_UX', 'LK_PREP_STANDARDS'];
 

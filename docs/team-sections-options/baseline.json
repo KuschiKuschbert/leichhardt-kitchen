@@ -1,0 +1,66 @@
+{
+  "team-390": {
+    "before": {
+      "complete": 2,
+      "firstTop": 309,
+      "rowH": 135,
+      "pageH": 1875
+    },
+    "working": 4
+  },
+  "admin-390": {
+    "before": {
+      "complete": 0,
+      "firstTop": 612,
+      "rowH": 135,
+      "pageH": 2350
+    },
+    "working": 4,
+    "breaks": {
+      "taps": 3,
+      "named": "Ari · Dinner"
+    },
+    "task": {
+      "taps": 53,
+      "cells": 17,
+      "people": 8,
+      "savedRight": true
+    },
+    "fixOne": {
+      "taps": 3,
+      "right": true
+    }
+  },
+  "admin-1280": {
+    "before": {
+      "complete": 1,
+      "firstTop": 628,
+      "rowH": 135,
+      "pageH": 2178
+    },
+    "working": 5
+  },
+  "double-admin-390": {
+    "before": {
+      "complete": 0,
+      "firstTop": 612,
+      "rowH": 135,
+      "pageH": 2324
+    },
+    "working": 4,
+    "breaks": {
+      "taps": 3,
+      "named": "Ari · Dinner"
+    },
+    "task": {
+      "taps": 41,
+      "cells": 14,
+      "people": 8,
+      "savedRight": true
+    },
+    "fixOne": {
+      "taps": 3,
+      "right": true
+    }
+  }
+}

@@ -13939,12 +13939,14 @@ if (list.length) sg('oreg', 's');
     var shs = kitShifts();
     return tmPeople().filter(function (p) { return shs.some(function (s) { return tmOnShift(p.id, s.id); }); });
   }
-  // A row's service is a view choice only, kept with this date's other memory-only UI state.
+  // The service the break details show for a person: a view choice only, kept with this date's other memory-only UI
+  // state. It starts on the service on now (or the next one) when the date is today, else the first one they work.
   function tmRowService(id) {
     var views = tmUi.rowServices || (tmUi.rowServices = {}), sh = views[id];
     if (!tmShift(sh)) {
-      var worked = kitShifts().filter(function (s) { return tmOnShift(id, s.id); })[0];
-      views[id] = sh = worked ? worked.id : tmShNow();
+      var worked = kitShifts().filter(function (s) { return tmOnShift(id, s.id); }), m = T.mins();
+      var live = tmPlanDay() === dayNow() ? worked.filter(function (s) { return s.from != null && s.to != null && s.from <= m && m < s.to; })[0] || worked.filter(function (s) { return s.from != null && s.from > m; })[0] : null;
+      views[id] = sh = live ? live.id : worked[0] ? worked[0].id : tmShNow();
     }
     return sh;
   }
@@ -13976,11 +13978,13 @@ if (list.length) sg('oreg', 's');
   function tmSel(k, label, opts, cur, quiet, off) {
     var visible = k.indexOf('tm-sec:') === 0 ? 'Section' : k.indexOf('tm-row-sh:') === 0 ? 'Service to edit' : k.indexOf('tm-len:') === 0 ? 'Length' : label.split(' for ')[0];
     var chosen = opts.filter(function (o) { return String(o[0]) === String(cur); })[0], rowField = k.indexOf('tm-sec:') === 0 || k.indexOf('tm-row-sh:') === 0;
-    var id = k.split(':')[1], contextual = rowField || k.indexOf('tm-at:') === 0 || k.indexOf('tm-len:') === 0;
+    var parts = k.split(':'), id = parts[1], contextual = rowField || k.indexOf('tm-at:') === 0 || k.indexOf('tm-len:') === 0;
+    // A grid cell's key names its own service (tm-sec:<id>:<sh>); other contextual fields follow the details service.
+    var ctxSh = parts[0] === 'tm-sec' && parts[2] ? parts[2] : tmRowService(id);
     // The shared picker can rebind after a redraw. Its identity must include the captured date/service,
     // rather than allowing an old Lunch choice to reach a new Dinner control with the same data-k.
-    var identity = contextual ? ' id="tm-choice-' + esc(encodeURIComponent(tmPlanDay()) + '-' + encodeURIComponent(tmRowService(id)) + '-' + encodeURIComponent(k)) + '"' : '';
-    return '<label class="tm-pick"><span' + (quiet ? ' class="visually-hidden"' : '') + '>' + esc(visible) + '</span><select' + identity + ' data-k="' + esc(k) + '" aria-label="' + esc(label) + '"' + (contextual ? ' data-day="' + esc(tmPlanDay()) + '" data-sh="' + esc(tmRowService(id)) + '"' : '') + (off || svOf('t') === 'busy' ? ' disabled' : '') + '>' +
+    var identity = contextual ? ' id="tm-choice-' + esc(encodeURIComponent(tmPlanDay()) + '-' + encodeURIComponent(ctxSh) + '-' + encodeURIComponent(k)) + '"' : '';
+    return '<label class="tm-pick"><span' + (quiet ? ' class="visually-hidden"' : '') + '>' + esc(visible) + '</span><select' + identity + ' data-k="' + esc(k) + '" aria-label="' + esc(label) + '"' + (contextual ? ' data-day="' + esc(tmPlanDay()) + '" data-sh="' + esc(ctxSh) + '"' : '') + (off || svOf('t') === 'busy' ? ' disabled' : '') + '>' +
       opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(o[0]) === String(cur) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>' + (rowField && chosen && String(chosen[1]).length > 18 ? '<small class="tm-selected-value">' + esc(chosen[1]) + '</small>' : '') + '</label>';
   }
   function tmRow(p, s) {
@@ -14070,19 +14074,34 @@ if (list.length) sg('oreg', 's');
     if (!page) { if (tmFocusObserver) tmFocusObserver.disconnect(); return; }
     var save = page.querySelector('.tm-focus-save'), nav = document.querySelector('.tabbar'), navHeight = 0;
     if (nav && nav.getClientRects().length) { var box = nav.getBoundingClientRect(), style = getComputedStyle(nav); if (style.position === 'fixed' && box.bottom >= innerHeight - 2 && box.top > innerHeight / 2) navHeight = box.height; }
-    [['--tm-focus-nav-height', navHeight], ['--tm-focus-save-height', save ? save.getBoundingClientRect().height : 0]].forEach(function (x) { var value = Math.ceil(x[1]) + 'px'; if (document.documentElement.style.getPropertyValue(x[0]) !== value) document.documentElement.style.setProperty(x[0], value); });
+    // The day grid's service heads stay in view under a bar that sticks to the top over the planner (the admin
+    // panel's room tabs on a phone). Only the page's ancestors' siblings are looked at; a side column or the bottom
+    // tab bar does not count.
+    var topInset = 0, pr = page.getBoundingClientRect();
+    for (var anc = page; anc && anc !== document.body; anc = anc.parentElement) {
+      Array.prototype.forEach.call(anc.parentElement ? anc.parentElement.children : [], function (x) {
+        if (x === anc || !x.getClientRects().length) return;
+        var cs = getComputedStyle(x), xr = x.getBoundingClientRect();
+        if ((cs.position !== 'sticky' && cs.position !== 'fixed') || cs.top === 'auto' || xr.top > innerHeight / 2 || xr.right <= pr.left || xr.left >= pr.right) return;
+        topInset = Math.max(topInset, (cs.position === 'sticky' ? parseFloat(cs.top) || 0 : Math.max(0, xr.top)) + xr.height);
+      });
+    }
+    [['--tm-focus-nav-height', navHeight], ['--tm-focus-save-height', save ? save.getBoundingClientRect().height : 0], ['--tm-grid-top', topInset], ['--tm-grid-head-h', page.querySelector('.tm-grid-head') ? page.querySelector('.tm-grid-head').getBoundingClientRect().height : 0]].forEach(function (x) { var value = Math.ceil(x[1]) + 'px'; if (document.documentElement.style.getPropertyValue(x[0]) !== value) document.documentElement.style.setProperty(x[0], value); });
   }
   function tmFocusEnsureVisible(el) {
     var page = S.root && S.root.querySelector('.tm-focus-page');
     if (!page || !el || !page.contains(el) || !el.getClientRects().length) return;
     var navHeight = parseFloat(document.documentElement.style.getPropertyValue('--tm-focus-nav-height')) || 0;
-    var dock = page.querySelector('.tm-focus-save'), bottom = innerHeight - navHeight, r = el.getBoundingClientRect();
+    var dock = page.querySelector('.tm-focus-save'), bottom = innerHeight - navHeight, r = el.getBoundingClientRect(), top = 8;
     if (dock && !dock.contains(el)) { var box = dock.getBoundingClientRect(); if (box.top > 0 && box.top < bottom && box.bottom > 0) bottom = box.top; }
-    if (r.bottom > bottom - 8 || r.top < 8) {
+    // nor under the day grid's sticky service heads
+    var head = page.querySelector('.tm-grid-head');
+    if (head && !head.contains(el) && head.getClientRects().length) { var hb = head.getBoundingClientRect(); if (hb.bottom > 0 && hb.top < bottom) top = Math.max(top, hb.bottom + 8); }
+    if (r.bottom > bottom - 8 || r.top < top) {
       el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
       r = el.getBoundingClientRect();
       if (r.bottom > bottom - 8) window.scrollBy(0, r.bottom - bottom + 8);
-      else if (r.top < 8) window.scrollBy(0, r.top - 8);
+      else if (r.top < top) window.scrollBy(0, r.top - top);
     }
   }
   /* Cross-training hints on the planner (head chef, 10 Nov 2026, docs/cross-training-options/brief.md): "Not on Pans in
@@ -14120,30 +14139,62 @@ if (list.length) sg('oreg', 's');
     });
     return out;
   }
+  /* The day grid (head chef, 15 Nov 2026, docs/team-sections-options/brief.md, the chosen mix): people down, the
+     kitchen's services across with their hours, one Section picker per service a person works and "Off" where they do
+     not. Each picker is keyed tm-sec:<id>:<sh>, so a choice can only reach its own person, date and service. The heads
+     count, in plain words, who still has no section (chefs read Head chef or Sous chef and are not counted). Breaks
+     opens the one details panel. The usual section and the person's section on an earlier service are offered first
+     inside the picker, never filled in by themselves. Nothing is read or saved here. */
+  // The grid's columns: the services someone on this date's draft works, in the book's order (Lunch, Dinner, then the
+  // configured order). A service nobody works has no column; the details panel still offers every service to add.
+  function tmGridShifts() { var ps = tmDayPeople(); return tmServiceChoices().filter(function (s) { return ps.some(function (p) { return tmOnShift(p.id, s.id); }); }); }
+  function tmChefRole(p) { return chefP(p) ? (p.role === 'head' ? 'Head chef' : 'Sous chef') : ''; }
+  function tmGridHeadHTML(shs) {
+    var ps = tmDayPeople();
+    return '<li class="tm-grid-head" aria-hidden="true"><span class="tm-grid-who">Who</span>' + shs.map(function (s) {
+      var on = ps.filter(function (p) { return !chefP(p) && tmOnShift(p.id, s.id); }), none = on.filter(function (p) { return !tmf.on[p.id][s.id]; }).length;
+      return '<span class="tm-grid-sh"><b>' + esc(s.name) + '</b><small>' + (s.from != null && s.to != null ? tmHHMM(s.from) + ' to ' + tmHHMM(s.to) : 'Hours not set') + '</small><small class="tm-grid-count">' + (none ? '<b>' + none + '</b> no section' : on.length ? 'All have one' : 'Nobody to place') + '</small></span>';
+    }).join('') + '</li>';
+  }
+  function tmGridCellHTML(p, s, shs) {
+    if (!tmOnShift(p.id, s.id)) return '<span class="tm-grid-off">Off</span>';
+    var cur = tmf.on[p.id][s.id], first = [], u = tmUsual(p.id, s.id);
+    if (u && u.sec !== cur) first.push([u.sec, 'Usually ' + tmSecName(u.sec) + ', ' + u.n + ' of the last ' + u.of + ' ' + tmWeekday(tmPlanDay()) + 's']);
+    var before = shs.slice(0, shs.indexOf(s)).filter(function (o) { return tmOnShift(p.id, o.id) && tmSecName(tmf.on[p.id][o.id]); }).pop();
+    if (before) { var same = tmf.on[p.id][before.id]; if (same !== cur && !first.some(function (o) { return o[0] === same; })) first.push([same, 'Same as ' + before.name + ': ' + tmSecName(same)]); }
+    var opts = first.concat([['', tmChefRole(p) || 'No section']]).concat(kitSecs().map(function (x) { return [x.id, x.name]; }));
+    return tmSel('tm-sec:' + p.id + ':' + s.id, 'Section for ' + p.name + ' on ' + s.name, opts, cur, true);
+  }
+  function tmGridRowHTML(p, shs, learn) {
+    var bs = tmf.br.filter(function (b) { return b.id === p.id && tmOnShift(p.id, b.sh); }).sort(function (a, b) { return a.at - b.at; });
+    var brk = bs.length ? bs.map(function (b) { return (tmIsSplit(b.len) ? 'Split ' : '') + tmHHMM(b.at); }).join(', ') : 'not set';
+    var notes = shs.map(function (s) { var h = learn[p.id + '|' + s.id]; return h ? (shs.length > 1 ? s.name + ': ' : '') + h : ''; }).filter(Boolean);
+    return '<li class="tm-person-row tm-grid-row' + (tmUi.focus === p.id ? ' is-focused' : '') + '" data-id="' + esc(p.id) + '" data-sh="' + esc(tmRowService(p.id)) + '"><div class="tm-grid-who"><span class="tm-person-name">' + esc(p.name) + '</span>' +
+      '<button type="button" class="tm-grid-brk" data-p="tm-focus" data-id="' + esc(p.id) + '" aria-expanded="' + (tmUi.focus === p.id) + '" aria-label="' + esc('Breaks for ' + p.name + ': ' + (bs.length ? brk : 'not set')) + '"' + (svOf('t') === 'busy' ? ' disabled' : '') + '>Breaks <span>' + esc(brk) + '</span></button></div>' +
+      shs.map(function (s) { return '<div class="tm-grid-cell">' + tmGridCellHTML(p, s, shs) + '</div>'; }).join('') +
+      (tmRsTime(p.id) ? '<p class="tm-learn tm-roster-time tm-grid-note">Roster ' + esc(tmRsTime(p.id)) + '</p>' : '') +
+      notes.map(function (n) { return '<p class="tm-learn tm-grid-note">' + esc(n) + '</p>'; }).join('') + '</li>';
+  }
   function tmPersonListHTML() {
-    var q = tmFind.toLowerCase().trim(), learn = tmLearnHints();
-    var list = tmDayPeople().filter(function (p) { var sh = tmRowService(p.id), current = tmOnShift(p.id, sh) ? tmSecName(tmf.on[p.id][sh]) : ''; return !q || (p.name + ' ' + current).toLowerCase().indexOf(q) >= 0; });
-    if (!list.length) return '<li class="hint">No people match. Change the search.</li>';
-    return list.map(function (p) {
-      var s = tmShift(tmRowService(p.id)), on = tmOnShift(p.id, s.id), current = on ? tmf.on[p.id][s.id] : '';
-      var detail = on ? '' : 'Not on ' + s.name;
-      var breaks = on ? tmBreaks(p.id, s.id).map(function (b) { return (tmIsSplit(b.len) ? 'Split ' : 'Break ') + tmHHMM(b.at) + ' to ' + tmAwayTime(b.at + b.len); }).join(' · ') || 'Break not set' : '';
-      var options = [['', chefP(p) ? (p.role === 'head' ? 'Head chef' : 'Sous chef') : 'No section']].concat(kitSecs().map(function (x) { return [x.id, x.name]; }));
-      return '<li class="tm-person-row' + (on ? '' : ' is-off') + (tmUi.focus === p.id ? ' is-focused' : '') + '" data-id="' + esc(p.id) + '" data-sh="' + esc(s.id) + '"><div class="tm-person-head"><span class="tm-person-name">' + esc(p.name) + '</span><div class="tm-row-fields">' +
-        '<div class="tm-person-service">' + tmSel('tm-row-sh:' + p.id, 'Service to edit for ' + p.name, tmServiceChoices().map(function (x) { return [x.id, x.name]; }), s.id) + '</div><div class="tm-person-section">' + tmSel('tm-sec:' + p.id, 'Section for ' + p.name + ' on ' + s.name, options, current, false, !on) + '</div></div></div>' +
-        (tmRsTime(p.id) ? '<p class="tm-learn tm-roster-time">Roster ' + esc(tmRsTime(p.id)) + '</p>' : '') +
-        '<div class="tm-row-summary"><span class="tm-person-breaks">' + esc(detail || breaks) + '</span><button type="button" class="btn" data-p="tm-focus" data-id="' + esc(p.id) + '" aria-expanded="' + (tmUi.focus === p.id) + '" aria-label="' + esc('Edit breaks for ' + p.name + ' on ' + s.name) + '"' + (svOf('t') === 'busy' ? ' disabled' : '') + '>Edit breaks</button></div>' + (learn[p.id + '|' + s.id] ? '<p class="tm-learn">' + esc(learn[p.id + '|' + s.id]) + '</p>' : '') + '</li>';
-    }).join('');
+    var q = tmFind.toLowerCase().trim(), learn = tmLearnHints(), shs = tmGridShifts();
+    // Find matches a name or a section on any service the person works
+    var list = tmDayPeople().filter(function (p) { return !q || (p.name + ' ' + shs.map(function (s) { return tmOnShift(p.id, s.id) ? tmSecName(tmf.on[p.id][s.id]) : ''; }).join(' ')).toLowerCase().indexOf(q) >= 0; });
+    return tmGridHeadHTML(shs) + (list.length ? list.map(function (p) { return tmGridRowHTML(p, shs, learn); }).join('') : '<li class="hint">No people match. Change the search.</li>');
   }
   function tmFocusHTML() {
     var p = tmDayPeople().filter(function (x) { return x.id === tmUi.focus; })[0];
-    if (!p) return '<aside class="tm-detail-workbench is-empty" aria-label="Service and break details"><h3>Service and break details</h3><p class="hint">Choose Edit breaks beside a person.</p></aside>';
-    var s = tmShift(tmRowService(p.id));
-    return '<aside class="tm-detail-workbench" data-id="' + esc(p.id) + '" data-sh="' + esc(s.id) + '" aria-label="' + esc('Break details for ' + p.name + ' on ' + s.name + ', ' + tmPlanDate(tmPlanDay())) + '"><header class="tm-workbench-head"><div><h3>' + esc(p.name + ' · ' + s.name) + '</h3><p>' + esc(tmPlanDate(tmPlanDay())) + ' · Draft</p></div><button type="button" class="p-link" data-p="tm-focus-close"' + (svOf('t') === 'busy' ? ' disabled' : '') + '>Close details</button></header>' + tmRow(p, s) + '</aside>';
+    if (!p) return '<aside class="tm-detail-workbench is-empty" aria-label="Service and break details"><h3>Service and break details</h3><p class="hint">Choose Breaks beside a person.</p></aside>';
+    var s = tmShift(tmRowService(p.id)), busy = svOf('t') === 'busy';
+    // One chip per kitchen service: the details follow the chosen one (a view choice, nothing changes)
+    var chips = '<div class="tm-bench-shifts" role="group" aria-label="' + esc('Service for ' + p.name) + '">' + tmServiceChoices().map(function (x) {
+      return '<button type="button" class="chip" data-p="tm-sh" data-id="' + esc(p.id) + '" data-v="' + esc(x.id) + '" aria-pressed="' + (x.id === s.id) + '"' + (busy ? ' disabled' : '') + '>' + esc(x.name + (tmOnShift(p.id, x.id) ? '' : ' (off)')) + '</button>';
+    }).join('') + '</div>';
+    return '<aside class="tm-detail-workbench" data-id="' + esc(p.id) + '" data-sh="' + esc(s.id) + '" aria-label="' + esc('Break details for ' + p.name + ' on ' + s.name + ', ' + tmPlanDate(tmPlanDay())) + '"><header class="tm-workbench-head"><div><h3>' + esc(p.name + ' · ' + s.name) + '</h3><p>' + esc(tmPlanDate(tmPlanDay())) + ' · Draft</p></div><button type="button" class="p-link" data-p="tm-focus-close"' + (busy ? ' disabled' : '') + '>Close details</button></header>' + chips + tmRow(p, s) + '</aside>';
   }
   function tmAssignHTML(s) {
     if (!tmDayPeople().length) return tmQuickHTML(s);
-    return tmQuickHTML(s) + '<div class="tm-focus-grid"><div class="tm-focus-roster tm-worksheet"><ul class="tm-people" aria-label="' + esc('Selected staff for ' + tmPlanDate(tmPlanDay())) + '">' + tmPersonListHTML() + '</ul></div>' + tmFocusHTML() + '</div>';
+    var n = Math.min(tmGridShifts().length, 12);
+    return tmQuickHTML(s) + '<div class="tm-focus-grid"><div class="tm-focus-roster tm-worksheet"><ul class="tm-people tm-grid tm-grid-n' + n + (n >= 3 ? ' tm-grid-wide' : '') + '" aria-label="' + esc('Sections for ' + tmPlanDate(tmPlanDay())) + '">' + tmPersonListHTML() + '</ul></div>' + tmFocusHTML() + '</div>';
   }
   // This chooser only changes the existing dated draft. Names/services remain in memory with that day's UI.
   function tmQuickHTML(s) {
@@ -14285,7 +14336,17 @@ if (list.length) sg('oreg', 's');
     var sh = id ? el.getAttribute('data-sh') || tmRowService(id) : tmShNow(), s = tmShift(sh);
     if (a === 'tm-whole') { tmWhole = !tmWhole; draw(); return; }
     if (a === 'tm-add-staff') { tmWhole = false; tmUi.quickOpen = !tmUi.quickOpen; draw(); return; }
-    if (a === 'tm-focus') { if (tmDayPeople().some(function (p) { return p.id === id; })) { tmUi.focus = id; tmWhole = false; draw(); } return; }
+    if (a === 'tm-focus') {
+      if (!tmDayPeople().some(function (p) { return p.id === id; })) return;
+      // On a phone the one details panel moves into this row: keep the tapped row where the finger is
+      var was = el.getBoundingClientRect().top; tmUi.focus = id; tmWhole = false; draw();
+      // after the frame's layout (the panel's move and the browser's own scroll anchoring) has settled
+      requestAnimationFrame(function () {
+        var again = S.root && Array.prototype.filter.call(S.root.querySelectorAll('[data-p="tm-focus"]'), function (b) { return b.getAttribute('data-id') === id; })[0];
+        if (again && !tmFocusMedia.matches) { var moved = again.getBoundingClientRect().top - was; if (Math.abs(moved) > 1) window.scrollBy(0, moved); }
+      });
+      return;
+    }
     if (a === 'tm-focus-close') {
       var prior = tmUi.focus; tmUi.focus = ''; draw();
       var trigger = S.root && Array.prototype.filter.call(S.root.querySelectorAll('[data-p="tm-focus"]'), function (button) { return button.getAttribute('data-id') === prior; })[0];
@@ -14336,10 +14397,6 @@ if (list.length) sg('oreg', 's');
     if (k === 'tm-q') return;
     var p = k.split(':'), id = p[1], v = el.value, sh = id ? el.getAttribute('data-sh') || tmRowService(id) : tmShNow();
     if (el.getAttribute('data-day') && el.getAttribute('data-day') !== tmPlanDay()) return;
-    if (p[0] === 'tm-row-sh') {
-      if (tmShift(v) && tmDayPeople().some(function (x) { return x.id === id; })) { (tmUi.rowServices || (tmUi.rowServices = {}))[id] = v; draw(); }
-      return;
-    }
     if (p[0] === 'tm-quick-person' || p[0] === 'tm-quick-shift') {
       if (!tmUi.quick) return;
       var valid = p[0] === 'tm-quick-person' ? tmPeople().some(function (x) { return x.id === id; }) : !!tmShift(id);
@@ -14353,8 +14410,11 @@ if (list.length) sg('oreg', 's');
     if (p[0] === 'tm-spmode') { tmSp.mode = ['0', '1', '2'].indexOf(v) >= 0 ? v : null; draw(); return; }
     if (p[0] === 'tm-spgap') { tmSp.gap = v !== '' && (+v === 15 || TM_LENS.indexOf(+v) >= 0) ? +v : null; return; }
     if (p[0] === 'tm-sec') {
-      var person = tmPeople().filter(function (x) { return x.id === id; })[0], service = tmShift(sh);
-      if (!person || !service || tmWhole || sh !== tmRowService(id) || !tmOnShift(id, sh) || (v !== '' && !kitSecs().some(function (x) { return x.id === v; }))) return;
+      // tm-sec:<id>:<sh> only: a key without its service (the old row picker) is refused, as is one whose captured
+      // service no longer matches, so a held picker can never write to another service after a redraw
+      var keySh = p[2] || '', person = tmPeople().filter(function (x) { return x.id === id; })[0], service = tmShift(keySh);
+      if (!keySh || el.getAttribute('data-sh') !== keySh || !person || !service || tmWhole || !tmOnShift(id, keySh) || (v !== '' && !kitSecs().some(function (x) { return x.id === v; }))) return;
+      sh = keySh;
       tmf.on[id][sh] = v;
       tmClearMsg();
       tmAssignMsg = person.name + (v ? ' assigned to ' + tmSecName(v) + ' for ' + service.name + '.' : ': section cleared for ' + service.name + '. Their service and breaks are kept.') + ' Not saved yet.';
@@ -14667,8 +14727,10 @@ if (list.length) sg('oreg', 's');
     if (!tmDirty()) { draw(); return; }
     var keep = tmf, mine = tmPlan, entry = tmPlanEntry(keep.day), identity = stableIdentity(), out = tmOut(keep), t = now(), v = keep.base + 1;
     var d = { day: keep.day, on: out.on, br: out.br, v: v, at: keep.base ? keep.at : t, upd: t };
-    var people_ = {}, current = d.day === dayNow(), ops = [['set', docRef('team', d.day), d]];
+    var people_ = {}, current = d.day === dayNow(), ops = [['set', docRef('team', d.day), d]], unset = [];
     out.on.forEach(function (o) { people_[o.id] = 1; });
+    // who still has no section, in the grid's order (person, then Lunch, Dinner, ...); a chef's role is not missing
+    tmPeople().forEach(function (pp) { if (chefP(pp) || !keep.on[pp.id]) return; tmServiceChoices().forEach(function (ss) { if (keep.on[pp.id][ss.id] === '') unset.push(pp.name + ' ' + ss.name); }); });
     // Only a save for today invalidates today's live record on staff phones. Future planning adds no staff reads.
     if (current) { ops.push(['set', cfgDoc(), { pastEdit: { t: t } }, true]); tmOwn = t; }
     svStart('t'); tmMsg = ''; tmAssignMsg = ''; draw();
@@ -14684,7 +14746,7 @@ if (list.length) sg('oreg', 's');
       var n = Object.keys(people_).length;
       var finish = function (noticeFailed) {
         if (tmPlan !== mine || identity !== stableIdentity()) return;
-        entry.msg = 'Team for ' + tmPlanDate(d.day) + ' saved at ' + clock(t) + ': ' + n + (n === 1 ? ' person' : ' people') + ' on.' + (noticeFailed ? ' Other screens may need to reopen the book to see it.' : '') + tmRsLeft();
+        entry.msg = 'Team for ' + tmPlanDate(d.day) + ' saved at ' + clock(t) + ': ' + n + (n === 1 ? ' person' : ' people') + ' on.' + (unset.length ? ' Still no section: ' + unset.slice(0, 6).join(', ') + (unset.length > 6 ? ' and ' + (unset.length - 6) + ' more' : '') + '.' : '') + (noticeFailed ? ' Other screens may need to reopen the book to see it.' : '') + tmRsLeft();
         if (tmf === keep) tmMsg = entry.msg;
         svDone('t', tmf === keep, function () {}); draw(); tmPaint();
       };

@@ -57,7 +57,7 @@ async function pause(p) {
     ok(idle.fits && idle.page <= idle.viewport && idle.rect.width >= 44 && idle.rect.height >= 44,
       day + ': the full date fits its 44 px target and the 320 px page at largest text (' + JSON.stringify(idle) + ')');
 
-    await L.pick(p, 'select[data-k="tm-sec:sam"]', 'grill');
+    await L.pick(p, 'select[data-k="tm-sec:sam:lunch"]', 'grill');
     await L.waitFor(p, () => !document.querySelector('[data-p="tm-save"]').disabled, null, 4000);
     const dirty = await button(p);
     await pause(p);

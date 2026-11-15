@@ -113,7 +113,8 @@ const teamSeed = {
       bars: [...document.querySelectorAll('.tm-tlbar i')].map(e => e.getAttribute('style')),
       editor: document.querySelectorAll('.tm-person-row').length === expected.length && expected.every(([id, service, section]) => {
         const row = document.querySelector('.tm-person-row[data-id="' + id + '"]');
-        return row && picker(row, 'tm-row-sh:' + id, service) && picker(row, 'tm-sec:' + id, section);
+        // the day grid: one dated section picker per service the person works, no Service to edit switch
+        return row && !row.querySelector('select[data-k^="tm-row-sh:"]') && picker(row, 'tm-sec:' + id + ':' + service, section);
       })
     };
   }, today);
@@ -121,14 +122,14 @@ const teamSeed = {
   ok(tl.rows[0] === 'AnnLunch 10:00 to 15:00 · break 13:00' && tl.rows[1] === 'BoLong day 10:00 to 22:00 · split 14:30, back 17:30', 'team: hours and breaks in words (' + tl.rows.join(' | ') + ')');
   ok(tl.bars.length === 4 && tl.bars.every(s => /^left:\d+(\.\d)?%;width:\d+(\.\d)?%$/.test(s)), 'team: each bar a checked number (' + tl.bars.join(' | ') + ')');
   const beforeEdit = await p.evaluate(k => ({ saved: JSON.stringify(__fake.dump()[k]), writes: __fake.writes.length }), fsKey(['team', today]));
-  if (tl.editor) await L.pick(p, 'select[data-k="tm-sec:ann"]', 'larder');
+  if (tl.editor) await L.pick(p, 'select[data-k="tm-sec:ann:lunch"]', 'larder');
   const inlineEdit = await p.evaluate(k => {
     const save = document.querySelector('[data-p="tm-save"]');
-    return { section: document.querySelector('select[data-k="tm-sec:ann"]')?.value,
+    return { section: document.querySelector('select[data-k="tm-sec:ann:lunch"]')?.value,
       canSave: !!save && !save.disabled, saved: JSON.stringify(__fake.dump()[k]), writes: __fake.writes.length };
   }, fsKey(['team', today]));
   ok(tl.editor && inlineEdit.section === 'larder' && inlineEdit.canSave && inlineEdit.saved === beforeEdit.saved && inlineEdit.writes === beforeEdit.writes,
-    'team: visible dated service/section pickers edit the draft directly, with no extra view tap or write before Save');
+    'team: each visible dated section picker edits its own service in the draft directly, with no extra view tap or write before Save');
   for (const w of [390, 768, 1280]) { await p.setViewportSize({ width: w, height: 900 }); await L.settle(p, 200); ok(!(await L.overflow(p)), 'team ' + w + ' px: no sideways scroll'); }
   ok(p.errors.length === 0, 'team: no page errors ' + p.errors.join(' | '));
   await p.context().close();

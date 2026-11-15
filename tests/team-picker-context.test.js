@@ -24,7 +24,7 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const read = p => p.evaluate(k => __fake.dump()[k], TEAM);
 const field = (p, name) => p.locator('select[data-k="' + name + '"]');
 const click = async (p, selector) => { await p.locator(selector).click(); await L.settle(p, 150); };
-async function ready(p) { await L.waitFor(p, () => !!document.querySelector('select[data-k="tm-row-sh:ann"]'), null, 7000); }
+async function ready(p) { await L.waitFor(p, () => !!document.querySelector('select[data-k="tm-sec:ann:lunch"]'), null, 7000); }
 async function open(browser, base, options) {
   const p = await L.open(browser, '#/team', Object.assign({ base, who: 'sam', width: 1280, extra: fixture(), wait: 900 }, options));
   await ready(p); return p;
@@ -42,10 +42,7 @@ async function removeLunch(p) {
     config.kitShifts = config.kitShifts.map(s => s.id === 'lunch' ? Object.assign({}, s, { off: true }) : s);
     __fake.write(k, config);
   }, CFG);
-  await L.waitFor(p, () => {
-    const service = document.querySelector('select[data-k="tm-row-sh:ann"]');
-    return service && service.value === 'dinner';
-  }, null, 7000);
+  await L.waitFor(p, () => !document.querySelector('select[data-k="tm-sec:ann:lunch"]') && !!document.querySelector('select[data-k="tm-sec:ann:dinner"]'), null, 7000);
 }
 async function save(p) {
   await click(p, '[data-p="tm-save"]');
@@ -61,19 +58,28 @@ async function save(p) {
     browser = await L.start();
     let p = await open(browser, base);
     const beforeSection = await read(p);
-    const sectionOption = await holdPicker(p, 'tm-sec:ann', 'grill');
+    // The day grid (15 Nov 2026): each cell's key names its own service, tm-sec:<id>:<sh>
+    const sectionOption = await holdPicker(p, 'tm-sec:ann:lunch', 'pans');
     ok(/Section for Ann on Lunch/.test(await p.locator('dialog.ux-picker').innerText()), 'held section: picker identifies the original Ann Lunch context');
     await removeLunch(p);
-    ok(await field(p, 'tm-row-sh:ann').inputValue() === 'dinner' && await field(p, 'tm-sec:ann').inputValue() === 'pans', 'configuration change: row falls back to Ann\'s existing Dinner section');
+    ok(await field(p, 'tm-sec:ann:dinner').inputValue() === 'pans' && !await field(p, 'tm-sec:ann:lunch').count(), 'configuration change: the Lunch column goes and Ann\'s Dinner section stays');
     if (await p.locator(sectionOption).count()) await p.locator(sectionOption).click();
     await L.settle(p, 180);
-    ok(await field(p, 'tm-sec:ann').inputValue() === 'pans' && await p.locator('[data-p="tm-save"]').isDisabled(), 'held section: choosing the old Lunch option cannot create a Dinner draft change');
+    ok(await field(p, 'tm-sec:ann:dinner').inputValue() === 'pans' && await p.locator('[data-p="tm-save"]').isDisabled(), 'held section: choosing the old Lunch option cannot create a Dinner draft change');
     ok(same(await read(p), beforeSection), 'held section: no acknowledged roster or break changes before Save');
-    await L.pick(p, 'select[data-k="tm-sec:ann"]', 'grill'); await save(p);
+    // A picker keyed the old way (no service in its key), or one whose captured service does not match its key, is
+    // refused. This fails on the row-picker code, which took the service from the row's Service to edit.
+    const refused = await p.evaluate(() => {
+      const root = document.querySelector('.tm-grid'), make = (k, sh) => { const el = document.createElement('select'); el.setAttribute('data-k', k); el.setAttribute('data-day', document.querySelector('.tm-notebook').getAttribute('data-day')); el.setAttribute('data-sh', sh); el.innerHTML = '<option value="grill" selected>Grill</option>'; root.appendChild(el); el.dispatchEvent(new Event('change', { bubbles: true })); el.remove(); };
+      make('tm-sec:ann', 'dinner'); make('tm-sec:ann:dinner', 'lunch');
+      return document.querySelector('select[data-k="tm-sec:ann:dinner"]').value;
+    });
+    ok(refused === 'pans' && await p.locator('[data-p="tm-save"]').isDisabled(), 'old key: a section picker without its service, or with a service that does not match its key, changes nothing');
+    await L.pick(p, 'select[data-k="tm-sec:ann:dinner"]', 'grill'); await save(p);
     const afterSection = await read(p);
     ok(afterSection.on.some(x => x.id === 'ann' && x.sh === 'dinner' && x.sec === 'grill') &&
       afterSection.on.some(x => x.id === 'ann' && x.sh === 'lunch' && x.sec === 'grill') && same(afterSection.br, beforeSection.br),
-    'fresh section: a new Dinner picker still changes only Dinner and retains the earlier breaks');
+    'fresh section: the Dinner cell changes only Dinner and retains the earlier breaks');
     ok(!p.errors.length, 'held section: no browser errors ' + p.errors.join(' | '));
     await p.context().close();
 
@@ -110,7 +116,7 @@ async function save(p) {
     'cross-service review: Ann\'s Lunch meal overlapping her Full day split is visible in her details');
     ok(same(await read(p), beforeOverlap) && await p.locator('[data-p="tm-save"]').isDisabled(),
       'cross-service review: showing a warning neither corrects nor saves the plan automatically');
-    await L.pick(p, 'select[data-k="tm-row-sh:bo"]', 'lunch'); await click(p, '[data-p="tm-focus"][data-id="bo"]');
+    await click(p, '[data-p="tm-focus"][data-id="bo"]'); await click(p, '.tm-detail-workbench [data-p="tm-sh"][data-id="bo"][data-v="lunch"]');
     ok(!await p.locator('.tm-detail-workbench .tm-overlap-warning').count(), 'different people: Bo\'s simultaneous meal does not create a personal overlap warning');
     await click(p, '[data-p="tm-whole"]');
     const wholeReview = p.locator('.tm-editor .tm-overlap-review');
@@ -127,7 +133,7 @@ async function save(p) {
       const returned = await p.evaluate(() => {
         const el = document.activeElement; return el && el.getAttribute('data-p') === 'tm-focus' && el.getAttribute('data-id') === 'ann';
       });
-      ok(returned, width + ': keyboard Close details returns focus to Ann\'s Edit breaks action');
+      ok(returned, width + ': keyboard Close details returns focus to Ann\'s Breaks action');
       if (returned) await p.keyboard.press('Enter'); else await p.locator('[data-p="tm-focus"][data-id="ann"]').click();
       await L.settle(p, 160);
       ok(await field(p, 'tm-at:ann:0').inputValue() === '840' && await p.locator('[data-p="tm-save"]').isEnabled(),
