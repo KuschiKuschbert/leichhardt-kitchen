@@ -181,8 +181,11 @@
       var y = String(r.yield || '').toLowerCase(), v = parseFloat((y.match(/([\d.]+)\s*(l|litre|kg)\b/) || [])[1]) || 0;
       return { fam: 'other', shape: 'gn', gn: v >= 8 ? '1/1' : v >= 3 ? '1/2' : v >= 1 ? '1/3' : '1/6' };
     }
+    // the dish's own plating steps say where it is served ("serve in a bowl", "on a plastic board"; a dessert keeps its plate)
+    var said = r.kind !== 'dessert' ? platingOf(r) : null;
+    if (said && said.ware === 'bowl') return { fam: 'bowl', shape: 'round', size: 28, rim: 'flat', depth: 'shallow', col: 'white' };
     // the size of the book's own boards (about 36 cm across on the editor's scale; 50 before 15 Nov 2026)
-    if (/board|platter|share|grazing/.test(nm)) return { fam: 'board', shape: 'rect', size: 36, tone: 'medium', finish: 'straight', edge: 'rounded' };
+    if (/board|platter|share|grazing/.test(nm) || said && said.ware === 'board') return { fam: 'board', shape: 'rect', size: 36, tone: 'medium', finish: 'straight', edge: 'rounded' };
     if (/pasta|spaghetti|fettuccine|carbonara|bolognese|risotto|linguine|penne/.test(nm)) return { fam: 'bowl', shape: 'round', size: 28, rim: 'flat', depth: 'shallow', col: 'white' };
     if (/salad|bowl|curry|poke|laksa|soup|chowder|ramen|pho/.test(nm)) return { fam: 'bowl', shape: 'round', size: 26, rim: 'rolled', depth: 'deep', col: 'white' };
     if (r.kind === 'side') return { fam: 'bowl', shape: 'round', size: 18, rim: 'rolled', depth: 'deep', col: 'white' };
@@ -230,6 +233,8 @@
 
   /* ---------- drawn from its recipe card (js/compose.js) ---------- */
   function C() { return window.LK_COMPOSE; }
+  // how the dish's own Plating or Serve steps say it is plated (js/compose.js plating(), 15 Nov 2026), or null
+  function platingOf(r) { return r && C() && C().plating ? C().plating(r) : null; }
   // the part an ingredient's own card makes (the Cowboy candy, the slaw, the mushroom sauce), or null
   function cardPart(i, r, m) { return C() ? C().partFor(i, r, m) : null; }
   // a part of the drawing as the layout sees it: the library piece, or a piece drawn from its recipe (its role kept on it)
@@ -261,6 +266,8 @@
        its amounts are not one plate's, so only a line marked per plate sizes its part (15 Nov 2026) */
     var batch = /\bbatch\b/i.test(String(r.yield || '')) || (r.ingredients || []).some(function (i) { var am = DR.amount(i.q); return !!(am && am.g >= 1000); });
     var qOf = function (i) { return !batch || /\bper (plate|serve|portion|bowl|board)\b/i.test((i.q || '') + ' ' + (i.note || '')) ? i.q : ''; };
+    // what the plating steps say about each ingredient ("3 lamb rissoles on the mash"); a build has its own order
+    var said = loose ? null : platingOf(r), howOf = function (i) { return said ? said.how[R.ingName(i)] || (i.whole && said.how[R.ingName({ name: i.whole })]) || null : null; };
     var fold = function (name, into) { also[name] = into.ing; (into.also = into.also || []).push(name); };
     (r.ingredients || []).forEach(function (i0) {
       split(i0).forEach(function (i) {
@@ -278,14 +285,14 @@
         // its own card says what it is made of and how it is prepped: drawn from that (a pick the head chef made still wins)
         var mk = cardPart(i, r, m);
         // no amount on the dish's line ("[Qty]"): the card's own grams per plate, when it says (the slaw's 150 g)
-        if (mk) { made.push({ ing: name, from: mk.from }); out.push({ ing: name, i: i, id: mk.id, it: mk, scale: DR.scaleFor(mk, DR.amount(qOf(i)) ? qOf(i) : mk.per ? mk.per + ' g' : ''), count: 1, conf: 0.9, guesses: m.guesses || [] }); return; }
+        if (mk) { made.push({ ing: name, from: mk.from }); out.push({ ing: name, i: i, id: mk.id, it: mk, scale: DR.scaleFor(mk, DR.amount(qOf(i)) ? qOf(i) : mk.per ? mk.per + ' g' : ''), count: 1, conf: 0.9, guesses: m.guesses || [], how: howOf(i) }); return; }
         // no card, but the dish cuts or cooks it its own way ("Broccolini (charred)"): the piece in that state
         var dp = C() && C().dress(i, r, m);
         if (dp) { m = { id: dp.id, conf: m.conf, guesses: m.guesses, it: dp }; }
         if (!m.id || m.conf < 0.6) { unsure.push({ ing: name, guesses: m.id ? m.guesses : [] }); return; }
         // two ingredients for the same piece (the pie mix and the pie case, smoked or oven brisket): one part, both named
         if (used[m.id]) { fold(name, used[m.id]); return; }
-        var it = m.it || LIB.get(m.id), part = { ing: name, i: i, id: m.id, it: it, scale: DR.scaleFor(it, qOf(i)), count: countOf(it, qOf(i)), conf: m.conf, guesses: m.guesses };
+        var it = m.it || LIB.get(m.id), part = { ing: name, i: i, id: m.id, it: it, scale: DR.scaleFor(it, qOf(i)), count: countOf(it, qOf(i)), conf: m.conf, guesses: m.guesses, how: howOf(i) };
         // a sauce never floods the plate (a garnish is sized to its main when the plate is laid out, 15 Nov 2026)
         if (/sauce/.test(it.role)) part.scale = Math.min(part.scale, 1.6);
         // a parmy's own sauce, ham and cheese go on the schnitzel, in the recipe's order
@@ -325,7 +332,7 @@
       if (st) { host.id = st.id; host.it = st; }
       out = keep;
     }
-    return { parts: out, unsure: unsure, also: also, made: made };
+    return { parts: out, unsure: unsure, also: also, made: made, said: said };
   }
   function idxIn(r, name) { return (r.ingredients || []).map(R.ingName).indexOf(name); }
   function countOf(it, q) { var a = DR.amount(q); return a && a.n && it && it.n ? Math.max(1, Math.min(12, Math.round(a.n / it.n))) : 1; }
@@ -334,7 +341,7 @@
   function areaOf(surf) { var s = LIB.surface(surf); return s.area; }
   function sizeEl(el) { var b = R.bbox(el); return [b[2] - b[0], b[3] - b[1]]; }
   var RIDER = { sauce: 1, dsauce: 1, topping: 1, garnish: 1 };
-  function riderEl(e) { var it = itemOfEl(e); return !it || !!RIDER[it.role] || !!e._on; }
+  function riderEl(e) { var it = itemOfEl(e); return !it || !!RIDER[it.role] || !!e._on || !!e._under; }
   // a part's centre back on the servingware: it may hang 15% over the rim, as the book's own plates do
   function clampEl(e, a, k) {
     var o = R.oval(e), rx = Math.max(4, a.rx - R.reach(o, 1, 0) * (k == null ? 0.85 : k)), ry = Math.max(4, a.ry - R.reach(o, 0, 1) * (k == null ? 0.85 : k)), dx = (o.x - a.cx) / rx, dy = (o.y - a.cy) / ry, nx = o.x, ny = o.y;
@@ -349,8 +356,10 @@
      may overlap a little (_grp). Parts that stay where they are (moved by hand, kept) still push the others. Sauces,
      toppings and garnish ride on their part and are not pushed. */
   function solve(els, a, keep) {
-    var all = els.filter(function (e) { return !riderEl(e); }), root = function (e) { return e._bed || e; }, still = function (e) { return !!e._still || !!(keep && e.fixed); };
-    var sync = function () { all.forEach(function (e) { if (e._bed) { e.x = e._bed.x + e._bo[0]; e.y = e._bed.y + e._bo[1]; } }); };
+    // a part on a part on a part (the barra on the greens on the rice) moves with the bottom one
+    var all = els.filter(function (e) { return !riderEl(e); }), root = function (e) { var k = 0; while (e._bed && k++ < 5) e = e._bed; return e; }, still = function (e) { return !!e._still || !!(keep && e.fixed); };
+    var depth = function (e) { var k = 0; while (e._bed && k < 5) { e = e._bed; k++; } return k; };
+    var sync = function () { all.filter(function (e) { return e._bed; }).sort(function (x, y) { return depth(x) - depth(y); }).forEach(function (e) { e.x = e._bed.x + e._bo[0]; e.y = e._bed.y + e._bo[1]; }); };
     for (var iter = 0; iter < 80; iter++) {
       var moved = 0;
       for (var x = 0; x < all.length; x++) {
@@ -413,7 +422,7 @@
   // how a layout is turned for a seed: odd seeds are the mirror image (a bowl is never mirrored)
   function tvFor(style, seed) { return { m: seed % 2 === 1 && style !== 'bowl' && style !== 'pan' }; }
   var LAYER = { sauce: 0, dsauce: 0, starch: 1, bread: 1, veg: 1, salad: 1, sidedish: 1, main: 2, dessert: 2, dside: 2, topping: 3, garnish: 4 };
-  function layEl(e) { if (e._on) return 3; var it = itemOfEl(e); return it && LAYER[it.role] != null ? LAYER[it.role] : 2; }
+  function layEl(e) { if (e._under) return -1; if (e._on || e._top) return 3; var it = itemOfEl(e); return it && LAYER[it.role] != null ? LAYER[it.role] : 2; }
   // one element for each copy of a part: its piece, place, size and turn, its label and what is drawn inside it
   function elsFor(d, r, p, at, rot, o) {
     o = o || {};
@@ -421,7 +430,9 @@
     d.defs[k2] = it.raw ? it.body : LIB.body(it.id);
     for (var c = 0; c < p.count; c++) {
       var dx = 0, dy = 0, dr = 0;
-      if (p.count > 1 && o.row) { dx = (c - (p.count - 1) / 2) * it.w * p.scale * 0.6; dr = (c - (p.count - 1) / 2) * 8; }
+      // criss-cross stacked (the corn ribs, the plating steps say): on one spot, turned one way and the other
+      if (p.count > 1 && p.how && p.how.cross) { dx = (c - (p.count - 1) / 2) * 3; dy = -c * 2; dr = c % 2 ? 38 : -38; }
+      else if (p.count > 1 && o.row) { dx = (c - (p.count - 1) / 2) * it.w * p.scale * 0.6; dr = (c - (p.count - 1) / 2) * 8; }
       else if (p.count > 1) { var ang = c / p.count * Math.PI * 2 + (o.rnd ? o.rnd() * 0.5 : 0), rr = Math.min(Math.max(it.w, it.h) * p.scale * 0.5, o.ring || Infinity); dx = Math.cos(ang) * rr; dy = Math.sin(ang) * rr * 0.7; dr = o.rnd ? o.rnd() * 50 - 25 : 0; }
       var el = { t: 'item', a: k2, x: n1(at[0] + dx), y: n1(at[1] + dy), sx: n1(p.scale * 100) / 100, sy: n1((p.sy || p.scale) * 100) / 100, r: Math.round(rot + dr), ing: p.ing };
       if (it.raw) { el.t = 'raw'; el.bx = it.box.map(n1).join(' '); el.role = it.role; if (it.made) { el.made = it.made; el.ms = it.ms; } if (it.dr) { el.dr = it.dr; el.ck = it.cook; } }
@@ -477,6 +488,10 @@
     var it = p.it, t = (p.ing + ' ' + (p.i && p.i.note || '')).toLowerCase();
     var sauce = /sauce/.test(it.role) || (it.role === 'topping' && /\b(sauce|gravy|jus|aioli|mayo)\b/.test(t));
     if (!sauce || p.on || it.form === 'drizzle' || style === 'bowl' && small) return false;
+    // the plating steps say: on the side is a ramekin; on, over, round or next to a part is not
+    var hw = p.how || {};
+    if (hw.side) return true;
+    if (hw.on || hw.over || hw.around || hw.next || hw.centre || hw.across || hw.round || hw.sideOf || hw.half) return false;
     if (SIDE_W.test(t)) return true;
     if (ON_W.test(t)) return false;
     if ((style === 'pub' || style === 'side') && /\b(gravy|sauce|jus|aioli|mayo)\b/.test(t)) return true;
@@ -487,18 +502,23 @@
   // the whole plate (a wave, a squiggle, a swoop), or round it in dots ("drizzled round")
   function acrossOf(p) {
     if (!/sauce/.test(p.it.role)) return '';
-    var t = (p.ing + ' ' + (p.i && p.i.note || '')).toLowerCase();
+    var hw = p.how || {}, t = (p.ing + ' ' + (p.i && p.i.note || '')).toLowerCase();
+    if (hw.across) return 'across';
+    if (hw.round) return 'round';
+    if (hw.over || hw.on) return 'over';
     if (/\bover\b|on top|smother|pour/.test(t)) return 'over';
     if (/wav|squiggl|across|swoop|swoosh|swipe/.test(t)) return 'across';
     if (/\b(a)?round\b/.test(t) && (/\bdots?\b|\boil\b|drizzl/.test(t) || p.it.form === 'dots')) return 'round';
     return '';
   }
+  // the part at the bottom of what sits on what (the rice under the greens under the barra)
+  function bedRoot(e) { var k = 0; while (e._bed && k++ < 5) e = e._bed; return e; }
   // two solid parts still lying over each other by more than a tenth of their reach (the solver could not part them)
   function crowded(els) {
     var all = els.filter(function (e) { return !riderEl(e) && (e.t === 'item' || e.t === 'raw'); });
     for (var x = 0; x < all.length; x++) for (var y = x + 1; y < all.length; y++) {
       var A = all[x], B = all[y];
-      if ((A._bed || A) === (B._bed || B) || A._over === B || B._over === A || A._over && A._over === B._over || A._grp && A._grp === B._grp) continue;
+      if (bedRoot(A) === bedRoot(B) || A._over === B || B._over === A || A._over && A._over === B._over || A._grp && A._grp === B._grp) continue;
       var oa = R.oval(A), ob = R.oval(B), dx = ob.x - oa.x, dy = ob.y - oa.y, dd = Math.hypot(dx, dy) || 0.01, ux = dx / dd, uy = dy / dd, ra = R.reach(oa, ux, uy), rb = R.reach(ob, ux, uy);
       if (dd < ra + rb - 0.2 * Math.min(ra, rb)) return true;
     }
@@ -537,33 +557,90 @@
     var solidP = order.filter(function (p) { return p.role === 'ramekin' || !RIDER[p.role]; });
     // at most 3 extra copies on a plate (a board shows every piece)
     if (!S0.pack) { var extra = 0; order.forEach(function (p) { if (p.count > 1) { var e2 = Math.max(0, Math.min(p.count - 1, 3 - extra)); p.count = 1 + e2; extra += e2; } }); }
+    // what the dish's own plating steps say (js/compose.js plating()): followed first, the book's layout for the rest
+    var said = r.kind !== 'dessert' ? platingOf(r) : null, solidIng = {};
+    solidP.forEach(function (p) { if (!solidIng[p.ing]) solidIng[p.ing] = p; });
+    // a solid part the card puts on another ("3 lamb rissoles on the mash", "barra on top of the greens")
+    var onP = solidP.filter(function (p) { return p.role !== 'ramekin' && p.how && p.how.on && solidIng[p.how.on] && solidIng[p.how.on] !== p; }), bedOf = {};
+    onP.forEach(function (p) { bedOf[p.how.on] = 1; });
+    // a pool the card puts over a part ("laksa over the rice"): drawn under it, wider, so it shows round it
+    var poolP = solidP.filter(function (p) { return p.how && p.how.over && solidIng[p.how.over] && /^(bowlful|pool)$/.test(p.it.form); });
+    var rideOn = function (p, bedEl) {
+      var bo = R.oval(bedEl), n = p.count, one = p.count, had = els.filter(function (e) { return e._bed === bedEl; }).length; p.count = 1; p.placed = true;
+      for (var c = 0; c < n; c++) {
+        // several things on one bed (the four greens on the rice, three rissoles on the mash) spread over it
+        // (down a half the card gives, as the book's rissoles on their half of the mash)
+        var j = had + c, many = n > 1 || had, ox = n > 1 ? (c / (n - 1) - 0.5) * 0.9 * bo.a : many ? ((j % 3) - 1) * 0.4 * bo.a : 0, oy = many && n === 1 ? (-0.25 + 0.3 * Math.floor(j / 3)) * bo.b : -0.22 * bo.b;
+        if (bedEl._half && n > 1) { oy = (c / (n - 1) - 0.5) * 1.1 * bo.b; ox = 0; }
+        push(elsFor(d, r, p, [bedEl.x + ox, bedEl.y + oy], Math.round(rng(p, c)() * 20 - 10))).forEach(function (e) {
+          e._bed = bedEl; e._bo = [e.x - bedEl.x, e.y - bedEl.y];
+          // drawn over its bed (the cowboy candy on the wings), whatever it is
+          if (layEl(e) <= layEl(bedEl)) e._top = 1;
+        });
+      }
+      p.count = one;
+      // the bed shows round what sits on it, as the book's mash and rice do: at least about 1.4 times its size (a half the
+      // card gives keeps its half)
+      var onA = els.filter(function (e) { return e._bed === bedEl; }).reduce(function (t, e) { return t + ovalArea(e); }, 0), bedA = ovalArea(bedEl);
+      if (onA > 0.7 * bedA && !bedEl._half) { var kbd = Math.min(1.8, Math.sqrt(onA / (0.7 * bedA))); bedEl.sx = n1(bedEl.sx * kbd * 100) / 100; bedEl.sy = n1(bedEl.sy * kbd * 100) / 100; }
+      // on a half the card gives, what sits on it fits the half instead (the rissoles stay inside the bowl)
+      else if (onA > 0.8 * bedA) { var kfit = Math.sqrt(0.8 * bedA / onA); els.filter(function (e) { return e._bed === bedEl; }).forEach(function (e) { e.sx = n1(e.sx * kfit * 100) / 100; e.sy = n1(e.sy * kfit * 100) / 100; e._bo = [e._bo[0] * kfit, e._bo[1] * kfit]; }); }
+    };
+    // the parts the card puts on others, each once its bed is down (the greens on the rice before the barra on the greens)
+    var placeSaid = function () {
+      for (var pass = 0; pass < 4; pass++) onP.forEach(function (p) { if (p.placed) return; var b = els.filter(function (e) { return e.ing === p.how.on && !riderEl(e); })[0]; if (b) rideOn(p, b); });
+      poolP.forEach(function (p) {
+        if (p.placed) return;
+        var b = els.filter(function (e) { return e.ing === p.how.over; })[0]; if (!b) return;
+        // drawn as a pool of it, in its colour (a bowl of laksa under the rice would be a bowl)
+        if (!p.it.raw && LIB.get('sauce-pool')) { p.it = LIB.get('sauce-pool'); p.ram = { col: LIB.sauceColour(p.ing) || '#E8962E' }; }
+        p.placed = true; p.scale = Math.sqrt(1.8 * ovalArea(b) / (Math.PI / 4 * p.it.w * p.it.h)); p.count = 1;
+        push(elsFor(d, r, p, [b.x, b.y], 0, { host: b })).forEach(function (e) { e._under = 1; });
+      });
+      // next to another part ("bacon and peas next to the mash"): beside it, towards the front right
+      solidP.forEach(function (p) {
+        var hw = p.how || {}, b = hw.next && els.filter(function (e) { return e.ing === hw.next && !riderEl(e); })[0], mine = els.filter(function (e) { return e.ing === p.ing && !e._bed; });
+        if (!b || !mine.length) return;
+        var ux = tv.m ? -0.94 : 0.94, uy = 0.34, bo = R.oval(b);
+        mine.forEach(function (e, j) { var o = R.oval(e), dd = R.reach(bo, ux, uy) + R.reach(o, -ux, -uy) + 2; e.x = n1(b.x + ux * dd + j * 6); e.y = n1(b.y + uy * dd + j * 10); });
+      });
+    };
     var hostEl = function () { var m = els.concat(still).filter(function (e) { var it = itemOfEl(e); return it && /^(main|dessert)$/.test(it.role) && !e._ram; }).sort(function (x, y) { return ovalArea(y) - ovalArea(x); })[0]; return m || els.filter(function (e) { return !riderEl(e) && !e._ram; }).sort(function (x, y) { return ovalArea(y) - ovalArea(x); })[0] || null; };
     var push = function (list) { list.forEach(function (e) { els.push(e); }); return list; }, boardFill = 0.4;
 
     if (S0.pack) {
       /* a board: every solid sized so together they cover what the book's boards do (a board of three, as the brisket
          board, about 30%; a full butcher's board about 45%), on the book's spots, copies fanned in a row */
-      var bs = solidP.filter(function (p) { return p.role !== 'ramekin'; }), tot = 0;
+      var bs = solidP.filter(function (p) { return p.role !== 'ramekin' && onP.indexOf(p) < 0 && poolP.indexOf(p) < 0; }), tot = 0;
       boardFill = Math.min(0.45, 0.24 + 0.025 * bs.length);
+      // the card's own order: its back row left to right, and what it puts at a corner (the butcher's boards)
+      var rows = said && said.rows, back = rows ? rows.back.filter(function (n) { return solidIng[n] && onP.indexOf(solidIng[n]) < 0; }) : [], given = function (p) { return rows && (back.indexOf(p.ing) >= 0 || rows.spots[p.ing]); };
       bs.forEach(function (p) { tot += Math.PI / 4 * p.it.w * p.it.h * p.scale * p.scale * p.count; });
       var kb = tot ? Math.max(0.35, Math.min(2.2, Math.sqrt(boardFill * foodA / tot))) : 1;
       // a small board's few parts sit out towards its edges, as on the book's brisket board
-      var spread = bs.length <= 4 ? 1.2 : 1;
-      bs.forEach(function (p, k) {
+      var spread = bs.length <= 4 ? 1.2 : 1, free = 0;
+      bs.forEach(function (p) {
         p.scale *= kb;
         // one part's copies (the taco board's tortillas) no more than a fifth of the board
         var shp = Math.PI / 4 * p.it.w * p.it.h * p.scale * p.scale * p.count / foodA; if (shp > 0.2) p.scale *= Math.sqrt(0.2 / shp);
-        var s0 = BOARD[k % BOARD.length], at = [a.cx + (tv.m ? -s0[0] : s0[0]) * spread * a.rx + (k >= BOARD.length ? 10 : 0), a.cy + s0[1] * spread * a.ry];
+        var s0, bi = back.indexOf(p.ing);
+        // the back row's parts fit side by side, each in its share of the board's width
+        if (bi >= 0) { s0 = [back.length > 1 ? -0.74 + 1.48 * bi / (back.length - 1) : 0, -0.4]; p.scale = Math.min(p.scale, 1.6 * a.rx / back.length / (Math.min(p.it.w, p.it.h * 1.4) * (p.count > 1 ? 1.4 : 1))); }
+        else if (rows && rows.spots[p.ing]) s0 = rows.spots[p.ing];
+        else { s0 = BOARD[free % BOARD.length]; if (rows) while (free < BOARD.length && s0[1] < 0 && back.length) s0 = BOARD[++free % BOARD.length]; free++; }
+        var sp = given(p) ? 1 : spread, at = [a.cx + (tv.m ? -s0[0] : s0[0]) * sp * a.rx + (!given(p) && free > BOARD.length ? 10 : 0), a.cy + s0[1] * sp * a.ry];
         push(elsFor(d, r, p, at, Math.round(rng(p)() * 20 - 10), { row: true, grp: p.count > 1 ? p.ing : '' }));
       });
       solidP.filter(function (p) { return p.role === 'ramekin'; }).forEach(function (p, k) {
-        var s0 = POTS[k % POTS.length]; push(elsFor(d, r, p, [a.cx + (tv.m ? -s0[0] : s0[0]) * a.rx, a.cy + s0[1] * a.ry], 0)).forEach(function (e) { e._ram = 1; });
+        var s0 = rows && rows.spots[p.ing] || POTS[k % POTS.length]; push(elsFor(d, r, p, [a.cx + (tv.m ? -s0[0] : s0[0]) * a.rx, a.cy + s0[1] * a.ry], 0)).forEach(function (e) { e._ram = 1; });
       });
-    } else if (S0.bowl) {
+    } else if (S0.bowl && !solidP.some(function (p) { return p.how && p.how.half; })) {
       // a bowl: the base heaped in the middle, a little towards the front left as the book's salads are, the rest
       // round it on top of the base, each a good share of the bowl
-      var bOrder = solidP.filter(function (p) { return p.role !== 'ramekin'; }), sauceW = /\b(sauce|jus|gravy|aioli|mayo|dressing|relish|ketchup|chutney|salsa|pesto|glaze|syrup|coulis|puree|dip)$/;
+      var bOrder = solidP.filter(function (p) { return p.role !== 'ramekin' && onP.indexOf(p) < 0 && poolP.indexOf(p) < 0; }), sauceW = /\b(sauce|jus|gravy|aioli|mayo|dressing|relish|ketchup|chutney|salsa|pesto|glaze|syrup|coulis|puree|dip)$/;
       var base = bOrder.filter(function (p) { return /^(starch|salad|main)$/.test(p.it.role) && p.it.form === 'bowlful'; })[0] || bOrder.filter(function (p) { return p.it.role === 'starch' || p.it.role === 'salad'; })[0] ||
+        // a pile served as the bowl's base (the nachos' corn chips)
+        bOrder.filter(function (p) { return p.it.role === 'sidedish' && /^(pile|bowlful|mound)$/.test(p.it.form); })[0] ||
         (bOrder.length > 1 ? bOrder.filter(function (p) { return /^(salad|veg)$/.test(p.it.role) && !sauceW.test(plain(p.ing)); })[0] : null);
       if (!base && bOrder.length === 1) {
         // one thing in the bowl (the calamari topper's strips): it fills the bowl, not a corner of it
@@ -590,18 +667,23 @@
       // a side sauce in a ramekin on the rim at about 2 o'clock
       solidP.filter(function (p) { return p.role === 'ramekin'; }).forEach(function (p, k) { var ang = -Math.PI / 3 + k * 0.6; push(elsFor(d, r, p, [a.cx + (tv.m ? -1 : 1) * Math.cos(ang) * a.rx * 0.75, a.cy + Math.sin(ang) * a.ry * 0.75], 0)).forEach(function (e) { e._ram = 1; }); });
     } else {
-      // a plate: each solid part on its spot, the biggest first
-      var byRole = {}, bedStyle = style === 'bed' || style === 'stack';
+      // a plate (or a bowl the card splits in halves): each solid part on its spot, the biggest first; what the card
+      // says first (in the middle, one half and the other, on another part), the style's spot for the rest
+      var byRole = {}, bedStyle = (style === 'bed' || style === 'stack') && !onP.length;
       var bedP = bedStyle ? solidP.filter(function (p) { return p.it.role === 'starch'; })[0] || solidP.filter(function (p) { return /^(veg|salad)$/.test(p.it.role) && /mash|pur|rice|polenta|risotto|greens|spinach|leaves|slaw|noodle/.test((p.ing + ' ' + p.it.name).toLowerCase()); })[0] : null;
       var rideP = bedP ? solidP.filter(function (p) { return p.it.role === 'main' && !/^(bowlful|pool)$/.test(p.it.form); })[0] : null;
       // a wave of purée across the plate: the bed sits in the middle of it, as on the book's pork belly
-      var waveBed = bedP && parts.some(function (p) { return RIDER[p.role] && p.it.form === 'line' && acrossOf(p) === 'across'; });
+      var waveBed = (bedP || onP.length) && parts.some(function (p) { return RIDER[p.role] && p.it.form === 'line' && acrossOf(p) === 'across'; });
       solidP.forEach(function (p) {
-        if (p === rideP) return;
-        var role = p.role === 'ramekin' ? 'ramekin' : p.role, k = byRole[role] = (byRole[role] || 0) + 1, at = p === bedP && waveBed ? [a.cx, a.cy - 0.04 * a.ry] : spot(style, role === 'ramekin' ? 'ramekin' : p === bedP ? 'starch' : role, a, k - 1, tv);
+        if (p === rideP || onP.indexOf(p) >= 0 || poolP.indexOf(p) >= 0) return;
+        var hw = p.how || {}, isBed = p === bedP || !!bedOf[p.ing];
+        var role = p.role === 'ramekin' ? 'ramekin' : p.role, k = byRole[role] = (byRole[role] || 0) + 1, at = isBed && waveBed || hw.centre ? [a.cx, a.cy - (isBed && waveBed ? 0.04 * a.ry : 0)] : spot(style, role === 'ramekin' ? 'ramekin' : isBed ? 'starch' : role, a, k - 1, tv);
+        // one half and the other ("mash on one half of the bowl, the vegetables on the other half"): each fills its half
+        if (hw.half) { at = [a.cx + (hw.half === 'one' ? -1 : 1) * (tv.m ? -1 : 1) * 0.44 * a.rx, a.cy]; p.scale = Math.max(p.scale, Math.min(2.2, Math.sqrt(0.24 * foodA / (Math.PI / 4 * p.it.w * p.it.h * p.count)))); }
         var list = push(elsFor(d, r, p, at, role === 'main' || role === 'dessert' ? Math.round(rng(p)() * 20 - 10) : role === 'ramekin' ? 0 : Math.round(rng(p)() * 40 - 20), { rnd: rng(p, 1) }));
         if (role === 'ramekin') list.forEach(function (e) { e._ram = 1; });
-        if (p === bedP) list.forEach(function (e) { e._bedPart = 1; });
+        if (isBed) list.forEach(function (e) { e._bedPart = 1; });
+        if (hw.half) list.forEach(function (e) { e._half = 1; });
       });
       // the main on its bed (the pork on its mash, the chicken on its rice): it moves with the bed, slightly to the back
       if (rideP) {
@@ -617,24 +699,39 @@
       }
     }
 
+    placeSaid();
+
     // what rides on the main: toppings stacked in the recipe's order, garnish spread over its back half, both sized to it;
     // a sauce under it, a dollop at its edge, a wave or a swoop across the plate, oil in dots round it
     var garn = [], hostA = 0;
     parts.forEach(function (p, k) {
       if (p.placed || p.role === 'ramekin' || !RIDER[p.role]) return;
-      var h = hostEl(), role = p.role, how = acrossOf(p), rnd = rng(p, 2);
+      // the part the card puts it on, over, round or next to ("gravy over the rissoles", "cowboy candy on top of the wings")
+      var hw = p.how || {}, tgt = hw.over || hw.on || hw.around || hw.next, tel = tgt ? els.filter(function (e) { return e.ing === tgt; })[0] : null;
+      var h = tel || hostEl(), role = p.role, how = acrossOf(p), rnd = rng(p, 2);
       p.placed = true;
       if (!h) { push(elsFor(d, r, p, [a.cx, a.cy], 0)); return; }
       var ho = R.oval(h), hs = sizeEl(h), Ah = Math.PI * ho.a * ho.b, A1 = Math.PI / 4 * p.it.w * p.it.h, off = (k % 3 - 1) * 4;
       hostA = Ah;
+      p._host = tel;
+      // round a part ("pork sauce around the mash"): a pool under it, wider than it, so it shows all round
+      if (hw.around && tel) { if (!p.it.raw && /^(swoosh|smear|line|drizzle)$/.test(p.it.form) && LIB.get('sauce-pool')) { p.it = LIB.get('sauce-pool'); A1 = Math.PI / 4 * p.it.w * p.it.h; } p.scale = Math.sqrt(1.7 * Ah / A1); p.sy = 0; push(elsFor(d, r, p, [h.x, h.y], 0, { host: h })); return; }
+      // next to a part (the jus next to the mash): a pool beside it, under what sits there
+      if (hw.next && tel && /sauce/.test(role)) { var nx = tv.m ? -1 : 1; p.scale = Math.min(p.scale, Math.sqrt(0.5 * Ah / A1)); push(elsFor(d, r, p, [h.x + nx * ho.a * 0.9, h.y + ho.b * 0.4], 0, { host: h })); return; }
+      // on one side of the main and on the other (the nachos' avocado and sour cream)
+      if (hw.sideOf) { var sx0 = (hw.sideOf === 'one' ? -1 : 1) * (tv.m ? -1 : 1) * 0.35 * ho.a; p.scale = Math.min(p.scale, Math.sqrt(0.3 * Ah / A1)); p.on = true; push(elsFor(d, r, p, [h.x + sx0, h.y], 0, { host: h })); return; }
       if (role === 'topping') {
         // a parmy's napoli, ham and cheese cover the schnitzel; any other topping at most half of the main
         if (!p.on || !/parm|schnit/i.test(r.name)) p.scale = Math.min(p.scale, Math.sqrt(0.48 * Ah / (A1 * p.count)));
         push(elsFor(d, r, p, [h.x + off, h.y + off * 0.5], h.r || 0, { host: h, rnd: rnd, ring: Math.min(ho.a, ho.b) * 0.28 }));
       } else if (role === 'garnish') garn.push(p);
       else if (p.it.form === 'drizzle') { p.scale = Math.min(p.scale, hs[0] * 0.9 / p.it.w); p.on = true; push(elsFor(d, r, p, [h.x, h.y], -8, { host: h })); }
-      // over the main, drawn on it: never more than half of it, so the main still shows
-      else if (how === 'over') { p.scale = Math.min(p.scale, Math.sqrt(0.5 * Ah / A1)); p.on = true; push(elsFor(d, r, p, [h.x + off, h.y + off * 0.5], h.r || 0, { host: h })); }
+      // over the main, drawn on it: never more than half of it, so the main still shows; a long swoosh poured over a part
+      // is drawn as a drizzle over it (the adobo's sauce from the pot), not a stick across it
+      else if (how === 'over') {
+        if (!p.it.raw && /^(swoosh|smear|line)$/.test(p.it.form) && LIB.get('sauce-drizzle')) { p.it = LIB.get('sauce-drizzle'); A1 = Math.PI / 4 * p.it.w * p.it.h; p.scale = Math.min(1.6, hs[0] * 0.9 / p.it.w); }
+        p.scale = Math.min(p.scale, Math.sqrt(0.5 * Ah / A1)); p.on = true; push(elsFor(d, r, p, [h.x + off, h.y + off * 0.5], h.r || 0, { host: h }));
+      }
       else if (how === 'across') {
         /* across the whole plate, as the book draws it: a wave of purée right across the middle with the mash on it (the
            pork belly), a swoop in front of the main with the main above its tail (the beef cheek) */
@@ -661,8 +758,8 @@
     });
     // garnish: all together at most about 0.36 of the main, each at its own place over the main's back half
     if (garn.length) {
-      var h0 = hostEl(), go = R.oval(h0), GA = Math.PI * go.a * go.b;
       garn.forEach(function (p, j) {
+        var h0 = p._host || hostEl(), go = R.oval(h0), GA = Math.PI * go.a * go.b;
         var A1 = Math.PI / 4 * p.it.w * p.it.h, phi = (-100 + j * 140 / Math.max(1, garn.length - 1)) * Math.PI / 180, lx = 0.22 * go.a * Math.cos(phi), ly = 0.22 * go.b * Math.sin(phi);
         p.scale = Math.max(0.35, Math.min(p.scale, Math.sqrt(0.36 * GA / (garn.length * A1 * p.count))));
         push(elsFor(d, r, p, [go.x + lx * Math.cos(go.t) - ly * Math.sin(go.t), go.y + lx * Math.sin(go.t) + ly * Math.cos(go.t)], Math.round(rng(p, 3)() * 60 - 30), { host: h0, rnd: rng(p, 4), ring: Math.min(go.a, go.b) * 0.18 }));
@@ -682,7 +779,7 @@
     var solidEls = function () { return els.filter(function (e) { return !riderEl(e); }); };
     // a bowl's base and what lies on it are sized to the bowl already (the caesar's cos, its toast at most 15% of the bowl)
     // (and what rides on a part that keeps its size keeps its size too: the caesar's egg on its cos)
-    var growable = function (e) { return !e._ram && !e._line && !e._base && !e._over && !e._rim && !(e._h && e._h !== e && !growable(e._h)) && !(e._h && e._h._still); };
+    var growable = function (e) { return !e._ram && !e._line && !e._over && !e._rim && !e._half && !(e._h && e._h !== e && !growable(e._h)) && !(e._h && e._h._still); };
     /* a lone main (a beef cheek, wings) covers less of its plate in the book than a full pub plate does, and a main on a
        sweep of purée stays small, so the sweep shows (the book's beef cheek: about 13% of the plate) */
     var nSolid = els.filter(function (e) { return !riderEl(e) && !e._ram; }).length, swept = els.some(function (e) { return e._line; });
@@ -690,14 +787,23 @@
     var scaleAll = function (k) {
       els.forEach(function (e) {
         if (!growable(e)) return;
-        e.sx = n1(e.sx * k * 100) / 100; e.sy = n1(e.sy * k * 100) / 100;
+        // a bowl's base grows with the rest when the bowl looks empty, never past its rim
+        var kk = e._base ? Math.min(k, 1.6 * Math.min(a.rx, a.ry) / Math.max(1, Math.max(R.oval(e).a, R.oval(e).b) * 2 / 0.92)) : k;
+        if (e._base && kk < 1 && k >= 1) kk = 1;
+        e.sx = n1(e.sx * kk * 100) / 100; e.sy = n1(e.sy * kk * 100) / 100;
         if (e._h) { e._o = [e._o[0] * k, e._o[1] * k]; }
         if (e._bed) { e._bo = [e._bo[0] * k, e._bo[1] * k]; }
       });
     };
-    var follow = function () { els.forEach(function (e) { if (e._h) { e.x = e._h.x + e._o[0]; e.y = e._h.y + e._o[1]; } if (e._bed) { e.x = e._bed.x + e._bo[0]; e.y = e._bed.y + e._bo[1]; } }); };
+    var follow = function () {
+      // the bottom of each stack first, then what sits on it, then what rides on that
+      var dep = function (e) { var k = 0, x = e; while ((x._bed || x._h) && k < 6) { x = x._bed || x._h; k++; } return k; };
+      els.slice().sort(function (x, y) { return dep(x) - dep(y); }).forEach(function (e) { if (e._h) { e.x = e._h.x + e._o[0]; e.y = e._h.y + e._o[1]; } if (e._bed) { e.x = e._bed.x + e._bo[0]; e.y = e._bed.y + e._bo[1]; } });
+    };
     // a wave or a swoop is a thin stroke across its box: it is not counted as food when sizing and centring
     var food = function () { return els.filter(function (e) { return !e._line; }).concat(still); };
+    // a plate the card splits in halves keeps them where the card puts them (not moved to centre the food)
+    var halves = els.some(function (e) { return e._half; });
     for (var pass = 0; pass < 3; pass++) {
       var cv = R.cover(food(), a);
       if (cv.cov && (cv.cov < band[0] || cv.cov > band[1])) scaleAll(Math.max(0.7, Math.min(1.45, Math.sqrt(mid / cv.cov))));
@@ -711,7 +817,7 @@
       follow(); solve(els.concat(still), a, false); follow();
       // the middle of the food in the middle of the servingware
       var cv2 = R.cover(food(), a), ox2 = cv2.cx - a.cx, oy2 = cv2.cy - a.cy;
-      if (Math.hypot(ox2 / a.rx, oy2 / a.ry) > 0.05) {
+      if (Math.hypot(ox2 / a.rx, oy2 / a.ry) > 0.05 && !halves) {
         solidEls().forEach(function (e) { if (!e._bed && !e._over) { e.x -= ox2; e.y -= oy2; } });
         els.forEach(function (e) { if (e._over) { e.x -= ox2; e.y -= oy2; } });
         follow(); solve(els.concat(still), a, false); follow();
@@ -723,14 +829,17 @@
     for (var tries = 0; tries < 5 && crowded(els.concat(still)); tries++) { scaleAll(0.92); follow(); solve(els.concat(still), a, false); follow(); }
     // and once more in the middle, now everything has its size
     var cv4 = R.cover(food(), a), ox4 = cv4.cx - a.cx, oy4 = cv4.cy - a.cy;
-    if (Math.hypot(ox4 / a.rx, oy4 / a.ry) > 0.04) { solidEls().forEach(function (e) { if (!e._bed && !e._over) { e.x -= ox4; e.y -= oy4; } }); els.forEach(function (e) { if (e._over) { e.x -= ox4; e.y -= oy4; } }); follow(); solve(els.concat(still), a, false); follow(); }
+    if (Math.hypot(ox4 / a.rx, oy4 / a.ry) > 0.04 && !halves) { solidEls().forEach(function (e) { if (!e._bed && !e._over) { e.x -= ox4; e.y -= oy4; } }); els.forEach(function (e) { if (e._over) { e.x -= ox4; e.y -= oy4; } }); follow(); solve(els.concat(still), a, false); follow(); }
+    // off centre where the card says ("place the beef cheek a bit off centre"): a little to the back left of the middle
+    var offc = {}; parts.forEach(function (p) { if (p.how && p.how.offc) offc[p.ing] = 1; });
+    els.forEach(function (e) { if (offc[e.ing] && !riderEl(e) && !e._bed) { e.x += (tv.m ? 1 : -1) * 0.12 * a.rx; e.y -= 0.08 * a.ry; } });
     // what rides on a part goes where that part went, and stays on the servingware
     follow();
     els.forEach(function (e) { if (riderEl(e) && !e._line) clampEl(e, a, 0); });
     // layers: sauce, base pieces, mains, toppings, garnish (the order js/draw.js keeps when adding by hand)
     els.forEach(function (e, k) { e._k = k; });
     els.sort(function (x, y) { return (layEl(x) - layEl(y)) || (x._k - y._k); });
-    els.forEach(function (e) { e.x = n1(e.x); e.y = n1(e.y); ['_k', '_h', '_o', '_on', '_bed', '_bo', '_bedPart', '_over', '_base', '_loose', '_grp', '_ram', '_line', '_rim'].forEach(function (f) { delete e[f]; }); });
+    els.forEach(function (e) { e.x = n1(e.x); e.y = n1(e.y); ['_k', '_h', '_o', '_on', '_bed', '_bo', '_bedPart', '_over', '_base', '_loose', '_grp', '_ram', '_line', '_rim', '_under', '_half', '_top'].forEach(function (f) { delete e[f]; }); });
     still.forEach(function (e) { delete e._still; });
     return els;
   }
