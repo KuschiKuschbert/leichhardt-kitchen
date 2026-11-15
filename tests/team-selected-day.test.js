@@ -17,9 +17,10 @@ const fixture = () => ({
 });
 const ids = p => p.locator('.tm-person-row').evaluateAll(es => es.map(e => e.dataset.id).sort());
 const expected = (p, list) => ids(p).then(xs => JSON.stringify(xs) === JSON.stringify(list.slice().sort()));
-const section = (p, id) => p.locator('select[data-k="tm-sec:' + id + '"]');
-const pick = (p, id, value) => L.pick(p, 'select[data-k="tm-sec:' + id + '"]', value);
-const service = (p, id, sh) => L.pick(p, 'select[data-k="tm-row-sh:' + id + '"]', sh);
+// the day grid: one section picker per person and service (tm-sec:<id>:<sh>); the details panel picks its own service
+const section = (p, id, sh) => p.locator('select[data-k="tm-sec:' + id + ':' + sh + '"]');
+const pick = (p, id, value, sh = 'lunch') => L.pick(p, 'select[data-k="tm-sec:' + id + ':' + sh + '"]', value);
+const service = async (p, id, sh) => { await details(p, id); await click(p, '.tm-detail-workbench [data-p="tm-sh"][data-id="' + id + '"][data-v="' + sh + '"]'); };
 const click = async (p, selector) => { await p.locator(selector).click(); await L.settle(p, 140); };
 const read = p => p.evaluate(k => __fake.dump()[k], TEAM);
 const countReads = p => p.evaluate(() => __fake.reads.filter(k => /\/(team|teamsum)(\/|$)/.test(k)).length);
@@ -34,7 +35,7 @@ async function day(p, date) { await L.teamDay(p, date); await ready(p); }
   await L.teamWarm(p, tomorrow, ready);   // tomorrow's week read first: on a Sunday it is next week
   const original = await read(p), reads = await countReads(p), writes = await p.evaluate(() => __fake.writes.length);
   ok(await expected(p, ['ann', 'bo', 'sam']), 'day membership: only people on an active configured service appear in the worksheet');
-  ok(await p.locator('select[data-k="tm-row-sh:bo"]').inputValue() === 'dinner' && await section(p, 'bo').inputValue() === 'pans' && await p.locator('.tm-person-row[data-id="bo"]').isVisible(), 'day membership: Dinner-only Bo starts on his actual Dinner service and section');
+  ok(!await section(p, 'bo', 'lunch').count() && /Off/.test(await p.locator('.tm-person-row[data-id="bo"] .tm-grid-off').first().innerText()) && await p.locator('.tm-person-row[data-id="bo"]').getAttribute('data-sh') === 'dinner' && await section(p, 'bo', 'dinner').inputValue() === 'pans' && await p.locator('.tm-person-row[data-id="bo"]').isVisible(), 'day membership: Dinner-only Bo starts on his actual Dinner service and section');
   ok(await p.locator('input[data-k="tm-quick-person:dee"]').count() === 1 && !await p.locator('.tm-person-row[data-id="dee"]').count(), 'Add staff: an unselected person remains available in the chooser rather than the worksheet');
   await p.fill('[data-k="tm-q"]', 'Dee'); await L.settle(p, 160);
   ok(await p.locator('.tm-person-row').count() === 0 && /No people match/.test(await p.locator('.tm-people').innerText()), 'search: typing an unselected name cannot reveal an unscheduled worksheet row');
@@ -45,18 +46,18 @@ async function day(p, date) { await L.teamDay(p, date); await ready(p); }
   ok(await expected(p, ['ann', 'bo', 'sam']), 'date return: today restores its own day membership without another date leaking in');
   await pick(p, 'ann', '');
   await details(p, 'ann');
-  ok(await expected(p, ['ann', 'bo', 'sam']) && await section(p, 'ann').inputValue() === '' && await p.locator('select[data-k="tm-at:ann:0"]').inputValue() === '825', 'clear section: attendance and the break keep the person in the worksheet');
+  ok(await expected(p, ['ann', 'bo', 'sam']) && await section(p, 'ann', 'lunch').inputValue() === '' && await p.locator('select[data-k="tm-at:ann:0"]').inputValue() === '825', 'clear section: attendance and the break keep the person in the worksheet');
   await membership(p, 'ann', 'lunch');
   ok(!await p.locator('.tm-person-row[data-id="ann"]').count(), 'last service removal: the person leaves the worksheet immediately');
   await membership(p, 'bo', 'lunch'); await pick(p, 'bo', 'grill'); await membership(p, 'bo', 'lunch');
-  ok(await p.locator('.tm-person-row[data-id="bo"]').count() === 1 && await section(p, 'bo').isDisabled() && await p.locator('[data-p="tm-on"][data-id="bo"][data-sh="lunch"]').getAttribute('aria-pressed') === 'false', 'one of several services removed: another selected service keeps the person visible and Lunch is explicitly absent');
+  ok(await p.locator('.tm-person-row[data-id="bo"]').count() === 1 && !await section(p, 'bo', 'lunch').count() && await p.locator('[data-p="tm-on"][data-id="bo"][data-sh="lunch"]').getAttribute('aria-pressed') === 'false', 'one of several services removed: another selected service keeps the person visible and Lunch is explicitly absent');
   await service(p, 'bo', 'dinner');
-  ok(await section(p, 'bo').inputValue() === 'pans' && await p.locator('select[data-k="tm-at:bo:0"]').inputValue() === '1140', 'other service: section and break remain intact after removing Lunch');
+  ok(await section(p, 'bo', 'dinner').inputValue() === 'pans' && await p.locator('select[data-k="tm-at:bo:0"]').inputValue() === '1140', 'other service: section and break remain intact after removing Lunch');
   await membership(p, 'bo', 'dinner');
   ok(!await p.locator('.tm-person-row[data-id="bo"]').count(), 'all services removed: the final removal drops the row even while another person is still selected');
   await click(p, '.tm-focus-toolbar [data-p="tm-add-staff"]');
   await p.locator('input[data-k="tm-quick-person:dee"]').check(); await click(p, '[data-p="tm-quick-add"]');
-  ok(await expected(p, ['dee', 'sam']) && await section(p, 'dee').inputValue() === '', 'late Add staff: adding another person brings their row into the selected day');
+  ok(await expected(p, ['dee', 'sam']) && await section(p, 'dee', 'lunch').inputValue() === '', 'late Add staff: adding another person brings their row into the selected day');
   ok(JSON.stringify(await read(p)) === JSON.stringify(original) && await countReads(p) === reads && await p.evaluate(n => __fake.writes.length === n, writes), 'local filtering: membership, searching and date navigation add no database read or write');
   await click(p, '[data-p="tm-save"]'); await L.waitFor(p, k => __fake.dump()[k].v === 2, TEAM, 6000);
   const saved = await read(p);

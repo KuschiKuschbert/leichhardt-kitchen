@@ -24,8 +24,9 @@ const boardHidden = p => p.$eval('.tm-away', e => e.hidden && getComputedStyle(e
 const boardShown = p => p.$eval('.tm-away', e => !e.hidden && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 0);
 const rows = p => p.$$eval('.tm-away-row', all => all.map(e => ({ name: (e.querySelector('.tm-away-name') || {}).textContent || '', text: e.textContent.trim() })));
 const press = async (p, s) => { const found = await tap(p, s); await L.settle(p, 150); return found; };
-const shift = async (p, sh, id = 'sam') => { if (await p.locator('[data-p="tm-whole"]').getAttribute('aria-pressed') === 'true') await press(p, '[data-p="tm-whole"]'); await L.pick(p, 'select[data-k="tm-row-sh:' + id + '"]', sh); };
-const assign = (p, id, sec) => L.pick(p, 'select[data-k="tm-sec:' + id + '"]', sec);
+// the day grid (15 Nov 2026): a section picker per person and service; the details panel picks its service with a chip
+const shift = async (p, sh, id = 'sam') => { if (await p.locator('[data-p="tm-whole"]').getAttribute('aria-pressed') === 'true') await press(p, '[data-p="tm-whole"]'); await details(p, id); await press(p, '.tm-detail-workbench [data-p="tm-sh"][data-id="' + id + '"][data-v="' + sh + '"]'); };
+const assign = (p, id, sec, sh = 'lunch') => L.pick(p, 'select[data-k="tm-sec:' + id + ':' + sh + '"]', sec);
 const pick = async (p, k, v) => { if (!k.startsWith('tm-sec:')) await details(p, k.split(':')[1]); await L.pick(p, 'select[data-k="' + k + '"]', String(v)); return true; };
 async function ready(p) { await L.waitFor(p, () => !!document.querySelector('.tm-page.tm-notebook .tm-nbook .tm-work [data-p="tm-whole"]'), null, 6000); }
 async function details(p, id) {
@@ -56,17 +57,17 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   });
   ok(boardStyle.charcoal && boardStyle.edge >= 4 && boardStyle.radius >= 8 && boardStyle.compact && !boardStyle.pin, 'break board: the saved breaks retain charcoal and their orange edge in the compact strip');
   ok(await p.$$eval('.tm-next-row', all => all.length) > 0 && await p.$$eval('.tm-next-row', all => all.length) <= 3, 'next breaks: a compact list uses the loaded saved schedule');
-  ok(await p.$eval('select[data-k="tm-sec:sam"]', e => e.value) === 'larder' && !await p.$('[data-p="tm-section"], [data-p="tm-assign"]'), 'assignment: Sam has an explicit current section picker without a global assignment mode');
+  ok(await p.$eval('select[data-k="tm-sec:sam:lunch"]', e => e.value) === 'larder' && await p.$eval('select[data-k="tm-sec:sam:dinner"]', e => e.value) === 'grill' && !await p.$('[data-p="tm-section"], [data-p="tm-assign"]'), 'assignment: Sam has an explicit current section picker without a global assignment mode');
   await assign(p, 'sam', 'grill');
   await details(p);
-  ok(await p.$eval('select[data-k="tm-sec:sam"]', e => e.value) === 'grill', 'assignment: choosing Grill deliberately overrides Sam\'s usual Pans');
-  ok(await p.$eval('select[data-k="tm-sec:sam"]', e => [...e.options].some(o => o.value === '' && o.textContent === 'Sous chef')), 'assignment: the chef role remains an explicit no-section choice');
+  ok(await p.$eval('select[data-k="tm-sec:sam:lunch"]', e => e.value) === 'grill', 'assignment: choosing Grill deliberately overrides Sam\'s usual Pans');
+  ok(await p.$eval('select[data-k="tm-sec:sam:lunch"]', e => [...e.options].some(o => o.value === '' && o.textContent === 'Sous chef')), 'assignment: the chef role remains an explicit no-section choice');
   await assign(p, 'sam', ''); await details(p);
-  ok(await p.$eval('select[data-k="tm-sec:sam"]', e => e.value) === '' && await p.$eval('[data-p="tm-on"][data-id="sam"]', e => e.getAttribute('aria-pressed')) === 'true' && await p.$eval('select[data-k="tm-at:sam:0"]', e => e.value) === '870', 'Clear section: Sam stays on Lunch and keeps his break');
+  ok(await p.$eval('select[data-k="tm-sec:sam:lunch"]', e => e.value) === '' && await p.$eval('[data-p="tm-on"][data-id="sam"]', e => e.getAttribute('aria-pressed')) === 'true' && await p.$eval('select[data-k="tm-at:sam:0"]', e => e.value) === '870', 'Clear section: Sam stays on Lunch and keeps his break');
   await assign(p, 'sam', 'grill');
   await shift(p, 'dinner');
-  ok(await p.$eval('select[data-k="tm-sec:sam"]', e => e.value) === 'grill', 'shift switch: Dinner displays its own section without carrying a selected assignment mode');
-  await assign(p, 'sam', 'pans');
+  ok(await p.$eval('select[data-k="tm-sec:sam:dinner"]', e => e.value) === 'grill' && await p.$eval('select[data-k="tm-sec:sam:lunch"]', e => e.value) === 'grill', 'each service: Dinner keeps its own section beside Lunch, without a selected assignment mode');
+  await assign(p, 'sam', 'pans', 'dinner');
   await press(p, '.tm-work [data-p="tm-whole"]');
   const whole = await txt(p, '.tm-work') || '';
   const samDay = await p.$$eval('.tm-dayperson', all => (all.find(e => /Sam/.test(e.textContent)) || {}).textContent || '');
@@ -204,19 +205,17 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
     await p.setViewportSize({ width, height: 844 });
     await p.evaluate(size => document.documentElement.setAttribute('data-text', size), text); await L.settle(p, 150);
     const m = await p.evaluate(() => {
-      const services = [...document.querySelectorAll('select[data-k^="tm-row-sh:"]')].map(e => [...e.options].map(o => o.value));
+      const services = [...document.querySelectorAll('.tm-bench-shifts [data-p="tm-sh"]')].map(e => e.dataset.v), columns = document.querySelectorAll('.tm-grid-head .tm-grid-sh').length;
       const whole = document.querySelector('.tm-work [data-p="tm-whole"]');
-      const targets = [...document.querySelectorAll('.tm-work button[data-p="tm-whole"], .tm-person-head .ux-picker-trigger, [data-p="tm-focus"], [data-p="tm-save"]')].filter(e => e.getClientRects().length).map(e => { const r = e.getBoundingClientRect(); return { action: e.dataset.p || 'picker', width: r.width, height: r.height }; });
-      return { services, whole: !!whole, small: targets.filter(r => r.width < 43.5 || r.height < 43.5), saves: document.querySelectorAll('[data-p="tm-save"]').length };
+      const targets = [...document.querySelectorAll('.tm-work button[data-p="tm-whole"], .tm-grid-cell .ux-picker-trigger, .tm-bench-shifts .chip, [data-p="tm-focus"], [data-p="tm-save"]')].filter(e => e.getClientRects().length).map(e => { const r = e.getBoundingClientRect(); return { action: e.dataset.p || 'picker', width: r.width, height: r.height }; });
+      return { services, columns, whole: !!whole, small: targets.filter(r => r.width < 43.5 || r.height < 43.5), saves: document.querySelectorAll('[data-p="tm-save"]').length };
     });
     const label = width + ' ' + text, over = await L.overflow(p);
-    ok(m.services.length === 3 && m.services.every(ss => JSON.stringify(ss) === JSON.stringify(manyShifts.map(s => s.id))) && m.whole, label + ': every row offers every configured service and Whole day remains available');
+    ok(JSON.stringify(m.services) === JSON.stringify(manyShifts.map(s => s.id)) && m.columns === 3 && m.whole, label + ': the grid has a column only for the 3 services worked; the details offer every configured service; Whole day remains available');
     ok(!over && m.small.length === 0 && m.saves === 1, label + ': long names and three breaks fit the page, controls are 44 px and Save remains single (' + (over || JSON.stringify(m.small)) + ')');
   }
-  const lastServiceTrigger = 'select[data-k="tm-row-sh:sam"] + .ux-picker-trigger';
-  await p.focus(lastServiceTrigger); await p.keyboard.press('Enter'); await L.settle(p, 150);
-  await p.keyboard.press('ArrowDown'); await p.keyboard.press('End'); await p.keyboard.press('Enter'); await L.settle(p, 150);
-  ok(await p.$eval('select[data-k="tm-row-sh:sam"]', e => e.value) === 'extra8', 'keyboard: the row picker opens by keyboard and its last configured service remains reachable');
+  await p.focus('.tm-bench-shifts [data-p="tm-sh"][data-v="extra8"]'); await p.keyboard.press('Enter'); await L.settle(p, 150);
+  ok(await p.$eval('.tm-detail-workbench', e => e.dataset.sh) === 'extra8' && /Add Evening preparation and smoker 9/.test(await txt(p, '.tm-detail-workbench') || ''), 'keyboard: the last configured service is reachable from the details panel, ready to add');
   ok(await readCount(p) === layoutReads && p.errors.length === 0, 'layout: resizing, largest text and keyboard shift changes reuse reads and raise no page errors ' + p.errors.join(' | '));
   await p.context().close();
   await b.close();

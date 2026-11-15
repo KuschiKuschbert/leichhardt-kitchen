@@ -26,9 +26,10 @@ const fixture = () => Object.assign({ [CFG]: { people, staffIds: ['sam', 'ann', 
 const fullDate = d => new Date(d + 'T12:00:00+10:00').toLocaleDateString('en-AU', { timeZone: 'Australia/Brisbane', weekday: 'long', day: 'numeric', month: 'long' });
 const click = async (p, s) => { const found = await tap(p, s); await L.settle(p, 120); return found; };
 const read = (p, d) => p.evaluate(k => window.__fake.dump()[k], key(['team', d]));
-const service = async (p, person, sh) => { if (await p.locator('[data-p="tm-whole"]').getAttribute('aria-pressed') === 'true') await click(p, '[data-p="tm-whole"]'); await L.pick(p, 'select[data-k="tm-row-sh:' + person + '"]', sh); };
-const assignment = async (p, person, sh, sec) => { await service(p, person, sh); await L.pick(p, 'select[data-k="tm-sec:' + person + '"]', sec); };
-const rowSection = (p, id) => p.$eval('select[data-k="tm-sec:' + id + '"]', e => e.value);
+// the day grid (15 Nov 2026): each person and service has its own section picker, tm-sec:<id>:<sh>
+const service = async p => { if (await p.locator('[data-p="tm-whole"]').getAttribute('aria-pressed') === 'true') await click(p, '[data-p="tm-whole"]'); };
+const assignment = async (p, person, sh, sec) => { await service(p); await L.pick(p, 'select[data-k="tm-sec:' + person + ':' + sh + '"]', sec); };
+const rowSection = (p, id, sh = 'lunch') => p.$eval('select[data-k="tm-sec:' + id + ':' + sh + '"]', e => e.value);
 const savedSection = (rec, id, sh) => (rec.on.find(x => x.id === id && x.sh === sh) || {}).sec;
 const selected = p => p.$eval('[data-p="tm-day"][aria-pressed="true"]', e => e.getAttribute('data-day'));
 async function ready(p) { await L.waitFor(p, () => !!document.querySelector('.tm-weeknav') && !!document.querySelector('.tm-work [data-p="tm-whole"]'), null, 7000); }
@@ -84,7 +85,7 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
   ok((await txt(p, '.tm-save') || '').includes(fullDate(tomorrow)) && /saved/i.test(await txt(p, '.tm-save') || ''), 'Save acknowledgement names the future date after the server answers');
   ok(JSON.stringify(await read(p, today)) === JSON.stringify(originalToday) && await p.evaluate(([k, value]) => window.__fake.dump()[k].pastEdit.t === value, [CFG, originalCfg.pastEdit.t]), 'isolation: saving a future date preserves today and its live-team stamp');
   await goDate(p, later);
-  await service(p, 'bo', 'lunch');
+  await service(p);
   ok(await rowSection(p, 'bo') === 'pans' && !await p.$eval('[data-p="tm-save"]', e => e.disabled), 'drafts: saving tomorrow does not discard the other date\'s unsaved section');
   await click(p, '.tm-date-controls [data-p="tm-today"]');
   await ready(p);
@@ -128,7 +129,7 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
   p = await L.open(browser, '#/team', { who: 'sam', extra: emptyFuture, wait: 900 }); await ready(p); await goDate(p, nextWeek);
   ok(!!(await p.$('[data-p="tm-use"]')), 'copy: an empty selected future day offers Same as last weekday');
   await p.locator('details.tm-batch > summary').click(); await click(p, '[data-p="tm-use"]');
-  await L.waitFor(p, () => !!document.querySelector('select[data-k="tm-sec:ann"]'), null, 6000);
+  await L.waitFor(p, () => !!document.querySelector('select[data-k^="tm-sec:ann:"]'), null, 6000);
   ok(await rowSection(p, 'ann') === 'grill' && !await p.$eval('[data-p="tm-save"]', e => e.disabled), 'copy: next week copies today\'s dated plan into an unsaved draft');
   ok(!await read(p, nextWeek) && JSON.stringify(await read(p, today)) === JSON.stringify(plan(today)), 'copy: neither source nor destination is saved automatically');
   ok(p.errors.length === 0, 'copy: no browser errors ' + p.errors.join(' | '));

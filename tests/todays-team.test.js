@@ -37,8 +37,10 @@ const onShift = async (p, id, sh) => {
     await p.locator('input[data-k="tm-quick-person:' + id + '"]').check();
     await tap(p, '[data-p="tm-quick-add"]'); await L.settle(p, 200); await details(p, id); return true;
   }
-  if (sh) await pick(p, 'tm-row-sh:' + id, sh);
-  await details(p, id); const done = await tap(p, '[data-p="tm-on"][data-id="' + id + '"]'); await L.settle(p, 200); return done;
+  // the details panel picks its own service with a chip (the day grid has no Service to edit switch)
+  await details(p, id);
+  if (sh) { await tap(p, '.tm-detail-workbench [data-p="tm-sh"][data-id="' + id + '"][data-v="' + sh + '"]'); await L.settle(p, 150); }
+  const done = await tap(p, '[data-p="tm-on"][data-id="' + id + '"]'); await L.settle(p, 200); return done;
 };
 const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.nb-addline').getBoundingClientRect().top; return [...document.querySelectorAll('[id^="nbr-"]')].filter(e => { const q = e.getBoundingClientRect(); return q.top >= 0 && q.bottom <= bar; }).length; });
 // Measure the approved local view choice separately from the unchanged team header and work rows.
@@ -83,9 +85,9 @@ const withoutViewChoice = async p => {
   ok(await p.locator('input[data-k="tm-quick-shift:lunch"]').isChecked(), 'page: Lunch is the explicit initial service choice');
   ok(await p.$eval('[data-p="tm-save"]', e => e.disabled), 'page: Save is off while nothing changed');
   await onShift(p, 'ann');
-  ok(await pick(p, 'tm-sec:ann', 'grill'), 'page: Ann on Lunch gets a section picker');
+  ok(await pick(p, 'tm-sec:ann:lunch', 'grill'), 'page: Ann on Lunch gets a section picker');
   ok(await onShift(p, 'sam'), 'page: Sam is ticked onto Lunch');
-  ok(await p.$eval('select[data-k="tm-sec:sam"]', e => e.value === '' && [...e.options].some(o => o.value === '' && o.textContent === 'Sous chef')), 'page: a sous chef has a section picker too, starting on their role');
+  ok(await p.$eval('select[data-k="tm-sec:sam:lunch"]', e => e.value === '' && [...e.options].some(o => o.value === '' && o.textContent === 'Sous chef')), 'page: a sous chef has a section picker too, starting on their role');
   await details(p, 'ann'); await tap(p, '[data-p="tm-addbr"][data-id="ann"]'); await L.settle(p, 200);
   ok(await pick(p, 'tm-at:ann:0', 870) && await pick(p, 'tm-len:ann:0', 45), 'page: Ann gets a break at 14:30 for 45 minutes');
   await L.settle(p, 150);
@@ -97,8 +99,8 @@ const withoutViewChoice = async p => {
   await tap(p, '[data-p="tm-spread"]'); await L.settle(p, 200);
   ok(/3 breaks from 12:00/.test(await txt(p, '.tm-save') || ''), 'page: Spread them sets 3 breaks from 12:00, one at a time (' + (await txt(p, '.tm-save')) + ')');
   await onShift(p, 'ann', 'dinner');
-  ok(await p.$eval('select[data-k="tm-sec:ann"]', e => e.value) === 'grill', 'page: Ann on Dinner starts with her Lunch section');
-  await pick(p, 'tm-sec:ann', 'pans'); await L.settle(p, 150);
+  ok(await p.$eval('select[data-k="tm-sec:ann:dinner"]', e => e.value) === 'grill', 'page: Ann on Dinner starts with her Lunch section');
+  await pick(p, 'tm-sec:ann:dinner', 'pans'); await L.settle(p, 150);
   ok(/Also on Lunch: Grill/.test(await txt(p, '.tm-detail-workbench') || ''), 'page: Ann\'s workbench says she is also on Lunch, on Grill');
   await tap(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => !!window.__fake.dump()[k], TEAM, 8000);
@@ -245,7 +247,7 @@ const withoutViewChoice = async p => {
   p = await L.open(b, '#/team', { who: 'sam', extra: cfg({ kitShifts: DAY }), wait: 1800 });
   await onShift(p, 'ann');
   await onShift(p, 'bo'); await onShift(p, 'sam');
-  ok(await pick(p, 'tm-sec:sam', 'pans'), 'chef section: Sam puts himself on Pans');
+  ok(await pick(p, 'tm-sec:sam:day', 'pans'), 'chef section: Sam puts himself on Pans');
   await tools(p);
   ok(await p.$eval('select[data-k="tm-spfrom"]', e => e.value) === '870' && await p.$eval('select[data-k="tm-splen"]', e => e.value) === '150' && await p.$eval('select[data-k="tm-spmode"]', e => e.value) === '0', 'split: on a 10:00 to 22:00 shift Spread them starts on a 2.5 hour split at 14:30, all together');
   await tap(p, '[data-p="tm-addbr"][data-id="sam"]'); await L.settle(p, 200);
@@ -297,11 +299,11 @@ const withoutViewChoice = async p => {
   const withSum = () => Object.assign(cfg(), { [TSUM]: tsumRec });
   p = await L.open(b, '#/team', { who: 'sam', extra: withSum(), wait: 1800 });
   ok(await onShift(p, 'ann'), 'usual: Ann is ticked onto Lunch');
-  ok(await p.$eval('select[data-k="tm-sec:ann"]', e => e.value) === 'grill', 'usual: she starts on her usual section, Grill');
+  ok(await p.$eval('select[data-k="tm-sec:ann:lunch"]', e => e.value) === 'grill', 'usual: she starts on her usual section, Grill');
   const annRow = await txt(p, '.tm-detail-workbench') || '';
   ok(annRow.includes('Usually Grill, 6 of the last 8 ' + wdName + 's') && !/In training/.test(annRow), 'usual: her workbench says her usual section, and no In training line though the record has one (' + annRow + ')');
   await onShift(p, 'bo');
-  ok(await p.$eval('select[data-k="tm-sec:bo"]', e => e.value) === '', 'usual: a section taken off the list is not filled in');
+  ok(await p.$eval('select[data-k="tm-sec:bo:lunch"]', e => e.value) === '', 'usual: a section taken off the list is not filled in');
   ok(await p.evaluate(() => window.__fake.reads.filter(r => /\/teamsum\//.test(r)).length) === 1, 'usual: the numbers are read once');
   ok(p.errors.length === 0, 'usual: no page errors ' + p.errors.join(' | '));
   await p.context().close();
@@ -320,7 +322,7 @@ const withoutViewChoice = async p => {
   p = await L.open(b, '#/team', { who: 'sam', extra: Object.assign(cfg(), { [TSUM]: learnSum, [TEAM]: learnPlan }), wait: 1800 });
   await L.waitFor(p, () => !!document.querySelector('.tm-learn'), null, 8000).catch(() => {});
   let hints = await learnHints(p);
-  ok(JSON.stringify(hints.filter(h => h[1])) === JSON.stringify([['bo', 'Not on Pans in 30 days. Ann is on Pans in this plan.']]), 'learn: only Bo gets a hint, pairing him with Ann on Pans (' + JSON.stringify(hints) + ')');
+  ok(JSON.stringify(hints.filter(h => h[1])) === JSON.stringify([['bo', 'Lunch: Not on Pans in 30 days. Ann is on Pans in this plan.']]), 'learn: only Bo gets a hint, pairing him with Ann on Pans, named by service in the day grid (' + JSON.stringify(hints) + ')');
   ok(!(await L.overflow(p)) && p.errors.length === 0, 'learn: no sideways scroll or page errors ' + p.errors.join(' | '));
   await p.context().close();
   p = await L.open(b, '#/team', { who: 'sam', extra: Object.assign(cfg(), { [TSUM]: learnSum, [TEAM]: learnPlan }), failReads: '/teamsum/', wait: 1800 });

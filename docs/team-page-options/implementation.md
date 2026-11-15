@@ -1,6 +1,6 @@
 # Today's team: C implementation
 
-10 November 2026, Queensland. **Implemented and locally verified; hosted checks and delivery are tracked in PR #652.** The owner chose C, Roster and focus, saying "okay lets go with c". Existing focused [PR #652](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/652) carries the application implementation. The [brief](brief.md) owns the choice, original independent council votes, preview comparisons, dissent and rejected all-three blend. No further design-choice gate or full council round is needed for faithful implementation.
+10 November 2026, Queensland. **Implemented and locally verified; hosted checks and delivery are tracked in PR #652.** **15 November 2026: the row's Service to edit and Section pair is replaced by the day grid ([brief](../team-sections-options/brief.md)); the details panel, dated drafts, Save and recovery below still hold, with a service chip in the details.** The owner chose C, Roster and focus, saying "okay lets go with c". Existing focused [PR #652](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/652) carries the application implementation. The [brief](brief.md) owns the choice, original independent council votes, preview comparisons, dissent and rejected all-three blend. No further design-choice gate or full council round is needed for faithful implementation.
 
 ## Changed contract
 

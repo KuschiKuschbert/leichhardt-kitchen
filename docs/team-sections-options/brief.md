@@ -2,7 +2,7 @@
 
 15 November 2026, Queensland. Head chef request: "a simpler way of applying sections to staff. At this point I have to physically tap the picker for lunch then assign lunch shift. Tap the picker go to dinner assign shift there. There must be a more user friendly way especially now with the uploaded roster that we know the times someone is working."
 
-**Status: council done, waiting for the head chef's choice. Nothing in the app has changed.** Round 1 Build smaller (5 of 5); round 2 B 15, C 13, A 8; **recommended: the mix** (B's day grid, A's worded Breaks, C's "Same as Lunch" inside the picker, neutral counts). [Proposal](proposal.md), [evidence packet](evidence-packet.md), [previews](index.html) ([A](a.html), [B](b.html), [C](c.html), [the mix](mix.html)). Role-based analysis, not research with staff.
+**Status: the mix chosen 15 November 2026 and built (see Chosen and Built at the end).** Round 1 Build smaller (5 of 5); round 2 B 15, C 13, A 8; **recommended: the mix** (B's day grid, A's worded Breaks, C's "Same as Lunch" inside the picker, neutral counts). [Proposal](proposal.md), [evidence packet](evidence-packet.md), [previews](index.html) ([A](a.html), [B](b.html), [C](c.html), [the mix](mix.html)). Role-based analysis, not research with staff.
 
 ## Round 1
 
@@ -296,4 +296,67 @@ The book-wide double-tap guard in the shared picker is a separate fix pull reque
 
 ## Chosen
 
-To come: the head chef chooses.
+15 November 2026: the head chef chose the recommendation, the mix ("Yeah let's try the recommendation. Might change that later again but let's build it and send it live when done"). Recorded in `docs/head-chef-decisions.md`.
+
+## Built
+
+15 November 2026, in this pull request. `js/prep.js`:
+- `tmGridShifts()`, `tmGridHeadHTML()`, `tmGridCellHTML()` and `tmGridRowHTML()` draw the grid.
+- `tmPersonListHTML()` filters by a name or a section on any service.
+- `tmSel()` gives a cell its own service.
+- `teamField()` refuses a section key without its service, or one whose captured service differs.
+- The details panel has a chip per service, and `tmRowService()` opens it on the service on now or next.
+- On a phone, the tapped row stays in place when the panel moves.
+- `tmFocusGeometry()` measures a top bar that sticks over the planner; `tmFocusEnsureVisible()` keeps focus clear of the heads.
+- `teamSave()` names who still has no section.
+
+`css/app.css` holds the `.tm-grid*` block and `.tm-bench-shifts`. No new read, write, field, rule or listener.
+
+**Departures from the combined preview, kept small:**
+- A service nobody works that day has no column (a 12-service stress test made 12 columns on a phone). The details panel still offers every service.
+- The usual section is offered first in the picker, then "Same as Lunch" (Skeptic's follow-up).
+- Cross-training hints name their service ("Lunch: Not on Pans in 30 days...").
+- Break details stay beside the grid from 1100 px, as in C, not from 768 px as the designer asked. At 768 px the panel beside the grid would leave the section cells under 100 px wide.
+- The double-tap guard in the book's shared picker is not changed here. It needs its own fix pull request: it touches every picker.
+
+**Implemented app measurements** (stand-in, the same made-up days and tasks as the baseline, fallback fonts, admin session unless stated; script [`implemented.cjs`](implemented.cjs), raw [`implemented.json`](implemented.json)):
+
+| Task or measure | Before (C row) | Built grid | Combined preview |
+| --- | ---: | ---: | ---: |
+| Sections, two services, doubles move (14 cells), then Save, 390 px | 41 | **29** | 29 |
+| Sections, three services (17 cells), then Save, 390 px | 53 | **35** | 35 |
+| One correction and Save | 3 to 5 | **3** | 3 |
+| Open Ari's Dinner break details at 14:00 | 3 | **2** | 2 |
+| Rows in the working screen, 390 px, two services / three | 4 / 4 | **6 / 5** | 6 / 4 |
+| Rows in the working screen, 1280 px | 5 | **8** | 8 |
+| Complete rows on opening: admin 390 / `#/team` 390 / admin 1280 | 0 / 2 / 1 | 0 / 2 / **0** | 0 / 3 / 1 |
+| Row height at 390 px, two services / three | 135 | 80 / 99 | 77 / 97 |
+
+The working screen has the service heads stuck at the top, and rows under them do not count. One measured loss: at 1280 px the service heads sit above the first row, so on opening the Save area cuts the first row (1 complete row before, 0 now). One scroll shows 8 rows, against 5 before. Screenshots: `built-admin-390.png`, `built-team-390.png`, `built-admin-1280.png`, `built-double-admin-390.png`, `built-double-admin-390-after.png`.
+
+**Checks:**
+- New `tests/team-grid.test.js`:
+  - usual and "Same as Lunch" offered first and never applied;
+  - no automatic fill;
+  - plain counts with chefs left out, and nothing green before Save;
+  - the chef cell reads Sous chef with the dashed edge;
+  - Off cells;
+  - the Save words, six then a count;
+  - a long name wraps only between words at the largest text;
+  - three services on a phone;
+  - the heads stuck under the admin room tabs.
+- `tests/team-picker-context.test.js` adds the old-key check. It fails on the row-picker logic (reproduced by putting that logic back) and passes now.
+- `tests/team-row-service.test.js` is rewritten for the grid. It checks:
+  - the details chip is view only;
+  - services stay separate;
+  - the one editor moves between layouts;
+  - search across services;
+  - Off and explicit Add or Remove;
+  - Whole day;
+  - dated drafts;
+  - a held or repeated Save;
+  - the Save words;
+  - 04:00 recovery;
+  - the tapped row stays in place, which fails without the fix (450 to 47 px) and passes now.
+- The other team files, `todays-team`, `kitchen-pages` and `design-patterns` use the new keys.
+- Full suite result: to come.
