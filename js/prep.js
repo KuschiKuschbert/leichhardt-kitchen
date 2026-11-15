@@ -14056,6 +14056,8 @@ if (list.length) sg('oreg', 's');
   }
   function tmAddShift(id, sh) {
     if (tmOnShift(id, sh)) return;
+    // back on the service a Take off took: its Undo line goes, so it never offers to put back what is already there
+    if (tmUi.offUndo && tmUi.offUndo.id === id && tmUi.offUndo.sh === sh) tmUi.offUndo = null;
     var o = tmf.on[id], was = o ? o[Object.keys(o)[0]] : '', usual = tmUsual(id, sh);
     // Reuse the known weekday/shift suggestion, then an existing section on another service. Never guess a new one.
     (tmf.on[id] = o || {})[sh] = usual ? usual.sec : was && kitSecs().some(function (x) { return x.id === was; }) ? was : '';
@@ -14650,8 +14652,13 @@ if (list.length) sg('oreg', 's');
       // first break sits in the middle of their hours on this service (16 Nov 2026), so a double shift gets one each.
       var split = (hb ? hb[1] - hb[0] >= TM_LONG : tmLong(s)) && !bs.some(function (b) { return tmIsSplit(b.len); }), t = tmTimes(s, null, id, split ? TM_SPLIT : 30);
       var at = split ? (hb ? hb[0] + 270 : tmSpFrom(s)) : last ? last.at + last.len : hb ? hb[0] + (hb[1] - hb[0]) / 2 - 15 : tmSpFrom(s);
-      at = Math.round(at / 15) * 15; if (t.indexOf(at) < 0) at = t.filter(function (m) { return m >= at; })[0] || t[t.length - 1];
-      tmf.br.push({ id: id, sh: sh, at: at, len: split ? TM_SPLIT : 30 }); tmClearMsg(); draw();
+      at = Math.round(at / 15) * 15;
+      // a time inside their hours that does not overlap their other breaks on this service: the first from the one wanted,
+      // else the first at all; none left says so, never a second copy of the same break (16 Nov 2026)
+      var nlen = split ? TM_SPLIT : 30, free = t.filter(function (m) { return !bs.some(function (b) { return m < b.at + b.len && b.at < m + nlen; }); });
+      if (!free.length) { tmClearMsg(); tmAssignMsg = 'No free time left for another break inside ' + mnName(id) + '\'s hours on ' + s.name + '. Change a break first.'; draw(); return; }
+      at = free.filter(function (m) { return m >= at; })[0] || free[0];
+      tmf.br.push({ id: id, sh: sh, at: at, len: nlen }); tmClearMsg(); draw();
       // the new break's time picker takes the focus, so the next move is to choose its time
       var nb = tmBreaks(id, sh).length - 1;
       requestAnimationFrame(function () { var t = S.root && S.root.querySelector('select[data-k="tm-at:' + id + ':' + sh + ':' + nb + '"]'); if (t && t._uxTrigger) t = t._uxTrigger; if (t) { t.focus({ preventScroll: true }); tmFocusEnsureVisible(t); } });

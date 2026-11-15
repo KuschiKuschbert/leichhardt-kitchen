@@ -349,3 +349,15 @@ D's rows replace the day grid, the details panel with its service chips, and Who
 Checked in the built app: Add a service says "Ari added to Dinner. Not saved yet. Not on the roster for Dinner: rostered 10:00 to 15:00."; Take off asks "Tap again to take off", then "Cal taken off Lunch and its breaks. Not saved yet." with the focus on Undo; Undo puts Cal back with "Roster 10:00 to 14:30"; Spread names who it moved; Clear asks again by date. The differences from the preview are a few pixels of row height from the final styles.
 
 **Not evidenced:** real fonts on a real phone; rendered contrast and keyboard focus rings on the new controls (computed from tokens in the follow-up: Take off 7.35:1, the break block 4.77:1 on the bar); the live site until it is merged.
+
+**Tests (step two).** The 17 test files that used the grid, the details panel or Whole day review were rewritten for the rows, keeping each check's intent; checks of what is gone were replaced by the nearest check of the same contract (a held picker never reaches another person, service or date; a quiet repaint never rebuilds a control; the focus lands on the next thing to do), and each removal says why in the file. New checks in `tests/team-hours.test.js` (row actions at 390 px, and two faults below), `team-picker-context` (forged and held break and Add a service changes refused), `team-row-service`, `team-selected-day`, `team-roster-hours`, `team-quiet` (every row control keeps its node, value and focus through the minute paint). Every Today's team, roster, Home, chef, admin, roles, read-budget, design-patterns, safe-text and kitchen file passes locally (5.7 min).
+
+**Faults the rewrite found, each fixed with a check that fails first:**
+- + Break focused the hidden select behind the picker; Add a service dropped the focus to the page when it took a person's last service. Both now move the focus to the next thing to set (the new break's time, the new service's section).
+- After a redraw the focus went back to the person's first Take off, so a keyboard Take off Dinner armed Lunch next. The focus restore (`guestSel()`) now matches the service and date too.
+- A long unbroken name scrolled the page sideways at 320 to 768 px; it now wraps inside a word only when one word is wider than the column.
+- At 390 px "break when too few" took its own line, so a row moved under the thumb as a break changed (the old panel's hold had prevented it); it now sits beside the name.
+- The Undo line stayed after the person was put back on that service and did nothing; putting them back by any path now takes it away.
+- + Break at the end of someone's hours copied their last break; it now takes a free time inside their hours, or says there is none.
+
+**Left for step three:** `tmNextHTML(false)` still draws a `tm-whole` button that nothing handles (never shown: the planner calls it with `true`); the old grid and panel CSS.

@@ -209,6 +209,21 @@ const addBreak = (p, id, sh) => click(p, '[data-p="tm-addbr"][data-id="' + id + 
   ok(p.errors.length === 0 && !await L.overflow(p), 'row actions: no page errors and no sideways scroll at 390 px ' + p.errors.join(' | '));
   await p.context().close();
 
+  // 9. found by the test rewrite (16 Nov 2026), each failing first: a stale Undo, and + Break copying the last break
+  p = await admin(b); await ready(p);
+  await click(p, '[data-p="tm-off"][data-id="mo"][data-sh="lunch"]'); await click(p, '[data-p="tm-off"][data-id="mo"][data-sh="lunch"]');
+  ok(await p.locator('.tm-tlrow[data-id="mo"] .tm-tlundo').count() === 1, 'stale Undo: Mo taken off Lunch shows the Undo line');
+  await L.pick(p, 'select[data-k="tm-addsvc:mo"]', 'lunch'); await L.settle(p, 200);
+  ok(!await p.locator('.tm-tlundo').count() && await p.locator('select[data-k="tm-sec:mo:lunch"]').count() === 1, 'stale Undo: putting Mo back on Lunch with Add a service takes the Undo line away');
+  await click(p, '[data-p="tm-addbr"][data-id="dev"][data-sh="lunch"]');
+  await L.pick(p, 'select[data-k="tm-at:dev:lunch:0"]', '870'); await L.settle(p, 150);
+  await click(p, '[data-p="tm-addbr"][data-id="dev"][data-sh="lunch"]');
+  const devTwo = [await value(p, 'tm-at:dev:lunch:0'), await value(p, 'tm-at:dev:lunch:1')];
+  // the breaks read in time order, so the new one comes first
+  ok(devTwo[1] === '870' && devTwo[0] !== '870' && +devTwo[0] + 30 <= 870, '+ Break: with Dev\'s break at 14:30, the end of his hours, a second break takes a free time before it, never a copy (' + devTwo.join(', ') + ')');
+  ok(p.errors.length === 0, 'found by the rewrite: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });
