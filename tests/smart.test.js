@@ -76,6 +76,26 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   ok(ps >= 0 && ps < pm && q.R.oval(q.d.els[ps]).a > q.R.oval(q.d.els[pm]).a, 'plating words: the pork sauce is round the mash: under it and wider');
   q = oc('wings');
   ok(q.d.els.findIndex(e => e.ing === 'Cowboy candy') > q.d.els.findIndex(e => e.ing === 'Chicken wings'), 'plating words: the cowboy candy is on top of the wings');
+  /* Found by the review (15 Nov 2026), each failing before its fix: Tidy up keeps a hand-moved main on its mash and parts
+     a dragged part from the one it was dropped on; Draw it again lays a main on a kept mash, or a mash under a kept
+     main; a ramekin keeps its sauce's colour in the side view. */
+  const onBed = (o, mainRe, bedRe) => { const mn = o.d.els.find(e => mainRe.test(e.ing)), bd = o.d.els.find(e => bedRe.test(e.ing)), mo3 = o.R.oval(mn); return o.R.inOval(o.R.oval(bd), mo3.x, mo3.y); };
+  q = PC.draw('pork-belly', 0);
+  const pb = q.d.els.find(e => /pork belly/i.test(e.ing)); pb.x += 4; pb.fixed = true; q.DR.withDrawing(q.d, () => q.S.tidy());
+  ok(onBed(q, /pork belly/i, /^Mash$/), 'review: Tidy up after the pork was moved by hand keeps it on its mash');
+  q = PC.draw('fish-chips', 0);
+  const fc = q.d.els.find(e => e.ing === 'Chips'), fs = q.d.els.find(e => e.ing === 'Salad'); fc.x = fs.x + 3; fc.y = fs.y + 2; fc.fixed = true; q.DR.withDrawing(q.d, () => q.S.tidy());
+  const fo1 = q.R.oval(fc), fo2 = q.R.oval(fs), fdd = Math.hypot(fo1.x - fo2.x, fo1.y - fo2.y), fux = (fo2.x - fo1.x) / fdd, fuy = (fo2.y - fo1.y) / fdd;
+  ok(fdd >= 0.8 * (q.R.reach(fo1, fux, fuy) + q.R.reach(fo2, -fux, -fuy)), 'review: chips dragged onto the salad are parted by Tidy up (' + fdd.toFixed(1) + ' apart)');
+  ['Mash', 'pork'].forEach(which => {
+    const o = PC.draw('senior-rissoles', 0), kp = o.d.els.find(e => which === 'Mash' ? /mash/i.test(e.ing) : /rissole/i.test(e.ing)); kp.fixed = true; kp.x += 6;
+    const o2 = PC.draw('senior-rissoles', 0, o.d);
+    ok(onBed(o2, /rissole/i, /mash/i), 'review: Draw it again with the ' + (which === 'Mash' ? 'mash' : 'rissoles') + ' kept by hand keeps the rissoles on the mash');
+  });
+  q = PC.draw('fish-chips', 0);
+  const sideD = q.DR.blank('fish-chips', 'side'); q.DR.withDrawing(sideD, () => q.S.drawFresh(sideD, { surf: q.d.surf, els: q.d.els }));
+  const cup = sideD.els.find(e => e.ing === 'Tartare sauce') || {};
+  ok(!!cup.cm && !JSON.stringify(cup.cm).includes('#7E4726') && Object.values(cup.cm).some(c => /^#E/i.test(c)), 'review: the tartare\'s ramekin is tartare-coloured from the side, not gravy brown (' + JSON.stringify(cup.cm) + ')');
   // a part the head chef moved by hand to the middle stays there, and nothing new is laid over it
   q = oc('eye-fillet');
   const handChips = q.by('Chips')[0]; handChips.x = 0; handChips.y = 0; handChips.fixed = true;

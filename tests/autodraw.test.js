@@ -230,9 +230,9 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + k3 + '.q"]', '100 g'); await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + k3 + '.name"]', 'Green capsicum (sliced)');
   await L.settle(p, 200);
   await p.click('[data-mg="save"]');
-  await wait(p, () => /Kept the older drawing/.test(Array.from(document.querySelectorAll('.mg-toasts .p-toast')).map(t => t.textContent).join(' ')), null, 30000);
+  await wait(p, () => /Kept the older plate drawing/.test(Array.from(document.querySelectorAll('.mg-toasts .p-toast')).map(t => t.textContent).join(' ')), null, 30000);
   s = await store(p);
-  ok(/Kept the older drawing: Fried Chicken Wings\. Open it and tap Draw it again/.test(await toasts(p)) && !/Redrawn/.test(await toasts(p)) && (s[wpk] || {}).v === vOld, 'keep: a card change leaves the older wings plate as it is and says so (' + await toasts(p) + ')');
+  ok(/Kept the older plate drawing: Fried Chicken Wings\. Open it and tap Draw it again/.test(await toasts(p)) && !/Redrawn/.test(await toasts(p)) && (s[wpk] || {}).v === vOld, 'keep: a card change leaves the older wings plate as it is and says so (' + await toasts(p) + ')');
   ok(!errs(p).length, 'keep, card change: no page errors ' + errs(p).join(' | '));
   await p.context().close();
   // the dish itself gains an ingredient: kept, and in red, as the new ingredient has no Pass label (the allergen lens reads them)
@@ -257,6 +257,27 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   s = await store(p);
   ok(!/Kept the older|Redrawn|no Pass label/.test(await toasts(p)) && (s[wpk] || {}).v === vOld, 'keep: a yield change leaves the older plate as it is and says nothing about it (' + await toasts(p) + ')');
   ok(!errs(p).length, 'keep: no page errors ' + errs(p).join(' | '));
+  await p.context().close();
+  // a row renamed in place is not a new ingredient: its Pass label follows the rename, so no red slip (review, 15 Nov 2026)
+  p = await L.open(b, '#/manage/r/wings', { who: 'ann', extra: Object.assign({}, older, cfg()), wait: 1400 });
+  await editor(p);
+  const bbqRow = await p.evaluate(() => { const f = Array.from(document.querySelectorAll('[data-f^="ing."][data-f$=".name"]')).find(x => x.value === 'Double-smoked BBQ sauce'); return f ? +f.getAttribute('data-f').split('.')[1] : -1; });
+  await L.reveal(p, '[data-f="ing.' + bbqRow + '.name"]'); await p.fill('[data-f="ing.' + bbqRow + '.name"]', 'Smoky BBQ sauce'); await L.settle(p, 200);
+  await p.click('[data-mg="save"]');
+  await wait(p, () => /Saved/.test(Array.from(document.querySelectorAll('.mg-toasts .p-toast')).map(t => t.textContent).join(' ')), null, 15000);
+  await L.settle(p, 2500);
+  ok(bbqRow >= 0 && !/no Pass label/.test(await toasts(p)) && !(await p.$('.mg-toasts .p-toast-bad')), 'keep: a renamed ingredient gives no red slip (' + await toasts(p) + ')');
+  await p.context().close();
+  // Undo after Draw it again on an older plate puts the older layout back too, so the plate is still kept (review)
+  p = await L.open(b, '#/manage/draw/wings-plate', { who: 'ann', extra: Object.assign({}, older, cfg()), wait: 1200, width: 1280, height: 900 });
+  await wait(p, () => !!(window.LK_SMART && window.LK_SMART.ui && document.querySelector('.dw-ctx')), null, 20000);
+  await L.dwShow(p, '[data-dw="sm-draw"]'); await p.click('[data-dw="sm-draw"]');
+  await wait(p, () => !!(window.LK_DRAW.state().d.layout || {}).lv, null, 10000);
+  const lvNew = await p.evaluate(() => window.LK_DRAW.state().d.layout.lv);
+  await p.click('.dw-top-acts [data-dw="undo"]'); await L.settle(p, 300);
+  const lvUndo = await p.evaluate(() => (window.LK_DRAW.state().d.layout || {}).lv);
+  ok(lvNew === 2 && lvUndo === undefined, 'keep: Undo after Draw it again on an older plate puts its older layout back (lv ' + lvNew + ' then ' + lvUndo + ')');
+  ok(!errs(p).length, 'keep, undo: no page errors ' + errs(p).join(' | '));
   await p.context().close();
 
   // a sauce of choice in a ramekin is still drawn from its card: a change to the mushroom sauce draws the grill board again

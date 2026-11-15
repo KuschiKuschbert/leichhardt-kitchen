@@ -854,8 +854,13 @@
       if (wasNew) { e.isNew = false; e.key = e.id = e.d.id = id; e.meta.src = 'new'; }
       /* what this save did to the ingredient list, for the drawings (15 Nov 2026): a plate drawn the older way is kept
          as it is, and the slip names it only when the ingredients changed */
-      var was0 = e.ing0 || {}, now0 = ingMap(clean), drawO = { added: Object.keys(now0).filter(function (k) { return !was0[k]; }).map(function (k) { return now0[k].name; }) };
+      // (a row renamed in place is the same row, not a new ingredient: its Pass label follows the rename)
+      var was0 = e.ing0 || {}, now0 = ingMap(clean), rows0 = Object.keys(was0).map(function (k) { return was0[k]; });
+      var drawO = { added: (e.d.ingredients || []).filter(function (i) { return trimStr(i.name) && rows0.indexOf(i) < 0; }).map(function (i) { return trimStr(i.name); }) };
       drawO.ingsChanged = drawO.added.length > 0 || Object.keys(was0).some(function (k) { return !now0[k]; });
+      // what a save before could not show (no signal for the picks or a drawing) is carried to this one
+      if (e.drawPend) { e.drawPend.added.forEach(function (n) { if (drawO.added.indexOf(n) < 0) drawO.added.push(n); }); drawO.ingsChanged = drawO.ingsChanged || e.drawPend.ingsChanged; }
+      e.drawPend = drawO;
       if (!newer) { e.menu = menuOf(id); e.d.pins = clean.pins; e.ing0 = ingMap(e.d); e.snap = snapOf(e); }
       else { e.snap = submitted; keepNow(); }
       // the slip names the recipe (6 Nov 2026, docs/action-feedback.md): never "Saved" alone when the thing has a name
@@ -891,6 +896,8 @@
       return S && S.autoDraw ? S.autoDraw(id, o || {}) : null;
     }).then(function (res) {
       if (!res) return;
+      // the drawings were checked with this save's ingredient changes: nothing left to carry to the next save
+      if (e && !res.nopicks && !res.reload && !(res.unread && res.unread.length)) e.drawPend = null;
       var cur = X.change(id);
       if (e && M.ed === e && cur && cur.v > e.meta.v) {
         var clean = snapOf(e) === e.snap;
@@ -910,10 +917,11 @@
       /* plates drawn the older way are kept as they are until the head chef redraws them (15 Nov 2026): named when the
          ingredients changed, and in red when a new ingredient has no Pass label on one (the allergen lens reads them) */
       var names = function (L) { return L.length > 3 ? L.slice(0, 3).join(', ') + ' and ' + (L.length - 3) + ' more' : L.join(', '); };
-      if (res.older && res.older.length) say.push('Kept the older drawing: ' + names(res.older) + '. Open ' + (res.older.length === 1 ? 'it' : 'each') + ' and tap Draw it again to show the change.');
-      if (res.unlabelled && res.unlabelled.length) say.push(names(res.unlabelled) + (res.unlabelled.length === 1 ? ' has' : ' have') + ' no Pass label yet. Open the drawing and tap Draw it again.');
+      if (res.older && res.older.length) say.push('Kept the older plate drawing: ' + names(res.older) + '. Open ' + (res.older.length === 1 ? 'it' : 'each') + ' and tap Draw it again to show the change.');
+      if (res.unlabelled && res.unlabelled.length) say.push(names(res.unlabelled) + (res.unlabelled.length === 1 ? ' has' : ' have') + ' no Pass label yet. Open the plate drawing and tap Draw it again.');
+      if (res.unread && res.unread.length) say.push('Drawings not checked, no signal: ' + names(res.unread) + '. They are checked again on the next save.');
       // a drawing not drawn is a failure: red until OK (6 Nov 2026)
-      if (say.length) toast(say.join(' '), false, !!(res.nopicks || res.sideLeft && res.sideLeft.length || res.reload || res.unlabelled && res.unlabelled.length));
+      if (say.length) toast(say.join(' '), false, !!(res.nopicks || res.sideLeft && res.sideLeft.length || res.reload || res.unlabelled && res.unlabelled.length || res.unread && res.unread.length));
     }).catch(function () {});
   }
   function focusId(id) {

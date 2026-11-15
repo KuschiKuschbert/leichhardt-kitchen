@@ -260,11 +260,15 @@
 
   /* ---------- undo, redo and drafts ---------- */
   function snapNow() { return JSON.stringify({ surf: W.d.surf, els: W.d.els, name: W.d.name }); }
+  /* An undo step also keeps how the drawing was laid out (15 Nov 2026): Undo after Draw it again on a plate laid out the
+     older way puts its old layout back too, so it is still kept until the head chef redraws it. snapNow() stays the
+     baseline for unsaved changes. */
+  function snapUndo() { return JSON.stringify({ surf: W.d.surf, els: W.d.els, name: W.d.name, layout: W.d.layout || null }); }
   /* Keep editing them: the drawing kept on this device comes back, as one undo step. The first change made while the
      "Changes not saved yet" box shows does this first (28 Oct 2026), so nothing drawn lands on the saved copy, is never
      kept and is lost on leaving. The part picked on the saved copy is let go: its place may hold another part now. */
   function takeKept() {
-    var k = W.d.kept; W.undo.push(snapNow()); if (W.undo.length > 100) W.undo.shift(); W.redo = []; W.d.kept = null; W.sel = [];
+    var k = W.d.kept; W.undo.push(snapUndo()); if (W.undo.length > 100) W.undo.shift(); W.redo = []; W.d.kept = null; W.sel = [];
     W.d.surf = k.surf; W.d.els = k.els; W.d.name = k.name || W.d.name;
     Object.keys(k.defs || {}).forEach(function (x) { if (W.d.defs[x] === undefined) W.d.defs[x] = k.defs[x]; });
   }
@@ -274,13 +278,13 @@
      picked on the saved copy may be another part in the kept drawing: before, the words went on a part no longer in
      the drawing and were never kept or saved. A piece added or new servingware goes on the kept drawing (before()). */
   function keptFirst() { if (!W.d || !W.d.kept) return false; keptBack(); changed(); return true; }
-  function before() { if (W.d && W.d.kept) keptBack(); W.noteShut = W.smart; W.undo.push(snapNow()); if (W.undo.length > 100) W.undo.shift(); W.redo = []; }
+  function before() { if (W.d && W.d.kept) keptBack(); W.noteShut = W.smart; W.undo.push(snapUndo()); if (W.undo.length > 100) W.undo.shift(); W.redo = []; }
   // the book's one two-tap helper (js/prep.js arm(), through LK_PREP.book()), drawing this page again
   function arm(k) { var b = B(); return b.arm ? b.arm(k, draw) : true; }
   function armed(k) { var b = B(); return !!(b.armed && b.armed(k)); }
-  function restore(s) { var o = JSON.parse(s); W.d.surf = o.surf; W.d.els = o.els; W.d.name = o.name; W.sel = W.sel.filter(function (i) { return i < W.d.els.length; }); }
-  function undo() { if (!W.undo.length) return; W.noteShut = W.smart; W.redo.push(snapNow()); restore(W.undo.pop()); changed(); }
-  function redo() { if (!W.redo.length) return; W.undo.push(snapNow()); restore(W.redo.pop()); changed(); }
+  function restore(s) { var o = JSON.parse(s); W.d.surf = o.surf; W.d.els = o.els; W.d.name = o.name; if ('layout' in o) W.d.layout = o.layout; W.sel = W.sel.filter(function (i) { return i < W.d.els.length; }); }
+  function undo() { if (!W.undo.length) return; W.noteShut = W.smart; W.redo.push(snapUndo()); restore(W.undo.pop()); changed(); }
+  function redo() { if (!W.redo.length) return; W.undo.push(snapUndo()); restore(W.redo.pop()); changed(); }
   function draftKey() { return 'lk.dw.draft.' + (W.d.isNew ? 'new-' + W.d.rid + '-' + W.d.slot : W.d.id); }
   function dirty() { return !!(W.d && W.d.saved !== snapNow()); }
   // a new drawing with no parts yet: saving it would put an empty plate with no Pass labels on every phone (27 Oct
@@ -1067,19 +1071,19 @@
     if (ids.length === 2) {
       // two fingers: pinch and turn the picked part, or zoom the view
       var p0 = ptrs[ids[0]], p1 = ptrs[ids[1]], one = W.sel.length === 1 ? W.d.els[W.sel[0]] : null;
-      drag = { pinch: true, d0: Math.hypot(p1[0] - p0[0], p1[1] - p0[1]) || 1, a0: Math.atan2(p1[1] - p0[1], p1[0] - p0[0]), el: one ? clone(one) : null, z0: W.view.z, snap: snapNow(), moved: false };
+      drag = { pinch: true, d0: Math.hypot(p1[0] - p0[0], p1[1] - p0[1]) || 1, a0: Math.atan2(p1[1] - p0[1], p1[0] - p0[0]), el: one ? clone(one) : null, z0: W.view.z, snap: snapUndo(), moved: false };
       return;
     }
     var p = toSvg(svg, ev.clientX, ev.clientY), h = ev.target.closest('[data-h]'), g = ev.target.closest('.dw-el');
     if (h && W.sel.length) {
       var i0 = W.sel[0], el = W.d.els[i0];
-      drag = { h: h.getAttribute('data-h'), i: i0, el0: clone(el), p0: p, snap: snapNow(), moved: false };
+      drag = { h: h.getAttribute('data-h'), i: i0, el0: clone(el), p0: p, snap: snapUndo(), moved: false };
     } else if (g) {
       var i = +g.getAttribute('data-i');
       if (W.many || ev.shiftKey) { var k = W.sel.indexOf(i); if (k >= 0 && !ev.shiftKey) W.sel.splice(k, 1); else if (k < 0) W.sel.push(i); }
       else if (W.sel.indexOf(i) < 0) W.sel = [i];
       W.noteShut = W.smart;
-      drag = { move: true, p0: p, start: W.sel.map(function (j) { return clone(W.d.els[j]); }), snap: snapNow(), moved: false };
+      drag = { move: true, p0: p, start: W.sel.map(function (j) { return clone(W.d.els[j]); }), snap: snapUndo(), moved: false };
       var o = W.root.querySelector('.dw-ovl'); if (o) o.innerHTML = selOverlay();
       W.root.querySelectorAll('.dw-el').forEach(function (x) { x.classList.toggle('on', W.sel.indexOf(+x.getAttribute('data-i')) >= 0); });
     } else {
