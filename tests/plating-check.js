@@ -106,7 +106,8 @@ function roleOfLabel(label, r) {
 }
 const isBed = p => /^(starch|vegsalad|dessert)$/.test(GROUP[p.role] || '') && BED_W.test(p.name + ' ' + Object.keys(p.ids || {}).join(' '));
 // ---------- metrics over a grid and parts {name, role, prims} ----------
-function measure(G, parts, extraPrims) {
+// skip(a, b): a pair the dish's own plating steps put one on the other (the rissoles on the mash): not a fault
+function measure(G, parts, extraPrims, skip) {
   const a = G.a, N = G.nx*G.ny, uni = new Uint8Array(N), R = Math.sqrt(a.rx*a.ry), XY = k => [(k % G.nx)*G.g+G.x0, Math.floor(k/G.nx)*G.g+G.y0];
   parts.forEach(p => { p.mask = new Uint8Array(N); p.prims.filter(counts).forEach(q => paint(G, q, p.mask)); let n = 0, sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
     for (let k = 0; k < N; k++) if (p.mask[k]) { uni[k] = 1; n++; const [x, y] = XY(k); sx += x; sy += y; sxx += x*x; syy += y*y; sxy += x*y; }
@@ -120,7 +121,7 @@ function measure(G, parts, extraPrims) {
   let ov = 0, ovPair = '', ovHard = 0, hardPair = '';
   for (let i = 0; i < solid.length; i++) for (let j = i+1; j < solid.length; j++) { const A = solid[i], B = solid[j], o = inter(A.mask, B.mask)/Math.min(A.n, B.n);
     if (o > ov) { ov = o; ovPair = A.name + ' / ' + B.name; }
-    if (!isBed(A) && !isBed(B) && !(GROUP[A.role] === 'vegsalad' && GROUP[B.role] === 'vegsalad') && o > ovHard) { ovHard = o; hardPair = A.name + ' / ' + B.name; } }
+    if (!isBed(A) && !isBed(B) && !(GROUP[A.role] === 'vegsalad' && GROUP[B.role] === 'vegsalad') && !(skip && skip(A.name, B.name)) && o > ovHard) { ovHard = o; hardPair = A.name + ' / ' + B.name; } }
   const main = vis.filter(p => /^(protein|dessert)$/.test(GROUP[p.role])).sort((x, y) => y.n-x.n)[0] || null;
   const sauces = vis.filter(p => GROUP[p.role] === 'sauce').map(s => { const um = main && main !== s ? inter(s.mask, main.mask)/s.n : 0; let uo = 0, on = ''; solid.forEach(q => { if (q === main || s.z != null && q.z != null && q.z < s.z) return; const o = inter(s.mask, q.mask)/s.n; if (o > uo) { uo = o; on = q.name; } }); return { name: s.name, share: s.share, underMain: um, underOther: uo, other: on, p: s }; });
   const beds = vis.filter(p => p !== main && isBed(p)), onBed = main && beds.length ? Math.max(...beds.map(b => inter(main.mask, b.mask)/main.n)) : null;
@@ -175,7 +176,19 @@ function auto(r, seed) {
   // z: where the part is first drawn; a sauce drawn over a part (a dollop on a salad) is not under it
   DR.withDrawing(d, () => d.els.forEach((e, z) => { if (e.t !== 'item' && e.t !== 'raw') return; const it = e.t === 'item' ? LIB.get(e.a.split('@')[0]) : null, role = it ? it.role : e.role || 'main', key = e.ing || e.a;
     const p = by[key] = by[key] || { name: key, role, prims: [], els: 0, ids: {}, z }; p.els++; p.ids[it ? it.id : 'raw:' + (e.made || e.dr || '')] = it ? it.form || '' : 'card'; p.prims.push(...flatten(Rn.elSVG(e))); }));
-  const parts = Object.values(by), m = measure(G, parts, []);
+  /* what the dish's own plating steps put on, over or round another part, and parts on the same one (the four greens on
+     the rice): drawn over each other because the card says so, so not counted as overlapping */
+  const C = bind().win.LK_COMPOSE, said = C && C.plating ? C.plating(r) : null, under = {}, how = said ? said.how : {};
+  if (said) Object.keys(how).forEach(n => { const h = how[n], t = h.on || h.over || h.around || h.next; if (t) under[n] = t; });
+  // the bottom of a stack the card builds (the barra on the greens on the rice: all on the rice)
+  const root = n => { let k = 0; while (under[n] && k++ < 5) n = under[n]; return n; };
+  const skip = (a, b) => root(a) === root(b) || under[a] === b || under[b] === a;
+  const parts = Object.values(by), m = measure(G, parts, [], skip);
+  // a sauce the card puts across the plate, round or next to a part, or a part on it ("mash on top of it"), is under
+  // that part on purpose
+  m.sauces.forEach(sc => { const h = how[sc.name] || {}; if (h.across || h.round || skip(sc.name, sc.other) || Object.keys(how).some(n => how[n].on === sc.name && n === sc.other)) { sc.underOther = 0; } });
+  // the card puts a part off centre or splits the plate in halves: off the middle on purpose
+  m.saidOff = Object.keys(how).some(n => how[n].offc || how[n].half);
   m.style = res && res.style; m.kind = d.surf.fam + (d.surf.size || '') + (d.surf.shape && d.surf.shape !== 'round' ? d.surf.shape : ''); m.parts = parts.length; m.els = d.els.length; m.area = a; m.unsure = (res && res.unsure || []).map(u => u.ing);
   m.sauceHow = m.sauces.map(s => { const ids = Object.keys(s.p.ids), ram = ids.some(x => /ramekin/.test(x)), ing = (r.ingredients || []).find(i => Rn.ingName(i) === s.name), want = WANT_SIDE.test(s.name + ' ' + (ing && ing.note || ''));
     s.missingRamekin = want && !ram; return s.name + ':' + (ram ? 'ramekin' : (s.underMain > 0.25 ? 'under-main' : s.underOther > 0.25 ? 'under-' + s.other : 'beside') + '(' + Object.values(s.p.ids).join('/') + ')') + (want ? ' [recipe: side/choice]' : ''); });
@@ -226,7 +239,7 @@ const LINE_OK = /wav|squiggl|zigzag|\bline\b|across|swoop|swoosh|smear|swipe/i;
 const RULES = [
   ['no two solid parts overlap by more than 0.10 on a plate, 0.20 on a board (not a main on its bed, not salad on salad)', x => x.ovHard > (fam(x.kind) === 'board' ? 0.20 : 0.10)],
   ['food covers 20 to 65% of the servingware', x => x.cov < 0.20 || x.cov > 0.65],
-  ['the food sits in the middle (off by 0.20 or less on a plate, 0.30 on a board)', x => x.off > (fam(x.kind) === 'board' ? 0.30 : 0.20)],
+  ['the food sits in the middle (off by 0.20 or less on a plate, 0.30 on a board; unless the card says off centre or in halves)', x => !x.saidOff && x.off > (fam(x.kind) === 'board' ? 0.30 : 0.20)],
   ['on a bed, the main is at least half on it', x => x.style === 'bed' && x.onBed != null && x.onBed < 0.5],
   ['a sauce the recipe serves on the side is in a ramekin', x => x.sauces.some(s => s.missingRamekin)],
   ['garnish and toppings together are under 0.6 of the main (parmy toppers, tacos and boards apart: there the toppings are the dish)', x => !/parm|schnit|taco|nacho/i.test(x.r.name) && fam(x.kind) !== 'board' && x.garnTotal > 0.6],
