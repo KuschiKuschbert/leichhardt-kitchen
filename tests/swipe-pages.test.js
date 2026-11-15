@@ -3,9 +3,12 @@ const L = require('./lib');
 const { R, ok } = L.results();
 const hash = p => p.evaluate(() => location.hash);
 async function go(p, h) {
+  // Pinch and mouse-selection cases can leave browser state behind, even after the hash changes.
+  const c = await p.context().newCDPSession(p);
+  await c.send('Emulation.setPageScaleFactor', { pageScaleFactor: 1 }); await c.detach();
   await p.evaluate(v => { location.hash = v; }, h);
   await L.settle(p, 600);
-  await p.evaluate(() => { document.activeElement.blur(); window.scrollTo(0, 0); });
+  await p.evaluate(() => { document.activeElement.blur(); getSelection().removeAllRanges(); window.scrollTo(0, 0); });
   await L.settle(p, 200);
 }
 async function swipe(p, selector, dx, dy = 0, opt = {}) {
@@ -50,6 +53,10 @@ async function fixedFrame(p) {
     const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height };
   }));
 }
+async function gestureState(p) {
+  return p.evaluate(() => ({ hash: location.hash, scale: visualViewport.scale, selection: getSelection().toString(),
+    focused: document.activeElement.tagName + '#' + document.activeElement.id, sending: LK_PREP.sendFirst() }));
+}
 (async () => {
   const b = await L.start();
   for (const width of [390, 768, 1280]) {
@@ -92,6 +99,26 @@ async function fixedFrame(p) {
     ok(await hash(p) === '#/prep', name + ': stays on the current tab');
   }
   await go(p, '#/prep');
+  await p.evaluate(() => { const r = document.createRange(); r.selectNodeContents(document.querySelector('#rtitle')); getSelection().addRange(r); });
+  await swipe(p, '#rtitle', -110);
+  ok(await hash(p) === '#/prep', 'selected text keeps its page');
+  await go(p, '#/prep');
+  ok(await p.evaluate(() => {
+    const empty = document.createElement('span'); document.querySelector('#rtitle').append(empty);
+    const r = document.createRange(); r.selectNode(empty); getSelection().addRange(r);
+    return !getSelection().isCollapsed && getSelection().toString() === '';
+  }), 'empty selection fixture retains a range without selected text');
+  await swipe(p, '#rtitle', -110);
+  ok(await hash(p) === '#/orders', 'an empty selection does not leave swipes disabled');
+  await go(p, '#/prep');
+  const zoom = await p.context().newCDPSession(p);
+  await zoom.send('Emulation.setPageScaleFactor', { pageScaleFactor: 2 });
+  await swipe(p, '#rtitle', -110);
+  ok(await hash(p) === '#/prep', 'zoomed page keeps its own pan gesture');
+  await zoom.detach(); await go(p, '#/prep'); await swipe(p, '#rtitle', -110);
+  const recovered = await gestureState(p);
+  ok(recovered.hash === '#/orders', 'normal swipes resume after zoom and selection are cleared ' + JSON.stringify(recovered));
+  await go(p, '#/prep');
   await swipe(p, '#rtitle', -110, 0, { beforeEnd: () => p.evaluate(() => { location.hash = '#/waste'; }) });
   ok(await hash(p) === '#/waste', 'a route change during a gesture cancels the old destination');
   await go(p, '#/prep'); await p.click('.nb-addline'); await L.settle(p, 250);
@@ -115,7 +142,8 @@ async function fixedFrame(p) {
   ok(await hash(p) === '#/recipes' && await p.inputValue('#find') === 'burger', 'focused search field keeps typing on its page');
   await p.locator('#find').blur(); await p.fill('#find', ''); await p.locator('#find').blur(); await L.settle(p, 300);
   await swipe(p, '.group-head', -110);
-  ok(await hash(p) === '#/prep', 'Recipes can swipe to Prep after search loses focus');
+  const afterSearch = await gestureState(p);
+  ok(afterSearch.hash === '#/prep', 'Recipes can swipe to Prep after search loses focus ' + JSON.stringify(afterSearch));
   await go(p, '#/r/burger'); await swipe(p, '#rtitle', -110);
   ok(await hash(p) === '#/r/burger', 'a recipe detail keeps its own contextual navigation');
   await go(p, '#/prep');
@@ -126,7 +154,8 @@ async function fixedFrame(p) {
   await p.emulateMedia({ reducedMotion: 'reduce' }); await swipe(p, '#rtitle', -110, 0, { beforeEnd: async () => {
     ok(await p.locator('.page-swipe-surface').count() === 0, 'reduced motion removes finger-follow movement');
   } });
-  ok(await hash(p) === '#/orders', 'reduced motion still changes tabs');
+  const reduced = await gestureState(p);
+  ok(reduced.hash === '#/orders', 'reduced motion still changes tabs ' + JSON.stringify(reduced));
   ok(!p.errors.length, 'guard cases have no browser errors ' + p.errors.join('|'));
   await p.context().close();
   const cfg = L.seed()['kitchens/' + L.PIN + '/config/main']; cfg.staffSee.cleaning = false;

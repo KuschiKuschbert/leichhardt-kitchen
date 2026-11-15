@@ -343,7 +343,7 @@
     var P = window.LK_PREP, active = document.activeElement, selection = window.getSelection();
     return !!(P && P.privateAccess() && !P.functionOnly() && !P.workLock() && !P.sendFirst() &&
       document.visibilityState !== 'hidden' && !(active && active.matches(pageSwipeFields)) &&
-      !(selection && !selection.isCollapsed) && !(window.visualViewport && visualViewport.scale > 1.05) &&
+      !(selection && !selection.isCollapsed && selection.toString()) && !(window.visualViewport && visualViewport.scale > 1.05) &&
       !document.querySelector('.wm-wrap, .cooling-wrap, .fn-pop, .sheet-bg, .p-sheet, .nt-wrap, .mlp-wrap, .gz-wrap, dialog[open], [aria-modal="true"]'));
   }
   function pageSwipeFrom(el) {

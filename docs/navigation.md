@@ -41,17 +41,24 @@ The captured drag moved content 30.8 px, with the header at x=0 and no document 
 check kept the header at x=0 and moved the inline Add control with its page. Both returned to the ordinary layout
 with no gesture styles left after release. These stills show positioning, not animation speed.
 
-The initial 52-check gesture suite failed 20 checks against unchanged `main`. The completed 61-check suite,
+The initial 52-check gesture suite failed 20 checks against unchanged `main`. The completed 66-check suite,
 including motion and recipe-card tap checks, passed in local Chrome. Add stays one tap away, the phone header
 stays 64 px high, and five complete prep rows remain visible before and after. Motion keeps the fixed phone Add
 dock anchored; larger-screen Add controls remain part of the moving page. The pending-write guard is checked
 against the existing `sendFirst()` signal, using a test stand-in. The wider suite separately covers write recovery.
 
-The full local run completed 337 files, with 328 passing after retry. Nine files repeated failures and all nine
+The first full local run completed 337 files, with 328 passing after retry. Nine files repeated failures and all nine
 reproduced the same failing checks on a clean `9697fd8` checkout: `auto-merge-queue`, `chef-panel`, `cutoff-patterns`,
 `fold-recipes`, `function-prep-print`, `function-print`, `mascot`, `save-states` and `team-grid`. The isolated baseline
 comparison covers 26 failing checks. `supplier-orders` passed its isolated retry. These local baseline failures
 are recorded separately from the passing gesture checks; the full GitHub browser and rules gate remains required.
+
+Selection recovery was checked after the first GitHub run exposed two late gesture failures. Independent test
+scenarios now clear any zoom and text selection left by the pinch and mouse cases, with explicit checks that
+zooming and selected text block navigation and ordinary swipes resume afterwards. A separate reproduction showed
+an empty, non-collapsed selection leaving the page on Prep. The guard now checks for actual selected text. The
+empty-selection regression and all 66 gesture checks pass with that correction, together with the four existing
+swipe-dismissal, Back and parent-return test files. The complete GitHub gate runs again on this final source.
 
 Break-it priorities: an ordinary scroll changing pages, a sheet or draft losing its context, and a swipe also
 activating the touched card or button. `tests/swipe-pages.test.js` covers real CDP touches, cancellation, two
