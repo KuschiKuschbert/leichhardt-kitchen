@@ -2,7 +2,7 @@
 
 15 November 2026, Queensland. Head chef request: "can we have the option to hide some shifts like smoker in the todays team admin part if needed and then add them when needed?" Clarified: "I would like to have the option to still have the shift in the whole system, but unless I put someone on smoker it is hidden." The pain: Today's team clutter (the Smoker tick box under Add staff, the Smoker chip in a person's details). Not the roster file, not Home.
 
-**Status: round 1 Build smaller (5 of 5); round 2 B 16, A 14, C 6; recommended: B repaired (combined preview below). Waiting for the head chef's choice.** Role-based analysis, not research with staff. [Proposal](proposal.md), [evidence packet](evidence-packet.md).
+**Status: round 1 Build smaller (5 of 5); round 2 B 16, A 14, C 6; the head chef chose B repaired and that the roster never fills a hidden shift (15 November 2026); built (see Chosen and Built).** Role-based analysis, not research with staff. [Proposal](proposal.md), [evidence packet](evidence-packet.md).
 
 ## Round 1
 
@@ -198,3 +198,56 @@ Lead's repair of B from the scorers' own fixes; **not re-scored by the council**
 **Main downside:** one chip in the details row is an action, not a view: a stray tap puts a person on Smoker in the draft (said in words, undone with Remove in place, nothing saved until Save). The keeper and the skeptic preferred A for that reason.
 
 **Open question for the head chef (separate change):** the roster file fills every shift a rostered time overlaps (head chef, 14 Nov 2026). Should it skip a shift set to hide until someone is on it?
+
+## Chosen
+
+15 November 2026: the head chef chose **B repaired (Recommended)** and, for the roster file, **"Yes, skip hidden shifts"**. Recorded in `docs/head-chef-decisions.md`.
+
+## Built
+
+`js/prep.js`:
+- `kitShifts()` and `shClean()` carry `occ` (true only when set). `kitShifts()` never leaves a hidden shift out, so the grid, Home and Your day are unchanged.
+- `tmShown()`, `tmServiceShown()`, `tmServiceHidden()` and `tmOccShow()` beside `tmServiceChoices()`: one rule for the boxes, the Add handler and the chips.
+- `tmQuickHTML()`: the shown boxes, then "+ Smoker" (`tm-occ-show`); the service ticked to start with is never a hidden one. `tm-occ-show` shows the box ticked for the date and moves the focus to it. Add selected staff reads the shown list.
+- `tmFocusHTML()`: a hidden shift the person is not on is "+ Smoker", the `tm-on` button with `data-occ`. The `tm-on` handler moves the details to that shift, then runs its own date, service and person checks, the same add and the same words ("Ann added to Smoker. Not saved yet."), and keeps the focus on the pressed chip.
+- Refresh clears the date's shown shifts with its draft.
+- `shAdminHTML()`: "Hide Smoker on Today's team until someone is on it" under each shift, off for a removed one; the block's hint says what it does. `onChange` `shocc`.
+
+`js/roster-import.js`: `services()` leaves out a shift with `occ`, so the roster file never fills it; a roster time inside it only is listed as idle.
+
+`css/app.css`: `.tm-occ-row` (items as wide as their words), `.tm-occ-add` (44 px, wraps, solid edge), `.a-sh-occ` and a line between shifts in Kitchen, Shifts.
+
+No new read, listener, rule or collection. One new true/false on `config/main.kitShifts[]`, written only by the verified admin with Save changes (the rules already allow it). An older saved copy ignores it on reading and drops it on an admin Save: Smoker then shows again, the safe failure.
+
+**Implemented app measurements** (stand-in, fallback fonts, sous chef on `#/team`, the same fixture and script as the combined preview, raw [`measured-built.json`](measured-built.json)):
+
+| Measure | Today | Combined preview | Built |
+| --- | ---: | ---: | ---: |
+| Add staff service boxes, 390 / 768 / 1280 px | 116 / 68 / 68 px | 68 / 68 / 68 | **68 / 68 / 68** |
+| After "+ Smoker" in Add staff, 390 px | n/a | 116 px | 116 px (the Smoker box on its own row, focused) |
+| Details chips for Ann, row height, 390 and 1280 px | 44 px | 44 px | 44 px |
+| Ann onto Smoker with a section, 390 px | 5 taps | 4 | **4** |
+| Gus onto Smoker only with a section, 390 px | 7 taps | 7 | 7 |
+| Long names (four services, a 30-letter hidden one), 390 px | n/a | no sideways scroll | no sideways scroll |
+| Admin, Kitchen, Shifts, three shifts, 390 / 1280 px | 687 / 364 px | 882 / 559 | 933 / 591 (the hint's extra sentence) |
+| Browser errors at 390, 768 and 1280 px | none | none | none |
+
+Screenshots: `built-addstaff-390.png`, `built-details-390.png`, `built-added-390.png`, `built-admin-shifts-390.png`, `built-admin-shifts-1280.png`, `built-long-addstaff-390.png`. After "+ Smoker" the new Smoker cell starts on the person's section from another service (Ann: Grill), as Add Smoker always did (`tmAddShift()`); the task above then changes it.
+
+**Checks:**
+- New `tests/team-hidden-shifts.test.js` (45 checks):
+  - an empty day with Smoker first in Kitchen order ticks Lunch, shows no Smoker box and offers "+ Smoker";
+  - "+ Smoker" in Add staff shows the box ticked with the focus on it; Add selected staff puts Cam on Smoker only; nothing saved;
+  - at 390 and 1280 px, "+ Smoker" in Ann's details puts her on Smoker, the chip becomes the pressed Smoker chip with the focus, the words say it is not saved, Bo then sees Smoker (off), and a Remove leaves Smoker (off) with Add Smoker;
+  - someone already on Smoker in the saved plan: the box and chip show as before;
+  - Home at 08:00: Ann on the hidden Smoker sees it and its section;
+  - Admin: each shift has its own named tick box; Save changes saves `occ`; a later save of Lunch's time keeps it.
+  - It fails on the code before this change (no "+ Smoker"; the run stops).
+- `tests/roster-import.test.js`: a 10:00 to 15:00 roster time over a hidden Smoker is Lunch only; a time inside the hidden shift touches nothing; the same Smoker not hidden still counts. The two new hidden checks fail on the old `services()`.
+- `tests/todays-team.test.js`: the saved shift shape now includes `occ: false`.
+- `tests/design-patterns.test.js`: `.tm-occ-add`, `.tm-occ-row`, `.a-sh-occ`.
+- Locally, all 31 Today's team, roster, Home, Kitchen, admin, roles, read budget and design files pass.
+
+**Not evidenced:** real fonts on a real phone (the row fits Lunch, Dinner and + Smoker in the stand-in's fonts; with wider fonts "+ Smoker" takes its own row, as today's box did); rendered contrast and the focus ring on a real device (existing chip and checkbox tokens); live behaviour after release.
+
+**Left for later, not chosen:** the saved overview's timeline still spans every timed shift, so a hidden 06:00 Smoker starts it at 06:00 (one reviewer's suggestion); the stand-in's 12-hour time boxes in Kitchen, Shifts.

@@ -155,10 +155,11 @@
   }
 
   /* The kitchen's shifts a roster time touches (head chef, 14 Nov 2026: every one it overlaps). kit: config kitShifts
-     { id, from, to, off } in minutes after midnight. Shifts switched off or without both times are left out. */
+     { id, from, to, off, occ } in minutes after midnight. Shifts switched off or without both times are left out, and so
+     is a shift hidden on Today's team until someone is on it (occ, head chef, 15 Nov 2026): the chefs put people on it. */
   function services(shift, kit) {
     return (kit || []).filter(function (s) {
-      return s && !s.off && typeof s.from === 'number' && typeof s.to === 'number' && s.to > s.from && shift.from < s.to && shift.to > s.from;
+      return s && !s.off && s.occ !== true && typeof s.from === 'number' && typeof s.to === 'number' && s.to > s.from && shift.from < s.to && shift.to > s.from;
     }).map(function (s) { return s.id; });
   }
 
