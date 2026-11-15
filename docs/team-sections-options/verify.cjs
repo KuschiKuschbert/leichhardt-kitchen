@@ -1,0 +1,169 @@
+// Measures the section previews (docs/team-sections-options/brief.md). Preview only: made-up data, fallback fonts,
+// an imitation of the admin shell. Counts real taps (window.__taps counts every button, link or input tap), complete
+// person rows, row heights, sideways scroll, visible targets under 44 px, page errors and the Save states.
+// Run from the repo root:  CHROME=<headless shell> node docs/team-sections-options/verify.cjs [designs]
+const path = require('path'), fs = require('fs');
+const { chromium } = require(path.resolve(__dirname, '../../tests/node_modules/playwright-core'));
+const server = require(path.resolve(__dirname, '../../tests/serve'));
+const PORT = 8779, BASE = 'http://127.0.0.1:' + PORT + '/docs/team-sections-options/';
+const designs = (process.argv[2] || 'a,b,c').split(',');
+const out = { source: 'Preview', note: 'Made-up data, fallback fonts, imitation admin shell (first row about 600 px down at 390 px).', results: {} };
+let fails = 0;
+const ok = (c, m) => { if (!c) { fails++; console.log('FAIL ' + m); } return !!c; };
+
+async function measure(p) {
+  return p.evaluate(() => {
+    const rows = [...document.querySelectorAll('.ta-row, .tb-grid tbody tr:not(.tb-benchrow), .tc-row, .tm-row')];
+    const save = document.querySelector('.ts-save'), bar = document.querySelector('.ts-tabbar'), top = document.querySelector('.ts-top');
+    let bottom = innerHeight;
+    if (bar && getComputedStyle(bar).display !== 'none') bottom = Math.min(bottom, bar.getBoundingClientRect().top);
+    if (save) { const r = save.getBoundingClientRect(); if (r.top < bottom && r.top > 0) bottom = r.top; }
+    const topLine = top ? top.getBoundingClientRect().bottom : 0;
+    const full = rows.filter(e => { const r = e.getBoundingClientRect(); return r.top >= topLine - 0.5 && r.bottom <= bottom + 0.5; }).length;
+    const small = [...document.querySelectorAll('button, a, input, summary')].filter(e => { const r = e.getBoundingClientRect(), cs = getComputedStyle(e); return r.width && r.height && cs.visibility !== 'hidden' && !e.closest('.ts-design-switch') && !e.closest('.ts-top') && (r.height < 43.5 || r.width < 43.5) && !e.classList.contains('ts-link'); }).map(e => (e.getAttribute('aria-label') || e.textContent).trim().slice(0, 30));
+    return { complete: full, firstTop: rows[0] ? Math.round(rows[0].getBoundingClientRect().top + scrollY) : null, rowH: rows.slice(0, 3).map(e => Math.round(e.getBoundingClientRect().height)), sideways: document.documentElement.scrollWidth > innerWidth, small: [...new Set(small)].slice(0, 6), pageH: document.documentElement.scrollHeight };
+  });
+}
+async function working(p) {
+  // the working screen: the first row just under the sticky top bar
+  await p.evaluate(() => { const r = document.querySelector('.ta-row, .tb-grid thead, .tc-start'); window.scrollTo(0, r.getBoundingClientRect().top + scrollY - 76); });
+  await p.waitForTimeout(80);
+  return (await measure(p)).complete;
+}
+const state = p => p.evaluate(() => JSON.parse(JSON.stringify(window.TS.on)));
+const want = p => p.evaluate(() => window.TS.want);
+async function chooseIn(p, label) {
+  const b = p.locator('.ts-sheet button[data-i]').filter({ hasText: new RegExp('^' + label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$') }).first();
+  await b.click(); await p.waitForTimeout(30);
+}
+async function sectionsTask(p, d) {
+  const w = await want(p), names = await p.evaluate(() => Object.fromEntries(window.TS.sections.map(s => [s.id, s.name])));
+  await p.evaluate(() => { window.__taps = 0; });
+  if (d === 'c') {
+    await p.click('[data-a="go"]');
+    for (let n = 0; n < 40 && await p.locator('.tc-sheet').count(); n++) {
+      const head = await p.locator('.tc-sheet h3').innerText(), [who, svc] = head.split(' · ');
+      const ids = await p.evaluate(([who, svc]) => [window.TS.people.find(x => x.name === who).id, window.TS.services.find(s => s.name === svc).id], [who, svc]);
+      const target = names[w[ids[0]][ids[1]]];
+      const same = p.locator('.tc-sheet .tc-same');
+      if (await same.count() && (await same.innerText()).endsWith(': ' + target)) { await same.click(); await p.waitForTimeout(30); }
+      else await p.locator('.tc-sheet .tc-opts button').filter({ hasText: new RegExp('^' + target + '$') }).first().click();
+      await p.waitForTimeout(30);
+    }
+  } else {
+    for (const pid of Object.keys(w)) for (const sh of Object.keys(w[pid])) {
+      const cur = (await state(p))[pid][sh];
+      if (cur === w[pid][sh]) continue;
+      await p.click('[data-a="pick"][data-id="' + pid + '"][data-sh="' + sh + '"]'); await chooseIn(p, names[w[pid][sh]]);
+    }
+  }
+  await p.click('[data-a="save"]');
+  await p.waitForFunction(() => /Saved/.test(document.querySelector('.ts-save').innerText) && !/Saving/.test(document.querySelector('.ts-save').innerText));
+  const taps = await p.evaluate(() => window.__taps), s = await state(p);
+  const right = Object.keys(w).every(pid => Object.keys(w[pid]).every(sh => s[pid][sh] === w[pid][sh]));
+  return { taps, right, said: await p.locator('.ts-said').innerText() };
+}
+async function breakTask(p) {
+  // open Ari's Dinner break details from the opening state
+  await p.evaluate(() => { window.__taps = 0; });
+  const open = p.locator('[data-a="bench-open"][data-id="ari"]'); await open.click(); await p.waitForTimeout(40);
+  if (!/Dinner/.test(await p.locator('.ts-bench header b').innerText())) { await p.click('.ts-bench [data-a="bench-sh"][data-sh="dinner"]'); await p.waitForTimeout(40); }
+  return { taps: await p.evaluate(() => window.__taps), named: await p.locator('.ts-bench header b').innerText() };
+}
+async function fixOne(p, d) {
+  // after everything is set and saved, Eli's Dinner becomes Grill, then Save
+  await p.evaluate(() => { window.__taps = 0; });
+  if (d === 'c') {
+    await p.click('[data-a="change"][data-id="eli"]');
+    for (let n = 0; n < 6 && await p.locator('.tc-sheet').count(); n++) {
+      const head = await p.locator('.tc-sheet h3').innerText();
+      if (/Dinner/.test(head)) await p.locator('.tc-sheet .tc-opts button').filter({ hasText: /^Grill$/ }).first().click();
+      else await p.locator('.tc-sheet .tc-opts button[aria-selected="true"]').first().click();
+      await p.waitForTimeout(30);
+    }
+  } else { await p.click('[data-a="pick"][data-id="eli"][data-sh="dinner"]'); await chooseIn(p, 'Grill'); }
+  await p.click('[data-a="save"]');
+  await p.waitForFunction(() => /Saved/.test(document.querySelector('.ts-save').innerText) && !/Saving/.test(document.querySelector('.ts-save').innerText));
+  return { taps: await p.evaluate(() => window.__taps), right: (await state(p)).eli.dinner === 'grill' };
+}
+
+(async () => {
+  const srv = await new Promise(res => { const s = server.listen(PORT, '127.0.0.1', () => res(s)); });
+  const b = await chromium.launch({ executablePath: process.env.CHROME, args: ['--hide-scrollbars'] });
+  for (const d of designs) {
+    const R = out.results[d] = {};
+    for (const fx of ['three', 'double']) for (const shell of ['admin', 'team']) for (const width of [390, 768, 1280]) {
+      const p = await b.newPage({ viewport: { width, height: width === 390 ? 844 : width === 768 ? 1024 : 844 } }), errs = [];
+      p.on('pageerror', e => errs.push(e.message));
+      await p.goto(BASE + d + '.html?fx=' + fx + (shell === 'team' ? '&team=1' : '') + '&shot=1');
+      await p.waitForTimeout(150);
+      const m = await measure(p); m.working = await working(p);
+      const k = fx + '-' + shell + '-' + width; R[k] = m;
+      if (width === 390) await p.screenshot({ path: path.join(__dirname, d + '-' + fx + '-' + shell + '-390.png') });
+      if (width === 1280 && shell === 'admin' && fx === 'three') await p.screenshot({ path: path.join(__dirname, d + '-three-admin-1280.png') });
+      ok(!m.sideways, d + ' ' + k + ' no sideways scroll'); ok(!m.small.length, d + ' ' + k + ' targets 44 px: ' + m.small.join(', '));
+      if (shell === 'admin' && width === 390) {
+        await p.evaluate(() => window.scrollTo(0, 0));
+        R[k].sections = await sectionsTask(p, d); ok(R[k].sections.right, d + ' ' + k + ' sections task ends with the wanted sections');
+        await p.evaluate(() => { const r = document.querySelector('.ta-row, .tb-grid thead, .tc-start'); window.scrollTo(0, r.getBoundingClientRect().top + scrollY - 76); });
+        await p.screenshot({ path: path.join(__dirname, d + '-' + fx + '-done-390.png') });
+        R[k].fixOne = await fixOne(p, d); ok(R[k].fixOne.right, d + ' ' + k + ' one correction');
+      }
+      ok(!errs.length, d + ' ' + k + ' no page errors ' + errs.join('; '));
+      await p.close();
+    }
+    // break details, fresh page
+    let p = await b.newPage({ viewport: { width: 390, height: 844 } });
+    await p.goto(BASE + d + '.html?fx=three'); await p.waitForTimeout(100);
+    R.breaks = await breakTask(p); ok(/Ari · Dinner/.test(R.breaks.named), d + ' break details name Ari Dinner');
+    await p.evaluate(() => { const r = document.querySelector('.ts-bench'); window.scrollTo(0, r.getBoundingClientRect().top + scrollY - 200); });
+    await p.screenshot({ path: path.join(__dirname, d + '-breaks-390.png') });
+    await p.close();
+    // Save waits, then is refused: never Saved early, work kept, words say so
+    p = await b.newPage({ viewport: { width: 390, height: 844 } });
+    await p.goto(BASE + d + '.html?fx=double&hold=1'); await p.waitForTimeout(100);
+    if (d === 'c') { await p.click('[data-a="go"]'); await p.locator('.tc-sheet .tc-opts button').filter({ hasText: /^Grill$/ }).first().click(); await p.click('.tc-sheet [data-a="close"]'); }
+    else { await p.click('[data-a="pick"][data-id="ari"][data-sh="lunch"]'); await chooseIn(p, 'Grill'); }
+    await p.click('[data-a="save"]'); await p.waitForTimeout(80);
+    const held = await p.locator('.ts-save').innerText();
+    ok(/Saving/.test(held) && !/✓ Saved/.test(held) && await p.locator('[data-a="save"]').isDisabled(), d + ' held Save shows Saving and stays off');
+    await p.evaluate(() => window.__release()); await p.waitForTimeout(60);
+    const doneWords = await p.locator('.ts-said').innerText();
+    ok(/Saved Tuesday 17 November at 13:05/.test(doneWords) && /Still no section: /.test(doneWords), d + ' Save names the services still without a section');
+    R.savedWords = doneWords; await p.close();
+    p = await b.newPage({ viewport: { width: 390, height: 844 } });
+    await p.goto(BASE + d + '.html?fx=double&fail=1'); await p.waitForTimeout(100);
+    if (d === 'c') { await p.click('[data-a="go"]'); await p.locator('.tc-sheet .tc-opts button').filter({ hasText: /^Grill$/ }).first().click(); await p.click('.tc-sheet [data-a="close"]'); }
+    else { await p.click('[data-a="pick"][data-id="ari"][data-sh="lunch"]'); await chooseIn(p, 'Grill'); }
+    await p.click('[data-a="save"]'); await p.waitForTimeout(700);
+    ok(/Not saved\. Changes kept\./.test(await p.locator('.ts-save').innerText()) && (await state(p)).ari.lunch === 'grill' && await p.locator('.ts-said[role="alert"]').count() === 1, d + ' refused Save keeps the work and says so');
+    await p.screenshot({ path: path.join(__dirname, d + '-fail-390.png') });
+    await p.close();
+    // long name and long sections, largest text
+    p = await b.newPage({ viewport: { width: 390, height: 844 } });
+    await p.goto(BASE + d + '.html?fx=three&long=1'); await p.evaluate(() => { document.documentElement.setAttribute('data-text', 'xlarge'); }); await p.waitForTimeout(100);
+    const mjk = await p.evaluate(() => { const ch = document.querySelector('[data-id="mjk"]'); return !!ch; });
+    await p.evaluate(() => { const e = document.querySelector('[data-id="mjk"]'); if (e) e.scrollIntoView({ block: 'center' }); });
+    R.long = await measure(p); ok(!R.long.sideways && mjk, d + ' long name and largest text: no sideways scroll');
+    await p.screenshot({ path: path.join(__dirname, d + '-long-xlarge-390.png') });
+    await p.close();
+  }
+  // C only: Back and Close keep what was chosen; the sheet names the person and service
+  if (designs.includes('c')) {
+    const p = await b.newPage({ viewport: { width: 390, height: 844 } });
+    await p.goto(BASE + 'c.html?fx=double'); await p.waitForTimeout(100);
+    await p.click('[data-a="go"]'); await p.locator('.tc-sheet .tc-opts button').filter({ hasText: /^Grill$/ }).first().click();
+    const second = await p.locator('.tc-sheet h3').innerText();
+    await p.click('.tc-sheet [data-a="back"]'); const back = await p.locator('.tc-sheet h3').innerText();
+    await p.click('.tc-sheet [data-a="close"]');
+    ok(second === 'Ari · Dinner' && back === 'Ari · Lunch' && (await state(p)).ari.lunch === 'grill' && /Set 1 section\. 13 still no section\. Not saved yet\./.test(await p.locator('.tc-start').innerText()), 'c Back steps to the named cell; Close keeps the choice and says it is not saved');
+    await p.click('[data-a="go"]'); await p.waitForTimeout(60);
+    await p.screenshot({ path: path.join(__dirname, 'c-sheet-390.png') });
+    await p.close();
+  }
+  await b.close(); srv.close();
+  out.fails = fails;
+  fs.writeFileSync(path.join(__dirname, 'verify-' + designs.join('') + '.json'), JSON.stringify(out, null, 1) + '\n');
+  console.log(JSON.stringify(out.results, (k, v) => k === 'small' && !v.length ? undefined : v));
+  console.log(fails ? fails + ' FAILED' : 'all checks pass');
+})().catch(e => { console.error(e); process.exit(1); });
