@@ -335,6 +335,103 @@
     var a = navActive();
     return '<nav class="tabbar" aria-label="Main">' + navList().map(function (t) { return '<a href="' + t[2] + '"' + (a === t[0] ? ' aria-current="page"' : '') + '>' + NAV_ICON[t[0]] + '<span>' + t[1] + '</span></a>'; }).join('') + '</nav>';
   }
+  /* Touch shortcuts use the same permitted main tabs. Nothing is prefetched or saved by a gesture.
+     Start away from system Back edges; fields, sheets and horizontal scrollers keep their own gestures. */
+  var pageSwipe = null, pageSwipeClick = 0, pageSwipeArrival = null, pageSwipeMotion = null;
+  var pageSwipeFields = 'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="slider"]';
+  function pageSwipeReady() {
+    var P = window.LK_PREP, active = document.activeElement, selection = window.getSelection();
+    return !!(P && P.privateAccess() && !P.functionOnly() && !P.workLock() && !P.sendFirst() &&
+      document.visibilityState !== 'hidden' && !(active && active.matches(pageSwipeFields)) &&
+      !(selection && !selection.isCollapsed) && !(window.visualViewport && visualViewport.scale > 1.05) &&
+      !document.querySelector('.wm-wrap, .cooling-wrap, .fn-pop, .sheet-bg, .p-sheet, .nt-wrap, .mlp-wrap, .gz-wrap, dialog[open], [aria-modal="true"]'));
+  }
+  function pageSwipeFrom(el) {
+    if (!el.closest || !el.closest('.page') || el.closest(pageSwipeFields + ', summary, canvas, nav, .wtop, .tabbar, [data-no-page-swipe]')) return false;
+    var action = el.closest('button, [role="button"]');
+    if (action && !action.closest('.nb-row')) return false;
+    var link = el.closest('a');
+    if (link && !link.matches('.dish, .tile')) return false;
+    for (var n = el; n && n !== app; n = n.parentElement) {
+      if (n.scrollWidth > n.clientWidth + 2 && /auto|scroll/.test(getComputedStyle(n).overflowX)) return false;
+    }
+    return true;
+  }
+  function pageSwipeQuiet() { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+  function pageSwipeClearMotion() {
+    var motion = pageSwipeMotion; pageSwipeMotion = null;
+    if (motion) { motion.animation.cancel(); motion.page.classList.remove('page-swipe-surface'); }
+    app.classList.remove('page-swiping');
+  }
+  function pageSwipeSettle(page, from) {
+    pageSwipeClearMotion();
+    if (!page || !page.isConnected || !from || pageSwipeQuiet()) return;
+    page.classList.add('page-swipe-surface'); app.classList.add('page-swiping');
+    // Relative position keeps the Add dock anchored to the viewport; a transform would move its containing block.
+    var animation = page.animate([{ left: from + 'px' }, { left: '0px' }], { duration: 180, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    pageSwipeMotion = { page: page, animation: animation };
+    animation.onfinish = function () { if (pageSwipeMotion && pageSwipeMotion.animation === animation) pageSwipeClearMotion(); };
+  }
+  function pageSwipeReset(settle) {
+    var drag = pageSwipe; pageSwipe = null;
+    if (!drag) return;
+    drag.page.classList.remove('page-swipe-surface'); drag.page.style.removeProperty('--page-swipe-x');
+    app.classList.remove('page-swiping');
+    if (drag.moved) pageSwipeClick = performance.now() + 400;
+    if (settle) pageSwipeSettle(drag.page, drag.offset || 0);
+  }
+  document.addEventListener('touchstart', function (e) {
+    pageSwipeClick = 0;
+    if (pageSwipe) { pageSwipeReset(true); return; }
+    if (e.touches.length !== 1 || e.defaultPrevented || !pageSwipeReady() || !pageSwipeFrom(e.target)) return;
+    var t = e.touches[0], hash = location.hash, tabs = navList(), index = tabs.findIndex(function (tab) { return tab[2] === hash; });
+    if (index < 0 || t.clientX < 24 || t.clientX > innerWidth - 24) return;
+    pageSwipeClearMotion();
+    pageSwipe = { id: t.identifier, x: t.clientX, y: t.clientY, hash: hash, tabs: tabs, index: index, page: e.target.closest('.page'), moved: false };
+  }, { passive: true });
+  document.addEventListener('touchmove', function (e) {
+    var drag = pageSwipe; if (!drag) return;
+    var t = e.touches.length === 1 && e.touches[0];
+    if (!t || t.identifier !== drag.id || location.hash !== drag.hash || !drag.page.isConnected || !pageSwipeReady()) { pageSwipeReset(true); return; }
+    var dx = t.clientX - drag.x, dy = t.clientY - drag.y;
+    if (!drag.moved) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 12) return;
+      if (Math.abs(dx) < Math.abs(dy) * 1.5 || !e.cancelable) { pageSwipeReset(false); return; }
+      drag.to = drag.tabs[drag.index + (dx < 0 ? 1 : -1)];
+      if (!drag.to) { pageSwipeReset(false); return; }
+      drag.direction = dx < 0 ? 1 : -1; drag.moved = true;
+    }
+    if (e.cancelable) e.preventDefault();
+    if (!pageSwipeQuiet()) {
+      drag.offset = Math.max(-64, Math.min(64, dx * .28));
+      drag.page.classList.add('page-swipe-surface'); app.classList.add('page-swiping');
+      drag.page.style.setProperty('--page-swipe-x', drag.offset + 'px');
+    }
+  }, { passive: false });
+  document.addEventListener('touchend', function (e) {
+    var drag = pageSwipe; if (!drag) return;
+    var t = Array.prototype.find.call(e.changedTouches, function (touch) { return touch.identifier === drag.id; });
+    if (!t) return;
+    var dx = t.clientX - drag.x, dy = t.clientY - drag.y;
+    var go = drag.moved && !e.touches.length && Math.abs(dx) >= 72 && Math.abs(dx) >= Math.abs(dy) * 1.5 &&
+      (dx < 0 ? 1 : -1) === drag.direction && location.hash === drag.hash && drag.page.isConnected && pageSwipeReady() &&
+      navList().some(function (tab) { return tab[2] === drag.to[2]; });
+    pageSwipeReset(!go);
+    if (!go) return;
+    if (e.cancelable) e.preventDefault();
+    pageSwipeArrival = { hash: drag.to[2], direction: drag.direction };
+    location.hash = drag.to[2];
+  }, { passive: false });
+  document.addEventListener('touchcancel', function () { pageSwipeReset(true); }, { passive: true });
+  document.addEventListener('click', function (e) {
+    if (e.isTrusted && e.detail && performance.now() < pageSwipeClick) {
+      e.preventDefault(); e.stopImmediatePropagation(); pageSwipeClick = 0;
+    }
+  }, true);
+  window.addEventListener('hashchange', function () { pageSwipeReset(false); pageSwipeClearMotion(); });
+  window.addEventListener('blur', function () { pageSwipeReset(false); pageSwipeClearMotion(); pageSwipeArrival = null; });
+  window.addEventListener('resize', function () { pageSwipeReset(false); pageSwipeClearMotion(); });
+  document.addEventListener('visibilitychange', function () { pageSwipeReset(false); pageSwipeClearMotion(); pageSwipeArrival = null; });
   var SW_ICON = {
     pass: '<svg width="20" height="20" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" aria-hidden="true"><circle cx="32" cy="32" r="22"/><circle cx="32" cy="32" r="12" stroke-dasharray="4 5"/></svg>',
     tiles: '<svg width="20" height="20" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="20" height="20" rx="3"/><rect x="36" y="8" width="20" height="20" rx="3"/><rect x="8" y="36" width="20" height="20" rx="3"/><rect x="36" y="36" width="20" height="20" rx="3"/></svg>'
@@ -1871,6 +1968,10 @@
     }
     homeFew = false;
     app.innerHTML = html;
+    if (pageSwipeArrival) {
+      var arrival = pageSwipeArrival; pageSwipeArrival = null;
+      if (arrival.hash === location.hash) pageSwipeSettle(app.querySelector('.page'), arrival.direction * 36);
+    }
     paintCooling();
     if (homeRest) restDraw();
     if (route.name === 'landing' && !docketArrived) {

@@ -22,6 +22,8 @@ The rules behind them are in `CLAUDE.md` (Service rules, Coding rules, Things th
 
 ## A page
 
+- **Main-tab touch navigation** uses `pageSwipeFrom()` and the existing permitted `navList()` in `js/app.js`. A clear horizontal swipe moves one main tab without wrapping. `.page-swipe-surface` follows the finger slightly inside `.page-swiping`, then settles in 180 ms. Header, tabs and fixed controls stay anchored. Reduced motion removes movement. Fields, sheets, selected text, zoom and scrollable rows retain their own gestures. [Contract](navigation.md#main-tab-swipes-15-november-2026).
+
 - **The card:** `section.p-card` with `h2.p-h` (id `rtitle`, so the page's Back and focus land on it), a `.hint` line for what the page is for and when it was read, then the work. Buttons sit in a `.btn-row`: `.btn` for most, `.btn.dark` for the one main action. A quiet action in a sentence is a `.p-link` (Refresh, Try again).
 - **A failed read** never shows "nothing", "nobody" or "0": a `.p-err` line with role status says it could not load, a Try again, and the book tries once more after 5 minutes by itself (`retrySoon()`, `waiting()`). An answer from the phone's own copy with no signal is not "none" (`cacheOnly()`).
 - **Waiting** uses the Ink helpers, never a spinner: `inkLabel()` in a line, `inkWait()` for a block (`docs/loading-motion.md`).
