@@ -64,6 +64,11 @@ ok(sv('11:00-15:30') === 'lunch adl', 'services: 11:00 to 15:30 touches All day 
 ok(sv('16:00-21:30') === 'adl dinner', 'services: 16:00 to 21:30 is All day dining and Dinner');
 ok(sv('06:00-09:00') === '', 'services: a shift before every service touches none; a switched-off shift never counts');
 ok(X.services({ from: 600, to: 900 }, [{ id: 'x', from: 'a', to: 900 }, null, { id: 'y', from: 900, to: 600 }]).length === 0, 'services: shifts without proper times are left out');
+// a shift hidden on Today's team until someone is on it (head chef, 15 Nov 2026): the roster never fills it
+const SMOKE = KIT.concat([{ id: 'smoker', name: 'Smoker', from: 360, to: 660, occ: true }]);
+ok(X.services({ from: 600, to: 900 }, SMOKE).join(' ') === 'lunch', 'services: 10:00 to 15:00 overlaps a hidden Smoker 06:00 to 11:00, and is Lunch only');
+ok(X.services({ from: 360, to: 600 }, SMOKE).length === 0, 'services: a roster time inside a hidden shift only touches nothing, so it is listed as idle, not filled');
+ok(X.services({ from: 600, to: 900 }, KIT.concat([{ id: 'smoker', name: 'Smoker', from: 360, to: 660 }])).join(' ') === 'lunch smoker', 'services: the same Smoker not hidden still counts');
 
 // ---- names: the given name, the family initial for two of the same, exactly one, never shared ----
 const people = n => n.map(full => { const p = full.split(' '); return { name: full, given: p[0], family: p.length > 1 ? p[p.length - 1] : '', shifts: [] }; });
