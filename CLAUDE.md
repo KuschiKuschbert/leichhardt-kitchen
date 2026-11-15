@@ -26,6 +26,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | The finished words on wide screens (from 900 px): a finished section's own tab and the finished list, said large with the mascot under his words | `docs/kitchen-mascot.md` (the contract), `docs/mascot-desktop-options/brief.md` (the study: round 1 Build smaller; the chosen blend, built) |
 | Named staff welcome, current identity and personalisation audit | `docs/staff-personalisation-options/brief.md` (chosen A, long-name treatment and implementation checks) |
 | Login, who can read or write what, recipes, function writes | `docs/private-kitchen-access.md` (wins over anything older in this file) |
+| Opening the installed app again with an address (the kitchen tablet's Home button, links): the open book moves there, no reload (`launch_handler`, `launchQueue`, 16 Nov 2026) | `docs/app-launch.md` |
 | Device choice, Google, daily PIN unlock, Update, Settings | `docs/device-sessions.md` (replaces earlier session wording), `docs/settings-options/brief.md` |
 | Staff Add/Tick/Delete and capability lists | `docs/staff-capabilities.md` |
 | Publishing the rules from GitHub | `docs/rules-publication.md` |
@@ -35,6 +36,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Firestore reads and writes, what each page costs | `docs/firestore-usage.md` |
 | What a tap shows after it | `docs/action-feedback.md` (the rule), `docs/action-feedback-options/brief.md` (the audit) |
 | Loading, saving, progress and motion | `docs/loading-motion.md` (current), `docs/loading-feedback-options/brief.md` |
+| Long amounts, recipe headings and phone overflow repairs (16 Nov 2026) | `docs/responsive-overflow.md` |
 | Shared controls, search and tables | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
 | A whole-app audit | `docs/whole-app-audit.md`, `docs/ux-council-audit.md`, `docs/whole-app-inventory.md` |
 | Shared surface and operational colours, banners and category exceptions | `docs/surface-colours.md` (chosen hybrid), `docs/colour-coding.md`, `docs/design-patterns.md` |
@@ -74,7 +76,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Operandio cooling: manual stages, shared confirmation, quiet reminders and 10:00–21:00 Queensland window with nightly expiry | `docs/operandio-cooling.md`, `docs/operandio-cooling-options/brief.md` |
 | Operandio clock motion: chosen B desktop pill and fixed mobile ring, implementation and release checks | `docs/operandio-clock-motion-options/brief.md` |
 | Pings: who gets them, the sound | `docs/ping-recipients.md`, `docs/ping-sound.md` |
-| Back arrow and page trail | `docs/navigation.md` |
+| Back arrow, page trail and left/right touch swipes between existing main tabs | `docs/navigation.md` |
 | Merging, the queue, `urgent` | `docs/auto-merge.md` |
 | Publishing the site: only a merge that changes a file the phones load republishes; the book then updates silently when safe (no band unless asked) | `docs/site-publishing.md` |
 | Nightly backup and recovery | `docs/backup-recovery.md` |

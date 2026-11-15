@@ -1,4 +1,80 @@
-# Back actions
+# Navigation
+
+## Main tab swipes, 15 November 2026
+
+The owner requested left and right swipe navigation, chose the existing main-tab order, and asked for smooth,
+modern motion. On a touch screen, swipe left for the next permitted tab and right for the previous one:
+Recipes, Prep, Orders, Wastage, Transfers, Cleaning. The first and last tabs do not wrap. A hidden Cleaning page
+is not a destination. Home, individual recipes, editors, admin rooms and other task pages keep their own navigation.
+
+A single finger must travel at least 72 px, clearly horizontally. The page follows the finger a little and settles
+back after an incomplete swipe. A completed swipe opens its destination immediately with a 180 ms directional
+settle. The header, main tabs and fixed Add dock stay anchored. Reduced motion removes both movements.
+Buttons and keyboard navigation remain available. There is no new bar, overlay, hint or setting.
+
+Vertical scrolling, horizontal scrollers, controls, focused fields, selected text, zooming, two fingers and the
+outer 24 px used by system Back keep their gestures. Open sheets and unsettled writes block page swipes. A route,
+permission, visibility or window change cancels an unfinished gesture. Swiping a recipe card does not also open
+that card. The same permitted tab list and normal route rendering are used; no extra query, database listener, prefetch,
+database write, schema or persistent state is introduced. Existing drafts and browser Back remain in use.
+
+### Small-change service check
+
+**Verdict: Build.** This is an optional shortcut on the existing pages, adding no tab, control or service step.
+The session performed the skill's quick check, without extra reviewers. This is source and synthetic-fixture
+analysis, not a study with kitchen staff. Linear's consistent navigation and Things' visible alternatives fit:
+the tab order stays the same and no task becomes gesture-only. Duolingo's immediate feedback fits the finger
+response and immediate route change. The other reference apps add no relevant feature to this shortcut.
+
+The existing navigation, surface and operational colour contracts remain. No colours, type, spacing or save
+states change. Before implementation, commit `9697fd8`, the sous-chef fixture at 390 by 844 px showed five complete
+prep rows under a 64 px header, with Add a line one tap away. Stand-in fonts were used. The implementation's
+gesture suite remeasures that layout at 390, 768 and 1280 px and checks the header, tabs and Add dock during motion.
+
+Implemented-app captures, the same synthetic sous-chef fixture at 390 by 844 px with stand-in fonts:
+
+| While swiping left | After release |
+| --- | --- |
+| ![Prep content follows the finger while the header and Add dock stay still](images/main-tab-swipes/phone-drag.png) | ![Orders opens in the existing page layout](images/main-tab-swipes/phone-after.png) |
+
+The captured drag moved content 30.8 px, with the header at x=0 and no document overflow. At 1280 px, the same
+check kept the header at x=0 and moved the inline Add control with its page. Both returned to the ordinary layout
+with no gesture styles left after release. These stills show positioning, not animation speed.
+
+The initial 52-check gesture suite failed 20 checks against unchanged `main`. The completed 75-check suite,
+including motion and recipe-card tap checks, passed in local Chrome. Add stays one tap away, the phone header
+stays 64 px high, and five complete prep rows remain visible before and after. Motion keeps the fixed phone Add
+dock anchored; larger-screen Add controls remain part of the moving page. The pending-write guard is checked
+against the existing `sendFirst()` signal, using a test stand-in. The wider suite separately covers write recovery.
+
+The first full local run completed 337 files, with 328 passing after retry. Nine files repeated failures and all nine
+reproduced the same failing checks on a clean `9697fd8` checkout: `auto-merge-queue`, `chef-panel`, `cutoff-patterns`,
+`fold-recipes`, `function-prep-print`, `function-print`, `mascot`, `save-states` and `team-grid`. The isolated baseline
+comparison covers 26 failing checks. `supplier-orders` passed its isolated retry. These local baseline failures
+are recorded separately from the passing gesture checks; the full GitHub browser and rules gate remains required.
+
+Selection recovery was checked after the first GitHub run exposed two late gesture failures. Independent test
+scenarios now clear any zoom and text selection left by the pinch and mouse cases, with explicit checks that
+zooming and selected text block navigation and ordinary swipes resume afterwards. A separate reproduction showed
+an empty, non-collapsed selection leaving the page on Prep. The guard now checks for actual selected text. The
+empty-selection regression and all 66 gesture checks pass with that correction, together with the four existing
+swipe-dismissal, Back and parent-return test files. Further checks verify ordinary navigation after each rejected touch gesture and native mouse text selection.
+Linux CI traces identified an additional synthetic finger carried between unrelated emulated gesture cases.
+Each guard fixture now owns its browser context, with immediate recovery checked in that same page. Mouse
+selection uses a desktop context; touch flows use taps and one CDP input source per page, waiting for released
+touches before the next gesture. The app's two-finger guard remains. All 75 checks passed on Linux Chrome 157
+in the isolated diagnostic job as well as local Chrome; the temporary diagnostic workflow was then removed. A separate same-page redraw reproduction
+left the first following swipe ignored. Rendering now clears the old gesture and motion before replacing its
+page; two regression checks cover the interruption and immediate recovery. The complete GitHub gate remains required.
+
+Break-it priorities: an ordinary scroll changing pages, a sheet or draft losing its context, and a swipe also
+activating the touched card or button. `tests/swipe-pages.test.js` covers real CDP touches, cancellation, two
+fingers, restricted tabs, draft return and browser Back. Existing swipe-dismissal, navigation, role and read-budget
+tests are the adjacent regression gates. These are isolated browser checks, not physical-device verification.
+
+Rollback: revert the gesture code, motion styles and their documentation. No saved data or rules need migration.
+
+## Existing Back actions
 
 Accepted 24 Oct 2026. Keep the current layouts, fonts, buttons and permissions. Make it clear how to return from a
 task without losing work. A back action never submits a form or records an order.

@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Opening the installed app again, 16 November 2026
+
+The kitchen tablet's Home button reloaded the whole book on every tap. The manifest's `launch_handler` (`focus-existing`, then `auto`) keeps the open book, and the `launchQueue` consumer in `js/app.js` moves it to the address (`#/kiosk-home` is Home). Quick check: Build (no new tab, button, step or pop-up; 0 extra taps). Note: `docs/app-launch.md`. Test: `tests/launch-home.test.js`.
+
 ## Function sent, lines off, 14 November 2026
 
 The head chef asked that a function's prep and order tasks come off once it is prepped and sent out (trigger: the last round ticked Sent; all three kinds of line). Council: Build smaller 4 of 5, round 2 A 3.4, C 3.1, B 2.3; the mix chosen. The maths is in `js/functions.js` (`roundSent()`, `allSentAt()`, `lineOf()`, `lineOff()`, run by node), used by the phones (`fnOffMark()` and the `fnOff*` helpers in `js/prep.js`, `offSlip()` and `offLine()` in `js/functions.js`) and by the 03:00 job (`scripts/fn-sent-tidy.mjs`, from `nightly-learn.mjs`). The ingredient link is `fnFor` on a prep line (written with the line, only cleared later; no rule, the cancellation budget); Put back writes `keep`. Tests: `tests/fn-sent-tidy.test.js` (25 checks), `scripts/fn-sent-tidy-check.mjs` (emulator), rows in `tests/rules/client-shapes.test.mjs`. Brief: `docs/fn-sent-tidy-options/brief.md`.
@@ -220,6 +224,7 @@ Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records
 | Recipe and drawing editor layout, selected A's chapters with B's full-screen studio (3 Nov 2026) | `docs/recipe-editor-options/brief.md` |
 | Drawing studio, selected B: quiet canvas, with more servingware colours (4 Nov 2026) | `docs/studio-options/brief.md` |
 | Shared controls, deferred search, table interactions and council audit | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
+| Long amounts and recipe headings | `docs/responsive-overflow.md`: 16 November 2026, broader overflow audit and CSS wrapping repair; `tests/line-amount-wrap.test.js`, `tests/recipe-title-wrap.test.js`. |
 | Loading, saving, measured progress and reduced motion | `docs/loading-motion.md` (current), `docs/loading-feedback-options/brief.md` (recommended set chosen 4 Nov 2026, findings and build steps) |
 | What a tap shows after it: a save, add, tick, Undo or Refresh, its words, where the person is left (5 Nov 2026) | `docs/action-feedback.md` (the rule), `docs/action-feedback-options/brief.md` (audit of 307 actions, designs, scores) |
 | What reads and writes Firestore, what each page costs, and the plan to stay inside the free plan (audit, 5 Nov 2026) | `docs/firestore-usage.md` |
@@ -229,13 +234,13 @@ Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records
 | Supplier order and Delivery received redesign, selected A: The Order Sheet (3 Nov 2026) | `docs/receiving-design-options/brief.md` |
 | Wastage history, ranges, CSV | `docs/wastage-history.md` |
 | CSV text, quoting and numeric values across reports | `docs/report-exports.md` |
-| Transfer storage and returns | `docs/transfer-returns.md` (publish rules from the feature branch first: it indexes loans) |
+| Transfer storage and returns | `docs/transfer-returns.md`: 16 November 2026, phone card width repair in `css/app.css`, verified by `tests/transfer-overflow.test.js`. The original index migration needs rules published first; this CSS repair needs no rule or data change. |
 | Function cancel, Undo, delete | `docs/function-cancellation.md` |
 | Function print copy | `docs/function-printing.md` |
 | Delivery temperatures | `docs/delivery-received.md` |
 | Shift ping recipients | `docs/ping-recipients.md` |
 | Ping sound and the head chef's choice of sound | `docs/ping-sound.md` |
-| Back arrow and page trail | `docs/navigation.md` |
+| Back arrow, page trail and main-tab swipes | `docs/navigation.md`: 15 November 2026, owner chose main-tab order and smooth motion; `js/app.js`, `css/app.css`, `tests/swipe-pages.test.js`. Touch swipes use the permitted tabs, keep fields/sheets/scrollers and fixed controls steady, and respect reduced motion. |
 | Merging: ready means merge in the next release window, the one-at-a-time queue, `urgent`, the token | `docs/auto-merge.md` |
 | Publishing the site (13 Nov 2026): Publish site compares `main` with the live commit and publishes only when `scripts/site-changed.sh` finds a file the phones or live tests load; Live click tests follow its Deploy job, Publish rules its Published job; needs Pages Source: GitHub Actions; `tests/site-publish.test.js` | `docs/site-publishing.md` |
 | Seasonal celebrations, festival dates and their sources | `docs/seasonal-celebrations.md`, `docs/seasonal-calendar.md` |

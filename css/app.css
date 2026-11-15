@@ -118,6 +118,9 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 
 /* ---------- page frame ---------- */
 .page { max-width: 1240px; margin: 0 auto; padding: 1.5rem 1.25rem 2.5rem; display: flex; flex-direction: column; gap: 1.1rem; }
+#app.page-swiping { overflow-x: clip; }
+.page-swipe-surface { position: relative; left: var(--page-swipe-x, 0px); }
+@media (prefers-reduced-motion: reduce) { .page-swipe-surface { left: 0; } }
 .top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0.5rem 1.5rem; border-bottom: 3px solid var(--ink); padding-bottom: 0.75rem; }
 .brand { display: flex; flex-direction: column; gap: 0.1rem; text-decoration: none; }
 .eyebrow { font-family: var(--display); font-weight: 700; font-size: 0.8125rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-ink); }
@@ -156,7 +159,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .card { display: flex; flex-direction: column; gap: 1.4rem; padding: 1.6rem; background: var(--surface-paper); border: 1.5px solid var(--edge); border-radius: 14px; min-width: 0; }
 .card-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; border-bottom: 3px solid var(--ink); padding-bottom: 0.75rem; background: var(--surface-paper); }
 .card-head > div { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
-.card-head h2 { margin: 0; font-family: var(--display); font-weight: 700; font-size: 3rem; line-height: 1; }
+.card-head h2 { margin: 0; overflow-wrap: anywhere; font-family: var(--display); font-weight: 700; font-size: 3rem; line-height: 1; }
 .card-head h2:focus { outline: none; }
 .yield { color: var(--muted); }
 .menu-line { font-size: 0.875rem; color: var(--muted); }
@@ -225,7 +228,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .tile .t-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; }
 .tile .t-kind { font-family: var(--display); font-weight: 700; font-size: 0.8125rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-ink); padding-top: 0.25rem; }
 .tile .t-no { font-family: var(--display); font-weight: 700; font-size: 2.1rem; line-height: 1; color: var(--accent); }
-.tile .t-name { font-family: var(--display); font-weight: 700; font-size: 1.75rem; line-height: 1.05; }
+.tile .t-name { overflow-wrap: anywhere; font-family: var(--display); font-weight: 700; font-size: 1.75rem; line-height: 1.05; }
 .tile .t-yield { font-size: 0.875rem; color: var(--muted); }
 .tile .chips { margin-top: auto; gap: 0.35rem; }
 .tile .tag { font-size: 0.75rem; }
@@ -1932,10 +1935,10 @@ button.wm-a.wm-tile { text-align: left; }
   .dr-chips .chip { padding: 0 0.7rem; }
 }
 /* ---------- readability (20 Oct 2026) ----------
-   The amount is what a cook acts on, so it reads in ink, bold, in the body font, on one line. Allergen words are never
+   The amount is what a cook acts on, so it reads in ink, bold, in the body font, wrapping within its row. Allergen words are never
    the smallest text on a card, and "may have" tags get a tint as well as the dashed border. Small buttons use the body
    font, not the notebook script. A phone's top bar is one slim line. */
-.nb-q { font: 700 1.05rem var(--body); color: var(--ink); white-space: nowrap; margin-left: 0.4rem; }
+.nb-q { display: inline-block; max-width: calc(100% - 0.4rem); font: 700 1.05rem var(--body); color: var(--ink); white-space: normal; margin-left: 0.4rem; }
 .tag { font-size: 0.9375rem; }
 .tag.maybe { background: var(--hit); }
 .allergen-row .from { font-size: 0.9375rem; color: var(--ink); }
@@ -4076,17 +4079,18 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .w-secs { display: block; max-width: min(16rem, 52vw); margin: 0.1rem 0 0; font: 600 0.8125rem/1.3 var(--body); color: var(--muted); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Transfers: Still out as cards, one a pick-up (after Airbnb's trips): who has it, since when and how long, then each item
    with its own Mark returned. Old loans (7 days or more) get a red edge and a red tag. */
-.tr-cards { display: grid; gap: 10px; margin: 6px 0 4px; }
+.tr-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin: 6px 0 4px; }
 .tr-card { padding: 10px 12px 4px; border: 1.5px solid var(--ink); border-radius: 12px; background: var(--paper); box-shadow: 0 2px 0 rgba(28,29,31,0.08); }
 .tr-card.is-old { border-color: var(--tag); box-shadow: inset 4px 0 0 var(--tag); }
 .tr-ch { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.tr-cv { margin: 0; font: 700 0.8125rem/1.3 var(--body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); }
+.tr-cv { min-width: 0; overflow-wrap: anywhere; margin: 0; font: 700 0.8125rem/1.3 var(--body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); }
 .tr-ch .tr-age { flex: 0 0 auto; vertical-align: 0; }
 .tr-age.is-today { border-color: var(--line); color: var(--muted); }
 .tr-card .tr-cs { display: block; margin: 2px 0 2px; }
 .tr-card .nb-rows { margin: 0; }
 .tr-card .tr-item { align-items: center; border-bottom: 0; border-top: 1px solid var(--rule); }
 .tr-card .tr-item .nb-main { min-width: 0; }
+.tr-card .w-amt { white-space: normal; }
 .tr-ret { flex: 0 0 auto; min-height: 44px; padding: 0 12px; gap: 6px; font: 700 0.875rem/1 var(--body); white-space: nowrap; }
 .tr-ret[disabled] { opacity: 0.6; }
 .tr-tick { flex: 0 0 auto; }
