@@ -2,7 +2,7 @@
 const L = require('./lib');
 const { R, ok } = L.results();
 const hash = p => p.evaluate(() => location.hash);
-// Keep one touch input source per page. Mixed mouse and touch emulation can retain synthetic fingers in Linux Chrome.
+// Keep one touch input source per page. Each independent guard fixture owns its native gesture state.
 const touchSessions = new WeakMap();
 async function touchSession(p) {
   if (!touchSessions.has(p)) touchSessions.set(p, await p.context().newCDPSession(p));
@@ -48,7 +48,9 @@ async function swipe(p, selector, dx, dy = 0, opt = {}) {
     if (opt.beforeEnd) await opt.beforeEnd();
     await c.send('Input.dispatchTouchEvent', { type: opt.cancel ? 'touchCancel' : 'touchEnd', touchPoints: [] });
     // Wait for the browser to lift/cancel every finger before reusing this input source.
-    await L.waitFor(p, () => { const t = window.swipeTrace; return !t.length || !window.swipeTarget.isConnected || t[t.length - 1][3] === 0; }, null, 3000);
+    await L.waitFor(p, () => { const t = window.swipeTrace; return !t.length || !window.swipeTarget.isConnected || t[t.length - 1][3] === 0; }, null, 3000).catch(async () => {
+      throw new Error('Touch sequence did not finish: ' + JSON.stringify({ selector, dx, dy, x, state: await gestureState(p) }));
+    });
   }
   await L.settle(p, 400);
 }
@@ -113,18 +115,22 @@ async function gestureState(p) {
   ok(await hash(mouse) === '#/prep', 'mouse selection stays on the current page');
   ok(await mouse.evaluate(() => !!getSelection().toString()), 'mouse drag still selects text');
   await mouse.context().close();
-  const p = await L.open(b, '#/prep', { touch: true, wait: 1400 });
   for (const [name, dx, dy, opt] of [
     ['short', -40, 0, {}], ['vertical', 10, -120, {}], ['diagonal', -90, 90, {}],
     ['cancelled', -110, 0, { cancel: true }], ['two fingers', -110, 0, { multi: true }],
     ['screen edge', 110, 0, { x: 8 }]
   ]) {
+    // A native gesture cancelled by the browser must not contaminate an unrelated fixture.
+    // Recovery is still tested in the same page as the rejected gesture.
+    const p = await L.open(b, '#/prep', { touch: true, wait: 1400 });
     await go(p, '#/prep'); await swipe(p, '#rtitle', dx, dy, opt);
     ok(await hash(p) === '#/prep', name + ': stays on the current tab');
     await go(p, '#/prep'); await swipe(p, '#nbr-i3', -110);
     const resumed = await gestureState(p);
     ok(resumed.hash === '#/orders', name + ': ordinary touch navigation resumes ' + (resumed.hash === '#/orders' ? '' : JSON.stringify(resumed)));
+    await p.context().close();
   }
+  const p = await L.open(b, '#/prep', { touch: true, wait: 1400 });
   await go(p, '#/prep');
   await p.evaluate(() => { const r = document.createRange(); r.selectNodeContents(document.querySelector('#rtitle')); getSelection().addRange(r); });
   await swipe(p, '#rtitle', -110);
