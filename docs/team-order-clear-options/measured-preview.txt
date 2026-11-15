@@ -1,0 +1,79 @@
+today 390 services in order: ["Lunch","Dinner","All day"]
+today 390 rows in one screen, median row px, list px: {"rows":3,"rowPx":123,"list":1176}
+today 390 Dev: section and a break at 13:30, taps: 4
+today 390 Dev break times offered (roster 12:00 to 15:00): {"first":"Break 10:00","last":"Break 15:00","count":21}
+today 390 Dev words: {"row":"Dev | Breaks 13:30 | Section | Larder ▾ | Off | Off | Roster 12:00 to 15:00 | Dev · Lunch | Monday 16 November · Draft | Close details | Lunch | Dinner (off) | + Smoker | All day (off) | Break 1 | Break 13:30 ▾ | Length | 30 min ▾ | + Break | Remove Lunch and its breaks","panel":"Dev · Lunch | Monday 16 November · Draft | Close details | Lunch | Dinner (off) | + Smoker | All day (off) | Break 1 | Break 13:30 ▾ | Length | 30 min ▾ | + Break | Remove Lunch and its breaks"}
+today 390 sideways scroll, errors: {"over":false,"errors":[]}
+today 768 services in order: ["Lunch","Dinner","All day"]
+today 768 rows in one screen, median row px, list px: {"rows":7,"rowPx":104,"list":1007}
+today 768 Dev: section and a break at 13:30, taps: 4
+today 768 Dev break times offered (roster 12:00 to 15:00): {"first":"Break 10:00","last":"Break 15:00","count":21}
+today 768 Dev words: {"row":"Dev | Breaks 13:30 | Section | Larder ▾ | Off | Off | Roster 12:00 to 15:00 | Dev · Lunch | Monday 16 November · Draft | Close details | Lunch | Dinner (off) | + Smoker | All day (off) | Break 1 | Break 13:30 ▾ | Length | 30 min ▾ | + Break | Remove Lunch and its breaks","panel":"Dev · Lunch | Monday 16 November · Draft | Close details | Lunch | Dinner (off) | + Smoker | All day (off) | Break 1 | Break 13:30 ▾ | Length | 30 min ▾ | + Break | Remove Lunch and its breaks"}
+today 768 sideways scroll, errors: {"over":false,"errors":[]}
+today 1280 services in order: ["Lunch","Dinner","All day"]
+today 1280 rows in one screen, median row px, list px: {"rows":6,"rowPx":104,"list":1007}
+today 1280 Dev: section and a break at 13:30, taps: 4
+today 1280 Dev break times offered (roster 12:00 to 15:00): {"first":"Break 10:00","last":"Break 15:00","count":21}
+today 1280 Dev words: {"row":"Dev | Breaks 13:30 | Section | Larder ▾ | Off | Off | Roster 12:00 to 15:00","panel":"Dev · Lunch | Monday 16 November · Draft | Close details | Lunch | Dinner (off) | + Smoker | All day (off) | Break 1 | Break 13:30 ▾ | Length | 30 min ▾ | + Break | Remove Lunch and its breaks"}
+today 1280 sideways scroll, errors: {"over":false,"errors":[]}
+today 1280 whole day: 7 cooks, a section and one break each, then Save: {"taps":29,"saved":true}
+A 390 services in order: ["Lunch","All day","Dinner"]
+A 390 rows in one screen, median row px, list px: {"rows":3,"rowPx":123,"list":1196}
+A 390 Dev: section and a break at 13:30, taps: 4
+A 390 Dev break times offered (roster 12:00 to 15:00): {"first":"Break 12:00","last":"Break 14:30","count":11}
+A 390 Dev words: {"row":"Dev | Breaks 13:30 | Section | Larder ▾ | Off | Off | Roster 12:00 to 15:00 · Break 13:30 to 14:00 | Dev · Lunch | Monday 16 November · Draft | Close details | + Smoker | Lunch | All day (off) | Dinner (off) | Lunch: Roster 12:00 to 15:00 | Break 1 | Break 13:30 ▾ | Length | 30 min ▾ | + Break | Remove Lunch and its breaks","panel":"Dev · Lunch | Monday 16 November · Draft | Close details | + Smoker | Lunch | All day (off) | Dinner (off) | Lunch: Roster 12:00 to 15:00 | Break 1 | Break 13:30 ▾ | Length | 30 min ▾ | + Break | Remove Lunch and its breaks"}
+A 390 sideways scroll, errors: {"over":false,"errors":[]}
+A 768 services in order: ["Lunch","All day","Dinner"]
+A 768 rows in one screen, median row px, list px: {"rows":7,"rowPx":104,"list":1007}
+A 768 Dev: section and a break at 13:30, taps: 4
+A 768 Dev break times offered (roster 12:00 to 15:00): {"first":"Break 12:00","last":"Break 14:30","count":11}
+A 768 Dev words: {"row":"Dev | Breaks 13:30 | Section | Larder ▾ | Off | Off | Roster 12:00 to 15:00 · Break 13:30 to 14:00 | Dev · Lunch | Monday 16 November · Draft | Close details | + Smoker | Lunch | All day (off) | Dinner (off) | Lunch: Roster 12:00 to 15:00 | Break 1 | Break 13:30 ▾ | Length | 30 min ▾ | + Break | Remove Lunch and its breaks","panel":"Dev · Lunch | Monday 16 November · Draft | Close details | + Smoker | Lunch | All day (off) | Dinner (off) | Lunch: Roster 12:00 to 15:00 | Break 1 | Break 13:30 ▾ | Length | 30 min ▾ | + Break | Remove Lunch and its breaks"}
+A 768 sideways scroll, errors: {"over":false,"errors":[]}
+A 1280 services in order: ["Lunch","All day","Dinner"]
+A 1280 rows in one screen, median row px, list px: {"rows":6,"rowPx":104,"list":1007}
+A 1280 Dev: section and a break at 13:30, taps: 4
+A 1280 Dev break times offered (roster 12:00 to 15:00): {"first":"Break 12:00","last":"Break 14:30","count":11}
+A 1280 Dev words: {"row":"Dev | Breaks 13:30 | Section | Larder ▾ | Off | Off | Roster 12:00 to 15:00 · Break 13:30 to 14:00","panel":"Dev · Lunch | Monday 16 November · Draft | Close details | + Smoker | Lunch | All day (off) | Dinner (off) | Lunch: Roster 12:00 to 15:00 | Break 1 | Break 13:30 ▾ | Length | 30 min ▾ | + Break | Remove Lunch and its breaks"}
+A 1280 sideways scroll, errors: {"over":false,"errors":[]}
+A 1280 whole day: 7 cooks, a section and one break each, then Save: {"taps":29,"saved":true}
+A 390 clear: {"armedWords":"Tap again to clear Monday 16 November","msg":"Everyone taken off Monday 16 November: 9 people. Not saved yet. Refresh brings the saved plan back.","rowsLeft":0,"tapsBeforeSave":3}
+B 390 services in order: ["Lunch","All day","Dinner"]
+B 390 rows in one screen, median row px, list px: {"rows":3,"rowPx":141,"list":1378}
+B 390 Dev: section and a break at 13:30, taps: 4
+B 390 Dev break times offered (roster 12:00 to 15:00): {"first":"Break 12:00","last":"Break 14:30","count":11}
+B 390 Dev words: {"row":"Dev | Breaks 13:30 | Section | Larder ▾ | Off | Off | Roster 12:00 to 15:00 · Break 13:30 to 14:00 | Dev · Lunch | Monday 16 November · Draft | Close details | + Smoker | Lunch | All day (off) | Dinner (off) | Lunch: Roster 12:00 to 15:00 | Break 1 | Break 13:30 ▾ | Length | 30 min ▾ | + Break | Remove Lunch and its breaks","panel":"Dev · Lunch | Monday 16 November · Draft | Close details | + Smoker | Lunch | All day (off) | Dinner (off) | Lunch: Roster 12:00 to 15:00 | Break 1 | Break 13:30 ▾ | Length | 30 min ▾ | + Break | Remove Lunch and its breaks"}
+B 390 sideways scroll, errors: {"over":false,"errors":[]}
+B 768 services in order: ["Lunch","All day","Dinner"]
+B 768 rows in one screen, median row px, list px: {"rows":6,"rowPx":122,"list":1188}
+B 768 Dev: section and a break at 13:30, taps: 4
+B 768 Dev break times offered (roster 12:00 to 15:00): {"first":"Break 12:00","last":"Break 14:30","count":11}
+B 768 Dev words: {"row":"Dev | Breaks 13:30 | Section | Larder ▾ | Off | Off | Roster 12:00 to 15:00 · Break 13:30 to 14:00 | Dev · Lunch | Monday 16 November · Draft | Close details | + Smoker | Lunch | All day (off) | Dinner (off) | Lunch: Roster 12:00 to 15:00 | Break 1 | Break 13:30 ▾ | Length | 30 min ▾ | + Break | Remove Lunch and its breaks","panel":"Dev · Lunch | Monday 16 November · Draft | Close details | + Smoker | Lunch | All day (off) | Dinner (off) | Lunch: Roster 12:00 to 15:00 | Break 1 | Break 13:30 ▾ | Length | 30 min ▾ | + Break | Remove Lunch and its breaks"}
+B 768 sideways scroll, errors: {"over":false,"errors":[]}
+B 1280 services in order: ["Lunch","All day","Dinner"]
+B 1280 rows in one screen, median row px, list px: {"rows":5,"rowPx":122,"list":1188}
+B 1280 Dev: section and a break at 13:30, taps: 4
+B 1280 Dev break times offered (roster 12:00 to 15:00): {"first":"Break 12:00","last":"Break 14:30","count":11}
+B 1280 Dev words: {"row":"Dev | Breaks 13:30 | Section | Larder ▾ | Off | Off | Roster 12:00 to 15:00 · Break 13:30 to 14:00","panel":"Dev · Lunch | Monday 16 November · Draft | Close details | + Smoker | Lunch | All day (off) | Dinner (off) | Lunch: Roster 12:00 to 15:00 | Break 1 | Break 13:30 ▾ | Length | 30 min ▾ | + Break | Remove Lunch and its breaks"}
+B 1280 sideways scroll, errors: {"over":false,"errors":[]}
+B 1280 whole day: 7 cooks, a section and one break each, then Save: {"taps":29,"saved":true}
+B 390 clear: {"armedWords":"Tap again to clear Monday 16 November","msg":"Everyone taken off Monday 16 November: 9 people. Not saved yet. Refresh brings the saved plan back.","rowsLeft":0,"tapsBeforeSave":3}
+C 390 services in order: ["Lunch","All day","Dinner"]
+C 390 rows in one screen, median row px, list px: {"rows":1,"rowPx":211,"list":2123}
+C 390 Dev: section and a break at 13:30, taps: 3
+C 390 Dev break times offered (roster 12:00 to 15:00): {"first":"Break 12:00","last":"Break 14:30","count":11}
+C 390 Dev words: {"row":"Dev | Services | Roster 12:00 to 15:00 · Break 13:30 to 14:00 | Lunch | Roster 12:00 to 15:00 | Section | Larder ▾ | Break 1 | Break 13:30 ▾ | Length | 30 min ▾ | + Break","panel":""}
+C 390 sideways scroll, errors: {"over":false,"errors":[]}
+C 768 services in order: ["Lunch","All day","Dinner"]
+C 768 rows in one screen, median row px, list px: {"rows":6,"rowPx":117,"list":1180}
+C 768 Dev: section and a break at 13:30, taps: 3
+C 768 Dev break times offered (roster 12:00 to 15:00): {"first":"Break 12:00","last":"Break 14:30","count":11}
+C 768 Dev words: {"row":"Dev | Services | Roster 12:00 to 15:00 · Break 13:30 to 14:00 | Lunch | Roster 12:00 to 15:00 | Section | Larder ▾ | Break 1 | Break 13:30 ▾ | Length | 30 min ▾ | + Break","panel":""}
+C 768 sideways scroll, errors: {"over":false,"errors":[]}
+C 1280 services in order: ["Lunch","All day","Dinner"]
+C 1280 rows in one screen, median row px, list px: {"rows":5,"rowPx":117,"list":1158}
+C 1280 Dev: section and a break at 13:30, taps: 3
+C 1280 Dev break times offered (roster 12:00 to 15:00): {"first":"Break 12:00","last":"Break 14:30","count":11}
+C 1280 Dev words: {"row":"Dev | Services | Roster 12:00 to 15:00 · Break 13:30 to 14:00 | Lunch | Roster 12:00 to 15:00 | Section | Larder ▾ | Break 1 | Break 13:30 ▾ | Length | 30 min ▾ | + Break","panel":""}
+C 1280 sideways scroll, errors: {"over":false,"errors":[]}
+C 1280 whole day: 7 cooks, a section and one break each, then Save: {"taps":22,"saved":true}
+C 390 clear: {"armedWords":"Tap again to clear Monday 16 November","msg":"Everyone taken off Monday 16 November: 9 people. Not saved yet. Refresh brings the saved plan back.","rowsLeft":0,"tapsBeforeSave":3}

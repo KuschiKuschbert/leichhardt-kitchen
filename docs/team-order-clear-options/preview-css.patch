@@ -1,0 +1,43 @@
+diff --git a/css/app.css b/css/app.css
+index b8217d0..bf66cc5 100644
+--- a/css/app.css
++++ b/css/app.css
+@@ -5705,3 +5705,38 @@ html:has(.tm-focus-page) {
+   #rec-print h2 { font: 700 12pt var(--display); margin: 10pt 0 2pt; break-after: avoid; }
+   #rec-print p { margin: 0 0 2pt; }
+ }
++/* PREVIEW ONLY (docs/team-order-clear-options, council round 2): window.__tl = A, B or C. Not for release. */
++.tm-focus-page .tm-rowbar { display: block; height: 10px; margin: .35rem .9rem .15rem; }
++.tm-focus-page .tm-rowticks { display: block; margin: 0 .9rem; }
++.tm-focus-page .tm-rowline .tm-roster-time { margin: .1rem 0 0; }
++.tm-focus-page .tm-grid > .tm-grid-head > .tm-rowscale { grid-column: 1 / -1; display: block; margin-top: .25rem; contain: inline-size; }
++.tm-focus-page .tm-people.tm-tlplan { list-style: none; margin: 0; padding: 0; }
++.tm-tlplan > .tm-tlplan-head { position: sticky; top: var(--tm-grid-top, 0px); z-index: 4; background: var(--surface-paper); border-bottom: 2px solid var(--ink); padding: .4rem 0 .3rem; }
++.tm-tlplan-svcs { display: flex; flex-wrap: wrap; gap: .15rem 1rem; font-size: .875rem; color: var(--muted); }
++.tm-tlplan-svcs b { color: var(--ink); font: 700 1rem/1.2 var(--display); }
++.tm-tlplan-head .tm-rowticks { margin-top: .3rem; }
++.tm-tlplan > .tm-tlrow { padding: .5rem 0; border-bottom: 1px solid var(--line); }
++.tm-notebook.tm-focus-page .tm-tlrow .tm-person-name { font-size: 1.5rem; line-height: 1.05; }
++.tm-tlrow > .tm-grid-who { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
++.tm-tlrow-day .tm-roster-time { margin: .1rem 0 .3rem; }
++.tm-tlsvc { display: grid; grid-template-columns: minmax(7rem, 11rem) minmax(8rem, 12rem) minmax(0, 1fr); gap: .4rem .6rem; align-items: center; padding: .25rem 0; }
++.tm-tlsvc-name { min-width: 0; }
++.tm-tlsvc-name b { display: block; font: 700 1rem/1.2 var(--display); }
++.tm-tlsvc-name small { display: block; font-size: .8125rem; color: var(--muted); }
++.tm-tlsvc-brs { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; min-width: 0; }
++.tm-tlsvc-brs .tm-pick { margin: 0; }
++.tm-tlsvc-brs :is(select, .ux-picker-trigger) { min-height: 44px; }
++.tm-tlsvc-brs .chip { min-height: 44px; }
++.tm-tlplan > .tm-person-row > .tm-detail-workbench { margin: .4rem 0 .2rem; contain: inline-size; }
++@media (max-width: 599px) { .tm-tlsvc { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .tm-tlsvc-brs { grid-column: 1 / -1; } }
++@media (min-width: 1100px) {
++  .tm-focus-page .tm-focus-grid.tm-tl-c:has(> .tm-detail-workbench.is-empty) { grid-template-columns: minmax(0, 1fr); }
++  .tm-focus-page .tm-focus-grid.tm-tl-c > .tm-detail-workbench.is-empty { display: none; }
++}
++@media (min-width: 600px) {
++  .tm-tlplan > .tm-tlrow, .tm-tlplan > .tm-tlplan-head { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); column-gap: .75rem; align-items: start; }
++  .tm-tlplan > .tm-tlrow > .tm-grid-who { flex-direction: column; align-items: flex-start; gap: 0; }
++  .tm-tlplan > .tm-tlrow > :is(.tm-tlrow-day, .tm-tlsvc, .tm-detail-workbench), .tm-tlplan-head > :is(.tm-tlplan-svcs, .tm-rowticks) { grid-column: 2; }
++}
++@media (max-width: 599px) { .tm-focus-page .tm-rowticks .tk1 { display: none; } }
++@media (min-width: 600px) { .tm-tlplan > .tm-tlrow > .tm-grid-who { grid-row: span 4; } }

@@ -79,3 +79,92 @@ The head chef widened the proposal before round 1a closed ([proposal-timeline.md
 | The roster saves the whole roster time on every service it touches: Mo 10:00 to 21:00 on Lunch and Dinner; Kit 14:30 to 17:00 on Lunch alone, two hours past its end; with All day not hidden a second service with the same hours. A 10:00 to 15:00 cook also on All day gets a 2.5 hour split at 14:30, because All day counts as long. | **Reproduced** in node with `plan()` and `services()` (skeptic) | The head chef's question above; one bar per distinct span; a unit check with these spans. |
 | Missing hours: Add staff sets none, Copy last weekday drops roster hours, "Add Lunch and Dinner" makes shifts with no times. | Checked in source (keeper, skeptic) | "Lunch hours" or "Hours not set" in words; nothing drawn without hours. |
 | Redraw under the thumb: bars redrawn on a picker change while another picker is open could move the row. A "now" line must use the existing minute paint, no new timer. | Risk | A click test that an open picker keeps its value and place while the bars redraw; remeasure the full app at 390, 768 and 1280 px. |
+
+## Round 2: three designs
+
+Built as one patch on the real page, switched by `window.__tl` (`preview-prep.patch`, `preview-css.patch`, runner `preview-run.cjs`, raw numbers `measured-preview.txt`). Admin session, test stand-in, fallback fonts, the roster-day fixture (Gus 08:00 to 15:00 and 17:00 to 21:00; Ari, Bea, Cal, Dev on Lunch with their own hours; Sam, Eli, Fen on Dinner; Mo on All day 10:00 to 21:00; no sections, no breaks; Smoker hidden). Never on the live book.
+
+**The same in all three** (round 1's cuts): services in time order (Lunch 10:00 to 15:00, All day 10:00 to 21:00, Dinner; Smoker 06:00 first in the chips); break times only inside the person's hours, ending by their finish (Dev: 12:00 to 14:30, 11 times, not 10:00 to 15:00, 21); + Break starts in the middle of their hours; their hours said in words where breaks are set; **Clear this day** in the fold, renamed "Copy, clear or spread breaks", admin only: Clear, then "Tap again to clear Monday 16 November", then "Everyone taken off Monday 16 November: 9 people. Not saved yet. Refresh brings the saved plan back."
+
+### A: Hours in words (changes the least)
+
+The day grid and the details panel stay as chosen on 15 November. Each row's line under the name becomes "Roster 12:00 to 15:00 · Break 13:30 to 14:00" (or "No break yet"). The panel adds "Lunch: Roster 12:00 to 15:00" above the break pickers. No bar while planning; the Saved shift overview keeps its bars. Screens: `A-plan-390.png`, `A-dev-390.png`, `A-dev-768.png`, `A-dev-1280.png`, `A-day-1280.png`.
+
+- **For:** nothing to relearn; the same density as today; the fault (breaks outside hours, hours not shown) is fixed.
+- **Against:** no picture of the day: who overlaps whom and where the gaps are still has to be read from words; the head chef asked for a bar.
+
+### B: A bar in every row (the grid reads as a time line)
+
+The grid and the panel stay for changing things. Under each row, a read-only bar of the person's day on one scale for the whole page, with hour marks in the sticky service heads (every hour from 600 px, every third hour on a phone), the break in orange on the bar and the same words under it. One bar per distinct span (Gus: two). The Saved shift overview fold goes: the grid shows the same day. Same structure at every width, changed by CSS only. Screens: `B-plan-390.png`, `B-dev-390.png`, `B-dev-768.png`, `B-dev-1280.png`, `B-day-1280.png`.
+
+- **For:** the whole day can be seen down the page (overlaps, gaps, breaks); the editing is unchanged; one overview instead of two.
+- **Against:** rows 18 px taller (5 rows on a laptop screen, not 6); at 1280 px the bar shares the width with the panel (about 490 px for 14 hours, 35 px an hour); a 30 minute break is a small orange mark.
+
+### C: The day on one clock (removes the most friction)
+
+The grid's service columns and "Off" cells go. The head lists each service with its hours and who has no section, then the hour marks. Each row: the name with **Services** (opens the panel, now only to add or remove a service), the person's bar beside the name from 600 px (under it on a phone), the words, then one line per service they work: the service and their hours, the Section picker, the break pickers and **+ Break**, all in the row. No Breaks tap. Screens: `C-plan-390.png`, `C-dev-390.png`, `C-dev-768.png`, `C-dev-1280.png`, `C-day-1280.png`.
+
+- **For:** a cook's section and break in 3 taps, not 4 (22 a day, not 29); the bar is wide (the whole list, about 60 px an hour at 1280); the time, section and break are together in the row.
+- **Against:** it replaces the day grid chosen on 15 November; on a phone a row is 211 px (1 per screen, not 3); comparing sections across people for one service is harder without columns; the panel still exists for services, a second place.
+
+### How they differ
+
+| | A | B | C |
+| --- | --- | --- | --- |
+| Layout | Day grid | Day grid plus a bar row | Rows on one clock, no service columns |
+| Where breaks are set | Panel | Panel | In the row |
+| Time shown while planning | Words | Bar and words | Bar and words, and each service's hours |
+| Saved shift overview | Kept | Removed (the grid is the overview) | Kept |
+| Approved design changed | None (the 9 Nov order rule, all three) | The overview fold | The 15 Nov day grid and the panel's break role |
+
+### Measured (Preview)
+
+| Measure | Today | A | B | C |
+| --- | ---: | ---: | ---: | ---: |
+| Dev: section and a break, taps (390, 768, 1280) | 4 | 4 | 4 | **3** |
+| The day: 7 cooks, a section and a break each, then Save, 1280 | 29 | 29 | 29 | **22** |
+| Break times offered to Dev (roster 12:00 to 15:00) | 21, from 10:00 | **11**, 12:00 to 14:30 | 11 | 11 |
+| Dev's hours where his break is set | No | Yes | Yes | Yes |
+| Rows wholly in one screen, 390 / 768 / 1280 | 3 / 7 / 6 | 3 / 7 / 6 | 3 / 6 / 5 | 1 / 6 / 5 |
+| Median row height px, 390 / 768 / 1280 | 123 / 104 / 104 | 123 / 104 / 104 | 141 / 122 / 122 | 211 / 117 / 117 |
+| List height px, 390 / 768 / 1280 | 1176 / 1007 / 1007 | 1196 / 1007 / 1007 | 1378 / 1188 / 1188 | 2123 / 1180 / 1158 |
+| Clear the whole day, 390 | 30 taps, then Save | 3, then Save | 3, then Save | 3, then Save |
+| Sideways scroll, browser errors (all widths) | none | none | none | none |
+| Pull requests to build (lead's estimate) | | 1 to 2 | 2 | 3 |
+| New reads, listeners, rules | | none | none | none |
+
+"Rows wholly in one screen" counts rows between the sticky head and the Save bar once the list is scrolled to its first row. Full-page captures show the sticky head over a row: a capture effect, not the layout.
+
+### Contract fit (lead's reading, for the scorers to test)
+
+- **Surface:** all three keep the sage people book and paper inside. Works.
+- **State meaning:** "Unsaved changes", "Not saved yet" and the dated Save are unchanged; Clear says nothing is saved. The orange break on a bar follows the approved "A saved day at a glance" (break in orange) and always has the words beside it. Works by that precedent; a scorer may argue orange should stay attention only.
+- **Words:** A words only; B and C words under every bar. Works.
+- **Real contrast:** the beige bar track on paper, the orange break on ink, and the focus ring on C's inline pickers: Not evidenced.
+- **States:** Clear armed, cleared and not saved (exercised); a failed Save, a lock and a second writer: unchanged code paths, not exercised. Not evidenced.
+- **Service continuity:** rows and taps above. B costs one row on a laptop; C costs two rows a screen on a phone and saves 7 taps a day.
+- **Departures for the head chef:** the 9 November order rule (all three); the Saved overview fold (B); the 15 November day grid (C).
+
+### Reference comparison (lead's reading)
+
+| Principle | A | B | C |
+| --- | --- | --- | --- |
+| Flighty: real times, now and next | Needs work: words only | Works: one scale down the page | Works: one wide scale |
+| Things 3: frequent actions visible, no drag-only | Works | Works | Works: section and breaks in the row |
+| Airbnb: time, place, status together | Needs work: hours in the row, breaks in the panel | Needs work: same split | Works: one line per service |
+| Todoist: quick, defaults visible, nothing guessed | Works: break starts mid-hours, editable | Works | Works |
+| Linear: one way to do each thing | Works | Works: one overview, not two | Needs work: services in the panel, breaks in the row |
+| Duolingo: honest feedback | Works | Works | Works |
+| Headspace: plain words for a new starter | Works | Works | Needs work: "Services" names a panel the grid called "Breaks" |
+
+### Break-it findings (lead, on the previews)
+
+| Scenario | Evidence | Repair or check |
+| --- | --- | --- |
+| Clear: arm, tap again, everyone off, nothing saved, Save then writes the empty plan. | Checked in the preview at 390 px (all three) | Before build: a date pick cancels the arm; nobody on reads as Not set (week list, chip, To do, roster fill); click tests. |
+| A break already outside the person's hours (from Spread or an old save) stays in the picker and the words add "(outside their hours)". | In the patch; not exercised | A click test with Bea broken at 10:30. |
+| The same roster time on two services draws one bar (`tmSpans()`). | In the patch; not exercised (the fixture has none) | A fixture with Mo on Lunch and Dinner, 10:00 to 21:00. |
+| C's inline pickers are keyed by person, service and break number (`tm-bat:<id>:<sh>:<n>`), so a held picker cannot reach another service. | Checked in the preview: a whole day of 7 cooks saved | The `tm-sec` style key check in a click test. |
+| B and C redraw the bars on every picker change; an open picker elsewhere must keep its value and place. | Risk / Not evidenced | A click test before release. |
+| On a phone, C's row is 211 px: 1 row a screen. | **Reproduced** (measured) | Accept, or C on a phone keeps the grid (a second render path, the keeper's concern). |
+| How the roster maps a time to services (Mo 10:00 to 21:00 on Lunch and Dinner with the same hours). | Reproduced in round 1b | The head chef's question; no design fixes it alone. |
