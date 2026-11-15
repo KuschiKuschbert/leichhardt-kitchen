@@ -196,9 +196,10 @@ async function layouts(p, label) {
     // was: the keyboard opened the named workbench without moving focus. Now Enter on Take off Dinner arms it and the
     // focus stays on that same button, so a second Enter takes Ann off Dinner, never another service
     await p.focus(off('ann', 'dinner')); await p.keyboard.press('Enter'); await L.settle(p, 150);
-    const armedFocus = await focusOn(p, off('ann', 'dinner')) && await p.locator(off('ann', 'dinner')).innerText() === 'Tap again to take off';
+    const focusName = () => p.evaluate(() => document.activeElement.getAttribute('aria-label') || document.activeElement.textContent.trim());
+    const armedFocus = await focusOn(p, off('ann', 'dinner')) && await p.locator(off('ann', 'dinner')).innerText() === 'Tap again to take off', armedOn = await focusName();
     await p.keyboard.press('Enter'); await L.settle(p, 150);
-    ok(armedFocus && !await p.locator(line('ann', 'dinner')).count() && await p.locator(line('ann', 'lunch')).count() === 1 && await value(p, 'tm-at:ann:lunch:0') === '825' && await focusOn(p, '[data-p="tm-off-undo"][data-id="ann"]'), label + ': keyboard Take off Dinner stays on its own button and takes Ann off Dinner only');
+    ok(armedFocus && !await p.locator(line('ann', 'dinner')).count() && await p.locator(line('ann', 'lunch')).count() === 1 && await value(p, 'tm-at:ann:lunch:0') === '825' && await focusOn(p, '[data-p="tm-off-undo"][data-id="ann"]'), label + ': keyboard Take off Dinner stays on its own button and takes Ann off Dinner only (focus after the first Enter: ' + armedOn + '; then: ' + await focusName() + ')');
     ok(!p.errors.length && await p.evaluate(() => !__fake.refused.length), label + ': no browser errors or refused reads');
     await p.context().close();
   }

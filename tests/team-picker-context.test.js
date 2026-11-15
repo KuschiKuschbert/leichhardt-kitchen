@@ -176,8 +176,8 @@ const forge = (p, list) => p.evaluate(list => {
     await p.context().close();
 
     // The details panel's Close and reopen went with the rows. The focus still lands on the next thing to do, for the
-    // same person and service, and the unsaved break is kept until Save. These two focus checks fail on the 16 Nov
-    // build: draw() puts the focus back by data-p and data-id only, so it lands on Ann's first service (Lunch).
+    // same person and service, and the unsaved break is kept until Save. The Take off focus check fails on the 16 Nov
+    // build: draw() puts the focus back by data-p and data-id only (guestSel), so it lands on Ann's first service, Lunch.
     for (const width of [390, 1280]) {
       p = await open(browser, base, { width });
       await p.locator('[data-p="tm-addbr"][data-id="ann"][data-sh="dinner"]').focus(); await p.keyboard.press('Enter'); await L.settle(p, 200);

@@ -1515,7 +1515,8 @@
   function guest() { return false; }
   function guestAsk(pend) { S.pending = pend; S.picking = true; S.who = ''; draw(); window.scrollTo(0, 0); }
   function guestSel(el) {
-    return ['data-p', 'data-id', 'data-d', 'data-i', 'data-v', 'data-k2'].filter(function (k) { return el.hasAttribute(k); })
+    // data-sh and data-day too (16 Nov 2026): a person's Take off and + Break differ only by service and date
+    return ['data-p', 'data-id', 'data-sh', 'data-day', 'data-d', 'data-i', 'data-v', 'data-k2'].filter(function (k) { return el.hasAttribute(k); })
       .map(function (k) { return '[' + k + '="' + String(el.getAttribute(k)).replace(/["\\]/g, '\\$&') + '"]'; }).join('');
   }
   function guestReplay(pend) {

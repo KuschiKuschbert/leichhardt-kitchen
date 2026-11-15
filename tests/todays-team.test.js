@@ -103,6 +103,8 @@ const withoutViewChoice = async p => {
   await tap(p, '[data-p="tm-spread"]'); await L.settle(p, 200);
   ok(/3 breaks from 12:00/.test(await txt(p, '.tm-save') || ''), 'page: Spread them sets 3 breaks from 12:00, one at a time (' + (await txt(p, '.tm-save')) + ')');
   ok(await onShift(p, 'ann', 'dinner') && /Ann added to Dinner\. Not saved yet\./.test(await saveWords(p)), 'page: Add a service puts Ann on Dinner in one pick and says so (' + await saveWords(p) + ')');
+  const secFocus = await p.evaluate(() => { const a = document.activeElement, s = document.querySelector('select[data-k="tm-sec:ann:dinner"]'); return { ok: !!a && !!s && (a === s || a === s.nextElementSibling && a.classList.contains('ux-picker-trigger')), at: a ? a.tagName + '.' + a.className : 'none' }; });
+  ok(secFocus.ok, 'page: Add a service puts the focus on the new service\'s section, the next thing to set (focus on ' + secFocus.at + ')');
   ok(await p.$eval('select[data-k="tm-sec:ann:dinner"]', e => e.value) === 'grill', 'page: Ann on Dinner starts with her Lunch section');
   await pick(p, 'tm-sec:ann:dinner', 'pans'); await L.settle(p, 150);
   // the workbench's "Also on Lunch: Grill" is gone: her row holds both services in time order, and Dinner's picker

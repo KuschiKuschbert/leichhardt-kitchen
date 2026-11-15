@@ -5725,10 +5725,13 @@ html:has(.tm-focus-page) {
 .tm-planhead .tm-grid-count b { display: inline; font: inherit; font-weight: 700; }
 .tm-focus-page .tm-rowticks { display: block; margin: .3rem .9rem 0; }
 .tm-focus-page .tm-plan > :is(.tm-tlrow, .tm-tlgone) { padding: .45rem 0; border-bottom: 1px solid var(--line); }
-.tm-plan > .tm-tlrow > .tm-grid-who { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .6rem; min-width: 0; }
-.tm-notebook.tm-focus-page .tm-tlrow .tm-person-name { min-width: 0; font-size: 1.5rem; line-height: 1.05; overflow-wrap: break-word; word-break: normal; }
+.tm-plan > .tm-tlrow > .tm-grid-who { display: flex; flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: .6rem; min-width: 0; }
+/* a long name wraps between words, and inside a word only when one word is wider than the column */
+.tm-notebook.tm-focus-page .tm-tlrow .tm-person-name { min-width: 0; max-width: 100%; font-size: 1.5rem; line-height: 1.05; overflow-wrap: anywhere; word-break: normal; }
 .tm-tlrole { color: var(--muted); font-size: .8125rem; }
-.tm-plan > .tm-tlrow > .tm-grid-who > :is(.tm-short-mark, .tm-roster-flag) { flex-basis: 100%; margin-top: .1rem; }
+/* "break when too few" sits beside the name on a phone, so it coming and going never moves the row under a thumb */
+.tm-plan > .tm-tlrow > .tm-grid-who > .tm-short-mark { margin-top: 0; }
+.tm-plan > .tm-tlrow > .tm-grid-who > .tm-roster-flag { flex-basis: 100%; margin-top: .1rem; }
 .tm-tlrow-main { min-width: 0; }
 .tm-focus-page .tm-rowbar { display: block; height: 6px; margin: .5rem .9rem .2rem; background: transparent; }
 .tm-rowbar .sh { border-radius: 3px; }
