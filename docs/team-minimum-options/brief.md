@@ -2,7 +2,7 @@
 
 15 November 2026, Queensland. Head chef request: "In the today's team admin area, can we have a visual warning when not enough people are in the kitchen, like when too many people are on breaks? And maybe have a setting where chefs can set the minimum chefs for a time frame."
 
-**Status: waiting for the head chef's choice. Nothing in the app has changed.** Round 1 Build smaller (5 of 5); round 2 B 15, A 13, C 8; **recommended: the mix** (B's Save dock line, C's mark on Breaks, A's busy time per shift), reviewed again by four of the six (all Recommend with a change, every change made). [Proposal](proposal.md), [evidence packet](evidence-packet.md), [previews](index.html) ([A](a.html), [B](b.html), [C](c.html), [the mix](mix.html)). Role-based analysis, not research with staff.
+**Status: the mix chosen 15 November 2026 and built (see Chosen and Built at the end).** Round 1 Build smaller (5 of 5); round 2 B 15, A 13, C 8; **recommended: the mix** (B's Save dock line, C's mark on Breaks, A's busy time per shift), reviewed again by four of the six (all Recommend with a change, every change made). [Proposal](proposal.md), [evidence packet](evidence-packet.md), [previews](index.html) ([A](a.html), [B](b.html), [C](c.html), [the mix](mix.html)). Role-based analysis, not research with staff.
 
 ## Round 1
 
@@ -239,3 +239,64 @@ The keeper's test: a draft edit at 18:59, the clock past 19:00, then the line an
 - How often the kitchen really runs short. The evidence is a made-up day.
 - Whether a busy time per shift is enough, or the head chef wants a quieter Monday need (per weekday was split in round 1; later, if it nags).
 - The admin's whole-record config save may already drop `proofWords` and `pastEdit` (keeper, read only, not reproduced): its own check and fix pull request, outside this feature.
+
+## Chosen
+
+15 November 2026: the head chef chose the recommendation, the mix ("i take your recommendations for now"), with one busy time for every day; a per-weekday need waits until the warning nags on quiet nights. Recorded in `docs/head-chef-decisions.md`.
+
+## Built
+
+15 November 2026, in this pull request.
+
+**`js/prep.js`:**
+- **The setting.** `shBusyHTML()` draws Busy time from and to and People needed then under each shift in Admin, Kitchen, Shifts. `shAdminInput()` keeps the draft. `shClean()` keeps only a whole busy time (`tmBusyClean()`: from before to, 1 to 30 people) and leaves it out when unset. `tmBusy()` reads it. The Shifts row says "(busy 17:30 to 20:30, 6 needed)".
+- **The count.** `tmShortOf()` counts the selected day's draft, per busy time, in stretches between hours and break edges. `tmShortNow()` keeps one answer per draft, minute and settings.
+- **The line and the marks.** `tmShortLineHTML()` writes the Save dock line. `tmShortIds()` and `tmShortMarkHTML()` give the marks, held while a Breaks panel is open.
+- **The repaint.** `tmShortPaint()` runs from `tmAwayPaint()` (the minute, focus and clock paint). It changes only the line, the dock's own saved words and the marks, and waits while a picker is open or a box is typed in.
+- **The dock's own words.** `tmShortStateHidden()` steps the dock's "Saved 13:00 · Gus" aside while the line shows and nothing is unsaved.
+
+**`css/app.css`:** `.tm-short-line` (from 1100 px beside Save), `.tm-short-mark`, `.a-sh-busy` (on a phone laid out like the shift's own From and To).
+
+No new read, write path, rule, listener or timer. The busy time is one more field on each shift in `config/main`, written only by the verified admin's existing config save. Older code ignores it, but an older admin phone's config save would drop it until that phone updates (finding 14).
+
+**Departures from the combined preview, kept small:**
+- **The count uses saved roster hours.** #712 (merged during this study) saves each person's roster hours with the day's plan. A person counts within those hours where the day has them, and within the shift's hours where not. This answers round 1's finding 2 (a 17:00 starter no longer counts from 15:00). The setting's note says so.
+- **A shift with nobody on it says nothing.** A day not planned yet must not warn "Only 0 on Lunch".
+- **The busy time uses the shift's own time boxes**, not the preview's pickers, so the row has one kind of time control. People needed then is the book's picker.
+- **From 1100 px the line sits beside Save**, so the dock keeps its laptop height.
+- **A shift without hours**, with someone on it who has no roster hours, says "Can't check the Dinner busy time: Dinner has no hours set." It never shows a count.
+
+**Implemented app measurements.** Stand-in, the study's made-up day at 18:30, fallback fonts. Before: the same plan with no busy time set, as today. Script [`implemented.cjs`](implemented.cjs), raw [`implemented.json`](implemented.json).
+
+| Measure | Before | Built |
+| --- | ---: | ---: |
+| Save dock height, admin 390 / sous chef 390 / 768 / 1280 | 96 / 98 / 67 / 67 px | 114 / 116 / 96 / **67** px |
+| Person rows in the working screen, admin 390 / sous chef 390 / 768 / 1280 | 6 / 7 / 8 / 8 | 5 / 6 / 7 / 8 |
+| On break now names above the dock on the first screen, admin 390 / sous chef 390 | 3 of 4 / 4 of 4 | **2 of 4** / 4 of 4 |
+| Find the short time | 1 tap, then count 14 lines | 0 taps: the line is on the first screen at every width |
+| Fix (move Sam K and Hal) and Save | 7 taps | 7 taps |
+| Contrast of the line's first words and the mark (`--small-ink` on `--surface-paper`, 13 px bold) | | 5.27:1; the rest of the line 15.9:1. The book has no dark theme. |
+| Sideways scroll, page errors | none | none |
+
+The extra height and the lost row apply only while the plan is too few. With enough on, or no busy time set, the dock is as before. Screenshots: [admin 390](implemented-admin-390.png), [admin 390 working](implemented-admin-390-working.png), [sous chef 390](implemented-team-390.png), [768](implemented-admin-768.png), [1280](implemented-admin-1280.png), [the setting](implemented-setting-390.png).
+
+**Tests:** `tests/team-minimum.test.js`, 37 checks. It fails at its first check on the old code: there is no busy time setting. It covers:
+- the setting: half-chosen, back-to-front, saved whole, the row's words, and kept by a People save;
+- the line's words and the marks, and the dock's own words stepping aside;
+- a half-done fix, the marks holding while a panel is open, and the full fix and Save;
+- the clock passing the end of a short time: the Save button and pickers stay the same nodes, the draft is kept, no read;
+- roster hours, and a Function shift that does not count for Dinner;
+- a short roster, a planned day, a day not planned yet, and no busy time set;
+- two short times, no hours set, and a refused Save;
+- a shift name shown as text, never run.
+
+`tests/design-patterns.test.js` has the new class and helper names. Run locally with 26 related files: every team test, `todays-team`, `admin-kit`, `roles`, `safe-text`, `read-budget`, `sticky-bars` and the roster tests. All pass.
+
+**Before ready, from the recommendation:**
+1. **Board above the dock on the admin phone: not met.** It was 3 of 4 before (round 1's finding 1). While the plan is too few it is now 2 of 4. Stepping the dock's own saved words aside was not enough, because the warning takes two lines. The sous chefs' `#/team` keeps all 4, and the line itself says the short time in words. Offered to the head chef as its own fix pull request, since the overlap is older than this feature.
+2. Carry the busy time through every save path: done and tested.
+3. One pure count with node-style cases: done through the page tests above, not a separate node file. `js/prep.js` is not loaded by node.
+4. Repaint only on the existing paths, with the hold rule and the clock test: done.
+5. Unread or failed plans: the editor, and so the line, shows only once the day's plan has been read. The clock not ready says "Checking the kitchen clock". **Not evidenced in a test.**
+6. Remeasured at 390, 768 and 1280: done, above. A refused Save: tested.
+7. Contrast: measured, above.

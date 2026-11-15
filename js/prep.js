@@ -1768,7 +1768,7 @@
       people: ps.length,
       sous: ps.filter(function (p) { return p.id !== c.headId && (c.sousIds || []).indexOf(p.id) >= 0; }).length,
       secs: kitSecs().map(function (x) { return String(x.name); }),
-      shifts: kitShifts().map(function (x) { return x.from != null && x.to != null ? x.name + ' ' + tmHHMM(x.from) + ' to ' + tmHHMM(x.to) : x.name; }),
+      shifts: kitShifts().map(function (x) { var b = tmBusy(x.id); return (x.from != null && x.to != null ? x.name + ' ' + tmHHMM(x.from) + ' to ' + tmHHMM(x.to) : x.name) + (b ? ' (busy ' + tmHHMM(b.from) + ' to ' + tmHHMM(b.to) + ', ' + b.n + ' needed)' : ''); }),
       shown: FEATS.filter(function (f) { return see[f[0]]; }).map(function (f) { return f[1]; }),
       hidden: FEATS.filter(function (f) { return !see[f[0]]; }).map(function (f) { return f[1]; }),
       badges: c.showBadges !== false, sound: pingSound(), sousMail: c.sousMail === true,
@@ -13074,7 +13074,7 @@ if (list.length) sg('oreg', 's');
     var i = +el.getAttribute('data-i'), d = S.draft;
     if (a === 'name') d.people[i].name = el.value;
     if (a === 'ksec' && d.kitSecs && d.kitSecs[i]) d.kitSecs[i].name = el.value;
-    if (a === 'shname' || a === 'shfrom' || a === 'shto') shAdminInput(a, el, d);
+    if (a === 'shname' || a === 'shfrom' || a === 'shto' || a === 'shbfrom' || a === 'shbto') shAdminInput(a, el, d);
   }
   function onChange(e) {
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
@@ -13114,7 +13114,7 @@ if (list.length) sg('oreg', 's');
     if (a === 'badges') { S.draft.showBadges = el.checked; return; }
     if (a === 'staffsee') { S.draft.staffSee[el.getAttribute('data-f')] = el.checked; return; }
     // a shift's name or times, once the box is left or a time picked: drawn again so Save changes follows
-    if (a === 'shname' || a === 'shfrom' || a === 'shto') { shAdminInput(a, el, S.draft); draw(); return; }
+    if (a === 'shname' || a === 'shfrom' || a === 'shto' || a === 'shbfrom' || a === 'shbto' || a === 'shneed') { shAdminInput(a, el, S.draft); draw(); return; }
     var i = +el.getAttribute('data-i'), p = S.draft.people[i];
     if (a === 'role') {
       if (el.value === 'head' && S.level !== 'owner') { el.value = p.role; return; }
@@ -13749,10 +13749,28 @@ if (list.length) sg('oreg', 's');
     return ((S.config && S.config.kitShifts) || []).filter(function (x) { return x && tmStr(x.id, 40) && String(x.name || '').trim() && !x.off; })
       .map(function (x) { return { id: x.id, name: String(x.name).trim().slice(0, 40), from: tmMin(x.from), to: tmMin(x.to) }; });
   }
+  // a shift's busy time as saved, or null (kitShifts() itself carries only id, name, from and to)
+  function tmBusy(shId) {
+    var x = ((S.config && S.config.kitShifts) || []).filter(function (s) { return s && s.id === shId && !s.off; })[0];
+    return x ? tmBusyClean(x.busy) : null;
+  }
   function shClean(list) {
     var seen = {};
-    return (Array.isArray(list) ? list : []).map(function (x) { x = x || {}; return { id: String(x.id || '').slice(0, 40), name: String(x.name || '').replace(/\s+/g, ' ').trim().slice(0, 40), from: tmMin(x.from), to: tmMin(x.to), off: !!x.off }; })
+    return (Array.isArray(list) ? list : []).map(function (x) {
+      x = x || {};
+      var o = { id: String(x.id || '').slice(0, 40), name: String(x.name || '').replace(/\s+/g, ' ').trim().slice(0, 40), from: tmMin(x.from), to: tmMin(x.to), off: !!x.off }, b = tmBusyClean(x.busy);
+      if (b) o.busy = b;   // the shift's busy time (15 Nov 2026), only when whole: left out when unset or half chosen
+      return o;
+    })
       .filter(function (x) { if (!x.id || !x.name || seen[x.id]) return false; seen[x.id] = 1; return true; }).slice(0, 12);
+  }
+  /* A shift's busy time (head chef, 15 Nov 2026, docs/team-minimum-options/brief.md): { from, to, n }, minutes after
+     midnight and how many people the shift needs on and not on a break then. Whole and from before to, or nothing. */
+  var TM_NEED_MAX = 30;
+  function tmBusyClean(b) {
+    if (!b || typeof b !== 'object') return null;
+    var f = tmMin(b.from), t = tmMin(b.to), n = b.n;
+    return f !== null && t !== null && f < t && f === b.from && t === b.to && typeof n === 'number' && Math.floor(n) === n && n >= 1 && n <= TM_NEED_MAX ? { from: f, to: t, n: n } : null;
   }
   /* A record read from Firestore, checked entry by entry (the rules check only the sizes): a person, a shift and a
      section are short words, a break starts within the day and lasts one of the five lengths. Anything else is left out. */
@@ -14254,10 +14272,102 @@ if (list.length) sg('oreg', 's');
     var brk = bs.length ? bs.map(function (b) { return (tmIsSplit(b.len) ? 'Split ' : '') + tmHHMM(b.at); }).join(', ') : 'not set';
     var notes = shs.map(function (s) { var h = learn[p.id + '|' + s.id]; return h ? (shs.length > 1 ? s.name + ': ' : '') + h : ''; }).filter(Boolean);
     return '<li class="tm-person-row tm-grid-row' + (tmUi.focus === p.id ? ' is-focused' : '') + '" data-id="' + esc(p.id) + '" data-sh="' + esc(tmRowService(p.id)) + '"><div class="tm-grid-who"><span class="tm-person-name">' + esc(p.name) + '</span>' +
-      '<button type="button" class="tm-grid-brk" data-p="tm-focus" data-id="' + esc(p.id) + '" aria-expanded="' + (tmUi.focus === p.id) + '" aria-label="' + esc('Breaks for ' + p.name + ': ' + (bs.length ? brk : 'not set')) + '"' + (svOf('t') === 'busy' ? ' disabled' : '') + '>Breaks <span>' + esc(brk) + '</span></button></div>' +
+      '<button type="button" class="tm-grid-brk" data-p="tm-focus" data-id="' + esc(p.id) + '" aria-expanded="' + (tmUi.focus === p.id) + '" aria-label="' + esc('Breaks for ' + p.name + ': ' + (bs.length ? brk : 'not set')) + '"' + (svOf('t') === 'busy' ? ' disabled' : '') + '>Breaks <span>' + esc(brk) + '</span></button>' +
+      tmShortMarkHTML(p.id) + '</div>' +
       shs.map(function (s) { return '<div class="tm-grid-cell">' + tmGridCellHTML(p, s, shs) + '</div>'; }).join('') +
       (tmf.hrs && tmf.hrs[p.id] ? '<p class="tm-learn tm-roster-time tm-grid-note">Roster ' + esc(tmHoursWords(tmf.hrs[p.id])) + '</p>' : '') +
       notes.map(function (n) { return '<p class="tm-learn tm-grid-note">' + esc(n) + '</p>'; }).join('') + '</li>';
+  }
+  /* ---------- Too few on the plan at a busy time (head chef, 15 Nov 2026, docs/team-minimum-options/brief.md) ----------
+     The council's mix: one line in the Save dock ("Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed.
+     Move a marked break."), "break when too few" under the Breaks of each person away then, and the busy time set on each
+     shift in Admin, Kitchen, Shifts (tmBusy). A warning only: Save is never stopped. From the draft already in memory and
+     the shifts every phone already has: no read, no listener, no new timer (the minute paint, tmShortPaint). */
+  /* The count, pure. A person counts at a minute when they are on the busy time's own shift, inside their roster hours
+     for it when the day has them (else the shift's hours), and not on a break then (start in, return out, any of their
+     breaks). It only changes at hours and break edges, so it is worked out per stretch between edges. Today starts at
+     the kitchen clock's minute (a short time already over says nothing); a planned day, the whole day. */
+  function tmShortOf(f, from) {
+    var out = { spells: [], noHours: [] }, known = {};
+    tmPeople().forEach(function (p) { known[p.id] = 1; });
+    kitShifts().forEach(function (s) {
+      var b = tmBusy(s.id); if (!b) return;
+      var start = Math.max(b.from, from || 0); if (start >= b.to) return;
+      var ids = Object.keys(f.on).filter(function (id) { return known[id] && f.on[id][s.id] !== undefined; });
+      if (!ids.length) return;   // nobody on this shift yet: not planned, nothing to warn
+      var hrs = function (id) { var h = f.hrs && f.hrs[id] && f.hrs[id][s.id]; return h || (s.from != null && s.to != null ? [s.from, s.to] : null); };
+      if (ids.some(function (id) { return !hrs(id); })) { out.noHours.push(s.name); return; }
+      var brs = f.br.filter(function (x) { return ids.indexOf(x.id) >= 0 && f.on[x.id][x.sh] !== undefined && tmMin(x.at) !== null; });
+      var pts = [start, b.to];
+      ids.forEach(function (id) { pts.push(hrs(id)[0], hrs(id)[1]); });
+      brs.forEach(function (x) { pts.push(x.at, x.at + x.len); });
+      pts = pts.filter(function (m) { return m >= start && m <= b.to; }).sort(function (x, y) { return x - y; }).filter(function (m, k, a) { return !k || a[k - 1] !== m; });
+      var cur = null;
+      for (var k = 0; k < pts.length - 1; k++) {
+        var m = pts[k], inn = 0, onPlan = 0, away = [];
+        ids.forEach(function (id) {
+          var h = hrs(id); if (!(h[0] <= m && m < h[1])) return;
+          onPlan++;
+          if (brs.some(function (x) { return x.id === id && x.at <= m && m < x.at + x.len; })) away.push(id); else inn++;
+        });
+        if (inn < b.n) {
+          if (!cur) cur = { sh: s.id, name: s.name, n: b.n, from: m, to: pts[k + 1], low: inn, roster: onPlan, steps: [{ at: m, n: inn }], away: [] };
+          else { cur.to = pts[k + 1]; cur.low = Math.min(cur.low, inn); cur.roster = Math.min(cur.roster, onPlan); if (cur.steps[cur.steps.length - 1].n !== inn) cur.steps.push({ at: m, n: inn }); }
+          away.forEach(function (id) { if (cur.away.indexOf(id) < 0) cur.away.push(id); });
+        } else if (cur) { out.spells.push(cur); cur = null; }
+      }
+      if (cur) out.spells.push(cur);
+    });
+    out.spells.sort(function (x, y) { return x.from - y.from || x.to - y.to; });
+    return out;
+  }
+  // the selected day's draft, worked out once per draw or minute: null when there is nothing to check
+  var tmShortMemo = { key: '', val: null }, tmShortHold = null;
+  function tmShortNow() {
+    var day = tmPlanDay(), today = day === dayNow();
+    if (!tmf || day < dayNow() || !kitShifts().some(function (s) { return tmBusy(s.id); })) return null;
+    if (today && T.ready && !T.ready()) return { clock: true };
+    var from = today ? T.mins() : 0, key = day + '|' + from + '|' + tmSig(tmf) + '|' + JSON.stringify((S.config && S.config.kitShifts) || []) + '|' + tmPeople().map(function (p) { return p.id; }).join(',');
+    if (tmShortMemo.key !== key) tmShortMemo = { key: key, val: Object.assign(tmShortOf(tmf, from), { from: from, today: today }) };
+    return tmShortMemo.val;
+  }
+  // the dock line in words (HTML-safe), or '' when the plan has enough or nothing is set
+  function tmShortLineHTML(r) {
+    if (!r) return '';
+    if (r.clock) return esc('Checking the kitchen clock. Busy times are checked after.');
+    if (r.noHours.length && !r.spells.length) return esc('Can\'t check the ' + r.noHours[0] + ' busy time: ' + r.noHours[0] + ' has no hours set.');
+    var s = r.spells[0]; if (!s) return '';
+    var at = function (x) { return r.today && x.at <= r.from ? 'now' : 'from ' + tmHHMM(x.at); };
+    var lowest = s.steps.reduce(function (a, b) { return b.n < a.n ? b : a; });
+    // the shift is named only when another shift's busy time is short at the same time
+    var named = r.spells.some(function (x) { return x !== s && x.sh !== s.sh && x.from < s.to && s.from < x.to; }) ? ' on ' + s.name : '';
+    var when = r.today && s.from <= r.from ? 'now until ' + tmHHMM(s.to) : tmHHMM(s.from) + ' to ' + tmHHMM(s.to);
+    var count = s.roster < s.n ? 'Only ' + s.roster + ' on ' + s.name + (s.low < s.roster ? ' (' + s.low + ' ' + at(lowest) + ' with breaks)' : '') + ', ' + s.n + ' needed. ' + (s.away.length ? 'Add people or move a marked break.' : 'Add people.')
+      : (s.steps.length <= 2 ? s.steps.map(function (x) { return x.n + ' ' + at(x); }).join(', ') : 'As few as ' + lowest.n + ' ' + at(lowest)) + ', ' + s.n + ' needed. Move a marked break.';
+    var next = r.spells[1] ? ' Next: ' + tmHHMM(r.spells[1].from) + ' to ' + tmHHMM(r.spells[1].to) + '.' : '';
+    return '<b>' + esc((tmDirty() ? 'Unsaved plan' : 'Saved plan') + ': too few' + named + ' ' + when + '.') + '</b> ' + esc(count + next);
+  }
+  /* The people away in the short time the line names. While a Breaks panel is open they hold still, so a row never
+     shrinks under a thumb as a break moves; they catch up when the panel closes or the plan is saved. */
+  function tmShortIds() {
+    var r = tmShortNow(), ids = r && r.spells && r.spells[0] ? r.spells[0].away : [];
+    if (tmUi.focus) { if (!tmShortHold || tmShortHold.day !== tmPlanDay()) tmShortHold = { day: tmPlanDay(), ids: ids }; return tmShortHold.ids; }
+    tmShortHold = null; return ids;
+  }
+  function tmShortMarkHTML(id) { return '<span class="tm-short-mark" data-id="' + esc(id) + '"' + (tmShortIds().indexOf(id) >= 0 ? '' : ' hidden') + '>break when too few</span>'; }
+  // the dock's own "Saved 13:00 · Gus" steps aside while the line shows (the notebook head says it): the board keeps its room
+  function tmShortStateHidden(line) { return !!line && !tmDirty() && svOf('t') !== 'busy' && svOf('t') !== 'fail' && !tmQuickPending(tmUi); }
+  // the minute, focus and clock paint (tmAwayPaint): only the line, the status beside it and the marks, never a control;
+  // while a picker is open or a box is being typed in, the next paint catches up
+  function tmShortPaint() {
+    if (!tmf || !S.root || sheetOpen() || typing()) return;
+    var slot = S.root.querySelector('.tm-short-line'); if (!slot) return;
+    var html = tmShortLineHTML(tmShortNow());
+    if (slot._tmHTML !== html) { slot.innerHTML = html; slot.hidden = !html; slot._tmHTML = html; }
+    var st = S.root.querySelector('.tm-focus-save .tm-save-state'); if (st && st.hidden !== tmShortStateHidden(html)) st.hidden = tmShortStateHidden(html);
+    if (tmUi.focus) return;
+    var ids = tmShortIds();
+    S.root.querySelectorAll('.tm-short-mark').forEach(function (el) { var off = ids.indexOf(el.getAttribute('data-id')) < 0; if (el.hidden !== off) el.hidden = off; });
   }
   function tmPersonListHTML() {
     var q = tmFind.toLowerCase().trim(), learn = tmLearnHints(), shs = tmGridShifts();
@@ -14350,7 +14460,8 @@ if (list.length) sg('oreg', 's');
     var tools = '<details class="tm-batch"><summary data-p="tm-batch-toggle">Copy a day or spread breaks</summary>' + use + tmSel('tm-tool-sh', 'Service for break tools', shs.map(function (x) { return [x.id, x.name]; }), s.id) + (spread || '<p class="hint">Nobody is on this service yet. Add staff before spreading breaks.</p>') + tmDraftOverlapHTML() + '</details>';
     var status = busy ? 'Saving...' : svOf('t') === 'fail' ? 'Not saved. Changes kept.' : dirty ? 'Unsaved changes' : rec ? 'Saved ' + clock(rec.upd) + (rec.by ? ' · ' + mnName(rec.by) : '') : 'No team saved yet';
     if (tmQuickPending(tmUi)) status += ' · Staff selection waiting for Add';
-    save = '<div class="tm-save tm-focus-save"><p class="tm-save-state" role="status">' + esc(status) + '</p>' + svButton({ k: 't', p: 'tm-save', idle: 'Save ' + date, off: !dirty, busy: busy }) + svLine('t', busy, tmMsg || tmAssignMsg) + '</div>';
+    var shortLine = tmShortLineHTML(tmShortNow());
+    save = '<div class="tm-save tm-focus-save"><p class="tm-save-state" role="status"' + (tmShortStateHidden(shortLine) ? ' hidden' : '') + '>' + esc(status) + '</p><p class="tm-short-line" role="status"' + (shortLine ? '' : ' hidden') + '>' + shortLine + '</p>' + svButton({ k: 't', p: 'tm-save', idle: 'Save ' + date, off: !dirty, busy: busy }) + svLine('t', busy, tmMsg || tmAssignMsg) + '</div>';
     return '<section class="tm-page tm-notebook tm-focus-page' + (isToday ? '' : ' tm-planning') + '" data-day="' + esc(day) + '" aria-labelledby="rtitle">' +
       '<div class="tm-nbook"><div class="tm-nleft"><header class="tm-nhead"><div>' + heading + '</div><div class="tm-planstate"><p class="tm-draftstate' + (dirty ? ' is-dirty' : '') + '" role="status">' + esc(status) + '</p><button type="button" class="p-link" data-p="tm-refresh"' + (busy || tmLastBusy ? ' disabled' : '') + ' title="' + esc(pe.checkedAt ? 'Last checked ' + clock(now() - Math.max(0, Date.now() - pe.checkedAt)) : 'Check the saved plan') + '">' + (armed('tm-refresh') ? 'Tap again to refresh' : 'Refresh') + '</button></div></header>' +
       tmDateHTML() + '<div class="tm-work">' + (!isToday ? '<p class="tm-future-note hint">Planning ' + esc(date) + '. The live board still shows today\'s saved breaks.</p>' : '') + tmFocusToolbarHTML() +
@@ -14925,11 +15036,23 @@ if (list.length) sg('oreg', 's');
       var nm = s.name || 'this shift';
       return '<li class="a-ks-row a-sh-row' + (s.off ? ' is-off' : '') + '"><label class="visually-hidden" for="a-sh' + i + '">Shift name</label><input id="a-sh' + i + '" class="search" data-k="a-sh' + i + '" data-a="shname" data-i="' + i + '" maxlength="40" autocomplete="off" placeholder="Shift name, like Lunch" value="' + esc(s.name) + '"' + (s.off ? ' disabled' : '') + '>' +
         time(i, 'from', s.from, 'From, ' + nm) + time(i, 'to', s.to, 'To, ' + nm) +
-        '<button type="button" class="p-x" data-p="sh-rm" data-i="' + i + '" aria-label="' + esc((s.off ? 'Put back: ' : 'Remove: ') + nm) + '">' + (s.off ? 'Put back' : armed('sh-rm:' + s.id) ? 'Tap again to remove' : 'Remove') + '</button></li>';
+        '<button type="button" class="p-x" data-p="sh-rm" data-i="' + i + '" aria-label="' + esc((s.off ? 'Put back: ' : 'Remove: ') + nm) + '">' + (s.off ? 'Put back' : armed('sh-rm:' + s.id) ? 'Tap again to remove' : 'Remove') + '</button>' +
+        (s.off ? '' : shBusyHTML(s, i, nm)) + '</li>';
     }).join('');
-    return '<section class="set-block a-ks a-sh"><span class="hint">The kinds of shift the chefs put people on in Today\'s team, each with its own sections. From and To are optional: with them, each person\'s section follows the shift that is on. Renaming a shift keeps its history. Save changes at the bottom to put them live.</span>' +
+    return '<section class="set-block a-ks a-sh"><span class="hint">The kinds of shift the chefs put people on in Today\'s team, each with its own sections. From and To are optional: with them, each person\'s section follows the shift that is on. Busy time is optional too: when a plan leaves fewer people on that shift and not on a break than needed then, the Save bar in Today\'s team says when, and marks whose break it is. It never stops a Save. Renaming a shift keeps its history. Save changes at the bottom to put them live.</span>' +
       (rows ? '<div class="a-sh-head" aria-hidden="true"><span>Shift</span><span>From</span><span>To</span></div><ul class="a-ks-list">' + rows + '</ul>' : '<p class="hint">No shifts yet, so Today\'s team has nothing to put people on.</p>') +
       '<div class="btn-row"><button type="button" class="btn" data-p="sh-add">Add a shift</button>' + (list.length ? '' : '<button type="button" class="btn" data-p="sh-usual">Add Lunch and Dinner</button>') + '</div></section>';
+  }
+  /* The shift's busy time (head chef, 15 Nov 2026, docs/team-minimum-options/brief.md): from, to and people needed then,
+     under the shift's own times. Saved only whole (tmBusyClean); a half-chosen or back-to-front one says so here. */
+  function shBusyHTML(s, i, nm) {
+    var b = s.busy || {}, any = b.from != null || b.to != null || b.n != null, whole = tmBusyClean(b);
+    var time = function (k, v, lab) { return '<input type="time" class="search a-sh-t" data-a="shb' + k + '" data-i="' + i + '" step="900" value="' + (v == null ? '' : tmHHMM(v)) + '" aria-label="' + esc(lab) + '">'; };
+    var need = '<select class="a-sh-need" data-a="shneed" data-i="' + i + '" aria-label="' + esc('People needed then, ' + nm) + '"><option value=""' + (b.n == null ? ' selected' : '') + '>Not set</option>' +
+      Array.apply(null, Array(20)).map(function (_, k) { return '<option value="' + (k + 1) + '"' + (b.n === k + 1 ? ' selected' : '') + '>' + (k + 1) + '</option>'; }).join('') + '</select>';
+    var note = !any || whole ? '' : b.from != null && b.to != null && b.from >= b.to ? 'The busy time\'s From must be before its To. Not saved like this.' : 'Choose From, To and People needed to keep this busy time. Not saved until all three are set.';
+    return '<div class="a-sh-busy"><span class="a-sh-bl">Busy time</span>' + time('from', b.from, 'Busy time from, ' + nm) + '<span class="a-sh-bto">to</span>' + time('to', b.to, 'Busy time to, ' + nm) +
+      '<label class="a-sh-nl"><span>People needed then</span>' + need + '</label>' + (note ? '<p class="hint a-sh-bnote" role="status">' + note + '</p>' : '') + '</div>';
   }
   function shAdminClick(a, el, d) {
     var i = +el.getAttribute('data-i');
@@ -14945,6 +15068,13 @@ if (list.length) sg('oreg', 's');
     if (!x) return;
     if (a === 'shname') x.name = el.value;
     if (a === 'shfrom' || a === 'shto') { var m = /^(\d{2}):(\d{2})/.exec(el.value || ''); x[a === 'shfrom' ? 'from' : 'to'] = m ? tmMin(+m[1] * 60 + +m[2]) : null; }
+    // the busy time: kept in the draft as chosen, half or whole; nothing chosen leaves no busy time on the shift
+    if (a === 'shbfrom' || a === 'shbto' || a === 'shneed') {
+      var b = x.busy = x.busy || { from: null, to: null, n: null };
+      if (a === 'shneed') { var n = parseInt(el.value, 10); b.n = n >= 1 && n <= TM_NEED_MAX ? n : null; }
+      else { var t = /^(\d{2}):(\d{2})/.exec(el.value || ''); b[a === 'shbfrom' ? 'from' : 'to'] = t ? tmMin(+t[1] * 60 + +t[2]) : null; }
+      if (b.from == null && b.to == null && b.n == null) delete x.busy;
+    }
   }
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && teamHere() && S.root && document.body.contains(S.root)) { teamLoad(TM_FRESH); tmAwayPaint(); } });
   window.addEventListener('focus', function () { tmAwayPaint(); });
@@ -15141,6 +15271,7 @@ if (list.length) sg('oreg', 's');
     var away = tmAwayData(), board = S.root.querySelector('.tm-away');
     put('.tm-away-slot', tmAwayHTML(away, !!S.root.querySelector('.tm-focus-page'))); put('.tm-next-slot', tmNextHTML(!!S.root.querySelector('.tm-focus-page'))); put('.tm-live-detail-slot', tmLiveDetailHTML(away));
     if (board) board.hidden = tmAwayHidden(away);
+    tmShortPaint();
     var el = S.root.querySelector('.tm-nclock'), text = tmHHMM(T.mins());
     if (el && el.textContent !== text) el.textContent = text;
   }
