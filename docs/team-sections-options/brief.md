@@ -359,4 +359,8 @@ The working screen has the service heads stuck at the top, and rows under them d
   - 04:00 recovery;
   - the tapped row stays in place, which fails without the fix (450 to 47 px) and passes now.
 - The other team files, `todays-team`, `kitchen-pages` and `design-patterns` use the new keys.
-- Full suite result: to come.
+- **GitHub Click tests:** green on the pull request. All five browser shards and the rules and nightly checks pass. The first run failed one hint expectation that a later step on this branch had made out of date; that was fixed and checked again.
+- **Local full suite** (333 files, cloud container): every Today's team file passes, and so do the roles, design pattern, colour, read budget and Home files. Three files failed here:
+  - `update-confirmation`: lost its test stand-in mid-reload under load, and passed on a rerun.
+  - `function-print` and `function-prep-print`: failed the same way on an untouched copy of `main` in this container, so the cause is the container's print engine. Both pass on GitHub.
+- **Not evidenced:** real phones with real fonts; the live book with real staff and sections; how many cells the nightly usual sections leave empty; wet-hand use of 101 px pills.
