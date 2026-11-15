@@ -38,7 +38,6 @@ async function quickOpen(p) {
   if (!await p.locator('.tm-quick-add').isVisible()) await click(p, '.tm-focus-toolbar [data-p="tm-add-staff"]');
 }
 async function pick(p, k, value) { await L.pick(p, 'select' + field(k), String(value)); }
-const service = (p, id, sh) => pick(p, 'tm-row-sh:' + id, sh);
 async function save(p, version, day = today) {
   await click(p, '[data-p="tm-save"]');
   await L.waitFor(p, ([k, v]) => (__fake.dump()[k] || {}).v === v, [key('team', day), version], 7000);
@@ -69,21 +68,20 @@ const spreadPlan = () => ({ day: today,
   ok(await p.evaluate(() => LK_PREP.unsaved() && LK_PREP.dirtyForUpdate()), 'chooser protection: unsent staff choices count as work before the roster is changed');
   await click(p, '[data-p="tm-quick-add"]');
   ok(!await p.locator('.tm-quick-add').isVisible() && await p.locator('[data-k^="tm-quick-person:"]:checked').count() === 0, 'Add: the chooser collapses and clears only its completed selection');
-  ok(await p.locator('select' + field('tm-sec:ann')).inputValue() === '' && await p.locator('select' + field('tm-sec:bo')).inputValue() === '' && !await p.locator('select' + field('tm-sec:sam')).count() && await p.locator(personCheck('sam')).count() === 1, 'Add: only chosen people enter the worksheet; other staff stay available in the chooser');
+  ok(await p.locator('select' + field('tm-sec:ann:lunch')).inputValue() === '' && await p.locator('select' + field('tm-sec:bo:lunch')).inputValue() === '' && !await p.locator('select[data-k^="tm-sec:sam:"]').count() && await p.locator(personCheck('sam')).count() === 1, 'Add: only chosen people enter the worksheet; other staff stay available in the chooser');
   ok(!await saveOff(p) && !await read(p) && await readCount(p) === initialReads, 'Add is a local draft change with no database read or premature save');
-  await service(p, 'ann', 'dinner'); await service(p, 'bo', 'dinner');
-  ok(await p.locator('select' + field('tm-sec:ann')).inputValue() === '' && await p.locator('select' + field('tm-sec:bo')).inputValue() === '', 'multi-service add: both selected staff also join Dinner without an invented section or break');
-  await pick(p, 'tm-sec:ann', 'pans');
-  await service(p, 'ann', 'lunch'); await pick(p, 'tm-sec:ann', 'grill');
+  ok(await p.locator('select' + field('tm-sec:ann:dinner')).inputValue() === '' && await p.locator('select' + field('tm-sec:bo:dinner')).inputValue() === '' && !await p.locator('select[data-k^="tm-sec:ann:smoker"]').count(), 'multi-service add: both selected staff also join Dinner without an invented section or break');
+  await pick(p, 'tm-sec:ann:dinner', 'pans');
+  await pick(p, 'tm-sec:ann:lunch', 'grill');
   const first = await save(p, 1);
   ok(first.on.length === 4 && has(first, 'ann', 'lunch', 'grill') && has(first, 'ann', 'dinner', 'pans') && has(first, 'bo', 'lunch', '') && has(first, 'bo', 'dinner', '') && !first.br.length, 'one Save persists the selected people, services and distinct sections without guessing breaks');
   await quickOpen(p); await check(p, personCheck('ann')); await check(p, personCheck('cam'));
   await click(p, '[data-p="tm-quick-add"]');
-  ok(await p.locator('select' + field('tm-sec:ann')).inputValue() === 'grill' && await p.locator('select' + field('tm-sec:cam')).inputValue() === '', 'adding another group keeps an existing person\'s section while adding the new person');
+  ok(await p.locator('select' + field('tm-sec:ann:lunch')).inputValue() === 'grill' && await p.locator('select' + field('tm-sec:ann:dinner')).inputValue() === 'pans' && await p.locator('select' + field('tm-sec:cam:lunch')).inputValue() === '', 'adding another group keeps an existing person\'s section while adding the new person');
   const second = await save(p, 2);
   ok(second.on.length === 5 && has(second, 'cam', 'lunch', '') && has(second, 'ann', 'dinner', 'pans'), 'repeated Add does not duplicate membership or overwrite another service');
   await p.reload(); await ready(p);
-  ok((await read(p)).on.length === 5 && await p.locator('select' + field('tm-sec:ann')).inputValue() === 'grill', 'reload: the bulk-added day uses the existing persisted team record');
+  ok((await read(p)).on.length === 5 && await p.locator('select' + field('tm-sec:ann:lunch')).inputValue() === 'grill', 'reload: the bulk-added day uses the existing persisted team record');
   ok(!p.errors.length, 'staff setup: no browser errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -93,7 +91,7 @@ const spreadPlan = () => ({ day: today,
   const hints = { day: today, days: [], usual: { [new Date(L.NOW).getDay() + '|lunch']: { ann: ['larder', 6, 8] } }, learn: {} };
   p = await L.open(browser, '#/team', { who: 'sam', extra: fixture({ [TEAM]: earlierService, [key('teamsum', 'main')]: hints }), wait: 950 }); await ready(p);
   await quickOpen(p); await check(p, personCheck('ann')); await check(p, personCheck('bo')); await click(p, '[data-p="tm-quick-add"]');
-  ok(await p.locator('select' + field('tm-sec:ann')).inputValue() === 'larder' && await p.locator('select' + field('tm-sec:bo')).inputValue() === 'pans', 'known defaults: bulk Add uses this weekday/service\'s usual section, then a valid section from another service');
+  ok(await p.locator('select' + field('tm-sec:ann:lunch')).inputValue() === 'larder' && await p.locator('select' + field('tm-sec:bo:lunch')).inputValue() === 'pans', 'known defaults: bulk Add uses this weekday/service\'s usual section, then a valid section from another service');
   ok(JSON.stringify(await read(p)) === JSON.stringify(earlierService), 'known defaults remain an unsaved draft for the chef to check');
   const hinted = await save(p, 2);
   ok(has(hinted, 'ann', 'lunch', 'larder') && has(hinted, 'bo', 'lunch', 'pans') && has(hinted, 'bo', 'dinner', 'pans') && hinted.on.length === 3, 'known defaults: explicit Save retains the existing service while publishing the checked additions');

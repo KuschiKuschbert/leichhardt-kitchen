@@ -19,8 +19,8 @@ const config = {
 };
 const plan = { day, on: [{ id: 'ann', sh: 'dinner', sec: 'pans' }, { id: 'ann', sh: 'lunch', sec: 'grill' }],
   br: [{ id: 'ann', sh: 'lunch', at: 840, len: 30 }], v: 1, at: L.NOW, upd: L.NOW, by: 'sam' };
-const rowService = 'select[data-k="tm-row-sh:ann"]';
-const service = (p, id) => L.pick(p, rowService, id);
+// the day grid (15 Nov 2026): services across in the book's order, one section picker per person and service
+const cell = sh => 'select[data-k="tm-sec:ann:' + sh + '"]';
 const state = p => p.evaluate(([configKey, teamKey]) => ({
   reads: window.__fake.reads.filter(k => /\/(team|teamsum|config)\//.test(k)).length,
   writes: window.__fake.writes.length,
@@ -31,30 +31,31 @@ const state = p => p.evaluate(([configKey, teamKey]) => ({
 (async () => {
   const browser = await L.start();
   const p = await L.open(browser, '#/team', { who: 'sam', extra: { [CFG]: config, [TEAM]: plan }, wait: 1200 });
-  await L.waitFor(p, () => !!document.querySelector('select[data-k="tm-row-sh:ann"]'), null, 6000);
+  await L.waitFor(p, () => !!document.querySelector('select[data-k="tm-sec:ann:dinner"]'), null, 6000);
   const before = await state(p);
-  ok(await p.$eval(rowService, e => e.value) === 'dinner', 'row service: the configured Dinner default remains selected even though Lunch is displayed first');
+  ok(await p.$eval('.tm-person-row[data-id="ann"]', e => e.dataset.sh) === 'lunch', 'details service: at 14:00 Ann\'s break details start on Lunch, the service on now, though Dinner is configured first');
 
   for (const width of [390, 768, 1280]) {
     await p.setViewportSize({ width, height: 844 }); await L.settle(p, 150);
-    const order = await p.$eval(rowService, e => [...e.options].map(o => o.value));
-    ok(JSON.stringify(order) === JSON.stringify(['lunch', 'dinner', 'smoker', 'prep']), width + ': Lunch and Dinner prefixes sort first regardless of case; other shifts retain configured order');
-    ok(!(await L.overflow(p)), width + ': ordered row services do not cause sideways page scroll');
+    const order = await p.$$eval('.tm-grid-head .tm-grid-sh > b', l => l.map(e => e.textContent));
+    ok(JSON.stringify(order) === JSON.stringify(['lUnCh service', 'DINNER service']), width + ': Lunch and Dinner prefixes sort first regardless of case; services nobody works today have no column (' + order.join(', ') + ')');
+    ok(await p.locator(cell('lunch')).count() === 1 && await p.locator(cell('dinner')).count() === 1 && !await p.locator(cell('smoker')).count(), width + ': Ann has a section picker on each service she works');
+    ok(!(await L.overflow(p)), width + ': the service columns do not cause sideways page scroll');
   }
 
-  await L.pick(p, 'select[data-k="tm-sec:ann"]', 'grill');
-  await service(p, 'lunch');
-  await L.pick(p, 'select[data-k="tm-sec:ann"]', 'pans');
-  await service(p, 'dinner');
-  ok(await p.$eval(rowService, e => e.value) === 'dinner' && await p.$eval('select[data-k="tm-sec:ann"]', e => e.value) === 'grill', 'row service switching: Dinner stays selected with its own unsaved Grill assignment');
-  await service(p, 'lunch');
-  ok(await p.$eval('select[data-k="tm-sec:ann"]', e => e.value) === 'pans', 'shared draft: Lunch retains its separate unsaved Pans assignment');
+  await p.locator('[data-p="tm-focus"][data-id="ann"]').click(); await L.settle(p, 150);
+  const chips = await p.$$eval('.tm-bench-shifts [data-p="tm-sh"]', l => l.map(e => e.dataset.v));
+  ok(JSON.stringify(chips) === JSON.stringify(['lunch', 'dinner', 'smoker', 'prep']), 'details: every configured service is offered in the book\'s order, ready to add (' + chips.join(', ') + ')');
+  await L.pick(p, cell('dinner'), 'grill');
+  await L.pick(p, cell('lunch'), 'pans');
+  ok(await p.$eval(cell('dinner'), e => e.value) === 'grill', 'each service: Dinner keeps its own unsaved Grill assignment');
+  ok(await p.$eval(cell('lunch'), e => e.value) === 'pans', 'shared draft: Lunch keeps its separate unsaved Pans assignment');
   const after = await state(p);
   ok(JSON.stringify(after.shifts) === JSON.stringify(shifts), 'display order: the saved shift configuration remains unchanged');
   ok(JSON.stringify(after.team) === JSON.stringify(before.team) && after.writes === before.writes, 'draft switching: the saved day and write count remain unchanged until Save');
-  ok(after.reads === before.reads, 'row service switching and resizing: the existing loaded plan is reused without reads');
+  ok(after.reads === before.reads, 'section edits and resizing: the existing loaded plan is reused without reads');
   ok(await p.$$eval('[data-p="tm-save"]', all => all.length) === 1 && await p.$eval('[data-p="tm-save"]', e => !e.disabled), 'shared draft: one enabled Save covers both shift edits');
-  ok(p.errors.length === 0, 'row service display: no browser errors ' + p.errors.join(' | '));
+  ok(p.errors.length === 0, 'service columns: no browser errors ' + p.errors.join(' | '));
   await p.context().close(); await browser.close();
   L.report(R);
 })().catch(e => { console.log(R.join('\n')); console.error(e); process.exit(1); });
