@@ -1597,7 +1597,7 @@ window.LK_DATA = {
     },
     /* Feast of the Feather, the head chef's whole smoked chicken for sharing, 16 November 2026. The brine, rub and
        smoke are the head chef's first trial: confirm them after the first bird. The Yorkshire pudding is the head
-       chef's recipe; the cider-pickled red cabbage is the head chef's pick. Mushy peas has no card yet. */
+       chef's recipe; the cider-pickled red cabbage is the head chef's pick; the mushy peas are bought in. */
     {
       id: 'feast-of-the-feather', art: 'feast-of-the-feather', no: '130', kind: 'main', forLine: 'Smoker special', name: 'Feast of the Feather',
       menu: 'Feast of the Feather: whole brined and smoked chicken on a giant golden Yorkshire pudding, with buttery mash, mushy peas, cider-pickled red cabbage and a jug of rich gravy. Made for sharing.',
@@ -1606,7 +1606,7 @@ window.LK_DATA = {
         { q: '1', name: 'Smoked chicken', note: 'No. 10, whole, brined, seasoned and smoked', link: 'smoked-chicken' },
         { q: '1', name: 'Yorkshire pudding', note: 'giant, 18 cm, one batch', link: 'yorkshire-pudding', tags: ['Gluten', 'Egg', 'Milk'] },
         { q: '[Qty]', name: 'Mash', link: 'mash', tags: ['Milk?'] },
-        { q: '[Qty]', name: 'Mushy peas', note: 'pea-forward, a touch of mint', link: 'mushy-peas', tags: ['Milk?'] },
+        { q: '[Qty]', name: 'Mushy peas', note: 'bought in', link: 'mushy-peas' },
         { q: '[Qty]', name: 'Cider-pickled red cabbage', link: 'cider-red-cabbage' },
         { q: '[Qty]', name: 'Gravy', note: 'in a jug. [House gravy or a chicken gravy to confirm]', link: 'gravy' }
       ],
@@ -1614,7 +1614,7 @@ window.LK_DATA = {
         { label: 'Smoked chicken', x: 35.6, y: 36.1, side: 'right', link: 'smoked-chicken', note: 'Whole, breast up, in the middle of the Yorkshire.' },
         { label: 'Yorkshire pudding', x: 13.8, y: 48.3, side: 'right', link: 'yorkshire-pudding', tags: ['Gluten', 'Egg', 'Milk'], note: 'Giant, under the chicken. Keep the crisp edges showing.' },
         { label: 'Mash', x: 77.9, y: 24.6, side: 'left', link: 'mash', note: 'Its own mound, beside the Yorkshire. [Amount to come]' },
-        { label: 'Mushy peas', x: 78.6, y: 41.9, side: 'left', link: 'mushy-peas', tags: ['Milk?'], note: 'Its own mound. [Amount to come]' },
+        { label: 'Mushy peas', x: 78.6, y: 41.9, side: 'left', link: 'mushy-peas', note: 'Bought in. Its own mound. [Amount to come]' },
         { label: 'Red cabbage', x: 78.6, y: 56, side: 'left', link: 'cider-red-cabbage', note: 'Cider-pickled. A small pile for colour and crunch. [Amount to come]' },
         { label: 'Gravy jug', x: 49.1, y: 80.2, side: 'right', link: 'gravy', note: 'On the side, poured at the table. [Amount to come]' }
       ],
@@ -1625,7 +1625,7 @@ window.LK_DATA = {
           'Yorkshire pudding (card 133): one 18 cm pudding per board, one batch. 230 °C, fan off, 20 to 25 min, crisp and deep golden.',
           'Mash (card 70) and gravy (card 69) as for every plate.',
           'Cider-pickled red cabbage (card 134), made ahead.',
-          'Mushy peas. [Recipe to come]'
+          'Mushy peas (card 136), bought in. [How it is heated and held to come]'
         ] },
         { title: 'Plating', steps: [
           'Sharing board. [Board to confirm]',
@@ -1636,7 +1636,8 @@ window.LK_DATA = {
           '[Carved at the table or in the kitchen: to confirm]'
         ] }
       ],
-      safety: { title: 'Chicken', text: 'Probe the thickest part of the breast and the inner thigh, away from the bone. Both at least 75 °C before it leaves the heat.' }
+      safety: { title: 'Chicken', text: 'Probe the thickest part of the breast and the inner thigh, away from the bone. Both at least 75 °C before it leaves the heat.' },
+      labelNote: 'The mushy peas are bought in: check their label.'
     },
     {
       id: 'smoked-chicken', art: 'smoked-chicken', no: '131', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Smoked Chicken', short: 'Smoked chicken',
@@ -1718,13 +1719,13 @@ window.LK_DATA = {
     },
     {
       id: 'yorkshire-pudding', art: 'yorkshire-pudding', no: '133', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Yorkshire Pudding', short: 'Yorkshire pudding',
-      yield: 'Batch: 140 g plain flour, 200 ml milk, 4 eggs and ½ tsp salt, 100 ml canola oil in the tin. Makes 1 giant pudding in an 18 cm (7 inch) tin, one per board. Bake at 230 °C, fan off, 20 to 25 min. Trial: confirm after the first bake.',
+      yield: 'Batch: 140 g plain flour, 200 ml milk, 4 eggs and ½ tsp salt, 100 ml fresh canola oil in the tin. Makes 1 giant pudding in an 18 cm (7 inch) tin, one per board. Bake at 230 °C, fan off, 20 to 25 min. Trial: confirm after the first bake.',
       ingredients: [
         { q: '140 g', name: 'Plain flour', note: 'never self-raising', tags: ['Gluten'] },
         { q: '200 ml', name: 'Milk', tags: ['Milk'] },
         { q: '4', name: 'Eggs', note: 'at room temperature', tags: ['Egg'] },
         { q: '½ tsp', name: 'Salt' },
-        { q: '100 ml', name: 'Canola oil', note: 'the fryer oil, for the tin. Not the Tuscan oil: it burns' }
+        { q: '100 ml', name: 'Canola oil', note: 'fresh, for the tin. Never oil out of the fryer, never the Tuscan oil: it burns' }
       ],
       sections: [
         { title: 'Batter', steps: [
@@ -1734,7 +1735,7 @@ window.LK_DATA = {
         ] },
         { title: 'Tin and oil', steps: [
           'Oven to 230 °C, fan off.',
-          '100 ml canola oil (the fryer oil) in the 18 cm (7 inch) tin. Not the Tuscan oil: it burns.',
+          '100 ml fresh canola oil in the 18 cm (7 inch) tin. Never oil out of the fryer, never the Tuscan oil: it burns.',
           'Tin on the upper-middle shelf, 10 to 15 min, until the oil is smoking hot.'
         ] },
         { title: 'Bake', steps: [
@@ -1774,6 +1775,17 @@ window.LK_DATA = {
       safety: { title: 'Use within 2 weeks', text: 'A quick pickle, not a preserve. Keep it sealed in the coolroom, dated, and use it within 2 weeks.' },
       contains: [],
       check: []
+    },
+    {
+      id: 'mushy-peas', art: 'mushy-peas', no: '136', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Mushy Peas', short: 'Mushy peas',
+      yield: 'Bought in. [Brand, amount per board and how it is heated to come]',
+      ingredients: [
+        { q: '[Qty]', name: 'Mushy peas', note: 'bought in. [Brand to confirm]' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Bought in, ready made. [How it is heated and held to come]'] }
+      ],
+      labelNote: 'Bought in: check the label for allergens when a new brand or batch comes in.'
     },
     /* Beast Burger (card 135), the head chef's new smoker burger, 16 November 2026. Working title, also Mixed Meat Monster. */
     {

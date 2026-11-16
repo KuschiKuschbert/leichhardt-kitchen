@@ -1,26 +1,28 @@
 /* Feast of the Feather (card 130) with its Smoked Chicken (131), Herb Brine (132) and Yorkshire Pudding (133),
    16 November 2026. The dish opens with its board drawing and pins, the chicken pin opens card 131, card 131 opens
-   the brine, the Yorkshire pin opens card 133, the two cards to come keep the dish Not complete yet and out of
-   Free from, and nothing scrolls sideways. */
+   the brine, the Yorkshire pin opens card 133, every part has a card so the dish is complete (mushy peas, card 136,
+   bought in), and nothing scrolls sideways. */
 const L = require('./lib');
 const { R, ok } = L.results();
 (async () => {
  global.window = {};
  require('../js/art.js'); require('../js/data.js');
  const D = window.LK_DATA, A = window.LK_ART, by = id => D.recipes.find(r => r.id === id);
- const dish = by('feast-of-the-feather'), chicken = by('smoked-chicken'), brine = by('herb-brine'), york = by('yorkshire-pudding'), cab = by('cider-red-cabbage');
- ok(!!(dish && chicken && brine && york && cab), 'the five cards are in the book');
- ok(dish.no === '130' && chicken.no === '131' && brine.no === '132' && york.no === '133' && cab.no === '134', 'card numbers 130 to 134');
- ok(D.recipes.filter(r => ['130', '131', '132', '133', '134'].includes(r.no)).length === 5, 'no other card uses 130 to 134');
- ok(!!A.plates[dish.art] && !!A.pans[chicken.art] && !!A.pans[brine.art] && !!A.pans[york.art] && !!A.pans[cab.art], 'the dish has a plate drawing, the batches have pans');
+ const dish = by('feast-of-the-feather'), chicken = by('smoked-chicken'), brine = by('herb-brine'), york = by('yorkshire-pudding'), cab = by('cider-red-cabbage'), peas = by('mushy-peas');
+ ok(!!(dish && chicken && brine && york && cab && peas), 'the six cards are in the book');
+ ok(dish.no === '130' && chicken.no === '131' && brine.no === '132' && york.no === '133' && cab.no === '134' && peas.no === '136', 'card numbers 130 to 134 and 136');
+ ok(D.recipes.filter(r => ['130', '131', '132', '133', '134', '136'].includes(r.no)).length === 6, 'no other card uses 130 to 134 or 136');
+ ok(!!A.plates[dish.art] && !!A.pans[chicken.art] && !!A.pans[brine.art] && !!A.pans[york.art] && !!A.pans[cab.art] && !!A.pans[peas.art], 'the dish has a plate drawing, the batches have pans');
+ ok(/bought in/i.test(peas.yield) && /check the label/i.test(peas.labelNote) && dish.ingredients.every(i => !i.link || D.recipes.some(r => r.id === i.link)), 'mushy peas are bought in, and every part of the dish has a card');
+ ok(/fresh/.test(york.ingredients.find(i => i.name === 'Canola oil').note) && /Never oil out of the fryer/.test(JSON.stringify(york.sections)) && !/the fryer oil/.test(JSON.stringify(york)), 'the tin oil is fresh canola, never oil out of the fryer');
  ok(cab.ingredients.some(i => i.q === '250 ml' && /cider vinegar/i.test(i.name)) && /2 weeks/.test(cab.safety.text), 'the red cabbage is cider-pickled and keeps 2 weeks');
  ok(!!(A.sides['feast-of-the-feather'] && /Yorkshire pudding/.test(A.sides['feast-of-the-feather'].body) && /Gravy jug/.test(A.sides['feast-of-the-feather'].body)), 'the dish has its labelled side view');
- ok(york.ingredients.map(i => i.q + ' ' + i.name).join(', ') === '140 g Plain flour, 200 ml Milk, 4 Eggs, ½ tsp Salt, 100 ml Canola oil' && /Not the Tuscan oil/.test(JSON.stringify(york.sections)) && !/Which fat|Resting time|Hot fat in the tin first/.test(JSON.stringify(york)) && /230 °C, fan off, 20 to 25 min/.test(york.yield) && /230 °C, fan off, 20 to 25 min/.test(JSON.stringify(dish.sections)) && york.sections.some(s => s.steps.includes('Rest it 1 hour at room temperature.')) && york.sections.some(s => s.steps.includes('Do not open the door for the first 20 min, or it collapses.')) && !/210 °C|250 °C|12 min/.test(JSON.stringify([dish.sections, york])) && /Makes 1 giant pudding in an 18 cm/.test(york.yield) && !/half a batch|2 tins/.test(JSON.stringify([dish, york]) + A.sides['feast-of-the-feather'].body), 'the Yorkshire is 140 g plain flour, 200 ml milk, 4 eggs, ½ tsp salt, rested 1 hour, 100 ml canola oil smoking hot, 1 pudding in an 18 cm tin, one batch per board, 230 °C fan off for 20 to 25 min, door shut 20 min');
+ ok(york.ingredients.map(i => i.q + ' ' + i.name).join(', ') === '140 g Plain flour, 200 ml Milk, 4 Eggs, ½ tsp Salt, 100 ml Canola oil' && /never the Tuscan oil/.test(JSON.stringify(york.sections)) && !/Which fat|Resting time|Hot fat in the tin first/.test(JSON.stringify(york)) && /230 °C, fan off, 20 to 25 min/.test(york.yield) && /230 °C, fan off, 20 to 25 min/.test(JSON.stringify(dish.sections)) && york.sections.some(s => s.steps.includes('Rest it 1 hour at room temperature.')) && york.sections.some(s => s.steps.includes('Do not open the door for the first 20 min, or it collapses.')) && !/210 °C|250 °C|12 min/.test(JSON.stringify([dish.sections, york])) && /Makes 1 giant pudding in an 18 cm/.test(york.yield) && !/half a batch|2 tins/.test(JSON.stringify([dish, york]) + A.sides['feast-of-the-feather'].body), 'the Yorkshire is 140 g plain flour, 200 ml milk, 4 eggs, ½ tsp salt, rested 1 hour, 100 ml canola oil smoking hot, 1 pudding in an 18 cm tin, one batch per board, 230 °C fan off for 20 to 25 min, door shut 20 min');
  ok(/No\. 10/.test(chicken.yield) && !/1\.6 to 1\.8 kg, unstuffed/.test(JSON.stringify(chicken.ingredients)), 'the chicken is a No. 10');
  ok(dish.pins.every(p => p.x > 0 && p.x < 100 && p.y > 0 && p.y < 100), 'every pin sits on the drawing');
  ok(dish.ingredients.some(i => i.link === 'smoked-chicken') && chicken.ingredients.some(i => i.link === 'herb-brine'), 'dish to chicken to brine links');
  ok(!D.menuOrder.some(s => s.ids.includes('feast-of-the-feather')), 'a trial dish, not on the guest menu');
- ok(!/\u2014/.test(JSON.stringify([dish, chicken, brine, york, cab])), 'no em dashes');
+ ok(!/\u2014/.test(JSON.stringify([dish, chicken, brine, york, cab, peas])), 'no em dashes');
  ok(/75 °C/.test(chicken.safety.text) && /5 °C/.test(brine.safety.text), 'the chicken probe and the cold brine warnings are there');
  const b = await L.start();
  for (const width of [390, 768, 1280]) {
@@ -30,8 +32,13 @@ const { R, ok } = L.results();
   ok(!(await L.overflow(p)), width + ': the dish fits');
   ok(await p.locator('#r-plate .pin').count() === dish.pins.length, width + ': every pin is on the plate');
   ok(await p.locator('#r-side svg text').count() >= 6, width + ': From the side shows how it is plated, each part named');
-  const warn = await p.locator('main .warn').first().innerText();
-  ok(/Not complete yet/i.test(warn) && /Mushy peas/.test(warn) && !/red cabbage/i.test(warn) && !/Yorkshire/.test(warn), width + ': only the mushy peas card to come keeps it Not complete yet');
+  const main = await p.locator('main').innerText();
+  ok(!/Not complete yet|Card to come/i.test(main), width + ': every part has a card, so the dish is not marked Not complete yet');
+  ok(/mushy peas are bought in: check their label/i.test(main), width + ': the allergen box says to check the bought-in mushy peas label');
+  await p.click('#r-plate a.pin[href$="/mushy-peas"]'); await L.settle(p, 400);
+  ok(/Mushy Peas/.test(await p.locator('#rtitle').textContent()), width + ': the mushy peas pin opens card 136');
+  ok(!(await L.overflow(p)), width + ': card 136 fits');
+  await p.goBack(); await L.settle(p, 400);
   await p.click('#r-plate a.pin[href$="/cider-red-cabbage"]'); await L.settle(p, 400);
   ok(/Cider-Pickled Red Cabbage/.test(await p.locator('#rtitle').textContent()), width + ': the red cabbage pin opens card 134');
   ok(!(await L.overflow(p)), width + ': card 134 fits');
