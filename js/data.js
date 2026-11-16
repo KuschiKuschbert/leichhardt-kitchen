@@ -1622,7 +1622,7 @@ window.LK_DATA = {
         { title: 'Cooking', steps: [
           'Smoked chicken: brined, dried, seasoned, smoked and finished hot as card 131. Probe the breast and the inner thigh: 75 °C in both.',
           'Rest the chicken on a rack, 10 to 15 min.',
-          'Yorkshire pudding (card 133): one 18 cm pudding per board, one batch. 210 °C, fan off, for 12 min, crisp at the edges.',
+          'Yorkshire pudding (card 133): one 18 cm pudding per board, one batch. 230 °C, fan off, 20 to 25 min, crisp and deep golden.',
           'Mash (card 70) and gravy (card 69) as for every plate.',
           'Cider-pickled red cabbage (card 134), made ahead.',
           'Mushy peas. [Recipe to come]'
@@ -1718,22 +1718,33 @@ window.LK_DATA = {
     },
     {
       id: 'yorkshire-pudding', art: 'yorkshire-pudding', no: '133', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Yorkshire Pudding', short: 'Yorkshire pudding',
-      yield: 'Batch: 140 g flour, 200 ml milk and 4 eggs, 100 ml canola oil in the tin. Makes 1 giant pudding in an 18 cm (7 inch) tin, one per board. Bake at 210 °C, fan off, for 12 min. Trial: confirm after the first bake.',
+      yield: 'Batch: 140 g plain flour, 200 ml milk, 4 eggs and ½ tsp salt, 100 ml canola oil in the tin. Makes 1 giant pudding in an 18 cm (7 inch) tin, one per board. Bake at 230 °C, fan off, 20 to 25 min. Trial: confirm after the first bake.',
       ingredients: [
-        { q: '140 g', name: 'Flour', tags: ['Gluten'] },
+        { q: '140 g', name: 'Plain flour', note: 'never self-raising', tags: ['Gluten'] },
         { q: '200 ml', name: 'Milk', tags: ['Milk'] },
-        { q: '4', name: 'Eggs', tags: ['Egg'] },
+        { q: '4', name: 'Eggs', note: 'at room temperature', tags: ['Egg'] },
+        { q: '½ tsp', name: 'Salt' },
         { q: '100 ml', name: 'Canola oil', note: 'the fryer oil, for the tin. Not the Tuscan oil: it burns' }
       ],
       sections: [
-        { title: 'Method', steps: [
-          'Whisk the flour, milk and eggs into a smooth batter.',
-          'Rest the batter for 1 hour.',
-          '100 ml canola oil (the fryer oil) in the tin. Heat it in the oven until hot before the batter goes in. Not the Tuscan oil: it burns.',
-          'Pour the batter into the 18 cm (7 inch) tin.',
-          'Bake at 210 °C, fan off, for 12 min.'
+        { title: 'Batter', steps: [
+          'Whisk the eggs, flour, milk and salt until smooth, with no lumps.',
+          'Pour the batter into a jug.',
+          'Rest it 1 hour at room temperature.'
+        ] },
+        { title: 'Tin and oil', steps: [
+          'Oven to 230 °C, fan off.',
+          '100 ml canola oil (the fryer oil) in the 18 cm (7 inch) tin. Not the Tuscan oil: it burns.',
+          'Tin on the upper-middle shelf, 10 to 15 min, until the oil is smoking hot.'
+        ] },
+        { title: 'Bake', steps: [
+          'Tin out. Shut the oven door straight away to keep the heat in.',
+          'Pour in all the batter, fast. It should sizzle as it hits the oil.',
+          'Straight back in on the upper-middle shelf. Bake 20 to 25 min until puffed, crisp and deep golden.',
+          'Do not open the door for the first 20 min, or it collapses.'
         ] }
-      ]
+      ],
+      tip: { title: 'Three rules', text: 'Do not open the door for the first 20 min. Plain flour only: self-raising rises unevenly and turns cakey. Pour fast: the oil cools the longer the tin is out.' }
     },
     {
       /* The head chef's pick, 16 November 2026: a quick pickled red cabbage recipe from the It's a Veg World After All
