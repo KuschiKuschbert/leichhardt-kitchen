@@ -307,7 +307,7 @@ Combined with the occasional-shift setting from #711: the shift editor shows bot
 
 ## Board above the dock, 16 November 2026
 
-The fix for round 1's finding 1 and Before ready item 1, in its own pull request. **Waiting for the head chef's OK** on the look (the before and after below); the pull request stays a draft until then.
+The fix for round 1's finding 1 and Before ready item 1, in its own pull request. **Chosen 16 November 2026:** the head chef saw the before and after below and said "okay" (recorded in `docs/head-chef-decisions.md`).
 
 **The fault, remeasured on `main` at `a67f126`** (after the rows on one clock, #721). Implemented app, click-test stand-in, fallback fonts, the study's made-up day at 18:30 with four on a break, the head chef on `#/admin`, Team, Today's team, 390 x 844, scroll 0. Script [`board-dock.cjs`](board-dock.cjs), raw [`board-dock-before.json`](board-dock-before.json).
 - With enough on: the dock starts at 680 px; Sam K, the fourth name, sits at 677 to 694 px. 3 of 4 names show ([screenshot](board-dock-before-admin-390-enough.png)).
