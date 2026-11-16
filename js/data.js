@@ -1622,7 +1622,7 @@ window.LK_DATA = {
         { title: 'Cooking', steps: [
           'Smoked chicken: brined, dried, seasoned, smoked and finished hot as card 131. Probe the breast and the inner thigh: 75 °C in both.',
           'Rest the chicken on a rack, 10 to 15 min.',
-          'Yorkshire pudding (card 133): one 18 cm pudding per board, one batch. 210 °C for 12 min, crisp at the edges.',
+          'Yorkshire pudding (card 133): one 18 cm pudding per board, one batch. 210 °C, fan off, for 12 min, crisp at the edges.',
           'Mash (card 70) and gravy (card 69) as for every plate.',
           'Cider-pickled red cabbage (card 134), made ahead.',
           'Mushy peas. [Recipe to come]'
@@ -1718,19 +1718,20 @@ window.LK_DATA = {
     },
     {
       id: 'yorkshire-pudding', art: 'yorkshire-pudding', no: '133', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Yorkshire Pudding', short: 'Yorkshire pudding',
-      yield: 'Batch: 200 g flour, 200 ml milk and 4 eggs. Makes 1 giant pudding in an 18 cm (7 inch) tin, one per board. Bake at 210 °C for 12 min. Trial: confirm after the first bake.',
+      yield: 'Batch: 140 g flour, 200 ml milk and 4 eggs, 100 ml fat in the tin. Makes 1 giant pudding in an 18 cm (7 inch) tin, one per board. Bake at 210 °C, fan off, for 12 min. Trial: confirm after the first bake.',
       ingredients: [
-        { q: '200 g', name: 'Flour', tags: ['Gluten'] },
+        { q: '140 g', name: 'Flour', tags: ['Gluten'] },
         { q: '200 ml', name: 'Milk', tags: ['Milk'] },
-        { q: '4', name: 'Eggs', tags: ['Egg'] }
+        { q: '4', name: 'Eggs', tags: ['Egg'] },
+        { q: '100 ml', name: 'Fat', note: 'for the tin. [Which fat to confirm]' }
       ],
       sections: [
         { title: 'Method', steps: [
           'Whisk the flour, milk and eggs into a smooth batter.',
           'Rest the batter for 1 hour.',
-          '[Hot fat in the tin first: the fat and how much to come]',
+          '100 ml fat in the tin. Heat it in the oven until hot before the batter goes in.',
           'Pour the batter into the 18 cm (7 inch) tin.',
-          'Bake at 210 °C for 12 min.'
+          'Bake at 210 °C, fan off, for 12 min.'
         ] }
       ]
     },
@@ -1762,6 +1763,57 @@ window.LK_DATA = {
       safety: { title: 'Use within 2 weeks', text: 'A quick pickle, not a preserve. Keep it sealed in the coolroom, dated, and use it within 2 weeks.' },
       contains: [],
       check: []
+    },
+    /* Beast Burger (card 135), the head chef's new smoker burger, 16 November 2026. Working title, also Mixed Meat Monster. */
+    {
+      id: 'beast-burger', art: 'beast-burger', diagram: 'beast-burger-build', no: '135', kind: 'main', forLine: 'Smoker special', name: 'Beast Burger', short: 'Beast burger',
+      aka: 'mixed meat monster monster burger',
+      yield: 'Per plate. A sourdough cob loaf is the bun: smashed patties, cheese, chicken tenders, pork belly, pulled lamb, cheese sauce, cowboy candy and onion rings, with house BBQ and Alabama white sauces. 160 g chips on the side. Working title: Mixed Meat Monster.',
+      ingredients: [
+        { q: '1', name: 'Sourdough cob loaf', note: 'the bun, cut across into a base and a top', tags: ['Gluten'] },
+        { q: '30 ml', name: 'House BBQ sauce', note: 'on the base', link: 'house-bbq-sauce' },
+        { q: '20 g', name: 'Oak leaf lettuce' },
+        { q: '50 g', name: 'Pickles', note: 'bread and butter, bought in' },
+        { q: '160 g', name: 'Smash patty', note: 'smashed patties', link: 'smash-patty' },
+        { q: '2 slices', name: 'Burger cheese', note: 'on the patties', tags: ['Milk'] },
+        { q: '2', name: 'Southern-style chicken tenders', note: 'bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
+        { q: '80 g', name: 'Pork belly', note: 'sliced', link: 'pork-belly-batch' },
+        { q: '120 g', name: 'Smoked pulled lamb', note: 'from the smoker' },
+        { q: '50 ml', name: 'American cheese sauce', note: 'the liquid cheese', link: 'american-cheese-sauce' },
+        { q: '50 g', name: 'Cowboy candy', link: 'cowboy-candy' },
+        { q: '5', name: 'Onion rings', note: 'bought in', tags: ['Gluten', 'Egg?', 'Soy?'] },
+        { q: '50 ml', name: 'Alabama white sauce', link: 'alabama-white-sauce' },
+        { q: '160 g', name: 'Chips', note: 'on the side' }
+      ],
+      pins: [
+        { label: 'Beast burger', x: 59.4, y: 35.8, side: 'left', tags: ['Gluten', 'Milk', 'Egg'], note: 'Sourdough cob as the bun. Bottom to top: house BBQ sauce, oak leaf, pickles, smashed patties, cheese, 2 tenders, pork belly, pulled lamb, cheese sauce, cowboy candy, 5 onion rings, Alabama white sauce, cob top.' },
+        { label: 'Chips', x: 29.2, y: 63.2, side: 'right', tags: [], note: '160 g.' }
+      ],
+      sections: [
+        { title: 'Cooking', steps: [
+          'Chicken tenders: fry at 175 °C. [Time to confirm]',
+          'Pulled lamb: from the smoker, reheated to 75 °C.',
+          'Smash patties, pork belly, onion rings and the cob. [Cooking to confirm]'
+        ] },
+        { title: 'Plating, bottom to top', steps: [
+          'Cob base.',
+          'House BBQ sauce, 30 ml.',
+          'Oak leaf, 20 g.',
+          'Pickles, 50 g.',
+          'Smashed patties, 160 g.',
+          'Cheese, 2 slices.',
+          'Chicken tenders, 2.',
+          'Pork belly slices, 80 g.',
+          'Pulled lamb, 120 g.',
+          'Cheese sauce, 50 ml.',
+          'Cowboy candy, 50 g.',
+          'Onion rings, 5.',
+          'Alabama white sauce, 50 ml.',
+          'Cob top.',
+          '160 g chips on the side. [Plate or board to confirm]'
+        ] }
+      ],
+      labelNote: 'Check the cob loaf, chicken tender and onion ring labels.'
     },
     {
       id: 'pork-knuckle', art: 'pork-knuckle', no: '92', kind: 'main', forLine: 'Special', name: 'Pork Knuckle',
