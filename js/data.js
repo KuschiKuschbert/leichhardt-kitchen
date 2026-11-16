@@ -48,7 +48,7 @@
   Specials always shows first. The head chef's Special switch in Manage Recipes puts a dish in it.
 */
 window.LK_DATA = {
-  updated: '7 November 2026',
+  updated: '16 November 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
   menuOrder: [
     { title: 'Specials', ids: ['chicken-adobo', 'lamb-nachos', 'buffalo-corn-cob-with-cashew-crumb'] },
@@ -2844,6 +2844,167 @@ window.LK_DATA = {
       "labelNote": "Check the baking powder label. Baking method, oven setting and time were not supplied. Maple butter is the board service glaze, separate from this batch.",
       "avc": "Cornbread Batch BF 12ptn",
       "yield": "Batch: 12 portions."
+    },
+    {
+      "id": "feast-of-the-feather",
+      "no": "130",
+      "kind": "batch",
+      "forLine": "For Feast of the Feather",
+      "name": "Feast of the Feather: Smoked Chicken",
+      "short": "Feast of the Feather chicken",
+      "yield": "Trial batch: 1 whole chicken, 1.6–1.8 kg raw. Unstuffed, with no added brine or salt solution.",
+      "ingredients": [
+        {
+          "q": "1",
+          "name": "Whole chicken",
+          "note": "1.6–1.8 kg raw; unstuffed, not pre-brined"
+        },
+        {
+          "q": "3 litres",
+          "name": "Water",
+          "note": "brine, total"
+        },
+        {
+          "q": "120 g",
+          "name": "Salt",
+          "note": "brine"
+        },
+        {
+          "q": "60 g",
+          "name": "Brown sugar",
+          "note": "brine"
+        },
+        {
+          "q": "6 cloves",
+          "name": "Garlic",
+          "note": "brine, crushed"
+        },
+        {
+          "q": "3",
+          "name": "Bay leaves",
+          "note": "brine"
+        },
+        {
+          "q": "6 g",
+          "name": "Black peppercorns",
+          "note": "brine, cracked"
+        },
+        {
+          "q": "6 sprigs",
+          "name": "Fresh thyme",
+          "note": "brine"
+        },
+        {
+          "q": "4 leaves",
+          "name": "Fresh sage",
+          "note": "brine"
+        },
+        {
+          "q": "½ lemon",
+          "name": "Lemon zest",
+          "note": "brine, zest only"
+        },
+        {
+          "q": "15 ml",
+          "name": "Neutral oil",
+          "note": "after brining"
+        },
+        {
+          "q": "3 g",
+          "name": "Sweet paprika",
+          "note": "rub, unsmoked"
+        },
+        {
+          "q": "2 g",
+          "name": "Garlic powder",
+          "note": "rub"
+        },
+        {
+          "q": "2 g",
+          "name": "Onion powder",
+          "note": "rub"
+        },
+        {
+          "q": "2 g",
+          "name": "Ground black pepper",
+          "note": "rub"
+        },
+        {
+          "q": "1 g",
+          "name": "Dried thyme",
+          "note": "rub"
+        },
+        {
+          "q": "0.5 g",
+          "name": "Rubbed dried sage",
+          "note": "rub"
+        }
+      ],
+      "sections": [
+        {
+          "title": "Trial recipe",
+          "steps": [
+            "First trial, not a validated production schedule. Record bird weight, smoker load, actual times, final core temperatures and salt level. Assess before standardising.",
+            "Chicken method only. Intended to sit on a giant Yorkshire pudding with mushy peas, mash and a jug of gravy. Side recipes and serving quantities: [To confirm]."
+          ]
+        },
+        {
+          "title": "Brine: 8–12 hours",
+          "steps": [
+            "Heat 500 ml of the water with the salt, sugar, garlic, bay, peppercorns, fresh thyme, sage and lemon zest until the salt and sugar dissolve.",
+            "Add the remaining 2.5 litres of water. Chill the brine to 5 °C or below before adding the chicken.",
+            "Submerge the chicken. Refrigerate at 5 °C or below for 8–12 hours.",
+            "The brine uses 40 g salt per litre of water. If more is needed to cover the bird, scale every brine ingredient proportionally. Do not scale the brining time.",
+            "Remove the chicken and discard the used brine. Pat dry. Do not rinse raw poultry."
+          ]
+        },
+        {
+          "title": "Dry the skin: 12–24 hours",
+          "steps": [
+            "Put the chicken on a rack over a tray. Refrigerate uncovered for 12–24 hours at 5 °C or below in a dedicated raw-poultry area, protected from cross-contamination."
+          ]
+        },
+        {
+          "title": "Season after brining",
+          "steps": [
+            "Mix the paprika, garlic powder, onion powder, ground black pepper, dried thyme and rubbed sage.",
+            "Lightly coat the dry chicken with 15 ml neutral oil. Apply the rub evenly just before cooking.",
+            "Add no salt to the first-trial rub. Assess the cooked bird before adjusting."
+          ]
+        },
+        {
+          "title": "Smoke: 150 °C",
+          "steps": [
+            "Preheat the smoker to 150 °C. Use indirect heat and light, clean applewood smoke. Place the chicken breast upwards.",
+            "Allow about 60–90 minutes for the smoke stage. Start probing after 60 minutes. Move to the hot finish sooner if the bird is cooking quickly. Times are estimates, not proof of doneness."
+          ]
+        },
+        {
+          "title": "Rational finish: 210 °C",
+          "steps": [
+            "Transfer directly to the preheated Rational: 210 °C, dry convection, 0% added steam, medium fan.",
+            "Allow about 15–30 minutes to colour and crisp the skin. Do not baste during the finish.",
+            "Probe both the thickest breast and inner thigh, avoiding bone. Both must reach at least 75 °C before removing the chicken from the heat. Continue cooking if either is below 75 °C.",
+            "Alternatively finish in the smoker at 210–220 °C if it can hold that heat cleanly. Use the same core-temperature endpoint."
+          ]
+        },
+        {
+          "title": "Rest and serve",
+          "steps": [
+            "Rest on a rack for 10–15 minutes, uncovered or very loosely tented.",
+            "Serve promptly. Keep the Yorkshire edges visible and bring the gravy separately. This trial covers immediate service, not cook-chill or reheating."
+          ]
+        }
+      ],
+      "tip": {
+        "title": "Trial only: smoke, then crisp",
+        "text": "Applewood at 150 °C, then Rational at 210 °C, dry convection, 0% added steam, medium fan. Stage times are estimates. No added salt in the rub."
+      },
+      "safety": {
+        "title": "Probe before service",
+        "text": "Brine and dry at 5 °C or below. Discard used brine. Both thickest breast and inner thigh must reach at least 75 °C, away from bone. Do not rely on cooking time or skin colour."
+      },
+      "labelNote": "Check the chicken, oil and spice labels. Allergens here cover the chicken recipe only, not Yorkshire pudding, mash, peas or gravy."
     }
   ]
 };

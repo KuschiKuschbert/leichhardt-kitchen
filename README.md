@@ -193,6 +193,8 @@ All recipes are in **`js/data.js`**. The top of that file explains every field. 
 7. If it is a dish on the guest menu, add its `id` to the right section in `menuOrder` at the top of `js/data.js`, in the spot where the menu prints it. A dish left out of `menuOrder` still shows, under "Other dishes". Batch recipes and components are not listed there.
 8. Change `updated` at the top of the file to today's date.
 
+Card 130, **Feast of the Feather: Smoked Chicken** (16 November 2026), records the head chef-requested trial recipe: herb brine, salt-free rub, applewood smoke and a dry Rational finish. Times are estimates; breast and inner thigh must each reach 75 °C. It covers one 1.6–1.8 kg bird and immediate service only. The Yorkshire pudding, mushy peas, mash and gravy are serving context, with their recipes and quantities still to confirm. Trial results are required before marking the card finished. Epicure informed flavour pairings; it did not provide a tested cooking schedule.
+
 ### Batch cards still to come
 
 Dishes already link to these ids. Add a recipe with the same `id` and the links, "Used in" lists and allergens switch on by themselves. Most-used first:

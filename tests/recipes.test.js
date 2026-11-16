@@ -164,6 +164,17 @@ async function waitForJump(p, id, allowEnd) {
   const twice = await p.evaluate(() => [...document.querySelectorAll('a.dish')].map(a => a.textContent.replace(/\s+/g, ' ').trim()).filter(t => { const m = t.match(/(?:With|Goes on) (.*)$/); if (!m) return false; const parts = m[1].split(', '); return new Set(parts).size < parts.length; }));
   ok(twice.length === 0, 'recipe cards: no linked card is named twice in With or Goes on (' + twice.join(' | ').slice(0, 160) + ')');
   await p.context().close();
+  // The new trial remains readable without a kitchen login at all supported widths.
+  for (const width of [390, 768, 1280]) {
+    p = await L.open(b, '#/r/feast-of-the-feather', { who: '', width, height: 900, wait: 1200 });
+    const text = await p.locator('main').textContent();
+    ok(/Feast of the Feather/.test(text) && /Trial recipe/.test(text), width + ': public chicken card names the trial');
+    ok(/Brine: 8–12 hours/.test(text) && /Season after brining/.test(text) && /Rational finish: 210 °C/.test(text), width + ': all chicken stages show');
+    ok(/Both must reach at least 75 °C/.test(text), width + ': cooking requires both core readings');
+    ok(!(await L.overflow(p)), width + ': chicken card fits');
+    ok(p.errors.length === 0, width + ': chicken card has no page errors');
+    await p.context().close();
+  }
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); console.log(R.join('\n')); process.exit(1); });
