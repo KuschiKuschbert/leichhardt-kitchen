@@ -5525,14 +5525,14 @@ html:has(.tm-focus-page) {
    dashed edge. Accepted: one quiet line, no fill. Words carry every state; red stays for a failed Save. */
 .tm-notebook.tm-focus-page .tm-short-line { flex: 1 1 100%; min-width: 0; margin: 0; }
 .tm-short-line > .tm-short-words { margin: 0; font-size: .8125rem; line-height: 1.4; overflow-wrap: break-word; }
-.tm-short-band { display: flex; flex-direction: column; gap: 0; min-width: 0; margin: 0; padding: .15rem .55rem .1rem; border-left: 4px solid var(--small-ink); background: var(--hit); }
-/* while the band shows, the dock gives up its empty saved-words row and some top padding: the On break now board keeps
-   all its names above the dock on a 390 px phone (#722), six away included */
-.tm-notebook.tm-focus-page .tm-focus-save.has-short { padding-top: .4rem; }
+.tm-short-band { display: flex; flex-direction: column; gap: 0; min-width: 0; margin: 0; padding: .05rem .55rem 0; border-left: 4px solid var(--small-ink); background: var(--hit); }
+/* while the band shows, the dock gives up its empty saved-words row and some of its padding: the On break now board keeps
+   all its names above the dock on a 390 px phone (#722), six away included, and on a 375 x 667 one (#724) */
+.tm-notebook.tm-focus-page .tm-focus-save.has-short { padding-top: .2rem; padding-bottom: .35rem; row-gap: .25rem; }
 .tm-notebook.tm-focus-page .tm-focus-save.has-short .sv-line:empty { display: none; }
 .tm-short-band.is-pending { border-left-style: dashed; }
 .tm-short-band.is-accepted { flex-direction: row; align-items: center; justify-content: space-between; gap: .5rem; padding: 0 0 0 .55rem; border-left-color: var(--line); background: transparent; }
-.tm-short-fact { margin: 0; font: 700 .9375rem/1.25 var(--body); color: var(--ink); overflow-wrap: break-word; }
+.tm-short-fact { margin: 0; padding-top: .05rem; font: 700 .9375rem/1.15 var(--body); color: var(--ink); overflow-wrap: break-word; }
 .tm-short-band.is-accepted .tm-short-fact { min-width: 0; font: 400 .8125rem/1.35 var(--body); }
 .tm-short-band.is-accepted .tm-short-fact b { font-weight: 700; }
 .tm-short-tf { color: var(--small-ink); }
@@ -5570,6 +5570,11 @@ html:has(.tm-focus-page) {
   .p-admin.ad-admin.tm-admin-plan .ad-title { font-size: 1.65rem; line-height: 1.15; }
   .p-admin.ad-admin.tm-admin-plan .ad-eyebrow { margin: 0; font: 400 .8125rem/1.35 var(--body); letter-spacing: 0; text-transform: none; color: var(--muted); }
   .p-admin.ad-admin.tm-admin-plan .a-tabs { margin-bottom: .65rem; gap: 1rem; }
+  /* On break now at the top of Today's team on every phone (head chef, 16 Nov 2026, the brief's Short phones): today's
+     live board above the notebook head and the date, so a 375 x 667 phone shows every name above the Save dock; the
+     date stays directly above the rows it plans. From 720 px the board stays under the date. */
+  .tm-notebook.tm-focus-page .tm-nbook { grid-template-areas: 'away' 'head' 'date' 'week' 'notice' 'toolbar' 'editor' 'save' 'review' 'tools' 'roster' 'extra'; }
+  .tm-notebook.tm-focus-page .tm-live-strip { margin-top: .85rem; }
 }
 @media (min-width: 1100px) {
   .tm-focus-page .tm-focus-grid { grid-template-columns: minmax(0, 1fr); }

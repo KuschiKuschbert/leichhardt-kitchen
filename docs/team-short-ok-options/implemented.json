@@ -26,8 +26,8 @@
   },
   "admin-390-short": {
     "first": {
-      "dockH": 135,
-      "listPx": 641,
+      "dockH": 122,
+      "listPx": 654,
       "words": "Too few now until 19:00: 4 on, 6 needed Go to Sam K’s break Accept 4 on",
       "board": "4 of 4",
       "accept": "118x44",
@@ -44,15 +44,15 @@
       "overflow": false
     },
     "working": {
-      "listPx": 524,
-      "dockH": 135
+      "listPx": 538,
+      "dockH": 122
     },
     "errors": 0
   },
   "admin-390-accepting": {
     "first": {
-      "dockH": 154,
-      "listPx": 622,
+      "dockH": 139,
+      "listPx": 637,
       "words": "Not saved yet: 4 on, 6 needed, accepted until 19:00 today Tap Save to share it with the chefs. Undo",
       "board": "4 of 4",
       "accept": "",
@@ -69,15 +69,15 @@
       "overflow": false
     },
     "working": {
-      "listPx": 505,
-      "dockH": 154
+      "listPx": 520,
+      "dockH": 139
     },
     "errors": 0
   },
   "admin-390-accepted": {
     "first": {
-      "dockH": 112,
-      "listPx": 664,
+      "dockH": 103,
+      "listPx": 673,
       "words": "Accepted until 19:00 today: 4 on, 6 needed. By Gus at 18:00. Undo",
       "board": "4 of 4",
       "accept": "",
@@ -94,17 +94,17 @@
       "overflow": false
     },
     "working": {
-      "listPx": 547,
-      "dockH": 112
+      "listPx": 556,
+      "dockH": 103
     },
     "errors": 0
   },
   "admin-390-worse": {
     "first": {
-      "dockH": 170,
-      "listPx": 606,
+      "dockH": 157,
+      "listPx": 619,
       "words": "Too few now until 19:00: 3 on, 6 needed At 18:00 Gus accepted 4 on. Sam K’s save at 18:10 left 3 on. Go to Sam K’s break Accept 3 on",
-      "board": "3 of 5",
+      "board": "5 of 5",
       "accept": "117x44",
       "link": "182x44",
       "undo": "",
@@ -119,8 +119,8 @@
       "overflow": false
     },
     "working": {
-      "listPx": 489,
-      "dockH": 170
+      "listPx": 502,
+      "dockH": 157
     },
     "errors": 0
   },
@@ -151,8 +151,8 @@
   },
   "team-390-short": {
     "first": {
-      "dockH": 137,
-      "listPx": 639,
+      "dockH": 124,
+      "listPx": 652,
       "words": "Too few now until 19:00: 4 on, 6 needed Go to Sam K’s break Accept 4 on",
       "board": "4 of 4",
       "accept": "118x44",
@@ -169,15 +169,15 @@
       "overflow": false
     },
     "working": {
-      "listPx": 523,
-      "dockH": 137
+      "listPx": 536,
+      "dockH": 124
     },
     "errors": 0
   },
   "team-390-accepting": {
     "first": {
-      "dockH": 156,
-      "listPx": 620,
+      "dockH": 141,
+      "listPx": 635,
       "words": "Not saved yet: 4 on, 6 needed, accepted until 19:00 today Tap Save to share it with the chefs. Undo",
       "board": "4 of 4",
       "accept": "",
@@ -194,15 +194,15 @@
       "overflow": false
     },
     "working": {
-      "listPx": 505,
-      "dockH": 156
+      "listPx": 519,
+      "dockH": 141
     },
     "errors": 0
   },
   "team-390-accepted": {
     "first": {
-      "dockH": 114,
-      "listPx": 662,
+      "dockH": 105,
+      "listPx": 671,
       "words": "Accepted until 19:00 today: 4 on, 6 needed. By Gus at 18:00. Undo",
       "board": "4 of 4",
       "accept": "",
@@ -219,15 +219,15 @@
       "overflow": false
     },
     "working": {
-      "listPx": 546,
-      "dockH": 114
+      "listPx": 555,
+      "dockH": 105
     },
     "errors": 0
   },
   "team-390-worse": {
     "first": {
-      "dockH": 172,
-      "listPx": 604,
+      "dockH": 159,
+      "listPx": 617,
       "words": "Too few now until 19:00: 3 on, 6 needed At 18:00 Gus accepted 4 on. Sam K’s save at 18:10 left 3 on. Go to Sam K’s break Accept 3 on",
       "board": "5 of 5",
       "accept": "117x44",
@@ -244,8 +244,8 @@
       "overflow": false
     },
     "working": {
-      "listPx": 488,
-      "dockH": 172
+      "listPx": 502,
+      "dockH": 159
     },
     "errors": 0
   },
@@ -276,8 +276,8 @@
   },
   "admin-768-short": {
     "first": {
-      "dockH": 86,
-      "listPx": 758,
+      "dockH": 74,
+      "listPx": 770,
       "words": "Too few now until 19:00: 4 on, 6 needed Go to Sam K’s break Accept 4 on",
       "board": "4 of 4",
       "accept": "118x44",
@@ -294,15 +294,15 @@
       "overflow": false
     },
     "working": {
-      "listPx": 637,
-      "dockH": 86
+      "listPx": 649,
+      "dockH": 74
     },
     "errors": 0
   },
   "admin-768-accepting": {
     "first": {
-      "dockH": 104,
-      "listPx": 740,
+      "dockH": 91,
+      "listPx": 753,
       "words": "Not saved yet: 4 on, 6 needed, accepted until 19:00 today Tap Save to share it with the chefs. Undo",
       "board": "4 of 4",
       "accept": "",
@@ -319,15 +319,15 @@
       "overflow": false
     },
     "working": {
-      "listPx": 618,
-      "dockH": 104
+      "listPx": 631,
+      "dockH": 91
     },
     "errors": 0
   },
   "admin-768-accepted": {
     "first": {
-      "dockH": 63,
-      "listPx": 781,
+      "dockH": 55,
+      "listPx": 789,
       "words": "Accepted until 19:00 today: 4 on, 6 needed. By Gus at 18:00. Undo",
       "board": "4 of 4",
       "accept": "",
@@ -344,15 +344,15 @@
       "overflow": false
     },
     "working": {
-      "listPx": 659,
-      "dockH": 63
+      "listPx": 667,
+      "dockH": 55
     },
     "errors": 0
   },
   "admin-768-worse": {
     "first": {
-      "dockH": 103,
-      "listPx": 741,
+      "dockH": 91,
+      "listPx": 753,
       "words": "Too few now until 19:00: 3 on, 6 needed At 18:00 Gus accepted 4 on. Sam K’s save at 18:10 left 3 on. Go to Sam K’s break Accept 3 on",
       "board": "5 of 5",
       "accept": "117x44",
@@ -369,8 +369,8 @@
       "overflow": false
     },
     "working": {
-      "listPx": 619,
-      "dockH": 103
+      "listPx": 631,
+      "dockH": 91
     },
     "errors": 0
   },
@@ -401,8 +401,8 @@
   },
   "admin-1280-short": {
     "first": {
-      "dockH": 86,
-      "listPx": 758,
+      "dockH": 74,
+      "listPx": 770,
       "words": "Too few now until 19:00: 4 on, 6 needed Go to Sam K’s break Accept 4 on",
       "board": "4 of 4",
       "accept": "118x44",
@@ -419,15 +419,15 @@
       "overflow": false
     },
     "working": {
-      "listPx": 643,
-      "dockH": 86
+      "listPx": 655,
+      "dockH": 74
     },
     "errors": 0
   },
   "admin-1280-accepting": {
     "first": {
-      "dockH": 86,
-      "listPx": 758,
+      "dockH": 74,
+      "listPx": 770,
       "words": "Not saved yet: 4 on, 6 needed, accepted until 19:00 today Tap Save to share it with the chefs. Undo",
       "board": "4 of 4",
       "accept": "",
@@ -444,15 +444,15 @@
       "overflow": false
     },
     "working": {
-      "listPx": 643,
-      "dockH": 86
+      "listPx": 655,
+      "dockH": 74
     },
     "errors": 0
   },
   "admin-1280-accepted": {
     "first": {
-      "dockH": 63,
-      "listPx": 781,
+      "dockH": 55,
+      "listPx": 789,
       "words": "Accepted until 19:00 today: 4 on, 6 needed. By Gus at 18:00. Undo",
       "board": "4 of 4",
       "accept": "",
@@ -469,15 +469,15 @@
       "overflow": false
     },
     "working": {
-      "listPx": 666,
-      "dockH": 63
+      "listPx": 674,
+      "dockH": 55
     },
     "errors": 0
   },
   "admin-1280-worse": {
     "first": {
-      "dockH": 103,
-      "listPx": 741,
+      "dockH": 91,
+      "listPx": 753,
       "words": "Too few now until 19:00: 3 on, 6 needed At 18:00 Gus accepted 4 on. Sam K’s save at 18:10 left 3 on. Go to Sam K’s break Accept 3 on",
       "board": "5 of 5",
       "accept": "117x44",
@@ -494,8 +494,8 @@
       "overflow": false
     },
     "working": {
-      "listPx": 625,
-      "dockH": 103
+      "listPx": 637,
+      "dockH": 91
     },
     "errors": 0
   }

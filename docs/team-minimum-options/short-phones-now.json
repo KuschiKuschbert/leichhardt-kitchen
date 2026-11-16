@@ -1,0 +1,542 @@
+{
+  "320x568 admin enough": {
+    "names": "0 of 4",
+    "boardTop": 555,
+    "boardBottom": 803,
+    "dockTop": 404,
+    "dockH": 96,
+    "short": 388,
+    "heads": {
+      "pbar": 80,
+      "rooms": 159,
+      "heading": 240,
+      "tabs": 282,
+      "nhead": 337,
+      "date": 451
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "320x568 admin short": {
+    "names": "0 of 4",
+    "boardTop": 555,
+    "boardBottom": 803,
+    "dockTop": 386,
+    "dockH": 114,
+    "short": 406,
+    "heads": {
+      "pbar": 80,
+      "rooms": 159,
+      "heading": 240,
+      "tabs": 282,
+      "nhead": 337,
+      "date": 451
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "320x568 team enough": {
+    "names": "0 of 4",
+    "boardTop": 299,
+    "boardBottom": 547,
+    "dockTop": 402,
+    "dockH": 98,
+    "short": 134,
+    "heads": {
+      "pbar": null,
+      "rooms": null,
+      "heading": null,
+      "tabs": null,
+      "nhead": 81,
+      "date": 194
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "320x568 team short": {
+    "names": "0 of 4",
+    "boardTop": 299,
+    "boardBottom": 547,
+    "dockTop": 384,
+    "dockH": 116,
+    "short": 152,
+    "heads": {
+      "pbar": null,
+      "rooms": null,
+      "heading": null,
+      "tabs": null,
+      "nhead": 81,
+      "date": 194
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "320x568 chef enough": {
+    "names": "0 of 4",
+    "boardTop": 455,
+    "boardBottom": 703,
+    "dockTop": 404,
+    "dockH": 96,
+    "short": 288,
+    "heads": {
+      "pbar": null,
+      "rooms": 80,
+      "heading": 140,
+      "tabs": 182,
+      "nhead": 237,
+      "date": 351
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "320x568 chef short": {
+    "names": "0 of 4",
+    "boardTop": 455,
+    "boardBottom": 703,
+    "dockTop": 386,
+    "dockH": 114,
+    "short": 306,
+    "heads": {
+      "pbar": null,
+      "rooms": 80,
+      "heading": 140,
+      "tabs": 182,
+      "nhead": 237,
+      "date": 351
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "375x667 admin enough": {
+    "names": "0 of 4",
+    "boardTop": 447,
+    "boardBottom": 602,
+    "dockTop": 503,
+    "dockH": 96,
+    "short": 88,
+    "heads": {
+      "pbar": 80,
+      "rooms": 138,
+      "heading": 219,
+      "tabs": 260,
+      "nhead": 316,
+      "date": 394
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "375x667 admin short": {
+    "names": "0 of 4",
+    "boardTop": 447,
+    "boardBottom": 602,
+    "dockTop": 485,
+    "dockH": 114,
+    "short": 106,
+    "heads": {
+      "pbar": 80,
+      "rooms": 138,
+      "heading": 219,
+      "tabs": 260,
+      "nhead": 316,
+      "date": 394
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "375x667 team enough": {
+    "names": "4 of 4",
+    "boardTop": 213,
+    "boardBottom": 367,
+    "dockTop": 501,
+    "dockH": 98,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": null,
+      "heading": null,
+      "tabs": null,
+      "nhead": 81,
+      "date": 160
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "375x667 team short": {
+    "names": "4 of 4",
+    "boardTop": 213,
+    "boardBottom": 367,
+    "dockTop": 483,
+    "dockH": 116,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": null,
+      "heading": null,
+      "tabs": null,
+      "nhead": 81,
+      "date": 160
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "375x667 chef enough": {
+    "names": "3 of 4",
+    "boardTop": 369,
+    "boardBottom": 524,
+    "dockTop": 503,
+    "dockH": 96,
+    "short": 10,
+    "heads": {
+      "pbar": null,
+      "rooms": 80,
+      "heading": 140,
+      "tabs": 182,
+      "nhead": 237,
+      "date": 316
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "375x667 chef short": {
+    "names": "2 of 4",
+    "boardTop": 369,
+    "boardBottom": 524,
+    "dockTop": 485,
+    "dockH": 114,
+    "short": 28,
+    "heads": {
+      "pbar": null,
+      "rooms": 80,
+      "heading": 140,
+      "tabs": 182,
+      "nhead": 237,
+      "date": 316
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "360x740 admin enough": {
+    "names": "3 of 4",
+    "boardTop": 447,
+    "boardBottom": 602,
+    "dockTop": 576,
+    "dockH": 96,
+    "short": 15,
+    "heads": {
+      "pbar": 80,
+      "rooms": 138,
+      "heading": 219,
+      "tabs": 260,
+      "nhead": 316,
+      "date": 394
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "360x740 admin short": {
+    "names": "2 of 4",
+    "boardTop": 447,
+    "boardBottom": 602,
+    "dockTop": 558,
+    "dockH": 114,
+    "short": 33,
+    "heads": {
+      "pbar": 80,
+      "rooms": 138,
+      "heading": 219,
+      "tabs": 260,
+      "nhead": 316,
+      "date": 394
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "360x740 team enough": {
+    "names": "4 of 4",
+    "boardTop": 213,
+    "boardBottom": 367,
+    "dockTop": 574,
+    "dockH": 98,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": null,
+      "heading": null,
+      "tabs": null,
+      "nhead": 81,
+      "date": 160
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "360x740 team short": {
+    "names": "4 of 4",
+    "boardTop": 213,
+    "boardBottom": 367,
+    "dockTop": 556,
+    "dockH": 116,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": null,
+      "heading": null,
+      "tabs": null,
+      "nhead": 81,
+      "date": 160
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "360x740 chef enough": {
+    "names": "4 of 4",
+    "boardTop": 369,
+    "boardBottom": 524,
+    "dockTop": 576,
+    "dockH": 96,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": 80,
+      "heading": 140,
+      "tabs": 182,
+      "nhead": 237,
+      "date": 316
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "360x740 chef short": {
+    "names": "4 of 4",
+    "boardTop": 369,
+    "boardBottom": 524,
+    "dockTop": 558,
+    "dockH": 114,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": 80,
+      "heading": 140,
+      "tabs": 182,
+      "nhead": 237,
+      "date": 316
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "390x844 admin enough": {
+    "names": "4 of 4",
+    "boardTop": 447,
+    "boardBottom": 602,
+    "dockTop": 680,
+    "dockH": 96,
+    "short": 0,
+    "heads": {
+      "pbar": 80,
+      "rooms": 138,
+      "heading": 219,
+      "tabs": 260,
+      "nhead": 316,
+      "date": 394
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "390x844 admin short": {
+    "names": "4 of 4",
+    "boardTop": 447,
+    "boardBottom": 602,
+    "dockTop": 662,
+    "dockH": 114,
+    "short": 0,
+    "heads": {
+      "pbar": 80,
+      "rooms": 138,
+      "heading": 219,
+      "tabs": 260,
+      "nhead": 316,
+      "date": 394
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "390x844 team enough": {
+    "names": "4 of 4",
+    "boardTop": 213,
+    "boardBottom": 367,
+    "dockTop": 678,
+    "dockH": 98,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": null,
+      "heading": null,
+      "tabs": null,
+      "nhead": 81,
+      "date": 160
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "390x844 team short": {
+    "names": "4 of 4",
+    "boardTop": 213,
+    "boardBottom": 367,
+    "dockTop": 660,
+    "dockH": 116,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": null,
+      "heading": null,
+      "tabs": null,
+      "nhead": 81,
+      "date": 160
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "390x844 chef enough": {
+    "names": "4 of 4",
+    "boardTop": 369,
+    "boardBottom": 524,
+    "dockTop": 680,
+    "dockH": 96,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": 80,
+      "heading": 140,
+      "tabs": 182,
+      "nhead": 237,
+      "date": 316
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "390x844 chef short": {
+    "names": "4 of 4",
+    "boardTop": 369,
+    "boardBottom": 524,
+    "dockTop": 662,
+    "dockH": 114,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": 80,
+      "heading": 140,
+      "tabs": 182,
+      "nhead": 237,
+      "date": 316
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "412x915 admin enough": {
+    "names": "4 of 4",
+    "boardTop": 447,
+    "boardBottom": 602,
+    "dockTop": 751,
+    "dockH": 96,
+    "short": 0,
+    "heads": {
+      "pbar": 80,
+      "rooms": 138,
+      "heading": 219,
+      "tabs": 260,
+      "nhead": 316,
+      "date": 394
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "412x915 admin short": {
+    "names": "4 of 4",
+    "boardTop": 447,
+    "boardBottom": 602,
+    "dockTop": 733,
+    "dockH": 114,
+    "short": 0,
+    "heads": {
+      "pbar": 80,
+      "rooms": 138,
+      "heading": 219,
+      "tabs": 260,
+      "nhead": 316,
+      "date": 394
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "412x915 team enough": {
+    "names": "4 of 4",
+    "boardTop": 213,
+    "boardBottom": 367,
+    "dockTop": 749,
+    "dockH": 98,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": null,
+      "heading": null,
+      "tabs": null,
+      "nhead": 81,
+      "date": 160
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "412x915 team short": {
+    "names": "4 of 4",
+    "boardTop": 213,
+    "boardBottom": 367,
+    "dockTop": 731,
+    "dockH": 116,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": null,
+      "heading": null,
+      "tabs": null,
+      "nhead": 81,
+      "date": 160
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "412x915 chef enough": {
+    "names": "4 of 4",
+    "boardTop": 369,
+    "boardBottom": 524,
+    "dockTop": 751,
+    "dockH": 96,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": 80,
+      "heading": 140,
+      "tabs": 182,
+      "nhead": 237,
+      "date": 316
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "412x915 chef short": {
+    "names": "4 of 4",
+    "boardTop": 369,
+    "boardBottom": 524,
+    "dockTop": 733,
+    "dockH": 114,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": 80,
+      "heading": 140,
+      "tabs": 182,
+      "nhead": 237,
+      "date": 316
+    },
+    "overflow": false,
+    "errors": 0
+  }
+}

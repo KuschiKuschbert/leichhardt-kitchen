@@ -258,7 +258,7 @@ No new read, listener or timer. Older code ignores `ok`. An older phone's Save r
 - **The fact is 15 px, not 16.** It stays on one line at 390 px in the book's fonts.
 - **The band sits beside Save from 720 px, not 1100.** At 768 px a full-width band hid On break now names (#722 merged this morning). Beside Save the dock is 86 px.
 - **The marks say when each break starts** ("Break 18:30, too few"), not its whole span. The longer words wrapped beside the name, so a row moved under the thumb when its mark went (the existing thumb check, reproduced 17 px on the first build).
-- **While the band shows, the dock drops its empty saved-words row and 4 px of top padding.** Without it, with six away, Sam K's name sat under the dock on the head chef's phone (the #722 check, reproduced: last name 639 px, dock 625 px).
+- **While the band shows, the dock drops its empty saved-words row and some of its padding** (`.has-short`: top .2rem, bottom .35rem, rows .25rem apart; the band .05rem at its top, the fact 15 px at 1.15 line height). Without it, with six away, Sam K's name sat under the dock on the head chef's phone (the #722 check, reproduced: last name 639 px, dock 625 px), and after #724 merged, under it on a 375 x 667 phone (#724's check, reproduced: last name 473 px, dock 464 px).
 - **A cleared acceptance is named for why it went:** "No longer too few at 18:30 to 19:00, so its acceptance is cleared." says the plan has enough there now; "Acceptance undone" means a chef tapped Undo.
 
 **Implemented app measurements.** Stand-in, the study's made-up day at 18:30, fallback fonts unless named. Script [`implemented.cjs`](implemented.cjs), raw [`implemented.json`](implemented.json). Before: the same plan with no busy time set. Today's line (15 Nov) measured 114 px at 390 (`baseline.json`).
@@ -266,26 +266,28 @@ No new read, listener or timer. Older code ignores `ok`. An older phone's Save r
 | Save dock | admin 390 | sous chef 390 | admin 768 | admin 1280 |
 | --- | ---: | ---: | ---: | ---: |
 | No busy time set | 96 | 98 | 67 | 67 |
-| Too few, saved plan | **135** | 137 | 86 | 86 |
-| Accept tapped, waiting for Save | 154 | 156 | 104 | 86 |
-| Accepted (one quiet line) | **112** | 114 | 63 | 63 |
-| Worse later (the reason line) | 170 | 172 | 103 | 103 |
+| Too few, saved plan | **122** | 124 | 74 | 74 |
+| Accept tapped, waiting for Save | 139 | 141 | 91 | 74 |
+| Accepted (one quiet line) | **103** | 105 | 55 | 55 |
+| Worse later (the reason line) | 157 | 159 | 91 | 91 |
 
 | Measure | Result |
 | --- | --- |
-| List in view on the working screen, admin 390: no busy time / too few / accepted | 563 / 524 / 547 px |
-| On break now names above the dock, admin 390, in Barlow (the #722 check) | 4 of 4, and 6 of 6 with six away (2 px to spare) |
-| On break now names above the dock, admin 390, worse state (five away), fallback fonts | **3 of 5** (Not evidenced in Barlow) |
+| List in view on the working screen, admin 390: no busy time / too few / accepted | 563 / 538 / 556 px |
+| On break now names above the dock, in Barlow (the #722 and #724 checks, after #724 moved the board to the top on phones) | 4 of 4 at 390 x 844, 6 of 6 with six away; 4 of 4 at 375 x 667 (4 px to spare) and 360 x 740, admin and chef panel |
+| On break now names above the dock, admin 390, worse state (five away), fallback fonts | 5 of 5 |
 | Taps to accept a saved short time | 2 (Accept, Save) |
 | Taps to reach the first marked break | 1 |
 | Tap targets | Accept 118 x 44, Go to 181 x 44 (wider from 720 px), Undo 44 x 44 |
 | Contrast | "Too few" 5.05:1; the fact, the reason and the link 15.24:1; Accept 5.59:1; the accepted line 15.9:1; an orange mark 5.27:1, a grey one 6.73:1 |
 | Sideways scroll, page errors | none at 390, 768 and 1280 |
 
-Screenshots: `implemented-<admin|team>-<390|768|1280>-<short|accepting|accepted|worse>.png`, and `-working` at 390.
+Screenshots: `implemented-<admin|team>-<390|768|1280>-<short|accepting|accepted|worse>.png`, and `-working` at 390. Remeasured after #724 merged in (16 Nov 2026, 15:30).
+
+**Rules published** from this branch with the Publish rules workflow on 16 Nov 2026, 15:00 to 15:03 Queensland time (run 428): the publish, the access verification and the Lock probe on the live book all passed. `main` held no other rules change then or when #724 merged in.
 
 **Tests:**
-- `tests/team-minimum.test.js`, 75 checks. Parts 2 to 10 are in the new words. Part 11 is new:
+- `tests/team-minimum.test.js`, 89 checks after #724 merged in (its short-phone part in the new words). Parts 2 to 10 are in the new words. Part 11 is new:
   - Accept, Undo before Save, Save with the record's exact `ok`
   - the quiet line and grey marks, still covered a minute later
   - Undo and Save, a worse plan with who saved it

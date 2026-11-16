@@ -1597,7 +1597,7 @@ window.LK_DATA = {
     },
     /* Feast of the Feather, the head chef's whole smoked chicken for sharing, 16 November 2026. The brine, rub and
        smoke are the head chef's first trial: confirm them after the first bird. The Yorkshire pudding is the head
-       chef's recipe. Mushy peas and the cider-pickled red cabbage have no cards yet. */
+       chef's recipe; the cider-pickled red cabbage is the head chef's pick. Mushy peas has no card yet. */
     {
       id: 'feast-of-the-feather', art: 'feast-of-the-feather', no: '130', kind: 'main', forLine: 'Smoker special', name: 'Feast of the Feather',
       menu: 'Feast of the Feather: whole brined and smoked chicken on a giant golden Yorkshire pudding, with buttery mash, mushy peas, cider-pickled red cabbage and a jug of rich gravy. Made for sharing.',
@@ -1622,9 +1622,10 @@ window.LK_DATA = {
         { title: 'Cooking', steps: [
           'Smoked chicken: brined, dried, seasoned, smoked and finished hot as card 131. Probe the breast and the inner thigh: 75 °C in both.',
           'Rest the chicken on a rack, 10 to 15 min.',
-          'Yorkshire pudding (card 133): one 18 cm pudding per board, one batch. 210 °C for 12 min, crisp at the edges.',
+          'Yorkshire pudding (card 133): one 18 cm pudding per board, one batch. 210 °C, fan off, for 12 min, crisp at the edges.',
           'Mash (card 70) and gravy (card 69) as for every plate.',
-          'Mushy peas and red cabbage. [Recipes to come]'
+          'Cider-pickled red cabbage (card 134), made ahead.',
+          'Mushy peas. [Recipe to come]'
         ] },
         { title: 'Plating', steps: [
           'Sharing board. [Board to confirm]',
@@ -1717,21 +1718,102 @@ window.LK_DATA = {
     },
     {
       id: 'yorkshire-pudding', art: 'yorkshire-pudding', no: '133', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Yorkshire Pudding', short: 'Yorkshire pudding',
-      yield: 'Batch: 200 g flour, 200 ml milk and 4 eggs. Makes 1 giant pudding in an 18 cm (7 inch) tin, one per board. Bake at 210 °C for 12 min. Trial: confirm after the first bake.',
+      yield: 'Batch: 140 g flour, 200 ml milk and 4 eggs, 100 ml fat in the tin. Makes 1 giant pudding in an 18 cm (7 inch) tin, one per board. Bake at 210 °C, fan off, for 12 min. Trial: confirm after the first bake.',
       ingredients: [
-        { q: '200 g', name: 'Flour', tags: ['Gluten'] },
+        { q: '140 g', name: 'Flour', tags: ['Gluten'] },
         { q: '200 ml', name: 'Milk', tags: ['Milk'] },
-        { q: '4', name: 'Eggs', tags: ['Egg'] }
+        { q: '4', name: 'Eggs', tags: ['Egg'] },
+        { q: '100 ml', name: 'Fat', note: 'for the tin. [Which fat to confirm]' }
       ],
       sections: [
         { title: 'Method', steps: [
           'Whisk the flour, milk and eggs into a smooth batter.',
           'Rest the batter for 1 hour.',
-          '[Hot fat in the tin first: the fat and how much to come]',
+          '100 ml fat in the tin. Heat it in the oven until hot before the batter goes in.',
           'Pour the batter into the 18 cm (7 inch) tin.',
-          'Bake at 210 °C for 12 min.'
+          'Bake at 210 °C, fan off, for 12 min.'
         ] }
       ]
+    },
+    {
+      /* The head chef's pick, 16 November 2026: a quick pickled red cabbage recipe from the It's a Veg World After All
+         blog, cups as 250 ml, the method in the book's words. */
+      id: 'cider-red-cabbage', art: 'cider-red-cabbage', no: '134', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Cider-Pickled Red Cabbage', short: 'Red cabbage',
+      yield: 'Batch: half a red cabbage, about 1 L in 2 jars. Keeps 2 weeks in the coolroom. [Amount per board to come]',
+      ingredients: [
+        { q: '½ head', name: 'Red cabbage', note: 'cored, finely shredded. [Weight to confirm]' },
+        { q: '250 ml', name: 'Water' },
+        { q: '250 ml', name: 'Apple cider vinegar' },
+        { q: '1 tbsp', name: 'Sugar', note: 'white' },
+        { q: '1 tsp', name: 'Salt', note: 'fine' },
+        { q: '2 cloves', name: 'Garlic', note: 'smashed, 1 per jar' },
+        { q: '2', name: 'Bay leaves', note: '1 per jar' }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Core the cabbage. Shred it finely on the mandoline or with a sharp knife.',
+          'Whisk the water, vinegar, sugar and salt in a pot. Bring to a gentle boil, stirring until the sugar and salt dissolve. Off the heat.',
+          'Pack the cabbage into 2 glass jars, 350 to 500 ml each. 1 smashed garlic clove and 1 bay leaf in each jar.',
+          'Half the brine into each jar. It does not need to cover the cabbage yet: the cabbage softens and the brine covers it as it stands.',
+          'Lids on. Stand until the jars are at room temperature, 1 to 4 hours.',
+          'Into the coolroom. Chill a few hours before use.'
+        ] },
+        { title: 'Storage', steps: ['Sealed, in the coolroom. Label it with the date made. Use within 2 weeks.'] }
+      ],
+      safety: { title: 'Use within 2 weeks', text: 'A quick pickle, not a preserve. Keep it sealed in the coolroom, dated, and use it within 2 weeks.' },
+      contains: [],
+      check: []
+    },
+    /* Beast Burger (card 135), the head chef's new smoker burger, 16 November 2026. Working title, also Mixed Meat Monster. */
+    {
+      id: 'beast-burger', art: 'beast-burger', diagram: 'beast-burger-build', no: '135', kind: 'main', forLine: 'Smoker special', name: 'Beast Burger', short: 'Beast burger',
+      aka: 'mixed meat monster monster burger',
+      yield: 'Per plate. A sourdough cob loaf is the bun: smashed patties, cheese, chicken tenders, pork belly, pulled lamb, cheese sauce, cowboy candy and onion rings, with house BBQ and Alabama white sauces. 160 g chips on the side. Working title: Mixed Meat Monster.',
+      ingredients: [
+        { q: '1', name: 'Sourdough cob loaf', note: 'the bun, cut across into a base and a top', tags: ['Gluten'] },
+        { q: '30 ml', name: 'House BBQ sauce', note: 'on the base', link: 'house-bbq-sauce' },
+        { q: '20 g', name: 'Oak leaf lettuce' },
+        { q: '50 g', name: 'Pickles', note: 'bread and butter, bought in' },
+        { q: '160 g', name: 'Smash patty', note: 'smashed patties', link: 'smash-patty' },
+        { q: '2 slices', name: 'Burger cheese', note: 'on the patties', tags: ['Milk'] },
+        { q: '2', name: 'Southern-style chicken tenders', note: 'bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
+        { q: '80 g', name: 'Pork belly', note: 'sliced', link: 'pork-belly-batch' },
+        { q: '120 g', name: 'Smoked pulled lamb', note: 'from the smoker' },
+        { q: '50 ml', name: 'American cheese sauce', note: 'the liquid cheese', link: 'american-cheese-sauce' },
+        { q: '50 g', name: 'Cowboy candy', link: 'cowboy-candy' },
+        { q: '5', name: 'Onion rings', note: 'bought in', tags: ['Gluten', 'Egg?', 'Soy?'] },
+        { q: '50 ml', name: 'Alabama white sauce', link: 'alabama-white-sauce' },
+        { q: '160 g', name: 'Chips', note: 'on the side' }
+      ],
+      pins: [
+        { label: 'Beast burger', x: 59.4, y: 35.8, side: 'left', tags: ['Gluten', 'Milk', 'Egg'], note: 'Sourdough cob as the bun. Bottom to top: house BBQ sauce, oak leaf, pickles, smashed patties, cheese, 2 tenders, pork belly, pulled lamb, cheese sauce, cowboy candy, 5 onion rings, Alabama white sauce, cob top.' },
+        { label: 'Chips', x: 29.2, y: 63.2, side: 'right', tags: [], note: '160 g.' }
+      ],
+      sections: [
+        { title: 'Cooking', steps: [
+          'Chicken tenders: fry at 175 °C. [Time to confirm]',
+          'Pulled lamb: from the smoker, reheated to 75 °C.',
+          'Smash patties, pork belly, onion rings and the cob. [Cooking to confirm]'
+        ] },
+        { title: 'Plating, bottom to top', steps: [
+          'Cob base.',
+          'House BBQ sauce, 30 ml.',
+          'Oak leaf, 20 g.',
+          'Pickles, 50 g.',
+          'Smashed patties, 160 g.',
+          'Cheese, 2 slices.',
+          'Chicken tenders, 2.',
+          'Pork belly slices, 80 g.',
+          'Pulled lamb, 120 g.',
+          'Cheese sauce, 50 ml.',
+          'Cowboy candy, 50 g.',
+          'Onion rings, 5.',
+          'Alabama white sauce, 50 ml.',
+          'Cob top.',
+          '160 g chips on the side. [Plate or board to confirm]'
+        ] }
+      ],
+      labelNote: 'Check the cob loaf, chicken tender and onion ring labels.'
     },
     {
       id: 'pork-knuckle', art: 'pork-knuckle', no: '92', kind: 'main', forLine: 'Special', name: 'Pork Knuckle',

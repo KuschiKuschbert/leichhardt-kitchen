@@ -1,0 +1,218 @@
+{
+  "320x568 admin enough": {
+    "names": "0 of 4",
+    "boardTop": 351,
+    "boardBottom": 598,
+    "dockTop": 404,
+    "dockH": 96,
+    "short": 183,
+    "heads": {
+      "pbar": 80,
+      "rooms": 159,
+      "heading": 240,
+      "tabs": 282,
+      "nhead": 603,
+      "date": 717
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "320x568 admin short": {
+    "names": "0 of 4",
+    "boardTop": 351,
+    "boardBottom": 598,
+    "dockTop": 386,
+    "dockH": 114,
+    "short": 201,
+    "heads": {
+      "pbar": 80,
+      "rooms": 159,
+      "heading": 240,
+      "tabs": 282,
+      "nhead": 603,
+      "date": 717
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "320x568 team enough": {
+    "names": "4 of 4",
+    "boardTop": 95,
+    "boardBottom": 342,
+    "dockTop": 402,
+    "dockH": 98,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": null,
+      "heading": null,
+      "tabs": null,
+      "nhead": 347,
+      "date": 461
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "320x568 team short": {
+    "names": "4 of 4",
+    "boardTop": 95,
+    "boardBottom": 342,
+    "dockTop": 384,
+    "dockH": 116,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": null,
+      "heading": null,
+      "tabs": null,
+      "nhead": 347,
+      "date": 461
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "320x568 chef enough": {
+    "names": "2 of 4",
+    "boardTop": 251,
+    "boardBottom": 498,
+    "dockTop": 404,
+    "dockH": 96,
+    "short": 83,
+    "heads": {
+      "pbar": null,
+      "rooms": 80,
+      "heading": 140,
+      "tabs": 182,
+      "nhead": 503,
+      "date": 617
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "320x568 chef short": {
+    "names": "1 of 4",
+    "boardTop": 251,
+    "boardBottom": 498,
+    "dockTop": 386,
+    "dockH": 114,
+    "short": 101,
+    "heads": {
+      "pbar": null,
+      "rooms": 80,
+      "heading": 140,
+      "tabs": 182,
+      "nhead": 503,
+      "date": 617
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "360x640 admin enough": {
+    "names": "4 of 4",
+    "boardTop": 329,
+    "boardBottom": 484,
+    "dockTop": 476,
+    "dockH": 96,
+    "short": 0,
+    "heads": {
+      "pbar": 80,
+      "rooms": 138,
+      "heading": 219,
+      "tabs": 260,
+      "nhead": 489,
+      "date": 568
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "360x640 admin short": {
+    "names": "3 of 4",
+    "boardTop": 329,
+    "boardBottom": 484,
+    "dockTop": 458,
+    "dockH": 114,
+    "short": 15,
+    "heads": {
+      "pbar": 80,
+      "rooms": 138,
+      "heading": 219,
+      "tabs": 260,
+      "nhead": 489,
+      "date": 568
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "360x640 team enough": {
+    "names": "4 of 4",
+    "boardTop": 95,
+    "boardBottom": 249,
+    "dockTop": 474,
+    "dockH": 98,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": null,
+      "heading": null,
+      "tabs": null,
+      "nhead": 254,
+      "date": 333
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "360x640 team short": {
+    "names": "4 of 4",
+    "boardTop": 95,
+    "boardBottom": 249,
+    "dockTop": 456,
+    "dockH": 116,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": null,
+      "heading": null,
+      "tabs": null,
+      "nhead": 254,
+      "date": 333
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "360x640 chef enough": {
+    "names": "4 of 4",
+    "boardTop": 251,
+    "boardBottom": 406,
+    "dockTop": 476,
+    "dockH": 96,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": 80,
+      "heading": 140,
+      "tabs": 182,
+      "nhead": 410,
+      "date": 489
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "360x640 chef short": {
+    "names": "4 of 4",
+    "boardTop": 251,
+    "boardBottom": 406,
+    "dockTop": 458,
+    "dockH": 114,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": 80,
+      "heading": 140,
+      "tabs": 182,
+      "nhead": 410,
+      "date": 489
+    },
+    "overflow": false,
+    "errors": 0
+  }
+}
