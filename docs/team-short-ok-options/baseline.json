@@ -1,0 +1,140 @@
+{
+  "admin-390-1400": {
+    "first": {
+      "dockH": 114,
+      "line": "Saved plan: too few 18:30 to 19:00. 4 from 18:30, 5 from 18:45, 6 needed. Move a marked break.",
+      "lineFont": "13px",
+      "lineOnScreen": true,
+      "rowsFull": 0,
+      "rowsAny": 0,
+      "marks": "sam,dev,fen,hal",
+      "overflow": false
+    },
+    "working": {
+      "dockH": 114,
+      "line": "Saved plan: too few 18:30 to 19:00. 4 from 18:30, 5 from 18:45, 6 needed. Move a marked break.",
+      "lineFont": "13px",
+      "lineOnScreen": true,
+      "rowsFull": 1,
+      "rowsAny": 2,
+      "marks": "sam,dev,fen,hal",
+      "overflow": false
+    },
+    "errors": 0
+  },
+  "admin-390-1830": {
+    "first": {
+      "dockH": 114,
+      "line": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
+      "lineFont": "13px",
+      "lineOnScreen": true,
+      "rowsFull": 0,
+      "rowsAny": 0,
+      "marks": "sam,dev,fen,hal",
+      "overflow": false
+    },
+    "working": {
+      "dockH": 114,
+      "line": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
+      "lineFont": "13px",
+      "lineOnScreen": true,
+      "rowsFull": 1,
+      "rowsAny": 2,
+      "marks": "sam,dev,fen,hal",
+      "overflow": false
+    },
+    "errors": 0
+  },
+  "team-390-1400": {
+    "first": {
+      "dockH": 116,
+      "line": "Saved plan: too few 18:30 to 19:00. 4 from 18:30, 5 from 18:45, 6 needed. Move a marked break.",
+      "lineFont": "13px",
+      "lineOnScreen": true,
+      "rowsFull": 0,
+      "rowsAny": 1,
+      "marks": "sam,dev,fen,hal",
+      "overflow": false
+    },
+    "working": {
+      "dockH": 116,
+      "line": "Saved plan: too few 18:30 to 19:00. 4 from 18:30, 5 from 18:45, 6 needed. Move a marked break.",
+      "lineFont": "13px",
+      "lineOnScreen": true,
+      "rowsFull": 1,
+      "rowsAny": 2,
+      "marks": "sam,dev,fen,hal",
+      "overflow": false
+    },
+    "errors": 0
+  },
+  "team-390-1830": {
+    "first": {
+      "dockH": 116,
+      "line": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
+      "lineFont": "13px",
+      "lineOnScreen": true,
+      "rowsFull": 0,
+      "rowsAny": 1,
+      "marks": "sam,dev,fen,hal",
+      "overflow": false
+    },
+    "working": {
+      "dockH": 116,
+      "line": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
+      "lineFont": "13px",
+      "lineOnScreen": true,
+      "rowsFull": 1,
+      "rowsAny": 2,
+      "marks": "sam,dev,fen,hal",
+      "overflow": false
+    },
+    "errors": 0
+  },
+  "admin-1280-1400": {
+    "first": {
+      "dockH": 67,
+      "line": "Saved plan: too few 18:30 to 19:00. 4 from 18:30, 5 from 18:45, 6 needed. Move a marked break.",
+      "lineFont": "13px",
+      "lineOnScreen": true,
+      "rowsFull": 0,
+      "rowsAny": 1,
+      "marks": "sam,dev,fen,hal",
+      "overflow": false
+    },
+    "working": {
+      "dockH": 67,
+      "line": "Saved plan: too few 18:30 to 19:00. 4 from 18:30, 5 from 18:45, 6 needed. Move a marked break.",
+      "lineFont": "13px",
+      "lineOnScreen": true,
+      "rowsFull": 3,
+      "rowsAny": 4,
+      "marks": "sam,dev,fen,hal",
+      "overflow": false
+    },
+    "errors": 0
+  },
+  "admin-1280-1830": {
+    "first": {
+      "dockH": 67,
+      "line": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
+      "lineFont": "13px",
+      "lineOnScreen": true,
+      "rowsFull": 0,
+      "rowsAny": 1,
+      "marks": "sam,dev,fen,hal",
+      "overflow": false
+    },
+    "working": {
+      "dockH": 67,
+      "line": "Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.",
+      "lineFont": "13px",
+      "lineOnScreen": true,
+      "rowsFull": 3,
+      "rowsAny": 4,
+      "marks": "sam,dev,fen,hal",
+      "overflow": false
+    },
+    "errors": 0
+  }
+}
