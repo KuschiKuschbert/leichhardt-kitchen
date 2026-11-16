@@ -1,0 +1,110 @@
+{
+  "360x640 admin enough": {
+    "names": "0 of 4",
+    "boardTop": 447,
+    "boardBottom": 602,
+    "dockTop": 476,
+    "dockH": 96,
+    "short": 115,
+    "heads": {
+      "pbar": 80,
+      "rooms": 138,
+      "heading": 219,
+      "tabs": 260,
+      "nhead": 316,
+      "date": 394
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "360x640 admin short": {
+    "names": "0 of 4",
+    "boardTop": 447,
+    "boardBottom": 602,
+    "dockTop": 458,
+    "dockH": 114,
+    "short": 133,
+    "heads": {
+      "pbar": 80,
+      "rooms": 138,
+      "heading": 219,
+      "tabs": 260,
+      "nhead": 316,
+      "date": 394
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "360x640 team enough": {
+    "names": "4 of 4",
+    "boardTop": 213,
+    "boardBottom": 367,
+    "dockTop": 474,
+    "dockH": 98,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": null,
+      "heading": null,
+      "tabs": null,
+      "nhead": 81,
+      "date": 160
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "360x640 team short": {
+    "names": "4 of 4",
+    "boardTop": 213,
+    "boardBottom": 367,
+    "dockTop": 456,
+    "dockH": 116,
+    "short": 0,
+    "heads": {
+      "pbar": null,
+      "rooms": null,
+      "heading": null,
+      "tabs": null,
+      "nhead": 81,
+      "date": 160
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "360x640 chef enough": {
+    "names": "2 of 4",
+    "boardTop": 369,
+    "boardBottom": 524,
+    "dockTop": 476,
+    "dockH": 96,
+    "short": 37,
+    "heads": {
+      "pbar": null,
+      "rooms": 80,
+      "heading": 140,
+      "tabs": 182,
+      "nhead": 237,
+      "date": 316
+    },
+    "overflow": false,
+    "errors": 0
+  },
+  "360x640 chef short": {
+    "names": "1 of 4",
+    "boardTop": 369,
+    "boardBottom": 524,
+    "dockTop": 458,
+    "dockH": 114,
+    "short": 55,
+    "heads": {
+      "pbar": null,
+      "rooms": 80,
+      "heading": 140,
+      "tabs": 182,
+      "nhead": 237,
+      "date": 316
+    },
+    "overflow": false,
+    "errors": 0
+  }
+}

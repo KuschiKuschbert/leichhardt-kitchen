@@ -1,0 +1,4 @@
+@media (max-width: 719px) {
+  .tm-notebook.tm-focus-page .tm-nbook { grid-template-areas: 'head' 'away' 'date' 'week' 'notice' 'toolbar' 'editor' 'save' 'review' 'tools' 'roster' 'extra'; }
+  .tm-notebook.tm-focus-page .tm-live-strip { margin-top: .65rem; }
+}

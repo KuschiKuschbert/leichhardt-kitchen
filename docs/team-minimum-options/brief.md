@@ -356,3 +356,32 @@ Screenshots in the book's fonts: before [enough](board-dock-before-fonts-admin-3
 
 **Tests.** `tests/team-minimum.test.js` part 10, measured in the book's own fonts (if they cannot load, the check says so and measures nothing): on the admin at 390 x 844 and scroll 0, every name ends above the dock, and the board's words, the dock's words and Save show, with the too few line, without it, and with six away while too few. At 768 and 1280 px the Team heading on Today's team is the same as on People. On the old code it fails 2 of 49 ("Dev, Fen, Hal": the last name ends at 663 px, the dock starts at 662 px; six away: "Dev, Fen, Eli"); with the fix 0 of 49. `tests/design-patterns.test.js` names `tm-admin-plan`.
 
+
+## Short phones, 16 November 2026
+
+The head chef asked for a look at shorter phones after Board above the dock went live. **Waiting for the head chef's choice**; nothing in the book has changed.
+
+**Measured** on `main` at `0625139`, implemented app, click-test stand-in, the book's own fonts (Barlow, Barlow Condensed, Caveat), the study's made-up day at 18:30 with four on a break, enough on and too few. Script [`short-phones.cjs`](short-phones.cjs), raw [`short-phones-now.json`](short-phones-now.json) and [`short-phones-now-640.json`](short-phones-now-640.json). On break now names above the Save dock at scroll 0:
+
+| Screen | Admin, Today's team | Chef panel, Today's team | `#/team` |
+| --- | --- | --- | --- |
+| 412 x 915, 390 x 844 | 4 of 4 / 4 of 4 | 4 of 4 / 4 of 4 | 4 of 4 / 4 of 4 |
+| 360 x 740 | **3 of 4 / 2 of 4** | 4 of 4 / 4 of 4 | 4 of 4 / 4 of 4 |
+| 375 x 667 (iPhone SE and 8) | **0 of 4 / 0 of 4** | 3 of 4 / 2 of 4 | 4 of 4 / 4 of 4 |
+| 360 x 640 (a 360 x 740 phone with the browser's address bar) | **0 of 4 / 0 of 4** | 2 of 4 / 1 of 4 | 4 of 4 / 4 of 4 |
+| 320 x 568 (iPhone SE, first model) | 0 of 4 / 0 of 4 | 0 of 4 / 0 of 4 | 0 of 4 / 0 of 4 |
+
+At 375 x 667 the admin page has 383 px above the board (the Google account line 58, the rooms 81, the Team heading 41, the page tabs 56, the notebook head 78, the date 53) and about 420 px between the top bar and the dock. A smaller heading cannot free enough.
+
+**Previews** (CSS added to the page only, [`short-phones-a.css`](short-phones-a.css), [`short-phones-b.css`](short-phones-b.css); raw [`short-phones-a.json`](short-phones-a.json), [`short-phones-b.json`](short-phones-b.json), [`short-phones-a-small.json`](short-phones-a-small.json)):
+
+| Option | 375 x 667, admin / chef / `#/team` (enough; too few) | 360 x 740, admin | 360 x 640, admin / chef | What it costs |
+| --- | --- | --- | --- | --- |
+| **A. The board at the top of Today's team on every phone** (above the notebook title and the date) | 4 / 4 / 4 of 4; 4 / 4 / 4 of 4 | 4 of 4 both | 4 of 4, 3 of 4 too few / 4 of 4 | On a short phone the title, Saved and Refresh, and the date start just under the dock; the sage title band sits under the board. The people rows start 10 px lower. Also changes the 390 x 844 phone. |
+| A, only on phones shorter than 800 px | the same | the same | the same | The layout would change when the phone turns or a keyboard resizes the page. |
+| B. The board between the title and the date | 2 / 4 / 4 of 4; 1 / 4 / 4 of 4 | 4 of 4 both | not measured | Leaves the admin at 375 x 667 short. |
+| Leave it | as measured above | | | Short phones scroll about 100 px to see the board. |
+
+None of these fixes 320 px wide phones: the board's lines wrap there and it is 247 px tall.
+
+**Quick check (small change: no new tab, button, pop-up or step).** Recommended: **A on every phone**. The board is always today and now, so it sits apart from the day being planned, and the date stays directly above the rows it controls. One phone layout, no words hidden, no taps added. Screenshots: [now, admin 375 x 667](short-now-admin-375x667.png); A: [admin 375 x 667](short-a-admin-375x667.png), [`#/team` 375 x 667](short-a-team-375x667.png), [admin 390 x 844](short-a-admin-390x844.png). Contract note: the Current break board pattern keeps the board in the notebook; A keeps it there but moves it above the notebook's head on phones, a departure for the head chef to choose.
