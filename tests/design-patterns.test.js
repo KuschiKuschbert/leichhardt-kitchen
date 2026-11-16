@@ -32,7 +32,7 @@ const CLASSES = [
   'todo-notebook', 'todo-book', 'todo-bookhead', 'todo-spine', 'todo-work', 'todo-formtitle', 'todo-status', 'todo-privacy',
   'tm-notebook', 'tm-nbook', 'tm-nhead', 'tm-nspine', 'tm-work', 'tm-viewbar', 'tm-shift-scroll', 'tm-dayperson', 'tm-away-slot',
   'tm-weeknav', 'tm-daypick',
-  'tm-focus-page', 'tm-date-controls', 'tm-week-reveal', 'tm-row-fields', 'tm-row-summary', 'tm-detail-workbench', 'tm-focus-grid', 'tm-focus-save', 'tm-live-strip', 'tm-focus-panel',
+  'tm-focus-page', 'tm-date-controls', 'tm-week-reveal', 'tm-row-fields', 'tm-row-summary', 'tm-detail-workbench', 'tm-focus-grid', 'tm-focus-save', 'tm-live-strip', 'tm-focus-panel', 'tm-admin-plan',
   'tm-grid', 'tm-grid-head', 'tm-grid-row', 'tm-grid-who', 'tm-grid-sh', 'tm-grid-count', 'tm-grid-cell', 'tm-grid-off', 'tm-grid-brk', 'tm-grid-note', 'tm-bench-shifts', 'tm-occ-add', 'tm-occ-row', 'a-sh-occ',
   'tm-short-line', 'tm-short-mark', 'tm-roster-flag',
   'tm-plan', 'tm-planhead', 'tm-plan-svcs', 'tm-plan-hours', 'tm-tlrow', 'tm-tlrow-main', 'tm-tlrow-day', 'tm-rowbar', 'tm-rowticks', 'tm-tlsvc', 'tm-tlsvc-head', 'tm-tlsvc-name', 'tm-tlsvc-sec', 'tm-tlsvc-brs', 'tm-tlsvc-add', 'tm-tlsvc-more', 'tm-tloff', 'tm-tlundo', 'tm-tlrole', 'tm-tlhint', 'a-sh-busy', 'a-sh-need', 'a-sh-bnote',

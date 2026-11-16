@@ -6726,7 +6726,9 @@
       '<p class="hint a-forget">To use a different kitchen PIN on this device, open Settings, This phone.</p></section>');
     var resume = INTELLIGENCE_PAGES.indexOf(at) < 0 && intelligenceAllowed() && window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3 && window.LK_INTELLIGENCE.resumeHTML ? window.LK_INTELLIGENCE.resumeHTML(at) : '';
     if (at !== 'proofreader' && intelligenceAllowed() && proofModule()) resume += proofModule().resumeHTML(proofAdapter());
-    return panelShellHTML(bar, railHTML(), findBtn('a-find-head') + adminHeadingHTML(ag, at), tabsBar, (owner ? idCardHTML() : '') + resume + pane);
+    // Today's team takes the chef panel's one-line Team heading on a phone (css, .tm-admin-plan), so the On break now
+    // board ends above the Save dock on the first screen (16 Nov 2026, docs/team-minimum-options/brief.md, Board above the dock)
+    return panelShellHTML(bar, railHTML(), findBtn('a-find-head') + adminHeadingHTML(ag, at), tabsBar, (owner ? idCardHTML() : '') + resume + pane, at === 'plan' ? 'tm-admin-plan' : '');
   }
   // The owner and PIN chefs use one responsive panel shell. Each supplies its own permitted rooms and real pages.
   function panelShellHTML(bar, rail, heading, tabs, pane, extra) {
