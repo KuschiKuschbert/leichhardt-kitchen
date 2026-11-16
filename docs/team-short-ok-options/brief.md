@@ -6,7 +6,7 @@
 - Asked what he wants when the plan is short, he chose **OK it for the day**: "maybe add live warning before I save like a red bar or something until the problem is resolved? what do other fancy apps do for a warning?"
 - Who may OK it: **head chef and sous chefs**. Not chosen: a question at Save, a ping before the busy time.
 
-**Status: round 1 done (Build smaller, 5 of 5); round 2 designs drawn, scoring next.** [Proposal](proposal.md), [evidence packet](evidence-packet.md), [previews](index.html). Role-based analysis, not research with staff.
+**Status: round 1 Build smaller (5 of 5); round 2 A 43, C 32.5, B 27 (A first for all six); recommended: the mix (A's band and Accept + C's jump as a link + B's real times in the marks), focused follow-up below. Waiting for the head chef's choice.** [Proposal](proposal.md), [evidence packet](evidence-packet.md), [previews](index.html). Role-based analysis, not research with staff.
 
 ## Round 1
 
@@ -124,3 +124,74 @@ Screenshots: `shot-<design>-<role>-<width>-<state>.png` (states short, edit, acc
 | Todoist: nothing accepted by itself, defaults visible | Works | Works | Needs work: "Save and accept" bundles every unsaved change |
 | Headspace: plain words | Works: "Accept 4 of 6", "Accepted for today" | Works | Works |
 | Things 3: frequent actions visible, occasional ones tucked away | Works | Works | Needs work: Show and Accept take room every time it is short |
+
+## Round 2 scores
+
+Six fresh agents (the five, plus the kitchen screen designer) saw all three previews, the same evidence packet and the service rules. Scores out of 10. Previews only; the scorers read the screenshots, and the skeptic also drove the previews in a browser.
+
+| Reviewer | A | B | C | First | Decisive point |
+| --- | ---: | ---: | ---: | --- | --- |
+| Cook | 7 | 5 | 4 | A | The fact reads at arm's length, Save stays put, a stray tap on Accept only changes the draft. C stacks "Save and accept" on Save: a wet thumb sends it to every phone. |
+| Head chef | 8 | 4 | 6 | A | One place, sent with Save, cannot refuse another chef's draft. After accepting the dock should get smaller. Offer red as a departure, since he asked. |
+| Skeptic | 6 | 4 | 5 | A | A drops today's "Move a marked break", so Accept is the only action on a short time caused by four overlapping breaks. Keep the fix first and the marks. |
+| New starter | 7 | 5 | 6 | A | The dashed "Not saved yet" edge and grey "(accepted)" marks read without colour. "Accepting" reads like "Saving...": change it. "4 on, 6 needed" over "4 of 6". |
+| Keeper | 8 | 4 | 6 | A | A rides `tmSig`, `svButton` and `svDone` as they are. B puts a control in an `aria-hidden` head that only `draw()` rebuilds. C's Undo is a second whole-plan save. |
+| Screen designer | 7 | 5 | 5.5 | A | A works; add the fix next to Accept. The amber fill alone is 1.04:1 against the page: the edge and the words do the work. Red over a failed Save makes a pending acceptance look refused. |
+| **Total** | **43** | **27** | **32.5** | A 6 of 6 | |
+
+Every reviewer said the designs differ structurally, B the most; A and C differ in when the acceptance is sent and in C's jump, more than in layout (designer: "partly").
+
+**Red** (the head chef's suggestion): five of six reject it or call it a departure for the head chef to choose: the band would match Save's own failure line (`shot-a-admin-390-fail-red.png`), and a pending acceptance under a failed Save would look refused. The head chef reviewer would still offer it, as a departure.
+
+**Break-it findings from round 2:**
+
+| # | Scenario | Evidence | Disposition |
+| --- | --- | --- | --- |
+| 7 | **Accept as the only action.** At 18:30, 8 rostered on Dinner, four meal breaks overlap. A offers only Accept; after accepting B and C remove the marks, A greys them. Moving one or two breaks would fix it. | **Reproduced** in `a-admin.html?s=short`, `b-admin.html?s=accepted`, `c-admin.html?s=accepted` (skeptic). | The mix puts the fix beside Accept ("Go to Sam K's break") and keeps the marks, grey, after accepting. Whether Accept should apply when the roster itself has enough is a **head chef question** below. |
+| 8 | **C's failed one-tap save.** Two "Try again" buttons 12 px apart, both end Accepted, no Undo; "Not saved yet" above "Saved plan". | **Reproduced** in `c-admin.html?s=fail` (skeptic, new starter, cook). | C's one-tap save rejected by all six. The mix has one Try again (Save) and keeps the pending acceptance with Undo. |
+| 9 | **Stamp mismatch.** "Saved 18:31 · Gus" beside "Gus, 14:05". | **Reproduced** in the A and C previews (a fixture error, four reviewers). | Fixed in the mix: a fresh accept says "Gus at 18:31" from the save; a loaded one says "Saved 14:05 · Gus" in the head. In the app the time comes from the saved record. |
+| 10 | **B's accepted line kept the warning fill.** | **Reproduced** (preview CSS order, new starter and designer). | Preview bug, fixed in `pv.css`; B is not taken. |
+| 11 | **The minute paint changes Accept as the thumb lands** (at 19:00 the next short time). | **Risk / Not evidenced** (keeper). | The button carries its own times (`data-from`, `data-to`, `data-low` in the mix); in the app a tap whose times no longer match is refused with words. Client test at 19:00. |
+| 12 | **The clock is not ready at Save, so every acceptance is dropped.** | **Risk / Not evidenced** (keeper). | Save keeps acceptances while `T.ready()` is false. Client test. |
+| 13 | **B's growing head moves the rows.** | **Checked** in Chromium: scroll anchoring kept Dev's row still (200 to 199 px). Safari Not evidenced (skeptic). | B is not taken. |
+
+## Mix of A, B and C
+
+| Source and part | Take or reject | Principle | Kitchen benefit | Conflict or cost | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| A, the band in the Save dock, fact first, Accept beside it | **Take** | Linear (one place), Airbnb (fact and action together) | Seen on the first and the working screen; one place to learn | 51 px of list while short in the mix (A alone 33) | All six |
+| A, the acceptance in the draft, sent with Save | **Take** | Todoist (nothing accepted by itself), Duolingo (honest "Not saved yet") | A stray tap changes only the draft; the existing versioned Save, `svButton`, `svDone` | 2 taps to accept | All six |
+| A, grey marks "(accepted)" after accepting | **Take** | Duolingo | A new sous chef sees which breaks were accepted, and can still move them | A line per marked person stays | New starter, skeptic, cook |
+| B, real times in each mark ("Break 18:30 to 19:00, too few then") | **Take** | Flighty (real times where the eye already is) | Says when, on the row to change | The mark is a little longer | Five of six |
+| B, the block on the clock and in the sticky head | **Reject** | Linear (one place) | | 76 px of sticky head, Accept off the first screen, `aria-hidden` head, a second minute paint | All six |
+| C, Show breaks to move, as a link in the band ("Go to Sam K's break", then "Next: Dev's break") | **Take** | Airbnb (next action beside the fact), Things 3 (keep the common fix visible) | 1 tap to each marked break; the fix sits level with Accept, so Accept is not the only action | About 18 px of dock; must survive the minute paint | Skeptic, designer, new starter, keeper; the cook would leave it out (On break now already names who is away) |
+| C, Undo on the accepted line | **Take**, as a draft change sent with Save | Duolingo | Takes back a mistaken acceptance the same way it was given | None new: Save already sends it | Cook |
+| C, Accept saves at once; "Save and accept" | **Reject** | Todoist | | Bundles every unsaved change; a mis-tap reaches every phone; two Try again on failure | All six |
+
+**Why not all three in full:** B's head plus C's button row is taller than any single design, two places say one fact, and two ways to send an acceptance. **Why not pure A:** it leaves Accept as the only action and the marks without times.
+
+## Combined preview
+
+[The mix](m-admin.html) ([sous chef](m-team.html)), states with `?s=`: short, edit, accept, accepted, worse, fail, fixed; Undo on the accepted line goes to an unsaved "acceptance taken off". **Preview**, the same snapshot, data and conditions as A, B and C. Raw `verify-m.json`.
+
+- **While short:** the amber band, fact first: "**Too few** now until 19:00: 4 on, 6 needed", then "Saved plan. 5 from 18:45. Go to Sam K's break" (the link jumps to that row and outlines it; next tap "Next: Dev's break"). **Accept 4 on** beside the words, 44 px. Each marked person: "Break 18:30 to 19:00, too few then".
+- **Accept:** "Not saved yet: accept 4 on, 6 needed, until 19:00. Save to share it with the chefs. Undo", dashed edge. Save turns on.
+- **Saved:** one quiet line in place of the dock's status words: "**Accepted for today:** 4 on, 6 needed, until 19:00. Gus at 18:31. Undo". The marks stay, grey: "Break 18:30 to 19:00 (short accepted)".
+- **Worse later:** the band comes back: "Too few now until 19:00: 3 on, 6 needed. Gus accepted 4 on at 14:05. The plan changed since. Go to Sam K's break".
+- **Failed Save:** the pending band stays with Undo; one Try again; the red line says "The plan and the acceptance are still here."
+- The dock's own status words step aside while the band shows (the band says Saved, Unsaved or Not saved yet itself).
+
+| Measure | Today | A | Mix |
+| --- | ---: | ---: | ---: |
+| Taps to accept a saved short time | not possible | 2 | **2** |
+| Taps to reach the first marked break | scroll and look | scroll and look | **1** (checked: Sam K's row outlined, then Dev's) |
+| Save dock while short, admin / sous chef 390 | 114 / 116 px | 147 / 149 | 165 / 167 |
+| Save dock with the acceptance waiting, admin 390 | | 170 | 147 |
+| Save dock once accepted, admin 390 | 114 (the line stays) | 142 | **118** |
+| Save dock after a failed Save | | 240 | 217 |
+| List in view, working screen, admin 390, while short / once accepted | 545 | 512 / 518 | 494 / **541** |
+| Admin 1280, dock while short / accepted | 67 | 80 / 95 | 92 / 67 |
+| Contrast ("Too few"; the fact; Accept; the accepted line) | 5.27 | 5.05; 15.24; 5.59; 15.9 | 5.05; 15.24; 5.59; 15.9 |
+| Sideways scroll, page errors | none | none | none |
+
+Screenshots: `shot-m-admin-390-<state>.png`, `shot-m-admin-390-jump.png` (after Go to Sam K's break), `shot-m-admin-390-unaccept.png` (Undo on an accepted line). Focus on the break picker after the jump: Not evidenced in the snapshot (its pickers are static copies).
