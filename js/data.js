@@ -1725,7 +1725,8 @@ window.LK_DATA = {
       ],
       sections: [
         { title: 'Method', steps: [
-          'Whisk the flour, milk and eggs into a smooth batter. [Resting time to come]',
+          'Whisk the flour, milk and eggs into a smooth batter.',
+          'Rest the batter for 1 hour.',
           '[Hot fat in each tin first: the fat and how much to come]',
           'Split the batter between 2 tins, 18 cm (7 inch) each.',
           'Bake at 250 °C for 12 min.'
