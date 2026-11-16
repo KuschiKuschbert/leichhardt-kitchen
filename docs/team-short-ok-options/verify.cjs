@@ -5,7 +5,7 @@ const path = require('path'), fs = require('fs');
 const { chromium } = require(path.resolve(__dirname, '../../tests/node_modules/playwright-core'));
 const OUT = __dirname, BASE = 'http://127.0.0.1:8777/docs/team-short-ok-options/';
 const designs = (process.argv[2] || 'a,b,c').split(',');
-const STATES = ['short', 'edit', 'accept', 'accepted', 'worse', 'fail', 'fixed'];
+const STATES = ['short', 'edit', 'accept', 'accepted', 'unaccept', 'worse', 'fail', 'fixed'];
 const measure = p => p.evaluate(() => {
   const lum = c => { const m = c.match(/[\d.]+/g).map(Number); const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }; return .2126 * f(m[0]) + .7152 * f(m[1]) + .0722 * f(m[2]); };
   const bg = e => { while (e) { const b = getComputedStyle(e).backgroundColor; if (b && !/rgba\(0, 0, 0, 0\)|transparent/.test(b)) return b; e = e.parentElement; } return 'rgb(255,255,255)'; };
@@ -32,9 +32,9 @@ const measure = p => p.evaluate(() => {
   const toWork = p => p.evaluate(() => { const h = document.querySelector('.tm-planhead'); window.scrollTo(0, h.getBoundingClientRect().top + scrollY - 60); });
   for (const d of designs) {
     out[d] = {};
-    for (const [role, w] of [['admin', 390], ['team', 390], ['admin', 1280]]) {
+    for (const [role, w] of [['admin', 390], ['team', 390], ['admin', 768], ['admin', 1280]]) {
       for (const s of STATES) {
-        if (w === 1280 && !['short', 'accepted'].includes(s)) continue;
+        if (w > 400 && !['short', 'accepted', 'accept', 'worse'].includes(s)) continue;
         const p = await page(BASE + d + '-' + role + '.html?s=' + s, w);
         const first = await measure(p);
         const tag = d + '-' + role + '-' + w + '-' + s;

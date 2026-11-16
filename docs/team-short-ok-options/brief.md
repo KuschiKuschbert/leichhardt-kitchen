@@ -6,7 +6,7 @@
 - Asked what he wants when the plan is short, he chose **OK it for the day**: "maybe add live warning before I save like a red bar or something until the problem is resolved? what do other fancy apps do for a warning?"
 - Who may OK it: **head chef and sous chefs**. Not chosen: a question at Save, a ping before the busy time.
 
-**Status: round 1 Build smaller (5 of 5); round 2 A 43, C 32.5, B 27 (A first for all six); recommended: the mix (A's band and Accept + C's jump as a link + B's real times in the marks), focused follow-up below. Waiting for the head chef's choice.** [Proposal](proposal.md), [evidence packet](evidence-packet.md), [previews](index.html). Role-based analysis, not research with staff.
+**Status: round 1 Build smaller (5 of 5); round 2 A 43, C 32.5, B 27 (A first for all six); recommended: the mix (A's band and Accept + C's jump as a link + B's real times in the marks), reviewed again by three (all Recommend with a change, every change made). Waiting for the head chef's choice.** [Proposal](proposal.md), [evidence packet](evidence-packet.md), [previews](index.html). Role-based analysis, not research with staff.
 
 ## Round 1
 
@@ -172,26 +172,74 @@ Every reviewer said the designs differ structurally, B the most; A and C differ 
 
 ## Combined preview
 
-[The mix](m-admin.html) ([sous chef](m-team.html)), states with `?s=`: short, edit, accept, accepted, worse, fail, fixed; Undo on the accepted line goes to an unsaved "acceptance taken off". **Preview**, the same snapshot, data and conditions as A, B and C. Raw `verify-m.json`.
+[The mix](m-admin.html) ([sous chef](m-team.html)), states with `?s=`: short, edit, accept, accepted, unaccept, worse, fail, fixed. **Preview**, the same snapshot, data and conditions as A, B and C, after the focused follow-up below (its own small model in `mix.js`, so an unsaved edit, a waiting acceptance and Undo stay separate). Raw `verify-m.json`.
 
-- **While short:** the amber band, fact first: "**Too few** now until 19:00: 4 on, 6 needed", then "Saved plan. 5 from 18:45. Go to Sam K's break" (the link jumps to that row and outlines it; next tap "Next: Dev's break"). **Accept 4 on** beside the words, 44 px. Each marked person: "Break 18:30 to 19:00, too few then".
-- **Accept:** "Not saved yet: accept 4 on, 6 needed, until 19:00. Save to share it with the chefs. Undo", dashed edge. Save turns on.
-- **Saved:** one quiet line in place of the dock's status words: "**Accepted for today:** 4 on, 6 needed, until 19:00. Gus at 18:31. Undo". The marks stay, grey: "Break 18:30 to 19:00 (short accepted)".
-- **Worse later:** the band comes back: "Too few now until 19:00: 3 on, 6 needed. Gus accepted 4 on at 14:05. The plan changed since. Go to Sam K's break".
-- **Failed Save:** the pending band stays with Undo; one Try again; the red line says "The plan and the acceptance are still here."
-- The dock's own status words step aside while the band shows (the band says Saved, Unsaved or Not saved yet itself).
+- **While short:** the amber band, fact first, 16 px: "**Too few** now until 19:00: 4 on, 6 needed". Under it one row: **Go to Sam K's break** on the left (a 44 px link: it jumps to that row and outlines it; again, "Next: Dev's break (2 of 4)") and **Accept 4 on** on the right (44 px). Each marked person: "Break 18:30 to 19:00, too few then". With an unsaved edit the fact starts "Not saved yet."
+- **Accept:** the acceptance is the short time on the button that was tapped. "Not saved yet: 4 on, 6 needed, accepted until 19:00. Tap Save to share it with the chefs. Undo", dashed edge. Undo takes off only the acceptance; an unsaved edit stays. Save turns on.
+- **Saved:** one quiet line in place of the dock's status words: "**Accepted until 19:00 today:** 4 on, 6 needed. By Gus at 18:31." with a 44 px Undo. The marks stay, grey: "Break 18:30 to 19:00 (too few, accepted)". The notebook head says "Saved 18:31 · Gus".
+- **Undo on an accepted line:** "Not saved yet. Too few now until 19:00: 4 on, 6 needed. Acceptance undone." Save sends it.
+- **Worse later:** the band comes back and names who changed it: "Too few now until 19:00: 3 on, 6 needed. At 14:05 Gus accepted 4 on. Sam K's save at 18:10 left 3 on."
+- **Failed Save:** the waiting acceptance stays with Undo; one Try again; the red line says "The plan and the acceptance are still here."
 
 | Measure | Today | A | Mix |
 | --- | ---: | ---: | ---: |
 | Taps to accept a saved short time | not possible | 2 | **2** |
-| Taps to reach the first marked break | scroll and look | scroll and look | **1** (checked: Sam K's row outlined, then Dev's) |
-| Save dock while short, admin / sous chef 390 | 114 / 116 px | 147 / 149 | 165 / 167 |
-| Save dock with the acceptance waiting, admin 390 | | 170 | 147 |
-| Save dock once accepted, admin 390 | 114 (the line stays) | 142 | **118** |
-| Save dock after a failed Save | | 240 | 217 |
-| List in view, working screen, admin 390, while short / once accepted | 545 | 512 / 518 | 494 / **541** |
-| Admin 1280, dock while short / accepted | 67 | 80 / 95 | 92 / 67 |
+| Taps to reach the first marked break | scroll and look | scroll and look | **1** (checked: Sam K's row outlined, then Dev's, "2 of 4") |
+| Save dock while short, admin / sous chef 390 | 114 / 116 px | 147 / 149 | 179 / 181 |
+| Save dock while short, admin 768 / 1280 | 67 (1280) | | 159 / 117 |
+| Save dock with the acceptance waiting, admin 390 | | 170 | 179 |
+| Save dock once accepted, admin 390 / 768 / 1280 | 114 (the line stays) / / 67 | 142 | **128 / 128 / 67** |
+| Save dock, acceptance undone / worse / failed Save, admin 390 | | | 199 / 217 / 248 |
+| List in view, working screen, admin 390, while short / once accepted | 545 | 512 / 518 | 480 / **531** |
+| Link, Undo and Accept tap height | | Undo 18 px | **44 px** each |
 | Contrast ("Too few"; the fact; Accept; the accepted line) | 5.27 | 5.05; 15.24; 5.59; 15.9 | 5.05; 15.24; 5.59; 15.9 |
 | Sideways scroll, page errors | none | none | none |
 
-Screenshots: `shot-m-admin-390-<state>.png`, `shot-m-admin-390-jump.png` (after Go to Sam K's break), `shot-m-admin-390-unaccept.png` (Undo on an accepted line). Focus on the break picker after the jump: Not evidenced in the snapshot (its pickers are static copies).
+Screenshots: `shot-m-admin-390-<state>.png` (and `-working`), `shot-m-admin-768-<state>.png`, `shot-m-admin-1280-<state>.png`, `shot-m-team-390-<state>.png`. Focus on the break picker after the jump: Not evidenced (the snapshot's pickers are static copies).
+
+### Focused follow-up on the combined preview
+
+The mix brought in a flow none of the six had seen together (the fix link beside Accept, Undo through Save, new words), so three of them looked at it again. **Review status: all three Recommend with a change; every change is now in the preview above.** The cook, the head chef and the keeper did not review it again.
+
+| Reviewer | Verdict | What they found | Done |
+| --- | --- | --- | --- |
+| New starter | Recommend with a change | Every round 2 ask is in; every state reads without colour. Still unclear: the waiting line read as an order; "(short accepted)" read as a short break; "accepted 4 on at 14:05" read as "4 people on at 14:05"; one state had two names ("Unsaved plan", "Not saved yet"). Tap Accept, walk away, never Save: nobody would know. | All eight word changes made ("Not saved yet: 4 on, 6 needed, accepted until 19:00", "Tap Save to share it", "(too few, accepted)", "Accepted until 19:00 today: ... By Gus at 18:31", "Not saved yet" for every unsaved state). Walking away with an acceptance waiting: the book's existing unsaved-draft handling must cover it, **a client test before ready**. |
+| Skeptic | Recommend with a change | The repairs hold: the fix sits beside Accept, every jump puts the break above the dock (Sam K, Dev, Fen, Hal, Eli at 390), one Try again. **Reproduced** in the earlier mix: accepting after an unsaved edit showed the old numbers; Undo dropped the edit; the jump skipped Dev after a break moved; the worse state's times were out of order and did not say who changed the plan. | The acceptance now comes from the tapped button's own times; Undo takes off only the acceptance; the jump follows the person, with "2 of 4"; worse names "Sam K's save at 18:10". The mis-tap from Undo to Save is now 44 px targets with a gap: **Risk**, measure in the app. |
+| Screen designer | Recommend with a change | The link (126 x 18) and Undo (34 x 18) were too small; the waiting edge drew solid, not dashed (a preview CSS order bug); at 1280 the band used 439 of 1014 px; at 768 Accept sat 12 px over a right-aligned Save. Keep the dock under 180 px in every state. | 44 px link and Undo on one row with Accept, the fix first; dashed edge fixed; the band fills the free width from 1100 px (1280 dock 117 while short, 67 once accepted); a 6 px wider gap above Save. **Not met:** under 180 px in every state. Short is 179, but acceptance undone is 199, worse 217 and a failed Save 248 at 390 px. |
+
+## Recommendation
+
+**Recommend the mix: A's amber band in the Save dock, fact first, with Accept going into the plan for the existing Save + C's jump to the breaks as a 44 px link beside Accept + B's real times in each marked person's line. Reject B's clock block and sticky-head warning, C's one-tap save and "Save and accept", and red.**
+
+**Why it beats the alternatives.**
+- A led round 2 for all six (43 points; C 32.5, B 27). The mix keeps A's one place and its honest "Not saved yet", and repairs A's main fault: Accept was the only action. The fix now sits first on the same row.
+- 1 tap to reach each break to move, where today and in A it is scroll and look.
+- 2 taps to accept, through the Save that already exists: a stray tap changes only the draft, it cannot refuse another chef's work, and "Accepted" shows only once the server has it.
+- Once accepted the warning shrinks to one line (128 px dock at 390, 67 at 1280), close to today, where today's line stays all day.
+- No new read or listener. One optional field on `team/<day>`, a looser rule.
+
+**Principles.** Linear: one place. Airbnb: the fact, the fix and Accept together. Flighty: real times, on the rows. Duolingo: Not saved yet, then Accepted, then why it came back. Todoist: nothing accepted by itself, nothing bundled. Headspace: "4 on, 6 needed", "Accepted until 19:00 today".
+
+**Main downside.** While the plan is short the dock is 179 px on a 390 px phone (today 114): 65 px less list, about one person row's day bar and hours. In rarer states it is taller still (199 to 248 px). The head chef's phone also already shows only 2 of 4 On break now names above the dock while short (#722 is open for that).
+
+**Red.** Not recommended: five of six reject it or call it a departure, because it matches Save's own failure line (`shot-a-admin-390-fail-red.png`). It stays a choice for the head chef, as a departure from the colour rules.
+
+**Questions for the head chef.**
+1. The mix, as recommended, or another design?
+2. Amber (recommended) or red?
+3. When the roster itself has enough people and only breaks make it short, should Accept still be offered? The skeptic would offer only the fix then; the mix offers both, with the fix first. Recommended: both, as previewed, because the head chef asked to approve a short time and the grey marks keep the breaks in view.
+
+**Before the build is ready** (Implemented app, not Preview):
+1. Rules first: `ok` (an optional list, size-limited, entries `{ sh, from, to, n, low, by, at }` with `by` an id) added to `teamOk()`, published before the client (looser). Emulator rows: a chef with `ok` and `v + 1`, a save without it, a staff member who is not a chef, an oversized list; a `tests/rules/client-shapes.test.mjs` row; the Lock probe after publishing.
+2. Every save path carries it: `teamClean()`, `tmFrom`/`tmOut`/`tmSig`, `teamSave()`, the roster's "Save the filled days", Clear. A client test for each, and one for an older writer that drops it (the warning returns with words).
+3. Matching, one pure rule shared by the band and the marks: a short time is covered only if every minute sits inside an accepted one at the same or a higher count, with the same need. Acceptances that cover nothing are dropped at Save; Save keeps them while the clock is not ready. Client tests at 18:29, 18:30, 18:31 and 19:00, need raised from 6 to 7, fixed then made worse, and a planned day that becomes today.
+4. The Accept button carries its own times; a tap whose times no longer match (the 19:00 repaint) is refused with words. The minute paint changes only the band's words and the marks, never a control under a finger (`tmShortPaint()`'s existing hold rule).
+5. "Accepted ... By <name> at <time>" from the saved record only, the name through `esc()`, a `tests/safe-text.test.js` line.
+6. An acceptance left waiting when the page is left: the existing unsaved-draft handling keeps it and says so. A client test.
+7. Remeasure the complete app at 390, 768 and 1280 px with real fonts, the largest text size and the longest staff name: the dock in every state, tap sizes and the gap between Accept and Save, the jumped-to row and its picker clear of the dock.
+8. New patterns in `docs/design-patterns.md` and `tests/design-patterns.test.js`.
+
+**Unresolved.**
+- How often the kitchen plans short, and on purpose: not evidenced (the warning is a day old; whether a busy time is set in the real book is not visible here).
+- The dock over 180 px in the rarer states.
+- Two chefs accepting at once: the versioned Save refuses the second and names the first (`teamSave()`); not exercised for an acceptance.
