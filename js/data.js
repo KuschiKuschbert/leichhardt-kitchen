@@ -1597,7 +1597,7 @@ window.LK_DATA = {
     },
     /* Feast of the Feather, the head chef's whole smoked chicken for sharing, 16 November 2026. The brine, rub and
        smoke are the head chef's first trial: confirm them after the first bird. The Yorkshire pudding is the head
-       chef's recipe. Mushy peas and the cider-pickled red cabbage have no cards yet. */
+       chef's recipe; the cider-pickled red cabbage is the head chef's pick. Mushy peas has no card yet. */
     {
       id: 'feast-of-the-feather', art: 'feast-of-the-feather', no: '130', kind: 'main', forLine: 'Smoker special', name: 'Feast of the Feather',
       menu: 'Feast of the Feather: whole brined and smoked chicken on a giant golden Yorkshire pudding, with buttery mash, mushy peas, cider-pickled red cabbage and a jug of rich gravy. Made for sharing.',
@@ -1624,7 +1624,8 @@ window.LK_DATA = {
           'Rest the chicken on a rack, 10 to 15 min.',
           'Yorkshire pudding (card 133): one 18 cm pudding per board, one batch. 210 °C for 12 min, crisp at the edges.',
           'Mash (card 70) and gravy (card 69) as for every plate.',
-          'Mushy peas and red cabbage. [Recipes to come]'
+          'Cider-pickled red cabbage (card 134), made ahead.',
+          'Mushy peas. [Recipe to come]'
         ] },
         { title: 'Plating', steps: [
           'Sharing board. [Board to confirm]',
@@ -1732,6 +1733,35 @@ window.LK_DATA = {
           'Bake at 210 °C for 12 min.'
         ] }
       ]
+    },
+    {
+      /* The head chef's pick, 16 November 2026: a quick pickled red cabbage recipe from the It's a Veg World After All
+         blog, cups as 250 ml, the method in the book's words. */
+      id: 'cider-red-cabbage', art: 'cider-red-cabbage', no: '134', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Cider-Pickled Red Cabbage', short: 'Red cabbage',
+      yield: 'Batch: half a red cabbage, about 1 L in 2 jars. Keeps 2 weeks in the coolroom. [Amount per board to come]',
+      ingredients: [
+        { q: '½ head', name: 'Red cabbage', note: 'cored, finely shredded. [Weight to confirm]' },
+        { q: '250 ml', name: 'Water' },
+        { q: '250 ml', name: 'Apple cider vinegar' },
+        { q: '1 tbsp', name: 'Sugar', note: 'white' },
+        { q: '1 tsp', name: 'Salt', note: 'fine' },
+        { q: '2 cloves', name: 'Garlic', note: 'smashed, 1 per jar' },
+        { q: '2', name: 'Bay leaves', note: '1 per jar' }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Core the cabbage. Shred it finely on the mandoline or with a sharp knife.',
+          'Whisk the water, vinegar, sugar and salt in a pot. Bring to a gentle boil, stirring until the sugar and salt dissolve. Off the heat.',
+          'Pack the cabbage into 2 glass jars, 350 to 500 ml each. 1 smashed garlic clove and 1 bay leaf in each jar.',
+          'Half the brine into each jar. It does not need to cover the cabbage yet: the cabbage softens and the brine covers it as it stands.',
+          'Lids on. Stand until the jars are at room temperature, 1 to 4 hours.',
+          'Into the coolroom. Chill a few hours before use.'
+        ] },
+        { title: 'Storage', steps: ['Sealed, in the coolroom. Label it with the date made. Use within 2 weeks.'] }
+      ],
+      safety: { title: 'Use within 2 weeks', text: 'A quick pickle, not a preserve. Keep it sealed in the coolroom, dated, and use it within 2 weeks.' },
+      contains: [],
+      check: []
     },
     {
       id: 'pork-knuckle', art: 'pork-knuckle', no: '92', kind: 'main', forLine: 'Special', name: 'Pork Knuckle',
