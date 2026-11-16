@@ -1,0 +1,1658 @@
+{
+  "a": {
+    "admin-390-short": {
+      "first": {
+        "dockH": 147,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 629,
+        "listPx": 629,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 4 of 6 Saved plan. 5 from 18:45. Accept 4 of 6",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 44,
+        "acceptW": 128,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 512,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 147,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-edit": {
+      "first": {
+        "dockH": 171,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 605,
+        "listPx": 605,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Too few now until 18:45: 5 of 6 Unsaved plan. Accept 5 of 6",
+        "marks": "dev,fen,hal",
+        "acceptH": 44,
+        "acceptW": 127,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 488,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 171,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-accept": {
+      "first": {
+        "dockH": 170,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 606,
+        "listPx": 606,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Accepting 4 of 6 now until 19:00 Not saved yet. Save to share it with the chefs. Undo",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 489,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 170,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-accepted": {
+      "first": {
+        "dockH": 142,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 634,
+        "listPx": 634,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Accepted for today: 4 of 6 on Dinner now until 19:00. Gus, 14:05.",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": 15.9,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 518,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 142,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-worse": {
+      "first": {
+        "dockH": 182,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 594,
+        "listPx": 594,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 3 of 6 Gus accepted 4 of 6 at 14:05. The plan changed since. Accept 3 of 6",
+        "marks": "sam,dev,eli,fen,hal",
+        "acceptH": 44,
+        "acceptW": 127,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 477,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 182,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-fail": {
+      "first": {
+        "dockH": 240,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 536,
+        "listPx": 536,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Accepting 4 of 6 now until 19:00 Not saved yet. Save to share it with the chefs. Undo",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 420,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 240,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-fixed": {
+      "first": {
+        "dockH": 96,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 680,
+        "listPx": 680,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 563,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 96,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "team-390-short": {
+      "first": {
+        "dockH": 149,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 627,
+        "listPx": 627,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 4 of 6 Saved plan. 5 from 18:45. Accept 4 of 6",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 44,
+        "acceptW": 128,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 511,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 149,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-edit": {
+      "first": {
+        "dockH": 173,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 603,
+        "listPx": 603,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Too few now until 18:45: 5 of 6 Unsaved plan. Accept 5 of 6",
+        "marks": "dev,fen,hal",
+        "acceptH": 44,
+        "acceptW": 127,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 487,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 173,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-accept": {
+      "first": {
+        "dockH": 172,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 604,
+        "listPx": 604,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Accepting 4 of 6 now until 19:00 Not saved yet. Save to share it with the chefs. Undo",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 488,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 172,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-accepted": {
+      "first": {
+        "dockH": 144,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 632,
+        "listPx": 632,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Accepted for today: 4 of 6 on Dinner now until 19:00. Gus, 14:05.",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": 15.9,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 517,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 144,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-worse": {
+      "first": {
+        "dockH": 184,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 592,
+        "listPx": 592,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 3 of 6 Gus accepted 4 of 6 at 14:05. The plan changed since. Accept 3 of 6",
+        "marks": "sam,dev,eli,fen,hal",
+        "acceptH": 44,
+        "acceptW": 127,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 476,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 184,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-fail": {
+      "first": {
+        "dockH": 242,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 535,
+        "listPx": 535,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Accepting 4 of 6 now until 19:00 Not saved yet. Save to share it with the chefs. Undo",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 419,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 242,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-fixed": {
+      "first": {
+        "dockH": 98,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 678,
+        "listPx": 678,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 562,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 98,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "admin-1280-short": {
+      "first": {
+        "dockH": 80,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 752,
+        "listPx": 752,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 4 of 6 Saved plan. 5 from 18:45. Accept 4 of 6",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 44,
+        "acceptW": 128,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 636,
+        "rowsFull": 2,
+        "rowsAny": 4,
+        "dockH": 80,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-1280-accepted": {
+      "first": {
+        "dockH": 95,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 737,
+        "listPx": 737,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Accepted for today: 4 of 6 on Dinner now until 19:00. Gus, 14:05.",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": 15.9,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 620,
+        "rowsFull": 2,
+        "rowsAny": 4,
+        "dockH": 95,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "acceptTask": {
+      "taps": 2,
+      "scrolled": false,
+      "end": "accepted",
+      "words": "Accepted for today: 4 of 6 on Dinner now until 19:00. Gus, 14:05."
+    }
+  },
+  "b": {
+    "admin-390-short": {
+      "first": {
+        "dockH": 96,
+        "headH": 132,
+        "workTop": 0,
+        "workBottom": 680,
+        "listPx": 680,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": false,
+        "words": "Too few 18:30 to 19:00 on Dinner: 4 of 6 Accept 4 of 6 | Too few now until 19:00: 4 of 6. Saved plan.",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 44,
+        "acceptW": 128,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": null,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": 5.27
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 487,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 96,
+        "headH": 132,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-edit": {
+      "first": {
+        "dockH": 120,
+        "headH": 132,
+        "workTop": 0,
+        "workBottom": 656,
+        "listPx": 656,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": false,
+        "words": "Too few 18:30 to 18:45 on Dinner: 5 of 6 Accept 5 of 6 | Too few now until 18:45: 5 of 6. Unsaved plan.",
+        "marks": "dev,fen,hal",
+        "acceptH": 44,
+        "acceptW": 127,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": null,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": 5.27
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 463,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 120,
+        "headH": 132,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-accept": {
+      "first": {
+        "dockH": 120,
+        "headH": 126,
+        "workTop": 0,
+        "workBottom": 656,
+        "listPx": 656,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": false,
+        "words": "Accepting 4 of 6, 18:30 to 19:00 Not saved yet. Save to share it. Undo | Accepting 4 of 6, 18:30 to 19:00. Not saved yet.",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": null,
+          "quiet": null,
+          "pointer": 5.27
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 469,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 120,
+        "headH": 126,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-accepted": {
+      "first": {
+        "dockH": 96,
+        "headH": 125,
+        "workTop": 0,
+        "workBottom": 680,
+        "listPx": 680,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": false,
+        "words": "Accepted for today: 4 of 6 on Dinner 18:30 to 19:00. Gus, 14:05.",
+        "marks": "",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": 15.24,
+          "accept": null,
+          "quiet": 15.24,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 494,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 96,
+        "headH": 125,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-worse": {
+      "first": {
+        "dockH": 96,
+        "headH": 180,
+        "workTop": 0,
+        "workBottom": 680,
+        "listPx": 680,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": false,
+        "words": "Too few 18:30 to 19:00 on Dinner: 3 of 6 Gus accepted 4 of 6 at 14:05. The plan changed since. Accept 3 of 6 | Too few now until 19:00: 3 of 6. Saved plan.",
+        "marks": "sam,dev,eli,fen,hal",
+        "acceptH": 44,
+        "acceptW": 127,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": 5.27
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 439,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 96,
+        "headH": 180,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-fail": {
+      "first": {
+        "dockH": 190,
+        "headH": 126,
+        "workTop": 0,
+        "workBottom": 587,
+        "listPx": 587,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": false,
+        "words": "Accepting 4 of 6, 18:30 to 19:00 Not saved yet. Save to share it. Undo | Accepting 4 of 6, 18:30 to 19:00. Not saved yet.",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": null,
+          "quiet": null,
+          "pointer": 5.27
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 400,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 190,
+        "headH": 126,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-fixed": {
+      "first": {
+        "dockH": 96,
+        "headH": 73,
+        "workTop": 0,
+        "workBottom": 680,
+        "listPx": 680,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 546,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 96,
+        "headH": 73,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "team-390-short": {
+      "first": {
+        "dockH": 98,
+        "headH": 132,
+        "workTop": 0,
+        "workBottom": 678,
+        "listPx": 678,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Too few 18:30 to 19:00 on Dinner: 4 of 6 Accept 4 of 6 | Too few now until 19:00: 4 of 6. Saved plan.",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 44,
+        "acceptW": 128,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": null,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": 5.27
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 486,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 98,
+        "headH": 132,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-edit": {
+      "first": {
+        "dockH": 122,
+        "headH": 132,
+        "workTop": 0,
+        "workBottom": 654,
+        "listPx": 654,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Too few 18:30 to 18:45 on Dinner: 5 of 6 Accept 5 of 6 | Too few now until 18:45: 5 of 6. Unsaved plan.",
+        "marks": "dev,fen,hal",
+        "acceptH": 44,
+        "acceptW": 127,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": null,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": 5.27
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 463,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 122,
+        "headH": 132,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-accept": {
+      "first": {
+        "dockH": 122,
+        "headH": 126,
+        "workTop": 0,
+        "workBottom": 654,
+        "listPx": 654,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Accepting 4 of 6, 18:30 to 19:00 Not saved yet. Save to share it. Undo | Accepting 4 of 6, 18:30 to 19:00. Not saved yet.",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": null,
+          "quiet": null,
+          "pointer": 5.27
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 469,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 122,
+        "headH": 126,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-accepted": {
+      "first": {
+        "dockH": 98,
+        "headH": 125,
+        "workTop": 0,
+        "workBottom": 678,
+        "listPx": 678,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Accepted for today: 4 of 6 on Dinner 18:30 to 19:00. Gus, 14:05.",
+        "marks": "",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": 15.24,
+          "accept": null,
+          "quiet": 15.24,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 494,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 98,
+        "headH": 125,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-worse": {
+      "first": {
+        "dockH": 98,
+        "headH": 180,
+        "workTop": 0,
+        "workBottom": 678,
+        "listPx": 678,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Too few 18:30 to 19:00 on Dinner: 3 of 6 Gus accepted 4 of 6 at 14:05. The plan changed since. Accept 3 of 6 | Too few now until 19:00: 3 of 6. Saved plan.",
+        "marks": "sam,dev,eli,fen,hal",
+        "acceptH": 44,
+        "acceptW": 127,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": 5.27
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 439,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 98,
+        "headH": 180,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-fail": {
+      "first": {
+        "dockH": 191,
+        "headH": 126,
+        "workTop": 0,
+        "workBottom": 585,
+        "listPx": 585,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Accepting 4 of 6, 18:30 to 19:00 Not saved yet. Save to share it. Undo | Accepting 4 of 6, 18:30 to 19:00. Not saved yet.",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": null,
+          "quiet": null,
+          "pointer": 5.27
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 399,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 191,
+        "headH": 126,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-fixed": {
+      "first": {
+        "dockH": 98,
+        "headH": 73,
+        "workTop": 0,
+        "workBottom": 678,
+        "listPx": 678,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 545,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 98,
+        "headH": 73,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "admin-1280-short": {
+      "first": {
+        "dockH": 67,
+        "headH": 115,
+        "workTop": 0,
+        "workBottom": 765,
+        "listPx": 765,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Too few 18:30 to 19:00 on Dinner: 4 of 6 Accept 4 of 6 | Too few now until 19:00: 4 of 6. Saved plan.",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 44,
+        "acceptW": 128,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": null,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": 5.27
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 589,
+        "rowsFull": 2,
+        "rowsAny": 4,
+        "dockH": 67,
+        "headH": 115,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-1280-accepted": {
+      "first": {
+        "dockH": 67,
+        "headH": 90,
+        "workTop": 0,
+        "workBottom": 765,
+        "listPx": 765,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Accepted for today: 4 of 6 on Dinner 18:30 to 19:00. Gus, 14:05.",
+        "marks": "",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": 15.24,
+          "accept": null,
+          "quiet": 15.24,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 614,
+        "rowsFull": 2,
+        "rowsAny": 4,
+        "dockH": 67,
+        "headH": 90,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "acceptTask": {
+      "taps": 2,
+      "scrolled": true,
+      "end": "accepted",
+      "words": "Accepted for today: 4 of 6 on Dinner 18:30 to 19:00. Gus, 14:05."
+    }
+  },
+  "c": {
+    "admin-390-short": {
+      "first": {
+        "dockH": 180,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 596,
+        "listPx": 596,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 4 of 6 Saved plan. 5 from 18:45. Show breaks to move Accept 4 of 6",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 45,
+        "acceptW": 150,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 479,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 180,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-edit": {
+      "first": {
+        "dockH": 204,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 572,
+        "listPx": 572,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Too few now until 18:45: 5 of 6 Unsaved plan. Show breaks to move Save and accept 5 of 6",
+        "marks": "dev,fen,hal",
+        "acceptH": 45,
+        "acceptW": 150,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 455,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 204,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-accept": {
+      "first": {
+        "dockH": 204,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 572,
+        "listPx": 572,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 4 of 6 Unsaved plan. 5 from 18:45. Show breaks to move Accept 4 of 6",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 45,
+        "acceptW": 150,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 455,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 204,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-accepted": {
+      "first": {
+        "dockH": 142,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 634,
+        "listPx": 634,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Accepted for today: 4 of 6 on Dinner now until 19:00. Gus, 14:05. Undo",
+        "marks": "",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": 15.9,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 518,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 142,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-worse": {
+      "first": {
+        "dockH": 197,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 579,
+        "listPx": 579,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 3 of 6 Gus accepted 4 of 6 at 14:05. The plan changed since. Show breaks to move Accept 3 of 6",
+        "marks": "sam,dev,eli,fen,hal",
+        "acceptH": 45,
+        "acceptW": 150,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 462,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 197,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-fail": {
+      "first": {
+        "dockH": 273,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 503,
+        "listPx": 503,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 4 of 6 Saved plan. 5 from 18:45. Show breaks to move Try again",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 45,
+        "acceptW": 150,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 386,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 273,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-fixed": {
+      "first": {
+        "dockH": 96,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 680,
+        "listPx": 680,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 563,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 96,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "team-390-short": {
+      "first": {
+        "dockH": 182,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 594,
+        "listPx": 594,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 4 of 6 Saved plan. 5 from 18:45. Show breaks to move Accept 4 of 6",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 45,
+        "acceptW": 150,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 479,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 182,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-edit": {
+      "first": {
+        "dockH": 206,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 570,
+        "listPx": 570,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Too few now until 18:45: 5 of 6 Unsaved plan. Show breaks to move Save and accept 5 of 6",
+        "marks": "dev,fen,hal",
+        "acceptH": 45,
+        "acceptW": 150,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 455,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 206,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-accept": {
+      "first": {
+        "dockH": 206,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 570,
+        "listPx": 570,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 4 of 6 Unsaved plan. 5 from 18:45. Show breaks to move Accept 4 of 6",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 45,
+        "acceptW": 150,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 455,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 206,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-accepted": {
+      "first": {
+        "dockH": 144,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 632,
+        "listPx": 632,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Accepted for today: 4 of 6 on Dinner now until 19:00. Gus, 14:05. Undo",
+        "marks": "",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": 15.9,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 517,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 144,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-worse": {
+      "first": {
+        "dockH": 199,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 577,
+        "listPx": 577,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 3 of 6 Gus accepted 4 of 6 at 14:05. The plan changed since. Show breaks to move Accept 3 of 6",
+        "marks": "sam,dev,eli,fen,hal",
+        "acceptH": 45,
+        "acceptW": 150,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 461,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 199,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-fail": {
+      "first": {
+        "dockH": 275,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 501,
+        "listPx": 501,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 4 of 6 Saved plan. 5 from 18:45. Show breaks to move Try again",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 45,
+        "acceptW": 150,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 385,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 275,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-fixed": {
+      "first": {
+        "dockH": 98,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 678,
+        "listPx": 678,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 562,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 98,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "admin-1280-short": {
+      "first": {
+        "dockH": 125,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 707,
+        "listPx": 707,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 4 of 6 Saved plan. 5 from 18:45. Show breaks to move Accept 4 of 6",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 45,
+        "acceptW": 150,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 590,
+        "rowsFull": 2,
+        "rowsAny": 4,
+        "dockH": 125,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-1280-accepted": {
+      "first": {
+        "dockH": 112,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 720,
+        "listPx": 720,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Accepted for today: 4 of 6 on Dinner now until 19:00. Gus, 14:05. Undo",
+        "marks": "",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": 15.9,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 603,
+        "rowsFull": 2,
+        "rowsAny": 4,
+        "dockH": 112,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "acceptTask": {
+      "taps": 1,
+      "scrolled": false,
+      "end": "accepted",
+      "words": "Accepted for today: 4 of 6 on Dinner now until 19:00. Gus, 14:05. Undo"
+    }
+  }
+}

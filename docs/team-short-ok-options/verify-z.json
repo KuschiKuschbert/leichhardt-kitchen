@@ -1,0 +1,548 @@
+{
+  "z": {
+    "admin-390-short": {
+      "first": {
+        "dockH": 114,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 662,
+        "listPx": 662,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 545,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 114,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "admin-390-edit": {
+      "first": {
+        "dockH": 114,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 662,
+        "listPx": 662,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 545,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 114,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "admin-390-accept": {
+      "first": {
+        "dockH": 114,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 662,
+        "listPx": 662,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 545,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 114,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "admin-390-accepted": {
+      "first": {
+        "dockH": 114,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 662,
+        "listPx": 662,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 545,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 114,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "admin-390-worse": {
+      "first": {
+        "dockH": 114,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 662,
+        "listPx": 662,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 545,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 114,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "admin-390-fail": {
+      "first": {
+        "dockH": 114,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 662,
+        "listPx": 662,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 545,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 114,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "admin-390-fixed": {
+      "first": {
+        "dockH": 114,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 662,
+        "listPx": 662,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 545,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 114,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "team-390-short": {
+      "first": {
+        "dockH": 116,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 660,
+        "listPx": 660,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 544,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 116,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "team-390-edit": {
+      "first": {
+        "dockH": 116,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 660,
+        "listPx": 660,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 544,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 116,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "team-390-accept": {
+      "first": {
+        "dockH": 116,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 660,
+        "listPx": 660,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 544,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 116,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "team-390-accepted": {
+      "first": {
+        "dockH": 116,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 660,
+        "listPx": 660,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 544,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 116,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "team-390-worse": {
+      "first": {
+        "dockH": 116,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 660,
+        "listPx": 660,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 544,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 116,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "team-390-fail": {
+      "first": {
+        "dockH": 116,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 660,
+        "listPx": 660,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 544,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 116,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "team-390-fixed": {
+      "first": {
+        "dockH": 116,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 660,
+        "listPx": 660,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 544,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 116,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "admin-1280-short": {
+      "first": {
+        "dockH": 67,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 765,
+        "listPx": 765,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 648,
+        "rowsFull": 2,
+        "rowsAny": 4,
+        "dockH": 67,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "admin-1280-accepted": {
+      "first": {
+        "dockH": 67,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 765,
+        "listPx": 765,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 648,
+        "rowsFull": 2,
+        "rowsAny": 4,
+        "dockH": 67,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    }
+  }
+}
