@@ -1622,7 +1622,7 @@ window.LK_DATA = {
         { title: 'Cooking', steps: [
           'Smoked chicken: brined, dried, seasoned, smoked and finished hot as card 131. Probe the breast and the inner thigh: 75 °C in both.',
           'Rest the chicken on a rack, 10 to 15 min.',
-          'Yorkshire pudding (card 133): one 18 cm pudding per board, one batch. 230 °C, fan off, 20 to 25 min, crisp and deep golden.',
+          'Yorkshire pudding (card 133): one 18 cm pudding per board, one batch. 17 min at 210 °C, then 8 min at 230 °C. Never open the oven.',
           'Mash (card 70) and gravy (card 69) as for every plate.',
           'Cider-pickled red cabbage (card 134), made ahead.',
           'Mushy peas (card 136), bought in. [How it is heated and held to come]'
@@ -1719,7 +1719,7 @@ window.LK_DATA = {
     },
     {
       id: 'yorkshire-pudding', art: 'yorkshire-pudding', no: '133', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Yorkshire Pudding', short: 'Yorkshire pudding',
-      yield: 'Batch: 140 g plain flour, 200 ml milk, 4 eggs and ½ tsp salt, 100 ml fresh canola oil in the tin. Makes 1 giant pudding in an 18 cm (7 inch) tin, one per board. Bake at 230 °C, fan off, 20 to 25 min. Trial: confirm after the first bake.',
+      yield: 'Batch: 140 g plain flour, 200 ml milk, 4 eggs and ½ tsp salt, 100 ml fresh canola oil in the tin. Makes 1 giant pudding in an 18 cm (7 inch) tin, one per board. 17 min at 210 °C, then 8 min at 230 °C, the oven never opened.',
       ingredients: [
         { q: '140 g', name: 'Plain flour', note: 'never self-raising', tags: ['Gluten'] },
         { q: '200 ml', name: 'Milk', tags: ['Milk'] },
@@ -1734,18 +1734,22 @@ window.LK_DATA = {
           'Rest it 1 hour at room temperature.'
         ] },
         { title: 'Tin and oil', steps: [
-          'Oven to 230 °C, fan off.',
+          'Preheat the oven to 210 °C, full fan, no moisture at all.',
           '100 ml fresh canola oil in the 18 cm (7 inch) tin. Never oil out of the fryer, never the Tuscan oil: it burns.',
-          'Tin on the upper-middle shelf, 10 to 15 min, until the oil is smoking hot.'
+          'Heat the oil in the oven for 15 min.'
         ] },
         { title: 'Bake', steps: [
-          'Tin out. Shut the oven door straight away to keep the heat in.',
+          'Quickly but carefully take the tin out. Close the oven.',
           'Pour in all the batter, fast. It should sizzle as it hits the oil.',
-          'Straight back in on the upper-middle shelf. Bake 20 to 25 min until puffed, crisp and deep golden.',
-          'Do not open the door for the first 20 min, or it collapses.'
-        ] }
+          'Tin straight back in. Close the oven.',
+          'Turn the fan down to 2 bars. Bake 17 min at 210 °C.',
+          'Raise the temperature to 230 °C. Bake 8 min more.',
+          'Do not open the oven at any point in these 25 min.'
+        ] },
+        { title: 'Cool', steps: ['Out of the oven. Cool it on a wire rack at room temperature.'] }
       ],
-      tip: { title: 'Three rules', text: 'Do not open the door for the first 20 min. Plain flour only: self-raising rises unevenly and turns cakey. Pour fast: the oil cools the longer the tin is out.' }
+      safety: { title: 'Never open the oven', text: 'Not once during the 25 min bake, under any circumstances. The pudding collapses.' },
+      tip: { title: 'Two rules', text: 'Plain flour only: self-raising rises unevenly and turns cakey. Pour fast: the oil cools the longer the tin is out.' }
     },
     {
       /* The head chef's pick, 16 November 2026: a quick pickled red cabbage recipe from the It's a Veg World After All
