@@ -1604,7 +1604,7 @@ window.LK_DATA = {
       yield: 'Per board. One whole smoked No. 10 chicken on a giant Yorkshire pudding, mash, mushy peas and red cabbage beside it, gravy in a jug. Trial dish. [Serves per board to come]',
       ingredients: [
         { q: '1', name: 'Smoked chicken', note: 'No. 10, whole, brined, seasoned and smoked', link: 'smoked-chicken' },
-        { q: '1', name: 'Yorkshire pudding', note: 'giant, one per board', link: 'yorkshire-pudding', tags: ['Gluten', 'Egg', 'Milk'] },
+        { q: '1', name: 'Yorkshire pudding', note: 'giant, 18 cm, half a batch', link: 'yorkshire-pudding', tags: ['Gluten', 'Egg', 'Milk'] },
         { q: '[Qty]', name: 'Mash', link: 'mash', tags: ['Milk?'] },
         { q: '[Qty]', name: 'Mushy peas', note: 'pea-forward, a touch of mint', link: 'mushy-peas', tags: ['Milk?'] },
         { q: '[Qty]', name: 'Cider-pickled red cabbage', link: 'cider-red-cabbage' },
@@ -1622,7 +1622,7 @@ window.LK_DATA = {
         { title: 'Cooking', steps: [
           'Smoked chicken: brined, dried, seasoned, smoked and finished hot as card 131. Probe the breast and the inner thigh: 75 °C in both.',
           'Rest the chicken on a rack, 10 to 15 min.',
-          'Yorkshire pudding (card 133): 250 °C for 12 min. One giant pudding per board, crisp at the edges.',
+          'Yorkshire pudding (card 133): one 18 cm pudding per board, half a batch. 250 °C for 12 min, crisp at the edges.',
           'Mash (card 70) and gravy (card 69) as for every plate.',
           'Mushy peas and red cabbage. [Recipes to come]'
         ] },
@@ -1717,7 +1717,7 @@ window.LK_DATA = {
     },
     {
       id: 'yorkshire-pudding', art: 'yorkshire-pudding', no: '133', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Yorkshire Pudding', short: 'Yorkshire pudding',
-      yield: 'Batch: 200 g flour, 200 ml milk and 4 eggs. Bake at 250 °C for 12 min. [Puddings per batch and the tin to come]',
+      yield: 'Batch: 200 g flour, 200 ml milk and 4 eggs. Makes 2 giant puddings, each in an 18 cm (7 inch) tin, one per board. Bake at 250 °C for 12 min. Trial: confirm after the first bake.',
       ingredients: [
         { q: '200 g', name: 'Flour', tags: ['Gluten'] },
         { q: '200 ml', name: 'Milk', tags: ['Milk'] },
@@ -1726,7 +1726,8 @@ window.LK_DATA = {
       sections: [
         { title: 'Method', steps: [
           'Whisk the flour, milk and eggs into a smooth batter. [Resting time to come]',
-          '[Hot fat in the tin first: the fat, how much and the tin to come]',
+          '[Hot fat in each tin first: the fat and how much to come]',
+          'Split the batter between 2 tins, 18 cm (7 inch) each.',
           'Bake at 250 °C for 12 min.'
         ] }
       ]

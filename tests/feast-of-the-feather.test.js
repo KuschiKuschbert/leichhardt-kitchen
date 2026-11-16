@@ -13,7 +13,7 @@ const { R, ok } = L.results();
  ok(dish.no === '130' && chicken.no === '131' && brine.no === '132' && york.no === '133', 'card numbers 130 to 133');
  ok(D.recipes.filter(r => ['130', '131', '132', '133'].includes(r.no)).length === 4, 'no other card uses 130 to 133');
  ok(!!A.plates[dish.art] && !!A.pans[chicken.art] && !!A.pans[brine.art] && !!A.pans[york.art], 'the dish has a plate drawing, the batches have pans');
- ok(york.ingredients.map(i => i.q + ' ' + i.name).join(', ') === '200 g Flour, 200 ml Milk, 4 Eggs' && /250 °C for 12 min/.test(york.yield), 'the Yorkshire is 200 g flour, 200 ml milk, 4 eggs, 250 °C for 12 min');
+ ok(york.ingredients.map(i => i.q + ' ' + i.name).join(', ') === '200 g Flour, 200 ml Milk, 4 Eggs' && /250 °C for 12 min/.test(york.yield) && /Makes 2 giant puddings, each in an 18 cm/.test(york.yield), 'the Yorkshire is 200 g flour, 200 ml milk, 4 eggs, 2 puddings in 18 cm tins, 250 °C for 12 min');
  ok(/No\. 10/.test(chicken.yield) && !/1\.6 to 1\.8 kg, unstuffed/.test(JSON.stringify(chicken.ingredients)), 'the chicken is a No. 10');
  ok(dish.pins.every(p => p.x > 0 && p.x < 100 && p.y > 0 && p.y < 100), 'every pin sits on the drawing');
  ok(dish.ingredients.some(i => i.link === 'smoked-chicken') && chicken.ingredients.some(i => i.link === 'herb-brine'), 'dish to chicken to brine links');
