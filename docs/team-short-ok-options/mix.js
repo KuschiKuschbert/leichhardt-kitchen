@@ -17,12 +17,12 @@
     var link = '<button type="button" class="p-link pv-jump" data-id="' + esc(go) + '">' + esc((jumpAt >= 0 ? 'Next: ' : 'Go to ') + name(go) + '’s break') + '</button>';
     if (st === 'fixed') show = [];
     else if (acc) {
-      band = '<p class="pv-quiet" role="status"><b>Accepted for today:</b> ' + esc('4 on, 6 needed, until 19:00. ' + who + '.') + ' <button type="button" class="p-link pv-mundo">Undo</button></p>';
+      band = '<p class="pv-quiet" role="status"><b>Accepted until 19:00 today:</b> ' + esc('4 on, 6 needed. By ' + who + '.') + ' <button type="button" class="p-link pv-mundo">Undo</button></p>';
       grey = true; show = c.S.short.away;
     } else if (pending) {
-      band = '<div class="pv-band is-pending" role="status"><div class="pv-words"><p class="pv-fact">' + esc('Not saved yet: accept 4 on, 6 needed, until 19:00') + '</p><p class="pv-more">Save to share it with the chefs. <button type="button" class="p-link pv-undo">Undo</button></p></div></div>';
+      band = '<div class="pv-band is-pending" role="status"><div class="pv-words"><p class="pv-fact">' + esc('Not saved yet: 4 on, 6 needed, accepted until 19:00') + '</p><p class="pv-more">Tap Save to share it with the chefs. <button type="button" class="p-link pv-undo">Undo</button></p></div></div>';
     } else {
-      var lead = off ? 'Not saved yet: acceptance taken off.' : st === 'worse' ? 'Gus accepted 4 on at 14:05. The plan changed since.' : (s.dirty ? 'Unsaved plan.' : 'Saved plan.') + (s.steps ? ' ' + s.steps + '.' : '');
+      var lead = off ? 'Not saved yet: acceptance undone.' : st === 'worse' ? 'At 14:05 Gus accepted 4 on. Now only 3 on.' : (s.dirty ? 'Not saved yet.' : 'Saved plan.') + (s.steps ? ' ' + s.steps.replace(/(\d) from/g, '$1 on from') + '.' : '');
       band = '<div class="pv-band is-row" role="status"><div class="pv-words"><p class="pv-fact"><span class="pv-tf">Too few</span> ' + esc(s.when + ': ' + s.low + ' on, ' + s.n + ' needed') + '</p>' +
         '<p class="pv-more">' + esc(lead) + ' ' + link + '</p></div>' +
         '<button type="button" class="pv-accept" data-low="' + s.low + '" data-from="' + s.range[0] + '" data-to="' + s.range[1] + '" aria-label="' + esc('Accept ' + s.low + ' on, ' + s.n + ' needed, on Dinner ' + s.when + ', for today') + '">Accept ' + s.low + ' on</button></div>';
@@ -33,11 +33,11 @@
     var stw = acc ? '' : st === 'fixed' ? 'Saved 18:31 · ' + ME : dirty ? 'Not saved yet' : 'Saved 13:00 · Gus';
     // the band says Saved, Unsaved or Not saved yet itself, so the dock's own status words step aside while it shows
     c.dock.innerHTML = (stw && !band ? '<p class="tm-save-state" role="status">' + esc(stw) + '</p>' : '') + band + save + line;
-    var head = document.querySelector('.tm-draftstate'); if (head) head.textContent = st === 'acceptedLive' ? 'Saved ' + liveAt + ' · ' + ME : st === 'accepted' ? 'Saved 14:05 · Gus' : dirty ? 'Not saved yet' : 'Saved 13:00 · Gus';
+    var head = document.querySelector('.tm-draftstate'); if (head) head.classList.toggle('is-dirty', dirty); if (head) head.textContent = st === 'acceptedLive' ? 'Saved ' + liveAt + ' · ' + ME : st === 'accepted' ? 'Saved 14:05 · Gus' : dirty ? 'Not saved yet' : 'Saved 13:00 · Gus';
     document.querySelectorAll('.tm-short-mark').forEach(function (e) {
       var id = e.dataset.id, on = show.indexOf(id) >= 0, b = BR[id];
       e.hidden = !on; e.classList.toggle('pv-muted', grey);
-      if (b) e.textContent = 'Break ' + hh(b[0]) + ' to ' + hh(b[1]) + (grey ? ' (short accepted)' : ', too few then');
+      if (b) e.textContent = 'Break ' + hh(b[0]) + ' to ' + hh(b[1]) + (grey ? ' (too few, accepted)' : ', too few then');
     });
   };
   // the mix's own taps, before pv.js: Undo on the accepted line goes into the plan; Save from there; the jump link
