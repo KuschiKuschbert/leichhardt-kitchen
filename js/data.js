@@ -1596,14 +1596,14 @@ window.LK_DATA = {
       labelNote: ''
     },
     /* Feast of the Feather, the head chef's whole smoked chicken for sharing, 16 November 2026. The brine, rub and
-       smoke are the head chef's first trial: confirm them after the first bird. Yorkshire pudding, mushy peas and the
-       cider-pickled red cabbage have no cards yet. */
+       smoke are the head chef's first trial: confirm them after the first bird. The Yorkshire pudding is the head
+       chef's recipe. Mushy peas and the cider-pickled red cabbage have no cards yet. */
     {
       id: 'feast-of-the-feather', art: 'feast-of-the-feather', no: '130', kind: 'main', forLine: 'Smoker special', name: 'Feast of the Feather',
       menu: 'Feast of the Feather: whole brined and smoked chicken on a giant golden Yorkshire pudding, with buttery mash, mushy peas, cider-pickled red cabbage and a jug of rich gravy. Made for sharing.',
-      yield: 'Per board. One whole smoked chicken on a giant Yorkshire pudding, mash, mushy peas and red cabbage beside it, gravy in a jug. Trial dish. [Serves per board to come]',
+      yield: 'Per board. One whole smoked No. 10 chicken on a giant Yorkshire pudding, mash, mushy peas and red cabbage beside it, gravy in a jug. Trial dish. [Serves per board to come]',
       ingredients: [
-        { q: '1', name: 'Smoked chicken', note: 'whole, brined, seasoned and smoked', link: 'smoked-chicken' },
+        { q: '1', name: 'Smoked chicken', note: 'No. 10, whole, brined, seasoned and smoked', link: 'smoked-chicken' },
         { q: '1', name: 'Yorkshire pudding', note: 'giant, one per board', link: 'yorkshire-pudding', tags: ['Gluten', 'Egg', 'Milk'] },
         { q: '[Qty]', name: 'Mash', link: 'mash', tags: ['Milk?'] },
         { q: '[Qty]', name: 'Mushy peas', note: 'pea-forward, a touch of mint', link: 'mushy-peas', tags: ['Milk?'] },
@@ -1622,7 +1622,7 @@ window.LK_DATA = {
         { title: 'Cooking', steps: [
           'Smoked chicken: brined, dried, seasoned, smoked and finished hot as card 131. Probe the breast and the inner thigh: 75 °C in both.',
           'Rest the chicken on a rack, 10 to 15 min.',
-          'Yorkshire pudding: one giant pudding per board, crisp at the edges. [Recipe, size and oven setting to come]',
+          'Yorkshire pudding (card 133): 250 °C for 12 min. One giant pudding per board, crisp at the edges.',
           'Mash (card 70) and gravy (card 69) as for every plate.',
           'Mushy peas and red cabbage. [Recipes to come]'
         ] },
@@ -1639,9 +1639,9 @@ window.LK_DATA = {
     },
     {
       id: 'smoked-chicken', art: 'smoked-chicken', no: '131', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Smoked Chicken', short: 'Smoked chicken',
-      yield: 'One whole chicken, 1.6 to 1.8 kg, unstuffed, with no added brine or salt solution. Brine and dry the day before. Trial recipe: confirm after the first bird.',
+      yield: 'One whole No. 10 chicken (about 1 kg), unstuffed, with no added brine or salt solution. Brine and dry the day before. Trial recipe: the times were planned for a 1.6 to 1.8 kg bird. [Times for a No. 10 to confirm on the first bird]',
       ingredients: [
-        { q: '1', name: 'Whole chicken', note: '1.6 to 1.8 kg, unstuffed, no added brine or salt solution' },
+        { q: '1', name: 'Whole chicken', note: 'No. 10, unstuffed, no added brine or salt solution' },
         { q: '3 L', name: 'Herb brine', note: 'one batch per chicken', link: 'herb-brine' },
         { q: '15 ml', name: 'Neutral oil', note: 'rub' },
         { q: '3 g', name: 'Sweet paprika', note: 'rub, not smoked' },
@@ -1672,7 +1672,7 @@ window.LK_DATA = {
         { title: 'Smoke', steps: [
           'Preheat the smoker to 150 °C. Indirect heat, applewood, a light clean smoke.',
           'Chicken in, breast up.',
-          'Smoke 60 to 90 min. Start probing at 60 min.',
+          'Smoke 60 to 90 min, planned for a bigger bird. A No. 10 cooks faster: probe early and often. [Times for a No. 10 to confirm]',
           'Cooking fast: move it to the hot finish sooner.'
         ] },
         { title: 'Finish hot', steps: [
@@ -1692,7 +1692,7 @@ window.LK_DATA = {
     },
     {
       id: 'herb-brine', art: 'herb-brine', no: '132', kind: 'batch', forLine: 'For the smoked chicken', name: 'Herb Brine', short: 'Herb brine',
-      yield: 'Batch: 3 L, enough for one chicken of 1.6 to 1.8 kg. 40 g salt per litre. Needs more liquid to cover the bird: scale everything in step. Trial recipe.',
+      yield: 'Batch: 3 L, enough for one No. 10 chicken. 40 g salt per litre. Needs more liquid to cover the bird: scale everything in step. Trial recipe.',
       ingredients: [
         { q: '3 L', name: 'Water', note: '500 ml of it heated' },
         { q: '120 g', name: 'Salt' },
@@ -1714,6 +1714,22 @@ window.LK_DATA = {
       safety: { title: 'Cold before the chicken', text: 'The brine must be 5 °C or below before the chicken goes in. Use it once, then throw it away.' },
       contains: [],
       check: []
+    },
+    {
+      id: 'yorkshire-pudding', art: 'yorkshire-pudding', no: '133', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Yorkshire Pudding', short: 'Yorkshire pudding',
+      yield: 'Batch: 200 g flour, 200 ml milk and 4 eggs. Bake at 250 °C for 12 min. [Puddings per batch and the tin to come]',
+      ingredients: [
+        { q: '200 g', name: 'Flour', tags: ['Gluten'] },
+        { q: '200 ml', name: 'Milk', tags: ['Milk'] },
+        { q: '4', name: 'Eggs', tags: ['Egg'] }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Whisk the flour, milk and eggs into a smooth batter. [Resting time to come]',
+          '[Hot fat in the tin first: the fat, how much and the tin to come]',
+          'Bake at 250 °C for 12 min.'
+        ] }
+      ]
     },
     {
       id: 'pork-knuckle', art: 'pork-knuckle', no: '92', kind: 'main', forLine: 'Special', name: 'Pork Knuckle',
