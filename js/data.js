@@ -1622,7 +1622,7 @@ window.LK_DATA = {
         { title: 'Cooking', steps: [
           'Smoked chicken: brined, dried, seasoned, smoked and finished hot as card 131. Probe the breast and the inner thigh: 75 °C in both.',
           'Rest the chicken on a rack, 10 to 15 min.',
-          'Yorkshire pudding (card 133): one 18 cm pudding per board, one batch. 210 °C for 12 min, crisp at the edges.',
+          'Yorkshire pudding (card 133): one 18 cm pudding per board, one batch. 210 °C, fan off, for 12 min, crisp at the edges.',
           'Mash (card 70) and gravy (card 69) as for every plate.',
           'Cider-pickled red cabbage (card 134), made ahead.',
           'Mushy peas. [Recipe to come]'
@@ -1718,19 +1718,20 @@ window.LK_DATA = {
     },
     {
       id: 'yorkshire-pudding', art: 'yorkshire-pudding', no: '133', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Yorkshire Pudding', short: 'Yorkshire pudding',
-      yield: 'Batch: 200 g flour, 200 ml milk and 4 eggs. Makes 1 giant pudding in an 18 cm (7 inch) tin, one per board. Bake at 210 °C for 12 min. Trial: confirm after the first bake.',
+      yield: 'Batch: 140 g flour, 200 ml milk and 4 eggs, 100 ml fat in the tin. Makes 1 giant pudding in an 18 cm (7 inch) tin, one per board. Bake at 210 °C, fan off, for 12 min. Trial: confirm after the first bake.',
       ingredients: [
-        { q: '200 g', name: 'Flour', tags: ['Gluten'] },
+        { q: '140 g', name: 'Flour', tags: ['Gluten'] },
         { q: '200 ml', name: 'Milk', tags: ['Milk'] },
-        { q: '4', name: 'Eggs', tags: ['Egg'] }
+        { q: '4', name: 'Eggs', tags: ['Egg'] },
+        { q: '100 ml', name: 'Fat', note: 'for the tin. [Which fat to confirm]' }
       ],
       sections: [
         { title: 'Method', steps: [
           'Whisk the flour, milk and eggs into a smooth batter.',
           'Rest the batter for 1 hour.',
-          '[Hot fat in the tin first: the fat and how much to come]',
+          '100 ml fat in the tin. Heat it in the oven until hot before the batter goes in.',
           'Pour the batter into the 18 cm (7 inch) tin.',
-          'Bake at 210 °C for 12 min.'
+          'Bake at 210 °C, fan off, for 12 min.'
         ] }
       ]
     },
