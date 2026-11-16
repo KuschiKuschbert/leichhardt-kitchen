@@ -5547,6 +5547,11 @@ html:has(.tm-focus-page) {
   .p-admin.ad-admin.tm-admin-plan .ad-title { font-size: 1.65rem; line-height: 1.15; }
   .p-admin.ad-admin.tm-admin-plan .ad-eyebrow { margin: 0; font: 400 .8125rem/1.35 var(--body); letter-spacing: 0; text-transform: none; color: var(--muted); }
   .p-admin.ad-admin.tm-admin-plan .a-tabs { margin-bottom: .65rem; gap: 1rem; }
+  /* On break now at the top of Today's team on every phone (head chef, 16 Nov 2026, the brief's Short phones): today's
+     live board above the notebook head and the date, so a 375 x 667 phone shows every name above the Save dock; the
+     date stays directly above the rows it plans. From 720 px the board stays under the date. */
+  .tm-notebook.tm-focus-page .tm-nbook { grid-template-areas: 'away' 'head' 'date' 'week' 'notice' 'toolbar' 'editor' 'save' 'review' 'tools' 'roster' 'extra'; }
+  .tm-notebook.tm-focus-page .tm-live-strip { margin-top: .85rem; }
 }
 @media (min-width: 1100px) {
   .tm-focus-page .tm-focus-grid { grid-template-columns: minmax(0, 1fr); }

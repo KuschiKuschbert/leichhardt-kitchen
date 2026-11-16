@@ -359,7 +359,7 @@ Screenshots in the book's fonts: before [enough](board-dock-before-fonts-admin-3
 
 ## Short phones, 16 November 2026
 
-The head chef asked for a look at shorter phones after Board above the dock went live. **Waiting for the head chef's choice**; nothing in the book has changed.
+The head chef asked for a look at shorter phones after Board above the dock went live. **Chosen 16 November 2026:** the head chef answered "Yes go" to A on every phone (recorded in `docs/head-chef-decisions.md`). Built below.
 
 **Measured** on `main` at `0625139`, implemented app, click-test stand-in, the book's own fonts (Barlow, Barlow Condensed, Caveat), the study's made-up day at 18:30 with four on a break, enough on and too few. Script [`short-phones.cjs`](short-phones.cjs), raw [`short-phones-now.json`](short-phones-now.json) and [`short-phones-now-640.json`](short-phones-now-640.json). On break now names above the Save dock at scroll 0:
 
@@ -385,3 +385,21 @@ At 375 x 667 the admin page has 383 px above the board (the Google account line 
 None of these fixes 320 px wide phones: the board's lines wrap there and it is 247 px tall.
 
 **Quick check (small change: no new tab, button, pop-up or step).** Recommended: **A on every phone**. The board is always today and now, so it sits apart from the day being planned, and the date stays directly above the rows it controls. One phone layout, no words hidden, no taps added. Screenshots: [now, admin 375 x 667](short-now-admin-375x667.png); A: [admin 375 x 667](short-a-admin-375x667.png), [`#/team` 375 x 667](short-a-team-375x667.png), [admin 390 x 844](short-a-admin-390x844.png). Contract note: the Current break board pattern keeps the board in the notebook; A keeps it there but moves it above the notebook's head on phones, a departure for the head chef to choose.
+
+**Built.** `css/app.css`: below 720 px, `.tm-focus-page .tm-nbook` puts `away` first in its grid areas (`'away' 'head' 'date' 'week' ...`) and the board takes a `.85rem` top margin. CSS only, one structure: the page's HTML, reading order, reads and writes are unchanged. From 720 px the board stays under the date.
+
+Implemented app, same conditions as above (raw [`short-phones-built.json`](short-phones-built.json)), names above the dock, enough on / too few:
+
+| Screen | Admin, before / built | Chef panel, before / built | `#/team`, before / built |
+| --- | --- | --- | --- |
+| 412 x 915, 390 x 844 | 4 of 4 both / 4 of 4 both | 4 of 4 both / 4 of 4 both | 4 of 4 both / 4 of 4 both |
+| 360 x 740 | 3 of 4, 2 of 4 / **4 of 4 both** | 4 of 4 both / 4 of 4 both | 4 of 4 both / 4 of 4 both |
+| 375 x 667 | 0 of 4 both / **4 of 4 both** | 3 of 4, 2 of 4 / **4 of 4 both** | 4 of 4 both / 4 of 4 both |
+| 360 x 640 | 0 of 4 both / **4 of 4, 3 of 4** | 2 of 4, 1 of 4 / **4 of 4 both** | 4 of 4 both / 4 of 4 both |
+| 320 x 568 | 0 of 4 both / 0 of 4 both | 0 of 4 both / 2 of 4, 1 of 4 | 0 of 4 both / **4 of 4 both** |
+| 768 x 1024 | 4 of 4 both, the board under the date / the same | the same | the same |
+
+The board's last name on the admin at 375 x 667 ends at 473 px, the dock starts at 485 px. The people rows start 10 px lower than before at every phone size; taps are unchanged. Screenshots: [admin 375 x 667](short-built-admin-375x667.png), [chef panel 375 x 667](short-built-chef-375x667.png), [admin 390 x 844](short-built-admin-390x844.png).
+
+**Tests.** `tests/team-minimum.test.js` part 11, in the book's fonts: at 375 x 667 and 360 x 740, on the admin page and in the chef panel, all four names end above the dock while the too few line shows; the order is the board, the notebook head, the date, then the rows; the too few line and Save show; no sideways scroll or page error. Part 10 now also checks that at 768 and 1280 px the order stays the notebook head, the date, the board, the rows. **On the old stylesheet: 7 failed of 63. With the fix: 0 of 63.** The team, Today's team, admin, chef panel, Home, roles, pages, sticky bars, safe text, read budget and design pattern test files (58 files) all pass locally.
+
