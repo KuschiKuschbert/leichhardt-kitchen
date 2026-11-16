@@ -1764,6 +1764,57 @@ window.LK_DATA = {
       contains: [],
       check: []
     },
+    /* Beast Burger (card 135), the head chef's new smoker burger, 16 November 2026. Working title, also Mixed Meat Monster. */
+    {
+      id: 'beast-burger', art: 'beast-burger', diagram: 'beast-burger-build', no: '135', kind: 'main', forLine: 'Smoker special', name: 'Beast Burger', short: 'Beast burger',
+      aka: 'mixed meat monster monster burger',
+      yield: 'Per plate. A sourdough cob loaf is the bun: smashed patties, cheese, chicken tenders, pork belly, pulled lamb, cheese sauce, cowboy candy and onion rings, with house BBQ and Alabama white sauces. 160 g chips on the side. Working title: Mixed Meat Monster.',
+      ingredients: [
+        { q: '1', name: 'Sourdough cob loaf', note: 'the bun, cut across into a base and a top', tags: ['Gluten'] },
+        { q: '30 ml', name: 'House BBQ sauce', note: 'on the base', link: 'house-bbq-sauce' },
+        { q: '20 g', name: 'Oak leaf lettuce' },
+        { q: '50 g', name: 'Pickles', note: 'bread and butter, bought in' },
+        { q: '160 g', name: 'Smash patty', note: 'smashed patties', link: 'smash-patty' },
+        { q: '2 slices', name: 'Burger cheese', note: 'on the patties', tags: ['Milk'] },
+        { q: '2', name: 'Southern-style chicken tenders', note: 'bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
+        { q: '80 g', name: 'Pork belly', note: 'sliced', link: 'pork-belly-batch' },
+        { q: '120 g', name: 'Smoked pulled lamb', note: 'from the smoker' },
+        { q: '50 ml', name: 'American cheese sauce', note: 'the liquid cheese', link: 'american-cheese-sauce' },
+        { q: '50 g', name: 'Cowboy candy', link: 'cowboy-candy' },
+        { q: '5', name: 'Onion rings', note: 'bought in', tags: ['Gluten', 'Egg?', 'Soy?'] },
+        { q: '50 ml', name: 'Alabama white sauce', link: 'alabama-white-sauce' },
+        { q: '160 g', name: 'Chips', note: 'on the side' }
+      ],
+      pins: [
+        { label: 'Beast burger', x: 59.4, y: 35.8, side: 'left', tags: ['Gluten', 'Milk', 'Egg'], note: 'Sourdough cob as the bun. Bottom to top: house BBQ sauce, oak leaf, pickles, smashed patties, cheese, 2 tenders, pork belly, pulled lamb, cheese sauce, cowboy candy, 5 onion rings, Alabama white sauce, cob top.' },
+        { label: 'Chips', x: 29.2, y: 63.2, side: 'right', tags: [], note: '160 g.' }
+      ],
+      sections: [
+        { title: 'Cooking', steps: [
+          'Chicken tenders: fry at 175 °C. [Time to confirm]',
+          'Pulled lamb: from the smoker, reheated to 75 °C.',
+          'Smash patties, pork belly, onion rings and the cob. [Cooking to confirm]'
+        ] },
+        { title: 'Plating, bottom to top', steps: [
+          'Cob base.',
+          'House BBQ sauce, 30 ml.',
+          'Oak leaf, 20 g.',
+          'Pickles, 50 g.',
+          'Smashed patties, 160 g.',
+          'Cheese, 2 slices.',
+          'Chicken tenders, 2.',
+          'Pork belly slices, 80 g.',
+          'Pulled lamb, 120 g.',
+          'Cheese sauce, 50 ml.',
+          'Cowboy candy, 50 g.',
+          'Onion rings, 5.',
+          'Alabama white sauce, 50 ml.',
+          'Cob top.',
+          '160 g chips on the side. [Plate or board to confirm]'
+        ] }
+      ],
+      labelNote: 'Check the cob loaf, chicken tender and onion ring labels.'
+    },
     {
       id: 'pork-knuckle', art: 'pork-knuckle', no: '92', kind: 'main', forLine: 'Special', name: 'Pork Knuckle',
       yield: 'Per plate. Pork knuckle on potato mash with pork sauce, hot honey glaze, 5 onion rings, fried shallots and sauerkraut.',

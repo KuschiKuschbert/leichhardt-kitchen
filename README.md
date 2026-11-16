@@ -89,6 +89,10 @@ The [compact Cleaning management exploration](docs/cleaning-chef-options/brief.m
 
 Card 130 is the head chef's sharing dish under Smoker special: a whole brined and smoked chicken on a giant Yorkshire pudding, with mash, mushy peas and cider-pickled red cabbage beside it and gravy in a jug. Card 131 (Smoked Chicken: a No. 10 bird, rub, smoke at 150 °C, hot finish in the iCombi at 210 °C, 75 °C in the breast and the inner thigh) and card 132 (Herb Brine, 40 g salt per litre) are the head chef's first trial recipe: confirm them after the first bird; the times were planned for a 1.6 to 1.8 kg bird. Card 133 is the head chef's Yorkshire pudding: 140 g flour, 200 ml milk and 4 eggs, the batter rested 1 hour, 100 ml hot fat in the tin, make 1 pudding in an 18 cm (7 inch) tin, one per board, 210 °C with the fan off for 12 min (a trial). Card 134 is the cider-pickled red cabbage, the head chef's pick of a quick pickle recipe: half a red cabbage, 250 ml each of water and apple cider vinegar, sugar, salt, garlic and bay, made ahead and kept 2 weeks. The mushy peas card is to come, so the dish shows Not complete yet. Amounts per board, serves, the board and carving stay in [square brackets]. The dish is not in `menuOrder` (it shows with the other smoker boards). The drawings are made from the library's own pieces: the 45 cm sharing board, a whole roast chicken on a scaled Yorkshire, mash, mushy peas, red cabbage and the gravy boat; the brine pan is the gravy pan recoloured, and the Yorkshire pan holds the library's Yorkshire pudding. From the side, a hand-drawn view in the book's side-view style shows the plating: the chicken breast up in the Yorkshire on the board, mash, mushy peas and red cabbage in their own mounds, the gravy jug beside it, each part labelled.
 
+## Beast Burger (16 November 2026)
+
+Card 135 is the head chef's new smoker burger, working title Mixed Meat Monster (a search for either name finds it). A sourdough cob loaf is the bun. Bottom to top: cob base, 30 ml house BBQ sauce (card 127), 20 g oak leaf, 50 g pickles, 160 g smashed patties, 2 slices of cheese, 2 southern-style chicken tenders, 80 g sliced pork belly (card 67), 120 g pulled lamb, 50 ml American cheese sauce (card 117, the liquid cheese), 50 g cowboy candy (card 109), 5 onion rings, 50 ml Alabama white sauce (card 128), cob top. 160 g chips on the side. The card has a plate drawing and a build drawing, top to bottom. The smash patty card is still to come, so the burger shows Not complete yet and stays out of Free from, like the two smash burgers. Cooking for the patties, pork belly, onion rings and cob, and the plate or board, are to come.
+
 ## Smoker batch cards (30 October 2026)
 
 Carolina Gold BBQ Sauce, House BBQ Sauce, Alabama White Sauce and Cornbread have batch cards and matching pan drawings. Cornbread and Alabama White link from the ingredients and drawing pins on both smoked boards. The supplied cards have no methods. The head chef instructed us to omit the pecan and unnamed ingredient entries. The drawings reuse existing sauce pans and the library's exact cornbread piece. House BBQ is not substituted for double-smoked BBQ without confirmation. See [smoker batch cards](docs/smoker-batches.md) for the source questions, saved-book overlay limitation and controlled-clock release verification.
@@ -204,7 +208,7 @@ Dishes already link to these ids. Add a recipe with the same `id` and the links,
 | id | Used by cards |
 | --- | --- |
 | `beer-batter` | 24 58 64 |
-| `smash-patty` | 22 23 |
+| `smash-patty` | 22 23 135 |
 | `french-topper` | 18 |
 | `mexican-topper` | 19 |
 | `americana-topper` | 20 |
