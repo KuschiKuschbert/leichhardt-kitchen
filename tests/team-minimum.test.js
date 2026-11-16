@@ -185,6 +185,8 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
       lastBottom: names.length ? Math.round(names[names.length - 1].getBoundingClientRect().bottom) : 0, head: words('.tm-away .tm-away-head'),
       state: words('.tm-focus-save .tm-save-state'), line: words('.tm-focus-save .tm-short-line') };
   });
+  // the order of the board, the notebook head, the date and the rows, top to bottom
+  const sequence = p => p.evaluate(() => [['board', '.tm-away'], ['head', '.tm-nhead'], ['date', '.tm-date-controls'], ['editor', '.tm-editor']].map(([n, s]) => [n, document.querySelector(s).getBoundingClientRect().top]).sort((a, b) => a[1] - b[1]).map(x => x[0]).join(','));
   const bookFonts = async p => {
     await p.context().unroute(/fonts\.(googleapis|gstatic)\.com/);
     const css = await p.addStyleTag({ url: 'https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@700&family=Caveat:wght@700&display=swap' }).then(() => true, () => false);
@@ -208,10 +210,31 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
     p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', width, extra: fixture(), clock: AT(1110), wait: 1800 });
     await ready(p); await L.settle(p, 300);
     const head = () => p.evaluate(() => { const h = document.querySelector('.ad-heading'), t = h.querySelector('.ad-title'), s = getComputedStyle(h); return [Math.round(h.getBoundingClientRect().height), getComputedStyle(t).fontSize, s.borderBottomWidth, getComputedStyle(h.querySelector('.ad-eyebrow')).textTransform].join(' '); });
-    const plan = await head(), m = await board(p);
+    const plan = await head(), m = await board(p), order = await sequence(p);
     await L.adminTab(p, 'people'); await L.settle(p, 300);
     const other = await head();
     ok(plan === other && m.above.length === 4, 'board above the dock, admin ' + width + ': the Team heading is the same on Today\'s team as on People (' + plan + ' / ' + other + '), all four names show');
+    ok(order === 'head,date,board,editor', 'short phones, admin ' + width + ': the board stays under the notebook head and the date (' + order + ')');
+    await p.context().close();
+  }
+
+  // 11. Short phones (head chef, 16 Nov 2026, the brief's Short phones): on every phone the board sits at the top of
+  //     Today's team, above the notebook head and the date, which stays directly above the rows. A 375 x 667 or 360 x 740
+  //     phone then shows all four names above the Save dock, on the admin page and in the chef panel, while the too few
+  //     line shows. In the book's fonts, as part 10. On the old code the admin page at 375 x 667 showed none of the four.
+  for (const [w, h] of [[375, 667], [360, 740]]) for (const [label, hash, o] of [['admin', '#/admin', { admin: true, adminPage: 'plan' }], ['chef panel', '#/chef', { who: 'sam' }]]) {
+    p = await L.open(b, hash, Object.assign({ width: w, height: h, extra: fixture(), clock: AT(1110), wait: 1800 }, o));
+    if (hash === '#/chef') {
+      await L.waitFor(p, () => !!document.querySelector('[data-p="c-group"][data-g="team"]'), null, 8000);
+      await p.locator('[data-p="c-group"][data-g="team"]').click(); await L.settle(p, 300);
+      const tab = p.locator('[data-p="c-tab"][data-t="plan"]'); if (await tab.getAttribute('aria-pressed') !== 'true') await tab.click();
+    }
+    await ready(p); await L.waitFor(p, () => document.querySelectorAll('.tm-away-row').length >= 4, null, 9000); await L.settle(p, 300);
+    if (!await bookFonts(p)) { ok(true, 'short phones, ' + label + ' ' + w + ' x ' + h + ': the book\'s fonts could not load here, the board was not measured'); await p.context().close(); continue; }
+    const m = await board(p), order = await sequence(p);
+    ok(m.scroll === 0 && JSON.stringify([...m.above].sort()) === JSON.stringify(['Dev', 'Fen', 'Hal', 'Sam K']), 'short phones, ' + label + ' ' + w + ' x ' + h + ', in Barlow: all 4 names end above the Save dock (' + m.above.join(', ') + '; last name ends at ' + m.lastBottom + ' px, the dock starts at ' + m.dockTop + ' px)');
+    ok(order === 'board,head,date,editor' && m.saveIn && /^Saved plan: too few now until 19:00/.test(m.line), 'short phones, ' + label + ' ' + w + ' x ' + h + ': the board, then the notebook head, the date and the rows; the too few line and Save show (' + order + ')');
+    ok(!await L.overflow(p) && p.errors.length === 0, 'short phones, ' + label + ' ' + w + ' x ' + h + ': no sideways scroll, no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }
 
