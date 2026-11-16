@@ -1718,18 +1718,18 @@ window.LK_DATA = {
     },
     {
       id: 'yorkshire-pudding', art: 'yorkshire-pudding', no: '133', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Yorkshire Pudding', short: 'Yorkshire pudding',
-      yield: 'Batch: 140 g flour, 200 ml milk and 4 eggs, 100 ml fat in the tin. Makes 1 giant pudding in an 18 cm (7 inch) tin, one per board. Bake at 210 °C, fan off, for 12 min. Trial: confirm after the first bake.',
+      yield: 'Batch: 140 g flour, 200 ml milk and 4 eggs, 100 ml canola oil in the tin. Makes 1 giant pudding in an 18 cm (7 inch) tin, one per board. Bake at 210 °C, fan off, for 12 min. Trial: confirm after the first bake.',
       ingredients: [
         { q: '140 g', name: 'Flour', tags: ['Gluten'] },
         { q: '200 ml', name: 'Milk', tags: ['Milk'] },
         { q: '4', name: 'Eggs', tags: ['Egg'] },
-        { q: '100 ml', name: 'Fat', note: 'for the tin. [Which fat to confirm]' }
+        { q: '100 ml', name: 'Canola oil', note: 'the fryer oil, for the tin. Not the Tuscan oil: it burns' }
       ],
       sections: [
         { title: 'Method', steps: [
           'Whisk the flour, milk and eggs into a smooth batter.',
           'Rest the batter for 1 hour.',
-          '100 ml fat in the tin. Heat it in the oven until hot before the batter goes in.',
+          '100 ml canola oil (the fryer oil) in the tin. Heat it in the oven until hot before the batter goes in. Not the Tuscan oil: it burns.',
           'Pour the batter into the 18 cm (7 inch) tin.',
           'Bake at 210 °C, fan off, for 12 min.'
         ] }
