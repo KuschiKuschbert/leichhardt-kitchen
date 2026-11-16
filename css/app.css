@@ -5539,6 +5539,15 @@ html:has(.tm-focus-page) {
 .p-admin.ad-admin.tm-focus-panel .tm-chef-identity p { min-width: 0; margin: 0; font: 400 .8125rem/1.4 var(--body); overflow-wrap: break-word; }
 .p-admin.ad-admin.tm-focus-panel .tm-chef-identity .p-link { display: inline-flex; align-items: center; min-width: 44px; min-height: 44px; max-width: 100%; white-space: normal; }
 .p-admin.ad-admin.tm-focus-panel .a-tabs { margin-bottom: .65rem; gap: 1rem; }
+/* The admin panel's Today's team on a phone (16 Nov 2026, docs/team-minimum-options/brief.md, Board above the dock): the
+   chef panel's one-line Team heading above, so every On break now name ends above the Save dock on the first screen.
+   The right padding keeps the words clear of Find (absolute, top right). From 720 px the admin heading stays as it is. */
+@media (max-width: 719px) {
+  .p-admin.ad-admin.tm-admin-plan .ad-heading { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .75rem; margin: 0 0 .2rem; padding: .2rem 6rem .3rem 0; border: 0; }
+  .p-admin.ad-admin.tm-admin-plan .ad-title { font-size: 1.65rem; line-height: 1.15; }
+  .p-admin.ad-admin.tm-admin-plan .ad-eyebrow { margin: 0; font: 400 .8125rem/1.35 var(--body); letter-spacing: 0; text-transform: none; color: var(--muted); }
+  .p-admin.ad-admin.tm-admin-plan .a-tabs { margin-bottom: .65rem; gap: 1rem; }
+}
 @media (min-width: 1100px) {
   .tm-focus-page .tm-focus-grid { grid-template-columns: minmax(0, 1fr); }
   .tm-focus-page .tm-focus-grid > .tm-detail-workbench { position: sticky; top: 1rem; }
