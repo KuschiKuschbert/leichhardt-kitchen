@@ -5519,16 +5519,39 @@ html:has(.tm-focus-page) {
 .tm-notebook.tm-focus-page .tm-focus-save .btn { flex: 0 1 auto; width: auto; max-width: 100%; min-height: 44px; margin-left: auto; }
 .tm-notebook.tm-focus-page .tm-save-state { flex: 1 1 10rem; min-width: 0; margin: 0; font-size: .8125rem; line-height: 1.4; overflow-wrap: break-word; }
 .tm-notebook.tm-focus-page .tm-focus-save .sv-line { order: -1; flex: 1 1 14rem; min-width: 0; max-width: 100%; margin: 0; white-space: normal; overflow-wrap: break-word; }
-/* Too few on the plan at a busy time (15 Nov 2026, docs/team-minimum-options/brief.md): one line in the Save dock, its
-   first words in the attention orange with the rest in ink; under a person's Breaks, the words that mark whose break */
-.tm-notebook.tm-focus-page .tm-short-line { flex: 1 1 100%; min-width: 0; margin: 0; font-size: .8125rem; line-height: 1.4; overflow-wrap: break-word; }
-.tm-notebook.tm-focus-page .tm-short-line b { color: var(--small-ink); }
+/* Too few on the plan at a busy time (15 Nov 2026, docs/team-minimum-options/brief.md), louder and with Accept for today
+   (16 Nov 2026, docs/team-short-ok-options/brief.md): an amber band in the Save dock, the book's attention line (--hit
+   fill, --small-ink edge) with the fact first, then the fix (a 44 px link) and Accept on one row. Waiting for Save: a
+   dashed edge. Accepted: one quiet line, no fill. Words carry every state; red stays for a failed Save. */
+.tm-notebook.tm-focus-page .tm-short-line { flex: 1 1 100%; min-width: 0; margin: 0; }
+.tm-short-line > .tm-short-words { margin: 0; font-size: .8125rem; line-height: 1.4; overflow-wrap: break-word; }
+.tm-short-band { display: flex; flex-direction: column; gap: 0; min-width: 0; margin: 0; padding: .15rem .55rem .1rem; border-left: 4px solid var(--small-ink); background: var(--hit); }
+/* while the band shows, the dock gives up its empty saved-words row and some top padding: the On break now board keeps
+   all its names above the dock on a 390 px phone (#722), six away included */
+.tm-notebook.tm-focus-page .tm-focus-save.has-short { padding-top: .4rem; }
+.tm-notebook.tm-focus-page .tm-focus-save.has-short .sv-line:empty { display: none; }
+.tm-short-band.is-pending { border-left-style: dashed; }
+.tm-short-band.is-accepted { flex-direction: row; align-items: center; justify-content: space-between; gap: .5rem; padding: 0 0 0 .55rem; border-left-color: var(--line); background: transparent; }
+.tm-short-fact { margin: 0; font: 700 .9375rem/1.25 var(--body); color: var(--ink); overflow-wrap: break-word; }
+.tm-short-band.is-accepted .tm-short-fact { min-width: 0; font: 400 .8125rem/1.35 var(--body); }
+.tm-short-band.is-accepted .tm-short-fact b { font-weight: 700; }
+.tm-short-tf { color: var(--small-ink); }
+.tm-short-why { margin: 0; font-size: .8125rem; line-height: 1.35; color: var(--ink); overflow-wrap: break-word; }
+.tm-short-row { display: flex; align-items: center; justify-content: space-between; gap: .5rem; min-width: 0; }
+.tm-short-row > .tm-short-why { flex: 1 1 auto; min-width: 0; }
+.tm-notebook.tm-focus-page .tm-short-link { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; padding: 0 .1rem; font-size: .9375rem; font-weight: 600; text-align: left; overflow-wrap: anywhere; }
+.tm-short-row > .tm-short-link[data-p="tm-short-go"] { flex: 1 1 auto; min-width: 0; }
+.tm-notebook.tm-focus-page .tm-short-accept { flex: none; min-height: 44px; padding: 0 .8rem; border: 2px solid var(--small-ink); border-radius: 999px; background: var(--paper); color: var(--small-ink); font: 700 .9375rem/1 var(--body); cursor: pointer; }
+.tm-notebook.tm-focus-page .tm-short-accept:disabled { border-color: var(--line); color: var(--muted); cursor: default; }
+.tm-short-mark.is-accepted { color: var(--muted); font-weight: 400; }
+.tm-focus-page .tm-plan > .tm-tlrow.is-short-here { outline: 3px solid var(--small-ink); outline-offset: 2px; }
 .tm-short-mark { display: block; margin-top: -.35rem; font: 700 .8125rem/1.3 var(--body); color: var(--small-ink); overflow-wrap: break-word; }
 /* off the roster (head chef, 16 Nov 2026): the same orange words under the name, shown only when it applies */
 .tm-roster-flag { display: block; margin-top: .1rem; font: 700 .8125rem/1.3 var(--body); color: var(--small-ink); overflow-wrap: break-word; }
 .tm-short-mark[hidden] { display: none; }
 /* a laptop: the line beside Save, so the dock keeps its height */
-@media (min-width: 1100px) { .tm-notebook.tm-focus-page .tm-short-line { flex-basis: 16rem; } }
+/* from 720 px the band sits beside Save, so the dock keeps about its old height and the board keeps its names */
+@media (min-width: 720px) { .tm-notebook.tm-focus-page .tm-short-line { flex: 1 1 0; } .tm-notebook.tm-focus-page .tm-focus-save.has-short .sv-line { flex-basis: 100%; } }
 .tm-focus-page .tm-extra { padding: .75rem .85rem 1rem; margin: 0; }
 .p-admin.ad-admin.tm-focus-panel .ad-heading { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .75rem; margin: 0 0 .35rem; padding: .2rem 0 .3rem; border: 0; }
 .p-admin.ad-admin.tm-focus-panel .ad-title { font-size: 1.65rem; line-height: 1.15; }

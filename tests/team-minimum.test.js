@@ -22,7 +22,10 @@ const plan = (day, on, br) => ({ day, on: on || ON, br: br || BR, v: 1, at: L.NO
 const fixture = (x, more) => Object.assign({ [CFG]: Object.assign({ people, headId: 'gus', sousIds: ['sam'], staffIds: people.map(p => p.id), kitShifts: BUSY, kitSecs: secs }, x || {}), [TEAM]: plan(today) }, more || {});
 const store = p => p.evaluate(() => window.__fake.dump());
 const reads = p => p.evaluate(() => window.__fake.reads.filter(k => /\/(team|teamsum|config)\//.test(k)).length);
-const line = p => p.evaluate(() => { const e = document.querySelector('.tm-short-line'); return e && !e.hidden ? e.innerText.replace(/\s+/g, ' ').trim() : ''; });
+// the band's words (16 Nov 2026: the fact, then why; the link and Accept are read on their own)
+const line = p => p.evaluate(() => { const e = document.querySelector('.tm-short-line'); return e && !e.hidden ? [...e.querySelectorAll('.tm-short-fact, .tm-short-why, .tm-short-words')].map(x => x.innerText.replace(/\s+/g, ' ').trim()).join(' ') : ''; });
+const goLink = p => p.evaluate(() => { const e = document.querySelector('.tm-short-line [data-p="tm-short-go"]'); return e ? e.innerText.trim() : ''; });
+const acceptBtn = p => p.evaluate(() => { const e = document.querySelector('.tm-short-line [data-p="tm-short-ok"]'); return e ? e.innerText.trim() : ''; });
 // the marks sit in each row's name column (rows on one clock, 16 Nov 2026); a mark in another person's row reads as "!"
 const marks = p => p.$$eval('.tm-short-mark:not([hidden])', l => l.map(e => { const row = e.closest('.tm-tlrow'); return row && e.closest('.tm-grid-who') && row.dataset.id === e.dataset.id ? e.dataset.id : '!' + e.dataset.id; }));
 const rows = n => p => L.waitFor(p, n => document.querySelectorAll('.tm-tlrow').length >= n, n, 9000);
@@ -66,10 +69,11 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   //    stepping aside while the line shows. No read for any of it.
   p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', width: 390, extra: fixture(), clock: AT(1110), wait: 1800 });
   await ready(p); await L.settle(p, 300);
-  ok(await line(p) === 'Saved plan: too few now until 19:00. 4 now, 5 from 18:45, 6 needed. Move a marked break.', 'line: when, how many and the need, from the saved plan (' + await line(p) + ')');
+  ok(await line(p) === 'Too few now until 19:00: 4 on, 6 needed', 'band: the fact first, when, how many and the need, from the saved plan (' + await line(p) + ')');
+  ok(await goLink(p) === 'Go to Sam K\u2019s break' && await acceptBtn(p) === 'Accept 4 on', 'band: the fix first, then Accept, on one row (' + await goLink(p) + ' / ' + await acceptBtn(p) + ')');
   ok(JSON.stringify(await marks(p)) === JSON.stringify(['sam', 'dev', 'fen', 'hal']), 'marks: the four away in the short time (' + (await marks(p)).join(',') + ')');
   ok(await p.$eval('.tm-focus-save .tm-save-state', e => e.hidden) && /Saved 13:00/.test(await txt(p, '.tm-draftstate') || ''), 'dock: its own saved words step aside; the notebook head still says Saved');
-  ok(await p.$eval('.tm-short-line b', e => getComputedStyle(e).color) !== await p.$eval('.tm-short-line', e => getComputedStyle(e).color), 'line: its first words stand out (attention orange), the rest in ink');
+  ok(await p.$eval('.tm-short-tf', e => getComputedStyle(e).color) !== await p.$eval('.tm-short-fact', e => getComputedStyle(e).color), 'band: "Too few" stands out (attention orange), the rest in ink');
   const r0 = await reads(p);
 
   // 3. A half-done fix: Sam K's Dinner break moves to 19:30 in his own row. The line follows at once and says Unsaved.
@@ -80,10 +84,10 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   const thumb = () => p.$eval(samAt, e => Math.round(e.nextElementSibling.getBoundingClientRect().top + scrollY));
   const thumbBefore = await thumb();
   await L.pick(p, samAt, '1170'); await L.settle(p, 200);
-  ok(await line(p) === 'Unsaved plan: too few now until 18:45. 5 now, 6 needed. Move a marked break.', 'half-done fix: still too few until 18:45, said as Unsaved (' + await line(p) + ')');
+  ok(await line(p) === 'Not saved yet. Too few now until 18:45: 5 on, 6 needed', 'half-done fix: still too few until 18:45, said as Not saved yet (' + await line(p) + ')');
   ok(JSON.stringify(await marks(p)) === JSON.stringify(['dev', 'fen', 'hal']), 'marks: Sam K\'s mark goes with his moved break; the others stay in their own rows (' + (await marks(p)).join(',') + ')');
   ok(await thumb() === thumbBefore, 'marks: Sam K\'s break picker stays where it was when his mark goes (' + thumbBefore + ' to ' + await thumb() + ')');
-  ok(!await p.$eval('.tm-focus-save .tm-save-state', e => e.hidden), 'dock: with unsaved changes its own words show again');
+  ok(await p.$eval('.tm-focus-save .tm-save-state', e => e.hidden) && /Unsaved changes/.test(await txt(p, '.tm-draftstate') || ''), 'dock: the band says Not saved yet, so the dock\'s own words step aside; the notebook head says it too');
   // the rest of the fix and Save: the line goes, no marks
   await L.pick(p, 'select[data-k="tm-at:hal:dinner:0"]', '1140'); await L.settle(p, 200);
   ok(await line(p) === '', 'full fix: the line goes as soon as the draft has enough');
@@ -98,7 +102,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   //    the Save button and the inputs are the same nodes, the draft is kept, no read.
   p = await L.open(b, '#/team', { who: 'sam', width: 390, extra: fixture(), clock: AT(1139), wait: 1800 });
   await ready(p); await L.settle(p, 300);
-  ok(/too few now until 19:00\. 5 now, 6 needed/.test(await line(p)), 'sous chef at 18:59: the line shows on #/team too (' + await line(p) + ')');
+  ok(/Too few now until 19:00: 5 on, 6 needed/.test(await line(p)), 'sous chef at 18:59: the band shows on #/team too (' + await line(p) + ')');
   await L.pick(p, 'select[data-k="tm-sec:cal:lunch"]', 'grill'); await L.settle(p, 150);
   // a section picker and a break picker in the rows: the minute paint must not rebuild either
   await p.evaluate(() => { window.__saveProbe = document.querySelector('[data-p="tm-save"]'); window.__cellProbe = document.querySelector('select[data-k="tm-sec:ari:dinner"]'); window.__breakProbe = document.querySelector('select[data-k="tm-at:hal:dinner:0"]'); });
@@ -118,8 +122,8 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   const shifts5 = [BUSY[0], Object.assign({}, BUSY[1], { busy: { from: 900, to: 1050, n: 6 } }), { id: 'fn', name: 'Function', from: 960, to: 1260, off: false }];
   p = await L.open(b, '#/team', { who: 'sam', width: 1280, extra: fixture({ kitShifts: shifts5 }, { [TEAM]: plan(today, late, []) }), clock: AT(900), wait: 1800 });
   await ready(p); await L.settle(p, 300);
-  ok(await line(p) === 'Saved plan: too few now until 17:00. Only 5 on Dinner, 6 needed. Add people.', 'roster hours: late starters count from 17:00; Cal on the Function shift does not count for Dinner (' + await line(p) + ')');
-  ok(!(await marks(p)).length, 'short roster with nobody on a break: nobody is marked');
+  ok(await line(p) === 'Too few now until 17:00: 5 on, 6 needed Only 5 on Dinner.', 'roster hours: late starters count from 17:00; Cal on the Function shift does not count for Dinner (' + await line(p) + ')');
+  ok(!(await marks(p)).length && await goLink(p) === '' && await acceptBtn(p) === 'Accept 5 on', 'short roster with nobody on a break: nobody is marked, no break to go to, Accept still offered');
   await p.context().close();
 
   // 6. A short roster says so, never blames one break; a planned day counts the whole day; a past day and a kitchen
@@ -127,13 +131,13 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   const quiet = ON.filter(o => o.sh === 'lunch' || ['sam', 'dev', 'hal'].includes(o.id)), quietBr = BR.filter(x => ['sam', 'dev', 'hal', 'eli'].includes(x.id));
   p = await L.open(b, '#/team', { who: 'sam', width: 390, extra: fixture({}, { [TEAM]: plan(today, quiet, quietBr) }), clock: AT(1110), wait: 1800 });
   await rows(4)(p); await L.settle(p, 300);
-  ok(await line(p) === 'Saved plan: too few now until 20:30. Only 3 on Dinner (0 now with breaks), 6 needed. Add people or move a marked break.', 'short roster: said as such, with the lowest count (' + await line(p) + ')');
+  ok(await line(p) === 'Too few now until 20:30: 0 on, 6 needed Only 3 on Dinner.', 'short roster: said as such, with the lowest count (' + await line(p) + ')');
   await L.teamDay(p, tomorrow); await L.settle(p, 300);
   ok(await line(p) === '', 'planned day with nobody on it: nothing to warn');
   await p.context().close();
   p = await L.open(b, '#/team', { who: 'sam', width: 390, extra: fixture({}, { [key('team', tomorrow)]: plan(tomorrow) }), clock: AT(840), wait: 1800 });
   await ready(p); await L.teamDay(p, tomorrow); await ready(p); await L.settle(p, 300);
-  ok(await line(p) === 'Saved plan: too few 18:30 to 19:00. 4 from 18:30, 5 from 18:45, 6 needed. Move a marked break.', 'planned day: the whole day, with real times (' + await line(p) + ')');
+  ok(await line(p) === 'Too few 18:30 to 19:00: 4 on, 6 needed', 'planned day: the whole day, with real times (' + await line(p) + ')');
   await p.context().close();
   p = await L.open(b, '#/team', { who: 'sam', width: 390, extra: fixture({ kitShifts: PLAIN }), clock: AT(1110), wait: 1800 });
   await ready(p); await L.settle(p, 300);
@@ -145,7 +149,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   const two = BR.map(x => ['ari', 'bea', 'gia'].includes(x.id) ? Object.assign({}, x, { at: 1185, len: 30 }) : x);
   p = await L.open(b, '#/team', { who: 'sam', width: 390, extra: fixture({}, { [TEAM]: plan(today, ON, two) }), clock: AT(1020), wait: 1800 });
   await ready(p); await L.settle(p, 300);
-  ok(await line(p) === 'Saved plan: too few 18:30 to 19:00. 4 from 18:30, 5 from 18:45, 6 needed. Move a marked break. Next: 19:45 to 20:15.', 'two short times: the first, then the next one\'s time (' + await line(p) + ')');
+  ok(await line(p) === 'Too few 18:30 to 19:00: 4 on, 6 needed Next: 19:45 to 20:15.', 'two short times: the first, then the next one\'s time (' + await line(p) + ')');
   ok(JSON.stringify(await marks(p)) === JSON.stringify(['sam', 'dev', 'fen', 'hal']), 'two short times: only the first one\'s people are marked (' + (await marks(p)).join(',') + ')');
   await p.context().close();
   const noHours = BUSY.map(s => s.id === 'dinner' ? Object.assign({}, s, { from: null, to: null }) : s);
@@ -159,7 +163,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   await ready(p); await L.settle(p, 300);
   await L.pick(p, 'select[data-k="tm-at:sam:dinner:0"]', '1170'); await L.settle(p, 200);
   await p.locator('[data-p="tm-save"]').click(); await L.settle(p, 1500);
-  ok(/^Unsaved plan: too few now until 18:45/.test(await line(p)) && /Not saved/.test(await txt(p, '.tm-focus-save') || '') && !await p.$eval('.tm-focus-save .tm-save-state', e => e.hidden), 'refused Save: the draft is kept, the dock says Not saved and the line says Unsaved (' + await line(p) + ')');
+  ok(/^Not saved yet\. Too few now until 18:45/.test(await line(p)) && /Not saved/.test(await txt(p, '.tm-focus-save') || '') && !await p.$eval('.tm-focus-save .tm-save-state', e => e.hidden), 'refused Save: the draft is kept, the dock says Not saved and the band says Not saved yet (' + await line(p) + ')');
   await p.context().close();
 
   // 9. Words from the kitchen's settings are text, never markup
@@ -167,7 +171,90 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   const quiet2 = ON.filter(o => o.sh === 'lunch' || ['sam', 'dev', 'hal'].includes(o.id));
   p = await L.open(b, '#/team', { who: 'sam', width: 390, extra: fixture({ kitShifts: odd }, { [TEAM]: plan(today, quiet2, []) }), clock: AT(1110), wait: 1800 });
   await rows(4)(p); await L.settle(p, 300);
-  ok(/Only 3 on <img src=x onerror=window.__x=1>Dinner, 6 needed\. Add people\.$/.test(await line(p)) && !await p.evaluate(() => window.__x) && !await p.locator('.tm-short-line img').count(), 'safe text: a shift name is shown as typed, never run (' + await line(p) + ')');
+  ok(/Only 3 on <img src=x onerror=window.__x=1>Dinner\.$/.test(await line(p)) && !await p.evaluate(() => window.__x) && !await p.locator('.tm-short-line img').count(), 'safe text: a shift name is shown as typed, never run (' + await line(p) + ')');
+  await p.context().close();
+
+  // 11. Accept for today (head chef, 16 Nov 2026, docs/team-short-ok-options/brief.md). Accept goes into the plan and
+  //     Save shares it; Undo before Save leaves nothing to save; once saved it is one quiet line with who and when, the
+  //     marks turn grey, and it still covers the short time a minute later. Undo then Save takes it off. A plan made
+  //     worse brings the band back and says who saved it; a tap on an Accept that changed under the finger is refused;
+  //     Go to <name>'s break moves to each marked break in turn. The clock not ready keeps acceptances; a fixed plan
+  //     clears them. None of it reads. On the old code there is no Accept at all: the first check fails.
+  const okRow = (x) => Object.assign({ sh: 'dinner', from: 1110, to: 1140, n: 6, low: 4, by: 'gus', at: AT(1080) }, x || {});
+  const bandBtn = (p, k) => p.locator('.tm-short-line [data-p="' + k + '"]');
+  const dockWords = p => txt(p, '.tm-focus-save');
+  p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', width: 390, extra: fixture(), clock: AT(1110), wait: 1800 });
+  await ready(p); await L.settle(p, 300);
+  const r11 = await reads(p);
+  ok(await bandBtn(p, 'tm-short-ok').count() === 1, 'accept: the band offers Accept 4 on beside the fix');
+  await bandBtn(p, 'tm-short-ok').click(); await L.settle(p, 200);
+  ok(await line(p) === 'Not saved yet: 4 on, 6 needed, accepted until 19:00 today Tap Save to share it with the chefs.', 'accept: it goes into the plan and says it is not saved yet (' + await line(p) + ')');
+  ok(!await p.$eval('[data-p="tm-save"]', e => e.disabled) && !(await store(p))[TEAM].ok, 'accept: Save turns on; nothing is written yet');
+  ok(await p.$eval('.tm-short-band', e => getComputedStyle(e).borderLeftStyle) === 'dashed', 'accept: the waiting band has a dashed edge, a cue that is not colour');
+  await bandBtn(p, 'tm-short-undo').click(); await L.settle(p, 200);
+  ok(await line(p) === 'Too few now until 19:00: 4 on, 6 needed' && await p.$eval('[data-p="tm-save"]', e => e.disabled), 'accept: Undo before Save puts the band back, with nothing to save');
+  await bandBtn(p, 'tm-short-ok').click(); await L.settle(p, 200);
+  await p.locator('[data-p="tm-save"]').click();
+  await L.waitFor(p, k => window.__fake.dump()[k].v === 2, TEAM, 8000); await L.settle(p, 300);
+  let doc = (await store(p))[TEAM];
+  ok(JSON.stringify(doc.ok) === JSON.stringify([okRow({ at: doc.upd })]), 'accept: Save shares it with the plan, stamped with the save (' + JSON.stringify(doc.ok) + ')');
+  ok(await line(p) === 'Accepted until 19:00 today: 4 on, 6 needed. By Gus at 18:30.', 'accepted: one quiet line, who and when (' + await line(p) + ')');
+  ok(/Accepted for the chefs: 4 on, 6 needed, 18:30 to 19:00\./.test(await dockWords(p) || ''), 'accepted: the Save words say what was accepted');
+  const grey = await p.$$eval('.tm-short-mark:not([hidden])', l => l.map(e => e.dataset.id + ':' + e.textContent + ':' + e.classList.contains('is-accepted')));
+  ok(grey[0] === 'sam:Break 18:30, too few, accepted:true' && grey.length === 4, 'accepted: the marks stay, grey, with each break\'s time (' + grey.join(' | ') + ')');
+  await focusAt(p, AT(1111));
+  ok(await line(p) === 'Accepted until 19:00 today: 4 on, 6 needed. By Gus at 18:30.', 'accepted: a minute later the trimmed short time is still covered (' + await line(p) + ')');
+  await bandBtn(p, 'tm-short-undo').click(); await L.settle(p, 200);
+  ok(await line(p) === 'Not saved yet. Too few now until 19:00: 4 on, 6 needed Acceptance undone.', 'undo: the band comes back and says the acceptance is undone (' + await line(p) + ')');
+  await p.locator('[data-p="tm-save"]').click();
+  await L.waitFor(p, k => window.__fake.dump()[k].v === 3, TEAM, 8000); await L.settle(p, 300);
+  doc = (await store(p))[TEAM];
+  ok(!('ok' in doc) && /Acceptance undone: 18:30 to 19:00\./.test(await dockWords(p) || ''), 'undo: Save takes it off the plan and says so (' + JSON.stringify(doc.ok) + ')');
+  ok(await reads(p) === r11, 'accept: no read for any of it');
+  ok(p.errors.length === 0, 'accept: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  // a plan made worse after the acceptance: Eli's Dinner break at 18:30 too, saved by Sam K at 18:10
+  const worseBr = BR.concat([{ id: 'eli', sh: 'dinner', at: 1110, len: 30 }]);
+  const worse = Object.assign(plan(today, ON, worseBr), { ok: [okRow()], v: 2, upd: AT(1090), by: 'sam' });
+  p = await L.open(b, '#/team', { who: 'sam', width: 390, extra: fixture({}, { [TEAM]: worse }), clock: AT(1110), wait: 1800 });
+  await ready(p); await L.settle(p, 300);
+  ok(await line(p) === 'Too few now until 19:00: 3 on, 6 needed At 18:00 Gus accepted 4 on. Sam K’s save at 18:10 left 3 on.', 'worse: the band comes back and says who saved it (' + await line(p) + ')');
+  ok(await acceptBtn(p) === 'Accept 3 on' && (await marks(p)).length === 5, 'worse: Accept offers the new count; all five away are marked');
+  // the minute paint changed the band under the finger: the button's own times no longer match, so the tap is refused
+  await p.evaluate(() => { document.querySelector('.tm-short-line [data-p="tm-short-ok"]').setAttribute('data-low', '4'); });
+  await bandBtn(p, 'tm-short-ok').click(); await L.settle(p, 200);
+  ok(/Not accepted: the short time changed as you tapped/.test(await dockWords(p) || '') && await p.$eval('[data-p="tm-save"]', e => e.disabled), 'refused tap: a changed short time is not accepted, and says so');
+  // Go to <name>'s break: each marked person in row order, their break picker in view and focused
+  await bandBtn(p, 'tm-short-go').click(); await L.settle(p, 200);
+  const here = () => p.evaluate(() => { const r = document.querySelector('.tm-tlrow.is-short-here'), a = document.activeElement, f = a && a.getBoundingClientRect(), d = document.querySelector('.tm-focus-save').getBoundingClientRect(), h = document.querySelector('.tm-planhead').getBoundingClientRect();
+    return { row: r && r.dataset.id, focus: a && a.closest('.tm-tlrow') ? a.closest('.tm-tlrow').dataset.id : '', clear: !!f && f.top >= h.bottom - 1 && f.bottom <= d.top + 1 }; });
+  let h1 = await here();
+  ok(h1.row === 'sam' && h1.focus === 'sam' && h1.clear && await goLink(p) === 'Next: Dev’s break (2 of 5)', 'go to: Sam K\'s row first, his break picker focused, clear of the list head and the dock (' + JSON.stringify(h1) + ', ' + await goLink(p) + ')');
+  await bandBtn(p, 'tm-short-go').click(); await L.settle(p, 200);
+  h1 = await here();
+  ok(h1.row === 'dev' && h1.focus === 'dev' && h1.clear && await goLink(p) === 'Next: Eli’s break (3 of 5)', 'go to: then Dev\'s (' + JSON.stringify(h1) + ', ' + await goLink(p) + ')');
+  ok(p.errors.length === 0, 'worse: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  // the kitchen clock not ready at Save: acceptances are kept; a plan fixed where it was accepted clears it at Save
+  const accepted = Object.assign(plan(today), { ok: [okRow()], v: 2, upd: AT(1085) });
+  p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', width: 390, extra: fixture({}, { [TEAM]: accepted }), clock: AT(1110), wait: 1800 });
+  await ready(p); await L.settle(p, 300);
+  ok(await line(p) === 'Accepted until 19:00 today: 4 on, 6 needed. By Gus at 18:00.', 'accepted on another phone: the quiet line from the saved plan (' + await line(p) + ')');
+  await L.pick(p, 'select[data-k="tm-sec:cal:lunch"]', 'grill'); await L.settle(p, 150);
+  await p.evaluate(() => { window.LK_TIME.ready = () => false; });
+  await p.locator('[data-p="tm-save"]').click();
+  await L.waitFor(p, k => window.__fake.dump()[k].v === 3, TEAM, 8000);
+  ok(JSON.stringify((await store(p))[TEAM].ok) === JSON.stringify([okRow()]), 'clock not ready: Save keeps the acceptance as it was');
+  await p.context().close();
+  p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', width: 390, extra: fixture({}, { [TEAM]: accepted }), clock: AT(1110), wait: 1800 });
+  await ready(p); await L.settle(p, 300);
+  await L.pick(p, samAt, '1170'); await L.settle(p, 150);
+  await L.pick(p, 'select[data-k="tm-at:hal:dinner:0"]', '1140'); await L.settle(p, 150);
+  ok(await line(p) === '', 'fixed: with enough on, the band goes');
+  await p.locator('[data-p="tm-save"]').click();
+  await L.waitFor(p, k => window.__fake.dump()[k].v === 3, TEAM, 8000); await L.settle(p, 300);
+  ok(!('ok' in (await store(p))[TEAM]) && /No longer too few at 18:30 to 19:00, so its acceptance is cleared\./.test(await dockWords(p) || ''), 'fixed: Save clears the acceptance and says why');
+  ok(p.errors.length === 0, 'fixed: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // 10. The On break now board ends above the Save dock on the head chef's phone (Board above the dock, 16 Nov 2026).
@@ -200,7 +287,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
     if (!await bookFonts(p)) { ok(true, 'board above the dock, admin 390, ' + label + ': the book\'s fonts could not load here, the board was not measured'); await p.context().close(); continue; }
     const m = await board(p);
     ok(m.scroll === 0 && JSON.stringify([...m.above].sort()) === JSON.stringify(names), 'board above the dock, admin 390, ' + label + ', in Barlow: all ' + names.length + ' names end above the Save dock (' + m.above.join(', ') + '; last name ends at ' + m.lastBottom + ' px, the dock starts at ' + m.dockTop + ' px)');
-    ok(/On break now/i.test(m.head) && m.saveIn && (shifts === BUSY ? /^Saved plan: too few now until 19:00/.test(m.line) && !m.state : /^Saved 13:00/.test(m.state) && !m.line), 'board above the dock, admin 390, ' + label + ': the board\'s words, the dock\'s words and Save all show (' + (m.line || m.state) + ')');
+    ok(/On break now/i.test(m.head) && m.saveIn && (shifts === BUSY ? /^Too few now until 19:00/.test(m.line) && !m.state : /^Saved 13:00/.test(m.state) && !m.line), 'board above the dock, admin 390, ' + label + ': the board\'s words, the dock\'s words and Save all show (' + (m.line || m.state) + ')');
     ok(!await L.overflow(p) && p.errors.length === 0, 'board above the dock, admin 390, ' + label + ': no sideways scroll, no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }

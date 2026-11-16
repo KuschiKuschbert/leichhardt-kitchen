@@ -13800,7 +13800,9 @@ if (list.length) sg('oreg', 's');
       return valid;
     })
       .map(function (b) { return { id: b.id, sh: b.sh, at: tmMin(b.at), len: b.len }; });
-    return { day: day, on: on, br: br, uncheckedBr: uncheckedBr, v: typeof x.v === 'number' && x.v >= 1 ? Math.floor(x.v) : 1, at: typeof x.at === 'number' ? x.at : 0, upd: typeof x.upd === 'number' ? x.upd : 0, by: tmStr(x.by, 80) || '' };
+    // the short busy times a chef accepted for the day (16 Nov 2026), checked entry by entry; anything else is left out
+    var ok = (Array.isArray(x.ok) ? x.ok : []).map(tmOkClean).filter(function (o) { return o && o.at; }).slice(0, TM_OK_MAX);
+    return { day: day, on: on, br: br, ok: ok, uncheckedBr: uncheckedBr, v: typeof x.v === 'number' && x.v >= 1 ? Math.floor(x.v) : 1, at: typeof x.at === 'number' ? x.at : 0, upd: typeof x.upd === 'number' ? x.upd : 0, by: tmStr(x.by, 80) || '' };
   }
   /* who sets it: a chef signed in with their own PIN (sousIds or headId), or the head chef's Google device with nobody
      signed in, as for Chef to-do (the rules check the same lists) */
@@ -13849,12 +13851,14 @@ if (list.length) sg('oreg', 's');
     var ts = pastStamp('t');
     if (tm.day === dayNow() && tm.st === 'ok' && ts > tm.stamp && ts !== tmOwn) teamLoad(0);
   }
-  /* the plan being changed: on[person][shift] = section id ('' for none), br: [{ id, sh, at, len }] */
+  /* the plan being changed: on[person][shift] = section id ('' for none), br: [{ id, sh, at, len }], ok: the short busy
+     times accepted for the day [{ sh, from, to, n, low, by, at }], at 0 until a Save shares it (16 Nov 2026) */
   function tmFrom(rec, day) {
     var on = {}, br = [], hrs = {};
     (rec ? rec.on : []).forEach(function (o) { (on[o.id] = on[o.id] || {})[o.sh] = o.sec; if (o.from != null) (hrs[o.id] = hrs[o.id] || {})[o.sh] = [o.from, o.to]; });
     (rec ? rec.br : []).forEach(function (b) { br.push({ id: b.id, sh: b.sh, at: b.at, len: b.len }); });
-    return { day: day, base: rec ? rec.v : 0, at: rec ? rec.at : 0, on: on, br: br, hrs: hrs };
+    var ok = (rec && rec.ok ? rec.ok : []).map(function (o) { return { sh: o.sh, from: o.from, to: o.to, n: o.n, low: o.low, by: o.by, at: o.at }; });
+    return { day: day, base: rec ? rec.v : 0, at: rec ? rec.at : 0, on: on, br: br, hrs: hrs, ok: ok };
   }
   // the plan as saved: sorted, so the same plan always reads the same; a break of someone not on that shift goes
   function tmOut(f) {
@@ -13867,8 +13871,12 @@ if (list.length) sg('oreg', 's');
     var br = f.br.filter(function (b) { return f.on[b.id] && f.on[b.id][b.sh] !== undefined && tmMin(b.at) !== null; })
       .map(function (b) { return { id: b.id, sh: b.sh, at: b.at, len: b.len }; })
       .sort(function (a, b) { return a.at - b.at || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0); });
-    return { on: on, br: br };
+    var ok = (f.ok || []).map(function (o) { return { sh: o.sh, from: o.from, to: o.to, n: o.n, low: o.low, by: o.by, at: o.at || 0 }; })
+      .sort(function (a, b) { return (a.sh < b.sh ? -1 : a.sh > b.sh ? 1 : 0) || a.from - b.from || a.to - b.to; });
+    return { on: on, br: br, ok: ok };
   }
+  // the acceptances as a Save sends them: one not shared yet takes the time of this Save
+  function tmOkStamp(list, t) { return (list || []).map(function (o) { return o.at ? o : Object.assign({}, o, { at: t }); }); }
   function tmSig(f) { return f ? JSON.stringify(tmOut(f)) : ''; }
   function tmDirty() { return !!tmf && tmSig(tmf) !== tmSnap; }
   function tmPlanDay() { return tmPlan.day || dayNow(); }
@@ -14318,7 +14326,7 @@ if (list.length) sg('oreg', 's');
       return '<span class="tm-grid-sh"><b>' + esc(s.name) + '</b> <small class="tm-plan-hours">' + (s.from != null && s.to != null ? tmHHMM(s.from) + ' to ' + tmHHMM(s.to) : 'Hours not set') + '</small> <small class="tm-grid-count">' + (none ? '<b>' + none + '</b> no section' : on.length ? 'All have one' : 'Nobody to place') + '</small></span>';
     }).join('') + '</span>' + tmTicksHTML(r) + '</li>';
   }
-  function tmPlanRowHTML(p, r, learn) {
+  function tmPlanRowHTML(p, r, learn, sv) {
     var busy = svOf('t') === 'busy', day = tmPlanDay(), dis = busy ? ' disabled' : '', flag = tmRosterFlag(p.id);
     var shs = tmServiceChoices().filter(function (s) { return tmOnShift(p.id, s.id); });
     var lines = shs.map(function (s, i) {
@@ -14336,8 +14344,8 @@ if (list.length) sg('oreg', 's');
         '<div class="tm-tlsvc-add">' + (bs.length < TM_BREAKS ? '<button type="button" class="chip tm-addbr" data-p="tm-addbr" data-id="' + esc(p.id) + '" data-sh="' + esc(s.id) + '" data-day="' + esc(day) + '" aria-label="' + esc('Add a break for ' + p.name + ' on ' + s.name) + '"' + dis + '>+ Break</button>' : '') + '</div>' +
         (i === shs.length - 1 ? '<div class="tm-tlsvc-more">' + tmAddSvcHTML(p) + '</div>' : '') + '</div>';
     }).join('');
-    return '<li class="tm-person-row tm-tlrow" data-id="' + esc(p.id) + '"><div class="tm-grid-who"><span class="tm-person-name">' + esc(p.name) + '</span>' + (chefP(p) ? '<small class="tm-tlrole">' + esc(tmChefRole(p)) + '</small>' : '') +
-      tmShortMarkHTML(p.id) + (flag ? '<span class="tm-roster-flag">' + esc(flag) + '</span>' : '') + '</div>' +
+    return '<li class="tm-person-row tm-tlrow' + (tmUi.shortGo === p.id ? ' is-short-here' : '') + '" data-id="' + esc(p.id) + '"><div class="tm-grid-who"><span class="tm-person-name">' + esc(p.name) + '</span>' + (chefP(p) ? '<small class="tm-tlrole">' + esc(tmChefRole(p)) + '</small>' : '') +
+      tmShortMarkHTML(p.id, sv) + (flag ? '<span class="tm-roster-flag">' + esc(flag) + '</span>' : '') + '</div>' +
       '<div class="tm-tlrow-main"><div class="tm-tlrow-day">' + tmBarHTML(p.id, r) + '<p class="tm-learn tm-roster-time">' + esc(tmDayWords(p.id)) + '</p></div>' + lines + tmOverlapHTML(p.id) + tmUndoHTML(p.id) + '</div></li>';
   }
   // the services a person is not on yet, in time order; a hidden one says so in words (it replaced the service chips)
@@ -14416,46 +14424,109 @@ if (list.length) sg('oreg', 's');
     if (tmShortMemo.key !== key) tmShortMemo = { key: key, val: Object.assign(tmShortOf(tmf, from), { from: from, today: today }) };
     return tmShortMemo.val;
   }
-  // the dock line in words (HTML-safe), or '' when the plan has enough or nothing is set
-  function tmShortLineHTML(r) {
-    if (!r) return '';
-    if (r.clock) return esc('Checking the kitchen clock. Busy times are checked after.');
-    if (r.noHours.length && !r.spells.length) return esc('Can\'t check the ' + r.noHours[0] + ' busy time: ' + r.noHours[0] + ' has no hours set.');
-    var s = r.spells[0]; if (!s) return '';
-    var at = function (x) { return r.today && x.at <= r.from ? 'now' : 'from ' + tmHHMM(x.at); };
-    var lowest = s.steps.reduce(function (a, b) { return b.n < a.n ? b : a; });
+  /* ---------- Accept for today (head chef, 16 Nov 2026, docs/team-short-ok-options/brief.md, the council's mix) ----------
+     The dock line became an amber band, fact first ("Too few now until 19:00: 4 on, 6 needed"), with "Go to Sam K's
+     break" and "Accept 4 on" on one row. Accept goes into the plan (f.ok, at 0) and the existing versioned Save shares
+     it (team/<day>.ok, sent only when not empty). An acceptance covers a short time only when the whole short time sits
+     inside it, on the same shift, at the same need and never fewer on: a plan made worse brings the band back and says
+     why, and today's short time, trimmed at each minute, stays covered. From the draft and the saved plan already in
+     memory: no read, no listener, no timer (the minute paint, tmShortPaint). */
+  var TM_OK_MAX = 12;
+  function tmOkClean(o) {
+    if (!o || !tmStr(o.sh, 40)) return null;
+    var f = tmMin(o.from), t = tmMin(o.to), n = o.n, low = o.low;
+    if (f === null || t === null || f >= t || f !== o.from || t !== o.to) return null;
+    if (typeof n !== 'number' || Math.floor(n) !== n || n < 1 || n > TM_NEED_MAX) return null;
+    if (typeof low !== 'number' || Math.floor(low) !== low || low < 0 || low >= n) return null;
+    return { sh: o.sh, from: f, to: t, n: n, low: low, by: tmStr(o.by, 80) || '', at: typeof o.at === 'number' && o.at > 0 ? o.at : 0 };
+  }
+  function tmOkCovers(o, s) { return o.sh === s.sh && o.n === s.n && o.from <= s.from && s.to <= o.to && s.low >= o.low; }
+  function tmOkOverlaps(o, s) { return o.sh === s.sh && o.from < s.to && s.from < o.to; }
+  // at Save: the acceptances that still touch a short time of the plan being saved (one over, or fixed, goes); with the
+  // kitchen clock not ready, all are kept
+  function tmOkKeep(f) {
+    var ok = (f.ok || []).filter(Boolean), today = f.day === dayNow();
+    if (!ok.length || (today && T.ready && !T.ready())) return ok;
+    var sp = tmShortOf(f, today ? T.mins() : 0).spells;
+    return ok.filter(function (o) { return sp.some(function (x) { return tmOkOverlaps(o, x); }); }).slice(0, TM_OK_MAX);
+  }
+  // what the band shows: the first short time nobody accepted, else the first accepted one, with its people in row order
+  function tmShortView(r) {
+    if (!r || r.clock || !r.spells) return { r: r };
+    var ok = (tmf && tmf.ok) || [], rec = tmPlanEntry(tmPlanDay()).rec;
+    var cov = function (x) { return ok.filter(function (o) { return tmOkCovers(o, x); })[0] || null; };
+    var open = r.spells.filter(function (x) { return !cov(x); }), s = open[0] || r.spells[0];
+    if (!s) return { r: r };
+    var order = tmDayPeople().map(function (p) { return p.id; });
+    return { r: r, s: s, ok: open[0] ? null : cov(s), open: open, rec: rec, saved: (rec && rec.ok) || [], away: s.away.slice().sort(function (x, y) { return order.indexOf(x) - order.indexOf(y); }) };
+  }
+  // the band in words (HTML-safe), and whether it says the plan's saved state itself (the dock's status then steps aside)
+  function tmShortBandHTML(v) {
+    var r = v.r, none = { html: '', says: false };
+    if (!r) return none;
+    if (r.clock) return { html: '<p class="tm-short-words">' + esc('Checking the kitchen clock. Busy times are checked after.') + '</p>', says: false };
+    if (!v.s) return r.noHours && r.noHours.length ? { html: '<p class="tm-short-words">' + esc('Can\'t check the ' + r.noHours[0] + ' busy time: ' + r.noHours[0] + ' has no hours set.') + '</p>', says: false } : none;
+    var s = v.s, day = tmPlanDay(), dirty = tmDirty(), busy = svOf('t') === 'busy' ? ' disabled' : '';
+    var span = function (x) { return r.today && x.from <= r.from ? 'until ' + tmHHMM(x.to) + ' today' : tmHHMM(x.from) + ' to ' + tmHHMM(x.to); };
+    var when = r.today && s.from <= r.from ? 'now until ' + tmHHMM(s.to) : tmHHMM(s.from) + ' to ' + tmHHMM(s.to);
     // the shift is named only when another shift's busy time is short at the same time
     var named = r.spells.some(function (x) { return x !== s && x.sh !== s.sh && x.from < s.to && s.from < x.to; }) ? ' on ' + s.name : '';
-    var when = r.today && s.from <= r.from ? 'now until ' + tmHHMM(s.to) : tmHHMM(s.from) + ' to ' + tmHHMM(s.to);
-    var count = s.roster < s.n ? 'Only ' + s.roster + ' on ' + s.name + (s.low < s.roster ? ' (' + s.low + ' ' + at(lowest) + ' with breaks)' : '') + ', ' + s.n + ' needed. ' + (s.away.length ? 'Add people or move a marked break.' : 'Add people.')
-      : (s.steps.length <= 2 ? s.steps.map(function (x) { return x.n + ' ' + at(x); }).join(', ') : 'As few as ' + lowest.n + ' ' + at(lowest)) + ', ' + s.n + ' needed. Move a marked break.';
-    var next = r.spells[1] ? ' Next: ' + tmHHMM(r.spells[1].from) + ' to ' + tmHHMM(r.spells[1].to) + '.' : '';
-    return '<b>' + esc((tmDirty() ? 'Unsaved plan' : 'Saved plan') + ': too few' + named + ' ' + when + '.') + '</b> ' + esc(count + next);
+    var undo = function (o) { return '<button type="button" class="p-link tm-short-link" data-p="tm-short-undo" data-sh="' + esc(o.sh) + '" data-from="' + o.from + '" data-to="' + o.to + '" data-day="' + esc(day) + '" aria-label="' + esc('Undo accepting ' + o.low + ' on, ' + o.n + ' needed, ' + span(o)) + '"' + busy + '>Undo</button>'; };
+    if (v.ok && !v.ok.at) return { says: true, html: '<div class="tm-short-band is-pending"><p class="tm-short-fact">' + esc('Not saved yet: ' + v.ok.low + ' on, ' + v.ok.n + ' needed' + named + ', accepted ' + span(v.ok)) + '</p><div class="tm-short-row"><span class="tm-short-why">Tap Save to share it with the chefs.</span>' + undo(v.ok) + '</div></div>' };
+    if (v.ok) return { says: !dirty, html: '<div class="tm-short-band is-accepted"><p class="tm-short-fact"><b>' + esc('Accepted ' + span(v.ok) + ':') + '</b> ' + esc(v.ok.low + ' on, ' + v.ok.n + ' needed' + named + '. By ' + (mnName(v.ok.by) || 'a chef') + ' at ' + clock(v.ok.at) + '.') + '</p>' + undo(v.ok) + '</div>' };
+    var why = [], undone = v.saved.filter(function (o) { return tmOkCovers(o, s); })[0];
+    var lapsed = !undone && v.saved.filter(function (o) { return tmOkOverlaps(o, s) && o.n === s.n; })[0];
+    if (undone) why.push('Acceptance undone.');
+    else if (lapsed) why.push('At ' + clock(lapsed.at) + ' ' + (mnName(lapsed.by) || 'a chef') + ' accepted ' + lapsed.low + ' on.' + (!dirty && v.rec && v.rec.upd > lapsed.at ? ' ' + (mnName(v.rec.by) || 'A chef') + '’s save at ' + clock(v.rec.upd) + ' left ' + s.low + ' on.' : ''));
+    if (s.roster < s.n) why.push('Only ' + s.roster + ' on ' + s.name + '.');
+    var next = v.open.filter(function (x) { return x !== s; })[0];
+    if (next) why.push('Next: ' + tmHHMM(next.from) + ' to ' + tmHHMM(next.to) + '.');
+    // the fix first: the next person away then, in row order ("Next: Dev's break (2 of 4)" after a jump)
+    var at = v.away.indexOf(tmUi.shortGo), go = v.away.length ? v.away[(at + 1) % v.away.length] : '';
+    var link = go ? '<button type="button" class="p-link tm-short-link" data-p="tm-short-go" data-id="' + esc(go) + '" data-sh="' + esc(s.sh) + '">' + esc((at < 0 ? 'Go to ' : 'Next: ') + mnName(go) + '’s break' + (at < 0 ? '' : ' (' + (v.away.indexOf(go) + 1) + ' of ' + v.away.length + ')')) + '</button>' : '<span></span>';
+    var accept = '<button type="button" class="tm-short-accept" data-p="tm-short-ok" data-sh="' + esc(s.sh) + '" data-from="' + s.from + '" data-to="' + s.to + '" data-n="' + s.n + '" data-low="' + s.low + '" data-day="' + esc(day) + '" aria-label="' + esc('Accept ' + s.low + ' on, ' + s.n + ' needed, on ' + s.name + ' ' + when + ', for the day') + '"' + busy + '>Accept ' + s.low + ' on</button>';
+    return { says: true, html: '<div class="tm-short-band"><p class="tm-short-fact">' + (dirty ? esc('Not saved yet. ') : '') + '<span class="tm-short-tf">Too few</span>' + esc(named + ' ' + when + ': ' + s.low + ' on, ' + s.n + ' needed') + '</p>' +
+      (why.length ? '<p class="tm-short-why">' + esc(why.join(' ')) + '</p>' : '') + '<div class="tm-short-row">' + link + accept + '</div></div>' };
   }
-  // the people away in the short time the line names
-  function tmShortIds() { var r = tmShortNow(); return r && r.spells && r.spells[0] ? r.spells[0].away : []; }
-  function tmShortMarkHTML(id) { return '<span class="tm-short-mark" data-id="' + esc(id) + '"' + (tmShortIds().indexOf(id) >= 0 ? '' : ' hidden') + '>break when too few</span>'; }
-  // the dock's own "Saved 13:00 · Gus" steps aside while the line shows (the notebook head says it): the board keeps its room
-  function tmShortStateHidden(line) { return !!line && !tmDirty() && svOf('t') !== 'busy' && svOf('t') !== 'fail' && !tmQuickPending(tmUi); }
-  // the minute, focus and clock paint (tmAwayPaint): only the line, the status beside it and the marks, never a control;
-  // while a picker is open or a box is being typed in, the next paint catches up
+  // a marked person's words: when their break in the short time starts ("Break 18:30, too few"), grey once accepted
+  function tmShortMarkWords(id, v) {
+    if (!v || !v.s || v.away.indexOf(id) < 0) return null;
+    var s = v.s, b = ((tmf && tmf.br) || []).filter(function (x) { return x.id === id && x.sh === s.sh && tmMin(x.at) !== null && x.at < s.to && s.from < x.at + x.len; })[0];
+    // short enough to sit beside the name, so a row never changes height under a thumb when its mark goes
+    var acc = !!(v.ok && v.ok.at), w = b ? (tmIsSplit(b.len) ? 'Split ' : 'Break ') + tmHHMM(b.at) : 'Break';
+    return { text: w + (acc ? ', too few, accepted' : ', too few'), grey: acc };
+  }
+  function tmShortMarkHTML(id, v) {
+    var m = tmShortMarkWords(id, v);
+    return '<span class="tm-short-mark' + (m && m.grey ? ' is-accepted' : '') + '" data-id="' + esc(id) + '"' + (m ? '' : ' hidden') + '>' + esc(m ? m.text : '') + '</span>';
+  }
+  // the dock's own "Saved 13:00 · Gus" steps aside while the band says the plan's state itself (the notebook head says it too)
+  function tmShortStateHidden(b) { return !!(b && b.html) && b.says && svOf('t') !== 'busy' && svOf('t') !== 'fail' && !tmQuickPending(tmUi); }
+  // the minute, focus and clock paint (tmAwayPaint): the band, the status beside it and the marks. Never under a finger:
+  // while a picker is open, a box is being typed in or the focus is in the band (Accept, the link, Undo), the next paint
+  // catches up. A tap on an Accept the paint has changed is refused by its own times (teamClick, tm-short-ok).
   function tmShortPaint() {
     if (!tmf || !S.root || sheetOpen() || typing()) return;
     var slot = S.root.querySelector('.tm-short-line'); if (!slot) return;
-    var html = tmShortLineHTML(tmShortNow());
-    if (slot._tmHTML !== html) { slot.innerHTML = html; slot.hidden = !html; slot._tmHTML = html; }
-    var st = S.root.querySelector('.tm-focus-save .tm-save-state'); if (st && st.hidden !== tmShortStateHidden(html)) st.hidden = tmShortStateHidden(html);
-    var ids = tmShortIds();
-    S.root.querySelectorAll('.tm-short-mark').forEach(function (el) { var off = ids.indexOf(el.getAttribute('data-id')) < 0; if (el.hidden !== off) el.hidden = off; });
+    if (document.activeElement && document.activeElement !== slot && slot.contains(document.activeElement)) return;
+    var v = tmShortView(tmShortNow()), b = tmShortBandHTML(v);
+    if (slot._tmHTML !== b.html) { slot.innerHTML = b.html; slot.hidden = !b.html; slot._tmHTML = b.html; if (slot.parentNode) slot.parentNode.classList.toggle('has-short', !!b.html); }
+    var st = S.root.querySelector('.tm-focus-save .tm-save-state'), hide = tmShortStateHidden(b); if (st && st.hidden !== hide) st.hidden = hide;
+    S.root.querySelectorAll('.tm-short-mark').forEach(function (el) {
+      var m = tmShortMarkWords(el.getAttribute('data-id'), v), off = !m;
+      if (el.hidden !== off) el.hidden = off;
+      if (m && el.textContent !== m.text) el.textContent = m.text;
+      if (el.classList.contains('is-accepted') !== !!(m && m.grey)) el.classList.toggle('is-accepted', !!(m && m.grey));
+    });
   }
   function tmPersonListHTML() {
-    var q = tmFind.toLowerCase().trim(), learn = tmLearnHints(), r = tmDayRange(), u = tmUi.offUndo;
+    var q = tmFind.toLowerCase().trim(), learn = tmLearnHints(), r = tmDayRange(), u = tmUi.offUndo, sv = tmShortView(tmShortNow());
     // Find matches a name or a section on any service the person works
     var list = tmDayPeople().filter(function (p) { return !q || (p.name + ' ' + tmServiceChoices().map(function (s) { return tmOnShift(p.id, s.id) ? tmSecName(tmf.on[p.id][s.id]) : ''; }).join(' ')).toLowerCase().indexOf(q) >= 0; });
     // someone just taken off their last service keeps a line where their row was, with Undo
     var gone = u && u.day === tmPlanDay() && !tmf.on[u.id] ? u.id : '';
     if (gone) { var keep = {}; list.forEach(function (p) { keep[p.id] = 1; }); list = tmPeople().filter(function (p) { return p.id === gone || keep[p.id]; }); }
-    return tmPlanHeadHTML(r) + (list.length ? list.map(function (p) { return p.id === gone ? '<li class="tm-person-row tm-tlgone" data-id="' + esc(p.id) + '">' + tmUndoHTML(p.id) + '</li>' : tmPlanRowHTML(p, r, learn); }).join('') : '<li class="hint">No people match. Change the search.</li>');
+    return tmPlanHeadHTML(r) + (list.length ? list.map(function (p) { return p.id === gone ? '<li class="tm-person-row tm-tlgone" data-id="' + esc(p.id) + '">' + tmUndoHTML(p.id) + '</li>' : tmPlanRowHTML(p, r, learn, sv); }).join('') : '<li class="hint">No people match. Change the search.</li>');
   }
   function tmAssignHTML(s) {
     var undo = tmUi.offUndo && tmUi.offUndo.day === tmPlanDay();
@@ -14521,8 +14592,8 @@ if (list.length) sg('oreg', 's');
     var tools = '<details class="tm-batch"><summary data-p="tm-batch-toggle">' + (clear ? 'Copy, clear or spread breaks' : 'Copy a day or spread breaks') + '</summary>' + clear + use + tmSel('tm-tool-sh', 'Service for break tools', shs.map(function (x) { return [x.id, x.name]; }), s.id) + (spread || '<p class="hint">Nobody is on this service yet. Add staff before spreading breaks.</p>') + tmDraftOverlapHTML() + '</details>';
     var status = busy ? 'Saving...' : svOf('t') === 'fail' ? 'Not saved. Changes kept.' : dirty ? 'Unsaved changes' : rec ? 'Saved ' + clock(rec.upd) + (rec.by ? ' · ' + mnName(rec.by) : '') : 'No team saved yet';
     if (tmQuickPending(tmUi)) status += ' · Staff selection waiting for Add';
-    var shortLine = tmShortLineHTML(tmShortNow());
-    save = '<div class="tm-save tm-focus-save"><p class="tm-save-state" role="status"' + (tmShortStateHidden(shortLine) ? ' hidden' : '') + '>' + esc(status) + '</p><p class="tm-short-line" role="status"' + (shortLine ? '' : ' hidden') + '>' + shortLine + '</p>' + svButton({ k: 't', p: 'tm-save', idle: 'Save ' + date, off: !dirty, busy: busy }) + svLine('t', busy, tmMsg || tmAssignMsg) + '</div>';
+    var shortBand = tmShortBandHTML(tmShortView(tmShortNow()));
+    save = '<div class="tm-save tm-focus-save' + (shortBand.html ? ' has-short' : '') + '"><p class="tm-save-state" role="status"' + (tmShortStateHidden(shortBand) ? ' hidden' : '') + '>' + esc(status) + '</p><div class="tm-short-line" role="status"' + (shortBand.html ? '' : ' hidden') + '>' + shortBand.html + '</div>' + svButton({ k: 't', p: 'tm-save', idle: 'Save ' + date, off: !dirty, busy: busy }) + svLine('t', busy, tmMsg || tmAssignMsg) + '</div>';
     return '<section class="tm-page tm-notebook tm-focus-page' + (isToday ? '' : ' tm-planning') + '" data-day="' + esc(day) + '" aria-labelledby="rtitle">' +
       '<div class="tm-nbook"><div class="tm-nleft"><header class="tm-nhead"><div>' + heading + '</div><div class="tm-planstate"><p class="tm-draftstate' + (dirty ? ' is-dirty' : '') + '" role="status">' + esc(status) + '</p><button type="button" class="p-link" data-p="tm-refresh"' + (busy || tmLastBusy ? ' disabled' : '') + ' title="' + esc(pe.checkedAt ? 'Last checked ' + clock(now() - Math.max(0, Date.now() - pe.checkedAt)) : 'Check the saved plan') + '">' + (armed('tm-refresh') ? 'Tap again to refresh' : 'Refresh') + '</button></div></header>' +
       tmDateHTML() + '<div class="tm-work">' + (!isToday ? '<p class="tm-future-note hint">Planning ' + esc(date) + '. The live board still shows today\'s saved breaks.</p>' : '') + tmFocusToolbarHTML() +
@@ -14593,6 +14664,39 @@ if (list.length) sg('oreg', 's');
     }
     if (!tmPlanEditable()) return;
     var sh = id ? el.getAttribute('data-sh') || '' : tmShNow(), s = tmShift(sh);
+    // Accept for today (16 Nov 2026): the short time on the tapped button, only while it is still the one shown (the
+    // minute paint may have changed it under the finger); into the plan, shared by Save
+    if (a === 'tm-short-ok') {
+      if (el.getAttribute('data-day') !== tmPlanDay()) return;
+      var kv = tmShortView(tmShortNow()), ks = kv.s, kw = function (k) { return +el.getAttribute('data-' + k); };
+      if (!ks || kv.ok || ks.sh !== el.getAttribute('data-sh') || ks.from !== kw('from') || ks.to !== kw('to') || ks.n !== kw('n') || ks.low !== kw('low')) { tmClearMsg(); tmAssignMsg = 'Not accepted: the short time changed as you tapped. Check the words above Save, then accept again.'; draw(); return; }
+      var kept = (tmf.ok || []).filter(function (o) { return !tmOkOverlaps(o, ks); });
+      if (kept.length >= TM_OK_MAX) { tmClearMsg(); tmAssignMsg = errMsg('Not accepted: ' + TM_OK_MAX + ' short times are accepted for this day already. Undo one first.'); draw(); return; }
+      tmf.ok = kept.concat([{ sh: ks.sh, from: ks.from, to: ks.to, n: ks.n, low: ks.low, by: tmMe(), at: 0 }]);
+      tmClearMsg(); draw();
+      requestAnimationFrame(function () { var b = S.root && S.root.querySelector('[data-p="tm-short-undo"]'); if (b) b.focus({ preventScroll: true }); });
+      return;
+    }
+    if (a === 'tm-short-undo') {
+      if (el.getAttribute('data-day') !== tmPlanDay()) return;
+      var us = el.getAttribute('data-sh') || '', uf = +el.getAttribute('data-from'), ut = +el.getAttribute('data-to');
+      tmf.ok = (tmf.ok || []).filter(function (o) { return !(o.sh === us && o.from === uf && o.to === ut); });
+      tmClearMsg(); draw(); return;
+    }
+    // Go to <name>'s break: that person's break picker, clear of the list head and the dock; the link moves to the next
+    if (a === 'tm-short-go') {
+      var gr = S.root && Array.prototype.filter.call(S.root.querySelectorAll('.tm-tlrow'), function (x) { return x.getAttribute('data-id') === id; })[0];
+      if (!gr) return;
+      tmUi.shortGo = id;
+      S.root.querySelectorAll('.tm-tlrow.is-short-here').forEach(function (x) { if (x !== gr) x.classList.remove('is-short-here'); });
+      gr.classList.add('is-short-here');
+      var gs = Array.prototype.filter.call(gr.querySelectorAll('.tm-tlsvc'), function (x) { return x.getAttribute('data-sh') === sh; })[0] || gr;
+      // the picker's own button (the select before it is hidden): on the short time's service first, else any of theirs
+      var gq = function (x) { return x.querySelector('.tm-tlsvc-brs .ux-picker-trigger') || x.querySelector('.tm-tlsvc-brs select'); }, gp = gq(gs) || gq(gr);
+      if (gp) { gp.focus({ preventScroll: true }); tmFocusEnsureVisible(gp); } else gr.scrollIntoView({ block: 'center' });
+      tmShortPaint();
+      return;
+    }
     if (a === 'tm-add-staff') { tmUi.quickOpen = !tmUi.quickOpen; draw(); return; }
     // "+ Smoker" in Add staff: the box shows, ticked, for this date, and the focus moves to it
     if (a === 'tm-occ-show') {
@@ -14644,6 +14748,7 @@ if (list.length) sg('oreg', 's');
       var gone = tmDayPeople().length;
       // through tmRemoveShift(), so roster hours and breaks go with each service
       Object.keys(tmf.on).forEach(function (pid) { Object.keys(tmf.on[pid] || {}).forEach(function (x) { tmRemoveShift(pid, x); }); });
+      tmf.ok = [];   // nobody on, nothing short: the day's acceptances go too
       tmUi.occShow = null; tmUi.offUndo = null; tmClearMsg();
       tmAssignMsg = 'Everyone taken off ' + tmPlanDate(cday) + ': ' + gone + (gone === 1 ? ' person' : ' people') + '. Not saved yet. Refresh brings the saved plan back.'; draw(); return;
     }
@@ -14951,8 +15056,10 @@ if (list.length) sg('oreg', 's');
     var job = tmRs, mine = tmPlan, identity = stableIdentity(), t = now(), today = dayNow(), list = tmRsDrafts(), ops = [];
     if (!list.length) return;
     list.forEach(function (d) {
-      var f = tmPlanEntry(d).f, out = tmOut(f);
-      ops.push(['set', docRef('team', d), { day: d, on: out.on, br: out.br, v: f.base + 1, at: f.base ? f.at : t, upd: t }]);
+      var f = tmPlanEntry(d).f; f.ok = tmOkKeep(f);
+      var out = tmOut(f), okOut = tmOkStamp(out.ok, t), rd = { day: d, on: out.on, br: out.br, v: f.base + 1, at: f.base ? f.at : t, upd: t };
+      if (okOut.length) rd.ok = okOut;   // sent only when not empty, as teamSave()
+      ops.push(['set', docRef('team', d), rd]);
     });
     var current = list.indexOf(today) >= 0;
     if (current) { ops.push(['set', cfgDoc(), { pastEdit: { t: t } }, true]); tmOwn = t; }
@@ -14962,6 +15069,7 @@ if (list.length) sg('oreg', 's');
       if (tmPlan !== mine || identity !== stableIdentity()) return;
       list.forEach(function (d, i) {
         var e = tmPlanEntry(d), data = ops[i][2], clean = teamClean(Object.assign({ by: tmMe() }, data), d);
+        e.f.ok = tmOkStamp(e.f.ok, t);
         e.rec = clean; e.st = 'ok'; e.checkedAt = Date.now(); e.f.base = data.v; e.f.at = data.at; e.snap = tmSig(e.f);
         if (tmf === e.f) tmSnap = e.snap;
         if (d === today) tm = { day: d, rec: clean, st: 'ok', at: Date.now(), retry: 0, epoch: accessEpoch, stamp: t };
@@ -15037,8 +15145,17 @@ if (list.length) sg('oreg', 's');
   function teamSave() {
     if (!tmPlanEditable() || svOf('t') === 'busy' || svOf('rs') === 'busy') return;
     if (!tmDirty()) { draw(); return; }
+    var okBefore = (tmf.ok || []).slice();
+    tmf.ok = tmOkKeep(tmf);   // an accepted time that is over, or fixed, goes with this Save
+    if (!tmDirty()) { draw(); return; }
     var keep = tmf, mine = tmPlan, entry = tmPlanEntry(keep.day), identity = stableIdentity(), out = tmOut(keep), t = now(), v = keep.base + 1;
     var d = { day: keep.day, on: out.on, br: out.br, v: v, at: keep.base ? keep.at : t, upd: t };
+    var okOut = tmOkStamp(out.ok, t), okWas = (entry.rec && entry.rec.ok) || [], okKey = function (o) { return o.sh + '|' + o.from + '|' + o.to + '|' + o.low; };
+    if (okOut.length) d.ok = okOut;   // the accepted short times, only when there are some (16 Nov 2026)
+    var okNew = okOut.filter(function (o) { return o.at === t; }), okGone = okWas.filter(function (o) { return !okOut.some(function (x) { return okKey(x) === okKey(o); }); });
+    // gone because the plan has enough there now (or the time is over), not because a chef tapped Undo
+    var okFixed = okGone.filter(function (o) { return okBefore.some(function (x) { return okKey(x) === okKey(o); }); });
+    okGone = okGone.filter(function (o) { return okFixed.indexOf(o) < 0; });
     var people_ = {}, current = d.day === dayNow(), ops = [['set', docRef('team', d.day), d]], unset = [];
     var offRoster = tmPeople().filter(function (pp) { return keep.on[pp.id]; }).map(function (pp) { var o = tmRosterOff(pp.id); return o.length ? pp.name + ' (' + o.map(function (x) { return x.name; }).join(', ') + ')' : ''; }).filter(Boolean);
     out.on.forEach(function (o) { people_[o.id] = 1; });
@@ -15051,6 +15168,7 @@ if (list.length) sg('oreg', 's');
       if (tmPlan !== mine || identity !== stableIdentity()) return;
       var clean = teamClean(Object.assign({ by: tmMe() }, d), d.day);
       entry.rec = clean; entry.st = 'ok'; entry.checkedAt = Date.now();
+      keep.ok = tmOkStamp(keep.ok, t);
       keep.base = v; keep.at = d.at; entry.snap = tmSig(keep);
       if (tmf === keep) tmSnap = entry.snap;
       if (d.day === dayNow()) {
@@ -15059,7 +15177,10 @@ if (list.length) sg('oreg', 's');
       var n = Object.keys(people_).length;
       var finish = function (noticeFailed) {
         if (tmPlan !== mine || identity !== stableIdentity()) return;
-        entry.msg = 'Team for ' + tmPlanDate(d.day) + ' saved at ' + clock(t) + ': ' + (n ? n + (n === 1 ? ' person' : ' people') + ' on.' : 'nobody on, so the day reads as Not set.') + (unset.length ? ' Still no section: ' + unset.slice(0, 6).join(', ') + (unset.length > 6 ? ' and ' + (unset.length - 6) + ' more' : '') + '.' : '') + (offRoster.length ? ' Not on the roster: ' + offRoster.slice(0, 6).join(', ') + (offRoster.length > 6 ? ' and ' + (offRoster.length - 6) + ' more' : '') + '.' : '') + (noticeFailed ? ' Other screens may need to reopen the book to see it.' : '') + tmRsLeft();
+        entry.msg = 'Team for ' + tmPlanDate(d.day) + ' saved at ' + clock(t) + ': ' + (n ? n + (n === 1 ? ' person' : ' people') + ' on.' : 'nobody on, so the day reads as Not set.') + (unset.length ? ' Still no section: ' + unset.slice(0, 6).join(', ') + (unset.length > 6 ? ' and ' + (unset.length - 6) + ' more' : '') + '.' : '') + (offRoster.length ? ' Not on the roster: ' + offRoster.slice(0, 6).join(', ') + (offRoster.length > 6 ? ' and ' + (offRoster.length - 6) + ' more' : '') + '.' : '') +
+          (okNew.length ? ' Accepted for the chefs: ' + okNew.map(function (o) { return o.low + ' on, ' + o.n + ' needed, ' + tmHHMM(o.from) + ' to ' + tmHHMM(o.to); }).join('; ') + '.' : '') +
+          (okGone.length ? ' Acceptance undone: ' + okGone.map(function (o) { return tmHHMM(o.from) + ' to ' + tmHHMM(o.to); }).join(', ') + '.' : '') +
+          (okFixed.length ? ' No longer too few at ' + okFixed.map(function (o) { return tmHHMM(o.from) + ' to ' + tmHHMM(o.to); }).join(', ') + ', so its acceptance is cleared.' : '') + (noticeFailed ? ' Other screens may need to reopen the book to see it.' : '') + tmRsLeft();
         if (tmf === keep) { tmMsg = entry.msg; tmUi.offUndo = null; }
         svDone('t', tmf === keep, function () {}); draw(); tmPaint();
       };

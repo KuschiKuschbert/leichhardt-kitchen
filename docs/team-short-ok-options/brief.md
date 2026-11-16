@@ -6,21 +6,7 @@
 - Asked what he wants when the plan is short, he chose **OK it for the day**: "maybe add live warning before I save like a red bar or something until the problem is resolved? what do other fancy apps do for a warning?"
 - Who may OK it: **head chef and sous chefs**. Not chosen: a question at Save, a ping before the busy time.
 
-**Status: round 1 Build smaller (5 of 5); round 2 A 43, C 32.5, B 27 (A first for all six); recommended: the mix (A's band and Accept + C's jump as a link + B's real times in the marks), reviewed again by three (all Recommend with a change, every change made). Waiting for the head chef's choice.** [Proposal](proposal.md), [evidence packet](evidence-packet.md), [previews](index.html). Role-based analysis, not research with staff.
-
-## Round 1
-
-**Verdict: Build smaller, 5 of 5.** Five fresh agents read the proposal, the evidence packet and the baseline screenshots (source `main` at `a67f126`).
-
-| Reviewer | Verdict | Decisive point |
-| --- | --- | --- |
-| Cook mid-service | Build smaller | The OK earns its place: a warning nobody can answer gets ignored, all day, on every phone. Louder through the words, fact first ("Too few now until 19:00: 4 of 6"), not a bigger red bar: the dock already costs the one full row on a phone. Accept its own 44 px button, away from Save. Keep the marks, plainer, after an OK. |
-| Head chef | Build smaller | Real but not measured: the warning is a day old and nobody knows if a busy time is set. Louder is cheap; the OK is the cost. Red would read as Save's own failure line. Make OK a tick sent with the plan's existing Save. |
-| Skeptic | Build smaller | The live recount already exists, so "louder" is a restyle. A one-tap OK becomes a reflex. The deliberate case is planning fewer people; overlapping breaks are a mistake. OK the head count only and send it with Save; breaks that drop below it still warn. |
-| New starter | Build smaller | "Accepted by Sam K at 14:05" stops a new sous chef undoing a short time left on purpose. "OK" reads as "close this": name what it accepts ("Accept 4 of 6, 18:30 to 19:00"). Show pending, saved and withdrawn in words: "Plan changed: now 3 of 6". |
-| Keeper of the book | Build smaller | Only cheap if the OK rides the existing versioned Save: its own write either refuses another chef's draft (it bumps `v`) or is wiped by the next whole-record save. A save for today stamps `config/main.pastEdit`: about 2 reads per open phone, as any team save. Match an OK by "inside the OK'd time, never fewer, the same need"; drop OKs that cover nothing at Save. |
-
-**Cuts all five accept.**
+**Status: the mix chosen 16 November 2026, in amber, with Accept offered beside the fix, and built (see Chosen and Built). Round 1 Build smaller (5 of 5); round 2 A 43, C 32.5, B 27 (A first for all six); the mix reviewed again by three (all Recommend with a change, every change made).**
 - **Amber, not red.** Red in the Save dock already means "Not saved, try again" (`svFail`), and `--bad-ink` #9B2716 sits close to the attention orange `--small-ink` #B83F15 (1.39:1 between them). Amber with words is the attention family. Red is a departure only the head chef can choose; the previews show it once.
 - **Louder means clearer, not taller.** Fact first, real times, the count of the need. Keep the dock near today's 114 px on a 390 px phone.
 - **Name what is accepted**, by its numbers and times, not "OK".
@@ -243,3 +229,78 @@ The mix brought in a flow none of the six had seen together (the fix link beside
 - How often the kitchen plans short, and on purpose: not evidenced (the warning is a day old; whether a busy time is set in the real book is not visible here).
 - The dock over 180 px in the rarer states.
 - Two chefs accepting at once: the versioned Save refuses the second and names the first (`teamSave()`); not exercised for an acceptance.
+
+## Chosen
+
+16 November 2026: the head chef chose **the mix (recommended)**, **amber (recommended)**, and **offer both** the fix and Accept when only breaks make it short (recommended). Recorded in `docs/head-chef-decisions.md`. The build follows "Before the build is ready" above.
+
+## Built
+
+16 November 2026, in this pull request.
+
+**`firestore.rules`:** `teamOk()` allows an optional `ok` list on `team/<day>` (24 entries at most) beside `on` and `br`, with the same writers, the same versioned save and the same day. Looser: **publish the rules before the client merges.** Entries are checked one by one on every phone that reads them (`teamClean()`), as `on` and `br` are.
+
+**`js/prep.js`:**
+- **The data.** `ok: [{ sh, from, to, n, low, by, at }]` rides on the day's plan: `tmOkClean()` checks each entry, `teamClean()` keeps up to 12, `tmFrom()` puts them in the draft, `tmOut()` lists them (so an acceptance alone turns Save on), `tmOkStamp()` gives a new one the save's time.
+- **The rule.** `tmOkCovers()`: a short time is covered only while the whole of it sits inside an accepted one, on the same shift, at the same need, never fewer on. `tmOkKeep()` drops at Save the acceptances that no longer touch a short time; all are kept while the kitchen clock is not ready.
+- **The band.** `tmShortView()` picks the first short time nobody accepted, else the first accepted one; `tmShortBandHTML()` draws it. `tmShortMarkWords()` gives each marked person's words. `tmShortPaint()` repaints the band, the dock's words and the marks on the existing minute paint, and waits while the focus is in the band.
+- **The taps** in `teamClick()`:
+  - `tm-short-ok`: refused with words when the tapped button's own times no longer match the band.
+  - `tm-short-undo`: takes the acceptance back out of the plan.
+  - `tm-short-go`: focuses that person's break picker clear of the list head and the dock, then moves the link on to the next person.
+- **Saving.** `teamSave()` says what it did ("Accepted for the chefs: ...", "Acceptance undone: ...", "No longer too few at ..., so its acceptance is cleared."). The roster's Save the filled days carries acceptances, and Clear clears them.
+
+**`css/app.css`:** the `.tm-short-band` block. The dock's `.has-short` gives up its empty saved-words row and 4 px of top padding while the band shows. From 720 px the band sits beside Save.
+
+No new read, listener or timer. Older code ignores `ok`. An older phone's Save rewrites the day without it: the band comes back on every phone, as before, until someone accepts again.
+
+**Departures from the combined preview, kept small:**
+- **The fact is 15 px, not 16.** It stays on one line at 390 px in the book's fonts.
+- **The band sits beside Save from 720 px, not 1100.** At 768 px a full-width band hid On break now names (#722 merged this morning). Beside Save the dock is 86 px.
+- **The marks say when each break starts** ("Break 18:30, too few"), not its whole span. The longer words wrapped beside the name, so a row moved under the thumb when its mark went (the existing thumb check, reproduced 17 px on the first build).
+- **While the band shows, the dock drops its empty saved-words row and 4 px of top padding.** Without it, with six away, Sam K's name sat under the dock on the head chef's phone (the #722 check, reproduced: last name 639 px, dock 625 px).
+- **A cleared acceptance is named for why it went:** "No longer too few at 18:30 to 19:00, so its acceptance is cleared." says the plan has enough there now; "Acceptance undone" means a chef tapped Undo.
+
+**Implemented app measurements.** Stand-in, the study's made-up day at 18:30, fallback fonts unless named. Script [`implemented.cjs`](implemented.cjs), raw [`implemented.json`](implemented.json). Before: the same plan with no busy time set. Today's line (15 Nov) measured 114 px at 390 (`baseline.json`).
+
+| Save dock | admin 390 | sous chef 390 | admin 768 | admin 1280 |
+| --- | ---: | ---: | ---: | ---: |
+| No busy time set | 96 | 98 | 67 | 67 |
+| Too few, saved plan | **135** | 137 | 86 | 86 |
+| Accept tapped, waiting for Save | 154 | 156 | 104 | 86 |
+| Accepted (one quiet line) | **112** | 114 | 63 | 63 |
+| Worse later (the reason line) | 170 | 172 | 103 | 103 |
+
+| Measure | Result |
+| --- | --- |
+| List in view on the working screen, admin 390: no busy time / too few / accepted | 563 / 524 / 547 px |
+| On break now names above the dock, admin 390, in Barlow (the #722 check) | 4 of 4, and 6 of 6 with six away (2 px to spare) |
+| On break now names above the dock, admin 390, worse state (five away), fallback fonts | **3 of 5** (Not evidenced in Barlow) |
+| Taps to accept a saved short time | 2 (Accept, Save) |
+| Taps to reach the first marked break | 1 |
+| Tap targets | Accept 118 x 44, Go to 181 x 44 (wider from 720 px), Undo 44 x 44 |
+| Contrast | "Too few" 5.05:1; the fact, the reason and the link 15.24:1; Accept 5.59:1; the accepted line 15.9:1; an orange mark 5.27:1, a grey one 6.73:1 |
+| Sideways scroll, page errors | none at 390, 768 and 1280 |
+
+Screenshots: `implemented-<admin|team>-<390|768|1280>-<short|accepting|accepted|worse>.png`, and `-working` at 390.
+
+**Tests:**
+- `tests/team-minimum.test.js`, 75 checks. Parts 2 to 10 are in the new words. Part 11 is new:
+  - Accept, Undo before Save, Save with the record's exact `ok`
+  - the quiet line and grey marks, still covered a minute later
+  - Undo and Save, a worse plan with who saved it
+  - a refused tap whose short time changed
+  - Go to, twice, with the focus clear of the list head and the dock
+  - the clock not ready keeping the acceptance, and a fixed plan clearing it
+  - no read
+  - On the old code part 11 fails at its first check: there is no Accept.
+- `tests/safe-text.test.js`: the accepting chef's name in the band.
+- `tests/design-patterns.test.js`: the new classes and helpers.
+- `tests/rules/rules.test.mjs`, 6 new rows: a sous chef and the head chef with `ok`, a save without it, staff refused, more than 24 refused, not a list refused. `tests/rules/client-shapes.test.mjs`: a save with `ok` for every role. 782 rules checks and 292 client shape rows pass on the emulator.
+- Run locally with 27 related files (every team test, `todays-team`, the roster tests, `roles`, `read-budget`, `sticky-bars`, `home-staff-*`): all pass.
+
+**Not evidenced, carried forward:**
+- The roster's Save the filled days with an acceptance made on a filled draft: a code path with no click test.
+- Leaving the page with an acceptance waiting: the existing unsaved-draft handling keeps the day's draft; no test for an acceptance.
+- The worse state's board names in Barlow.
+- Two chefs accepting at once: the versioned Save refuses the second and names the first (`teamSave()`), not exercised for an acceptance.
