@@ -1,0 +1,826 @@
+{
+  "m": {
+    "admin-390-short": {
+      "first": {
+        "dockH": 179,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 597,
+        "listPx": 597,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 4 on, 6 needed Go to Sam K’s break Accept 4 on",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 44,
+        "acceptW": 118,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": null,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 480,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 179,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-edit": {
+      "first": {
+        "dockH": 179,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 597,
+        "listPx": 597,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Not saved yet. Too few now until 18:45: 5 on, 6 needed Go to Dev’s break Accept 5 on",
+        "marks": "dev,fen,hal",
+        "acceptH": 44,
+        "acceptW": 117,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": null,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 480,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 179,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-accept": {
+      "first": {
+        "dockH": 179,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 597,
+        "listPx": 597,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Not saved yet: 4 on, 6 needed, accepted until 19:00 Tap Save to share it with the chefs. Undo",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 480,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 179,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-accepted": {
+      "first": {
+        "dockH": 128,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 648,
+        "listPx": 648,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Accepted until 19:00 today: 4 on, 6 needed. By Gus at 14:05. Undo",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": 15.9,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 531,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 128,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-unaccept": {
+      "first": {
+        "dockH": 199,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 577,
+        "listPx": 577,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Not saved yet. Too few now until 19:00: 4 on, 6 needed Acceptance undone. Go to Sam K’s break Accept 4 on",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 44,
+        "acceptW": 118,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 460,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 199,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-worse": {
+      "first": {
+        "dockH": 217,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 559,
+        "listPx": 559,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 3 on, 6 needed At 14:05 Gus accepted 4 on. Sam K’s save at 18:10 left 3 on. Go to Sam K’s break Accept 3 on",
+        "marks": "sam,dev,eli,fen,hal",
+        "acceptH": 44,
+        "acceptW": 117,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 442,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 217,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-fail": {
+      "first": {
+        "dockH": 248,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 528,
+        "listPx": 528,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Not saved yet: 4 on, 6 needed, accepted until 19:00 Tap Save to share it with the chefs. Undo",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 411,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 248,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-390-fixed": {
+      "first": {
+        "dockH": 96,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 680,
+        "listPx": 680,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 563,
+        "rowsFull": 0,
+        "rowsAny": 2,
+        "dockH": 96,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "team-390-short": {
+      "first": {
+        "dockH": 181,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 595,
+        "listPx": 595,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 4 on, 6 needed Go to Sam K’s break Accept 4 on",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 44,
+        "acceptW": 118,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": null,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 480,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 181,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-edit": {
+      "first": {
+        "dockH": 181,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 595,
+        "listPx": 595,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Not saved yet. Too few now until 18:45: 5 on, 6 needed Go to Dev’s break Accept 5 on",
+        "marks": "dev,fen,hal",
+        "acceptH": 44,
+        "acceptW": 117,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": null,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 479,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 181,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-accept": {
+      "first": {
+        "dockH": 181,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 595,
+        "listPx": 595,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Not saved yet: 4 on, 6 needed, accepted until 19:00 Tap Save to share it with the chefs. Undo",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 479,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 181,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-accepted": {
+      "first": {
+        "dockH": 130,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 646,
+        "listPx": 646,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Accepted until 19:00 today: 4 on, 6 needed. By Gus at 14:05. Undo",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": 15.9,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 530,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 130,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-unaccept": {
+      "first": {
+        "dockH": 201,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 575,
+        "listPx": 575,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Not saved yet. Too few now until 19:00: 4 on, 6 needed Acceptance undone. Go to Sam K’s break Accept 4 on",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 44,
+        "acceptW": 118,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 459,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 201,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-worse": {
+      "first": {
+        "dockH": 219,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 557,
+        "listPx": 557,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 3 on, 6 needed At 14:05 Gus accepted 4 on. Sam K’s save at 18:10 left 3 on. Go to Sam K’s break Accept 3 on",
+        "marks": "sam,dev,eli,fen,hal",
+        "acceptH": 44,
+        "acceptW": 117,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 441,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 219,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-fail": {
+      "first": {
+        "dockH": 250,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 526,
+        "listPx": 526,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": true,
+        "words": "Not saved yet: 4 on, 6 needed, accepted until 19:00 Tap Save to share it with the chefs. Undo",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 410,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 250,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "team-390-fixed": {
+      "first": {
+        "dockH": 98,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 678,
+        "listPx": 678,
+        "rowsFull": 0,
+        "rowsAny": 1,
+        "warnOnScreen": false,
+        "words": "",
+        "marks": "",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 562,
+        "rowsFull": 1,
+        "rowsAny": 2,
+        "dockH": 98,
+        "headH": 56,
+        "warnOnScreen": false
+      },
+      "errors": []
+    },
+    "admin-768-short": {
+      "first": {
+        "dockH": 159,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 617,
+        "listPx": 617,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 4 on, 6 needed Go to Sam K’s break Accept 4 on",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 44,
+        "acceptW": 118,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": null,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 500,
+        "rowsFull": 1,
+        "rowsAny": 3,
+        "dockH": 159,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-768-accept": {
+      "first": {
+        "dockH": 159,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 617,
+        "listPx": 617,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Not saved yet: 4 on, 6 needed, accepted until 19:00 Tap Save to share it with the chefs. Undo",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 500,
+        "rowsFull": 1,
+        "rowsAny": 3,
+        "dockH": 159,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-768-accepted": {
+      "first": {
+        "dockH": 128,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 648,
+        "listPx": 648,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Accepted until 19:00 today: 4 on, 6 needed. By Gus at 14:05. Undo",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": 15.9,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 531,
+        "rowsFull": 1,
+        "rowsAny": 3,
+        "dockH": 128,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-768-worse": {
+      "first": {
+        "dockH": 179,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 597,
+        "listPx": 597,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 3 on, 6 needed At 14:05 Gus accepted 4 on. Sam K’s save at 18:10 left 3 on. Go to Sam K’s break Accept 3 on",
+        "marks": "sam,dev,eli,fen,hal",
+        "acceptH": 44,
+        "acceptW": 117,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 480,
+        "rowsFull": 1,
+        "rowsAny": 3,
+        "dockH": 179,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-1280-short": {
+      "first": {
+        "dockH": 117,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 715,
+        "listPx": 715,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 4 on, 6 needed Go to Sam K’s break Accept 4 on",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 44,
+        "acceptW": 118,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": null,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 598,
+        "rowsFull": 2,
+        "rowsAny": 4,
+        "dockH": 117,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-1280-accept": {
+      "first": {
+        "dockH": 117,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 715,
+        "listPx": 715,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Not saved yet: 4 on, 6 needed, accepted until 19:00 Tap Save to share it with the chefs. Undo",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": null,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 598,
+        "rowsFull": 2,
+        "rowsAny": 4,
+        "dockH": 117,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-1280-accepted": {
+      "first": {
+        "dockH": 67,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 765,
+        "listPx": 765,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Accepted until 19:00 today: 4 on, 6 needed. By Gus at 14:05. Undo",
+        "marks": "sam,dev,fen,hal",
+        "acceptH": 0,
+        "acceptW": 0,
+        "contrast": {
+          "tooFew": null,
+          "fact": null,
+          "more": null,
+          "accept": null,
+          "quiet": 15.9,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 648,
+        "rowsFull": 2,
+        "rowsAny": 4,
+        "dockH": 67,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "admin-1280-worse": {
+      "first": {
+        "dockH": 155,
+        "headH": 56,
+        "workTop": 0,
+        "workBottom": 677,
+        "listPx": 677,
+        "rowsFull": 0,
+        "rowsAny": 0,
+        "warnOnScreen": true,
+        "words": "Too few now until 19:00: 3 on, 6 needed At 14:05 Gus accepted 4 on. Sam K’s save at 18:10 left 3 on. Go to Sam K’s break Accept 3 on",
+        "marks": "sam,dev,eli,fen,hal",
+        "acceptH": 44,
+        "acceptW": 117,
+        "contrast": {
+          "tooFew": 5.05,
+          "fact": 15.24,
+          "more": 15.24,
+          "accept": 5.59,
+          "quiet": null,
+          "pointer": null
+        },
+        "overflow": false
+      },
+      "working": {
+        "listPx": 560,
+        "rowsFull": 1,
+        "rowsAny": 3,
+        "dockH": 155,
+        "headH": 56,
+        "warnOnScreen": true
+      },
+      "errors": []
+    },
+    "acceptTask": {
+      "taps": 2,
+      "scrolled": false,
+      "end": "acceptedLive",
+      "words": "Accepted until 19:00 today: 4 on, 6 needed. By Gus at 18:31. Undo"
+    }
+  }
+}

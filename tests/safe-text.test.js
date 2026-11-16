@@ -132,6 +132,17 @@ async function check(b, hash, o, name, see, then) {
     await p.click('.wtop-who'); await L.settle(p, 300);
   });
   await check(b, '#/team', { who: 'sam', extra: tx }, 'chef\'s Today\'s team', 'Shift');
+  // Accept for today (16 Nov 2026): the accepting chef's name in the band's quiet line ("By Ann ... at 13:00"), at 12:30
+  // while Lunch's busy time is short and accepted (2 on, 3 needed; 1 with Bo's break)
+  const okCfg = tx[fsKey(['config', 'main'])], okTeam = tx[fsKey(['team', today])];
+  const tx2 = Object.assign({}, tx, {
+    [fsKey(['config', 'main'])]: Object.assign({}, okCfg, { people: okCfg.people.map(x => x.id === 'ann' ? Object.assign({}, x, { name: 'Ann ' + P }) : x), kitShifts: okCfg.kitShifts.map(x => x.id === 'lunch' ? Object.assign({}, x, { busy: { from: 720, to: 840, n: 3 } }) : x) }),
+    [fsKey(['team', today])]: Object.assign({}, okTeam, { ok: [{ sh: 'lunch', from: 750, to: 840, n: 3, low: 1, by: 'ann', at: L.NOW - 3600000 }] })
+  });
+  await check(b, '#/team', { who: 'sam', extra: tx2, clock: L.NOW - 90 * 60000 }, 'accepted short time', 'Ann', async p => {
+    await L.settle(p, 800);
+    ok(/By Ann Zz<i id="pwn"><\/i>/.test(await p.textContent('.tm-short-line') || ''), 'accepted short time: the chef\'s name shows as typed in the band (' + (await p.textContent('.tm-short-line') || '').slice(0, 80) + ')');
+  });
   // the drawing editor: a damaged drawing record with markup in its colours and anchors (the head chef's own drawing)
   const P2 = (id, name, role) => ({ id, name, role, add: true, tick: true, del: role !== 'staff', active: true });
   const dx = {
