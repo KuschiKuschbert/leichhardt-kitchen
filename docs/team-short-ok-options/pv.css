@@ -32,7 +32,7 @@
 .pv-cov .pv-sp { position: absolute; top: 0; bottom: 0; background: var(--small-ink); border: 1px solid var(--surface-paper); border-radius: 2px; min-width: 6px; }
 .pv-cov .pv-sp.is-ok { background: repeating-linear-gradient(135deg, var(--muted) 0 2px, transparent 2px 5px); }
 .tm-focus-page .tm-plan > .tm-grid-head .pv-headline { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .6rem; margin: .35rem 0 0; padding: .3rem .5rem; border-left: 4px solid var(--small-ink); background: var(--hit); }
-.pv-headline.is-ok { border-left-color: var(--line); background: transparent; }
+.tm-focus-page .tm-plan > .tm-grid-head .pv-headline.is-ok { border-left-color: var(--line); background: transparent; }
 .pv-headline .pv-words { flex: 1 1 8rem; min-width: 0; }
 .tm-focus-page .tm-plan > .tm-grid-head .pv-headline:not(.is-ok) { flex-wrap: nowrap; }
 .pv-headline .pv-fact { font-size: .9375rem; }
