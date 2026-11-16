@@ -48,7 +48,7 @@
   Specials always shows first. The head chef's Special switch in Manage Recipes puts a dish in it.
 */
 window.LK_DATA = {
-  updated: '7 November 2026',
+  updated: '16 November 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
   menuOrder: [
     { title: 'Specials', ids: ['chicken-adobo', 'lamb-nachos', 'buffalo-corn-cob-with-cashew-crumb'] },
@@ -1594,6 +1594,143 @@ window.LK_DATA = {
         { title: 'Plating', steps: ['Serve on a plastic board with a wood finish. [Layout to confirm]'] }
       ],
       labelNote: ''
+    },
+    /* Feast of the Feather, the head chef's whole smoked chicken for sharing, 16 November 2026. The brine, rub and
+       smoke are the head chef's first trial: confirm them after the first bird. The Yorkshire pudding is the head
+       chef's recipe. Mushy peas and the cider-pickled red cabbage have no cards yet. */
+    {
+      id: 'feast-of-the-feather', art: 'feast-of-the-feather', no: '130', kind: 'main', forLine: 'Smoker special', name: 'Feast of the Feather',
+      menu: 'Feast of the Feather: whole brined and smoked chicken on a giant golden Yorkshire pudding, with buttery mash, mushy peas, cider-pickled red cabbage and a jug of rich gravy. Made for sharing.',
+      yield: 'Per board. One whole smoked No. 10 chicken on a giant Yorkshire pudding, mash, mushy peas and red cabbage beside it, gravy in a jug. Trial dish. [Serves per board to come]',
+      ingredients: [
+        { q: '1', name: 'Smoked chicken', note: 'No. 10, whole, brined, seasoned and smoked', link: 'smoked-chicken' },
+        { q: '1', name: 'Yorkshire pudding', note: 'giant, 18 cm, half a batch', link: 'yorkshire-pudding', tags: ['Gluten', 'Egg', 'Milk'] },
+        { q: '[Qty]', name: 'Mash', link: 'mash', tags: ['Milk?'] },
+        { q: '[Qty]', name: 'Mushy peas', note: 'pea-forward, a touch of mint', link: 'mushy-peas', tags: ['Milk?'] },
+        { q: '[Qty]', name: 'Cider-pickled red cabbage', link: 'cider-red-cabbage' },
+        { q: '[Qty]', name: 'Gravy', note: 'in a jug. [House gravy or a chicken gravy to confirm]', link: 'gravy' }
+      ],
+      pins: [
+        { label: 'Smoked chicken', x: 35.6, y: 36.1, side: 'right', link: 'smoked-chicken', note: 'Whole, breast up, in the middle of the Yorkshire.' },
+        { label: 'Yorkshire pudding', x: 13.8, y: 48.3, side: 'right', link: 'yorkshire-pudding', tags: ['Gluten', 'Egg', 'Milk'], note: 'Giant, under the chicken. Keep the crisp edges showing.' },
+        { label: 'Mash', x: 77.9, y: 24.6, side: 'left', link: 'mash', note: 'Its own mound, beside the Yorkshire. [Amount to come]' },
+        { label: 'Mushy peas', x: 78.6, y: 41.9, side: 'left', link: 'mushy-peas', tags: ['Milk?'], note: 'Its own mound. [Amount to come]' },
+        { label: 'Red cabbage', x: 78.6, y: 56, side: 'left', link: 'cider-red-cabbage', note: 'Cider-pickled. A small pile for colour and crunch. [Amount to come]' },
+        { label: 'Gravy jug', x: 49.1, y: 80.2, side: 'right', link: 'gravy', note: 'On the side, poured at the table. [Amount to come]' }
+      ],
+      sections: [
+        { title: 'Cooking', steps: [
+          'Smoked chicken: brined, dried, seasoned, smoked and finished hot as card 131. Probe the breast and the inner thigh: 75 °C in both.',
+          'Rest the chicken on a rack, 10 to 15 min.',
+          'Yorkshire pudding (card 133): one 18 cm pudding per board, half a batch. 250 °C for 12 min, crisp at the edges.',
+          'Mash (card 70) and gravy (card 69) as for every plate.',
+          'Mushy peas and red cabbage. [Recipes to come]'
+        ] },
+        { title: 'Plating', steps: [
+          'Sharing board. [Board to confirm]',
+          'Giant Yorkshire pudding on the board.',
+          'Whole chicken in the middle of the Yorkshire, breast up. Leave plenty of golden pudding showing.',
+          'Mash, mushy peas and red cabbage beside it, each in its own mound. Not in the Yorkshire, so it stays crisp. [Amounts to come]',
+          'Gravy in a jug on the side. Guests pour it at the table. [Amount to come]',
+          '[Carved at the table or in the kitchen: to confirm]'
+        ] }
+      ],
+      safety: { title: 'Chicken', text: 'Probe the thickest part of the breast and the inner thigh, away from the bone. Both at least 75 °C before it leaves the heat.' }
+    },
+    {
+      id: 'smoked-chicken', art: 'smoked-chicken', no: '131', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Smoked Chicken', short: 'Smoked chicken',
+      yield: 'One whole No. 10 chicken (about 1 kg), unstuffed, with no added brine or salt solution. Brine and dry the day before. Trial recipe: the times were planned for a 1.6 to 1.8 kg bird. [Times for a No. 10 to confirm on the first bird]',
+      ingredients: [
+        { q: '1', name: 'Whole chicken', note: 'No. 10, unstuffed, no added brine or salt solution' },
+        { q: '3 L', name: 'Herb brine', note: 'one batch per chicken', link: 'herb-brine' },
+        { q: '15 ml', name: 'Neutral oil', note: 'rub' },
+        { q: '3 g', name: 'Sweet paprika', note: 'rub, not smoked' },
+        { q: '2 g', name: 'Garlic powder', note: 'rub' },
+        { q: '2 g', name: 'Onion powder', note: 'rub' },
+        { q: '2 g', name: 'Ground black pepper', note: 'rub' },
+        { q: '1 g', name: 'Dried thyme', note: 'rub' },
+        { q: '0.5 g', name: 'Dried sage', note: 'rub, rubbed' },
+        { q: '[Qty]', name: 'Applewood', note: 'for the smoker' }
+      ],
+      sections: [
+        { title: 'Brine, the day before', steps: [
+          'Make the herb brine (card 132). It must be 5 °C or below before the chicken goes in.',
+          'Chicken in the brine, fully under. Refrigerate 8 to 12 hours.',
+          'Lift the chicken out. Throw the brine away.',
+          'Pat the chicken dry. Do not rinse it.'
+        ] },
+        { title: 'Dry the skin', steps: [
+          'Chicken on a rack over a tray, uncovered, in the raw poultry area of the coolroom.',
+          'Leave it 12 to 24 hours.'
+        ] },
+        { title: 'Season', steps: [
+          'Mix the paprika, garlic powder, onion powder, black pepper, thyme and sage.',
+          'Rub the dry chicken lightly with the oil.',
+          'Coat it evenly with the mix just before it goes in the smoker.',
+          'No salt in the rub: the brine seasons it.'
+        ] },
+        { title: 'Smoke', steps: [
+          'Preheat the smoker to 150 °C. Indirect heat, applewood, a light clean smoke.',
+          'Chicken in, breast up.',
+          'Smoke 60 to 90 min, planned for a bigger bird. A No. 10 cooks faster: probe early and often. [Times for a No. 10 to confirm]',
+          'Cooking fast: move it to the hot finish sooner.'
+        ] },
+        { title: 'Finish hot', steps: [
+          'Straight from the smoker into the iCombi: dry heat, 210 °C, 0% humidity, medium fan.',
+          '15 to 30 min, until the breast and the inner thigh both read at least 75 °C.',
+          'Do not baste: the skin needs to dry and colour.',
+          'If the smoker runs cleanly at 210 to 220 °C, you can finish it there instead.'
+        ] },
+        { title: 'Rest', steps: ['On a rack, uncovered or loosely covered, 10 to 15 min.', 'Serve straight away. [Holding, cooling and reheating to confirm]'] },
+        { title: 'First trial: write it down', steps: ['The bird weight, how full the smoker was, the real times, both final temperatures and how salty it tastes. The head chef then confirms this card.'] }
+      ],
+      tip: { title: 'On the iCombi', text: 'Hot finish: dry heat, 210 °C, 0% humidity, medium fan, 15 to 30 min, until both probes read 75 °C.' },
+      safety: { title: 'Raw chicken', text: 'Times are a guide only. Probe the thickest part of the breast and the inner thigh, away from the bone: at least 75 °C in both. Do not rinse raw chicken.' },
+      contains: [],
+      check: [],
+      labelNote: 'Check the chicken label: no added brine or salt solution.'
+    },
+    {
+      id: 'herb-brine', art: 'herb-brine', no: '132', kind: 'batch', forLine: 'For the smoked chicken', name: 'Herb Brine', short: 'Herb brine',
+      yield: 'Batch: 3 L, enough for one No. 10 chicken. 40 g salt per litre. Needs more liquid to cover the bird: scale everything in step. Trial recipe.',
+      ingredients: [
+        { q: '3 L', name: 'Water', note: '500 ml of it heated' },
+        { q: '120 g', name: 'Salt' },
+        { q: '60 g', name: 'Brown sugar' },
+        { q: '6 cloves', name: 'Garlic', note: 'crushed' },
+        { q: '3', name: 'Bay leaves' },
+        { q: '6 g', name: 'Black peppercorns', note: 'cracked' },
+        { q: '6 sprigs', name: 'Thyme' },
+        { q: '4 leaves', name: 'Sage' },
+        { q: '½ lemon', name: 'Lemon zest' }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Heat 500 ml of the water with everything else until the salt and sugar dissolve.',
+          'Add the rest of the water.',
+          'Chill to 5 °C or below before any chicken goes in.'
+        ] }
+      ],
+      safety: { title: 'Cold before the chicken', text: 'The brine must be 5 °C or below before the chicken goes in. Use it once, then throw it away.' },
+      contains: [],
+      check: []
+    },
+    {
+      id: 'yorkshire-pudding', art: 'yorkshire-pudding', no: '133', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Yorkshire Pudding', short: 'Yorkshire pudding',
+      yield: 'Batch: 200 g flour, 200 ml milk and 4 eggs. Makes 2 giant puddings, each in an 18 cm (7 inch) tin, one per board. Bake at 250 °C for 12 min. Trial: confirm after the first bake.',
+      ingredients: [
+        { q: '200 g', name: 'Flour', tags: ['Gluten'] },
+        { q: '200 ml', name: 'Milk', tags: ['Milk'] },
+        { q: '4', name: 'Eggs', tags: ['Egg'] }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Whisk the flour, milk and eggs into a smooth batter. [Resting time to come]',
+          '[Hot fat in each tin first: the fat and how much to come]',
+          'Split the batter between 2 tins, 18 cm (7 inch) each.',
+          'Bake at 250 °C for 12 min.'
+        ] }
+      ]
     },
     {
       id: 'pork-knuckle', art: 'pork-knuckle', no: '92', kind: 'main', forLine: 'Special', name: 'Pork Knuckle',
