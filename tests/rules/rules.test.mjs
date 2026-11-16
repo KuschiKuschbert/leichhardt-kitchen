@@ -340,6 +340,14 @@ await ok(W([['team/2026-11-08', team({ day: '2026-11-08', br: Array.from({ lengt
 await ok(W([['team/2026-11-08', team({ day: '2026-11-08', v: 1.5 })]], { id: 'sam' }), false, 'team: the version is a whole number');
 await ok(W([['team/2026-11-08', team({ day: '2026-11-08', upd: 'now' })]], { id: 'sam' }), false, 'team: the times are numbers');
 await ok(W([['team/2026-11-08', team({ day: '2026-11-08' })]], { id: 'sam' }), true, 'team: tomorrow\'s team can be set the night before');
+// Accept for today (16 Nov 2026): an optional list of accepted short busy times, sent with the versioned save
+const okd = (n) => Array.from({ length: n }, (_, i) => ({ sh: 'dinner', from: 1110 + i, to: 1140, n: 6, low: 4, by: 'sam', at: 1 }));
+await ok(W([['team/2026-11-10', team({ day: '2026-11-10', ok: okd(1) })]], { id: 'sam' }), true, 'team: a sous chef saves the plan with an accepted short time');
+await ok(W([['team/2026-11-10', team({ day: '2026-11-10', v: 2, upd: 2, ok: okd(2) })]], { id: 'hd' }), true, 'team: the head chef saves the next version with acceptances');
+await ok(W([['team/2026-11-10', team({ day: '2026-11-10', v: 3, upd: 3 })]], { id: 'sam' }), true, 'team: a save without acceptances still passes (they were all undone)');
+await ok(W([['team/2026-11-11', team({ day: '2026-11-11', ok: okd(1) })]], { id: 'ann' }), false, 'team: staff cannot accept a short time');
+await ok(W([['team/2026-11-11', team({ day: '2026-11-11', ok: okd(25) })]], { id: 'sam' }), false, 'team: at most 24 acceptances');
+await ok(W([['team/2026-11-11', team({ day: '2026-11-11', ok: 'all' })]], { id: 'sam' }), false, 'team: acceptances are a list');
 await ok(getDoc(doc(anon, K + 'team/2026-11-07')), false, 'team: a PIN holder cannot read it while signed out');
 await ok(deleteDoc(doc(anon, K + 'team/2026-11-07')), false, 'team: staff cannot delete one');
 await ok(setDoc(doc(owner, K + 'team/2026-11-09'), team({ day: '2026-11-09', by: '' })), true, 'team: the head chef\'s Google device sets one');

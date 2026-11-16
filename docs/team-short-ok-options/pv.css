@@ -1,0 +1,72 @@
+/* Previews for docs/team-short-ok-options/brief.md. Never loaded by the book. Existing tokens only: the attention band is
+   the book's existing attention line (.su-info-line.attn: --hit fill, --small-ink edge); words always carry the meaning. */
+
+/* the preview's own switcher, outside the page: which state is showing */
+.pv-switch { position: fixed; left: 0; right: 0; top: 0; z-index: 99; display: none; }
+
+/* A and C: the attention band in the Save dock */
+.tm-notebook.tm-focus-page .tm-focus-save .pv-band { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; min-width: 0; margin: 0; padding: .4rem .55rem; border-left: 4px solid var(--small-ink); background: var(--hit); }
+.pv-band .pv-words { flex: 1 1 8rem; min-width: 0; }
+.pv-band.is-row { flex-wrap: nowrap; }
+.pv-fact { margin: 0; font: 700 .9375rem/1.25 var(--body); color: var(--ink); overflow-wrap: break-word; }
+.pv-fact .pv-tf { color: var(--small-ink); }
+.pv-more { margin: .1rem 0 0; font-size: .8125rem; line-height: 1.35; color: var(--ink); overflow-wrap: break-word; }
+.tm-notebook.tm-focus-page .pv-accept, .tm-notebook.tm-focus-page .pv-show { flex: none; min-height: 44px; padding: 0 .8rem; border: 2px solid var(--small-ink); border-radius: 999px; background: var(--paper); color: var(--small-ink); font: 700 .9375rem/1 var(--body); cursor: pointer; }
+.tm-notebook.tm-focus-page .pv-accept:disabled { border-color: var(--faint, #C9C9C9); color: var(--muted); }
+.tm-notebook.tm-focus-page .pv-show { border-color: var(--ink); color: var(--ink); }
+.pv-acts { flex: 1 1 100%; display: flex; gap: .5rem; min-width: 0; }
+.tm-notebook.tm-focus-page .pv-acts > button { flex: 1 1 0; min-width: 0; white-space: normal; line-height: 1.15; padding: .2rem .6rem; }
+.pv-band.is-pending { border-left-style: dashed; }
+/* accepted: one quiet line, no fill (the head chef's choice is saved, not a success and not a failure) */
+.tm-notebook.tm-focus-page .tm-focus-save .pv-quiet { flex: 1 1 100%; min-width: 0; margin: 0; padding: .15rem 0 .15rem .55rem; border-left: 4px solid var(--line); font-size: .8125rem; line-height: 1.35; color: var(--ink); overflow-wrap: break-word; }
+.pv-quiet b { font-weight: 700; }
+.pv-quiet .p-link, .pv-more .p-link { min-height: 0; font-size: inherit; }
+/* the marks after an acceptance (A): plain words, no orange */
+.tm-short-mark.pv-muted { color: var(--muted); font-weight: 400; }
+/* a highlighted row after Show breaks to move (C) */
+.tm-plan > .tm-tlrow.pv-here { outline: 3px solid var(--small-ink); outline-offset: 2px; }
+
+/* B: on the clock. The short time drawn on the list head's hours and on each marked person's bar, words beside it */
+.tm-focus-page .tm-plan > .tm-grid-head .pv-cov { position: relative; display: block; height: 12px; margin: .3rem .9rem 0; }
+.pv-cov .pv-busy { position: absolute; top: 2px; bottom: 2px; border: 1px dashed var(--muted); border-radius: 2px; }
+.pv-cov .pv-sp { position: absolute; top: 0; bottom: 0; background: var(--small-ink); border: 1px solid var(--surface-paper); border-radius: 2px; min-width: 6px; }
+.pv-cov .pv-sp.is-ok { background: repeating-linear-gradient(135deg, var(--muted) 0 2px, transparent 2px 5px); }
+.tm-focus-page .tm-plan > .tm-grid-head .pv-headline { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .6rem; margin: .35rem 0 0; padding: .3rem .5rem; border-left: 4px solid var(--small-ink); background: var(--hit); }
+.tm-focus-page .tm-plan > .tm-grid-head .pv-headline.is-ok { border-left-color: var(--line); background: transparent; }
+.pv-headline .pv-words { flex: 1 1 8rem; min-width: 0; }
+.tm-focus-page .tm-plan > .tm-grid-head .pv-headline:not(.is-ok) { flex-wrap: nowrap; }
+.pv-headline .pv-fact { font-size: .9375rem; }
+.tm-rowbar .pv-sp { position: absolute; top: -3px; bottom: -3px; border: 2px solid var(--small-ink); border-radius: 2px; background: transparent; min-width: 6px; }
+.tm-focus-page .tm-plan .tm-rowbar { position: relative; }
+
+/* the one-line pointer B keeps in the dock (no fill: the detail is on the clock) */
+.tm-notebook.tm-focus-page .tm-focus-save .pv-pointer { flex: 1 1 100%; min-width: 0; margin: 0; font-size: .8125rem; line-height: 1.4; }
+.pv-pointer b { color: var(--small-ink); }
+
+/* the head chef's own suggestion, shown once as a departure: the same band in the failure red */
+.pv-red .tm-notebook.tm-focus-page .tm-focus-save .pv-band { border-left-color: var(--bad-ink); background: var(--bad-tint); }
+.pv-red .pv-fact .pv-tf, .pv-red .tm-short-mark { color: var(--bad-ink); }
+.pv-red .tm-notebook.tm-focus-page .pv-accept { border-color: var(--bad-ink); color: var(--bad-ink); }
+
+@media (min-width: 1100px) {
+  .tm-notebook.tm-focus-page .tm-focus-save .pv-band, .tm-notebook.tm-focus-page .tm-focus-save .pv-quiet, .tm-notebook.tm-focus-page .tm-focus-save .pv-pointer { flex: 1 1 24rem; }
+  .pv-acts { flex: 0 1 auto; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto !important; } }
+
+/* The mix after the focused follow-up (16 Nov 2026): the fact on top, then one row with the fix first (a 44 px link)
+   and Accept at its end; Undo a 44 px link; the waiting edge drawn dashed (it lost to the band rule before). */
+.tm-notebook.tm-focus-page .tm-focus-save .pv-band.is-pending { border-left-style: dashed; }
+.tm-notebook.tm-focus-page .tm-focus-save .pv-mband { flex-direction: column; align-items: stretch; gap: .1rem; padding: .35rem .55rem .2rem; }
+.pv-mband .pv-fact { font-size: 1rem; }
+.pv-mrow { display: flex; align-items: center; justify-content: space-between; gap: .5rem; min-width: 0; }
+.pv-mrow > .pv-more { flex: 1 1 auto; min-width: 0; margin: 0; }
+.tm-notebook.tm-focus-page .pv-mlink { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; padding: 0 .1rem; font-size: .9375rem; font-weight: 600; text-align: left; overflow-wrap: anywhere; }
+.pv-mrow > .pv-jump { flex: 1 1 auto; min-width: 0; }
+.tm-notebook.tm-focus-page .tm-focus-save .pv-mquiet { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding-top: 0; padding-bottom: 0; }
+.pv-mquiet > p { margin: 0; min-width: 0; }
+/* the band keeps a clear gap above Save, where Accept would otherwise sit right over it (768 px) */
+.tm-notebook.tm-focus-page .tm-focus-save .pv-mband, .tm-notebook.tm-focus-page .tm-focus-save .pv-mquiet { margin-bottom: .4rem; }
+@media (min-width: 1100px) {
+  .tm-notebook.tm-focus-page .tm-focus-save .pv-mband, .tm-notebook.tm-focus-page .tm-focus-save .pv-mquiet { flex: 1 1 0; margin-bottom: 0; }
+}
