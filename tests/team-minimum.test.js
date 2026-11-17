@@ -80,7 +80,9 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   //    The Breaks panel and its hold went with the rows (16 Nov 2026): Sam K's mark goes on the same draw, in his name
   //    column, and the picker he just used stays where his thumb is (the hold's reason: a row never moves under a thumb).
   //    The thumb check fails on the 16 Nov build at 390 px: the mark's line goes and the picker moves up 19 px.
-  const samAt = 'select[data-k="tm-at:sam:dinner:0"]';
+  //    One break per person (17 Nov 2026): his only break's time picker on his break line, tm-bat:sam:<at>:0, whatever
+  //    its start is now (the key follows the break's start)
+  const samAt = 'select[data-k^="tm-bat:sam:"]', halAt = 'select[data-k^="tm-bat:hal:"]';
   const thumb = () => p.$eval(samAt, e => Math.round(e.nextElementSibling.getBoundingClientRect().top + scrollY));
   const thumbBefore = await thumb();
   await L.pick(p, samAt, '1170'); await L.settle(p, 200);
@@ -89,7 +91,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   ok(await thumb() === thumbBefore, 'marks: Sam K\'s break picker stays where it was when his mark goes (' + thumbBefore + ' to ' + await thumb() + ')');
   ok(await p.$eval('.tm-focus-save .tm-save-state', e => e.hidden) && /Unsaved changes/.test(await txt(p, '.tm-draftstate') || ''), 'dock: the band says Not saved yet, so the dock\'s own words step aside; the notebook head says it too');
   // the rest of the fix and Save: the line goes, no marks
-  await L.pick(p, 'select[data-k="tm-at:hal:dinner:0"]', '1140'); await L.settle(p, 200);
+  await L.pick(p, halAt, '1140'); await L.settle(p, 200);
   ok(await line(p) === '', 'full fix: the line goes as soon as the draft has enough');
   await p.locator('[data-p="tm-save"]').click();
   await L.waitFor(p, k => window.__fake.dump()[k].v === 2, TEAM, 8000);
@@ -105,11 +107,11 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   ok(/Too few now until 19:00: 5 on, 6 needed/.test(await line(p)), 'sous chef at 18:59: the band shows on #/team too (' + await line(p) + ')');
   await L.pick(p, 'select[data-k="tm-sec:cal:lunch"]', 'grill'); await L.settle(p, 150);
   // a section picker and a break picker in the rows: the minute paint must not rebuild either
-  await p.evaluate(() => { window.__saveProbe = document.querySelector('[data-p="tm-save"]'); window.__cellProbe = document.querySelector('select[data-k="tm-sec:ari:dinner"]'); window.__breakProbe = document.querySelector('select[data-k="tm-at:hal:dinner:0"]'); });
+  await p.evaluate(() => { window.__saveProbe = document.querySelector('[data-p="tm-save"]'); window.__cellProbe = document.querySelector('select[data-k="tm-sec:ari:dinner"]'); window.__breakProbe = document.querySelector('select[data-k^="tm-bat:hal:"]'); });
   const r1 = await reads(p);
   await p.clock.fastForward(60000); await L.settle(p, 200);
   ok(await line(p) === '' && !(await marks(p)).length, 'clock: at 19:00 the short time is over, the line and the marks go by themselves');
-  ok(await p.evaluate(() => window.__saveProbe === document.querySelector('[data-p="tm-save"]') && window.__cellProbe === document.querySelector('select[data-k="tm-sec:ari:dinner"]') && !!window.__breakProbe && window.__breakProbe === document.querySelector('select[data-k="tm-at:hal:dinner:0"]')), 'clock: the minute paint leaves the Save button, the section and the break pickers in place');
+  ok(await p.evaluate(() => window.__saveProbe === document.querySelector('[data-p="tm-save"]') && window.__cellProbe === document.querySelector('select[data-k="tm-sec:ari:dinner"]') && !!window.__breakProbe && window.__breakProbe === document.querySelector('select[data-k^="tm-bat:hal:"]')), 'clock: the minute paint leaves the Save button, the section and the break pickers in place');
   ok(await p.$eval('select[data-k="tm-sec:cal:lunch"]', e => e.value) === 'grill' && !await p.$eval('[data-p="tm-save"]', e => e.disabled), 'clock: the unsaved draft is kept');
   ok(await reads(p) === r1, 'clock: no read');
   ok(p.errors.length === 0, 'sous chef: no page errors ' + p.errors.join(' | '));
@@ -161,7 +163,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   // 8. A refused Save keeps the draft and the line says Unsaved
   p = await L.open(b, '#/team', { who: 'sam', width: 390, extra: fixture(), clock: AT(1110), wait: 1800, fakeMode: 'fail' });
   await ready(p); await L.settle(p, 300);
-  await L.pick(p, 'select[data-k="tm-at:sam:dinner:0"]', '1170'); await L.settle(p, 200);
+  await L.pick(p, samAt, '1170'); await L.settle(p, 200);
   await p.locator('[data-p="tm-save"]').click(); await L.settle(p, 1500);
   ok(/^Not saved yet\. Too few now until 18:45/.test(await line(p)) && /Not saved/.test(await txt(p, '.tm-focus-save') || '') && !await p.$eval('.tm-focus-save .tm-save-state', e => e.hidden), 'refused Save: the draft is kept, the dock says Not saved and the band says Not saved yet (' + await line(p) + ')');
   await p.context().close();
@@ -249,7 +251,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', width: 390, extra: fixture({}, { [TEAM]: accepted }), clock: AT(1110), wait: 1800 });
   await ready(p); await L.settle(p, 300);
   await L.pick(p, samAt, '1170'); await L.settle(p, 150);
-  await L.pick(p, 'select[data-k="tm-at:hal:dinner:0"]', '1140'); await L.settle(p, 150);
+  await L.pick(p, halAt, '1140'); await L.settle(p, 150);
   ok(await line(p) === '', 'fixed: with enough on, the band goes');
   await p.locator('[data-p="tm-save"]').click();
   await L.waitFor(p, k => window.__fake.dump()[k].v === 3, TEAM, 8000); await L.settle(p, 300);
@@ -324,6 +326,43 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
     ok(!await L.overflow(p) && p.errors.length === 0, 'short phones, ' + label + ' ' + w + ' x ' + h + ': no sideways scroll, no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }
+
+  // 12. One break per person (17 Nov 2026, docs/team-one-break-options/brief.md): a break belongs to the person's day.
+  //     (a) Ari's split saved on Lunch from 14:00 runs to 18:00, into Dinner's busy time from 17:30: with Bea's and Eli's
+  //     Dinner breaks at 17:30 it leaves 5 on, and Ari is marked with the split's own time. On the 16 Nov build the mark
+  //     matched only breaks saved on the short shift and read "Break, too few", with no time.
+  const lunchSplit = [{ id: 'ari', sh: 'lunch', at: 840, len: 240 }, { id: 'bea', sh: 'dinner', at: 1050, len: 30 }, { id: 'eli', sh: 'dinner', at: 1050, len: 30 }];
+  p = await L.open(b, '#/team', { who: 'sam', width: 390, extra: fixture({}, { [TEAM]: plan(today, ON, lunchSplit) }), clock: AT(1050), wait: 1800 });
+  await ready(p); await L.settle(p, 300);
+  ok(await line(p) === 'Too few now until 18:00: 5 on, 6 needed', 'one break per person: a split saved on Lunch that runs into Dinner\'s busy time counts (' + await line(p) + ')');
+  ok(JSON.stringify(await marks(p)) === JSON.stringify(['ari', 'bea', 'eli']) && await txt(p, '.tm-short-mark[data-id="ari"]') === 'Split 14:00, too few', 'one break per person: Ari is marked with his Lunch-saved split and its time (' + (await marks(p)).join(',') + ' / ' + await txt(p, '.tm-short-mark[data-id="ari"]') + ')');
+  ok(p.errors.length === 0, 'one break per person, too few: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  //     (b) Sam K has two breaks, Lunch at 12:30 and Dinner at 18:30: Go to Sam K's break focuses the one in the short
+  //     time, on his break line (tm-short-go carries the short time, data-from and data-to)
+  p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', width: 390, extra: fixture({}, { [TEAM]: plan(today, ON, BR.concat([{ id: 'sam', sh: 'lunch', at: 750, len: 30 }])) }), clock: AT(1110), wait: 1800 });
+  await ready(p); await L.settle(p, 300);
+  ok(await goLink(p) === 'Go to Sam K\u2019s break' && await p.$$eval('select[data-k^="tm-bat:sam:"]', l => l.length) === 2, 'go to, two breaks: the band offers Sam K\'s break, and he has two break pickers');
+  await p.locator('.tm-short-line [data-p="tm-short-go"]').click(); await L.settle(p, 200);
+  const goFocus = await p.evaluate(() => { const a = document.activeElement, s = document.querySelector('select[data-k^="tm-bat:sam:1110:"]'); return { ok: !!s && (a === s || a === s._uxTrigger || a === s.nextElementSibling) && !!a.closest('.tm-brline'), at: a ? (a._uxSource || a).getAttribute('data-k') || a.tagName : 'none' }; });
+  ok(goFocus.ok, 'go to, two breaks: the focus lands on the 18:30 break in the short time, not his 12:30 one (' + goFocus.at + ')');
+  ok(p.errors.length === 0, 'go to, two breaks: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  //     (c) a break that leaves a service with nobody else on says so in that person's sentence, and only then: Cal and
+  //     Eli alone on Lunch, both at 12:30; Eli's moved to 13:00 and the words go
+  const words = (p, id) => txt(p, '.tm-tlrow[data-id="' + id + '"] .tm-roster-time');
+  p = await L.open(b, '#/team', { who: 'sam', width: 390, extra: fixture({}, { [TEAM]: plan(today, [{ id: 'cal', sh: 'lunch', sec: 'grill' }, { id: 'eli', sh: 'lunch', sec: 'larder' }], [{ id: 'cal', sh: 'lunch', at: 750, len: 30 }, { id: 'eli', sh: 'lunch', at: 750, len: 30 }]) }), wait: 1800 });
+  await rows(2)(p); await L.settle(p, 300);
+  ok(await words(p, 'cal') === 'Lunch hours 10:00 to 15:00 \u00b7 Break 12:30 to 13:00 (nobody else on Lunch 12:30 to 13:00)' && /\(nobody else on Lunch 12:30 to 13:00\)$/.test(await words(p, 'eli') || ''), 'nobody else on: both breaks at 12:30 leave Lunch empty, and each sentence says so (' + await words(p, 'cal') + ')');
+  await L.pick(p, 'select[data-k^="tm-bat:eli:"]', '780'); await L.settle(p, 200);
+  ok(await words(p, 'cal') === 'Lunch hours 10:00 to 15:00 \u00b7 Break 12:30 to 13:00' && await words(p, 'eli') === 'Lunch hours 10:00 to 15:00 \u00b7 Break 13:00 to 13:30', 'nobody else on: once Eli\'s break moves to 13:00, neither sentence says it (' + await words(p, 'cal') + ' / ' + await words(p, 'eli') + ')');
+  ok(p.errors.length === 0, 'nobody else on: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  // and the study's day, where every service keeps people on through each break, never says it
+  p = await L.open(b, '#/team', { who: 'sam', width: 390, extra: fixture(), clock: AT(1110), wait: 1800 });
+  await ready(p); await L.settle(p, 300);
+  ok(!await p.$$eval('.tm-tlrow .tm-roster-time', l => l.some(e => /nobody else on/.test(e.textContent))), 'nobody else on: a day with people on through every break says it nowhere');
+  await p.context().close();
 
   await b.close();
   L.report(R);

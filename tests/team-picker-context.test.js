@@ -1,6 +1,8 @@
 // A held picker keeps its own date, person and service when the page redraws under it. Rows on one clock (16 Nov 2026):
-// each row control's key names its person and service (tm-sec:ID:SH, tm-at:ID:SH:N, tm-len:ID:SH:N, tm-addsvc:ID) and
-// carries the date it was drawn for, so an old choice can never land on another person, service or date.
+// each row control's key names its person and service (tm-sec:ID:SH, tm-addsvc:ID) and carries the date it was drawn
+// for. One break per person (17 Nov 2026, docs/team-one-break-options/brief.md): a break picker's key names the person
+// and the break's start when drawn (tm-bat:ID:AT:N, tm-blen:ID:AT:N) with the date, so a choice held while that break
+// moves or goes, or the old per-service keys (tm-at:ID:SH:N), can never land on another person, break or date.
 // Every person, time and Firebase record here is synthetic. The server belongs to this test only.
 const L = require('./lib');
 const { R, ok } = L.results();
@@ -53,12 +55,12 @@ async function save(p) {
   await L.waitFor(p, k => __fake.dump()[k].v === 2 && !/Saving/.test(document.querySelector('[data-p="tm-save"]').textContent), TEAM, 6000);
 }
 // A change from a picker the page did not draw this way: [key, data-sh (null for none), value, data-day (default: the
-// page's)]. Each goes in the rows' list, as a held or stray picker would, and is taken out again.
+// page's; '' for none)]. Each goes in the rows' list, as a held or stray picker would, and is taken out again.
 const forge = (p, list) => p.evaluate(list => {
   const root = document.querySelector('.tm-plan'), day = document.querySelector('.tm-notebook').getAttribute('data-day');
   list.forEach(([k, sh, v, d]) => {
     const el = document.createElement('select'), o = document.createElement('option');
-    el.setAttribute('data-k', k); el.setAttribute('data-day', d || day); if (sh !== null) el.setAttribute('data-sh', sh);
+    el.setAttribute('data-k', k); if (d !== '') el.setAttribute('data-day', d || day); if (sh !== null) el.setAttribute('data-sh', sh);
     o.value = v; o.textContent = v; o.selected = true; el.appendChild(o);
     root.appendChild(el); el.dispatchEvent(new Event('change', { bubbles: true })); el.remove();
   });
@@ -95,30 +97,62 @@ const forge = (p, list) => p.evaluate(list => {
     ok(!p.errors.length, 'held section: no browser errors ' + p.errors.join(' | '));
     await p.context().close();
 
-    // Both services offer 14:00. Option compatibility alone cannot make an old service's picker safe to rebind.
+    // Both services offer 14:00. Option compatibility alone cannot make a picker for a break that has gone safe to rebind:
+    // Ann's first break (13:45) is on Lunch, so it goes from view with Lunch; her 2nd break (19:00) stays
     p = await open(browser, base, { extra: fixture(true) });
-    const beforeBreak = await read(p), breakOption = await holdPicker(p, 'tm-at:ann:lunch:0', '840');
-    ok(/Break 1 for Ann on Lunch/.test(await p.locator('dialog.ux-picker').innerText()), 'held break: the picker names Ann, Lunch and the break');
+    const beforeBreak = await read(p), breakOption = await holdPicker(p, 'tm-bat:ann:825:0', '840');
+    ok(/Break for Ann/.test(await p.locator('dialog.ux-picker').innerText()), 'held break: the picker names Ann and the break');
     await removeLunch(p);
-    ok(!await field(p, 'tm-at:ann:lunch:0').count() && await field(p, 'tm-at:ann:dinner:0').inputValue() === '1140', 'configuration change: Ann\'s Lunch line goes and her Dinner break shows as saved');
+    ok(!await field(p, 'tm-bat:ann:825:0').count() && await field(p, 'tm-bat:ann:1140:0').inputValue() === '1140', 'configuration change: Ann\'s Lunch line and its break go from view and her 19:00 break shows as saved');
     if (await p.locator(breakOption).count()) await p.locator(breakOption).click();
     await L.settle(p, 180);
-    ok(await field(p, 'tm-at:ann:dinner:0').inputValue() === '1140' && await saveOff(p),
-      'held break: a valid 14:00 Lunch option cannot replace the Dinner break after redraw');
+    ok(await field(p, 'tm-bat:ann:1140:0').inputValue() === '1140' && await p.locator('select[data-k^="tm-bat:ann:"]').count() === 1 && await saveOff(p),
+      'held break: a valid 14:00 option for the break that went cannot move her other break after redraw');
     ok(same(await read(p), beforeBreak), 'held break: the earlier selection writes no acknowledged data');
-    // the break keys: no service in the key (the old details panel's), another service, another date, or a person
-    // with no such break
-    await forge(p, [['tm-at:ann:0', 'dinner', '1155'], ['tm-at:ann:dinner:0', 'lunch', '1155'], ['tm-at:ann:dinner:0', null, '1155'], ['tm-at:ann:dinner:0', 'dinner', '1155', tomorrow],
-      ['tm-len:ann:0', 'dinner', '45'], ['tm-len:ann:dinner:0', 'lunch', '45'], ['tm-len:ann:dinner:0', 'dinner', '45', tomorrow], ['tm-at:bo:dinner:0', 'dinner', '1155']]);
+    // the break keys: the old per-service keys (tm-at, tm-len) and the old details panel's are not read at all; a person
+    // break key from another date, without its date, with no break at that start, for a person with no such break, or
+    // with a length that is not one of the book's, changes nothing
+    await forge(p, [['tm-at:ann:0', 'dinner', '1155'], ['tm-at:ann:dinner:0', 'dinner', '1155'], ['tm-at:ann:dinner:0', null, '1155'], ['tm-len:ann:dinner:0', 'dinner', '45'],
+      ['tm-bat:ann:1140:0', null, '1155', tomorrow], ['tm-bat:ann:1140:0', null, '1155', ''], ['tm-bat:ann:1141:0', null, '1155'], ['tm-bat:ann:1140:1', null, '1155'], ['tm-bat:bo:1140:0', null, '1155'],
+      ['tm-blen:ann:1140:0', null, '45', tomorrow], ['tm-blen:ann:1140:0', null, '50'], ['tm-blen:bo:1140:0', null, '45']]);
     await L.settle(p, 150);
-    ok(await value(p, 'tm-at:ann:dinner:0') === '1140' && await value(p, 'tm-len:ann:dinner:0') === '30' && !await field(p, 'tm-at:bo:dinner:0').count() && await saveOff(p),
-      'old key: a break picker without its service, with another service, from another date or for a break that is not there changes nothing');
-    await L.pick(p, 'select[data-k="tm-at:ann:dinner:0"]', '1155'); await save(p);
+    ok(await value(p, 'tm-bat:ann:1140:0') === '1140' && await value(p, 'tm-blen:ann:1140:0') === '30' && !await p.locator('select[data-k^="tm-bat:bo:"]').count() && await saveOff(p),
+      'old key: an old per-service break key, or a person break key from another date, without its date, for a break or person that is not there, or with no such length, changes nothing');
+    await L.pick(p, 'select[data-k="tm-bat:ann:1140:0"]', '1155'); await save(p);
     const afterBreak = await read(p);
     ok(afterBreak.br.some(x => x.id === 'ann' && x.sh === 'lunch' && x.at === 825 && x.len === 45) &&
       afterBreak.br.some(x => x.id === 'ann' && x.sh === 'dinner' && x.at === 1155 && x.len === 30) && afterBreak.br.length === 2,
-    'fresh break: a new Dinner picker saves only the intended service and retains Lunch');
+    'fresh break: the 19:00 picker saves only that break, on the service that holds it, and keeps the hidden Lunch break');
     ok(!p.errors.length, 'held break: no browser errors ' + p.errors.join(' | '));
+    await p.context().close();
+
+    // A picker held open while its own break is moved by another change (here its time, through the same break's
+    // picker on the page, as a second chef's tap or a stray picker would): the held choice finds no break with the
+    // start it was drawn for, so it is refused. Nothing changes and no other break is written.
+    p = await open(browser, base);
+    const beforeMove = await read(p), moveOption = await holdPicker(p, 'tm-bat:ann:1140:0', '1200');
+    ok(/2nd break for Ann/.test(await p.locator('dialog.ux-picker').innerText()), 'held moved break: the picker names Ann\'s 2nd break');
+    await p.evaluate(() => { const s = document.querySelector('select[data-k="tm-bat:ann:1140:0"]'); s.value = '1155'; s.dispatchEvent(new Event('change', { bubbles: true })); });
+    await L.waitFor(p, () => !!document.querySelector('select[data-k="tm-bat:ann:1155:0"]'), null, 4000);
+    if (await p.locator(moveOption).count()) await p.locator(moveOption).click();
+    await L.settle(p, 200);
+    const movedBreaks = await p.locator('select[data-k^="tm-bat:"]').evaluateAll(l => l.map(e => e.dataset.k + '=' + e.value));
+    ok(same(movedBreaks, ['tm-bat:ann:825:0=825', 'tm-bat:ann:1155:0=1155']) && same(await read(p), beforeMove),
+      'held moved break: the 20:00 held for Ann\'s 2nd break at 19:00 is refused once it moved to 19:15; her first break and everyone else are as they were (' + movedBreaks.join(', ') + ')');
+    ok(!p.errors.length, 'held moved break: no browser errors ' + p.errors.join(' | '));
+    await p.context().close();
+
+    // The same break saved for one person on two services (an older plan could hold it so) is one break: one picker,
+    // and the plan reads as it was saved, so Save stays off and nothing is written
+    const twice = fixture();
+    twice[TEAM].br = [{ id: 'ann', sh: 'lunch', at: 840, len: 30 }, { id: 'ann', sh: 'dinner', at: 840, len: 30 }];
+    p = await open(browser, base, { extra: twice });
+    const twiceWrites = await p.evaluate(() => __fake.writes.length);
+    ok(await p.locator('select[data-k^="tm-bat:ann:"]').count() === 1 && await value(p, 'tm-bat:ann:840:0') === '840' && await p.locator('.tm-tlrow[data-id="ann"] .tm-brline [data-p="tm-addbr"]').count() === 1,
+      'same break twice: Ann\'s 14:00 break saved on Lunch and on Dinner shows as one break picker, with + 2nd break');
+    ok(await saveOff(p) && await p.evaluate(n => __fake.writes.length === n, twiceWrites) && same(await read(p), twice[TEAM]) && /Break 14:00 to 14:30/.test(await p.locator('.tm-tlrow[data-id="ann"] .tm-roster-time').innerText()),
+      'same break twice: the plan reads as unchanged; Save is off and no draft is written');
+    ok(!p.errors.length, 'same break twice: no browser errors ' + p.errors.join(' | '));
     await p.context().close();
 
     // Add a service is held open while the chef's date moves on: today's choice reaches neither tomorrow nor today.
@@ -164,11 +198,12 @@ const forge = (p, list) => p.evaluate(list => {
       { id: 'bo', sh: 'lunch', at: 825, len: 30 }];
     p = await open(browser, base, { extra: overlap });
     const beforeOverlap = await read(p), annWarn = p.locator('.tm-tlrow[data-id="ann"] .tm-overlap-warning');
-    // the rows are the whole day (the details panel and Whole day review went, 16 Nov 2026): nothing to open
-    ok(await annWarn.count() === 1 && await annWarn.isVisible() && /Ann/.test(await annWarn.innerText()) && /Lunch/.test(await annWarn.innerText()) && /Full day/.test(await annWarn.innerText()),
-      'cross-service review: Ann\'s Lunch meal overlapping her Full day split is visible in her row without a tap');
+    // the rows are the whole day (the details panel and Whole day review went, 16 Nov 2026): nothing to open. Since
+    // 17 Nov 2026 a person's breaks are their day's, so the words name her, not services
+    ok(await annWarn.count() === 1 && await annWarn.isVisible() && /Review overlapping meal breaks or splits for Ann\. Nothing has been changed automatically\./.test(await annWarn.innerText()),
+      'overlap review: Ann\'s meal break inside her split is visible in her row without a tap');
     ok(same(await read(p), beforeOverlap) && await saveOff(p),
-      'cross-service review: showing a warning neither corrects nor saves the plan automatically');
+      'overlap review: showing a warning neither corrects nor saves the plan automatically');
     ok(!await p.locator('.tm-tlrow[data-id="bo"] .tm-overlap-warning').count(), 'different people: Bo\'s simultaneous meal does not create a personal overlap warning');
     const review = await p.locator('.tm-batch .tm-overlap-review').evaluateAll(l => l.map(e => e.textContent).join(' '));
     ok(/Ann/.test(review) && !/for Bo/.test(review), 'tools fold: the day\'s overlap review names Ann, not Bo');
@@ -178,17 +213,20 @@ const forge = (p, list) => p.evaluate(list => {
     // The details panel's Close and reopen went with the rows. The focus still lands on the next thing to do, for the
     // same person and service, and the unsaved break is kept until Save. The Take off focus check fails on the 16 Nov
     // build: draw() puts the focus back by data-p and data-id only (guestSel), so it lands on Ann's first service, Lunch.
+    // Since 17 Nov 2026 + Break is the person's (Bo, by his name): the focus moves to his new break's time, named for him
+    // and the date (its data-sh is empty: no service), and a time picked there changes his break only
     for (const width of [390, 1280]) {
       p = await open(browser, base, { width });
-      await p.locator('[data-p="tm-addbr"][data-id="ann"][data-sh="dinner"]').focus(); await p.keyboard.press('Enter'); await L.settle(p, 200);
+      await p.locator('[data-p="tm-addbr"][data-id="bo"]').focus(); await p.keyboard.press('Enter'); await L.settle(p, 200);
+      const boKey = await L.brKey(p, 'bo', 0);
       const focused = await p.evaluate(() => {
         const el = document.activeElement, s = el && (el.matches('select') ? el : el.previousElementSibling);
         return s && s.matches && s.matches('select') ? s.getAttribute('data-k') + ' ' + s.getAttribute('data-day') + ' ' + s.getAttribute('data-sh') : el && [el.tagName, el.getAttribute('data-p'), el.getAttribute('data-id'), el.getAttribute('data-sh')].join(' ');
       });
-      ok(focused === 'tm-at:ann:dinner:1 ' + today + ' dinner', width + ': keyboard + Break on Ann\'s Dinner puts the focus on that new break\'s time (' + focused + ')');
-      await L.pick(p, 'select[data-k="tm-at:ann:dinner:1"]', '1230');
-      ok(await value(p, 'tm-at:ann:dinner:1') === '1230' && await value(p, 'tm-at:ann:dinner:0') === '1140' && await value(p, 'tm-at:ann:lunch:0') === '825' && !await field(p, 'tm-at:bo:dinner:0').count() && !await saveOff(p) && (await read(p)).v === 1,
-        width + ': the new break holds the time picked, unsaved; Ann\'s other breaks and Bo are as they were');
+      ok(/^tm-bat:bo:\d+:0$/.test(boKey) && focused === boKey + ' ' + today + ' ', width + ': keyboard + Break by Bo\'s name puts the focus on his new break\'s time (' + focused + ')');
+      await L.pick(p, 'select[data-k="' + boKey + '"]', '1230');
+      ok(await value(p, 'tm-bat:bo:1230:0') === '1230' && await value(p, 'tm-bat:ann:1140:0') === '1140' && await value(p, 'tm-bat:ann:825:0') === '825' && !await saveOff(p) && (await read(p)).v === 1,
+        width + ': Bo\'s new break holds the time picked, unsaved; Ann\'s breaks are as they were');
       // Take off is armed by person, service and date. The second tap must reach the same button: Enter on Take off
       // Dinner keeps the focus on Ann's armed Dinner button, never her Lunch one.
       const offDinner = '[data-p="tm-off"][data-id="ann"][data-sh="dinner"]';
@@ -196,11 +234,11 @@ const forge = (p, list) => p.evaluate(list => {
       const armedFocus = await p.evaluate(() => { const a = document.activeElement; return [a.getAttribute('data-p'), a.getAttribute('data-id'), a.getAttribute('data-sh'), a.classList.contains('is-armed')].join(' '); });
       ok(armedFocus === 'tm-off ann dinner true', width + ': keyboard Take off Dinner keeps the focus on Ann\'s armed Dinner button (' + armedFocus + ')');
       await p.locator(offDinner).click(); await L.settle(p, 200);
-      ok(JSON.stringify(await p.$$eval('.tm-tlrow[data-id="ann"] .tm-tlsvc', l => l.map(e => e.dataset.sh))) === '["lunch"]' && await value(p, 'tm-sec:ann:lunch') === 'grill' && await value(p, 'tm-at:ann:lunch:0') === '825' && await value(p, 'tm-sec:bo:dinner') === 'grill',
-        width + ': Take off Dinner takes Ann off Dinner only; her Lunch and Bo are as they were');
+      ok(JSON.stringify(await p.$$eval('.tm-tlrow[data-id="ann"] .tm-tlsvc', l => l.map(e => e.dataset.sh))) === '["lunch"]' && await value(p, 'tm-sec:ann:lunch') === 'grill' && await value(p, 'tm-bat:ann:825:0') === '825' && !await field(p, 'tm-bat:ann:1140:0').count() && await value(p, 'tm-sec:bo:dinner') === 'grill' && await value(p, 'tm-bat:bo:1230:0') === '1230',
+        width + ': Take off Dinner takes Ann off Dinner and the break inside it only; her Lunch break and Bo are as they were');
       await p.keyboard.press('Enter'); await L.settle(p, 200);
-      ok(await value(p, 'tm-sec:ann:dinner') === 'pans' && await value(p, 'tm-at:ann:dinner:0') === '1140' && await value(p, 'tm-at:ann:dinner:1') === '1230' && (await read(p)).v === 1,
-        width + ': Undo from the keyboard puts back Ann\'s Dinner with its section and both breaks, unsaved');
+      ok(await value(p, 'tm-sec:ann:dinner') === 'pans' && await value(p, 'tm-bat:ann:1140:0') === '1140' && await value(p, 'tm-bat:ann:825:0') === '825' && await value(p, 'tm-bat:bo:1230:0') === '1230' && (await read(p)).v === 1,
+        width + ': Undo from the keyboard puts back Ann\'s Dinner with its section and its break, unsaved');
       ok(!p.errors.length, width + ': the break and Take off drafts raise no browser errors ' + p.errors.join(' | '));
       await p.context().close();
     }

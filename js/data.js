@@ -48,10 +48,10 @@
   Specials always shows first. The head chef's Special switch in Manage Recipes puts a dish in it.
 */
 window.LK_DATA = {
-  updated: '16 November 2026',
+  updated: '17 November 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
   menuOrder: [
-    { title: 'Specials', ids: ['chicken-adobo', 'lamb-nachos', 'buffalo-corn-cob-with-cashew-crumb'] },
+    { title: 'Specials', ids: ['chicken-adobo', 'lamb-nachos', 'buffalo-corn-cob-with-cashew-crumb', 'philly-potato'] },
     { title: "Snackin' Plates", ids: ['poutine', 'beetroot-bites', 'brisket-cob', 'wings', 'haloumi-tacos', 'pork-belly-bites', 'calamari', 'riblets', 'garlic-bread', 'bacon-cheese-bread', 'chips-snack'] },
     { title: 'Salads', ids: ['caesar', 'green-bowl', 'pumpkin-salad'] },
     { title: 'Big Country Feeds', ids: ['beef-cheek', 'ribs', 'barra', 'carbonara', 'fish-chips', 'lamb-rissoles', 'vegan-rissoles', 'pork-belly', 'pie'] },
@@ -1845,6 +1845,41 @@ window.LK_DATA = {
         ] }
       ],
       labelNote: 'Check the cob loaf, chicken tender and onion ring labels.'
+    },
+    {
+      id: 'philly-potato', art: 'philly-potato', no: '137', kind: 'snack', forLine: 'Special', name: 'Philly Cheesesteak Loaded Potato', short: 'Philly potato', avc: 'Loaded Spuds side and entree',
+      yield: 'Per serve. 2 potatoes, gently squashed, loaded with pulled BBQ brisket, roast capsicum, caramelised onion and cheese sauce, run through the impinger, then topped with ranch, crispy fried onions and spring onion.',
+      ingredients: [
+        { q: '250 g', name: 'Washed potatoes', note: '2 potatoes, rustically squashed [how they are cooked before squashing to come]' },
+        { q: '100 g', name: 'Pulled BBQ brisket', link: 'brisket', note: '[smoked brisket (card 79) or oven brisket (card 121), and any BBQ sauce, to confirm]' },
+        { q: '60 g', name: 'Roast capsicum strips', note: 'bought in (Sandhurst roast red capsicum)' },
+        { q: '80 g', name: 'Caramelised onion', note: 'bought in (Beerenberg)' },
+        { q: '50 g', name: 'American cheese sauce', link: 'american-cheese-sauce', note: 'the liquid cheese' },
+        { q: '50 ml', name: 'Ranch dressing', link: 'ranch', note: 'on top, after the impinger' },
+        { q: '15 g', name: 'Crispy fried onions', note: 'bought in (Dragon Phoenix), not the house fried onions (card 73). On top, after the impinger', tags: ['Gluten?'] },
+        { q: '0.05 bunch', name: 'Spring onion', note: 'on top, after the impinger' }
+      ],
+      pins: [
+        { label: 'Squashed potatoes', x: 19.8, y: 58.5, side: 'left', tags: [], note: '2 potatoes, 250 g in all, rustically squashed. [Cooking before squashing to come]' },
+        { label: 'Pulled BBQ brisket', x: 65.1, y: 53.3, side: 'right', link: 'brisket', note: '100 g. Loaded on before the impinger.' },
+        { label: 'American cheese sauce', x: 57.5, y: 42.5, side: 'left', link: 'american-cheese-sauce', note: '50 g. Loaded on before the impinger.' },
+        { label: 'Roast capsicum', x: 29.2, y: 42.5, side: 'left', tags: [], note: '60 g. Loaded on before the impinger.' },
+        { label: 'Caramelised onion', x: 31.6, y: 59.9, side: 'left', tags: [], note: '80 g. Loaded on before the impinger.' },
+        { label: 'Ranch dressing', x: 34.0, y: 54.7, side: 'left', link: 'ranch', note: '50 ml. On top, after the impinger.' },
+        { label: 'Crispy fried onions', x: 62.3, y: 38.7, side: 'right', tags: ['Gluten?'], note: '15 g. On top, after the impinger. Bought in, not the house fried onions.' },
+        { label: 'Spring onion', x: 75.5, y: 52.8, side: 'right', tags: [], note: 'On top, after the impinger.' }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          '[Cook the potatoes before squashing: how, temperature and time to come]',
+          'Gently squash 2 potatoes, 250 g in all, rustic style.',
+          'Load them with 100 g pulled BBQ brisket, 60 g roast capsicum, 80 g caramelised onion and 50 g American cheese sauce.',
+          'Run it through the impinger. [Setting to come]',
+          'Top with 50 ml ranch dressing, 15 g crispy fried onions and the spring onion.',
+          '[Plate or board to come]'
+        ] }
+      ],
+      labelNote: 'Check the crispy fried onion, caramelised onion, roast capsicum and brisket labels.'
     },
     {
       id: 'pork-knuckle', art: 'pork-knuckle', no: '92', kind: 'main', forLine: 'Special', name: 'Pork Knuckle',
