@@ -927,7 +927,8 @@
     o = o || {};
     var name = String(o.name || 'Ann').trim() || 'Ann';
     S = { t: [], taps: 0, name: name, lower: name.toLowerCase(), upper: name.toUpperCase(), design: design, v: o.version === 2 ? 2 : 1, k: o.quick ? 0.25 : 1 };
-    if (o.reduced || W.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    // The preview's own Reduced motion box can override the device setting (o.force), so a reviewer can watch.
+    if (o.reduced || (!o.force && W.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
       var t = D.getElementById('rtitle');
       if (t) t.textContent = 'April Fools, ' + name + '. Nothing is broken today.';
       S = null;

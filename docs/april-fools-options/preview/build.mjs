@@ -32,16 +32,16 @@ if (!/^<!doctype/i.test(html)) html = '<!doctype html>' + html;
 
 const SAY = {
   A: ['Collapse', 'Small things go wrong first: a typo, a tilted card, the wrong time. Then his welcome turns to "hello ann.", the clock runs backwards, every card swings off its pin and falls, and the tabs drop off. The screen goes dark and types to them; ERROR 0x0401 turns into 1 APRIL and everything flies back.', 'The screen cracks like glass. "what did you press? the book is gone."', 'The pins pop off the cards instead of the crack. "the book fell over. all of it."'],
-  B: ['Takeover', 'Typos and flickers, then the page tears and switches off like an old telly. A terminal works through the book line by line, says HELLO ANN, fills a progress bar to 99% and drops it to 1%. FATAL ERROR 0x0401 turns into 1 APRIL and the telly comes back on.', 'Green hacker terminal: the recipes deleted section by section, "blaming the fryer", "renaming ann to banana", "sending prep list to the moon".', 'Amber "Kitchen Book update": "teaching the mascot to cook: FAILED", "salt replaced with sugar", "moving pans to the car park".'],
+  B: ['Takeover', 'Typos and flickers, then the page tears and switches off like an old telly. A terminal works through the book line by line, says HELLO ANN, fills a progress bar to 99% and drops it to 1% ("oops."). FATAL ERROR 0x0401 turns into 1 APRIL and the telly comes back on.', 'Green hacker terminal: the recipes deleted section by section, "blaming the fryer", "renaming ann to banana", "sending prep list to the moon".', 'Amber "MASCOT-OS": the mascot has taken over. "hiding the good knife", "teaching the mascot to cook: FAILED", "salt replaced with sugar", "installing more mascots". Not a fake book update, so real updates stay trusted.'],
   C: ['Possessed', 'The page stays, but one by one every word turns on them. Then a colour split, the mascot breaks loose and grows, letters melt, strips tear, a colour wheel swirls, one slow inversion, and the page turns upside down. A tapped piece runs away.', 'Puns: "Your sentence: Pants", "Your breakdown: Never", "Prep by sedation", tabs Regrets, Perp, Disorders, Wasted, Trespass, Screaming.', 'Every word becomes their name: every section, everyone on with them, every tab, the date and the clock.'],
-  D: ['Ransom note', 'Letters quietly go missing from words. Then a paper note slides in and letters fly out of the page one by one into it, cut-out style, in five different papers. It is signed THE KITCHEN GANG, which turns into 1 APRIL, and the letters go home.', '"WE HAVE YOUR SAUCES, ANN. LEAVE 1 KG OF BUTTER AT THE PASS. TELL NO ONE."', '"WE TOOK YOUR VOWELS, ANN. SAY CHEESE TO GET THEM BACK."'],
+  D: ['Ransom note', 'Letters quietly go missing from words. Then a paper note slides in and letters fly out of the page one by one into it, cut-out style, in five different papers. It is signed THE KITCHEN GANG, which turns into 1 APRIL, and the letters go home.', '"WE HAVE YOUR SAUCES, ANN. LEAVE 1 KG OF BUTTER AT THE PASS. OR NO GRAVY."', '"WE TOOK YOUR VOWELS, ANN. SAY CHEESE TO GET THEM BACK."'],
   E: ['Hungry mascot', 'He looks away twice, says he is hungry, climbs out of his bubble and eats Home one card at a time, growing with every bite. Then he comes for the screen: "you\'re next." Burp. Then he gives it all back.', 'Bites: "nom.", "crunchy.", "needs salt.", "the clock was chewy." Ends "it was a snack."', 'Bites: "the prep list: chewy.", "your break: too short.", "the team: spicy." Ends "only joking."'],
   F: ['Code rain', 'A letter drips out of a word now and then. Then whole words drain down the screen as falling characters, the page goes dark, and the rain fills the screen until their name lights up in it.', 'Cyan rain; the name, then "WAKE UP, ANN" turns into 1 APRIL.', 'Amber rain: "WHERE IS THE BOOK, ANN?", then "IT IS IN THE RAIN" turns into 1 APRIL.'],
   G: ['Black hole', 'A dot appears on Your day and grows into a black hole with a burning ring. It pulls in the tabs, the top bar, every card, the welcome and last of all the mascot, while their name orbits it. Then it swallows the screen, and spits everything back.', '"everything is in here now." NO SIGNAL turns into 1 APRIL.', '"the prep list is past the event horizon." NO WAY BACK turns into 1 APRIL.'],
   H: ['Gravity', 'Everything drifts up a few pixels. Then the cards, the welcome and the tabs fall up and pile under the top bar. A note at the bottom talks to them, the page turns upside down, and everything floats.', '"turn your phone over, ann." then "better?" UP IS DOWN.', '"gravity has been switched off." "please hold on to the bench." ZERO G.'],
   I: ['Endless Home', 'His welcome turns into "hello ann." Then the page zooms into a smaller Home, with a smaller Home inside that, faster and faster, forever. Taps make it faster. Then dark, and LEVEL 401 turns into 1 APRIL.', 'Zooms into the KB logo: "you went too deep, ann."', 'Zooms into the mascot: "you are inside the mascot now, ann."'],
   J: ['Dust', 'A corner of the top bar crumbles. Then the top bar, the welcome, every card and the tabs blow away like dust, letters first, to a black screen and a blinking cursor. WINDY DAY turns into 1 APRIL and the dust blows back.', '"ann? are you still there? the wind took the book."', '"ann, the book blew away. it is somewhere near the bins."'],
-  K: ['Talks back', 'Nothing falls. The mascot keeps talking, more and more unhinged, and the cards turn their backs on them one by one. Every tap gets a reply ("Rude.", "Wet hands!"). The gentlest of the twelve.', '"I know what you did to the jus." "It\'s just you and me now. Forever."', '"The fridge told me everything." "The tabs have gone on strike."'],
+  K: ['Talks back', 'Nothing falls. The mascot keeps talking, more and more unhinged, and the cards turn their backs on them one by one. Every tap gets a reply ("Rude.", "Wet hands!"). The gentlest of the twelve.', '"I know what you did to the jus." "It\'s just you and me now. Forever."', '"Can I tell you a secret?" "The fridge told me everything." "The tabs have gone on strike."'],
   L: ['Melt', 'One card starts to sag. Then the whole page melts like wax in strips, the heat rises from the bottom, and it all drips into a puddle. Taps make a strip melt faster.', '"too hot, ann." 401 DEGREES turns into 1 APRIL.', '"who left the book on the stove?" MEDIUM WELL turns into 1 APRIL.']
 };
 const TEAM = ['Ann', 'Sam', 'Bo', 'Fay', 'Finn', 'Jo', 'Kit', 'Lee', 'Max', 'Ned', 'Ola', 'Pia', 'Ravi', 'Sol', 'Tui', 'Uma'];
@@ -55,8 +55,8 @@ const page = `<!doctype html>
 <title>April Fools options</title>
 <style>
 :root { --bg: #EDE6D8; --ink: #1C1D1F; --soft: #4A4740; --card: #FBF8F1; --line: #1C1D1F; --accent: #C2451A; --on: #1C1D1F; --on-ink: #fff; --ok: #2F6B3A; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #161615; --ink: #F1EEE7; --soft: #BDB8AE; --card: #22211F; --line: #4A4843; --accent: #FF9C6E; --on: #F1EEE7; --on-ink: #161615; --ok: #8FD49B; } }
-:root[data-theme="dark"] { --bg: #161615; --ink: #F1EEE7; --soft: #BDB8AE; --card: #22211F; --line: #4A4843; --accent: #FF9C6E; --on: #F1EEE7; --on-ink: #161615; --ok: #8FD49B; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #161615; --ink: #F1EEE7; --soft: #BDB8AE; --card: #22211F; --line: #4A4843; --accent: #FF9C6E; --on: #F1EEE7; --on-ink: #161615; --ok: #8FD49B; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: #161615; --ink: #F1EEE7; --soft: #BDB8AE; --card: #22211F; --line: #4A4843; --accent: #FF9C6E; --on: #F1EEE7; --on-ink: #161615; --ok: #8FD49B; color-scheme: dark; }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
 .wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 16px; max-width: 1240px; margin: 0 auto; }
@@ -104,7 +104,7 @@ td button { min-height: 36px; border: 0; background: transparent; font-weight: 7
 <div class="wrap">
   <section aria-labelledby="h">
     <h1 id="h">April Fools on Home</h1>
-    <p class="lede">Twelve one-minute jokes, each in two versions: 24 in all, so nobody on the team gets the same one, this year or the next. Each plays on a copy of the real Home with made-up people; nothing real is touched. Taps make it worse. Hold a finger down anywhere to stop it.</p>
+    <p class="lede">Twelve one-minute jokes, each in two versions: 24 in all, so nobody on the team gets the same one, this year or the next. Each plays on a copy of the real Home with made-up people; nothing real is touched. Taps make it worse. Press and hold anywhere to stop it.</p>
     <div class="picks" role="group" aria-label="Design">
       ${Object.entries(SAY).map(([k, v]) => `<button type="button" data-d="${k}" aria-pressed="false">${k}<small>${v[0]}</small></button>`).join('')}
     </div>
@@ -153,7 +153,7 @@ td button { min-height: 36px; border: 0; background: transparent; font-weight: 7
     b.textContent = cur + ' · ' + s[0] + ', version ' + ver;
     p.textContent = s[1];
     v.className = 'v'; v.textContent = 'Version ' + ver + ': ' + s[1 + ver];
-    h.className = 'v'; h.textContent = rm.checked ? 'Reduced motion: no copy and no movement. The mascot only says "April Fools".' : 'Taps break the piece under the finger a little more. Hold a finger down anywhere for about a second to stop it. "Hold anywhere to stop" shows after a few taps or 25 seconds.';
+    h.className = 'v'; h.textContent = rm.checked ? 'Reduced motion: no copy and no movement. The mascot only says "April Fools".' : 'Taps break the piece under the finger a little more. Press and hold anywhere for about a second to stop it. "Press and hold to stop" shows after three taps or at 15 seconds.';
     say.append(b, p, v, h);
   }
   function play(d) {
@@ -163,7 +163,7 @@ td button { min-height: 36px; border: 0; background: transparent; font-weight: 7
     describe();
     if (innerWidth < 960) document.getElementById('phone').scrollIntoView({ behavior: 'smooth', block: 'start' });
     var c = cur;
-    load(function () { f.contentWindow.FOOLS.play(c, { name: nm.value, version: ver, quick: quick, reduced: rm.checked }); try { f.contentWindow.focus(); } catch (e) {} });
+    load(function () { f.contentWindow.FOOLS.play(c, { name: nm.value, version: ver, quick: quick, reduced: rm.checked, force: !rm.checked }); try { f.contentWindow.focus(); } catch (e) {} });
   }
   function drawDeal() {
     var F = f.contentWindow && f.contentWindow.FOOLS;
@@ -194,6 +194,7 @@ td button { min-height: 36px; border: 0; background: transparent; font-weight: 7
   rm.addEventListener('change', describe);
   yr.addEventListener('change', drawDeal);
   nm.addEventListener('change', function () { try { f.contentWindow.SETNAME(nm.value); } catch (e) {} });
+  try { if (matchMedia('(prefers-reduced-motion: reduce)').matches) { rm.checked = true; var tip = document.createElement('p'); tip.className = 'note'; tip.textContent = 'Your device asks for less motion, so Reduced motion is ticked. Untick it to watch the jokes move.'; rm.closest('.row').after(tip); } } catch (e) {}
   addEventListener('resize', fit); fit(); load();
 })();
 </script>
@@ -201,4 +202,10 @@ td button { min-height: 36px; border: 0; background: transparent; font-weight: 7
 </html>
 `;
 fs.writeFileSync(path.join(HERE, 'index.html'), page);
+// ARTIFACT=<file>: the same page as a claude.ai page body (its skeleton adds doctype, head and body), for the
+// head chef to open on a phone. Kept out of the repo.
+if (process.env.ARTIFACT) {
+  const head = page.slice(page.indexOf('<title>'), page.indexOf('</head>')), body = page.slice(page.indexOf('<body>') + 6, page.lastIndexOf('</body>'));
+  fs.writeFileSync(process.env.ARTIFACT, head.replace(/<meta [^>]*>\n?/g, '') + body);
+}
 console.log('wrote', path.join(HERE, 'index.html'), Math.round(page.length / 1024) + ' KB');
