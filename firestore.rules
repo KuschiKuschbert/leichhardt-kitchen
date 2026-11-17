@@ -1291,6 +1291,22 @@ service cloud.firestore {
           && request.resource.data.at > resource.data.at);
       allow delete: if false;
     }
+    match /kitchens/KITCHEN_PIN/fools/{sid} {
+      // April Fools (17 Nov 2026, docs/april-fools.md): a person's joke has played this year, so it plays once a year per
+      // person on any device (their phone and the shared display). fools/<YYYY-04-01>_<staff id>, { day, at, by }.
+      // Written by that person on their own PIN session when their joke starts; never changed or deleted. Read by that
+      // person only (one read, their first Home view of 1 April on a device) and the verified admin.
+      function foolsOk(sid) {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['day', 'at', 'by'])
+          && d.day is string && d.day.matches('[0-9]{4}-04-01')
+          && d.at is int && d.at > 0 && d.at <= request.time.toMillis() + 300000
+          && sid == d.day + '_' + d.by;
+      }
+      allow read: if isAdmin() || (kitchenRead() && sid.split('_')[0].matches('[0-9]{4}-04-01') && sid == sid.split('_')[0] + '_' + reader());
+      allow create: if staff() && foolsOk(sid);
+      allow update, delete: if false;
+    }
     // Who has seen a shift ping: one small record per person, ping and day, written when they tap Got it.
     // The record id is the day, an underscore and the writer's id. Records are never changed or deleted.
     match /kitchens/KITCHEN_PIN/notes/{id}/seen/{sid} {

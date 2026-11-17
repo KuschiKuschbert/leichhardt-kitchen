@@ -1793,6 +1793,21 @@
      the phones make (js/fools.js deal(), from the staff list: no reads), and Preview, which opens Home and plays it now
      with that name (js/app.js LK_APP.fools; nothing is kept). js/fools.js loads when this row opens. */
   var foolsAdminLoad = null, foolsAdminErr = false;
+  /* Once a year on any device (head chef, 17 Nov 2026: "do the once thing"; docs/april-fools.md). fools/<YYYY-04-01>_<me>,
+     { day, at, by }, written once by the person when their joke starts (foolsMark()). foolsSeen(): has it played on
+     another device? One read from the server, on a person's first Home view of 1 April on a device (about one read per
+     person per device, once a year). true: played; false: not yet; null: could not tell (no signal, refused, rules not
+     published yet), and the device's own record decides. A cached answer is never taken for "not yet". */
+  function foolsSeen(id, day) {
+    if (!id || id !== S.who || !whoName() || !canW() || !/^\d{4}-04-01$/.test(day || '')) return Promise.resolve(null);
+    return sdk().then(function () { return fb.fs.getDocFromServer(docRef('fools', day + '_' + id)); })
+      .then(function (sn) { return !!sn.exists(); }, function () { return null; });
+  }
+  function foolsMark(id, day) {
+    if (!id || id !== S.who || !canW() || !/^\d{4}-04-01$/.test(day || '')) return;
+    // a second device after the first is refused by the rules (never changed): the joke is already kept, so nothing to show
+    W([['set', docRef('fools', day + '_' + id), { day: day, at: now() }]]).catch(function () {});
+  }
   function foolsYear() { var d = dayNow(); return +d.slice(0, 4) + (d.slice(5) > '04-01' ? 1 : 0); }
   function foolsAdminHTML() {
     var F = window.LK_FOOLS, year = foolsYear();
@@ -16266,6 +16281,7 @@ if (list.length) sg('oreg', 's');
     whoId: function () { return whoName() ? S.who : ''; },
     // April Fools (docs/april-fools.md): the staff ids the joke deal is made from, the same on every phone (no read)
     foolsIds: function () { return ptPeople().map(function (p) { return p.id; }); },
+    foolsSeen: foolsSeen, foolsMark: foolsMark,
     // the no-signal sentence while the kitchen's settings are not loaded and there is no signal, otherwise '' (js/app.js)
     offline: function () { return offWait() ? OFF_KITCHEN : ''; },
     // Sign in from the chef hat with nobody signed in: "Who are you?" on the prep list, then back to the page it came from.

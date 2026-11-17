@@ -1,5 +1,9 @@
 # Firestore reads and writes: audit, 5 November 2026
 
+## April Fools, 17 November 2026
+
+On 1 April only: one read per person per device (their own `fools/<1 April>_<staff id>`, from the server, on their first Home view that day) and one write per person (when their joke starts). About 20 to 40 reads and 20 writes that day; none on any other day, no listener. The admin panel's April Fools row and its Preview read nothing. `docs/april-fools.md`.
+
 ## Function sent, lines off, 14 November 2026
 
 [Function sent, lines off](fn-sent-tidy-options/brief.md): the phones decide from the functions and Sent listeners they already run, so no new listener and no read while a list shows. The slip on the phone that sends the last trip names what came off from the lists that phone holds, with no read (the service view reads nothing); when Orders is not loaded there it says "the Function stock line if it was not ordered". The 03:00 job reads the last 7 days' Sent ticks (one query), each function that has them, and four small queries a day from an all-sent function's day to today: about 8 to 36 reads a function a night, for 7 nights. It writes only the lines that come off, and stamps `config/main.pastEdit` when a past day changed (every phone's config listener hears it once).

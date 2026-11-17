@@ -42,6 +42,11 @@ const heading = p => p.evaluate(() => (document.querySelector('#app #rtitle') ||
     ok(await p.evaluate(() => !!window.LK_FOOLS && window.LK_FOOLS.api === 1), 'personal phone: js/fools.js loaded on 1 April');
     ok(await p.evaluate(() => !!document.querySelector('link#fl-css')), 'personal phone: css/fools.css loaded');
     ok((await rec(p) || {}).st === 'play', 'personal phone: lk.fools.ann says it started');
+    const served = path => p.evaluate(k => (JSON.parse(localStorage.getItem('fake.fs') || '{}'))[k] || null, path);
+    await L.waitFor(p, k => !!(JSON.parse(localStorage.getItem('fake.fs') || '{}'))[k], key(['fools', '2027-04-01_ann']), 6000).catch(() => {});
+    const kept = await served(key(['fools', '2027-04-01_ann']));
+    ok(!!kept && kept.day === '2027-04-01' && kept.by === 'ann' && typeof kept.at === 'number' && Object.keys(kept).sort().join() === 'at,by,day',
+      'once a year: the server keeps fools/2027-04-01_ann { day, at, by } when it starts ' + JSON.stringify(kept));
     ok(await p.evaluate(() => document.getElementById('app').classList.contains('fl-under')), 'personal phone: the real Home is hidden under the copy, not changed');
     ok(/Ann/.test(await heading(p)), 'personal phone: the real welcome still says the name (only the copy changes)');
     ok(await p.evaluate(() => document.documentElement.scrollWidth - innerWidth) <= 0, 'personal phone: no sideways scroll while it plays');
@@ -63,6 +68,17 @@ const heading = p => p.evaluate(() => (document.querySelector('#app #rtitle') ||
     await p.reload(); await L.settle(p, 2500);
     ok(!(await layer(p)) && !(await cardUp(p)), 'once a day: a reload plays nothing again');
     ok(await heading(p) === 'Got you, Ann.', 'once a day: the bubble still says Got you');
+  });
+
+  await step('already played on another device', async () => {
+    const day = '2027-04-01', o = fixture(day);
+    o[key(['fools', day + '_ann'])] = { day, at: APR1 - 600000, by: 'ann' };
+    await open({ deviceMode: 'shared', extra: o });
+    await L.waitFor(p, () => (document.querySelector('#app #rtitle') || {}).textContent === 'Got you, Ann.', null, 8000).catch(() => {});
+    await L.settle(p, 1500);
+    ok(!(await layer(p)) && !(await cardUp(p)), 'another device: it played on Ann\'s phone, so the shared display plays nothing');
+    ok(await heading(p) === 'Got you, Ann.', 'another device: his bubble says Got you');
+    ok((await rec(p) || {}).st === 'seen', 'another device: kept as seen on this device too');
   });
 
   await step('1 April on the shared display', async () => {

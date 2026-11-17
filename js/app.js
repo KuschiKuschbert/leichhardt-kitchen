@@ -1479,7 +1479,7 @@
      (reduced motion or celebrations Still: the words only) }. Celebrations Off: nothing at all. Out of date on any other kitchen day. A screen hint
      only: it grants nothing and is never sent. When it cannot be kept (storage refused), nothing plays, so a reload can
      never scare them twice. */
-  var foolsLoad = null, foolsAsk = null;
+  var foolsLoad = null, foolsAsk = null, foolsAsking = '';
   function foolsDay() { var T = window.LK_TIME; return !!(T && T.ready() && T.day().slice(5) === '04-01'); }
   function foolsRec(id) { try { var r = JSON.parse(localStorage.getItem('lk.fools.' + id) || 'null'); return r && r.d === window.LK_TIME.day() ? r : null; } catch (e) { return null; } }
   function foolsKeep(id, st) {
@@ -1504,12 +1504,22 @@
     var ask = foolsAsk, rec = foolsRec(id);
     if (!ask && (!foolsDay() || foolsOff() || (rec && rec.st !== 'play'))) return;
     if (!F) { if (!foolsLoad) foolsLoad = mgScript('js/fools.js?v=1').then(function () { foolsSync(); }, function () { foolsLoad = null; }); return; }
-    if (F.api !== 1 || F.busy()) return;
-    var name = P.whoName(), done = function (st) { foolsKeep(id, st); homeWelcomePaint(); };
+    if (F.api !== 1 || F.busy() || foolsAsking) return;
+    var name = P.whoName(), day = window.LK_TIME.day();
+    var done = function (st) { foolsKeep(id, st); homeWelcomePaint(); if (st === 'play' && P.foolsMark) P.foolsMark(id, day); };
     if (ask) { foolsAsk = null; F.start({ name: ask.name || name, preview: ask }); return; }
     if (!foolsCan()) return;
     if (rec && rec.st === 'play') { F.start({ name: name, recover: true, done: done }); return; }
-    F.start({ id: id, name: name, ids: P.foolsIds ? P.foolsIds() : [id], year: +window.LK_TIME.day().slice(0, 4), length: window.__lkFoolsLength, done: done });
+    var go = function () { F.start({ id: id, name: name, ids: P.foolsIds ? P.foolsIds() : [id], year: +day.slice(0, 4), length: window.__lkFoolsLength, done: done }); };
+    if (!P.foolsSeen) { go(); return; }
+    // once a year on any device: the server says whether it played elsewhere (one read); then only his words
+    foolsAsking = id;
+    P.foolsSeen(id, day).then(function (seen) {
+      foolsAsking = '';
+      var P2 = window.LK_PREP, here = parseRoute().name === 'landing' && P2 && P2.whoId && P2.whoId() === id && window.LK_TIME.day() === day;
+      if (seen === true) { foolsKeep(id, 'seen'); homeWelcomePaint(); return; }
+      if (here && !F.busy() && !foolsRec(id)) go();
+    });
   }
   /* Private tools load only on their page. A failed download leaves a Retry action.
      Protected data is fetched only after the current sign-in has been checked. */
