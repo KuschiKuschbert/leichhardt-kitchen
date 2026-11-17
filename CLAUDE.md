@@ -85,7 +85,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Merging, the queue, `urgent` | `docs/auto-merge.md` |
 | Publishing the site: only a merge that changes a file the phones load republishes; the book then updates silently when safe (no band unless asked) | `docs/site-publishing.md` |
 | Nightly backup and recovery | `docs/backup-recovery.md` |
-| Seasonal celebrations and festival dates | `docs/seasonal-celebrations.md`, `docs/seasonal-calendar.md`, `docs/celebration-options/brief.md` |
+| Seasonal celebrations and festival dates; the New Year show over Home (fireworks and the cards' dance, 17 Nov 2026) | `docs/seasonal-celebrations.md`, `docs/seasonal-calendar.md`, `docs/celebration-options/brief.md` |
 
 ## Service council (5 Nov 2026)
 
