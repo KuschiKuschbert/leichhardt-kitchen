@@ -48,10 +48,10 @@
   Specials always shows first. The head chef's Special switch in Manage Recipes puts a dish in it.
 */
 window.LK_DATA = {
-  updated: '16 November 2026',
+  updated: '17 November 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
   menuOrder: [
-    { title: 'Specials', ids: ['chicken-adobo', 'lamb-nachos', 'buffalo-corn-cob-with-cashew-crumb'] },
+    { title: 'Specials', ids: ['chicken-adobo', 'lamb-nachos', 'buffalo-corn-cob-with-cashew-crumb', 'philly-potato'] },
     { title: "Snackin' Plates", ids: ['poutine', 'beetroot-bites', 'brisket-cob', 'wings', 'haloumi-tacos', 'pork-belly-bites', 'calamari', 'riblets', 'garlic-bread', 'bacon-cheese-bread', 'chips-snack'] },
     { title: 'Salads', ids: ['caesar', 'green-bowl', 'pumpkin-salad'] },
     { title: 'Big Country Feeds', ids: ['beef-cheek', 'ribs', 'barra', 'carbonara', 'fish-chips', 'lamb-rissoles', 'vegan-rissoles', 'pork-belly', 'pie'] },
@@ -1607,7 +1607,7 @@ window.LK_DATA = {
         { q: '1', name: 'Yorkshire pudding', note: 'giant, 18 cm, one batch', link: 'yorkshire-pudding', tags: ['Gluten', 'Egg', 'Milk'] },
         { q: '[Qty]', name: 'Mash', link: 'mash', tags: ['Milk?'] },
         { q: '[Qty]', name: 'Mushy peas', note: 'bought in', link: 'mushy-peas' },
-        { q: '[Qty]', name: 'Cider-pickled red cabbage', link: 'cider-red-cabbage' },
+        { q: '120 g', name: 'Cider-pickled red cabbage', link: 'cider-red-cabbage' },
         { q: '[Qty]', name: 'Gravy', note: 'in a jug. [House gravy or a chicken gravy to confirm]', link: 'gravy' }
       ],
       pins: [
@@ -1615,17 +1615,17 @@ window.LK_DATA = {
         { label: 'Yorkshire pudding', x: 13.8, y: 48.3, side: 'right', link: 'yorkshire-pudding', tags: ['Gluten', 'Egg', 'Milk'], note: 'Giant, under the chicken. Keep the crisp edges showing.' },
         { label: 'Mash', x: 77.9, y: 24.6, side: 'left', link: 'mash', note: 'Its own mound, beside the Yorkshire. [Amount to come]' },
         { label: 'Mushy peas', x: 78.6, y: 41.9, side: 'left', link: 'mushy-peas', note: 'Bought in. Its own mound. [Amount to come]' },
-        { label: 'Red cabbage', x: 78.6, y: 56, side: 'left', link: 'cider-red-cabbage', note: 'Cider-pickled. A small pile for colour and crunch. [Amount to come]' },
+        { label: 'Red cabbage', x: 78.6, y: 56, side: 'left', link: 'cider-red-cabbage', note: 'Cider-pickled, 120 g. A small pile for colour and crunch.' },
         { label: 'Gravy jug', x: 49.1, y: 80.2, side: 'right', link: 'gravy', note: 'On the side, poured at the table. [Amount to come]' }
       ],
       sections: [
         { title: 'Cooking', steps: [
-          'Smoked chicken (card 131): brined, dried, seasoned, smoked 2 hours, then finished hot. Probe the breast and the inner thigh: 75 °C in both.',
+          'Smoked chicken (card 131): brined, dried, seasoned and smoked 2 hours, then cooled and kept in the coolroom. Finished to order in the oven at 180 °C until hot. Probe the breast and the inner thigh: 75 °C in both.',
           'Rest the chicken on a rack, 10 to 15 min.',
           'Yorkshire pudding (card 133): one 18 cm pudding per board, one batch. 17 min at 210 °C, then 8 min at 230 °C. Never open the oven.',
           'Mash (card 70) and gravy (card 69) as for every plate.',
           'Cider-pickled red cabbage (card 134), made ahead.',
-          'Mushy peas (card 136), bought in. [How it is heated and held to come]'
+          'Mushy peas (card 136): heated in a pan with a dash of water, salt and pepper.'
         ] },
         { title: 'Plating', steps: [
           'Sharing board. [Board to confirm]',
@@ -1641,7 +1641,7 @@ window.LK_DATA = {
     },
     {
       id: 'smoked-chicken', art: 'smoked-chicken', no: '131', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Smoked Chicken', short: 'Smoked chicken',
-      yield: 'One whole No. 10 chicken (about 1 kg), unstuffed, with no added brine or salt solution. Brine and dry the day before. Smoke 2 hours at 150 °C, then finish hot until the breast and the inner thigh read 75 °C. [Hot finish time for a No. 10 to confirm]',
+      yield: 'One whole No. 10 chicken (about 1 kg), unstuffed, with no added brine or salt solution. Brine and dry the day before. Smoke 2 hours at 150 °C, cool, then the coolroom until it is ordered, 5 days at most. Finish to order in the oven at 180 °C until hot: 75 °C in the breast and the inner thigh.',
       ingredients: [
         { q: '1', name: 'Whole chicken', note: 'No. 10, unstuffed, no added brine or salt solution' },
         { q: '3 L', name: 'Herb brine', note: 'one batch per chicken', link: 'herb-brine' },
@@ -1674,18 +1674,21 @@ window.LK_DATA = {
         { title: 'Smoke', steps: [
           'Preheat the smoker to 150 °C. Indirect heat, applewood, a light clean smoke.',
           'Chicken in, breast up.',
-          'Smoke 2 hours.'
+          'Smoke 2 hours.',
+          'Probe the breast and the inner thigh: at least 75 °C in both.'
         ] },
-        { title: 'Finish hot', steps: [
-          'Straight from the smoker into the iCombi: dry heat, 210 °C, 0% humidity, medium fan.',
-          '15 to 30 min, until the breast and the inner thigh both read at least 75 °C.',
-          'Do not baste: the skin needs to dry and colour.',
-          'If the smoker runs cleanly at 210 to 220 °C, you can finish it there instead.'
+        { title: 'Cool and hold', steps: [
+          'Cool it straight after the smoker: below 21 °C within 2 hours, then 5 °C or below within 4 more hours.',
+          'Start the Operandio cooling clock and record the checks.',
+          'Into the coolroom, covered and dated, until it is ordered. Use within 5 days of cooking.'
         ] },
-        { title: 'Rest', steps: ['On a rack, uncovered or loosely covered, 10 to 15 min.', 'Serve straight away. [Holding, cooling and reheating to confirm]'] },
+        { title: 'Finish to order', steps: [
+          'When the board is ordered: into the oven at 180 °C until hot right through.',
+          'Probe the breast and the inner thigh: at least 75 °C in both.',
+          'Do not baste: the skin needs to dry and colour.'
+        ] },
         { title: 'First trial: write it down', steps: ['The bird weight, how full the smoker was, the real times, both final temperatures and how salty it tastes. The head chef then confirms this card.'] }
       ],
-      tip: { title: 'On the iCombi', text: 'Hot finish: dry heat, 210 °C, 0% humidity, medium fan, 15 to 30 min, until both probes read 75 °C.' },
       safety: { title: 'Raw chicken', text: 'Times are a guide only. Probe the thickest part of the breast and the inner thigh, away from the bone: at least 75 °C in both. Do not rinse raw chicken.' },
       contains: [],
       check: [],
@@ -1754,7 +1757,7 @@ window.LK_DATA = {
       /* The head chef's pick, 16 November 2026: a quick pickled red cabbage recipe from the It's a Veg World After All
          blog, cups as 250 ml, the method in the book's words. */
       id: 'cider-red-cabbage', art: 'cider-red-cabbage', no: '134', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Cider-Pickled Red Cabbage', short: 'Red cabbage',
-      yield: 'Batch: half a red cabbage, about 1 L in 2 jars. Keeps 2 weeks in the coolroom. [Amount per board to come]',
+      yield: 'Batch: half a red cabbage, about 1 L in 2 jars. Keeps 2 weeks in the coolroom. 120 g per board.',
       ingredients: [
         { q: '½ head', name: 'Red cabbage', note: 'cored, finely shredded. [Weight to confirm]' },
         { q: '250 ml', name: 'Water' },
@@ -1781,12 +1784,14 @@ window.LK_DATA = {
     },
     {
       id: 'mushy-peas', art: 'mushy-peas', no: '136', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Mushy Peas', short: 'Mushy peas',
-      yield: 'Bought in. [Brand, amount per board and how it is heated to come]',
+      yield: 'Bought in, any brand. Heated in a pan with a dash of water, salt and pepper. [Amount per board to come]',
       ingredients: [
-        { q: '[Qty]', name: 'Mushy peas', note: 'bought in. [Brand to confirm]' }
+        { q: '[Qty]', name: 'Mushy peas', note: 'bought in, any brand' },
+        { q: 'A dash', name: 'Water' },
+        { q: 'To taste', name: 'Salt and pepper' }
       ],
       sections: [
-        { title: 'Method', steps: ['Bought in, ready made. [How it is heated and held to come]'] }
+        { title: 'Method', steps: ['Mushy peas in a pan with a dash of water.', 'Heat until hot, stirring.', 'Season with salt and pepper.'] }
       ],
       labelNote: 'Bought in: check the label for allergens when a new brand or batch comes in.'
     },
@@ -1840,6 +1845,41 @@ window.LK_DATA = {
         ] }
       ],
       labelNote: 'Check the cob loaf, chicken tender and onion ring labels.'
+    },
+    {
+      id: 'philly-potato', art: 'philly-potato', no: '137', kind: 'snack', forLine: 'Special', name: 'Philly Cheesesteak Loaded Potato', short: 'Philly potato', avc: 'Loaded Spuds side and entree',
+      yield: 'Per serve. 2 potatoes, gently squashed, loaded with pulled BBQ brisket, roast capsicum, caramelised onion and cheese sauce, run through the impinger, then topped with ranch, crispy fried onions and spring onion.',
+      ingredients: [
+        { q: '250 g', name: 'Washed potatoes', note: '2 potatoes, rustically squashed [how they are cooked before squashing to come]' },
+        { q: '100 g', name: 'Pulled BBQ brisket', link: 'brisket', note: '[smoked brisket (card 79) or oven brisket (card 121), and any BBQ sauce, to confirm]' },
+        { q: '60 g', name: 'Roast capsicum strips', note: 'bought in (Sandhurst roast red capsicum)' },
+        { q: '80 g', name: 'Caramelised onion', note: 'bought in (Beerenberg)' },
+        { q: '50 g', name: 'American cheese sauce', link: 'american-cheese-sauce', note: 'the liquid cheese' },
+        { q: '50 ml', name: 'Ranch dressing', link: 'ranch', note: 'on top, after the impinger' },
+        { q: '15 g', name: 'Crispy fried onions', note: 'bought in (Dragon Phoenix), not the house fried onions (card 73). On top, after the impinger', tags: ['Gluten?'] },
+        { q: '0.05 bunch', name: 'Spring onion', note: 'on top, after the impinger' }
+      ],
+      pins: [
+        { label: 'Squashed potatoes', x: 19.8, y: 58.5, side: 'left', tags: [], note: '2 potatoes, 250 g in all, rustically squashed. [Cooking before squashing to come]' },
+        { label: 'Pulled BBQ brisket', x: 65.1, y: 53.3, side: 'right', link: 'brisket', note: '100 g. Loaded on before the impinger.' },
+        { label: 'American cheese sauce', x: 57.5, y: 42.5, side: 'left', link: 'american-cheese-sauce', note: '50 g. Loaded on before the impinger.' },
+        { label: 'Roast capsicum', x: 29.2, y: 42.5, side: 'left', tags: [], note: '60 g. Loaded on before the impinger.' },
+        { label: 'Caramelised onion', x: 31.6, y: 59.9, side: 'left', tags: [], note: '80 g. Loaded on before the impinger.' },
+        { label: 'Ranch dressing', x: 34.0, y: 54.7, side: 'left', link: 'ranch', note: '50 ml. On top, after the impinger.' },
+        { label: 'Crispy fried onions', x: 62.3, y: 38.7, side: 'right', tags: ['Gluten?'], note: '15 g. On top, after the impinger. Bought in, not the house fried onions.' },
+        { label: 'Spring onion', x: 75.5, y: 52.8, side: 'right', tags: [], note: 'On top, after the impinger.' }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          '[Cook the potatoes before squashing: how, temperature and time to come]',
+          'Gently squash 2 potatoes, 250 g in all, rustic style.',
+          'Load them with 100 g pulled BBQ brisket, 60 g roast capsicum, 80 g caramelised onion and 50 g American cheese sauce.',
+          'Run it through the impinger. [Setting to come]',
+          'Top with 50 ml ranch dressing, 15 g crispy fried onions and the spring onion.',
+          '[Plate or board to come]'
+        ] }
+      ],
+      labelNote: 'Check the crispy fried onion, caramelised onion, roast capsicum and brisket labels.'
     },
     {
       id: 'pork-knuckle', art: 'pork-knuckle', no: '92', kind: 'main', forLine: 'Special', name: 'Pork Knuckle',
