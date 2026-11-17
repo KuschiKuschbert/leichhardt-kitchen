@@ -35,7 +35,8 @@ const selected = p => p.$eval('[data-p="tm-day"][aria-pressed="true"]', e => e.g
 async function ready(p) { await L.waitFor(p, () => !!document.querySelector('.tm-weeknav') && !!document.querySelector('.tm-work [data-p="tm-save"]'), null, 7000); }
 async function dates(p) { if (!await p.locator('.tm-weeknav').isVisible()) await click(p, '[data-p="tm-date-toggle"]'); }
 // a planner row or any of its pickers: what a past or unknown day must not offer
-const ROW_CONTROLS = '.tm-tlrow, select[data-k^="tm-sec:"], select[data-k^="tm-at:"], [data-p="tm-off"], [data-p="tm-addbr"], select[data-k^="tm-addsvc:"]';
+// (a person's break pickers are tm-bat:<id>:<at>:<n> since one break per person, 17 Nov 2026)
+const ROW_CONTROLS = '.tm-tlrow, select[data-k^="tm-sec:"], select[data-k^="tm-bat:"], [data-p="tm-off"], [data-p="tm-addbr"], select[data-k^="tm-addsvc:"]';
 async function goDate(p, d, edit = true) {
   await dates(p);
   for (let tries = 0; tries < 12; tries++) {
@@ -208,12 +209,12 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
   await assignment(p, 'ann', 'lunch', 'pans');
   // Ann's break moves from 13:45 to 14:15, after now: 14:30 (the old pick) is no longer offered, as a 45 minute break
   // must end by her 15:00 finish (16 Nov 2026), and a value outside the list would have cleared the break instead
-  await L.pick(p, 'select[data-k="tm-at:ann:lunch:0"]', '855');
+  await L.pick(p, 'select[data-k^="tm-bat:ann:825:"]', '855');
   await click(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k].v === 2, TEAM, 6000);
   ok(JSON.stringify((await read(p, today)).br.filter(b => b.id === 'ann')) === JSON.stringify([{ id: 'ann', sh: 'lunch', at: 855, len: 45 }]), 'late week read: the moved break is saved first');
   await p.evaluate(() => window.__fake.releaseInitialWeek()); await L.settle(p, 200);
-  ok(await rowSection(p, 'ann') === 'pans' && await p.$eval('select[data-k="tm-at:ann:lunch:0"]', e => e.value) === '855' && !/Ann/.test(await txt(p, '.tm-away-slot') || ''), 'late week read: an older snapshot cannot replace the saved section or break, or restore an old current break');
+  ok(await rowSection(p, 'ann') === 'pans' && await p.$eval('select[data-k^="tm-bat:ann:"]', e => e.value) === '855' && !/Ann/.test(await txt(p, '.tm-away-slot') || ''), 'late week read: an older snapshot cannot replace the saved section or break, or restore an old current break');
   await assignment(p, 'ann', 'lunch', 'larder'); await click(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k].v === 3, TEAM, 6000);
   ok(savedSection(await read(p, today), 'ann', 'lunch') === 'larder', 'late week read: the next Save retains the acknowledged version and advances to version three');

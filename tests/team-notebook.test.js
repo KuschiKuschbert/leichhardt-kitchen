@@ -1,6 +1,7 @@
 // Person worksheet: per-person section and break picks share one dated draft and Save. The away panel always describes the
-// saved plan. Rows on one clock (16 Nov 2026): each person's row holds a line per service they work, with its section and
-// break pickers, and Add a service; the details panel and Whole day review went with the day grid.
+// saved plan. Rows on one clock (16 Nov 2026): each person's row holds a line per service they work, with its section
+// picker, and Add a service; the details panel and Whole day review went with the day grid. One break per person (17 Nov
+// 2026): a person's breaks sit on one break line under their day, keyed by the break's start (tm-bat:ID:AT:N).
 // Access, Use it and every old break/batch control are covered by todays-team.test.js.
 const L = require('./lib');
 const fs = require('fs'), path = require('path');
@@ -26,7 +27,8 @@ const boardHidden = p => p.$eval('.tm-away', e => e.hidden && getComputedStyle(e
 const boardShown = p => p.$eval('.tm-away', e => !e.hidden && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 0);
 const rows = p => p.$$eval('.tm-away-row', all => all.map(e => ({ name: (e.querySelector('.tm-away-name') || {}).textContent || '', text: e.textContent.trim() })));
 const press = async (p, s) => { const found = await tap(p, s); await L.settle(p, 150); return found; };
-// a section picker per person and service (tm-sec:ID:SH), break pickers per service (tm-at:ID:SH:N), all in the row
+// a section picker per person and service (tm-sec:ID:SH), one break line per person (tm-bat:ID:AT:N, found as it is now
+// with L.brKey(), since the key follows the break's start), all in the row
 const assign = (p, id, sec, sh = 'lunch') => L.pick(p, 'select[data-k="tm-sec:' + id + ':' + sh + '"]', sec);
 const pick = async (p, k, v) => { await L.pick(p, 'select[data-k="' + k + '"]', String(v)); return true; };
 const val = (p, k) => p.$eval('select[data-k="' + k + '"]', e => e.value);
@@ -62,7 +64,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   ok(await val(p, 'tm-sec:sam:lunch') === 'grill', 'assignment: choosing Grill deliberately overrides Sam\'s usual Pans');
   ok(await p.$eval('select[data-k="tm-sec:sam:lunch"]', e => [...e.options].some(o => o.value === '' && o.textContent === 'Sous chef')), 'assignment: the chef role remains an explicit no-section choice');
   await assign(p, 'sam', '');
-  ok(await val(p, 'tm-sec:sam:lunch') === '' && JSON.stringify(await lines(p, 'sam')) === '["lunch","dinner"]' && await val(p, 'tm-at:sam:lunch:0') === '870', 'Clear section: Sam stays on Lunch and keeps his break');
+  ok(await val(p, 'tm-sec:sam:lunch') === '' && JSON.stringify(await lines(p, 'sam')) === '["lunch","dinner"]' && await val(p, await L.brKey(p, 'sam', 0)) === '870', 'Clear section: Sam stays on Lunch and keeps his break');
   await assign(p, 'sam', 'grill');
   ok(await val(p, 'tm-sec:sam:dinner') === 'grill' && await val(p, 'tm-sec:sam:lunch') === 'grill', 'each service: Dinner keeps its own section beside Lunch, without a selected assignment mode');
   await assign(p, 'sam', 'pans', 'dinner');
@@ -84,21 +86,21 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
 
   // An unsaved break move cannot change staff\'s published status, including when another chef wins the save.
   // 14:15 (855): the last start a 45 minute break has inside Ann's Lunch to 15:00 (break times inside her hours, 16 Nov 2026)
-  ok(await pick(p, 'tm-at:ann:lunch:0', 855), 'draft: Ann\'s break remains editable through the existing controls');
+  ok(await pick(p, await L.brKey(p, 'ann', 0), 855), 'draft: Ann\'s break remains editable through the existing controls');
   await L.settle(p, 150);
   ok((await rows(p)).some(r => r.name === 'Ann'), 'draft break: Ann remains scheduled away according to the saved break');
   await press(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k].v === 3, TEAM, 6000);
   ok(!(await rows(p)).some(r => r.name === 'Ann') && (await saved(p)).br.some(x => x.id === 'ann' && x.at === 855), 'saved break: only a successful Save publishes the moved break to scheduled status');
-  await pick(p, 'tm-at:ann:lunch:0', 780); await L.settle(p, 150);
+  await pick(p, await L.brKey(p, 'ann', 0), 780); await L.settle(p, 150);
   const beforeConflict = await away(p);
   const newer = Object.assign({}, await saved(p), { v: 4, upd: L.NOW + 60000, br: out.br.map(x => x.id === 'ann' ? Object.assign({}, x, { at: 840 }) : x) });
   await p.evaluate(([k, r]) => window.__fake.write(k, r), [TEAM, newer]);
   await press(p, '[data-p="tm-save"]'); await L.settle(p, 700);
   ok(/Not saved:/.test(await txt(p, '.tm-save') || '') && (await saved(p)).v === 4, 'conflict: another chef\'s newer version is protected');
-  ok(await away(p) === beforeConflict && await val(p, 'tm-at:ann:lunch:0') === '780', 'conflict: saved status stays on the loaded plan and the unfinished break edit remains recoverable');
+  ok(await away(p) === beforeConflict && await val(p, await L.brKey(p, 'ann', 0)) === '780', 'conflict: saved status stays on the loaded plan and the unfinished break edit remains recoverable');
   await press(p, '[data-p="tm-refresh"]');
-  ok(await val(p, 'tm-at:ann:lunch:0') === '780', 'Refresh: the first tap keeps the unsaved draft until discard is confirmed');
+  ok(await val(p, await L.brKey(p, 'ann', 0)) === '780', 'Refresh: the first tap keeps the unsaved draft until discard is confirmed');
   await press(p, '[data-p="tm-refresh"]'); await L.settle(p, 250);
   ok(/14:45/.test(await away(p) || '') && await p.$eval('[data-p="tm-save"]', e => e.disabled), 'Refresh: confirmation loads the newer saved break and resets the draft');
   ok(p.errors.length === 0, 'assignment and conflict: no page errors ' + p.errors.join(' | '));
@@ -197,7 +199,8 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   ok(await readCount(p) === beforeAge, 'freshness painting: checking old state itself adds no reads');
   await p.context().close();
 
-  // More real shifts than fit, long synthetic people and all three breaks at the largest supported reading size.
+  // More real shifts than fit, long synthetic people and an older day's four breaks for Sam (two at most a person since
+  // 17 Nov 2026, but a saved day with more still shows them all) at the largest supported reading size.
   const manyShifts = shifts.concat(Array.from({ length: 9 }, (_, i) => ({ id: 'extra' + i, name: 'Evening preparation and smoker ' + (i + 1), from: 600, to: 1320 })));
   const longPeople = people.map(x => Object.assign({}, x, { name: x.name + ' ' + 'Longsynthetickitchenname'.repeat(3) }));
   p = await L.open(b, '#/team', { who: 'sam', extra: fixture(plan({ br: plan().br.concat([{ id: 'sam', sh: 'lunch', at: 720, len: 30 }, { id: 'sam', sh: 'lunch', at: 780, len: 30 }]) }), { people: longPeople, kitShifts: manyShifts, kitSecs: secs.map(x => Object.assign({}, x, { name: x.name + ' and the long preparation section' })) }), wait: 1200 });
@@ -216,7 +219,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
     });
     const label = width + ' ' + text, over = await L.overflow(p);
     ok(JSON.stringify(m.on) === JSON.stringify(ordered.filter(x => x === 'lunch' || x === 'dinner')) && JSON.stringify(m.offered) === JSON.stringify(ordered.filter(x => x !== 'lunch' && x !== 'dinner')) && m.columns === 3, label + ': the head has a column only for the 3 services worked; Sam\'s lines and his Add a service give every configured service in time order');
-    ok(!over && m.small.length === 0 && m.saves === 1, label + ': long names and three breaks fit the page, controls are 44 px and Save remains single (' + [over, m.small.length && JSON.stringify(m.small)].filter(Boolean).join('; ') + ')');
+    ok(!over && m.small.length === 0 && m.saves === 1, label + ': long names and four breaks fit the page, controls are 44 px and Save remains single (' + [over, m.small.length && JSON.stringify(m.small)].filter(Boolean).join('; ') + ')');
   }
   // the last configured service by keyboard alone: Add a service, End, Enter
   await p.locator('select[data-k="tm-addsvc:sam"] + .ux-picker-trigger').focus(); await p.keyboard.press('Enter'); await L.settle(p, 200);
