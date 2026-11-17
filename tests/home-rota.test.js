@@ -88,5 +88,42 @@ const ready = p => L.waitFor(p, () => !!document.querySelector('#hm-with-body .h
     ok(b.length === 1 && b[0].cols.length === 3, 'three shifts still fit one board (' + JSON.stringify(b.map(x => x.cols)) + ')');
     ok(!(await L.overflow(p)), 'three shifts: no sideways scroll');
   });
+  // A roster day (head chef, 17 Nov 2026, docs/home-roster-options/brief.md): the roster file cuts a long day into its
+  // services, so Home joins each person's parts back into one day; a split keeps its gap; a service added by hand without
+  // roster hours counts with its own; a double that moves section later says so where the later column is not shown;
+  // Your day says the whole stretch; the head chef always sees the whole day, on the plan or not. At 14:00.
+  const rosterOn = [
+    { id: 'ann', sh: 'lunch', sec: 'hot', from: 600, to: 900 }, { id: 'ann', sh: 'dinner', sec: 'prep', from: 900, to: 1260 },   // 10:00 to 21:00, Hot larder then Prep
+    { id: 'bo', sh: 'lunch', sec: 'pans', from: 600, to: 840 }, { id: 'bo', sh: 'dinner', sec: 'pans', from: 1020, to: 1260 },     // a split
+    { id: 'cleo', sh: 'lunch', sec: 'pass', from: 660, to: 900 }, { id: 'cleo', sh: 'dinner', sec: 'grill' },                       // Dinner added by hand
+    { id: 'dev', sh: 'lunch', sec: 'prep' },                                                                                       // no roster hours
+    { id: 'gus', sh: 'lunch', sec: 'pass', from: 600, to: 900 }, { id: 'eli', sh: 'dinner', sec: 'grill', from: 1020, to: 1260 }];
+  const rosterFx = () => fixture({ on: rosterOn, br: [] }, { headId: 'gus', people: people.map(x => x.id === 'gus' ? Object.assign({}, x, { role: 'head', del: true }) : x) });
+  // each person on a board as read: name, hours, a later section, breaks
+  const persons = (p, sel) => p.$$eval(sel + ' .hm-tp', l => l.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
+  const cellOf = (list, name) => list.filter(c => c === name || c.indexOf(name + ' ') === 0);
+  await step('roster day: a cook on Lunch', async () => {
+    p = await L.open(browser, '#/', { who: 'bo', extra: rosterFx(), wait: 1200 });
+    await ready(p);
+    const b = await persons(p, '#hm-with-body');
+    ok(JSON.stringify(cellOf(b, 'Ann')) === JSON.stringify(['Ann 10:00 to 21:00 Prep from 15:00']), 'roster day: a long day cut into services reads as one day, with the later section where Dinner is not on the board (' + JSON.stringify(cellOf(b, 'Ann')) + ')');
+    ok(JSON.stringify(cellOf(b, 'Cleo')) === JSON.stringify(['Cleo 11:00 to 21:00 Grill from 15:00']), 'roster day: a service added by hand counts with its own hours (' + JSON.stringify(cellOf(b, 'Cleo')) + ')');
+    ok(JSON.stringify(cellOf(b, 'Dev')) === JSON.stringify(['Dev']) && JSON.stringify(cellOf(b, 'Gus')) === JSON.stringify(['Gus 10:00 to 15:00']), 'roster day: no roster hours, no hours line; one service, its own hours (' + JSON.stringify([cellOf(b, 'Dev'), cellOf(b, 'Gus')]) + ')');
+    ok(/Lunch · 10:00 to 14:00/.test(await txt(p, '#hm-day') || ''), 'roster day: Your day on a split says the part of the day now (' + ((await txt(p, '#hm-day')) || '').replace(/\s+/g, ' ').slice(0, 90) + ')');
+    ok(!(await L.overflow(p)), 'roster day: no sideways scroll');
+  });
+  await step('roster day: Your day for a long day', async () => {
+    p = await L.open(browser, '#/', { who: 'ann', extra: rosterFx(), wait: 1200 });
+    await ready(p);
+    ok(/Lunch · 10:00 to 21:00/.test(await txt(p, '#hm-day') || ''), 'roster day: Your day says the whole roster day, not the Lunch slice (' + ((await txt(p, '#hm-day')) || '').replace(/\s+/g, ' ').slice(0, 90) + ')');
+  });
+  await step('roster day: the head chef on the plan', async () => {
+    p = await L.open(browser, '#/', { admin: true, extra: rosterFx(), wait: 1200 });
+    await ready(p);
+    const card = (await txt(p, '#hm-with') || '').replace(/\s+/g, ' ');
+    ok(/On today/.test(card) && !/On with you/.test(card) && /Eli/.test(card) && /Bo/.test(card), 'head chef on the plan: Home shows the whole day, Dinner included (' + card.slice(0, 120) + ')');
+    ok(await p.locator('#hm-full-team').evaluate(e => e.hidden && e.getBoundingClientRect().height === 0) && !!(await p.$('#hm-with a.hm-pl[href="#/team"]')), 'head chef on the plan: no second copy behind a fold, the Today\'s team link stays');
+    ok(!(await L.overflow(p)), 'head chef on the plan: no sideways scroll');
+  });
   await browser.close(); L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });

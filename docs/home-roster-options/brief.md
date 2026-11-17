@@ -50,3 +50,72 @@ Recommend the fix only, as a repair:
 - Tests: `tests/home-rota.test.js` at 14:00, 15:00, 17:00, 19:59 and 20:00 with a section change, a split and a service added by hand, failing on the old code first.
 
 Main downside: the full-day fold still shows a double in each column it works (board C as chosen), now with the whole day each time.
+
+## Head chef's answers (17 November 2026)
+
+"Yes build the fix, and always show me the whole day and maybe make some layout/style improvements for that?"
+
+- **The fix:** built on this branch (below).
+- **The head chef always sees the whole day:** On today, with no fold, whether or not they are on the plan. A decision for `docs/head-chef-decisions.md`.
+- **Layout for the whole day:** a small change on an existing card (no tab, button, pop-up or step), so the council's quick check: three options drawn and measured by the lead, no extra agents. The head chef chooses.
+
+## The fix (built)
+
+- **One day per person:** each person on the board shows their whole roster day (`homePersonDay()`, sharing `tmJoin()` with `tmHoursWords()`). Back-to-back parts are joined, a split keeps its gap, and a service added by hand without roster hours counts with its own hours. A person with no roster hours gets no hours line, as before.
+- **A later move of section:** a double that moves section later says so where that later column is not on the same board: "Prep from 15:00" (`homeSecMove()`). The time is never before that service starts.
+- **Your day:** the joined part that holds the service on now: "Lunch · 10:00 to 21:00"; on a split, "Lunch · 10:00 to 14:00".
+- **The head chef:** always gets On today, the whole day, with no fold and the Today's team link.
+
+Checks: `tests/home-rota.test.js` "roster day" (12 checks; 5 fail on the code before), `tests/team-roster-hours.test.js` (a split reads with its gap in each column; no "from" note where both columns show).
+
+## Round 2 (quick check): the whole day's layout
+
+The whole day is the head chef's On today and the staff's View today's full team. On with you (staff, their own service) keeps board C either way.
+
+- **Preview:** each option is a changed copy of `js/prep.js` and `css/app.css` served to the stand-in (`preview-run.cjs`, `preview/`).
+- **Fixture:** synthetic people at 14:00, fallback fonts, Mo moving from Larder to Grill at 17:00.
+
+| Option | Central idea | How the day is read |
+| --- | --- | --- |
+| **A: one service at a time** (changes least) | The same board, split into one block per service, stacked; each name and their day on one line | Service, then section, then person |
+| **B: the day on one clock** (rethinks) | One row per person in start order, their day as a bar on one scale with a mark at the time now (the look of Today's team), their sections and breaks in words | Person and time |
+| **C: sections across the day** (least to read) | One block per section, who works it and when, in time order, and a quiet "Nobody 15:00 to 17:00" where a section has a gap | Section, then time |
+
+| Measured (Preview) | Today (hours fixed) | A | B | C |
+| --- | ---: | ---: | ---: | ---: |
+| Head chef's card, 390 px | 898 px | 952 px | 793 px | 583 px |
+| Head chef's card, 768 px | 928 px | 952 px | 793 px | 583 px |
+| Head chef's card, 1280 px | 614 px | 796 px | 793 px | 426 px |
+| Staff fold opened, 390 px | 856 px | 910 px | 751 px | 541 px |
+| Entries for 9 people | 15 | 15 | 9 | 11 |
+| Taps: head chef / staff fold | 0 / 1 | 0 / 1 | 0 / 1 | 0 / 1 |
+| Sideways scroll, errors (390, 768, 1280) | none | none | none | none |
+
+**Pros and cons:**
+
+- **A:**
+  - Pro: the board everyone knows, now readable on a phone (no wrapping times).
+  - Con: the longest, and a double is listed in every service.
+- **B:**
+  - Pro: one row per person and the same picture as the planner.
+  - Pro: who is in when, and who is on a break at the time mark, is seen at once without status words. The board stays a saved plan.
+  - Con: sections are words under each name, not a column to scan.
+  - Con: on a busy day the list grows with people, not with services.
+- **C:**
+  - Pro: the shortest, and it answers "who is on Grill when".
+  - Con: a person's day is split across the sections they work.
+  - Con: a gap note on a service where a section is not needed (Grill during All day dining) is noise every day.
+
+**Contract fit:** all three keep the sage people card, words for every state, "back 14:30" bold while on a break, no read, listener or saved copy. B reuses the approved timeline bar (`.tm-tlbar`: ink day, orange break block, which is a break, not attention). C's gap note is quiet words, not amber: a gap in a plan is information. Not evidenced: Barlow fonts, contrast of the quiet lines, keyboard order.
+
+**Reference fit:** Linear: B gives one picture for the same thing on Home and in the planner. Flighty: B shows what is on now against real times from the held plan. Things 3: C tucks the person detail away behind the section. Airbnb: A and B keep person, time and place together.
+
+**Break-it:**
+- A long name or a split day wraps inside its row in all three (checked: Gus "08:00 to 15:00, 17:00 to 21:00" at 390 px, no sideways scroll).
+- The minute paint moves B's time mark only; rows keep their order (start time), so nothing jumps under a thumb.
+- A plan without roster hours: B draws each person's services' own hours. Not evidenced in this preview.
+- Four or more services: not evidenced.
+
+**Mix:** B's rows with C's gap notes was considered and not recommended: the notes would fire every day for sections that All day dining does not use. A adds nothing to B that B lacks.
+
+**Recommendation: B, the day on one clock.** It shows each person once, with their whole day on the same clock as Today's team, so the head chef reads Home and the planner the same way. Main downside: sections are words under each name, and C is 210 px shorter on a phone. In the build, only "back 14:15" is bold, not the whole line under the name.

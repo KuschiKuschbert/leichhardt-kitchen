@@ -1,0 +1,12 @@
+/* preview A */
+.hm-svcs { display: grid; gap: .9rem; }
+@media (min-width: 1100px) { .hm-svcs { grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); align-items: start; } }
+.hm-svc-h { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .6rem; margin: 0 0 .2rem; padding-bottom: .3rem; border-bottom: 2px solid var(--ink); font: 700 .8125rem/1.2 var(--display); letter-spacing: .12em; text-transform: uppercase; }
+.hm-svc-h span { font: 600 .8125rem/1.2 var(--body); letter-spacing: 0; text-transform: none; }
+.hm-svc-h small { margin-left: auto; font: 600 .75rem/1.2 var(--body); letter-spacing: 0; text-transform: none; color: var(--muted); }
+.hm-svc-l { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); margin: 0; }
+.hm-svc-l dt, .hm-svc-l dd { margin: 0; padding: .4rem 0; border-top: 1px solid var(--line); }
+.hm-svc-l dt:first-of-type, .hm-svc-l dt:first-of-type + dd { border-top: 0; }
+.hm-svc-l dt { font-size: .875rem; font-weight: 600; }
+.hm-svc-l .hm-tp-line { display: flex; flex-wrap: wrap; justify-content: space-between; column-gap: .5rem; }
+.hm-svc-l .hm-tp-line .hm-tp-hrs { font-size: .875rem; font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }

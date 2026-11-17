@@ -11847,6 +11847,35 @@ if (list.length) sg('oreg', 's');
   }
   var homeGreetSeen = '';
   function homeShiftHours(s) { return s.from != null && s.to != null ? tmHHMM(s.from) + ' to ' + tmHHMM(s.to) : 'Hours not set'; }
+  /* A person's day from the saved plan (head chef, 17 Nov 2026; docs/home-roster-options/brief.md): the roster file cuts
+     a 10:00 to 21:00 day into Lunch, All day and Dinner (16 Nov), so Home joins their parts back into one day; a split
+     keeps its gap, and a service added by hand without roster hours counts with the service's own. Only for a person
+     with roster hours that day: [] without, so a plan made without the roster file says its hours once, in the column
+     heads, as before. From the plan already held: no read. */
+  function homePersonDay(rec, id) {
+    var mine = (rec && rec.on || []).filter(function (o) { return o.id === id && tmShift(o.sh); });
+    var own = function (o) { return tmMin(o.from) !== null && tmMin(o.to) !== null && o.from < o.to ? [o.from, o.to] : null; };
+    if (!mine.some(own)) return [];
+    return tmJoin(mine.map(function (o) { var s = tmShift(o.sh); return own(o) || (s.from != null && s.to != null && s.from < s.to ? [s.from, s.to] : null); }));
+  }
+  // a double that moves section later, said where they are now when that service is not on the same board: "Grill from
+  // 17:00" (only the first later change to a named section; never before that service starts, as plans saved on 15 Nov
+  // 2026 hold the whole day on each service; with no start known, "then Grill")
+  function homeSecMove(rec, o, shown) {
+    var s0 = tmShift(o.sh); if (!s0) return '';
+    var later = rec.on.filter(function (x) { var s = tmShift(x.sh); return x.id === o.id && x.sh !== o.sh && s && tmShiftCmp(s0, s) < 0; })
+      .sort(function (a, b) { return tmShiftCmp(tmShift(a.sh), tmShift(b.sh)); });
+    var nx = later.filter(function (x) { return x.sec !== o.sec; })[0], name = nx ? tmSecName(nx.sec) : '';
+    if (!name || shown && shown[nx.sh]) return '';
+    var sf = tmShift(nx.sh).from, at = tmMin(nx.from) !== null ? (sf != null ? Math.max(nx.from, sf) : nx.from) : sf;
+    return at != null ? name + ' from ' + tmHHMM(at) : 'then ' + name;
+  }
+  // Your day's hours: the joined part of my roster day that holds the service on now (Mo: "Lunch · 10:00 to 21:00", the
+  // 15 Nov 2026 contract); without roster hours, the service's own
+  function homeMyHours(rec, id, n) {
+    var part = n.from != null ? homePersonDay(rec, id).filter(function (h) { return h[0] <= n.from && n.to <= h[1]; })[0] : null;
+    return part ? tmPartsWords([part]) : n.from != null ? tmHHMM(n.from) + ' to ' + tmHHMM(n.to) : homeShiftHours(n.s);
+  }
   function homeDayHTML() {
     var d = homePlanData(); if (!d) return '';
     var p = me(), ready = d.state === 'ready', m = T.mins(), mine = ready ? tmMy(p.id) : [], n = tmNow(mine, m);
@@ -11854,7 +11883,7 @@ if (list.length) sg('oreg', 's');
     // A person's own valid choice for today stays known independently of the roster. An automatic plan pick does not.
     var pick = ksPicks(p) && ksGet(p.id), manual = pick && pick.self === true && pick.auto !== true ? kitSecs().filter(function (s) { return s.id === pick.sec; })[0] : null;
     var sec = n ? tmSecWords(p, n) : manual ? manual.name : '';
-    var title = 'Your section', sub = n ? n.s.name + ' · ' + (n.from != null ? tmHHMM(n.from) + ' to ' + tmHHMM(n.to) : homeShiftHours(n.s)) : ready ? 'No shift has been allocated to you' : homePlanNote(d);
+    var title = 'Your section', sub = n ? n.s.name + ' · ' + homeMyHours(d.rec, p.id, n) : ready ? 'No shift has been allocated to you' : homePlanNote(d);
     var value = sec || (ready || d.state === 'unset' ? 'Not assigned' : d.state === 'error' ? 'Unavailable' : 'Checking...');
     if (unavailable) { sub = 'Your saved shift is unavailable. Check with the chef.'; value = sec || 'Unavailable'; }
     if (manual && !n) sub = 'Your pick today · ' + sub;
@@ -11894,7 +11923,9 @@ if (list.length) sg('oreg', 's');
     var byShift = {}; kitShifts().forEach(function (s) { byShift[s.id] = s; });
     var all = ready ? d.rec.on.filter(function (o) { return byShift[o.sh]; }) : [];
     var hours = function (s) { return s && s.from != null && s.to != null && s.from < s.to; };
-    var scoped = !!n && (hours(n.s) || all.some(function (o) { return o.id !== p.id && o.sh === n.s.id; }));
+    // the head chef always sees the whole saved day, on the plan or not (head chef, 17 Nov 2026: "always show me the whole day")
+    var hc = (S.config || {}).headId === p.id;
+    var scoped = !hc && !!n && (hours(n.s) || all.some(function (o) { return o.id !== p.id && o.sh === n.s.id; }));
     var rows = scoped ? all.filter(function (o) { var s = byShift[o.sh]; return o.id !== p.id && (o.sh === n.s.id || hours(s) && hours(n.s) && s.from < n.s.to && n.s.from < s.to); }) : all;
     var head = '<div class="hm-ph"><h3 class="hm-pt">' + (scoped ? 'On with you' : 'On today') + '</h3>' +
       '<span class="hm-roster-caption">' + esc(scoped ? n.s.name + ' team' : 'Saved plan') + '</span></div>';
@@ -11918,25 +11949,28 @@ if (list.length) sg('oreg', 's');
     cols.sort(function (a, b) { return tmShiftCmp(a, b) || ks.indexOf(a) - ks.indexOf(b); });
     var secs = kitSecs().map(function (x) { return x.id; }), row = function (o) { return secs.indexOf(o.sec) >= 0 ? o.sec : ''; };
     var board = function (list) {
+      var shown = {}; list.forEach(function (s) { shown[s.id] = true; });
       var keys = secs.concat(['']).filter(function (k) { return list.some(function (s) { return at[s.id].some(function (o) { return row(o) === k; }); }); });
       return '<table class="hm-rota"><thead><tr><td></td>' + list.map(function (s) { return '<th scope="col">' + esc(s.name) + ' <small>' + esc(homeShiftHours(s)) + '</small></th>'; }).join('') + '</tr></thead><tbody>' +
         keys.map(function (k) {
           return '<tr><th scope="row">' + esc(k ? tmSecName(k) : 'No section') + '</th>' + list.map(function (s) {
             return '<td>' + at[s.id].filter(function (o) { return row(o) === k; }).sort(function (a, b) { return mnName(a.id).localeCompare(mnName(b.id)); })
-              .map(function (o) { return homeRotaPerson(rec, o, m); }).join('') + '</td>';
+              .map(function (o) { return homeRotaPerson(rec, o, m, shown); }).join('') + '</td>';
           }).join('') + '</tr>';
         }).join('') + '</tbody></table>';
     };
     return cols.length <= 3 ? board(cols) : cols.map(function (s) { return board([s]); }).join('');
   }
   // one person in a cell: their name, then their breaks on that shift; while on one, bold "back 15:00" in its place
-  function homeRotaPerson(rec, o, m) {
+  function homeRotaPerson(rec, o, m, shown) {
     var bs = tmShiftBreaks(rec, o), away = bs.filter(function (b) { return tmOnBreak(b, m); })[0];
     var words = away ? 'back ' + tmAwayTime(away.at + away.len) :
       bs.map(function (b) { return (tmIsSplit(b.len) ? 'split ' : 'break ') + tmAwayTime(b.at) + ' to ' + tmAwayTime(b.at + b.len); }).join(', ');
-    // who comes in when (15 Nov 2026): the person's roster hours, on their own line, never bold like "back 15:00"
-    var hours = o.from != null && o.to != null ? ' <small class="hm-tp-hrs">' + esc(tmHHMM(o.from) + ' to ' + tmHHMM(o.to)) + '</small>' : '';
-    return '<span class="hm-tp' + (away ? ' is-away' : '') + '"><b>' + esc(mnName(o.id)) + '</b>' + hours + (words ? ' <small>' + esc(words) + '</small>' : '') + '</span>';
+    // who comes in when (15 Nov 2026): the person's whole roster day (17 Nov 2026), on its own line, never bold like
+    // "back 15:00"; then where a double moves later ("Grill from 17:00")
+    var day = homePersonDay(rec, o.id), move = homeSecMove(rec, o, shown);
+    var hours = day.length ? ' <small class="hm-tp-hrs">' + esc(tmPartsWords(day)) + '</small>' : '';
+    return '<span class="hm-tp' + (away ? ' is-away' : '') + '"><b>' + esc(mnName(o.id)) + '</b>' + hours + (move ? ' <small class="hm-tp-move">' + esc(move) + '</small>' : '') + (words ? ' <small>' + esc(words) + '</small>' : '') + '</span>';
   }
   function homeBoardHTML() {
     var head = '<div class="hm-bh"><h3 class="hm-bt" id="hm-board-h">Now and next</h3><b class="hm-clock">' + esc(T.clock(now())) + '</b></div>';
@@ -15101,14 +15135,18 @@ if (list.length) sg('oreg', 's');
   // a person's roster hours in words from { shift: [from, to] }: "10:00 to 21:30", or "10:00 to 14:00, 17:00 to 22:00"
   // Parts that touch or overlap read as one time (16 Nov 2026: the roster's time is cut to each service, so Lunch
   // 10:00 to 15:00, All day dining 15:00 to 17:00 and Dinner 17:00 to 21:00 read "10:00 to 21:00" again)
-  function tmHoursWords(hrs) {
+  function tmHoursWords(hrs) { return tmPartsWords(tmJoin(Object.keys(hrs || {}).map(function (sh) { return hrs[sh]; }))); }
+  // [from, to] parts in time order, parts that touch or overlap joined into one: Lunch 10:00 to 15:00 and Dinner 15:00 to
+  // 21:00 are one day, 10:00 to 21:00; a split (08:00 to 15:00, 17:00 to 21:00) keeps its gap
+  function tmJoin(parts) {
     var list = [];
-    Object.keys(hrs || {}).map(function (sh) { return hrs[sh]; }).filter(Boolean).sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; }).forEach(function (h) {
+    parts.filter(Boolean).slice().sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; }).forEach(function (h) {
       var last = list[list.length - 1];
       if (last && h[0] <= last[1]) last[1] = Math.max(last[1], h[1]); else list.push([h[0], h[1]]);
     });
-    return list.map(function (h) { return tmHHMM(h[0]) + ' to ' + tmHHMM(h[1]); }).join(', ');
+    return list;
   }
+  function tmPartsWords(list) { return list.map(function (h) { return tmHHMM(h[0]) + ' to ' + tmHHMM(h[1]); }).join(', '); }
   function tmRsChoose() {
     var input = S.root && S.root.querySelector('[data-k="tm-roster-file"]');
     if (input && tmRsOK() && !tmRsBusy() && svOf('t') !== 'busy' && !tmLastBusy) input.click();

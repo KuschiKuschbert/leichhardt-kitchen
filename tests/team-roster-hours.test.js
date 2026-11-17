@@ -34,7 +34,9 @@ const cells = p => p.$$eval('#hm-with-body .hm-tp', l => l.map(e => e.textConten
   // the card leaves out the viewer and shows their shift; the whole day is in the card's fold (all .hm-tp in #hm-with)
   const c = await cells(p), all = await p.$$eval('#hm-with .hm-tp', l => l.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
   ok(c.some(x => /^Bea 10:00 to 14:00/.test(x)), 'On today: everyone on the day sees when a coworker comes in and goes (' + c.join(' | ') + ')');
-  ok(all.some(x => /^Bea 17:00 to 21:00/.test(x)), 'On today, the whole day: a split roster shows each part under its own service (' + all.join(' | ') + ')');
+  // (17 Nov 2026) each cell says the person's whole roster day, so a split reads with its gap in each column it works
+  ok(all.filter(x => /^Bea 10:00 to 14:00, 17:00 to 21:00$/.test(x)).length >= 2, 'On today, the whole day: a split roster shows both parts, with the gap, in each column (' + all.join(' | ') + ')');
+  ok(all.filter(x => /^Ann 10:00 to 21:30$/.test(x)).length === 2 && !all.some(x => / from /.test(x)), 'On today, the whole day: a double on both columns needs no "from" note, both are on the board (' + all.join(' | ') + ')');
   ok(c.includes('Cal') && c.filter(x => /^(Dev|Eli|Fen)$/.test(x)).length === 3, 'On today: no hours for an older plan or for broken values (dropped, never shown as text)');
   const day = (await txt(p, '#hm-day') || '').replace(/\s+/g, ' ');
   ok(/Lunch · 10:00 to 21:30/.test(day), 'Your day: Ann\'s own roster hours in place of the service\'s (' + day.slice(0, 120) + ')');
