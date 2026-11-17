@@ -169,17 +169,19 @@ const D = {
     'tomorrow': ['admin-ahead-1', () => {
       css(MIX_CSS);
       $('.nb-left .nb-empty').textContent = 'Nothing planned for tomorrow.';
+      $('.nb-left .nb-prog').classList.add('pa-n'); $('.nb-left .nb-prog').textContent = 'Nothing planned';
       $('.nb-left .nb-foot').innerHTML = '<p class="hint">Tomorrow’s list is written tonight, on today’s list. Planning ahead starts with Friday.</p>';
     }],
     'sous-later-day': ['chef-ahead-3', () => {
       css(MIX_CSS);
       $('.nb-left .nb-prog').outerHTML = '<div class="nb-pw"><div class="nb-prog pa-n">2 lines planned</div></div>';
-      $('.nb-left .nb-body').innerHTML = '<p class="pa-for">Planned ahead by the head chef for <b>Saturday 21 November</b>. Staff see these lines on Saturday, not before.</p>' + msat(false, false);
+      $('.nb-left .nb-body').innerHTML = '<p class="pa-for">Planned ahead by the head chef for <b>Saturday 21 November</b>. Only the head chef adds or changes lines on a later day. Staff see them on Saturday.</p>' + msat(false, false);
       $('.nb-left .nb-foot').remove();
     }],
     'day-arrives': ['staff-day-arrives', () => {
       const a = $('#nbr-a1'), tt = $('.nb-tt', a); tt.removeAttribute('data-n'); $$('.visually-hidden, .nb-marks', tt).forEach(x => x.remove());
       $('.nb-wrote', a).textContent = 'Planned Sun by Head chef';
+      css('#nbr-a1 .nb-meta, #nbr-a1 .nb-wrote{white-space:normal;overflow:visible;text-overflow:clip}');
       const o = $('#nbr-i1 .nb-tt'); o.setAttribute('data-n', '3'); $('.nb-mk', o).insertAdjacentHTML('beforebegin', '<span class="visually-hidden">. Start here, 3</span> <span class="nb-marks"><span class="nb-why">Waiting longest</span></span>');
     }]
   }

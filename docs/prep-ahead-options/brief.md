@@ -193,7 +193,8 @@ After round 1 the head chef added: **"But only for admins."** Read here as the b
 
 - Only the admin sees **Add to Saturday**, Urgent, Remove and ⋯ on a later day. A sous chef who opens a later day sees its lines read only: "Planned ahead by the head chef for Saturday 21 November. Staff see these lines on Saturday, not before." (`design-mix/sous-later-day.png`). Staff still see only today.
 - The head chef's PIN on a device without the Google sign-in (the shared tablet) is not admin: it cannot plan ahead.
-- The rules get **stricter**: a line marked planned, on a day after tomorrow, can be written only by the admin. A function's platter lines, which function managers and chefs already write on the function's day, keep working. Published **after** the client (old code never writes planned lines), then the Lock probe. Emulator rows: admin 5 days ahead allowed; sous chef, function manager (non-function line) and staff refused; a function line on a later day still allowed.
+- The rules get **stricter** for marked lines only: on a day after tomorrow, a line marked planned (new or old document) is written only by the admin (finding 16 has the shape). Unmarked lines are as today, so function bookings, the rollover, What the platters need and past-day restores keep working. Published **after** the client, in the same release window, once the client already shows a later day read only to everyone else (finding 15). Emulator rows: the admin at +5 days allowed; sous chef, function manager and staff at +5 refused, and a sous chef update that drops the mark refused; still allowed: a staff tick on the line's own day, a sous chef restore on a past day, a marked rolled copy onto today and a function booking line at +5.
+- Write the stricter rule only once the head chef confirms the reading (skeptic). The gate lives in one helper on the page.
 - If "admins" meant the head chef and the sous chefs, the design is the same and the rule is the one that already exists (`lineWho()`), with no rules change.
 
 ### Measured (Preview, mix, admin fixture)
@@ -214,7 +215,23 @@ The date field shows 11/21/2026 in the preview browser; on an Australian phone i
 
 ### Focused review of the mix
 
-To come: the keeper, the screen designer and the skeptic on the combined preview and the admin-only rule.
+Fresh agents, 17 Nov 2026: the keeper, the screen designer and the skeptic, on the combined preview and the admin-only rule. **All three: keep the mix**, with conditions. Review status: the mix is the lead's synthesis of the six reviewers' own takes; these three reviewed it as drawn.
+
+- **Screen designer:** one layout and one task flow; the calendar reads as "planned" without colour and is not a target; keep the orange dock, its words stop a wrong-day add. Changes, all taken: a graphite count (or "Nothing planned") on tomorrow and on an empty day; the byline wraps, never cuts ("Planned Sun by He..." at 390 px); from 7 days ahead the title and the dock carry the date ("Add to Sat 28 Nov"); the sous chef's note says only the head chef adds or changes lines on a later day. The preview now shows the first, second and fourth (`design-mix/tomorrow.png`, `day-arrives.png`, `sous-later-day.png`). Not evidenced: rendered contrast of the muted calendar, focus, reduced motion, Urgent and Remove at 768 px.
+- **Skeptic:** the admin reading holds but is not certain ("admins" is plural; the book has one admin). The page is the same under both readings; only the stricter rule differs, so **do not write or publish it until the head chef confirms**. Keep the gate in one helper, so the other answer is a one-line change. Costs to tell the head chef: no planning from the kitchen tablet; a sous chef told "put the brisket on Saturday" cannot; a plan for a cancelled job stays until its eve if the head chef is off.
+- **Keeper:** the reading is sound (`ownerHere()` needs the Google user, the head chef PIN session and a live grant, like `isAdmin()`); on the shared tablet the idle lock clears Google, so the head chef there is read only. The rule can be enforced without breaking any writer if it has the right shape (finding 16). Merge and publish in the same release window; the emulator rows prove the rule, the Lock probe does not.
+
+Findings (focused review, source review, all to be fixed in the build):
+
+| # | Scenario | Evidence | Repair or check |
+| --- | --- | --- | --- |
+| 14 | Friday night the crew writes "Brine pork 3 kg" under Tonight, for tomorrow; the admin had planned "Brine pork 2 kg" for Saturday. The crew cannot see Saturday, and the rollover skips a copy only by its rolled id. | Risk, checked in source (skeptic, keeper) | The rollover already reads Saturday's lines: it skips a line that matches an open planned line (words and section; the amount taken if the plan has none), with no new read. Different amounts keep both, each marked "Also" by the existing double-ups. Click test across Friday night. |
+| 15 | Read only exists only in the preview: on a later day `rowHTML()` draws Remove (`can('del')`) and Urgent (`can('add')`) for anyone, and a tap on the words ticks. | Checked in source (keeper) | Draw a planned line on a later day read only for everyone but the admin, before the rule is published. `tests/roles.test.js`: a sous chef at 390 and 1280 px sees no Remove, Urgent or ⋯, and a tap on the words writes nothing. |
+| 16 | The rule's traps: a function exemption keyed on `fn` is a hole (any `fn` value is accepted without a booking); a rule on the new document only lets an update drop the mark; a rule with no day limit refuses staff ticks on the line's own day, sous chef restores on past days and the whole rollover batch. | Checked in source (keeper, skeptic) | In the `days/{day}/items` block only, reusing the `admin` already worked out there (no new `get()`): admin, or not a later day (`nearDay()`'s own bounds), or neither the new nor the old document is marked. No function exemption is needed: function bookings never set the mark. |
+| 17 | The admin's grant lapses with the Saturday sheet open (the tablet's idle lock clears Google, the 04:00 unlock before a new grant, no signal): the write goes out, is refused, and the slip says "Ask the head chef". | Checked in source (keeper); Risk on a device | Add on a later day checks `ownerHere()` at the tap and keeps the words if it fails; the later-day sheet closes, saying why, when it drops. Emulator row: head chef PIN without the grant, refused. Click test: drop the grant, tap Add, nothing written. |
+| 18 | A later day that also holds a function's platter lines: the note and "2 lines planned" must count planned lines only. | Checked in source (skeptic) | Count marked lines only; a platter line in the click fixture. |
+
+The eve itself is not previewed: today's page on Friday does not change (it reads nothing of Saturday). Finding 14 is checked on Saturday morning instead.
 
 ## Recommendation
 
@@ -222,7 +239,7 @@ To come: the keeper, the screen designer and the skeptic on the combined preview
 
 Main downside: no overview of what is planned. The admin opens each day to see it (the date field reaches any day in about 3 taps). A week overview would cost reads on every open and go stale; it can come later if the head chef misses it.
 
-Before any of this: the rollover repair ships on its own (findings 1 and 3), and the build fixes findings 2, 9, 10 and 11 with their click tests.
+Before any of this: the rollover repair ships on its own (findings 1 and 3). The build then fixes findings 2, 9, 10, 11 and 14 to 18 with their click tests and emulator rows. Admin only costs: no planning from the kitchen tablet (its idle lock clears Google), and a sous chef asked to plan a line cannot.
 
 Questions for the head chef:
 1. Choose: the mix (recommended), A, B or C.
@@ -232,7 +249,7 @@ Questions for the head chef:
 ## Verification plan (before ready)
 
 - The rollover repair's own pull request: the client test from `break-rollover.cjs` fails on main and passes after, with and without all seven past days in `lk.past`; a closed day with only planned lines, either side of midnight.
-- Rules emulator: chef 7 days ahead allowed, staff 2 days ahead refused; a row in `tests/rules/client-shapes.test.mjs`.
+- Rules emulator: the rows in Admin only and finding 16; a row in `tests/rules/client-shapes.test.mjs` for the new call.
 - `tests/roles.test.js` on a later day for each role; staff never see a later day.
 - Add on a later day: the slip names the day, Undo removes the right line, a held write shows Not sent and lands on the named day, an Add sheet open across midnight keeps its day.
 - On its day: "Planned by" byline, no Waiting longest, sort order.
@@ -240,4 +257,5 @@ Questions for the head chef:
 - 390, 768 and 1280 px on the implemented app; `tests/read-budget.test.js` unchanged.
 - Nightly backup's forward days: a node test of the day list.
 - The sheet keeps its day across a lock, the 04:00 unlock and midnight (finding 9); the slip after closing names the day (10); a later day's line cannot be ticked (11).
-- Admin only: rules emulator rows (admin allowed; sous chef, function manager's own line and staff refused; a function's platter line on a later day still allowed); `tests/roles.test.js` shows a sous chef a later day read only; the Lock probe after publishing the stricter rules.
+- Admin only: `tests/roles.test.js` shows a sous chef a later day read only at 390 and 1280 px (finding 15); the grant dropped with the sheet open writes nothing (17).
+- Friday night's crew line and Saturday's planned line: one line, or two marked Also (finding 14); a function platter line on a planned day is not counted (18).
