@@ -25,6 +25,7 @@ const { R, ok } = L.results();
  ok(!/\u2014/.test(JSON.stringify([dish, chicken, brine, york, cab, peas])), 'no em dashes');
  ok(/75 °C/.test(chicken.safety.text) && /5 °C/.test(brine.safety.text), 'the chicken probe and the cold brine warnings are there');
  ok(chicken.sections.some(s => s.title === 'Finish to order' && s.steps.includes('When the board is ordered: into the oven at 180 °C until hot right through.')) && /180 °C/.test(JSON.stringify(dish.sections)) && !chicken.tip && !/iCombi|210 °C|15 to 30 min|10 to 15 min/.test(JSON.stringify(chicken)), 'the chicken is finished to order at 180 °C');
+ ok(chicken.sections.some(s => s.title === 'Cool and hold' && s.steps.some(t => /below 21 °C within 2 hours, then 5 °C or below within 4 more hours/.test(t)) && s.steps.some(t => /coolroom/.test(t))) && /coolroom/.test(JSON.stringify(dish.sections)) && !/hot or chilled/.test(JSON.stringify(chicken)), 'after the smoker the chicken is cooled in two stages and kept in the coolroom');
  ok(dish.ingredients.some(i => i.link === 'cider-red-cabbage' && i.q === '120 g') && /120 g per board/.test(cab.yield) && /any brand/.test(peas.yield) && !/Brand to confirm/.test(JSON.stringify(peas)), '120 g red cabbage per board, mushy peas any brand');
  ok(chicken.sections.some(s => s.title === 'Smoke' && s.steps.includes('Smoke 2 hours.')) && /Smoke 2 hours at 150 °C/.test(chicken.yield) && /smoked 2 hours/.test(JSON.stringify(dish.sections)) && !/60 to 90 min|Cooking fast/.test(JSON.stringify(chicken)), 'the No. 10 chicken smokes 2 hours');
  const b = await L.start();

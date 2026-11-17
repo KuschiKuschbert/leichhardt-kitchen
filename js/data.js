@@ -1620,7 +1620,7 @@ window.LK_DATA = {
       ],
       sections: [
         { title: 'Cooking', steps: [
-          'Smoked chicken (card 131): brined, dried, seasoned and smoked 2 hours. Finished to order in the oven at 180 °C until hot. Probe the breast and the inner thigh: 75 °C in both.',
+          'Smoked chicken (card 131): brined, dried, seasoned and smoked 2 hours, then cooled and kept in the coolroom. Finished to order in the oven at 180 °C until hot. Probe the breast and the inner thigh: 75 °C in both.',
           'Rest the chicken on a rack, 10 to 15 min.',
           'Yorkshire pudding (card 133): one 18 cm pudding per board, one batch. 17 min at 210 °C, then 8 min at 230 °C. Never open the oven.',
           'Mash (card 70) and gravy (card 69) as for every plate.',
@@ -1641,7 +1641,7 @@ window.LK_DATA = {
     },
     {
       id: 'smoked-chicken', art: 'smoked-chicken', no: '131', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Smoked Chicken', short: 'Smoked chicken',
-      yield: 'One whole No. 10 chicken (about 1 kg), unstuffed, with no added brine or salt solution. Brine and dry the day before. Smoke 2 hours at 150 °C. Finish to order in the oven at 180 °C until hot: 75 °C in the breast and the inner thigh.',
+      yield: 'One whole No. 10 chicken (about 1 kg), unstuffed, with no added brine or salt solution. Brine and dry the day before. Smoke 2 hours at 150 °C, cool, then the coolroom until it is ordered. Finish to order in the oven at 180 °C until hot: 75 °C in the breast and the inner thigh.',
       ingredients: [
         { q: '1', name: 'Whole chicken', note: 'No. 10, unstuffed, no added brine or salt solution' },
         { q: '3 L', name: 'Herb brine', note: 'one batch per chicken', link: 'herb-brine' },
@@ -1677,7 +1677,11 @@ window.LK_DATA = {
           'Smoke 2 hours.',
           'Probe the breast and the inner thigh: at least 75 °C in both.'
         ] },
-        { title: 'Until it is ordered', steps: ['[How the smoked chicken is held until it is ordered, hot or chilled, to confirm]'] },
+        { title: 'Cool and hold', steps: [
+          'Cool it straight after the smoker: below 21 °C within 2 hours, then 5 °C or below within 4 more hours.',
+          'Start the Operandio cooling clock and record the checks.',
+          'Into the coolroom, covered and dated, until it is ordered. [How many days it keeps to confirm]'
+        ] },
         { title: 'Finish to order', steps: [
           'When the board is ordered: into the oven at 180 °C until hot right through.',
           'Probe the breast and the inner thigh: at least 75 °C in both.',
