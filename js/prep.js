@@ -14308,6 +14308,9 @@ if (list.length) sg('oreg', 's');
     c.sort(function (x, y) { var hx = tmHrs(tmf, id, x), hy = tmHrs(tmf, id, y); return (x.occ ? 1 : 0) - (y.occ ? 1 : 0) || (at + len <= hy[1] ? 1 : 0) - (at + len <= hx[1] ? 1 : 0) || hy[0] - hx[0]; });
     return c.length ? c[0].id : '';
   }
+  // a person's breaks on the service tmBrSh() gives now: after Undo or Add a service, so where a break is saved never
+  // depends on the order of taps
+  function tmBrResh(id) { tmf.br.forEach(function (b) { if (b.id === id) b.sh = tmBrSh(id, b.at, b.len) || b.sh; }); }
   // every 15 minutes inside one of their joined spans, ending by that span's finish (never in a gap between services)
   function tmBrTimes(id, len, keep) {
     var out = [];
@@ -14343,14 +14346,14 @@ if (list.length) sg('oreg', 's');
     var near = Math.round(target / 15) * 15, gone = false;
     var free = tmBrTimes(id, len).filter(function (m) { return !mine.some(function (b) { return m < b.at + b.len && b.at < m + len; }); });
     if (!free.length) return { none: 'No free time left for another break inside ' + mnName(id) + '\'s hours. Change a break first.' };
-    // an hour clear of their other breaks where the day allows it, so a 2nd break never sits against the first
-    var spaced = free.filter(function (m) { return !mine.some(function (b) { return m < b.at + b.len + 60 && b.at - 60 < m + len; }); });
-    if (spaced.length) free = spaced;
     if (tmPlanDay() === dayNow()) {
       var q = Math.ceil(T.mins() / 15) * 15; gone = near < q;
       free = free.filter(function (m) { return m >= q; });
       if (!free.length) return { none: 'No time left today for a break inside ' + mnName(id) + '\'s hours.' };
     }
+    // then an hour clear of their other breaks where the times left allow it, so a 2nd break never sits against the first
+    var spaced = free.filter(function (m) { return !mine.some(function (b) { return m < b.at + b.len + 60 && b.at - 60 < m + len; }); });
+    if (spaced.length) free = spaced;
     var order = free.slice().sort(function (a, b) { return Math.abs(a - near) - Math.abs(b - near) || a - b; }), c = order[0], moved = null, still = null;
     var others = tmf.br.filter(function (b) { return b.id !== id && tmOnShift(b.id, b.sh) && tmMin(b.at) !== null; });
     var withAt = function (m) {
@@ -14839,7 +14842,7 @@ if (list.length) sg('oreg', 's');
       if (!ou || ou.day !== tmPlanDay() || ou.id !== id || !tmShift(ou.sh) || tmOnShift(ou.id, ou.sh) || !tmPeople().some(function (p) { return p.id === ou.id; })) return;
       (tmf.on[ou.id] = tmf.on[ou.id] || {})[ou.sh] = ou.sec || '';
       if (ou.hrs) ((tmf.hrs = tmf.hrs || {})[ou.id] = tmf.hrs[ou.id] || {})[ou.sh] = ou.hrs;
-      tmf.br = tmf.br.concat(ou.brs); tmUi.offUndo = null; tmClearMsg();
+      tmf.br = tmf.br.concat(ou.brs); tmBrResh(ou.id); tmUi.offUndo = null; tmClearMsg();
       tmAssignMsg = 'Undone: ' + mnName(ou.id) + ' is back on ' + ou.name + ' with their section and breaks. Not saved yet.'; draw();
       requestAnimationFrame(function () { var b = S.root && Array.prototype.filter.call(S.root.querySelectorAll('[data-p="tm-off"]'), function (x) { return x.getAttribute('data-id') === ou.id && x.getAttribute('data-sh') === ou.sh; })[0]; if (b) b.focus({ preventScroll: true }); });
       return;
@@ -14903,7 +14906,7 @@ if (list.length) sg('oreg', 's');
       var ap = tmDayPeople().filter(function (x) { return x.id === id; })[0], as = tmShift(v);
       if (!ap || !as || tmOnShift(id, v)) return;
       var hidden = !tmShown(as);
-      tmAddShift(id, v); if (hidden) tmOccShow(v);
+      tmAddShift(id, v); tmBrResh(id); if (hidden) tmOccShow(v);
       tmClearMsg(); tmAssignMsg = ap.name + ' added to ' + as.name + '. Not saved yet.' + (tmRosterFlag(id) ? ' ' + tmRosterFlag(id) + '.' : ''); draw();
       // the new service's section picker takes the focus, so the next move is to give the section (the picker may be gone)
       requestAnimationFrame(function () { var t = S.root && S.root.querySelector('select[data-k="tm-sec:' + id + ':' + v + '"]'); if (t && t._uxTrigger) t = t._uxTrigger; if (t) { t.focus({ preventScroll: true }); tmFocusEnsureVisible(t); } });
