@@ -4,7 +4,7 @@
 
 Files: `proposal.md` (round 1), `evidence-packet.md` (contracts and measurements given to every reviewer). The joke as built: `docs/april-fools.md`; the first study: `docs/april-fools-options/brief.md`. This is role-based analysis by five fresh reviewers, not research with real staff.
 
-**Status: round 1 done, waiting for the head chef. No app change.**
+**Status: the head chef chose "Wait, get ready now" (18 November 2026). Built in the same pull request: the joke starts at 04:00, and each person's record keeps which joke they got. The timing is looked at again after 1 April 2027.**
 
 ## Round 1: should we build it?
 
@@ -30,8 +30,8 @@ Contract fit: Needs work. Levers 1 and 2 propose changing the approved When rule
 
 | Scenario | Role and state | Expected | Status | Repair or check |
 | --- | --- | --- | --- | --- |
-| The joke starts at midnight, not 04:00 | A closer still signed in at 00:40 on 1 April, during pack down | Nothing before 04:00 (contract: "from the 04:00 PIN day") | Checked in the source: `foolsDay()` uses `LK_TIME.day()`, which turns at Queensland midnight (`js/boot.js` line 35); `tests/april-fools.test.js` checks 08:00 on 31 March, 1 April and 2 April, never 00:00 to 03:59 | A fault in the joke as built, independent of this study: start at 04:00 and add a check at 00:30 and 03:59 that fails on the old code |
-| The same joke as last year | A returning cook after five people ranked ahead of them left | Never last year's joke | Checked in a Node simulation of the built `deal()` (4 years, 2,000 teams each): 0.0% of returning people at 13 or 16 staff with 25 to 30% leaving a year, 0.2% at 40%, 0.8% at 20 staff with 50% leaving. The contract's "nobody gets last year's design" is true in practice but not guaranteed | Word the contract as measured; keeping each person's joke in their record (keeper) would make it a guarantee in later years |
+| The joke starts at midnight, not 04:00 | A closer still signed in at 00:40 on 1 April, during pack down | Nothing before 04:00 (contract: "from the 04:00 PIN day") | Reproduced in `tests/april-fools.test.js` on the old code: the joke loaded and played at 00:30 and 03:59 on 1 April (`foolsDay()` used `LK_TIME.day()`, which turns at Queensland midnight) | Fixed: `foolsDay()` also needs the hour to be 4 or later. Checked: 00:30 and 03:59 load nothing, 08:00 plays (59 of 59) |
+| The same joke as last year | A returning cook after five people ranked ahead of them left | Never last year's joke | Checked in a Node simulation of the built `deal()` (4 years, 2,000 teams each): 0.0% of returning people at 13 or 16 staff with 25 to 30% leaving a year, 0.2% at 40%, 0.8% at 20 staff with 50% leaving. The contract's "nobody gets last year's design" is true in practice but not guaranteed | Contract worded as measured. Each person's record now keeps their joke (`joke`), so a later year can make it a guarantee |
 | It plays twice (lever 1) | A returning cook: calm first view on their phone and on the shared display; the phone plays at the 3rd view; the display reaches its 2nd view at 18:00 | Once a year on any device | Risk / Not evidenced (skeptic, keeper): `foolsSeen()` reads only at the first view (`js/app.js`) | Read the record again at the chosen view; a client test with two pages on one stand-in store |
 | The chosen moment never comes (lever 1) | A cook signs in at 09:00 (calm), later PINs open Prep (first sign-in rules) | Played or knowingly skipped | Risk / Not evidenced (keeper): no joke and no record, so in 2028 they look like a first-timer and get the same first-view pattern | Count a skipped year, or play at the first view when no later moment comes |
 | No plan in the dinner rush (lever 1) | A returning cook with no row on Today's team, 2nd Home view at 18:40 on the shared display | Never in busy time | Risk / Not evidenced (skeptic) | A kitchen-wide busy window as the floor; with no plan, the first view only |
@@ -47,3 +47,14 @@ Contract fit: Needs work. Levers 1 and 2 propose changing the approved When rule
 After 1 April 2027, read who came back and how the first joke went, then run round 2 for the timing.
 
 Main downside: returning staff on 1 April 2028 still meet the joke at the same moment; only the words and the joke itself change. If the head chef wants the moment to move as well, round 2 can draw three designs inside the council's cuts (1 April only, own phone, outside the person's shift, no decoy, no slow start, no other day).
+
+## The head chef's decision, 18 November 2026
+
+Asked to choose between waiting and getting ready now (recommended), building smaller now, or building every lever against the advice, the head chef chose **"Wait, get ready now"**.
+
+## Built
+
+- **04:00 start.** `foolsDay()` in `js/app.js` needs 1 April and the hour 4 or later (Queensland). A closer still signed in after midnight packs down in peace.
+- **Which joke they got.** `js/fools.js` passes the joke (`A1` to `L2`) to `done('play', joke)`; `LK_PREP.foolsMark()` keeps it in `fools/<YYYY-04-01>_<staff id>` as `joke`. `firestore.rules`: `joke` allowed and optional, one of the 24 (looser; it publishes by itself after the merge, and nothing writes before 1 April 2027).
+- **Tests.** `tests/april-fools.test.js` (59 checks): the record keeps the joke dealt to her; nothing at 00:30 or 03:59 on 1 April. All four new checks failed on the old code. `tests/rules/client-shapes.test.mjs`: own create with its joke allowed, a joke not one of the 24 refused (301 rows pass on the emulator).
+- **Not built (after 1 April 2027):** "Year 2, Ann." and naming last year's joke, a deal that rules out any joke a person has seen, and any change to when the joke plays.

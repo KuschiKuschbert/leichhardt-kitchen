@@ -2,7 +2,7 @@
 // first Home view of the day on a device plays their joke from js/fools.js on a copy laid over Home, own phones and the
 // shared display alike, then the mascot owns up. Once per person per day on a device; the reveal comes back after a
 // reload; Still gives the words only; celebrations Off gives nothing; other days load nothing. The admin panel's
-// Kitchen page lists who gets which and Preview plays one now, keeping nothing. No reads, no writes. Synthetic staff only.
+// Kitchen page lists who gets which and Preview plays one now, keeping nothing. On 1 April from 04:00: one read and one write per person. Synthetic staff only.
 const L = require('./lib');
 const { R, ok } = L.results();
 // 08:00 Queensland on 1 April 2027, the day before and the day after
@@ -45,8 +45,10 @@ const heading = p => p.evaluate(() => (document.querySelector('#app #rtitle') ||
     const served = path => p.evaluate(k => (JSON.parse(localStorage.getItem('fake.fs') || '{}'))[k] || null, path);
     await L.waitFor(p, k => !!(JSON.parse(localStorage.getItem('fake.fs') || '{}'))[k], key(['fools', '2027-04-01_ann']), 6000).catch(() => {});
     const kept = await served(key(['fools', '2027-04-01_ann']));
-    ok(!!kept && kept.day === '2027-04-01' && kept.by === 'ann' && typeof kept.at === 'number' && Object.keys(kept).sort().join() === 'at,by,day',
-      'once a year: the server keeps fools/2027-04-01_ann { day, at, by } when it starts ' + JSON.stringify(kept));
+    ok(!!kept && kept.day === '2027-04-01' && kept.by === 'ann' && typeof kept.at === 'number' && Object.keys(kept).sort().join() === 'at,by,day,joke',
+      'once a year: the server keeps fools/2027-04-01_ann { day, at, by, joke } when it starts ' + JSON.stringify(kept));
+    const dealt = await p.evaluate(() => { const ids = window.LK_PREP.foolsIds(), d = window.LK_FOOLS.deal(ids.indexOf('ann') < 0 ? ids.concat(['ann']) : ids, 2027).ann; return d.design + d.version; });
+    ok(!!kept && kept.joke === dealt && /^[A-L][12]$/.test(dealt), 'the record keeps which joke she got, the one dealt to her: ' + (kept && kept.joke) + ' ' + dealt);
     ok(await p.evaluate(() => document.getElementById('app').classList.contains('fl-under')), 'personal phone: the real Home is hidden under the copy, not changed');
     ok(/Ann/.test(await heading(p)), 'personal phone: the real welcome still says the name (only the copy changes)');
     ok(await p.evaluate(() => document.documentElement.scrollWidth - innerWidth) <= 0, 'personal phone: no sideways scroll while it plays');
@@ -115,7 +117,8 @@ const heading = p => p.evaluate(() => (document.querySelector('#app #rtitle') ||
     await L.settle(p, 2500);
     ok(!p.__files.length && !(await layer(p)), 'celebrations Off: nothing loads and nothing plays');
     await p.context().close();
-    for (const [label, clock] of [['31 March', MAR31], ['2 April', APR2]]) {
+    // 1 April starts at 04:00, when the PIN day turns: a closer still signed in after midnight is left to pack down
+    for (const [label, clock] of [['31 March', MAR31], ['1 April at 00:30', APR1 - 450 * 60000], ['1 April at 03:59', APR1 - 241 * 60000], ['2 April', APR2]]) {
       await open({ clock });
       await L.settle(p, 2500);
       ok(!p.__files.length && !(await layer(p)), label + ': nothing loads and nothing plays');

@@ -2,7 +2,7 @@
 
 ## April Fools that people cannot see coming, 18 November 2026
 
-The head chef asked for the joke to be smarter and less predictable for people fooled the year before. Round 1: Don't build yet, 3 of 5 (the other two Build smaller; all five cut another day, a decoy and a slow start, and keep "Year 2, Ann."). Found on the way: the joke as built starts at Queensland midnight, not 04:00. Study only, waiting for the head chef: `docs/april-fools-smarter-options/` (`proposal.md`, `evidence-packet.md`, `brief.md`).
+The head chef asked for the joke to be smarter and less predictable for people fooled the year before. Round 1: Don't build yet, 3 of 5 (the other two Build smaller; all five cut another day, a decoy and a slow start, and keep "Year 2, Ann."). The head chef chose "Wait, get ready now": `foolsDay()` in `js/app.js` starts at 04:00 (it started at midnight), and `js/fools.js`, `LK_PREP.foolsMark()` and `firestore.rules` keep which joke each person got (`joke`). Tests: `tests/april-fools.test.js` (59), `tests/rules/client-shapes.test.mjs` (two rows). Study: `docs/april-fools-smarter-options/` (`proposal.md`, `evidence-packet.md`, `brief.md`).
 
 ## April Fools on Home, 17 November 2026
 
