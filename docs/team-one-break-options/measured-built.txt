@@ -1,0 +1,38 @@
+390 + Break buttons on the page: 9
+390 row px no breaks Mo, Bea, Gus: [375,223,319]
+390 rows wholly in one screen from the first row: 0
+390 Mo + Break once: {"taps":1,"words":"Roster 10:00 to 21:00 · Split 14:30 to 17:00","said":"Mo: split 14:30 to 17:00, an 11 hour day. Not saved yet."}
+390 Gus + Break once: {"words":"Roster: Lunch 08:00 to 15:00, Dinner 17:00 to 21:00 · Break 14:00 to 14:30","said":"Gus: break 14:00 to 14:30, the first time left today. Not saved yet."}
+390 Dev + Break once: {"words":"Roster 12:00 to 20:00 · Break 15:45 to 16:15 (nobody else on All day 15:45 to 16:00)","said":"Dev: break 15:45 to 16:15, the middle of their day. Mo is on break then too. Not saved yet."}
+390 Mo split 15:00 and a 2nd break 19:00: {"taps":4,"words":"Roster 10:00 to 21:00 · Split 15:00 to 17:30, 2nd break 19:00 to 19:30"}
+390 sideways scroll, errors: {"over":false,"errors":[]}
+390 row px everyone a break Mo, Bea, Gus: [428,256,352]
+390 everyone: sideways scroll, errors: {"over":false,"errors":[]}
+768 + Break buttons on the page: 9
+768 row px no breaks Mo, Bea, Gus: [215,111,163]
+768 rows wholly in one screen from the first row: 5
+768 Mo + Break once: {"taps":1,"words":"Roster 10:00 to 21:00 · Split 14:30 to 17:00","said":"Mo: split 14:30 to 17:00, an 11 hour day. Not saved yet."}
+768 Gus + Break once: {"words":"Roster: Lunch 08:00 to 15:00, Dinner 17:00 to 21:00 · Break 14:00 to 14:30","said":"Gus: break 14:00 to 14:30, the first time left today. Not saved yet."}
+768 Dev + Break once: {"words":"Roster 12:00 to 20:00 · Break 15:45 to 16:15 (nobody else on All day 15:45 to 16:00)","said":"Dev: break 15:45 to 16:15, the middle of their day. Mo is on break then too. Not saved yet."}
+768 Mo split 15:00 and a 2nd break 19:00: {"taps":4,"words":"Roster 10:00 to 21:00 · Split 15:00 to 17:30, 2nd break 19:00 to 19:30"}
+768 sideways scroll, errors: {"over":false,"errors":[]}
+768 row px everyone a break Mo, Bea, Gus: [287,163,215]
+768 everyone: sideways scroll, errors: {"over":false,"errors":[]}
+1280 + Break buttons on the page: 9
+1280 row px no breaks Mo, Bea, Gus: [215,111,163]
+1280 rows wholly in one screen from the first row: 5
+1280 Mo + Break once: {"taps":1,"words":"Roster 10:00 to 21:00 · Split 14:30 to 17:00","said":"Mo: split 14:30 to 17:00, an 11 hour day. Not saved yet."}
+1280 Gus + Break once: {"words":"Roster: Lunch 08:00 to 15:00, Dinner 17:00 to 21:00 · Break 14:00 to 14:30","said":"Gus: break 14:00 to 14:30, the first time left today. Not saved yet."}
+1280 Dev + Break once: {"words":"Roster 12:00 to 20:00 · Break 15:45 to 16:15 (nobody else on All day 15:45 to 16:00)","said":"Dev: break 15:45 to 16:15, the middle of their day. Mo is on break then too. Not saved yet."}
+1280 Mo split 15:00 and a 2nd break 19:00: {"taps":4,"words":"Roster 10:00 to 21:00 · Split 15:00 to 17:30, 2nd break 19:00 to 19:30"}
+1280 sideways scroll, errors: {"over":false,"errors":[]}
+1280 row px everyone a break Mo, Bea, Gus: [235,130,183]
+1280 everyone: sideways scroll, errors: {"over":false,"errors":[]}
+1280 the day at the planner's times, then Save: {"taps":26,"saved":true}
+390 take Mo off Lunch (split 14:30): {"said":"Mo taken off Lunch. Split 14:30 to 17:00 goes too. Not saved yet. Undo","words":"Roster 15:00 to 21:00 · No break yet"}
+390 Undo: {"words":"Roster 10:00 to 21:00 · Split 14:30 to 17:00 (nobody else on All day 15:30 to 16:00)"}
+390 take Dev off Lunch (break 15:30 on All day): {"said":"Dev taken off Lunch. Not saved yet. Undo","words":"Roster 15:00 to 20:00 · Break 15:30 to 16:00 (nobody else on All day 15:30 to 16:00)"}
+390 take off: errors: []
+390 old day, Ari three breaks: {"pickers":3,"add":0,"words":"Roster 10:00 to 15:00 · Break 11:00 to 11:30, 2nd break 12:30 to 13:00, 3rd break 14:00 to 14:30","save":true}
+1280 Spread on Lunch, All day, Dinner after Mo's split: {"mo":"Roster 10:00 to 21:00 · Split 14:30 to 17:00, 2nd break 20:30 to 21:00","dev":"Roster 12:00 to 20:00 · Break 14:00 to 14:30","said":["5 breaks from 12:00, one per group, starting every 30 min. Left as they were (a break already, or a break then): Mo. Check them, then Save.","1 break from 17:00, one per group, starting every 30 min. Moved inside their hours: Sam 16:30. Left as they were (a break already, or a break then): Dev and Mo. Check them, then Save.","3 breaks from 19:00, one per group, starting every 30 min. Moved inside their hours: Fen 20:30, Mo 20:30. Left as they were (a break already, or a break then): Gus, Sam and Dev. Check them, then Save."],"errors":[]}
+390 sous chef on #/team: {"rows":9,"bea":"Roster 11:00 to 15:00 · Break 14:00 to 14:30","said":"Bea: break 14:00 to 14:30, the first time left today. Not saved yet.","over":false,"errors":[]}

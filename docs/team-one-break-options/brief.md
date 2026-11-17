@@ -2,7 +2,7 @@
 
 17 November 2026, Queensland. The head chef asked: "On our roster/team today, can we just add a global break time, not having 3 different break times? But still have the option to add a second break time per staff member? In a smart way?" Asked what "global" means, the head chef chose **one break per person** for their whole day (not one per service), with a second break that can be added per person, and a smart default.
 
-**Status: round 1 Build smaller (3 of 5). Round 2: A 18, C 11, B 7 (A first for all six); the combined preview D (A, C's capped default, the designer's phone layout and the new starter's words) reviewed by the designer, the new starter and the skeptic and repaired. Recommendation: D. Waiting for the head chef's choice.** Role-based analysis, not research with staff. [Proposal](proposal.md), [evidence packet](evidence-packet.md), [fixture](fixture.cjs), baseline runner [baseline-run.cjs](baseline-run.cjs) and its numbers [measured-baseline.txt](measured-baseline.txt).
+**Status: round 1 Build smaller (3 of 5). Round 2: A 18, C 11, B 7 (A first for all six); the combined preview D (A, C's capped default, the designer's phone layout and the new starter's words) reviewed by the designer, the new starter and the skeptic and repaired. Recommendation: D. The head chef chose D, two breaks at most, no Fill (17 November 2026).** Role-based analysis, not research with staff. [Proposal](proposal.md), [evidence packet](evidence-packet.md), [fixture](fixture.cjs), baseline runner [baseline-run.cjs](baseline-run.cjs) and its numbers [measured-baseline.txt](measured-baseline.txt).
 
 ## Why it came up
 
@@ -243,6 +243,42 @@ Screenshots: `D-plan-390.png`, `D-rows-390.png`, `D-rows2-390.png`, `D-mo-390.pn
 3. **Fill their breaks (one tap for the whole day):** not recommended now. Later, inside "Copy, clear or spread breaks", if you want it?
 4. **All day has no busy time**, so the Too few band never covers it. Set All day's people needed to 1 in Admin, Kitchen, Shifts? (A setting, no code.)
 
-## Build plan (after the choice, this branch)
+## Chosen
+
+17 November 2026: the head chef said "go with D, two breaks max, no fill".
+1. **D, the mix** (Recommended).
+2. **Two breaks at most** per person per day (Recommended). An old saved day with three still shows all three and each can be changed or taken away.
+3. **No Fill their breaks** (Recommended): + Break per person only.
+
+The fourth point (a busy time for All day) is a setting in Admin, Kitchen, Shifts, left with the head chef. Recorded in `docs/head-chef-decisions.md`.
+
+## Build plan (this branch)
 
 One pull request: `js/prep.js` (the break line and its helpers in place of the per-service break pickers and + Break; one service helper for a break; pickers keyed by the person and the break's start with the date; identical breaks merged on load; the default with its words; Take off and Undo; the too-few mark by minutes; Go to <name>'s break to the person's line; Spread capped; Home's "· All day" after a break dropped), `css/app.css`, `docs/design-patterns.md` and `tests/design-patterns.test.js`, `README.md`, `docs/head-chef-decisions.md`; the ten test files that use `tm-addbr`, `tm-at:` and `tm-len:` rewritten, new checks in `team-row-service` and `team-picker-context` (a held picker after a break moves; two same-start breaks; a quick second tap; Spread's cap; a break across a service edge counted by Too few; the past-time rule; a saved day read back unchanged). Remeasure the built app at 390, 768 and 1280 as the admin and as a sous chef on `#/team`. No new read, listener, rule or saved field.
+
+## Built (17 November 2026)
+
+D in the implemented app (`js/prep.js`: `TM_MAXBR`, `tmBrSh()`, `tmBrTimes()`, `tmBrOutside()`, `tmNames()`, `tmBrName()`, `tmBrLen()`, `tmBrDefault()`, `tmBrAlone()`, `tmBrFocus()`, `tmBrAddHTML()`, `tmBrLineHTML()`, `tmOffWords()`; `tmFrom()` merges identical breaks; `tmRemoveShift()` keeps a break another service holds; Spread capped; the too-few mark by minutes; Go to <name>'s break to the break in the short time; Home's break row without a service name. `css/app.css`: `.tm-tlday`, `.tm-brline`, `.tm-brone`, `.tm-braddwho`, `.tm-addbr.is-second`). The preview's Fill, tags and B list are not built. No new read, listener, rule or saved field.
+
+**Implemented app measurements** (stand-in, fallback fonts, admin session unless named, `fixture.cjs`, clock as the stand-in sets it; runner `built-run.cjs`, raw `measured-built.txt`, screenshots `built-*.png`):
+
+| Measure | Today | D preview | **Built** |
+| --- | ---: | ---: | ---: |
+| + Break buttons, 9 people | 15 | 9 | **9** |
+| Mo: one tap on + Break | Break 12:15 to 12:45 | Split 14:30 to 17:00 | **Split 14:30 to 17:00, "an 11 hour day"** |
+| Mo: split 15:00 and a 2nd break 19:00 | 5 taps, flagged | 4 | **4** |
+| The day at the planner's times, then Save, 1280 | 26 | 26 | **26** |
+| Row px, no breaks, Mo / Bea / Gus, 390 | 369 / 207 / 308 | 387 / 226 / 327 | **375 / 223 / 319** |
+| same, 768 | 243 / 129 / 186 | 227 / 114 / 171 | **215 / 111 / 163** |
+| same, 1280 | 213 / 109 / 161 | 213 / 109 / 161 | **215 / 111 / 163** |
+| Row px, everyone a break, 390 | 413 / 251 / 352 | 438 / 256 / 357 | **428 / 256 / 352** |
+| same, 1280 | 213 / 159 / 161 | 237 / 133 / 185 | **235 / 130 / 183** |
+| Rows wholly in one screen from the first row, 390 / 768 / 1280 | 1 / 4 / 5 | 0 / 4 / 5 | **0 / 5 / 5** |
+| Spread on all three services after Mo's split | Mo 4, Dev 3 | Mo 2, Dev 1 | **Mo 2, Dev 1**, the rest named |
+| An old day with three breaks for Ari | | all shown | **all shown ("2nd", "3rd break"), no + 2nd break, Save off** |
+| A sous chef on `#/team`, 390 | | | **9 rows, + Break works, no sideways scroll, no errors** |
+| Sideways scroll, browser errors (390, 768, 1280) | none | none | **none** |
+
+The built rows are a little shorter than the preview's: the service lines lost their empty + Break column. On a phone a row with no break is 6 to 16 px taller than today (the + Break chip by the name); a row with a break is the height of today's or within 15 px.
+
+**Not evidenced:** real fonts on a real phone (the break line fits 390 px by a few pixels in the stand-in's fonts; it wraps, not scrolls, if a font is wider); rendered contrast and keyboard focus rings; the live site until it is merged; a phone on the older version reading a break saved across a service edge (it reads the same `{ id, sh, at, len }`; its words may say "(outside their hours)").
