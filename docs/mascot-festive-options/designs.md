@@ -1,67 +1,83 @@
-# Three designs: the mascot in festive clothes
+# Designs: the mascot in festive clothes, and a Christmas countdown
 
-Round 2 of the service council. Preview only: no app code changed. Source commit `4eca7f4`. Screens: the real book in the click-test browser with the Firebase stand-in, synthetic staff, stand-in fonts, 2 x pixels, Christmas Day 2026 at 14:00 Queensland (Diwali shown on the same day with the calendar's test hook). The dressed art was swapped in by folder; the book's own `js/mascot.js` drew it, played it and rested it. All files in `evidence/`.
+Preview only: no app code changed. Source commit `4eca7f4`. Screens: the real book in the click-test browser with the Firebase stand-in, synthetic staff, stand-in fonts, 2 x pixels (the wide shots halved), Christmas Day 2026 at 14:00 Queensland (Diwali shown on the same day with the calendar's test hook), and Tuesday 1 December 2026 at 14:00 for the countdown. The dressed art was swapped in by folder; the book's own `js/mascot.js` drew, played and rested it. All files are in `evidence/`.
 
-This is decoration, so the designs cannot differ by task flow on a work page. They differ in **what he wears**, **where he wears it**, **which celebrations get it** and **whether the festival changes his daily play**. Every design: no new control, no words, no read, write, rule or listener; nothing moves on any page; Off on the device and the quiet days (Nyepi, Buddha Jayanti, Philippine Independence Day) leave him in his work clothes; reduced motion shows the clothes on the still and plays nothing by itself; the clothes are the same all kitchen day, whatever the list or the person's work is doing.
+## Round 1 sketches, before the cut
 
-## A. A hat on his star, everywhere, on the Australian and fun days
+Round 1 saw three wider sketches: A a hat on every pose everywhere, B a dress-up day on Home (a drop-on play, hat and festival bandana colours), C festival colours on his bandana for every celebration (`B-outfits-board.png`, `B-dressup-strip.png`, `C-bandana-board.png`, `C-xmas-home-390.png`, `C-diwali-home-390.png`). All five reviewers cut the bandana and the drop-on play ([brief](brief.md#round-1-should-he-be-dressed-build-smaller-5-of-5)). The designs below stay inside that cut: worn from the first frame, never animated on, no recolouring.
 
-**Central idea: one festive hat, worn all day wherever he stands, only where a hat is how people celebrate.**
+## Round 2: three designs inside the cut
 
-- **What:** a pixel hat drawn over the top point of his star in every frame and still. Bandana and apron unchanged.
-- **Which days:** the 16 Australian and fun days. Santa hat for Christmas Eve, Christmas Day and Boxing Day; a party cone for New Year's Eve and New Year's Day; heart band for Valentine's; green top hat for St Patrick's; bunny ears for Easter; flower crown for Mother's Day; fascinator for Melbourne Cup; witch hat for Halloween; toque for Chefs Day; [Father's Day and Coffee Day: to come]. None for Star Wars Day (a film's trademark) or World Food Day. Cultural and religious festivals: his work clothes, as today.
-- **Where:** Home (his speech bubble), under a finished prep list and on a finished section's tab. One look on every screen that day.
-- **Daily play:** unchanged. Today's shuffled action plays in the hat.
-- **Screens:** `A-xmas-home-390.png`, `A-xmas-home-1280.png` (close up `A-xmas-home-1280-zoom.png`), `A-xmas-done-390.png`, `A-xmas-done-1920.png`, `A-hats-board.png`, `A-frames-santa.png`.
+Every design: no new control, no words, no read, write, rule or listener; nothing moves on any page; Off on the device and the quiet days (Nyepi, Buddha Jayanti, Philippine Independence Day) leave him in his work clothes; reduced motion and Still show the piece on the still; the piece is the same all kitchen day whatever the list or the person is doing; the welcome's own rule decides the day (clock ready, celebrations On, a celebratory day). This is decoration, so the designs differ in **what he wears, which days, where, and on which frames**, not in a task flow.
 
-## B. A dress-up day on Home
+### A. A hat on every pose, wherever he stands, on the Australian and fun days
 
-**Central idea: Home is where the celebration lives, so that is where he dresses up, and he shows it with a play of its own.**
+**Central idea: a festive hat is how Australians dress up for these days, so he wears one all day, on every screen.**
 
-- **What:** the festival's hat and its colours on his bandana (`B-outfits-board.png`). Cultural and religious festivals get the bandana colours only, no hat.
-- **Which days:** every celebratory occasion, 37 days a year (the 16 Australian and fun days with hat and colours, the 21 festival days with colours).
-- **Where:** Home only. Under a finished prep list and on a finished section's tab he keeps his work clothes, the way work pages keep Kitchen Book (`B-xmas-done-390.png`).
-- **Daily play:** on the first Home view of a celebration day, a dress-up play takes the place of today's action: the hat drops onto his star from the top edge, the bandana turns as it lands, and he waves (`B-dressup-strip.png`, 8 frames, about 2.7 s). Today's shuffled action is kept for the next ordinary day. A tap replays the dress-up.
-- **Screens:** `B-xmas-home-390.png`, `B-xmas-home-1280.png` (close up `B-xmas-home-1280-zoom.png`), `B-xmas-done-390.png`, `B-diwali-home-390.png`, `B-outfits-board.png`, `B-dressup-strip.png`.
+- **Days (16):** Santa hat for Christmas Eve, Christmas Day and Boxing Day; party cone for New Year's Eve and New Year's Day; heart band for Valentine's; green top hat for St Patrick's; bunny ears for Easter; flower crown for Mother's Day; fascinator for Melbourne Cup; witch hat for Halloween; [Father's Day: to come]. None for Chefs Day (a toque reads as the chef hat, as the stamp did), Coffee Day, World Food Day or Star Wars Day (a film's trademark). Cultural and religious festivals: his work clothes, as today.
+- **Frames:** all 88 frames and 11 stills, from measured head positions, so the hat stays on through every play.
+- **Where:** Home, under a finished prep list (also at 192 x 256 px on a wide screen), and on a finished section's tab.
+- **Screens:** `A-xmas-home-390.png`, `A-xmas-home-1280-zoom.png`, `A-xmas-done-390.png`, `A-xmas-done-1920.png`, `A-hats-board.png`, `A-frames-santa.png`.
 
-## C. Festival colours on his bandana, every celebration, everywhere
+### B. A hat on his rest pose, on Home only, on the same days
 
-**Central idea: the smallest change that still covers every festival: his own bandana in the day's colours, no costume.**
+**Central idea: the least that still says it: Home is where the celebration lives, and he wears the hat when he stands still beside the wish.**
 
-- **What:** his bandana and its knot in two colours taken from the festival's own drawing (`C-bandana-board.png`). No hats.
-- **Which days:** every celebratory occasion, 37 days a year.
+- **Days:** the same 16 as A.
+- **Frames:** only his rest pose (the Welcome still). Today's action plays in his work clothes; when it ends he rests in the hat (`B-rest-only-strip.png`). One hat position per hat, not 99, so a redraw of the action art cannot leave a hat floating.
+- **Where:** Home only. Under a finished prep list and on a finished section's tab he keeps his work clothes, as work pages keep Kitchen Book (`B-xmas-done-390.png`).
+- **Screens:** at rest Home is `A-xmas-home-390.png`; `B-rest-only-strip.png`; `B-xmas-done-390.png`.
+
+### C. One small accent at his bandana knot, for every celebration with a wish
+
+**Central idea: every festival the book greets gets the same size of piece, taken from its own approved motifs, so nobody's festival looks smaller.**
+
+- **Days (37):** every celebratory occasion. A flower or sprig of one size tucked in his bandana knot: holly for Christmas, marigold for Diwali and Tihar (the ambience already uses marigolds), plum blossom for Lunar New Year (as its ambience), shamrock for St Patrick's, a small pumpkin for Halloween, [frangipani for Galungan and Kuningan, and each other festival's piece: to come after the cultural-symbol review] (`C2-accents-board.png`). A festival whose piece the review does not pass gets none.
+- **Frames:** all 88 frames and 11 stills; the knot is found in each from the art (`C2-frames-marigold.png`).
 - **Where:** Home, under a finished prep list and on a finished section's tab.
-- **Daily play:** unchanged.
-- **Measured weakness:** at 48 x 64 px on a phone the bandana is a thin band. Christmas red reads; Diwali marigold barely shows against his yellow star (`C-diwali-home-390.png`).
-- **Screens:** `C-xmas-home-390.png`, `C-xmas-home-1280-zoom.png`, `C-diwali-home-390.png`, `C-bandana-board.png`.
+- **Measured:** at 48 x 64 px on a phone the accent is about 11 px across: a dot of colour beside his face. The holly reads as red and green; the marigold as an orange flower (`C2-xmas-home-390.png`, `C2-diwali-home-390.png`).
+- **Screens:** `C2-xmas-home-390.png`, `C2-diwali-home-390.png`, `C2-xmas-done-390.png`, `C2-accents-board.png`, `C2-frames-marigold.png`.
 
-## How they differ
+### How they differ
 
 | | A | B | C |
 | --- | --- | --- | --- |
-| What he wears | A hat | Hat and bandana colours | Bandana colours |
-| Which days | 16 Australian and fun | 37 (21 with colours only) | 37 |
+| What he wears | A hat that says the day | The same hat | A small knot accent, equal for all |
+| Which days | 16 Australian and fun | 16 Australian and fun | 37, every celebration with a wish, after review |
+| Frames | All 99 | The rest pose only | All 99 |
 | Where | Home, finished list, finished section | Home only | Home, finished list, finished section |
-| Daily play | Unchanged | A dress-up play replaces it on the day | Unchanged |
-| Says which festival at 48 px | Yes, by the hat's shape | On hat days | Only by colour, weakly |
+| Says which day at 48 px | Yes, by its shape (Santa, witch, top hat, cone) | Yes, at rest | Mostly by colour |
 
-## The same task in each (the head chef's question: "Is he dressed today?")
+### The same check in each
 
 | | Today | A | B | C |
 | --- | --- | --- | --- | --- |
-| Taps for any main task | unchanged | unchanged | unchanged | unchanged |
-| Lines on a 390 px phone | unchanged | unchanged | unchanged | unchanged |
+| Taps for any main task | | unchanged | unchanged | unchanged |
+| Lines on a 390 px phone | | unchanged | unchanged | unchanged |
 | Navigation levels | 0 | 0 | 0 | 0 |
-| Measured rectangles that moved (Home 390 and 1280, finished list 390 and 1920) | none | none | none | none |
-| New reads, rules, listeners | none | none | none | none |
-| Art per occasion | none | one pixel hat (about 0.5 KB of code) | hat and two colours, plus one dress-up clip drawn in code | two colours (about 30 bytes) |
-| Build size | | 1 pull request | 1 to 2 (the dress-up play and its bag rule) | 1 pull request |
-| Relearning | none | none | none | none |
-| Risk | | a hat misplaced in a frame; a work page shows a festive touch | the dress-up replaces an action; plain on work pages may read as "he changed back" | too subtle to notice on a phone |
+| Measured rectangles that moved (Home 390 and 1280, finished list 390 and 1920) | | none | none | none |
+| Reads, rules, listeners | none | none | none | none |
+| Art and code | | 99 head positions, about 1 KB; about 0.5 KB per hat | about 0.5 KB per hat, one position each | 99 knot positions, about 1 KB; about 0.3 KB per accent |
+| Build size | | 1 pull request | 1 pull request, smaller | 1 pull request, then one per batch of reviewed accents |
+| Cultural review | none needed beyond the hats | none | each festival's accent |
+| Main risk | a hat misplaced in one frame; a festive piece beside "Every line ticked" | the hat appears as the play ends, which can read as a change of clothes | too small to notice; a festival without a passed accent is left out |
 
 ## Prototype checks (Preview)
 
-- **The hat follows him.** The top of his star, its tilt and his size were measured from the art in all 99 pictures (88 frames, 11 stills). The smoker pose is smaller and further left; the hat scales with it (`A-frames-santa.png`).
-- **The frame's top edge.** The art leaves 22 to 34 px above his star. Across all 99 pictures the worst cut is 3.7 px of 256 (the party cone, bunny ears and toque in Serve and Build frames), 1.6 px for the Santa and witch hats, none for the fascinator and flower crown. Under 1 px at 48 x 64 and 72 x 96 px; visible only at 192 x 256 px. Repair: move that hat down by the cut in those frames.
-- **The bandana** is found in every frame by its colour above the eye line and in the knot beside it; the face screen, apron stripes and outline are left alone (checked by eye on the boards; not measured pixel by pixel).
-- **Not exercised in the preview:** midnight from Boxing Day to an ordinary day with Home or a finished list open, Off switched on with Home open, an older saved copy of `js/mascot.js`, reduced motion, the dress-up play's effect on the shuffled set, dark mode, the section screens at 1.5 m.
+- **Hats follow him.** The top of his star, its tilt and his size were measured from the art in all 99 pictures. The smoker pose is smaller and further left; the hat scales with it (`A-frames-santa.png`).
+- **The frame's top edge.** The worst cut is 3.7 px of 256 (party cone, bunny ears in some Serve and Build frames), 1.6 px for the Santa and witch hats, none for the fascinator and flower crown: under 1 px at 48 x 64 and 72 x 96 px. Repair: move the hat down by the cut in those frames.
+- **The knot** is found in every frame as the navy pixels right of the eyes, at and above the eye line (`C2-frames-marigold.png`). Checked by eye, not pixel by pixel.
+- **Not exercised in the preview:** midnight with Home or a finished list open, Off chosen with Home open, an older saved copy of `js/mascot.js`, reduced motion and Still, dark mode, the section screens at 1.5 m, real phones.
+
+## The Christmas countdown: three places (quick check)
+
+Asked the same day: "And add a Christmas celebration countdown?" Shown for Tuesday 1 December 2026, 24 days before Christmas Day. Each runs from 1 to 23 December (Christmas Eve has its own wish), counts in Queensland days from the book's clock, and needs no read. The words were placed by hand in the real page after it drew (Preview). Today on 1 December Home says "Welcome, Ann" and the Coming up card is hidden: it shows only the next 7 days (`K0-dec1-home-390.png`).
+
+| | K1. He says it | K2. Coming up line | K3. On the date line |
+| --- | --- | --- | --- |
+| What | The welcome bubble: "24 days to Christmas, Ann" | Home's Coming up card shows "Christmas Day, in 24 days" with the Christmas stamp | "Tuesday 1 December · 14:00 · 24 days to Christmas" |
+| 390 px phone | Bubble on two lines: Your day starts 29 px lower (171 to 200 px). A 40-character name stays on two lines at the long-name size (`K1-bubble-390.png`, `K1-bubble-long-390.png`) | Nothing above Your day moves; the card is at the foot of Home, below Prep by section (`K2-coming-390.png`) | Date wraps: Your day 23 px lower, and he drops 23 px below his bubble's tail (`K3-dateline-390.png`) |
+| 1280 px | One line, nothing moves (`K1-bubble-1280.png`) | The card shows below Prep by section (`K2-coming-1280.png`) | One line, nothing moves (`K3-dateline-1280.png`) |
+| What it replaces | The ordinary welcome words for 23 days (a shift wish such as "Enjoy your break" would keep its place, by the welcome's order) | Nothing | Nothing |
+| Pattern | The approved welcome bubble (17 Nov 2026) | The approved Coming up line with stamps (3 Nov 2026), its window stretched for Christmas | A new use of the date line |
+| Taps, controls | none | none | none |
