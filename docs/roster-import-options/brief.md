@@ -347,3 +347,17 @@ The owner said: "We seem to have somehow lost the working hours for imported ros
 - 38 related files pass locally.
 
 Screenshots: `roster-hours-home-head-390.png`, `roster-hours-home-staff-390.png`.
+
+## Quick check: roster times in bold (17 November 2026)
+
+The head chef: "in our today's team, when I assign the sections for the day I'd like to see the rostered hours as well somehow highlighted or something so I don't have to look so long? Everything else in there is sweet."
+
+- **Size:** a small change on an existing page (no tab, button, pop-up or step), so the council's quick check, no extra agents.
+- **Needed:** yes. Each row already says the hours, but in one quiet grey sentence with the breaks ("Roster 10:00 to 15:00 · No break yet"), so the eye has to read the whole line to find them. Placing sections is the job where the hours matter (who opens, who closes).
+- **What it does:** in each Today's team row, the roster times in that sentence are bold ink (`.tm-hrs`, `--ink`, tabular numbers, kept on one line): "Roster **10:00 to 15:00** · No break yet", "Roster: Lunch **08:00 to 15:00**, Dinner **17:00 to 21:00** · Break 14:00 to 14:30". A service's own hours, used when there is no roster time ("Lunch hours 10:00 to 15:00"), stay quiet, so bold also means "from the roster". The words are unchanged, character for character; nothing else on the page moves.
+- **Taps and lines:** no taps added. Lines unchanged: row heights measured the same before and after (Gus, Ari, Mo: 352, 223, 408 px at 390; 215, 111, 267 at 768; 183, 111, 234 at 1280; the stand-in, admin session, `docs/team-one-break-options/fixture.cjs`, fallback fonts). No sideways scroll, no browser errors at 390, 768 or 1280.
+- **Contract fit:** no colour meaning added: ink, not orange (action), amber (attention) or green (Saved), so the hours never read as a status. It works without colour (bold weight). Ink on paper is the page's body text contrast. The Off the roster flag (`.tm-roster-flag`) and the break warnings keep their own look.
+- **Reference fit:** Flighty: the time that matters is the boldest thing in the line. Things 3: one quiet sentence, one strong word, no extra chrome.
+- **Try to break it:** a service or shift name with markup in a two-service sentence is escaped piece by piece now the sentence is built as HTML (checked: `tests/safe-text.test.js`, chef's Today's team). A split roster marks each part on its own (checked). A day without roster hours (Copy last weekday, an older plan, broken stored values) shows no bold (checked). A very long sentence at 320 px: the bold times never break inside "10:00 to 15:00" and the line wraps between parts (Risk: not measured at 320 px; checked at 390 with no sideways scroll).
+- **Not changed:** Home's On today board and Your day (the head chef asked about placing sections); the saved overview.
+- **Evidence:** `tests/team-roster-hours.test.js` (each roster time marked on its own, a split in two parts, the service's own hours not; bold ink on one line, the rest of the sentence still muted). The first of the two new checks fails on the old code; the second cannot run there. Screenshots `bold-hours-before-390.png`, `bold-hours-after-390.png`.

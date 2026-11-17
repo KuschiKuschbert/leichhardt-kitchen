@@ -14500,12 +14500,14 @@ if (list.length) sg('oreg', 's');
   }
   // one sentence: "Roster 12:00 to 15:00 · Break 13:30 to 14:00"; two parts of a day name their services; "No break yet";
   // a break with nobody else on its service then says so: "Break 15:45 to 16:15 (nobody else on All day 15:45 to 16:00)"
-  function tmDayWords(id) {
-    var spans = tmSpans(id), brs = tmDayBreaks(id), named = spans.length > 1;
-    var hrs = spans.map(function (o) { return (named ? o.shs.join(', ') + ' ' : o.roster ? 'Roster ' : o.shs.join(', ') + ' hours ') + tmHHMM(o.from) + ' to ' + tmHHMM(o.to); }).join(', ');
+  // html: the same words, escaped, with each roster time in bold ink (.tm-hrs) so the planner finds a person's hours at
+  // a glance while placing sections (head chef, 17 Nov 2026); a service's own hours (no roster) stay quiet
+  function tmDayWords(id, html) {
+    var spans = tmSpans(id), brs = tmDayBreaks(id), named = spans.length > 1, e = html ? esc : String;
+    var hrs = spans.map(function (o) { var t = e(tmHHMM(o.from) + ' to ' + tmHHMM(o.to)); return e(named ? o.shs.join(', ') + ' ' : o.roster ? 'Roster ' : o.shs.join(', ') + ' hours ') + (html && o.roster ? '<b class="tm-hrs">' + t + '</b>' : t); }).join(', ');
     if (named && spans.every(function (o) { return o.roster; })) hrs = 'Roster: ' + hrs;
     var bw = brs.length ? brs.map(function (b, n) { var lone = tmBrAlone(id, b); return tmBrName(b, n) + ' ' + tmHHMM(b.at) + ' to ' + tmHHMM(b.at + b.len) + (tmBrOutside(id, b.at, b.len) ? ' (outside their hours)' : lone ? ' (' + lone + ')' : ''); }).join(', ') : 'No break yet';
-    return (hrs || 'Hours not set') + ' · ' + bw;
+    return (hrs || 'Hours not set') + ' · ' + e(bw);
   }
   // the sticky head: each service worked, in time order, with its hours and who has no section yet; then the hour marks
   function tmPlanHeadHTML(r) {
@@ -14528,7 +14530,7 @@ if (list.length) sg('oreg', 's');
     }).join('');
     return '<li class="tm-person-row tm-tlrow' + (tmUi.shortGo === p.id ? ' is-short-here' : '') + '" data-id="' + esc(p.id) + '"><div class="tm-grid-who"><span class="tm-person-name">' + esc(p.name) + '</span>' + (chefP(p) ? '<small class="tm-tlrole">' + esc(tmChefRole(p)) + '</small>' : '') +
       tmShortMarkHTML(p.id, sv) + (flag ? '<span class="tm-roster-flag">' + esc(flag) + '</span>' : '') + (tmDayBreaks(p.id).length ? '' : '<span class="tm-braddwho">' + tmBrAddHTML(p) + '</span>') + '</div>' +
-      '<div class="tm-tlrow-main"><div class="tm-tlrow-day">' + tmBarHTML(p.id, r) + '<div class="tm-tlday"><p class="tm-learn tm-roster-time">' + esc(tmDayWords(p.id)) + '</p>' + tmBrLineHTML(p) + '</div></div>' + lines + tmOverlapHTML(p.id) + tmUndoHTML(p.id) + '</div></li>';
+      '<div class="tm-tlrow-main"><div class="tm-tlrow-day">' + tmBarHTML(p.id, r) + '<div class="tm-tlday"><p class="tm-learn tm-roster-time">' + tmDayWords(p.id, true) + '</p>' + tmBrLineHTML(p) + '</div></div>' + lines + tmOverlapHTML(p.id) + tmUndoHTML(p.id) + '</div></li>';
   }
   // the services a person is not on yet, in time order; a hidden one says so in words (it replaced the service chips)
   function tmAddSvcHTML(p) {

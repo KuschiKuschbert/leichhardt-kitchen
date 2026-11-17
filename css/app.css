@@ -5806,6 +5806,9 @@ html:has(.tm-focus-page) {
 .tm-rowbar .sh { border-radius: 3px; }
 .tm-rowbar .br, .tm-rowbar .sp { top: -4px; bottom: -4px; border: 2px solid var(--surface-paper); border-radius: 3px; }
 .tm-tlrow-day .tm-roster-time { margin: .1rem 0 .2rem; }
+/* a person's roster times in bold ink inside the quiet sentence, kept on one line, so they are found at a glance while
+   placing sections (head chef, 17 Nov 2026); a service's own hours (no roster) stay quiet */
+.tm-roster-time .tm-hrs { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 /* one break per person (17 Nov 2026): the sentence, then the break line ("Break 15:45", "30 min", "+ 2nd break") on one
    line where it fits; + Break sits by the name while the person has none. From 1100 px the sentence wraps first. */
 .tm-tlday { display: flex; flex-wrap: wrap; align-items: center; gap: .2rem .6rem; }

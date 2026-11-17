@@ -48,6 +48,13 @@ const cells = p => p.$$eval('#hm-with-body .hm-tp', l => l.map(e => e.textConten
   ok(/^Roster 10:00 to 21:30 · No break yet$/.test(await said('ann')) && /^Roster: Lunch 10:00 to 14:00, Dinner 17:00 to 21:00 · No break yet$/.test(await said('bea')), 'rows: each person\'s saved roster hours, a split in order with its services (' + await said('ann') + ' | ' + await said('bea') + ')');
   const plain = await Promise.all(['cal', 'dev', 'eli', 'fen'].map(said));
   ok(plain.every(x => /^Lunch hours 10:00 to 15:00 · No break yet$/.test(x)), 'rows: no roster hours without valid saved hours; the service\'s own hours say so (' + plain.join(' | ') + ')');
+  // the roster times in bold ink, found at a glance while placing sections (head chef, 17 Nov 2026); the words above
+  // are unchanged, and a service's own hours (no roster) stay quiet
+  const bold = id => p.$$eval('.tm-tlrow[data-id="' + id + '"] .tm-roster-time .tm-hrs', l => l.map(e => e.textContent));
+  const annB = await bold('ann'), beaB = await bold('bea'), plainB = await Promise.all(['cal', 'dev', 'eli', 'fen'].map(bold));
+  ok(JSON.stringify(annB) === '["10:00 to 21:30"]' && JSON.stringify(beaB) === '["10:00 to 14:00","17:00 to 21:00"]' && plainB.every(l => !l.length), 'rows: each roster time is marked on its own, a split in two parts; a service\'s own hours are not (' + JSON.stringify([annB, beaB, plainB]) + ')');
+  const look = await p.$eval('.tm-tlrow[data-id="ann"] .tm-roster-time', e => { const s = getComputedStyle(e), t = getComputedStyle(e.querySelector('.tm-hrs')), i = document.createElement('i'); i.style.color = 'var(--ink)'; document.body.appendChild(i); const ink = getComputedStyle(i).color; i.remove(); return { w: +t.fontWeight, c: t.color, sc: s.color, ws: t.whiteSpace, ink }; });
+  ok(look.w >= 700 && look.c !== look.sc && look.c === look.ink && look.ws === 'nowrap', 'rows: the roster time is bold ink on one line, the rest of the sentence stays quiet (' + JSON.stringify(look) + ')');
   const glance = (await p.$$eval('.tm-tlr', l => l.map(e => e.textContent.replace(/\s+/g, ' ').trim()))).find(x => /^Ann/.test(x)) || '';
   ok(/Lunch, roster 10:00 to 21:30/.test(glance), 'saved overview: Ann\'s line says his roster hours (' + glance + ')');
   // Whole day review is gone: each row is the whole day, the hours in its sentence and the section on each service line
