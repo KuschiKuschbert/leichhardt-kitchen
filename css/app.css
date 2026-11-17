@@ -5801,11 +5801,24 @@ html:has(.tm-focus-page) {
 /* "break when too few" sits beside the name on a phone, so it coming and going never moves the row under a thumb */
 .tm-plan > .tm-tlrow > .tm-grid-who > .tm-short-mark { margin-top: 0; }
 .tm-plan > .tm-tlrow > .tm-grid-who > .tm-roster-flag { flex-basis: 100%; margin-top: .1rem; }
+@media (max-width: 599px) {
+  .tm-plan > .tm-tlrow > .tm-grid-who > .tm-rostered { order: 1; flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: .6rem; margin-top: .3rem; }
+  /* a zero-height full line before the label, so the label keeps its own width on its own line */
+  .tm-plan > .tm-tlrow > .tm-grid-who:has(> .tm-rostered)::after { content: ""; flex-basis: 100%; order: 0; height: 0; }
+}
 .tm-tlrow-main { min-width: 0; }
 .tm-focus-page .tm-rowbar { display: block; height: 6px; margin: .5rem .9rem .2rem; background: transparent; }
 .tm-rowbar .sh { border-radius: 3px; }
 .tm-rowbar .br, .tm-rowbar .sp { top: -4px; bottom: -4px; border: 2px solid var(--surface-paper); border-radius: 3px; }
 .tm-tlrow-day .tm-roster-time { margin: .1rem 0 .2rem; }
+/* the roster hours as a label under the name (head chef, 17 Nov 2026: "a colour coded line or label with Rostered
+   hours ... so it stands out"): filled with the people colour (the edge of Today's team's own sage cover), ink text
+   (6.2:1). Never orange (attention, the roster flag), the success green (Saved) or charcoal (Save, a selected tab).
+   On a phone it is its own line under the name and + Break; from 600 px it sits under the name in the name column,
+   each part of the day on its own line. */
+.tm-rostered { display: inline-flex; flex-direction: column; align-items: flex-start; max-width: 100%; margin-top: .2rem; padding: .2rem .6rem .25rem; border-radius: 6px; background: var(--surface-people-edge); color: var(--ink); line-height: 1.25; }
+.tm-rostered-k { font-size: .6875rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.tm-rostered .tm-hrs { display: block; font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 /* one break per person (17 Nov 2026): the sentence, then the break line ("Break 15:45", "30 min", "+ 2nd break") on one
    line where it fits; + Break sits by the name while the person has none. From 1100 px the sentence wraps first. */
 .tm-tlday { display: flex; flex-wrap: wrap; align-items: center; gap: .2rem .6rem; }
