@@ -14945,8 +14945,9 @@ if (list.length) sg('oreg', 's');
     tmClearMsg();
     tmf.br = tmf.br.filter(function (b) { return b.sh !== sh || tmIsSplit(b.len) !== split; });
     var n = 0, moved = [], kept = [];
-    ids.forEach(function (id, i) {
-      var at = from + (per ? Math.floor(i / per) * gap : 0), h = tmHrs(tmf, id, s), was = at;
+    ids.forEach(function (id) {
+      // the group by the people given a break so far: someone left as they were takes no place in the order
+      var at = from + (per ? Math.floor(n / per) * gap : 0), h = tmHrs(tmf, id, s), was = at;
       // inside their own hours on this service (16 Nov 2026); whoever is moved is named, so a group together is seen
       if (h && h[1] > h[0]) at = Math.min(Math.max(at, h[0]), Math.max(h[0], h[1] - len));
       // one break per person (17 Nov 2026): anyone with two breaks, a break of this kind on another service, or a
