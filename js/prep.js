@@ -2249,12 +2249,12 @@
   }
   function supplierOccurrences() {
     var out = [], done = cutDone(), ms = now();
-    for (var k = 0; k < 8; k++) {
+    for (var k = 0; k < CUT_DAYS; k++) {
       var date = shift(dayNow(), k);
       CUT.on(cutList(), (T.dow() + k) % 7).forEach(function (c) {
         var at = T.at(date) + c.at * 60000;
         out.push({ day: date, cutoffId: c.s.id, at: at, deliveryDay: shift(date, c.pre), name: c.s.name,
-          label: dayShort(date) + ', ' + hhmm(c.at) + ' ' + CUT.forText(c, date), key: c.s.id + '|' + date,
+          label: dayShort(date) + ', ' + hhmm(c.at) + ' ' + CUT.forText(c, date), forText: CUT.forText(c, date), key: c.s.id + '|' + date,
           done: !!done[c.s.id + '|' + date], past: at <= ms });
       });
     }
@@ -11644,9 +11644,12 @@ if (list.length) sg('oreg', 's');
   // who gets the bar: the head chef and sous chefs with their PIN, and the head chef's Google device
   function cutWho() { return !!S.config && (isSous() || admDev()); }
   /* The shared ticks: one record per supplier and cut-off day, cutdone/<day>_<supplier id> { day, sid, on, at, by }, so
-     the rules check every tick (who, when, which). One live listener on today's and tomorrow's (a query on day), on a
-     chef's phone (their PIN session) or the head chef's Google account, only while cut-offs are set: one read per record of
-     those two days (ticks and taken-off ticks, one when there are none) when the book opens, then only what changes. It moves on when the kitchen day changes, and starts as soon as
+     the rules check every tick (who, when, which). One live listener on the next CUT_DAYS days from today (a query on day;
+     today's and tomorrow's until 17 Nov 2026), on a chef's phone (their PIN session) or the head chef's Google account,
+     only while cut-offs are set: one read per record of those days (ticks and taken-off ticks, one when there are none)
+     when the book opens, then only what changes. The days after tomorrow hold a record only for an order placed after a
+     cut-off closed, which counts for the next window (cutRoll()), or one recorded days ahead: a few reads a day at most.
+     They let the supplier pages and the Order list say a weekly supplier is ordered. It moves on when the kitchen day changes, and starts as soon as
      this phone may read (cutWatch() runs on every paint, so a Google account checked or a PIN session opened late is
      caught). A refused or failed read keeps what this phone last saw (the bar and the pushes carry on).
      No signal (28 Oct 2026): the listener started again (the kitchen day changed, a chef signed in) answers at once
@@ -11655,6 +11658,9 @@ if (list.length) sg('oreg', 's');
      phone's own on top, and the bar and the tick list say ticks from other phones are not in yet. Otherwise a supplier
      another chef ordered showed as not ordered after midnight, and could be ordered twice. */
   var cutSub = null, cutSubKey = '', cutSeen = {}, cutWrites = Object.create(null), cutState = 'loading', cutSnap = {};
+  // the days the ticks are read for, today first: the same 8 days the supplier pages know the cut-offs of (supplierOccurrences())
+  var CUT_DAYS = 8;
+  function cutDays() { var out = []; for (var k = 0; k < CUT_DAYS; k++) out.push(shift(dayNow(), k)); return out; }
   function cutHas() { return cutWho() && cutList().some(function (s) { return s.at >= 0 && s.dd.length; }); }
   function cutCanRead() { return !!fb && !!S.pin && cutHas() && (canW() || (!!S.user && S.level === 'owner')); }
   var cutErr = { key: '', at: 0 };
@@ -11666,7 +11672,7 @@ if (list.length) sg('oreg', 's');
     if (want === cutSubKey) return;
     if (want && cutErr.key === want + '|' + cutReader() && Date.now() - cutErr.at < 300000) return;
     if (cutSub) cutSub();
-    var days = want ? [dayNow(), shift(dayNow(), 1)] : [];
+    var days = want ? cutDays() : [];
     // another kitchen PIN: nothing kept. The next kitchen day on the same PIN: the ticks of a day still covered (the day
     // that was tomorrow) stay until the server answers. A tick just made on this phone before the first read stays too.
     if (cutSubKey) {
@@ -11979,7 +11985,7 @@ if (list.length) sg('oreg', 's');
   }
   /* Coming up's order cut-offs (8 Nov 2026, the audit of the redesign): each supplier's next cut-off after today, in the
      next 7 days, for the chefs who get the cut-off bar; from the kitchen's settings already held, no read. Today's are on
-     the board. A cut-off already ticked as ordered (today's and tomorrow's ticks are known) is left out. */
+     the board. A cut-off already ticked as ordered (the next CUT_DAYS days' ticks are known) is left out. */
   function homeCutsHTML() {
     if (!cutWho()) return '';
     var seen = {}, out = [], done = cutDone(), tom = shift(dayNow(), 1);
@@ -12032,8 +12038,10 @@ if (list.length) sg('oreg', 's');
      done, with no tick. Recording the quantities stays on the supplier's own page (its name on the tick list). Before,
      the bar's Order done did this, and the tick list opened a linked supplier's sheet instead of ticking. */
   function cutConfirm(key) {
-    // Any of today's or tomorrow's cut-offs, the two days the shared ticks cover.
-    var c = cutOn(0).concat(cutOn(1)).filter(function (x) { return x.key === key; })[0];
+    // Any cut-off in the days the shared ticks cover. The tap is when the order was placed (head chef, 17 Nov 2026): once
+    // its cut-off has passed it counts for the supplier's next cut-off, as an order recorded on its page does.
+    var c = cutAll().filter(function (x) { return x.key === key; })[0], n = c && c.at <= T.mins() ? cutRoll(c) : null;
+    if (n) { c = n; key = n.key; }
     if (!c || !cutCanTick() || cutSeen[key]) return;
     var context = supplierContext(), by = cutTicker();
     function fail(e) {
@@ -12044,7 +12052,7 @@ if (list.length) sg('oreg', 's');
     cutOrdered(key, true).then(function (saved) {
       var current = cutSeen[key];
       if (context !== supplierContext() || !current || current.by !== saved.by || current.at !== saved.at) return;
-      toast(c.s.name + ': order done. No quantities recorded.', { label: 'Undo', fn: function () {
+      toast(c.s.name + ': ordered ' + cutDel(c) + '. No quantities recorded.', { label: 'Undo', fn: function () {
         var current = cutSeen[key];
         if (context !== supplierContext() || by !== cutTicker() || !current || current.by !== saved.by || current.at !== saved.at) return;
         cutOrdered(key, false).then(function () { if (context === supplierContext()) toast('Order confirmation undone. Saved order history is unchanged.'); }, fail);
@@ -12059,6 +12067,24 @@ if (list.length) sg('oreg', 's');
      disclosure; Chef to-do stays read-only. Both retain attribution, absolute dates and unconfirmed deadlines. */
   // Today's cut-offs, and tomorrow's whose reminder has started, soonest first.
   function cutRowsNow() { var m = T.mins(); return cutToday().concat(cutOn(1).filter(function (c) { return cutOnNow(c, m); })); }
+  // every cut-off in the days the ticks cover, today first
+  function cutAll() { var out = []; for (var k = 0; k < CUT_DAYS; k++) out = out.concat(cutOn(k)); return out; }
+  /* The window an order placed now counts for once cut-off c has closed (head chef, 17 Nov 2026: "if it is not in the
+     time frame it will roll to the next window"): the same supplier's next cut-off still open, in the days the ticks
+     cover, or null. From the settings and the clock, no reads. */
+  function cutRoll(c) {
+    var m = T.mins();
+    for (var k = 0; k < CUT_DAYS; k++) { var n = cutOn(k).filter(function (x) { return x.s.id === c.s.id && x.at > m; })[0]; if (n) return n; }
+    return null;
+  }
+  /* The tick a cut-off row shows and acts on: its own, or once it has closed, the next window's (an order placed after
+     the cut-off). { key, d: the tick or null, roll: the next window when the row stands for it }. */
+  function cutTickFor(c) {
+    var d = cutDone()[c.key];
+    if (d || c.at > T.mins()) return { key: c.key, d: d || null, roll: null };
+    var n = cutRoll(c);
+    return n ? { key: n.key, d: cutDone()[n.key] || null, roll: n } : { key: c.key, d: null, roll: null };
+  }
   /* Tomorrow, heads-up (5 Nov 2026, the head chef's supplier patterns): tomorrow's cut-offs for a delivery 2 or more days
      after them ("Wednesday's order by Friday 16:00"), all the day before, until their own reminder starts. A row has
      Ordered already instead of a tick box, so nobody ticks it to mean "seen": it is only for an order placed early, and
@@ -12083,26 +12109,28 @@ if (list.length) sg('oreg', 's');
   }
   // Named actions on Orders distinguish an externally placed order from ticking one request.
   function cutRowHTML(c, ro, named, ahead) {
-    var m = T.mins(), done = cutDone();
-    var d = done[c.key], past = c.at <= m, who = d ? cutByName(d) : '';
-    var st = d ? 'Ordered' + (who ? ' by ' + who : '') + (d.at ? ', ' + clock(d.at) : '') : past ? 'Closed, not ticked' : cutIn(c.at - m);
+    // a closed cut-off stands for the next window (cutTickFor()): "Closed, ordered for Thu 19 Nov by Sam, 14:00"
+    var m = T.mins(), t = cutTickFor(c), roll = t.roll;
+    var d = t.d, past = c.at <= m, who = d ? cutByName(d) : '';
+    var st = d ? (roll ? 'Closed, ordered ' + cutDel(roll) : 'Ordered') + (who ? ' by ' + who : '') + (d.at ? ', ' + clock(d.at) : '') : past ? 'Closed, not ticked' : cutIn(c.at - m);
     var cls = d ? 'is-done' : past ? 'is-past' : c.at - m <= CUT_SOON ? 'is-soon' : '';
     if (named) {
-      var pending = !!cutWrites[c.key], known = cutState === 'ok';
+      var pending = !!cutWrites[t.key], known = cutState === 'ok';
       st = pending ? 'Not sent' : d ? st : !known ? 'Confirmation not checked' : past ? 'Closed, not confirmed' : ahead ? 'For tomorrow' : st;
       return '<li class="cut-o o-cut-row ' + (pending ? 'is-pending' : cls) + '"><a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a>' +
         '<span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span>' +
-        '<button type="button" class="cut-box o-cut-action" data-p="cut-tick" data-id="' + esc(c.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Undo order placed for ' : 'Order placed for ') + c.s.name + (c.at >= 1440 ? ', for tomorrow' : '')) + '"' + (cutCanTick() ? '' : ' disabled') + '>' + (d ? 'Undo' : 'Order placed' + (ahead ? ' for tomorrow' : '')) + '</button></li>';
+        '<button type="button" class="cut-box o-cut-action" data-p="cut-tick" data-id="' + esc(t.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Undo order placed for ' : 'Order placed for ') + c.s.name + (roll ? ', ' + cutDel(roll) : c.at >= 1440 ? ', for tomorrow' : '')) + '"' + (cutCanTick() ? '' : ' disabled') + '>' + (d ? 'Undo' : 'Order placed' + (ahead ? ' for tomorrow' : '')) + '</button></li>';
     }
-    return '<li class="cut-o ' + cls + '">' + (ro ? '<span class="cut-box cut-mark" aria-hidden="true">' + (d ? '&#10003;' : '') + '</span>' : '<button type="button" class="cut-box" data-p="cut-tick" data-id="' + esc(c.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Ordered from ' : 'Tick when ordered from ') + c.s.name) + '"' + (cutCanTick() ? '' : ' disabled') + '><span aria-hidden="true">' + (d ? '&#10003;' : '') + '</span></button>') +
+    return '<li class="cut-o ' + cls + '">' + (ro ? '<span class="cut-box cut-mark" aria-hidden="true">' + (d ? '&#10003;' : '') + '</span>' : '<button type="button" class="cut-box" data-p="cut-tick" data-id="' + esc(t.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Ordered from ' : 'Tick when ordered from ') + c.s.name + (roll ? ', ' + cutDel(roll) : '')) + '"' + (cutCanTick() ? '' : ' disabled') + '><span aria-hidden="true">' + (d ? '&#10003;' : '') + '</span></button>') +
       '<a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a><span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span></li>';
   }
   /* Orders C (9 Nov 2026): one compact disclosure, separate from the staff requests. Reuse the existing cut-off
      listener and clock; no catalogue, extra reads or saved disclosure state. Never open it on a live update. */
   function cutOrdSummaryHTML() {
     var xs = cutRowsNow().concat(cutAhead()).sort(function (a, b) { return a.at - b.at; });
-    var done = cutDone(), pending = xs.filter(function (c) { return !!cutWrites[c.key]; }).length;
-    var due = xs.filter(function (c) { return !done[c.key]; }), late = due.filter(function (c) { return c.at <= T.mins(); }).length;
+    // a closed cut-off whose next window is ordered is not overdue (cutTickFor())
+    var pending = xs.filter(function (c) { return !!cutWrites[cutTickFor(c).key]; }).length;
+    var due = xs.filter(function (c) { return !cutTickFor(c).d; }), late = due.filter(function (c) { return c.at <= T.mins(); }).length;
     var next = due[0], title = 'Supplier cut-offs', detail = '', detailHTML = '';
     if (pending) detail = 'Not sent. Waiting for confirmation.';
     else if (cutState === 'error') detail = 'Could not check confirmations.';

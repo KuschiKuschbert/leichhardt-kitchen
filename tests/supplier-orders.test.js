@@ -1,6 +1,6 @@
 // Supplier orders (24 Oct 2026): the head chef and sous chefs tick off each supplier's order once it is in, on the
-// order list or on Chef to-do. The ticks are shared (cutdone/<day>_<supplier id>, one live listener on today's and
-// tomorrow's), take the cut-off off the bar on every chef's phone and stop its pushes (scripts/cutoff-push.mjs). Staff
+// order list or on Chef to-do. The ticks are shared (cutdone/<day>_<supplier id>, one live listener on the next 8 days'
+// since 17 Nov 2026, today's and tomorrow's before), take the cut-off off the bar on every chef's phone and stop its pushes (scripts/cutoff-push.mjs). Staff
 // never see or read them. The pages open at 14:00.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
@@ -19,6 +19,8 @@ const CUTS = [
   { id: 'chk', name: 'Chicken', dd: [next], at: 13 * 60, pre: 1 }
 ];
 const CD = sid => fsKey(['cutdone', today + '_' + sid]);
+// a week on: Chicken's next cut-off, where a tick after today's has closed goes (head chef, 17 Nov 2026)
+const CD7 = sid => fsKey(['cutdone', L.ymd(new Date(L.NOW + 7 * 86400000)) + '_' + sid]);
 const tickOf = (sid, by, at) => ({ [CD(sid)]: { day: today, sid, on: true, at, by } });
 const extra = x => Object.assign({ [CFG]: { people, sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], showBadges: true, cutoffs: CUTS } }, x || {});
 async function openCuts(p) { await L.waitFor(p, () => !!document.querySelector('.o-cut-fold'), null, 10000); if (!(await p.$eval('.o-cut-fold', e => e.open))) { await p.click('.o-cut-fold > summary'); await L.settle(p, 200); } }
@@ -48,16 +50,18 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   ok(/^Ordered by Sam, \d\d:\d\d$/.test(r[1].st), 'tick: the row says who ordered and when (' + r[1].st + ')');
   await L.waitFor(p, () => [...document.querySelectorAll('.cut-tl li:not(.is-done):not(.is-past) .cut-n')].map(e => e.textContent).join() === 'Veg', null, 10000);
   ok(true, 'tick: PFD leaves the pending cut-offs');
-  // ticking the closed one still records it
+  // ticking the closed one records it for its next cut-off, a week on (the tick is when the order was placed, 17 Nov 2026)
   await p.click('.cut-tl li:nth-child(1) .cut-box');
   await L.waitFor(p, () => { const e = document.querySelector('.cut-tl li:nth-child(1) .cut-box'); return e && e.getAttribute('aria-pressed') === 'true'; }, null, 10000);
   ok(true, 'tick: a closed cut-off can still be ticked off');
+  s = await store(p);
+  ok(!s[CD('chk')] && s[CD7('chk')]?.on === true, 'tick: after its cut-off the order counts for the next cut-off, a week on');
   // a mis-tap: untick PFD
   await openCuts(p);
   await p.click('.cut-tl li:nth-child(2) .cut-box');
   await L.waitFor(p, () => { const e = document.querySelector('.cut-tl li:nth-child(2) .cut-box'); return e && e.getAttribute('aria-pressed') === 'false'; }, null, 10000);
   s = await store(p);
-  ok(s[CD('pfd')].on === false && s[CD('chk')].on === true, 'untick: PFD\'s tick is taken off, Chicken stays');
+  ok(s[CD('pfd')].on === false && s[CD7('chk')].on === true, 'untick: PFD\'s tick is taken off, Chicken stays');
   await L.waitFor(p, () => [...document.querySelectorAll('.cut-tl li:not(.is-done):not(.is-past) .cut-n')].map(e => e.textContent).join() === 'PFD,Veg', null, 10000);
   ok(true, 'untick: PFD is pending again');
   // a mis-tap: tick and untick Veg straight after each other; the untick wins, in the order tapped (review, 24 Oct 2026)

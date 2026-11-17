@@ -3032,6 +3032,8 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-pick-cut { display: block; font-style: normal; font-size: 0.75rem; font-weight: 600; color: var(--small-ink); }
 .su-pick[aria-pressed="true"] .su-pick-cut { color: inherit; opacity: 0.85; }
 .su-pick-cut.done { color: var(--done-ink); }
+/* which delivery is ordered (17 Nov 2026): green on the supplier you are on too, the dark-surface green on its charcoal chip */
+.su-pick[aria-pressed="true"] .su-pick-cut.done { color: var(--done-on-dark); opacity: 1; }
 .su-send { display: grid; gap: 0.5rem; margin: 1rem 0; padding: 0.8rem 0.9rem; border-radius: var(--r-act); background: var(--beige); }
 .su-send .hint { margin: 0; }
 .su-then { display: block; margin: 0.4rem 0 0.5rem; }
@@ -4084,6 +4086,9 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 @media (max-width: 899px) {
   .su-info-line { border: 1.5px solid var(--surface-work-edge); border-radius: 10px; background: var(--surface-paper); }
   .su-info-line.attn { border-color: var(--small-ink); }
+  /* ordered for the delivery it names (17 Nov 2026): green words and edge, the same one line and height */
+  .su-info-line.done { border-color: var(--done); background: var(--done-tint); }
+  .su-info-line.done > span:first-child { color: var(--done-ink); }
 }
 
 /* ---------- Redesign step 4 (8 Nov 2026, head chef): Wastage and Transfers. docs/whole-app-redesign-options/brief.md
