@@ -271,7 +271,7 @@
     var h = mk('h2', '', c, 'April Fools, ' + s.name + '!'); h.id = 'fl-rv-h';
     mk('p', 'fl-rv-p', c, 'A joke for 1 April. You did nothing wrong, and nothing is broken.');
     mk('p', 'fl-rv-p', c, 'Your prep list, orders and recipes are all safe.');
-    mk('p', 'fl-rv-s', c, "April Fools' Day: on 1 April people in Australia play tricks on each other until midday. This one was from the head chef.");
+    mk('p', 'fl-rv-s', c, "April Fools' Day: on 1 April people in Australia play tricks on each other. This one was from the head chef.");
     var b = mk('button', 'fl-rv-b', c, 'Back to my day'); b.type = 'button';
     var done = false, t0 = performance.now();
     function close() {

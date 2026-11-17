@@ -4,7 +4,7 @@
 
 Files: `proposal.md` (round 1), `evidence-packet.md` (contracts and measurements given to every reviewer), `designs.md` (the shared rules and designs A, B and C, round 2), `ideas.md` (the first idea list), `pool.md` (the 24 one-minute jokes the head chef then asked for, and how they are dealt), `preview/index.html` (plays all 24 on a frozen copy of Home; open it in any browser), `evidence/` (today's Home, the round 2 frame strips, and `pool/` with frames of all 24). This is role-based analysis by six fresh reviewers, not research with real staff.
 
-**Status: after round 2 the head chef asked for a pool of jokes, one per person, never the same twice, then chose 35 seconds each (below). The 24 are playable and waiting for the head chef to say which to cut or change. Nothing in the book has changed.**
+**Status: after round 2 the head chef asked for a pool of jokes, one per person, never the same twice, then chose 35 seconds each, darker, with their own day (below). Built in the book on 17 November 2026 (`docs/april-fools.md`).**
 
 ## Round 1: should we build it?
 
@@ -80,4 +80,4 @@ Kept from the council: mornings only (04:00 to 11:59), personal devices only, a 
 
 Later the same day the head chef found one minute too long and, after trying 15 to 60 seconds on the live page, chose **35 seconds** for every joke (`pool.md`, Length). The head chef asked for it to go darker (`pool.md`, Darker: a closing vignette, red eyes, static, the softened lines restored, more personal lines) and for each joke to use the person's own day: their section, shift, break, coworkers and prep count, from what their Home already shows, with no reads (`pool.md`, Their own day).
 
-**Status: the pool is drawn and playable at 35 seconds, waiting for the head chef to play the 24 and say which to cut or change. Nothing in the book has changed.**
+**Status: built in the book on 17 November 2026 with all 24, for everyone who signs in on 1 April on any device, with a preview in the admin panel (`docs/april-fools.md`).**

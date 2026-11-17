@@ -47,7 +47,7 @@ Every joke has the same shape over one minute, so people have time to doubt them
 2. **12 to about 40 s, it breaks.** The design's own break plays out, on the book's own pieces, with the person's name.
 3. **40 to about 52 s, the message.** Usually dark, with their name and a line about the book.
 4. **About 49 to 55 s, the clue.** A code or word that turns into **1 APRIL** in orange.
-5. **57.5 s, the reveal.** Everything goes back, the copy fades, and the mascot's card says "April Fools, [name]! A joke for 1 April. You did nothing wrong, and nothing is broken. Your prep list, orders and recipes are all safe." and "April Fools' Day: on 1 April people in Australia play tricks on each other until midday. This one was from the head chef." (as dark as the rest), then **Back to my day**.
+5. **57.5 s, the reveal.** Everything goes back, the copy fades, and the mascot's card says "April Fools, [name]! A joke for 1 April. You did nothing wrong, and nothing is broken. Your prep list, orders and recipes are all safe." and "April Fools' Day: on 1 April people in Australia play tricks on each other. This one was from the head chef." (as dark as the rest; "until midday" went when the head chef chose the whole day), then **Back to my day**.
 
 **Taps.** With a minute to fill, a tap cannot end it (people tap at once). Instead the piece under the finger breaks a little more (it slips, falls, runs away, gets eaten, blows away, turns its back, according to the design). At most one break every 0.25 s, however fast the taps.
 

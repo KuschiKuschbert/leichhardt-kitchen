@@ -1788,7 +1788,33 @@
      with its one Save (draftOf(), adminSave()), so the canonical capability lists keep their one save path
      (docs/staff-capabilities.md). A closed row draws nothing behind it: the sections' who is on today reads (loadShifts)
      only once that row is open. */
-  var K_ROWS = { secs: 'Kitchen sections', shifts: 'Shifts', see: 'Pages staff see', badges: 'Weekly top tickers' };
+  var K_ROWS = { secs: 'Kitchen sections', shifts: 'Shifts', see: 'Pages staff see', badges: 'Weekly top tickers', fools: 'April Fools' };
+  /* April Fools (head chef, 17 Nov 2026; docs/april-fools.md): who gets which joke on the next 1 April, from the same deal
+     the phones make (js/fools.js deal(), from the staff list: no reads), and Preview, which opens Home and plays it now
+     with that name (js/app.js LK_APP.fools; nothing is kept). js/fools.js loads when this row opens. */
+  var foolsAdminLoad = null, foolsAdminErr = false;
+  function foolsYear() { var d = dayNow(); return +d.slice(0, 4) + (d.slice(5) > '04-01' ? 1 : 0); }
+  function foolsAdminHTML() {
+    var F = window.LK_FOOLS, year = foolsYear();
+    if (!F || F.api !== 1) {
+      if (!foolsAdminLoad && !foolsAdminErr && window.LK_APP && window.LK_APP.load) foolsAdminLoad = window.LK_APP.load('js/fools.js?v=1').then(function () { foolsAdminLoad = null; if (S.kOpen === 'fools') draw(); }, function () { foolsAdminLoad = null; foolsAdminErr = true; if (S.kOpen === 'fools') draw(); });
+      return foolsAdminErr ? '<p class="hint" role="alert">Could not open the jokes. It needs the signal the first time. Check the signal and try again.</p><div class="btn-row"><button type="button" class="btn" data-p="fools-retry">Try again</button></div>'
+        : '<p class="hint" role="status">Opening the April Fools jokes...</p>';
+    }
+    var ps = ptPeople(), deal = F.deal(ps.map(function (p) { return p.id; }), year);
+    var joke = function (x) { return x ? x.design + ' ' + F.designs[x.design].name + ', version ' + x.version : ''; };
+    var any = F.letters.map(function (l) { return [1, 2].map(function (v) { return '<option value="' + l + v + '">' + esc(l + ' ' + F.designs[l].name + ', version ' + v) + '</option>'; }).join(''); }).join('');
+    return '<p class="hint">On 1 April everyone who signs in gets their own ' + F.length + '-second joke once, on their phone or the shared display, then the mascot owns up. Nobody gets the same one, and nobody gets last year\'s. Preview opens Home and plays it now with that name. Nothing is kept or sent.</p>' +
+      lvHTML({
+        key: 'fools', items: ps, step: 30, noun: ['person', 'people'], ph: 'Search people', empty: 'No one on the staff list yet.',
+        cols: [
+          { h: 'Person', th: true, html: function (p) { return esc(p.name); } },
+          { h: 'Joke on 1 April ' + year, html: function (p) { return esc(joke(deal[p.id])); } },
+          { h: '', cls: 'a-act', html: function (p) { var x = deal[p.id]; return x ? '<button type="button" class="btn" data-p="fools-play" data-d="' + esc(x.design + x.version) + '" data-n="' + esc(p.name) + '">Preview</button>' : ''; } }
+        ]
+      }) +
+      '<div class="btn-row"><label class="a-f"><span>Any joke</span><select id="fools-any" data-k="fools-any">' + any + '</select></label><button type="button" class="btn" data-p="fools-any">Preview</button></div>';
+  }
   function kitchenHomeHTML(d, saveBlock) {
     var k = kitchenInfo(), plural = function (n, one, many) { return n + ' ' + (n === 1 ? one : many); };
     var list = function (a) { return a.length ? a.join(', ') : 'None'; };
@@ -1820,6 +1846,7 @@
         }) +
         (mlOwner() ? row('Sous chefs read Kitchen mail', k ? (k.sousMail ? 'On' : 'Off') : '', 'mail', 'Today, Kitchen mail') : '') +
         row('Who books functions', k ? plural(k.fns, 'person', 'people') : '', 'people', 'Team, People')) +
+      group('Once a year', edit('fools', 'April Fools', '24 jokes on 1 April ' + foolsYear(), foolsAdminHTML)) +
       group('Records and safety', row('Confirmed item links', 'Names linked to recipes and supplier items', 'reference-records') +
         row('Backup', 'Every night at 03:30', 'tools') + row('Kitchen PIN', 'Change the PIN', 'tools'));
   }
@@ -13015,6 +13042,14 @@ if (list.length) sg('oreg', 's');
     if (a === 'a-reset-pin') { resetPin(id); return; }
     // a Kitchen Overview row opens the page that changes its setting, in whichever room it lives
     if (a === 'k-row') { var kr = el.getAttribute('data-r'); if (!K_ROWS[kr]) return; S.kOpen = S.kOpen === kr ? '' : kr; S.kJump = S.kOpen; draw(); return; }
+    // April Fools, Preview: Home plays that joke now with that name (docs/april-fools.md). The verified admin only.
+    if (a === 'fools-play' || a === 'fools-any') {
+      var fj = a === 'fools-any' ? ((S.root && S.root.querySelector('#fools-any')) || {}).value : el.getAttribute('data-d');
+      if (!adminTabs() || !/^[A-L][12]$/.test(fj || '') || !window.LK_APP || !window.LK_APP.fools) return;
+      window.LK_APP.fools({ design: fj[0], version: +fj[1], name: a === 'fools-any' ? whoName() : el.getAttribute('data-n') });
+      return;
+    }
+    if (a === 'fools-retry') { foolsAdminErr = false; draw(); return; }
     if (a === 'k-open') { var kt = el.getAttribute('data-t'); if (intelligenceBusy() || !A_TAB_NAMES[kt] || kt === 'mail' && !mlOwner()) return; S.personId = ''; S.atab = kt; S.agLast = S.agLast || {}; S.agLast[adminGroupOf(kt)[0]] = kt; lsSet('lk.prep.atab', kt); draw(); adminToTop(); return; }
     // a person's page (admin pages step 5): open it from their row, and back to the list (also the top bar's Back)
     if (a === 'a-person') { S.personId = id; draw(); adminToTop(); return; }
@@ -16229,6 +16264,8 @@ if (list.length) sg('oreg', 's');
     homeGreet: homeGreet,
     // The signed-in person's staff id, only while their name shows (the kitchen mascot keeps one shuffled set per person).
     whoId: function () { return whoName() ? S.who : ''; },
+    // April Fools (docs/april-fools.md): the staff ids the joke deal is made from, the same on every phone (no read)
+    foolsIds: function () { return ptPeople().map(function (p) { return p.id; }); },
     // the no-signal sentence while the kitchen's settings are not loaded and there is no signal, otherwise '' (js/app.js)
     offline: function () { return offWait() ? OFF_KITCHEN : ''; },
     // Sign in from the chef hat with nobody signed in: "Who are you?" on the prep list, then back to the page it came from.
