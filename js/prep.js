@@ -14066,6 +14066,33 @@ if (list.length) sg('oreg', 's');
     var shs = kitShifts();
     return tmPeople().filter(function (p) { return shs.some(function (s) { return tmOnShift(p.id, s.id); }); });
   }
+  /* All day dining rolls over (head chef, 17 Nov 2026): it gets no staff of its own; a cook on it keeps the section they
+     have on Lunch, or with no Lunch, the one they have on Dinner. The book knows such a service by its hours, not its
+     name: a usual (not occasional) shift that starts when or before another usual one ends and ends when or after a
+     third usual one starts (All day 15:00 to 17:00 between Lunch 10:00 to 15:00 and Dinner 17:00 to 21:00). */
+  function tmBridge(s) {
+    if (!s || s.occ || s.from == null || s.to == null || s.to <= s.from) return false;
+    var others = kitShifts().filter(function (x) { return x.id !== s.id && !x.occ && x.from != null && x.to != null && x.to > x.from; });
+    return others.some(function (a) { return a.from < s.from && a.to >= s.from && a.to < s.to; }) && others.some(function (c) { return c.to > s.to && c.from <= s.to && c.from > s.from; });
+  }
+  // the service a person's bridge section follows: the one before it they work (Lunch), else the one after (Dinner)
+  function tmRollSrc(id, b) {
+    var on = kitShifts().filter(function (x) { return x.id !== b.id && !x.occ && tmOnShift(id, x.id) && x.from != null && x.to != null; });
+    var before = on.filter(function (a) { return a.from < b.from && a.to >= b.from && a.to < b.to; })[0];
+    return before || on.filter(function (c) { return c.to > b.to && c.from <= b.to && c.from > b.from; })[0] || null;
+  }
+  // a person's section changed on a service (was: the section before): each bridge that follows that service and still
+  // holds no section, or the old one, takes the new one. A section picked on the bridge itself stays. Returns names.
+  function tmRollFollow(id, sh, was) {
+    var out = [];
+    kitShifts().forEach(function (b) {
+      if (!tmBridge(b) || !tmOnShift(id, b.id)) return;
+      var src = tmRollSrc(id, b), cur = tmf.on[id][b.id];
+      if (!src || src.id !== sh || cur === tmf.on[id][sh] || (cur !== '' && cur !== was)) return;
+      tmf.on[id][b.id] = tmf.on[id][sh]; out.push(b.name);
+    });
+    return out;
+  }
   function tmAddShift(id, sh) {
     if (tmOnShift(id, sh)) return;
     // back on the service a Take off took: its Undo line goes, so it never offers to put back what is already there
@@ -14073,6 +14100,10 @@ if (list.length) sg('oreg', 's');
     var o = tmf.on[id], was = o ? o[Object.keys(o)[0]] : '', usual = tmUsual(id, sh);
     // Reuse the known weekday/shift suggestion, then an existing section on another service. Never guess a new one.
     (tmf.on[id] = o || {})[sh] = usual ? usual.sec : was && kitSecs().some(function (x) { return x.id === was; }) ? was : '';
+    // a bridge (All day) rolls over from Lunch, else Dinner (17 Nov 2026): their section there, or none until it has one
+    var add = tmShift(sh);
+    if (tmBridge(add)) { var src = tmRollSrc(id, add); tmf.on[id][sh] = src ? tmf.on[id][src.id] || '' : ''; }
+    else tmRollFollow(id, sh, '');
     // A service added by hand takes the person's roster hours that day, cut to the service's own hours (head chef,
     // 16 Nov 2026). With no roster hours, or none inside the service, it keeps the service's hours (tmHrs()).
     var hrs = tmf.hrs && tmf.hrs[id], s = tmShift(sh), lo = 1440, hi = 0;
@@ -14472,7 +14503,10 @@ if (list.length) sg('oreg', 's');
     var often = !u && tmOften(p.id, s.id);
     if (often && often.sec !== cur) first.push([often.sec, 'Often ' + tmSecName(often.sec) + ', ' + often.n + ' of ' + often.of + ' ' + s.name + ' shifts in 30 days']);
     var before = shs.slice(0, shs.indexOf(s)).filter(function (o) { return tmOnShift(p.id, o.id) && tmSecName(tmf.on[p.id][o.id]); }).pop();
-    if (before) { var same = tmf.on[p.id][before.id]; if (same !== cur && !first.some(function (o) { return o[0] === same; })) first.push([same, 'Same as ' + before.name + ': ' + tmSecName(same)]); }
+    // All day (a bridge) offers the section it rolls over from first: Lunch, else Dinner (17 Nov 2026)
+    var roll = tmBridge(s) ? tmRollSrc(p.id, s) : null;
+    if (roll && tmSecName(tmf.on[p.id][roll.id])) before = roll;
+    if (before) { var same = tmf.on[p.id][before.id]; if (same !== cur && !first.some(function (o) { return o[0] === same; })) first[roll ? 'unshift' : 'push']([same, 'Same as ' + before.name + ': ' + tmSecName(same)]); }
     var opts = first.concat([['', tmChefRole(p) || 'No section']]).concat(kitSecs().map(function (x) { return [x.id, x.name]; }));
     return tmSel('tm-sec:' + p.id + ':' + s.id, 'Section for ' + p.name + ' on ' + s.name, opts, cur, true);
   }
@@ -14896,9 +14930,11 @@ if (list.length) sg('oreg', 's');
       var keySh = p[2] || '', person = tmPeople().filter(function (x) { return x.id === id; })[0], service = tmShift(keySh);
       if (!keySh || el.getAttribute('data-sh') !== keySh || !person || !service || !tmOnShift(id, keySh) || (v !== '' && !kitSecs().some(function (x) { return x.id === v; }))) return;
       sh = keySh;
+      var secWas = tmf.on[id][sh];
       tmf.on[id][sh] = v;
+      var rolled = v ? tmRollFollow(id, sh, secWas) : [];   // All day follows Lunch, else Dinner (17 Nov 2026)
       tmClearMsg();
-      tmAssignMsg = person.name + (v ? ' assigned to ' + tmSecName(v) + ' for ' + service.name + '.' : ': section cleared for ' + service.name + '. Their service and breaks are kept.') + ' Not saved yet.';
+      tmAssignMsg = person.name + (v ? ' assigned to ' + tmSecName(v) + ' for ' + service.name + '.' + (rolled.length ? ' ' + tmNames(rolled) + ' follows.' : '') : ': section cleared for ' + service.name + '. Their service and breaks are kept.') + ' Not saved yet.';
       draw(); return;
     }
     // Add a service (16 Nov 2026): the person goes on it, with their roster hours that day if any (tmAddShift())

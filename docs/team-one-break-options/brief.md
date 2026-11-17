@@ -250,7 +250,7 @@ Screenshots: `D-plan-390.png`, `D-rows-390.png`, `D-rows2-390.png`, `D-mo-390.pn
 2. **Two breaks at most** per person per day (Recommended). An old saved day with three still shows all three and each can be changed or taken away.
 3. **No Fill their breaks** (Recommended): + Break per person only.
 
-The fourth point (a busy time for All day) is a setting in Admin, Kitchen, Shifts, left with the head chef. Recorded in `docs/head-chef-decisions.md`.
+The fourth point (a busy time for All day) was withdrawn: the head chef said All day gets no staff of its own and rolls over from the Lunch section, so All day now follows Lunch, else Dinner (17 November 2026, `docs/team-sections-options/brief.md`, Quick check). Recorded in `docs/head-chef-decisions.md`.
 
 ## Build plan (this branch)
 

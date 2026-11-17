@@ -366,3 +366,16 @@ The working screen has the service heads stuck at the top, and rows under them d
 - **Not evidenced:** real phones with real fonts; the live book with real staff and sections; how many cells the nightly usual sections leave empty; wet-hand use of 101 px pills.
 
 **Later (16 November 2026):** the head chef chose D in [the time line brief](../team-order-clear-options/brief.md): services run in time order (this replaces Lunch, then Dinner, then the saved order), break times sit inside each person's hours, and step two replaces this grid with each person's bar on one clock.
+
+## Quick check: All day follows Lunch, else Dinner (17 November 2026)
+
+The head chef, after the one-break change: "all day doesnt really get an extra staff member attached, it basically rolls over from the section assigned to lunch", then, asked whether the book should do that: "follow lunch, and if someone starts in the time of all day dining, and has no lunch shift, only dinner shift theyll get the dinner section assigned".
+
+- **Size:** a small change on an existing page (no tab, button, pop-up or step), so the council's quick check, no extra agents.
+- **What it does:** All day takes a cook's Lunch section, or with no Lunch, their Dinner section. It fills when that section is picked or changed ("Mo assigned to Grill for Lunch. All day follows. Not saved yet."), when Add a service or Add staff puts someone on All day, and when the roster file fills the day. A section picked on All day itself stays. All day's picker offers "Same as Lunch: Grill" first. A day saved before is not changed by opening it (Save stays off); its next Lunch change fills an empty All day.
+- **How the book knows All day:** by its hours, not its name (`tmBridge()`): a usual (not occasional) shift that starts when or before another usual one ends and ends when or after a third usual one starts. With Lunch 10:00 to 15:00, All day dining 15:00 to 17:00 and Dinner 17:00 to 21:00, only All day is one; Smoker, being occasional, never makes Lunch roll over. If the kitchen's hours ever stop meeting like that, All day just stops following, and its picker works as before.
+- **Taps and lines:** fewer taps (a cook on Lunch and All day needs one section pick, not two); no lines added. The head's "no section" count for All day drops as it follows.
+- **Contract fit:** the existing section picker and words; "follows" said in the Save bar's words, never only by colour. Todoist: a known default, visible and editable. Linear: one place for a cook's section across the services they roll through. Headspace: plain words.
+- **Try to break it:** a hand-picked All day section survives a Lunch change (checked); Sue on All day and Dinner only follows Dinner (checked); Bea on Smoker and Lunch: Lunch never follows Smoker (checked); a saved day opens unchanged with Save off (checked); the roster file adding All day before Lunch: All day starts empty and follows once Lunch is added (the same code path as Add a service, checked through Ari); a kitchen whose services overlap rather than meet: Risk, by design All day stops following.
+- **Evidence:** `tests/team-allday.test.js` (11 checks; 4 fail on the code before the change); the Today's team, roster and Home board test files pass.
+
