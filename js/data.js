@@ -1625,7 +1625,7 @@ window.LK_DATA = {
           'Yorkshire pudding (card 133): one 18 cm pudding per board, one batch. 17 min at 210 °C, then 8 min at 230 °C. Never open the oven.',
           'Mash (card 70) and gravy (card 69) as for every plate.',
           'Cider-pickled red cabbage (card 134), made ahead.',
-          'Mushy peas (card 136), bought in. [How it is heated and held to come]'
+          'Mushy peas (card 136): heated in a pan with a dash of water, salt and pepper.'
         ] },
         { title: 'Plating', steps: [
           'Sharing board. [Board to confirm]',
@@ -1784,12 +1784,14 @@ window.LK_DATA = {
     },
     {
       id: 'mushy-peas', art: 'mushy-peas', no: '136', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Mushy Peas', short: 'Mushy peas',
-      yield: 'Bought in, any brand. [Amount per board and how it is heated to come]',
+      yield: 'Bought in, any brand. Heated in a pan with a dash of water, salt and pepper. [Amount per board to come]',
       ingredients: [
-        { q: '[Qty]', name: 'Mushy peas', note: 'bought in, any brand' }
+        { q: '[Qty]', name: 'Mushy peas', note: 'bought in, any brand' },
+        { q: 'A dash', name: 'Water' },
+        { q: 'To taste', name: 'Salt and pepper' }
       ],
       sections: [
-        { title: 'Method', steps: ['Bought in, ready made. [How it is heated and held to come]'] }
+        { title: 'Method', steps: ['Mushy peas in a pan with a dash of water.', 'Heat until hot, stirring.', 'Season with salt and pepper.'] }
       ],
       labelNote: 'Bought in: check the label for allergens when a new brand or batch comes in.'
     },
