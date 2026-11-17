@@ -272,14 +272,25 @@
     options = options || {}; var iid = 'su-' + name;
     return '<label class="field" for="' + iid + '"><span class="label">' + label + '</span><input class="search" id="' + iid + '" data-sf="' + name + '" value="' + esc(value == null ? '' : value) + '"' + (options.readonly ? ' readonly' : '') + (options.type ? ' type="' + options.type + '"' : '') + (options.placeholder ? ' placeholder="' + esc(options.placeholder) + '"' : '') + (options.max ? ' maxlength="' + options.max + '"' : '') + (options.decimal ? ' inputmode="decimal"' : '') + '></label>';
   }
-  /* Today's cut-off beside each supplier (design A, step 3, 3 Nov 2026), from the cut-off occurrences already on the
-     phone: no read. "by 15:00" while open, "ordered" once ticked, nothing after it passed or with no cut-off today. */
-  function todayCut(s) {
-    if (!s || !s.cutoffId) return '';
-    var o = occurrences().filter(function (x) { return x.cutoffId === s.cutoffId && x.day === day(); })[0];
-    return !o ? '' : o.done ? 'ordered' : o.past ? '' : 'by ' + T.clock(o.at);
+  /* The cut-off beside each supplier (design A, step 3, 3 Nov 2026), from the cut-off occurrences already on the phone:
+     no read. Which delivery is ordered (head chef, 17 Nov 2026): "✓ Ordered for Thu 19 Nov" in green once the window an
+     order placed now counts for is ticked (after a cut-off that is the next window), and for the rest of a cut-off day
+     whose order is in; otherwise the next cut-off, "by 15:00" today or "by Wed 15:00". { text, done } or null. */
+  function cutMark(s) {
+    if (!s || !s.cutoffId) return null;
+    var list = occurrences().filter(function (x) { return x.cutoffId === s.cutoffId; });
+    var next = list.filter(function (x) { return !x.past; })[0] || null;
+    var kept = list.filter(function (x) { return x.past && x.done && x.day === day(); }).pop() || null;
+    var o = next && next.done ? next : kept;
+    if (o) return { done: true, text: orderedText(o) };
+    if (!next || typeof next.at !== 'number') return null;
+    return { done: false, text: 'by ' + (next.day === day() ? '' : weekday(next.at) + ' ') + T.clock(next.at) };
   }
-  function supplierSelect() { return '<label class="field su-mobile-pick"><span class="label">Supplier</span><select class="search" data-sf="supplier">' + (M.suppliers || []).map(function (s) { return '<option value="' + esc(s.id) + '"' + (s.id === M.sid ? ' selected' : '') + '>' + esc(s.name + (todayCut(s) ? ' · ' + todayCut(s) : '')) + '</option>'; }).join('') + '</select></label>'; }
+  // "for Thu 19 Nov": the delivery a cut-off is for (js/prep.js gives the words; an older copy only the first date)
+  function forWords(o) { return o && (o.forText || (o.deliveryDay && window.LK_CUT ? 'for ' + window.LK_CUT.dateText(o.deliveryDay) : '')) || ''; }
+  function orderedText(o) { var w = forWords(o); return '✓ Ordered' + (w ? ' ' + w : ''); }
+  function weekday(ms) { return new Intl.DateTimeFormat('en-AU', { timeZone: 'Australia/Brisbane', weekday: 'short' }).format(new Date(ms)); }
+  function supplierSelect() { return '<label class="field su-mobile-pick"><span class="label">Supplier</span><select class="search" data-sf="supplier">' + (M.suppliers || []).map(function (s) { var m = cutMark(s); return '<option value="' + esc(s.id) + '"' + (s.id === M.sid ? ' selected' : '') + '>' + esc(s.name + (m ? ' · ' + m.text : '')) + '</option>'; }).join('') + '</select></label>'; }
   function statusHTML() {
     var task = activeTask(), note = M.armedLeave && (task === 'editor' || task === 'supplier' || task === 'import'), msg = M.armedLeave && !note ? '' : (M.msgAt === 'history' && M.historyOpen || M.msgAt === 'import' && task === 'catalogue') ? '' : M.msg;
     var pending = M.review && task !== 'review' && (M.saving || M.review.uncertain) ? '<p id="su-recording-status" class="su-status" role="status">Recording for ' + esc(M.review.supplierName) + (M.saving ? ' is still in progress. ' : ' needs confirmation. ') + '<a href="#/suppliers/' + encodeURIComponent(M.review.sid) + '" data-su-recovery>Return to review</a>' + (M.saving ? ' to check its outcome.' : ' to retry safely.') + '</p>' : '';
@@ -290,7 +301,7 @@
       (canEdit() ? '<nav class="chips su-tools" aria-label="Supplier tools"><button type="button" class="chip" data-su="order-mode" aria-pressed="' + (M.mode === 'order') + '">Supplier order</button><button type="button" class="chip" data-su="manage" aria-pressed="' + (M.mode === 'manage') + '">Manage catalogue</button></nav>' : '');
   }
   function sidebarHTML() {
-    return '<aside class="su-side"><span class="label">Suppliers</span><nav aria-label="Suppliers">' + (M.suppliers || []).map(function (s) { return '<button type="button" class="chip su-pick" data-su="pick" data-sid="' + esc(s.id) + '" aria-pressed="' + (s.id === M.sid) + '"><span>' + esc(s.name) + (todayCut(s) ? '<em class="su-pick-cut' + (todayCut(s) === 'ordered' ? ' done' : '') + '">' + esc(todayCut(s)) + '</em>' : '') + '</span><small>' + s.items.filter(function (i) { return !i.archived; }).length + '</small></button>'; }).join('') + '</nav>' + (canEdit() ? '<div class="su-side-bottom">' + smallButton('add-supplier', 'Add supplier') + '</div>' : '') + '</aside>';
+    return '<aside class="su-side"><span class="label">Suppliers</span><nav aria-label="Suppliers">' + (M.suppliers || []).map(function (s) { var m = cutMark(s); return '<button type="button" class="chip su-pick" data-su="pick" data-sid="' + esc(s.id) + '" aria-pressed="' + (s.id === M.sid) + '"><span>' + esc(s.name) + (m ? '<em class="su-pick-cut' + (m.done ? ' done' : '') + '">' + esc(m.text) + '</em>' : '') + '</span><small>' + s.items.filter(function (i) { return !i.archived; }).length + '</small></button>'; }).join('') + '</nav>' + (canEdit() ? '<div class="su-side-bottom">' + smallButton('add-supplier', 'Add supplier') + '</div>' : '') + '</aside>';
   }
   function emptyHTML() { return '<div class="empty"><h3 class="h3">No supplier catalogue yet</h3><p>Supplier goods and pars are private. The head chef can import the checked catalogue or add a supplier here.</p>' + (canEdit() ? '<div class="btn-row">' + button('import', 'Import catalogue', '', true) + button('add-supplier', 'Add supplier') + '</div>' : '<p class="hint">Ask the head chef to import the supplier sheets.</p>') + '</div>'; }
   function currentPar(i) { return i.par === '' ? 'Not set' : i.par; }
@@ -503,11 +514,15 @@
     // it opens by itself when something needs a look: an order already marked as placed (Additional order lives
     // in the card) or a last order that could not be read; a tap on the line decides after that
     var o = occurrence(), h = hist(), l = latest(), parts = [], attn = !!h.err || !!(o && o.done), open = M.infoOpen === null ? attn : M.infoOpen;
+    // which delivery is ordered, in green, the same words as the supplier chip (cutMark(), 17 Nov 2026)
+    var mark = o && o.done ? { done: true, text: orderedText(o) } : cutMark(supplier()), green = !!(mark && mark.done);
     // short enough for one line on a phone: "Order by 15:00 today", or the weekday when it closes on another day
-    if (o) parts.push(o.done ? 'Order marked as placed' : 'Order by ' + (typeof o.at === 'number' ? T.clock(o.at) + (T.day(o.at) === day() ? ' today' : ' ' + new Intl.DateTimeFormat('en-AU', { timeZone: 'Australia/Brisbane', weekday: 'short' }).format(new Date(o.at))) : occurrenceLabel(o)));
-    parts.push(h.busy && !h.rows ? 'reading the last order' : h.err ? 'last order not read' : l ? 'last order ' + shortDate(l.at) : 'no order recorded yet');
+    if (green) parts.push(mark.text);
+    else if (o) parts.push('Order by ' + (typeof o.at === 'number' ? T.clock(o.at) + (T.day(o.at) === day() ? ' today' : ' ' + new Intl.DateTimeFormat('en-AU', { timeZone: 'Australia/Brisbane', weekday: 'short' }).format(new Date(o.at))) : occurrenceLabel(o)));
+    // "last" alone beside the longer green words, so the line stays one line on a 390 px phone
+    parts.push(h.busy && !h.rows ? 'reading the last order' : h.err ? 'last order not read' : l ? (green ? 'last ' : 'last order ') + shortDate(l.at) : 'no order recorded yet');
     var line = parts.join(' · ');
-    return '<div class="su-info' + (open ? ' open' : '') + '"><button type="button" class="su-info-line' + (attn ? ' attn' : '') + '" data-su="info" aria-expanded="' + open + '" aria-controls="su-info-body"><span>' + esc(line.charAt(0).toUpperCase() + line.slice(1)) + '</span><span class="su-info-more" aria-hidden="true">' + (open ? 'Less' : 'More') + '</span></button>' +
+    return '<div class="su-info' + (open ? ' open' : '') + '"><button type="button" class="su-info-line' + (attn ? ' attn' : '') + (green ? ' done' : '') + '" data-su="info" aria-expanded="' + open + '" aria-controls="su-info-body"><span>' + esc(line.charAt(0).toUpperCase() + line.slice(1)) + '</span><span class="su-info-more" aria-hidden="true">' + (open ? 'Less' : 'More') + '</span></button>' +
       '<div id="su-info-body" class="su-info-body">' + cutoffHTML() + latestHTML() + '</div></div>';
   }
   function orderHTML() {
@@ -703,7 +718,7 @@
     store.record(r.sid, r.catalogueV, r.id, r.lines, r.occurrence ? { day: r.occurrence.day, cutoffId: r.occurrence.cutoffId } : null, r.linkV, r.additional, r.occurrence && r.occurrence.deliveryDay || '').then(function (result) {
       if (g !== generation) return;
       var h = hist(r.sid); h.rows = [result.order].concat((h.rows || []).filter(function (o) { return o.id !== result.order.id; })); indexHistory(h);
-      delete M.drafts[r.sid]; M.review = null; M.saving = false; M.additional = ''; M.historyId = result.order.id; M.msg = result.replayed ? 'This order was already recorded. No duplicate was made.' : 'Order recorded. Nothing was sent to the supplier.'; draw();
+      delete M.drafts[r.sid]; M.review = null; M.saving = false; M.additional = ''; M.historyId = result.order.id; M.msg = result.replayed ? 'This order was already recorded. No duplicate was made.' : 'Order recorded' + (forWords(r.occurrence) ? ' ' + forWords(r.occurrence) : '') + '. Nothing was sent to the supplier.'; draw();
       // a new view: start at its top, where the message says it was recorded (5 Nov 2026, docs/action-feedback.md)
       focusTask();
     }, function (e) { if (g === generation) { M.saving = false; if (e.code === 'uncertain') r.uncertain = true; if (e.code === 'stale' || e.code === 'concurrent') r.uncertain = false; if (e.code === 'recorded') { r.recorded = true; r.uncertain = false; if (e.prior) { var h = hist(r.sid); h.rows = [e.prior].concat((h.rows || []).filter(function (o) { return o.id !== e.prior.id; })); indexHistory(h); } } M.err = errorText(e); draw(); } });

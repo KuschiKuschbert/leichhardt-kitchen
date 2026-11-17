@@ -309,7 +309,7 @@ row('js/prep.js loadMail(): open mail (mail, done == false; sous chef mail off)'
 row('js/prep.js loadMailDone(): mail ticked in the last 30 days', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(query(C(db, 'mail'), where('doneAt', '>=', NOW - 30 * DAY))) });
 row('js/prep.js todoLoad() and the Done list: todos, st == open and doneAt in 30 days', { ok: CHEFS, asks: CHEFS,
   run: db => Promise.all([getDocs(query(C(db, 'todos'), where('st', '==', 'open'))), getDocs(query(C(db, 'todos'), where('doneAt', '>=', NOW - 30 * DAY)))]) });
-row('js/prep.js cutWatch(): supplier order ticks listener (cutdone, day in today and tomorrow)', { ok: CHEFS, asks: CHEFS, run: db => listen(query(C(db, 'cutdone'), where('day', 'in', [TODAY, TMW]))) });
+row('js/prep.js cutWatch(): supplier order ticks listener (cutdone, day in the next 8 days from today, 17 Nov 2026)', { ok: CHEFS, asks: CHEFS, run: db => listen(query(C(db, 'cutdone'), where('day', 'in', [0, 1, 2, 3, 4, 5, 6, 7].map(n => kday(NOW + n * DAY))))) });
 row('js/supplier-store.js: the catalogue and a supplier (suppliers)', { ok: CHEFS, asks: CHEFS, run: db => Promise.all([getDocs(C(db, 'suppliers')), getDoc(D(db, 'suppliers/s1'))]) });
 row('js/prep.js psRead(): first active section page, server read with overflow sentinel', { ok: KITCHEN, asks: KITCHEN,
   run: db => getDocsFromServer(query(C(db, 'prepStandards'), where('sectionId', '==', 'larder'), where('archived', '==', false), orderBy(documentId()), limit(101))) });
