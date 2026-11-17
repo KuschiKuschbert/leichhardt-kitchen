@@ -1,7 +1,9 @@
   // ---- preview only: the whole day (head chef's On today, the staff fold) drawn by homeWholeHTML() ----
   function homeRotaHTML(rec, rows, m) {
     var all = rec.on.filter(function (o) { return tmShift(o.sh); }).length;
-    return rows.length === all ? homeWholeHTML(rec, rows, m) : homeRotaBoard(rec, rows, m);
+    // by role (round 2): the head chef's whole day only; staff, and staff not on the plan, keep the board
+    var p = me(), hc = !!p && (S.config || {}).headId === p.id;
+    return hc && rows.length === all ? homeWholeHTML(rec, rows, m) : homeRotaBoard(rec, rows, m);
   }
   function homeWBreaks(rec, id, m) {
     var bs = (rec.br || []).filter(function (b) { return b.id === id && tmShift(b.sh) && tmMin(b.at) !== null; }).sort(function (a, b) { return a.at - b.at; });

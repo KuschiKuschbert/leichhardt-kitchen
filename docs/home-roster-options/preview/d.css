@@ -19,3 +19,4 @@
 .hm-st { align-items: flex-start; }
 .hm-st-t { padding-top: .05rem; }
 .hm-st-n .hm-tp.is-gone b { font-weight: 400; color: var(--muted); }
+.hm-st-none .hm-st-t { font-size: .8125rem; line-height: 1.3; }

@@ -196,3 +196,13 @@ Before release, measure the implemented app with Barlow at 390, 768 and 1280 px:
 - the head chef on and off the plan, staff on and off the plan, and a sous chef;
 - four services, 15 people, long names, a shift with no hours;
 - the minute paint at a start and at a break's start and end.
+
+### D with the round 2 repairs (preview)
+
+`preview/d.js` and `preview/common.js` now carry the repairs above. Measured with a split cook added to the fixture (Jo: Pans 10:00 to 14:00, then Larder 17:00 to 21:00 with a dinner break at 19:00):
+- **Height (Preview):** the head chef's card is 513 px at 14:00 on a phone, 482 px at 07:00, 498 px at 19:10 and 467 px at 1280.
+- **The staff fold** keeps the section board (913 px).
+- **Words:** Mo reads "Larder, then Grill from 17:00" until dinner and "Grill" from then on. Jo's morning part goes grey at 14:00 ("Pans, until 14:00"). At 19:10 "Jo again, Larder, back 19:30" sits under 17:00.
+- **Gus** starts at 08:00, before Lunch: parts are cut to the service's start only where they overlap (plans saved on 15 November).
+
+Screenshots `d-repaired.png` (07:00, 14:00, 19:10) and `d-repaired-1280.png`.
