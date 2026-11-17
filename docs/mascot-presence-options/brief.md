@@ -181,3 +181,25 @@ The owner, after hearing that the Home mascot is personal to each person (their 
 **Try to break it.** Long names and seasonal ornaments: the bubble is left out when the room beside him is under 120 px, or the words would wrap (checked at four widths with a short name; a 40-character name and Christmas snow not exercised). A shared screen: Home shows on a person's first sign-in of the day, so the bubble is seen once a day per person per screen, and a cook who goes straight to Prep may miss it (accepted). H2's words were chosen so none reads as status ("order up" is not used for Serve). Phones mostly get no bubble: at 390 px the greeting reaches him.
 
 **Recommended: H2**, his own line for today's action, because it is the one that is his and personal without repeating the heading or stating a fact that can go stale. The owner chooses; H1 is the most literal "welcome".
+
+### The owner's answer: he says the welcome (17 November 2026)
+
+Shown H1, H2 and H3, the owner answered: "I was wondering if we can replace the welcome text with the mascot and keep the randomisetmr, so instead of the big welcome home message, we just have the mascot talk to you." No preference on how long it stays. So the welcome itself is his speech bubble and it stays all visit, since it is the page's heading.
+
+**Drawn** (`preview/home-say.js`, `home-say.css`, `home-say-capture.mjs`; `evidence/walk-home-say.json`), in the book's own fonts (Barlow, Barlow Condensed and Caveat supplied locally), against today's Home, with "Ann" and "Maximiliana Featherstonehaugh-Ramírez" at four widths ([23](evidence/23-home-say-1920.png), [24](evidence/24-home-say-390.png), [25](evidence/25-home-say-768.png)):
+
+- The heading keeps its element (`#rtitle`, the page's focus target and heading for a screen reader), its words and its randomiser (celebration, shift, time of day). It is drawn as his speech bubble: paper and ink, its tail pointing at him, in the same Caveat handwriting, smaller than the big welcome (34 px on a wide screen, 26 px on a phone, the long-name sizes kept).
+- He stands on its left, his feet on the date line: 72 x 96 px on a wide screen (64 x 85 today), 48 x 64 px on a phone. The date sits under the bubble.
+- His daily action plays once and he rests, as today; a tap replays it. Long names wrap inside the bubble.
+
+| Measured (Preview) | Today | He says it |
+| --- | --- | --- |
+| Heading font, 1920 / 390 px | Caveat 48 / 42 px | Caveat 34 / 26 px |
+| Him, 1920 / 390 px | 64 x 85 corner / 64 x 85 corner | 72 x 96 / 48 x 64, left of his words |
+| Your day card moves down, 1920 / 390 px (Ann) | | 15 / 8 px |
+| The same with the long name, 390 px | | 21 px |
+| Sideways scroll, errors | 0, 0 | 0, 0 |
+
+**Quick check.** No tab, button, pop-up, step, read or write. Taps to see your section and break: 0, as today. Rows on a phone: the cards start 8 px lower. Headspace: one greeting, said once, by him. It changes the chosen heading design of 10 November (the named welcome, staff personalisation A) and the mascot's corner, card and room places, which is the owner's call, made here.
+
+**For the build.** The heading's bubble look and his room come with the page's first draw, so nothing jumps when his art arrives; if his art fails, or an older saved copy of `js/mascot.js` answers, the heading goes back to today's plain welcome. Signed out keeps its plain day heading, with no mascot. `js/app.js` (the heading's class), `js/mascot.js` (his place beside the words, a new `api`), `css/app.css`; `tests/mascot.test.js` (his place), the welcome and Home layout tests; `docs/kitchen-mascot.md`, `docs/design-patterns.md` (Home mascot), `docs/head-chef-decisions.md`. Not evidenced yet: seasonal ornaments beside the bubble, Extra large text, reduced motion, the Functions-only Home.
