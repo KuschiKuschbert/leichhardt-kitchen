@@ -1620,7 +1620,7 @@ window.LK_DATA = {
       ],
       sections: [
         { title: 'Cooking', steps: [
-          'Smoked chicken: brined, dried, seasoned, smoked and finished hot as card 131. Probe the breast and the inner thigh: 75 °C in both.',
+          'Smoked chicken (card 131): brined, dried, seasoned, smoked 2 hours, then finished hot. Probe the breast and the inner thigh: 75 °C in both.',
           'Rest the chicken on a rack, 10 to 15 min.',
           'Yorkshire pudding (card 133): one 18 cm pudding per board, one batch. 17 min at 210 °C, then 8 min at 230 °C. Never open the oven.',
           'Mash (card 70) and gravy (card 69) as for every plate.',
@@ -1641,7 +1641,7 @@ window.LK_DATA = {
     },
     {
       id: 'smoked-chicken', art: 'smoked-chicken', no: '131', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Smoked Chicken', short: 'Smoked chicken',
-      yield: 'One whole No. 10 chicken (about 1 kg), unstuffed, with no added brine or salt solution. Brine and dry the day before. Trial recipe: the times were planned for a 1.6 to 1.8 kg bird. [Times for a No. 10 to confirm on the first bird]',
+      yield: 'One whole No. 10 chicken (about 1 kg), unstuffed, with no added brine or salt solution. Brine and dry the day before. Smoke 2 hours at 150 °C, then finish hot until the breast and the inner thigh read 75 °C. [Hot finish time for a No. 10 to confirm]',
       ingredients: [
         { q: '1', name: 'Whole chicken', note: 'No. 10, unstuffed, no added brine or salt solution' },
         { q: '3 L', name: 'Herb brine', note: 'one batch per chicken', link: 'herb-brine' },
@@ -1674,8 +1674,7 @@ window.LK_DATA = {
         { title: 'Smoke', steps: [
           'Preheat the smoker to 150 °C. Indirect heat, applewood, a light clean smoke.',
           'Chicken in, breast up.',
-          'Smoke 60 to 90 min, planned for a bigger bird. A No. 10 cooks faster: probe early and often. [Times for a No. 10 to confirm]',
-          'Cooking fast: move it to the hot finish sooner.'
+          'Smoke 2 hours.'
         ] },
         { title: 'Finish hot', steps: [
           'Straight from the smoker into the iCombi: dry heat, 210 °C, 0% humidity, medium fan.',
