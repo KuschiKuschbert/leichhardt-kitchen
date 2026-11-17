@@ -2,9 +2,9 @@
 
 17 November 2026, Queensland. The head chef asked: "For the 1st of April I'd like to trick everyone with a completely weird home page animation, like a hacker has hacked into the page and broken all elements. A super weird animation that also says their name on the day and completely breaks the visual design. Something dark and cruel so they think they broke something when they first log in. Hacker style, psychedelic, elements of the real design move around weird and break."
 
-Files: `proposal.md` (round 1), `evidence-packet.md` (contracts and measurements given to every reviewer), `designs.md` (the shared rules and designs A, B and C, round 2), `ideas.md` (eleven ideas, three built), `preview/index.html` (plays every design on a frozen copy of Home; open it in any browser), `evidence/` (today's Home and frame strips at 390 px). This is role-based analysis by six fresh reviewers, not research with real staff.
+Files: `proposal.md` (round 1), `evidence-packet.md` (contracts and measurements given to every reviewer), `designs.md` (the shared rules and designs A, B and C, round 2), `ideas.md` (the first idea list), `pool.md` (the 24 one-minute jokes the head chef then asked for, and how they are dealt), `preview/index.html` (plays all 24 on a frozen copy of Home; open it in any browser), `evidence/` (today's Home, the round 2 frame strips, and `pool/` with frames of all 24). This is role-based analysis by six fresh reviewers, not research with real staff.
 
-**Status: designs shown, waiting for the head chef's choice. Nothing in the book has changed.**
+**Status: after round 2 the head chef asked for 24 one-minute jokes, one per person, never the same twice (below). The pool is playable and waiting for the head chef to say which to cut or change. Nothing in the book has changed.**
 
 ## Round 1: should we build it?
 
@@ -34,4 +34,48 @@ Every cut was taken into the designs as a shared rule (`designs.md`, "What every
 
 ## Round 2: the designs
 
-To be completed with the six reviewers' scores, the mix and the recommendation.
+Three structurally different designs, all about 8 to 9 seconds with any tap skipping (`designs.md`, frames in `evidence/A-collapse-390.png`, `B-takeover-390.png`, `C-possessed-390.png`): **A Collapse** breaks the real layout (crack, cards fall, dark, typed words), **B Takeover** replaces the screen (telly off, terminal, countdown, 0x0401 to 1 APRIL), **C Possessed** corrupts the words in place and lets taps drive it. All six reviewers agreed they differ in structure, except the screen designer, who saw A and B as two passive "watch, then dark words" flows.
+
+| Reviewer | A | B | C | Recommendation |
+| --- | --- | --- | --- | --- |
+| Cook mid-service | 7 | 5 | 3 | A's fall and dark, ending on B's 1 APRIL; no crack; no countdown |
+| Head chef | 7 | 6 | 4 | A's crack and fall, then B's HELLO and 0x0401 to 1 APRIL in one dark phase, C's still colour split |
+| Skeptic | 6 | 5 | 3 | A without the crack, ending on B's 0x0401 to 1 APRIL |
+| New starter | 7 | 4 | 3 | A, without "what did you press?", with 1 APRIL typed last and "You did nothing wrong." in the reveal |
+| Keeper | 6 | 8 | 3 | B (cheapest, two selectors), opened by A's card fall |
+| Screen designer | 7 | 6 | 3 | A with B's ending and C's puns |
+| **Mean** | **6.7** | **5.7** | **3.2** | |
+
+Scores are out of 10, as each reviewer gave them. Contract fit: A Works except the crack and "what did you press?" (rule 7: threaten the book, not the person); B Needs work (coworker blame lines, "access HEAD CHEF", the success green on "gone", the "call the head chef" countdown); C Needs work (taps that make it worse, 602 ms a second, the inversion). Reference fit: Duolingo (an honest answer: the pieces fly back, 1 APRIL before the reveal) and Headspace (plain words, no blame) favoured A with B's ending; Flighty's calm-motion rule is broken on purpose, on Home only.
+
+**Mix of all three:** five of six said a full blend loses (C's taps contradict "any tap skips", two dark phases repeat the same beat, the cost adds up). Most named the same narrow mix.
+
+**Council recommendation: A's collapse ending on B's 0x0401 to 1 APRIL, without the blame lines, under 10 seconds, any tap skips.** Main downside: about seven seconds with no clue for someone who has never heard of April Fools.
+
+### Round 2 Break-it findings
+
+| Scenario | Status | Disposition |
+| --- | --- | --- |
+| The skip tap opens the reveal on pointerdown and its own click closes it 8 ms later, unread | Reproduced in the preview (skeptic) | Fixed: taps no longer end the joke; the reveal's backdrop ignores taps for 1.5 s and its button needs a fresh press after 0.6 s. Checked in the preview: a 1.4 s hold then a frantic tap leaves the card up; a tap after 1.5 s closes it and focus goes to the Home heading |
+| The 10 s self-hide never fired (`to { visibility: hidden }` with a forward fill) | Reproduced in the preview (skeptic) | Fixed with `from, to { visibility: hidden }` at 65 s. Checked: a layer whose script never runs is hidden after its delay |
+| Tab and Enter reached the real cooling clock under the copy | Reproduced in the preview (skeptic) | Fixed: the real `#app` is inert while the joke plays. Checked: Tab reaches nothing on the page |
+| C: fast taps stack the inversion and both flips inside a second (photosensitivity) | Risk, rough frame count only, not PEAT | Mitigated: one break per 0.25 s of taps, only ever one inversion, ramped over 0.9 s. A proper flash analysis is still needed before release |
+| The copy taken in the first second has no mascot art or cards yet; the mascot's daily action plays unseen underneath | Risk / Not evidenced (keeper) | For the build: start after the first server paint and his rest pose; hold his daily action until after the reveal |
+| Storage refused: "played" lives in memory, a reload plays it again | Risk / Not evidenced (keeper) | For the build: if the save fails, give the words only |
+| Focus after the reveal went to the page body; the preview's "390" phone was 370 x 824 | Reproduced (screen designer) | Fixed: focus goes to the Home heading; the frame is now exactly 390 x 844 |
+
+## The head chef's decision, 17 November 2026
+
+After playing A, B and C: "i like all of them, can we make more so each of the staff members gets a random one but no two ever get the same", for a team of **13 to 20**, unique **on the day and every year**, and "maybe take your time, 1 minute to fool them should be fine for them to realise whats going on".
+
+So the council's single short joke became **a pool of 24 one-minute jokes**: twelve designs, each in two versions, dealt so that nobody shares a joke and nobody gets last year's design. Everything is in `pool.md`; all 24 play in `preview/index.html`; frames in `evidence/pool/`.
+
+Departures from the council's advice that the head chef chose (recorded, not reopened):
+
+- **One minute**, not 5 to 9 seconds. With a minute, a tap cannot skip, so **taps make the tapped piece break more** and **holding a finger down for 1.2 s stops it** ("Hold anywhere to stop" after four taps or at 25 s). Five of six reviewers rejected taps that make it worse in C; the hold, the hint and Escape are the way out WCAG 2.2.2 needs.
+- **C's colour wheel and single inversion** stay (designer, skeptic and keeper would cut them).
+- **A1 keeps the glass crack and "what did you press?"** (cook, new starter and skeptic would cut the crack; four would cut the line). A2 is the gentler version of both, so the deal can be told to skip A1 if wanted.
+
+Kept from the council: mornings only (04:00 to 11:59), personal devices only, a copy over Home with the real page inert, the self-hide, the reveal recovered after a reload, nothing when offline or with work waiting, no coworker blamed, no real failure red, no claim of a real breach, the clue before the reveal and "You did nothing wrong."
+
+**Status: the pool is drawn and playable, waiting for the head chef to play the 24 and say which to cut or change. Nothing in the book has changed.**

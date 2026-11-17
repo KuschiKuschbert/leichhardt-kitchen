@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## April Fools on Home, 17 November 2026
+
+The head chef asked for a fake "hacked" Home on 1 April that says the person's name. Round 1 Build smaller 5 of 5; round 2 A 6.7, B 5.7, C 3.2 (the council recommended A ending on B's 1 APRIL). The head chef then asked for 24 one-minute jokes, a different one for each person every year. Review-only preview and pool in `docs/april-fools-options/` (`preview/fools.js`, `fools.css`, `build.mjs`, `snapshot.mjs`, `capture.mjs`); nothing in the book yet. Brief: `docs/april-fools-options/brief.md`; the pool and the deal: `pool.md`.
+
 ## Opening the installed app again, 16 November 2026
 
 The kitchen tablet's Home button reloaded the whole book on every tap. The manifest's `launch_handler` (`focus-existing`, then `auto`) keeps the open book, and the `launchQueue` consumer in `js/app.js` moves it to the address (`#/kiosk-home` is Home). Quick check: Build (no new tab, button, step or pop-up; 0 extra taps). Note: `docs/app-launch.md`. Test: `tests/launch-home.test.js`.
