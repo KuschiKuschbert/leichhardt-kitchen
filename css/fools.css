@@ -1,0 +1,143 @@
+/* April Fools on Home (head chef, 17 Nov 2026; docs/april-fools.md). Lazy: js/fools.js loads it on 1 April or for the
+   admin panel's preview. The layer is a copy of the page over the real one; it hides itself at 65 s by its own
+   animation, and the real page under it is hidden by an animation with no fill, so a script that stops part way can
+   never leave Home covered or dead. Red here is art (eyes, a red terminal), never the book's error red. */
+.fl-layer { position: fixed; inset: 0; z-index: 2147483000; overflow: hidden; background: #C9B48F; touch-action: none; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
+  animation: fl-life 1ms linear 65s forwards; }
+/* Both ends hidden: a forward fill of "to" alone was not enough in Chromium (the skeptic reproduced it). */
+@keyframes fl-life { from, to { visibility: hidden; } }
+.fl-layer.fl-black { background: #000; }
+.fl-layer.fl-hot { background: #3A2A1C; }
+.fl-stage, .fl-shake { position: absolute; inset: 0; transform: translateZ(0); }
+.fl-app { position: absolute; left: 0; width: 100%; }
+.fl-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace !important; letter-spacing: 0 !important; }
+.fl-evil img, .fl-evil canvas { filter: hue-rotate(150deg) saturate(2.4) contrast(1.25); }
+.fl-loose { z-index: 40 !important; }
+.fl-c { white-space: pre; }
+.fl-cb { display: inline-block; }
+.fl-gone { visibility: hidden; }
+/* The real page under the copy: hidden for 65 s by an animation with no fill, so it comes back by itself. */
+.fl-under { animation: fl-under 65s linear; }
+@keyframes fl-under { from, to { visibility: hidden; } }
+.fl-sr { position: fixed; left: -9999px; top: 0; width: 1px; height: 1px; overflow: hidden; }
+.fl-nopin::before { display: none !important; }
+.fl-layer.fl-dim .fl-stage { opacity: 0.7; }
+
+/* Darker: the closing vignette, red eyes, static, a red terminal */
+.fl-vig { position: absolute; inset: 0; z-index: 5; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at 50% 45%, rgba(0, 0, 0, 0) 32%, rgba(0, 0, 0, 0.55) 62%, #000 100%); }
+.fl-eyes { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
+.fl-eyes i { position: absolute; top: 44%; width: 14%; height: 9%; border-radius: 50%; background: radial-gradient(circle, #FFE3E3 0 18%, #FF2A2A 36%, rgba(255, 30, 30, 0.6) 58%, rgba(255, 0, 0, 0) 72%); box-shadow: 0 0 6px 2px rgba(255, 40, 40, 0.7); }
+.fl-eyes i:first-child { left: 30%; }
+.fl-eyes i:last-child { left: 55%; }
+.fl-snow { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 7; pointer-events: none; opacity: 0; image-rendering: pixelated; }
+.fl-term.fl-term-red { color: #FF6B6B; text-shadow: 0 0 8px rgba(255, 60, 60, 0.5); }
+
+/* The engine: hold ring, the hint, the warning */
+.fl-hold { position: absolute; z-index: 20; width: 96px; height: 96px; border-radius: 50%; border: 4px solid rgba(255, 255, 255, 0.9); box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.45); pointer-events: none; }
+.fl-hint { position: absolute; left: 50%; transform: translateX(-50%); z-index: 19; white-space: nowrap; pointer-events: none; opacity: 0;
+  font: 600 15px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; color: #fff; background: #000; padding: 11px 14px; border-radius: 6px; letter-spacing: 0.04em; }
+.fl-hint { bottom: calc(var(--tabbar-h, 68px) + 24px); }
+.fl-warn { position: absolute; left: 50%; top: 104px; transform: translateX(-50%); z-index: 19; white-space: nowrap; pointer-events: none; opacity: 0;
+  font: 600 15px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; color: #fff; background: #000; padding: 11px 14px; border-radius: 6px; letter-spacing: 0.04em; }
+
+/* Shared closing beats */
+.fl-dark { position: absolute; inset: 0; background: #050505; opacity: 0; z-index: 6; pointer-events: none; }
+.fl-type { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); width: min(330px, 86vw); z-index: 8;
+  font: 600 22px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; color: #EDEDED; }
+.fl-tl { white-space: pre-wrap; word-break: break-word; min-height: 1.5em; }
+.fl-cur { display: inline-block; width: 0.6em; height: 1.05em; margin-left: 1px; background: currentColor; vertical-align: -0.16em; animation: fl-blink 1s steps(1) infinite; }
+@keyframes fl-blink { 50% { opacity: 0; } }
+.fl-april-box { position: absolute; left: 50%; top: 68%; transform: translate(-50%, -50%); width: min(360px, 92vw); z-index: 9; text-align: center;
+  font: 800 34px/1.15 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; color: #F4F1EA; word-break: break-word; }
+.fl-april-box.fl-low { top: 80%; }
+.fl-april { color: #FFB089; text-shadow: 0 0 10px rgba(255, 150, 100, 0.45); }
+
+/* A: crack, pins */
+.fl-crack { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.fl-ck-dark { fill: none; stroke: rgba(0, 0, 0, 0.55); stroke-width: 3.4; stroke-linejoin: round; stroke-linecap: round; }
+.fl-ck-light { fill: none; stroke: rgba(255, 255, 255, 0.92); stroke-width: 1.3; stroke-linejoin: round; stroke-linecap: round; }
+.fl-ck-hit { fill: rgba(255, 255, 255, 0.55); stroke: rgba(0, 0, 0, 0.5); stroke-width: 1.5; }
+.fl-pin { position: absolute; z-index: 4; width: 14px; height: 14px; border-radius: 50%; background: #C2451A; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25); pointer-events: none; }
+
+/* B: the telly and the terminal */
+.fl-line { position: absolute; left: 0; right: 0; top: 50%; height: 3px; margin-top: -1px; background: #fff; box-shadow: 0 0 18px 5px rgba(255, 255, 255, 0.65); z-index: 4; opacity: 0; }
+.fl-term { position: absolute; inset: 0; z-index: 5; box-sizing: border-box; padding: max(56px, 9vh) 18px 18px; background: #020403; color: #8CFFB4; overflow: hidden;
+  font: 500 14px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; text-shadow: 0 0 6px rgba(80, 255, 150, 0.45); transform-origin: 50% 50%; }
+.fl-term.fl-amber { color: #FFC46B; text-shadow: 0 0 6px rgba(255, 180, 80, 0.45); background: #0A0602; }
+.fl-term::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.3) 0 1px, transparent 1px 3px); }
+.fl-big { font-size: 44px; font-weight: 800; line-height: 1.05; margin: 14vh 0 18px; word-break: break-word; }
+.fl-sub { font-size: 18px; line-height: 1.45; margin-top: 6px; }
+.fl-april-box.fl-in-term { position: static; transform: none; text-align: left; width: auto; font-size: 44px; margin-top: 10px; color: inherit; }
+
+/* C: colour split, tears, melting letters, the colour wheel and the one inversion */
+.fl-layer.fl-rgb .fl-app { text-shadow: -2px 0 rgba(255, 0, 190, 0.7), 2px 0 rgba(0, 225, 255, 0.7); }
+.fl-strip { position: absolute; inset: 0; z-index: 2; transform: translateZ(0); pointer-events: none; overflow: hidden; }
+.fl-ch { display: inline-block; white-space: pre; animation: fl-drip var(--t, 4s) cubic-bezier(.55, 0, .9, .5) var(--d, 0s) forwards; transform-origin: 50% 0; }
+@keyframes fl-drip { to { transform: translateY(var(--dy, 18px)) skewY(var(--sk, 8deg)) scaleY(var(--sy, 1.4)); opacity: 0.8; } }
+.fl-psy { position: absolute; left: 50%; top: 50%; width: 240vmax; height: 240vmax; margin: -120vmax 0 0 -120vmax; z-index: 3; pointer-events: none; mix-blend-mode: hue; opacity: 0;
+  background: conic-gradient(from 0deg, #ff00cc, #ffcc00, #00ffcc, #3366ff, #ff00cc); }
+.fl-inv { position: absolute; inset: 0; z-index: 6; background: #fff; mix-blend-mode: difference; opacity: 0; pointer-events: none; }
+
+/* D: the ransom note */
+.fl-note { position: absolute; left: 14px; right: 14px; top: 22%; z-index: 7; padding: 18px 12px 16px; background: #F4EEDC; color: #1C1D1F; border: 1px solid #BFB49A;
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.18), 0 2px 18px rgba(0, 0, 0, 0.3); transform: rotate(-2deg); text-align: center; }
+.fl-nl { margin: 4px 0; line-height: 1.25; }
+.fl-nw { display: inline-block; max-width: 100%; white-space: nowrap; margin: 0 4px; }
+.fl-nw .fl-rc { white-space: normal; }
+.fl-rc, .fl-fly { display: inline-block; padding: 2px 4px; margin: 1px; line-height: 1; border-radius: 1px; box-shadow: 0 1px 1px rgba(0, 0, 0, 0.25); }
+.fl-fly { position: absolute; z-index: 8; pointer-events: none; transform-origin: 0 0; }
+.fl-f1 { font-family: Georgia, "Times New Roman", serif; background: #fff; color: #111; }
+.fl-f2 { font-family: "Barlow Condensed", "Arial Narrow", sans-serif; font-weight: 700; background: #1C1D1F; color: #fff; }
+.fl-f3 { font-family: Caveat, cursive; font-weight: 700; background: #FFE9A8; color: #1C1D1F; }
+.fl-f4 { font-family: ui-monospace, Menlo, Consolas, monospace; font-weight: 700; background: #E2602A; color: #fff; }
+.fl-f5 { font-family: Barlow, system-ui, sans-serif; font-weight: 700; background: #DDE7F0; color: #1C1D1F; }
+.fl-nsign { margin-top: 12px; font: 700 22px/1 Caveat, cursive; }
+.fl-april-box.fl-in-note { position: static; transform: none; width: auto; margin-top: 4px; color: #1C1D1F; font: 700 30px/1.1 Caveat, cursive; }
+.fl-in-note .fl-april { color: #C2451A; text-shadow: none; }
+
+/* F: code rain */
+.fl-rain { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 7; pointer-events: none; }
+.fl-rainword { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); width: min(360px, 92vw); z-index: 8; text-align: center; word-break: break-word;
+  font: 800 52px/1.1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #DFFBFF; text-shadow: 0 0 14px rgba(120, 240, 255, 0.8); }
+.fl-rainword.fl-amber { font-size: 34px; color: #FFE2B0; text-shadow: 0 0 14px rgba(255, 190, 90, 0.8); }
+.fl-rainword span { display: inline-block; white-space: pre; }
+.fl-rainsub { position: absolute; left: 50%; top: 52%; transform: translateX(-50%); width: min(340px, 90vw); z-index: 8; text-align: center; opacity: 0;
+  font: 800 22px/1.25 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #DFFBFF; text-shadow: 0 0 10px rgba(120, 240, 255, 0.7); }
+.fl-rainsub.fl-amber { color: #FFE2B0; text-shadow: 0 0 10px rgba(255, 190, 90, 0.7); }
+
+/* G: black hole */
+.fl-hole { position: absolute; width: 100px; height: 100px; border-radius: 50%; z-index: 5; pointer-events: none; background: radial-gradient(circle, #000 0 56%, rgba(0, 0, 0, 0.6) 62%, rgba(0, 0, 0, 0) 70%); }
+.fl-ring { position: absolute; inset: -45%; border-radius: 50%; background: conic-gradient(from 0deg, transparent, #E2602A, #8B3DFF, transparent 45%, #FFB089, #E2602A, transparent 80%);
+  -webkit-mask: radial-gradient(circle, transparent 0 35%, #000 37%, #000 46%, transparent 52%); mask: radial-gradient(circle, transparent 0 35%, #000 37%, #000 46%, transparent 52%); }
+.fl-orbit { position: absolute; width: 0; height: 0; z-index: 6; pointer-events: none; }
+.fl-orbit span { position: absolute; left: -0.3em; top: -0.55em; font: 800 30px/1 ui-monospace, Menlo, Consolas, monospace; color: #FFB089; text-shadow: 0 0 10px rgba(255, 150, 100, 0.6); }
+
+/* H: gravity */
+.fl-floor { position: absolute; left: 50%; top: 56%; transform: translateX(-50%); z-index: 8; max-width: 88vw; text-align: center;
+  font: 700 26px/1.2 Caveat, cursive; color: #1C1D1F; background: #FBF8F1; border: 2px solid #1C1D1F; border-radius: 10px; padding: 8px 14px; overflow-wrap: anywhere; }
+
+/* I: endless Home */
+.fl-zoom { position: absolute; inset: 0; z-index: 1; }
+.fl-nest { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; transform-origin: 0 0; box-shadow: 0 0 0 2px #1C1D1F; background: #C9B48F; }
+
+/* J: dust */
+.fl-dust { position: absolute; z-index: 5; display: block; pointer-events: none; border-radius: 1px; }
+
+/* L: melt */
+.fl-heat { position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0; background: linear-gradient(to top, rgba(226, 96, 42, 0.85), rgba(226, 96, 42, 0) 70%); }
+.fl-puddle { position: absolute; left: -10%; right: -10%; bottom: -2%; height: 30%; z-index: 4; transform-origin: 50% 100%; border-radius: 50% 50% 0 0 / 40% 40% 0 0; pointer-events: none;
+  background: radial-gradient(ellipse at 30% 30%, #E9DCC1 0 12%, transparent 13%), radial-gradient(ellipse at 70% 40%, #2B2A27 0 9%, transparent 10%), radial-gradient(ellipse at 50% 60%, #DDE7F0 0 14%, transparent 15%), #C9B48F; }
+.fl-type.fl-on-puddle { top: 80%; color: #1C1D1F; }
+
+/* The reveal: the book's own paper card, the mascot, plain words and one button. On a phone the tab bar stays
+   uncovered, so a tap on a tab goes straight to that page. */
+.fl-reveal { position: fixed; inset: 0; z-index: 2147483100; display: grid; place-items: center; padding: 16px; box-sizing: border-box; background: rgba(28, 29, 31, 0.5); }
+@media (max-width: 719px) { .fl-reveal { bottom: var(--tabbar-h, 68px); } }
+.fl-card { position: relative; width: min(360px, 100%); box-sizing: border-box; margin-top: 56px; padding: 66px 20px 18px; background: #FBF8F1; color: #1C1D1F; border: 2px solid #1C1D1F; border-radius: 14px;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.25); text-align: center; font-family: Barlow, system-ui, sans-serif; }
+.fl-rv-m { position: absolute; left: 50%; top: -70px; width: 96px; height: 128px; margin-left: -48px; }
+.fl-card h2 { margin: 0 0 10px; font: 700 40px/1.05 Caveat, cursive; overflow-wrap: anywhere; }
+.fl-rv-p { margin: 0 0 6px; font-size: 18px; line-height: 1.4; font-weight: 600; }
+.fl-rv-s { margin: 10px 0 0; font-size: 17px; line-height: 1.4; color: #1C1D1F; font-weight: 500; }
+.fl-rv-b { margin-top: 16px; width: 100%; min-height: 48px; border: 0; border-radius: 10px; background: #1C1D1F; color: #fff; font: 700 18px/1 Barlow, system-ui, sans-serif; cursor: pointer; }
+.fl-rv-b:focus-visible { outline: 3px solid #E2602A; outline-offset: 3px; }
