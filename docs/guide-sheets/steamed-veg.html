@@ -1,0 +1,58 @@
+<!doctype html>
+<!-- The printable sheet for the bundled guide "Steamed veg on the iCombi" (lk-steamed-veg in js/prep.js).
+     Print it again after a change, from the repo root:
+       node docs/guide-sheets/print.cjs docs/guide-sheets/steamed-veg.html guides/steamed-veg.pdf
+     Keep the words in step with G_VEG and steamVegHTML() in js/prep.js. -->
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<title>Steamed veg on the iCombi</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&amp;family=Barlow+Condensed:wght@700&amp;display=swap" rel="stylesheet">
+<style>
+  @page { size: A4; margin: 14mm 15mm; }
+  :root { --ink: #1C1D1F; --muted: #55585E; --accent: #E2602A; --accent-ink: #C2451A; --beige: #F2EFE8; --line: #E0DBCF; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #fff; color: var(--ink); font: 11.5pt/1.35 'Barlow', sans-serif; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .eb { font: 700 10pt/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-ink); }
+  h1 { font: 700 34pt/1 'Barlow Condensed', sans-serif; margin: 2mm 0 3mm; }
+  .lead { font-size: 13pt; margin: 0 0 5mm; max-width: 165mm; }
+  .band { border-block: 2px solid var(--ink); padding: 3mm 0; font-size: 14pt; margin: 0 0 4mm; }
+  ol.beeps { list-style: none; padding: 0; margin: 0 0 5mm; display: grid; gap: 2.5mm; }
+  ol.beeps li { display: grid; grid-template-columns: 52mm 1fr; align-items: center; column-gap: 6mm; background: var(--beige); border-left: 3mm solid var(--accent); padding: 3.5mm 5mm; break-inside: avoid; }
+  .t { font: 700 26pt/1 'Barlow Condensed', sans-serif; }
+  .a { font: 700 19pt/1.1 'Barlow', sans-serif; display: block; }
+  .b { font-size: 12.5pt; display: block; margin-top: 1mm; }
+  .times { font-size: 13pt; margin: 0 0 5mm; }
+  h2 { font: 700 15pt/1 'Barlow Condensed', sans-serif; letter-spacing: .04em; text-transform: uppercase; border-bottom: 1px solid var(--ink); padding-bottom: 1.5mm; margin: 0 0 2.5mm; }
+  ol.steps { margin: 0; padding-left: 7mm; }
+  ol.steps li { margin: 0 0 1.6mm; padding-left: 1mm; }
+  .tbc { color: var(--muted); }
+  footer { margin-top: 5mm; padding-top: 2mm; border-top: 1px solid var(--line); color: var(--muted); font-size: 9pt; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+<span class="eb">Leichhardt Hotel Kitchen &middot; Equipment guide</span>
+<h1>Steamed veg on the iCombi</h1>
+<p class="lead">The steamed veg programme on the iCombi (the Rational). Carrots, cauliflower and broccoli go in together and come out at their own beep, straight into ice water.</p>
+<p class="band">Fill a sink with <b>ice water</b> first. Times count from when the veg goes in.</p>
+<ol class="beeps">
+  <li><span class="t">Ready beep</span><span><span class="a">All in</span><span class="b">Carrots, cauliflower and broccoli, each in its own tray</span></span></li>
+  <li><span class="t">2 min</span><span><span class="a">Broccoli out</span><span class="b">Into the ice water</span></span></li>
+  <li><span class="t">4 min</span><span><span class="a">Cauliflower out</span><span class="b">Into the ice water</span></span></li>
+  <li><span class="t">6 min</span><span><span class="a">Carrots out</span><span class="b">Last beep. Into the ice water</span></span></li>
+</ol>
+<p class="times"><b>Cook times:</b> broccoli 2&nbsp;min, cauliflower 4&nbsp;min, carrots 6&nbsp;min.</p>
+<h2>Steps</h2>
+<ol class="steps">
+  <li>Fill one sink with ice water before you start, with plenty of ice.</li>
+  <li>Prep the veg as on the Seasonal Vegetables card. Each vegetable goes in its own steam tray.</li>
+  <li>Start the steamed veg programme. The oven heats up to its set temperature and beeps once when it is ready.</li>
+  <li>Ready beep: put all three trays in together. Carrots, cauliflower and broccoli. Close the door.</li>
+  <li>Beep at 2 min: broccoli out, straight into the ice water.</li>
+  <li>Beep at 4 min: cauliflower out, straight into the ice water.</li>
+  <li>Last beep, 6 min: carrots out, straight into the ice water. The ice water stops the cooking.</li>
+  <li class="tbc">[Time in the ice water, draining and storage to confirm]</li>
+</ol>
+<footer><span>Kitchen Book, Guides: Steamed veg on the iCombi</span><span>17 November 2026</span></footer>
+</body>
+</html>

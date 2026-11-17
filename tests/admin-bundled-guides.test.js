@@ -11,10 +11,10 @@ const { R, ok } = L.results();
       const label = (who ? 'head chef and Google' : 'Google admin') + ' at ' + width;
       const p = await L.open(b, '#/admin', { admin: true, who, width, extra: { [cfgKey]: cfg }, wait: 1000 });
       await L.adminTab(p, 'guides');
-      ok(await p.locator('.g-row').count() === 2, label + ': both bundled guides appear with no uploads');
+      ok(await p.locator('.g-row').count() === 3, label + ': all three bundled guides appear with no uploads');
       ok(await p.locator('.g-row [data-p="g-edit"], .g-row [data-p="g-del"]').count() === 0, label + ': no broken editing or removal controls');
-      ok(await p.locator('.g-row').filter({ hasText: 'Included with the book' }).count() === 2, label + ': included guides are explained');
-      for (const id of ['lk-2-hour-4-hour', 'lk-smoke-service']) {
+      ok(await p.locator('.g-row').filter({ hasText: 'Included with the book' }).count() === 3, label + ': included guides are explained');
+      for (const id of ['lk-2-hour-4-hour', 'lk-smoke-service', 'lk-steamed-veg']) {
         await p.click('.g-open[href="#/guides/' + id + '"]');
         await L.waitFor(p, () => !!document.querySelector('.g-doc'));
         ok(await p.locator('.g-doc a[download]').count() === 1, label + ': ' + id + ' opens with its PDF');
