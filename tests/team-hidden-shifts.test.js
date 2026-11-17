@@ -74,14 +74,15 @@ const click = async (p, sel) => { await p.locator(sel).first().click(); await L.
     const focus = await p.evaluate(() => { const a = document.activeElement, line = a && a.closest('.tm-tlrow[data-id="ann"] .tm-tlsvc'); return line ? 'smoker line: ' + line.dataset.sh : a === document.body ? 'page' : a.className; });
     ok(focus === 'smoker line: smoker', width + ': the focus lands on Ann\'s new Smoker line (' + focus + ')');
     ok(/Ann added to Smoker\. Not saved yet\./.test(await L.txt(p, '.tm-page') || ''), width + ': the page says in words who was added and that it is not saved');
-    ok(await p.locator('.tm-tlrow[data-id="ann"] [data-p="tm-off"][data-sh="smoker"]').count() === 1 && await p.locator('.tm-tlrow[data-id="ann"] [data-p="tm-addbr"][data-sh="smoker"]').count() === 1, width + ': Ann\'s Smoker line has its own Take off and + Break');
+    // one break per person (17 Nov 2026): the Smoker line has its own Take off; + Break is Ann's, by her name, on no service line
+    ok(await p.locator('.tm-tlrow[data-id="ann"] [data-p="tm-off"][data-sh="smoker"]').count() === 1 && await p.locator('.tm-tlrow[data-id="ann"] .tm-braddwho [data-p="tm-addbr"]').count() === 1 && !await p.locator('.tm-tlrow[data-id="ann"] .tm-tlsvc [data-p="tm-addbr"]').count(), width + ': Ann\'s Smoker line has its own Take off, and her one + Break sits by her name');
     ok(await writes(p) === before, width + ': nothing is saved until Save');
     ok(same(await adds(p, 'bo'), ['Smoker 06:00 to 11:00']), width + ': with Ann on it, Smoker shows as usual in Bo\'s Add a service (' + (await adds(p, 'bo')).join(', ') + ')');
     // a mistaken Take off is undone in place: Smoker stays shown for this date
     const off = '[data-p="tm-off"][data-id="ann"][data-sh="smoker"]';
     await click(p, off); await click(p, off);
     ok(!await p.locator('select[data-k="tm-sec:ann:smoker"]').count() && same(await adds(p, 'ann'), ['Smoker 06:00 to 11:00']), width + ': after Take off, Smoker stays shown for this date, in Ann\'s Add a service without the hidden words');
-    ok(await p.locator('.tm-tlrow[data-id="ann"] [data-p="tm-off-undo"]').count() === 1 && /Ann taken off Smoker and its breaks\. Not saved yet\./.test(await L.txt(p, '.tm-page') || ''), width + ': Undo is there to put it back');
+    ok(await p.locator('.tm-tlrow[data-id="ann"] [data-p="tm-off-undo"]').count() === 1 && /Ann taken off Smoker\. Not saved yet\./.test(await L.txt(p, '.tm-page') || ''), width + ': Undo is there to put it back');
     ok(!(await L.overflow(p)), width + ': no sideways scroll');
     ok(p.errors.length === 0, width + ': no browser errors ' + p.errors.join(' | '));
     await p.context().close();

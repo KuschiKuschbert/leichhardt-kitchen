@@ -1,4 +1,5 @@
-// A worksheet shows the people selected for its date, across every configured service.
+// A worksheet shows the people selected for its date, across every configured service. Breaks are the person's, one
+// break line each (17 Nov 2026, docs/team-one-break-options/brief.md): pickers tm-bat:<id>:<at>:<n>, found by the start.
 const L = require('./lib');
 const { R, ok } = L.results();
 const key = (...p) => ['kitchens', L.PIN, ...p].join('/');
@@ -52,18 +53,18 @@ async function day(p, date) { await L.teamDay(p, date); await ready(p); }
   await day(p, today); await L.waitFor(p, () => !!document.querySelector('.tm-person-row[data-id="ann"]'), null, 6000);
   ok(await expected(p, ['ann', 'bo', 'sam']), 'date return: today restores its own day membership without another date leaking in');
   await pick(p, 'ann', '');
-  ok(await expected(p, ['ann', 'bo', 'sam']) && await section(p, 'ann', 'lunch').inputValue() === '' && await p.locator('select[data-k="tm-at:ann:lunch:0"]').inputValue() === '825', 'clear section: attendance and the break keep the person in the worksheet');
+  ok(await expected(p, ['ann', 'bo', 'sam']) && await section(p, 'ann', 'lunch').inputValue() === '' && await p.locator('select[data-k^="tm-bat:ann:825:"]').inputValue() === '825', 'clear section: attendance and the break keep the person in the worksheet');
   await click(p, offButton('ann', 'lunch'));
   ok(await p.locator('.tm-tlrow[data-id="ann"]').count() === 1 && /Tap again to take off/.test(await p.locator(offButton('ann', 'lunch')).innerText()), 'Take off: the first tap only arms it, in place, and Ann is still on Lunch');
   await click(p, offButton('ann', 'lunch'));
-  ok(!await p.locator('.tm-tlrow[data-id="ann"]').count() && !await p.locator('select[data-k^="tm-sec:ann:"], select[data-k^="tm-at:ann:"]').count(), 'last service removal: the person leaves the worksheet immediately, with her section and break pickers');
-  ok(await p.locator('.tm-tlgone[data-id="ann"] [data-p="tm-off-undo"]').count() === 1 && await p.evaluate(() => document.activeElement && document.activeElement.matches('[data-p="tm-off-undo"][data-id="ann"]')) && /Ann taken off Lunch and its breaks\. Not saved yet\. Ann is not on this day now: Undo, or Add staff, puts them back\./.test(await words(p)), 'last service removal: a line with Undo stays where the row was, takes the focus and the words say what went');
+  ok(!await p.locator('.tm-tlrow[data-id="ann"]').count() && !await p.locator('select[data-k^="tm-sec:ann:"], select[data-k^="tm-bat:ann:"]').count(), 'last service removal: the person leaves the worksheet immediately, with her section and break pickers');
+  ok(await p.locator('.tm-tlgone[data-id="ann"] [data-p="tm-off-undo"]').count() === 1 && await p.evaluate(() => document.activeElement && document.activeElement.matches('[data-p="tm-off-undo"][data-id="ann"]')) && /Ann taken off Lunch\. Break 13:45 to 14:30 goes too\. Not saved yet\. Ann is not on this day now: Undo, or Add staff, puts them back\./.test(await words(p)), 'last service removal: a line with Undo stays where the row was, takes the focus and the words say what went');
   await addService(p, 'bo', 'lunch');
   ok(JSON.stringify(await lines(p, 'bo')) === '["lunch","dinner"]' && /Bo added to Lunch\. Not saved yet\./.test(await words(p)), 'Add a service: Bo joins Lunch in one pick, in time order before Dinner, and the words say so');
   await pick(p, 'bo', 'grill'); await takeOff(p, 'bo', 'lunch');
   ok(await p.locator('.tm-tlrow[data-id="bo"]').count() === 1 && !await section(p, 'bo', 'lunch').count() && JSON.stringify(await lines(p, 'bo')) === '["dinner"]' && JSON.stringify(await addable(p, 'bo')) === '["lunch"]' && await p.locator('.tm-tlrow[data-id="bo"] [data-p="tm-off-undo"]').count() === 1, 'one of several services removed: another selected service keeps the person visible and Lunch is explicitly absent (offered to add again, Undo in his row)');
   ok(!await p.locator('.tm-tlgone[data-id="ann"]').count(), 'one Undo at a time: the newer Take off replaces Ann\'s Undo line');
-  ok(await section(p, 'bo', 'dinner').inputValue() === 'pans' && await p.locator('select[data-k="tm-at:bo:dinner:0"]').inputValue() === '1140', 'other service: section and break remain intact after removing Lunch');
+  ok(await section(p, 'bo', 'dinner').inputValue() === 'pans' && await p.locator('select[data-k^="tm-bat:bo:1140:"]').inputValue() === '1140', 'other service: section and break remain intact after removing Lunch');
   await takeOff(p, 'bo', 'dinner');
   ok(!await p.locator('.tm-tlrow[data-id="bo"]').count() && await p.locator('.tm-tlgone[data-id="bo"]').count() === 1, 'all services removed: the final removal drops the row even while another person is still selected');
   await click(p, '.tm-focus-toolbar [data-p="tm-add-staff"]');

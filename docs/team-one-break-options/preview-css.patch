@@ -1,0 +1,40 @@
+diff --git a/css/app.css b/css/app.css
+index ab99fd2..4f61845 100644
+--- a/css/app.css
++++ b/css/app.css
+@@ -5790,6 +5790,35 @@ html:has(.tm-focus-page) {
+ .tm-notebook.tm-focus-page .tm-tlsvc :is(.tm-tlsvc-brs, .tm-tlsvc-more) :is(select, .ux-picker-trigger) { width: auto; max-width: 100%; min-height: 44px; }
+ .tm-notebook.tm-focus-page .tm-tlsvc-more :is(select, .ux-picker-trigger) { border: 1px solid var(--faint); color: var(--muted); font-size: .875rem; }
+ .tm-tlsvc-add .chip { min-height: 44px; }
++/* PREVIEW (17 Nov 2026, docs/team-one-break-options): one break per person */
++.ob-line, .ob-li-picks { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin: .15rem 0 .35rem; }
++.ob-one { display: inline-flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
++.tm-notebook .ob-line .tm-pick, .tm-notebook .ob-li-picks .tm-pick { display: inline-flex; flex: none; width: auto; max-width: 100%; margin: 0; }
++.tm-notebook.tm-focus-page :is(.ob-line, .ob-li-picks) :is(select, .ux-picker-trigger) { width: auto; max-width: 100%; min-height: 44px; }
++.ob-add.chip { min-height: 44px; }
++.ob-dayline { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .6rem; margin: .1rem 0 .2rem; }
++.ob-dayline > .tm-roster-time { margin: 0; flex: 1 1 13rem; min-width: 0; }
++.ob-dayline > .ob-line { margin: 0; }
++.ob-dayline > .ob-line:has(.ob-one) { flex-basis: 100%; }
++.tm-plan > .tm-tlrow > .tm-grid-who > .ob-addwho { margin-left: auto; }
++/* D: + 2nd break is the quiet Add a service look, 8 px from the pickers; from 1100 px the sentence wraps before the pickers */
++.ob-dayline > .ob-line { gap: .5rem; }
++.tm-notebook.tm-focus-page .ob-line .ob-add.chip { border: 1px solid var(--faint); color: var(--muted); background: transparent; font-size: .875rem; }
++@media (min-width: 1100px) { .ob-dayline { flex-wrap: nowrap; } .ob-dayline > .tm-roster-time { flex: 1 1 auto; min-width: 12rem; } .ob-dayline > .ob-line:has(.ob-one) { flex: 0 0 auto; } }
++@media (min-width: 600px) { .tm-plan > .tm-tlrow > .tm-grid-who > .ob-addwho { margin: .25rem 0 0; } }
++@media (min-width: 1100px) { .ob-dayline > .ob-line:has(.ob-one) { flex-basis: auto; } .ob-dayline > .tm-roster-time { flex: 0 1 auto; } }
++.ob-list { margin: .8rem 0 0; padding: .6rem 0 0; border-top: 2px solid var(--ink); }
++.ob-h { margin: 0 0 .3rem; font: 700 1.125rem/1.2 var(--display); }
++.ob-sub { margin: .6rem 0 .2rem; font-weight: 700; color: var(--muted); }
++.ob-ul { list-style: none; margin: 0; padding: 0; }
++.ob-li { display: grid; grid-template-columns: minmax(0, 1fr); gap: .1rem .6rem; padding: .35rem 0; border-bottom: 1px solid var(--line); }
++.ob-li-who { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 .5rem; }
++.ob-li-who b { font: 700 1.125rem/1.2 var(--display); }
++.ob-with { color: var(--small-ink); font-weight: 700; flex-basis: 100%; }
++.ob-fill { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .75rem; margin: .5rem 0; }
++.ob-fill .lk-fillnote { margin: 0; flex: 1 1 14rem; }
++.ob-fill .btn { min-height: 44px; }
++@media (min-width: 600px) { .ob-li { grid-template-columns: 11rem minmax(0, 1fr); align-items: center; } .ob-with { flex-basis: auto; } }
+ .tm-notebook.tm-focus-page .tm-grid-cell.is-chef .tm-pick:has(option[value=""]:checked) :is(.ux-picker-trigger, select) { border-style: solid; color: var(--ink); }
+ .tm-tlundo { margin: .3rem 0; font-size: .875rem; overflow-wrap: break-word; }
+ .tm-tlundo .p-link { min-height: 44px; font-weight: 700; }

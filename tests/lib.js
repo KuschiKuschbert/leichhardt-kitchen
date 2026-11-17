@@ -502,6 +502,12 @@ async function choose(page, selector, options) {
   if (source.multiple) await page.locator('.ux-picker-footer .dark').click();
   await settle(page, 250); // Let the overlay's Back entry and scroll restoration finish.
 }
+// Today's team, one break per person (17 Nov 2026): the data-k of a person's nth break picker in the order of their day
+// ('bat' its time, 'blen' its length), or '' when they have fewer breaks. The key carries the break's start
+// (tm-bat:<id>:<at>:<n>), so it changes when the time does: look it up again after a change.
+async function brKey(page, id, n, kind) {
+  return page.evaluate(a => { const l = [...document.querySelectorAll('select[data-k^="tm-' + a[1] + ':' + a[0] + ':"]')]; return l[a[2]] ? l[a[2]].getAttribute('data-k') : ''; }, [id, kind || 'bat', n || 0]);
+}
 async function pick(page, selector, value) {
   const source = page.locator(selector).first();
   await source.evaluate(el => el.nextElementSibling.click());
@@ -649,4 +655,4 @@ async function teamDay(page, day) {
   }
   await page.locator('[data-p="tm-day"][data-day="' + day + '"]').first().click(); await settle(page, 160);
 }
-module.exports = { teamDay, teamWarm, updateNow, docked, oLog, pLog, whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, dwShow, dwAdd, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, kitchenRow, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+module.exports = { brKey, teamDay, teamWarm, updateNow, docked, oLog, pLog, whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, dwShow, dwAdd, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, kitchenRow, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };

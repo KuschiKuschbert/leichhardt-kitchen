@@ -89,11 +89,13 @@ const withoutViewChoice = async p => {
   ok(await pick(p, 'tm-sec:ann:lunch', 'grill'), 'page: Ann on Lunch gets a section picker');
   ok(await onShift(p, 'sam'), 'page: Sam is ticked onto Lunch');
   ok(await p.$eval('select[data-k="tm-sec:sam:lunch"]', e => e.value === '' && [...e.options].some(o => o.value === '' && o.textContent === 'Sous chef')), 'page: a sous chef has a section picker too, starting on their role');
-  await tap(p, '[data-p="tm-addbr"][data-id="ann"][data-sh="lunch"]'); await L.settle(p, 200);
+  // one break per person (17 Nov 2026): + Break is Ann's own, by her name, not one on each service line
+  await tap(p, '[data-p="tm-addbr"][data-id="ann"]'); await L.settle(p, 200);
   // the time picker shows as its enhanced button when the book draws one, so either one holding the focus counts
-  const brFocus = await p.evaluate(() => { const a = document.activeElement, s = document.querySelector('select[data-k="tm-at:ann:lunch:0"]'); return { ok: !!a && !!s && (a === s || a === s.nextElementSibling && a.classList.contains('ux-picker-trigger')), at: a ? a.tagName + '.' + a.className : 'none' }; });
+  const brFocus = await p.evaluate(() => { const a = document.activeElement, s = document.querySelector('select[data-k^="tm-bat:ann:"]'); return { ok: !!a && !!s && (a === s || a === s.nextElementSibling && a.classList.contains('ux-picker-trigger')), at: a ? a.tagName + '.' + a.className : 'none' }; });
   ok(brFocus.ok, 'page: + Break puts the focus on the new break\'s time, the next thing to choose (focus on ' + brFocus.at + ')');
-  ok(await pick(p, 'tm-at:ann:lunch:0', 870) && await pick(p, 'tm-len:ann:lunch:0', 45), 'page: Ann gets a break at 14:30 for 45 minutes');
+  // her break line's pickers carry the break's start in their key (tm-bat:ann:<at>:0), so each is looked up as it is now
+  ok(await pick(p, await L.brKey(p, 'ann', 0), 870) && await pick(p, await L.brKey(p, 'ann', 0, 'blen'), 45), 'page: Ann gets a break at 14:30 for 45 minutes');
   await L.settle(p, 150);
   ok((await p.$eval('[data-p="tm-save"]', e => e.disabled)) === false, 'page: Save is on once something changed');
   ok(TEAM in (await store(p)) === false, 'page: nothing is saved before Save');
@@ -132,7 +134,7 @@ const withoutViewChoice = async p => {
   // another chef saves meanwhile: this page's save is refused and says so, the changes stay, Refresh reads theirs
   await p.evaluate(([k, d]) => window.__fake.write(k, d), [TEAM, Object.assign({}, t, { v: 2, upd: t.upd + 60000, by: 'sam', on: t.on.slice(0, 2) })]);
   await takeOff(p, 'bo', 'lunch');
-  ok(!await p.locator('.tm-tlrow[data-id="bo"]').count() && /Bo taken off Lunch and its breaks\. Not saved yet\. Bo is not on this day now: Undo, or Add staff, puts them back\./.test(await saveWords(p)), 'Take off: two taps take Bo off his only service, and the words say so (' + await saveWords(p) + ')');
+  ok(!await p.locator('.tm-tlrow[data-id="bo"]').count() && /Bo taken off Lunch\. Break 13:00 to 13:30 goes too\. Not saved yet\. Bo is not on this day now: Undo, or Add staff, puts them back\./.test(await saveWords(p)), 'Take off: two taps take Bo off his only service, and the words say so, naming the break that goes with it (' + await saveWords(p) + ')');
   await tap(p, '[data-p="tm-save"]'); await L.settle(p, 1500);
   ok((await txt(p, '.tm-save') || '').includes('Not saved: Sam saved the team for ' + dayTitle + ' at ') && /\d\d:\d\d\. Your changes are still here/.test(await txt(p, '.tm-save') || ''), 'conflict: a save over a newer one names its date and keeps the draft (' + (await txt(p, '.tm-save')) + ')');
   ok((await store(p))[TEAM].v === 2, 'conflict: the newer save stays as it is');
@@ -253,7 +255,8 @@ const withoutViewChoice = async p => {
   await p.context().close();
 
   // Chefs take a section too, and split shifts (head chef, 7 Nov 2026): a Day shift of 10:00 to 22:00 starts Spread
-  // them on a 2.5 hour split 4.5 hours in; splits and meal breaks spread apart; + Break starts with the split
+  // them on a 2.5 hour split 4.5 hours in; splits and meal breaks spread apart; + Break starts with the split (one
+  // break per person, 17 Nov 2026: the split comes from one unbroken stretch of 9 hours or more of their day)
   const DAY = [{ id: 'day', name: 'Day', from: 600, to: 1320, off: false }];
   p = await L.open(b, '#/team', { who: 'sam', extra: cfg({ kitShifts: DAY }), wait: 1800 });
   await onShift(p, 'ann');
@@ -261,16 +264,18 @@ const withoutViewChoice = async p => {
   ok(await pick(p, 'tm-sec:sam:day', 'pans'), 'chef section: Sam puts himself on Pans');
   await tools(p);
   ok(await p.$eval('select[data-k="tm-spfrom"]', e => e.value) === '870' && await p.$eval('select[data-k="tm-splen"]', e => e.value) === '150' && await p.$eval('select[data-k="tm-spmode"]', e => e.value) === '0', 'split: on a 10:00 to 22:00 shift Spread them starts on a 2.5 hour split at 14:30, all together');
-  await tap(p, '[data-p="tm-addbr"][data-id="sam"][data-sh="day"]'); await L.settle(p, 200);
-  ok(await p.$eval('select[data-k="tm-len:sam:day:0"]', e => e.value) === '150' && await p.$eval('select[data-k="tm-at:sam:day:0"]', e => e.value) === '870', '+ Break: on a long shift the first one is the split');
+  await tap(p, '[data-p="tm-addbr"][data-id="sam"]'); await L.settle(p, 200);
+  ok(await p.$eval('select[data-k="' + await L.brKey(p, 'sam', 0, 'blen') + '"]', e => e.value) === '150' && await p.$eval('select[data-k="' + await L.brKey(p, 'sam', 0) + '"]', e => e.value) === '870' && /Sam: split 14:30 to 17:00, a 12 hour day\. Not saved yet\./.test(await saveWords(p)), '+ Break: on a long shift the first one is the split, and the words say why (' + await saveWords(p) + ')');
   await tap(p, '[data-p="tm-spread"]'); await L.settle(p, 200);
   ok(/3 splits from 14:30, all together/.test(await txt(p, '.tm-save') || ''), 'split: Spread them, all together (' + (await txt(p, '.tm-save')) + ')');
   await pick(p, 'tm-spfrom', 1080); await pick(p, 'tm-splen', 30); await pick(p, 'tm-spmode', '2'); await L.settle(p, 100);
   await tap(p, '[data-p="tm-spread"]'); await L.settle(p, 200);
   ok(/3 breaks from 18:00, two per group, starting every 30 min/.test(await txt(p, '.tm-save') || ''), 'split: then the meal breaks, two at a time, keeping the splits (' + (await txt(p, '.tm-save')) + ')');
+  // was: every person could add a third break. Two at most a person since 17 Nov 2026 (the head chef's choice): with a
+  // split and a meal break each, nobody is offered + 2nd break, and nothing else in the row adds one
   let thirdBreaks = 0;
-  for (const id of ['ann', 'bo', 'sam']) thirdBreaks += await p.locator('.tm-tlrow[data-id="' + id + '"] [data-p="tm-addbr"][data-id="' + id + '"][data-sh="day"]:not([disabled])').count();
-  ok(thirdBreaks === 3, 'split: every person can still add a third break in their row');
+  for (const id of ['ann', 'bo', 'sam']) thirdBreaks += await p.locator('.tm-tlrow[data-id="' + id + '"] [data-p="tm-addbr"]').count();
+  ok(thirdBreaks === 0, 'split: two breaks each, so nobody is offered a third (two at most a person)');
   await tap(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => !!window.__fake.dump()[k], TEAM, 8000);
   s = (await store(p))[TEAM];
