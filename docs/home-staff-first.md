@@ -112,6 +112,10 @@ Checking who is on takes no tap, before and after. The whole day is no tap for t
 
 `tests/home-rota.test.js` checks the board at 390, 768 and 1280 px, the double, the break words, the hidden fold, the staff fold, three and four shifts and no team listener: 57 of 57 pass, and it failed 8 of 20 on the old Home (the rest need a board to run). The Home, roster, welcome, colour and pattern tests now look for `.hm-tp` in `#hm-with`. Revert the change to restore the list; no saved data changes.
 
+## The whole day by start time, 17 November 2026
+
+Since 17 November 2026 the whole day (the head chef's On today, which the head chef now always sees, anyone not on the plan, and the staff's View today's full team) is no longer the board above: it lists names grouped by start time, each with the section they are rostered on now and until when, a "Now" rule, and "back 14:15" while on a break. On with you keeps the board. Each person's hours on the board are their whole roster day. This replaces "The native full-team disclosure retains every saved shift, person, section and break" for break windows: they are in Today's team and on each person's own Your day (head chef decision, 17 November 2026). [Brief](home-roster-options/brief.md).
+
 ## First sign-in of the day, 10 November 2026
 
 The owner asked to close #599 and rebuild only its first sign-in part on current main. #599's shift rows are not rebuilt: `#hm-day` above already shows the person's section, shift and break.

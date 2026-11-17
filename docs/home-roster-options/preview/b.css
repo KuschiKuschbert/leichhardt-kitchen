@@ -1,0 +1,14 @@
+/* preview B */
+.hm-dclock { position: relative; }
+.hm-dticks { display: block; position: relative; height: 1.1rem; margin: 0 0 .1rem; font-size: .6875rem; color: var(--muted); }
+@media (max-width: 599px) { .hm-dticks .tk1 { display: none; } }
+.hm-dlist { list-style: none; margin: 0; padding: 0; }
+.hm-drow { display: block; padding: .45rem 0; border-top: 1px solid var(--line); }
+.hm-dtop { display: flex; justify-content: space-between; align-items: baseline; column-gap: .5rem; }
+.hm-dtop .hm-tp-hrs { font-size: .875rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
+.hm-dbar { display: block; position: relative; height: 6px; margin: .35rem 0 .3rem; background: linear-gradient(var(--line), var(--line)) center / 100% 2px no-repeat; }
+.hm-dbar .sh { border-radius: 3px; }
+.hm-dbar .br, .hm-dbar .sp { top: -4px; bottom: -4px; border: 2px solid var(--surface-people); border-radius: 3px; }
+.hm-dnow { position: absolute; top: -5px; bottom: -5px; width: 2px; margin-left: -1px; background: var(--ink); border-radius: 1px; }
+.hm-drow small { display: block; font-size: .8125rem; color: var(--muted); }
+.hm-drow.is-away .hm-dbr { font-weight: 700; color: var(--ink); }

@@ -34,7 +34,13 @@ const cells = p => p.$$eval('#hm-with-body .hm-tp', l => l.map(e => e.textConten
   // the card leaves out the viewer and shows their shift; the whole day is in the card's fold (all .hm-tp in #hm-with)
   const c = await cells(p), all = await p.$$eval('#hm-with .hm-tp', l => l.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
   ok(c.some(x => /^Bea 10:00 to 14:00/.test(x)), 'On today: everyone on the day sees when a coworker comes in and goes (' + c.join(' | ') + ')');
-  ok(all.some(x => /^Bea 17:00 to 21:00/.test(x)), 'On today, the whole day: a split roster shows each part under its own service (' + all.join(' | ') + ')');
+  // (17 Nov 2026) the whole day in the fold, by start time (docs/home-roster-options/brief.md, D): a split is listed at
+  // each start, its morning finished at 14:00; Ann's plan, saved on 15 Nov with the whole day on both services, reads as
+  // one day with the later section from Dinner's start; broken stored times fall back to the service's own hours
+  const whole = await p.$$eval('#hm-team .hm-tp', l => l.map(e => [...e.children].map(c => c.textContent.replace(/\s+/g, ' ').trim()).join(' ')));
+  ok(whole.includes('Bea Larder · finished 14:00') && whole.includes('Bea again Larder · until 21:00'), 'On today, the whole day: a split roster is listed at each start, the part already over says so (' + whole.join(' | ') + ')');
+  ok(whole.includes('Ann Grill, then Pans from 15:00 · until 21:30') && whole.filter(x => /^Ann /.test(x)).length === 1, 'On today, the whole day: a double saved with the whole day on both services reads as one day (' + whole.join(' | ') + ')');
+  ok(['Cal', 'Dev', 'Eli', 'Fen'].every(n => whole.includes(n + ' Pans · until 15:00')), 'On today, the whole day: no saved hours or broken ones use the service\'s own (' + whole.join(' | ') + ')');
   ok(c.includes('Cal') && c.filter(x => /^(Dev|Eli|Fen)$/.test(x)).length === 3, 'On today: no hours for an older plan or for broken values (dropped, never shown as text)');
   const day = (await txt(p, '#hm-day') || '').replace(/\s+/g, ' ');
   ok(/Lunch · 10:00 to 21:30/.test(day), 'Your day: Ann\'s own roster hours in place of the service\'s (' + day.slice(0, 120) + ')');

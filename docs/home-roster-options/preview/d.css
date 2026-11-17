@@ -1,0 +1,22 @@
+/* preview D */
+.hm-starts { list-style: none; margin: 0; padding: 0; }
+.hm-st { display: flex; align-items: baseline; gap: .9rem; padding: .45rem 0; border-top: 1px solid var(--line); }
+.hm-st:first-child { border-top: 0; }
+.hm-st-t { flex: 0 0 3.4rem; font: 700 1.0625rem/1.2 var(--body); font-variant-numeric: tabular-nums; }
+.hm-st-n { display: flex; flex-wrap: wrap; gap: .25rem 1rem; min-width: 0; font-size: 1.0625rem; font-weight: 600; }
+.hm-st-n .hm-tp { display: inline; }
+.hm-st-n .hm-tp small { display: inline; font-size: .8125rem; font-weight: 400; color: var(--muted); }
+.hm-st-n .hm-tp small.hm-st-back { font-weight: 700; color: var(--ink); }
+.hm-st-now { display: flex; align-items: center; gap: .5rem; padding: .1rem 0; font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+.hm-st-now::before, .hm-st-now::after { content: ''; flex: 1; border-top: 2px solid var(--ink); }
+.hm-st-now + .hm-st { border-top: 0; }
+.hm-st-n .hm-tp, .hm-st-n .hm-tp + .hm-tp { margin: 0; font: inherit; }
+.hm-st-n { gap: .35rem 1.1rem; }
+.hm-st-n .hm-tp { display: inline-flex; flex-direction: column; line-height: 1.2; }
+.hm-st-n .hm-tp b { font-weight: 600; }
+.hm-st-n .hm-tp small.hm-st-sec { display: block; font-size: .8125rem; font-weight: 400; color: var(--muted); }
+.hm-st-n .hm-tp small.hm-st-back { display: block; }
+.hm-st { align-items: flex-start; }
+.hm-st-t { padding-top: .05rem; }
+.hm-st-n .hm-tp.is-gone b { font-weight: 400; color: var(--muted); }
+.hm-st-none .hm-st-t { font-size: .8125rem; line-height: 1.3; }
