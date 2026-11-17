@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## April Fools that people cannot see coming, 18 November 2026
+
+The head chef asked for the joke to be smarter and less predictable for people fooled the year before. Round 1: Don't build yet, 3 of 5 (the other two Build smaller; all five cut another day, a decoy and a slow start, and keep "Year 2, Ann."). Found on the way: the joke as built starts at Queensland midnight, not 04:00. Study only, waiting for the head chef: `docs/april-fools-smarter-options/` (`proposal.md`, `evidence-packet.md`, `brief.md`).
+
 ## April Fools on Home, 17 November 2026
 
 The head chef asked for a fake "hacked" Home on 1 April that says the person's name. Round 1 Build smaller 5 of 5; round 2 A 6.7, B 5.7, C 3.2 (the council recommended A ending on B's 1 APRIL). The head chef then asked for 24 jokes, a different one for each person every year, 35 seconds each. Review-only preview and pool in `docs/april-fools-options/` (`preview/fools.js`, `fools.css`, `build.mjs`, `snapshot.mjs`, `capture.mjs`, `widths.mjs`). Built the same day: `js/fools.js` and `css/fools.css` (lazy, 1 April and the admin preview only), `foolsSync()` and `LK_APP.fools()` in `js/app.js`, the Kitchen row `foolsAdminHTML()` and `LK_PREP.foolsIds()` in `js/prep.js`, `tests/april-fools.test.js` (49 checks), and `lk.fools.off` on every other test phone (`tests/lib.js`). The contract: `docs/april-fools.md`; the study: `brief.md`, `pool.md`.
