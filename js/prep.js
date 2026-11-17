@@ -10640,9 +10640,9 @@ if (list.length) sg('oreg', 's');
   // The head chef's steamed veg run on the iCombi (17 Nov 2026): one programme, all three in at the ready beep, each out at its
   // own beep. The cook times match the Seasonal Vegetables card (68). Bundled like the two above: no reads, no writes.
   var G_VEG = { id: 'lk-steamed-veg', title: 'Steamed veg on the iCombi', cat: 'equipment', who: 'all',
-    sum: 'The steamed veg programme on the iCombi (the Rational). Carrots, cauliflower and broccoli go in together and come out at their own beep, straight into ice water.',
+    sum: 'The steamed veg programme on the iCombi (the Rational): steam, 100 °C. Carrots, cauliflower and broccoli go in together and come out at their own beep, straight into ice water.',
     kw: 'steamed veg, veg programme, combi oven, cauliflower, broccoli, ice bath', pages: 0,
-    steps: 'Fill one sink with ice water before you start, with plenty of ice.\nPrep the veg as on the Seasonal Vegetables card. Each vegetable goes in its own steam tray.\nStart the steamed veg programme. The oven heats up to its set temperature and beeps once when it is ready.\nReady beep: put all three trays in together. Carrots, cauliflower and broccoli. Close the door.\nBeep at 2 min: broccoli out, straight into the ice water.\nBeep at 4 min: cauliflower out, straight into the ice water.\nLast beep, 6 min: carrots out, straight into the ice water. The ice water stops the cooking.\n[Time in the ice water, draining and storage to confirm]' };
+    steps: 'Fill one sink with ice water before you start, with plenty of ice.\nPrep the veg as on the Seasonal Vegetables card. Each vegetable goes in its own steam tray.\nStart the steamed veg programme: steam, 100 °C. The oven heats up and beeps once when it is ready.\nReady beep: put all three trays in together. Carrots, cauliflower and broccoli. Close the door.\nBeep at 2 min: broccoli out, straight into the ice water.\nBeep at 4 min: cauliflower out, straight into the ice water.\nLast beep, 6 min: carrots out, straight into the ice water. The ice water stops the cooking.\nLeave all the veg in the ice water until it is cold.\nDrain the water. Put the veg in a big white tub with a lid.' };
   var G_BUNDLED = [G_FOOD, G_SMOKE, G_VEG];
   function gById(id) { return G_BUNDLED.filter(function (g) { return g.id === id; })[0] || (S.guides || []).filter(function (g) { return g.id === id; })[0] || null; }
   function gOrder(a, b) { return (G_RANK[a.cat] == null ? 99 : G_RANK[a.cat]) - (G_RANK[b.cat] == null ? 99 : G_RANK[b.cat]) || String(a.title).localeCompare(String(b.title)); }
@@ -10901,10 +10901,10 @@ if (list.length) sg('oreg', 's');
   // The steamed veg run at a glance: what each beep means, readable from the oven. Fixed words, nothing typed or read.
   function steamVegHTML() {
     var beep = function (t, a, b) { return '<li><b class="g-veg-t">' + t + '</b><span class="g-veg-a">' + a + '</span><span>' + b + '</span></li>'; };
-    return '<section class="g-veg" aria-label="Beeps and what comes out"><p class="g-food-band">Fill a sink with <b>ice water</b> first. Times count from when the veg goes in.</p>' +
+    return '<section class="g-veg" aria-label="Beeps and what comes out"><p class="g-food-band"><b>Steam, 100&nbsp;°C.</b> Fill a sink with <b>ice water</b> first. Times count from when the veg goes in.</p>' +
       '<ol class="g-veg-beeps">' + beep('Ready beep', 'All in', 'Carrots, cauliflower and broccoli, each in its own tray') + beep('2 min', 'Broccoli out', 'Into the ice water') +
       beep('4 min', 'Cauliflower out', 'Into the ice water') + beep('6 min', 'Carrots out', 'Last beep. Into the ice water') + '</ol>' +
-      '<p><b>Cook times:</b> broccoli 2&nbsp;min, cauliflower 4&nbsp;min, carrots 6&nbsp;min.</p>' +
+      '<p><b>Cook times:</b> broccoli 2&nbsp;min, cauliflower 4&nbsp;min, carrots 6&nbsp;min.</p><p><b>Once it is all cold:</b> drain the water and put the veg in a big white tub with a lid.</p>' +
       '<p class="g-noprint"><a class="btn" href="guides/steamed-veg.pdf" download>Download printable sheet (PDF)</a></p></section>';
   }
   function guideDocHTML() {
