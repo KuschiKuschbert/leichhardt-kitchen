@@ -1,0 +1,8 @@
+today 390 everyone a break: {"mo":413,"bea":251,"gus":352,"list":2842,"breakList":0,"fillLine":""}
+today 1280 everyone a break: {"mo":213,"bea":159,"gus":161,"list":1601,"breakList":0,"fillLine":""}
+A 390 everyone a break: {"mo":436,"bea":275,"gus":376,"list":3055,"breakList":0,"fillLine":""}
+A 1280 everyone a break: {"mo":237,"bea":133,"gus":185,"list":1563,"breakList":0,"fillLine":""}
+B 390 everyone a break: {"mo":369,"bea":207,"gus":308,"list":2446,"breakList":1413,"fillLine":""}
+B 1280 everyone a break: {"mo":213,"bea":109,"gus":161,"list":1349,"breakList":624,"fillLine":""}
+C 390 everyone a break: {"mo":463,"bea":301,"gus":402,"list":3292,"breakList":0,"fillLine":"9 breaks were filled for you. Check them, then Save.\nEmpty them","said":"Filled for you: 9 breaks, each in the middle of the person's day, moved when someone on the same service is already away then; a split for Mo (a long day). Check, then Save."}
+C 1280 everyone a break: {"mo":237,"bea":133,"gus":210,"list":1588,"breakList":0,"fillLine":"9 breaks were filled for you. Check them, then Save.\nEmpty them","said":"Filled for you: 9 breaks, each in the middle of the person's day, moved when someone on the same service is already away then; a split for Mo (a long day). Check, then Save."}

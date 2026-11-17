@@ -46,7 +46,10 @@ async function save(p, version, day = today) {
   return read(p, day);
 }
 const has = (rec, id, sh, sec) => !!rec && rec.on.some(o => o.id === id && o.sh === sh && (sec === undefined || o.sec === sec));
-const mealStarts = rec => ['sam', 'ann', 'bo', 'cam'].map(id => rec.br.find(b => b.id === id && b.sh === 'lunch' && b.len < 150)?.at);
+// Sam's older day holds three breaks (a Lunch split, a Lunch and a Dinner meal break). One break per person (17 Nov
+// 2026): Spread on Lunch takes Lunch's meal breaks away, then leaves Sam as he was (two breaks already, and his split
+// at 12:00) and names him, so the spacing checks are about Ann, Bo and Cam, who start from the chosen time
+const mealStarts = rec => ['ann', 'bo', 'cam'].map(id => rec.br.find(b => b.id === id && b.sh === 'lunch' && b.len < 150)?.at);
 const spreadPlan = () => ({ day: today,
   on: people.slice(0, 4).map(p => ({ id: p.id, sh: 'lunch', sec: 'grill' })).concat([{ id: 'sam', sh: 'dinner', sec: 'pans' }]),
   br: people.slice(0, 4).map((p, i) => ({ id: p.id, sh: 'lunch', at: 840 + i * 15, len: 30 })).concat([
@@ -127,22 +130,24 @@ const spreadPlan = () => ({ day: today,
   await pick(p, 'tm-spfrom', '720'); await pick(p, 'tm-splen', '30'); await pick(p, 'tm-spmode', '1'); await pick(p, 'tm-spgap', '15');
   const beforeSpreadReads = await readCount(p);
   await click(p, '[data-p="tm-spread"]');
+  const spreadWords = await p.locator('.tm-page').innerText();
   ok(JSON.stringify(await read(p)) === JSON.stringify(original) && await readCount(p) === beforeSpreadReads, 'Spread fills only the draft and adds no read before the explicit Save');
   let rec = await save(p, 2);
-  ok(JSON.stringify(mealStarts(rec)) === JSON.stringify([720, 735, 750, 765]) && rec.br.filter(b => b.sh === 'lunch' && b.len < 150).every(b => b.len === 30), 'overlap: 30-minute breaks can start every 15 minutes in chef-first order');
+  ok(JSON.stringify(mealStarts(rec)) === JSON.stringify([720, 735, 750]) && rec.br.filter(b => b.sh === 'lunch' && b.len < 150).every(b => b.len === 30), 'overlap: 30-minute breaks can start every 15 minutes in staff order');
+  ok(!rec.br.some(b => b.id === 'sam' && b.sh === 'lunch' && b.len < 150) && /Left as they were \(a break already, or a break then\): Sam\./.test(spreadWords), 'one break per person: Spread leaves Sam, with two breaks and his split then, as he was and names him; the next person starts at the chosen time');
   ok(rec.br.some(b => b.id === 'sam' && b.sh === 'lunch' && b.at === 630 && b.len === 150) && rec.br.some(b => b.id === 'sam' && b.sh === 'dinner' && b.at === 1110 && b.len === 30), 'Spread retains existing splits and other services while replacing the selected service\'s meal breaks');
   await pick(p, 'tm-spmode', '2'); await click(p, '[data-p="tm-spread"]'); rec = await save(p, 3);
-  ok(JSON.stringify(mealStarts(rec)) === JSON.stringify([720, 720, 735, 735]), 'two together: pairs share a start and the next pair starts after the selected spacing');
+  ok(JSON.stringify(mealStarts(rec)) === JSON.stringify([720, 720, 735]), 'two together: pairs share a start and the next pair starts after the selected spacing');
   await pick(p, 'tm-spmode', '0');
   ok(!await p.locator('select' + field('tm-spgap')).count() || !await p.locator('select' + field('tm-spgap')).evaluate(e => !!e.nextElementSibling && e.nextElementSibling.getClientRects().length > 0), 'all together: unused start spacing is hidden');
   await click(p, '[data-p="tm-spread"]'); rec = await save(p, 4);
-  ok(JSON.stringify(mealStarts(rec)) === JSON.stringify([720, 720, 720, 720]), 'all together: every selected-service meal break starts at the chosen time');
+  ok(JSON.stringify(mealStarts(rec)) === JSON.stringify([720, 720, 720]), 'all together: every selected-service meal break starts at the chosen time');
   await pick(p, 'tm-spmode', '1'); await pick(p, 'tm-spgap', '');
   await click(p, '[data-p="tm-spread"]'); rec = await save(p, 5);
-  ok(JSON.stringify(mealStarts(rec)) === JSON.stringify([720, 750, 780, 810]), 'default spacing: After previous break keeps the earlier one-after-another behaviour');
+  ok(JSON.stringify(mealStarts(rec)) === JSON.stringify([720, 750, 780]), 'default spacing: After previous break keeps the earlier one-after-another behaviour');
   await pick(p, 'tm-splen', '45'); await pick(p, 'tm-spgap', '15');
   await click(p, '[data-p="tm-spread"]'); rec = await save(p, 6);
-  ok(JSON.stringify(mealStarts(rec)) === JSON.stringify([720, 735, 750, 765]) && rec.br.filter(b => b.sh === 'lunch' && b.len < 150).every(b => b.len === 45), 'independent controls: changing duration to 45 minutes does not change a deliberate 15-minute start spacing');
+  ok(JSON.stringify(mealStarts(rec)) === JSON.stringify([720, 735, 750]) && rec.br.filter(b => b.sh === 'lunch' && b.len < 150).every(b => b.len === 45), 'independent controls: changing duration to 45 minutes does not change a deliberate 15-minute start spacing');
   ok(rec.on.length === original.on.length && JSON.stringify(rec.on) === JSON.stringify(original.on.slice().sort((a, b) => a.id.localeCompare(b.id) || a.sh.localeCompare(b.sh))), 'Spread never changes who is on a service or their sections');
   ok(!p.errors.length, 'overlapping breaks: no browser errors ' + p.errors.join(' | '));
   await p.context().close();

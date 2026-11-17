@@ -1,0 +1,19 @@
+390 + Break buttons on the page: 15
+390 Mo + Break buttons: ["Add a break for Mo on Lunch","Add a break for Mo on All day","Add a break for Mo on Dinner"]
+390 Gus + Break buttons: 2
+390 Mo row px: 369
+390 Mo after one + Break on Lunch: {"taps":1,"words":"Roster 10:00 to 21:00 · Break 12:15 to 12:45"}
+390 Mo break times offered on All day: {"first":"Break 15:00","last":"Break 16:30","count":7}
+390 Mo: one break at 15:00 on All day, taps: 2
+390 Mo: break 13:00 and second break 18:30, taps: {"taps":4,"words":"Roster 10:00 to 21:00 · Break 13:00 to 13:30, Break 18:30 to 19:00"}
+390 sideways scroll, errors: {"over":false,"errors":[]}
+1280 + Break buttons on the page: 15
+1280 Mo + Break buttons: ["Add a break for Mo on Lunch","Add a break for Mo on All day","Add a break for Mo on Dinner"]
+1280 Gus + Break buttons: 2
+1280 Mo row px: 213
+1280 Mo after one + Break on Lunch: {"taps":1,"words":"Roster 10:00 to 21:00 · Break 12:15 to 12:45"}
+1280 Mo break times offered on All day: {"first":"Break 15:00","last":"Break 16:30","count":7}
+1280 Mo: one break at 15:00 on All day, taps: 2
+1280 Mo: break 13:00 and second break 18:30, taps: {"taps":4,"words":"Roster 10:00 to 21:00 · Break 13:00 to 13:30, Break 18:30 to 19:00"}
+1280 sideways scroll, errors: {"over":false,"errors":[]}
+1280 whole day: 7 cooks, a section on every line and one break each, then Save: {"taps":26,"saved":true}
