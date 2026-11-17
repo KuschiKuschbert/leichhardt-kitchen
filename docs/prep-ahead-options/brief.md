@@ -2,7 +2,7 @@
 
 ## Status
 
-Study only, 17 Nov 2026. Round 1 and round 2 of the service council are done; the head chef has not chosen yet. Nothing in the app has changed. Evidence: [packet](packet.md), `baseline/`, `design-*/`, `preview-measurements.json`. This is role-based analysis with fresh agents, not research with staff.
+Study only, 17 Nov 2026. Round 1 and round 2 of the service council are done, with the mix recommended; the head chef has not chosen yet. After round 1 the head chef added "But only for admins" (see Admin only). Nothing in the app has changed. Evidence: [packet](packet.md), `baseline/`, `design-*/`, `preview-measurements.json`. This is role-based analysis with fresh agents, not research with staff.
 
 The request (head chef, 17 Nov 2026): "I'd like to add the possibility to put items on the preplists for days in the future."
 
@@ -50,7 +50,7 @@ Also checked in source: the night list clock (`listStart()`) and `writtenLate()`
 
 1. Rollover repair (finding 1) ships first, on its own, with its failing test. No adding on later days until it is out.
 2. A new field marks a line written for a later day (name to settle in the build; never `ahead`). On its day the line reads "Planned by Sam, Sun", is not Waiting longest, and counts as written at the start of its day.
-3. Head chef and sous chefs only (`canBrowse()`), no rules change. Emulator rows: a chef 7 days ahead is allowed, a staff member 2 days ahead is refused. `tests/roles.test.js` on a later day for each role.
+3. Who plans: round 1 said the head chef and sous chefs (`canBrowse()`, no rules change). The head chef then asked for admins only, which needs a stricter rule (see Admin only). Either way: emulator rows for who is allowed and refused, and `tests/roles.test.js` on a later day for each role.
 4. From the day after tomorrow, up to 4 weeks ahead (head chef's call, below). Tomorrow stays on tonight's list.
 5. Prep reopens on Today when a chef leaves it, at the 04:00 unlock and after a lock.
 6. On a later day: no tick box (nothing is ticked before its day), Urgent, Remove and the ⋯ menu for chefs; "Saturday", not "saturday"; Handy says "Saturday is still to come", not "Nothing was ticked".
@@ -122,17 +122,112 @@ Screens: `design-c/today.png`, `design-c/later-day.png` (also `-768`, `-1280`), 
 
 Contrast, focus, reduced motion and the real slip timing are **Not evidenced** in previews.
 
-## Round 2 scores
+## Round 2 scores (out of 5, 5 best; fresh agents, role-based, not research with staff)
 
-To come: six fresh agents (the five reviewers and the kitchen screen designer).
+| Reviewer | A. Open the day | B. Chef panel | C. Day strip | Recommends |
+| --- | --- | --- | --- | --- |
+| Cook mid-service | 4 | 2 | 3 | A, with C's plain later day and B's tomorrow sentence |
+| Head chef | 4 | 2 | 3 | A, with B's tomorrow sentence and C's "Planned ahead for Saturday" line |
+| Skeptic | 4 | 2 | 3 | A trimmed: C's one-column later day, B's tomorrow sentence, a neutral count |
+| New starter | 4 | 2 | 3 | A with C's named day chips |
+| Keeper | 4.5 | 2 | 3 | A, with B's tomorrow sentence and C's note at the top |
+| Screen designer | 4 | 2 | 3 | A, with C's note under the header; no dashed box; a graphite count |
 
-## The mix
+All six ranked **A first, C second, B last**. All six said the designs differ in structure (the screen designer: B really differs, C is a variant of A in two parts).
 
-To come.
+Disagreement, one line each:
+- New starter: take C's named day chips with A (one tap to a named day). The other five rejected the strip: it changes the day row chefs use for past days, offers tomorrow (which takes no adds), sits above the section tabs and adds a second form.
+- Screen designer: the dashed square already means Not saved (or No section) in the book; a wet thumb will tap it. Replace it.
+- Keeper: B's reads cannot use `dayCache()` (other chefs write those days), and B needs a second add path; Prep history already says "Changes are made on the prep list".
+
+### Reference fit
+
+| Principle | A | B | C |
+| --- | --- | --- | --- |
+| Linear (one way to do one job) | Works: today's sheet for every day | Needs work: a second place and form | Needs work: a second form, a second day picker |
+| Things 3 (today and later apart) | Works: a later day is its own page | Works: an Upcoming page | Needs work: later days sit above today's list |
+| Todoist (quick add, visible defaults) | Works: suggestions, chips and proofreading kept | Needs work: no chips or usual lines | Needs work: no chips or usual lines |
+| Flighty (no reads for the look, no stale status) | Works: no new reads | Needs work: about 7 reads per open, stale counts | Works |
+| Duolingo (each tap answers truthfully) | Works in preview: the slip names the day; the slip after closing does not yet (finding 10) | Not evidenced | Works in preview |
+| Headspace (plain words) | Needs work: "Planned by Sam, today" on Saturday's page | Works: the tomorrow sentence | Works: the note at the top |
+
+### Contract fit
+
+- **Works:** A keeps one add path (`addTyped()`, `newItem()`, `openTwin()`, `addedToast()`, `prepUndo()` follow the day on screen), no new reads, no rules change for chefs, staff pages unchanged.
+- **Needs work:** the dashed box (dashed means Not saved or No section); the orange handwritten count (planned is neutral, and it competes with the orange Add at 768 and 1280 px); B's `‹ ›` 34 px and its 35 px link; C's cut placeholder ("Amount tc").
+- **Not evidenced:** rendered contrast, keyboard focus, reduced motion, the keyboard over the sheet, the real slip timing, Not sent.
+- **Proposed change to an approved rule** (head chef's call): "lines are added on Today only" (`docs/prep-book.md`) becomes "the admin also adds on a day from the day after tomorrow".
+
+### Break-it findings (round 2, source review)
+
+| # | Scenario | Evidence | Repair or check |
+| --- | --- | --- | --- |
+| 9 | Add sheet open for Saturday, then an idle lock, the 04:00 unlock or midnight resets Prep to Today; the chef unlocks and taps Add. `addTyped()` calls `newItem()` with no date, so the line goes to whatever `S.date` is then, and `openTwin()` checks today's lines. | Write path checked in source; the lock path Risk (skeptic, keeper) | The sheet keeps the day it opened on and passes it to the write and the twin check. A day change closes a later-day sheet and says so ("Friday is tomorrow now"). Click test: open, lock, unlock, Add; and the clock across midnight. |
+| 10 | After the sheet closes, the slip says "Added Brine pork to Larder" with no day (`justClosed()`, `addedToast()`); "Corrected..." has the same gap. Undo is safe (`prepUndo()` keeps the day). | Checked in source (skeptic) | Name the day when it is not today. Click test reads the slip after closing. |
+| 11 | A line on a later day can be ticked by tapping its words: `tickOk` in `rowHTML()` has no date check. This already applies to a function's platter lines on later days today. | Checked in source (keeper) | Add "not after today" to the tick check. Click test taps the box and the words on a later day. |
+| 12 | Each `›` step opens a listener on the day it passes (1 read for an empty day). | Checked in source (skeptic) | Accepted: a few reads per planning trip; no new listener on today. |
+| 13 | B only: a panel add reusing `addTyped()` would fold a Saturday line into today's open twin. | Checked in source (keeper) | B rejected. |
+
+## The mix: A with small takes from B and C (recommended)
+
+Preview: `design-mix/` (Preview, admin fixture, 390 px; `later-day` and `sheet` also at 768 and 1280).
+
+| Source | Part | Take or reject | Why, principle |
+| --- | --- | --- | --- |
+| A | The day row to reach a day; today's Add sheet, titled "Add to Saturday 21 Nov"; "For Saturday 21 November. Not on today's list."; the slip "Added for Saturday 21 Nov"; the dock "Add to Saturday" | Take | One way to add (Linear); the answer names where the line went (Duolingo); usual lines, chips and proofreading kept (Todoist) |
+| A | Handy on a later day ("Saturday is still to come") | Reject | Dead space; nothing is ticked before the day |
+| A | Dashed square in place of the tick box | Reject | Dashed means Not saved or No section; replaced by a quiet calendar (muted ink, words carry the meaning) |
+| A | Orange handwritten "2 lines planned" | Change to graphite ink | Planned is neutral information, not attention (colour contract) |
+| B | "Tomorrow is written tonight on today's list" | Take, on tomorrow's page | One plain reason (Headspace) |
+| B | The panel page, week counts, inline form | Reject | Second add path, reads, three levels deep (Linear, Flighty) |
+| C | "Planned ahead for Saturday 21 November. Staff see these lines on Saturday, not before." at the top | Take | The day is read before adding, even on a long list (Things 3, Airbnb) |
+| C | One column for a later day | Take | No empty Handy page |
+| C | The day strip, the inline form | Reject (new starter disagreed on the strip) | Changes the day row, offers tomorrow, a second form |
+| New starter | "Planned Wed by Sam" (not "Planned by Sam, today"; "Sun" could read "for Sunday") | Take | Plain words (Headspace) |
+
+Why not all three: B's counts bring reads and a second add path; C's strip and A's day row cannot both stand without two ways to move between days. The light mix costs words and CSS on top of A.
+
+### Admin only (head chef, 17 Nov 2026)
+
+After round 1 the head chef added: **"But only for admins."** Read here as the book's own word: admin is the head chef on a device with the owner's Google sign-in, a live head chef PIN session and the matching device grant (`ownerHere()` on the page, `isAdmin()` in the rules). So:
+
+- Only the admin sees **Add to Saturday**, Urgent, Remove and ⋯ on a later day. A sous chef who opens a later day sees its lines read only: "Planned ahead by the head chef for Saturday 21 November. Staff see these lines on Saturday, not before." (`design-mix/sous-later-day.png`). Staff still see only today.
+- The head chef's PIN on a device without the Google sign-in (the shared tablet) is not admin: it cannot plan ahead.
+- The rules get **stricter**: a line marked planned, on a day after tomorrow, can be written only by the admin. A function's platter lines, which function managers and chefs already write on the function's day, keep working. Published **after** the client (old code never writes planned lines), then the Lock probe. Emulator rows: admin 5 days ahead allowed; sous chef, function manager (non-function line) and staff refused; a function line on a later day still allowed.
+- If "admins" meant the head chef and the sous chefs, the design is the same and the rule is the one that already exists (`lineWho()`), with no rules change.
+
+### Measured (Preview, mix, admin fixture)
+
+| | Before | Mix |
+| --- | --- | --- |
+| Taps to put Brine pork on Saturday, 3 days ahead (typing not counted) | Not possible | 5: `›` x3, Add to Saturday, Add (or the date field: about 3 for the picker instead of the arrows) |
+| A second line for the same day | | 1 more (Add; the sheet stays open) |
+| Back to today | | 1 (Today), or by leaving Prep |
+| Today's rows in view, chef and staff, 390 px | 5 and 6 | 5 and 6 (today does not change) |
+| Later day rows in view, 390 px | 0 | 2 of 2, the note above them |
+| New reads | | None beyond opening a day (1 read for an empty day, 1 per line) |
+| Rules | | Stricter for planned lines (admin only) |
+| Sideways scroll at 390, 768, 1280 | 0 | 0 |
+| Under 44 px | | none new |
+
+The date field shows 11/21/2026 in the preview browser; on an Australian phone it follows the phone's own date order. Not evidenced.
+
+### Focused review of the mix
+
+To come: the keeper, the screen designer and the skeptic on the combined preview and the admin-only rule.
 
 ## Recommendation
 
-To come.
+**Recommend the mix: A's way in, with C's note and one column for a later day, B's tomorrow sentence, a neutral count, a calendar in place of the tick box and "Planned Wed by", for the admin only.** It keeps one way to add a prep line and changes nothing on today's page for anyone, which is why every reviewer put A first. The words carry the day at every step: the page title, the note at the top, the dock, the sheet title, the slip, and on the day the line itself.
+
+Main downside: no overview of what is planned. The admin opens each day to see it (the date field reaches any day in about 3 taps). A week overview would cost reads on every open and go stale; it can come later if the head chef misses it.
+
+Before any of this: the rollover repair ships on its own (findings 1 and 3), and the build fixes findings 2, 9, 10 and 11 with their click tests.
+
+Questions for the head chef:
+1. Choose: the mix (recommended), A, B or C.
+2. Who plans ahead: the admin only, as asked (read as Google plus head chef PIN on that device), or the head chef and the sous chefs.
+3. How far ahead: from the day after tomorrow up to 4 weeks (recommended), or other.
 
 ## Verification plan (before ready)
 
@@ -144,3 +239,5 @@ To come.
 - Prep reopens on Today after leaving it, at 04:00 and after a lock.
 - 390, 768 and 1280 px on the implemented app; `tests/read-budget.test.js` unchanged.
 - Nightly backup's forward days: a node test of the day list.
+- The sheet keeps its day across a lock, the 04:00 unlock and midnight (finding 9); the slip after closing names the day (10); a later day's line cannot be ticked (11).
+- Admin only: rules emulator rows (admin allowed; sous chef, function manager's own line and staff refused; a function's platter line on a later day still allowed); `tests/roles.test.js` shows a sous chef a later day read only; the Lock probe after publishing the stricter rules.

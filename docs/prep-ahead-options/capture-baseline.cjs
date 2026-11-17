@@ -42,10 +42,13 @@ async function measure(p) {
     ['staff-add-sheet', 'ann', 390, 844, [p => p.click('.nb-addline')]],
     ['chef-today', 'sam', 390, 844, []],
     ['chef-ahead-3', 'sam', 390, 844, [p => p.click('[data-p="day"][data-d="1"]'), p => p.click('[data-p="day"][data-d="1"]'), p => p.click('[data-p="day"][data-d="1"]')]],
-    ['chef-today-1280', 'sam', 1280, 800, []]
+    ['chef-today-1280', 'sam', 1280, 800, []],
+    // the verified admin (Google, head chef PIN and grant): the head chef asked for planning ahead to be admin only
+    ['admin-ahead-3', 'admin', 390, 844, [p => p.click('[data-p="day"][data-d="1"]'), p => p.click('[data-p="day"][data-d="1"]'), p => p.click('[data-p="day"][data-d="1"]')]],
+    ['admin-ahead-1', 'admin', 390, 844, [p => p.click('[data-p="day"][data-d="1"]')]]
   ];
   for (const [name, who, w, h, steps, extra] of runs) {
-    const p = await L.open(b, '#/prep', { who, width: w, height: h, wait: 2500, extra });
+    const p = await L.open(b, '#/prep', Object.assign({ width: w, height: h, wait: 2500, extra }, who === 'admin' ? { admin: true } : { who }));
     await L.settle(p, 1500);
     for (const s of steps) { await s(p); await L.settle(p, 700); }
     notes.push({ name, who, width: w, ...(await measure(p)) });

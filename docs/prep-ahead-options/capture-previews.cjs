@@ -34,6 +34,22 @@ function helpers() {
     document.documentElement.classList.add(...d.documentElement.classList);
     document.body.className = d.body.className;
   };
+  // the mix: a planned line shows a calendar in place of the tick box (nothing to tick before its day; a dashed edge
+  // already means not saved or no section in the book), and only the admin gets Urgent, Remove and the line menu
+  const CAL = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M4 10h16M9 3v4M15 3v4"></path></svg>';
+  window.mrow = (id, text, qty, by, edit) => '<li id="nbr-' + id + '" class="nb-row pa-row"><span class="pa-cal">' + CAL + '</span><span class="nb-main"><span class="nb-t nb-tt">' + text +
+    (qty ? ' <span class="nb-q">' + qty + '</span>' : '') + '<span class="visually-hidden">. Planned for Saturday</span></span><span class="nb-meta"><span class="nb-wrote">' + by + '</span></span></span>' + (edit ? '<span class="nb-acts">' +
+    '<button type="button" class="nb-star" aria-pressed="false" aria-label="Mark urgent: ' + text + '">' + ICON_U + '<span class="nb-aw">Urgent</span></button>' +
+    '<button type="button" class="nb-x" aria-label="Remove ' + text + '">Remove</button><button type="button" class="nb-more nb-more-fix" aria-label="More for ' + text + '">⋯</button></span>' : '') + '</li>';
+  window.msat = (extra, edit) => hd('Grill', '1 line') + '<ul class="nb-rows">' + mrow('p1', 'Thaw brisket', '2', 'Planned Wed by Head chef', edit) + '</ul>' +
+    hd('Larder', (extra ? '2 lines' : '1 line')) + '<ul class="nb-rows">' + mrow('p2', 'Pizza dough', '3 batch', 'Planned Mon by Head chef', edit) +
+    (extra ? mrow('p3', 'Brine pork', '2 kg', 'Planned Wed by Head chef', edit) : '') + '</ul>';
+  window.MIX_CSS = `.pa-cal{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;margin:9px;color:var(--muted)}
+.pa-cal svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.pa-row .nb-main{cursor:default}
+.nb-prog.pa-n{color:var(--ink)}
+.nb-right,.nb-spine{display:none}.nb .nb-left{flex:1 1 100%;max-width:none}
+.pa-for{margin:0 0 10px;font-family:var(--body);font-size:.95rem;line-height:1.4;color:var(--ink)}.pa-for b{font-weight:700}`;
   window.PA_CSS = `.pa-box{flex:0 0 auto;width:26px;height:26px;margin:9px;border:2px dashed var(--faint);border-radius:4px}
 .pa-row .nb-main{cursor:default}
 .pa-note{margin:12px 0 0;font-family:var(--body);font-size:.95rem;line-height:1.45;color:var(--ink)}
@@ -128,6 +144,44 @@ const D = {
       $('.nb-left .nb-body').innerHTML = '<p class="pa-for">Planned ahead for <b>Saturday 21 November</b>. Staff see these lines on the day.</p>' + ADD + slipHTML('Added for Saturday 21 Nov', '<b>Brine pork</b> to Larder') + saturday(true);
       $('.nb-left .nb-foot').remove();
     }]
+  },
+  // The mix (round 2: all six reviewers ranked A first and named the same small takes): A's way in (the day row, the Add
+  // sheet named for the day, its slip), C's note at the top and its one column for a later day (no empty Handy page),
+  // B's sentence for tomorrow, a neutral count, a calendar in place of the tick box, "Planned Wed by". Admin only (head
+  // chef, 17 Nov 2026: "But only for admins"): a sous chef sees a later day's lines and cannot change them.
+  mix: {
+    'later-day': ['admin-ahead-3', () => {
+      css(MIX_CSS);
+      $('.nb-left .nb-prog').outerHTML = '<div class="nb-pw"><div class="nb-prog pa-n">2 lines planned</div></div><div class="wk-dock"><button type="button" class="btn dark nb-addline"><svg class="wk-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Add to Saturday</button></div>';
+      $('.nb-left .nb-body').innerHTML = '<p class="pa-for">Planned ahead for <b>Saturday 21 November</b>. Staff see these lines on Saturday, not before.</p>' + msat(false, true);
+      $('.nb-left .nb-foot').remove();
+    }],
+    'sheet': ['admin-ahead-3', async () => {
+      css(MIX_CSS);
+      $('.nb-left .nb-prog').outerHTML = '<div class="nb-pw"><div class="nb-prog pa-n">3 lines planned</div></div>';
+      $('.nb-left .nb-body').innerHTML = '<p class="pa-for">Planned ahead for <b>Saturday 21 November</b>. Staff see these lines on Saturday, not before.</p>' + msat(true, true); $('.nb-left .nb-foot').remove();
+      await sheetFrom();
+      $('#p-log-h').textContent = 'Add to Saturday 21 Nov';
+      $('.p-sheet .nb-add').insertAdjacentHTML('beforebegin', '<p class="pa-for">For <b>Saturday 21 November</b>. Not on today’s list.</p>');
+      $('.p-sheet .just-r').outerHTML = slipHTML('Added for Saturday 21 Nov', '<b>Brine pork</b> to Larder');
+      $('#p-text').setAttribute('placeholder', 'Write a line for Saturday...');
+    }],
+    'tomorrow': ['admin-ahead-1', () => {
+      css(MIX_CSS);
+      $('.nb-left .nb-empty').textContent = 'Nothing planned for tomorrow.';
+      $('.nb-left .nb-foot').innerHTML = '<p class="hint">Tomorrow’s list is written tonight, on today’s list. Planning ahead starts with Friday.</p>';
+    }],
+    'sous-later-day': ['chef-ahead-3', () => {
+      css(MIX_CSS);
+      $('.nb-left .nb-prog').outerHTML = '<div class="nb-pw"><div class="nb-prog pa-n">2 lines planned</div></div>';
+      $('.nb-left .nb-body').innerHTML = '<p class="pa-for">Planned ahead by the head chef for <b>Saturday 21 November</b>. Staff see these lines on Saturday, not before.</p>' + msat(false, false);
+      $('.nb-left .nb-foot').remove();
+    }],
+    'day-arrives': ['staff-day-arrives', () => {
+      const a = $('#nbr-a1'), tt = $('.nb-tt', a); tt.removeAttribute('data-n'); $$('.visually-hidden, .nb-marks', tt).forEach(x => x.remove());
+      $('.nb-wrote', a).textContent = 'Planned Sun by Head chef';
+      const o = $('#nbr-i1 .nb-tt'); o.setAttribute('data-n', '3'); $('.nb-mk', o).insertAdjacentHTML('beforebegin', '<span class="visually-hidden">. Start here, 3</span> <span class="nb-marks"><span class="nb-why">Waiting longest</span></span>');
+    }]
   }
 };
 const C_CSS = `.pa-strip{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}.pa-strip::-webkit-scrollbar{display:none}
@@ -156,7 +210,7 @@ async function measure(p) {
   // B's slip screen: the plan page with the new line and the slip under the form
   const bPage = D.b['plan-page'][1];
   D.b['plan-slip'][1] = new Function('(' + bPage.toString() + ')(); $(".pa-plan .nb-add").insertAdjacentHTML("afterend", slipHTML("Added for Saturday 21 Nov", "<b>Brine pork</b> to Larder")); $$(".pa-plan .nb-hd")[1].insertAdjacentHTML("beforebegin", ""); $$(".pa-plan .nb-rows")[1].insertAdjacentHTML("beforeend", prow("p3", "Brine pork", "2 kg", "Planned by Sam, just now")); $$(".pa-day small")[1].textContent = "3 lines";');
-  const wide = { 'a/later-day': 1, 'b/plan-page': 1, 'c/later-day': 1, 'shared/day-arrives': 1, 'before/chef-ahead-3': 1 };
+  const wide = { 'mix/later-day': 1, 'mix/sheet': 1, 'a/later-day': 1, 'b/plan-page': 1, 'c/later-day': 1, 'shared/day-arrives': 1, 'before/chef-ahead-3': 1 };
   for (const d of Object.keys(D)) {
     const out = path.join(dir, 'design-' + d);
     fs.mkdirSync(out, { recursive: true });
@@ -174,7 +228,7 @@ async function measure(p) {
         const suffix = w === 390 ? '' : '-' + w;
         notes.push({ design: d, screen, width: w, ...(await measure(p)) });
         await p.screenshot({ path: path.join(out, screen + suffix + '.png') });
-        if (w === 390 && /plan-page|plan-slip|later-day|later-slip/.test(screen)) {
+        if (w === 390 && /plan-page|plan-slip|later-day|later-slip/.test(screen) && d !== 'mix') {
           await p.screenshot({ path: path.join(out, screen + '-full.png'), fullPage: true });
           const h4 = await p.$('.pa-day-h');
           if (h4) { await p.evaluate(() => { const e = document.querySelector('.pa-day-h'); scrollTo(0, e.getBoundingClientRect().top + scrollY - 140); }); await L.settle(p, 100);
