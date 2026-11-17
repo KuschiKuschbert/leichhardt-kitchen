@@ -23,11 +23,22 @@
 .fl-nopin::before { display: none !important; }
 .fl-layer.fl-dim .fl-stage { opacity: 0.7; }
 
+/* Darker: the closing vignette, red eyes, static, a red terminal */
+.fl-vig { position: absolute; inset: 0; z-index: 5; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at 50% 45%, rgba(0, 0, 0, 0) 32%, rgba(0, 0, 0, 0.55) 62%, #000 100%); }
+.fl-eyes { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
+.fl-eyes i { position: absolute; top: 44%; width: 14%; height: 9%; border-radius: 50%; background: radial-gradient(circle, #FFE3E3 0 18%, #FF2A2A 36%, rgba(255, 30, 30, 0.6) 58%, rgba(255, 0, 0, 0) 72%); box-shadow: 0 0 6px 2px rgba(255, 40, 40, 0.7); }
+.fl-eyes i:first-child { left: 30%; }
+.fl-eyes i:last-child { left: 55%; }
+.fl-snow { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 7; pointer-events: none; opacity: 0; image-rendering: pixelated; }
+.fl-term.fl-term-red { color: #FF6B6B; text-shadow: 0 0 8px rgba(255, 60, 60, 0.5); }
+
 /* The engine: hold ring, the hint, the warning */
 .fl-hold { position: absolute; z-index: 20; width: 96px; height: 96px; border-radius: 50%; border: 4px solid rgba(255, 255, 255, 0.9); box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.45); pointer-events: none; }
 .fl-hint { position: absolute; left: 50%; transform: translateX(-50%); z-index: 19; white-space: nowrap; pointer-events: none; opacity: 0;
   font: 600 15px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; color: #fff; background: #000; padding: 11px 14px; border-radius: 6px; letter-spacing: 0.04em; }
 .fl-hint { bottom: calc(var(--tabbar-h, 68px) + 24px); }
+.fl-warn { position: absolute; left: 50%; top: 104px; transform: translateX(-50%); z-index: 19; white-space: nowrap; pointer-events: none; opacity: 0;
+  font: 600 15px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; color: #fff; background: #000; padding: 11px 14px; border-radius: 6px; letter-spacing: 0.04em; }
 
 /* Shared closing beats */
 .fl-dark { position: absolute; inset: 0; background: #050505; opacity: 0; z-index: 6; pointer-events: none; }

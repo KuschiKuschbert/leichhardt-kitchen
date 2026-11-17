@@ -78,6 +78,6 @@ Departures from the council's advice that the head chef chose (recorded, not reo
 
 Kept from the council: mornings only (04:00 to 11:59), personal devices only, a copy over Home with the real page inert, the self-hide, the reveal recovered after a reload, nothing when offline or with work waiting, no coworker blamed, no real failure red, no claim of a real breach, the clue before the reveal and "You did nothing wrong."
 
-Later the same day the head chef found one minute too long and, after trying 15 to 60 seconds on the live page, chose **35 seconds** for every joke (`pool.md`, Length). The head chef also said it could have gone darker, and asked for each joke to use the person's own day: their section, shift, break, coworkers and prep count, from what their Home already shows, with no reads (`pool.md`, Their own day).
+Later the same day the head chef found one minute too long and, after trying 15 to 60 seconds on the live page, chose **35 seconds** for every joke (`pool.md`, Length). The head chef asked for it to go darker (`pool.md`, Darker: a closing vignette, red eyes, static, the softened lines restored, more personal lines) and for each joke to use the person's own day: their section, shift, break, coworkers and prep count, from what their Home already shows, with no reads (`pool.md`, Their own day).
 
 **Status: the pool is drawn and playable at 35 seconds, waiting for the head chef to play the 24 and say which to cut or change. Nothing in the book has changed.**

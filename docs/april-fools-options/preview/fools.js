@@ -158,6 +158,29 @@
     (lot || ['typo', 'tilt', 'typo', 'clock']).forEach(function (n, i) { later(2500 + i * 2600, steps[n]); });
   }
 
+  /* ---------- darker: a closing vignette, red eyes, static and glitch bursts ---------- */
+  // The edges of the screen close in while it breaks (opacity only). Red here is art, never the book's error red.
+  function vignette(s, from, ms) { var v = mk('div', 'fl-vig', s.L); go(v, [{ opacity: 0 }, { opacity: 0.88 }], { duration: ms || 24000, delay: from || 0, easing: 'ease-in' }); s.vig = v; return v; }
+  // The mascot's eyes glow red: two dots over his eyes on the copy, fading in.
+  function eyes(m) {
+    if (!m || m.querySelector('.fl-eyes')) return;
+    var e = mk('span', 'fl-eyes', m); mk('i', '', e); mk('i', '', e);
+    go(e, [{ opacity: 0 }, { opacity: 1 }], { duration: 1200 });
+  }
+  // TV static over the dark: a small canvas of noise, redrawn ten times a second at low opacity (no flashing).
+  function snow(s, ms) {
+    var c = mk('canvas', 'fl-snow', s.L), w = 120, h = 260, x = c.getContext('2d'), img = x.createImageData(w, h);
+    c.width = w; c.height = h;
+    every(100, function () { for (var i = 0; i < img.data.length; i += 4) { var v = Math.random() * 255; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255; } x.putImageData(img, 0, 0); });
+    go(c, [{ opacity: 0 }, { opacity: 0.13 }], { duration: ms || 1500 });
+    return c;
+  }
+  // A burst of glitch: strips of the page tear sideways and the screen jolts.
+  function glitch(s, n) {
+    tear(s, n || 3);
+    go(s.shake, [{ transform: 'translate(0,0)' }, { transform: 'translate(-6px,2px) skewX(-3deg)' }, { transform: 'translate(5px,-2px)' }, { transform: 'translate(0,0)' }], { duration: 240, fill: 'none', easing: 'steps(3)' });
+  }
+
   /* ---------- the engine: taps, hold to stop, the hint and the reveal ---------- */
   function nudge(p) {
     if (!p) return;
@@ -349,7 +372,7 @@
     later(12000, function () {
       if (head) { head.classList.add('fl-mono'); bubble('hello ' + first(s.lower) + '.', 700); }
       var m = one('.mascot');
-      if (m) { m.classList.add('fl-evil'); go(m, [{ transform: 'none' }, { transform: 'translate(-3px,1px) rotate(-8deg)' }, { transform: 'translate(3px,-1px) rotate(8deg)' }, { transform: 'none' }], { duration: 160, iterations: 5, fill: 'none' }); }
+      if (m) { eyes(m); go(m, [{ transform: 'none' }, { transform: 'translate(-3px,1px) rotate(-8deg)' }, { transform: 'translate(3px,-1px) rotate(8deg)' }, { transform: 'none' }], { duration: 160, iterations: 5, fill: 'none' }); }
     });
     later(15000, function () {
       var m = /^\d\d:\d\d$/.test(times[0] || '') ? (+times[0].slice(0, 2)) * 60 + (+times[0].slice(3)) : 14 * 60;
@@ -362,6 +385,7 @@
       });
       scramble(date, 'no day · no time', 900);
     });
+    later(16500, function () { glitch(s, 3); });
     later(18000, function () { if (v2) pins(s); else crack(s); });
     later(21000, function () {
       s.falling = true;
@@ -370,16 +394,16 @@
     });
     later(33000, function () { tops().forEach(function (e, i) { drop(e, 'top', i * 160); }); });
     later(34500, function () { tabs().forEach(function (e, i) { drop(e, 'tab', i * 110); }); });
-    later(37000, function () { s.dk = dark(s, 0, 2500); });
+    later(37000, function () { s.dk = dark(s, 0, 2500); s.sn = snow(s); });
     later(40000, function () {
       var n = first(s.lower), f = s.f;
-      s.tp = typed(s, keep(v2 ? [n + '.', f.noBreak ? 'your break: not set.' : f.brk ? 'your break: ' + f.brk + '.' : null, f.noBreak || f.brk ? 'it never will be now.' : null, 'the book fell over.', '', 'all of it.']
-        : [n + '.', f.sec ? (f.sec + (f.shift ? '. ' + f.shift : '') + (f.from ? '. ' + f.from + ' to ' + f.to : '') + '.').toLowerCase() : null, 'what did you press?', '', 'the book is gone.']));
+      s.tp = typed(s, keep(v2 ? [n + '.', f.noBreak ? 'your break: not set.' : f.brk ? 'your break: ' + f.brk + '.' : null, f.noBreak || f.brk ? 'it never will be now.' : null, 'the book fell over.', '', 'you pushed it.']
+        : [n + '.', f.sec ? (f.sec + (f.shift ? '. ' + f.shift : '') + (f.from ? '. ' + f.from + ' to ' + f.to : '') + '.').toLowerCase() : null, 'what did you press?', '', 'the book is gone.', 'and it was you.']));
     });
     later(49000, function () { s.ap = april(s, null, 'ERROR 0x0401'); });
     later(55000, function () {
       s.rebuilt = true;
-      lift(s.tp, 300); lift(s.ap, 300); lift(s.dk, 600); lift(s.crack, 600);
+      lift(s.tp, 300); lift(s.ap, 300); lift(s.dk, 600); lift(s.crack, 600); lift(s.sn, 400);
       all('.fl-pin', s.L).forEach(function (p) { p.remove(); });
       cards().forEach(function (c) { c.classList.remove('fl-nopin'); });
       clocks.forEach(function (e, i) { e.textContent = times[i]; });
@@ -424,18 +448,18 @@
     later(15500, function () {
       var t = s.term = mk('div', 'fl-term' + (v2 ? ' fl-amber' : ''), s.L), log = mk('div', 'fl-log', t);
       var lines = v2 ? [
-        'MASCOT-OS 4.01', 'the mascot has taken over', '', pad('> user ', nm.slice(0, 14)), pad('> hiding the good knife ', 'OK'),
+        'MASCOT-OS 4.01', 'the mascot is hungry', '', pad('> user ', nm.slice(0, 14)), pad('> feeding ' + nl.slice(0, 10) + ' to the mascot ', '40%'), pad('> hiding the good knife ', 'OK'),
         pad('> ' + nl.slice(0, 10) + ' moved to ', 'DISHES'), pad('> break moved to ', '2028'),
         pad('> hiding the recipes ', 'OK')].concat(secs.map(function (x) { return pad('    ' + x.toLowerCase().replace(/\s+/g, '_') + ' ', 'hidden'); }), [
         pad('> teaching the mascot to cook ', 'FAILED'), pad('> moving ' + mine.toLowerCase() + ' to the car park ', 'OK'), pad('> salt replaced with sugar ', 'OK'),
         pad('> ' + nl.slice(0, 12) + "'s settings ", 'scrambled'), pad('> installing more mascots ', '...')])
-        : keep(['KB-OS 4.01  KITCHEN BOOK', pad('> login from the walk-in fridge ', 'OK'), pad('> user ', nm.slice(0, 14)),
+        : keep(['KB-OS 4.01  KITCHEN BOOK', pad('> remote session ', 'OPEN'), pad('> user ', nm.slice(0, 14)),
             s.f.sec ? pad('> locating ' + nl.slice(0, 8) + ' ', s.f.sec.toUpperCase().slice(0, 10)) : null,
             s.f.from ? pad('> shift ', ((s.f.shift ? s.f.shift.toUpperCase() + ' ' : '') + s.f.from).slice(0, 16)) : null,
             s.f.mates.length ? pad('> on with ' + nl.slice(0, 8) + ' ', s.f.mates.join(', ').toUpperCase().slice(0, 14)) : null,
             s.f.jobs !== null ? pad('> prep ', s.f.done + ' OF ' + s.f.jobs + ' DONE') : null, pad('> break ', 'CANCELLED'), '> rm -rf /kitchen/recipes'])
           .concat(secs.map(function (x) { return pad('    ' + x.toLowerCase().replace(/\s+/g, '_') + '.rcp ', 'gone'); }), [
-            pad('    gravy.rcp ', 'gone'), pad('    the_good_knife ', 'gone'), pad('> translating prep list to pig latin ', 'done'), pad('> blaming the fryer ', 'done'),
+            pad('    gravy.rcp ', 'gone'), pad('    the_good_knife ', 'gone'), pad('> encrypting prep list ', 'done'), pad('> blaming the fryer ', 'done'),
             pad('> renaming ' + nl.slice(0, 10) + ' to banana ', 'done'), pad('> sending prep list to the moon ', 'done')]);
       var i = 0;
       (function next() {
@@ -450,7 +474,7 @@
       typeLines(big, ['HELLO ' + nm + '.'], 90, 0, function () {
         var sub = mk('div', 'fl-sub', s.term);
         typeLines(sub, v2 ? [s.f.sec ? 'the mascot is on ' + s.f.sec.toLowerCase() + ' now.' : 'the mascot is in charge now.', 'please clap.']
-          : [s.f.sec && s.f.from ? 'you start on ' + s.f.sec.toLowerCase() + ' at ' + s.f.from + '.' : 'your book belongs to the fridge now.', 'we will be watching.'], 45, 500, function () {
+          : [s.f.sec && s.f.from ? 'you start on ' + s.f.sec.toLowerCase() + ' at ' + s.f.from + '.' : 'your book belongs to us now.', 'we will be watching.'], 45, 500, function () {
           var bar = mk('div', 'fl-sub fl-bar', s.term), n = 0, word = v2 ? 'more mascots ' : 'restoring the book ';
           var step = every(260, function () {
             n = Math.min(99, n + Math.ceil(rnd(1, 5)));
@@ -460,6 +484,7 @@
         });
       });
     });
+    later(28500, function () { if (s.term) s.term.classList.add('fl-term-red'); });
     later(50000, function () { s.term.textContent = ''; mk('div', 'fl-sub', s.term, 'FATAL ERROR'); april(s, s.term, '0x0401', 'fl-in-term'); });
     later(55000, function () { tvOn(s); });
   }
@@ -467,9 +492,9 @@
   /* ============ C · Possessed: the page stays, but every word turns on you ============ */
   var SWAP = [
     ['#hm-day-h', 'Your doom'], ['.hm-day-row .hm-t', 'Your sentence'], ['.hm-day-break .hm-t', 'Your breakdown'],
-    ['.hm-day-break .hm-s', 'A chef has seen your knife skills'], ['.hm-tm', 'Never'], ['#hm-with .hm-pt', 'Onto you'],
+    ['.hm-day-break .hm-s', 'A chef has seen what you did'], ['.hm-tm', 'Never'], ['#hm-with .hm-pt', 'Onto you'],
     ['.hm-roster-caption', 'Lunch is you'], ['#hm-full-team > summary', "View today's full scream"], ['#hm-prep .hm-pt', 'Prep by sedation'],
-    ['.hm-pc', '6 of 0 done'], ['#hm-up-h', 'Coming soon: nothing'], ['.wall-foot', 'Cook as written. Or as sung. Nobody knows any more.']
+    ['.hm-pc', '6 of 0 done'], ['#hm-up-h', 'Coming for you'], ['.wall-foot', 'Cook as written. The head chef is watching.']
   ];
   var TABS = { Recipes: 'Regrets', Prep: 'Perp', Orders: 'Disorders', Wastage: 'Wasted', Transfers: 'Trespass', Cleaning: 'Screaming' };
   var SECS = { Pans: 'Pants', Grill: 'Grilled', Fryers: 'Friars', Larder: 'Ladder', Sauce: 'Saucy', Pass: 'Passed out' };
@@ -524,11 +549,12 @@
     later(27000, function () {
       var m = one('.mascot');
       if (!m) return;
-      m.classList.add('fl-evil');
+      m.classList.add('fl-evil'); eyes(m);
       var r = rect(m), pts = [[0.55, 0.35], [0.15, 0.6], [0.7, 0.75], [0.35, 0.2], [0.6, 0.5]], kf = [{ transform: 'none' }];
       pts.forEach(function (p, i) { kf.push({ transform: 'translate(' + (innerWidth * p[0] - r.left).toFixed(0) + 'px,' + (innerHeight * p[1] - r.top).toFixed(0) + 'px) rotate(' + (i * 200 - 90) + 'deg) scale(' + (1.4 + i * 0.45) + ')' }); });
       go(m, kf, { duration: 14000, easing: 'steps(20)' });
     });
+    later(25000, function () { var h = mk('div', 'fl-warn', s.L, "don't touch anything."); h.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, fill: 'forwards' }); });
     later(31000, function () { all('#hm-day-h, .hm-pt, .hm-t, .tabbar a span').forEach(melt); });
     later(34000, function () { tear(s, 2); every(900, function () { if (!s.flipped) tear(s, 2); }); });
     later(37000, function () {
@@ -548,14 +574,15 @@
   /* ============ D · Ransom note: letters are cut out of the page and glued into a note ============ */
   function Dn(s) {
     var v2 = s.v === 2, nm = first(s.upper).slice(0, 12);
-    var lines = v2 ? keep(['WE TOOK YOUR VOWELS, ' + nm + '.', s.f.sec ? s.f.sec.toUpperCase().slice(0, 12) + ' IS NEXT.' : null, 'SAY CHEESE TO GET', 'THEM BACK.'])
-      : ['WE HAVE YOUR SAUCES, ' + nm + '.', 'LEAVE 1 KG OF BUTTER', 'AT THE PASS' + (s.f.from ? ' BY ' + s.f.from : '') + '.', 'OR NO GRAVY.'];
+    var lines = v2 ? keep(['WE TOOK YOUR VOWELS, ' + nm + '.', s.f.sec ? s.f.sec.toUpperCase().slice(0, 12) + ' IS NEXT.' : null, 'THEN YOU.'])
+      : ['WE HAVE YOUR SAUCES, ' + nm + '.', 'LEAVE 1 KG OF BUTTER', 'AT THE PASS' + (s.f.from ? ' BY ' + s.f.from : '') + '.', 'TELL NO ONE.'];
     opening(s, ['typo', 'clock', 'tilt', 'typo']);
     var src = [], note, targets = [];
     later(11000, function () {
       src = letters(false);
       // A few letters go missing first, one by one: did that word always look like that?
       shuffle(src).slice(0, 8).forEach(function (c, i) { later(i * 900, function () { c.classList.add('fl-gone'); }); });
+      later(5000, function () { glitch(s, 2); });
     });
     later(20000, function () {
       s.L.classList.add('fl-dim');
@@ -613,7 +640,7 @@
     // What he says depends on what he eats, in their own words from Home.
     function said(p, i) {
       if (p.matches('#hm-day')) return v2 ? (f.noBreak ? 'your break: not set. tasty.' : 'your break: too short.') : f.sec ? f.sec.toLowerCase() + ': crunchy.' : 'crunchy.';
-      if (p.matches('#hm-with')) return f.mates.length ? both(f.mates).toLowerCase() + (v2 ? ': gone.' : ': spicy.') : 'the team: spicy.';
+      if (p.matches('#hm-with')) return f.mates.length ? both(f.mates).toLowerCase() + (v2 ? ': gone.' : ': eaten.') : 'the team: spicy.';
       if (p.matches('#hm-prep')) return f.jobs !== null ? f.jobs + ' jobs. ' + (v2 ? 'chewy.' : 'needs salt.') : 'the prep list: chewy.';
       if (p.matches('.wall-date')) return f.day ? f.day.toLowerCase() + ': stale.' : 'the date: stale.';
       if (p.matches('.tabbar')) return 'mmm, tabs.';
@@ -654,12 +681,13 @@
     later(40000, function () { s.eating = false; moveTo(innerWidth / 2, innerHeight * 0.45, 900); bubble(v2 ? 'delicious. who is next?' : 'delicious, ' + nm + '.', 500); });
     later(44000, function () {
       bubble(f.from ? "you're next. " + f.from + '.' : "you're next.", 400);
+      eyes(m);
       go(s.shake, [{ transform: 'translate(0,0)' }, { transform: 'translate(-4px,2px)' }, { transform: 'translate(3px,-2px)' }, { transform: 'translate(0,0)' }], { duration: 200, iterations: 8, fill: 'none' });
       go(m, [{ transform: 'translate(' + at.x + 'px,' + at.y + 'px) scale(' + size + ')' }, { transform: 'translate(' + at.x + 'px,' + at.y + 'px) scale(14)' }], { duration: 3000, delay: 600, easing: 'ease-in' });
     });
     later(47500, function () { s.dk = dark(s, 0, 500); });
     later(48500, function () { s.tp = typed(s, ['burp.']); });
-    later(50500, function () { lift(s.tp, 200); s.ap = april(s, null, v2 ? 'only joking.' : 'it was a snack.'); });
+    later(50500, function () { lift(s.tp, 200); s.ap = april(s, null, v2 ? 'still hungry.' : 'you were a snack.'); });
     later(54500, function () {
       lift(s.ap, 300); lift(s.dk, 500);
       bubble(v2 ? 'here, have it back.' : 'fine. have it back.', 0);
@@ -715,7 +743,7 @@
     later(38000, function () {
       var big = mk('div', 'fl-rainword' + (v2 ? ' fl-amber' : ''), s.L);
       var word = v2 ? 'WHERE IS THE BOOK, ' + nm + '?' : nm;
-      var sub = v2 ? (s.f.mates.length ? both(s.f.mates).toUpperCase() + pl(s.f.mates, " DON'T KNOW EITHER.", " DOESN'T KNOW EITHER.") : null) : (s.f.sec ? s.f.sec.toUpperCase() + (s.f.from ? ' · ' + s.f.from : '') : null);
+      var sub = v2 ? (s.f.mates.length ? both(s.f.mates).toUpperCase() + pl(s.f.mates, " DON'T KNOW EITHER.", " DOESN'T KNOW EITHER.") : null) : (s.f.sec ? 'THEY KNOW YOU ARE ON ' + s.f.sec.toUpperCase() : null);
       if (sub) later(v2 ? 4500 : 3600, function () { var u = mk('div', 'fl-rainsub' + (v2 ? ' fl-amber' : ''), s.L, sub); go(u, [{ opacity: 0 }, { opacity: 1 }], { duration: 800 }); s.word2 = u; });
       Array.prototype.forEach.call(word, function (ch, i) { var c = mk('span', '', big, ch); c.style.opacity = '0'; go(c, [{ opacity: 0, transform: 'translateY(-30px)' }, { opacity: 1, transform: 'none' }], { duration: 500, delay: 400 + i * (v2 ? 120 : 600) }); });
       s.word = big;
@@ -770,9 +798,10 @@
       go(orb, [{ transform: 'rotate(0deg) scale(1)' }, { transform: 'rotate(1080deg) scale(.1)', opacity: 0.4 }], { duration: 13000, easing: 'ease-in' });
     });
     later(40000, function () { sizeTo(30, 2500, innerWidth / 2, innerHeight / 2); });
-    later(43500, function () { var f = s.f; s.tp = typed(s, keep(v2 ? ['the prep list is past', 'the event horizon,', nl + '.', f.jobs !== null ? f.jobs + ' jobs. ' + f.done + ' done. forever.' : null] : ['everything is in here', 'now, ' + nl + '.', f.sec ? 'even ' + f.sec.toLowerCase() + '.' : null])); });
+    later(42000, function () { s.sn = snow(s); });
+    later(43500, function () { var f = s.f; s.tp = typed(s, keep(v2 ? ['the prep list is past', 'the event horizon,', nl + '.', f.jobs !== null ? f.jobs + ' jobs. ' + f.done + ' done. forever.' : null] : ['everything is in here', 'now, ' + nl + '.', f.sec ? 'even ' + f.sec.toLowerCase() + '.' : null, "you're next."])); });
     later(49500, function () { lift(s.tp, 300); s.ap = april(s, null, v2 ? 'NO WAY BACK' : 'NO SIGNAL'); });
-    later(54500, function () { lift(s.ap, 300); if (s.orb) s.orb.remove(); sizeTo(0, 900); settle(gone, 800); });
+    later(54500, function () { lift(s.ap, 300); lift(s.sn, 300); if (s.orb) s.orb.remove(); sizeTo(0, 900); settle(gone, 800); });
   }
 
   /* ============ H · Upside-down gravity: everything falls up ============ */
@@ -794,7 +823,7 @@
       shuffle(cards()).concat(foot(), heads(), tabs()).forEach(function (p, i) { later(i * 900, function () { fallUp(p); }); });
     });
     later(26000, function () { s.note = mk('div', 'fl-floor', s.L, v2 ? 'gravity has been switched off' + (s.f.sec ? ' on ' + s.f.sec.toLowerCase() : '') + ', ' + nm + '.' : 'turn your phone over, ' + nm + '.'); go(s.note, [{ opacity: 0, transform: 'translate(-50%,20px)' }, { opacity: 1, transform: 'translate(-50%,0)' }], { duration: 500 }); });
-    later(33000, function () { if (s.note) s.note.textContent = v2 ? 'please hold on to the bench.' : 'better?'; go(s.stage, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(180deg)' }], { duration: 2400, easing: 'cubic-bezier(.5,0,.3,1)' }); });
+    later(33000, function () { if (s.note) s.note.textContent = v2 ? 'hold on. nobody is coming.' : 'better?'; go(s.stage, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(180deg)' }], { duration: 2400, easing: 'cubic-bezier(.5,0,.3,1)' }); });
     later(40000, function () {
       if (s.note) s.note.textContent = v2 ? (s.f.mates.length ? both(s.f.mates).toLowerCase() + pl(s.f.mates, ' are floating too.', ' is floating too.') : 'nothing is where it should be.') : (s.f.shift && s.f.from ? 'no? ' + s.f.shift.toLowerCase() + ' starts at ' + s.f.from + '. hang on.' : 'no? hang on.');
       up.forEach(function (p) { go(p, [{ transform: 'translate(0px,0px) rotate(0deg)' }, { transform: 'translate(' + rnd(-20, 20).toFixed(0) + 'px,' + rnd(-25, 25).toFixed(0) + 'px) rotate(' + rnd(-25, 25).toFixed(0) + 'deg)' }], { duration: rnd(1800, 2600), iterations: Infinity, direction: 'alternate', easing: 'ease-in-out', composite: 'add' }); });
@@ -833,11 +862,11 @@
     later(28000, function () { if (s.zoomA) s.zoomA.playbackRate = 1.8; });
     later(34000, function () { if (s.zoomA) s.zoomA.playbackRate = 3; });
     s.tap = function (p) { if (s.zoomA) s.zoomA.playbackRate = Math.min(6, s.zoomA.playbackRate + 0.6); else nudge(p); };
-    later(40000, function () { s.dk = dark(s, 0, 1500); });
-    later(41500, function () { if (s.zoomA) s.zoomA.playbackRate = 0.4; s.tp = typed(s, keep(v2 ? ['you are inside', 'the mascot now,', nm + '.', s.f.mates.length ? both(s.f.mates).toLowerCase() + pl(s.f.mates, ' are still outside.', ' is still outside.') : null] : ['you went too deep,', nm + '.', s.f.shift ? s.f.shift.toLowerCase() + ' started without you.' : null])); });
+    later(40000, function () { s.dk = dark(s, 0, 1500); s.sn = snow(s); if (v2) eyes(one('.mascot')); });
+    later(41500, function () { if (s.zoomA) s.zoomA.playbackRate = 0.4; s.tp = typed(s, keep(v2 ? ['you are inside', 'the mascot now,', nm + '.', s.f.mates.length ? both(s.f.mates).toLowerCase() + pl(s.f.mates, " are still outside. they can't hear you.", " is still outside. they can't hear you.") : null] : ['you went too deep,', nm + '.', s.f.shift ? s.f.shift.toLowerCase() + ' started without you.' : null, "you can't get out."])); });
     later(48500, function () { lift(s.tp, 300); s.ap = april(s, null, 'LEVEL 401'); });
     later(54500, function () {
-      lift(s.ap, 300); lift(s.dk, 600);
+      lift(s.ap, 300); lift(s.dk, 600); lift(s.sn, 400);
       if (s.zoomA) { s.zoomA.cancel(); s.zoomA = null; }
       all('.fl-nest', s.L).forEach(function (n) { go(n, [{ opacity: 1 }, { opacity: 0 }], { duration: 500 }); });
     });
@@ -874,11 +903,11 @@
       var order = tops().concat(heads(), cards(), foot(), tabs()), gap = 19000 / order.length;
       order.forEach(function (p, i) { later(i * gap, function () { blow(p); }); });
     });
-    later(36000, function () { s.dk = dark(s, 0, 1500); });
-    later(38000, function () { var f = s.f; s.tp = typed(s, keep(v2 ? [nm + ', the book', 'blew away.', f.sec ? f.sec.toLowerCase() + ' went with it.' : null, '', 'it is somewhere', 'near the bins.'] : [nm + '?', 'are you still there?', '', f.mates.length ? both(f.mates).toLowerCase() + ' left already.' : null, 'the wind took the book.'])); });
+    later(36000, function () { s.dk = dark(s, 0, 1500); s.sn = snow(s); });
+    later(38000, function () { var f = s.f; s.tp = typed(s, keep(v2 ? [nm + ', the book', 'blew away.', f.sec ? f.sec.toLowerCase() + ' went with it.' : null, '', 'it is somewhere', 'near the bins.', "you're next."] : [nm + '?', 'are you still there?', '', f.mates.length ? both(f.mates).toLowerCase() + ' left already.' : null, 'the wind took the book.', 'and now you.'])); });
     later(49000, function () { lift(s.tp, 300); s.ap = april(s, null, 'WINDY DAY'); });
     later(53500, function () {
-      lift(s.ap, 300); lift(s.dk, 700);
+      lift(s.ap, 300); lift(s.dk, 700); lift(s.sn, 400);
       blown.forEach(function (p) { all('.fl-cb', p).forEach(function (c) { c.getAnimations().forEach(function (a) { a.cancel(); }); }); dust(s, p, true); });
     });
   }
@@ -891,7 +920,7 @@
       [23000, 'The sauces are not speaking to you.', '#hm-prep'], [28000, 'The tabs have gone on strike.', 'tabs'], [33000, f.noBreak ? 'Your break? Not set. Not ever.' : 'Your break went home.', '#hm-day'],
       [38000, f.mates.length ? both(f.mates) + pl(f.mates, ' are not coming back.', ' is not coming back.') : 'Fine. Be like that.', '#hm-with'], [43000, '...'], [47000, 'Still here?'], [51000, "It's 1 April, " + nm + '.'], [54500, 'We still love you.']
     ] : [
-      [4000, nm + '.'], [8000, f.sec ? nm + ", you're on " + f.sec + ' today.' : nm + ', are you there?'], [13000, "Don't look at me like that."], [18000, 'I know what you did to the jus.'],
+      [4000, nm + '.'], [8000, f.sec ? nm + ", you're on " + f.sec + ' today.' : nm + ', are you there?'], [13000, "Don't touch anything."], [18000, 'I know what you did to the jus.'],
       [23000, f.jobs !== null ? 'The prep list has ' + f.jobs + ' jobs. It does not want you on any of them.' : "The prep list doesn't want to talk to you.", '#hm-prep'],
       [28000, f.noBreak ? 'Your break is not set. It never will be.' : 'Neither does your break.', '#hm-day'], [33000, f.mates.length ? both(f.mates) + pl(f.mates, ' have gone home.', ' has gone home.') : 'Everyone on with you has left.', '#hm-with'],
       [38000, "It's just you and me now.", 'tabs'], [43000, 'Forever.'], [47000, '...'], [51000, "Kidding. It's 1 April."], [54500, 'Got you, ' + nm + '.']
@@ -911,7 +940,7 @@
         else if (st[2]) away(one(st[2]));
       });
     });
-    later(43000, function () { s.dk = mk('div', 'fl-dark', s.L); go(s.dk, [{ opacity: 0 }, { opacity: 0.45 }], { duration: 2500 }); });
+    later(43000, function () { s.dk = mk('div', 'fl-dark', s.L); go(s.dk, [{ opacity: 0 }, { opacity: 0.6 }], { duration: 2500 }); eyes(one('.mascot')); glitch(s, 2); });
     later(51000, function () { lift(s.dk, 800); settle(turned, 900); turned = []; });
   }
 
@@ -940,7 +969,7 @@
     });
     s.tap = function (p, x) { var st = strips[Math.floor(x / (innerWidth / n))]; if (st) go(st, [{ transform: 'translateY(0px)' }, { transform: 'translateY(' + rnd(30, 70).toFixed(0) + 'px)' }], { duration: 500, composite: 'add', easing: 'ease-in' }); else nudge(p); };
     later(38000, function () { s.pd = mk('div', 'fl-puddle', s.L); go(s.pd, [{ transform: 'scaleY(0)', opacity: 0 }, { transform: 'scaleY(1)', opacity: 1 }], { duration: 2500, easing: 'ease-out' }); });
-    later(41000, function () { var f = s.f; s.tp = typed(s, keep(v2 ? ['who left the book', 'on the stove,', nm + '?', f.sec ? 'it was on ' + f.sec.toLowerCase() + '.' : null] : ['too hot,', nm + '.', f.sec ? f.sec.toLowerCase() + ' is melting.' : null]), 'fl-on-puddle'); });
+    later(41000, function () { var f = s.f; s.tp = typed(s, keep(v2 ? ['who left the book', 'on the stove,', nm + '?', f.sec ? 'you left it on ' + f.sec.toLowerCase() + '.' : null] : ['too hot,', nm + '.', f.sec ? f.sec.toLowerCase() + ' is melting.' : null, "you're next."]), 'fl-on-puddle'); });
     later(48500, function () { lift(s.tp, 300); s.ap = april(s, null, v2 ? 'MEDIUM WELL' : '401 DEGREES', 'fl-low'); });
     later(54000, function () {
       lift(s.ap, 300); lift(s.pd, 600); lift(s.heat, 800);
@@ -949,8 +978,8 @@
   }
 
   var DESIGNS = {
-    A: { name: 'Collapse', run: A }, B: { name: 'Takeover', run: B }, C: { name: 'Possessed', run: C }, D: { name: 'Ransom note', run: Dn },
-    E: { name: 'Hungry mascot', run: E }, F: { name: 'Code rain', run: F }, G: { name: 'Black hole', run: G }, H: { name: 'Gravity', run: H },
+    A: { name: 'Collapse', run: A }, B: { name: 'Takeover', run: B, dark: true }, C: { name: 'Possessed', run: C }, D: { name: 'Ransom note', run: Dn },
+    E: { name: 'Hungry mascot', run: E }, F: { name: 'Code rain', run: F, dark: true }, G: { name: 'Black hole', run: G }, H: { name: 'Gravity', run: H },
     I: { name: 'Endless Home', run: I }, J: { name: 'Dust', run: J }, K: { name: 'Talks back', run: K }, L: { name: 'Melt', run: Lm }
   };
 
@@ -1008,7 +1037,9 @@
     s.vis = function () { if (D.hidden) reveal(); };
     D.addEventListener('visibilitychange', s.vis);
     later(15000, function () { hint(s); });
+    later(END - 2500, function () { lift(s.vig, 1500); });
     later(END, reveal);
+    if (!DESIGNS[design].dark) later(12000, function () { vignette(s, 0, 24000); });
     DESIGNS[design].run(s);
   }
 

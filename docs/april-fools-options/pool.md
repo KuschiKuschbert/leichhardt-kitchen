@@ -6,6 +6,18 @@
 
 After playing the pool, the head chef said: "i think one minute might be too long", tried the jokes at 15, 20, 30, 45 and 60 seconds on the live page, and chose: "i think i go with 35 seconds". Every joke is written as one minute and plays in 35 seconds, everything scaled together (`LENGTH` in `preview/fools.js`); pressing and holding to stop still takes 1.2 s. The times below are written for the minute: multiply by 0.58 for the real second (the break starts at about 7 s, the clue at about 29 s, the reveal at 33.5 s, "Press and hold to stop" shows at about 9 s or after three taps).
 
+## Darker (head chef, 17 November 2026)
+
+"I think we could've gone a bit darker", then "And definitely go darker". The 24 were turned up rather than adding a third set, so the deal still gives everyone a different joke.
+
+- **On every joke except B and F** (which go black anyway): the edges close in with a dark vignette from about 7 s (opacity only).
+- **Red eyes:** the mascot's eyes glow red in A, C, E (as he fills the screen), I2 (inside him) and K ("Forever."). Red here is art; the book's own error red is never used.
+- **Static** over the dark parts of A, G, I and J; **glitch bursts** in A, D and K; B's terminal turns red before HELLO.
+- **The softening undone:** B1 is a real-looking hacker log again ("remote session OPEN", "encrypting prep list", "your book belongs to us now"); C1 has "A chef has seen what you did", "Coming for you", "The head chef is watching" and "don't touch anything." again; D1 ends "TELL NO ONE."; K1 says "Don't touch anything."
+- **Personal:** A1 "the book is gone. and it was you."; A2 "you pushed it."; B2 "feeding ann to the mascot: 40%"; D2 "PANS IS NEXT. THEN YOU."; E1 "sam and bo: eaten." and "you were a snack."; E2 "still hungry."; F1 "THEY KNOW YOU ARE ON PANS"; G1 and J2 and L1 "you're next."; H2 "hold on. nobody is coming."; I1 "you can't get out."; I2 "sam and bo are still outside. they can't hear you."; J1 "and now you."; L2 "you left it on pans."
+
+Kept whatever the darkness: no coworker blamed for doing something (they are eaten, watching, gone or outside), nothing that looks like a real failed save on a work page, no claim of stolen personal details, a camera or a report to IT or police, press and hold always stops it, mornings and personal phones only, and the reveal still says "You did nothing wrong." The reviewers' advice to soften (new starter, skeptic) is recorded above; the head chef chose darker.
+
 ## Their own day (head chef, 17 November 2026)
 
 Asked whether the jokes should use each person's real day: "Oh yeah use their data please!" Every joke now reads what that person's own Home already shows, from the copy, before anything moves: their **section**, **shift and hours**, **break**, the **people on with them** (the "On with you" rows only, each once, never themselves) and the **prep count**. No reads, nothing new fetched, nothing saved; a missing fact leaves its line out, and one person on with them reads "Bo has", not "Bo have".
