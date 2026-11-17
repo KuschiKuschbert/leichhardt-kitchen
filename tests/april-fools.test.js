@@ -53,7 +53,7 @@ const heading = p => p.evaluate(() => (document.querySelector('#app #rtitle') ||
     // press and hold anywhere for 1.2 s stops it, and the press that stops it does not close the reveal
     await p.mouse.move(195, 500); await p.mouse.down(); await p.clock.runFor(1400); await L.settle(p, 100); await p.mouse.up();
     await L.waitFor(p, () => !!document.querySelector('.fl-card'), null, 4000);
-    ok(!(await layer(p)) || await p.evaluate(() => getComputedStyle(document.querySelector('.fl-layer')).opacity !== '1'), 'press and hold: the copy goes');
+    ok(await p.evaluate(() => { const l = document.querySelector('.fl-layer'); return !l || getComputedStyle(l).opacity !== '1'; }), 'press and hold: the copy goes');
     ok((await rec(p) || {}).st === 'seen', 'press and hold: the reveal is kept as seen');
     ok(/April Fools, Ann!/.test(await p.evaluate(() => document.querySelector('.fl-card h2').textContent)), 'reveal: April Fools with the name');
     ok(/You did nothing wrong/.test(await p.evaluate(() => document.querySelector('.fl-card').textContent)), 'reveal: says they did nothing wrong');
