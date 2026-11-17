@@ -156,3 +156,28 @@ With no signal the scene goes and the counts stay as they were. Home at 1920 x 1
 - A held write, another screen's tick, Undo, a new line for today after the finish, the 10 minute lock and PIN, Queensland midnight and 04:00, reduced motion, Extra large text, Barlow.
 - `docs/kitchen-mascot.md`, `docs/prep-book.md` (Tonight, for tomorrow; the count), `docs/design-patterns.md` and the mascot tests change in the same pull request.
 - Before it is called done: read it from 1.5 m on one section screen, and look at the clocked nights the book already keeps to see how often the batch rule would have been wrong.
+
+## Home: the mascot says hello (asked 17 November 2026)
+
+The owner, after hearing that the Home mascot is personal to each person (their own shuffled action each day) and the prep pages never are: "can we at least on the home screen have the mascot welcome them now? With a speech bubble or something as well?"
+
+**Quick check, not a full council** (`.claude/skills/service-council/SKILL.md`, "When it runs": a change on an existing page that adds no tab, bar button, pop-up or step). Home is not a service page. Same theme as this study, so it is recorded here. Every measurement is a **Preview** (`preview/home-bubble.js`, `home-bubble.css`, `home-capture.mjs`; `evidence/walk-home.json`), stand-in fonts, a shared screen, Ann on Pans at 14:00.
+
+**Three options drawn, one placement** ([20-home-bubbles-1920.png](evidence/20-home-bubbles-1920.png)): a paper-and-ink bubble on the welcome row, left of him, its tail pointing at him, never over a word of the name, the date or a seasonal ornament (measured the way `js/mascot.js` measures his corner). Where it does not fit there is no bubble: the heading already greets.
+
+| | H1 He says the greeting | H2 A line of his own for today's action | H3 Your section today |
+| --- | --- | --- | --- |
+| Words (Ann, Smash day) | "Good afternoon, Ann!" | "Let's smash it." | "Pans today. 1 left on the list." |
+| Personal because | the heading's own varied greeting | each person's own shuffled action (11 lines, one per action) | the person's section from Your day and Prep by section |
+| Bubble at 1920, 1280, 768 px | 206, 206, 121 px wide | 148 px | 256 px |
+| At 390 px | none (no room beside him) | none | none |
+| Rectangles moved, taps added, reads | 0, 0, 0 | 0, 0, 0 | 0, 0, 0 |
+| Headspace: one name for each thing | Needs work: two greetings side by side | Works: his own words, nothing to keep true | Needs work: repeats Your day and Prep by section |
+| Flighty: no stale status shown as live | Works | Works | Needs work: "1 left" must follow the list while it shows |
+| Earlier council rules (`docs/mascot-cheer-options/ideas.md`) | Fine | Fine: two moods, no clock, no person rated | A second status voice, which the cheer study turned down |
+
+**Lifetime, the same for all three:** the bubble comes with his first play of the day and stays a few seconds after he rests, then goes; a tap on him replays both. Returning to Home the same day: no bubble, as he opens at rest. Reduced motion: the bubble shows with his still for a few seconds, with no fade. Hidden from screen readers (the heading already greets). Not a control. On a lock or handover it goes with him.
+
+**Try to break it.** Long names and seasonal ornaments: the bubble is left out when the room beside him is under 120 px, or the words would wrap (checked at four widths with a short name; a 40-character name and Christmas snow not exercised). A shared screen: Home shows on a person's first sign-in of the day, so the bubble is seen once a day per person per screen, and a cook who goes straight to Prep may miss it (accepted). H2's words were chosen so none reads as status ("order up" is not used for Serve). Phones mostly get no bubble: at 390 px the greeting reaches him.
+
+**Recommended: H2**, his own line for today's action, because it is the one that is his and personal without repeating the heading or stating a fact that can go stale. The owner chooses; H1 is the most literal "welcome".
