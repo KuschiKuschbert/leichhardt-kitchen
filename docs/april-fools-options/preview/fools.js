@@ -160,7 +160,6 @@
     var s = S;
     e.preventDefault(); e.stopPropagation();
     if (!live(s)) return;
-    s.taps++;
     holdEnd(s);
     var r = s.ring = mk('div', 'fl-hold', s.L);
     r.style.left = e.clientX + 'px'; r.style.top = e.clientY + 'px';
@@ -170,6 +169,7 @@
     var now = performance.now();
     if (now - (s.lastTap || 0) < 250) return;
     s.lastTap = now;
+    s.taps++;
     var p = hit(e.clientX, e.clientY);
     if (s.tap) s.tap(p, e.clientX, e.clientY); else nudge(p);
     if (s.taps >= 3) hint(s);
@@ -188,8 +188,12 @@
     // In the book the mascot is a canvas: copy his drawing too (a clone of a canvas is blank).
     var oc = real.querySelector('.mascot canvas'), cc = app.querySelector('.mascot canvas');
     if (oc && cc) { try { cc.getContext('2d').drawImage(oc, 0, 0); } catch (e) { /* no mascot in the copy */ } }
-    // Nothing under the copy can be reached with a key while the joke plays.
-    real.setAttribute('inert', '');
+    // Nothing under the copy can be reached with a key while the joke plays. A CSS animation hides it for 65 s and
+    // then ends by itself, so a script that stops part way cannot leave Home dead (the skeptic reproduced that with inert).
+    real.classList.add('fl-under');
+    var say = mk('div', 'fl-sr', D.body, 'An April Fools joke is playing for one minute. Press Escape, or press and hold, to stop it.');
+    say.setAttribute('role', 'status');
+    S.say = say;
     S.real = real; S.L = L; S.stage = stage; S.shake = shake; S.app = app;
   }
   // Ids stay on the copies: the book's styles use them. The real page comes first, so getElementById still finds it.
@@ -209,7 +213,8 @@
     s.t.forEach(clearTimeout);
     holdEnd(s);
     if (s.raf) cancelAnimationFrame(s.raf);
-    if (s.real) s.real.removeAttribute('inert');
+    if (s.real) s.real.classList.remove('fl-under');
+    if (s.say) s.say.remove();
     var f = s.L.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: 'forwards' });
     f.onfinish = function () { s.L.remove(); };
     card(s);
@@ -392,9 +397,9 @@
         pad('> hiding the recipes ', 'OK')].concat(secs.map(function (x) { return pad('    ' + x.toLowerCase().replace(/\s+/g, '_') + ' ', 'hidden'); }), [
         pad('> teaching the mascot to cook ', 'FAILED'), pad('> moving ' + mine.toLowerCase() + ' to the car park ', 'OK'), pad('> salt replaced with sugar ', 'OK'),
         pad('> ' + nl.slice(0, 12) + "'s settings ", 'scrambled'), pad('> installing more mascots ', '...')])
-        : ['KB-OS 4.01  KITCHEN BOOK', pad('> remote session ', 'OPEN'), pad('> user ', nm.slice(0, 14)), '> rm -rf /kitchen/recipes']
+        : ['KB-OS 4.01  KITCHEN BOOK', pad('> login from the walk-in fridge ', 'OK'), pad('> user ', nm.slice(0, 14)), '> rm -rf /kitchen/recipes']
           .concat(secs.map(function (x) { return pad('    ' + x.toLowerCase().replace(/\s+/g, '_') + '.rcp ', 'gone'); }), [
-            pad('    gravy.rcp ', 'gone'), pad('    the_good_knife ', 'gone'), '> encrypting prep list', pad('> blaming the fryer ', 'done'),
+            pad('    gravy.rcp ', 'gone'), pad('    the_good_knife ', 'gone'), pad('> translating prep list to pig latin ', 'done'), pad('> blaming the fryer ', 'done'),
             pad('> renaming ' + nl.slice(0, 10) + ' to banana ', 'done'), pad('> sending prep list to the moon ', 'done')]);
       var i = 0;
       (function next() {
@@ -408,7 +413,7 @@
       var big = mk('div', 'fl-big', s.term);
       typeLines(big, ['HELLO ' + nm + '.'], 90, 0, function () {
         var sub = mk('div', 'fl-sub', s.term);
-        typeLines(sub, v2 ? ['the mascot is in charge now.', 'please clap.'] : ['your book belongs to us now.', 'do not panic.'], 45, 500, function () {
+        typeLines(sub, v2 ? ['the mascot is in charge now.', 'please clap.'] : ['your book belongs to the fridge now.', 'do not panic.'], 45, 500, function () {
           var bar = mk('div', 'fl-sub fl-bar', s.term), n = 0, word = v2 ? 'more mascots ' : 'restoring the book ';
           var step = every(260, function () {
             n = Math.min(99, n + Math.ceil(rnd(1, 5)));
@@ -450,7 +455,11 @@
     s.step = 0;
     function invert() { if (s.step >= 1) return; s.step = 1; var v = mk('div', 'fl-inv', s.L); go(v, [{ opacity: 0 }, { opacity: 1, offset: 0.3 }, { opacity: 1, offset: 0.7 }, { opacity: 0 }], { duration: 900 }); }
     function flip() { if (s.step >= 2) return; s.step = 2; s.flipped = true; go(s.stage, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(180deg)' }], { duration: 900, easing: 'cubic-bezier(.3,1.35,.5,1)' }); }
-    s.tap = function (p, x, y) { flee(p, x, y); if (s.taps >= 6 && s.step === 0) invert(); else if (s.taps >= 10 && s.step === 1) flip(); };
+    s.tap = function (p, x, y) {
+      flee(p, x, y);
+      var at = (performance.now() - s.t0) / s.k;
+      if (s.taps >= 6 && s.step === 0 && at >= 30000) invert(); else if (s.taps >= 10 && s.step === 1 && at >= 40000) flip();
+    };
     if (v2) {
       // Everyone and everything becomes the person.
       jobs.push(function () { bubble(nm + ', ' + nm + ', ' + nm + '.', 600); });
@@ -499,7 +508,7 @@
 
   /* ============ D · Ransom note: letters are cut out of the page and glued into a note ============ */
   function Dn(s) {
-    var v2 = s.v === 2, nm = first(s.upper);
+    var v2 = s.v === 2, nm = first(s.upper).slice(0, 12);
     var lines = v2 ? ['WE TOOK YOUR VOWELS, ' + nm + '.', 'SAY CHEESE TO GET', 'THEM BACK.'] : ['WE HAVE YOUR SAUCES, ' + nm + '.', 'LEAVE 1 KG OF BUTTER', 'AT THE PASS.', 'OR NO GRAVY.'];
     opening(s, ['typo', 'clock', 'tilt', 'typo']);
     var src = [], note, targets = [];
@@ -585,7 +594,7 @@
         });
       });
     }
-    s.tap = function (p) { if (p && p !== m && s.eating) chomp(p, pick(['oh, a snack.', 'thank you.', 'more.'])); else nudge(p); };
+    s.tap = function (p) { if (p && p !== m && !p.matches('#rtitle') && s.eating) chomp(p, pick(['oh, a snack.', 'thank you.', 'more.'])); else if (p && !p.matches('#rtitle')) nudge(p); };
     later(13000, function () { m.classList.add('fl-loose'); moveTo(innerWidth / 2, innerHeight * 0.3, 900); });
     later(15000, function () {
       s.eating = true;
@@ -733,7 +742,7 @@
       s.upside = true;
       shuffle(cards()).concat(foot(), heads(), tabs()).forEach(function (p, i) { later(i * 900, function () { fallUp(p); }); });
     });
-    later(26000, function () { s.note = mk('div', 'fl-floor', s.L, v2 ? 'gravity has been switched off, ' + nm + '.' : 'turn your phone over, ' + nm + '.'); go(s.note, [{ opacity: 0, transform: 'translateY(20px)' }, { opacity: 1, transform: 'none' }], { duration: 500 }); });
+    later(26000, function () { s.note = mk('div', 'fl-floor', s.L, v2 ? 'gravity has been switched off, ' + nm + '.' : 'turn your phone over, ' + nm + '.'); go(s.note, [{ opacity: 0, transform: 'translate(-50%,20px)' }, { opacity: 1, transform: 'translate(-50%,0)' }], { duration: 500 }); });
     later(33000, function () { if (s.note) s.note.textContent = v2 ? 'please hold on to the bench.' : 'better?'; go(s.stage, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(180deg)' }], { duration: 2400, easing: 'cubic-bezier(.5,0,.3,1)' }); });
     later(40000, function () {
       if (s.note) s.note.textContent = v2 ? 'nothing is where it should be.' : 'no? hang on.';
@@ -913,7 +922,8 @@
     s.t.forEach(clearTimeout);
     holdEnd(s);
     if (s.raf) cancelAnimationFrame(s.raf);
-    if (s.real) s.real.removeAttribute('inert');
+    if (s.real) s.real.classList.remove('fl-under');
+    if (s.say) s.say.remove();
     if (s.L) s.L.remove();
     if (s.close) s.close();
     D.removeEventListener('keydown', s.key);
@@ -925,8 +935,8 @@
     stop();
     D.querySelectorAll('.fl-reveal').forEach(function (e) { e.remove(); });
     o = o || {};
-    var name = String(o.name || 'Ann').trim() || 'Ann';
-    S = { t: [], taps: 0, name: name, lower: name.toLowerCase(), upper: name.toUpperCase(), design: design, v: o.version === 2 ? 2 : 1, k: o.quick ? 0.25 : 1 };
+    var name = (String(o.name || 'Ann').normalize ? String(o.name || 'Ann').normalize('NFC') : String(o.name || 'Ann')).trim() || 'Ann';
+    S = { t: [], taps: 0, t0: performance.now(), name: name, lower: name.toLowerCase(), upper: name.toUpperCase(), design: design, v: o.version === 2 ? 2 : 1, k: o.quick ? 0.25 : 1 };
     // The preview's own Reduced motion box can override the device setting (o.force), so a reviewer can watch.
     if (o.reduced || (!o.force && W.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
       var t = D.getElementById('rtitle');

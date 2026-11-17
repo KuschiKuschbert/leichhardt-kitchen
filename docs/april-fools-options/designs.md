@@ -9,7 +9,7 @@
 3. **Not when something is really wrong.** Not offline or with reads used up (`lkServerUp()` false), not with unsent work, not with a sheet open. So "Nothing is broken" is always true.
 4. **A copy, never the real page.** The joke plays on a copy of Home laid over it (inert, hidden from screen readers). The real Home underneath is never touched; ending the joke is removing the copy. The copy also hides itself after 10 seconds by its own CSS, even if the script stops.
 5. **Played once, the reveal always reaches you.** "Played this year" is saved on the device when it starts. If the reveal never showed (a reload, the app closed in a panic), the next Home view that day shows only the reveal card.
-6. **Skip.** Any tap or Escape skips to the reveal (C: the third tap; each tap makes it worse first). It also ends on a route change, a lock, a hidden tab or a redraw of the page.
+6. **Skip.** Any tap or Escape skips to the reveal (C: the third tap; each tap makes it worse first). It also ends on a route change, a lock, a hidden tab or a full redraw of the page (`render()`; not Home's own 30-second repaint, which happens under the copy). In the one-minute pool (`pool.md`) a press and hold, or Escape, ends it instead.
 7. **No real failure language.** No red, no fake "Not sent" band, nothing on a work page. It threatens the book, never the person.
 8. **Motion.** Transform and opacity only (a still filter or text shadow is drawn once, never animated). One flash at most.
 9. **Otherwise just words.** With reduced motion, Seasonal celebrations Still or Off, after 12:00, or on a shared screen, the mascot's bubble says "April Fools, Ann. Nothing is broken today." and nothing else happens.

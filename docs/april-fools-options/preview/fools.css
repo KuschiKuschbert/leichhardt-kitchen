@@ -16,6 +16,10 @@
 .fl-c { white-space: pre; }
 .fl-cb { display: inline-block; }
 .fl-gone { visibility: hidden; }
+/* The real page under the copy: hidden for 65 s by an animation with no fill, so it comes back by itself. */
+.fl-under { animation: fl-under 65s linear; }
+@keyframes fl-under { from, to { visibility: hidden; } }
+.fl-sr { position: fixed; left: -9999px; top: 0; width: 1px; height: 1px; overflow: hidden; }
 .fl-nopin::before { display: none !important; }
 .fl-layer.fl-dim .fl-stage { opacity: 0.7; }
 
@@ -67,7 +71,8 @@
 .fl-note { position: absolute; left: 14px; right: 14px; top: 22%; z-index: 7; padding: 18px 12px 16px; background: #F4EEDC; color: #1C1D1F; border: 1px solid #BFB49A;
   box-shadow: 0 10px 0 rgba(0, 0, 0, 0.18), 0 2px 18px rgba(0, 0, 0, 0.3); transform: rotate(-2deg); text-align: center; }
 .fl-nl { margin: 4px 0; line-height: 1.25; }
-.fl-nw { display: inline-block; white-space: nowrap; margin: 0 4px; }
+.fl-nw { display: inline-block; max-width: 100%; white-space: nowrap; margin: 0 4px; }
+.fl-nw .fl-rc { white-space: normal; }
 .fl-rc, .fl-fly { display: inline-block; padding: 2px 4px; margin: 1px; line-height: 1; border-radius: 1px; box-shadow: 0 1px 1px rgba(0, 0, 0, 0.25); }
 .fl-fly { position: absolute; z-index: 8; pointer-events: none; transform-origin: 0 0; }
 .fl-f1 { font-family: Georgia, "Times New Roman", serif; background: #fff; color: #111; }
@@ -95,7 +100,7 @@
 
 /* H: gravity */
 .fl-floor { position: absolute; left: 50%; top: 56%; transform: translateX(-50%); z-index: 8; max-width: 88vw; text-align: center;
-  font: 700 26px/1.2 Caveat, cursive; color: #1C1D1F; background: #FBF8F1; border: 2px solid #1C1D1F; border-radius: 10px; padding: 8px 14px; }
+  font: 700 26px/1.2 Caveat, cursive; color: #1C1D1F; background: #FBF8F1; border: 2px solid #1C1D1F; border-radius: 10px; padding: 8px 14px; overflow-wrap: anywhere; }
 
 /* I: endless Home */
 .fl-zoom { position: absolute; inset: 0; z-index: 1; }
