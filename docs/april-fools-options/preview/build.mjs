@@ -104,20 +104,20 @@ td button { min-height: 36px; border: 0; background: transparent; font-weight: 7
 <div class="wrap">
   <section aria-labelledby="h">
     <h1 id="h">April Fools on Home</h1>
-    <p class="lede">Twelve one-minute jokes, each in two versions: 24 in all, so nobody on the team gets the same one, this year or the next. Each plays on a copy of the real Home with made-up people; nothing real is touched. Taps make it worse. Press and hold anywhere to stop it.</p>
+    <p class="lede">Twelve jokes, each in two versions: 24 in all, so nobody on the team gets the same one, this year or the next. Each plays on a copy of the real Home with made-up people; nothing real is touched. Pick a length to feel how long it should run. Taps make it worse. Press and hold anywhere to stop it.</p>
     <div class="picks" role="group" aria-label="Design">
       ${Object.entries(SAY).map(([k, v]) => `<button type="button" data-d="${k}" aria-pressed="false">${k}<small>${v[0]}</small></button>`).join('')}
     </div>
     <div class="row">
       <span class="seg" role="group" aria-label="Version"><button type="button" data-v="1" aria-pressed="true">Version 1</button><button type="button" data-v="2" aria-pressed="false">Version 2</button></span>
-      <span class="seg" role="group" aria-label="Speed"><button type="button" data-k="1" aria-pressed="true">Real time, 1 min</button><button type="button" data-k="q" aria-pressed="false">Quick, 15 s</button></span>
+      <span class="seg" role="group" aria-label="Length">${[15, 20, 30, 45, 60].map(n => `<button type="button" data-k="${n}" aria-pressed="${n === 30}">${n === 60 ? '1 min' : n + ' s'}</button>`).join('')}</span>
     </div>
     <div class="row">
       <label>Name <input type="text" id="nm" value="Ann" maxlength="40" autocomplete="off"></label>
       <label><input type="checkbox" id="rm"> Reduced motion</label>
       <button type="button" class="again" id="again">Play again</button>
     </div>
-    <div class="say" id="say" aria-live="polite"><b>Pick a design</b><p>It plays for about a minute, then the mascot owns up.</p></div>
+    <div class="say" id="say" aria-live="polite"><b>Pick a design</b><p>It plays for the length you pick, then the mascot owns up.</p></div>
     <h2>Who gets which</h2>
     <div class="row"><label>Year <select id="yr">${[2027, 2028, 2029, 2030, 2031].map(y => `<option>${y}</option>`).join('')}</select></label></div>
     <table id="deal"><thead><tr><th scope="col">Person</th><th scope="col" id="th-now">This year</th><th scope="col" id="th-last">Last year</th></tr></thead><tbody></tbody></table>
@@ -132,7 +132,7 @@ td button { min-height: 36px; border: 0; background: transparent; font-weight: 7
   var SAY = ${JSON.stringify(SAY).replace(/</g, '\\u003c')};
   var TEAM = ${JSON.stringify(TEAM)};
   var f = document.getElementById('f'), nm = document.getElementById('nm'), rm = document.getElementById('rm'), say = document.getElementById('say'), yr = document.getElementById('yr');
-  var cur = null, ver = 1, quick = false, queued = null;
+  var cur = null, ver = 1, len = 30, queued = null;
   function pressed(sel, attr, val) { document.querySelectorAll(sel).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute(attr) === String(val))); }); }
   function fit() {
     var p = document.getElementById('phone');
@@ -150,10 +150,10 @@ td button { min-height: 36px; border: 0; background: transparent; font-weight: 7
     say.innerHTML = '';
     if (!cur) return;
     var s = SAY[cur], b = document.createElement('b'), p = document.createElement('p'), v = document.createElement('p'), h = document.createElement('p');
-    b.textContent = cur + ' · ' + s[0] + ', version ' + ver;
+    b.textContent = cur + ' · ' + s[0] + ', version ' + ver + ', ' + (len === 60 ? '1 minute' : len + ' seconds');
     p.textContent = s[1];
     v.className = 'v'; v.textContent = 'Version ' + ver + ': ' + s[1 + ver];
-    h.className = 'v'; h.textContent = rm.checked ? 'Reduced motion: no copy and no movement. The mascot only says "April Fools".' : 'Taps break the piece under the finger a little more. Press and hold anywhere for about a second to stop it. "Press and hold to stop" shows after three taps or at 15 seconds.';
+    h.className = 'v'; h.textContent = rm.checked ? 'Reduced motion: no copy and no movement. The mascot only says "April Fools".' : 'Taps break the piece under the finger a little more. Press and hold anywhere for about a second to stop it. "Press and hold to stop" shows after three taps or a quarter of the way in.';
     say.append(b, p, v, h);
   }
   function play(d) {
@@ -163,7 +163,7 @@ td button { min-height: 36px; border: 0; background: transparent; font-weight: 7
     describe();
     if (innerWidth < 960) document.getElementById('phone').scrollIntoView({ behavior: 'smooth', block: 'start' });
     var c = cur;
-    load(function () { f.contentWindow.FOOLS.play(c, { name: nm.value, version: ver, quick: quick, reduced: rm.checked, force: !rm.checked }); try { f.contentWindow.focus(); } catch (e) {} });
+    load(function () { f.contentWindow.FOOLS.play(c, { name: nm.value, version: ver, length: len, reduced: rm.checked, force: !rm.checked }); try { f.contentWindow.focus(); } catch (e) {} });
   }
   function drawDeal() {
     var F = f.contentWindow && f.contentWindow.FOOLS;
@@ -189,7 +189,7 @@ td button { min-height: 36px; border: 0; background: transparent; font-weight: 7
   }
   document.querySelectorAll('.picks button').forEach(function (b) { b.addEventListener('click', function () { play(b.dataset.d); }); });
   document.querySelectorAll('.seg button[data-v]').forEach(function (b) { b.addEventListener('click', function () { ver = +b.dataset.v; pressed('.seg button[data-v]', 'data-v', ver); if (cur) play(); }); });
-  document.querySelectorAll('.seg button[data-k]').forEach(function (b) { b.addEventListener('click', function () { quick = b.dataset.k === 'q'; pressed('.seg button[data-k]', 'data-k', b.dataset.k); if (cur) play(); }); });
+  document.querySelectorAll('.seg button[data-k]').forEach(function (b) { b.addEventListener('click', function () { len = +b.dataset.k; pressed('.seg button[data-k]', 'data-k', len); if (cur) play(); }); });
   document.getElementById('again').addEventListener('click', function () { play(); });
   rm.addEventListener('change', describe);
   yr.addEventListener('change', drawDeal);

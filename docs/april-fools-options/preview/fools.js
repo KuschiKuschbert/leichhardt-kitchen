@@ -1,4 +1,5 @@
-/* April Fools on Home: twelve one-minute designs, each in two versions (24 jokes), for review only.
+/* April Fools on Home: twelve designs, each in two versions (24 jokes), for review only. Each is written as one minute
+   and plays at any length from 10 to 60 s (o.length), everything scaled together.
    docs/april-fools-options/brief.md. The book never loads this file.
    Every design plays on a copy of the page laid over it (.fl-layer). The real Home underneath is never touched (it is
    only made inert while the joke plays), so ending the joke is removing the copy. The copy also hides itself after
@@ -936,7 +937,7 @@
     D.querySelectorAll('.fl-reveal').forEach(function (e) { e.remove(); });
     o = o || {};
     var name = (String(o.name || 'Ann').normalize ? String(o.name || 'Ann').normalize('NFC') : String(o.name || 'Ann')).trim() || 'Ann';
-    S = { t: [], taps: 0, t0: performance.now(), name: name, lower: name.toLowerCase(), upper: name.toUpperCase(), design: design, v: o.version === 2 ? 2 : 1, k: o.quick ? 0.25 : 1 };
+    S = { t: [], taps: 0, t0: performance.now(), name: name, lower: name.toLowerCase(), upper: name.toUpperCase(), design: design, v: o.version === 2 ? 2 : 1, k: o.length ? Math.max(10, Math.min(60, o.length)) / 60 : (o.quick ? 0.25 : 1) };
     // The preview's own Reduced motion box can override the device setting (o.force), so a reviewer can watch.
     if (o.reduced || (!o.force && W.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
       var t = D.getElementById('rtitle');

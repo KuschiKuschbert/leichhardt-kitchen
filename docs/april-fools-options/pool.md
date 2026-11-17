@@ -2,6 +2,10 @@
 
 17 November 2026. After seeing A, B and C (`designs.md`), the head chef said: "i like all of them, can we make more so each of the staff members gets a random one but no two ever get the same", for a team of 13 to 20, "same day and every year", and "1 minute to fool them should be fine for them to realise what's going on". This file is that pool. Play every joke in `preview/index.html` (Version 1 or 2, real time or a quick 15-second run, any name). Frames of each at 390 px: `evidence/pool/`.
 
+## Length: one minute was too long (17 November 2026)
+
+After playing the pool, the head chef said: "i think one minute might be too long". Every joke is timed as one piece, so the preview now plays any of them at 15, 20, 30 or 45 seconds or a minute, everything scaled together (the hold to stop stays 1.2 s). The head chef picks the length on the live page. The times below are for the full minute; at 30 seconds, halve them.
+
 ## How each joke runs
 
 Every joke has the same shape over one minute, so people have time to doubt themselves, then to realise:
