@@ -1,0 +1,56 @@
+/* April Fools on Home: styles for the three designs, review only (docs/april-fools-options/brief.md).
+   The layer is a copy of the page over the real one. It hides itself at 10 s by its own animation, so a script that
+   stops part way can never leave Home covered. Only transform and opacity are animated. */
+.fl-layer { position: fixed; inset: 0; z-index: 2147483000; overflow: hidden; background: #C9B48F; touch-action: none; -webkit-tap-highlight-color: transparent; user-select: none;
+  animation: fl-life 1ms linear 10s forwards; }
+@keyframes fl-life { to { visibility: hidden; } }
+.fl-layer.fl-black { background: #000; }
+.fl-stage, .fl-shake { position: absolute; inset: 0; transform: translateZ(0); }
+.fl-app { position: absolute; left: 0; width: 100%; }
+.fl-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace !important; letter-spacing: 0 !important; }
+.fl-evil img, .fl-evil canvas { filter: hue-rotate(150deg) saturate(2.4) contrast(1.25); }
+
+/* A: the crack, the dark and the typing */
+.fl-crack { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.fl-ck-dark { fill: none; stroke: rgba(0, 0, 0, 0.55); stroke-width: 3.4; stroke-linejoin: round; stroke-linecap: round; }
+.fl-ck-light { fill: none; stroke: rgba(255, 255, 255, 0.92); stroke-width: 1.3; stroke-linejoin: round; stroke-linecap: round; }
+.fl-ck-hit { fill: rgba(255, 255, 255, 0.55); stroke: rgba(0, 0, 0, 0.5); stroke-width: 1.5; }
+.fl-dark { position: absolute; inset: 0; background: #050505; opacity: 0; z-index: 4; }
+.fl-type { position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%); width: min(320px, 84vw); z-index: 5;
+  font: 600 22px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; color: #EDEDED; }
+.fl-tl { white-space: pre-wrap; word-break: break-word; min-height: 1.5em; }
+.fl-cur { display: inline-block; width: 0.6em; height: 1.05em; margin-left: 1px; background: currentColor; vertical-align: -0.16em; animation: fl-blink 1s steps(1) infinite; }
+@keyframes fl-blink { 50% { opacity: 0; } }
+
+/* B: the telly switching off and the terminal */
+.fl-line { position: absolute; left: 0; right: 0; top: 50%; height: 3px; margin-top: -1px; background: #fff; box-shadow: 0 0 18px 5px rgba(255, 255, 255, 0.65); z-index: 4; opacity: 0; }
+.fl-term { position: absolute; inset: 0; z-index: 5; box-sizing: border-box; padding: max(56px, 9vh) 18px 18px; background: #020403; color: #8CFFB4; overflow: hidden;
+  font: 500 14px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; text-shadow: 0 0 6px rgba(80, 255, 150, 0.45); transform-origin: 50% 50%; }
+.fl-term::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.3) 0 1px, transparent 1px 3px); }
+.fl-big { font-size: 44px; font-weight: 800; line-height: 1.05; margin: 18vh 0 18px; word-break: break-word; }
+.fl-sub { font-size: 18px; line-height: 1.45; }
+.fl-count { font-size: 128px; font-weight: 800; line-height: 1; margin-top: 22px; }
+.fl-code { margin-top: 10px; }
+.fl-april { color: #FFB089; text-shadow: 0 0 8px rgba(255, 150, 100, 0.5); }
+
+/* C: colour split, tears, melting letters, the colour wheel and the one inversion */
+.fl-layer.fl-rgb .fl-app, .fl-layer.fl-rgb .fl-strip { text-shadow: -2px 0 rgba(255, 0, 190, 0.7), 2px 0 rgba(0, 225, 255, 0.7); }
+.fl-strip { position: absolute; inset: 0; z-index: 2; transform: translateZ(0); pointer-events: none; }
+.fl-ch { display: inline-block; white-space: pre; animation: fl-drip var(--t, 2.6s) cubic-bezier(.55, 0, .9, .5) var(--d, 0s) forwards; transform-origin: 50% 0; }
+@keyframes fl-drip { to { transform: translateY(var(--dy, 18px)) skewY(var(--sk, 8deg)) scaleY(var(--sy, 1.4)); opacity: 0.8; } }
+.fl-psy { position: absolute; left: 50%; top: 50%; width: 240vmax; height: 240vmax; margin: -120vmax 0 0 -120vmax; z-index: 3; pointer-events: none; mix-blend-mode: hue; opacity: 0;
+  background: conic-gradient(from 0deg, #ff00cc, #ffcc00, #00ffcc, #3366ff, #ff00cc); }
+.fl-inv { position: absolute; inset: 0; z-index: 6; background: #fff; mix-blend-mode: difference; opacity: 0; pointer-events: none; }
+.fl-hint { position: absolute; left: 50%; bottom: calc(var(--tabbar-h, 68px) + 24px); transform: translateX(-50%); z-index: 7; white-space: nowrap;
+  font: 600 14px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; color: #fff; background: #000; padding: 9px 12px; border-radius: 4px; letter-spacing: 0.06em; opacity: 0; }
+
+/* The reveal: the book's own paper card, the mascot, plain words and one button */
+.fl-reveal { position: fixed; inset: 0; z-index: 2147483100; display: grid; place-items: center; padding: 16px; box-sizing: border-box; background: rgba(28, 29, 31, 0.5); }
+.fl-card { position: relative; width: min(360px, 100%); box-sizing: border-box; margin-top: 56px; padding: 66px 20px 18px; background: #FBF8F1; color: #1C1D1F; border: 2px solid #1C1D1F; border-radius: 14px;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.25); text-align: center; font-family: Barlow, system-ui, sans-serif; }
+.fl-rv-m { position: absolute; left: 50%; top: -70px; width: 96px; height: 128px; margin-left: -48px; }
+.fl-card h2 { margin: 0 0 10px; font: 700 40px/1.05 Caveat, cursive; overflow-wrap: anywhere; }
+.fl-rv-p { margin: 0 0 6px; font-size: 18px; line-height: 1.4; font-weight: 600; }
+.fl-rv-s { margin: 10px 0 0; font-size: 15px; line-height: 1.4; color: #4A4740; }
+.fl-rv-b { margin-top: 16px; width: 100%; min-height: 48px; border: 0; border-radius: 10px; background: #1C1D1F; color: #fff; font: 700 18px/1 Barlow, system-ui, sans-serif; cursor: pointer; }
+.fl-rv-b:focus-visible { outline: 3px solid #E2602A; outline-offset: 3px; }
