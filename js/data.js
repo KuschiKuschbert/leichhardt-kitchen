@@ -1641,7 +1641,7 @@ window.LK_DATA = {
     },
     {
       id: 'smoked-chicken', art: 'smoked-chicken', no: '131', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Smoked Chicken', short: 'Smoked chicken',
-      yield: 'One whole No. 10 chicken (about 1 kg), unstuffed, with no added brine or salt solution. Brine and dry the day before. Smoke 2 hours at 150 °C, cool, then the coolroom until it is ordered. Finish to order in the oven at 180 °C until hot: 75 °C in the breast and the inner thigh.',
+      yield: 'One whole No. 10 chicken (about 1 kg), unstuffed, with no added brine or salt solution. Brine and dry the day before. Smoke 2 hours at 150 °C, cool, then the coolroom until it is ordered, 5 days at most. Finish to order in the oven at 180 °C until hot: 75 °C in the breast and the inner thigh.',
       ingredients: [
         { q: '1', name: 'Whole chicken', note: 'No. 10, unstuffed, no added brine or salt solution' },
         { q: '3 L', name: 'Herb brine', note: 'one batch per chicken', link: 'herb-brine' },
@@ -1680,7 +1680,7 @@ window.LK_DATA = {
         { title: 'Cool and hold', steps: [
           'Cool it straight after the smoker: below 21 °C within 2 hours, then 5 °C or below within 4 more hours.',
           'Start the Operandio cooling clock and record the checks.',
-          'Into the coolroom, covered and dated, until it is ordered. [How many days it keeps to confirm]'
+          'Into the coolroom, covered and dated, until it is ordered. Use within 5 days of cooking.'
         ] },
         { title: 'Finish to order', steps: [
           'When the board is ordered: into the oven at 180 °C until hot right through.',
