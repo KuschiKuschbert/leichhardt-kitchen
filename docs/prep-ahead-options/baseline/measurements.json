@@ -1,0 +1,103 @@
+{
+  "source": "Implemented app (main 70ce8f4), click-test stand-in, synthetic data, 2026-11-18 14:00 Queensland",
+  "notes": [
+    {
+      "name": "chef-add-sheet",
+      "who": "sam",
+      "width": 390,
+      "rowsInView": 4,
+      "visibleBottom": 707,
+      "rowsTotal": 6,
+      "title": "Today",
+      "dayNav": true,
+      "addLine": true,
+      "foot": "",
+      "empty": "",
+      "overflow": 0
+    },
+    {
+      "name": "staff-day-arrives",
+      "who": "ann",
+      "width": 390,
+      "rowsInView": 4,
+      "visibleBottom": 707,
+      "rowsTotal": 7,
+      "title": "Today",
+      "dayNav": false,
+      "addLine": true,
+      "foot": "",
+      "empty": "",
+      "overflow": 0
+    },
+    {
+      "name": "staff-today",
+      "who": "ann",
+      "width": 390,
+      "rowsInView": 5,
+      "visibleBottom": 707,
+      "rowsTotal": 6,
+      "title": "Today",
+      "dayNav": false,
+      "addLine": true,
+      "foot": "",
+      "empty": "",
+      "overflow": 0
+    },
+    {
+      "name": "staff-add-sheet",
+      "who": "ann",
+      "width": 390,
+      "rowsInView": 5,
+      "visibleBottom": 707,
+      "rowsTotal": 6,
+      "title": "Today",
+      "dayNav": false,
+      "addLine": true,
+      "foot": "",
+      "empty": "",
+      "overflow": 0
+    },
+    {
+      "name": "chef-today",
+      "who": "sam",
+      "width": 390,
+      "rowsInView": 4,
+      "visibleBottom": 707,
+      "rowsTotal": 6,
+      "title": "Today",
+      "dayNav": true,
+      "addLine": true,
+      "foot": "",
+      "empty": "",
+      "overflow": 0
+    },
+    {
+      "name": "chef-ahead-3",
+      "who": "sam",
+      "width": 390,
+      "rowsInView": 0,
+      "visibleBottom": 776,
+      "rowsTotal": 0,
+      "title": "Saturday",
+      "dayNav": true,
+      "addLine": false,
+      "foot": "You are looking at Saturday. Lines are added on Today only.",
+      "empty": "Nothing written for saturday yet.",
+      "overflow": 0
+    },
+    {
+      "name": "chef-today-1280",
+      "who": "sam",
+      "width": 1280,
+      "rowsInView": 5,
+      "visibleBottom": 800,
+      "rowsTotal": 6,
+      "title": "Today",
+      "dayNav": true,
+      "addLine": true,
+      "foot": "",
+      "empty": "",
+      "overflow": 0
+    }
+  ]
+}
