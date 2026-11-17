@@ -8,7 +8,8 @@
    of the Welcome row, then the Your day card, then room kept in the heading; only a name that cannot wrap leaves
    him out.
    Since 10 Nov 2026 js/prep.js also loads this file for the finished prep list: sprite() below is a still mascot
-   that can play one action once. */
+   that can play one action once.
+   Since 17 Nov 2026 he wears a festive hat on Home on a few celebration days (Festive hats on Home, below). */
 (function () {
   'use strict';
   // Home and the finished prep list each ask for this file. A second run would replace LK_MASCOT and lose hold of
@@ -58,6 +59,58 @@
     return rec;
   }
   function today() { return window.LK_TIME.day(); }
+
+  /* Festive hats on Home (head chef, 17 Nov 2026; docs/kitchen-mascot.md, Festive hats on Home). js/app.js says which
+     hat today wears, by the welcome's own rule for the day; only the mascot on Home wears it, from the first frame of
+     his play to his rest pose. Under a finished prep list (Sprite, below) he keeps his work clothes. Each hat is a small
+     pixel map drawn here, 4 px a pixel like his art, so there is no file to fail; it sits on the top point of his star
+     as HEAD measured it for each picture, leans with him and keeps inside his frame. */
+  var INK = { k: '#141418', r: '#ce2030', R: '#961422', w: '#faf8f0', W: '#d6d2c8', y: '#fac828', o: '#f08214' };
+  var HATS = {
+    // Christmas Eve, Christmas Day and Boxing Day: a Santa hat flopping to the left, away from his chimney
+    santa: { seat: [36, 48], drop: 24, rows: ['......kkkkk.....', '....kkrrrrrkk...', '...krrrrrrrrrk..', '..krrrrrrrrrrk..', 'kkkrrkrrrrrrrrk.',
+      'kwwkk.krrrrrrrk.', 'kwwwk.krrrrrrRk.', '.kkk.krrrrrrrRk.', '...kkwwwwwwwwwkk', '..kwwwwwwwwwwwwk', '..kwwWwwwWwwwWwk', '...kkkkkkkkkkkk.'] },
+    // New Year's Eve and New Year's Day: a striped party cone with a pompom
+    party: { seat: [36, 48], drop: 22, rows: ['.......kk.......', '......kyyk......', '.......kk.......', '......kook......', '......kyyk......', '.....kooook.....',
+      '.....kyyyyk.....', '....koooooook...', '....kyyyyyyyk...', '...kooooooooook.', '...kyyyyyyyyyyk.', '....kkkkkkkkkk..'] }
+  };
+  // The art's version HEAD was measured on: art with a new ?v= wears no hat until the script measures it again.
+  var HEAD_ART = '?v=1';
+  // HEAD points start: made by scripts/mascot-head-points.py from the art, never by hand. Per action, frames 0 to 7
+  // of its sheet, then its still: his size against the Welcome still, then [x, y of his star's top point, lean].
+  var HEAD_SUM = 'd3212a96b513fc14dc62a6ab197a9e9f31f29fc4552b3beb6f554ec62189e4f1', HEAD = {
+    'idle': [1,[99.4,26,0.6],[99.2,25,0.6],[99.2,25,0.5],[99.4,26,1],[99.2,26,0.5],[99.5,26,-0.1],[98.9,26,0],[99.2,26,0.4],[99.4,26,0.6]],
+    'welcome': [1,[98.7,27,-0.5],[99.4,27,-0.8],[99.4,27,-3.1],[99.4,27,-2.1],[99.2,27,-3],[99.2,27,-2.5],[99.4,27,-1],[99.4,27,0.1],[98.7,27,-0.5]],
+    'look-around': [1,[99.5,26,0.3],[98.4,26,-0.7],[99.2,26,-4.6],[99.5,26,0.4],[98.8,26,0],[99.6,26,5.9],[98.7,26,-0.2],[99.4,26,0.3],[99.5,26,0.3]],
+    'recipe-reading': [1,[98.4,26,0.3],[98,26,0.2],[98.3,26,-0.2],[98.6,26,1],[98.8,26,0.9],[98.3,26,2.3],[98.6,26,0.6],[98.6,26,0.5],[98.4,26,0.3]],
+    'ready-to-cook': [1,[99.5,28,0.8],[100.5,27,1.4],[100.8,27,0.8],[99.6,27,-0.8],[100.6,27,0.4],[98.8,32,-3.6],[99.4,27,0.2],[99.2,27,0.2],[99.5,28,0.8]],
+    'smash': [1,[87.8,28,3.3],[87.9,29,4.6],[88.3,30,3.4],[87.7,38,2],[87.4,36,1.2],[88.1,29,2.8],[87,27,2.7],[85.9,30,1.4],[87.8,28,3.3]],
+    'flip': [0.95,[85.8,30,2.5],[85.5,30,3.1],[85.8,30,3.5],[85.4,30,1.7],[86.1,30,3.7],[85.7,30,3.4],[85.3,30,1.7],[86,30,2.6],[85.8,30,2.5]],
+    'build': [1,[99.4,27,1.1],[97,26,-0.1],[96.8,26,0.2],[97.5,24,0.3],[98.3,24,1.3],[98.2,24,0.7],[97.7,24,0.1],[98.2,24,-0.3],[99.4,27,1.1]],
+    'burger': [1,[98,27,0],[97.9,29,-0.4],[98.5,26,0.2],[97.2,22,-2.1],[98.3,22,-0.6],[99,25,-1.1],[98,25,-1.2],[98.3,27,0.2],[98,27,0]],
+    'walk': [0.9,[89.7,34,1.5],[89.7,34,-0.5],[74,35,-1.9],[74.3,34,-1.5],[100.6,34,-0.6],[102.8,34,-1.2],[88.6,34,-0.4],[90,33,-0.5],[89.7,34,1.5]],
+    'smoker': [0.7,[56.3,60,0.7],[56.1,61,0.7],[56.4,61,3.8],[54.8,61,0.7],[56.4,60,1.6],[56.5,60,3.6],[55.7,60,0.7],[56,60,2],[56.3,60,0.7]]
+  };
+  // HEAD points end
+  var hatArt = {};
+  function hatPic(name) {
+    if (hatArt[name]) return hatArt[name];
+    var h = HATS[name], c = document.createElement('canvas'), x = c.getContext('2d'), i, j;
+    c.width = h.rows[0].length * 4; c.height = h.rows.length * 4;
+    if (x) for (j = 0; j < h.rows.length; j++) for (i = 0; i < h.rows[j].length; i++) if (INK[h.rows[j][i]]) { x.fillStyle = INK[h.rows[j][i]]; x.fillRect(i * 4, j * 4, 4, 4); }
+    return (hatArt[name] = c);
+  }
+  // The hat on picture f (0 to 7 of the action's sheet, 8 its still). A picture HEAD does not know wears none.
+  function hatDraw(ctx, name, action, f) {
+    var h = HATS[name], row = HEAD[action], p = row && row[f + 1];
+    if (!h || !p || V !== HEAD_ART) return;
+    var s = row[0], seatY = p[1] + h.drop * s, top = seatY - h.seat[1] * s;
+    ctx.save(); ctx.imageSmoothingEnabled = false;
+    ctx.translate(p[0], seatY - Math.min(0, Math.floor(top)));
+    ctx.rotate(p[2] * Math.PI / 180); ctx.scale(s, s);
+    ctx.drawImage(hatPic(name), -h.seat[0], -h.seat[1]);
+    ctx.restore();
+  }
   function image(file, ok, no) { var i = new Image(); i.onload = function () { ok(i); }; i.onerror = no; i.src = ART + file + V; return i; }
 
   function textBoxes(el) {
@@ -143,19 +196,22 @@
     return null;
   }
 
-  function Mascot(host, id) {
+  function Mascot(host, id, hat) {
     var self = this, btn = document.createElement('button'), cv = document.createElement('canvas'), ctx = cv.getContext('2d');
     var timer = null, sheets = {}, rests = {}, playing = false, busy = false, frame = 0, clip = '', plays = 0, gone = false, holdTimer = null, io = null, ro = null;
+    var wear = HATS[hat] ? hat : '';
     btn.type = 'button'; btn.className = 'mascot'; btn.setAttribute('aria-label', 'Kitchen mascot, play again');
     cv.width = 192; cv.height = 256; btn.appendChild(cv);
-    function paintImg(img, f) {
+    // name: the action whose sheet (frame f) or still (no f) this is, for today's hat
+    function paintImg(img, f, name) {
       if (gone || !ctx) return;
       ctx.clearRect(0, 0, 192, 256); ctx.imageSmoothingEnabled = false;
       if (f == null) ctx.drawImage(img, 0, 0, 192, 256); else ctx.drawImage(img, (f % 4) * 192, Math.floor(f / 4) * 256, 192, 256, 0, 0, 192, 256);
+      if (wear) hatDraw(ctx, wear, name, f == null ? 8 : f);
       btn.setAttribute('data-frame', f == null ? 'rest' : String(f));
     }
     function stop() { if (timer) clearTimeout(timer); timer = null; }
-    function rest() { stop(); playing = false; btn.setAttribute('data-state', 'rest'); if (rests.welcome) paintImg(rests.welcome); }
+    function rest() { stop(); playing = false; btn.setAttribute('data-state', 'rest'); if (rests.welcome) paintImg(rests.welcome, null, 'welcome'); }
     function still(name, ok) { if (rests[name]) return ok(rests[name]); image(name + '-still.png', function (i) { rests[name] = i; ok(i); }, function () { ok(null); }); }
     function tick() {
       if (gone || !playing) return;
@@ -166,7 +222,7 @@
           var r = load(id); if (r.today === clip && r.day === today() && !r.played) { r.played = true; save(id, r); }
           return;
         }
-        frame++; paintImg(sheets[clip], frame); tick();
+        frame++; paintImg(sheets[clip], frame, clip); tick();
       }, CLIPS[clip][frame]);
     }
     // One pass of today's action. Reduced motion shows its pose for a moment instead (on a tap only).
@@ -174,7 +230,7 @@
       if (gone || playing || busy) return;
       if (reduced.matches) {
         if (!tapped) return;
-        clearTimeout(holdTimer); still(name, function (i) { if (!i || gone) return; paintImg(i); btn.setAttribute('data-state', 'still');
+        clearTimeout(holdTimer); still(name, function (i) { if (!i || gone) return; paintImg(i, null, name); btn.setAttribute('data-state', 'still');
           holdTimer = setTimeout(function () { if (!playing) rest(); }, 2000); });
         return;
       }
@@ -182,7 +238,7 @@
       busy = true;
       function go(sheet) {
         busy = false; if (gone || !sheet) return;
-        sheets[name] = sheet; clip = name; frame = 0; playing = true; plays++; btn.setAttribute('data-state', 'playing'); paintImg(sheet, 0); tick();
+        sheets[name] = sheet; clip = name; frame = 0; playing = true; plays++; btn.setAttribute('data-state', 'playing'); paintImg(sheet, 0, name); tick();
       }
       if (sheets[name]) go(sheets[name]); else image(name + '-sheet-compact.webp', go, function () { busy = false; });
     }
@@ -212,14 +268,22 @@
         // no art: Home is the plain welcome, and the next Home draw on this page does not keep his room (artOff)
         if (!i) { artOff = true; self.dispose(); return; }
         artOff = false;
-        paintImg(i); btn.setAttribute('data-state', 'rest');
+        paintImg(i, null, 'welcome'); btn.setAttribute('data-state', 'rest');
         if (btn.hidden) return;
         var d = today(), r = load(id);
         if (r.day !== d) { r = draw(id, d, r); save(id, r); }
         if (!r.played) play(r.today, false);
       });
     };
-    this.state = function () { return { id: id, clip: clip, frame: frame, playing: playing, plays: plays, scheduled: !!timer, hidden: btn.hidden, mounted: btn.isConnected, rest: btn.getAttribute('data-state') }; };
+    /* A new day, Off, or the clock coming ready changes the hat where he stands. At rest he is drawn again at once;
+       in a play the next frame wears it, so a play is never cut or started again. */
+    this.wear = function (h) {
+      h = HATS[h] ? h : '';
+      if (h === wear) return;
+      wear = h;
+      if (!playing && rests.welcome && btn.getAttribute('data-state') === 'rest') paintImg(rests.welcome, null, 'welcome');
+    };
+    this.state = function () { return { id: id, clip: clip, frame: frame, playing: playing, plays: plays, scheduled: !!timer, hidden: btn.hidden, mounted: btn.isConnected, rest: btn.getAttribute('data-state'), hat: wear }; };
     this.dispose = function () {
       gone = true; stop(); clearTimeout(holdTimer); if (io) io.disconnect(); if (ro) ro.disconnect();
       document.removeEventListener('visibilitychange', onVis); btn.removeEventListener('click', onTap);
@@ -280,17 +344,20 @@
     };
   }
 
+  // person.hat: today's festive hat on Home (since 17 Nov 2026), or none
   function mount(app, person) {
     var host = app.querySelector('#main.wall-main');
     if (!person || !person.id || !host || !host.querySelector('#rtitle.hm-welcome')) { unmount(); return; }
-    if (cur && cur.id === person.id && cur.host === host && cur.state().mounted) { cur.place(); return; }
-    unmount(); cur = new Mascot(host, person.id); cur.start();
+    if (cur && cur.id === person.id && cur.host === host && cur.state().mounted) { cur.place(); cur.wear(person.hat); return; }
+    unmount(); cur = new Mascot(host, person.id, person.hat); cur.start();
   }
   function unmount() { if (cur) cur.dispose(); cur = null; }
   window.LK_MASCOT = {
     api: API, mount: mount, unmount: unmount,
     // Since 17 Nov 2026 he can stand beside the welcome and say it (js/app.js asks before drawing the bubble).
     say: 1, artOff: function () { return artOff; },
+    // Since 17 Nov 2026 the hats he can wear on Home (mount()'s person.hat).
+    hats: Object.keys(HATS),
     sprite: function () { lastSprite = Sprite(); return lastSprite; },
     state: function () { return cur ? cur.state() : null; },
     // For the click tests: the last still mascot made by sprite().

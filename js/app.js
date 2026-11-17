@@ -1453,6 +1453,15 @@
      on the first such Home view (about 11 KB, once); its art loads per day and is never kept in the saved shell.
      No reads. A failed download leaves Home as it is and tries again on the next Home view. */
   var mascotLoad = null;
+  /* Festive hats on Home (head chef, 17 Nov 2026; docs/kitchen-mascot.md): the day comes from the welcome's own rule
+     (clock ready, celebrations On on this device, today's occasion), so the hat and the wish always agree. A hat for
+     the Christmas days and the New Year days only, for now. Under a finished prep list he keeps his work clothes. */
+  var MASCOT_HATS = { 'au-christmas-eve': 'santa', 'au-christmas-day': 'santa', 'au-boxing-day': 'santa', 'au-new-years-eve': 'party', 'au-new-years-day': 'party' };
+  function mascotHat() {
+    var bridge = window.KB_THEME_BRIDGE && window.KB_THEME_BRIDGE.status();
+    var themeId = window.LK_TIME.ready() && bridge && !bridge.gated ? bridge.themeId : '';
+    return MASCOT_HATS[themeId] || '';
+  }
   function mascotSync() {
     var P = window.LK_PREP, id = P && P.whoId ? P.whoId() : '';
     if (parseRoute().name !== 'landing' || !id) { if (window.LK_MASCOT) window.LK_MASCOT.unmount(); return; }
@@ -1460,10 +1469,10 @@
       if (window.LK_MASCOT.api !== 1) return;
       // an older copy of his file cannot stand beside the words: the heading stays plain and he takes his old place
       if (!window.LK_MASCOT.say) homeSayStop();
-      window.LK_MASCOT.mount(app, { id: id });
+      window.LK_MASCOT.mount(app, { id: id, hat: mascotHat() });
       return;
     }
-    if (!mascotLoad) mascotLoad = mgScript('js/mascot.js?v=3').then(function () { homeSayOff = false; mascotSync(); }, function () { mascotLoad = null; homeSayStop(); });
+    if (!mascotLoad) mascotLoad = mgScript('js/mascot.js?v=4').then(function () { homeSayOff = false; mascotSync(); }, function () { mascotLoad = null; homeSayStop(); });
   }
   // New words or a seasonal change move a mascot already on Home to its new place. Never a new one: a failed
   // download waits for the next Home view (docs/kitchen-mascot.md).

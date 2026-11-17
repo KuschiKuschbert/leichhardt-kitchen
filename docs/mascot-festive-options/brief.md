@@ -128,3 +128,14 @@ A blend of all three is worse: a hat and a knot accent on one head brings back t
 - Remeasure the implemented app at 390, 768 and 1280 px (and 1920 px for the finished list, which stays plain), light and dark, with the real fonts.
 - Click tests: the hat's pixel present on Christmas Day; gone at Boxing Day 23:59:30 plus 90 s, with Off, on a quiet day and on an ordinary day; a late clock; reduced motion and Still (the hat on the still); a hat on the play's frames; none on the finished list; an older `js/mascot.js` with no costume flag; nothing fetched for the hat. The countdown: 30 November (none), 1 December (24 days), 17 December, 18 December (the usual words), Off, midnight.
 - A node check that every one of the 99 head positions matches the art's version and hash.
+
+## Chosen, 17 November 2026
+
+The owner: "go with your recommendations, both in one pull request". The recommended blend (A's hat on every frame, on Home only, with C's legibility rule), starting with the Santa hat and the party cone, and the countdown as K2.
+
+## Built, 17 November 2026
+
+- **Hats.** `HATS`, `HEAD`, `hatDraw()` and `wear()` in `js/mascot.js` (`?v=4` from both callers); `mascotHat()` and `MASCOT_HATS` in `js/app.js`; `scripts/mascot-head-points.py`. Per action one size (the middle of its 9 pictures, snapped), so a hat never changes size by a pixel within a play. The repair for the break-it finding is in: `mount()` hands the hat to a mascot already standing, and the next kitchen day takes it off within a minute (checked at Boxing Day 23:59:30). A hat that would cross the frame's top edge moves down.
+- **Countdown.** `countdown()` in `js/seasonal/seasonal.js`, inside the Coming up lookahead, so Off, the clock and midnight work as for every celebration. On 17 December the card says "Christmas Eve, Thu 24 Dec" and "Christmas Day, in 8 days"; from 18 December its usual words.
+- **Tests.** `tests/mascot-hats.test.js` (23 checks, 14 fail on the code before) and `tests/christmas-countdown.test.js` (18 checks, 5 fail before). The mascot, seasonal and Home files that touch the same code pass: mascot, mascot-finished-list, mascot-section-done, mascot-wide-finish, seasonal, seasonal-calendar, seasonal-shell, home-board, home-welcome-randomiser, staff-welcome-layout (1,242 checks).
+- **Not yet checked:** dark mode, real phones, the section screens at 1.5 m, and the live site (after merge).
