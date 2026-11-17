@@ -152,7 +152,7 @@
   function hint(s) {
     if (s.hinted || !live(s)) return;
     s.hinted = true;
-    var h = mk('div', 'fl-hint', s.L, 'Hold anywhere to stop');
+    var h = mk('div', 'fl-hint', s.L, 'Press and hold to stop');
     h.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, fill: 'forwards' });
   }
   function holdEnd(s) { if (!s) return; clearTimeout(s.holdT); if (s.ring) { s.ring.remove(); s.ring = null; } }
@@ -172,7 +172,7 @@
     s.lastTap = now;
     var p = hit(e.clientX, e.clientY);
     if (s.tap) s.tap(p, e.clientX, e.clientY); else nudge(p);
-    if (s.taps >= 4) hint(s);
+    if (s.taps >= 3) hint(s);
   }
 
   function pageCopy() {
@@ -222,7 +222,7 @@
     var h = mk('h2', '', c, 'April Fools, ' + s.name + '!'); h.id = 'fl-rv-h';
     mk('p', 'fl-rv-p', c, 'A joke for 1 April. You did nothing wrong, and nothing is broken.');
     mk('p', 'fl-rv-p', c, 'Your prep list, orders and recipes are all safe.');
-    mk('p', 'fl-rv-s', c, 'On 1 April people in Australia play tricks on each other until midday. This one was from the head chef.');
+    mk('p', 'fl-rv-s', c, "April Fools' Day: on 1 April people in Australia play tricks on each other until midday. This one was from the head chef.");
     var b = mk('button', 'fl-rv-b', c, 'Back to my day'); b.type = 'button';
     var done = false, t0 = performance.now();
     function close() {
@@ -388,10 +388,10 @@
     later(15500, function () {
       var t = s.term = mk('div', 'fl-term' + (v2 ? ' fl-amber' : ''), s.L), log = mk('div', 'fl-log', t);
       var lines = v2 ? [
-        'KITCHEN BOOK UPDATE 4.01', 'do not turn off your phone', '', pad('> downloading update ', 'OK'), pad('> user ', nm.slice(0, 14)),
-        pad('> removing old recipes ', 'OK')].concat(secs.map(function (x) { return pad('    ' + x.toLowerCase().replace(/\s+/g, '_') + ' ', 'removed'); }), [
+        'MASCOT-OS 4.01', 'the mascot has taken over', '', pad('> user ', nm.slice(0, 14)), pad('> hiding the good knife ', 'OK'),
+        pad('> hiding the recipes ', 'OK')].concat(secs.map(function (x) { return pad('    ' + x.toLowerCase().replace(/\s+/g, '_') + ' ', 'hidden'); }), [
         pad('> teaching the mascot to cook ', 'FAILED'), pad('> moving ' + mine.toLowerCase() + ' to the car park ', 'OK'), pad('> salt replaced with sugar ', 'OK'),
-        pad('> ' + nl.slice(0, 12) + "'s settings ", 'scrambled'), pad('> installing 401 of 401 ', '...')])
+        pad('> ' + nl.slice(0, 12) + "'s settings ", 'scrambled'), pad('> installing more mascots ', '...')])
         : ['KB-OS 4.01  KITCHEN BOOK', pad('> remote session ', 'OPEN'), pad('> user ', nm.slice(0, 14)), '> rm -rf /kitchen/recipes']
           .concat(secs.map(function (x) { return pad('    ' + x.toLowerCase().replace(/\s+/g, '_') + '.rcp ', 'gone'); }), [
             pad('    gravy.rcp ', 'gone'), pad('    the_good_knife ', 'gone'), '> encrypting prep list', pad('> blaming the fryer ', 'done'),
@@ -408,8 +408,8 @@
       var big = mk('div', 'fl-big', s.term);
       typeLines(big, ['HELLO ' + nm + '.'], 90, 0, function () {
         var sub = mk('div', 'fl-sub', s.term);
-        typeLines(sub, [v2 ? 'your book is being updated.' : 'your book belongs to us now.', 'do not turn off your phone.'], 45, 500, function () {
-          var bar = mk('div', 'fl-sub fl-bar', s.term), n = 0, word = v2 ? 'installing ' : 'restoring the book ';
+        typeLines(sub, v2 ? ['the mascot is in charge now.', 'please clap.'] : ['your book belongs to us now.', 'do not panic.'], 45, 500, function () {
+          var bar = mk('div', 'fl-sub fl-bar', s.term), n = 0, word = v2 ? 'more mascots ' : 'restoring the book ';
           var step = every(260, function () {
             n = Math.min(99, n + Math.ceil(rnd(1, 5)));
             bar.textContent = word + '[' + '#'.repeat(Math.floor(n / 10)) + '-'.repeat(10 - Math.floor(n / 10)) + '] ' + n + '%';
@@ -473,7 +473,6 @@
       s.L.classList.add('fl-rgb');
       go(s.shake, [{ transform: 'translate(0,0)' }, { transform: 'translate(-2px,1px)' }, { transform: 'translate(1px,-1px)' }, { transform: 'translate(2px,1px)' }, { transform: 'translate(0,0)' }], { duration: 700, iterations: Infinity, easing: 'steps(1)' });
     });
-    later(25000, function () { var h = mk('div', 'fl-warn', s.L, "don't touch anything."); h.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, fill: 'forwards' }); });
     later(27000, function () {
       var m = one('.mascot');
       if (!m) return;
@@ -501,7 +500,7 @@
   /* ============ D · Ransom note: letters are cut out of the page and glued into a note ============ */
   function Dn(s) {
     var v2 = s.v === 2, nm = first(s.upper);
-    var lines = v2 ? ['WE TOOK YOUR VOWELS, ' + nm + '.', 'SAY CHEESE TO GET', 'THEM BACK.'] : ['WE HAVE YOUR SAUCES, ' + nm + '.', 'LEAVE 1 KG OF BUTTER', 'AT THE PASS.', 'TELL NO ONE.'];
+    var lines = v2 ? ['WE TOOK YOUR VOWELS, ' + nm + '.', 'SAY CHEESE TO GET', 'THEM BACK.'] : ['WE HAVE YOUR SAUCES, ' + nm + '.', 'LEAVE 1 KG OF BUTTER', 'AT THE PASS.', 'OR NO GRAVY.'];
     opening(s, ['typo', 'clock', 'tilt', 'typo']);
     var src = [], note, targets = [];
     later(11000, function () {
@@ -632,8 +631,9 @@
         }
         if (d.y - d.n * fs > innerHeight) drops.splice(i, 1);
       }
-      if (spawnTop && Math.random() < spawnTop) drops.push({ x: Math.floor(Math.random() * innerWidth / fs) * fs, y: -fs, v: rnd(160, 420), n: Math.floor(rnd(8, 22)), trail: [] });
-      for (var q = 0; q < 3 && letterQ.length; q++) {
+      // At most 110 drops at once, so a slow phone keeps up (the rain was the heaviest joke, 522 to 579 ms a second at 4x slower).
+      if (spawnTop && drops.length < 110 && Math.random() < spawnTop) drops.push({ x: Math.floor(Math.random() * innerWidth / fs) * fs, y: -fs, v: rnd(160, 420), n: Math.floor(rnd(8, 22)), trail: [] });
+      for (var q = 0; q < 3 && letterQ.length && drops.length < 140; q++) {
         var c = letterQ.shift(), r = rect(c);
         c.classList.add('fl-gone');
         drops.push({ x: r.left, y: r.top + r.height * 0.8, v: rnd(90, 260), n: Math.floor(rnd(5, 14)), trail: [c.textContent] });
@@ -826,11 +826,11 @@
   function K(s) {
     var v2 = s.v === 2, nm = first(s.name), turned = [];
     var script = v2 ? [
-      [4000, nm + '.'], [8000, nm + '. We need to talk.'], [13000, 'The fridge told me everything.'], [18000, 'Who used the last of the butter?'],
+      [4000, nm + '.'], [8000, nm + '. Can I tell you a secret?'], [13000, 'The fridge told me everything.'], [18000, 'Who used the last of the butter?'],
       [23000, 'The sauces are not speaking to you.', '#hm-prep'], [28000, 'The tabs have gone on strike.', 'tabs'], [33000, 'Your break went home.', '#hm-day'],
       [38000, 'Fine. Be like that.', '#hm-with'], [43000, '...'], [47000, 'Still here?'], [51000, "It's 1 April, " + nm + '.'], [54500, 'We still love you.']
     ] : [
-      [4000, nm + '.'], [8000, nm + ', are you there?'], [13000, "Don't touch anything."], [18000, 'I know what you did to the jus.'],
+      [4000, nm + '.'], [8000, nm + ', are you there?'], [13000, "Don't look at me like that."], [18000, 'I know what you did to the jus.'],
       [23000, "The prep list doesn't want to talk to you.", '#hm-prep'], [28000, 'Neither does your break.', '#hm-day'], [33000, 'Everyone on with you has left.', '#hm-with'],
       [38000, "It's just you and me now.", 'tabs'], [43000, 'Forever.'], [47000, '...'], [51000, "Kidding. It's 1 April."], [54500, 'Got you, ' + nm + '.']
     ];
@@ -942,7 +942,7 @@
     // A hidden screen ends it: the reveal is waiting when they come back.
     s.vis = function () { if (D.hidden) reveal(); };
     D.addEventListener('visibilitychange', s.vis);
-    later(25000, function () { hint(s); });
+    later(15000, function () { hint(s); });
     later(END, reveal);
     DESIGNS[design].run(s);
   }
