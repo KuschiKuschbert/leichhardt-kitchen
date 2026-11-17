@@ -27,6 +27,16 @@ Built 10 November 2026 (owner: "yes i trust your recommendations", after the ser
 - **Where it does not show.** A list of one line (an ordinary tick), the wall board, another day, a function's platter tab. Those keep their plain words. A section's own tab keeps its plain words under 900 px; from 900 px wide a finished section has its own finished words there (below).
 - **Size.** 48 x 64 px where Handy sits under the list (under 900 px), so the page's words stay on one line beside him, with his room kept before the art loads and when it is missing, so nothing under him moves. From 900 px wide the card says it large with him under his words, up to his drawn size (below); where the large words do not fit, with no signal, or with an older saved stylesheet, it is the small card at 64 x 85 px.
 
+## Today finishes today
+
+Built 17 November 2026 (owner: "Build A", after the presence study: [the brief](mascot-presence-options/brief.md), round 1 Build smaller 5 of 5, round 2 A first for all six). Lines written tonight for tomorrow sat on today's list under "Tonight, for tomorrow" as open lines, so once tomorrow's list was started today's list could never finish and the card above never came.
+
+- **A real night list.** `nightCut()` in `js/prep.js`: the batch today's own lines clocked (`LK_LEARN.listStart()`, lines the server holds), only when it started no earlier than 90 minutes before the kitchen's usual night list for that weekday, or any night (`summary/learned`, already read). An afternoon batch of dinner lines, one late line, or no usual night known yet is not a night list, and everything is as before.
+- **One count everywhere.** With a night list, tomorrow's lines leave today's counts (`dayLines()`): the header ("15 of 15 done", and "· 6 for tomorrow" beside the day line, on its row, so the header keeps its height when the sixth line arrives from another screen), Home's total and section bars, Closing soon, the start-here numbers and Waiting longest, the finished card, the slip's section sentence and a section's finished words.
+- **The finish above tomorrow's lines.** The card says "Every line for today ticked. 15 of 15." and "Tomorrow's 6 lines are below.", above "Tonight, for tomorrow", whose lines stay to tick tonight. On a wide screen it is the large scene only where tomorrow's heading and two of its lines stay in view (owner, decision 3), else the small card. Serve plays as before.
+- **A section's own tab** gives tomorrow's lines of that section their own "Tonight, for tomorrow" heading, last, with a night list, so the tab's finished words come above them.
+- `tests/today-finishes.test.js` (32 checks; 16 fail on the code before).
+
 ## A finished section, on the slip
 
 Built 10 November 2026 (owner: "yeah go ahead", the same evening step 1 went live). This is step 2 of the council's recommendation in [the mascot cheer study](mascot-cheer-options/brief.md). The council split three to three on it, and the recommendation was to let step 1 run about four weeks first; the owner chose to go ahead. Words only: the mascot is not on the slip.

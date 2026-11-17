@@ -57,3 +57,29 @@ The owner asked: "can you think about how to make the mascot smarter across the 
 | Transfers | "Nothing is out." | "Everything's back. Nothing out." (idea 7) | Not chosen |
 
 Round 2 of the Home line (direction 1) was not asked for.
+
+## The finish line of Orders, Functions and Cleaning: round 1, 17 November 2026
+
+[Proposal](core-finish-proposal.md): the finished prep list's card on each page, at its own finish. Five fresh reviewers, each judging the three pages.
+
+| Reviewer | Orders | Functions | Cleaning | Most useful change |
+| --- | --- | --- | --- | --- |
+| Cook mid-service | Build smaller: a still beside the page's own sentence, no play | Build smaller: the function's own page only, "Every round sent.", never `#/fn/now` | Don't build yet | A still beside each page's own finish words, only on a view with nothing left |
+| Head chef | Build smaller: a still inside "Everything on this list has been ordered.", no play, no second count | Don't build: the page already says Done, All sent, the time and who | Don't build yet | Orders only, as a still, after Prep's design A has run four weeks |
+| Skeptic | Don't build | Don't build | Don't build yet | None of the three until Prep's design A has run four weeks; then one page whose finish is rare, held by the server, outside service, in the page's own words |
+| New starter | Build smaller: a still, no play | Build smaller, new words: "All 3 rounds sent." | Don't build yet | Each page's own status word and the count; no slang, no farewell |
+| Keeper of the book | Build smaller: a still, no play | Build smaller: `#/fn/<id>` only, once Functions has confirmed every trip out | Don't build | One shared helper for his art pulled out of `finPaint()`, each page giving only its own finish rule |
+
+**Verdicts.** Orders: Build smaller, 4 of 5. Functions: Build smaller, 3 of 5 (head chef and skeptic: Don't build). Cleaning: Don't build yet, 5 of 5.
+
+**Agreement.** Orders: a still beside the page's own "Everything on this list has been ordered.", no play and no second count. Functions: never "out" (since 14 November "out" means Functions confirmed the trip, which `allSentAt()` does not wait for), never on `#/fn/now` while another function has rounds to go. Cleaning: held back from the team, no settled finish (Awaiting Pass check, Unable to complete), no listener, close to a quiet zone.
+
+**Leading Break-it findings (read in code, not run).**
+
+| Finding | Reviewers | Disposition |
+| --- | --- | --- |
+| An ordered line stays 10 minutes for Undo (`ORD_HIDE`), so the finish shows when a shared screen's 10 minute lock comes, and Prep's 2 minute memory of the finishing tick means he could never play there | all five | Orders: a still only, no play |
+| "Every round is out." beside "Waiting for Functions to confirm"; the sender's Undo can take it back after he has played | all five | Functions: "All 3 rounds sent.", the function's own page only, or not at all |
+| A cleaning job reopened on another screen while one says "packed down": the page reads once, with no listener | skeptic, keeper | Cleaning: not until it has a settled finish and a live answer |
+
+**Recommendation for the owner.** Orders as a still beside its own finish sentence, built after design A has been seen in the kitchen for a few weeks (head chef, skeptic). Functions only with the new words, on the function's own page, if the owner still wants it. Cleaning not until it is on for the team.
