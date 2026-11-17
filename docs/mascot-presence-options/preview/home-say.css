@@ -1,0 +1,14 @@
+/* Review-only (home-say.js): the welcome said by the mascot. The heading keeps its words, its randomiser and its
+   place as the page's heading; it is drawn as his speech bubble, in the book's paper and ink, with room kept on its
+   left for him. Smaller than the big welcome it replaces. */
+#main.wall-main { position: relative; }
+#rtitle.hm-welcome.pv-say { --room: 84px; position: relative; box-sizing: border-box; width: fit-content; max-width: calc(100% - var(--room)); margin-left: var(--room); padding: 6px 18px 8px; border: 2px solid var(--ink, #1a1a1a); border-radius: 18px; background: var(--surface-paper, #FBF8F1); font-size: 2.1rem; line-height: 1.15; }
+#rtitle.hm-welcome.pv-say::before { content: ''; position: absolute; left: -15px; bottom: 12px; border: 8px solid transparent; border-right: 14px solid var(--ink, #1a1a1a); border-left: 0; }
+#rtitle.hm-welcome.pv-say::after { content: ''; position: absolute; left: -10px; bottom: 14px; border: 6px solid transparent; border-right: 10px solid var(--surface-paper, #FBF8F1); border-left: 0; }
+.wall-date.pv-say-date { margin-left: 84px; margin-top: 6px; }
+@media (max-width: 767px) {
+  #rtitle.hm-welcome.pv-say { --room: 60px; font-size: 1.6rem; padding: 4px 12px 6px; border-radius: 14px; }
+  #rtitle.hm-welcome.pv-say.hm-welcome-long { font-size: 1.35rem; }
+  #rtitle.hm-welcome.pv-say.hm-welcome-compact { font-size: 1.15rem; }
+  .wall-date.pv-say-date { margin-left: 60px; }
+}

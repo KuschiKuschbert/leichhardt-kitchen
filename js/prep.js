@@ -3623,6 +3623,25 @@
   // An open line that sits under "Tonight, for tomorrow" on today's All list (pageBody()), not under its section.
   // One rule for the page and for the section's sentence on the slip (secWords()), so the two cannot disagree.
   function tonightLine(x, day, cut) { return cut >= 0 && !x.done && !x.deleted && writtenLate(x, day, cut); }
+  /* Today finishes today (owner, 17 Nov 2026: "Build A"; docs/mascot-presence-options/brief.md). Lines written tonight
+     for tomorrow sat on today's list as open lines, so once tomorrow's list was started today's could never finish.
+     With a real night list they leave today's counts: the header, Home, Closing soon, the start-here numbers, the
+     finished card and a section's finished words. A real night list is one today's own lines clocked (the batch of
+     LK_LEARN.listStart(), lines the server holds) that started no earlier than 90 minutes before the kitchen's usual
+     night list for that weekday, or any night (summary/learned, already read: no read of its own). Anything else, an
+     afternoon batch of dinner lines, one late line, or no usual night known yet, is -1, and every count is as before. */
+  function nightCut(day) {
+    if (day !== dayNow() || !window.LK_LEARN || !S.lists) return -1;
+    var own = window.LK_LEARN.listStart(S.items.filter(function (x) { return !x._unsent; }), day, T);
+    if (!own || own.m < 0) return -1;
+    var w = S.lists.dow ? S.lists.dow[String(parseYmd(day).getDay())] : undefined, usual = typeof w === 'number' ? w : S.lists.usual;
+    return typeof usual === 'number' && usual >= 0 && own.m >= usual - 90 ? own.m : -1;
+  }
+  // The day's own lines that count for that day: not a function's platters, not removed, not tomorrow's (nightCut()).
+  function dayLines(date) {
+    var cut = nightCut(date);
+    return S.items.filter(function (x) { return !x.deleted && !x.fn && !(cut >= 0 && tonightLine(x, date, cut)); });
+  }
   // the rollovers wait for summary/learned (or for its read to fail), so they know when the night list was written
   function learnedIn() { return S.learnFor === S.pin + '|' + dayNow() || waiting('learned'); }
   // the same for the past days: read, or their read failed (the rollover then reads the days it needs itself)
@@ -5313,17 +5332,18 @@
   // The list is finished and sent, and the page still shows its plain "ticked off" words where the card goes.
   function finDue() {
     if (S.name !== 'prep' || !S.root || S.root.querySelector('.nb-fin') || !S.root.querySelector('.nb-left .nb-body > .nb-empty')) return false;
-    var daily = S.items.filter(function (x) { return !x.deleted && !x.fn; });
+    var daily = dayLines(S.date);
     return finOk(daily, daily.filter(function (x) { return x.done; }).length, dayNow());
   }
-  function finHTML(doneN, n) {
-    return '<div class="nb-fin"><span class="nb-fin-art" data-fin-art aria-hidden="true"></span><div class="nb-fin-w"><p class="nb-fin-say">Every line ticked. ' + doneN + ' of ' + n + '.</p><p class="nb-empty">See Done today under Handy.</p></div></div>';
+  // tmr: tomorrow's lines under the card (today finishes today, 17 Nov 2026): the words say whose lines are ticked
+  function finHTML(doneN, n, tmr) {
+    return '<div class="nb-fin"><span class="nb-fin-art" data-fin-art aria-hidden="true"></span><div class="nb-fin-w"><p class="nb-fin-say">Every line ' + (tmr ? 'for today ' : '') + 'ticked. ' + doneN + ' of ' + n + '.</p><p class="nb-empty">' + (tmr ? 'Tomorrow\'s ' + tmr + (tmr === 1 ? ' line is' : ' lines are') + ' below.' : 'See Done today under Handy.') + '</p></div></div>';
   }
   // This phone's own tick just finished today's list (or an untick took it back): he may play once when the card shows.
   // Only a line of the day's own list counts, and only a list of more than one line: a function's platter has its
   // own tab and count, and leaves the cheer as it was.
   function finNote(date, id, done) {
-    var daily = S.items.filter(function (x) { return !x.deleted && !x.fn; }), it = daily.filter(function (x) { return x.id === id; })[0];
+    var daily = dayLines(date), it = daily.filter(function (x) { return x.id === id; })[0];
     if (!it) return;
     if (!done || date !== dayNow() || daily.length < 2) { finCheer = null; return; }
     finCheer = daily.some(function (x) { return !x.done && x.id !== id; }) ? null : { day: date, id: id, who: S.who, at: Date.now(), seen: false, said: false };
@@ -5358,12 +5378,12 @@
       // on a finished section's own tab (finFit()) he is a still: the slip has read the sentence out, and the one
       // play belongs to the finished list, even when the tick that finished the list was made on this tab
       var sec = slot.getAttribute('data-fin-art') === 'sec';
-      var gone = !S.root.querySelector('.nb-left .nb-rows .nb-row');
+      var gone = !S.root.querySelector('.nb-left .nb-rows:not(.nb-tmr) .nb-row');
       if (!sec && live && gone && !finCheer.said) { finCheer.said = true; var say = S.root.querySelector('.nb-fin-say'); if (say) liveSay(say.textContent); }
       if (!M || typeof M.sprite !== 'function') {
         // An answer without sprite() is an older saved copy (the saved shell hands that back with no signal):
         // one try, like a failed download, never a loop.
-        if (!finLoad && !finOff && window.LK_APP && window.LK_APP.load) finLoad = window.LK_APP.load('js/mascot.js?v=2').then(function () {
+        if (!finLoad && !finOff && window.LK_APP && window.LK_APP.load) finLoad = window.LK_APP.load('js/mascot.js?v=3').then(function () {
           finLoad = null;
           if (window.LK_MASCOT && typeof window.LK_MASCOT.sprite === 'function') finPaint(); else { finOff = true; finPaint(); }
         }, function () { finLoad = null; finOff = true; finPaint(); });
@@ -5456,7 +5476,7 @@
     try {
       var m = act && act.sec, date = m && m.date;
       if (!m || !secView(date) || S.tab !== m.tab || secWaiting()) return '';
-      var daily = S.items.filter(function (x) { return !x.deleted && !x.fn; }), it = daily.filter(function (x) { return x.id === m.id; })[0];
+      var daily = dayLines(date), it = daily.filter(function (x) { return x.id === m.id; })[0];
       // this person's own tick, still standing
       if (!it || !it.done || it.doneById !== m.who || m.who !== S.who) return '';
       // the heading the line sits under: the tab's on a section's own tab, the line's own section on All
@@ -5505,7 +5525,7 @@
       if (S.name !== 'prep' || !S.root || !S.tab) return false;
       var plain = S.root.querySelector('.nb-left .nb-body > .nb-empty');
       if (!plain || plain.hasAttribute('data-fin-sec')) return false;
-      var daily = S.items.filter(function (x) { return !x.deleted && !x.fn; });
+      var daily = dayLines(S.date);
       return !daily.some(function (x) { return inTab(x) && (!x.done || lingers(x)); }) && !!secPage(daily, S.date);
     } catch (e) { return false; }
   }
@@ -5535,7 +5555,8 @@
       // list's card, or removed lines a chef has asked to see. The large words come when the page has emptied, on
       // the draw he speaks and plays on, so their size is chosen once and does not change a few seconds after the
       // finish, and they never stand under a row. (A section's tab says nothing new while a line lingers.)
-      if (S.root.querySelector('.nb-left .nb-rows .nb-row')) {
+      // tomorrow's lines (.nb-tmr) stay under the finished words on purpose: today finishes today (17 Nov 2026)
+      if (S.root.querySelector('.nb-left .nb-rows:not(.nb-tmr) .nb-row')) {
         // A line this person ticked on another screen lingers here too, and only the screen that made the tick set
         // the draw that ends it: one draw when the linger is over, so the card does not wait small for some later
         // draw. Time passing only, and only while a line really lingers.
@@ -5569,7 +5590,11 @@
       // His drawn size is for the whole finished list only. On a section's tab he is never taller than his words:
       // 96 x 128 px under two lines of 40 px words, a smaller size under smaller or fewer words, or none.
       var list = el === card, sizes = list ? [192, 96, 64, 0] : [96, 64, 48, 0], shape = el.querySelector('.nb-fin-say');
+      // With tomorrow's lines under the words, the scene is large only while their heading and two of their lines
+      // stay in view above the slip (owner, 17 Nov 2026, decision 3); the page may scroll for the rest of them.
+      var tmrRows = body.querySelectorAll('.nb-rows.nb-tmr .nb-row'), tmrKeep = tmrRows.length ? tmrRows[Math.min(1, tmrRows.length - 1)] : null;
       var fits = function (f) {
+        if (tmrKeep) return el.getBoundingClientRect().height + 1.8 * rem <= room && tmrKeep.getBoundingClientRect().bottom + at <= Math.min(r.bottom + at, window.innerHeight - 80) && (list || !f || f * 4 / 3 <= shape.getBoundingClientRect().height + 0.5);
         if (el.getBoundingClientRect().height + 1.8 * rem > room || body.scrollHeight - body.clientHeight > base) return false;
         return list || !f || f * 4 / 3 <= shape.getBoundingClientRect().height + 0.5;
       };
@@ -5629,7 +5654,7 @@
   }
   // a turned phone or a resized window: measure again, so the words are never cut short
   window.addEventListener('resize', function () { finFit(); finPaint(); secFit(); });
-  function pageBody(items, date, board) {
+  function pageBody(items, date, board, fin) {
     /* ticked lines leave the list and show under Done today in Handy. Sections with nothing left to do are hidden.
        board: the wall board (wallOn()): every section, each in its own column, function platters in theirs, no removed
        lines */
@@ -5641,22 +5666,27 @@
     /* Tonight, for tomorrow (3 Nov 2026, work pages redesign A): on today's list, on All, the open lines written after
        tonight's list was started (cutFor(), the same cut the rollover uses) sit last under their own heading, because
        they go on tomorrow's list. No read: the cut comes from the day's own lines and summary/learned. */
-    var TONIGHT = '\u0001tonight', FNS = 'Function platters', FNCOL = '\u0002fn', cut = !S.tab && date === dayNow() ? cutFor(date, items) : -1;
+    // fin: the page's finished words (a card, or a tab's "Nothing left to do"), drawn above tomorrow's lines when
+    // there are some (today finishes today, 17 Nov 2026), else after every section. On a section's tab tomorrow's
+    // lines sit last under their own heading too, but only with a real night list (nightCut()).
+    var TONIGHT = '\u0001tonight', FNS = 'Function platters', FNCOL = '\u0002fn', cut = date !== dayNow() ? -1 : !S.tab ? cutFor(date, items) : S.tab !== FN_TAB && !board ? nightCut(date) : -1;
     function secOf(x) { if (board && x.fn) return FNCOL; if (tonightLine(x, date, cut)) return TONIGHT; return S.tab === FN_TAB ? FNS : S.tab || lineSec(x); }
     shown.forEach(function (x) { var k = secOf(x); if (!seen[k]) { seen[k] = 1; order.push(k); } });
     [FNCOL, TONIGHT].forEach(function (last) { if (seen[last]) order = order.filter(function (k) { return k !== last; }).concat([last]); });
-    return order.map(function (sec) {
+    var finUsed = false;
+    var out = order.map(function (sec) {
       var all = shown.filter(function (x) { return secOf(x) === sec; });
       var live = all.filter(function (x) { return !x.deleted; });
       var rows = all.filter(function (x) { return !(x.done && !x.deleted) || lingers(x); });
       if (!rows.length) return '';
       var name = sec === FNCOL ? FNS : sec || (board ? 'No section' : ''), out;
-      if (sec === TONIGHT) out = '<div class="nb-hd nb-hd-tonight"><span>Tonight, for tomorrow</span><span>' + live.length + '</span></div><p class="nb-sd nb-tonight-sd">On tomorrow\'s list. Tick here if it gets done tonight.</p>' +
-        '<ul class="nb-rows">' + rows.map(function (x) { return rowHTML(x, date, false, (lineSec(x) ? '<span class="nb-also">' + esc(lineSec(x)) + '</span>' : '') + alsoHTML(x, lineSec(x), twins)); }).join('') + '</ul>';
+      if (sec === TONIGHT) out = (fin && !board ? (finUsed = true, fin) : '') + '<div class="nb-hd nb-hd-tonight"><span>Tonight, for tomorrow</span><span>' + live.length + '</span></div><p class="nb-sd nb-tonight-sd">On tomorrow\'s list. Tick here if it gets done tonight.</p>' +
+        '<ul class="nb-rows nb-tmr">' + rows.map(function (x) { return rowHTML(x, date, false, (lineSec(x) ? '<span class="nb-also">' + esc(lineSec(x)) + '</span>' : '') + alsoHTML(x, lineSec(x), twins)); }).join('') + '</ul>';
       else out = (name ? '<div class="nb-hd"><span>' + esc(name) + '</span>' + secBar(live) + '<span>' + live.filter(function (x) { return x.done; }).length + '/' + live.length + '</span></div>' : '') +
         '<ul class="nb-rows">' + rows.map(function (x) { return rowHTML(x, date, false, alsoHTML(x, sec === FNCOL ? FNS : sec, twins)); }).join('') + '</ul>';
       return board ? '<section class="wb-col" aria-label="' + esc(sec === TONIGHT ? 'Tonight, for tomorrow' : name) + '">' + out + '</section>' : out;
     }).join('');
+    return out + (fin && !finUsed ? fin : '');
   }
   /* "Add from the recipes" opens a panel that floats over the list (it does not push the list or the add form around).
      Nothing is listed until the person types or taps Show all. The list inside scrolls. */
@@ -5870,7 +5900,9 @@
     if (S.tab === FN_TAB && !fnLive.length && !fnGone) S.tab = '';
     var wall = wallOn();
     if (wall) S.tab = '';
-    var live = S.tab === FN_TAB ? fnLive : daily, doneN = live.filter(function (x) { return x.done; }).length;
+    // today finishes today (17 Nov 2026): with a real night list, tomorrow's lines are not counted against today
+    var dayL = dayLines(S.date), tmrN = daily.length - dayL.length;
+    var live = S.tab === FN_TAB ? fnLive : dayL, doneN = live.filter(function (x) { return x.done; }).length;
     var removed = S.items.filter(function (x) { return x.deleted; });
     var secs = {}, tabs = [];
     daily.forEach(function (x) { [lineSec(x)].concat(alsoNow(x)).forEach(function (n) { if (n && !secs[n]) { secs[n] = 1; tabs.push(n); } }); });
@@ -5882,8 +5914,8 @@
     // screens (.nb-rc), so they do not push the lines down; CSS shows one of the two
     // (with no signal and the day not loaded, Closing soon gives no count of the lines left open: it would count only
     // the lines this phone wrote since)
-    var flags = closeoutHTML(S.itemsState === 'offline' ? null : daily, S.date) + wNoteHTML();
-    S.startN = startNums(daily);
+    var flags = closeoutHTML(S.itemsState === 'offline' ? null : dayL, S.date) + wNoteHTML();
+    S.startN = startNums(dayL);
     var sideH = sideHTML(today, flags);
     var add = can('add') && S.date === today ?
       '<form class="nb-add" data-p-form="add">' +
@@ -5897,10 +5929,10 @@
     var addNote = add ? '' : S.date !== today ? '<p class="hint">You are looking at ' + esc(dayName(S.date)) + '. Lines are added on Today only.</p>' : '<p class="hint">You can read the book but not write in it. Ask the head chef if that is wrong.</p>';
     var todayEmpty = !live.length && S.itemsState === 'ok' ? '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet.</p>' : '';
     if (!S.items.length && S.itemsState === 'loading') todayEmpty = inkWait('Loading the prep list...', 'prep', 4);
-    if (live.length && doneN === live.length && !S.tab) todayEmpty = finOk(live, doneN, today) ? finHTML(doneN, live.length) : '<p class="nb-empty">Everything on this list is ticked off. See Done today under Handy.</p>';
+    if (live.length && doneN === live.length && !S.tab) todayEmpty = finOk(live, doneN, today) ? finHTML(doneN, live.length, tmrN) : '<p class="nb-empty">Everything ' + (tmrN ? 'for today' : 'on this list') + ' is ticked off. See Done today under Handy.</p>';
     if (S.itemsState === 'ok' && S.tab && !live.some(function (x) { return inTab(x) && (!x.done || lingers(x)); })) {
       // a finished section on its own tab: the plain words carry the finished ones for a wide screen (finFit())
-      var secDone = secPage(daily, S.date);
+      var secDone = secPage(dayL, S.date);
       todayEmpty = '<p class="nb-empty"' + (secDone ? ' data-fin-sec="' + esc(secDone.done + (secDone.next ? '\n' + secDone.next : '')) + '"' : '') + '>Nothing left to do in ' + esc(S.tab === FN_TAB ? 'Functions' : S.tab) + '. Ticked lines are under Done today in Handy.</p>';
     }
     if (!S.tab && !daily.length && fnLive.length && S.itemsState === 'ok') todayEmpty = '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet. Function platters are on the Functions tab.</p>';
@@ -5909,9 +5941,10 @@
     if (offNote) todayEmpty = '';
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
       // Done today sits behind the count (3 Nov 2026, work pages redesign A): a tap on "3 of 13 done" goes to it
-      tmWrap(S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : doneN ? '<button type="button" class="nb-prog nb-progbtn" data-p="donejump" aria-label="' + doneN + ' of ' + live.length + ' done. Show Done today">' + doneN + ' of ' + live.length + ' done</button>' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>', S.date) + (add ? dockBtn('nb-addline', 'write', 'Add a line') : '') + '</header>' +
+      tmWrap(S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : doneN ? '<button type="button" class="nb-prog nb-progbtn" data-p="donejump" aria-label="' + doneN + ' of ' + live.length + ' done. Show Done today">' + doneN + ' of ' + live.length + ' done</button>' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>', S.date, tmrN && S.tab !== FN_TAB ? '\u00b7 ' + tmrN + ' for tomorrow' : '') + (add ? dockBtn('nb-addline', 'write', 'Add a line') : '') + '</header>' +
       (S.itemsState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' : '') +
-      '<div class="nb-body">' + (flags ? '<div class="nb-lc">' + flags + '</div>' : '') + offNote + (S.tab === FN_TAB ? fnGone : '') + pageBody(S.items, S.date) + todayEmpty + '</div>' +
+      // the finished words go above tomorrow's lines when there are some (pageBody()), else where they always were
+      '<div class="nb-body">' + (flags ? '<div class="nb-lc">' + flags + '</div>' : '') + offNote + (S.tab === FN_TAB ? fnGone : '') + (tmrN && /nb-fin|nb-empty/.test(todayEmpty) ? pageBody(S.items, S.date, false, todayEmpty) : pageBody(S.items, S.date) + todayEmpty) + '</div>' +
       (addNote || removed.length && can('del') ? '<div class="nb-foot">' + addNote + (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div>' : '') + '</section>';
     // the add form as a sheet (3 Nov 2026), drawn with the page from S.pLog like Log waste, so a redraw keeps what is typed
     var pSheet = add && S.pLog ? '<div class="sheet-bg" data-p="p-log-close"></div><div class="sheet p-sheet" role="dialog" aria-modal="true" aria-labelledby="p-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="p-log-h">Add to prep</h3>' + add +
@@ -11742,7 +11775,8 @@ if (list.length) sg('oreg', 's');
   function homeIcon(k) { return window.LK_APP && window.LK_APP.icon ? window.LK_APP.icon(k) : ''; }
   function homeLeft(m) { return m < 60 ? m + ' min left' : Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') + ' left'; }
   // today's own lines (not a function's platters), from the live list; null until the server answered for today
-  function homeLines() { return S.date === dayNow() && S.itemsState === 'ok' ? (S.items || []).filter(function (x) { return !x.deleted && !x.fn; }) : null; }
+  // today's own lines, tomorrow's left out with a real night list (dayLines(), 17 Nov 2026)
+  function homeLines() { return S.date === dayNow() && S.itemsState === 'ok' ? dayLines(S.date) : null; }
   function homeRows() {
     // Personal section and break have their own fixed place above the work, never in this time-sorted group.
     var m = T.mins(), out = [], timed = [];
@@ -15416,7 +15450,13 @@ if (list.length) sg('oreg', 's');
     }
     return teamOK() && tm.st === 'ok' && !tmSet(tm.rec) ? '<a class="nb-tmset" href="#/team">Set today\'s team</a>' : '';
   }
-  function tmWrap(prog, date) { var h = tmHeadHTML(date); return h ? '<div class="nb-pw' + (/nb-tmday/.test(h) ? ' is-day' : '') + '">' + prog + h + '</div>' : prog; }
+  // more: a few words beside the day line ("· 6 for tomorrow", 17 Nov 2026), only where that line is: never a line
+  // of its own, so the header keeps its height when tomorrow's list is written on another screen
+  function tmWrap(prog, date, more) {
+    var h = tmHeadHTML(date);
+    if (h && more) h = '<span class="nb-pw-row">' + h + '<span class="nb-tmr-n">' + esc(more) + '</span></span>';
+    return h ? '<div class="nb-pw' + (/nb-tmday/.test(h) ? ' is-day' : '') + '">' + prog + h + '</div>' : prog;
+  }
   // the admin's To do (js/admin-dashboard.js): from what is already read, no read of its own
   function teamNeed() { if (!teamOK()) return undefined; teamLoad(); return tm.st === 'ok' ? (tmSet(tm.rec) ? 'set' : 'unset') : tm.st === 'err' ? 'error' : 'loading'; }
   function shAdminHTML(d) {

@@ -3854,6 +3854,10 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .nb-tmday.is-changed { color: var(--accent-ink); }
 .nb-tmday.is-changed::before { content: '\25CF'; margin-right: 0.3em; }
 .nb-tmday:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Today finishes today (17 Nov 2026): "· 6 for tomorrow" beside the day line, on its row, so the header keeps its height */
+.nb-pw-row { display: flex; align-items: baseline; justify-content: flex-end; gap: 0.35em; width: 100%; max-width: min(18rem, 60vw); margin: 0.15rem 0 0 auto; }
+.nb-pw-row .nb-tmday { flex: 1 1 0; width: auto; max-width: none; margin: 0; }
+.nb-tmr-n { flex: 0 0 auto; font: 400 0.8125rem/1.3 var(--body); color: var(--ink); white-space: nowrap; }
 .wm-me-n small.wm-day { color: var(--ink); font-weight: 600; }
 /* small phones: the round buttons closer, and below 375 px the title a little smaller, only while the chip shows
    (measured: "Kitchen Book" stays whole at 360, 375 and 390 px) */
@@ -5655,6 +5659,23 @@ html:has(.tm-focus-page) {
 .mascot:focus { outline: none; }
 .mascot:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 @media (prefers-reduced-motion: no-preference) { :where(.mascot):active { scale: 0.96; } }
+/* The mascot says the welcome (owner, 17 Nov 2026; docs/kitchen-mascot.md): the named heading is his speech bubble,
+   paper and ink with its tail pointing at him, smaller than the big welcome, his room kept on its left from the
+   first draw (js/mascot.js stands him there). Its words, the randomiser and its place as the page's heading stay. */
+#main.wall-main { --say-room: 84px; }
+.wall-h.hm-welcome.hm-say { position: relative; box-sizing: border-box; width: fit-content; max-width: calc(100% - var(--say-room)); margin-left: var(--say-room); padding: 6px 18px 8px; border: 2px solid var(--ink); border-radius: 18px; background: var(--surface-paper); font-size: 2.1rem; line-height: 1.15; }
+.wall-h.hm-welcome.hm-say::before { content: ''; position: absolute; left: -15px; bottom: 12px; border: 8px solid transparent; border-right: 14px solid var(--ink); border-left: 0; }
+.wall-h.hm-welcome.hm-say::after { content: ''; position: absolute; left: -10px; bottom: 14px; border: 6px solid transparent; border-right: 10px solid var(--surface-paper); border-left: 0; }
+.wall-h.hm-welcome.hm-say + .wall-date { margin-top: 6px; margin-left: var(--say-room); }
+/* On a phone the bubble costs the cards as little height as it can: a long or very long greeting is smaller, so a
+   40-character name at Extra large text keeps three coworkers above the tab bar (tests/staff-welcome-layout.test.js). */
+@media (max-width: 767px) {
+  #main.wall-main { --say-room: 60px; }
+  .wall-h.hm-welcome.hm-say { padding: 3px 12px 4px; border-radius: 14px; font-size: 1.6rem; }
+  .wall-h.hm-welcome.hm-say.hm-welcome-long { font-size: 1.25rem; line-height: 1.1; }
+  .wall-h.hm-welcome.hm-say.hm-welcome-compact { font-size: 0.9rem; line-height: 1.1; }
+  .wall-h.hm-welcome.hm-say + .wall-date { margin-top: 3px; }
+}
 /* The finished prep list (owner, 10 Nov 2026; docs/kitchen-mascot.md): the mascot beside the page's own words when
    every line is ticked and sent. In the page, never over it. The bubble is a speech shape in the green that means
    done, with no outline, so it is not taken for a chip or a button. The art keeps its room before it loads, so

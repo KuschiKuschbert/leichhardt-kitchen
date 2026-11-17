@@ -1,10 +1,12 @@
 /* The kitchen mascot on Home (owner, 9 Nov 2026; docs/kitchen-mascot.md).
    Loaded by js/app.js only when a named person opens Home. Not in the saved shell.
    Each person has their own shuffled set of all 11 actions, kept on this device. On the first Home view
-   of the kitchen day where it can play, today's action plays once at the right end of the Welcome row,
-   then the mascot rests on the Welcome pose. A tap replays today's action and never draws a new one.
-   No reads, no writes, nothing over a list. The full name always wins: when the words fill the corner it stands on
-   the Your day card, then the heading keeps it room; only a name that cannot wrap leaves it out.
+   of the kitchen day where it can play, today's action plays once, then the mascot rests on the Welcome pose.
+   A tap replays today's action and never draws a new one. No reads, no writes, nothing over a list.
+   Since 17 Nov 2026 he says the welcome: he stands left of the heading, which js/app.js draws as his speech bubble.
+   Where that cannot be (an older js/app.js, no room under the top bar) he takes his older places: the right end
+   of the Welcome row, then the Your day card, then room kept in the heading; only a name that cannot wrap leaves
+   him out.
    Since 10 Nov 2026 js/prep.js also loads this file for the finished prep list: sprite() below is a still mascot
    that can play one action once. */
 (function () {
@@ -25,6 +27,9 @@
   var ALL = Object.keys(CLIPS);
   var reduced = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
   var memo = {}, cur = null;
+  // His art failed to load on this page: js/app.js then draws the plain welcome until the signal comes back.
+  var artOff = false;
+  window.addEventListener('online', function () { artOff = false; });
 
   // A seeded shuffle, so the order is the same for a person and day on any run of the page.
   function rng(seed) {
@@ -105,9 +110,30 @@
      room for the mascot (A): their words wrap before the corner. Only when even that fails is it left out,
      so the full name always wins. The room is checked by measuring without it, so a resize never loops. */
   function room(host, on) { Array.prototype.forEach.call(host.querySelectorAll('#rtitle, .wall-date'), function (e) { e.classList.toggle('mascot-room', on); }); }
+  /* Saying the welcome (owner, 17 Nov 2026): js/app.js draws the named heading as his speech bubble (.hm-say), with
+     room kept on its left. He stands in that room, his feet on the date line, the largest of 72 x 96, 64 x 85 or
+     48 x 64 px that fits the room and stays under the top bar. When none does, the heading goes back to the plain
+     welcome and the places below are tried as before. */
+  function say(host) {
+    var h = host.querySelector('#rtitle.hm-welcome.hm-say'), d = host.querySelector('.wall-date');
+    if (!h || !d) return null;
+    var hb = h.getBoundingClientRect(), db = d.getBoundingClientRect(), mb = host.getBoundingClientRect();
+    var bar = document.querySelector('.wtop'), roof = bar ? bar.getBoundingClientRect().bottom + 4 : mb.top;
+    var left = mb.left + (parseFloat(getComputedStyle(host).paddingLeft) || 0), sizes = [72, 64, 48], i, w, ht;
+    for (i = 0; i < sizes.length; i++) {
+      w = sizes[i]; ht = w * 4 / 3;
+      if (left + w > hb.left - 8 || db.bottom - ht < roof) continue;
+      return { w: w, left: left - mb.left, top: db.bottom - ht - mb.top, spot: 'say' };
+    }
+    return null;
+  }
+  function plain(host) { var h = host.querySelector('#rtitle.hm-say'); if (h) h.classList.remove('hm-say'); }
   function fit(host) {
     var f;
     room(host, false);
+    f = say(host);
+    if (f) return f;
+    plain(host);
     f = corner(host) || onCard(host);
     if (f || !host.querySelector('#rtitle.hm-welcome')) return f;
     room(host, true);
@@ -183,7 +209,9 @@
       // The rest pose comes first. Missing art leaves Home exactly as it was, with no retry from this view.
       still('welcome', function (i) {
         if (gone) return;
-        if (!i) { self.dispose(); return; }
+        // no art: Home is the plain welcome, and the next Home draw on this page does not keep his room (artOff)
+        if (!i) { artOff = true; self.dispose(); return; }
+        artOff = false;
         paintImg(i); btn.setAttribute('data-state', 'rest');
         if (btn.hidden) return;
         var d = today(), r = load(id);
@@ -196,7 +224,7 @@
       gone = true; stop(); clearTimeout(holdTimer); if (io) io.disconnect(); if (ro) ro.disconnect();
       document.removeEventListener('visibilitychange', onVis); btn.removeEventListener('click', onTap);
       if (btn.parentNode) btn.parentNode.removeChild(btn); host.classList.remove('mascot-host');
-      room(host, false);
+      room(host, false); plain(host);
     };
   }
 
@@ -261,6 +289,8 @@
   function unmount() { if (cur) cur.dispose(); cur = null; }
   window.LK_MASCOT = {
     api: API, mount: mount, unmount: unmount,
+    // Since 17 Nov 2026 he can stand beside the welcome and say it (js/app.js asks before drawing the bubble).
+    say: 1, artOff: function () { return artOff; },
     sprite: function () { lastSprite = Sprite(); return lastSprite; },
     state: function () { return cur ? cur.state() : null; },
     // For the click tests: the last still mascot made by sprite().

@@ -790,8 +790,15 @@
     var P = window.LK_PREP, n = P && P.whoName ? P.whoName() : '';
     var hw = homeWords(dt, n), words = hw.words, date = hw.date;
     var size = Math.max(Array.from(words).length, Array.from(n).length + 9);
-    return '<h2 class="wall-h' + (board ? ' hm-day' : '') + (n ? ' hm-welcome' : '') + (n && size > 21 ? ' hm-welcome-long' : '') + (n && size > 37 ? ' hm-welcome-compact' : '') + '" id="rtitle" tabindex="-1" data-home-heading="' + (board ? 'board' : 'dockets') + '">' + esc(words) + '</h2><p class="wall-date"><span data-home-date>' + esc(date) + '</span>' + (board ? ' · <span id="hm-time">' + esc(window.LK_TIME.clock(window.LK_TIME.now())) + '</span>' : '') + '</p>';
+    return '<h2 class="wall-h' + (board ? ' hm-day' : '') + (n ? ' hm-welcome' : '') + (n && size > 21 ? ' hm-welcome-long' : '') + (n && size > 37 ? ' hm-welcome-compact' : '') + (n && homeSays() ? ' hm-say' : '') + '" id="rtitle" tabindex="-1" data-home-heading="' + (board ? 'board' : 'dockets') + '">' + esc(words) + '</h2><p class="wall-date"><span data-home-date>' + esc(date) + '</span>' + (board ? ' · <span id="hm-time">' + esc(window.LK_TIME.clock(window.LK_TIME.now())) + '</span>' : '') + '</p>';
   }
+  /* The mascot says the welcome (owner, 17 Nov 2026; docs/kitchen-mascot.md): the named heading is drawn as his speech
+     bubble (.hm-say) with his room on its left, from the first draw, so nothing moves when he arrives. It stays the
+     page's heading, words and randomiser unchanged. When he cannot stand there (his file failed to load, an older
+     saved copy of it that cannot place him there, or his art failed on this page) the heading is today's plain welcome. */
+  var homeSayOff = false;
+  function homeSays() { var M = window.LK_MASCOT; return !homeSayOff && !(M && (!M.say || (M.artOff && M.artOff()))); }
+  function homeSayStop() { homeSayOff = true; var h = app.querySelector('#rtitle.hm-say'); if (h) h.classList.remove('hm-say'); }
   function homeWelcomePaint() {
     if (parseRoute().name !== 'landing') return;
     var h = app.querySelector('[data-home-heading]'), date = app.querySelector('[data-home-date]');
@@ -1449,8 +1456,14 @@
   function mascotSync() {
     var P = window.LK_PREP, id = P && P.whoId ? P.whoId() : '';
     if (parseRoute().name !== 'landing' || !id) { if (window.LK_MASCOT) window.LK_MASCOT.unmount(); return; }
-    if (window.LK_MASCOT) { if (window.LK_MASCOT.api === 1) window.LK_MASCOT.mount(app, { id: id }); return; }
-    if (!mascotLoad) mascotLoad = mgScript('js/mascot.js?v=2').then(function () { mascotSync(); }, function () { mascotLoad = null; });
+    if (window.LK_MASCOT) {
+      if (window.LK_MASCOT.api !== 1) return;
+      // an older copy of his file cannot stand beside the words: the heading stays plain and he takes his old place
+      if (!window.LK_MASCOT.say) homeSayStop();
+      window.LK_MASCOT.mount(app, { id: id });
+      return;
+    }
+    if (!mascotLoad) mascotLoad = mgScript('js/mascot.js?v=3').then(function () { homeSayOff = false; mascotSync(); }, function () { mascotLoad = null; homeSayStop(); });
   }
   // New words or a seasonal change move a mascot already on Home to its new place. Never a new one: a failed
   // download waits for the next Home view (docs/kitchen-mascot.md).

@@ -38,6 +38,7 @@ const homeGeometry = p => p.evaluate(() => {
   // Caveat's font box extends vertically beyond its line box even for the unchanged short heading.
   // Check actual horizontal text bounds and that overflow is not clipped, rather than asserting font metrics.
   return { heading: h.textContent, prefix: h.textContent.slice(0, h.textContent.indexOf(', ')), named: h.classList.contains('hm-welcome'), nameFits: text.every(r => r.left >= hb.left - 1 && r.right <= hb.right + 1) && getComputedStyle(h).overflowY === 'visible',
+    lines: text.length ? new Set(text.map(r => Math.round(r.top))).size : 0, lineH: parseFloat(getComputedStyle(h).lineHeight) || 0,
     own: b(own), team: b(team), visible: [...document.querySelectorAll('#hm-with-body .hm-tp')].filter(e => e.getBoundingClientRect().bottom <= limit + 0.5).length,
     fullTeam: document.querySelector('#hm-full-team > summary').getBoundingClientRect().bottom <= limit + 0.5,
     section: document.querySelector('[data-hm-priority="section"]').textContent,
@@ -66,8 +67,10 @@ const homeGeometry = p => p.evaluate(() => {
     ok(g.visible === 3 && g.fullTeam, 'real fonts: three scheduled coworkers and full-team control remain above the phone tabs (' + JSON.stringify(g) + ')');
     ok(!g.overflow && /Larder/.test(g.section), 'real fonts: personal section remains visible without sideways scroll');
     if (name === 'Ann') short = g;
-    else if (name === LONG && short) ok(Math.abs(g.own.top - short.own.top) <= 2 && Math.abs(g.own.height - short.own.height) <= 1 && Math.abs(g.team.height - short.team.height) <= 1,
-      'real fonts: compact full-name heading preserves the ordinary enlarged-text card geometry within two pixels');
+    // Since 17 Nov 2026 the welcome is the mascot's speech bubble (docs/kitchen-mascot.md): a long name wraps inside
+    // it, so the cards may start lower by the bubble's extra lines, and by nothing else; the cards keep their sizes.
+    else if (name === LONG && short) ok(g.own.top - short.own.top >= -2 && g.own.top - short.own.top <= (g.lines - short.lines) * g.lineH + 2 && Math.abs(g.own.height - short.own.height) <= 1 && Math.abs(g.team.height - short.team.height) <= 1,
+      'real fonts: a long name only adds its own bubble lines above the cards, and the cards keep their sizes (' + JSON.stringify({ moved: g.own.top - short.own.top, lines: [short.lines, g.lines], lineH: g.lineH }) + ')');
   });
   for (const name of [LONG, 'अदिति शर्मा', '李明', 'W'.repeat(40)]) await step('fallback ' + name, async () => {
     await open(name, { settings: { text: 'xlarge' } });
