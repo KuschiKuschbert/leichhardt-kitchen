@@ -1,5 +1,5 @@
-/* April Fools on Home: twelve designs, each in two versions (24 jokes), for review only. Each is written as one minute
-   and plays at any length from 10 to 60 s (o.length), everything scaled together.
+/* April Fools on Home: twelve designs, each in two versions (24 jokes), for review only. Each plays for 35 seconds
+   (the head chef's choice); o.length plays it at another length from 10 to 60 s for comparison.
    docs/april-fools-options/brief.md. The book never loads this file.
    Every design plays on a copy of the page laid over it (.fl-layer). The real Home underneath is never touched (it is
    only made inert while the joke plays), so ending the joke is removing the copy. The copy also hides itself after
@@ -11,7 +11,9 @@
   var D = document, W = window;
   var S = null;
   var GL = '█▓▒░<>/\\|#$%&@!?01';
-  var END = 57500, HOLD = 1200;
+  // Each joke is written as one minute (every time below is in that minute) and plays in LENGTH seconds, all scaled
+  // together: the head chef chose 35 s on 17 November 2026. The hold to stop is not scaled.
+  var END = 57500, HOLD = 1200, LENGTH = 35;
   var LETTERS = 'ABCDEFGHIJKL'.split('');
   var TXT = '#rtitle, .wall-date, .hm-bt, .hm-clock, .hm-t, .hm-s, .hm-day-value, .hm-tm, .hm-pt, .hm-roster-caption, .hm-rota th, .hm-tp b, .hm-pc, .hm-sn, .hm-sl, #hm-full-team > summary, .wall-foot, .tabbar a span';
 
@@ -937,7 +939,7 @@
     D.querySelectorAll('.fl-reveal').forEach(function (e) { e.remove(); });
     o = o || {};
     var name = (String(o.name || 'Ann').normalize ? String(o.name || 'Ann').normalize('NFC') : String(o.name || 'Ann')).trim() || 'Ann';
-    S = { t: [], taps: 0, t0: performance.now(), name: name, lower: name.toLowerCase(), upper: name.toUpperCase(), design: design, v: o.version === 2 ? 2 : 1, k: o.length ? Math.max(10, Math.min(60, o.length)) / 60 : (o.quick ? 0.25 : 1) };
+    S = { t: [], taps: 0, t0: performance.now(), name: name, lower: name.toLowerCase(), upper: name.toUpperCase(), design: design, v: o.version === 2 ? 2 : 1, k: (o.length ? Math.max(10, Math.min(60, o.length)) : o.quick ? 15 : LENGTH) / 60 };
     // The preview's own Reduced motion box can override the device setting (o.force), so a reviewer can watch.
     if (o.reduced || (!o.force && W.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
       var t = D.getElementById('rtitle');

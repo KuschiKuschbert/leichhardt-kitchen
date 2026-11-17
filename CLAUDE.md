@@ -85,7 +85,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Publishing the site: only a merge that changes a file the phones load republishes; the book then updates silently when safe (no band unless asked) | `docs/site-publishing.md` |
 | Nightly backup and recovery | `docs/backup-recovery.md` |
 | Seasonal celebrations and festival dates | `docs/seasonal-celebrations.md`, `docs/seasonal-calendar.md`, `docs/celebration-options/brief.md` |
-| An April Fools joke on Home (1 April mornings: 24 one-minute fake "hacked" Homes on a copy of the page, a different one per person every year, then the mascot owns up): the study and pool, not built yet (17 Nov 2026) | `docs/april-fools-options/brief.md`, `docs/april-fools-options/pool.md` |
+| An April Fools joke on Home (1 April mornings: 24 fake "hacked" Homes of 35 seconds on a copy of the page, a different one per person every year, then the mascot owns up): the study and pool, not built yet (17 Nov 2026) | `docs/april-fools-options/brief.md`, `docs/april-fools-options/pool.md` |
 
 ## Service council (5 Nov 2026)
 

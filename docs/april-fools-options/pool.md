@@ -1,10 +1,10 @@
-# April Fools on Home: the pool of 24 one-minute jokes
+# April Fools on Home: the pool of 24 jokes, 35 seconds each
 
 17 November 2026. After seeing A, B and C (`designs.md`), the head chef said: "i like all of them, can we make more so each of the staff members gets a random one but no two ever get the same", for a team of 13 to 20, "same day and every year", and "1 minute to fool them should be fine for them to realise what's going on". This file is that pool. Play every joke in `preview/index.html` (Version 1 or 2, real time or a quick 15-second run, any name). Frames of each at 390 px: `evidence/pool/`.
 
-## Length: one minute was too long (17 November 2026)
+## Length: 35 seconds (head chef, 17 November 2026)
 
-After playing the pool, the head chef said: "i think one minute might be too long". Every joke is timed as one piece, so the preview now plays any of them at 15, 20, 30 or 45 seconds or a minute, everything scaled together (the hold to stop stays 1.2 s). The head chef picks the length on the live page. The times below are for the full minute; at 30 seconds, halve them.
+After playing the pool, the head chef said: "i think one minute might be too long", tried the jokes at 15, 20, 30, 45 and 60 seconds on the live page, and chose: "i think i go with 35 seconds". Every joke is written as one minute and plays in 35 seconds, everything scaled together (`LENGTH` in `preview/fools.js`); pressing and holding to stop still takes 1.2 s. The times below are written for the minute: multiply by 0.58 for the real second (the break starts at about 7 s, the clue at about 29 s, the reveal at 33.5 s, "Press and hold to stop" shows at about 9 s or after three taps).
 
 ## How each joke runs
 

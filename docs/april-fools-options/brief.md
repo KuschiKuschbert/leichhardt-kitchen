@@ -4,7 +4,7 @@
 
 Files: `proposal.md` (round 1), `evidence-packet.md` (contracts and measurements given to every reviewer), `designs.md` (the shared rules and designs A, B and C, round 2), `ideas.md` (the first idea list), `pool.md` (the 24 one-minute jokes the head chef then asked for, and how they are dealt), `preview/index.html` (plays all 24 on a frozen copy of Home; open it in any browser), `evidence/` (today's Home, the round 2 frame strips, and `pool/` with frames of all 24). This is role-based analysis by six fresh reviewers, not research with real staff.
 
-**Status: after round 2 the head chef asked for 24 one-minute jokes, one per person, never the same twice (below). The pool is playable and waiting for the head chef to say which to cut or change. Nothing in the book has changed.**
+**Status: after round 2 the head chef asked for a pool of jokes, one per person, never the same twice, then chose 35 seconds each (below). The 24 are playable and waiting for the head chef to say which to cut or change. Nothing in the book has changed.**
 
 ## Round 1: should we build it?
 
@@ -72,10 +72,12 @@ So the council's single short joke became **a pool of 24 one-minute jokes**: twe
 
 Departures from the council's advice that the head chef chose (recorded, not reopened):
 
-- **One minute**, not 5 to 9 seconds. With a minute, a tap cannot skip, so **taps make the tapped piece break more** and **holding a finger down for 1.2 s stops it** ("Hold anywhere to stop" after four taps or at 25 s). Five of six reviewers rejected taps that make it worse in C; the hold, the hint and Escape are the way out WCAG 2.2.2 needs.
+- **One minute, then 35 seconds**, not 5 to 9 seconds. At that length a tap cannot skip, so **taps make the tapped piece break more** and **holding a finger down for 1.2 s stops it** ("Hold anywhere to stop" after four taps or at 25 s). Five of six reviewers rejected taps that make it worse in C; the hold, the hint and Escape are the way out WCAG 2.2.2 needs.
 - **C's colour wheel and single inversion** stay (designer, skeptic and keeper would cut them).
 - **A1 keeps the glass crack and "what did you press?"** (cook, new starter and skeptic would cut the crack; four would cut the line). A2 is the gentler version of both, so the deal can be told to skip A1 if wanted.
 
 Kept from the council: mornings only (04:00 to 11:59), personal devices only, a copy over Home with the real page inert, the self-hide, the reveal recovered after a reload, nothing when offline or with work waiting, no coworker blamed, no real failure red, no claim of a real breach, the clue before the reveal and "You did nothing wrong."
 
-**Status: the pool is drawn and playable, waiting for the head chef to play the 24 and say which to cut or change. Nothing in the book has changed.**
+Later the same day the head chef found one minute too long and, after trying 15 to 60 seconds on the live page, chose **35 seconds** for every joke (`pool.md`, Length).
+
+**Status: the pool is drawn and playable at 35 seconds, waiting for the head chef to play the 24 and say which to cut or change. Nothing in the book has changed.**
