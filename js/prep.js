@@ -10637,7 +10637,14 @@ if (list.length) sg('oreg', 's');
     kw: 'smoke menu, butchers board, beast board, maple butter, California gold',
     thumb: 'guides/smoke-prep.png', pages: 2, dims: [{ w: 1191, h: 1683 }, { w: 1191, h: 1683 }],
     steps: 'Brisket: vac down with BBQ sauce. Keep in the blanching pot. [Reheat method to confirm]\nPulled lamb and pulled pork: reheat to 75°C. Record the core temperatures, then keep in the hot box.\nService fridge: wings, sausages, cornbread, sauces and sliders. Keep slaw refrigerated until plating. [Heating methods to confirm]\nBring a service batch of maple butter to room temperature. Manage its time out of refrigeration.\nOn the bench: green board and brown board. Set out Alabama white, California gold and house smoked BBQ sauce, pickles in a 1/6 bain, and a separate bain of maple butter.\nUnder the oven, in covered bains: pulled pork, pulled lamb, sauced brisket slices, sausages, wings and cornbread. Use this space only with verified hot holding at 60°C or above. Keep fridge stock at 5°C or below.\nButchers Board: pork, lamb, brisket, sausage, slaw, cornbread and pickles. The Beast Board adds wings and sliders. [Portions and service quantities to confirm]' };
-  function gById(id) { return id === G_SMOKE.id ? G_SMOKE : id === G_FOOD.id ? G_FOOD : (S.guides || []).filter(function (g) { return g.id === id; })[0] || null; }
+  // The head chef's steamed veg run on the iCombi (17 Nov 2026): one programme, all three in at the ready beep, each out at its
+  // own beep. The cook times match the Seasonal Vegetables card (68). Bundled like the two above: no reads, no writes.
+  var G_VEG = { id: 'lk-steamed-veg', title: 'Steamed veg on the iCombi', cat: 'equipment', who: 'all',
+    sum: 'The steamed veg programme on the iCombi (the Rational): steam, 100 °C. Carrots, cauliflower and broccoli go in together and come out at their own beep, straight into ice water.',
+    kw: 'steamed veg, veg programme, combi oven, cauliflower, broccoli, ice bath', pages: 0,
+    steps: 'Fill one sink with ice water before you start, with plenty of ice.\nPrep the veg as on the Seasonal Vegetables card. Each vegetable goes in its own steam tray.\nStart the steamed veg programme: steam, 100 °C. The oven heats up and beeps once when it is ready.\nReady beep: put all three trays in together. Carrots, cauliflower and broccoli. Close the door.\nBeep at 2 min: broccoli out, straight into the ice water.\nBeep at 4 min: cauliflower out, straight into the ice water.\nLast beep, 6 min: carrots out, straight into the ice water. The ice water stops the cooking.\nLeave all the veg in the ice water until it is cold.\nDrain the water. Put the veg in a big white tub with a lid.' };
+  var G_BUNDLED = [G_FOOD, G_SMOKE, G_VEG];
+  function gById(id) { return G_BUNDLED.filter(function (g) { return g.id === id; })[0] || (S.guides || []).filter(function (g) { return g.id === id; })[0] || null; }
   function gOrder(a, b) { return (G_RANK[a.cat] == null ? 99 : G_RANK[a.cat]) - (G_RANK[b.cat] == null ? 99 : G_RANK[b.cat]) || String(a.title).localeCompare(String(b.title)); }
   /* Who sees a guide (23 Oct 2026, head chef): who is 'all' (or missing), 'chefs' (the head chef and sous chefs) or 'fn'
      (function managers and chefs). The head chef's Google device sees every guide. Nobody signed in is the staff view.
@@ -10653,8 +10660,8 @@ if (list.length) sg('oreg', 's');
   }
   function gViewer() { var p = me(); return (admDev() ? 'a' : '') + (p ? p.id + (chefP(p) ? 'c' : '') : '') + (fnOK() ? 'f' : ''); }
   function gWhoTag(g) { return g.who === 'chefs' || g.who === 'fn' ? '<span class="g-who">For ' + esc(gWhoName(g.who).toLowerCase()) + '</span>' : ''; }
-  function gBundled(g) { return g.id === G_FOOD.id || g.id === G_SMOKE.id; }
-  function gAll() { return (S.guides || []).filter(function (g) { return !g.removed && g.title && !gBundled(g); }).concat([G_FOOD, G_SMOKE]).sort(gOrder); }
+  function gBundled(g) { return G_BUNDLED.some(function (b) { return b.id === g.id; }); }
+  function gAll() { return (S.guides || []).filter(function (g) { return !g.removed && g.title && !gBundled(g); }).concat(G_BUNDLED).sort(gOrder); }
   function gLive() { return gAll().filter(gSees); }
   function gSig(list) { return (list || []).map(function (g) { return g.id + ':' + (g.upd || 0) + (g.removed ? 'r' : ''); }).join('|'); }
   function gIsNew(g) { return now() - (g.at || 0) < G_NEW; }
@@ -10880,7 +10887,7 @@ if (list.length) sg('oreg', 's');
       // drops the keyboard (onKey), and a 44 px Clear while something is typed (g-qx, toggled in onInput)
       '<div class="g-find"><label class="visually-hidden" for="g-q">Search the guides</label><span class="g-qwrap' + (S.gq ? ' has-q' : '') + '"><input id="g-q" type="search" class="search" data-k="g-q" placeholder="Search: oven, fryer, cleaning" value="' + esc(S.gq) + '" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">' +
       '<button type="button" class="g-qx" data-p="g-clear" aria-label="Clear the search">&times;</button></span></div>' + chips +
-      (S.gErr ? '<p class="p-err" role="status">Could not load the guides uploaded by the head chef. Check the signal. The bundled food safety and smoke service guides are available below.</p>' : '') +
+      (S.gErr ? '<p class="p-err" role="status">Could not load the guides uploaded by the head chef. Check the signal. The guides that come with the book are below.</p>' : '') +
       '<div id="g-list" class="g-list">' + gListHTML() + '</div>' + gAdminLink() + '</section>';
   }
   function foodRuleHTML() {
@@ -10890,6 +10897,15 @@ if (list.length) sg('oreg', 's');
       '<p class="hint">The rule is based on how quickly microorganisms grow in potentially hazardous food between 5°C and 60°C.</p>' +
       '<p class="g-noprint"><a class="btn" href="guides/2-hour-4-hour.pdf" download>Download printable guide (PDF)</a></p>' +
       '<p class="hint">Adapted from Food Standards Australia New Zealand, Safe Food Australia InfoBite, 2-hour / 4-hour rule. See <a href="https://www.foodstandards.gov.au/safefood" target="_blank" rel="noopener noreferrer">Safe Food Australia</a>, Appendix 2, for using time as a control.</p></section>';
+  }
+  // The steamed veg run at a glance: what each beep means, readable from the oven. Fixed words, nothing typed or read.
+  function steamVegHTML() {
+    var beep = function (t, a, b) { return '<li><b class="g-veg-t">' + t + '</b><span class="g-veg-a">' + a + '</span><span>' + b + '</span></li>'; };
+    return '<section class="g-veg" aria-label="Beeps and what comes out"><p class="g-food-band"><b>Steam, 100&nbsp;°C.</b> Fill a sink with <b>ice water</b> first. Times count from when the veg goes in.</p>' +
+      '<ol class="g-veg-beeps">' + beep('Ready beep', 'All in', 'Carrots, cauliflower and broccoli, each in its own tray') + beep('2 min', 'Broccoli out', 'Into the ice water') +
+      beep('4 min', 'Cauliflower out', 'Into the ice water') + beep('6 min', 'Carrots out', 'Last beep. Into the ice water') + '</ol>' +
+      '<p><b>Cook times:</b> broccoli 2&nbsp;min, cauliflower 4&nbsp;min, carrots 6&nbsp;min.</p><p><b>Once it is all cold:</b> drain the water and put the veg in a big white tub with a lid.</p>' +
+      '<p class="g-noprint"><a class="btn" href="guides/steamed-veg.pdf" download>Download printable sheet (PDF)</a></p></section>';
   }
   function guideDocHTML() {
     var g = gById(S.gSel), back = '<nav class="g-top g-noprint" aria-label="Back"><a class="p-link" href="#/guides">All guides</a></nav>';
@@ -10902,12 +10918,12 @@ if (list.length) sg('oreg', 's');
         '<div class="g-ph" style="aspect-ratio: ' + (+d.w || 1414) + ' / ' + (+d.h || 2000) + '">' + (pv.state === 'error' ? 'Could not load this page.' : 'Loading page ' + (i + 1) + '...') + '</div>') +
         (n > 1 ? '<figcaption>Page ' + (i + 1) + ' of ' + n + '</figcaption>' : '') + '</figure>';
     }
-    var admin = admDev() && g.id !== G_FOOD.id && g.id !== G_SMOKE.id, pen = admin && window.LK_APP && window.LK_APP.icon ? window.LK_APP.icon('pen') : '';
+    var admin = admDev() && !gBundled(g), pen = admin && window.LK_APP && window.LK_APP.icon ? window.LK_APP.icon('pen') : '';
     return back + '<article class="g-doc"><header class="g-dh"><span class="g-eb">' + esc(gCatName(g.cat)) + ' guide</span><h2 class="g-title" id="rtitle" tabindex="-1">' + esc(g.title) + '</h2>' +
       (g.sum ? '<p class="g-lead">' + esc(g.sum) + '</p>' : '') + '<p class="g-meta">' + esc(gMeta(g)) + '</p>' +
       // the head chef's Change this guide sits under the title, like Change this recipe on a card (not after every page)
       (admin ? '<p class="g-chg g-noprint"><button type="button" class="p-x g-chg-a" data-p="g-change" data-id="' + esc(g.id) + '">' + pen + '<span>' + (armed('g-change:' + g.id) ? 'Not saved. Tap again' : 'Change this guide') + '</span></button></p>' : '') + '</header>' +
-      (g.id === G_FOOD.id ? foodRuleHTML() : '') +
+      (g.id === G_FOOD.id ? foodRuleHTML() : '') + (g.id === G_VEG.id ? steamVegHTML() : '') +
       (g.id === G_SMOKE.id ? '<p class="g-noprint"><a class="btn" href="guides/smoke-prep-and-setup.pdf" download>Download printable sheets (PDF)</a></p>' : '') +
       (steps.length ? gStepsHTML(g, steps, pv, n) : '') +
       (n ? '<section class="g-pages" aria-label="Pages"><p class="hint g-noprint">' + (n > 1 ? n + ' pages. ' : '') + 'Tap a page to open it big.</p>' +

@@ -39,7 +39,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
 
   // Staff page: only the kitchen PIN is needed (no name or own PIN), removed guides never show
   p = await L.open(b, '#/guides', { who: 'ann', extra, wait: 1500 });
-  ok(await p.locator('.g-card').count() === 4, 'guides: two uploaded guides plus food safety and smoke service, the removed one left out');
+  ok(await p.locator('.g-card').count() === 5, 'guides: two uploaded guides plus the three that come with the book (food safety, smoke service, steamed veg), the removed one left out');
   ok(await p.locator('[data-p="g-cat"]').count() === 5, 'guides: category chips All, Equipment, Cleaning, Food safety and Prep and cooking');
   await L.choose(p, '[data-p="g-cat"][data-v="cleaning"]');
   ok(await p.locator('.g-card').count() === 1 && /Fryer/.test(await p.locator('.g-card').innerText()), 'guides: the Cleaning chip shows only the fryer guide');
@@ -55,11 +55,11 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   await p.press('#g-q', 'Enter'); await L.settle(p, 150);
   ok(await S(p, () => document.activeElement.id) !== 'g-q' && await p.locator('.g-card').count() === 1, 'guides search: Enter drops the keyboard and keeps the results');
   await p.click('#g-q + .ux-search-clear'); await L.settle(p, 200);
-  ok(await p.inputValue('#g-q') === '' && await S(p, () => document.activeElement.id) === 'g-q' && await p.locator('.g-card').count() === 4 && !(await p.locator('#g-q + .ux-search-clear').isVisible()), 'guides search: Clear empties the box, keeps the cursor there and shows every guide');
+  ok(await p.inputValue('#g-q') === '' && await S(p, () => document.activeElement.id) === 'g-q' && await p.locator('.g-card').count() === 5 && !(await p.locator('#g-q + .ux-search-clear').isVisible()), 'guides search: Clear empties the box, keeps the cursor there and shows every guide');
   await p.fill('#g-q', 'slicer'); await L.settle(p, 250);
   ok(await p.locator('.g-card').count() === 0 && await p.locator('.p-empty [data-p="g-clear"]').count() === 1, 'guides: a removed guide is not found, and Clear the search is offered');
   await p.click('.p-empty [data-p="g-clear"]');
-  ok(await p.locator('.g-card').count() === 4, 'guides: Clear the search brings all four back');
+  ok(await p.locator('.g-card').count() === 5, 'guides: Clear the search brings all five back');
 
   // One guide: pages read once, then kept; steps; recipe cards it is on; a page opened big
   const before = await S(p, () => window.__fake.readLog.length);
@@ -114,7 +114,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   // Admin: add a guide from a photo
   p = await L.open(b, '#/admin', { admin: true, width: 1280, height: 900, extra, wait: 1800 });
   await L.adminTab(p, 'guides'); await L.settle(p, 300);
-  ok(await p.locator('.g-row').count() === 4, 'admin: the Guides tab lists two uploaded and two bundled guides');
+  ok(await p.locator('.g-row').count() === 5, 'admin: the Guides tab lists two uploaded and three bundled guides');
   await p.click('[data-p="g-new"]'); await L.settle(p, 200);
   await p.click('[data-p="g-save"]'); await L.settle(p, 100);
   ok(/title/.test(await p.locator('.g-edit .p-err').innerText()), 'admin: saving with nothing asks for a title');
@@ -131,7 +131,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   const dk = Object.keys(s).find(k => /\/guides\/[^/]+$/.test(k) && s[k].title === 'Dishwasher start up'), did = dk ? dk.split('/').pop() : '';
   ok(!!dk && s[dk].pages === 1 && s[dk].v === 1 && s[dk].cat === 'cleaning' && /^data:image\/jpeg/.test(s[dk].thumb) && s[dk].dims.length === 1, 'admin photo: the guide is saved with one page and a small picture');
   ok(!!dk && /^data:image\/(webp|jpeg)/.test((s[G([did, 'pages', '0'])] || {}).img || ''), 'admin photo: the page picture is saved on its own');
-  ok(/Saved "Dishwasher start up"/.test(await S(p, () => window.LK_PREP.state.gMsg)) && await p.locator('.g-row').count() === 5, 'admin photo: says saved, and the list shows it');
+  ok(/Saved "Dishwasher start up"/.test(await S(p, () => window.LK_PREP.state.gMsg)) && await p.locator('.g-row').count() === 6, 'admin photo: says saved, and the list shows it');
 
   // Admin: add a guide from a two page PDF (pages drawn and words read by pdf.js)
   await p.click('[data-p="g-new"]'); await L.settle(p, 200);
@@ -170,7 +170,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   await p.click('[data-p="g-del"][data-id="' + cid + '"]'); await L.settle(p, 100);
   ok(/Tap again/.test(await p.locator('[data-p="g-del"][data-id="' + cid + '"]').innerText()) && !(await store(p))[ck].removed, 'admin remove: the first tap only asks again');
   await p.click('[data-p="g-del"][data-id="' + cid + '"]'); await L.settle(p, 200);
-  ok((await store(p))[ck].removed === true && await p.locator('.g-row').count() === 5, 'admin remove: the second tap removes it from the list');
+  ok((await store(p))[ck].removed === true && await p.locator('.g-row').count() === 6, 'admin remove: the second tap removes it from the list');
   await p.click('[data-p="toast-act"]'); await L.settle(p, 300);
   ok((await store(p))[ck].removed === false, 'admin remove: Undo puts it back');
 
@@ -202,7 +202,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
 
   // The new guide reaches staff: the list is read again when the Guides page opens
   p = await L.open(b, '#/guides', { extra: Object.assign({}, extra, { [G(['new1'])]: { title: 'Slicer cleaning', cat: 'cleaning', sum: '', steps: 'Unplug it.', kw: '', text: '', thumb: '', pages: 0, dims: [], v: 1, file: '', removed: false, at: L.NOW, upd: L.NOW } }), wait: 1500 });
-  ok(await p.locator('.g-card').count() === 5 && await p.locator('.g-new').count() === 2, 'guides: a guide added in the last 14 days is marked New');
+  ok(await p.locator('.g-card').count() === 6 && await p.locator('.g-new').count() === 2, 'guides: a guide added in the last 14 days is marked New');
   await p.context().close();
 
   // Who sees it (23 Oct 2026): a chefs guide and a function managers guide. Staff see neither, a sous chef sees both,
@@ -224,7 +224,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
     await L.waitFor(p, () => document.querySelectorAll('.g-card').length >= 2, null, 5000).catch(() => {});
     await L.settle(p, 300);
     const t = await titles(p), extraT = t.filter(x => /guide$/.test(x) && x !== 'iCombi: programme a new recipe').sort();
-    ok(t.length === 4 + want.length && JSON.stringify(extraT) === JSON.stringify(want), 'who sees it: ' + label + ' sees ' + (want.join(' and ') || 'only the guides for everyone') + ' (' + t.join(', ') + ')');
+    ok(t.length === 5 + want.length && JSON.stringify(extraT) === JSON.stringify(want), 'who sees it: ' + label + ' sees ' + (want.join(' and ') || 'only the guides for everyone') + ' (' + t.join(', ') + ')');
     if (who === 'sam') ok(await p.locator('.g-who').count() === 2 && /For chefs/i.test(await p.locator('.g-who').first().innerText() + await p.locator('.g-who').last().innerText()), 'who sees it: the chef\'s list marks them For chefs and For function managers');
     if (who === 'ann') {
       await p.evaluate(() => { location.hash = '#/guides/chefg'; }); await L.settle(p, 400);
@@ -244,12 +244,12 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   const headX = Object.assign({}, whoX, { ['kitchens/' + L.PIN + '/config/main']: Object.assign({}, whoX['kitchens/' + L.PIN + '/config/main'], { headId: 'ann' }) });
   p = await L.open(b, '#/guides', { who: 'ann', extra: headX, wait: 1500 });
   await L.waitFor(p, () => document.querySelectorAll('.g-card').length >= 4, null, 5000).catch(() => {});
-  ok((await titles(p)).length === 6, 'who sees it: the head chef signed in with their PIN sees all six guides (' + (await titles(p)).join(', ') + ')');
+  ok((await titles(p)).length === 7, 'who sees it: the head chef signed in with their PIN sees all seven guides (' + (await titles(p)).join(', ') + ')');
   await p.context().close();
   // the head chef's Google device: every guide in the admin list, and Who sees it is saved
   p = await L.open(b, '#/admin', { admin: true, who: '', width: 1280, height: 900, extra: whoX, wait: 1800 });
   await L.adminTab(p, 'guides'); await L.settle(p, 300);
-  ok(await p.locator('.g-row').count() === 6, 'who sees it: the admin Guides tab lists all four uploaded and two bundled guides');
+  ok(await p.locator('.g-row').count() === 7, 'who sees it: the admin Guides tab lists all four uploaded and three bundled guides');
   await p.click('[data-p="g-edit"][data-id="fryer"]'); await L.settle(p, 200);
   ok(await p.locator('[data-p="g-fwho"][data-v="all"][aria-pressed="true"]').count() === 1, 'who sees it: an older guide opens as Everyone');
   await L.choose(p, '[data-p="g-fwho"][data-v="chefs"]');

@@ -3166,6 +3166,17 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
 .g-food-times dt { font: 700 1.8rem/1.1 var(--display); margin-bottom: .7rem; }
 .g-food-times dd { margin: 0; font-weight: 600; }
 @media (max-width: 600px) { .g-food-times { grid-template-columns: 1fr; } }
+/* The steamed veg guide (17 Nov 2026): the four beeps in the same type and accent, side by side from 900 px, a row each on a phone. */
+.g-veg-beeps { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.g-veg-beeps > li { display: flex; flex-direction: column; gap: .3rem; min-width: 0; border-top: 6px solid var(--accent); padding: 1rem; background: var(--beige); overflow-wrap: anywhere; }
+.g-veg-t { font: 700 1.8rem/1.1 var(--display); }
+.g-veg-a { font-weight: 700; font-size: 1.15rem; }
+@media (max-width: 899px) { .g-veg-beeps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) {
+  .g-veg-beeps { grid-template-columns: 1fr; gap: .6rem; }
+  .g-veg-beeps > li { display: grid; grid-template-columns: minmax(5.5rem, 34%) 1fr; column-gap: .9rem; row-gap: .15rem; padding: .75rem 1rem; }
+  .g-veg-t { grid-row: span 2; font-size: 1.5rem; }
+}
 
 /* The Chef's Desk: the admin rooms share the book's paper, type and ruled lists. The 20 Oct chapter styles under them
    went in the tidy-up (5 Nov 2026, admin pages step 7); what they still gave the rooms is in these rules now. */
