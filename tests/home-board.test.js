@@ -120,7 +120,8 @@ const shut = async p => { if (await p.$('.nt-wrap')) { await p.keyboard.press('E
   ok(!rows.some(r => /order closes/.test(r.t)), 'staff: no cut-off rows');
   ok(!(await p.$('#hm-cuts li')), 'staff: no cut-offs in Coming up');
   const staffTeam = await txt(p, '#hm-team') || '';
-  ok(/Ann/.test(staffTeam) && /Sam/.test(staffTeam) && /Larder/.test(staffTeam) && /Lunch 10:00 to 15:00/.test(staffTeam), 'staff: the full day shows the saved team, their sections and shift hours (' + staffTeam + ')');
+  // (17 Nov 2026) the full day by start time: each person's start, section now and until when (docs/home-roster-options/brief.md, D)
+  ok(/Ann/.test(staffTeam) && /Sam/.test(staffTeam) && /Larder/.test(staffTeam) && /^10:00/.test(staffTeam) && /until 15:00/.test(staffTeam), 'staff: the full day shows the saved team, their start, sections and until when (' + staffTeam + ')');
   ok(!(await p.$('#hm-team a[href="#/team"]')) && !(await p.$('#hm-team button, #hm-team input, #hm-team select')), 'staff: the roster has no team editor link or editing controls');
   const staffBill = await bill(p);
   await shut(p);
@@ -206,7 +207,9 @@ const shut = async p => { if (await p.$('.nt-wrap')) { await p.keyboard.press('E
     ok(await p.locator('#hm-full-team').evaluate(e => !e.open), w + ' px: full-day detail starts folded');
     await p.click('#hm-full-team > summary');
     const team = await txt(p, '#hm-team') || '';
-    ok(/Larder/.test(team) && /Ann/.test(team) && /break 14:30/.test(team) && /Lunch/.test(team), w + ' px: full On today retains section, shift and break details (' + team.slice(0, 100) + ')');
+    // (17 Nov 2026) the full day by start time keeps section, start and until when; break windows are in Today's team
+    // and on each person's own Your day (head chef, docs/home-roster-options/brief.md, D for everyone)
+    ok(/Larder/.test(team) && /Ann/.test(team) && /^10:00/.test(team) && /until 15:00/.test(team), w + ' px: full On today keeps section, start and until when (' + team.slice(0, 100) + ')');
     await p.context().close();
   }
 

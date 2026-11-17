@@ -57,7 +57,9 @@ const saved = async (p, data) => {
     if (width === 390) ok(positions.crewBottom <= positions.barTop + 1, 'phone: the two fixture coworkers and own break fit before the fixed tab bar');
     ok(await p.locator('#hm-full-team').evaluate(e => !e.open), width + ': full-day detail starts folded');
     await p.click('#hm-full-team > summary');
-    ok(/Jo/.test(await read(p, '#hm-team')) && /Dinner 16:00 to 22:00/.test(await read(p, '#hm-team')), width + ': full saved day, including later-only staff, opens in one tap');
+    // (17 Nov 2026) the full day by start time: Jo under 16:00, on until 22:00 (docs/home-roster-options/brief.md, D)
+    const fullDay = await p.$eval('#hm-team', e => e.innerText.replace(/\s+/g, ' '));
+    ok(/16:00 Jo /.test(fullDay) && /Jo [^·]* · until 22:00/.test(fullDay), width + ': full saved day, including later-only staff, opens in one tap (' + fullDay.slice(0, 160) + ')');
     const count = await p.evaluate(() => __fake.reads.filter(k => /\/team\//.test(k)).length);
     await p.clock.runFor(31000); await L.settle(p, 100);
     ok(await p.locator('#hm-full-team').evaluate(e => e.open) && await p.evaluate(() => __fake.reads.filter(k => /\/team\//.test(k)).length) === count, width + ': a clock repaint preserves the open full-day detail with no team read');

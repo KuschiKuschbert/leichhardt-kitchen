@@ -27,7 +27,8 @@ const noRows = p => p.$$eval('#hm-with .hm-tp', l => l.length === 0);
   let p = await L.open(b, '#/', { who: 'bo', extra: fixture(), wait: 1400 });
   await ready(p);
   const all = await text(p);
-  ok(/Ann/.test(all) && /Sam/.test(all) && /Larder/.test(all) && /Grill/.test(all) && /Lunch 10:00 to 15:00/.test(all) && /Dinner 16:00 to 22:00/.test(all), 'staff without their own allocation still see everyone and every saved shift, section and hours (' + all + ')');
+  // (17 Nov 2026) the whole day by start time: each start, the section, and until when (docs/home-roster-options/brief.md, D)
+  ok(/Ann/.test(all) && /Sam/.test(all) && /Larder/.test(all) && /Grill/.test(all) && /10:00/.test(all) && /until 15:00/.test(all) && /16:00/.test(all) && /until 22:00/.test(all), 'staff without their own allocation still see everyone, each start, section and until when (' + all + ')');
   ok(!(await p.$('.wtop .tm-slot .tm-chip')) && !(await p.$('#hm-with a[href="#/team"], #hm-with button, #hm-with input, #hm-with select')), 'staff without an allocation have no own-day chip or roster editing controls');
   ok(await teamReads(p) === 1 && await p.evaluate(() => __fake.bill.filter(x => /\/team\//.test(x.path) && /listen/.test(x.kind)).length) === 0, 'staff roster uses the existing single team read and has no team listener');
   ok(await p.evaluate(() => __fake.writes.flat().filter(x => /\/team\//.test(x.path)).length === 0), 'reading the roster writes no team record');
@@ -37,7 +38,7 @@ const noRows = p => p.$$eval('#hm-with .hm-tp', l => l.length === 0);
   await p.evaluate(([k, d, cf, t]) => { __fake.write(k, d); const c = __fake.dump()[cf]; __fake.write(cf, Object.assign({}, c, { pastEdit: Object.assign({}, c.pastEdit || {}, { t }) })); }, [TEAM, changed, CFG, L.NOW + 60000]);
   await L.waitFor(p, () => document.querySelectorAll('#hm-with-body .hm-tp').length === 1, null, 6000).catch(() => {});
   const saved = await text(p);
-  ok(/Ann/.test(saved) && /Dinner 16:00 to 22:00/.test(saved) && !/Sam|Lunch/.test(saved), 'the roster follows the newly saved plan, removing old allocations (' + saved + ')');
+  ok(/Ann/.test(saved) && /16:00/.test(saved) && /until 22:00/.test(saved) && !/Sam|10:00/.test(saved), 'the roster follows the newly saved plan, removing old allocations (' + saved + ')');
   ok(await teamReads(p) === 2, 'a saved team stamp adds exactly the existing one team read');
   await p.evaluate(() => { location.hash = '#/team'; }); await L.settle(p, 500);
   ok(/The head chef and the sous chefs set today's team/.test(await txt(p, '.tm-page') || '') && !(await p.$('.tm-work')), 'staff still cannot open the planner even with a saved roster');
