@@ -44,17 +44,20 @@ const cells = p => p.$$eval('#hm-with-body .hm-tp', l => l.map(e => e.textConten
   // a chef: the rows on one clock (each person's sentence of hours and breaks) and the saved overview
   p = await L.open(b, '#/team', { who: 'sam', extra: fixture(), wait: 1500 });
   await L.waitFor(p, () => document.querySelectorAll('.tm-tlrow').length >= 6, null, 9000);
-  const said = id => txt(p, '.tm-tlrow[data-id="' + id + '"] .tm-roster-time').then(x => x || '');
-  ok(/^Roster 10:00 to 21:30 · No break yet$/.test(await said('ann')) && /^Roster: Lunch 10:00 to 14:00, Dinner 17:00 to 21:00 · No break yet$/.test(await said('bea')), 'rows: each person\'s saved roster hours, a split in order with its services (' + await said('ann') + ' | ' + await said('bea') + ')');
+  // (17 Nov 2026) the roster hours are the label under the name; a row's words are the label, then the sentence
+  const said = id => p.$eval('.tm-tlrow[data-id="' + id + '"]', r => { const t = r.querySelector('.tm-rostered'), s = r.querySelector('.tm-roster-time'); return (t ? t.textContent.replace(/\s+/g, ' ').trim() + ' · ' : '') + (s ? s.textContent : ''); });
+  ok(/^Rostered hours: 10:00 to 21:30 · No break yet$/.test(await said('ann')) && /^Rostered hours: 10:00 to 14:00 and 17:00 to 21:00 · No break yet$/.test(await said('bea')), 'rows: each person\'s saved roster hours, a split in order (' + await said('ann') + ' | ' + await said('bea') + ')');
   const plain = await Promise.all(['cal', 'dev', 'eli', 'fen'].map(said));
   ok(plain.every(x => /^Lunch hours 10:00 to 15:00 · No break yet$/.test(x)), 'rows: no roster hours without valid saved hours; the service\'s own hours say so (' + plain.join(' | ') + ')');
-  // the roster times in bold ink, found at a glance while placing sections (head chef, 17 Nov 2026); the words above
-  // are unchanged, and a service's own hours (no roster) stay quiet
-  const bold = id => p.$$eval('.tm-tlrow[data-id="' + id + '"] .tm-roster-time .tm-hrs', l => l.map(e => e.textContent));
-  const annB = await bold('ann'), beaB = await bold('bea'), plainB = await Promise.all(['cal', 'dev', 'eli', 'fen'].map(bold));
-  ok(JSON.stringify(annB) === '["10:00 to 21:30"]' && JSON.stringify(beaB) === '["10:00 to 14:00","17:00 to 21:00"]' && plainB.every(l => !l.length), 'rows: each roster time is marked on its own, a split in two parts; a service\'s own hours are not (' + JSON.stringify([annB, beaB, plainB]) + ')');
-  const look = await p.$eval('.tm-tlrow[data-id="ann"] .tm-roster-time', e => { const s = getComputedStyle(e), t = getComputedStyle(e.querySelector('.tm-hrs')), i = document.createElement('i'); i.style.color = 'var(--ink)'; document.body.appendChild(i); const ink = getComputedStyle(i).color; i.remove(); return { w: +t.fontWeight, c: t.color, sc: s.color, ws: t.whiteSpace, ink }; });
-  ok(look.w >= 700 && look.c !== look.sc && look.c === look.ink && look.ws === 'nowrap', 'rows: the roster time is bold ink on one line, the rest of the sentence stays quiet (' + JSON.stringify(look) + ')');
+  // the roster hours as a label under the name (head chef, 17 Nov 2026: "a colour coded line or label with Rostered
+  // hours"): its own words, one line per part of the day, in the people colour; a service's own hours get no label
+  const tag = id => p.$$eval('.tm-tlrow[data-id="' + id + '"] .tm-grid-who > .tm-rostered', l => l.map(e => [e.querySelector('.tm-rostered-k').textContent.replace(/\s+/g, ' ').trim(), ...[...e.querySelectorAll('.tm-hrs')].map(b => b.lastChild.textContent.trim())]));
+  const annT = await tag('ann'), beaT = await tag('bea'), plainT = await Promise.all(['cal', 'dev', 'eli', 'fen'].map(tag));
+  ok(JSON.stringify(annT) === '[["Rostered hours:","10:00 to 21:30"]]' && JSON.stringify(beaT) === '[["Rostered hours:","10:00 to 14:00","17:00 to 21:00"]]' && plainT.every(l => !l.length), 'rows: the label under the name says Rostered hours and each part of the day; no label for a service\'s own hours (' + JSON.stringify([annT, beaT, plainT]) + ')');
+  const look = await p.$eval('.tm-tlrow[data-id="ann"] .tm-rostered', e => { const c = x => { const i = document.createElement('i'); i.style.color = x; document.body.appendChild(i); const v = getComputedStyle(i).color; i.remove(); return v; }, s = getComputedStyle(e), h = getComputedStyle(e.querySelector('.tm-hrs')), r = e.getBoundingClientRect(), name = e.parentNode.querySelector('.tm-person-name').getBoundingClientRect();
+    const lum = v => { const [r, g, b] = v.match(/\d+/g).map(Number).map(x => x / 255).map(x => x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4)); return 0.2126 * r + 0.7152 * g + 0.0722 * b; }, a = lum(s.backgroundColor), t = lum(s.color);
+    return { bg: s.backgroundColor === c('var(--surface-people-edge)'), ink: s.color === c('var(--ink)'), w: +h.fontWeight, ws: h.whiteSpace, contrast: Math.round((Math.max(a, t) + 0.05) / (Math.min(a, t) + 0.05) * 10) / 10, under: r.top >= name.bottom - 2 }; });
+  ok(look.bg && look.ink && look.w >= 700 && look.ws === 'nowrap' && look.contrast >= 4.5 && look.under, 'rows: the label is the people colour with ink text (contrast ' + look.contrast + ':1), the times bold on one line, under the name (' + JSON.stringify(look) + ')');
   const glance = (await p.$$eval('.tm-tlr', l => l.map(e => e.textContent.replace(/\s+/g, ' ').trim()))).find(x => /^Ann/.test(x)) || '';
   ok(/Lunch, roster 10:00 to 21:30/.test(glance), 'saved overview: Ann\'s line says his roster hours (' + glance + ')');
   // Whole day review is gone: each row is the whole day, the hours in its sentence and the section on each service line
@@ -63,9 +66,9 @@ const cells = p => p.$$eval('#hm-with-body .hm-tp', l => l.map(e => e.textConten
   await L.pick(p, 'select[data-k="tm-sec:ann:dinner"]', 'larder');
   const off = '[data-p="tm-off"][data-id="bea"][data-sh="dinner"]';
   await p.locator(off).click(); await L.settle(p, 150); await p.locator(off).click(); await L.settle(p, 150);
-  ok(/^Roster 10:00 to 14:00 · No break yet$/.test(await said('bea')), 'Take off: Bea\'s Dinner hours go with the service (' + await said('bea') + ')');
+  ok(/^Rostered hours: 10:00 to 14:00 · No break yet$/.test(await said('bea')), 'Take off: Bea\'s Dinner hours go with the service (' + await said('bea') + ')');
   await p.locator('.tm-tlrow[data-id="bea"] [data-p="tm-off-undo"]').click(); await L.settle(p, 150);
-  ok(/^Roster: Lunch 10:00 to 14:00, Dinner 17:00 to 21:00/.test(await said('bea')) && await p.locator('select[data-k="tm-sec:bea:dinner"]').inputValue() === 'larder', 'Undo: Bea is back on Dinner with her section and roster hours (' + await said('bea') + ')');
+  ok(/^Rostered hours: 10:00 to 14:00 and 17:00 to 21:00 · /.test(await said('bea')) && await p.locator('select[data-k="tm-sec:bea:dinner"]').inputValue() === 'larder', 'Undo: Bea is back on Dinner with her section and roster hours (' + await said('bea') + ')');
   await p.locator(off).click(); await L.settle(p, 150); await p.locator(off).click(); await L.settle(p, 150);
   await p.locator('[data-p="tm-save"]').click();
   await L.waitFor(p, k => (__fake.dump()[k] || {}).v === 2, TEAM, 8000);

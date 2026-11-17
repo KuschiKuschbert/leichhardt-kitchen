@@ -14498,16 +14498,23 @@ if (list.length) sg('oreg', 's');
     if (r) for (var h = r.lo; h <= r.hi; h += 60) t += '<span class="' + ((h / 60) % 3 ? 'tk1' : 'tk3') + '" style="left:' + tmPc(r, h) + '%">' + pad(Math.floor(h / 60) % 24) + '</span>';
     return '<span class="tm-tlt tm-rowticks" aria-hidden="true">' + t + '</span>';
   }
-  // one sentence: "Roster 12:00 to 15:00 · Break 13:30 to 14:00"; two parts of a day name their services; "No break yet";
-  // a break with nobody else on its service then says so: "Break 15:45 to 16:15 (nobody else on All day 15:45 to 16:00)"
-  // html: the same words, escaped, with each roster time in bold ink (.tm-hrs) so the planner finds a person's hours at
-  // a glance while placing sections (head chef, 17 Nov 2026); a service's own hours (no roster) stay quiet
-  function tmDayWords(id, html) {
-    var spans = tmSpans(id), brs = tmDayBreaks(id), named = spans.length > 1, e = html ? esc : String;
-    var hrs = spans.map(function (o) { var t = e(tmHHMM(o.from) + ' to ' + tmHHMM(o.to)); return e(named ? o.shs.join(', ') + ' ' : o.roster ? 'Roster ' : o.shs.join(', ') + ' hours ') + (html && o.roster ? '<b class="tm-hrs">' + t + '</b>' : t); }).join(', ');
-    if (named && spans.every(function (o) { return o.roster; })) hrs = 'Roster: ' + hrs;
+  // one sentence for the day under the bar: "Break 13:30 to 14:00", "No break yet"; a break with nobody else on its
+  // service then says so: "Break 15:45 to 16:15 (nobody else on All day 15:45 to 16:00)". Roster hours are not in it:
+  // they are the label by the name (tmRosteredHTML()). Hours without a roster time lead it in words: "Lunch hours 10:00
+  // to 15:00 · No break yet"; two such parts of a day name their services: "Lunch 10:00 to 15:00, Dinner 16:00 to 22:00"
+  function tmDayWords(id) {
+    var spans = tmSpans(id), brs = tmDayBreaks(id), own = spans.filter(function (o) { return !o.roster; }), named = own.length > 1;
+    var hrs = own.map(function (o) { return o.shs.join(', ') + (named ? ' ' : ' hours ') + tmHHMM(o.from) + ' to ' + tmHHMM(o.to); }).join(', ');
     var bw = brs.length ? brs.map(function (b, n) { var lone = tmBrAlone(id, b); return tmBrName(b, n) + ' ' + tmHHMM(b.at) + ' to ' + tmHHMM(b.at + b.len) + (tmBrOutside(id, b.at, b.len) ? ' (outside their hours)' : lone ? ' (' + lone + ')' : ''); }).join(', ') : 'No break yet';
-    return (hrs || 'Hours not set') + ' · ' + e(bw);
+    return (hrs ? hrs + ' · ' : spans.length ? '' : 'Hours not set · ') + bw;
+  }
+  // the roster hours as a label under the name, in the people colour with its own words, one line per part of the day,
+  // so the chef placing sections reads name and hours together (head chef, 17 Nov 2026: "a colour coded line or label
+  // with Rostered hours"). Only hours from the roster file; a service's own hours stay in the sentence.
+  function tmRosteredHTML(id) {
+    var rs = tmSpans(id).filter(function (o) { return o.roster; });
+    if (!rs.length) return '';
+    return '<span class="tm-rostered"><span class="tm-rostered-k">Rostered hours<span class="visually-hidden">: </span></span>' + rs.map(function (o, i) { return '<b class="tm-hrs">' + (i ? '<span class="visually-hidden"> and </span>' : '') + tmHHMM(o.from) + ' to ' + tmHHMM(o.to) + '</b>'; }).join('') + '</span>';
   }
   // the sticky head: each service worked, in time order, with its hours and who has no section yet; then the hour marks
   function tmPlanHeadHTML(r) {
@@ -14528,9 +14535,9 @@ if (list.length) sg('oreg', 's');
         '<div class="tm-grid-cell tm-tlsvc-sec' + (chefP(p) ? ' is-chef' : '') + '">' + tmGridCellHTML(p, s, shs) + '</div>' +
         (i === shs.length - 1 ? '<div class="tm-tlsvc-more">' + tmAddSvcHTML(p) + '</div>' : '') + '</div>';
     }).join('');
-    return '<li class="tm-person-row tm-tlrow' + (tmUi.shortGo === p.id ? ' is-short-here' : '') + '" data-id="' + esc(p.id) + '"><div class="tm-grid-who"><span class="tm-person-name">' + esc(p.name) + '</span>' + (chefP(p) ? '<small class="tm-tlrole">' + esc(tmChefRole(p)) + '</small>' : '') +
+    return '<li class="tm-person-row tm-tlrow' + (tmUi.shortGo === p.id ? ' is-short-here' : '') + '" data-id="' + esc(p.id) + '"><div class="tm-grid-who"><span class="tm-person-name">' + esc(p.name) + '</span>' + (chefP(p) ? '<small class="tm-tlrole">' + esc(tmChefRole(p)) + '</small>' : '') + tmRosteredHTML(p.id) +
       tmShortMarkHTML(p.id, sv) + (flag ? '<span class="tm-roster-flag">' + esc(flag) + '</span>' : '') + (tmDayBreaks(p.id).length ? '' : '<span class="tm-braddwho">' + tmBrAddHTML(p) + '</span>') + '</div>' +
-      '<div class="tm-tlrow-main"><div class="tm-tlrow-day">' + tmBarHTML(p.id, r) + '<div class="tm-tlday"><p class="tm-learn tm-roster-time">' + tmDayWords(p.id, true) + '</p>' + tmBrLineHTML(p) + '</div></div>' + lines + tmOverlapHTML(p.id) + tmUndoHTML(p.id) + '</div></li>';
+      '<div class="tm-tlrow-main"><div class="tm-tlrow-day">' + tmBarHTML(p.id, r) + '<div class="tm-tlday"><p class="tm-learn tm-roster-time">' + esc(tmDayWords(p.id)) + '</p>' + tmBrLineHTML(p) + '</div></div>' + lines + tmOverlapHTML(p.id) + tmUndoHTML(p.id) + '</div></li>';
   }
   // the services a person is not on yet, in time order; a hidden one says so in words (it replaced the service chips)
   function tmAddSvcHTML(p) {

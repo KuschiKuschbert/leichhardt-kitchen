@@ -67,7 +67,7 @@ async function choose(p, file, done) {
   const rows = await p.$$eval('.tm-tlrow', l => l.map(e => e.getAttribute('data-id')));
   ok(['sam', 'ann', 'bo'].every(id => rows.includes(id)) && !rows.includes('gus'), 'Thursday has Sam K, Ann and Bo from the roster: ' + rows.join(', '));
   const o2 = await order(); ok(o2[0] < o2[2], 'after a day chip, the day\'s rows come before the roster block again (' + o2.join(' < ') + ')');
-  ok(/Roster 10:00 to 21:00/.test(await text(p, '.tm-person-row[data-id="sam"] .tm-roster-time')) && /Roster 17:00 to 22:00/.test(await text(p, '.tm-person-row[data-id="bo"] .tm-roster-time')), 'each row says its roster time');
+  ok(/Rostered hours: 10:00 to 21:00/.test(await text(p, '.tm-person-row[data-id="sam"] .tm-rostered')) && /Rostered hours: 17:00 to 22:00/.test(await text(p, '.tm-person-row[data-id="bo"] .tm-rostered')), 'each row says its roster time');
   await p.locator('[data-p="tm-save"]').click();
   await L.waitFor(p, k => !!__fake.dump()[k], key('team', days[3]), 8000); await L.settle(p, 300);
   const thu = await dump(p, key('team', days[3]));
@@ -135,8 +135,8 @@ async function choose(p, file, done) {
   await L.waitFor(p, d => (document.querySelector('.tm-notebook') || {}).getAttribute && document.querySelector('.tm-notebook').getAttribute('data-day') === d && !!document.querySelector('.tm-person-row'), days[0], 9000);
   const seen = await p.$$eval('.tm-tlrow', l => l.map(e => e.getAttribute('data-id')));
   ok(seen.includes('ann') && seen.includes('bo') && !await p.locator('.tm-roster').count(), 'the sous chef sees Monday\'s imported team (' + seen.join(', ') + '), without the roster tool');
-  const boParts = saved[0].on.filter(o => o.id === 'bo'), boHours = { from: Math.min(...boParts.map(o => o.from)), to: Math.max(...boParts.map(o => o.to)) }, boWords = await text(p, '.tm-person-row[data-id="bo"] .tm-roster-time');
-  ok(new RegExp('Roster ' + [boHours.from, boHours.to].map(m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0')).join(' to ')).test(boWords), 'on another phone, after the import\'s memory is gone, the sous chef sees Bo\'s saved roster hours as one time, the parts joined (' + boWords + ')');
+  const boParts = saved[0].on.filter(o => o.id === 'bo'), boHours = { from: Math.min(...boParts.map(o => o.from)), to: Math.max(...boParts.map(o => o.to)) }, boWords = await text(p, '.tm-person-row[data-id="bo"] .tm-rostered');
+  ok(new RegExp('Rostered hours: ' + [boHours.from, boHours.to].map(m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0')).join(' to ')).test(boWords), 'on another phone, after the import\'s memory is gone, the sous chef sees Bo\'s saved roster hours as one time, the parts joined (' + boWords + ')');
   if (!await p.locator('[data-p="tm-spread"]').isVisible()) { await p.locator('[data-p="tm-batch-toggle"]').click(); await L.settle(p, 150); }
   await L.pick(p, 'select[data-k="tm-tool-sh"]', 'dinner'); await L.settle(p, 150);
   await p.locator('[data-p="tm-spread"]').click(); await L.settle(p, 200);
@@ -168,7 +168,7 @@ async function choose(p, file, done) {
   ok(/Not changed: .*(saved, past or planned before)/.test(linkedCard) && JSON.stringify(await dump(p, key('team', days[2]))) === JSON.stringify(wed), 'Wednesday, already saved, is not changed and the card says so');
   ok(/Name links \(1\)/.test(linkedCard) && /Mary Jo Kahale is MJ/.test(await p.evaluate(() => document.querySelector('.tm-roster-links').textContent)), 'the Name links fold lists the link');
   await p.locator('.tm-roster-days [data-day="' + days[3] + '"]').click(); await planner(p); await L.settle(p, 200);
-  ok(/Roster 10:00 to 15:00/.test(await text(p, '.tm-person-row[data-id="mj"] .tm-roster-time')), 'MJ is on Thursday\'s draft with her roster time');
+  ok(/Rostered hours: 10:00 to 15:00/.test(await text(p, '.tm-person-row[data-id="mj"] .tm-rostered')), 'MJ is on Thursday\'s draft with her roster time');
   await p.locator('[data-p="tm-save"]').click();
   await L.waitFor(p, k => !!__fake.dump()[k], key('team', days[3]), 8000);
   ok((await dump(p, key('team', days[3]))).on.some(o => o.id === 'mj' && o.sh === 'lunch'), 'Save writes MJ on Thursday');
