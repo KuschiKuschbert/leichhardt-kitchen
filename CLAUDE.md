@@ -85,8 +85,8 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Merging, the queue, `urgent` | `docs/auto-merge.md` |
 | Publishing the site: only a merge that changes a file the phones load republishes; the book then updates silently when safe (no band unless asked) | `docs/site-publishing.md` |
 | Nightly backup and recovery | `docs/backup-recovery.md` |
-| Seasonal celebrations and festival dates | `docs/seasonal-celebrations.md`, `docs/seasonal-calendar.md`, `docs/celebration-options/brief.md` |
-| April Fools on Home (1 April, built 17 Nov 2026): 24 fake "hacked" Homes of 35 seconds on a copy of the page, one per person per day on any device, never last year's, then the mascot owns up; the admin panel's preview | `docs/april-fools.md` (the contract), `docs/april-fools-options/brief.md` and `pool.md` (the study) |
+| Seasonal celebrations and festival dates; the New Year show over Home (fireworks and the cards' dance, 17 Nov 2026) | `docs/seasonal-celebrations.md`, `docs/seasonal-calendar.md`, `docs/celebration-options/brief.md` |
+| April Fools on Home (1 April, built 17 Nov 2026): 24 fake "hacked" Homes of 35 seconds on a copy of the page, once a year per person on any device, never last year's, then the mascot owns up; the admin panel's preview | `docs/april-fools.md` (the contract), `docs/april-fools-options/brief.md` and `pool.md` (the study) |
 
 ## Service council (5 Nov 2026)
 

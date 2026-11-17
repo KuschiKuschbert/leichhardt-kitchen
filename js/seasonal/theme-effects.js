@@ -31,7 +31,8 @@
   const ambientDesigns = {
     'snow': { label: 'Snow drifting across the app', motifs: ['snow'], motion: 'fall', count: 40 },
     'eggs-petals': { label: 'Patterned Easter eggs and spring petals drifting through the book', motifs: ['egg', 'pink-petal', 'cream-petal'], motion: 'flutter', count: 15 },
-    'new-year-streamers': { label: 'Warm paper streamers and slow chalk-star glints', motifs: ['streamer', 'star', 'confetti'], motion: 'fall', count: 18 },
+    // Fireworks for the New Year (head chef, 17 Nov 2026): they burst in the arrival only, then the streamers and stars rest.
+    'new-year-streamers': { label: 'Fireworks burst in the margins, then warm paper streamers and slow chalk-star glints', motifs: ['firework-kitchen', 'streamer', 'firework', 'firework-kitchen-b', 'confetti', 'firework-rose'], restMotifs: ['star', 'streamer'], motion: 'fall', count: 18, show: 'new-year' },
     'hearts': { label: 'Outlined hearts rising through the app', motifs: ['heart'], motion: 'rise', count: 18 },
     'bouquet-petals': { label: 'Paper-tone bouquet petals with botanical sprigs', motifs: ['pink-petal', 'cream-petal', 'sprig'], motion: 'flutter', count: 17 },
     'steam-ribbons': { label: 'Coffee steam curls and appreciation ribbons at the margins', motifs: ['steam', 'ribbon'], motion: 'rise', count: 12 },
@@ -107,8 +108,37 @@
   const C = { cream: '#fffefa', gold: '#d6ac55', orange: '#e2602a', rose: '#c9868d', green: '#758a68', blue: '#6a8597' };
   function motifSvg(body, w = 40, h = 48) { return svg(body, w, h); }
   const petal = colour => motifSvg('<path d="M20 7C40 2 39 31 20 40C1 31 0 2 20 7Z" fill="' + colour + '"/><path d="M20 13q-5 10 0 23" opacity=".35"/>');
+  // A firework: an outer ring of twelve sparks and an inner ring of eight, around a bright centre, in the book's chalk
+  // colours. It moves only by transform and opacity, like every celebration piece.
+  const firework = (a, b, c) => motifSvg('<circle cx="32" cy="32" r="3.4" fill="' + C.cream + '" stroke="none"/>' +
+    [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((r, i) => '<g transform="rotate(' + r + ' 32 32)"><path d="M32 20V7" stroke="' + [a, b, c][i % 3] + '" stroke-width="3"/><circle cx="32" cy="3.4" r="2.6" fill="' + [a, b, c][i % 3] + '" stroke="none"/></g>').join('') +
+    [15, 60, 105, 150, 195, 240, 285, 330].map((r, i) => '<path d="M32 27V20" transform="rotate(' + r + ' 32 32)" stroke="' + [b, c][i % 2] + '" stroke-width="2.2"/>').join(''), 64, 64);
+  /* A kitchen burst (head chef, 17 Nov 2026: "fancy fireworks on the home page using design elements"): the book's own
+     pieces fly out as the sparks: the mascot's yellow star with its sprinkles, the chef hat, the plate with its orange
+     centre and the cup, from the book's own icons, upright on a ring between short sparks. */
+  const KITCHEN_SPARKS = {
+    star: '<path d="M12 2.5l2.8 6 6.6.7-5 4.4 1.4 6.5L12 16.8l-5.8 3.3 1.4-6.5-5-4.4 6.6-.7Z" fill="#f2c230" stroke-width="1.6"/><circle cx="10" cy="10.5" r="1.1" fill="#e2607a" stroke="none"/><circle cx="14" cy="13" r="1.1" fill="#3fc7d6" stroke="none"/>',
+    chef: '<path d="M7 14.2A3.6 3.6 0 1 1 8.6 7.4a4.6 4.6 0 0 1 6.8 0A3.6 3.6 0 1 1 17 14.2V20H7Z" fill="' + C.cream + '" stroke-width="1.7"/><path d="M7 17h10" stroke-width="1.5"/>',
+    plate: '<circle cx="12" cy="12" r="8.5" fill="' + C.cream + '" stroke-width="1.6"/><circle cx="12" cy="12" r="4" fill="' + C.orange + '" stroke="none"/>',
+    cup: '<path d="M5 9h11v5.5A4.5 4.5 0 0 1 11.5 19h-2A4.5 4.5 0 0 1 5 14.5Z" fill="' + C.gold + '" stroke-width="1.7"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16" stroke-width="1.7"/><path d="M8.5 4.5q1 1.5 0 3M12 4q1 1.5 0 3" stroke="' + C.orange + '" stroke-width="1.4"/>'
+  };
+  const kitchenBurst = order => motifSvg('<circle cx="48" cy="48" r="4" fill="' + C.cream + '" stroke="none"/>' + order.map((k, i) => {
+    const a = i * Math.PI / 4, x = 48 + Math.sin(a) * 33, y = 48 - Math.cos(a) * 33, sx = 48 + Math.sin(a + Math.PI / 8) * 30, sy = 48 - Math.cos(a + Math.PI / 8) * 30;
+    return '<g transform="translate(' + (x - 8.5).toFixed(1) + ' ' + (y - 8.5).toFixed(1) + ') scale(.71)">' + KITCHEN_SPARKS[k] + '</g>' +
+      '<path d="M' + (48 + Math.sin(a + Math.PI / 8) * 14).toFixed(1) + ' ' + (48 - Math.cos(a + Math.PI / 8) * 14).toFixed(1) + 'L' + sx.toFixed(1) + ' ' + sy.toFixed(1) + '" stroke="' + [C.gold, C.orange][i % 2] + '" stroke-width="2.4"/>';
+  }).join(''), 96, 96);
+  // The New Year show's confetti spray and glitter sheet: many small pieces in one drawing, so one element moves them all.
+  const confettiSpray = motifSvg([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(i => {
+    const a = i * Math.PI / 6 + .2, r = 24 + (i * 7) % 18;
+    return '<rect x="-2.5" y="-4" width="5" height="8" rx="1" fill="' + [C.orange, C.cream, C.gold][i % 3] + '" stroke-width="1" transform="translate(' + (48 + Math.sin(a) * r).toFixed(1) + ' ' + (48 - Math.cos(a) * r).toFixed(1) + ') rotate(' + (i * 47) % 180 + ')"/>';
+  }).join(''), 96, 96);
+  const glitterSheet = motifSvg([[20, 12], [92, 40], [160, 8], [230, 46], [290, 18]].map(([x, y], i) =>
+    '<path transform="translate(' + x + ' ' + y + ') scale(' + (i % 2 ? .8 : 1) + ')" d="M0-9l2.6 6 6.4.6-4.9 4.3 1.5 6.3L0 4.9l-5.6 3.3 1.5-6.3-4.9-4.3 6.4-.6Z" fill="' + (i % 2 ? C.gold : C.cream) + '" stroke-width="1"/>').join(''), 320, 60);
   const ambientArt = {
-    'snow': '',
+    'snow': '', 'confetti-spray': confettiSpray, 'glitter-sheet': glitterSheet,
+    'firework-kitchen': kitchenBurst(['star', 'chef', 'plate', 'cup', 'star', 'chef', 'plate', 'cup']),
+    'firework-kitchen-b': kitchenBurst(['chef', 'star', 'cup', 'plate', 'chef', 'star', 'cup', 'plate']),
+    'firework': firework(C.gold, C.orange, C.cream), 'firework-rose': firework(C.rose, C.gold, C.cream), 'firework-green': firework(C.green, C.cream, C.orange),
     'pink-petal': petal(C.rose), 'cream-petal': petal(C.cream), 'marigold-petal': petal(C.gold), 'lotus-petal': petal('#f1dedc'),
     'heart': motifSvg('<path d="M20 15C4-7-12 17 20 41C52 17 36-7 20 15Z" fill="' + C.rose + '"/>'),
     'egg': motifSvg('<path d="M20 4C-2 24-1 44 20 44S42 24 20 4Z" fill="' + C.cream + '"/><path d="M6 24l7 4 7-5 7 5 7-4M6 34h28" stroke="' + C.orange + '"/><circle cx="18" cy="16" r="2" fill="' + C.gold + '"/>'),
@@ -170,7 +200,7 @@
     node.className = 'complete-particle kb-ambient-particle ' + (centre ? 'is-centre' : 'is-edge') + (ornament ? ' is-ornament' : '');
     node.dataset.ambientMotif = motif; node.dataset.ambientMotion = motion;
     const x = centre ? 30 + (index * 17) % 40 : index % 2 ? 2 + (index * 2.7) % 10 : 86 + (index * 1.7) % 10;
-    const size = motif === 'snow' ? 2 + index % 4 : motif === 'horse' ? (visible ? 96 : 75) : ornament ? (visible ? 53 : 40) : motif === 'saber' ? (visible ? 66 : 48) : motif === 'steam' ? (visible ? 38 : 29) : motif === 'kite' ? (visible ? 42 : 32) : (visible ? 23 : 17) + index % 8;
+    const size = motif.startsWith('firework-kitchen') ? (visible ? 150 + (index % 3) * 20 : 108) : motif.startsWith('firework') ? (visible ? 120 + (index % 3) * 24 : 84) : motif === 'snow' ? 2 + index % 4 : motif === 'horse' ? (visible ? 96 : 75) : ornament ? (visible ? 53 : 40) : motif === 'saber' ? (visible ? 66 : 48) : motif === 'steam' ? (visible ? 38 : 29) : motif === 'kite' ? (visible ? 42 : 32) : (visible ? 23 : 17) + index % 8;
     node.style.setProperty('--x', x + '%'); node.style.setProperty('--y', (10 + (index * 23) % 71) + '%');
     node.style.setProperty('--size', size + 'px');
     node.style.setProperty('--duration', (motion === 'race' ? 13 + index % 4 : motion === 'twinkle' || ornament ? 7 + index % 5 : motif === 'snow' ? 15 + index % 12 : 16 + index % 13) + 's');
@@ -182,15 +212,18 @@
     return node;
   }
   function ambientParticles(design, visible, count, rest) {
-    const nodes = [];
+    const nodes = [], motifs = rest && design.restMotifs ? design.restMotifs : design.motifs;
+    let bursts = 0;
     for (let i = 0; i < count; i++) {
-      const motif = design.motifs[i % design.motifs.length];
-      let motion = design.motion;
+      const motif = motifs[i % motifs.length];
+      let motion = motif.startsWith('firework') ? 'burst' : design.motion;
       if (motion === 'space') motion = motif === 'saber' ? 'saber' : 'twinkle';
       if (motion === 'race' && motif !== 'horse') motion = 'flutter';
       const node = ambientNode(motif, motion, i, visible);
       if (motif === 'horse') node.style.setProperty('--lane', (6 + (i % 3) * 5) + '%');
       timing(node, i, rest);
+      // Bursts go off one after another through the arrival, each about 2 seconds, high in the margins.
+      if (motion === 'burst') { node.style.setProperty('--duration', '1.9s'); node.style.setProperty('--delay', (bursts * .3) + 's'); node.style.setProperty('--y', (5 + (bursts * 19) % 46) + '%'); bursts++; }
       nodes.push(node);
     }
     return nodes;
@@ -212,6 +245,115 @@
     const restCount = Math.max(0, restLimit(visible) - hung - (design.horizon ? 1 : 0));
     const fill = rest => ambientParticles(design, visible, rest ? restCount : (visible ? design.count : Math.max(4, Math.round(design.count * .55))), rest);
     begin(layer, fill, arrive);
+    if (design.show === 'new-year' && phase === 'arrival') newYearShow(visible);
+  }
+  /* The New Year show (head chef, 17 Nov 2026: "use all elements of the home page that could burst into fireworks, and
+     rockets and stuff go crazy"). On New Year's Eve and New Year's Day, when Home's arrival plays (the first Home view of
+     the kitchen day, Replay, and midnight with Home open), Home's own pieces go off for about 7 seconds: every card's
+     pin launches a rocket, the mascot's star, the festival note's drawing, the Coming up stamp and the KB mark burst,
+     the welcome bubble throws confetti, rockets cross the screen from both bottom corners, and a finale bursts over the
+     board while glitter falls. A deliberate departure for these two days, the head chef's call, from "behind the page"
+     and "settle after about 4 seconds": it is drawn over the page, but never takes a tap, sits below every sheet and
+     pop-up, and removes itself. Each piece is one element moving by transform and opacity, made in half-second waves
+     that share a handful of timers. Reduced motion, Still, Off, a hidden tab or leaving Home: none of it. */
+  const SHOW_MS = 7600, showPics = new Map();
+  // A burst is drawn once as a picture in the book's colours, then only scaled: a phone never redraws its sparks each frame.
+  function showPic(motif) {
+    if (showPics.has(motif)) return showPics.get(motif);
+    const look = getComputedStyle(document.querySelector('#app') || document.documentElement);
+    const markup = branded(ambientArt[motif]).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ').replace(/var\((--[\w-]+)\)/g, (all, name) => look.getPropertyValue(name).trim() || '#1c1d1f');
+    const url = 'url("data:image/svg+xml,' + encodeURIComponent(markup) + '")';
+    showPics.set(motif, url);
+    return url;
+  }
+  let showTimers = [], dancers = [];
+  function showStop() {
+    showTimers.forEach(clearTimeout); showTimers = [];
+    dancers.forEach(a => a.cancel()); dancers = [];
+    document.getElementById('kb-ny-show')?.remove();
+  }
+  /* The dance (head chef, 17 Nov 2026: "the cards and icons wiggle in happy celebration dance as well"). While the show
+     goes off, Home's cards wiggle, the welcome bubble sways, the mascot hops and the top bar and tab bar icons bop, in
+     time, for about 6 seconds, then stand exactly where they were. Small (at most 1.2 degrees and 4 px for a card, 14 per
+     cent for an icon), so a tap still lands; added to whatever the piece already has, and cancelled with the show. */
+  const DANCE = {
+    card: [[{ transform: 'rotate(0deg) translateY(0)' }, { transform: 'rotate(-1.2deg) translateY(-4px)', offset: .25 }, { transform: 'rotate(1.2deg) translateY(-1px)', offset: .75 }, { transform: 'rotate(0deg) translateY(0)' }], .6, 10, .12],
+    bubble: [[{ transform: 'rotate(0deg)' }, { transform: 'rotate(-2.5deg)', offset: .25 }, { transform: 'rotate(2.5deg)', offset: .75 }, { transform: 'rotate(0deg)' }], .5, 12, 0],
+    hop: [[{ transform: 'translateY(0)' }, { transform: 'translateY(-8px)', offset: .4 }, { transform: 'translateY(0)', offset: .8 }, { transform: 'translateY(0)' }], .45, 13, 0],
+    icon: [[{ transform: 'scale(1) rotate(0deg)' }, { transform: 'scale(1.14) rotate(-8deg)', offset: .3 }, { transform: 'scale(1.14) rotate(8deg)', offset: .7 }, { transform: 'scale(1) rotate(0deg)' }], .4, 15, .07]
+  };
+  function dance(els, kind) {
+    const [frames, beat, beats, gap] = DANCE[kind];
+    els.filter(el => el && el.getClientRects().length).forEach((el, i) => {
+      dancers.push(el.animate(frames, { duration: beat * 1000, iterations: beats, delay: i * gap * 1000, easing: 'ease-in-out', composite: 'add' }));
+    });
+  }
+  function newYearShow(visible) {
+    showStop();
+    const main = document.querySelector('#app .wall-main');
+    if (!main) return;
+    // A phone gets half the corner rockets and glitter: its screen is smaller, and so is its processor.
+    const W = innerWidth, H = innerHeight, full = visible && W >= 600, show = document.createElement('div'), kinds = ['firework-kitchen', 'firework', 'firework-rose', 'firework-kitchen-b', 'firework-green'];
+    show.id = 'kb-ny-show'; show.setAttribute('aria-hidden', 'true');
+    let kind = 0;
+    const box = el => { const r = el && el.getBoundingClientRect(); return r && r.width && r.bottom > 0 && r.top < H ? r : null; };
+    /* Each piece is one element with one animation of fixed values. It is made in the half second before it goes off and
+       removed when it ends, so only the pieces in the air are on the page (about 15 at once, not 80): the waves share a
+       handful of timers, never one per piece. */
+    const waves = new Map(), put = (cls, x, y, delay, frames, time, ease, dress) => {
+      const at = Math.floor(delay * 2) / 2;
+      if (!waves.has(at)) waves.set(at, []);
+      waves.get(at).push(() => {
+        const n = document.createElement('i'); n.className = cls;
+        n.style.left = Math.round(x) + 'px'; n.style.top = Math.round(y) + 'px';
+        if (dress) dress(n);
+        show.append(n);
+        n.animate(frames, { duration: time * 1000, delay: (delay - at) * 1000, easing: ease, fill: 'both' }).finished.then(() => n.remove(), () => {});
+      });
+      pieces++;
+    };
+    let pieces = 0;
+    const burst = (x, y, delay, size) => put('kb-ny-burst', x, y, delay,
+      [{ transform: 'scale(.05)', opacity: 0 }, { opacity: 1, offset: .12 }, { transform: 'scale(1)', opacity: 1, offset: .35 }, { transform: 'translateY(14px) scale(1.25)', opacity: 0 }], 1.5, 'cubic-bezier(.2,.7,.3,1)',
+      n => { const z = size || 150; n.style.width = n.style.height = z + 'px'; n.style.margin = (-z / 2) + 'px 0 0 ' + (-z / 2) + 'px'; n.style.backgroundImage = showPic(kinds[kind++ % kinds.length]); });
+    const rocket = (x0, y0, x1, y1, delay, time) => {
+      const dx = Math.round(x1 - x0), dy = Math.round(y1 - y0), a = Math.atan2(x1 - x0, y0 - y1).toFixed(3) + 'rad';
+      put('kb-ny-rocket', x0, y0, delay, [{ transform: 'translate(0,0) rotate(' + a + ') scaleY(.6)', opacity: 0 }, { opacity: 1, offset: .1 }, { opacity: 1, offset: .9 }, { transform: 'translate(' + dx + 'px,' + dy + 'px) rotate(' + a + ') scaleY(1)', opacity: 0 }], time, 'cubic-bezier(.3,.6,.4,1)');
+      burst(x1, y1, delay + time * .9);
+    };
+    const confetti = (x, y, delay, turn) => put('kb-ny-spray', x, y, delay,
+      [{ transform: 'scale(.1) rotate(0deg)', opacity: 0 }, { opacity: 1, offset: .1 }, { transform: 'translateY(26px) scale(1.15) rotate(' + turn + 'deg)', opacity: 0 }], 1.6, 'cubic-bezier(.2,.7,.4,1)',
+      n => { n.style.backgroundImage = showPic('confetti-spray'); });
+    // Every card's pin launches a rocket that bursts above it.
+    [...main.querySelectorAll('.kb-season-note, .kb-home .hm-board, .kb-home .hm-paper, .kb-home > a')].map(box).filter(Boolean).sort((p, q) => p.top - q.top).slice(0, 6)
+      .forEach((r, i) => rocket(r.left + r.width / 2, r.top + 4, r.left + r.width / 2 + (i % 2 ? 46 : -46), Math.max(40, r.top - 110 - (i % 3) * 45), .1 + i * .28, .8));
+    // The mascot's star, the welcome bubble, the festival note's drawing, the Coming up stamp and the KB mark.
+    const m = box(main.querySelector('.mascot'));
+    if (m) burst(m.left + m.width / 2, m.top + m.height * .25, .35, 130);
+    const b = box(main.querySelector('#rtitle'));
+    if (b) { confetti(b.left + 10, b.top + 6, .55, -50); confetti(b.right - 10, b.top + 6, .7, 50); }
+    [main.querySelector('.kb-season-note svg'), main.querySelector('.kb-coming-mark'), document.querySelector('.wtop svg')].map(box).filter(Boolean)
+      .forEach((r, i) => burst(r.left + r.width / 2, r.top + r.height / 2, .9 + i * .35, 110));
+    // Rockets from both bottom corners, all over the screen.
+    for (let i = 0, n = full ? 12 : 6; i < n; i++) {
+      const left = i % 2 === 0;
+      rocket(left ? 12 : W - 12, H - 8, W * (left ? .12 + (i * .137) % .5 : .88 - (i * .137) % .5), H * (.12 + (i * .23) % .45), 1.5 + i * .27, 1);
+    }
+    // The finale over the board, and glitter falling.
+    [[0, 0, 230], [-W * .28, -40, 170], [W * .28, -30, 170]].forEach(([dx, dy, size], i) => burst(W / 2 + dx, H * .38 + dy, 4.9 + i * .15, size));
+    for (let i = 0, n = full ? 3 : 2; i < n; i++) {
+      put('kb-ny-glitter', W * (i + .5) / n, -30, 5.1 + i * .2,
+        [{ transform: 'translateY(0)', opacity: 0 }, { opacity: .95, offset: .1 }, { opacity: .95, offset: .8 }, { transform: 'translateY(' + Math.round(H * (.55 + i * .1)) + 'px)', opacity: 0 }], 2.4, 'linear',
+        el => { el.style.backgroundImage = showPic('glitter-sheet'); });
+    }
+    show.dataset.pieces = pieces;
+    document.body.append(show);
+    dance([...main.querySelectorAll('.kb-season-note, .kb-home .hm-board, .kb-home .hm-paper')], 'card');
+    dance([main.querySelector('#rtitle')], 'bubble');
+    dance([main.querySelector('.mascot')], 'hop');
+    dance([...document.querySelectorAll('.wtop-brand svg, .wtop button, .pnav a, .tabbar a, .kb-season-note svg, .kb-coming-mark')], 'icon');
+    waves.forEach((makes, at) => showTimers.push(setTimeout(() => makes.forEach(make => make()), at * 1000)));
+    showTimers.push(setTimeout(showStop, SHOW_MS));
   }
   // Anchored cultural objects belong to the page, not the viewport. They hang from under the top bar
   // (garlands, lanterns, kiping) or stand on the date line (diyas, pots) on the right of the heading,
@@ -302,6 +444,7 @@
     const effect = effectFor(current.theme), stopped = !current.theme || current.mode === 'still' || reduced.matches || quiet;
     const ambient = ambientFor(current.theme);
     clearTimeout(arrivalTimer); arrivalTimer = 0; phase = null; restPlan = null; app.classList.remove('kb-at-rest'); delete layer.dataset.phase;
+    if (stopped || current.surface !== 'home' || ambient?.show !== 'new-year') showStop();
     clean(); layer.replaceChildren(); delete layer.dataset.ambientPreset; app.dataset.motion = effect; app.dataset.motionIntensity = current.density; app.dataset.kbCelebrationSurface = current.surface; layer.dataset.motionIntensity = current.density; layer.dataset.surface = current.surface;
     app.classList.toggle('motion-still', stopped); app.classList.toggle('motion-gentle', !stopped); layer.className = 'effect-' + effect;
     if (!stopped) {
@@ -360,8 +503,9 @@
     announce();
   }
   function pause(on) {
-    // A hidden tab skips the rest of the arrival rather than replaying it later.
+    // A hidden tab skips the rest of the arrival rather than replaying it later, and ends the New Year show.
     if (on && phase === 'arrival') settle();
+    if (on) showStop();
     paused = !!on;
     document.querySelector('#app')?.classList.toggle('motion-paused', paused);
     document.querySelector('#kb-festive-effects')?.classList.toggle('motion-paused', paused);
