@@ -3,7 +3,7 @@
 //
 //   cd tests && npm install
 //   node -e "require('./serve').listen(8770,'127.0.0.1')" &
-//   CHROME=<chrome> node ../docs/mascot-presence-options/preview/capture.mjs <out folder> "today,A,B,C,M" 1920x1080,1280x900,390x844 [fallback]
+//   CHROME=<chrome> node ../docs/mascot-presence-options/preview/capture.mjs <out folder> "today,A,B,C,R" 1920x1080,1280x900,390x844 [fallback]
 //
 // The stand-in fonts are used (not Barlow), so text widths differ from the kitchen's screens.
 // The evening: 20:00, 15 lines for today (11 ticked, Fryers already finished) and 6 lines for tomorrow written from

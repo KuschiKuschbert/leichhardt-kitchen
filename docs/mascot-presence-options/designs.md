@@ -45,7 +45,7 @@ Taps to tick a line: 1 in every design (the shared screen's Who did this? tap is
 
 | | Today | A | B | C |
 | --- | --- | --- | --- | --- |
-| Steps (of 6, at 1920 x 1080) where he is seen on Prep | 0 | 1 (today's lines finished) | 4 (from 20:00: Fryers was done at 16:00) | 5 (every step with signal) |
+| Steps (of 6, at 1920 x 1080) where he is seen on Prep | 0 | 1 (today's lines finished) | 4 as drawn, **withdrawn**: 0 by B's own rule (see below) | 5 (every step with signal) |
 | List rows in view at 20:00, 1920 x 1080 | 9 | 9 | 8 | 9 |
 | List rows in view at 20:00, 1280 x 900 | 5 | 5 | 4 | 5 |
 | List rows in view at 20:00, 390 x 844 | 4 | 4 | 4 | 4 |
@@ -56,6 +56,8 @@ Taps to tick a line: 1 in every design (the shared screen's Who did this? tap is
 | Changes under 900 px | counts and the card | none | none |
 | Sideways scroll, browser errors | 0, 0 | 0, 0 | 0, 0 | 0, 0 |
 | No signal (step 4b) | | card goes, counts stay split | line goes | he goes |
+
+**Correction found in round 2 (all six reviewers, read in code).** The preview worked out B's finished sections with A's cut. The book's own rule for a finished section (`secSaid()`, `secLines()`) counts a section's lines for tomorrow as open, so on this evening, where every section has a line for tomorrow, B by itself says nothing. B is true only on A's cut. A repaired after round 2 is drawn as R: see [the brief](brief.md#recommend-a-built-whole-drawn-as-r).
 
 ## Costs
 

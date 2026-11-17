@@ -24,6 +24,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | The kitchen mascot: a shuffled daily action per person on Home, tap to replay; the card under a finished prep list; the section's sentence on the slip | `docs/kitchen-mascot.md` |
 | The study behind the mascot's cheers: the idea list, both council rounds, the designs; the ideas not built yet | `docs/mascot-cheer-options/brief.md` (both steps chosen and built) and its `ideas.md` |
 | The finished words on wide screens (from 900 px): a finished section's own tab and the finished list, said large with the mascot under his words | `docs/kitchen-mascot.md` (the contract), `docs/mascot-desktop-options/brief.md` (the study: round 1 Build smaller; the chosen blend, built) |
+| The mascot more present on the shared screens: today finishes today (tomorrow's lines out of today's counts), the study (17 Nov 2026, waiting for the owner) | `docs/mascot-presence-options/brief.md` |
 | Named staff welcome, current identity and personalisation audit | `docs/staff-personalisation-options/brief.md` (chosen A, long-name treatment and implementation checks) |
 | Login, who can read or write what, recipes, function writes | `docs/private-kitchen-access.md` (wins over anything older in this file) |
 | Opening the installed app again with an address (the kitchen tablet's Home button, links): the open book moves there, no reload (`launch_handler`, `launchQueue`, 16 Nov 2026) | `docs/app-launch.md` |
