@@ -104,7 +104,7 @@ td button { min-height: 36px; border: 0; background: transparent; font-weight: 7
 <div class="wrap">
   <section aria-labelledby="h">
     <h1 id="h">April Fools on Home</h1>
-    <p class="lede">Twelve jokes, each in two versions: 24 in all, so nobody on the team gets the same one, this year or the next. Each plays on a copy of the real Home with made-up people; nothing real is touched. Each runs for 35 seconds. Taps make it worse. Press and hold anywhere to stop it.</p>
+    <p class="lede">Twelve jokes, each in two versions: 24 in all, so nobody on the team gets the same one, this year or the next. Each plays on a copy of the real Home with made-up people and uses that person's own day from it: their section, shift, break, who they are on with and the prep count. Nothing real is touched. Each runs for 35 seconds. Taps make it worse. Press and hold anywhere to stop it.</p>
     <div class="picks" role="group" aria-label="Design">
       ${Object.entries(SAY).map(([k, v]) => `<button type="button" data-d="${k}" aria-pressed="false">${k}<small>${v[0]}</small></button>`).join('')}
     </div>

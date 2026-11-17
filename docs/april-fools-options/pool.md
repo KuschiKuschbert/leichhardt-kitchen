@@ -6,6 +6,27 @@
 
 After playing the pool, the head chef said: "i think one minute might be too long", tried the jokes at 15, 20, 30, 45 and 60 seconds on the live page, and chose: "i think i go with 35 seconds". Every joke is written as one minute and plays in 35 seconds, everything scaled together (`LENGTH` in `preview/fools.js`); pressing and holding to stop still takes 1.2 s. The times below are written for the minute: multiply by 0.58 for the real second (the break starts at about 7 s, the clue at about 29 s, the reveal at 33.5 s, "Press and hold to stop" shows at about 9 s or after three taps).
 
+## Their own day (head chef, 17 November 2026)
+
+Asked whether the jokes should use each person's real day: "Oh yeah use their data please!" Every joke now reads what that person's own Home already shows, from the copy, before anything moves: their **section**, **shift and hours**, **break**, the **people on with them** (the "On with you" rows only, each once, never themselves) and the **prep count**. No reads, nothing new fetched, nothing saved; a missing fact leaves its line out, and one person on with them reads "Bo has", not "Bo have".
+
+| | Version 1 | Version 2 |
+| --- | --- | --- |
+| A | The clock runs backwards and stops on their start time; in the dark: "pans. lunch. 10:00 to 21:00." | "your break: not set. it never will be now." |
+| B | The log finds them: "locating ann: PANS", "shift: LUNCH 10:00", "on with ann: SAM, BO", "prep: 0 OF 6 DONE", "break: CANCELLED"; then "you start on pans at 10:00. we will be watching." | "ann moved to DISHES", "break moved to 2028", "the mascot is on pans now." |
+| C | Their coworkers' jobs all read "Watching"; their shift reads "Lunch · 10:00 to forever" | (everything is their name already) |
+| D | "LEAVE 1 KG OF BUTTER AT THE PASS BY 10:00." | "PANS IS NEXT." |
+| E | Bites in their words: "pans: crunchy.", "sam and bo: spicy.", "6 jobs. needs salt.", "tuesday: stale."; "you're next. 10:00." | "your break: not set. tasty.", "sam and bo: gone." |
+| F | "PANS · 10:00" under their name in the rain | "SAM AND BO DON'T KNOW EITHER." |
+| G | Their section orbits the hole with their name; "even pans." | "6 jobs. 0 done. forever." |
+| H | "no? lunch starts at 10:00. hang on." | "gravity has been switched off on pans", "sam and bo are floating too." |
+| I | The smaller Homes say "pans. pans. pans." and "10:00. 10:00. 10:00."; "lunch started without you." | "sam and bo are still outside." |
+| J | "sam and bo left already." | "pans went with it." |
+| K | "Ann, you're on Pans today.", "The prep list has 6 jobs. It does not want you on any of them.", "Your break is not set. It never will be.", "Sam and Bo have gone home." | "Lunch starts at 10:00. You're not on it.", "Your break? Not set. Not ever.", "Sam and Bo are not coming back." |
+| L | "pans is melting." | "it was on pans." |
+
+The examples are the preview's made-up Ann (Lunch, 10:00 to 21:00, on Pans with Sam and Bo, break not set, 6 prep jobs). Coworkers are named as watching, gone or floating, never as having done something; the line "they saw what you did" was offered and left out for that reason. In the build the facts come from the same day data Home is drawn from, not from the page's words.
+
 ## How each joke runs
 
 Every joke has the same shape over one minute, so people have time to doubt themselves, then to realise:

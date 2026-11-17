@@ -48,6 +48,24 @@
   function pad(l, r, w) { w = w || 30; var n = Math.max(1, w - l.length - r.length - 1); return l + '.'.repeat(n) + ' ' + r; }
   function first(name) { return String(name).trim().split(/\s+/)[0]; }
 
+  /* What this person's own Home already shows, read from the copy before anything changes: their section, shift and
+     hours, break, the people on with them and the prep count. No reads; anything missing is null and its line is left out. */
+  function facts(name) {
+    var me = first(name).toLowerCase();
+    var t = function (sel) { var e = one(sel); return e ? e.textContent.trim() : ''; };
+    var sh = t('.hm-day-row .hm-s').match(/^(.*?)\s*·\s*(\d\d:\d\d)\s*to\s*(\d\d:\d\d)/), pc = t('.hm-pc').match(/(\d+)\s*of\s*(\d+)/), brk = t('.hm-day-break .hm-tm');
+    return {
+      sec: t('.hm-day-value') || null, shift: sh ? sh[1] : null, from: sh ? sh[2] : null, to: sh ? sh[3] : null,
+      brk: /\d\d:\d\d/.test(brk) ? brk.match(/\d\d:\d\d/)[0] : null, noBreak: /not set/i.test(brk),
+      // Only the "On with you" rows (the folded full team repeats names), each once, never the person themselves.
+      mates: all('#hm-with-body .hm-tp b').map(function (e) { return first(e.textContent); }).filter(function (n, i, a) { return n && a.indexOf(n) === i && n.toLowerCase() !== me; }).slice(0, 3),
+      done: pc ? +pc[1] : null, jobs: pc ? +pc[2] : null, day: first(t('[data-home-date]')) || null
+    };
+  }
+  function pl(list, many, one) { return list.length === 1 ? one : many; }
+  function both(list) { return list.length < 2 ? list.join('') : list.slice(0, -1).join(', ') + ' and ' + list[list.length - 1]; }
+  function keep(list) { return list.filter(function (x) { return x !== null && x !== undefined; }); }
+
   /* Letters turn to noise, then settle on the new words. */
   function scramble(e, to, ms) {
     if (!e) return;
@@ -334,8 +352,14 @@
       if (m) { m.classList.add('fl-evil'); go(m, [{ transform: 'none' }, { transform: 'translate(-3px,1px) rotate(-8deg)' }, { transform: 'translate(3px,-1px) rotate(8deg)' }, { transform: 'none' }], { duration: 160, iterations: 5, fill: 'none' }); }
     });
     later(15000, function () {
-      var m = 14 * 60;
-      every(150, function () { if (s.rebuilt) return; m -= 13; clocks.forEach(function (e) { e.textContent = hhmm(m); }); });
+      var m = /^\d\d:\d\d$/.test(times[0] || '') ? (+times[0].slice(0, 2)) * 60 + (+times[0].slice(3)) : 14 * 60;
+      var stopAt = s.f.from ? (+s.f.from.slice(0, 2)) * 60 + (+s.f.from.slice(3)) : null, n = 0;
+      every(150, function () {
+        if (s.rebuilt || m === stopAt) return;
+        m -= 13; n++;
+        if (stopAt !== null && ((m <= stopAt && m + 13 > stopAt) || n > 120)) m = stopAt;
+        clocks.forEach(function (e) { e.textContent = hhmm(m); });
+      });
       scramble(date, 'no day · no time', 900);
     });
     later(18000, function () { if (v2) pins(s); else crack(s); });
@@ -347,7 +371,11 @@
     later(33000, function () { tops().forEach(function (e, i) { drop(e, 'top', i * 160); }); });
     later(34500, function () { tabs().forEach(function (e, i) { drop(e, 'tab', i * 110); }); });
     later(37000, function () { s.dk = dark(s, 0, 2500); });
-    later(40000, function () { var n = first(s.lower); s.tp = typed(s, v2 ? [n + '.', 'the book fell over.', '', 'all of it.'] : [n + '.', 'what did you press?', '', 'the book is gone.']); });
+    later(40000, function () {
+      var n = first(s.lower), f = s.f;
+      s.tp = typed(s, keep(v2 ? [n + '.', f.noBreak ? 'your break: not set.' : f.brk ? 'your break: ' + f.brk + '.' : null, f.noBreak || f.brk ? 'it never will be now.' : null, 'the book fell over.', '', 'all of it.']
+        : [n + '.', f.sec ? (f.sec + (f.shift ? '. ' + f.shift : '') + (f.from ? '. ' + f.from + ' to ' + f.to : '') + '.').toLowerCase() : null, 'what did you press?', '', 'the book is gone.']));
+    });
     later(49000, function () { s.ap = april(s, null, 'ERROR 0x0401'); });
     later(55000, function () {
       s.rebuilt = true;
@@ -397,10 +425,15 @@
       var t = s.term = mk('div', 'fl-term' + (v2 ? ' fl-amber' : ''), s.L), log = mk('div', 'fl-log', t);
       var lines = v2 ? [
         'MASCOT-OS 4.01', 'the mascot has taken over', '', pad('> user ', nm.slice(0, 14)), pad('> hiding the good knife ', 'OK'),
+        pad('> ' + nl.slice(0, 10) + ' moved to ', 'DISHES'), pad('> break moved to ', '2028'),
         pad('> hiding the recipes ', 'OK')].concat(secs.map(function (x) { return pad('    ' + x.toLowerCase().replace(/\s+/g, '_') + ' ', 'hidden'); }), [
         pad('> teaching the mascot to cook ', 'FAILED'), pad('> moving ' + mine.toLowerCase() + ' to the car park ', 'OK'), pad('> salt replaced with sugar ', 'OK'),
         pad('> ' + nl.slice(0, 12) + "'s settings ", 'scrambled'), pad('> installing more mascots ', '...')])
-        : ['KB-OS 4.01  KITCHEN BOOK', pad('> login from the walk-in fridge ', 'OK'), pad('> user ', nm.slice(0, 14)), '> rm -rf /kitchen/recipes']
+        : keep(['KB-OS 4.01  KITCHEN BOOK', pad('> login from the walk-in fridge ', 'OK'), pad('> user ', nm.slice(0, 14)),
+            s.f.sec ? pad('> locating ' + nl.slice(0, 8) + ' ', s.f.sec.toUpperCase().slice(0, 10)) : null,
+            s.f.from ? pad('> shift ', ((s.f.shift ? s.f.shift.toUpperCase() + ' ' : '') + s.f.from).slice(0, 16)) : null,
+            s.f.mates.length ? pad('> on with ' + nl.slice(0, 8) + ' ', s.f.mates.join(', ').toUpperCase().slice(0, 14)) : null,
+            s.f.jobs !== null ? pad('> prep ', s.f.done + ' OF ' + s.f.jobs + ' DONE') : null, pad('> break ', 'CANCELLED'), '> rm -rf /kitchen/recipes'])
           .concat(secs.map(function (x) { return pad('    ' + x.toLowerCase().replace(/\s+/g, '_') + '.rcp ', 'gone'); }), [
             pad('    gravy.rcp ', 'gone'), pad('    the_good_knife ', 'gone'), pad('> translating prep list to pig latin ', 'done'), pad('> blaming the fryer ', 'done'),
             pad('> renaming ' + nl.slice(0, 10) + ' to banana ', 'done'), pad('> sending prep list to the moon ', 'done')]);
@@ -416,7 +449,8 @@
       var big = mk('div', 'fl-big', s.term);
       typeLines(big, ['HELLO ' + nm + '.'], 90, 0, function () {
         var sub = mk('div', 'fl-sub', s.term);
-        typeLines(sub, v2 ? ['the mascot is in charge now.', 'please clap.'] : ['your book belongs to the fridge now.', 'do not panic.'], 45, 500, function () {
+        typeLines(sub, v2 ? [s.f.sec ? 'the mascot is on ' + s.f.sec.toLowerCase() + ' now.' : 'the mascot is in charge now.', 'please clap.']
+          : [s.f.sec && s.f.from ? 'you start on ' + s.f.sec.toLowerCase() + ' at ' + s.f.from + '.' : 'your book belongs to the fridge now.', 'we will be watching.'], 45, 500, function () {
           var bar = mk('div', 'fl-sub fl-bar', s.term), n = 0, word = v2 ? 'more mascots ' : 'restoring the book ';
           var step = every(260, function () {
             n = Math.min(99, n + Math.ceil(rnd(1, 5)));
@@ -476,7 +510,9 @@
       jobs.push(function () { scramble(one('[data-home-date]'), 'Doomsday 1 April', 500); all('#hm-time, .hm-clock').forEach(function (e) { scramble(e, '13:13', 400); }); });
       SWAP.forEach(function (p) { jobs.push(function () { all(p[0]).forEach(function (e) { scramble(e, p[1], 450); }); }); });
       jobs.push(function () { var v = one('.hm-day-value'); if (v) scramble(v, SECS[v.textContent.trim()] || v.textContent.split('').reverse().join(''), 450); });
-      jobs.push(function () { all('#hm-with .hm-tp b').forEach(function (e) { scramble(e, nm, 450); }); all('.hm-sl').forEach(function (e) { scramble(e, 'no one left', 450); }); });
+      // The people on with them keep their names; what they are doing becomes "Watching".
+      jobs.push(function () { all('#hm-with .hm-rota tbody th').forEach(function (e) { scramble(e, 'Watching', 450); }); all('.hm-sl').forEach(function (e) { scramble(e, 'no one left', 450); }); });
+      if (s.f.from) jobs.push(function () { scramble(one('.hm-day-row .hm-s'), (s.f.shift || 'Shift') + ' · ' + s.f.from + ' to forever', 500); });
       jobs.push(function () { all('.tabbar a span').forEach(function (e) { var t = TABS[e.textContent.trim()]; if (t) scramble(e, t, 450); }); var w = one('.wtop-who-n'); if (w) scramble(w, nm.split('').reverse().join(''), 450); });
     }
     var gap = 21000 / jobs.length;
@@ -512,7 +548,8 @@
   /* ============ D · Ransom note: letters are cut out of the page and glued into a note ============ */
   function Dn(s) {
     var v2 = s.v === 2, nm = first(s.upper).slice(0, 12);
-    var lines = v2 ? ['WE TOOK YOUR VOWELS, ' + nm + '.', 'SAY CHEESE TO GET', 'THEM BACK.'] : ['WE HAVE YOUR SAUCES, ' + nm + '.', 'LEAVE 1 KG OF BUTTER', 'AT THE PASS.', 'OR NO GRAVY.'];
+    var lines = v2 ? keep(['WE TOOK YOUR VOWELS, ' + nm + '.', s.f.sec ? s.f.sec.toUpperCase().slice(0, 12) + ' IS NEXT.' : null, 'SAY CHEESE TO GET', 'THEM BACK.'])
+      : ['WE HAVE YOUR SAUCES, ' + nm + '.', 'LEAVE 1 KG OF BUTTER', 'AT THE PASS' + (s.f.from ? ' BY ' + s.f.from : '') + '.', 'OR NO GRAVY.'];
     opening(s, ['typo', 'clock', 'tilt', 'typo']);
     var src = [], note, targets = [];
     later(11000, function () {
@@ -572,7 +609,16 @@
   /* ============ E · The hungry mascot: he eats the page, one card at a time ============ */
   function E(s) {
     var v2 = s.v === 2, nm = first(s.lower), m = one('.mascot'), size = 1, eaten = [];
-    var bites = v2 ? ['the prep list: chewy.', 'needs salt.', 'your break: too short.', 'crunchy.', 'the team: spicy.', 'mmm, tabs.'] : ['nom.', 'nom nom.', 'crunchy.', 'needs salt.', 'the clock was chewy.', 'mmm, tabs.'];
+    var f = s.f, bites = v2 ? ['the prep list: chewy.', 'needs salt.', 'your break: too short.', 'crunchy.', 'the team: spicy.', 'mmm, tabs.'] : ['nom.', 'nom nom.', 'crunchy.', 'needs salt.', 'the clock was chewy.', 'mmm, tabs.'];
+    // What he says depends on what he eats, in their own words from Home.
+    function said(p, i) {
+      if (p.matches('#hm-day')) return v2 ? (f.noBreak ? 'your break: not set. tasty.' : 'your break: too short.') : f.sec ? f.sec.toLowerCase() + ': crunchy.' : 'crunchy.';
+      if (p.matches('#hm-with')) return f.mates.length ? both(f.mates).toLowerCase() + (v2 ? ': gone.' : ': spicy.') : 'the team: spicy.';
+      if (p.matches('#hm-prep')) return f.jobs !== null ? f.jobs + ' jobs. ' + (v2 ? 'chewy.' : 'needs salt.') : 'the prep list: chewy.';
+      if (p.matches('.wall-date')) return f.day ? f.day.toLowerCase() + ': stale.' : 'the date: stale.';
+      if (p.matches('.tabbar')) return 'mmm, tabs.';
+      return bites[i % bites.length];
+    }
     opening(s, ['stare', 'typo', 'stare', 'clock']);
     later(10500, function () { bubble(v2 ? "i'm starving, " + nm + '.' : "i'm hungry, " + nm + '.', 600); });
     if (!m) return;
@@ -603,11 +649,11 @@
       s.eating = true;
       var menu = [one('.wall-date')].concat(cards(), foot(), [all('.tabbar')[0]], tops()).filter(function (p) { return p && onScreen(p); });
       var gap = Math.min(3200, 24000 / menu.length);
-      menu.forEach(function (p, i) { later(i * gap, function () { chomp(p, bites[i % bites.length]); }); });
+      menu.forEach(function (p, i) { later(i * gap, function () { chomp(p, said(p, i)); }); });
     });
     later(40000, function () { s.eating = false; moveTo(innerWidth / 2, innerHeight * 0.45, 900); bubble(v2 ? 'delicious. who is next?' : 'delicious, ' + nm + '.', 500); });
     later(44000, function () {
-      bubble("you're next.", 400);
+      bubble(f.from ? "you're next. " + f.from + '.' : "you're next.", 400);
       go(s.shake, [{ transform: 'translate(0,0)' }, { transform: 'translate(-4px,2px)' }, { transform: 'translate(3px,-2px)' }, { transform: 'translate(0,0)' }], { duration: 200, iterations: 8, fill: 'none' });
       go(m, [{ transform: 'translate(' + at.x + 'px,' + at.y + 'px) scale(' + size + ')' }, { transform: 'translate(' + at.x + 'px,' + at.y + 'px) scale(14)' }], { duration: 3000, delay: 600, easing: 'ease-in' });
     });
@@ -669,13 +715,15 @@
     later(38000, function () {
       var big = mk('div', 'fl-rainword' + (v2 ? ' fl-amber' : ''), s.L);
       var word = v2 ? 'WHERE IS THE BOOK, ' + nm + '?' : nm;
+      var sub = v2 ? (s.f.mates.length ? both(s.f.mates).toUpperCase() + pl(s.f.mates, " DON'T KNOW EITHER.", " DOESN'T KNOW EITHER.") : null) : (s.f.sec ? s.f.sec.toUpperCase() + (s.f.from ? ' · ' + s.f.from : '') : null);
+      if (sub) later(v2 ? 4500 : 3600, function () { var u = mk('div', 'fl-rainsub' + (v2 ? ' fl-amber' : ''), s.L, sub); go(u, [{ opacity: 0 }, { opacity: 1 }], { duration: 800 }); s.word2 = u; });
       Array.prototype.forEach.call(word, function (ch, i) { var c = mk('span', '', big, ch); c.style.opacity = '0'; go(c, [{ opacity: 0, transform: 'translateY(-30px)' }, { opacity: 1, transform: 'none' }], { duration: 500, delay: 400 + i * (v2 ? 120 : 600) }); });
       s.word = big;
     });
     later(47000, function () { s.ap = april(s, null, v2 ? 'IT IS IN THE RAIN' : 'WAKE UP, ' + nm, 'fl-low'); });
     later(54000, function () {
       spawnTop = 0;
-      lift(cv, 700); lift(s.dk, 800); lift(s.word, 400); lift(s.ap, 400);
+      lift(cv, 700); lift(s.dk, 800); lift(s.word, 400); lift(s.word2, 400); lift(s.ap, 400);
       all('.fl-gone').forEach(function (c) { c.classList.remove('fl-gone'); go(c, [{ opacity: 0, transform: 'translateY(30px)' }, { opacity: 1, transform: 'none' }], { duration: rnd(300, 800), delay: rnd(0, 1200) }); });
     });
   }
@@ -718,11 +766,11 @@
     later(28000, function () {
       var orb = s.orb = mk('div', 'fl-orbit', s.L);
       orb.style.left = s.hx + 'px'; orb.style.top = s.hy + 'px';
-      Array.prototype.forEach.call(nm, function (ch, i, a) { var c = mk('span', '', orb, ch), ang = i / a.length * 360; c.style.transform = 'rotate(' + ang + 'deg) translateY(-110px) rotate(' + (-ang) + 'deg)'; });
+      Array.prototype.forEach.call(nm + (s.f.sec ? ' · ' + s.f.sec.toUpperCase().slice(0, 10) : ''), function (ch, i, a) { var c = mk('span', '', orb, ch), ang = i / a.length * 360; c.style.transform = 'rotate(' + ang + 'deg) translateY(-110px) rotate(' + (-ang) + 'deg)'; });
       go(orb, [{ transform: 'rotate(0deg) scale(1)' }, { transform: 'rotate(1080deg) scale(.1)', opacity: 0.4 }], { duration: 13000, easing: 'ease-in' });
     });
     later(40000, function () { sizeTo(30, 2500, innerWidth / 2, innerHeight / 2); });
-    later(43500, function () { s.tp = typed(s, v2 ? ['the prep list is past', 'the event horizon,', nl + '.'] : ['everything is in here', 'now, ' + nl + '.']); });
+    later(43500, function () { var f = s.f; s.tp = typed(s, keep(v2 ? ['the prep list is past', 'the event horizon,', nl + '.', f.jobs !== null ? f.jobs + ' jobs. ' + f.done + ' done. forever.' : null] : ['everything is in here', 'now, ' + nl + '.', f.sec ? 'even ' + f.sec.toLowerCase() + '.' : null])); });
     later(49500, function () { lift(s.tp, 300); s.ap = april(s, null, v2 ? 'NO WAY BACK' : 'NO SIGNAL'); });
     later(54500, function () { lift(s.ap, 300); if (s.orb) s.orb.remove(); sizeTo(0, 900); settle(gone, 800); });
   }
@@ -745,10 +793,10 @@
       s.upside = true;
       shuffle(cards()).concat(foot(), heads(), tabs()).forEach(function (p, i) { later(i * 900, function () { fallUp(p); }); });
     });
-    later(26000, function () { s.note = mk('div', 'fl-floor', s.L, v2 ? 'gravity has been switched off, ' + nm + '.' : 'turn your phone over, ' + nm + '.'); go(s.note, [{ opacity: 0, transform: 'translate(-50%,20px)' }, { opacity: 1, transform: 'translate(-50%,0)' }], { duration: 500 }); });
+    later(26000, function () { s.note = mk('div', 'fl-floor', s.L, v2 ? 'gravity has been switched off' + (s.f.sec ? ' on ' + s.f.sec.toLowerCase() : '') + ', ' + nm + '.' : 'turn your phone over, ' + nm + '.'); go(s.note, [{ opacity: 0, transform: 'translate(-50%,20px)' }, { opacity: 1, transform: 'translate(-50%,0)' }], { duration: 500 }); });
     later(33000, function () { if (s.note) s.note.textContent = v2 ? 'please hold on to the bench.' : 'better?'; go(s.stage, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(180deg)' }], { duration: 2400, easing: 'cubic-bezier(.5,0,.3,1)' }); });
     later(40000, function () {
-      if (s.note) s.note.textContent = v2 ? 'nothing is where it should be.' : 'no? hang on.';
+      if (s.note) s.note.textContent = v2 ? (s.f.mates.length ? both(s.f.mates).toLowerCase() + pl(s.f.mates, ' are floating too.', ' is floating too.') : 'nothing is where it should be.') : (s.f.shift && s.f.from ? 'no? ' + s.f.shift.toLowerCase() + ' starts at ' + s.f.from + '. hang on.' : 'no? hang on.');
       up.forEach(function (p) { go(p, [{ transform: 'translate(0px,0px) rotate(0deg)' }, { transform: 'translate(' + rnd(-20, 20).toFixed(0) + 'px,' + rnd(-25, 25).toFixed(0) + 'px) rotate(' + rnd(-25, 25).toFixed(0) + 'deg)' }], { duration: rnd(1800, 2600), iterations: Infinity, direction: 'alternate', easing: 'ease-in-out', composite: 'add' }); });
     });
     later(48000, function () { lift(s.note, 300); s.ap = april(s, null, v2 ? 'ZERO G' : 'UP IS DOWN', 'fl-low'); });
@@ -770,7 +818,8 @@
       var zoom = mk('div', 'fl-zoom', s.L);
       zoom.style.transformOrigin = fx.toFixed(1) + 'px ' + fy.toFixed(1) + 'px';
       zoom.appendChild(s.stage);
-      var words = ['hello ' + nm + '.', 'hello ' + nm + ' ' + nm + '.', nm + ' ' + nm + ' ' + nm + '.', 'deeper, ' + nm + '.'];
+      var sl = s.f.sec ? s.f.sec.toLowerCase() : null;
+      var words = ['hello ' + nm + '.', sl ? sl + '. ' + sl + '. ' + sl + '.' : 'hello ' + nm + ' ' + nm + '.', s.f.from ? s.f.from + '. ' + s.f.from + '. ' + s.f.from + '.' : nm + ' ' + nm + ' ' + nm + '.', 'deeper, ' + nm + '.'];
       for (var k = 1; k <= 3; k++) {
         var box = mk('div', 'fl-nest', zoom), c = copyOf(s.app), sc = Math.pow(r, k);
         box.style.transform = 'translate(' + (fx - fx * sc).toFixed(2) + 'px,' + (fy - fy * sc).toFixed(2) + 'px) scale(' + sc + ')';
@@ -785,7 +834,7 @@
     later(34000, function () { if (s.zoomA) s.zoomA.playbackRate = 3; });
     s.tap = function (p) { if (s.zoomA) s.zoomA.playbackRate = Math.min(6, s.zoomA.playbackRate + 0.6); else nudge(p); };
     later(40000, function () { s.dk = dark(s, 0, 1500); });
-    later(41500, function () { if (s.zoomA) s.zoomA.playbackRate = 0.4; s.tp = typed(s, v2 ? ['you are inside', 'the mascot now,', nm + '.'] : ['you went too deep,', nm + '.']); });
+    later(41500, function () { if (s.zoomA) s.zoomA.playbackRate = 0.4; s.tp = typed(s, keep(v2 ? ['you are inside', 'the mascot now,', nm + '.', s.f.mates.length ? both(s.f.mates).toLowerCase() + pl(s.f.mates, ' are still outside.', ' is still outside.') : null] : ['you went too deep,', nm + '.', s.f.shift ? s.f.shift.toLowerCase() + ' started without you.' : null])); });
     later(48500, function () { lift(s.tp, 300); s.ap = april(s, null, 'LEVEL 401'); });
     later(54500, function () {
       lift(s.ap, 300); lift(s.dk, 600);
@@ -826,7 +875,7 @@
       order.forEach(function (p, i) { later(i * gap, function () { blow(p); }); });
     });
     later(36000, function () { s.dk = dark(s, 0, 1500); });
-    later(38000, function () { s.tp = typed(s, v2 ? [nm + ', the book', 'blew away.', '', 'it is somewhere', 'near the bins.'] : [nm + '?', 'are you still there?', '', 'the wind took the book.']); });
+    later(38000, function () { var f = s.f; s.tp = typed(s, keep(v2 ? [nm + ', the book', 'blew away.', f.sec ? f.sec.toLowerCase() + ' went with it.' : null, '', 'it is somewhere', 'near the bins.'] : [nm + '?', 'are you still there?', '', f.mates.length ? both(f.mates).toLowerCase() + ' left already.' : null, 'the wind took the book.'])); });
     later(49000, function () { lift(s.tp, 300); s.ap = april(s, null, 'WINDY DAY'); });
     later(53500, function () {
       lift(s.ap, 300); lift(s.dk, 700);
@@ -836,14 +885,15 @@
 
   /* ============ K · The book talks back: nothing falls; he just will not stop talking ============ */
   function K(s) {
-    var v2 = s.v === 2, nm = first(s.name), turned = [];
+    var v2 = s.v === 2, nm = first(s.name), turned = [], f = s.f;
     var script = v2 ? [
-      [4000, nm + '.'], [8000, nm + '. Can I tell you a secret?'], [13000, 'The fridge told me everything.'], [18000, 'Who used the last of the butter?'],
-      [23000, 'The sauces are not speaking to you.', '#hm-prep'], [28000, 'The tabs have gone on strike.', 'tabs'], [33000, 'Your break went home.', '#hm-day'],
-      [38000, 'Fine. Be like that.', '#hm-with'], [43000, '...'], [47000, 'Still here?'], [51000, "It's 1 April, " + nm + '.'], [54500, 'We still love you.']
+      [4000, nm + '.'], [8000, nm + '. Can I tell you a secret?'], [13000, f.from ? (f.shift || 'Your shift') + ' starts at ' + f.from + ". You're not on it." : 'The fridge told me everything.'], [18000, 'The fridge told me everything.'],
+      [23000, 'The sauces are not speaking to you.', '#hm-prep'], [28000, 'The tabs have gone on strike.', 'tabs'], [33000, f.noBreak ? 'Your break? Not set. Not ever.' : 'Your break went home.', '#hm-day'],
+      [38000, f.mates.length ? both(f.mates) + pl(f.mates, ' are not coming back.', ' is not coming back.') : 'Fine. Be like that.', '#hm-with'], [43000, '...'], [47000, 'Still here?'], [51000, "It's 1 April, " + nm + '.'], [54500, 'We still love you.']
     ] : [
-      [4000, nm + '.'], [8000, nm + ', are you there?'], [13000, "Don't look at me like that."], [18000, 'I know what you did to the jus.'],
-      [23000, "The prep list doesn't want to talk to you.", '#hm-prep'], [28000, 'Neither does your break.', '#hm-day'], [33000, 'Everyone on with you has left.', '#hm-with'],
+      [4000, nm + '.'], [8000, f.sec ? nm + ", you're on " + f.sec + ' today.' : nm + ', are you there?'], [13000, "Don't look at me like that."], [18000, 'I know what you did to the jus.'],
+      [23000, f.jobs !== null ? 'The prep list has ' + f.jobs + ' jobs. It does not want you on any of them.' : "The prep list doesn't want to talk to you.", '#hm-prep'],
+      [28000, f.noBreak ? 'Your break is not set. It never will be.' : 'Neither does your break.', '#hm-day'], [33000, f.mates.length ? both(f.mates) + pl(f.mates, ' have gone home.', ' has gone home.') : 'Everyone on with you has left.', '#hm-with'],
       [38000, "It's just you and me now.", 'tabs'], [43000, 'Forever.'], [47000, '...'], [51000, "Kidding. It's 1 April."], [54500, 'Got you, ' + nm + '.']
     ];
     var snaps = ['Hey!', 'Stop poking me.', 'That tickles.', 'Rude.', 'Excuse me?', 'Wet hands!'];
@@ -890,7 +940,7 @@
     });
     s.tap = function (p, x) { var st = strips[Math.floor(x / (innerWidth / n))]; if (st) go(st, [{ transform: 'translateY(0px)' }, { transform: 'translateY(' + rnd(30, 70).toFixed(0) + 'px)' }], { duration: 500, composite: 'add', easing: 'ease-in' }); else nudge(p); };
     later(38000, function () { s.pd = mk('div', 'fl-puddle', s.L); go(s.pd, [{ transform: 'scaleY(0)', opacity: 0 }, { transform: 'scaleY(1)', opacity: 1 }], { duration: 2500, easing: 'ease-out' }); });
-    later(41000, function () { s.tp = typed(s, v2 ? ['who left the book', 'on the stove,', nm + '?'] : ['too hot,', nm + '.'], 'fl-on-puddle'); });
+    later(41000, function () { var f = s.f; s.tp = typed(s, keep(v2 ? ['who left the book', 'on the stove,', nm + '?', f.sec ? 'it was on ' + f.sec.toLowerCase() + '.' : null] : ['too hot,', nm + '.', f.sec ? f.sec.toLowerCase() + ' is melting.' : null]), 'fl-on-puddle'); });
     later(48500, function () { lift(s.tp, 300); s.ap = april(s, null, v2 ? 'MEDIUM WELL' : '401 DEGREES', 'fl-low'); });
     later(54000, function () {
       lift(s.ap, 300); lift(s.pd, 600); lift(s.heat, 800);
@@ -949,6 +999,7 @@
     }
     pageCopy();
     var s = S;
+    s.f = facts(s.name);
     s.L.addEventListener('pointerdown', down);
     ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) { s.L.addEventListener(ev, function () { holdEnd(s); }); });
     s.key = function (e) { if (e.key === 'Escape') reveal(); };
