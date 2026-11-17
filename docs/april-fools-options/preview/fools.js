@@ -784,7 +784,7 @@
 
   /* ============ J · Dust: the page blows away like dust ============ */
   function dust(s, p, back) {
-    var r = rect(p), cs = getComputedStyle(p), bg = cs.backgroundColor && cs.backgroundColor !== 'rgba(0, 0, 0, 0)' ? cs.backgroundColor : '#2B2A27', n = Math.min(36, Math.max(10, Math.round(r.width * r.height / 1800)));
+    var r = rect(p), cs = getComputedStyle(p), bg = cs.backgroundColor && cs.backgroundColor !== 'rgba(0, 0, 0, 0)' ? cs.backgroundColor : '#2B2A27', n = Math.min(22, Math.max(8, Math.round(r.width * r.height / 2600)));
     for (var i = 0; i < n; i++) {
       var d = mk('i', 'fl-dust', s.L), sz = rnd(4, 9);
       d.style.width = d.style.height = sz.toFixed(0) + 'px';
