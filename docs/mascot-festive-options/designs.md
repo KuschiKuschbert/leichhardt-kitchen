@@ -14,7 +14,7 @@ Every design: no new control, no words, no read, write, rule or listener; nothin
 
 **Central idea: a festive hat is how Australians dress up for these days, so he wears one all day, on every screen.**
 
-- **Days (16):** Santa hat for Christmas Eve, Christmas Day and Boxing Day; party cone for New Year's Eve and New Year's Day; heart band for Valentine's; green top hat for St Patrick's; bunny ears for Easter; flower crown for Mother's Day; fascinator for Melbourne Cup; witch hat for Halloween; [Father's Day: to come]. None for Chefs Day (a toque reads as the chef hat, as the stamp did), Coffee Day, World Food Day or Star Wars Day (a film's trademark). Cultural and religious festivals: his work clothes, as today.
+- **Days (11, corrected after round 2; first written as 16):** Santa hat for Christmas Eve, Christmas Day and Boxing Day; party cone for New Year's Eve and New Year's Day; [heart band for Valentine's: not drawn yet]; green top hat for St Patrick's; bunny ears for Easter; flower crown for Mother's Day; fascinator for Melbourne Cup; witch hat for Halloween; [Father's Day: to come]. None for Chefs Day (a toque reads as the chef hat, as the stamp did), Coffee Day, World Food Day or Star Wars Day (a film's trademark). Cultural and religious festivals: his work clothes, as today.
 - **Frames:** all 88 frames and 11 stills, from measured head positions, so the hat stays on through every play.
 - **Where:** Home, under a finished prep list (also at 192 x 256 px on a wide screen), and on a finished section's tab.
 - **Screens:** `A-xmas-home-390.png`, `A-xmas-home-1280-zoom.png`, `A-xmas-done-390.png`, `A-xmas-done-1920.png`, `A-hats-board.png`, `A-frames-santa.png`.
@@ -23,7 +23,7 @@ Every design: no new control, no words, no read, write, rule or listener; nothin
 
 **Central idea: the least that still says it: Home is where the celebration lives, and he wears the hat when he stands still beside the wish.**
 
-- **Days:** the same 16 as A.
+- **Days:** the same 11 as A.
 - **Frames:** only his rest pose (the Welcome still). Today's action plays in his work clothes; when it ends he rests in the hat (`B-rest-only-strip.png`). One hat position per hat, not 99, so a redraw of the action art cannot leave a hat floating.
 - **Where:** Home only. Under a finished prep list and on a finished section's tab he keeps his work clothes, as work pages keep Kitchen Book (`B-xmas-done-390.png`).
 - **Screens:** at rest Home is `A-xmas-home-390.png`; `B-rest-only-strip.png`; `B-xmas-done-390.png`.
@@ -43,7 +43,7 @@ Every design: no new control, no words, no read, write, rule or listener; nothin
 | | A | B | C |
 | --- | --- | --- | --- |
 | What he wears | A hat that says the day | The same hat | A small knot accent, equal for all |
-| Which days | 16 Australian and fun | 16 Australian and fun | 37, every celebration with a wish, after review |
+| Which days | 11 Australian and fun | 11 Australian and fun | 37, every celebration with a wish, after review |
 | Frames | All 99 | The rest pose only | All 99 |
 | Where | Home, finished list, finished section | Home only | Home, finished list, finished section |
 | Says which day at 48 px | Yes, by its shape (Santa, witch, top hat, cone) | Yes, at rest | Mostly by colour |
