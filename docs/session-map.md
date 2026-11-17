@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## April Fools on Home, 17 November 2026
+
+The head chef asked for a fake "hacked" Home on 1 April that says the person's name. Round 1 Build smaller 5 of 5; round 2 A 6.7, B 5.7, C 3.2 (the council recommended A ending on B's 1 APRIL). The head chef then asked for 24 jokes, a different one for each person every year, 35 seconds each. Review-only preview and pool in `docs/april-fools-options/` (`preview/fools.js`, `fools.css`, `build.mjs`, `snapshot.mjs`, `capture.mjs`, `widths.mjs`). Built the same day: `js/fools.js` and `css/fools.css` (lazy, 1 April and the admin preview only), `foolsSync()` and `LK_APP.fools()` in `js/app.js`, the Kitchen row `foolsAdminHTML()` and `LK_PREP.foolsIds()` in `js/prep.js`, `tests/april-fools.test.js` (49 checks), and `lk.fools.off` on every other test phone (`tests/lib.js`). The contract: `docs/april-fools.md`; the study: `brief.md`, `pool.md`.
+
 ## Opening the installed app again, 16 November 2026
 
 The kitchen tablet's Home button reloaded the whole book on every tap. The manifest's `launch_handler` (`focus-existing`, then `auto`) keeps the open book, and the `launchQueue` consumer in `js/app.js` moves it to the address (`#/kiosk-home` is Home). Quick check: Build (no new tab, button, step or pop-up; 0 extra taps). Note: `docs/app-launch.md`. Test: `tests/launch-home.test.js`.
@@ -47,6 +51,14 @@ On today on Home is a small board, sections down and shifts across (`homeRotaHTM
 ## Functions ahead of time, 10 November 2026
 
 The head chef could not find a Saturday function on Tuesday and asked how to get everyone's attention on a function during the week. The band shows a function only on its order day, the day before and the day; Home's Coming up sits at 955 px on a 390 px phone with a team saved (Implemented app). Round 1: Build smaller, 5 of 5. Round 2: A (quiet Next function line) 39, C (once-per-person heads-up card) 38, B (week strip and milestones) 26; five of six recommend a mix (A's line as the base, C's card under Your day collapsing to the line, B's open-only rule and Orders tag), previewed in `design-mix/` and endorsed with changes by all six and re-checked by four. **Chosen 10 Nov 2026: the mix**, line kept for everyone, Function tomorrow card shown to everyone once more. Build in three pull requests (brief, Build plan). [Brief](function-ahead-options/brief.md), [evidence](function-ahead-options/evidence.md). Built on 10 Nov 2026: step 1, the work-page line (`tests/fn-ahead.test.js`), and step 3, the Orders tag (`orderTag()` in `js/functions.js`, `ordRow()` in `js/prep.js`, `.o-fn-tag`, `tests/fn-order-tag.test.js`, 45 checks). Step 2, the Home card (`tests/fn-home-card.test.js`). Step 4, who has seen it (`huSync()` and `seenHTML()` in `js/functions.js`, `fnseen` with `fnSeenOK()` in `firestore.rules`, `tests/fn-seen.test.js`): one write per Got it, one read when a chef asks, a looser rule published before the client. Steps 1 to 3: no reads, writes or rules.
+
+## The New Year show, 17 November 2026 (built)
+
+The owner asked for fancy New Year animations, then for Home's own pieces to burst and rockets to "go crazy", then for the cards and icons to dance, and approved a playable preview. Quick check, not a council round: the head chef's own design. Built: `newYearShow()`, `showStop()`, `dance()`, `DANCE`, the firework and kitchen-burst pictures and the `new-year-streamers` preset's `show` in `js/seasonal/theme-effects.js`; `#kb-ny-show` and the `burst` ambient motion in `css/seasonal-effects.css`; `tests/new-year-show.test.js`. Note: `docs/seasonal-celebrations.md` (The New Year show), with the exception to the celebrations' rules for these two days.
+
+## Festive hats on the mascot and a Christmas countdown, 17 November 2026 (built)
+
+The owner asked to dress the mascot for the celebrations, then for a Christmas countdown. Round 1 Build smaller 5 of 5 (hats only, never animated on, no bandana colours, no dress-up play); round 2 B first for 5 of 6, the blend (A's hat on every frame, on Home only) named by 5 of 6; the countdown K2 (Coming up) for all six. The owner: "go with your recommendations, both in one pull request". Built: `HATS`, `HEAD`, `hatDraw()` and `wear()` in `js/mascot.js` (now `?v=4` from `js/app.js` and `js/prep.js`), `mascotHat()` in `js/app.js`, `countdown()` in `js/seasonal/seasonal.js`, `scripts/mascot-head-points.py` (run only when the art changes), `tests/mascot-hats.test.js`, `tests/christmas-countdown.test.js`. Notes: `docs/mascot-festive-options/brief.md` (both rounds, the mix, the evidence), `docs/kitchen-mascot.md` (Festive hats on Home), `docs/seasonal-celebrations.md` (Coming up).
 
 ## A smarter mascot, 17 November 2026 (round 1 only; Orders and Functions held a month)
 
@@ -321,5 +333,6 @@ Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records
 | `scripts/nightly-backup.mjs`, `scripts/backup-crypto.mjs`, `.github/workflows/nightly-backup.yml` | Nightly encrypted backup at 03:30 kitchen time (AES-256-GCM, `BACKUP_KEY`, kept 90 days). Reads only. `docs/backup-recovery.md` |
 | `scripts/cutoff-push.mjs`, `.github/workflows/cutoff-push.yml` | Phone pushes for order cut-offs every 10 minutes (`push`, once each in `pushsent`, none once ticked in `cutdone`) |
 | `scripts/access-bootstrap.mjs`, `scripts/ping-index.mjs`, `scripts/transfer-index.mjs`, `scripts/*-check.mjs` | One-off index and migration jobs the Publish rules workflow runs before a rules change that needs them, and the emulator checks that prove them and the server jobs. Read the matching `docs/` note before running one |
+| `scripts/mascot-head-points.py` | Measures the top of the mascot's star in each of his 99 pictures and writes `HEAD` and `HEAD_SUM` into `js/mascot.js` (`--write`), for the festive hats on Home. Run it only when `art/mascot/` changes; it needs Python 3 with Pillow. `tests/mascot-hats.test.js` |
 | `scripts/fold-recipes.mjs` | Folds the head chef's recipe changes from a Backup file into `js/data.js`: run it without `--write` first. Never commit the Backup file. `tests/fold-recipes.test.js` |
 

@@ -135,7 +135,7 @@ async function open(b, width) {
   const placed = F.fixture({ [F.key(['cutdone', F.today + '_northside'])]: { day: F.today, sid: 'northside', on: true, at: L.NOW - 60000, by: 'sam' } });
   p = await L.open(b, '#/suppliers/northside', { who: 'bo', extra: placed, wait: 1800, width: 390, height: 844 });
   await L.waitFor(p, () => !!document.querySelector('input[data-sf="qty"]'), null, 15000);
-  await L.waitFor(p, () => /marked as placed/.test((document.querySelector('.su-info-line') || {}).textContent || ''), null, 5000);
+  await L.waitFor(p, () => /Ordered for/.test((document.querySelector('.su-info-line') || {}).textContent || ''), null, 5000);
   ok(await p.isVisible('[data-su="additional"]'), 'an order already marked as placed opens the line with Additional order in sight');
   await p.context().close();
   p = await open(b, 1280);

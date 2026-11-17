@@ -39,6 +39,15 @@
     }
     return out;
   }
+  /* The Christmas countdown (head chef, 17 Nov 2026; docs/seasonal-celebrations.md, Coming up): from 1 December Home's
+     Coming up says "Christmas Day, in 24 days" until its own 7 days reach Christmas Day (18 December). The calendar's
+     own Christmas Day, from the kitchen date: no read, and Off (no lookahead) shows nothing. */
+  function countdown(day, soon) {
+    const xmas = day.slice(0, 4) + '-12-25', away = Math.round((utc(xmas) - utc(day)) / DAY);
+    if (day.slice(5, 7) !== '12' || away < 8 || away > 24 || soon.some(item => item.id === 'au-christmas-day')) return soon;
+    if (window.KB_SEASONAL_CALENDAR?.resolve(xmas)?.id !== 'au-christmas-day' || !byId.has('au-christmas-day')) return soon;
+    return soon.concat({ id: 'au-christmas-day', label: byId.get('au-christmas-day').label, day: xmas, away, when: 'in ' + away + ' days', date: short(xmas) }).slice(0, 2);
+  }
   function dayCount(record, day) {
     if (!record || record.start === record.end) return null;
     return { n: Math.round((utc(day) - utc(record.start)) / DAY) + 1, of: Math.round((utc(record.end) - utc(record.start)) / DAY) + 1 };
@@ -48,7 +57,7 @@
     const automatic = !design && prefs.selection === 'auto' && ready;
     const scheduled = automatic ? window.KB_SEASONAL_CALENDAR?.resolve(day) : null;
     const theme = byId.get(design || scheduled?.id) || null;
-    const soon = automatic ? upcoming(day, 2, 7) : [], count = automatic && theme ? dayCount(scheduled, day) : null;
+    const soon = automatic ? countdown(day, upcoming(day, 2, 7)) : [], count = automatic && theme ? dayCount(scheduled, day) : null;
     // Publish a new kitchen day even with celebrations Off, including Home without the staff clock.
     const next = day + '|' + (theme?.id || 'off') + '|' + prefs.motion + '|' + prefs.density + '|' + soon.map(item => item.id + item.when).join(',') + '|' + (count ? count.n + '/' + count.of : '');
     activeId = theme?.id || '';

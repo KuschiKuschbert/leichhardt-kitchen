@@ -202,6 +202,7 @@ async function start() {
    o.legacyPrimaryGoogle  old default-app Google identity for the one-time anonymous-device migration
    o.settings         saved recipe book settings, for example { view: 'tiles' }
    o.seasonal         seasonal preferences; other journeys default Off for date-independent navigation
+   o.fools            let the April Fools joke play (off on every other test phone: lk.fools.off)
    o.extra            more seed documents (see seed)
    o.base             the book's address for this page (BASE by default)
    o.sw               let the service worker run (it is blocked otherwise, so each page loads the files fresh)
@@ -305,7 +306,10 @@ async function open(browser, hash, o) {
     'lk.prep.sess': sess ? JSON.stringify({ v: 2, by: who, exp, uid, pinAt, issuedAt, mode }) : '',
     'lk.prep.seen': String(clock),   // on the phone's clock, like the idle check
     'lk.settings.v1': JSON.stringify(Object.assign({ installNo: true }, o.settings || {})),
-    'lk.seasonal.v1': JSON.stringify(o.seasonal || { selection: 'off' })
+    'lk.seasonal.v1': JSON.stringify(o.seasonal || { selection: 'off' }),
+    // April Fools (docs/april-fools.md): off on every test phone, so a run on 1 April is not covered by a joke;
+    // tests/april-fools.test.js turns it on with o.fools
+    'lk.fools.off': o.fools ? '' : '1'
   };
   if (!(o.deviceUnclassified || o.deviceMode === 'unclassified' || o.profile === null)) ls['lk.device.v2'] = JSON.stringify(o.profile || { v: 2, mode, ownerId: mode === 'personal' ? who || '' : '' });
   if (!o.board) ['sam', 'ann', 'bo', 'fay', 'finn'].concat((config.people || []).map(p => p.id), who ? [who] : []).forEach(id => { ls['lk.board.' + id] = ymd(new Date(serverClock)); });

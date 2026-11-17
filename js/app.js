@@ -805,7 +805,7 @@
     if (!h || !date) return;
     var P = window.LK_PREP, n = P && P.whoName ? P.whoName() : '';
     var parts = window.LK_TIME.day().split('-'), dt = new Date(+parts[0], +parts[1] - 1, +parts[2], 12);
-    var hw = homeWords(dt, n), words = hw.words;
+    var hw = homeWords(dt, n), words = foolsWords(n) || hw.words;
     var size = Math.max(Array.from(words).length, Array.from(n).length + 9);
     // The seasonal bridge observes child changes. Leave settled text alone so its state event cannot repaint forever.
     if (h.textContent !== words) h.textContent = words;
@@ -1453,6 +1453,15 @@
      on the first such Home view (about 11 KB, once); its art loads per day and is never kept in the saved shell.
      No reads. A failed download leaves Home as it is and tries again on the next Home view. */
   var mascotLoad = null;
+  /* Festive hats on Home (head chef, 17 Nov 2026; docs/kitchen-mascot.md): the day comes from the welcome's own rule
+     (clock ready, celebrations On on this device, today's occasion), so the hat and the wish always agree. A hat for
+     the Christmas days and the New Year days only, for now. Under a finished prep list he keeps his work clothes. */
+  var MASCOT_HATS = { 'au-christmas-eve': 'santa', 'au-christmas-day': 'santa', 'au-boxing-day': 'santa', 'au-new-years-eve': 'party', 'au-new-years-day': 'party' };
+  function mascotHat() {
+    var bridge = window.KB_THEME_BRIDGE && window.KB_THEME_BRIDGE.status();
+    var themeId = window.LK_TIME.ready() && bridge && !bridge.gated ? bridge.themeId : '';
+    return MASCOT_HATS[themeId] || '';
+  }
   function mascotSync() {
     var P = window.LK_PREP, id = P && P.whoId ? P.whoId() : '';
     if (parseRoute().name !== 'landing' || !id) { if (window.LK_MASCOT) window.LK_MASCOT.unmount(); return; }
@@ -1460,16 +1469,66 @@
       if (window.LK_MASCOT.api !== 1) return;
       // an older copy of his file cannot stand beside the words: the heading stays plain and he takes his old place
       if (!window.LK_MASCOT.say) homeSayStop();
-      window.LK_MASCOT.mount(app, { id: id });
+      window.LK_MASCOT.mount(app, { id: id, hat: mascotHat() });
       return;
     }
-    if (!mascotLoad) mascotLoad = mgScript('js/mascot.js?v=3').then(function () { homeSayOff = false; mascotSync(); }, function () { mascotLoad = null; homeSayStop(); });
+    if (!mascotLoad) mascotLoad = mgScript('js/mascot.js?v=4').then(function () { homeSayOff = false; mascotSync(); }, function () { mascotLoad = null; homeSayStop(); });
   }
   // New words or a seasonal change move a mascot already on Home to its new place. Never a new one: a failed
   // download waits for the next Home view (docs/kitchen-mascot.md).
   function mascotPlace() {
     var M = window.LK_MASCOT, s = M && M.api === 1 && M.state();
     if (s && s.mounted && parseRoute().name === 'landing') mascotSync();
+  }
+  /* April Fools (head chef, 17 Nov 2026; docs/april-fools.md). On 1 April (the kitchen's day, from 04:00 like the PIN
+     day, all day), each named person's first Home view of the day on this device plays their joke from js/fools.js:
+     own phones and the shared display alike. js/fools.js (lazy, about 77 KB, 20 KB compressed) loads only that day or
+     for the admin panel's preview. No reads and no writes; the deal comes from the staff list the book already holds.
+     lk.fools.<staff id> keeps { d: the kitchen day, st: 'play' (it started), 'seen' (the reveal showed) or 'quiet'
+     (reduced motion or celebrations Still: the words only) }. Celebrations Off: nothing at all. Out of date on any other kitchen day. A screen hint
+     only: it grants nothing and is never sent. When it cannot be kept (storage refused), nothing plays, so a reload can
+     never scare them twice. */
+  var foolsLoad = null, foolsAsk = null, foolsAsking = '';
+  function foolsDay() { var T = window.LK_TIME; return !!(T && T.ready() && T.day().slice(5) === '04-01'); }
+  function foolsRec(id) { try { var r = JSON.parse(localStorage.getItem('lk.fools.' + id) || 'null'); return r && r.d === window.LK_TIME.day() ? r : null; } catch (e) { return null; } }
+  function foolsKeep(id, st) {
+    try { localStorage.setItem('lk.fools.' + id, JSON.stringify({ d: window.LK_TIME.day(), st: st })); return true; } catch (e) { return false; }
+  }
+  // Seasonal celebrations Off on this device (the book's own branding only) means no joke at all. lk.fools.off = '1' turns
+  // it off on one device; no screen sets it: the click tests do, so a run on 1 April is not covered by a joke.
+  function foolsOff() {
+    try { if (localStorage.getItem('lk.fools.off') === '1') return true; } catch (e) { /* storage refused: foolsCan() says no */ }
+    var st = window.KB_SEASONAL && window.KB_SEASONAL.status ? window.KB_SEASONAL.status() : null;
+    return !!(st && st.preferences && st.preferences.selection === 'off');
+  }
+  function foolsCan() { try { localStorage.setItem('lk.fools.t', '1'); localStorage.removeItem('lk.fools.t'); return true; } catch (e) { return false; } }
+  // his speech bubble after the joke, all that day: "Got you, Ann." (or the words only, for a quiet device)
+  function foolsWords(name) {
+    var P = window.LK_PREP, id = P && P.whoId ? P.whoId() : '', r = id && name && foolsDay() ? foolsRec(id) : null, n = String(name || '').trim().split(/\s+/)[0];
+    return !r ? '' : r.st === 'seen' ? 'Got you, ' + n + '.' : r.st === 'quiet' ? 'April Fools, ' + n + '. Nothing is broken today.' : '';
+  }
+  function foolsSync() {
+    var F = window.LK_FOOLS, P = window.LK_PREP, id = P && P.whoId ? P.whoId() : '', home = parseRoute().name === 'landing';
+    if (!home || !id) { if (F && F.api === 1) F.end(home ? 'lock' : 'route'); return; }
+    var ask = foolsAsk, rec = foolsRec(id);
+    if (!ask && (!foolsDay() || foolsOff() || (rec && rec.st !== 'play'))) return;
+    if (!F) { if (!foolsLoad) foolsLoad = mgScript('js/fools.js?v=1').then(function () { foolsSync(); }, function () { foolsLoad = null; }); return; }
+    if (F.api !== 1 || F.busy() || foolsAsking) return;
+    var name = P.whoName(), day = window.LK_TIME.day();
+    var done = function (st) { foolsKeep(id, st); homeWelcomePaint(); if (st === 'play' && P.foolsMark) P.foolsMark(id, day); };
+    if (ask) { foolsAsk = null; F.start({ name: ask.name || name, preview: ask }); return; }
+    if (!foolsCan()) return;
+    if (rec && rec.st === 'play') { F.start({ name: name, recover: true, done: done }); return; }
+    var go = function () { F.start({ id: id, name: name, ids: P.foolsIds ? P.foolsIds() : [id], year: +day.slice(0, 4), length: window.__lkFoolsLength, done: done }); };
+    if (!P.foolsSeen) { go(); return; }
+    // once a year on any device: the server says whether it played elsewhere (one read); then only his words
+    foolsAsking = id;
+    P.foolsSeen(id, day).then(function (seen) {
+      foolsAsking = '';
+      var P2 = window.LK_PREP, here = parseRoute().name === 'landing' && P2 && P2.whoId && P2.whoId() === id && window.LK_TIME.day() === day;
+      if (seen === true) { foolsKeep(id, 'seen'); homeWelcomePaint(); return; }
+      if (here && !F.busy() && !foolsRec(id)) go();
+    });
   }
   /* Private tools load only on their page. A failed download leaves a Retry action.
      Protected data is fetched only after the current sign-in has been checked. */
@@ -1533,7 +1592,7 @@
       return;
     }
     root.innerHTML = mgNote('Supplier order', 'Opening supplier tools...', ' ', 'orders');
-    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=25').catch(function (e) { supLoad = null; throw e; });
+    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=26').catch(function (e) { supLoad = null; throw e; });
     supLoad.then(function () { if (parseRoute().name === 'suppliers') mountSuppliers(parseRoute()); }, function () {
       if (parseRoute().name === 'suppliers') root.innerHTML = mgNote('Could not open supplier tools', 'Check the connection and try again. The other kitchen pages still work.', '<div class="btn-row"><button type="button" class="btn dark" data-sup-retry>Try again</button><a class="btn" href="#/orders">Order list</a></div>');
     });
@@ -1554,6 +1613,8 @@
   }
   window.LK_APP = {
     mgApi: MG_API, KIND: KIND, isDish: isDish, esc: esc, art: art, rollFor: rollFor, load: mgScript,
+    // April Fools, the admin panel's Preview (docs/april-fools.md): Home plays that joke now; nothing is kept
+    fools: function (pick) { foolsAsk = pick; if (parseRoute().name === 'landing') foolsSync(); else location.hash = '#/'; },
     returnTo: function (hash) { parentReturn(hash); },
     noteRoute: function (replaced) {
       if (replaced && navPages[navHere]) navPages[navHere].hash = location.hash || '#/';
@@ -2007,6 +2068,7 @@
     else if (window.LK_PREP && window.LK_PREP.warm && !warmed) { warmed = true; setTimeout(function () { window.LK_PREP.warm(); }, 900); }
     backSync();
     mascotSync();
+    foolsSync();
     koSync();   // Keep screen on: holds on a recipe page when chosen, lets go everywhere else and while this device is locked
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
     document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'transfers' ? 'Transfers · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'todo' ? 'Chef to-do · ' : route.name === 'team' ? 'Today\'s team · ' : route.name === 'suppliers' ? 'Supplier order · ' : route.name === 'manage' ? 'Manage Recipes & Drawings · ' : route.name === 'fn' ? 'Functions · ' : route.name === 'functions' ? 'Manage functions · ' : route.name === 'cleaning' ? 'Kitchen cleaning · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : route.name === 'chef' ? 'Chef panel · ' : '')) + 'Leichhardt Kitchen Book';
@@ -2371,7 +2433,7 @@
     whoMenuClose(false, true); editSlotRedraw(); redrawManage();
     var ic = app.querySelector('.wtop-icons'); if (ic) { ic.outerHTML = topIcons(); paintCooling(); }
     var el = app.querySelector('.wtop-who'); if (el) el.outerHTML = whoMark(!!(e.detail && e.detail.signedIn));
-    homeWelcomePaint(); mascotSync();
+    homeWelcomePaint(); mascotSync(); foolsSync();
   });
   // Reuse the calendar's settled state for clock corrections, midnight and the device's On/Off choice.
   /* The seasonal bridge publishes on every page change, many a second while snow falls. Only a new occasion, its
@@ -2396,7 +2458,7 @@
   });
   // the kitchen settings were read (who is Head chef): the head chef's link on a card and the manage page follow
   window.addEventListener('lk-cfg', function () {
-    whoNamePaint(); homeWelcomePaint(); mascotSync();
+    whoNamePaint(); homeWelcomePaint(); mascotSync(); foolsSync();
     editSlotRedraw(); if (parseRoute().name === 'manage' && !(window.LK_MG && window.LK_MG.open())) redrawManage(); feRedraw();
     // Private settings can arrive after the sign-in roster without changing lk.feat's remembered values.
     // Recheck Cleaning then as well; a missing setting never publishes it from the saved flag.

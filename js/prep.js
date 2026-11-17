@@ -1788,7 +1788,48 @@
      with its one Save (draftOf(), adminSave()), so the canonical capability lists keep their one save path
      (docs/staff-capabilities.md). A closed row draws nothing behind it: the sections' who is on today reads (loadShifts)
      only once that row is open. */
-  var K_ROWS = { secs: 'Kitchen sections', shifts: 'Shifts', see: 'Pages staff see', badges: 'Weekly top tickers' };
+  var K_ROWS = { secs: 'Kitchen sections', shifts: 'Shifts', see: 'Pages staff see', badges: 'Weekly top tickers', fools: 'April Fools' };
+  /* April Fools (head chef, 17 Nov 2026; docs/april-fools.md): who gets which joke on the next 1 April, from the same deal
+     the phones make (js/fools.js deal(), from the staff list: no reads), and Preview, which opens Home and plays it now
+     with that name (js/app.js LK_APP.fools; nothing is kept). js/fools.js loads when this row opens. */
+  var foolsAdminLoad = null, foolsAdminErr = false;
+  /* Once a year on any device (head chef, 17 Nov 2026: "do the once thing"; docs/april-fools.md). fools/<YYYY-04-01>_<me>,
+     { day, at, by }, written once by the person when their joke starts (foolsMark()). foolsSeen(): has it played on
+     another device? One read from the server, on a person's first Home view of 1 April on a device (about one read per
+     person per device, once a year). true: played; false: not yet; null: could not tell (no signal, refused, rules not
+     published yet), and the device's own record decides. A cached answer is never taken for "not yet". */
+  function foolsSeen(id, day) {
+    if (!id || id !== S.who || !whoName() || !canW() || !/^\d{4}-04-01$/.test(day || '')) return Promise.resolve(null);
+    return sdk().then(function () { return fb.fs.getDocFromServer(docRef('fools', day + '_' + id)); })
+      .then(function (sn) { return !!sn.exists(); }, function () { return null; });
+  }
+  function foolsMark(id, day) {
+    if (!id || id !== S.who || !canW() || !/^\d{4}-04-01$/.test(day || '')) return;
+    // a second device after the first is refused by the rules (never changed): the joke is already kept, so nothing to show
+    W([['set', docRef('fools', day + '_' + id), { day: day, at: now() }]]).catch(function () {});
+  }
+  function foolsYear() { var d = dayNow(); return +d.slice(0, 4) + (d.slice(5) > '04-01' ? 1 : 0); }
+  function foolsAdminHTML() {
+    var F = window.LK_FOOLS, year = foolsYear();
+    if (!F || F.api !== 1) {
+      if (!foolsAdminLoad && !foolsAdminErr && window.LK_APP && window.LK_APP.load) foolsAdminLoad = window.LK_APP.load('js/fools.js?v=1').then(function () { foolsAdminLoad = null; if (S.kOpen === 'fools') draw(); }, function () { foolsAdminLoad = null; foolsAdminErr = true; if (S.kOpen === 'fools') draw(); });
+      return foolsAdminErr ? '<p class="hint" role="alert">Could not open the jokes. It needs the signal the first time. Check the signal and try again.</p><div class="btn-row"><button type="button" class="btn" data-p="fools-retry">Try again</button></div>'
+        : '<p class="hint" role="status">Opening the April Fools jokes...</p>';
+    }
+    var ps = ptPeople(), deal = F.deal(ps.map(function (p) { return p.id; }), year);
+    var joke = function (x) { return x ? x.design + ' ' + F.designs[x.design].name + ', version ' + x.version : ''; };
+    var any = F.letters.map(function (l) { return [1, 2].map(function (v) { return '<option value="' + l + v + '">' + esc(l + ' ' + F.designs[l].name + ', version ' + v) + '</option>'; }).join(''); }).join('');
+    return '<p class="hint">On 1 April everyone who signs in gets their own ' + F.length + '-second joke once, on their phone or the shared display, then the mascot owns up. Nobody gets the same one, and nobody gets last year\'s. Preview opens Home and plays it now with that name. Nothing is kept or sent.</p>' +
+      lvHTML({
+        key: 'fools', items: ps, step: 30, noun: ['person', 'people'], ph: 'Search people', empty: 'No one on the staff list yet.',
+        cols: [
+          { h: 'Person', th: true, html: function (p) { return esc(p.name); } },
+          { h: 'Joke on 1 April ' + year, html: function (p) { return esc(joke(deal[p.id])); } },
+          { h: '', cls: 'a-act', html: function (p) { var x = deal[p.id]; return x ? '<button type="button" class="btn" data-p="fools-play" data-d="' + esc(x.design + x.version) + '" data-n="' + esc(p.name) + '">Preview</button>' : ''; } }
+        ]
+      }) +
+      '<div class="btn-row"><label class="a-f"><span>Any joke</span><select id="fools-any" data-k="fools-any">' + any + '</select></label><button type="button" class="btn" data-p="fools-any">Preview</button></div>';
+  }
   function kitchenHomeHTML(d, saveBlock) {
     var k = kitchenInfo(), plural = function (n, one, many) { return n + ' ' + (n === 1 ? one : many); };
     var list = function (a) { return a.length ? a.join(', ') : 'None'; };
@@ -1820,6 +1861,7 @@
         }) +
         (mlOwner() ? row('Sous chefs read Kitchen mail', k ? (k.sousMail ? 'On' : 'Off') : '', 'mail', 'Today, Kitchen mail') : '') +
         row('Who books functions', k ? plural(k.fns, 'person', 'people') : '', 'people', 'Team, People')) +
+      group('Once a year', edit('fools', 'April Fools', '24 jokes on 1 April ' + foolsYear(), foolsAdminHTML)) +
       group('Records and safety', row('Confirmed item links', 'Names linked to recipes and supplier items', 'reference-records') +
         row('Backup', 'Every night at 03:30', 'tools') + row('Kitchen PIN', 'Change the PIN', 'tools'));
   }
@@ -2249,12 +2291,12 @@
   }
   function supplierOccurrences() {
     var out = [], done = cutDone(), ms = now();
-    for (var k = 0; k < 8; k++) {
+    for (var k = 0; k < CUT_DAYS; k++) {
       var date = shift(dayNow(), k);
       CUT.on(cutList(), (T.dow() + k) % 7).forEach(function (c) {
         var at = T.at(date) + c.at * 60000;
         out.push({ day: date, cutoffId: c.s.id, at: at, deliveryDay: shift(date, c.pre), name: c.s.name,
-          label: dayShort(date) + ', ' + hhmm(c.at) + ' ' + CUT.forText(c, date), key: c.s.id + '|' + date,
+          label: dayShort(date) + ', ' + hhmm(c.at) + ' ' + CUT.forText(c, date), forText: CUT.forText(c, date), key: c.s.id + '|' + date,
           done: !!done[c.s.id + '|' + date], past: at <= ms });
       });
     }
@@ -5383,7 +5425,7 @@
       if (!M || typeof M.sprite !== 'function') {
         // An answer without sprite() is an older saved copy (the saved shell hands that back with no signal):
         // one try, like a failed download, never a loop.
-        if (!finLoad && !finOff && window.LK_APP && window.LK_APP.load) finLoad = window.LK_APP.load('js/mascot.js?v=3').then(function () {
+        if (!finLoad && !finOff && window.LK_APP && window.LK_APP.load) finLoad = window.LK_APP.load('js/mascot.js?v=4').then(function () {
           finLoad = null;
           if (window.LK_MASCOT && typeof window.LK_MASCOT.sprite === 'function') finPaint(); else { finOff = true; finPaint(); }
         }, function () { finLoad = null; finOff = true; finPaint(); });
@@ -11644,9 +11686,12 @@ if (list.length) sg('oreg', 's');
   // who gets the bar: the head chef and sous chefs with their PIN, and the head chef's Google device
   function cutWho() { return !!S.config && (isSous() || admDev()); }
   /* The shared ticks: one record per supplier and cut-off day, cutdone/<day>_<supplier id> { day, sid, on, at, by }, so
-     the rules check every tick (who, when, which). One live listener on today's and tomorrow's (a query on day), on a
-     chef's phone (their PIN session) or the head chef's Google account, only while cut-offs are set: one read per record of
-     those two days (ticks and taken-off ticks, one when there are none) when the book opens, then only what changes. It moves on when the kitchen day changes, and starts as soon as
+     the rules check every tick (who, when, which). One live listener on the next CUT_DAYS days from today (a query on day;
+     today's and tomorrow's until 17 Nov 2026), on a chef's phone (their PIN session) or the head chef's Google account,
+     only while cut-offs are set: one read per record of those days (ticks and taken-off ticks, one when there are none)
+     when the book opens, then only what changes. The days after tomorrow hold a record only for an order placed after a
+     cut-off closed, which counts for the next window (cutRoll()), or one recorded days ahead: a few reads a day at most.
+     They let the supplier pages and the Order list say a weekly supplier is ordered. It moves on when the kitchen day changes, and starts as soon as
      this phone may read (cutWatch() runs on every paint, so a Google account checked or a PIN session opened late is
      caught). A refused or failed read keeps what this phone last saw (the bar and the pushes carry on).
      No signal (28 Oct 2026): the listener started again (the kitchen day changed, a chef signed in) answers at once
@@ -11655,6 +11700,9 @@ if (list.length) sg('oreg', 's');
      phone's own on top, and the bar and the tick list say ticks from other phones are not in yet. Otherwise a supplier
      another chef ordered showed as not ordered after midnight, and could be ordered twice. */
   var cutSub = null, cutSubKey = '', cutSeen = {}, cutWrites = Object.create(null), cutState = 'loading', cutSnap = {};
+  // the days the ticks are read for, today first: the same 8 days the supplier pages know the cut-offs of (supplierOccurrences())
+  var CUT_DAYS = 8;
+  function cutDays() { var out = []; for (var k = 0; k < CUT_DAYS; k++) out.push(shift(dayNow(), k)); return out; }
   function cutHas() { return cutWho() && cutList().some(function (s) { return s.at >= 0 && s.dd.length; }); }
   function cutCanRead() { return !!fb && !!S.pin && cutHas() && (canW() || (!!S.user && S.level === 'owner')); }
   var cutErr = { key: '', at: 0 };
@@ -11666,7 +11714,7 @@ if (list.length) sg('oreg', 's');
     if (want === cutSubKey) return;
     if (want && cutErr.key === want + '|' + cutReader() && Date.now() - cutErr.at < 300000) return;
     if (cutSub) cutSub();
-    var days = want ? [dayNow(), shift(dayNow(), 1)] : [];
+    var days = want ? cutDays() : [];
     // another kitchen PIN: nothing kept. The next kitchen day on the same PIN: the ticks of a day still covered (the day
     // that was tomorrow) stay until the server answers. A tick just made on this phone before the first read stays too.
     if (cutSubKey) {
@@ -12074,7 +12122,7 @@ if (list.length) sg('oreg', 's');
   }
   /* Coming up's order cut-offs (8 Nov 2026, the audit of the redesign): each supplier's next cut-off after today, in the
      next 7 days, for the chefs who get the cut-off bar; from the kitchen's settings already held, no read. Today's are on
-     the board. A cut-off already ticked as ordered (today's and tomorrow's ticks are known) is left out. */
+     the board. A cut-off already ticked as ordered (the next CUT_DAYS days' ticks are known) is left out. */
   function homeCutsHTML() {
     if (!cutWho()) return '';
     var seen = {}, out = [], done = cutDone(), tom = shift(dayNow(), 1);
@@ -12127,8 +12175,10 @@ if (list.length) sg('oreg', 's');
      done, with no tick. Recording the quantities stays on the supplier's own page (its name on the tick list). Before,
      the bar's Order done did this, and the tick list opened a linked supplier's sheet instead of ticking. */
   function cutConfirm(key) {
-    // Any of today's or tomorrow's cut-offs, the two days the shared ticks cover.
-    var c = cutOn(0).concat(cutOn(1)).filter(function (x) { return x.key === key; })[0];
+    // Any cut-off in the days the shared ticks cover. The tap is when the order was placed (head chef, 17 Nov 2026): once
+    // its cut-off has passed it counts for the supplier's next cut-off, as an order recorded on its page does.
+    var c = cutAll().filter(function (x) { return x.key === key; })[0], n = c && c.at <= T.mins() ? cutRoll(c) : null;
+    if (n) { c = n; key = n.key; }
     if (!c || !cutCanTick() || cutSeen[key]) return;
     var context = supplierContext(), by = cutTicker();
     function fail(e) {
@@ -12139,7 +12189,7 @@ if (list.length) sg('oreg', 's');
     cutOrdered(key, true).then(function (saved) {
       var current = cutSeen[key];
       if (context !== supplierContext() || !current || current.by !== saved.by || current.at !== saved.at) return;
-      toast(c.s.name + ': order done. No quantities recorded.', { label: 'Undo', fn: function () {
+      toast(c.s.name + ': ordered ' + cutDel(c) + '. No quantities recorded.', { label: 'Undo', fn: function () {
         var current = cutSeen[key];
         if (context !== supplierContext() || by !== cutTicker() || !current || current.by !== saved.by || current.at !== saved.at) return;
         cutOrdered(key, false).then(function () { if (context === supplierContext()) toast('Order confirmation undone. Saved order history is unchanged.'); }, fail);
@@ -12154,6 +12204,24 @@ if (list.length) sg('oreg', 's');
      disclosure; Chef to-do stays read-only. Both retain attribution, absolute dates and unconfirmed deadlines. */
   // Today's cut-offs, and tomorrow's whose reminder has started, soonest first.
   function cutRowsNow() { var m = T.mins(); return cutToday().concat(cutOn(1).filter(function (c) { return cutOnNow(c, m); })); }
+  // every cut-off in the days the ticks cover, today first
+  function cutAll() { var out = []; for (var k = 0; k < CUT_DAYS; k++) out = out.concat(cutOn(k)); return out; }
+  /* The window an order placed now counts for once cut-off c has closed (head chef, 17 Nov 2026: "if it is not in the
+     time frame it will roll to the next window"): the same supplier's next cut-off still open, in the days the ticks
+     cover, or null. From the settings and the clock, no reads. */
+  function cutRoll(c) {
+    var m = T.mins();
+    for (var k = 0; k < CUT_DAYS; k++) { var n = cutOn(k).filter(function (x) { return x.s.id === c.s.id && x.at > m; })[0]; if (n) return n; }
+    return null;
+  }
+  /* The tick a cut-off row shows and acts on: its own, or once it has closed, the next window's (an order placed after
+     the cut-off). { key, d: the tick or null, roll: the next window when the row stands for it }. */
+  function cutTickFor(c) {
+    var d = cutDone()[c.key];
+    if (d || c.at > T.mins()) return { key: c.key, d: d || null, roll: null };
+    var n = cutRoll(c);
+    return n ? { key: n.key, d: cutDone()[n.key] || null, roll: n } : { key: c.key, d: null, roll: null };
+  }
   /* Tomorrow, heads-up (5 Nov 2026, the head chef's supplier patterns): tomorrow's cut-offs for a delivery 2 or more days
      after them ("Wednesday's order by Friday 16:00"), all the day before, until their own reminder starts. A row has
      Ordered already instead of a tick box, so nobody ticks it to mean "seen": it is only for an order placed early, and
@@ -12178,26 +12246,28 @@ if (list.length) sg('oreg', 's');
   }
   // Named actions on Orders distinguish an externally placed order from ticking one request.
   function cutRowHTML(c, ro, named, ahead) {
-    var m = T.mins(), done = cutDone();
-    var d = done[c.key], past = c.at <= m, who = d ? cutByName(d) : '';
-    var st = d ? 'Ordered' + (who ? ' by ' + who : '') + (d.at ? ', ' + clock(d.at) : '') : past ? 'Closed, not ticked' : cutIn(c.at - m);
+    // a closed cut-off stands for the next window (cutTickFor()): "Closed, ordered for Thu 19 Nov by Sam, 14:00"
+    var m = T.mins(), t = cutTickFor(c), roll = t.roll;
+    var d = t.d, past = c.at <= m, who = d ? cutByName(d) : '';
+    var st = d ? (roll ? 'Closed, ordered ' + cutDel(roll) : 'Ordered') + (who ? ' by ' + who : '') + (d.at ? ', ' + clock(d.at) : '') : past ? 'Closed, not ticked' : cutIn(c.at - m);
     var cls = d ? 'is-done' : past ? 'is-past' : c.at - m <= CUT_SOON ? 'is-soon' : '';
     if (named) {
-      var pending = !!cutWrites[c.key], known = cutState === 'ok';
+      var pending = !!cutWrites[t.key], known = cutState === 'ok';
       st = pending ? 'Not sent' : d ? st : !known ? 'Confirmation not checked' : past ? 'Closed, not confirmed' : ahead ? 'For tomorrow' : st;
       return '<li class="cut-o o-cut-row ' + (pending ? 'is-pending' : cls) + '"><a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a>' +
         '<span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span>' +
-        '<button type="button" class="cut-box o-cut-action" data-p="cut-tick" data-id="' + esc(c.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Undo order placed for ' : 'Order placed for ') + c.s.name + (c.at >= 1440 ? ', for tomorrow' : '')) + '"' + (cutCanTick() ? '' : ' disabled') + '>' + (d ? 'Undo' : 'Order placed' + (ahead ? ' for tomorrow' : '')) + '</button></li>';
+        '<button type="button" class="cut-box o-cut-action" data-p="cut-tick" data-id="' + esc(t.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Undo order placed for ' : 'Order placed for ') + c.s.name + (roll ? ', ' + cutDel(roll) : c.at >= 1440 ? ', for tomorrow' : '')) + '"' + (cutCanTick() ? '' : ' disabled') + '>' + (d ? 'Undo' : 'Order placed' + (ahead ? ' for tomorrow' : '')) + '</button></li>';
     }
-    return '<li class="cut-o ' + cls + '">' + (ro ? '<span class="cut-box cut-mark" aria-hidden="true">' + (d ? '&#10003;' : '') + '</span>' : '<button type="button" class="cut-box" data-p="cut-tick" data-id="' + esc(c.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Ordered from ' : 'Tick when ordered from ') + c.s.name) + '"' + (cutCanTick() ? '' : ' disabled') + '><span aria-hidden="true">' + (d ? '&#10003;' : '') + '</span></button>') +
+    return '<li class="cut-o ' + cls + '">' + (ro ? '<span class="cut-box cut-mark" aria-hidden="true">' + (d ? '&#10003;' : '') + '</span>' : '<button type="button" class="cut-box" data-p="cut-tick" data-id="' + esc(t.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Ordered from ' : 'Tick when ordered from ') + c.s.name + (roll ? ', ' + cutDel(roll) : '')) + '"' + (cutCanTick() ? '' : ' disabled') + '><span aria-hidden="true">' + (d ? '&#10003;' : '') + '</span></button>') +
       '<a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a><span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span></li>';
   }
   /* Orders C (9 Nov 2026): one compact disclosure, separate from the staff requests. Reuse the existing cut-off
      listener and clock; no catalogue, extra reads or saved disclosure state. Never open it on a live update. */
   function cutOrdSummaryHTML() {
     var xs = cutRowsNow().concat(cutAhead()).sort(function (a, b) { return a.at - b.at; });
-    var done = cutDone(), pending = xs.filter(function (c) { return !!cutWrites[c.key]; }).length;
-    var due = xs.filter(function (c) { return !done[c.key]; }), late = due.filter(function (c) { return c.at <= T.mins(); }).length;
+    // a closed cut-off whose next window is ordered is not overdue (cutTickFor())
+    var pending = xs.filter(function (c) { return !!cutWrites[cutTickFor(c).key]; }).length;
+    var due = xs.filter(function (c) { return !cutTickFor(c).d; }), late = due.filter(function (c) { return c.at <= T.mins(); }).length;
     var next = due[0], title = 'Supplier cut-offs', detail = '', detailHTML = '';
     if (pending) detail = 'Not sent. Waiting for confirmation.';
     else if (cutState === 'error') detail = 'Could not check confirmations.';
@@ -13082,6 +13152,14 @@ if (list.length) sg('oreg', 's');
     if (a === 'a-reset-pin') { resetPin(id); return; }
     // a Kitchen Overview row opens the page that changes its setting, in whichever room it lives
     if (a === 'k-row') { var kr = el.getAttribute('data-r'); if (!K_ROWS[kr]) return; S.kOpen = S.kOpen === kr ? '' : kr; S.kJump = S.kOpen; draw(); return; }
+    // April Fools, Preview: Home plays that joke now with that name (docs/april-fools.md). The verified admin only.
+    if (a === 'fools-play' || a === 'fools-any') {
+      var fj = a === 'fools-any' ? ((S.root && S.root.querySelector('#fools-any')) || {}).value : el.getAttribute('data-d');
+      if (!adminTabs() || !/^[A-L][12]$/.test(fj || '') || !window.LK_APP || !window.LK_APP.fools) return;
+      window.LK_APP.fools({ design: fj[0], version: +fj[1], name: a === 'fools-any' ? whoName() : el.getAttribute('data-n') });
+      return;
+    }
+    if (a === 'fools-retry') { foolsAdminErr = false; draw(); return; }
     if (a === 'k-open') { var kt = el.getAttribute('data-t'); if (intelligenceBusy() || !A_TAB_NAMES[kt] || kt === 'mail' && !mlOwner()) return; S.personId = ''; S.atab = kt; S.agLast = S.agLast || {}; S.agLast[adminGroupOf(kt)[0]] = kt; lsSet('lk.prep.atab', kt); draw(); adminToTop(); return; }
     // a person's page (admin pages step 5): open it from their row, and back to the list (also the top bar's Back)
     if (a === 'a-person') { S.personId = id; draw(); adminToTop(); return; }
@@ -16300,6 +16378,9 @@ if (list.length) sg('oreg', 's');
     homeGreet: homeGreet,
     // The signed-in person's staff id, only while their name shows (the kitchen mascot keeps one shuffled set per person).
     whoId: function () { return whoName() ? S.who : ''; },
+    // April Fools (docs/april-fools.md): the staff ids the joke deal is made from, the same on every phone (no read)
+    foolsIds: function () { return ptPeople().map(function (p) { return p.id; }); },
+    foolsSeen: foolsSeen, foolsMark: foolsMark,
     // the no-signal sentence while the kitchen's settings are not loaded and there is no signal, otherwise '' (js/app.js)
     offline: function () { return offWait() ? OFF_KITCHEN : ''; },
     // Sign in from the chef hat with nobody signed in: "Who are you?" on the prep list, then back to the page it came from.

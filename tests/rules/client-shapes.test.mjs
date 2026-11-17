@@ -309,7 +309,7 @@ row('js/prep.js loadMail(): open mail (mail, done == false; sous chef mail off)'
 row('js/prep.js loadMailDone(): mail ticked in the last 30 days', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(query(C(db, 'mail'), where('doneAt', '>=', NOW - 30 * DAY))) });
 row('js/prep.js todoLoad() and the Done list: todos, st == open and doneAt in 30 days', { ok: CHEFS, asks: CHEFS,
   run: db => Promise.all([getDocs(query(C(db, 'todos'), where('st', '==', 'open'))), getDocs(query(C(db, 'todos'), where('doneAt', '>=', NOW - 30 * DAY)))]) });
-row('js/prep.js cutWatch(): supplier order ticks listener (cutdone, day in today and tomorrow)', { ok: CHEFS, asks: CHEFS, run: db => listen(query(C(db, 'cutdone'), where('day', 'in', [TODAY, TMW]))) });
+row('js/prep.js cutWatch(): supplier order ticks listener (cutdone, day in the next 8 days from today, 17 Nov 2026)', { ok: CHEFS, asks: CHEFS, run: db => listen(query(C(db, 'cutdone'), where('day', 'in', [0, 1, 2, 3, 4, 5, 6, 7].map(n => kday(NOW + n * DAY))))) });
 row('js/supplier-store.js: the catalogue and a supplier (suppliers)', { ok: CHEFS, asks: CHEFS, run: db => Promise.all([getDocs(C(db, 'suppliers')), getDoc(D(db, 'suppliers/s1'))]) });
 row('js/prep.js psRead(): first active section page, server read with overflow sentinel', { ok: KITCHEN, asks: KITCHEN,
   run: db => getDocsFromServer(query(C(db, 'prepStandards'), where('sectionId', '==', 'larder'), where('archived', '==', false), orderBy(documentId()), limit(101))) });
@@ -794,6 +794,24 @@ row('js/functions.js undoTrip(): take back my own trip within 2 minutes', { ok: 
 row('js/functions.js undoTrip(): a chef takes back a trip someone else sent', { ok: CHEFS, asks: CHEFS,
   prep: r => { const a = T0 + 800 + ALL.indexOf(r); return put({ [TRIP(a)]: Object.assign(tripRec(a, 'zed', { sentAt: Date.now() - 10 * MIN }), { by: 'zed' }) }); },
   run: (db, w, r) => { const a = T0 + 800 + ALL.indexOf(r); return W(r, [['set', TRIP(a), { void: true, voidAt: Date.now(), voidBy: w }, true]]); } });
+// April Fools (17 Nov 2026, docs/april-fools.md): once a year per person on any device (fools/<YYYY-04-01>_<me>)
+const FOOL = w => `fools/2027-04-01_${w}`, foolRec = () => ({ day: '2027-04-01', at: Date.now() });
+row('js/prep.js foolsSeen(): has my joke played on another device this year (my own fools record, from the server)', { ok: KPINS, asks: KPINS,
+  prep: (r, w) => put({ [FOOL(w)]: { day: '2027-04-01', at: NOW, by: w } }), run: (db, w) => getDocFromServer(D(db, FOOL(w))) });
+row('js/prep.js foolsSeen(): the same question before it has played (no record yet)', { ok: KPINS, asks: KPINS,
+  prep: (r, w) => put({ [FOOL(w)]: null }), run: (db, w) => getDocFromServer(D(db, FOOL(w))) });
+row('js/prep.js foolsMark(): my joke started (fools/<1 April>_<me>, once)', { ok: KPINS, asks: KPINS,
+  prep: (r, w) => put({ [FOOL(w)]: null }), run: (db, w, r) => W(r, [['set', FOOL(w), foolRec()]]) });
+row('js/prep.js foolsMark(): written again from another device after the first (never changed; the joke is already kept)', { ok: [], asks: [],
+  prep: (r, w) => put({ [FOOL(w)]: { day: '2027-04-01', at: NOW, by: w } }), run: (db, w, r) => W(r, [['set', FOOL(w), foolRec()]]) });
+row('js/prep.js: another person\'s April Fools record, read or written (never sent)', { ok: GOOGLE, asks: [],
+  prep: (r, w) => put({ [FOOL(w === 'ann' ? 'sam' : 'ann')]: { day: '2027-04-01', at: NOW, by: w === 'ann' ? 'sam' : 'ann' } }),
+  run: (db, w) => getDocFromServer(D(db, FOOL(w === 'ann' ? 'sam' : 'ann'))) });
+row('js/prep.js: an April Fools record in another person\'s name (never sent)', { ok: [], asks: [],
+  prep: (r, w) => put({ [FOOL(w === 'ann' ? 'sam' : 'ann')]: null }),
+  run: (db, w, r) => { const o = w === 'ann' ? 'sam' : 'ann'; return W(r, [['set', FOOL(o), Object.assign(foolRec(), { by: o })]]); } });
+row('js/prep.js: an April Fools record for another day (never sent)', { ok: [], asks: [],
+  prep: (r, w) => put({ [`fools/2027-04-02_${w}`]: null }), run: (db, w, r) => W(r, [['set', `fools/2027-04-02_${w}`, { day: '2027-04-02', at: Date.now() }]]) });
 // who said Got it to a function on Home (fnseen, 10 Nov 2026): once, as myself; never changed or deleted
 const SEEN = (w, s, g) => `fnseen/f1_${w}_${s || 'week'}_${g || '1abc2'}`;
 const seenRec = (s, at, by) => Object.assign({ fid: 'f1', g: '1abc2', s: s || 'week', day: TODAY, at: at || Date.now() }, by ? { by } : {});
