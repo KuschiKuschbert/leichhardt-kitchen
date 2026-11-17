@@ -43,3 +43,17 @@ Five directions were judged ([proposal](proposal.md)): 1 one more time-sensitive
 ## For the owner
 
 A narrow direction 1 is the only thing most reviewers would draw: one plain-type line under his welcome on Home, copied from Coming up's first row (a function for everyone; a cut-off for chefs), gone when Coming up hides it. Round 2 would draw that against two alternatives. Or stop here: the welcome bubble already speaks to each person's day.
+
+## Across the core (the lead's plan after round 1, chosen in part on 17 November 2026)
+
+The owner asked: "can you think about how to make the mascot smarter across the core?" Round 1 said he talks on Home and not at the top of every page. The plan offered: **on Home he talks to you** (the welcome bubble, which already follows the person's shift, break and celebrations); **on each work page he turns up at that page's own finish line**, in the space the page already leaves, with the finished card's pattern, a state worked out from lines the page holds, only after the server has them, a still until a finish, no new read. Recipes, Wastage and cooling stay quiet.
+
+| Page | The page today | The finish he would say | Owner |
+| --- | --- | --- | --- |
+| Prep | the finished card, rarely reached | design A of the presence study makes it reachable | Build A |
+| Orders | "Everything on this list has been ordered." | "Every line ordered. 8 of 8." (idea 8) | Council next |
+| Functions | rounds ticked Sent | "Every round is out." (idea 6) | Council next |
+| Cleaning (when on for the team) | pack down ticks | "Kitchen is packed down. Good night, team." (idea 5) | Council next |
+| Transfers | "Nothing is out." | "Everything's back. Nothing out." (idea 7) | Not chosen |
+
+Round 2 of the Home line (direction 1) was not asked for.

@@ -203,3 +203,11 @@ Shown H1, H2 and H3, the owner answered: "I was wondering if we can replace the 
 **Quick check.** No tab, button, pop-up, step, read or write. Taps to see your section and break: 0, as today. Rows on a phone: the cards start 8 px lower. Headspace: one greeting, said once, by him. It changes the chosen heading design of 10 November (the named welcome, staff personalisation A) and the mascot's corner, card and room places, which is the owner's call, made here.
 
 **For the build.** The heading's bubble look and his room come with the page's first draw, so nothing jumps when his art arrives; if his art fails, or an older saved copy of `js/mascot.js` answers, the heading goes back to today's plain welcome. Signed out keeps its plain day heading, with no mascot. `js/app.js` (the heading's class), `js/mascot.js` (his place beside the words, a new `api`), `css/app.css`; `tests/mascot.test.js` (his place), the welcome and Home layout tests; `docs/kitchen-mascot.md`, `docs/design-patterns.md` (Home mascot), `docs/head-chef-decisions.md`. Not evidenced yet: seasonal ornaments beside the bubble, Extra large text, reduced motion, the Functions-only Home.
+
+## Chosen, 17 November 2026
+
+The owner answered three questions the same afternoon:
+
+- **The Home welcome said by the mascot: "Ship it now".** Built in pull request #741 (`docs/kitchen-mascot.md`, He says the welcome).
+- **Design A: "Build A".** As recommended: A built whole, drawn as R. Decision 2 (the rule it changes) and decision 3 (the large scene where it keeps tomorrow's heading and two of its lines in view, else the compact row) go with it. Built in its own pull request after #741, with the "Before release" list above.
+- **The other core pages: Orders, Functions and Cleaning** get a short council each before they are built: the mascot at that page's own finish line, in the page's empty space, with the finished card's pattern ("Every line ordered. 8 of 8.", "Every round is out.", "Kitchen is packed down. Good night, team."). Transfers was not chosen. Record: `docs/mascot-voice-options/brief.md` (Across the core).
