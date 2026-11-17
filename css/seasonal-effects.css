@@ -50,6 +50,8 @@
 #kb-festive-effects .kb-ambient-particle[data-ambient-motion="quiet"]{animation-name:kb-ambient-quiet;--opacity:.43}
 #kb-festive-effects .kb-ambient-particle[data-ambient-motion="step"]{animation-name:kb-ambient-step}
 #kb-festive-effects .kb-ambient-particle[data-ambient-motion="ribbon"]{animation-name:kb-ambient-ribbon}
+#kb-festive-effects .kb-ambient-particle[data-ambient-motion="burst"]{top:var(--y);animation-name:kb-ambient-burst;animation-timing-function:cubic-bezier(.2,.7,.3,1);--opacity:.92}
+#kb-festive-effects .kb-ambient-particle.is-centre[data-ambient-motion="burst"]{--opacity:.5}
 #kb-festive-effects .kb-ambient-particle[data-ambient-motif="night-star"]{--opacity:.48}
 #kb-festive-effects .kb-ambient-particle[data-ambient-motif="steam"]{--opacity:.32}
 .kb-ambient-horizon{position:absolute;inset:0;border:0;--kb-horizon-strength:.6;opacity:.28;background:linear-gradient(90deg,#5164772b,transparent 18%,transparent 82%,#5164772b),linear-gradient(0deg,#6a85972b,transparent 30%);animation:kb-ambient-horizon 14s ease-in-out infinite;transform-origin:center bottom}
@@ -76,6 +78,7 @@
 @keyframes kb-ambient-breathe{0%,100%{transform:scale(.92);opacity:calc(var(--opacity) * .55)}50%{transform:scale(1.08);opacity:var(--opacity)}}
 @keyframes kb-ambient-quiet{0%,100%{transform:translateY(5px) rotate(-3deg);opacity:calc(var(--opacity) * .7)}50%{transform:translateY(-10px) rotate(3deg);opacity:var(--opacity)}}
 @keyframes kb-ambient-step{0%{transform:translate3d(0,var(--distance),0);opacity:0}10%{opacity:var(--opacity)}32%{transform:translate3d(8px,65dvh,0)}47%{transform:translate3d(-3px,70dvh,0)}72%{transform:translate3d(12px,27dvh,0);opacity:var(--opacity)}100%{transform:translate3d(0,-35px,0);opacity:0}}
+@keyframes kb-ambient-burst{0%{transform:translate3d(0,70px,0) scale(.06);opacity:0}16%{transform:translate3d(0,0,0) scale(.1);opacity:var(--opacity)}42%{transform:translate3d(0,0,0) scale(1);opacity:var(--opacity)}100%{transform:translate3d(0,16px,0) scale(1.22);opacity:0}}
 @keyframes kb-ambient-ribbon{0%{transform:translate3d(0,var(--distance),0) rotate(-8deg);opacity:0}10%,88%{opacity:var(--opacity)}40%{transform:translate3d(-20px,60dvh,0) rotate(14deg)}70%{transform:translate3d(20px,25dvh,0) rotate(-12deg)}100%{transform:translate3d(0,-40px,0) rotate(10deg);opacity:0}}
 @keyframes kb-ambient-horizon{0%,100%{opacity:calc(var(--kb-horizon-strength) * .42);transform:scaleY(.94)}50%{opacity:var(--kb-horizon-strength);transform:scaleY(1.04)}}
 @keyframes kb-saber-ignite{0%,100%{transform:scaleY(.07);opacity:.55}15%,72%{transform:scaleY(1);opacity:1}86%{transform:scaleY(.12);opacity:.6}}
@@ -117,3 +120,15 @@
 #kb-festive-effects .complete-particle.is-arrival{animation-iteration-count:1;animation-fill-mode:both}
 #app.kb-at-rest .kb-season-note :is(svg,svg *){animation:none!important}
 #app.kb-at-rest .kb-season-note .kb-motion-addon{display:none}
+
+/* The New Year show (head chef, 17 Nov 2026): Home's own pieces burst for about 7 seconds on New Year's Eve and New Year's
+   Day. Over the page but below every sheet and pop-up (60 and up), never taking a tap; transform and opacity only, each piece
+   animated from js/seasonal/theme-effects.js with fixed values so the compositor runs it. */
+#kb-ny-show{position:fixed;inset:0;z-index:55;pointer-events:none;overflow:hidden}
+#kb-ny-show *{pointer-events:none}
+#kb-ny-show i{position:absolute;display:block;font-style:normal;opacity:0}
+#kb-ny-show .kb-ny-burst,#kb-ny-show .kb-ny-spray,#kb-ny-show .kb-ny-glitter{background:center/contain no-repeat}
+#kb-ny-show .kb-ny-rocket{width:6px;height:34px;margin:-34px 0 0 -3px;border-radius:3px;background:linear-gradient(to top,transparent,var(--kb-festive-accent) 55%,var(--kb-festive-paper));transform-origin:50% 100%}
+#kb-ny-show .kb-ny-spray{width:120px;height:120px;margin:-60px 0 0 -60px}
+#kb-ny-show .kb-ny-glitter{width:min(320px,48vw);height:60px;margin-left:min(-160px,-24vw)}
+@media(prefers-reduced-motion:reduce){#kb-ny-show{display:none!important}}
