@@ -1,6 +1,6 @@
 # A smarter mascot: time-sensitive and page-related messages
 
-17 November 2026, Queensland. **Round 1: Build smaller, 4 of 5 (the skeptic: Don't build). Round 2 not run yet: waiting for the owner.** No app code.
+17 November 2026, Queensland. **Round 1: Build smaller, 4 of 5 (the skeptic: Don't build). Home only; the welcome he says on Home went live in #741. The finish line of Orders and Functions: held a month by the owner (17 Nov 2026), asked again 17 Dec 2026.** No app code.
 
 [Proposal](proposal.md). The contracts, design references and pictures given to every reviewer: [`../mascot-presence-options/evidence-packet.md`](../mascot-presence-options/evidence-packet.md), pictures 1, 0-all-390, 23 and 24 in [`../mascot-presence-options/evidence/`](../mascot-presence-options/evidence/).
 
@@ -83,3 +83,5 @@ Round 2 of the Home line (direction 1) was not asked for.
 | A cleaning job reopened on another screen while one says "packed down": the page reads once, with no listener | skeptic, keeper | Cleaning: not until it has a settled finish and a live answer |
 
 **Recommendation for the owner.** Orders as a still beside its own finish sentence, built after design A has been seen in the kitchen for a few weeks (head chef, skeptic). Functions only with the new words, on the function's own page, if the owner still wants it. Cleaning not until it is on for the team.
+
+**The owner's answer, 17 November 2026:** "wait for the mascot on orders and functions just yet. remind me again in a month." Nothing is built. A reminder is set for 17 December 2026, when design A (today finishes today, live from #741) will have run a month, as the head chef and skeptic reviewers asked.
