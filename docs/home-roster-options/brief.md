@@ -119,3 +119,25 @@ The whole day is the head chef's On today and the staff's View today's full team
 **Mix:** B's rows with C's gap notes was considered and not recommended: the notes would fire every day for sections that All day dining does not use. A adds nothing to B that B lacks.
 
 **Recommendation: B, the day on one clock.** It shows each person once, with their whole day on the same clock as Today's team, so the head chef reads Home and the planner the same way. Main downside: sections are words under each name, and C is 210 px shorter on a phone. In the build, only "back 14:15" is bold, not the whole line under the name.
+
+### The mix, and D (17 November 2026)
+
+The head chef, after A, B and C: "Any verdict on mix? Would it be easier to also somehow implement just the name for people on on the day and the rosters start time? ... It still doesn't read super easy to me for an at a glance feature."
+
+**Mix verdict:** a blend of A, B and C does not fix the glance, because all three put sections, hours and breaks in one card and the eye sorts them each time. The mix that wins splits the jobs:
+- **The glance:** who is in and when they start, one entry per person in time order (from B), as short as possible (from C).
+- **The detail:** sections, breaks and finishes, one tap away in Today's team (Things 3: tuck the detail away).
+- **From A:** nothing.
+
+**D: who starts when.** Names grouped by roster start time, in time order. A line at the time now ("NOW 14:00") sits between the starts already passed and those still to come. "back 14:15" in bold for anyone on a break now. A split's second start lists them again, marked "split". The Today's team link stays under it. Preview: `preview/d.js`, `preview/d.css`; screenshots `d-gus-390.png`, `d-gus-1280.png`, `option-d.png`.
+
+| Measured (Preview) | Today (hours fixed) | B | C | **D** |
+| --- | ---: | ---: | ---: | ---: |
+| Head chef's card, 390 px | 898 px | 793 px | 583 px | **354 px** |
+| Head chef's card, 1280 px | 614 px | 793 px | 426 px | **354 px** |
+| Lines for 9 people | 15 entries | 9 rows | 11 entries | **6 start times** |
+| Taps: the whole day / sections and breaks | 0 / 0 | 0 / 0 | 0 / 0 | **0 / 1** (Today's team) |
+
+**Trade-off:** sections, break windows and finish times leave the card. They are one tap away in Today's team. A break now still shows. Not evidenced: a day without roster hours, four or more services, real fonts.
+
+**Lead's recommendation now: D** for the head chef's On today. It is the only option that reads at a glance (6 lines for 9 people). The detail the head chef already set lives in Today's team. Open: whether the staff's View today's full team keeps the board (they look for who is on which section) or takes D too.
