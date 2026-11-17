@@ -2,7 +2,7 @@
 
 17 November 2026, Queensland. The head chef asked: "On our roster/team today, can we just add a global break time, not having 3 different break times? But still have the option to add a second break time per staff member? In a smart way?" Asked what "global" means, the head chef chose **one break per person** for their whole day (not one per service), with a second break that can be added per person, and a smart default.
 
-**Status: round 1 Build smaller (3 of 5). Round 2: three designs, scored; see below.** Role-based analysis, not research with staff. [Proposal](proposal.md), [evidence packet](evidence-packet.md), [fixture](fixture.cjs), baseline runner [baseline-run.cjs](baseline-run.cjs) and its numbers [measured-baseline.txt](measured-baseline.txt).
+**Status: round 1 Build smaller (3 of 5). Round 2: A 18, C 11, B 7 (A first for all six); the combined preview D (A, C's capped default, the designer's phone layout and the new starter's words) reviewed by the designer, the new starter and the skeptic and repaired. Recommendation: D. Waiting for the head chef's choice.** Role-based analysis, not research with staff. [Proposal](proposal.md), [evidence packet](evidence-packet.md), [fixture](fixture.cjs), baseline runner [baseline-run.cjs](baseline-run.cjs) and its numbers [measured-baseline.txt](measured-baseline.txt).
 
 ## Why it came up
 
@@ -181,29 +181,68 @@ Leading findings from the scorers:
 
 ## Combined preview: D, the mix
 
-Lead's synthesis of the scorers' own parts; `window.__ob = 'D'`, the same patch; runners `preview-run.cjs D`, `after-run.cjs D`, `spread-run.cjs`; raw `measured-mix.txt`, `measured-spread.txt`. **Review status: focused follow-up by the designer, the new starter and the skeptic (below); not re-scored by the whole council.**
+Lead's synthesis of the scorers' own parts, then repaired after a focused follow-up (below); `window.__ob = 'D'`, the same patch; runners `preview-run.cjs D`, `after-run.cjs D`, `spread-run.cjs`; raw `measured-mix.txt`, `measured-spread.txt`. **Review status: focused follow-up by the designer, the new starter and the skeptic; all three said D beats A; their must-fix items are repaired in the preview. Not re-scored by the whole council.**
 
-- **Each person's break line**, under the bar and the sentence ("Roster 12:00 to 20:00 · Break 15:45 to 16:15", "No break yet" when there is none): [Break 15:45 ▾] [30 min ▾] [+ 2nd break]; the second reads "2nd break 19:00". While a person has no break, **+ Break** sits by their name.
+- **Each person's break line**, under the bar and the sentence: [Break 15:45 ▾] [30 min ▾] [+ 2nd break], the second reading "2nd break 19:00", a split's length "2.5 h". While a person has no break, **+ Break** sits by their name and the sentence says "No break yet". + 2nd break has the quiet Add a service look, 8 px from the pickers.
 - **The service lines** keep the service, Take off and the Section picker. No break controls.
-- **+ Break's default**: the middle of their day (a split when one unbroken stretch is 9 hours or more; the next break, the middle of the longest stretch without one); moved to the nearest free time within an hour when someone else on the same service is away then; else kept, with who is away named. The tap says it: "Dev: break 15:45 to 16:15, in the middle of their day (Mo is away then too). Not saved yet."
-- **Take off**: a break another service they keep still holds stays; one that goes is named ("Mo taken off Lunch. Split 14:30 to 17:00 goes too. Not saved yet. Undo"); Undo puts it back.
-- **Spread them** stays per service and leaves anyone with two breaks, or a break then, as they were, by name.
-- **Gone:** 6 of the 15 + Break buttons, the per-service break pickers, the Fill and tag ideas.
+- **+ Break's default**: the middle of their day; a split when one unbroken stretch is 9 hours or more; the next break, the middle of the longest stretch without one; on today's date never a time already gone. When someone else on the same service is on break then, the nearest free time within an hour; else kept, and the tap names them. The tap says it in one sentence: "Mo: split 14:30 to 17:00, an 11 hour day. Not saved yet." / "Dev: break 15:45 to 16:15, the middle of their day. Mo is on break then too. Not saved yet."
+- **The sentence warns only for the real mistake**: when nobody else is on that service during the break, "Break 15:45 to 16:15 (nobody else on All day 15:45 to 16:00)". A day with a busy time on every service is also covered by the Too few band, as now.
+- **Take off**: a break another service they keep still holds stays; one that goes is said as going ("Mo taken off Lunch. Split 14:30 to 17:00 goes too. Not saved yet. Undo"); Undo puts it back.
+- **Spread them** stays per service; it leaves anyone with a break of that kind already, or a break then, as they were, by name ("Left as they were (a break already, or a break then): Gus, Sam, Dev.").
+- **Gone:** 6 of the 15 + Break buttons, the per-service break pickers. Not taken: B's list, C's Fill and tags.
 
-| Measure (Preview) | Today | A | **D, the mix** |
+| Measure (Preview: stand-in, fallback fonts, admin session, clock 14:00) | Today | A | **D, the mix** |
 | --- | ---: | ---: | ---: |
 | + Break buttons, 9 people | 15 | 9 | **9** |
-| Mo: one tap on + Break | Break 12:15 to 12:45 | Split 14:30 to 17:00 | **Split 14:30 to 17:00**, said why |
-| Dev: one tap | 13:15 (Lunch line) | 15:45 | **15:45, "(Mo is away then too)"** |
+| Mo: one tap on + Break | Break 12:15 to 12:45 | Split 14:30 to 17:00 | **Split 14:30 to 17:00**, "an 11 hour day" |
+| Dev: one tap | 13:15 (Lunch line) | 15:45, nothing said | **15:45, "Mo is on break then too", and "(nobody else on All day 15:45 to 16:00)" stays in the row** |
+| Gus: one tap at 14:00 on the day | 11:15 (already gone) | 11:15 (already gone) | **14:00, "the first time left today"** |
 | Mo: split 15:00 and a 2nd break 19:00 | 5 taps, still "(outside their hours)" | 4 | **4** |
 | The day at the planner's times, then Save, 1280 | 26 | 26 | **26** |
-| The day at the book's times, then Save, 1280 | 21, Too few 19:00 to 19:15 | 21 | **21**, no Too few |
-| Row px, everyone a break, Mo / Bea / Gus, 390 | 413 / 251 / 352 | 436 / 275 / 376 | **468 / 256 / 357** (Mo's split line wraps) |
-| same, 1280 | 213 / 159 / 161 | 237 / 133 / 185 | **237 / 133 / 210** |
-| Row px, no breaks, 390 | 369 / 207 / 308 | 387 / 226 / 327 | **387 / 226 / 327** |
-| Spread on all three services after Mo's split | Mo 4, Dev 3 | Mo 4, Dev 3 | **Mo 2, Dev 2**, the rest named |
+| The day at the book's times, then Save, 1280 | 21, Too few 19:00 to 19:15 | 21 | **21**, no Too few; the All day gap named |
+| Row px, no breaks, Mo / Bea / Gus, 390 | 369 / 207 / 308 | 387 / 226 / 327 | **387 / 226 / 327** |
+| Row px, everyone a break, 390 | 413 / 251 / 352 | 436 / 275 / 376 | **438 / 256 / 357** (Mo's longer sentence is the All day warning) |
+| same, 1280 | 213 / 159 / 161 | 237 / 133 / 185 | **237 / 133 / 185** |
+| Spread on all three services after Mo's split | Mo 4, Dev 3 | Mo 4, Dev 3 | **Mo 2, Dev 1**, the rest named |
+| An old day with three breaks on one service | | all shown | **all shown, "2nd" and "3rd break"; no + 2nd break** |
 | Sideways scroll, browser errors (390, 768, 1280) | none | none | **none** |
 
-Screenshots: `D-plan-390.png`, `D-rows-390.png`, `D-rows2-390.png` (Dev, one break line), `D-mo-390.png` (Mo, split and 2nd break), `D-mo-768.png`, `D-day-1280.png`.
+Screenshots: `D-plan-390.png`, `D-rows-390.png`, `D-rows2-390.png`, `D-mo-390.png`, `D-mo-768.png`, `D-day-1280.png`.
 
-**Contract fit:** sage book and paper: Works. Words on every state, "Not saved yet" on every change, the Take off and Undo words: Works. No orange for a fact (B's "Away with" not taken): Works. Real contrast, keyboard focus, real fonts: Not evidenced. A failed Save, a lock and a second writer: unchanged code paths, Not evidenced.
+**Contract fit:** sage book and paper: Works. Words on every state, "Not saved yet" on every change, Take off and Undo: Works. No orange for a fact: Works (the warning is in words in the sentence, muted ink). Rows with a break the height of today's on a phone, except where the warning adds words: Works. Real contrast, keyboard focus, real fonts, the large text setting: Not evidenced. A failed Save, a lock, a second writer: unchanged code paths, Not evidenced.
+
+### Follow-up on D (designer, new starter, skeptic) and the repairs
+
+| Finding | Who | Evidence | Repaired in the preview |
+| --- | --- | --- | --- |
+| Mo's split line wraps at 390 ("Split 14:30", "Split 2.5 h", "+ 2nd break") | Designer, new starter | Measured, 468 px | The length reads "2.5 h"; one line; Mo 438 px with the warning, else as Bea |
+| "+ 2nd break" looks like a picker, 6 px from it | Designer | Screenshot | Quiet Add a service look, 8 px gap |
+| At 1280 Gus's row 210 px: the pickers wrapped before the sentence | Designer | Measured | The sentence wraps first; 185 px |
+| The split message is 30 words, says "split" twice | Designer, new starter | Words | "Mo: split 14:30 to 17:00, an 11 hour day. Not saved yet." |
+| "away" can read as off work; the clash only shows until the next tap | New starter | Words | "on break"; the row keeps a warning when nobody else is on that service |
+| "Break 19:00" in the sentence and messages for a 2nd break | New starter | Words | "2nd break" everywhere |
+| Breaks set on the day land in the past (stand-in clock 14:00: Ari 11:30, Cal 12:00) | Skeptic | **Reproduced** (also in A and today's page) | On today's date the default starts at the next quarter hour: "the first time left today" |
+| Spread gave Dev a second break nobody chose (Lunch, then All day) | Skeptic | **Reproduced** | Spread leaves anyone with a break of that kind already as they were, by name |
+| Nobody on All day 15:45 to 16:00 and the Too few band is silent (All day has no busy time) | Skeptic | **Reproduced** | Named in the row; the head chef can also give All day a busy time of 1 (Admin, Kitchen, Shifts), no new code |
+| "Sam and Eli and Ivy and Jo" | Skeptic | Words | Commas: "Sam, Eli and Ivy" |
+| A quick second tap on + Break | Skeptic | **Checked**: lands on the name block in D, no second break (A added one) | Works |
+
+**Still Not evidenced:** real fonts and contrast on a phone; a held picker under the new keys; two breaks with the same start (the build merges them); a phone on the old code reading a break saved across a service edge.
+
+## Recommendation
+
+**Recommend D, the mix: A's break line on each person, C's spread-apart default capped at an hour, the designer's phone layout and the new starter's words, with Spread capped.** All six scorers put A first (A 18, C 11, B 7) and five asked for C's default on top; the three follow-up reviewers each said D beats A. It does what was asked: one break per person for the whole day, + 2nd break for anyone, and a smart default that says why (a split for a long day, the middle of the day, apart from whoever is on break, never a time already gone). + Break buttons go from 15 to 9; Mo's split comes back; a 15:00 or 14:45 break needs no hunting; the one real mistake (nobody left on a service) is named in the row. Linear (one place for each job), Airbnb (the day, the time and the break together), Todoist (a known default, visible and editable), Duolingo (each tap says what it did), Headspace (one name for each thing).
+
+**Main downside:** it saves no taps on a planned day (26 either way); on a phone a row with no break is 19 px taller (the + Break chip by the name), and about ten test files are rewritten.
+
+**Not recommended:** B's list (two places for one break; it moved under the thumb, reproduced) and C's Fill (saved breaks nobody checked; its tags outlived Save, reproduced).
+
+**Questions for the head chef:**
+1. **Choose D?** (Recommended.)
+2. **Two breaks at most per person** (old days with three still show all three). Right?
+3. **Fill their breaks (one tap for the whole day):** not recommended now. Later, inside "Copy, clear or spread breaks", if you want it?
+4. **All day has no busy time**, so the Too few band never covers it. Set All day's people needed to 1 in Admin, Kitchen, Shifts? (A setting, no code.)
+
+## Build plan (after the choice, this branch)
+
+One pull request: `js/prep.js` (the break line and its helpers in place of the per-service break pickers and + Break; one service helper for a break; pickers keyed by the person and the break's start with the date; identical breaks merged on load; the default with its words; Take off and Undo; the too-few mark by minutes; Go to <name>'s break to the person's line; Spread capped; Home's "· All day" after a break dropped), `css/app.css`, `docs/design-patterns.md` and `tests/design-patterns.test.js`, `README.md`, `docs/head-chef-decisions.md`; the ten test files that use `tm-addbr`, `tm-at:` and `tm-len:` rewritten, new checks in `team-row-service` and `team-picker-context` (a held picker after a break moves; two same-start breaks; a quick second tap; Spread's cap; a break across a service edge counted by Too few; the past-time rule; a saved day read back unchanged). Remeasure the built app at 390, 768 and 1280 as the admin and as a sous chef on `#/team`. No new read, listener, rule or saved field.

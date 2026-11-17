@@ -1,8 +1,8 @@
 diff --git a/css/app.css b/css/app.css
-index ab99fd2..988b701 100644
+index ab99fd2..4f61845 100644
 --- a/css/app.css
 +++ b/css/app.css
-@@ -5790,6 +5790,31 @@ html:has(.tm-focus-page) {
+@@ -5790,6 +5790,35 @@ html:has(.tm-focus-page) {
  .tm-notebook.tm-focus-page .tm-tlsvc :is(.tm-tlsvc-brs, .tm-tlsvc-more) :is(select, .ux-picker-trigger) { width: auto; max-width: 100%; min-height: 44px; }
  .tm-notebook.tm-focus-page .tm-tlsvc-more :is(select, .ux-picker-trigger) { border: 1px solid var(--faint); color: var(--muted); font-size: .875rem; }
  .tm-tlsvc-add .chip { min-height: 44px; }
@@ -17,6 +17,10 @@ index ab99fd2..988b701 100644
 +.ob-dayline > .ob-line { margin: 0; }
 +.ob-dayline > .ob-line:has(.ob-one) { flex-basis: 100%; }
 +.tm-plan > .tm-tlrow > .tm-grid-who > .ob-addwho { margin-left: auto; }
++/* D: + 2nd break is the quiet Add a service look, 8 px from the pickers; from 1100 px the sentence wraps before the pickers */
++.ob-dayline > .ob-line { gap: .5rem; }
++.tm-notebook.tm-focus-page .ob-line .ob-add.chip { border: 1px solid var(--faint); color: var(--muted); background: transparent; font-size: .875rem; }
++@media (min-width: 1100px) { .ob-dayline { flex-wrap: nowrap; } .ob-dayline > .tm-roster-time { flex: 1 1 auto; min-width: 12rem; } .ob-dayline > .ob-line:has(.ob-one) { flex: 0 0 auto; } }
 +@media (min-width: 600px) { .tm-plan > .tm-tlrow > .tm-grid-who > .ob-addwho { margin: .25rem 0 0; } }
 +@media (min-width: 1100px) { .ob-dayline > .ob-line:has(.ob-one) { flex-basis: auto; } .ob-dayline > .tm-roster-time { flex: 0 1 auto; } }
 +.ob-list { margin: .8rem 0 0; padding: .6rem 0 0; border-top: 2px solid var(--ink); }

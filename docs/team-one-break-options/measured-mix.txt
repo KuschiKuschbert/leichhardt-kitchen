@@ -2,37 +2,37 @@ D 390 + Break buttons on the page: 9
 D 390 row px Mo, Bea, Gus: [387,226,327]
 D 390 rows in one screen from the first row: {"rows":0,"medianRow":226,"list":2616}
 D 390 rows in one screen from Ari: {"rows":1,"medianRow":226,"list":2616}
-D 390 T1 Mo + Break once: {"taps":1,"words":"Roster 10:00 to 21:00 · Split 14:30 to 17:00","said":"Mo: split 14:30 to 17:00, a split, as the day runs 11 hours without one. Not saved yet."}
-D 390 Gus + Break once: {"words":"Roster: Lunch 08:00 to 15:00, Dinner 17:00 to 21:00 · Break 11:15 to 11:45","said":"Gus: break 11:15 to 11:45, in the middle of their day. Not saved yet."}
-D 390 Dev + Break once: {"words":"Roster 12:00 to 20:00 · Break 15:45 to 16:15","said":"Dev: break 15:45 to 16:15, in the middle of their day (Mo is away then too). Not saved yet."}
+D 390 T1 Mo + Break once: {"taps":1,"words":"Roster 10:00 to 21:00 · Split 14:30 to 17:00","said":"Mo: split 14:30 to 17:00, an 11 hour day. Not saved yet."}
+D 390 Gus + Break once: {"words":"Roster: Lunch 08:00 to 15:00, Dinner 17:00 to 21:00 · Break 14:00 to 14:30","said":"Gus: break 14:00 to 14:30, the first time left today. Not saved yet."}
+D 390 Dev + Break once: {"words":"Roster 12:00 to 20:00 · Break 15:45 to 16:15 (nobody else on All day 15:45 to 16:00)","said":"Dev: break 15:45 to 16:15, the middle of their day. Mo is on break then too. Not saved yet."}
 D 390 Mo break times offered: [35]
-D 390 T3 Mo split 15:00 and a second break 19:00: {"taps":4,"words":"Roster 10:00 to 21:00 · Split 15:00 to 17:30, Break 19:00 to 19:30"}
+D 390 T3 Mo split 15:00 and a second break 19:00: {"taps":4,"words":"Roster 10:00 to 21:00 · Split 15:00 to 17:30, 2nd break 19:00 to 19:30"}
 D 390 sideways scroll, errors: {"over":false,"errors":[]}
 D 768 + Break buttons on the page: 9
 D 768 row px Mo, Bea, Gus: [227,114,171]
 D 768 rows in one screen from the first row: {"rows":4,"medianRow":114,"list":1444}
 D 768 rows in one screen from Ari: {"rows":5,"medianRow":114,"list":1444}
-D 768 T1 Mo + Break once: {"taps":1,"words":"Roster 10:00 to 21:00 · Split 14:30 to 17:00","said":"Mo: split 14:30 to 17:00, a split, as the day runs 11 hours without one. Not saved yet."}
-D 768 Gus + Break once: {"words":"Roster: Lunch 08:00 to 15:00, Dinner 17:00 to 21:00 · Break 11:15 to 11:45","said":"Gus: break 11:15 to 11:45, in the middle of their day. Not saved yet."}
-D 768 Dev + Break once: {"words":"Roster 12:00 to 20:00 · Break 15:45 to 16:15","said":"Dev: break 15:45 to 16:15, in the middle of their day (Mo is away then too). Not saved yet."}
+D 768 T1 Mo + Break once: {"taps":1,"words":"Roster 10:00 to 21:00 · Split 14:30 to 17:00","said":"Mo: split 14:30 to 17:00, an 11 hour day. Not saved yet."}
+D 768 Gus + Break once: {"words":"Roster: Lunch 08:00 to 15:00, Dinner 17:00 to 21:00 · Break 14:00 to 14:30","said":"Gus: break 14:00 to 14:30, the first time left today. Not saved yet."}
+D 768 Dev + Break once: {"words":"Roster 12:00 to 20:00 · Break 15:45 to 16:15 (nobody else on All day 15:45 to 16:00)","said":"Dev: break 15:45 to 16:15, the middle of their day. Mo is on break then too. Not saved yet."}
 D 768 Mo break times offered: [35]
-D 768 T3 Mo split 15:00 and a second break 19:00: {"taps":4,"words":"Roster 10:00 to 21:00 · Split 15:00 to 17:30, Break 19:00 to 19:30"}
+D 768 T3 Mo split 15:00 and a second break 19:00: {"taps":4,"words":"Roster 10:00 to 21:00 · Split 15:00 to 17:30, 2nd break 19:00 to 19:30"}
 D 768 sideways scroll, errors: {"over":false,"errors":[]}
 D 1280 + Break buttons on the page: 9
 D 1280 row px Mo, Bea, Gus: [213,109,161]
 D 1280 rows in one screen from the first row: {"rows":5,"medianRow":109,"list":1349}
 D 1280 rows in one screen from Ari: {"rows":6,"medianRow":109,"list":1349}
-D 1280 T1 Mo + Break once: {"taps":1,"words":"Roster 10:00 to 21:00 · Split 14:30 to 17:00","said":"Mo: split 14:30 to 17:00, a split, as the day runs 11 hours without one. Not saved yet."}
-D 1280 Gus + Break once: {"words":"Roster: Lunch 08:00 to 15:00, Dinner 17:00 to 21:00 · Break 11:15 to 11:45","said":"Gus: break 11:15 to 11:45, in the middle of their day. Not saved yet."}
-D 1280 Dev + Break once: {"words":"Roster 12:00 to 20:00 · Break 15:45 to 16:15","said":"Dev: break 15:45 to 16:15, in the middle of their day (Mo is away then too). Not saved yet."}
+D 1280 T1 Mo + Break once: {"taps":1,"words":"Roster 10:00 to 21:00 · Split 14:30 to 17:00","said":"Mo: split 14:30 to 17:00, an 11 hour day. Not saved yet."}
+D 1280 Gus + Break once: {"words":"Roster: Lunch 08:00 to 15:00, Dinner 17:00 to 21:00 · Break 14:00 to 14:30","said":"Gus: break 14:00 to 14:30, the first time left today. Not saved yet."}
+D 1280 Dev + Break once: {"words":"Roster 12:00 to 20:00 · Break 15:45 to 16:15 (nobody else on All day 15:45 to 16:00)","said":"Dev: break 15:45 to 16:15, the middle of their day. Mo is on break then too. Not saved yet."}
 D 1280 Mo break times offered: [35]
-D 1280 T3 Mo split 15:00 and a second break 19:00: {"taps":4,"words":"Roster 10:00 to 21:00 · Split 15:00 to 17:30, Break 19:00 to 19:30"}
+D 1280 T3 Mo split 15:00 and a second break 19:00: {"taps":4,"words":"Roster 10:00 to 21:00 · Split 15:00 to 17:30, 2nd break 19:00 to 19:30"}
 D 1280 sideways scroll, errors: {"over":false,"errors":[]}
 D 1280 T5 whole day at the planner's times, then Save: {"taps":26,"saved":true}
-D 1280 T6 whole day at the book's times, then Save: {"taps":21,"said":"","breaks":["gus Break 11:15 to 11:45","sam Break 18:30 to 19:00","ari Break 12:15 to 12:45","bea Break 12:45 to 13:15","cal Break 11:45 to 12:15","dev Break 15:45 to 16:15","eli Break 19:00 to 19:30","fen Break 18:00 to 18:30","mo Split 14:30 to 17:00"],"tooFew":""}
-D 390 old day, Ari three breaks: {"pickers":3,"add":0,"words":"Roster 10:00 to 15:00 · Break 11:00 to 11:30, Break 12:30 to 13:00, Break 14:00 to 14:30"}
+D 1280 T6 whole day at the book's times, then Save: {"taps":21,"said":"","breaks":["gus Break 14:00 to 14:30","sam Break 18:30 to 19:00","ari Break 14:30 to 15:00","bea Break 14:00 to 14:30","cal Break 14:00 to 14:30","dev Break 15:45 to 16:15 (nobody else on All day 15:45 to 16:00)","eli Break 19:00 to 19:30","fen Break 18:00 to 18:30","mo Split 14:30 to 17:00 (nobody else on All day 15:45 to 16:00)"],"tooFew":""}
+D 390 old day, Ari three breaks: {"pickers":3,"add":0,"words":"Roster 10:00 to 15:00 · Break 11:00 to 11:30, 2nd break 12:30 to 13:00, 3rd break 14:00 to 14:30"}
 D 390 take Mo off Lunch (split 14:30): {"said":"Mo taken off Lunch. Split 14:30 to 17:00 goes too. Not saved yet. Undo","words":"Roster 15:00 to 21:00 · No break yet"}
-D 390 Undo: {"said":"Undone: Mo is back on Lunch with their section and breaks. Not saved yet.","words":"Roster 10:00 to 21:00 · Split 14:30 to 17:00"}
+D 390 Undo: {"said":"Undone: Mo is back on Lunch with their section and breaks. Not saved yet.","words":"Roster 10:00 to 21:00 · Split 14:30 to 17:00 (nobody else on All day 15:30 to 16:00)"}
 D 390 take off: errors: []
-D 390 everyone a break: {"mo":468,"bea":256,"gus":357,"list":2936,"breakList":0,"fillLine":""}
-D 1280 everyone a break: {"mo":237,"bea":133,"gus":210,"list":1588,"breakList":0,"fillLine":""}
+D 390 everyone a break: {"mo":438,"bea":256,"gus":357,"list":2926,"breakList":0,"fillLine":""}
+D 1280 everyone a break: {"mo":237,"bea":133,"gus":185,"list":1563,"breakList":0,"fillLine":""}
