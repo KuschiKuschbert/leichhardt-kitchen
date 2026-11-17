@@ -141,3 +141,9 @@ The head chef, after A, B and C: "Any verdict on mix? Would it be easier to also
 **Trade-off:** sections, break windows and finish times leave the card. They are one tap away in Today's team. A break now still shows. Not evidenced: a day without roster hours, four or more services, real fonts.
 
 **Lead's recommendation now: D** for the head chef's On today. It is the only option that reads at a glance (6 lines for 9 people). The detail the head chef already set lives in Today's team. Open: whether the staff's View today's full team keeps the board (they look for who is on which section) or takes D too.
+
+**D with the section now** (head chef: "And maybe the section they're rostered on at the current time?"):
+- **Each name** has a quiet second line: the section they are rostered on now; before their day, the one they start on; after it, the last one. A chef with no section reads as their role ("Head chef").
+- **A part of the day already over** goes grey and says "until 15:00", from the roster, not a claim about who is still there.
+- **The "NOW" line** sits before the first start still to come: at the top before anyone starts, at the end once everyone has.
+- **Height:** 467 px at 14:00 on a phone, 482 at 07:00, 435 at 17:30 (Preview). Screenshots `d-gus-390.png`, `d-through-the-day.png`, `option-d.png`.

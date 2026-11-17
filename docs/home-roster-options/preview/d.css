@@ -11,3 +11,11 @@
 .hm-st-now::before, .hm-st-now::after { content: ''; flex: 1; border-top: 2px solid var(--ink); }
 .hm-st-now + .hm-st { border-top: 0; }
 .hm-st-n .hm-tp, .hm-st-n .hm-tp + .hm-tp { margin: 0; font: inherit; }
+.hm-st-n { gap: .35rem 1.1rem; }
+.hm-st-n .hm-tp { display: inline-flex; flex-direction: column; line-height: 1.2; }
+.hm-st-n .hm-tp b { font-weight: 600; }
+.hm-st-n .hm-tp small.hm-st-sec { display: block; font-size: .8125rem; font-weight: 400; color: var(--muted); }
+.hm-st-n .hm-tp small.hm-st-back { display: block; }
+.hm-st { align-items: flex-start; }
+.hm-st-t { padding-top: .05rem; }
+.hm-st-n .hm-tp.is-gone b { font-weight: 400; color: var(--muted); }
