@@ -5663,11 +5663,14 @@ html:has(.tm-focus-page) {
 .wall-h.hm-welcome.hm-say::before { content: ''; position: absolute; left: -15px; bottom: 12px; border: 8px solid transparent; border-right: 14px solid var(--ink); border-left: 0; }
 .wall-h.hm-welcome.hm-say::after { content: ''; position: absolute; left: -10px; bottom: 14px; border: 6px solid transparent; border-right: 10px solid var(--surface-paper); border-left: 0; }
 .wall-h.hm-welcome.hm-say + .wall-date { margin-top: 6px; margin-left: var(--say-room); }
+/* On a phone the bubble costs the cards as little height as it can: a long or very long greeting is smaller, so a
+   40-character name at Extra large text keeps three coworkers above the tab bar (tests/staff-welcome-layout.test.js). */
 @media (max-width: 767px) {
   #main.wall-main { --say-room: 60px; }
-  .wall-h.hm-welcome.hm-say { padding: 4px 12px 6px; border-radius: 14px; font-size: 1.6rem; }
-  .wall-h.hm-welcome.hm-say.hm-welcome-long { font-size: 1.35rem; }
-  .wall-h.hm-welcome.hm-say.hm-welcome-compact { font-size: 1.15rem; }
+  .wall-h.hm-welcome.hm-say { padding: 3px 12px 4px; border-radius: 14px; font-size: 1.6rem; }
+  .wall-h.hm-welcome.hm-say.hm-welcome-long { font-size: 1.25rem; line-height: 1.1; }
+  .wall-h.hm-welcome.hm-say.hm-welcome-compact { font-size: 0.9rem; line-height: 1.1; }
+  .wall-h.hm-welcome.hm-say + .wall-date { margin-top: 3px; }
 }
 /* The finished prep list (owner, 10 Nov 2026; docs/kitchen-mascot.md): the mascot beside the page's own words when
    every line is ticked and sent. In the page, never over it. The bubble is a speech shape in the green that means
