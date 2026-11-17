@@ -5363,7 +5363,7 @@
       if (!M || typeof M.sprite !== 'function') {
         // An answer without sprite() is an older saved copy (the saved shell hands that back with no signal):
         // one try, like a failed download, never a loop.
-        if (!finLoad && !finOff && window.LK_APP && window.LK_APP.load) finLoad = window.LK_APP.load('js/mascot.js?v=2').then(function () {
+        if (!finLoad && !finOff && window.LK_APP && window.LK_APP.load) finLoad = window.LK_APP.load('js/mascot.js?v=3').then(function () {
           finLoad = null;
           if (window.LK_MASCOT && typeof window.LK_MASCOT.sprite === 'function') finPaint(); else { finOff = true; finPaint(); }
         }, function () { finLoad = null; finOff = true; finPaint(); });

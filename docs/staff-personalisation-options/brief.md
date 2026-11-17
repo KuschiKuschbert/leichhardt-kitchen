@@ -190,6 +190,10 @@ Publish the selected change as a small reversible application PR after final ver
 
 The initial draft was an audit and design handoff. The selected implementation is now verified locally; CI, queue state, merge and deployed-client evidence remain separate release states. No live deployment is asserted here.
 
+## Said by the mascot, 17 November 2026
+
+The owner chose to replace the big welcome heading with the mascot saying it, keeping the randomiser (`docs/head-chef-decisions.md`, 17 November 2026). The heading keeps its element, words, randomiser, escaping and identity rules above; it is drawn as his speech bubble, smaller, with him on its left. Where he cannot stand there it is the heading described here. The detail is in `docs/kitchen-mascot.md` (He says the welcome). The long-name check in `tests/staff-welcome-layout.test.js` now allows the bubble's own extra lines above the cards and nothing else.
+
 ## Varied welcomes, 10 November 2026
 
 The owner asked to add a randomiser for different welcomes, combined with celebrations. This extends the chosen A heading. Its source baseline is `7f85629`; the earlier implementation and measurements above describe the original fixed welcome.
