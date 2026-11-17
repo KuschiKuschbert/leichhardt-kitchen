@@ -54,7 +54,8 @@ const saved = p => p.evaluate(k => window.__fake.dump()[k], TEAM);
 const page = p => p.evaluate(() => document.body.innerText);
 // a person's row: the services they work, in the order shown, and the one sentence of their hours and breaks
 const lines = (p, id) => p.$$eval('.tm-tlrow[data-id="' + id + '"] .tm-tlsvc', l => l.map(e => e.dataset.sh).join());
-const words = (p, id) => p.$eval('.tm-tlrow[data-id="' + id + '"] p.tm-roster-time', e => e.textContent);
+// (17 Nov 2026) the roster hours are the label under the name, "Rostered hours: 12:00 to 15:00"; the words joined as read
+const words = (p, id) => p.$eval('.tm-tlrow[data-id="' + id + '"]', r => { const t = r.querySelector('.tm-rostered'); return (t ? t.textContent.replace(/\s+/g, ' ').trim() + ' · ' : '') + r.querySelector('p.tm-roster-time').textContent; });
 const times = async (p, k) => (await options(p, k)).filter(t => t !== 'No break');
 // the control that has the focus, by its key: a picker's trigger names the select behind it
 const focused = p => p.evaluate(() => { const a = document.activeElement, s = a && (a._uxSource || a); return !s || s === document.body ? 'page' : s.getAttribute('data-k') || [s.getAttribute('data-p'), s.getAttribute('data-id'), s.getAttribute('data-sh')].filter(Boolean).join(':'); });
@@ -77,7 +78,7 @@ const readyNext = p => L.waitFor(p, () => document.querySelectorAll('.tm-person-
   await L.teamWarm(p, tomorrow, ready);   // tomorrow's week read first: on a Sunday it is next week
   ok(await p.$$eval('.tm-planhead .tm-grid-sh > b', l => l.map(e => e.textContent).join()) === 'Lunch,All day dining,Dinner', 'time order: the head runs Lunch 10:00, All day dining 15:00, Dinner 17:00, not the saved order');
   ok(await lines(p, 'mo') === 'lunch,adl,dinner' && JSON.stringify(await options(p, 'tm-addsvc:dev')) === JSON.stringify(['Add a service', 'Smoker 06:00 to 15:00', 'All day dining 15:00 to 17:00', 'Dinner 17:00 to 21:00']), 'time order: Mo\'s lines run Lunch, All day dining, Dinner, and Dev\'s Add a service lists Smoker 06:00, All day dining, Dinner (' + (await options(p, 'tm-addsvc:dev')).join(', ') + ')');
-  ok(await words(p, 'dev') === 'Roster 12:00 to 15:00 · No break yet', 'words: Dev\'s row says his hours and that no break is set (' + await words(p, 'dev') + ')');
+  ok(await words(p, 'dev') === 'Rostered hours: 12:00 to 15:00 · No break yet', 'words: Dev\'s row says his hours and that no break is set (' + await words(p, 'dev') + ')');
   // was: a + Break on every service line (Mo had three). Now one per person, by the name, and none on a service line
   ok(await p.locator('[data-p="tm-addbr"]').count() === 5 && await p.locator('.tm-tlrow[data-id="mo"] [data-p="tm-addbr"]').count() === 1 && await p.locator('.tm-tlrow[data-id="mo"] .tm-braddwho [data-p="tm-addbr"]').count() === 1 && !await p.locator('.tm-tlsvc [data-p="tm-addbr"]').count(), 'one break per person: 5 people, 5 + Break, Mo\'s one by his name though he works three services, none on a service line');
   await addBreak(p, 'dev');
@@ -85,19 +86,19 @@ const readyNext = p => L.waitFor(p, () => document.querySelectorAll('.tm-person-
   ok(devTimes[0] === 'Break 12:00' && devTimes[devTimes.length - 1] === 'Break 14:30' && devTimes.length === 11, 'break times: Dev (roster 12:00 to 15:00) is offered 12:00 to 14:30, ending by his finish, not 10:00 to 15:00 (' + devTimes[0] + ' to ' + devTimes[devTimes.length - 1] + ', ' + devTimes.length + ')');
   // (5) today at 14:00 the middle of Dev's day (13:15) has gone: the default is the first quarter hour left, said so
   ok(+await bval(p, 'dev') >= 840 && await bval(p, 'dev') === '840' && await said(p, 'Dev') === 'Dev: break 14:00 to 14:30, the first time left today. Not saved yet.', 'past time: on today\'s date + Break never picks a time already gone; at 14:00 Dev\'s break is 14:00, and the words say why (' + await said(p, 'Dev') + ')');
-  ok(await words(p, 'dev') === 'Roster 12:00 to 15:00 · Break 14:00 to 14:30', 'words: Dev\'s sentence says his break once it is set (' + await words(p, 'dev') + ')');
+  ok(await words(p, 'dev') === 'Rostered hours: 12:00 to 15:00 · Break 14:00 to 14:30', 'words: Dev\'s sentence says his break once it is set (' + await words(p, 'dev') + ')');
   ok(await p.locator('.tm-tlrow[data-id="dev"] .tm-braddwho').count() === 0 && await p.$eval('.tm-tlrow[data-id="dev"] .tm-brline [data-p="tm-addbr"]', e => e.textContent) === '+ 2nd break', 'one break per person: once Dev has a break, + Break leaves his name and + 2nd break ends his break line');
   // (1) Mo 10:00 to 21:00, cut into Lunch, All day dining and Dinner: one unbroken 11 hour day, so one tap gives his split
   await addBreak(p, 'mo');
   ok(await bval(p, 'mo') === '870' && await bval(p, 'mo', 0, 'blen') === '150' && await said(p, 'Mo') === 'Mo: split 14:30 to 17:00, an 11 hour day. Not saved yet.', 'long day: one + Break gives Mo, 10:00 to 21:00 across three services, a split 14:30 to 17:00, said why (' + await said(p, 'Mo') + ')');
   const moTimes = await btimes(p, 'mo');
   ok(moTimes[0] === 'Split 10:00' && moTimes[moTimes.length - 1] === 'Split 18:30' && moTimes.length === 35, 'break times: Mo\'s split is offered across his whole day, 10:00 to 18:30, ending by his finish (' + moTimes[0] + ' to ' + moTimes[moTimes.length - 1] + ', ' + moTimes.length + ')');
-  ok(await words(p, 'mo') === 'Roster 10:00 to 21:00 · Split 14:30 to 17:00 (nobody else on All day dining 15:00 to 17:00)', 'words: Mo\'s split leaves nobody on All day dining, and his row says so (' + await words(p, 'mo') + ')');
+  ok(await words(p, 'mo') === 'Rostered hours: 10:00 to 21:00 · Split 14:30 to 17:00 (nobody else on All day dining 15:00 to 17:00)', 'words: Mo\'s split leaves nobody on All day dining, and his row says so (' + await words(p, 'mo') + ')');
   // (4) + 2nd break: the middle of his longest stretch without a break has gone today; the next time an hour clear of his split
   await addBreak(p, 'mo');
   const moSecond = +await bval(p, 'mo', 1);
   ok(moSecond >= 1020 + 60 && await said(p, 'Mo') === 'Mo: 2nd break 18:00 to 18:30, the first time left today. Not saved yet.', '2nd break: an hour clear of his split (ends 17:00), never against it (' + await said(p, 'Mo') + ')');
-  ok(!await p.locator('.tm-tlrow[data-id="mo"] [data-p="tm-addbr"]').count() && await words(p, 'mo') === 'Roster 10:00 to 21:00 · Split 14:30 to 17:00 (nobody else on All day dining 15:00 to 17:00), 2nd break 18:00 to 18:30', 'two at most: with two breaks Mo has no + Break left, and his sentence names both (' + await words(p, 'mo') + ')');
+  ok(!await p.locator('.tm-tlrow[data-id="mo"] [data-p="tm-addbr"]').count() && await words(p, 'mo') === 'Rostered hours: 10:00 to 21:00 · Split 14:30 to 17:00 (nobody else on All day dining 15:00 to 17:00), 2nd break 18:00 to 18:30', 'two at most: with two breaks Mo has no + Break left, and his sentence names both (' + await words(p, 'mo') + ')');
   await click(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k].v === 2, TEAM, 6000);
   const moBr = (await saved(p)).br.filter(x => x.id === 'mo').map(x => x.sh + ' ' + x.at + ' ' + x.len).sort().join(', ');
@@ -107,7 +108,7 @@ const readyNext = p => L.waitFor(p, () => document.querySelectorAll('.tm-person-
   ok(p.errors.length === 0, 'hours: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   p = await admin(b, 1280, { on: savedDay.on, br: savedDay.br, v: savedDay.v }); await ready(p);
-  ok(await bval(p, 'mo') === '870' && await bval(p, 'mo', 0, 'blen') === '150' && await bval(p, 'mo', 1) === '1080' && await bval(p, 'dev') === '840' && await words(p, 'mo') === 'Roster 10:00 to 21:00 · Split 14:30 to 17:00 (nobody else on All day dining 15:00 to 17:00), 2nd break 18:00 to 18:30' && await p.locator('[data-p="tm-save"]').isDisabled(), 'read back: the saved day opens with the same breaks and nothing to save');
+  ok(await bval(p, 'mo') === '870' && await bval(p, 'mo', 0, 'blen') === '150' && await bval(p, 'mo', 1) === '1080' && await bval(p, 'dev') === '840' && await words(p, 'mo') === 'Rostered hours: 10:00 to 21:00 · Split 14:30 to 17:00 (nobody else on All day dining 15:00 to 17:00), 2nd break 18:00 to 18:30' && await p.locator('[data-p="tm-save"]').isDisabled(), 'read back: the saved day opens with the same breaks and nothing to save');
   await p.context().close();
 
   // 1b. tomorrow, where the clock is not in the way: the middle of the day, a day with a gap, apart from others, a service edge
@@ -133,9 +134,9 @@ const readyNext = p => L.waitFor(p, () => document.querySelectorAll('.tm-person-
   ok(beaEdge.includes('Break 14:45') && beaEdge.includes('Break 15:00') && beaEdge[beaEdge.length - 1] === 'Break 16:30', 'service edge: Bea\'s times run across Lunch and All day dining, 14:45 and 15:00 included, to 16:30');
   await bpick(p, 'bea', 0, 885);
   // inside her hours, so no "(outside their hours)"; Mo (on his split) is the only other on All day dining, so it says so
-  ok(await words(p, 'bea') === 'Roster 11:00 to 17:00 · Break 14:45 to 15:15 (nobody else on All day dining 15:00 to 15:15)' && await said(p, 'Bea') === 'Bea: break 14:45 to 15:15. Not saved yet.', 'service edge: a 14:45 break across Lunch and All day dining is inside her hours, and the row names the one gap it leaves (' + await words(p, 'bea') + ')');
+  ok(await words(p, 'bea') === 'Rostered hours: 11:00 to 17:00 · Break 14:45 to 15:15 (nobody else on All day dining 15:00 to 15:15)' && await said(p, 'Bea') === 'Bea: break 14:45 to 15:15. Not saved yet.', 'service edge: a 14:45 break across Lunch and All day dining is inside her hours, and the row names the one gap it leaves (' + await words(p, 'bea') + ')');
   await bpick(p, 'bea', 0, 900);
-  ok(await words(p, 'bea') === 'Roster 11:00 to 17:00 · Break 15:00 to 15:30 (nobody else on All day dining 15:00 to 15:30)' && await focused(p) === 'tm-bat:bea:900:0', 'service edge: then 15:00, and the focus stays on her break\'s time picker (' + await focused(p) + ')');
+  ok(await words(p, 'bea') === 'Rostered hours: 11:00 to 17:00 · Break 15:00 to 15:30 (nobody else on All day dining 15:00 to 15:30)' && await focused(p) === 'tm-bat:bea:900:0', 'service edge: then 15:00, and the focus stays on her break\'s time picker (' + await focused(p) + ')');
   await click(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k].v === 2, NEXT, 6000);
   const next = await plan(p, NEXT), beaBr = next.br.filter(x => x.id === 'bea').map(x => x.sh + ' ' + x.at + ' ' + x.len).join();
@@ -146,7 +147,7 @@ const readyNext = p => L.waitFor(p, () => document.querySelectorAll('.tm-person-
   // 2. a break already outside the person's hours is kept and said in words, never dropped
   p = await admin(b, 1280, { br: [{ id: 'bea', sh: 'lunch', at: 630, len: 30 }] }); await ready(p);
   ok(await bval(p, 'bea') === '630' && (await options(p, await bk(p, 'bea'))).includes('Break 10:30 (outside their hours)'), 'outside: Bea\'s saved 10:30 break (roster from 11:00) is kept and says it is outside her hours');
-  ok(await words(p, 'bea') === 'Roster 11:00 to 15:00 · Break 10:30 to 11:00 (outside their hours)', 'outside: her row\'s sentence says it too (' + await words(p, 'bea') + ')');
+  ok(await words(p, 'bea') === 'Rostered hours: 11:00 to 15:00 · Break 10:30 to 11:00 (outside their hours)', 'outside: her row\'s sentence says it too (' + await words(p, 'bea') + ')');
   await p.context().close();
 
   // 3. Spread keeps each break inside the person's hours and names who it moved
@@ -178,12 +179,12 @@ const readyNext = p => L.waitFor(p, () => document.querySelectorAll('.tm-person-
   const beaTimes = await btimes(p, 'bea');
   // Smoker (a usual shift in this kitchen's list here) holds her break before Lunch, as the earlier service; she is the
   // only one on it, so her row says her break leaves nobody on Smoker
-  ok(beaTimes[0] === 'Break 11:00' && beaTimes[beaTimes.length - 1] === 'Break 14:30' && await words(p, 'bea') === 'Roster 11:00 to 15:00 · Break 14:00 to 14:30 (nobody else on Smoker 14:00 to 14:30)', 'by hand: Bea on Smoker (06:00 to 15:00) takes her roster hours that day, 11:00 to 15:00: her day still reads Roster 11:00 to 15:00 and her break times run 11:00 to 14:30 (' + await words(p, 'bea') + ')');
+  ok(beaTimes[0] === 'Break 11:00' && beaTimes[beaTimes.length - 1] === 'Break 14:30' && await words(p, 'bea') === 'Rostered hours: 11:00 to 15:00 · Break 14:00 to 14:30 (nobody else on Smoker 14:00 to 14:30)', 'by hand: Bea on Smoker (06:00 to 15:00) takes her roster hours that day, 11:00 to 15:00: her day still reads Roster 11:00 to 15:00 and her break times run 11:00 to 14:30 (' + await words(p, 'bea') + ')');
   await L.pick(p, 'select[data-k="tm-addsvc:ari"]', 'dinner');
   await addBreak(p, 'ari');
   const ariTimes = await btimes(p, 'ari');
   // one break per person: Ari's times run across both parts of his day, 10:00 to 14:30 and 17:00 to 20:30, none in his gap
-  ok(ariTimes.includes('Break 17:00') && ariTimes[ariTimes.length - 1] === 'Break 20:30' && !ariTimes.some(t => /^Break (14:45|15:\d\d|16:\d\d)$/.test(t)) && /^Lunch 10:00 to 15:00, Dinner 17:00 to 21:00 · /.test(await words(p, 'ari')), 'by hand: Ari (roster 10:00 to 15:00) on Dinner has no roster hours inside it, so Dinner takes its own hours, 17:00 to 21:00, and nothing is offered in his gap (' + await words(p, 'ari') + ')');
+  ok(ariTimes.includes('Break 17:00') && ariTimes[ariTimes.length - 1] === 'Break 20:30' && !ariTimes.some(t => /^Break (14:45|15:\d\d|16:\d\d)$/.test(t)) && /^Rostered hours: 10:00 to 15:00 · Dinner hours 17:00 to 21:00 · /.test(await words(p, 'ari')), 'by hand: Ari (roster 10:00 to 15:00) on Dinner has no roster hours inside it, so Dinner takes its own hours, 17:00 to 21:00, and nothing is offered in his gap (' + await words(p, 'ari') + ')');
   await click(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k].v === 2, TEAM, 6000);
   const bea = (await saved(p)).on.find(o => o.id === 'bea' && o.sh === 'smoker'), ari = (await saved(p)).on.find(o => o.id === 'ari' && o.sh === 'dinner');
@@ -264,7 +265,7 @@ const readyNext = p => L.waitFor(p, () => document.querySelectorAll('.tm-person-
   ok(await bval(p, 'bea') === '840', 'Take off keeps: Bea\'s break is 14:00, the first time left today');
   const beaOff = '[data-p="tm-off"][data-id="bea"][data-sh="smoker"]';
   await click(p, beaOff); await click(p, beaOff);
-  ok(await lines(p, 'bea') === 'lunch' && await bval(p, 'bea') === '840' && /Bea taken off Smoker\. Their break 14:00 stays\. Not saved yet\./.test(await page(p)) && await words(p, 'bea') === 'Roster 11:00 to 15:00 · Break 14:00 to 14:30', 'Take off keeps: Bea taken off Smoker keeps her 14:00 break, still inside her Lunch hours, and the words say it stays');
+  ok(await lines(p, 'bea') === 'lunch' && await bval(p, 'bea') === '840' && /Bea taken off Smoker\. Their break 14:00 stays\. Not saved yet\./.test(await page(p)) && await words(p, 'bea') === 'Rostered hours: 11:00 to 15:00 · Break 14:00 to 14:30', 'Take off keeps: Bea taken off Smoker keeps her 14:00 break, still inside her Lunch hours, and the words say it stays');
   ok(/^Bea taken off Smoker\. Not saved yet\./.test(await p.$eval('.tm-tlrow[data-id="bea"] .tm-tlundo', e => e.innerText)), 'Take off keeps: her Undo line names no break, as none went');
   await click(p, '[data-p="tm-off-undo"][data-id="bea"]');
   ok(await lines(p, 'bea') === 'smoker,lunch' && await bval(p, 'bea') === '840' && await p.locator('select[data-k^="tm-bat:bea:"]').count() === 1, 'Take off keeps: Undo puts Bea back on Smoker with one break, not two');
@@ -275,10 +276,10 @@ const readyNext = p => L.waitFor(p, () => document.querySelectorAll('.tm-person-
   ok(await p.$eval(off, e => e.textContent + ' | ' + e.getAttribute('aria-label')) === 'Tap again to take off | Tap again to take Mo off Lunch' && await lines(p, 'mo') === 'lunch,adl,dinner', 'Take off: the first tap only asks again, in words, and Mo stays on Lunch');
   await click(p, off);
   ok(await lines(p, 'mo') === 'adl,dinner' && await p.locator('select[data-k^="tm-bat:mo:"]').count() === 1 && await bval(p, 'mo') === '1125', 'Take off: the second tap takes Mo off Lunch and his 12:15 break, which only Lunch held; his Dinner and its break stay');
-  ok(/Mo taken off Lunch\. Break 12:15 to 12:45 goes too\. Not saved yet\./.test(await page(p)) && await words(p, 'mo') === 'Roster 15:00 to 21:00 · Break 18:45 to 19:15', 'Take off: the words say what goes, and his day loses the Lunch part (' + await words(p, 'mo') + ')');
+  ok(/Mo taken off Lunch\. Break 12:15 to 12:45 goes too\. Not saved yet\./.test(await page(p)) && await words(p, 'mo') === 'Rostered hours: 15:00 to 21:00 · Break 18:45 to 19:15', 'Take off: the words say what goes, and his day loses the Lunch part (' + await words(p, 'mo') + ')');
   ok(await focused(p) === 'tm-off-undo:mo' && await p.locator('.tm-tlrow[data-id="mo"] [data-p="tm-off-undo"]').count() === 1, 'Take off: the focus moves to Undo, in Mo\'s row (' + await focused(p) + ')');
   await click(p, '[data-p="tm-off-undo"][data-id="mo"]');
-  ok(await lines(p, 'mo') === 'lunch,adl,dinner' && await value(p, 'tm-sec:mo:lunch') === 'grill' && await bval(p, 'mo') === '735' && await words(p, 'mo') === 'Roster 10:00 to 21:00 · Break 12:15 to 12:45, 2nd break 18:45 to 19:15', 'Undo: Mo is back on Lunch with Grill, his 12:15 break and his roster hours, 10:00 to 21:00 again (' + await words(p, 'mo') + ')');
+  ok(await lines(p, 'mo') === 'lunch,adl,dinner' && await value(p, 'tm-sec:mo:lunch') === 'grill' && await bval(p, 'mo') === '735' && await words(p, 'mo') === 'Rostered hours: 10:00 to 21:00 · Break 12:15 to 12:45, 2nd break 18:45 to 19:15', 'Undo: Mo is back on Lunch with Grill, his 12:15 break and his roster hours, 10:00 to 21:00 again (' + await words(p, 'mo') + ')');
   ok(/Undone: Mo is back on Lunch with their section and breaks\. Not saved yet\./.test(await page(p)) && !await p.locator('[data-p="tm-off-undo"]').count(), 'Undo: the words say what came back, and the Undo line goes');
   ok(await focused(p) === 'tm-off:mo:lunch', 'Undo: the focus goes back to Take off Lunch (' + await focused(p) + ')');
   // a person's last service: the row leaves its Undo line where it was, between Bea and Mo
@@ -287,7 +288,7 @@ const readyNext = p => L.waitFor(p, () => document.querySelectorAll('.tm-person-
   ok(await p.$$eval('ul.tm-plan > li.tm-person-row', l => l.map(e => e.getAttribute('data-id')).join()) === 'sam,ari,bea,dev,mo' && !await p.locator('.tm-tlrow[data-id="dev"]').count() && await p.locator('li.tm-tlgone[data-id="dev"] [data-p="tm-off-undo"]').count() === 1, 'last service: Dev\'s row leaves an Undo line in its place, between Bea and Mo');
   ok(/Dev taken off Lunch\. Not saved yet\. Dev is not on this day now: Undo, or Add staff, puts them back\./.test(await page(p)) && await focused(p) === 'tm-off-undo:dev', 'last service: the words say Dev is not on this day now and how to put him back, with the focus on Undo');
   await click(p, '[data-p="tm-off-undo"][data-id="dev"]');
-  ok(await lines(p, 'dev') === 'lunch' && await words(p, 'dev') === 'Roster 12:00 to 15:00 · No break yet', 'last service: Undo brings Dev\'s row back with his roster hours (' + await words(p, 'dev') + ')');
+  ok(await lines(p, 'dev') === 'lunch' && await words(p, 'dev') === 'Rostered hours: 12:00 to 15:00 · No break yet', 'last service: Undo brings Dev\'s row back with his roster hours (' + await words(p, 'dev') + ')');
   // + Break: the focus moves to the new break's time picker, the next thing to choose
   await addBreak(p, 'dev');
   ok(await focused(p) === await bk(p, 'dev') && /^tm-bat:dev:\d+:0$/.test(await focused(p)), '+ Break: the focus moves to the new break\'s time picker (' + await focused(p) + ')');
