@@ -32,28 +32,28 @@ const ready = p => L.waitFor(p, () => !!document.querySelector('#hm-with-body .h
     catch (e) { ok(false, name + ': ' + String(e.message || e).split('\n')[0]); }
     finally { if (p) { ok(!p.errors.length, name + ': no browser errors ' + p.errors.join(' | ')); await p.context().close(); p = null; } }
   }
+  // The whole day (head chef, 17 Nov 2026, docs/home-roster-options/brief.md, D for everyone): names grouped by start
+  // time with a Now line, each person once, the section now and until when, "back 15:00" while on a break; break windows
+  // and later shifts' details live in Today's team. It replaced the 10 Nov board for the whole day only: On with you
+  // (below) keeps the board.
+  const starts = (p, sel) => p.evaluate(s => [...document.querySelectorAll(s + ' .hm-starts > li')].map(li => li.classList.contains('hm-st-now') ? 'NOW' :
+    { t: li.querySelector('.hm-st-t').textContent.trim(), people: [...li.querySelectorAll('.hm-tp')].map(e => e.innerText.replace(/\s+/g, ' ').trim()) }), sel);
   for (const width of [390, 768, 1280]) await step('head chef ' + width, async () => {
     p = await L.open(browser, '#/', { admin: true, extra: fixture(), width, height: width === 390 ? 844 : 1000, wait: 1200 });
     await ready(p);
-    const b = await board(p, '#hm-with-body'), card = await txt(p, '#hm-with-body') || '';
-    ok(b.length === 1, width + ': the whole day is one board (' + b.length + ')');
-    if (!b.length) return;
-    ok(JSON.stringify(b[0].cols) === JSON.stringify(['Lunch 10:00 to 15:00', 'Dinner 15:00 to 21:00']), width + ': shifts across, in start order, each with its hours (' + JSON.stringify(b[0].cols) + ')');
-    ok(JSON.stringify(b[0].rows.map(r => r.sec)) === JSON.stringify(secs.map(s => s.name)), width + ': sections down, in the kitchen\'s order (' + JSON.stringify(b[0].rows.map(r => r.sec)) + ')');
-    const cell = (sec, col) => (b[0].rows.find(r => r.sec === sec) || { cells: [] }).cells[col] || '';
-    ok(/^Ann/.test(cell('Hot larder', 0)) && /^Ann/.test(cell('Prep', 1)) && /^Bo/.test(cell('Hot larder', 1)), width + ': a chef on a double is in both columns, on each shift\'s section');
-    ok(cell('Prep', 0) === 'Dev' && cell('Pass', 1) === 'Gus' && /Fern/.test(cell('Salads and cold larder', 0)) && /Hana/.test(cell('Salads and cold larder', 0)), width + ': every person on every shift, two to a cell where the plan has two');
-    ok(await p.$$eval('#hm-with-body .hm-tp', l => l.length) === on.length, width + ': each saved shift row shows once');
-    ok(card.split('10:00 to 15:00').length === 2 && card.split('15:00 to 21:00').length === 2, width + ': each shift\'s hours are said once, not on every person');
-    ok(cell('Hot larder', 0) === 'Ann back 15:00' && await p.$$eval('#hm-with-body .hm-tp.is-away', l => l.length) === 3, width + ': a chef on a break now says when they are back (' + cell('Hot larder', 0) + ')');
-    ok(cell('Grill', 0) === 'Eli break 15:00 to 17:00' && cell('Grill', 1) === 'Eli', width + ': a break to come shows its whole window (' + cell('Grill', 0) + ')');
+    const d = await starts(p, '#hm-with-body'), card = await txt(p, '#hm-with-body') || '';
+    const order = d.map(x => x === 'NOW' ? x : x.t), all = [].concat(...d.filter(x => x !== 'NOW').map(x => x.people));
+    ok(/On today/.test(await txt(p, '#hm-with') || '') && JSON.stringify(order) === JSON.stringify(['10:00', 'NOW', '15:00']), width + ': the whole day by start time, the Now line before the starts still to come (' + JSON.stringify(order) + ')');
+    ok(all.length === 8 && JSON.stringify(d[0].people.map(x => x.split(' ')[0])) === JSON.stringify(['Ann', 'Bo', 'Cleo', 'Dev', 'Eli', 'Fern', 'Hana']) && /^Gus Pass · until 21:00$/.test(d[2].people[0]), width + ': each person once, a double as one day (' + JSON.stringify(all) + ')');
+    ok(d[0].people[0] === 'Ann Hot larder, then Prep from 15:00 · until 21:00 back 15:00' && await p.$$eval('#hm-with-body .hm-tp.is-away', l => l.length) === 3, width + ': the section now, a later move, until when, and when they are back from a break (' + d[0].people[0] + ')');
+    ok(d[0].people[3] === 'Dev Prep · until 15:00' && d[0].people[4] === 'Eli Grill · until 21:00' && !/break/.test(card), width + ': a break to come is not on the card (Today\'s team has it) (' + d[0].people[4] + ')');
     ok(await p.locator('#hm-full-team').evaluate(e => e.hidden && e.getBoundingClientRect().height === 0), width + ': no second copy of the same team behind a fold');
     ok(!!(await p.$('#hm-with-body a.hm-pl[href="#/team"]')), width + ': the head chef keeps the Today\'s team link');
     ok(!(await L.overflow(p)), width + ': no sideways scroll');
     if (width === 390) {
       const h = await p.locator('#hm-with').evaluate(e => e.getBoundingClientRect().height);
-      // the old list was 858 px for this day with the real fonts (the same people again behind the fold); the board 491 px
-      ok(h < 620, 'phone: the whole day fits in a much shorter card (' + Math.round(h) + ' px)');
+      // the 10 Nov board was 491 px for this day with the real fonts, the list before it 858 px
+      ok(h < 620, 'phone: the whole day fits in a short card (' + Math.round(h) + ' px)');
     }
     ok(await p.evaluate(() => __fake.bill.filter(x => /\/team\//.test(x.path) && /listen/.test(x.kind)).length) === 0, width + ': no team listener');
   });
@@ -65,8 +65,8 @@ const ready = p => L.waitFor(p, () => !!document.querySelector('#hm-with-body .h
     ok(!/Ann/.test(card) && /Bo/.test(card) && /Dev/.test(card) && !/Gus/.test(card), 'staff: coworkers on the same shift, not themselves or a later shift');
     ok(await p.locator('#hm-full-team').isVisible() && await p.locator('#hm-full-team').evaluate(e => !e.open), 'staff: the full day is one tap away, folded');
     await p.click('#hm-full-team > summary');
-    const all = await board(p, '#hm-team');
-    ok(all.length === 1 && all[0].cols.length === 2 && /Gus/.test(JSON.stringify(all)) && /Ann/.test(JSON.stringify(all)), 'staff: the fold opens the same board for the whole day (' + JSON.stringify(all.map(x => x.cols)) + ')');
+    const all = await starts(p, '#hm-team'), names = JSON.stringify(all);
+    ok(JSON.stringify(all.map(x => x === 'NOW' ? x : x.t)) === JSON.stringify(['10:00', 'NOW', '15:00']) && /"Gus Pass · until 21:00"/.test(names) && /"Ann Hot larder/.test(names), 'staff: the fold opens the whole day by start time, themselves included (' + names.slice(0, 160) + ')');
     ok(!/On today/.test(await txt(p, '#hm-team') || ''), 'staff: the fold does not repeat the card\'s heading');
     ok(!(await p.$('#hm-with a[href="#/team"]')), 'staff: no planner link');
     await p.clock.runFor(31000); await L.settle(p, 100);
@@ -76,16 +76,16 @@ const ready = p => L.waitFor(p, () => !!document.querySelector('#hm-with-body .h
     const four = [{ id: 'bfast', name: 'Breakfast', from: 360, to: 600 }, { id: 'lunch', name: 'Lunch', from: 600, to: 900 }, { id: 'aft', name: 'Afternoon', from: 780, to: 1020 }, { id: 'dinner', name: 'Dinner', from: 900, to: 1260 }];
     p = await L.open(browser, '#/', { admin: true, extra: fixture({ on: on.concat([{ id: 'dev', sh: 'aft', sec: 'grill' }, { id: 'gus', sh: 'bfast', sec: 'hot' }]) }, { kitShifts: four }), wait: 1200 });
     await ready(p);
-    const b = await board(p, '#hm-with-body');
-    ok(b.length === 4 && b.every(x => x.cols.length === 1) && JSON.stringify(b.map(x => x.cols[0].split(' ')[0])) === JSON.stringify(['Breakfast', 'Lunch', 'Afternoon', 'Dinner']), 'more than three shifts: one board per shift, one under the other (' + JSON.stringify(b.map(x => x.cols)) + ')');
+    const d = await starts(p, '#hm-with-body'), names = JSON.stringify(d);
+    ok(JSON.stringify(d.map(x => x === 'NOW' ? x : x.t)) === JSON.stringify(['06:00', '10:00', 'NOW', '15:00']) && /"Gus again Pass · until 21:00"/.test(names) && /"Dev Grill · until 17:00"/.test(names) && /"Gus Hot larder · finished 10:00"/.test(names), 'four shifts: a split is listed at each start, its first part finished; overlapping services make one day, on the section of the service on now (' + names + ')');
     ok(!(await L.overflow(p)), 'four shifts: no sideways scroll');
   });
   await step('three shifts on a phone', async () => {
     const three = [{ id: 'lunch', name: 'Lunch', from: 600, to: 900 }, { id: 'aft', name: 'Afternoon', from: 780, to: 1020 }, { id: 'dinner', name: 'Dinner', from: 900, to: 1260 }];
     p = await L.open(browser, '#/', { admin: true, extra: fixture({ on: on.concat([{ id: 'dev', sh: 'aft', sec: 'grill' }]) }, { kitShifts: three }), wait: 1200 });
     await ready(p);
-    const b = await board(p, '#hm-with-body');
-    ok(b.length === 1 && b[0].cols.length === 3, 'three shifts still fit one board (' + JSON.stringify(b.map(x => x.cols)) + ')');
+    const d = await starts(p, '#hm-with-body');
+    ok(JSON.stringify(d.map(x => x === 'NOW' ? x : x.t)) === JSON.stringify(['10:00', 'NOW', '15:00']), 'three shifts: one list by start time (' + JSON.stringify(d) + ')');
     ok(!(await L.overflow(p)), 'three shifts: no sideways scroll');
   });
   // A roster day (head chef, 17 Nov 2026, docs/home-roster-options/brief.md): the roster file cuts a long day into its

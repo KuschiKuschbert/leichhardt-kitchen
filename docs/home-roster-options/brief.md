@@ -206,3 +206,25 @@ Before release, measure the implemented app with Barlow at 390, 768 and 1280 px:
 - **Gus** starts at 08:00, before Lunch: parts are cut to the service's start only where they overlap (plans saved on 15 November).
 
 Screenshots `d-repaired.png` (07:00, 14:00, 19:10) and `d-repaired-1280.png`.
+
+## Chosen (17 November 2026)
+
+The owner asked "We build it for everyone don't we?", then, shown the council's split (D for chefs, the board for staff, 6 of 6) and the trade-off, "What would be the best for everyone?". The lead recommended **D for everyone, with each person's finish time on their quiet line**, and the build follows it:
+
+- **Why everyone:** the board the head chef found hard to read at a glance is as hard for staff, and one picture of the day is one thing to learn.
+- **The council's main reason** for keeping the board for staff was that finish times and break windows would be out of reach (staff cannot open Today's team). With "until 21:00" on every name, finish times stay on Home. Only other services' break windows leave the whole day; staff keep their own On with you board with breaks for their service, and their own Your day.
+- **Departure from the council:** the staff fold (6 of 6 said keep the board). Recorded here and in `docs/head-chef-decisions.md`.
+
+## Built (17 November 2026)
+
+- `js/prep.js`:
+  - `homeStartsHTML()`, `homeStartParts()` and `homeStartSec()`, with the round 2 repairs: no one vanishes ("No start time"; the board with no start times at all), a split's own section and break, parts cut only where they overlap, "Now" with no time, "again".
+  - The whole day uses it in `homeWithHTML()` (not scoped) and `homeTeamHTML()` (the fold).
+- `css/app.css`: the `.hm-starts` block.
+
+Measured in the implemented app (stand-in, fallback fonts, the 9-person roster day plus Jo's split, 14:00): the head chef's card 627 px at 390, 643 at 768, 543 at 1280; the staff fold 585 px at 390. No sideways scroll, no browser errors.
+
+Checks:
+- `tests/home-rota.test.js` (54): the whole day by start time at 390, 768 and 1280, the staff fold, and four and three services.
+- `tests/team-roster-hours.test.js` (20): a split listed at each start, a plan saved on 15 November, broken stored times.
+- `tests/home-board.test.js`, `tests/home-staff-first.test.js`, `tests/home-staff-roster.test.js`: rewritten to the new whole day, each keeping its intent.
