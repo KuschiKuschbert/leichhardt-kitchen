@@ -147,3 +147,52 @@ The head chef, after A, B and C: "Any verdict on mix? Would it be easier to also
 - **A part of the day already over** goes grey and says "until 15:00", from the roster, not a claim about who is still there.
 - **The "NOW" line** sits before the first start still to come: at the top before anyone starts, at the end once everyone has.
 - **Height:** 467 px at 14:00 on a phone, 482 at 07:00, 435 at 17:30 (Preview). Screenshots `d-gus-390.png`, `d-through-the-day.png`, `option-d.png`.
+
+## Round 2 scores (17 November 2026)
+
+Six fresh reviewers (the five plus the kitchen screen designer), each given only `round2-packet.md`, `evidence-packet.md` and the screenshots, no favourite. All six said the four options differ structurally (A by service, B by person on a clock, C by section, D by start time; the designer called A mostly a restack of today's board).
+
+| Reviewer | Ranking | Open question 1 | Open question 2 (staff fold) |
+| --- | --- | --- | --- |
+| Cook mid-service | D, C, B, A | D, with "Grill from 17:00" under a cook who moves later | Keep the section board |
+| Head chef | D, C, B, A | D on the head chef's card, plus a "No start time" group | Keep the section board |
+| Skeptic | D, C, B, A | D on the head chef's card only | Keep the board (staff cannot open Today's team) |
+| New starter | D, C, B, A | D with clearer words | Keep the board |
+| Keeper | D, C, B, A | D, with three repairs | Keep the board; switch D on by role, not by the row count |
+| Screen designer | D, C, B, A | D | Keep the board (only chefs can open Today's team) |
+
+**Verdict: D, 6 of 6. Staff's View today's full team keeps the section board, 6 of 6.**
+
+**Disagreement, one line each:**
+- Head chef only (head chef, skeptic, new starter) or every chef (keeper, designer: `teamOK()`).
+- The cook wants "Grill from 17:00" under a cook who moves later now. The head chef reviewer would wait for a real day of doubles.
+- Words: the new starter would say "finished 15:00". Round 1's skeptic warned against status words that claim presence, so "until 15:00" stays.
+
+**D against the seven references (all six):**
+- **Flighty, Things 3, Linear:** Work. Now against later, detail tucked away, one place for one job.
+- **Headspace:** Works for four reviewers, Needs work for two: "split" already means a break of 150 minutes or more in the book.
+- **Airbnb:** Needs work: finish times leave the card. This is the trade the head chef asked for.
+- **Todoist, Duolingo:** Not relevant. Nothing is added or ticked on this card.
+
+**Rejected from the others:**
+- A's stacked services repeat people.
+- B's bar on Home: it belongs in the planner; on a wet phone the 6 px bar and 11 px labels fail.
+- C's "Nobody 15:00 to 17:00": noise every day, and Today's team already warns when too few are on.
+
+**Mix:** no layout blend beats D (a second way of grouping fights for the eye). The blend that wins is D plus repairs.
+
+### Break-it findings (round 2) and repairs for the build
+
+| Finding | Evidence | Repair |
+| --- | --- | --- |
+| A person on a service with no hours, and no roster hours, vanishes from D; a plan where nobody has hours shows only the NOW line | Checked in source (skeptic, keeper, head chef) | A "No start time" group at the end; with no times at all, the section board |
+| A split's finished first part takes the section of the time now ("Grill, until 14:00" for a Pans morning); a dinner break's "back 19:30" shows under the grey first part; plans saved on 15 November hold the whole day on each service, so Mo would read Larder at 18:00 | Checked in source (skeptic, keeper) | Each entry takes the section and break of its own part, each part cut to its service's hours |
+| D picked by "the card holds the whole day", so staff not on the plan get D with no Today's team link | Checked in source (skeptic, keeper) | Choose D by role; staff keep the board; a check in the role tests |
+| "NOW 14:00" changes the card's text every minute, so the minute paint rebuilds it and keyboard focus is lost | Risk (keeper) | The line says "Now" without the time (Your day shows the clock); the card changes only when a start passes or a break starts or ends |
+| At 14:00 Mo reads Larder, so dinner Grill looks a cook short | Seen in `d-gus-390.png` (cook) | "Larder, Grill from 17:00" under a cook who moves later |
+| "split" means a long break elsewhere in the book | Words (skeptic, designer, new starter) | "again" for a second start |
+
+Before release, measure the implemented app with Barlow at 390, 768 and 1280 px:
+- the head chef on and off the plan, staff on and off the plan, and a sous chef;
+- four services, 15 people, long names, a shift with no hours;
+- the minute paint at a start and at a break's start and end.
