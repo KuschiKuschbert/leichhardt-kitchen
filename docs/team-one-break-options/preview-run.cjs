@@ -87,7 +87,7 @@ const fit = (p, fromId) => p.evaluate(id => {
     // T6 the whole day at the book's own times: sections, a break for all 9 people as offered, then Save
     p = await open(b, v, 1280); await ready(p); taps = 0;
     for (const id of Object.keys(F.plan)) for (const sh of F.lines[id]) await choose(p, 'select[data-k="tm-sec:' + id + ':' + sh + '"]', F.plan[id][0]);
-    if (v === 'C' || v === 'D') await tap(p, '[data-p="tm-ob-fill"]');
+    if (v === 'C') await tap(p, '[data-p="tm-ob-fill"]');
     else for (const id of ['gus', 'sam', ...Object.keys(F.plan)]) await addBr(p, v, id, F.brSh[id] || 'dinner');
     const after = await p.evaluate(() => [...document.querySelectorAll('.tm-person-row')].map(r => r.getAttribute('data-id') + ' ' + r.querySelector('.tm-roster-time').textContent.split(' · ').slice(1).join(' · ')));
     const shortLine = await p.evaluate(() => { const e = document.querySelector('.tm-short-band'); return e ? e.innerText.replace(/\n+/g, ' | ') : ''; });

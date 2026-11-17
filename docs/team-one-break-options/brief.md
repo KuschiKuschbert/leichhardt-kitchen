@@ -135,3 +135,75 @@ The Too few line comes from the existing check (`tmShortOf()`), not from any of 
 | C: Fill, then Save without looking | Reproduced by design (13 taps) | A head chef question |
 | A held picker after a break moves: keyed by its own start, refused when it has moved | Source only | Build check (`team-picker-context`) |
 | A phone on the old code reading a break saved across a service edge | Not evidenced | Build check, release in a merge window |
+
+## Round 2 scores
+
+Six fresh agents ranked A, B and C with the same evidence. Points: 3 for first, 2 for second, 1 for third. Every scorer said the three differ in structure; the skeptic and the cook said A and C are closer to each other than B is to either (C is A's rows plus a bulk fill).
+
+| Reviewer | 1st | 2nd | 3rd | Recommends |
+| --- | --- | --- | --- | --- |
+| Cook mid-service | A | C | B | A, keeping "No break yet", plus C's staggered + Break default; Fill only in the fold and cleared on Save if wanted |
+| Head chef | A | C | B | A with C's spread-apart default on + Break, the reason in words; no Fill |
+| Skeptic | A | C | B | A, + Break on the break line, Spread capped at two breaks a person; Fill held as the head chef's question |
+| New starter | A | B | C | A, keeping "No break yet", "2nd break 19:00", and Take off words that say what goes |
+| Keeper | A | C | B | A; remove the preview's leftovers (the unused Too few helper and its comment); "smart" is the default with its reason in words |
+| Screen designer | A | C | B | A with the phone repair: + Break by the name only while there is none, then at the end of the break line; "30 min" without "Length" |
+
+**Totals: A 18, C 11, B 7. A first for all six.**
+
+Leading findings from the scorers:
+
+| Finding | Who | Evidence | Disposition |
+| --- | --- | --- | --- |
+| B's list re-sorts after a pick: Dev's line drops 157 px and the next tap on Length set Eli's break | Skeptic | **Reproduced** at 390 px | B rejected |
+| C's tags and "Check them, then Save" outlast Save; on another day Empty them took away a break Sam had saved | Skeptic, keeper, designer | **Reproduced** (`C-filled-1280.png`, the skeptic's Wednesday) | Fill and the tags not taken |
+| Spread on Lunch, All day and Dinner gives Mo 4 breaks (two inside his split) and Dev 3 | Skeptic | **Reproduced** in A | Repaired in D: Spread leaves anyone with two breaks, or a break then, as they were, and names them (`measured-spread.txt`: Mo 2, Dev 2) |
+| A's default leaves nobody on All day 15:45 to 16:00 (Mo's split, Dev's break) and nothing warns: All day has no busy time | Head chef, skeptic | **Reproduced** | In D the tap says "(Mo is away then too)"; a busy time on All day would bring the Too few band |
+| A drops "No break yet" from the sentence | Cook, new starter, designer | Source, screenshots | Kept in D |
+| "Second 19:00" reads as seconds; "taken off Lunch and split 14:30 to 17:00" reads as a split added | New starter | Words | "2nd break 19:00"; "Mo taken off Lunch. Split 14:30 to 17:00 goes too." |
+| Phone rows +19 to +24 px in A | All | Measured | D's repair (below) |
+| Two breaks with the same start share one picker key | Keeper | Source | Build: merge identical breaks on load, offer only free times; a `team-picker-context` check |
+| `measured-after.txt` quoted an older Fill message | Four scorers | Stale file | Re-run; the file now holds the current words |
+
+## Mix of A, B and C
+
+| From | Part | Take or reject | Why, and the principle |
+| --- | --- | --- | --- |
+| A | One break line per person, under the bar and the sentence | **Take** (all six) | One place for each job (Linear); the time, the person's day and the break together (Airbnb) |
+| A | + Break by the name at all times | Reject in part | Rows grow on a phone; keep it only while the person has no break (designer, skeptic) |
+| B | The separate list in time order | Reject (six of six) | Two places for one break (Linear); 1,413 px down a phone; re-sorts under the thumb (reproduced); "Next planned breaks today" already says who goes next |
+| B | Rows that never grow | Take as a constraint | Rule 4: the repair keeps a one-break row the height of today's |
+| B | "Away with Ari" in orange | Reject | Attention ink for a fact that may be fine; the idiom is unclear to a new starter |
+| C | The staggered default on + Break, with its reason | **Take, capped at an hour** | A known default, visible and editable, said in words (Todoist, Duolingo); from the draft already in memory (Flighty). Uncapped, it moved Mo's split 75 minutes into the Lunch rush (found on D) |
+| C | Fill their breaks and the SUGGESTED tags | Reject (five of six; the cook would allow it in the fold, cleared on Save) | Saves 8 taps but can save breaks nobody checked; tags outlived Save (reproduced); a rival to Spread |
+
+**All three blended** (A's line, B's list, C's fill) was judged worse than A by all six: one break set in two places, three things to learn, and the Fill risk. The useful blend is **A + C's capped default + the designer's phone repair + the new starter's words**, with B contributing only its "rows must not grow" constraint.
+
+## Combined preview: D, the mix
+
+Lead's synthesis of the scorers' own parts; `window.__ob = 'D'`, the same patch; runners `preview-run.cjs D`, `after-run.cjs D`, `spread-run.cjs`; raw `measured-mix.txt`, `measured-spread.txt`. **Review status: focused follow-up by the designer, the new starter and the skeptic (below); not re-scored by the whole council.**
+
+- **Each person's break line**, under the bar and the sentence ("Roster 12:00 to 20:00 · Break 15:45 to 16:15", "No break yet" when there is none): [Break 15:45 ▾] [30 min ▾] [+ 2nd break]; the second reads "2nd break 19:00". While a person has no break, **+ Break** sits by their name.
+- **The service lines** keep the service, Take off and the Section picker. No break controls.
+- **+ Break's default**: the middle of their day (a split when one unbroken stretch is 9 hours or more; the next break, the middle of the longest stretch without one); moved to the nearest free time within an hour when someone else on the same service is away then; else kept, with who is away named. The tap says it: "Dev: break 15:45 to 16:15, in the middle of their day (Mo is away then too). Not saved yet."
+- **Take off**: a break another service they keep still holds stays; one that goes is named ("Mo taken off Lunch. Split 14:30 to 17:00 goes too. Not saved yet. Undo"); Undo puts it back.
+- **Spread them** stays per service and leaves anyone with two breaks, or a break then, as they were, by name.
+- **Gone:** 6 of the 15 + Break buttons, the per-service break pickers, the Fill and tag ideas.
+
+| Measure (Preview) | Today | A | **D, the mix** |
+| --- | ---: | ---: | ---: |
+| + Break buttons, 9 people | 15 | 9 | **9** |
+| Mo: one tap on + Break | Break 12:15 to 12:45 | Split 14:30 to 17:00 | **Split 14:30 to 17:00**, said why |
+| Dev: one tap | 13:15 (Lunch line) | 15:45 | **15:45, "(Mo is away then too)"** |
+| Mo: split 15:00 and a 2nd break 19:00 | 5 taps, still "(outside their hours)" | 4 | **4** |
+| The day at the planner's times, then Save, 1280 | 26 | 26 | **26** |
+| The day at the book's times, then Save, 1280 | 21, Too few 19:00 to 19:15 | 21 | **21**, no Too few |
+| Row px, everyone a break, Mo / Bea / Gus, 390 | 413 / 251 / 352 | 436 / 275 / 376 | **468 / 256 / 357** (Mo's split line wraps) |
+| same, 1280 | 213 / 159 / 161 | 237 / 133 / 185 | **237 / 133 / 210** |
+| Row px, no breaks, 390 | 369 / 207 / 308 | 387 / 226 / 327 | **387 / 226 / 327** |
+| Spread on all three services after Mo's split | Mo 4, Dev 3 | Mo 4, Dev 3 | **Mo 2, Dev 2**, the rest named |
+| Sideways scroll, browser errors (390, 768, 1280) | none | none | **none** |
+
+Screenshots: `D-plan-390.png`, `D-rows-390.png`, `D-rows2-390.png` (Dev, one break line), `D-mo-390.png` (Mo, split and 2nd break), `D-mo-768.png`, `D-day-1280.png`.
+
+**Contract fit:** sage book and paper: Works. Words on every state, "Not saved yet" on every change, the Take off and Undo words: Works. No orange for a fact (B's "Away with" not taken): Works. Real contrast, keyboard focus, real fonts: Not evidenced. A failed Save, a lock and a second writer: unchanged code paths, Not evidenced.

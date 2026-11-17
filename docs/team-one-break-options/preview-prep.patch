@@ -1,5 +1,5 @@
 diff --git a/js/prep.js b/js/prep.js
-index a4b26c9..090f472 100644
+index a4b26c9..280bae3 100644
 --- a/js/prep.js
 +++ b/js/prep.js
 @@ -14084,6 +14084,7 @@ if (list.length) sg('oreg', 's');
@@ -22,7 +22,7 @@ index a4b26c9..090f472 100644
      // A grid cell's key names its own service (tm-sec:<id>:<sh>); other contextual fields follow the details service.
      var ctxSh = (parts[0] === 'tm-sec' || parts[0] === 'tm-at' || parts[0] === 'tm-len') && parts[2] ? parts[2] : '';
      // The shared picker can rebind after a redraw. Its identity must include the captured date/service,
-@@ -14297,6 +14298,125 @@ if (list.length) sg('oreg', 's');
+@@ -14297,6 +14298,128 @@ if (list.length) sg('oreg', 's');
    }
    function tmPc(r, m) { return Math.max(0, Math.min(100, Math.round((m - r.lo) / (r.hi - r.lo) * 1000) / 10)); }
    function tmDayBreaks(id) { return tmf.br.filter(function (b) { return b.id === id && tmOnShift(id, b.sh) && tmShift(b.sh) && tmMin(b.at) !== null; }).sort(function (a, b) { return a.at - b.at; }); }
@@ -76,19 +76,22 @@ index a4b26c9..090f472 100644
 +    // same service is away, else the middle as it is
 +    var with_ = function (m) { var sh = obSh(id, m, len); return others.filter(function (b) { return tmOnShift(b.id, sh) && m < b.at + b.len && b.at < m + len; }).map(function (b) { return mnName(b.id); }); };
 +    var order = free.slice().sort(function (a, b) { return Math.abs(a - near) - Math.abs(b - near) || a - b; }), c = order[0], moved = null;
-+    if (stagger && with_(c).length) { var alone = order.filter(function (m) { return !with_(m).length; })[0]; if (alone != null) { moved = with_(c); c = alone; } }
++    // D: moved at most an hour; with nobody free that near, the middle stays and the words name who is away then too
++    var reach = obOn() === 'D' ? 60 : 1440, still = null;
++    if (stagger && with_(c).length) { var alone = order.filter(function (m) { return Math.abs(m - near) <= reach && !with_(m).length; })[0]; if (alone != null) { moved = with_(c); c = alone; } else still = with_(c); }
 +    var why = long ? 'a split, as the day runs ' + tmLenLabel(spans.filter(function (o) { return o.to - o.from >= TM_LONG; })[0].to - spans.filter(function (o) { return o.to - o.from >= TM_LONG; })[0].from).replace('Split ', '').replace(' h', ' hours') + ' without one' : mine.length ? 'in the middle of the longest stretch without a break' : 'in the middle of their day';
 +    if (moved) why = 'so ' + mnName(id) + ' is not away with ' + moved.join(' and ');
++    if (still) why += ' (' + still.join(' and ') + (still.length > 1 ? ' are' : ' is') + ' away then too)';
 +    return { at: c, len: len, sh: obSh(id, c, len), why: why };
 +  }
 +  // A: the person's break line under their day sentence. B: none in the row (the list below). C and D: as A
 +  function obRowLineHTML(p) {
 +    var v = obOn(); if (!v || v === 'B') return '';
-+    var h = obPickersHTML(p, { tags: v === 'C' || v === 'D' ? obFilled : null, noAdd: true });
++    var h = obPickersHTML(p, { tags: v === 'C' ? obFilled : null, noAdd: v !== 'D' || !tmDayBreaks(p.id).length });
 +    return h ? '<div class="ob-line">' + h + '</div>' : '';
 +  }
 +  function obAddHTML(p) {
-+    var v = obOn(); if (!v || v === 'B') return '';
++    var v = obOn(); if (!v || v === 'B' || v === 'D' && tmDayBreaks(p.id).length) return '';
 +    return '<span class="ob-addwho">' + obPickersHTML(p, { onlyAdd: true }) + '</span>';
 +  }
 +  // B: every break of the day in one list in time order, then who has none yet; each line sets that person's breaks
@@ -126,7 +129,7 @@ index a4b26c9..090f472 100644
 +    obFilled = {}; tmClearMsg(); tmAssignMsg = n + (n === 1 ? ' suggested break' : ' suggested breaks') + ' taken away. Not saved yet.'; draw();
 +  }
 +  function obFillHTML() {
-+    var v = obOn(); if (v !== 'C' && v !== 'D' || !tmPlanEditable()) return '';
++    var v = obOn(); if (v !== 'C' || !tmPlanEditable()) return '';
 +    var none = tmDayPeople().filter(function (p) { return !tmDayBreaks(p.id).length && tmSpans(p.id).length; }), filled = Object.keys(obFilled).filter(function (k) { var x = k.split('|'); return obBreakFor(x[0], +x[1]); }).length;
 +    if (!none.length && !filled) return '';
 +    return '<div class="ob-fill">' + (none.length ? '<span>' + esc(none.length + (none.length === 1 ? ' person has' : ' people have') + ' no break yet.') + '</span><button type="button" class="btn" data-p="tm-ob-fill">Fill their breaks</button>' : '<span class="lk-fillnote">' + esc(filled + (filled === 1 ? ' break was' : ' breaks were') + ' filled for you. Check them, then Save.') + '</span><button type="button" class="btn" data-p="tm-ob-empty">Empty them</button>') + '</div>';
@@ -137,18 +140,18 @@ index a4b26c9..090f472 100644
 +    opts = opts || {};
 +    var day = tmPlanDay(), bs = tmDayBreaks(p.id), dis = svOf('t') === 'busy' ? ' disabled' : '';
 +    var picks = opts.onlyAdd ? '' : bs.map(function (b, n) {
-+      var w = tmIsSplit(b.len) ? 'Split' : n ? 'Second break' : 'Break', short = n ? 'Second' : 'Break';
-+      return '<span class="ob-one">' + tmSel('tm-ob-at:' + p.id + ':' + b.at, w + ' for ' + p.name, [['', 'No break']].concat(obTimes(p.id, b.len, b.at).map(function (m) { return [m, (tmIsSplit(b.len) ? 'Split ' : n ? 'Second ' : 'Break ') + tmHHMM(m) + (obOutside(p.id, m, b.len) ? ' (outside their hours)' : '')]; })), b.at, true) +
-+        tmSel('tm-ob-len:' + p.id + ':' + b.at, 'How long, ' + w.toLowerCase() + ' for ' + p.name, TM_LENS.map(function (l) { return [l, 'Length ' + tmLenLabel(l)]; }), b.len, true) +
++      var D = obOn() === 'D', w = tmIsSplit(b.len) ? 'Split' : n ? (D ? '2nd break' : 'Second break') : 'Break', short = n ? 'Second' : 'Break';
++      return '<span class="ob-one">' + tmSel('tm-ob-at:' + p.id + ':' + b.at, w + ' for ' + p.name, [['', 'No break']].concat(obTimes(p.id, b.len, b.at).map(function (m) { return [m, (tmIsSplit(b.len) ? 'Split ' : n ? (D ? '2nd break ' : 'Second ') : 'Break ') + tmHHMM(m) + (obOutside(p.id, m, b.len) ? ' (outside their hours)' : '')]; })), b.at, true) +
++        tmSel('tm-ob-len:' + p.id + ':' + b.at, 'How long, ' + w.toLowerCase() + ' for ' + p.name, TM_LENS.map(function (l) { return [l, (D ? '' : 'Length ') + tmLenLabel(l)]; }), b.len, true) +
 +        (opts.tags && opts.tags[p.id + '|' + b.at] ? '<span class="lk-ftag ob-ftag">' + esc(opts.tags[p.id + '|' + b.at]) + '</span>' : '') + '</span>';
 +    }).join('');
-+    var add = !opts.noAdd && bs.length < OB_MAX ? '<button type="button" class="chip tm-addbr ob-add" data-p="tm-ob-add" data-id="' + esc(p.id) + '" data-day="' + esc(day) + '" aria-label="' + esc((bs.length ? 'Add a second break for ' : 'Add a break for ') + p.name) + '"' + dis + '>' + (bs.length ? '+ Second break' : '+ Break') + '</button>' : '';
++    var add = !opts.noAdd && bs.length < OB_MAX ? '<button type="button" class="chip tm-addbr ob-add" data-p="tm-ob-add" data-id="' + esc(p.id) + '" data-day="' + esc(day) + '" aria-label="' + esc((bs.length ? 'Add a second break for ' : 'Add a break for ') + p.name) + '"' + dis + '>' + (bs.length ? (obOn() === 'D' ? '+ 2nd break' : '+ Second break') : '+ Break') + '</button>' : '';
 +    return picks + add;
 +  }
    // the bar: the approved .tm-tlbar of "A saved day at a glance", positions from checked minutes, rounded once
    function tmBarHTML(id, r) {
      var spans = tmSpans(id); if (!r || !spans.length) return '';
-@@ -14315,7 +14435,7 @@ if (list.length) sg('oreg', 's');
+@@ -14315,7 +14438,7 @@ if (list.length) sg('oreg', 's');
      var spans = tmSpans(id), brs = tmDayBreaks(id), named = spans.length > 1;
      var hrs = spans.map(function (o) { return (named ? o.shs.join(', ') + ' ' : o.roster ? 'Roster ' : o.shs.join(', ') + ' hours ') + tmHHMM(o.from) + ' to ' + tmHHMM(o.to); }).join(', ');
      if (named && spans.every(function (o) { return o.roster; })) hrs = 'Roster: ' + hrs;
@@ -157,7 +160,7 @@ index a4b26c9..090f472 100644
      return (hrs || 'Hours not set') + ' · ' + bw;
    }
    // the sticky head: each service worked, in time order, with its hours and who has no section yet; then the hour marks
-@@ -14340,13 +14460,13 @@ if (list.length) sg('oreg', 's');
+@@ -14340,13 +14463,13 @@ if (list.length) sg('oreg', 's');
          '<button type="button" class="p-link tm-tloff' + (armedOff ? ' is-armed' : '') + '" data-p="tm-off" data-id="' + esc(p.id) + '" data-sh="' + esc(s.id) + '" data-day="' + esc(day) + '" aria-label="' + esc(armedOff ? 'Tap again to take ' + p.name + ' off ' + s.name : 'Take ' + p.name + ' off ' + s.name) + '"' + dis + '>' + esc(armedOff ? 'Tap again to take off' : 'Take off ' + s.name) + '</button></span>' +
          (hint ? '<small class="tm-learn tm-tlhint">' + esc(hint) + '</small>' : '') + '</span>' +
          '<div class="tm-grid-cell tm-tlsvc-sec' + (chefP(p) ? ' is-chef' : '') + '">' + tmGridCellHTML(p, s, shs) + '</div>' +
@@ -171,21 +174,21 @@ index a4b26c9..090f472 100644
 -      tmShortMarkHTML(p.id, sv) + (flag ? '<span class="tm-roster-flag">' + esc(flag) + '</span>' : '') + '</div>' +
 -      '<div class="tm-tlrow-main"><div class="tm-tlrow-day">' + tmBarHTML(p.id, r) + '<p class="tm-learn tm-roster-time">' + esc(tmDayWords(p.id)) + '</p></div>' + lines + tmOverlapHTML(p.id) + tmUndoHTML(p.id) + '</div></li>';
 +      tmShortMarkHTML(p.id, sv) + (flag ? '<span class="tm-roster-flag">' + esc(flag) + '</span>' : '') + obAddHTML(p) + '</div>' +
-+      '<div class="tm-tlrow-main"><div class="tm-tlrow-day">' + tmBarHTML(p.id, r) + (obOn() && obOn() !== 'B' ? '<div class="ob-dayline"><p class="tm-learn tm-roster-time">' + esc(tmDayWords(p.id).replace(' · No break yet', '')) + '</p>' + obRowLineHTML(p) + '</div>' : '<p class="tm-learn tm-roster-time">' + esc(tmDayWords(p.id)) + '</p>') + '</div>' + lines + tmOverlapHTML(p.id) + tmUndoHTML(p.id) + '</div></li>';
++      '<div class="tm-tlrow-main"><div class="tm-tlrow-day">' + tmBarHTML(p.id, r) + (obOn() && obOn() !== 'B' ? '<div class="ob-dayline"><p class="tm-learn tm-roster-time">' + esc(obOn() === 'D' ? tmDayWords(p.id) : tmDayWords(p.id).replace(' · No break yet', '')) + '</p>' + obRowLineHTML(p) + '</div>' : '<p class="tm-learn tm-roster-time">' + esc(tmDayWords(p.id)) + '</p>') + '</div>' + lines + tmOverlapHTML(p.id) + tmUndoHTML(p.id) + '</div></li>';
    }
    // the services a person is not on yet, in time order; a hidden one says so in words (it replaced the service chips)
    function tmAddSvcHTML(p) {
-@@ -14357,7 +14477,8 @@ if (list.length) sg('oreg', 's');
+@@ -14357,7 +14480,8 @@ if (list.length) sg('oreg', 's');
    // Undo for the last Take off, in place: in the person's row, or where the row was when it was their last service
    function tmUndoHTML(id) {
      var u = tmUi.offUndo; if (!u || u.id !== id || u.day !== tmPlanDay()) return '';
 -    return '<p class="tm-tlundo" role="status">' + esc(mnName(id) + ' taken off ' + u.name + ' and its breaks. Not saved yet.') + ' <button type="button" class="p-link" data-p="tm-off-undo" data-id="' + esc(id) + '">Undo</button></p>';
-+    var uw = obOn() ? mnName(id) + ' taken off ' + u.name + (u.brs.length ? ' and ' + u.brs.map(function (b) { return (tmIsSplit(b.len) ? 'split ' : 'break ') + tmHHMM(b.at) + ' to ' + tmHHMM(b.at + b.len); }).join(', ') : '') + '. Not saved yet.' : mnName(id) + ' taken off ' + u.name + ' and its breaks. Not saved yet.';
++    var uw = obOn() === 'D' ? mnName(id) + ' taken off ' + u.name + '.' + (u.brs.length ? ' ' + u.brs.map(function (b) { return (tmIsSplit(b.len) ? 'Split ' : 'Break ') + tmHHMM(b.at) + ' to ' + tmHHMM(b.at + b.len); }).join(' and ') + (u.brs.length > 1 ? ' go' : ' goes') + ' too.' : '') + ' Not saved yet.' : obOn() ? mnName(id) + ' taken off ' + u.name + (u.brs.length ? ' and ' + u.brs.map(function (b) { return (tmIsSplit(b.len) ? 'split ' : 'break ') + tmHHMM(b.at) + ' to ' + tmHHMM(b.at + b.len); }).join(', ') : '') + '. Not saved yet.' : mnName(id) + ' taken off ' + u.name + ' and its breaks. Not saved yet.';
 +    return '<p class="tm-tlundo" role="status">' + esc(uw) + ' <button type="button" class="p-link" data-p="tm-off-undo" data-id="' + esc(id) + '">Undo</button></p>';
    }
    function tmChefRole(p) { return chefP(p) ? (p.role === 'head' ? 'Head chef' : 'Sous chef') : ''; }
    function tmGridCellHTML(p, s, shs) {
-@@ -14491,7 +14612,7 @@ if (list.length) sg('oreg', 's');
+@@ -14491,7 +14615,7 @@ if (list.length) sg('oreg', 's');
    // a marked person's words: when their break in the short time starts ("Break 18:30, too few"), grey once accepted
    function tmShortMarkWords(id, v) {
      if (!v || !v.s || v.away.indexOf(id) < 0) return null;
@@ -194,7 +197,7 @@ index a4b26c9..090f472 100644
      // short enough to sit beside the name, so a row never changes height under a thumb when its mark goes
      var acc = !!(v.ok && v.ok.at), w = b ? (tmIsSplit(b.len) ? 'Split ' : 'Break ') + tmHHMM(b.at) : 'Break';
      return { text: w + (acc ? ', too few, accepted' : ', too few'), grey: acc };
-@@ -14531,7 +14652,7 @@ if (list.length) sg('oreg', 's');
+@@ -14531,7 +14655,7 @@ if (list.length) sg('oreg', 's');
    function tmAssignHTML(s) {
      var undo = tmUi.offUndo && tmUi.offUndo.day === tmPlanDay();
      if (!tmDayPeople().length && !undo) return tmQuickHTML(s);
@@ -203,7 +206,7 @@ index a4b26c9..090f472 100644
    }
    // This chooser only changes the existing dated draft. Names/services remain in memory with that day's UI.
    function tmQuickHTML(s) {
-@@ -14692,7 +14813,9 @@ if (list.length) sg('oreg', 's');
+@@ -14692,7 +14816,9 @@ if (list.length) sg('oreg', 's');
        gr.classList.add('is-short-here');
        var gs = Array.prototype.filter.call(gr.querySelectorAll('.tm-tlsvc'), function (x) { return x.getAttribute('data-sh') === sh; })[0] || gr;
        // the picker's own button (the select before it is hidden): on the short time's service first, else any of theirs
@@ -214,7 +217,7 @@ index a4b26c9..090f472 100644
        if (gp) { gp.focus({ preventScroll: true }); tmFocusEnsureVisible(gp); } else gr.scrollIntoView({ block: 'center' });
        tmShortPaint();
        return;
-@@ -14724,9 +14847,10 @@ if (list.length) sg('oreg', 's');
+@@ -14724,9 +14850,10 @@ if (list.length) sg('oreg', 's');
        if (!s || el.getAttribute('data-day') !== tmPlanDay() || !tmOnShift(id, sh)) return;
        if (!arm('tm-off:' + tmPlanDay() + ':' + id + ':' + sh)) return;
        var offHrs = tmf.hrs && tmf.hrs[id] && tmf.hrs[id][sh];
@@ -223,11 +226,11 @@ index a4b26c9..090f472 100644
 +      var obStay = obOn() ? tmBreaks(id, sh).filter(function (b) { return obSh(id, b.at, b.len, sh); }) : [], obGo = tmUi.offUndo.brs;
        tmRemoveShift(id, sh); tmClearMsg();
 -      tmAssignMsg = mnName(id) + ' taken off ' + s.name + ' and its breaks. Not saved yet.' + (tmf.on[id] ? '' : ' ' + mnName(id) + ' is not on this day now: Undo, or Add staff, puts them back.');
-+      tmAssignMsg = obOn() ? mnName(id) + ' taken off ' + s.name + (obGo.length ? ' and ' + obGo.map(function (b) { return (tmIsSplit(b.len) ? 'split ' : 'break ') + tmHHMM(b.at) + ' to ' + tmHHMM(b.at + b.len); }).join(', ') : '') + '.' + (obStay.length ? ' Their ' + obStay.map(function (b) { return (tmIsSplit(b.len) ? 'split ' : 'break ') + tmHHMM(b.at); }).join(', ') + ' stays.' : '') + ' Not saved yet.' + (tmf.on[id] ? '' : ' ' + mnName(id) + ' is not on this day now: Undo, or Add staff, puts them back.') : mnName(id) + ' taken off ' + s.name + ' and its breaks. Not saved yet.' + (tmf.on[id] ? '' : ' ' + mnName(id) + ' is not on this day now: Undo, or Add staff, puts them back.');
++      tmAssignMsg = obOn() === 'D' ? mnName(id) + ' taken off ' + s.name + '.' + (obGo.length ? ' ' + obGo.map(function (b) { return (tmIsSplit(b.len) ? 'Split ' : 'Break ') + tmHHMM(b.at) + ' to ' + tmHHMM(b.at + b.len); }).join(' and ') + (obGo.length > 1 ? ' go' : ' goes') + ' too.' : '') + (obStay.length ? ' Their ' + obStay.map(function (b) { return (tmIsSplit(b.len) ? 'split ' : 'break ') + tmHHMM(b.at); }).join(' and ') + ' stays.' : '') + ' Not saved yet.' + (tmf.on[id] ? '' : ' ' + mnName(id) + ' is not on this day now: Undo, or Add staff, puts them back.') : obOn() ? mnName(id) + ' taken off ' + s.name + (obGo.length ? ' and ' + obGo.map(function (b) { return (tmIsSplit(b.len) ? 'split ' : 'break ') + tmHHMM(b.at) + ' to ' + tmHHMM(b.at + b.len); }).join(', ') : '') + '.' + (obStay.length ? ' Their ' + obStay.map(function (b) { return (tmIsSplit(b.len) ? 'split ' : 'break ') + tmHHMM(b.at); }).join(', ') + ' stays.' : '') + ' Not saved yet.' + (tmf.on[id] ? '' : ' ' + mnName(id) + ' is not on this day now: Undo, or Add staff, puts them back.') : mnName(id) + ' taken off ' + s.name + ' and its breaks. Not saved yet.' + (tmf.on[id] ? '' : ' ' + mnName(id) + ' is not on this day now: Undo, or Add staff, puts them back.');
        draw();
        requestAnimationFrame(function () { var b = S.root && S.root.querySelector('[data-p="tm-off-undo"]'); if (b) { b.focus({ preventScroll: true }); tmFocusEnsureVisible(b); } });
        return;
-@@ -14752,6 +14876,20 @@ if (list.length) sg('oreg', 's');
+@@ -14752,6 +14879,20 @@ if (list.length) sg('oreg', 's');
        tmUi.occShow = null; tmUi.offUndo = null; tmClearMsg();
        tmAssignMsg = 'Everyone taken off ' + tmPlanDate(cday) + ': ' + gone + (gone === 1 ? ' person' : ' people') + '. Not saved yet. Refresh brings the saved plan back.'; draw(); return;
      }
@@ -248,7 +251,7 @@ index a4b26c9..090f472 100644
      if (a === 'tm-addbr') {
        if (!s || el.getAttribute('data-day') !== tmPlanDay() || !tmOnShift(id, sh) || tmBreaks(id, sh).length >= TM_BREAKS) return;
        var bs = tmBreaks(id, sh), last = bs.length ? bs[bs.length - 1] : null, hb = tmHrs(tmf, id, s);
-@@ -14815,6 +14953,17 @@ if (list.length) sg('oreg', 's');
+@@ -14815,6 +14956,17 @@ if (list.length) sg('oreg', 's');
        requestAnimationFrame(function () { var t = S.root && S.root.querySelector('select[data-k="tm-sec:' + id + ':' + v + '"]'); if (t && t._uxTrigger) t = t._uxTrigger; if (t) { t.focus({ preventScroll: true }); tmFocusEnsureVisible(t); } });
        return;
      }
@@ -266,3 +269,22 @@ index a4b26c9..090f472 100644
      // a break's time or length: tm-at:<id>:<sh>:<n>, so a held picker can only reach its own person, service and break
      if (p[0] === 'tm-at' || p[0] === 'tm-len') {
        var bsh = p[2] || '';
+@@ -14837,14 +14989,16 @@ if (list.length) sg('oreg', 's');
+     if (!ids.length) return;
+     tmClearMsg();
+     tmf.br = tmf.br.filter(function (b) { return b.sh !== sh || tmIsSplit(b.len) !== split; });
+-    var n = 0, moved = [];
++    var n = 0, moved = [], skipped = [];
+     ids.forEach(function (id, i) {
+       var at = from + (per ? Math.floor(i / per) * gap : 0), h = tmHrs(tmf, id, s), was = at;
+       // inside their own hours on this service (16 Nov 2026); whoever is moved is named, so a group together is seen
+       if (h && h[1] > h[0]) at = Math.min(Math.max(at, h[0]), Math.max(h[0], h[1] - len));
++      // PREVIEW D: two breaks a person at most, and never over a break they already have; whoever is left out is named
++      if (obOn() === 'D' && (tmDayBreaks(id).length >= OB_MAX || tmDayBreaks(id).some(function (x) { return at < x.at + x.len && x.at < at + len; }))) { skipped.push(mnName(id)); return; }
+       if (at < 1440 && tmBreaks(id, sh).length < TM_BREAKS) { tmf.br.push({ id: id, sh: sh, at: at, len: len }); n++; if (at !== was) moved.push(mnName(id) + ' ' + tmHHMM(at)); }
+     });
+-    tmMsg = n + ' ' + (split ? 'split' : 'break') + (n === 1 ? '' : 's') + ' from ' + tmHHMM(from) + ', ' + (per === 1 ? 'one per group' : per === 2 ? 'two per group' : 'all together') + (per ? ', starting every ' + gap + ' min' : '') + '.' + (moved.length ? ' Moved inside their hours: ' + moved.join(', ') + '.' : '') + ' Check them, then Save.'; draw();
++    tmMsg = n + ' ' + (split ? 'split' : 'break') + (n === 1 ? '' : 's') + ' from ' + tmHHMM(from) + ', ' + (per === 1 ? 'one per group' : per === 2 ? 'two per group' : 'all together') + (per ? ', starting every ' + gap + ' min' : '') + '.' + (moved.length ? ' Moved inside their hours: ' + moved.join(', ') + '.' : '') + (skipped.length ? ' Left as they were (two breaks already, or a break then): ' + skipped.join(', ') + '.' : '') + ' Check them, then Save.'; draw();
+   }
+   /* Use it: the same day last week, filled in for the chef to check (never saved by itself). On a tap: one read. People
+      no longer on the staff list and shifts taken off are left out. */
