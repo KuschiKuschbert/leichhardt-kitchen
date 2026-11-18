@@ -2686,6 +2686,34 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fe-grid .fe-num { width: 4rem; }
 .fe-time { width: 9rem; max-width: 100%; min-width: 0; min-height: 44px; text-align: center; }
 .fe-rnote { display: block; width: 11rem; margin-top: 0.25rem; min-height: 36px; font-size: 0.85rem; }
+/* typed function times (head chef, 18 Nov 2026, docs/fn-time-picker-options/brief.md): the time said back under the box
+   while it is typed, Morning or evening? with two chips, or a red Cannot read, once it is left; on a laptop a list of
+   times under Event start and First round at (.fe-tl, 44 px rows, ink for the row the arrow keys are on) */
+.fe-tcell { position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 0.2rem; width: 100%; min-width: 0; }
+.fe-time { font-variant-numeric: tabular-nums; }
+.fe-tsay { min-height: 1.25rem; font-size: 0.875rem; color: var(--muted); }
+.fe-tsay b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.fe-tcell:has(.fe-tq) .fe-tsay, .fe-tcell:has(.fe-err) .fe-tsay { display: none; }
+.fe-time.is-ask { border-color: var(--tag); box-shadow: 0 0 0 1px var(--tag); background: var(--hit); }
+.fe-time.is-bad { border-color: var(--bad-ink); box-shadow: 0 0 0 1px var(--bad-ink); background: var(--bad-tint); }
+.fe-time.is-ask:focus-visible, .fe-time.is-bad:focus-visible { outline-color: var(--ink); }
+.fe-tq { display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem; }
+.fe-tamb { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.fe-tl { position: absolute; z-index: 20; left: 0; width: max(100%, 13rem); max-height: 264px; overflow-y: auto; padding: 4px; background: var(--paper); border: 1.5px solid var(--ink); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18); }
+.fe-tl-o { display: flex; align-items: baseline; gap: 0.6rem; min-height: 44px; padding: 0.55rem 0.75rem; border-radius: var(--r-act); cursor: pointer; }
+.fe-tl-o b { font-size: 1.0625rem; font-variant-numeric: tabular-nums; }
+.fe-tl-o span { font-size: 0.875rem; color: var(--muted); }
+.fe-tl-o:hover { background: var(--hit); }
+.fe-tl-o.is-near { border-left: 4px solid var(--accent); border-radius: 0 var(--r-act) var(--r-act) 0; }
+.fe-tl-o.is-cur { background: var(--ink); color: #fff; }
+.fe-tl-o.is-cur span { color: #fff; }
+.fe-rrow { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.25rem 0.6rem; }
+.fe-grid .fe-tcell { width: 9rem; }
+.fe-grid .fe-rrow .fe-rnote { flex: 1 1 100%; margin-top: 0; }
+@media (min-width: 768px) {   /* a round's time and note on one line on a laptop */
+  .fe-grid .fe-rrow { flex-wrap: nowrap; }
+  .fe-grid .fe-rrow .fe-rnote { flex: 1 1 12rem; max-width: 22rem; }
+}
 .fe-rn { display: inline-block; min-width: 1.4rem; font-weight: 700; }
 .fe-nd { display: block; color: #6A4A00; font-weight: 600; }
 .fe-grid tr.is-empty { background: var(--bad-tint); }
