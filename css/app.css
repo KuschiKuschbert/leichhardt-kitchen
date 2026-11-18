@@ -1752,6 +1752,37 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .g-rb { display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem; min-width: 0; }
 .g-rb b { font-size: 1.0625rem; overflow-wrap: anywhere; }
 .g-open { display: inline-flex; align-items: center; color: var(--ink); text-decoration: none; }
+/* a video guide (head chef, 19 Nov 2026, docs/tutorial-videos.md): Play above the written steps; the player over the
+   page like a guide page opened big (gvOpen in js/prep.js), the wide video on a computer, the tall one on a phone */
+.g-vid { margin: 0.75rem 0 1rem; }
+.g-vplay { display: grid; grid-template-columns: auto 1fr; column-gap: 0.8rem; align-items: center; width: 100%; max-width: 32rem; min-height: 64px; padding: 0.7rem 1rem; border: 0; border-radius: 12px; background: var(--bar); color: var(--bar-text); text-align: left; cursor: pointer; }
+.g-vplay svg { grid-row: span 2; color: var(--accent); }
+.g-vt { font: 700 1.125rem/1.2 var(--display); text-transform: uppercase; }
+.g-vs { font-size: 0.875rem; color: #E7E1D3; }
+.g-vplay:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.g-vnone { margin: 0; padding: 0.7rem 0.9rem; border: 1.5px dashed var(--edge); border-radius: 10px; color: var(--muted); font-weight: 600; }
+.g-vthumb { color: var(--accent-ink); background: var(--paper); }
+.g-vhint { margin: 0 0 0.5rem; }
+.gv-body { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 0.6rem 0.6rem calc(0.6rem + env(safe-area-inset-bottom)); background: #000; container-type: size; }
+.gv-frame { position: relative; width: 100%; max-height: 100%; aspect-ratio: 16 / 9; }
+.gv-frame.tall { aspect-ratio: 9 / 16; }
+/* the biggest the video fits in the space under the title, whole, on any screen */
+@supports (width: 1cqw) {
+  .gv-frame { width: min(100cqw, 100cqh * 16 / 9); }
+  .gv-frame.tall { width: min(100cqw, 100cqh * 9 / 16); }
+}
+.gv-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
+/* the head chef's video links (admin, Kitchen, Guides): one row per video, a wide and a tall link */
+.tv-list { list-style: none; margin: 0; padding: 0; }
+.tv-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 0.75rem; padding: 0.6rem 0; border-top: 1px solid var(--line); }
+.tv-name { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.6rem; min-width: 0; }
+.tv-name b { overflow-wrap: anywhere; }
+.tv-name .g-who, .tv-all { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+.tv-all { color: var(--muted); letter-spacing: 0.06em; }
+.tv-in { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; font-size: 0.8125rem; font-weight: 600; }
+.tv-in input { width: 100%; min-width: 0; min-height: 44px; box-sizing: border-box; }
+.tv-in input[aria-invalid="true"] { border-color: var(--bad-ink); box-shadow: 0 0 0 1px var(--bad-ink); }
+@media (max-width: 560px) { .tv-row { grid-template-columns: 1fr; } }
 /* on a recipe card: the box only takes room when there is a guide */
 .r-guides { display: contents; }
 .g-hits a { font-weight: 700; color: var(--accent-ink); }

@@ -12,7 +12,7 @@ const now = Date.now(), today = new Date(now + 10 * 3600000).toISOString().slice
 const paths = [
  'config/main','config/admins','config/rosterLinks','proofHistory/x',`days/${today}/items/x`,`orders/${today}/lines/x`,`waste/${today}/lines/x`,`waste/${today}`,
  'transferOpen/x',`transfers/${today}/lines/x`,'daily/x','summary/waste','misses/x','views/x','notes/x','notes/x/seen/x',
- 'minutes/x','minutes/x/hist/1','minutes/x/signs/x','minutes/x/signs/1_staff','guides/x','guides/x/pages/0','functions/x','functions/x/hist/1',
+ 'minutes/x','minutes/x/hist/1','minutes/x/signs/x','minutes/x/signs/1_staff','guides/x','guides/x/pages/0','tutorials/staff','tutorials/chefs','functions/x','functions/x/hist/1',
  'fncontact/x','fnsent/x','fnseen/x','fools/2027-04-01_staff','mail/x','mailstat/x','todos/x','push/x','cutdone/x','suppliers/x','suppliers/x/audit/1',
  'suppliers/x/orders/x','supplierlinks/x','drinks/x','shifts/x','staffpins/x','pinset/x','sessions/x','proofs/x','activity/x',
  'sections/x','learned/x','ordlearned/x','learnlog/x','recipes/x/hist/1','drawings/x/hist/1'

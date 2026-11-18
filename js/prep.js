@@ -80,9 +80,9 @@
      this phone. No reads, no writes, nothing kept on the phone. */
   var PIN_AGAIN = 'Your PIN is saved. Type it again to sign in.';
   var SV_SLOW = 4000, SV_DONE = 1200, SV_WAIT = 'Waiting for the signal. Keep the book open.', svRec = {}, errSeen = {};
-  function svForm(k) { return k === 'ps' ? JSON.stringify(psModule() && psModule().draft() || null) : k === 't' ? tmSig(tmf) : k === 'n' ? JSON.stringify(S.nf || null) : k === 'm' ? mfSnap(S.mf) : k === 'g' ? gfSnap(S.gf) : k === 'c' ? JSON.stringify(S.cutDraft || null) : JSON.stringify(S.draft || null); }
+  function svForm(k) { return k === 'ps' ? JSON.stringify(psModule() && psModule().draft() || null) : k === 't' ? tmSig(tmf) : k === 'n' ? JSON.stringify(S.nf || null) : k === 'm' ? mfSnap(S.mf) : k === 'g' ? gfSnap(S.gf) : k === 'c' ? JSON.stringify(S.cutDraft || null) : k === 'v' ? JSON.stringify(S.vf && S.vf.raw || null) : JSON.stringify(S.draft || null); }
   // the form open now (the Save bar has one form, whose draft is taken again after each save; c: the order cut-offs)
-  function svObj(k) { return k === 'ps' ? psModule() && psModule().draft() : k === 't' ? tmf : k === 'n' ? S.nf : k === 'm' ? S.mf : k === 'g' ? S.gf : k === 'c' ? S.cutDraft : undefined; }
+  function svObj(k) { return k === 'ps' ? psModule() && psModule().draft() : k === 't' ? tmf : k === 'n' ? S.nf : k === 'm' ? S.mf : k === 'g' ? S.gf : k === 'c' ? S.cutDraft : k === 'v' ? S.vf : undefined; }
   function svStop(k) { var r = svRec[k]; if (r) clearTimeout(r.timer); delete svRec[k]; }
   function svReset() { Object.keys(svRec).forEach(svStop); }
   // act: which button started it, where a form has two (the minutes' Publish and Save draft). slow: draws the 4 s line
@@ -10862,9 +10862,12 @@ if (list.length) sg('oreg', 's');
   var G_CATS = [['equipment', 'Equipment'], ['cleaning', 'Cleaning'], ['safety', 'Food safety'], ['prep', 'Prep and cooking'], ['stock', 'Orders and stock'], ['shift', 'Opening and closing'], ['other', 'Other']];
   var G_MAXP = 20, G_IMG = 950000, G_LONG = 2000, G_TEXT = 6000, G_STALE = 30 * 60000, G_NEW = 14 * 86400000;
   var PDFJS = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/';   // the security header in index.html allows only this folder: change both together
-  var G_RANK = {}; G_CATS.forEach(function (c, i) { G_RANK[c[0]] = i; });
+  // What the Guides page shows: the videos first (made by the book, never a category the head chef picks for an upload)
+  // the Guides page shows the tutorial videos as their own group, last, under the kitchen's own guides (19 Nov 2026)
+  var G_SHOW = G_CATS.concat([['video', 'Videos']]);
+  var G_RANK = {}; G_SHOW.forEach(function (c, i) { G_RANK[c[0]] = i; });
   var G_ICON = '<svg viewBox="0 0 64 64" width="40" height="40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M32 16c-6-4-14-6-24-6v38c10 0 18 2 24 6 6-4 14-6 24-6V10c-10 0-18 2-24 6z"/><path d="M32 16v38"/><path d="M14 20c4 0 8 1 12 3M14 30c4 0 8 1 12 3M38 23c4-2 8-3 12-3M38 33c4-2 8-3 12-3"/></svg>';
-  function gCatName(c) { return (G_CATS.filter(function (k) { return k[0] === c; })[0] || [0, 'Other'])[1]; }
+  function gCatName(c) { return (G_SHOW.filter(function (k) { return k[0] === c; })[0] || [0, 'Other'])[1]; }
   function gRef(id) { return docRef('guides', id); }
   function gPageRef(id, n) { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['guides', id, 'pages', String(n)])); }
   function gPagesCol(id) { return fb.fs.collection.apply(null, [fb.db].concat(base(), ['guides', id, 'pages'])); }
@@ -10886,8 +10889,95 @@ if (list.length) sg('oreg', 's');
     kw: 'steamed veg, veg programme, combi oven, cauliflower, broccoli, ice bath', pages: 0,
     steps: 'Fill one sink with ice water before you start, with plenty of ice.\nPrep the veg as on the Seasonal Vegetables card. Each vegetable goes in its own steam tray.\nStart the steamed veg programme: steam, 100 °C. The oven heats up and beeps once when it is ready.\nReady beep: put all three trays in together. Carrots, cauliflower and broccoli. Close the door.\nBeep at 2 min: broccoli out, straight into the ice water.\nBeep at 4 min: cauliflower out, straight into the ice water.\nLast beep, 6 min: carrots out, straight into the ice water. The ice water stops the cooking.\nLeave all the veg in the ice water until it is cold.\nDrain the water. Put the veg in a big white tub with a lid.' };
   var G_BUNDLED = [G_FOOD, G_SMOKE, G_VEG];
-  function gById(id) { return G_BUNDLED.filter(function (g) { return g.id === id; })[0] || (S.guides || []).filter(function (g) { return g.id === id; })[0] || null; }
-  function gOrder(a, b) { return (G_RANK[a.cat] == null ? 99 : G_RANK[a.cat]) - (G_RANK[b.cat] == null ? 99 : G_RANK[b.cat]) || String(a.title).localeCompare(String(b.title)); }
+  /* Video tutorials (head chef, 19 Nov 2026; docs/tutorial-videos.md, In the book): one guide per page of the book, made
+     from the tutorial storyboards into js/tutorials.js (scripts/tutorials/catalogue.mjs) and loaded only when Guides opens.
+     The written steps travel with the book. The videos are unlisted on YouTube and play from youtube-nocookie.com, the one
+     video site the security header in index.html lets into a frame, only after a tap, over the page (gvOpen) so a redraw
+     never restarts them. Their links are in two records the head chef saves in the admin panel (Kitchen, Guides):
+     tutorials/staff, which every kitchen login reads, and tutorials/chefs, which the rules let only the head chef, the sous
+     chefs and the admin read. Each is { links: { <video id>: { w, t } } }: w the computer (16:9) video, t the phone (9:16) one.
+     A link is used only when it is an 11-character YouTube id, never as typed. */
+  var G_VIDS = null, gvLoading = null, gvFailed = false, VID_ID = /^[A-Za-z0-9_-]{11}$/;
+  var G_PLAY = '<svg viewBox="0 0 64 64" width="40" height="40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="12" width="52" height="40" rx="6"/><path d="M27 23l14 9-14 9z" fill="currentColor"/></svg>';
+  function gVids() {
+    if (G_VIDS || gvLoading || gvFailed || !window.LK_APP || !window.LK_APP.load) return G_VIDS || [];
+    gvLoading = window.LK_APP.load('js/tutorials.js?v=1').then(function () {
+      var T = window.LK_TUTORIALS;
+      if (!T || !Array.isArray(T.list)) throw { code: 'workspace-version' };
+      G_VIDS = T.list.map(function (t) {
+        return { id: 'v-' + t.id, vid: t.id, n: t.n, title: t.title, cat: 'video', who: t.who === 'chefs' ? 'chefs' : 'all', sum: t.sum, len: +t.len || 0,
+          steps: (t.steps || []).join('\n'), kw: 'video, tutorial, how to', pages: 0 };
+      });
+      gvLoading = null; draw();
+    }).catch(function () { gvLoading = null; gvFailed = true; draw(); });
+    return [];
+  }
+  function gById(id) { return G_BUNDLED.concat(G_VIDS || []).filter(function (g) { return g.id === id; })[0] || (S.guides || []).filter(function (g) { return g.id === id; })[0] || null; }
+  function gOrder(a, b) { return (G_RANK[a.cat] == null ? 99 : G_RANK[a.cat]) - (G_RANK[b.cat] == null ? 99 : G_RANK[b.cat]) || (a.n || 0) - (b.n || 0) || String(a.title).localeCompare(String(b.title)); }
+  function gvLen(g) { var s = g.len || 0; return s ? Math.floor(s / 60) + ' min ' + (s % 60 < 10 ? '0' : '') + (s % 60) : ''; }
+  /* The links, read when a video guide opens: tutorials/staff (1 read), and for a chef or the admin tutorials/chefs too
+     (1 more). Once a day per phone and per person signed in; no listener, no polling. A sign-in
+     change reads again, so a cook never keeps the chefs' links from the sous chef who used the phone before. */
+  var gvl = { links: null, day: '', who: '', state: 'idle', retry: 0 };
+  function gvChef() { var p = me(); return admDev() || !!(p && chefP(p)); }
+  function gvLinksLoad(force) {
+    if (!kitchenAccess() || !S.configFull || !fb || !/^\d{4,6}$/.test(S.pin) || !featOn('guides')) return;
+    var day = dayNow(), who = gViewer(), pin = S.pin, chef = gvChef();
+    if (gvl.state === 'loading' || Date.now() < gvl.retry || (!force && gvl.links && gvl.day === day && gvl.who === who)) return;
+    gvl.state = 'loading';
+    Promise.all([fb.fs.getDoc(docRef('tutorials', 'staff')), chef ? fb.fs.getDoc(docRef('tutorials', 'chefs')).catch(function (e) { if (e && e.code === 'permission-denied') return null; throw e; }) : null]).then(function (r) {
+      if (pin !== S.pin || who !== gViewer()) { gvl.state = 'idle'; return; }
+      var links = {};
+      r.forEach(function (sn) {
+        var l = sn && sn.exists() ? (sn.data() || {}).links : null;
+        if (l && typeof l === 'object') Object.keys(l).forEach(function (k) { var x = l[k] || {}; links[k] = { w: VID_ID.test(x.w) ? x.w : '', t: VID_ID.test(x.t) ? x.t : '' }; });
+      });
+      gvl.links = links; gvl.day = day; gvl.who = who; gvl.state = 'ok'; draw();
+    }, function () { gvl.state = 'error'; gvl.retry = Date.now() + 60000; draw(); });
+  }
+  function gvLink(g) { return gvl.links && gvl.who === gViewer() && gvl.links[g.vid] || { w: '', t: '' }; }
+  // the video for this screen: the computer one from 700 px wide, the phone one below, else whichever there is
+  function gvPick(g) {
+    var l = gvLink(g), wide = window.innerWidth >= 700, id = wide ? l.w || l.t : l.t || l.w;
+    return id ? { id: id, tall: id === l.t && !(wide && id === l.w) } : null;
+  }
+  function gvBlockHTML(g) {
+    gvLinksLoad();
+    var v = gvPick(g), len = gvLen(g);
+    if (!v) return '<section class="g-vid g-noprint" aria-label="Video"><p class="g-vnone">' + (gvl.state === 'loading' || gvl.state === 'idle' ? 'Loading the video...' :
+      gvl.state === 'error' && !gvl.links ? 'Could not load the video. Check the signal. The steps below show the same.' : 'Video to come: the head chef adds it here. The steps below show the same.') + '</p></section>';
+    return '<section class="g-vid g-noprint" aria-label="Video"><button type="button" class="g-vplay" data-p="g-play" data-id="' + esc(g.id) + '">' + G_PLAY +
+      '<span class="g-vt">Play the video</span><span class="g-vs">' + esc((len ? len + '. ' : '') + 'Sound on, or read the steps below.') + '</span></button></section>';
+  }
+  /* The player, over the page like a guide page opened big (gzOpen): Back or Close stops it. */
+  var gv = null;
+  function gvOpen(g) {
+    var v = gvPick(g);
+    if (!v || !VID_ID.test(v.id)) return;
+    if (gz) gzClose();
+    if (gv) gvClose();
+    var el = document.createElement('div');
+    el.className = 'gz-wrap gv-wrap'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', g.title + ', video');
+    gv = { el: el, prev: document.activeElement };
+    el.innerHTML = '<div class="gz-bar"><span class="gz-t">' + esc(g.title) + '<small>Video' + (gvLen(g) ? ', ' + esc(gvLen(g)) : '') + '</small></span><span class="gz-btns"><button type="button" class="gz-b gz-x" data-gv="close">Close</button></span></div>' +
+      '<div class="gv-body"><div class="gv-frame' + (v.tall ? ' tall' : '') + '"><iframe src="https://www.youtube-nocookie.com/embed/' + v.id + '?autoplay=1&amp;rel=0&amp;playsinline=1" title="' + esc(g.title + ' video') +
+      '" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div></div>';
+    document.body.appendChild(el);
+    ovPush('gv', function () { gvClose(true); });
+    document.documentElement.classList.add('gz-open');
+    var c = el.querySelector('[data-gv="close"]'); if (c) c.focus({ preventScroll: true });
+  }
+  function gvClose(noBack) {
+    if (!gv) return;
+    var prev = gv.prev;
+    ovDone('gv', noBack);
+    if (gv.el.parentNode) gv.el.parentNode.removeChild(gv.el);
+    gv = null;
+    document.documentElement.classList.remove('gz-open');
+    if (prev && prev.focus && document.body.contains(prev)) { try { prev.focus({ preventScroll: true }); } catch (e) {} }
+  }
+  document.addEventListener('click', function (e) { var b = gv && e.target.closest && e.target.closest('[data-gv="close"]'); if (b && gv.el.contains(b)) gvClose(); });
+  document.addEventListener('keydown', function (e) { if (gv && e.key === 'Escape') gvClose(); });
   /* Who sees a guide (23 Oct 2026, head chef): who is 'all' (or missing), 'chefs' (the head chef and sous chefs) or 'fn'
      (function managers and chefs). The head chef's Google device sees every guide. Nobody signed in is the staff view.
      Hidden on screen only: the rules cannot tell a sous chef from staff on a read (README, Head chef decisions). */
@@ -10905,10 +10995,13 @@ if (list.length) sg('oreg', 's');
   function gBundled(g) { return G_BUNDLED.some(function (b) { return b.id === g.id; }); }
   function gAll() { return (S.guides || []).filter(function (g) { return !g.removed && g.title && !gBundled(g); }).concat(G_BUNDLED).sort(gOrder); }
   function gLive() { return gAll().filter(gSees); }
+  // the Guides page: the guides and, for whoever may see each, the videos (the recipe cards and searches link guides only)
+  function gShown() { return gLive().concat(gVids().filter(gSees)).sort(gOrder); }
   function gSig(list) { return (list || []).map(function (g) { return g.id + ':' + (g.upd || 0) + (g.removed ? 'r' : ''); }).join('|'); }
   function gIsNew(g) { return now() - (g.at || 0) < G_NEW; }
   function gMeta(g) {
     var n = g.pages || 0, st = mnLines(g.steps).length, out = [];
+    if (g.vid) out.push('Video' + (gvLen(g) ? ', ' + gvLen(g) : ''));
     if (n) out.push(n + (n === 1 ? ' page' : ' pages'));
     if (st) out.push(st + (st === 1 ? ' step' : ' steps'));
     if (g.upd || g.at) out.push('Updated ' + dayShort(T.day(g.upd || g.at)));
@@ -11091,7 +11184,7 @@ if (list.length) sg('oreg', 's');
   }
 
   /* ---- the Guides page, as staff use it ---- */
-  function gThumbHTML(g) { return '<span class="g-thumb" aria-hidden="true">' + (g.thumb ? '<img src="' + esc(g.thumb) + '" alt="">' : G_ICON) + '</span>'; }
+  function gThumbHTML(g) { return '<span class="g-thumb' + (g.vid ? ' g-vthumb' : '') + '" aria-hidden="true">' + (g.thumb ? '<img src="' + esc(g.thumb) + '" alt="">' : g.vid ? G_PLAY : G_ICON) + '</span>'; }
   function gCardHTML(g, q) {
     var snip = q ? gSnip(g, q) : '';
     return '<li><a class="g-card" href="#/guides/' + encodeURIComponent(g.id) + '">' + gThumbHTML(g) + '<span class="g-cb"><span class="g-ct">' + esc(gCatName(g.cat)) + (gIsNew(g) ? '<span class="g-new">New</span>' : '') + gWhoTag(g) + '</span>' +
@@ -11100,25 +11193,27 @@ if (list.length) sg('oreg', 's');
   }
   function gAdminLink() { return admDev() ? '<p class="g-wl g-noprint"><button type="button" class="p-link" data-p="g-admin">Add or change guides</button></p>' : ''; }
   function gListHTML() {
-    var q = S.gq.trim(), list = gLive().filter(function (g) { return S.gcat === 'all' || g.cat === S.gcat; });
+    var q = S.gq.trim(), list = gShown().filter(function (g) { return S.gcat === 'all' || g.cat === S.gcat; });
     if (q) {
       list = gMatch(list, q);
       if (!list.length) return '<p class="p-empty">No guide matches "' + esc(q) + '"' + (S.gcat !== 'all' ? ' in ' + esc(gCatName(S.gcat)) : '') + '. <button type="button" class="p-x" data-p="g-clear">Clear the search</button></p><p class="hint">Ask the head chef if a guide is missing.</p>';
       return '<p class="lv-count" role="status">' + list.length + (list.length === 1 ? ' guide matches' : ' guides match') + '</p><ul class="g-cards">' + list.map(function (g) { return gCardHTML(g, q); }).join('') + '</ul>';
     }
-    return G_CATS.map(function (c) {
+    return G_SHOW.map(function (c) {
       var l = list.filter(function (g) { return g.cat === c[0]; });
-      return l.length ? '<section class="g-grp" aria-label="' + esc(c[1]) + '"><h3 class="g-gh"><span>' + esc(c[1]) + '</span><span>' + l.length + '</span></h3><ul class="g-cards">' + l.map(function (g) { return gCardHTML(g, ''); }).join('') + '</ul></section>' : '';
+      return l.length ? '<section class="g-grp" aria-label="' + esc(c[1]) + '"><h3 class="g-gh"><span>' + esc(c[1]) + '</span><span>' + l.length + '</span></h3>' +
+        (c[0] === 'video' ? '<p class="hint g-vhint">How each page of the book works, in a minute or two. Tap one, then Play. Each has its steps written out too.</p>' : '') + '<ul class="g-cards">' + l.map(function (g) { return gCardHTML(g, ''); }).join('') + '</ul></section>' : '';
     }).join('');
   }
   function guidesPageHTML() {
     loadGuides(Date.now() - S.guidesAt > G_STALE);
     if (S.gSel) return guideDocHTML();
-    var live = gLive(), head = '<header class="g-head"><span class="g-eb">Leichhardt Hotel Kitchen</span><h2 class="g-title" id="rtitle" tabindex="-1">Guides</h2><p class="g-lead">How to work the equipment, clean it and find things. Written by the head chef.</p></header>';
+    var live = gShown(), head = '<header class="g-head"><span class="g-eb">Leichhardt Hotel Kitchen</span><h2 class="g-title" id="rtitle" tabindex="-1">Guides</h2><p class="g-lead">How to work the equipment, clean it and find things. Written by the head chef.</p></header>';
     if (S.guides == null && !live.length) return '<section class="g-page">' + head + '<p class="hint">Loading...</p></section>';
     if (!live.length && S.gErr) return '<section class="g-page">' + head + '<p class="p-err" role="status">Could not load the guides. Check the signal. The book tries again by itself.</p></section>';
     if (!live.length) return '<section class="g-page">' + head + '<p class="p-empty">No guides yet. The head chef adds them in the admin panel.</p>' + gAdminLink() + '</section>';
-    var cats = G_CATS.filter(function (c) { return live.some(function (g) { return g.cat === c[0]; }); });
+    gVids();
+    var cats = G_SHOW.filter(function (c) { return live.some(function (g) { return g.cat === c[0]; }); });
     if (S.gcat !== 'all' && !cats.some(function (c) { return c[0] === S.gcat; })) S.gcat = 'all';
     var chips = cats.length > 1 ? '<div class="chips scroll g-cats" role="group" aria-label="Category">' + [['all', 'All']].concat(cats).map(function (c) {
       var n = c[0] === 'all' ? live.length : live.filter(function (g) { return g.cat === c[0]; }).length;
@@ -11150,9 +11245,11 @@ if (list.length) sg('oreg', 's');
       '<p class="g-noprint"><a class="btn" href="guides/steamed-veg.pdf" download>Download printable sheet (PDF)</a></p></section>';
   }
   function guideDocHTML() {
+    var vidSel = /^v-/.test(S.gSel || '');
+    if (vidSel) gVids();
     var g = gById(S.gSel), back = '<nav class="g-top g-noprint" aria-label="Back"><a class="p-link" href="#/guides">All guides</a></nav>';
     if (g && !g.removed && !gSees(g)) return back + '<section class="g-page"><h2 class="g-title" id="rtitle" tabindex="-1">This guide is for ' + esc(gWhoName(g.who).toLowerCase()) + '</h2><p class="hint">Sign in with your PIN to open it, or ask the head chef.</p></section>';
-    if (!g || g.removed) return back + '<section class="g-page"><h2 class="g-title" id="rtitle" tabindex="-1">Guide not found</h2><p class="hint">' + (S.guides == null || S.gBusy ? 'Loading...' : 'This guide was removed or the link is old. Look for it in the list.') + '</p></section>';
+    if (!g || g.removed) return back + '<section class="g-page"><h2 class="g-title" id="rtitle" tabindex="-1">Guide not found</h2><p class="hint">' + (S.guides == null || S.gBusy || (vidSel && !G_VIDS && !gvFailed) ? 'Loading...' : 'This guide was removed or the link is old. Look for it in the list.') + '</p></section>';
     var pv = gPagesFor(g), n = g.pages || 0, steps = mnLines(g.steps), cards = gCards(g), figs = '', i;
     for (i = 0; i < n; i++) {
       var d = (g.dims || [])[i] || { w: 1414, h: 2000 }, u = pv.urls[i];
@@ -11160,12 +11257,14 @@ if (list.length) sg('oreg', 's');
         '<div class="g-ph" style="aspect-ratio: ' + (+d.w || 1414) + ' / ' + (+d.h || 2000) + '">' + (pv.state === 'error' ? 'Could not load this page.' : 'Loading page ' + (i + 1) + '...') + '</div>') +
         (n > 1 ? '<figcaption>Page ' + (i + 1) + ' of ' + n + '</figcaption>' : '') + '</figure>';
     }
+    // a video is not written here: the head chef's button goes to its links instead (admin, Kitchen, Guides)
     var admin = admDev() && !gBundled(g), pen = admin && window.LK_APP && window.LK_APP.icon ? window.LK_APP.icon('pen') : '';
-    return back + '<article class="g-doc"><header class="g-dh"><span class="g-eb">' + esc(gCatName(g.cat)) + ' guide</span><h2 class="g-title" id="rtitle" tabindex="-1">' + esc(g.title) + '</h2>' +
+    return back + '<article class="g-doc"><header class="g-dh"><span class="g-eb">' + (g.vid ? 'Video tutorial' : esc(gCatName(g.cat)) + ' guide') + '</span><h2 class="g-title" id="rtitle" tabindex="-1">' + esc(g.title) + '</h2>' +
       (g.sum ? '<p class="g-lead">' + esc(g.sum) + '</p>' : '') + '<p class="g-meta">' + esc(gMeta(g)) + '</p>' +
       // the head chef's Change this guide sits under the title, like Change this recipe on a card (not after every page)
-      (admin ? '<p class="g-chg g-noprint"><button type="button" class="p-x g-chg-a" data-p="g-change" data-id="' + esc(g.id) + '">' + pen + '<span>' + (armed('g-change:' + g.id) ? 'Not saved. Tap again' : 'Change this guide') + '</span></button></p>' : '') + '</header>' +
-      (g.id === G_FOOD.id ? foodRuleHTML() : '') + (g.id === G_VEG.id ? steamVegHTML() : '') +
+      (admin && g.vid ? '<p class="g-chg g-noprint"><button type="button" class="p-x g-chg-a" data-p="g-vlinks">' + pen + '<span>Change the video links</span></button></p>' :
+        admin ? '<p class="g-chg g-noprint"><button type="button" class="p-x g-chg-a" data-p="g-change" data-id="' + esc(g.id) + '">' + pen + '<span>' + (armed('g-change:' + g.id) ? 'Not saved. Tap again' : 'Change this guide') + '</span></button></p>' : '') + '</header>' +
+      (g.vid ? gvBlockHTML(g) : '') + (g.id === G_FOOD.id ? foodRuleHTML() : '') + (g.id === G_VEG.id ? steamVegHTML() : '') +
       (g.id === G_SMOKE.id ? '<p class="g-noprint"><a class="btn" href="guides/smoke-prep-and-setup.pdf" download>Download printable sheets (PDF)</a></p>' : '') +
       (steps.length ? gStepsHTML(g, steps, pv, n) : '') +
       (n ? '<section class="g-pages" aria-label="Pages"><p class="hint g-noprint">' + (n > 1 ? n + ' pages. ' : '') + 'Tap a page to open it big.</p>' +
@@ -11182,7 +11281,7 @@ if (list.length) sg('oreg', 's');
   function gStepsHTML(g, steps, pv, n) {
     var on = gStep.id === g.id && gStep.i >= 0 && steps.length > 1, i = on ? Math.min(gStep.i, steps.length - 1) : 0;
     var sw = steps.length > 1 ? '<div class="g-mode g-noprint" role="group" aria-label="How to show the steps"><button type="button" class="chip" data-p="g-mode" data-v="all" aria-pressed="' + !on + '">All steps</button><button type="button" class="chip" data-p="g-mode" data-v="one" aria-pressed="' + on + '">Step by step</button></div>' : '';
-    if (!on) return '<section class="g-steps"><div class="g-sh"><h3 class="g-h3">Steps</h3>' + sw + '</div><ol class="g-ol">' + steps.map(function (t) { return '<li><span class="g-c" aria-hidden="true"></span><span>' + linkNote(t) + '</span></li>'; }).join('') + '</ol></section>';
+    if (!on) return '<section class="g-steps"><div class="g-sh"><h3 class="g-h3">' + (g.vid ? 'The steps in the video' : 'Steps') + '</h3>' + sw + '</div><ol class="g-ol">' + steps.map(function (t) { return '<li><span class="g-c" aria-hidden="true"></span><span>' + linkNote(t) + '</span></li>'; }).join('') + '</ol></section>';
     var u = n ? pv.urls[Math.min(i, n - 1)] : '', d = n ? (g.dims || [])[Math.min(i, n - 1)] || { w: 1414, h: 2000 } : null;
     return '<section class="g-steps g-one" aria-live="polite"><div class="g-sh"><h3 class="g-h3">Step ' + (i + 1) + ' of ' + steps.length + '</h3>' + sw + '</div>' +
       '<div class="g-bar" aria-hidden="true">' + steps.map(function (t, k) { return '<i' + (k <= i ? ' class="on"' : '') + '></i>'; }).join('') + '</div>' +
@@ -11472,7 +11571,72 @@ if (list.length) sg('oreg', 's');
     return '<div class="n-ws' + (open ? ' has-ed' : '') + '">' + (open ? '<div class="n-ed">' + gEditHTML() + '</div>' : '') +
       '<section class="set-block n-lst"><div class="n-lh"><div><span class="label">Guides</span><span class="hint">Staff open them from Guides in the menu, search them, and find them on the recipe cards they mention.</span></div>' +
       (open ? '' : '<button type="button" class="btn dark" data-p="g-new">Add a guide</button>') + '</div>' +
-      (open ? '' : msgHTML(S.gMsg)) + list + '</section></div>';
+      (open ? '' : msgHTML(S.gMsg)) + list + '</section></div>' + vfHTML();
+  }
+  /* The video links (head chef, 19 Nov 2026): one row per video, the computer (wide) and phone (tall) YouTube links, one
+     Save for both records. The form starts from the server only (2 reads when this page opens), never from a phone's
+     empty copy, so it cannot save an empty list over the real links. */
+  function ytId(t) {
+    t = String(t || '').trim();
+    if (!t) return '';
+    if (VID_ID.test(t)) return t;
+    var m = t.match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?(?:[^#]*&)?v=|embed\/|shorts\/|live\/|v\/))([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])/);
+    return m ? m[1] : '!';
+  }
+  function vfIds(f) { var out = {}; Object.keys(f.raw).forEach(function (k) { var r = f.raw[k] || {}; out[k] = { w: ytId(r.w), t: ytId(r.t) }; }); return out; }
+  function vfSame() { var f = S.vf; return !f || f.state !== 'ok' || JSON.stringify(vfIds(f)) === f.base; }
+  function vfLoad() {
+    if (S.vf || !admDev() || !fb || !/^\d{4,6}$/.test(S.pin)) return;
+    var f = S.vf = { state: 'loading', raw: {}, base: '', saving: false, msg: '' };
+    Promise.all([fromServer(docRef('tutorials', 'staff')), fromServer(docRef('tutorials', 'chefs'))]).then(function (r) {
+      if (S.vf !== f) return;
+      r.forEach(function (sn) {
+        var l = sn && sn.exists() ? (sn.data() || {}).links : null;
+        if (l && typeof l === 'object') Object.keys(l).forEach(function (k) { var x = l[k] || {}; f.raw[k] = { w: VID_ID.test(x.w) ? 'https://youtu.be/' + x.w : '', t: VID_ID.test(x.t) ? 'https://youtu.be/' + x.t : '' }; });
+      });
+      f.state = 'ok'; f.base = JSON.stringify(vfIds(f)); draw();
+    }, function () { if (S.vf === f) { f.state = 'error'; draw(); } });
+  }
+  function vfHTML() {
+    var vids = gVids(), f;
+    vfLoad(); f = S.vf;
+    var head = '<div class="n-lh"><div><span class="label">Video tutorials</span><span class="hint">Upload each video to YouTube as Unlisted, then paste its link here: the wide one for computers, the tall one for phones. ' +
+      'Staff see the videos marked Everyone. The chefs\' links are kept where only the head chef, the sous chefs and the admin can read them.</span></div></div>';
+    if (!vids.length || !f || f.state === 'loading') return '<section class="set-block tv-blk">' + head + '<p class="hint" role="status">' + (gvFailed ? 'Could not load the video list. Reload the page.' : 'Loading the videos...') + '</p></section>';
+    if (f.state === 'error') return '<section class="set-block tv-blk">' + head + '<p class="p-err" role="status">Could not check the saved links. Check the signal. <button type="button" class="p-x" data-p="tv-retry">Try again</button></p></section>';
+    var input = function (g, k, words) {
+      var v = (f.raw[g.vid] || {})[k] || '';
+      return '<label class="tv-in"><span>' + words + '</span><input type="url" inputmode="url" autocomplete="off" spellcheck="false" data-k="tv:' + esc(g.vid) + ':' + k + '" value="' + esc(v) + '" placeholder="https://youtu.be/..."' + (ytId(v) === '!' ? ' aria-invalid="true"' : '') + '></label>';
+    };
+    var rows = vids.map(function (g) {
+      return '<li class="tv-row"><div class="tv-name"><b>' + (g.n < 10 ? '0' : '') + g.n + ' ' + esc(g.title) + '</b>' + (g.who === 'chefs' ? '<span class="g-who">For chefs</span>' : '<span class="tv-all">Everyone</span>') +
+        (gvLen(g) ? '<span class="nt-by">' + esc(gvLen(g)) + '</span>' : '') + '</div>' + input(g, 'w', 'Computer, wide') + input(g, 't', 'Phone, tall') + '</li>';
+    }).join('');
+    return '<section class="set-block tv-blk">' + head + '<ol class="tv-list">' + rows + '</ol><div class="btn-row">' +
+      svButton({ k: 'v', p: 'tv-save', idle: 'Save video links', busy: f.saving, icon: 'guides', off: svHeld('v') || vfSame() }) + '</div>' + svLine('v', f.saving, f.msg) + '</section>';
+  }
+  function saveVidLinks() {
+    var f = S.vf;
+    if (!f || f.state !== 'ok' || f.saving || svHeld('v') || !fb) return;
+    if (vfSame()) { draw(); return; }
+    if (S.level !== 'owner') { f.msg = errMsg('Only the head chef can save the video links.'); draw(); return; }
+    var ids = vfIds(f), vids = gVids(), bad = vids.filter(function (g) { var x = ids[g.vid] || {}; return x.w === '!' || x.t === '!'; });
+    if (bad.length) { f.msg = errMsg('Not a YouTube link: ' + bad.map(function (g) { return g.title; }).join(', ') + '. Copy the link from the Share button on YouTube.'); draw(); return; }
+    var staff = {}, chefs = {};
+    vids.forEach(function (g) { var x = ids[g.vid] || {}; if (x.w || x.t) (g.who === 'chefs' ? chefs : staff)[g.vid] = { w: x.w || '', t: x.t || '' }; });
+    var n = Object.keys(staff).length + Object.keys(chefs).length;
+    f.saving = true; f.msg = ''; svStart('v'); draw();
+    W([['set', docRef('tutorials', 'staff'), { links: staff, at: now() }], ['set', docRef('tutorials', 'chefs'), { links: chefs, at: now() }]]).then(function () {
+      f.saving = false; f.base = JSON.stringify(ids);
+      gvl.day = ''; gvLinksLoad(true);
+      svDone('v', S.vf === f, function () { f.msg = 'Saved. ' + n + ' of ' + vids.length + ' videos have a link. Staff see theirs under Guides; the chefs see all of them.'; });
+      draw();
+    }, function (e) {
+      f.saving = false;
+      f.msg = errMsg(e && e.code === 'permission-denied' ? 'Not saved: the book refused this sign-in. Sign in again with the head chef\'s Google account.' : 'Not saved. Check the connection and try again. The links typed are kept.');
+      svFail('v', S.vf === f, function () { f.msg = ''; });
+      draw();
+    });
   }
   function gClean(t, n) { return String(t || '').replace(/\r/g, '').replace(/[ \t]+\n/g, '\n').replace(/^\s+|\s+$/g, '').slice(0, n); }
   /* Saving: the pages first (one record each, they are big), then old pages the new file does not need, then the guide itself,
@@ -13146,13 +13310,17 @@ if (list.length) sg('oreg', 's');
       S.gq = ''; draw(); focusK('g-q'); return;
     }
     if (a === 'g-zoom') { var gzg = gById(S.gSel); if (gzg) gzOpen(gzg.id, i); return; }
+    if (a === 'g-play') { var gpv = gById(el.getAttribute('data-id')); if (gpv && gpv.vid && gSees(gpv)) gvOpen(gpv); return; }
+    if (a === 'tv-save') { saveVidLinks(); return; }
+    if (a === 'tv-retry') { S.vf = null; draw(); return; }
     // a guide's steps: All steps, or Step by step with Back and Next (in memory only)
     if (a === 'g-mode') { gStep = el.getAttribute('data-v') === 'one' ? { id: S.gSel, i: 0 } : { id: '', i: -1 }; draw(); focusSel(el.getAttribute('data-v') === 'one' ? '[data-p="g-step"]:not([disabled])' : '[data-p="g-mode"][data-v="all"]'); return; }
     if (a === 'g-step') { var gsv = +el.getAttribute('data-v'); if (gsv >= 0) { gStep = { id: S.gSel, i: gsv }; draw(); focusSel('[data-p="g-step"][data-v="' + (gsv + 1) + '"], [data-p="g-mode"][data-v="all"].btn, [data-p="g-step"]:not([disabled])'); } return; }
     if (a === 'g-retry') { var grg = gById(S.gSel); if (grg) { delete gPg[grg.id + ':' + (grg.v || 1)]; draw(); } return; }
     if (a === 'g-admin') { S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin'; return; }
+    if (a === 'g-vlinks') { S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin'; return; }
     if (a === 'g-change') {
-      var gcg = gById(id); if (!gcg) return;
+      var gcg = gById(id); if (!gcg || gcg.vid) return;
       if (!(gfDirty() && S.gf.id === id)) { if (gfDirty() && !arm('g-change:' + id)) return; S.gf = gfFrom(gcg); S.gfSnap = gfSnap(S.gf); }
       S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin';
       return;
@@ -13374,6 +13542,7 @@ if (list.length) sg('oreg', 's');
     var b = S.root && S.root.querySelector('[data-p="mn-draft"]'); if (b) b.disabled = !!S.mSaving || svHeld('m') || mfSame(false);
     b = S.root && S.root.querySelector('[data-p="mn-pub"]'); if (b) b.disabled = !!S.mSaving || svHeld('m') || mfSame(true);
     b = S.root && S.root.querySelector('[data-p="n-save"]'); if (b) b.disabled = !!S.nSaving || svHeld('n') || nfSame();
+    b = S.root && S.root.querySelector('[data-p="tv-save"]'); if (b) b.disabled = !S.vf || !!S.vf.saving || svHeld('v') || vfSame();
     b = S.root && S.root.querySelector('[data-p="g-save"]'); if (b && S.gf) b.disabled = !!(S.gf.busy || S.gf.saving) || svHeld('g') || gfSame();
     // Chef to-do: an empty new job or an unchanged edit has nothing to save.
     b = S.root && S.root.querySelector('[data-p="todo-save"]'); if (b) b.disabled = !tdDirty();
@@ -13445,6 +13614,11 @@ if (list.length) sg('oreg', 's');
     if (k === 'o-text') { S.otext = el.value; oAutoQty(); var og = S.root.querySelector('#o-sugg'); if (og) og.innerHTML = ordSuggHTML(); return; }
     if (k === 'o-qty') { if (S.oqtyAuto && S.oqtyAuto !== el.value) sg('ordfill', 'e'); S.oqty = el.value; S.oqtyAuto = ''; var ou2 = S.root.querySelector('#o-units'); if (ou2) ou2.innerHTML = unitChipsHTML('o', S.oqty); oFillPatch(); return; }
     if (k === 'g-q') { S.gq = el.value; var gl = S.root.querySelector('#g-list'); if (gl) gl.innerHTML = gListHTML(); var gWrap = el.closest('.g-qwrap'); if (gWrap) gWrap.classList.toggle('has-q', !!S.gq); return; }
+    if (k && k.indexOf('tv:') === 0) {
+      var tvp = k.split(':');
+      if (S.vf && tvp.length === 3) { S.vf.raw[tvp[1]] = S.vf.raw[tvp[1]] || {}; S.vf.raw[tvp[1]][tvp[2] === 't' ? 't' : 'w'] = el.value; el.setAttribute('aria-invalid', String(ytId(el.value) === '!')); }
+      saveSync(); return;
+    }
     if (k === 'g-title' || k === 'g-sum' || k === 'g-steps' || k === 'g-kw') {
       if (!S.gf) return;
       S.gf[k.slice(2)] = el.value;

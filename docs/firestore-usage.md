@@ -1,5 +1,9 @@
 # Firestore reads and writes: audit, 5 November 2026
 
+## Tutorial videos in Guides, 19 November 2026
+
+The Videos group in Guides reads nothing: the videos' titles and steps travel in `js/tutorials.js`. Opening a video guide reads its links once a day per phone and person: `tutorials/staff` (1 read), and `tutorials/chefs` too for a chef or the admin (1 more). About 1 to 2 reads per person on a day they open one, no listener. The admin's links box reads both records from the server when it opens (2 reads); Save writes both in one batch (2 writes). Both records are small (a few kB at most).
+
 ## April Fools, 17 November 2026
 
 On 1 April only: one read per person per device (their own `fools/<1 April>_<staff id>`, from the server, on their first Home view that day) and one write per person (when their joke starts, with which joke it was). About 20 to 40 reads and 20 writes that day; none on any other day, no listener. The admin panel's April Fools row and its Preview read nothing. `docs/april-fools.md`.

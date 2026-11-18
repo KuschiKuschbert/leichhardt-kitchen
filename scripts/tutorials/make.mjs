@@ -18,6 +18,7 @@ import { createRequire } from 'module';
 import { L, CUTS, HERE, ROOT, launch } from './kit.mjs';
 import { film, script } from './film.mjs';
 import { compose, joinAll } from './compose.mjs';
+import { ORDER } from './order.mjs';
 
 const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : d; };
@@ -27,9 +28,7 @@ const steps = (opt('steps', 'voice,film,compose')).split(',');
 const engine = opt('engine', 'kokoro'), voice = opt('voice', 'af_heart'), speed = opt('speed', '1');
 const py = opt('py', process.env.TUTORIAL_PY || 'python3');
 const OUT = path.resolve(opt('out', path.join(HERE, 'out')));
-// The order of the whole-book video; each name is a file in storyboards/ (one video each, in this order).
-export const ORDER = ['sign-in', 'home', 'recipes', 'prep', 'orders', 'wastage', 'transfers', 'deliveries', 'guides', 'team-talk', 'drinks',
-  'todays-team', 'cleaning', 'functions', 'settings', 'chef-panel', 'supplier-order', 'recipes-manage', 'admin-today', 'admin-reports', 'admin-kitchen'];
+// The order of the whole-book video (order.mjs): each name is a file in storyboards/, one video each, in this order.
 
 const joinOnly = names.includes('join');
 const boards = names.includes('all') ? ORDER : names.filter(n => n !== 'join');

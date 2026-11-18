@@ -29,7 +29,7 @@ const CLASSES = [
   'set-block', 'label', 'a-ch-h', 'c-tools', 'c-tool', 'c-tool-go', 'a-tablewrap', 'a-table', 'a-plain', 'sk-c', 'a-legend', 'dsh-inbox', 'dsh-dtile', 'dsh-cmp', 'dsh-charts-btn', 'tm-learn', 'a-find', 'fd-sheet', 'a-quick', 'wm-tile', 'wm-due',
   'ps-viewbar', 'ps-minimum', 'ps-grid', 'ps-section', 'ps-fields', 'ps-form-grid', 'ps-catalogue-row', 'ps-standard',
   'ad-admin', 'ad-layout', 'a-nav', 'ad-main', 'ad-heading', 'a-tabs', 'a-pane',
-  'nt-dot', 'nt-meta', 'nt-at', 'g-mode', 'g-bar', 'tm-tl', 'tm-tlbar', 'dr-run', 'dr-oh', 'st-av', 'st-can', 'todo-more',
+  'nt-dot', 'nt-meta', 'nt-at', 'g-mode', 'g-bar', 'g-vplay', 'gv-frame', 'g-vnone', 'tv-row', 'tm-tl', 'tm-tlbar', 'dr-run', 'dr-oh', 'st-av', 'st-can', 'todo-more',
   'todo-notebook', 'todo-book', 'todo-bookhead', 'todo-spine', 'todo-work', 'todo-formtitle', 'todo-status', 'todo-privacy',
   'tm-notebook', 'tm-nbook', 'tm-nhead', 'tm-nspine', 'tm-work', 'tm-viewbar', 'tm-shift-scroll', 'tm-dayperson', 'tm-away-slot',
   'tm-weeknav', 'tm-daypick',
