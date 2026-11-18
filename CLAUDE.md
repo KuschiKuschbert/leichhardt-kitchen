@@ -76,6 +76,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Wastage history and CSV reports | `docs/wastage-history.md`, `docs/report-exports.md` |
 | Transfer storage and returns | `docs/transfer-returns.md` (publish rules from the feature branch first: it indexes loans) |
 | Function sent, lines off: once the last round is ticked Sent, the function's open prep and order lines (and lines added for it) leave the lists; the 03:00 job removes them | `docs/fn-sent-tidy-options/brief.md` (the mix chosen and built), `docs/code-contracts.md` (Functions) |
+| What a function's platters need, on its Orders line (the mix chosen and built 18 Nov 2026; one sum shared with Prep, `M.platterNeeds()`) | `docs/fn-order-ingredients-options/brief.md`, `docs/code-contracts.md` (Functions) |
 | Functions: cancel, Undo, delete, print | `docs/function-cancellation.md`, `docs/function-printing.md` |
 | Functions ahead of time: the chosen mix (Function this week card, Next function line, Orders tag, who has said Got it), when a function shows before its day | `docs/function-ahead-options/brief.md` (Chosen, build plan) |
 | Function times: typed, never guessed, a list of times on a laptop (chosen 18 Nov 2026) | `docs/fn-time-picker-options/brief.md` (Chosen) |
