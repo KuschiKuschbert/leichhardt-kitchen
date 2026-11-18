@@ -81,6 +81,7 @@
     d.rounds = (f.rounds || []).map(function (r) { return r.at ? { d: M.kday(r.at), t: M.kclock(r.at), note: r.note || '' } : { d: d.date, t: '', note: r.note || '' }; });
     if (d.rounds.length) { d.foodDate = d.rounds[0].d; d.foodT = d.rounds[0].t; d.foodSet = f.rounds[0].at !== f.start; }
     d.n = String(Math.max(2, n)); d.gap = n > 1 && f.rounds[0].at && f.rounds[1].at ? String(Math.max(1, Math.round((f.rounds[1].at - f.rounds[0].at) / M.MIN))) : '30';
+    if (d.mode === 'stag') markHand(d);
     d.lines = (f.lines || []).map(function (l) { return { rid: l.rid, name: l.name, unit: l.unit || 'platter', spec: l.spec || '', fp: l.fp || '', qty: String(l.qty), a: M.fromU(l.u, Math.max(1, n)) }; });
     d.custom = d.mode === 'stag' && d.lines.some(function (l) { return JSON.stringify(l.a) !== JSON.stringify(M.even(+l.qty || 0, n)); });
     return d;
@@ -160,6 +161,19 @@
   }
 
   /* ---------- the schedule: worked out again when what it is made from changes, never over a grid set by hand ---------- */
+  /* A round time set by hand (h on the round, never saved) stays when the first round, Rounds or the gap changes; the line
+     under the gap says so and Work the times out again moves it, with a second tap (head chef, 18 Nov 2026, C in
+     docs/fn-time-picker-options/brief.md). Before, retime() put every round back on the gap with no word, and the wrong
+     round time reached the pass. The saved function has no marker: a round off the first round plus the gap is one set by
+     hand (fromDoc(), and a draft kept on this device), so it holds after Save and reopen. */
+  function gridAt(d, i) { var first = atOf(d.foodDate, d.foodT), gap = int(d.gap) >= 1 ? int(d.gap) : 30; return first ? first + i * gap * M.MIN : 0; }
+  function offGrid(d, i) {
+    var r = d.rounds[i] || {}, t = String(r.t == null ? '' : r.t).trim(), at = t && atOf(r.d, t);
+    // a time typed but not read yet stays as typed, so it counts as set by hand
+    return i > 0 && !!t && (at ? at !== gridAt(d, i) : true);
+  }
+  function markHand(d) { d.rounds.forEach(function (r, i) { if (offGrid(d, i)) r.h = true; }); }
+  function handOf(d) { var out = []; d.rounds.forEach(function (r, i) { if (i && r.h) out.push(i); }); return out; }
   function retime(e) {
     var d = e.d;
     if (!d.foodSet) { d.foodDate = d.date; d.foodT = cleanT(d.startT) ? d.startT : ''; }
@@ -171,8 +185,9 @@
     var n = Math.min(M.MAX_ROUNDS, Math.max(2, int(d.n) || 2)), gap = int(d.gap) >= 1 ? int(d.gap) : 30, first = atOf(d.foodDate, d.foodT), old = d.rounds;
     d.rounds = [];
     for (var i = 0; i < n; i++) {
-      var at = first ? first + i * gap * M.MIN : 0;
-      d.rounds.push({ d: at ? M.kday(at) : d.foodDate, t: at ? M.kclock(at) : '', note: (old[i] || {}).note || '' });
+      var at = first ? first + i * gap * M.MIN : 0, o = old[i] || {};
+      if (i && o.h) d.rounds.push({ d: o.d, t: o.t, note: o.note || '', h: true });
+      else d.rounds.push({ d: at ? M.kday(at) : d.foodDate, t: at ? M.kclock(at) : '', note: o.note || '' });
     }
     realloc(e);
   }
@@ -331,7 +346,7 @@
       var f = M.derive(Object.assign({ id: id }, r[0].data())), c = r[1] && r[1].exists() ? r[1].data() : {};
       // cMiss: the contact could not be read on this phone (no PIN session for a function manager, or no signal)
       var e = { id: id, isNew: false, v: f.v, status: f.status, saved: f, savedC: c, cMiss: r[1] === null, d: fromDoc(f, c) };
-      if (kept && !f.removed) { try { var k = JSON.parse(kept); if (k && k.d && (!k.identity || k.identity === owner)) { e.d = k.d; e.status = k.status || e.status; e.restored = true; e.keptV = k.v; } } catch (x) {} }
+      if (kept && !f.removed) { try { var k = JSON.parse(kept); if (k && k.d && (!k.identity || k.identity === owner)) { e.d = k.d; if (e.d.mode === 'stag' && Array.isArray(e.d.rounds)) markHand(e.d); e.status = k.status || e.status; e.restored = true; e.keptV = k.v; } } catch (x) {} }
       E.ed = e; draw();
     }, function () { if (E.ed === opening && owned(owner)) { E.ed = { id: id, failed: true }; draw(); } });
   }
@@ -342,8 +357,10 @@
     // a new form: anything typed in it (28 Oct 2026: also the place, guests, times and the contact, since Save draft is
     // off until something is in it)
     if (e.isNew) { var n = e.d; return !!(['name', 'date', 'startT', 'loc', 'guests', 'cname', 'phone', 'email', 'kc', 'notes'].some(function (k) { return String(n[k] || '').trim(); }) || n.lines.length || n.gu || n.st); }
-    return JSON.stringify(e.d) !== JSON.stringify(fromDoc(e.saved, e.savedC)) || e.status !== e.saved.status;
+    return plain(e.d) !== plain(fromDoc(e.saved, e.savedC)) || e.status !== e.saved.status;
   }
+  // the form as text without the set-by-hand markers, which are never saved
+  function plain(d) { return JSON.stringify(d, function (k, v) { return k === 'h' ? undefined : v; }); }
 
   /* ---------- the form ---------- */
   function fieldErr(k) { var e = E.ed, p = (e.shown || []).filter(function (x) { return x.k === k; })[0]; return p ? '<span class="fe-err" id="fe-e-' + k + '">' + esc(p.t) + '</span>' : ''; }
@@ -424,7 +441,7 @@
     }).join('') + '</div>';
     out += '<div class="fe-row2">' + inp('foodDate', d.mode === 'all' ? 'Food goes out on' : 'First round on', d.foodDate, ' type="date"') + '<div class="field fe-f"><label class="label" for="fe-foodT">' + (d.mode === 'all' ? 'Food goes out at' : 'First round at') + '</label>' + tboxHTML('foodT', d.foodT) + (d.foodSet ? '' : '<span class="hint">Same as the event start until you change it.</span>') + '</div></div>';
     if (d.mode === 'stag') {
-      out += '<div class="fe-row2">' + inp('n', 'Rounds', d.n, ' type="number" inputmode="numeric" min="2" max="' + M.MAX_ROUNDS + '" step="1"') + inp('gap', 'Minutes between rounds', d.gap, ' type="number" inputmode="numeric" min="1" max="600" step="5"') + '</div>' +
+      out += '<div class="fe-row2">' + inp('n', 'Rounds', d.n, ' type="number" inputmode="numeric" min="2" max="' + M.MAX_ROUNDS + '" step="1"') + inp('gap', 'Minutes between rounds', d.gap, ' type="number" inputmode="numeric" min="1" max="600" step="5"') + '</div>' + handHTML(d) +
         '<p class="hint">' + (d.custom ? 'Split by hand. Changing the rounds keeps your numbers; ' : 'Split evenly, earlier rounds first (5 over 3 is 2, 2, 1). Type in the grid to split by hand. ') + '<button type="button" class="linkish" data-fe="even">' + (armed('even') ? 'Tap again to split evenly' : 'Split evenly again') + '</button></p>' + gridHTML(e);
     } else if (d.lines.length) {
       out += '<p class="fe-allline">All at ' + esc(cleanT(d.foodT) ? d.foodT : 'a time to come') + ': ' + esc(d.lines.map(function (l) { return (int(l.qty) || 0) + ' ' + M.short(l.name); }).join(', ')) + '</p>';
@@ -433,6 +450,16 @@
     if (f.start && f.first && f.first !== f.start) out += '<p class="hint">Event starts ' + esc(M.when(f.start, f.date)) + '; food from ' + esc(M.when(f.first, f.date)) + '. The kitchen sees both.</p>';
     return out + fieldErr('rounds') + fieldErr('gap');
   }
+  // "Round 3 set by hand (19:15). Changing the first round, Rounds or the gap keeps it; Work the times out again"
+  function handHTML(d) {
+    var hs = handOf(d); if (!hs.length) return '';
+    var one = hs.length === 1, g = one && gridAt(d, hs[0]);
+    var names = and(hs.map(function (i) { return String(i + 1); })), times = and(hs.map(function (i) { return d.rounds[i].t || 'no time'; }));
+    var go = one ? 'Tap again: round ' + names + (g ? ' goes to ' + M.kclock(g) : ' follows the gap') : 'Tap again: rounds ' + names + ' follow the gap';
+    return '<p class="hint fe-hand">' + esc((one ? 'Round ' : 'Rounds ') + names + ' set by hand (' + times + '). Changing the first round, Rounds or the gap keeps ' + (one ? 'it' : 'them') + '; ') +
+      '<button type="button" class="linkish" data-fe="regrid">' + esc(armed('regrid') ? go : 'Work the times out again') + '</button></p>';
+  }
+  function and(xs) { return xs.length < 2 ? xs.join('') : xs.slice(0, -1).join(', ') + ' and ' + xs[xs.length - 1]; }
   function liveHTML(e) {
     var f = toDoc(e), probs = check(e), tot = M.totalQty(f);
     return '<div class="fe-bar-t"><b>' + tot + ' ' + (tot === 1 ? 'platter' : 'platters') + '</b>' + (f.rounds.length ? ' · ' + (!f.first && !f.st ? (f.mode === 'all' ? 'time to come' : f.rounds.length + ' rounds, time to come') : f.mode === 'all' ? 'all at ' + esc(M.when(f.first, f.date)) : f.rounds.length + ' rounds from ' + esc(M.when(f.first, f.date))) : '') +
@@ -651,7 +678,7 @@
     else if (k === 'n' || k === 'gap') { d[k] = v; if (structural) retime(e); }
     else if ((m = /^qty(\d+)$/.exec(k))) { d.lines[+m[1]].qty = v; if (structural || d.mode === 'all') { if (d.mode === 'all') retime(e); else realloc(e); } }
     else if ((m = /^a(\d+)_(\d+)$/.exec(k))) { d.lines[+m[1]].a[+m[2]] = v; d.custom = true; }
-    else if ((m = /^rt(\d+)$/.exec(k))) { d.rounds[+m[1]].t = v; if (+m[1] === 0) { d.foodT = v; d.foodSet = true; } }
+    else if ((m = /^rt(\d+)$/.exec(k))) { d.rounds[+m[1]].t = v; if (+m[1] === 0) { d.foodT = v; d.foodSet = true; } else if (offGrid(d, +m[1])) d.rounds[+m[1]].h = true; else delete d.rounds[+m[1]].h; }
     else if ((m = /^rn(\d+)$/.exec(k))) { d.rounds[+m[1]].note = v; }
     else if (k === 'st') { d.st = !!v; if (v) d.startT = ''; retime(e); }
     else if (k === 'gu') { d.gu = !!v; if (v) d.guests = ''; }
@@ -829,7 +856,14 @@
     if (a === 'mode') { d.mode = v; if (v === 'stag' && int(d.n) < 2) d.n = '3'; d.custom = false; retime(e); keep(); draw(); return; }
     // a split typed by hand goes back to even: a second tap first (29 Oct 2026), there is no Undo
     if (a === 'even') { if (d.custom && !arm('even')) return; d.custom = false; realloc(e); keep(); draw(); return; }
-    if (a === 'rmround') { d.rounds.splice(i, 1); d.lines.forEach(function (l) { l.a.splice(i, 1); }); d.n = String(d.rounds.length); d.custom = true; if (d.rounds.length < 2) { d.mode = 'all'; retime(e); } keep(); draw(); return; }
+    if (a === 'rmround') { d.rounds.splice(i, 1); d.lines.forEach(function (l) { l.a.splice(i, 1); }); d.n = String(d.rounds.length); d.custom = true; if (d.rounds.length < 2) { d.mode = 'all'; retime(e); } else { if (!i) { d.foodDate = d.rounds[0].d; d.foodT = d.rounds[0].t; d.foodSet = true; delete d.rounds[0].h; } markHand(d); } keep(); draw(); return; }
+    // the round times set by hand go back on the first round plus the gap: a second tap first, there is no Undo
+    if (a === 'regrid') {
+      var hs = handOf(d); if (!hs.length || !arm('regrid')) return;
+      d.rounds.forEach(function (r) { delete r.h; }); retime(e); keep(); draw();
+      toast((hs.length === 1 ? 'Round ' : 'Rounds ') + and(hs.map(function (x) { return String(x + 1); })) + ' back on the gap: ' + and(hs.map(function (x) { return (d.rounds[x] || {}).t || 'no time'; })) + '.');
+      var gb = E.root.querySelector('[data-ff="gap"]'); if (gb) gb.focus({ preventScroll: true }); return;
+    }
     if (a === 'goto') { goto(v); return; }
     if (a === 'save') { save('save'); return; }
     if (a === 'review') {
