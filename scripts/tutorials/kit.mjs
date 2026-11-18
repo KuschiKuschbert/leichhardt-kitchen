@@ -51,7 +51,7 @@ export async function openApp(browser, hash, cut, o) {
   const c = CUTS[cut], blocked = [];
   const raw = browser.newContext;
   browser.newContext = async opts => {
-    const ctx = await raw(Object.assign({}, opts, { deviceScaleFactor: c.scale, bypassCSP: true }));
+    const ctx = await raw(Object.assign({}, opts, { deviceScaleFactor: c.scale, bypassCSP: true, locale: 'en-AU' }));
     // registered first, so the stand-ins tests/lib.js adds after it (Firebase, fonts, pdf.js) answer before this does
     await ctx.route(u => !u.href.startsWith(L.BASE) && !/^(data|blob):/.test(u.href), r => { blocked.push(r.request().url()); return r.abort(); });
     const newPage = ctx.newPage.bind(ctx);
