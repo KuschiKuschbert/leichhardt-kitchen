@@ -91,7 +91,8 @@ export default {
       say: ['Nothing is shared until you tap Save.', 'Then the plan is saved for everyone, with your name and the time.'],
       do: [
         { s: 0, d: 1.2, tap: '[data-p="tm-save"]' },
-        { s: 1, d: 0.6, circle: '.tm-draftstate', opts: { pad: 5 } }
+        // after Save the On break now card above grows by a line: the ring waits for it
+        { s: 1, d: 1.6, circle: '.tm-draftstate', opts: { pad: 5 } }
       ]
     },
     {
