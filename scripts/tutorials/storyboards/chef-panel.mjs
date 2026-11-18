@@ -116,7 +116,7 @@ export default {
       title: 'Kitchen',
       say: ['Kitchen is one page of rows.', 'Recipes and drawings, Supplier order, Functions, Delivery received and Guides.', 'Tap a row to open that tool.'],
       do: [
-        { s: 0, d: 0.3, tap: '[data-p="c-group"][data-g="kitchen"]', run: settled },
+        { s: 0, d: 0.1, tap: '[data-p="c-group"][data-g="kitchen"]', run: (page, cut, L) => page.waitForSelector('.c-tools', { state: 'visible', timeout: 8000 }).then(() => settled(page, cut, L)) },
         { s: 1, d: 0.1, underline: '.c-tool[data-tool="recipes"] strong' },
         { s: 1, d: 1.3, underline: '.c-tool[data-tool="suppliers"] strong' },
         { s: 1, d: 2.3, underline: '.c-tool[data-tool="functions"] strong' },
