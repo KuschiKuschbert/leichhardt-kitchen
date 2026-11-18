@@ -11,7 +11,7 @@ The head chef asked for tutorial videos of the whole book: one per page, the adm
 
 The finished videos go on Google Drive.
 
-The book itself does not change. A script films it and nothing is added to the app.
+A script films the book. The videos also play inside the book, under Guides (see In the book, 19 November 2026).
 
 ## Where things are
 
@@ -27,6 +27,9 @@ The book itself does not change. A script films it and nothing is added to the a
 | `scripts/tutorials/compose.mjs` | Puts it together with ffmpeg. Writes an MP4 and an `.srt` captions file. |
 | `scripts/tutorials/voice.py` | Makes the voice, one WAV per sentence, and mixes them into one track. |
 | `scripts/tutorials/out/` | The output. Git-ignored. Videos never go in this public repo. |
+| `scripts/tutorials/order.mjs` | The viewing order, and which videos only the chefs see. |
+| `scripts/tutorials/catalogue.mjs` | Makes `js/tutorials.js` from the storyboards: each video as a guide with its steps written out. |
+| `js/tutorials.js` | The videos as guides, for the book's Guides page. Made by `catalogue.mjs`, never by hand. Lazy: loaded when Guides opens. |
 
 Finished videos go to Drive: 02 Leichhardt Hotel / Step by Step Guides / Kitchen Book Tutorial Videos.
 - Names follow the filing rule: "04 VIDEO - Prep list - Desktop - v0.1.mp4", "04 CAPTIONS - ... .srt" and "00 VOICE SAMPLE - ...".
@@ -148,14 +151,38 @@ FreePD (public domain) closed in 2026. The music is "Easy Lemon" by Kevin MacLeo
 - Every outside request is refused while filming. A run lists any it refused, and should list none.
 - Before uploading, look at a still of each step: `ffmpeg -ss <s> -i video.mp4 -frames:v 1 still.jpg`.
 
-## Not done here
+## In the book (head chef, 19 November 2026)
 
-Showing the videos inside the book (a link or player in Guides) would change the app:
-- a new guide field
-- the rules
-- the security header, which has no `media-src` and no YouTube or Drive `frame-src`
+The head chef asked for the videos in Guides: the ones staff use for everyone, clearly labelled, and the head chef, sous chef and admin ones only for them. Their choices: YouTube, unlisted; the split below; the phone cut on phones and the desktop cut on computers; a quick check in place of the full service council.
 
-That goes through the service council and the head chef's OK first.
+**What the team sees**
+- Guides has a **Videos** group, last, under the kitchen's own guides, with a Videos chip. One line says what they are: "How each page of the book works, in a minute or two. Tap one, then Play. Each has its steps written out too."
+- Each video is a guide: its title, one line on what it shows, "Video, 1 min 32", and every step written out (the step's title and what the voice says). The search finds a video by its words.
+- The guide page says Video tutorial and has one Play button above the steps. Play opens the player over the page, like a guide page opened big. Back, Close or Escape shut it; a redraw never restarts it.
+- Under 700 px wide the phone (tall) cut plays, from 700 px the desktop (wide) cut. If only one is saved, that one plays.
+- No link saved yet: "Video to come: the head chef adds it here. The steps below show the same."
+
+**Who sees which**
+- Everyone: Signing in, Home, Recipes, Prep list, Orders, Wastage, Transfers, Delivery received, Guides, Pings minutes and mail, Drinks run, Cleaning, Functions, Settings (14).
+- The head chef, the sous chefs and the admin: also Today's team, the chef panel, Supplier order, Recipes and drawings and the three admin videos (21 in all). The list is `CHEFS` in `scripts/tutorials/order.mjs`.
+- The chefs' videos are marked For chefs. Staff who open one by its address are told it is for chefs.
+
+**Adding the links (the head chef)**
+1. Upload each MP4 to YouTube as **Unlisted** (not Private: a private video does not play for the team). Unlisted videos do not show in YouTube search; anyone with the link can watch.
+2. Admin, Kitchen, Guides, **Video tutorials**: one row per video, Computer (wide) and Phone (tall). Paste the link from YouTube's Share button. youtu.be, watch, shorts and embed links all work.
+3. Save video links. A box that is not a YouTube link is marked, and Save names it.
+
+**How it is kept**
+- `kitchens/<PIN>/tutorials/staff` and `tutorials/chefs`, each `{ links: { <video>: { w, t } }, at, by }`: w the wide video's id, t the tall one's. Only the 11-character YouTube id is kept, never the link as typed, and the book plays only an id.
+- `staff` is read by every kitchen login; `chefs` only by the head chef's Google account or a chef's PIN session (`chefId(reader())` in `firestore.rules`). So a cook's phone never has the chefs' links, even though the titles and steps of every video ship in `js/tutorials.js` (they hold nothing private).
+- Only the head chef's Google account writes them: the two records, these three fields, at most 30 videos each.
+- The admin box starts only from a server read of both records, so a phone without signal cannot save an empty list over the links.
+- Reads: the list reads nothing. Opening a video guide reads `staff` once a day (1 read), and `chefs` too for a chef (1 more). The admin box reads both from the server when it opens (2 reads).
+- The player is `https://www.youtube-nocookie.com/embed/<id>`, the one video site in the security header's `frame-src` (`index.html`). It loads only after Play.
+
+**After a storyboard changes**: run `node scripts/tutorials/catalogue.mjs --out <make.mjs output>` and commit `js/tutorials.js`. A new video in `ORDER` gets a guide and a row in the admin box by itself. If its `?v=` must change for phones to see it, bump it in `gVids()` in `js/prep.js`.
+
+**Checks**: `tests/guide-videos.test.js` (who sees which, Play on a phone and a computer, the player fits, Video to come, a bad saved link never played, the admin box and its save, no Save without the server); the `tutorials` rows in `tests/rules/rules.test.mjs`, `client-shapes.test.mjs` and `access.test.mjs`.
 
 ## The series, 18 and 19 November 2026
 

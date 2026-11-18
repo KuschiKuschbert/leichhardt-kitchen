@@ -1076,6 +1076,22 @@ await ok(todoQ(wPhone('w-ann')), false, 'todos: staff with a session cannot list
 await ok(getDoc(doc(wPhone('w-ann'), K + 'todos/t1')), false, 'todos: nor read one');
 await ok(todoQ(anon), false, 'todos: nor the kitchen PIN alone');
 await ok(getDocs(collection(env.authenticatedContext('other', { email: 'someone@test.local', email_verified: true }).firestore(), K + 'todos')), false, 'todos: nor another Google account');
+
+// the tutorial videos' links (19 Nov 2026): staff for every kitchen login, chefs for the chefs and the head chef's Google account
+const vids = (x, more) => Object.assign({ links: x || { prep: { w: 'AAAAAAAAAAA', t: 'BBBBBBBBBBB' } }, at: 1 }, more || {});
+await ok(setDoc(doc(owner, K + 'tutorials/staff'), vids()), true, 'tutorials: the head chef saves the staff links');
+await ok(setDoc(doc(owner, K + 'tutorials/chefs'), vids({ 'chef-panel': { w: 'CCCCCCCCCCC', t: '' } })), true, 'tutorials: and the chefs\' links');
+await ok(setDoc(doc(owner, K + 'tutorials/other'), vids()), false, 'tutorials: only the two records');
+await ok(setDoc(doc(owner, K + 'tutorials/staff'), vids(null, { note: 'x' })), false, 'tutorials: no fields beyond the links');
+await ok(setDoc(doc(owner, K + 'tutorials/staff'), vids('youtu.be/x')), false, 'tutorials: the links are a map');
+await ok(setDoc(doc(owner, K + 'tutorials/staff'), vids(Object.fromEntries(Array.from({ length: 31 }, (_, i) => ['v' + i, { w: '', t: '' }])))), false, 'tutorials: at most 30 videos');
+await ok(W([['tutorials/staff', vids()]], { id: 'sam' }), false, 'tutorials: a sous chef cannot save the links');
+await ok(getDoc(doc(wPhone('w-ann'), K + 'tutorials/staff')), true, 'tutorials: staff with a session read the staff links');
+await ok(getDoc(doc(wPhone('w-ann'), K + 'tutorials/chefs')), false, 'tutorials: staff cannot read the chefs\' links');
+await ok(getDoc(doc(wPhone('w-sam'), K + 'tutorials/chefs')), true, 'tutorials: a sous chef reads the chefs\' links');
+await ok(getDoc(doc(wPhone('w-hd'), K + 'tutorials/chefs')), true, 'tutorials: so does the head chef by PIN');
+await ok(getDoc(doc(owner, K + 'tutorials/chefs')), true, 'tutorials: and the Google account');
+await ok(getDoc(doc(anon, K + 'tutorials/staff')), false, 'tutorials: not the kitchen PIN alone');
 await ok(W([['todos/t1', { st: 'done', doneAt: 7, doneBy: 'sam', upd: 7 }, true]], { id: 'sam' }), true, 'todos: a sous chef ticks a job, named as the one who did it');
 await ok(W([['todos/t2', { st: 'done', doneAt: 7, doneBy: 'hd', upd: 7 }, true]], { id: 'sam' }), false, 'todos: a sous chef cannot tick one in someone else\'s name');
 await ok(W([['todos/t2', { st: 'done', doneAt: 7, doneBy: 'hd', upd: 7 }, true]], { id: 'hd' }), true, 'todos: the head chef by PIN ticks one');

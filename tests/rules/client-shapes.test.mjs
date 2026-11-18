@@ -146,6 +146,7 @@ const seed = {
   'directnotes/d1': ping({ text: 'Ann, see me at 15:00', tag: 'none', to: 'ann' }), [`directnotes/d1/seen/${TODAY}_ann`]: { day: TODAY, at: NOW, by: 'ann' },
   'minutes/m1': mins(), 'minutes/m1/signs/1_ann': { v: 1, st: 'present', at: NOW, name: 'Ann', by: 'ann' }, 'minutes/m2': mins({ no: 2, status: 'draft', pubAt: null, date: TODAY }),
   'guides/g1': { title: 'Dishwasher', cat: 'equipment', pages: 1, v: 1, removed: false }, 'guides/g1/pages/0': { img: 'data:image/png;base64,AA', v: 1, n: 0 },
+  'tutorials/staff': { links: { prep: { w: 'AAAAAAAAAAA', t: 'BBBBBBBBBBB' } }, at: 1, by: 'kit' }, 'tutorials/chefs': { links: { 'chef-panel': { w: 'CCCCCCCCCCC', t: '' } }, at: 1, by: 'kit' },
   'functions/f1': fnRec('f1'), 'functions/f1/hist/0': { was: {}, at: 1, by: 'fay' }, 'fncontact/f1': { cname: 'Jo Example', phone: '0400 000 000', email: '', upd: 1, by: 'fay' },
   [`fnsent/f1_${T0}`]: { fid: 'f1', at: T0, day: TODAY, sent: false, sentAt: 1, sentBy: 'ann', by: 'sam' },
   'fnseen/f1_ann_week_1abc2': { fid: 'f1', g: '1abc2', s: 'week', day: TODAY, at: NOW, by: 'ann' },
@@ -291,6 +292,10 @@ row('js/prep.js loadSigns(): the register (minutes/<id>/signs)', { ok: CHEFS, as
 // guides, recipes, drinks, sections, mail, to-do, cut-offs
 row('js/prep.js loadGuides(): the guides list', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(C(db, 'guides')) });
 row('js/prep.js gPagesFor(): a guide\'s pages (guides/<id>/pages)', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(C(db, 'guides/g1/pages')) });
+row('js/prep.js gvLinksLoad(): the video links for everyone (tutorials/staff)', { ok: KITCHEN, asks: KITCHEN, run: db => getDoc(D(db, 'tutorials/staff')) });
+row('js/prep.js gvLinksLoad(): the chefs\' video links (tutorials/chefs)', { ok: CHEFS, asks: CHEFS, run: db => getDoc(D(db, 'tutorials/chefs')) });
+row('js/prep.js vfLoad() (admin Guides): both video link records, from the server', { ok: CHEFS, asks: GOOGLE,
+  run: db => Promise.all([getDocFromServer(D(db, 'tutorials/staff')), getDocFromServer(D(db, 'tutorials/chefs'))]) });
 row('js/prep.js rxSync(): book/index, a changed recipe and drawing (with the kitchen PIN)', { ok: ALL, asks: ALL,
   run: db => Promise.all([getDoc(D(db, 'book/index')), getDoc(D(db, 'recipes/burger')), getDoc(D(db, 'drawings/burger-plate'))]) });
 row('js/prep.js dkCheck(): my usual drink (drinks/<me>)', { ok: KITCHEN, asks: KPINS, run: (db, w, r) => getDoc(D(db, 'drinks/' + ownId(r, w))) });
@@ -548,6 +553,8 @@ row('js/prep.js saveMinutes() (admin): publish minutes', { ok: GOOGLE, asks: GOO
   run: (db, w, r) => W(r, [['set', 'minutes/p-' + r, mins({ pubAt: Date.now() })]]) });
 row('js/prep.js saveGuide() (admin): a guide and its page picture', { ok: GOOGLE, asks: GOOGLE,
   run: (db, w, r) => W(r, [['set', `guides/${MINE(r)}/pages/0`, { img: 'data:image/png;base64,AA', w: 4, h: 6, v: 1, n: 0 }], ['set', 'guides/' + MINE(r), { title: 'Slicer', cat: 'equipment', sum: '', steps: 'Unplug it first.', kw: '', text: '', thumb: '', pages: 1, dims: [], v: 1, file: '', removed: false, at: Date.now(), upd: Date.now() }]]) });
+row('js/prep.js saveVidLinks() (admin Guides): the video links, both records', { ok: GOOGLE, asks: GOOGLE,
+  run: (db, w, r) => W(r, [['set', 'tutorials/staff', { links: { prep: { w: 'AAAAAAAAAAA', t: 'BBBBBBBBBBB' } }, at: Date.now() }], ['set', 'tutorials/chefs', { links: { 'chef-panel': { w: 'CCCCCCCCCCC', t: '' } }, at: Date.now() }]]) });
 row('js/prep.js dkSave(): my usual drink (drinks/<me>)', { ok: KITCHEN, asks: KPINS,
   run: (db, w, r) => W(r, [['set', 'drinks/' + ownId(r, w), { kind: 'flat', size: 'reg', milk: 'oat', shot: '', sugar: '1', note: '', cold: '', other: '', at: Date.now() }]]) });
 row('js/prep.js ksPick() and ksCheck(): my section today (shifts/<today>_<me>)', { ok: KITCHEN, asks: ['ownkit', 'kit', 'sam', 'ann', 'lou', 'tab'],

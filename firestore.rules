@@ -968,6 +968,20 @@ service cloud.firestore {
         allow delete: if isAdmin();
       }
     }
+    // The tutorial videos' YouTube links (#/guides, head chef 19 Nov 2026, docs/tutorial-videos.md). Two records only:
+    // staff (the videos of the pages everyone uses), read by every kitchen login, and chefs (the chef panel, Today's team,
+    // the supplier order, the recipe editor and the admin panel), read only by the head chef's Google account or a phone
+    // whose PIN session is a chef's. Only the head chef's Google account writes them, as links: { <video>: { w, t } }.
+    match /kitchens/KITCHEN_PIN/tutorials/{doc} {
+      function tutOk() {
+        return request.resource.data.keys().hasOnly(['links', 'at', 'by'])
+          && request.resource.data.links is map && request.resource.data.links.size() <= 30
+          && request.resource.data.get('at', 0) is int;
+      }
+      allow read: if (doc == 'staff' && kitchenRead()) || (doc == 'chefs' && (isAdmin() || (kitchenRead() && chefId(reader()))));
+      allow create, update: if doc in ['staff', 'chefs'] && isAdmin() && tutOk();
+      allow delete: if false;
+    }
     // The head chef's book (#/manage, 21 Oct 2026): recipes changed or added in the book itself, laid over js/data.js.
     // Everyone with the kitchen PIN reads them. Only the head chef writes them: with their Google account while nobody
     // else is signed in with a PIN on that device, or with their own PIN as the person in config/main headId (which only
