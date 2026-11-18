@@ -34,10 +34,14 @@ function frameList(dir, frames, end) {
   return list;
 }
 
-function filmToMp4(dir, out, w, h) {
+// len: make it exactly this long (the last picture held, or the end cut). The intro and outro are filmed for their
+// planned length, but stopping the film takes longer on a busy machine; a longer intro pushed the whole page later than
+// its voice (18 Nov 2026, seen on Admin Today: the voice was a step ahead of the picture).
+function filmToMp4(dir, out, w, h, len) {
   const { frames, end } = JSON.parse(fs.readFileSync(path.join(dir, 'frames.json'), 'utf8'));
-  ff(['-f', 'concat', '-safe', '0', '-i', frameList(dir, frames, end), '-vf', 'fps=' + FPS + ',scale=' + w + ':' + h + ':flags=lanczos,setsar=1,format=yuv420p', '-c:v', 'libx264', '-preset', 'medium', '-crf', '17', '-an', out], out);
-  return end - frames[0].t;
+  const fit = len ? ',tpad=stop_mode=clone:stop_duration=' + Math.ceil(len + 2) : '';
+  ff(['-f', 'concat', '-safe', '0', '-i', frameList(dir, frames, end), '-vf', 'fps=' + FPS + ',scale=' + w + ':' + h + ':flags=lanczos,setsar=1,format=yuv420p' + fit].concat(len ? ['-t', secs(len)] : [], ['-c:v', 'libx264', '-preset', 'medium', '-crf', '17', '-an', out]), out);
+  return len || end - frames[0].t;
 }
 
 async function stagePage(browser, cut) {
@@ -129,8 +133,8 @@ export async function compose(browser, board, cut, o) {
   await playCard(page, cut, { cut, mode: 'outro', title: board.done || "That's the " + board.title, next: board.next, credit: MUSIC.credit }, outLen, path.join(work, 'outro'));
   await page.context().close();
   const introMp4 = path.join(work, 'intro.mp4'), outroMp4 = path.join(work, 'outro.mp4');
-  filmToMp4(path.join(work, 'intro'), introMp4, W, H);
-  filmToMp4(path.join(work, 'outro'), outroMp4, W, H);
+  filmToMp4(path.join(work, 'intro'), introMp4, W, H, inLen);
+  filmToMp4(path.join(work, 'outro'), outroMp4, W, H, outLen);
 
   // 5. the voice: every sentence where it was said, then the music under it
   const total = inLen + main + outLen, cues = [];
