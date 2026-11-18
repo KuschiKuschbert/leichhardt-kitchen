@@ -1797,7 +1797,7 @@
      with that name (js/app.js LK_APP.fools; nothing is kept). js/fools.js loads when this row opens. */
   var foolsAdminLoad = null, foolsAdminErr = false;
   /* Once a year on any device (head chef, 17 Nov 2026: "do the once thing"; docs/april-fools.md). fools/<YYYY-04-01>_<me>,
-     { day, at, by }, written once by the person when their joke starts (foolsMark()). foolsSeen(): has it played on
+     { day, at, by, joke }, written once by the person when their joke starts (foolsMark(); joke 'A1' to 'L2', 18 Nov 2026). foolsSeen(): has it played on
      another device? One read from the server, on a person's first Home view of 1 April on a device (about one read per
      person per device, once a year). true: played; false: not yet; null: could not tell (no signal, refused, rules not
      published yet), and the device's own record decides. A cached answer is never taken for "not yet". */
@@ -1806,10 +1806,13 @@
     return sdk().then(function () { return fb.fs.getDocFromServer(docRef('fools', day + '_' + id)); })
       .then(function (sn) { return !!sn.exists(); }, function () { return null; });
   }
-  function foolsMark(id, day) {
+  function foolsMark(id, day, joke) {
     if (!id || id !== S.who || !canW() || !/^\d{4}-04-01$/.test(day || '')) return;
+    // which joke they got ('A1' to 'L2'), so a later year can avoid it and say so (head chef, 18 Nov 2026)
+    var rec = { day: day, at: now() };
+    if (/^[A-L][12]$/.test(joke || '')) rec.joke = joke;
     // a second device after the first is refused by the rules (never changed): the joke is already kept, so nothing to show
-    W([['set', docRef('fools', day + '_' + id), { day: day, at: now() }]]).catch(function () {});
+    W([['set', docRef('fools', day + '_' + id), rec]]).catch(function () {});
   }
   function foolsYear() { var d = dayNow(); return +d.slice(0, 4) + (d.slice(5) > '04-01' ? 1 : 0); }
   function foolsAdminHTML() {
