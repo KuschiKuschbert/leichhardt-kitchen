@@ -54,20 +54,20 @@ function hasPrivateContact(value) {
   await p.keyboard.press('Escape');
   await p.goto(L.BASE + '#/functions/new'); await L.settle(p, 900);
   ok(/New function/.test(await txt(p, '#fe-root') || ''), 'form: New function opens');
-  ok(await p.$eval('[data-ff="startT"]', e => e.type === 'time' && e.step === '60'), 'event start uses the minute picker');
+  // typed times since 18 Nov 2026 (the device clock box before): tests/function-time-boxes.test.js has the rest
+  ok(await p.$eval('[data-ff="startT"]', e => e.type === 'text' && e.inputMode === 'numeric'), 'event start is a typed box with a number keypad');
   await p.evaluate(() => {
     window.pickerCalls = 0;
     HTMLInputElement.prototype.showPicker = function () { window.pickerCalls++; };
   });
   await p.click('[data-ff="startT"]');
-  ok(await p.evaluate(() => window.pickerCalls === 1), 'tapping the time field opens its native picker');
-  await p.evaluate(() => { HTMLInputElement.prototype.showPicker = function () { throw new DOMException('Unavailable', 'NotAllowedError'); }; });
-
-  ok(await p.$eval('[data-ff="startT"]', e => { e.value = '25:99'; return e.value === ''; }), 'the native time control refuses an impossible time');
+  ok(await p.evaluate(() => window.pickerCalls === 0), 'tapping the time box opens no device clock');
+  await setV(p, '[data-ff="startT"]', '25:99');
+  ok(/Cannot read "25:99"/.test(await txt(p, '#fe-root') || ''), 'an impossible time is named, not taken');
   await p.fill('[data-ff="name"]', 'Smith 50th');
   await setV(p, '[data-ff="date"]', today);
   await setV(p, '[data-ff="startT"]', '18:00');
-  ok(await p.inputValue('[data-ff="startT"]') === '18:00', 'keyboard entry works when showPicker is unavailable');
+  ok(await p.inputValue('[data-ff="startT"]') === '18:00' && !/Cannot read/.test(await txt(p, '#fe-root') || ''), 'a typed 18:00 is taken and the warning goes');
   await p.$eval('[data-ff="date"]', e => { e.max = '2000-01-01'; });
   await p.click('[data-fe="save"]');
   ok(!Object.keys(await store(p)).some(k => k.startsWith(fsKey(['functions']) + '/')) && await p.$eval('[data-ff="date"]', e => !e.validity.valid && document.activeElement === e), 'save is blocked and focuses an out-of-range date');
@@ -92,7 +92,7 @@ function hasPrivateContact(value) {
   ok(/12 platters/.test(await txt(p, '#fe-live') || ''), 'platters: the bar adds up 12 platters (no guest multiplying)');
   await tap(p, '[data-fe="mode"][data-v="stag"]'); await L.settle(p, 100);
   await setV(p, '[data-ff="foodT"]', '18:30');
-  ok(await p.$eval('[data-ff="foodT"]', e => e.value) === '18:30', 'times: the picker keeps 18:30 in 24-hour storage');
+  ok(await p.$eval('[data-ff="foodT"]', e => e.value) === '18:30', 'times: the box keeps 18:30 in 24-hour storage');
   ok(await p.$eval('[data-ff="a2_0"]', e => e.value) === '2' && await p.$eval('[data-ff="a2_1"]', e => e.value) === '2' && await p.$eval('[data-ff="a2_2"]', e => e.value) === '1', 'staggered: 5 pizza platters over 3 rounds start as 2, 2, 1');
   ok(await p.$eval('[data-ff="rt1"]', e => e.value) === '19:00' && await p.$eval('[data-ff="rt2"]', e => e.value) === '19:30', 'staggered: rounds every 30 minutes from 18:30');
   // the brief's example: antipasto first, aussie in the first two rounds, pizza later

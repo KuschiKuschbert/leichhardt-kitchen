@@ -14,20 +14,27 @@ const XMAS = at('2026-12-25T14:00:00'), NYE = at('2026-12-31T14:00:00'), PLAIN =
 const realErrors = p => p.errors.filter(e => !/Failed to load resource/.test(e));
 const st = p => p.evaluate(() => window.LK_MASCOT ? window.LK_MASCOT.state() : null);
 const stillSt = p => p.evaluate(() => window.LK_MASCOT && window.LK_MASCOT.stillState ? window.LK_MASCOT.stillState() : null);
-// How many of his 192 x 256 pixels differ from the plain art for the same picture, and the lowest row that does.
-const diff = (p, sel, file, f) => p.evaluate(async ([sel, file, f]) => {
-  const c = document.querySelector(sel + ' canvas'), img = new Image();
-  img.src = 'art/mascot/' + file + '?v=1'; await img.decode();
+// How many of his 192 x 256 pixels differ from the plain art of the picture he has drawn, and the lowest row that does.
+// file: a still, or null for the frame of his play on Home. The art is decoded first. Then, with nothing awaited in
+// between, the frame he has drawn (his own state) and his pixels are read in one synchronous block, so they are always
+// the same frame: his play runs on real time, and on a slow runner a decode outlasted a frame (17 Nov 2026, #745).
+const diff = (p, sel, file) => p.evaluate(async ([sel, file]) => {
+  const M = window.LK_MASCOT, clip = file ? '' : M.state().clip, img = new Image();
+  img.src = 'art/mascot/' + (file || clip + '-sheet-compact.webp') + '?v=1'; await img.decode();
+  // from here to the return nothing awaits, so no timer of his play can draw the next frame in between
+  const s = file ? null : M.state(), f = s ? s.frame : null;
+  const a = document.querySelector(sel + ' canvas').getContext('2d').getImageData(0, 0, 192, 256).data;
   const t = document.createElement('canvas'); t.width = 192; t.height = 256;
   const x = t.getContext('2d'); x.imageSmoothingEnabled = false;
   if (f == null) x.drawImage(img, 0, 0, 192, 256); else x.drawImage(img, (f % 4) * 192, Math.floor(f / 4) * 256, 192, 256, 0, 0, 192, 256);
-  const a = c.getContext('2d').getImageData(0, 0, 192, 256).data, b = x.getImageData(0, 0, 192, 256).data;
+  const b = x.getImageData(0, 0, 192, 256).data;
   let n = 0, low = 0;
   for (let i = 0; i < a.length; i += 4) {
     if (Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2]) + Math.abs(a[i + 3] - b[i + 3]) > 40) { n++; low = Math.max(low, Math.floor(i / 4 / 192)); }
   }
-  return { n, low };
-}, [sel, file, f]);
+  // a play's look says which frame it was and that the play was still on it (the same clip, not back at rest)
+  return s ? { n, low, clip, frame: f, playing: s.playing && s.clip === clip } : { n, low };
+}, [sel, file]);
 
 // The art and the head points agree: the same sum scripts/mascot-head-points.py writes into js/mascot.js.
 function artCheck() {
@@ -64,11 +71,11 @@ function artCheck() {
     let s = await st(p);
     ok(s.hat === 'santa', 'Christmas Day: the Santa hat: ' + JSON.stringify(s));
     if (s.playing) {
-      const d = await diff(p, '.mascot', s.clip + '-sheet-compact.webp', s.frame);
-      ok(d.n > 150 && d.low < 100, 'his play wears it from the first frame, on his head: ' + JSON.stringify(d));
+      const d = await diff(p, '.mascot', null);
+      ok(d.playing && d.n > 150 && d.low < 100, 'his play wears it from the first frame, on his head: ' + JSON.stringify(d));
     } else ok(false, 'the first Home view of the day plays today’s action');
     await restNow();
-    const d = await diff(p, '.mascot', 'welcome-still.png', null);
+    const d = await diff(p, '.mascot', 'welcome-still.png');
     ok(d.n > 150 && d.low < 100, 'at rest he wears it, on his head only: ' + JSON.stringify(d));
     ok(!p.__art.some(u => /hat|santa|party/.test(u)), 'nothing fetched for the hat: ' + p.__art.join(','));
     ok(await p.evaluate(() => /Christmas/.test(document.querySelector('#rtitle').textContent)), 'the welcome says Christmas beside him');
@@ -76,23 +83,23 @@ function artCheck() {
 
   await step('New Year’s Eve: the party cone', async () => {
     await open({ clock: NYE }); await restNow();
-    const s = await st(p), d = await diff(p, '.mascot', 'welcome-still.png', null);
+    const s = await st(p), d = await diff(p, '.mascot', 'welcome-still.png');
     ok(s.hat === 'party' && d.n > 100 && d.low < 100, 'New Year’s Eve: the party cone: ' + JSON.stringify([s.hat, d]));
   });
 
   await step('an ordinary day, and celebrations Off', async () => {
     await open({ clock: PLAIN }); await restNow();
-    let s = await st(p), d = await diff(p, '.mascot', 'welcome-still.png', null);
+    let s = await st(p), d = await diff(p, '.mascot', 'welcome-still.png');
     ok(s.hat === '' && d.n === 0, '28 December: his work clothes, exactly the plain art: ' + JSON.stringify([s.hat, d]));
     await p.context().close();
     await open({ clock: XMAS, seasonal: { selection: 'off' } }); await restNow();
-    s = await st(p); d = await diff(p, '.mascot', 'welcome-still.png', null);
+    s = await st(p); d = await diff(p, '.mascot', 'welcome-still.png');
     ok(s.hat === '' && d.n === 0, 'Christmas Day with celebrations Off on this device: no hat: ' + JSON.stringify([s.hat, d]));
     await p.evaluate(() => window.KB_SEASONAL.configure({ selection: 'auto' })); await p.clock.runFor(400); await L.settle(p, 300);
-    s = await st(p); d = await diff(p, '.mascot', 'welcome-still.png', null);
+    s = await st(p); d = await diff(p, '.mascot', 'welcome-still.png');
     ok(s.hat === 'santa' && d.n > 150, 'turned On with Home open: he puts it on where he stands: ' + JSON.stringify([s.hat, d]));
     await p.evaluate(() => window.KB_SEASONAL.configure({ selection: 'off' })); await p.clock.runFor(400); await L.settle(p, 300);
-    s = await st(p); d = await diff(p, '.mascot', 'welcome-still.png', null);
+    s = await st(p); d = await diff(p, '.mascot', 'welcome-still.png');
     ok(s.hat === '' && d.n === 0, 'and Off takes it off again: ' + JSON.stringify([s.hat, d]));
   });
 
@@ -101,7 +108,7 @@ function artCheck() {
     let s = await st(p);
     ok(s.hat === 'santa', 'Boxing Day at 23:59: the Santa hat: ' + s.hat);
     await p.clock.runFor(90000); await L.settle(p, 400);
-    s = await st(p); const d = await diff(p, '.mascot', 'welcome-still.png', null);
+    s = await st(p); const d = await diff(p, '.mascot', 'welcome-still.png');
     ok(s.hat === '' && d.n === 0 && s.mounted, 'after Queensland midnight the hat is off where he stands, not at the 04:00 reload: ' + JSON.stringify([s.hat, d]));
   });
 
@@ -110,7 +117,7 @@ function artCheck() {
     await p.emulateMedia({ reducedMotion: 'reduce' });
     const today = (await p.evaluate(() => window.LK_MASCOT.record('ann'))).today;
     await p.click('.mascot'); await p.clock.runFor(100); await L.settle(p, 300);
-    const s = await st(p), d = await diff(p, '.mascot', today + '-still.png', null);
+    const s = await st(p), d = await diff(p, '.mascot', today + '-still.png');
     ok(s.rest === 'still' && !s.playing && s.hat === 'santa' && d.n > 150 && d.low < 100, 'the still of ' + today + ' wears the hat: ' + JSON.stringify([s.rest, s.hat, d]));
   });
 
@@ -120,7 +127,7 @@ function artCheck() {
     ['i1', 'i2', 'i3'].forEach((id, k) => { extra[key(['days', day, 'items', id])] = Object.assign({ text: 'Line ' + id, station: 'Larder', qty: '', recipe: '', addedBy: 'Sam', addedById: 'sam', addedAt: XMAS - (60 - k) * 60000, deleted: false }, done); });
     await open({ clock: XMAS, hash: '#/prep', extra });
     await L.waitFor(p, () => { const s = window.LK_MASCOT && window.LK_MASCOT.stillState && window.LK_MASCOT.stillState(); return !!s && s.rest === 'rest'; }, null, 6000);
-    const d = await diff(p, '.mascot-still', 'welcome-still.png', null);
+    const d = await diff(p, '.mascot-still', 'welcome-still.png');
     ok((await stillSt(p)) && d.n === 0, 'Christmas Day, every line ticked: the plain Welcome pose: ' + JSON.stringify(d));
   });
 

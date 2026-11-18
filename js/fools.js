@@ -1034,7 +1034,7 @@
     later(END - 2500, function () { lift(s.vig, 1500); });
     later(END, reveal);
     if (!DESIGNS[design].dark) later(12000, function () { vignette(s, 0, 24000); });
-    if (s.done) s.done('play');
+    if (s.done) s.done('play', design + s.v);
     DESIGNS[design].run(s);
   }
   function nameOf(n) { n = String(n || '').trim(); if (n.normalize) n = n.normalize('NFC'); return n || 'you'; }
@@ -1063,7 +1063,8 @@
 
   /* The book's way in (js/app.js foolsSync()). o: { name, id, ids (the staff ids the deal is made from), year,
      preview: { design, version } from the admin panel, recover: the reveal only, length (seconds, the click tests),
-     done(st): 'play' when it starts, 'seen' when the reveal shows, 'quiet' for the words only }.
+     done(st, joke): 'play' when it starts (with the joke, 'A1' to 'L2'), 'seen' when the reveal shows, 'quiet' for the
+     words only }.
      A joke starts only on a drawn Home still on screen, with the server there (lkServerUp(), one HEAD request), nothing
      waiting to be sent and no sheet open; otherwise nothing is marked and the next Home view tries again. */
   var starting = false;

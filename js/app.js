@@ -1405,7 +1405,7 @@
     }
     if (window.LK_FE) { if (window.LK_FE.api === FE_API && window.LK_FN && typeof window.LK_FN.M.effects === 'function') window.LK_FE.mount(root, route); else root.innerHTML = mgNote('Reload the book', 'The functions page on this device is a different version from the book. Reload the page to update it. Changes not saved yet are kept on this device.', '<div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div>'); return; }
     root.innerHTML = mgNote('Functions', 'Opening functions...', ' ', 'chef');
-    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=9').catch(function (e) { feLoad = null; throw e; });
+    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=10').catch(function (e) { feLoad = null; throw e; });
     feLoad.then(function () { if (parseRoute().name === 'functions') mountFunctions(parseRoute()); }, function () {
       var el = document.getElementById('fe-root');
       if (el) el.innerHTML = mgNote('Could not open functions', 'It needs the signal the first time it opens on a device. Check the signal and try again.', '<div class="btn-row"><button type="button" class="btn dark" data-act="feretry">Try again</button></div>');
@@ -1489,7 +1489,8 @@
      only: it grants nothing and is never sent. When it cannot be kept (storage refused), nothing plays, so a reload can
      never scare them twice. */
   var foolsLoad = null, foolsAsk = null, foolsAsking = '';
-  function foolsDay() { var T = window.LK_TIME; return !!(T && T.ready() && T.day().slice(5) === '04-01'); }
+  // 1 April from 04:00 (the PIN day turns then), so a closer still signed in after midnight packs down in peace
+  function foolsDay() { var T = window.LK_TIME; return !!(T && T.ready() && T.day().slice(5) === '04-01' && T.hour() >= 4); }
   function foolsRec(id) { try { var r = JSON.parse(localStorage.getItem('lk.fools.' + id) || 'null'); return r && r.d === window.LK_TIME.day() ? r : null; } catch (e) { return null; } }
   function foolsKeep(id, st) {
     try { localStorage.setItem('lk.fools.' + id, JSON.stringify({ d: window.LK_TIME.day(), st: st })); return true; } catch (e) { return false; }
@@ -1515,7 +1516,7 @@
     if (!F) { if (!foolsLoad) foolsLoad = mgScript('js/fools.js?v=1').then(function () { foolsSync(); }, function () { foolsLoad = null; }); return; }
     if (F.api !== 1 || F.busy() || foolsAsking) return;
     var name = P.whoName(), day = window.LK_TIME.day();
-    var done = function (st) { foolsKeep(id, st); homeWelcomePaint(); if (st === 'play' && P.foolsMark) P.foolsMark(id, day); };
+    var done = function (st, joke) { foolsKeep(id, st); homeWelcomePaint(); if (st === 'play' && P.foolsMark) P.foolsMark(id, day, joke); };
     if (ask) { foolsAsk = null; F.start({ name: ask.name || name, preview: ask }); return; }
     if (!foolsCan()) return;
     if (rec && rec.st === 'play') { F.start({ name: name, recover: true, done: done }); return; }
