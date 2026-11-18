@@ -802,6 +802,10 @@ row('js/prep.js foolsSeen(): the same question before it has played (no record y
   prep: (r, w) => put({ [FOOL(w)]: null }), run: (db, w) => getDocFromServer(D(db, FOOL(w))) });
 row('js/prep.js foolsMark(): my joke started (fools/<1 April>_<me>, once)', { ok: KPINS, asks: KPINS,
   prep: (r, w) => put({ [FOOL(w)]: null }), run: (db, w, r) => W(r, [['set', FOOL(w), foolRec()]]) });
+row('js/prep.js foolsMark(): my joke started, with which joke it was (joke: A1 to L2, 18 Nov 2026)', { ok: KPINS, asks: KPINS,
+  prep: (r, w) => put({ [FOOL(w)]: null }), run: (db, w, r) => W(r, [['set', FOOL(w), Object.assign(foolRec(), { joke: 'L2' })]]) });
+row('js/prep.js foolsMark(): a joke that is not one of the 24 is refused', { ok: [], asks: [],
+  prep: (r, w) => put({ [FOOL(w)]: null }), run: (db, w, r) => W(r, [['set', FOOL(w), Object.assign(foolRec(), { joke: 'M1' })]]) });
 row('js/prep.js foolsMark(): written again from another device after the first (never changed; the joke is already kept)', { ok: [], asks: [],
   prep: (r, w) => put({ [FOOL(w)]: { day: '2027-04-01', at: NOW, by: w } }), run: (db, w, r) => W(r, [['set', FOOL(w), foolRec()]]) });
 row('js/prep.js: another person\'s April Fools record, read or written (never sent)', { ok: GOOGLE, asks: [],
