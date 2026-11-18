@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prep lines for a later day: designs</title>
+<style>
+  :root { --ink: #1f1d1a; --muted: #5d5850; --paper: #faf7f0; --line: #d9d2c3; --accent: #c2410c; }
+  body { margin: 0; padding: 24px; background: var(--paper); color: var(--ink); font: 15px/1.4 system-ui, sans-serif; }
+  h1 { margin: 0 0 4px; font-size: 22px; }
+  p.sub { margin: 0 0 18px; color: var(--muted); }
+  .row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 26px; }
+  figure { margin: 0; }
+  figure img { width: 100%; border: 1px solid var(--line); border-radius: 8px; display: block; }
+  figcaption { margin-top: 6px; font-size: 13px; color: var(--muted); }
+  figcaption b { color: var(--ink); }
+  h2 { margin: 0 0 10px; font-size: 17px; }
+  .rec { border-left: 4px solid var(--accent); padding-left: 10px; }
+</style>
+</head>
+<body>
+<h1>Prep lines for a later day</h1>
+<p class="sub">Previews on synthetic data, 390 px. Today is Wednesday 18 Nov; the later day is Saturday 21 Nov. Before is the book as it is now.</p>
+
+<h2>The later day, where the line is added</h2>
+<div class="row">
+  <figure><img src="design-before/chef-ahead-3.png" alt=""><figcaption><b>Before.</b> A chef can open Saturday but cannot write on it.</figcaption></figure>
+  <figure><img src="design-a/later-day.png" alt=""><figcaption><b>A. Open the day.</b> Today's day row, then Add to Saturday. 5 taps. Scored 4 to 4.5.</figcaption></figure>
+  <figure><img src="design-b/plan-page.png" alt=""><figcaption><b>B. Chef panel.</b> A week with counts, its own form. 6 taps, reads. Scored 2.</figcaption></figure>
+  <figure><img src="design-c/later-day.png" alt=""><figcaption><b>C. Day strip.</b> One tap to a named day, form always open. 2 taps. Scored 3.</figcaption></figure>
+  <figure class="rec"><img src="design-mix/later-day.png" alt=""><figcaption><b>Recommended: the mix.</b> A's way in, C's note and one column, a calendar instead of a box, graphite count. Admin only.</figcaption></figure>
+</div>
+
+<h2>Adding, and what the others see</h2>
+<div class="row">
+  <figure><img src="design-before/chef-today.png" alt=""><figcaption><b>Before.</b> Today, as a chef sees it. Unchanged in A and the mix.</figcaption></figure>
+  <figure><img src="design-a/sheet.png" alt=""><figcaption><b>A.</b> Today's Add sheet, named for the day, slip says where it went.</figcaption></figure>
+  <figure><img src="design-b/plan-slip-scrolled.png" alt=""><figcaption><b>B.</b> The inline form and lines further down the panel page.</figcaption></figure>
+  <figure><img src="design-c/today.png" alt=""><figcaption><b>C.</b> The strip replaces the day row on today's page.</figcaption></figure>
+  <figure class="rec"><img src="design-mix/sheet.png" alt=""><figcaption><b>Mix.</b> As A: "Add to Saturday 21 Nov", "Added for Saturday 21 Nov".</figcaption></figure>
+</div>
+
+<h2>The mix for everyone else</h2>
+<div class="row">
+  <figure><img src="design-mix/sous-later-day.png" alt=""><figcaption><b>Sous chef</b> on Saturday: the lines, read only.</figcaption></figure>
+  <figure><img src="design-mix/tomorrow.png" alt=""><figcaption><b>Tomorrow</b> takes no plans: it is written tonight on today's list.</figcaption></figure>
+  <figure><img src="design-before/staff-day-arrives.png" alt=""><figcaption><b>Before, on the day:</b> the line reads "Waiting longest", "Sam 16:05" at 14:00.</figcaption></figure>
+  <figure class="rec"><img src="design-mix/day-arrives.png" alt=""><figcaption><b>Mix, on the day:</b> "Planned Sun by Head chef", no Waiting longest.</figcaption></figure>
+  <figure><img src="design-before/staff-today.png" alt=""><figcaption><b>Staff</b> today: no change in any design.</figcaption></figure>
+</div>
+</body>
+</html>

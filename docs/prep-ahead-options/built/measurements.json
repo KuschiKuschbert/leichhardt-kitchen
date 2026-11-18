@@ -1,0 +1,88 @@
+{
+  "source": "Implemented app (this branch), click-test stand-in, synthetic data, 2026-11-18 14:00 Queensland",
+  "notes": [
+    {
+      "name": "admin-later",
+      "width": 390,
+      "rowsInView": 2,
+      "rowsTotal": 2,
+      "overflow": 0,
+      "under44": [],
+      "errors": 0
+    },
+    {
+      "name": "admin-later",
+      "width": 768,
+      "rowsInView": 2,
+      "rowsTotal": 2,
+      "overflow": 0,
+      "under44": [],
+      "errors": 0
+    },
+    {
+      "name": "admin-later",
+      "width": 1280,
+      "rowsInView": 2,
+      "rowsTotal": 2,
+      "overflow": 0,
+      "under44": [],
+      "errors": 0
+    },
+    {
+      "name": "admin-sheet",
+      "width": 390,
+      "rowsInView": 2,
+      "rowsTotal": 2,
+      "overflow": 0,
+      "under44": [],
+      "errors": 0
+    },
+    {
+      "name": "admin-sheet",
+      "width": 1280,
+      "rowsInView": 2,
+      "rowsTotal": 2,
+      "overflow": 0,
+      "under44": [],
+      "errors": 0
+    },
+    {
+      "name": "sous-later",
+      "width": 390,
+      "rowsInView": 2,
+      "rowsTotal": 2,
+      "overflow": 0,
+      "under44": [],
+      "errors": 0
+    },
+    {
+      "name": "admin-tomorrow",
+      "width": 390,
+      "rowsInView": 0,
+      "rowsTotal": 0,
+      "overflow": 0,
+      "under44": [],
+      "errors": 0
+    },
+    {
+      "name": "staff-on-its-day",
+      "width": 390,
+      "rowsInView": 4,
+      "rowsTotal": 7,
+      "overflow": 0,
+      "under44": [],
+      "errors": 0
+    },
+    {
+      "name": "chef-today",
+      "width": 390,
+      "rowsInView": 4,
+      "rowsTotal": 6,
+      "overflow": 0,
+      "under44": [
+        "Set today's team 115x32"
+      ],
+      "errors": 0
+    }
+  ]
+}
