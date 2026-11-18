@@ -157,7 +157,41 @@ Showing the videos inside the book (a link or player in Guides) would change the
 
 That goes through the service council and the head chef's OK first.
 
-## Trial, 18 November 2026
+## The series, 18 and 19 November 2026
+
+The head chef approved the look on the Prep list trial and said "go ahead and film the other pages". All 21 pages are filmed in both cuts, in the American female voice (Kokoro `af_heart`). The order is `ORDER` in `make.mjs`, and `node scripts/tutorials/make.mjs join` joins them into one video per cut with chapter marks.
+
+1. **Start:** Signing in (`sign-in`).
+2. **Pages:** Home, Recipes, Prep list, Orders, Wastage, Transfers, Delivery received, Guides, Pings minutes and mail (`team-talk`), Drinks run, Today's team, Cleaning, Functions, Settings.
+3. **Chef:** The chef panel, Supplier order, Recipes and drawings (`recipes-manage`).
+4. **Admin:** Admin Today, Admin Reports, Admin Team and Kitchen. The last one ends the series with "That's the whole Kitchen Book".
+
+Each page:
+- has its own made-up data in its storyboard's `extra`
+- passed the voice check on every line
+- filmed with no page errors and no outside requests
+- was checked one still per step, at the step's last sentence
+
+### Known gaps, on purpose
+
+- **Recipes.** The amount multiplier is not shown: staff's recipe card has none. It is only in the chef's recipe editor.
+- **Keep screen on.** It is shown in the Phone cut only. The book offers it only on touch screens (`koCan()`), so the Desktop cut leaves it out. The Phone cut stands in a screen lock the way `tests/keep-screen-on.test.js` does.
+- **Signing in, the kitchen PIN.** The PIN is not typed on screen. The stand-in's 6-digit test PIN does not fit the 4-digit box, so the video starts with it already on the device.
+- **Signing in, the daily lock.** The 04:00 lock is said and its words are on screen, but only the shared screen's 10-minute lock is filmed (the clock jumps 11 minutes).
+- **Settings.** The version line shows the files' real date (October), which is later than the filmed day in June.
+
+### What went wrong while filming, and the fixes (for the next run)
+
+- **The picture fell behind the voice.** It ran up to 10 s behind by the end of the admin videos while five pages filmed at once. There were two causes:
+  - The screencast hands some frames over out of order on a busy machine. `compose.mjs` now lists frames in the order they were painted, and lines the cues up with the first painted frame.
+  - The filmed intro ran longer than planned. The intro and outro are now held or cut to exactly their planned length.
+
+  To check a video: the voice of a step and its picture should agree at the step's last sentence. Filming one page at a time also helps (`nice -n -10 node ...` gives the browser priority).
+- **US dates.** Date boxes showed US dates until `kit.mjs` set the browser's locale to `en-AU`.
+- **Dialogs cover the chalk.** The device question and the chef hat menu sit above every other layer, chalk included. `sign-in.mjs` and `home.mjs` lift the chalk into a see-through popover on top. A future change to `overlay.js` could do this for every video.
+- **Usage limits.** Five helper sessions filming in parallel used the 5-hour usage limit in about an hour, twice. Next time, run two at a time.
+
+## Trial, 18 November 2026 (kept for the record)
 
 The Prep list:
 - Desktop: 95.5 s, 8.9 MB.

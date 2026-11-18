@@ -1,8 +1,8 @@
 # Session map: which note to read, and every file
 
-## Tutorial videos, 18 November 2026 (trial)
+## Tutorial videos, 18 and 19 November 2026 (all 21 pages)
 
-The head chef asked for tutorial videos of every page, the admin included, and one video of them all. They want chalk circles, a realistic free voice over, captions, the mascot, tap ripples, quiet music, Desktop and Phone cuts, and Drive. No app change, so no council; the PR's verdict is Not needed (tooling only). Built in `scripts/tutorials/` (`make.mjs`, `film.mjs`, `kit.mjs`, `overlay.js`, `fixtures.mjs`, `compose.mjs`, `voice.py`, `stage/`, `storyboards/prep.mjs`). It films the book on the click tests' stand-in, one Chrome per cut drawing finer, with Kokoro's voice, "Easy Lemon" (CC BY, credited) and ffmpeg. The trial is the Prep list in both cuts plus a five-voice sample pack. The rest waits for the head chef's OK. Note: `docs/tutorial-videos.md`.
+The head chef asked for tutorial videos of every page, the admin included, and one video of them all. They want chalk circles, a realistic free voice over, captions, the mascot, tap ripples, quiet music, Desktop and Phone cuts, and Drive. No app change, so no council; the PR's verdict is Not needed (tooling only). Built in `scripts/tutorials/` (`make.mjs`, `film.mjs`, `kit.mjs`, `overlay.js`, `fixtures.mjs`, `compose.mjs`, `voice.py`, `stage/`, `storyboards/prep.mjs`). It films the book on the click tests' stand-in, one Chrome per cut drawing finer, with Kokoro's voice, "Easy Lemon" (CC BY, credited) and ffmpeg. The trial was the Prep list in both cuts plus a voice sample pack; the head chef chose the American female voice (Kokoro `af_heart`) after hearing their own cloned voice, then said go. All 21 pages were filmed by five helper sessions, joined with `make.mjs join`; the picture-behind-voice drift (frames out of order, long intros) was fixed in `compose.mjs`. Note: `docs/tutorial-videos.md`.
 
 ## Prep lines for a later day, 18 November 2026 (chosen and built)
 
