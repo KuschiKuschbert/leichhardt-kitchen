@@ -43,6 +43,10 @@ const extra = {
   [key('orders', day, 'lines', 'panko')]: { text: 'Panko', qty: '2 kg', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - 4 * 3600000, ordered: false, deleted: false }
 };
 
+// After a tap, the next sentence waits until the page has finished redrawing and painted it, so on a busy computer
+// the voice never runs ahead of the picture.
+const settled = (page, cut, L) => L.settle(page, 2500).then(() => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))));
+
 export default {
   id: 'supplier-order',
   title: 'Supplier order',
@@ -53,5 +57,72 @@ export default {
   extra,
   intro: ['Supplier order.', "Here's how the chefs write each supplier's order, check it and record it."],
   outro: ["That's Supplier order. Next up, Recipes and drawings."],
-  steps: []
+  steps: [
+    {
+      title: 'Cut-offs first',
+      say: ['The cut-offs sit at the top. Northside Foods closes at 15:00.', 'Pick a supplier here, or tap its name up top.'],
+      do: [
+        { s: 0, d: 0.3, circle: '#cut-band .cut-row >> nth=0', opts: { pad: 6 } },
+        { s: 1, d: 0.3, circle: { phone: '.su-mobile-pick .ux-picker-trigger', desktop: '.su-side' }, opts: { pad: 6 } }
+      ]
+    },
+    {
+      title: 'Write the order',
+      say: ['Each item shows its par, and what you ordered last time.', 'Type how many in the To order box.', 'Plus and minus change it by one.'],
+      do: [
+        { s: 0, d: 0.3, circle: '.su-row[data-item="chips"] .su-par', opts: { pad: 6 } },
+        { s: 0, d: 2.0, circle: '.su-row[data-item="chips"] .su-last', opts: { pad: 6 } },
+        { s: 1, d: 0.4, type: ['input[data-sf="qty"][data-i="chips"]', '5'] },
+        { s: 2, d: 0.4, tap: '[data-su="step"][data-i="chips"][data-d="1"]', run: settled },
+        { s: 2, d: 1.6, circle: '.su-row[data-item="chips"] .su-qty', opts: { pad: 6 } }
+      ]
+    },
+    {
+      title: 'Staff requests',
+      say: ['Staff requests shows what the team asked for on the order list.', 'Ann asked for panko, so write it in.', 'Nothing is ticked off here. The request stays on the order list.'],
+      do: [
+        { s: 0, d: 0.6, tap: '[data-su="requests"]', run: settled },
+        { s: 0, d: 2.2, circle: '.su-asked', opts: { pad: 6 } },
+        { s: 1, d: 0.6, type: ['input[data-sf="qty"][data-i="panko"]', '5'] },
+        { s: 2, d: 0.4, underline: '.su-asked .hint' }
+      ]
+    },
+    {
+      title: 'Review',
+      say: ["When it's all in, tap Review order.", 'Check every line.', 'Send it the usual way. Copy order text helps. The book sends nothing itself.'],
+      do: [
+        { s: 0, d: 0.8, tap: '[data-su="review"]', run: settled },
+        { s: 1, d: 0.2, circle: '.su-review .su-lines', opts: { pad: 6 } },
+        { s: 2, d: 1.4, circle: '[data-su="copy-review"]', opts: { pad: 6 } }
+      ]
+    },
+    {
+      title: 'Record it',
+      say: ['Once the order is placed, tap Record order placed.', 'Northside Foods now shows as ordered, and leaves the cut-offs.'],
+      do: [
+        { s: 0, d: 1.2, tap: '[data-su="record"]', run: settled },
+        { s: 1, d: 0.3, circle: '.su-info-line', opts: { pad: 6 } }
+      ]
+    },
+    {
+      title: 'Order history',
+      say: ['Order history shows each order, and who recorded it.', 'Choose a date to see that order.'],
+      do: [
+        { s: 0, d: 0.5, tap: '[data-su="history"]', run: settled },
+        { s: 0, d: 2.0, circle: '.su-disclosure:has([data-su="history"]) .su-lines', opts: { pad: 6 } },
+        { s: 1, d: 0.3, tap: { phone: '.su-history-dates .ux-picker-trigger', desktop: '[data-su="history-order"][data-id="o-last"]' }, run: settled },
+        { s: 1, d: 1.4, only: 'phone', tap: '.ux-picker [data-index="1"]', run: settled }
+      ]
+    },
+    {
+      title: 'Order done',
+      say: ['Ordered by phone or email instead? Open the order list.', 'Under the cut-offs, tap Order placed beside the supplier.', 'It shows who ordered it, with Undo.'],
+      do: [
+        { s: 0, d: 1.8, tap: '#cut-band .cut-go', run: settled },
+        { s: 1, d: 0.2, tap: '.o-cut-fold > summary', run: settled },
+        { s: 1, d: 1.6, tap: '.cut-tl li:has-text("West Bay Produce") .cut-box', run: settled },
+        { s: 2, d: 0.2, circle: '.cut-tl li:has-text("West Bay Produce")', opts: { pad: 4 } }
+      ]
+    }
+  ]
 };
