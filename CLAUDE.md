@@ -71,6 +71,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Drinks run notebook style | `docs/drinks-notebook.md`, `docs/code-contracts.md` (Drinks run) |
 | Keep screen on: the chip on a recipe's trail line and its Settings row (chosen and built 14 Nov 2026) | `docs/keep-screen-on-options/brief.md` (Chosen, After the tap, Built) |
 | Recipe amounts, the recipe and drawing editor, the drawing studio, smoker batches | `docs/recipe-multiplier.md`, `docs/recipe-editor-options/brief.md`, `docs/studio-options/brief.md`, `docs/smoker-batches.md` |
+| AI drawing in the studio with Claude API credit: round 1 Build smaller (3 of 5), library pieces only, an offline bake-off before any app change (18 Nov 2026) | `docs/ai-drawing-options/brief.md` |
 | Suppliers, order cut-offs, the supplier order and Delivery received | `docs/supplier-workspace.md`, `docs/cutoff-options/brief.md`, `docs/receiving-design-options/brief.md`, `docs/delivery-received.md`; chosen Latest/Earlier purchase labels: `docs/supplier-last-order-status-options/brief.md` |
 | Wastage history and CSV reports | `docs/wastage-history.md`, `docs/report-exports.md` |
 | Transfer storage and returns | `docs/transfer-returns.md` (publish rules from the feature branch first: it indexes loans) |
