@@ -159,7 +159,7 @@ That goes through the service council and the head chef's OK first.
 
 ## The series, 18 and 19 November 2026
 
-The head chef approved the look on the Prep list trial and said "go ahead and film the other pages". All 21 pages are filmed in both cuts, in the American female voice (Kokoro `af_heart`). The order is `ORDER` in `make.mjs`, and `node scripts/tutorials/make.mjs join` joins them into one video per cut with chapter marks.
+The head chef approved the look on the Prep list trial and said "go ahead and film the other pages". All 21 pages are filmed in both cuts, in the American female voice (Kokoro `af_heart`). Version 1.0: each page about 1 to 2 minutes, the whole book about 33 minutes per cut. The videos were sent in the session; the captions (one zip, `00 CAPTIONS - All videos - v1.0.zip`) are in the Drive folder. The order is `ORDER` in `make.mjs`, and `node scripts/tutorials/make.mjs join` joins them into one video per cut with chapter marks.
 
 1. **Start:** Signing in (`sign-in`).
 2. **Pages:** Home, Recipes, Prep list, Orders, Wastage, Transfers, Delivery received, Guides, Pings minutes and mail (`team-talk`), Drinks run, Today's team, Cleaning, Functions, Settings.
@@ -187,7 +187,7 @@ Each page:
   - The filmed intro ran longer than planned. The intro and outro are now held or cut to exactly their planned length.
 
   To check a video: the voice of a step and its picture should agree at the step's last sentence. Filming one page at a time also helps (`nice -n -10 node ...` gives the browser priority).
-- **US dates.** Date boxes showed US dates until `kit.mjs` set the browser's locale to `en-AU`.
+- **US dates.** Date and time boxes showed 06/16/2026 and 06:00 PM. The page's locale alone did not fix them: Chrome's own boxes follow the browser's start-up language. `kit.mjs` now starts it with `--lang=en-AU` and `LANG=en_AU.UTF-8`, so they read 16/06/2026 and 18:00. All pages were filmed again one at a time on 19 November.
 - **Dialogs cover the chalk.** The device question and the chef hat menu sit above every other layer, chalk included. `sign-in.mjs` and `home.mjs` lift the chalk into a see-through popover on top. A future change to `overlay.js` could do this for every video.
 - **Usage limits.** Five helper sessions filming in parallel used the 5-hour usage limit in about an hour, twice. Next time, run two at a time.
 
