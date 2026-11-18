@@ -36,8 +36,11 @@ const extra = {
   [key('staffpins', 'fay')]: { hash: L.sha('lk:fay:5151') }, [key('pinset', 'fay')]: { at: 1 }, [key('drinks', 'fay')]: { kind: 'flat', at: 1, by: 'fay' }
 };
 Object.entries(FNS).forEach(([id, f]) => { extra[key('functions', id)] = f; });
+// After a tap, the next sentence waits until the page has finished redrawing and painted it, so on a busy computer
+// the voice never runs ahead of the picture.
+const settled = (page, cut, L) => L.settle(page, 2500).then(() => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))));
 // a typed amount counts once its box loses focus (its change event), the way it does when a person taps on
-const blur = page => page.evaluate(() => document.activeElement && document.activeElement.blur());
+const blur = (page, cut, L) => page.evaluate(() => document.activeElement && document.activeElement.blur()).then(() => settled(page, cut, L));
 
 export default {
   id: 'functions',
@@ -67,7 +70,8 @@ export default {
         { s: 0, top: true },
         { s: 0, d: 0.9, circle: '#fn-band .fn-list', opts: { pad: 4 } },
         { s: 1, d: 0.3, circle: '#fn-band .fn-due >> nth=0', opts: { pad: 8 } },
-        { s: 2, d: 0.9, tap: '#fn-band .fn-row >> nth=0' },
+        { s: 2, d: 0.7, clear: true },
+        { s: 2, d: 0.9, tap: '#fn-band .fn-row >> nth=0', run: settled },
         { s: 2, d: 2.6, circle: '.fn-sheet .fn-next' }
       ]
     },
@@ -75,12 +79,12 @@ export default {
       title: 'Service view',
       say: ['With two functions on, tap Service view.', "Every round still to go is here, in order, with how long until it's due.", 'When a round leaves the pass, tap Send all.', 'It waits for Functions to confirm it, with Undo if you sent the wrong one.'],
       do: [
-        { s: 0, tap: '.fn-sheet .fn-close' },
-        { s: 0, d: 1.2, tap: '#fn-band a.fn-svc' },
+        { s: 0, tap: '.fn-sheet .fn-close', run: settled },
+        { s: 0, d: 1.2, tap: '#fn-band a.fn-svc', run: settled },
         { s: 1, d: 0.3, circle: '.fn-svc-row >> nth=0' },
-        { s: 2, d: 0.9, tap: '.fn-svc-row [data-fn="send"] >> nth=0' },
-        { s: 3, d: 0.2, tap: '.fn-svc-wl' },
-        { s: 3, d: 1.6, circle: '.fn-svc-trip >> nth=0' }
+        { s: 2, d: 0.9, tap: '.fn-svc-row [data-fn="send"] >> nth=0', run: settled },
+        { s: 3, d: 0.2, tap: '.fn-svc-wl', run: settled },
+        { s: 3, d: 2.0, circle: '.fn-svc-trip >> nth=0' }
       ]
     },
     {
@@ -88,9 +92,9 @@ export default {
       say: ['If a function is called off, tap Cancel function on its card.', 'The kitchen is told straight away.', 'Tapped the wrong one? Tap Undo cancel, and it is back.'],
       do: [
         { s: 0, go: '#/fn' },
-        { s: 0, d: 1.8, tap: '[data-fn="status"][data-id="kerr"][data-v="cancel"]' },
+        { s: 0, d: 1.8, tap: '[data-fn="status"][data-id="kerr"][data-v="cancel"]', run: settled },
         { s: 1, d: 0.2, circle: '.p-toast:not(.p-toast-old) .p-toast-msg' },
-        { s: 2, d: 0.9, tap: '[data-fn="status"][data-id="kerr"][data-v="undo"]' }
+        { s: 2, d: 0.9, tap: '[data-fn="status"][data-id="kerr"][data-v="undo"]', run: settled }
       ]
     },
     {
@@ -98,9 +102,9 @@ export default {
       say: ['Function managers book them too.', 'Tap the chef hat, then Functions.', 'Tap New function.', 'Write the name, the date, the start time and the guests.'],
       do: [
         { s: 0, top: true },
-        { s: 1, d: 0.2, tap: '.wtop-who' },
-        { s: 1, d: 1.9, tap: '.wm a[href="#/functions"]' },
-        { s: 2, d: 0.3, tap: 'a[href="#/functions/new"]' },
+        { s: 1, d: 0.2, tap: '.wtop-who', run: settled },
+        { s: 1, d: 1.9, tap: '.wm a[href="#/functions"]', run: settled },
+        { s: 2, d: 0.3, tap: 'a[href="#/functions/new"]', run: settled },
         { s: 3, d: 0.2, type: ['[data-ff="name"]', 'Lee 30th'] },
         { s: 3, d: 1.4, fill: ['[data-ff="date"]', day3] },
         { s: 3, d: 2.2, fill: ['[data-ff="startT"]', '18:00'] },
@@ -111,11 +115,11 @@ export default {
       title: 'Add platters',
       say: ['Tap Choose a platter, pick one, then write how many.', 'Add the next one the same way.', "The bar at the bottom adds them up, and says when it's ready."],
       do: [
-        { s: 0, d: 0.5, tap: '.fe-pick .ux-picker-trigger' },
-        { s: 0, d: 1.5, tap: '.ux-picker-option[data-v="pizza-platter"]' },
+        { s: 0, d: 0.5, tap: '.fe-pick .ux-picker-trigger', run: settled },
+        { s: 0, d: 1.5, tap: '.ux-picker-option[data-v="pizza-platter"]', run: settled },
         { s: 0, d: 2.4, fill: ['[data-ff="qty0"]', '4'], run: blur },
-        { s: 1, d: 0.2, tap: '.fe-pick .ux-picker-trigger' },
-        { s: 1, d: 1.1, tap: '.ux-picker-option[data-v="vege-platter"]' },
+        { s: 1, d: 0.2, tap: '.fe-pick .ux-picker-trigger', run: settled },
+        { s: 1, d: 1.1, tap: '.ux-picker-option[data-v="vege-platter"]', run: settled },
         { s: 1, d: 1.8, fill: ['[data-ff="qty1"]', '2'], run: blur },
         { s: 2, d: 0.1, circle: '#fe-live' }
       ]
@@ -124,9 +128,9 @@ export default {
       title: 'Check and confirm',
       say: ['Tap Check and confirm. This is what the kitchen will see.', 'Then tap Confirm function.', 'The band says its stock is on the order list today.'],
       do: [
-        { s: 0, d: 0.5, tap: '[data-fe="review"]' },
+        { s: 0, d: 0.5, tap: '[data-fe="review"]', run: settled },
         { s: 0, d: 2.0, circle: '.fe-review .fn-next' },
-        { s: 1, d: 0.5, tap: '[data-fe="confirm"]' },
+        { s: 1, d: 0.5, tap: '[data-fe="confirm"]', run: settled },
         { s: 2, d: 0.3, circle: '#fn-band .fn-li:has-text("Lee 30th")' }
       ]
     }

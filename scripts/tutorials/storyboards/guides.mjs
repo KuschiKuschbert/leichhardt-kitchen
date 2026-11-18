@@ -24,7 +24,8 @@ export default {
       title: 'All the guides',
       say: ['Every guide the head chef has written is here, grouped by kind.', 'Each card says how many pages and steps it has.'],
       do: [
-        { s: 0, d: 0.3, underline: '.g-title' },
+        // on a big screen the heading runs the whole width, so only the phone underlines it
+        { s: 0, d: 0.3, only: 'phone', underline: '.g-title' },
         { s: 0, d: 2.4, circle: '.g-gh >> nth=0' },
         { s: 1, d: 0.4, circle: '.g-cm >> nth=0', opts: { pad: 6 } }
       ]
@@ -53,8 +54,9 @@ export default {
       say: ['Tap a guide to open it.', 'It says what it is for, and how many pages and steps it has.'],
       do: [
         { s: 0, d: 0.5, tap: '.g-card[href="#/guides/lk-smoke-service"]' },
-        { s: 1, d: 0.3, underline: '.g-doc .g-title' },
-        { s: 1, d: 2.6, circle: '.g-meta', opts: { pad: 6 } }
+        { s: 1, d: 0.3, only: 'phone', underline: '.g-doc .g-title' },
+        { s: 1, d: 2.6, only: 'phone', circle: '.g-meta', opts: { pad: 6 } },
+        { s: 1, d: 0.4, only: 'desktop', circle: '.g-dh', opts: { pad: 4 } }
       ]
     },
     {
@@ -71,8 +73,9 @@ export default {
       title: 'Its pages',
       say: ["The guide's own pages are under the steps.", 'Tap a page to open it big. Tap Next to turn the page.'],
       do: [
-        // on a big screen a page is taller than the window, so the line above the pages is ringed instead
-        { s: 0, d: 0.3, circle: { phone: '.g-pages .g-pg >> nth=0', desktop: '.g-pages > .hint' }, opts: { pad: 6 } },
+        // on a big screen a page is taller than the window: it is brought up, and the tap marks it
+        { s: 0, d: 0.3, only: 'phone', circle: '.g-pages .g-pg >> nth=0', opts: { pad: 6 } },
+        { s: 0, d: 0.3, only: 'desktop', scroll: '.g-pages' },
         { s: 1, d: 0.3, tap: '.g-pages [data-p="g-zoom"][data-i="0"]' },
         { s: 1, d: 2.2, tap: '.gz-wrap [data-gz="next"]' },
         { s: 1, d: 3.6, key: 'Escape' }

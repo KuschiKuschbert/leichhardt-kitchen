@@ -55,7 +55,7 @@ function nightly() {
       x: { out: i % 3 === 0 ? 1 : 0, in: i % 5 === 0 ? 1 : 0 },
       fs: { v: 1,
         del: i % 2 ? [] : [{ at: '07:40', s: 'Green Grocer', c: 3.2, f: null, n: 'All there', by: 'Ann' }, { at: '10:15', s: 'City Meats', c: 2.1, f: -18.5, n: '', by: 'Bo' }],
-        c: i === 3 ? { cv: 1, due: 32, done: 30, miss: ['Fryer oil change'], missN: 1, unable: [{ t: 'Hood filters', n: 'No degreaser' }], unableN: 1, wait: [], waitN: 0, ev: 0, evRec: 0 }
+        c: i === 2 ? { cv: 1, due: 32, done: 30, miss: ['Fryer oil change'], missN: 1, unable: [{ t: 'Hood filters', n: 'No degreaser' }], unableN: 1, wait: [], waitN: 0, ev: 0, evRec: 0 }
           : { cv: 1, due: 30, done: 30, miss: [], missN: 0, unable: [], unableN: 0, wait: [], waitN: 0, ev: 0, evRec: 0 },
         cool: i % 4 === 2 ? { k: 'batch', start: '14:05', by: 'Bo', s2: '16:10', s2by: 'Bo', r1: '16:07', r1by: 'Bo', r2: '18:02', r2by: 'Ann' } : { k: 'none' } }
     });
@@ -92,9 +92,9 @@ function pastLines(x) {
       x[key('days', d, 'items', 'd' + k)] = { text, station, qty, recipe, addedBy: 'Sam', addedById: 'sam', addedAt: at(d, '08:' + String(10 + k).padStart(2, '0')), done, deleted: false,
         ...(done ? { doneBy: name, doneById: id, doneAt: at(d, String(9 + (k % 4)).padStart(2, '0') + ':' + String(5 + 4 * k).padStart(2, '0')) } : {}) };
     });
-    if (i > 30) continue;   // wastage, transfers and orders: the 30 days their reports read
     x[key('waste', d, 'lines', 'w1')] = { text: 'Chips', amount: 1.5, unit: 'kg', reason: 'excess', action: '', station: 'Fryer', addedBy: 'Bo', addedById: 'bo', addedAt: at(d, '21:30'), deleted: false };
     if (i % 2) x[key('waste', d, 'lines', 'w2')] = { text: 'Slaw', amount: 1, unit: 'tub', reason: 'expired', action: '', station: 'Larder', addedBy: 'Ann', addedById: 'ann', addedAt: at(d, '10:05'), deleted: false };
+    if (i > 30) continue;   // transfers and orders: the 30 days their reports read
     if (i % 3 === 0) x[key('transfers', d, 'lines', 't1')] = { text: 'Lemons', amount: 12, unit: 'pieces', dir: 'out', venue: 'Venue B', person: 'Jo', note: '', addedBy: 'Ann', addedById: 'ann', addedAt: at(d, '11:00'), deleted: false, back: true };
     if (i % 5 === 0) x[key('transfers', d, 'lines', 't2')] = { text: 'Brioche buns', amount: 2, unit: 'packs', dir: 'in', venue: 'Venue C', person: 'Lee', note: '', addedBy: 'Sam', addedById: 'sam', addedAt: at(d, '16:20'), deleted: false };
     if (i % 2 === 0) x[key('orders', d, 'lines', 'o1')] = { text: 'Milk', qty: '6 L', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: at(d, '13:00'), ordered: true, orderedBy: 'Sam', orderedById: 'sam', orderedAt: at(d, '14:00'), deleted: false };
@@ -128,6 +128,9 @@ function kitchenSetup(x) {
   x[key('notes', 'n1')] = { text: 'Green Grocer delivery at 09:00. Check the herbs.', tag: 'delivery', start: today, until: today, dows: [], tm: 540, removed: false, at: L.NOW - DAY, upd: L.NOW - DAY, by: 'sam' };
   x[key('notes', 'n2')] = { text: 'Fryer oil change after lunch', tag: 'none', start: today, until: today, dows: [], tm: 900, removed: false, at: L.NOW - DAY, upd: L.NOW - DAY, by: 'head' };
   const std = (sectionId, name, aliases, minimum, unit) => ({ sectionId, name, aliases, minimum, unit, instruction: 'Ready before service.', recipe: '', archived: false, v: 1, at: L.NOW - 3 * DAY, by: 'head' });
+  x[key('prepStandards', 'rump')] = std('grill', 'Portion rump', ['rump'], 20, 'portions');
+  x[key('prepStandards', 'schnitzel')] = std('grill', 'Crumb chicken schnitzels', ['schnitzels'], 30, 'portions');
+  x[key('prepStandards', 'patties')] = std('grill', 'Chicken burger patties', ['patties'], 24, 'patties');
   x[key('prepStandards', 'onions')] = std('larder', 'Slice onions', ['onions', 'sliced onions'], 2, 'tubs');
   x[key('prepStandards', 'slaw')] = std('larder', 'Slaw', ['coleslaw'], 2, 'tubs');
   x[key('prepStandards', 'gravy')] = std('sauce', 'Gravy', ['make gravy'], 5, 'L');
@@ -165,7 +168,7 @@ export async function hide(page) {
 // A page tab that may sit past the edge of the phone's tab row: slid into view first, so the tap lands where it shows.
 export const showTab = t => page => page.evaluate(t => {
   const e = document.querySelector('.a-tab[data-t="' + t + '"]');
-  if (e && e.offsetParent) e.parentElement.scrollLeft = Math.max(0, e.offsetLeft - 24);
+  if (e && e.offsetParent) e.scrollIntoView({ block: 'nearest', inline: 'center' });
 }, t);
 const toast = '.p-toast:not(.p-toast-old)';
 
@@ -211,8 +214,10 @@ export default {
         { s: 1, d: 0.2, circle: '.dsh-dtile >> nth=0' },
         { s: 1, d: 1.6, circle: '.dsh-dtile >> nth=1' },
         { s: 1, d: 3.1, circle: '.dsh-dtile >> nth=2' },
+        { s: 2, d: 0.7, clear: true },
         { s: 2, d: 0.9, tap: '.dsh-dtile[data-t="waste"]' },
         { s: 2, d: 2.6, circle: '.a-group[data-g="reports"]', opts: { pad: 6 } },
+        { s: 3, d: 0.2, clear: true },
         { s: 3, d: 0.4, tap: '.a-group[data-g="today"]' }
       ]
     },
@@ -235,6 +240,7 @@ export default {
         { s: 0, d: 0.1, run: showTab('references') },
         { s: 0, d: 0.4, tap: '.a-tab[data-t="references"]' },
         { s: 0, d: 2.2, circle: '[data-ai="review-reference"] >> nth=0' },
+        { s: 1, d: 0.4, clear: true },
         { s: 1, d: 0.6, tap: '[data-ai="review-reference"][data-value="ref:recipe:burger"]' },
         { s: 1, d: 2.2, circle: '#ai-recipeId-picker', opts: { pad: 6 } },
         { s: 2, d: 2.4, tap: '[data-ai="save"]' },
@@ -273,8 +279,9 @@ export default {
         { s: 0, d: 0.5, tap: '[data-p="a-find"]' },
         { s: 1, d: 0.3, type: ['#fd-q', 'rec'] },
         { s: 1, d: 1.6, circle: '#fd-list .sheet-o >> nth=0' },
+        { s: 2, d: 0.1, clear: true },
         { s: 2, d: 0.3, tap: '#fd-list .sheet-o >> nth=0' },
-        { s: 2, d: 1.4, underline: '.ad-title' }
+        { s: 2, d: 1.4, circle: '.a-tab[data-t="records"]', opts: { pad: 6 } }
       ]
     }
   ]

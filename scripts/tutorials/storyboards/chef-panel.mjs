@@ -31,16 +31,107 @@ const extra = Object.fromEntries([
   standard('gravy', 'sauce', 'Gravy', 5, 'L', 'Cool it fast, label and date.')
 ]);
 
+// After a tap, the next sentence waits until the page has finished redrawing and painted it, so on a busy computer
+// the voice never runs ahead of the picture.
+const settled = (page, cut, L) => L.settle(page, 2500).then(() => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))));
 export default {
   id: 'chef-panel',
   title: 'The chef panel',
   done: "That's the chef panel",
   sub: 'Run the shift with the team',
   next: 'Supplier order',
-  hash: '#/chef',
+  hash: '#/prep',
   who: 'sam',
   extra,
   intro: ['The chef panel.', "Here's how the head chef and the sous chefs run the shift from one place."],
   outro: ["That's the chef panel. Next up, Supplier order."],
-  steps: []
+  steps: [
+    {
+      title: 'Open the panel',
+      say: ['Head chefs and sous chefs have their own panel.', 'Tap the chef hat, then Sous chef panel.', 'It has five rooms: Today, Reports, Team, Kitchen and Prep.'],
+      do: [
+        { s: 1, d: 0.2, tap: '.wtop-who', run: settled },
+        { s: 1, d: 1.9, tap: '.wm a[href="#/chef"]', run: settled },
+        { s: 2, d: 0.4, circle: '.a-groups', opts: { pad: 6 } }
+      ]
+    },
+    {
+      title: 'Dashboard',
+      say: ['Today opens on the Dashboard.', "At a glance: the prep done, the orders, and today's team. Tap one to open it.", 'Chef to-do and Shift pings sit next to it.'],
+      do: [
+        { s: 0, d: 0.3, underline: '#rtitle' },
+        { s: 1, d: 0.3, circle: '.c-tiles', opts: { pad: 6 } },
+        { s: 2, d: 0.2, circle: '.a-tabs [data-t="todo"]', opts: { pad: 6 } },
+        { s: 2, d: 1.4, circle: '.a-tabs [data-t="notes"]', opts: { pad: 6 } }
+      ]
+    },
+    {
+      title: 'Add a job',
+      say: ['Tap Chef to-do. This list is only for the chefs.', 'Write the job.', "Add the day it's due, and who it's for, if you like.", 'Then tap Add to the list.'],
+      do: [
+        { s: 0, d: 0.3, tap: '.a-tabs [data-p="c-tab"][data-t="todo"]', run: settled },
+        { s: 1, d: 0.2, type: ['[data-k="todo-text"]', 'Sharpen the knives'] },
+        { s: 2, d: 0.2, fill: ['[data-k="todo-due"]', L.ymd(new Date(L.NOW + 2 * DAY))] },
+        { s: 2, d: 1.6, tap: '.todo-for .ux-picker-trigger', run: settled },
+        { s: 2, d: 2.6, tap: '.ux-picker [data-index="1"]', run: settled },
+        { s: 3, d: 0.5, tap: '[data-p="todo-save"]', run: settled },
+        { s: 3, d: 1.5, circle: '.todo-row:has-text("Sharpen the knives")' }
+      ]
+    },
+    {
+      title: 'Tick it off',
+      say: ["When a job's done, tap its box.", 'The slip names it. Tap Undo if it was the wrong one.', 'Chef to-do is in the chef hat too.'],
+      do: [
+        { s: 0, d: 0.6, tap: '[data-p="todo-tick"][data-id="t2"]', run: settled },
+        { s: 1, d: 0.2, circle: '.p-toast:not(.p-toast-old):has([data-p="toast-act"])' },
+        { s: 1, d: 1.9, tap: '.p-toast:not(.p-toast-old) [data-p="toast-act"]', run: settled },
+        { s: 2, d: 0.3, circle: '.wtop-who', opts: { pad: 6 } }
+      ]
+    },
+    {
+      title: 'Reports',
+      say: ['Reports keeps the prep and order records.', "Prep history shows a day's prep list, and what was ticked.", 'Pick another day here. Order history works the same way.'],
+      do: [
+        { s: 0, d: 0.3, tap: '[data-p="c-group"][data-g="reports"]', run: settled },
+        { s: 1, d: 0.3, circle: '.c-history > .hint' },
+        { s: 2, d: 0.2, circle: '[data-k="c-date"]' },
+        { s: 2, d: 2.2, tap: '[data-p="c-tab"][data-t="order-history"]', run: settled }
+      ]
+    },
+    {
+      title: 'Team',
+      say: ['Team is for the people.', "Today's team sets who is on, their section and their break.", 'Manage staff adds or removes a person.', 'Meeting minutes shows who has signed the latest minutes.'],
+      do: [
+        { s: 0, d: 0.3, tap: '[data-p="c-group"][data-g="team"]', run: settled },
+        { s: 1, d: 0.3, circle: '.tm-tlrow[data-id="ann"]' },
+        { s: 2, d: 0.2, tap: '[data-p="c-tab"][data-t="people"]', run: settled },
+        { s: 3, d: 0.2, tap: '[data-p="c-tab"][data-t="minutes"]', run: settled },
+        { s: 3, d: 1.8, circle: '.mn-tiles' }
+      ]
+    },
+    {
+      title: 'Kitchen',
+      say: ['Kitchen is one page of rows.', 'Recipes and drawings, Supplier order, Functions, Delivery received and Guides.', 'Tap a row to open that tool.'],
+      do: [
+        { s: 0, d: 0.3, tap: '[data-p="c-group"][data-g="kitchen"]', run: settled },
+        { s: 1, d: 0.1, underline: '.c-tool[data-tool="recipes"] strong' },
+        { s: 1, d: 1.3, underline: '.c-tool[data-tool="suppliers"] strong' },
+        { s: 1, d: 2.3, underline: '.c-tool[data-tool="functions"] strong' },
+        { s: 1, d: 3.1, underline: '.c-tool[data-tool="deliveries"] strong' },
+        { s: 1, d: 4.3, underline: '.c-tool[data-tool="guides"] strong' },
+        { s: 2, d: 0.3, circle: '.c-tool[data-tool="recipes"]' }
+      ]
+    },
+    {
+      title: 'Section standards',
+      say: ['Prep holds the section standards.', 'Pick a section to see what it should have ready before service.', 'Only the head chef changes them.'],
+      do: [
+        { s: 0, d: 0.3, tap: '[data-p="c-group"][data-g="prep"]', run: settled },
+        { s: 1, d: 0.3, tap: '#ps-section-picker', run: settled },
+        { s: 1, d: 1.4, tap: '.ux-picker-option[data-v="larder"]', run: settled },
+        { s: 1, d: 2.6, circle: '.ps-catalogue' },
+        { s: 2, d: 0.3, underline: '.ps-manager > .hint' }
+      ]
+    }
+  ]
 };
