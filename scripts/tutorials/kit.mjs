@@ -30,7 +30,12 @@ export const CUTS = {
 // context's scale, unless the whole browser is told to draw finer, so each cut gets its own browser.
 export async function launch(scale) {
   const o = L.chromeOpts();
-  const b = await L.chromium.launch(Object.assign({}, o, { args: (o.args || []).concat(['--force-device-scale-factor=' + (scale || 1)]) }));
+  // --lang and LANG: the browser's own date and time boxes follow its start-up language, not the page's locale, so
+  // without them they read 06/16/2026 and 06:00 PM; with them 16/06/2026 and 18:00, as on the kitchen's phones
+  const b = await L.chromium.launch(Object.assign({}, o, {
+    args: (o.args || []).concat(['--force-device-scale-factor=' + (scale || 1), '--lang=en-AU']),
+    env: Object.assign({}, process.env, { LANG: 'en_AU.UTF-8', LANGUAGE: 'en_AU' })
+  }));
   const raw = b.newContext.bind(b);
   b.newContext = async opts => {
     const ctx = await raw(opts), close = ctx.close.bind(ctx);
