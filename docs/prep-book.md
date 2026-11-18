@@ -586,7 +586,7 @@ Items without a confirmed unit accept a positive decimal quantity and retain an 
 
 ### Date and time pickers (26 Oct 2026)
 
-Date and time fields open the device calendar or clock picker when tapped, where the browser supports it. Function event, food and round times and delivery arrival times now use native time controls too. Keyboard entry remains available. Save and confirm actions check native validity, including incomplete entries and date limits; existing checks still enforce booking order, report ranges and Queensland delivery times. Optional fields can still be cleared. Picker appearance and 12/24-hour display follow the device; saved times remain 24-hour Queensland values. No new dependencies, reads, rules or saved fields.
+Date and time fields open the device calendar or clock picker when tapped, where the browser supports it. Delivery arrival times use native time controls too. Function event, food and round times did until 18 Nov 2026; they are now typed boxes read by the book, always 24-hour, with a time list on a laptop ([the study](fn-time-picker-options/brief.md)). Keyboard entry remains available. Save and confirm actions check native validity, including incomplete entries and date limits; existing checks still enforce booking order, report ranges and Queensland delivery times. Optional fields can still be cleared. Picker appearance and 12/24-hour display follow the device; saved times remain 24-hour Queensland values. No new dependencies, reads, rules or saved fields.
 
 
 ### Admin analysis, references and training

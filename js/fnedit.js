@@ -85,14 +85,27 @@
     d.custom = d.mode === 'stag' && d.lines.some(function (l) { return JSON.stringify(l.a) !== JSON.stringify(M.even(+l.qty || 0, n)); });
     return d;
   }
-  // Native time pickers provide minute values. Keep normalising older saved drafts.
-  var T24 = ' type="time" step="60" autocomplete="off"';
-  function normT(v) {
-    var t = String(v || '').trim().replace(/[.h ]/g, ':'), m = /^(\d{1,2}):?(\d{2})$/.exec(t);
-    if (!m || +m[1] > 23 || +m[2] > 59) return String(v || '').trim();
-    return (m[1].length === 1 ? '0' : '') + m[1] + ':' + m[2];
+  // Times are typed (head chef, 18 Nov 2026, docs/fn-time-picker-options/brief.md), replacing the device clock of 26 Oct:
+  // 1830, 18:30, 18.30, 0630, 18 and 6:30pm are read as they are, always 24-hour; 1 to 11 with no am or pm (630, 6) is
+  // asked, never guessed. A time is kept as typed until it is clear, so nothing saves or prints a guess.
+  var TBOX = ' type="text" inputmode="numeric" autocomplete="off" spellcheck="false" maxlength="8" placeholder="1830"';
+  function p2(n) { return (n < 10 ? '0' : '') + n; }
+  function readT(v) {
+    var t = String(v == null ? '' : v).trim().toLowerCase().replace(/\s+/g, '');
+    if (!t) return { k: 'empty' };
+    var ap = /(am|pm|a|p)$/.exec(t); if (ap) t = t.slice(0, -ap[1].length);
+    var m = /^(\d{1,2})(?:[:.h]?(\d{2}))?$/.exec(t);
+    if (!m) return { k: 'bad' };
+    var h = +m[1], mi = m[2] == null ? 0 : +m[2];
+    if (h > 23 || mi > 59) return { k: 'bad' };
+    if (ap) { if (h < 1 || h > 12) return { k: 'bad' }; h = h % 12 + (ap[1][0] === 'p' ? 12 : 0); return { k: 'ok', t: p2(h) + ':' + p2(mi) }; }
+    if (h >= 1 && h <= 11 && !/^0/.test(m[1])) return { k: 'amb', a: p2(h) + ':' + p2(mi), p: p2(h + 12) + ':' + p2(mi) };
+    return { k: 'ok', t: p2(h) + ':' + p2(mi) };
   }
-  function atOf(ymd, hm) { var m = M.hmMin(hm); return M.isYmd(ymd) && m === m ? M.kat(ymd, m) : 0; }
+  function cleanT(v) { return /^\d\d:\d\d$/.test(String(v)) && M.hmMin(v) === M.hmMin(v); }
+  function partOf(t) { var h = +String(t).slice(0, 2); return h < 5 ? 'after midnight' : h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening'; }
+  // only a clear HH:MM is a time: "630" or "6:30" waiting for morning or evening is not 06:30 (M.hmMin would read it so)
+  function atOf(ymd, hm) { var m = cleanT(hm) ? M.hmMin(hm) : NaN; return M.isYmd(ymd) && m === m ? M.kat(ymd, m) : 0; }
   function int(s) { var t = String(s == null ? '' : s).trim(); return /^\d+$/.test(t) ? +t : (t === '' ? 0 : NaN); }
   // the saved shape (without who and when): what the rules and the kitchen read
   function toDoc(e) {
@@ -107,14 +120,16 @@
   }
   // everything wrong for confirming: the schedule's problems, the typed numbers and the contact
   function check(e) {
-    var d = e.d, f = toDoc(e), out = M.problems(f);
+    var d = e.d, f = toDoc(e), tp = timeProblems(d), has = function (k) { return tp.some(function (x) { return x.k === k; }); };
+    var out = M.problems(f).filter(function (x) { return !(x.k === 'start' && has('startT')) && !(x.k === 'rounds' && has('foodT')); });
     // one guests message: the schedule's own when it has one, else the save limit (up to 2000)
     if (!out.some(function (x) { return x.k === 'guests'; })) out = out.concat(guestProblems(d));
     d.lines.forEach(function (l, i) {
       if (int(l.qty) !== int(l.qty)) out.push({ k: 'qty' + i, t: M.short(l.name) + ': whole platters only.' });
       l.a.forEach(function (x, r) { var v = int(x); if (r < d.rounds.length && (v !== v || v < 0)) out.push({ k: 'a' + i + '_' + r, t: M.short(l.name) + ', round ' + (r + 1) + ': a whole number, 0 or more.' }); });
     });
-    d.rounds.forEach(function (r, i) { if (!atOf(r.d, r.t) && !(d.st && d.mode === 'all' && !String(r.t).trim())) out.push({ k: 'round' + i, t: 'Round ' + (i + 1) + ': set its date and time.' }); });
+    d.rounds.forEach(function (r, i) { if (!atOf(r.d, r.t) && !(d.st && d.mode === 'all' && !String(r.t).trim()) && !has('rt' + i) && !(i === 0 && has('foodT'))) out.push({ k: 'round' + i, t: 'Round ' + (i + 1) + ': set its date and time.' }); });
+    out = out.concat(tp);
     if (d.mode === 'stag' && !(int(d.gap) >= 1)) out.push({ k: 'gap', t: 'The gap between rounds is 1 minute or more.' });
     return out.concat(contactProblems(d));
   }
@@ -123,6 +138,19 @@
   function guestProblems(d) {
     var v = int(d.guests);
     return !d.gu && String(d.guests == null ? '' : d.guests).trim() && !(v >= 0 && v <= 2000) ? [{ k: 'guests', t: 'Guests: a whole number up to 2000.' }] : [];
+  }
+  // a typed time the book will not guess: checked on every save and print, a draft too (18 Nov 2026)
+  function timeProblems(d) {
+    var out = [];
+    function one(k, v, name) {
+      var r = readT(v);
+      if (r.k === 'amb') out.push({ k: k, t: name + ': ' + r.a + ' or ' + r.p + '? Pick morning or evening.' });
+      else if (r.k === 'bad') out.push({ k: k, t: name + ': cannot read "' + String(v).trim() + '". Type it like 1830.' });
+    }
+    if (!d.st) one('startT', d.startT, 'Event start');
+    one('foodT', d.foodT, d.mode === 'all' ? 'Food goes out at' : 'First round at');
+    d.rounds.forEach(function (r, i) { if (i || r.t !== d.foodT) one('rt' + i, r.t, 'Round ' + (i + 1)); });
+    return out;
   }
   function contactProblems(d) {
     var out = [];
@@ -134,7 +162,7 @@
   /* ---------- the schedule: worked out again when what it is made from changes, never over a grid set by hand ---------- */
   function retime(e) {
     var d = e.d;
-    if (!d.foodSet) { d.foodDate = d.date; d.foodT = d.startT; }
+    if (!d.foodSet) { d.foodDate = d.date; d.foodT = cleanT(d.startT) ? d.startT : ''; }
     if (d.mode === 'all') {
       d.rounds = [{ d: d.foodDate, t: d.foodT, note: (d.rounds[0] || {}).note || '' }];
       d.lines.forEach(function (l) { l.a = [Math.max(0, int(l.qty) || 0)]; });
@@ -326,10 +354,21 @@
   }
   // guests: a number, or ticked Not known yet (the box empties and waits until it is unticked)
   // the event start: a 24-hour time, or ticked TBC (the food times then wait too, unless one is typed)
+  // a typed time box (18 Nov 2026): .fe-tsay reads the time back while it is typed where there is no list; once the box
+  // is left, an unclear time asks Morning or evening? with a chip for each, and one it cannot read says so in red
+  function tboxHTML(k, val, extra, err) {
+    var r = readT(val), say = r.k === 'amb' || r.k === 'bad', list = k === 'startT' || k === 'foodT';
+    return '<span class="fe-tcell"><input id="fe-' + k + '" class="search fe-time' + (r.k === 'amb' ? ' is-ask' : r.k === 'bad' ? ' is-bad' : '') + '" data-ff="' + k + '"' + TBOX +
+      (list ? ' role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="fe-tl"' : '') + ' value="' + esc(val) + '"' + (extra || '') +
+      (say || err ? ' aria-invalid="true" aria-describedby="fe-e-' + (say ? k : err) + '"' : ' aria-describedby="fe-ts-' + k + '"') + '>' +
+      '<span class="fe-tsay" id="fe-ts-' + k + '" aria-live="polite"></span>' +
+      (r.k === 'amb' ? '<span class="fe-tq" id="fe-e-' + k + '"><b>Morning or evening?</b><span class="fe-tamb">' + [[r.a, 'morning'], [r.p, 'evening']].map(function (c) { return '<button type="button" class="chip" data-fe="tpick" data-k="' + k + '" data-v="' + c[0] + '">' + c[0] + ' ' + c[1] + '</button>'; }).join('') + '</span></span>' : '') +
+      (r.k === 'bad' ? '<span class="fe-err" id="fe-e-' + k + '">Cannot read "' + esc(String(val).trim()) + '". Type it like 1830.</span>' : '') + '</span>';
+  }
   function startHTML(d) {
-    var err = (E.ed.shown || []).some(function (x) { return x.k === 'startT' || x.k === 'start'; });
-    return '<div class="field fe-f"><label class="label" for="fe-startT">Event start</label><div class="fe-gu"><input id="fe-startT" class="search fe-time" data-ff="startT"' + T24 + ' value="' + esc(d.st ? '' : d.startT) + '"' + (d.st ? ' disabled' : '') +
-      (err ? ' aria-invalid="true" aria-describedby="fe-e-start"' : '') + '><label class="a-check"><input type="checkbox" data-ff="st"' + (d.st ? ' checked' : '') + '> TBC</label></div>' +
+    var err = (E.ed.shown || []).some(function (x) { return x.k === 'start'; });
+    return '<div class="field fe-f"><label class="label" for="fe-startT">Event start</label><div class="fe-gu">' + tboxHTML('startT', d.st ? '' : d.startT, d.st ? ' disabled' : '', err ? 'start' : '') +
+      '<label class="a-check"><input type="checkbox" data-ff="st"' + (d.st ? ' checked' : '') + '> TBC</label></div>' +
       (d.st ? '<span class="hint">The kitchen sees "TBC" and the function shows all day. It can still be confirmed (all at once); fill the time in when it is known.</span>' : '') + fieldErr('start') + '</div>';
   }
   function guestsHTML(d) {
@@ -365,11 +404,11 @@
     var head = '<tr><th scope="col">Round</th>' + d.lines.map(function (l) { return '<th scope="col">' + esc(M.short(l.name)) + '</th>'; }).join('') + '<th scope="col">Total</th></tr>';
     var rows = d.rounds.map(function (r, ri) {
       var t = d.lines.reduce(function (s, l) { return s + (int(l.a[ri]) || 0); }, 0), nextDay = d.date && r.d && r.d !== d.date;
-      return '<tr' + (t ? '' : ' class="is-empty"') + '><th scope="row"><span class="fe-rn">' + (ri + 1) + '</span>' +
-        '<label class="visually-hidden" for="fe-rt' + ri + '">Round ' + (ri + 1) + ' time</label><input id="fe-rt' + ri + '" class="search fe-time"' + T24 + ' data-ff="rt' + ri + '" value="' + esc(r.t) + '">' +
+      return '<tr' + (t ? '' : ' class="is-empty"') + '><th scope="row"><div class="fe-rrow"><span class="fe-rn">' + (ri + 1) + '</span>' +
+        '<label class="visually-hidden" for="fe-rt' + ri + '">Round ' + (ri + 1) + ' time</label>' + tboxHTML('rt' + ri, r.t) +
         (nextDay ? '<small class="fe-nd">' + esc(M.dayName(r.d)) + (r.d === M.addDays(d.date, 1) ? ' (next day)' : '') + '</small>' : '') +
         '<label class="visually-hidden" for="fe-rn' + ri + '">Round ' + (ri + 1) + ' note</label><input id="fe-rn' + ri + '" class="search fe-rnote" data-ff="rn' + ri + '" value="' + esc(r.note) + '" placeholder="Note (optional)" maxlength="80">' +
-        (t ? '' : '<button type="button" class="p-x" data-fe="rmround" data-i="' + ri + '">Remove round</button>') + '</th>' +
+        (t ? '' : '<button type="button" class="p-x" data-fe="rmround" data-i="' + ri + '">Remove round</button>') + '</div></th>' +
         d.lines.map(function (l, li) { return '<td><label class="visually-hidden" for="fe-a' + li + '_' + ri + '">' + esc(M.short(l.name)) + ', round ' + (ri + 1) + '</label><input id="fe-a' + li + '_' + ri + '" class="search fe-num" type="number" inputmode="numeric" min="0" step="1" data-ff="a' + li + '_' + ri + '" value="' + esc(l.a[ri] == null ? 0 : l.a[ri]) + '"></td>'; }).join('') +
         '<td><b>' + t + '</b></td></tr>';
     }).join('');
@@ -383,12 +422,12 @@
     var d = e.d, out = '<div class="seg fe-mode" role="radiogroup" aria-label="How the platters go out">' + [['all', 'All at once'], ['stag', 'Staggered']].map(function (m) {
       return '<button type="button" class="seg-b" role="radio" data-fe="mode" data-v="' + m[0] + '" aria-checked="' + (d.mode === m[0]) + '">' + m[1] + '</button>';
     }).join('') + '</div>';
-    out += '<div class="fe-row2">' + inp('foodDate', d.mode === 'all' ? 'Food goes out on' : 'First round on', d.foodDate, ' type="date"') + inp('foodT', d.mode === 'all' ? 'Food goes out at' : 'First round at', d.foodT, T24, d.foodSet ? '' : 'Same as the event start until you change it.') + '</div>';
+    out += '<div class="fe-row2">' + inp('foodDate', d.mode === 'all' ? 'Food goes out on' : 'First round on', d.foodDate, ' type="date"') + '<div class="field fe-f"><label class="label" for="fe-foodT">' + (d.mode === 'all' ? 'Food goes out at' : 'First round at') + '</label>' + tboxHTML('foodT', d.foodT) + (d.foodSet ? '' : '<span class="hint">Same as the event start until you change it.</span>') + '</div></div>';
     if (d.mode === 'stag') {
       out += '<div class="fe-row2">' + inp('n', 'Rounds', d.n, ' type="number" inputmode="numeric" min="2" max="' + M.MAX_ROUNDS + '" step="1"') + inp('gap', 'Minutes between rounds', d.gap, ' type="number" inputmode="numeric" min="1" max="600" step="5"') + '</div>' +
         '<p class="hint">' + (d.custom ? 'Split by hand. Changing the rounds keeps your numbers; ' : 'Split evenly, earlier rounds first (5 over 3 is 2, 2, 1). Type in the grid to split by hand. ') + '<button type="button" class="linkish" data-fe="even">' + (armed('even') ? 'Tap again to split evenly' : 'Split evenly again') + '</button></p>' + gridHTML(e);
     } else if (d.lines.length) {
-      out += '<p class="fe-allline">All at ' + esc(d.foodT || '?') + ': ' + esc(d.lines.map(function (l) { return (int(l.qty) || 0) + ' ' + M.short(l.name); }).join(', ')) + '</p>';
+      out += '<p class="fe-allline">All at ' + esc(cleanT(d.foodT) ? d.foodT : 'a time to come') + ': ' + esc(d.lines.map(function (l) { return (int(l.qty) || 0) + ' ' + M.short(l.name); }).join(', ')) + '</p>';
     }
     var f = toDoc(e);
     if (f.start && f.first && f.first !== f.start) out += '<p class="hint">Event starts ' + esc(M.when(f.start, f.date)) + '; food from ' + esc(M.when(f.first, f.date)) + '. The kitchen sees both.</p>';
@@ -396,7 +435,7 @@
   }
   function liveHTML(e) {
     var f = toDoc(e), probs = check(e), tot = M.totalQty(f);
-    return '<div class="fe-bar-t"><b>' + tot + ' ' + (tot === 1 ? 'platter' : 'platters') + '</b>' + (f.rounds.length ? ' · ' + (f.mode === 'all' ? 'all at ' + esc(M.when(f.first, f.date)) : f.rounds.length + ' rounds from ' + esc(M.when(f.first, f.date))) : '') +
+    return '<div class="fe-bar-t"><b>' + tot + ' ' + (tot === 1 ? 'platter' : 'platters') + '</b>' + (f.rounds.length ? ' · ' + (!f.first && !f.st ? (f.mode === 'all' ? 'time to come' : f.rounds.length + ' rounds, time to come') : f.mode === 'all' ? 'all at ' + esc(M.when(f.first, f.date)) : f.rounds.length + ' rounds from ' + esc(M.when(f.first, f.date))) : '') +
       (f.gu || f.guests ? ' · ' + M.guestsText(f) : '') + (probs.length ? ' · <span class="fe-bad">' + probs.length + ' to fix before confirming</span>' : e.status !== 'confirmed' ? ' · <span class="fe-good">Ready to confirm</span>' : '') + '</div>';
   }
   function reviewHTML(e) {
@@ -497,7 +536,7 @@
     if (!P.fnOK()) { e.msg = 'Not saved: you are not ticked for Functions any more. Your changes are kept on this device.'; draw(); return; }
     var next = kind === 'confirm' ? 'confirmed' : kind === 'cancel' ? 'cancelled' : e.status;
     var probs = check({ d: e.d, status: next });
-    var contactBad = guestProblems(e.d).concat(contactProblems(e.d));
+    var contactBad = guestProblems(e.d).concat(timeProblems(e.d), contactProblems(e.d));
     if ((next === 'confirmed' && probs.length) || contactBad.length) { e.shown = next === 'confirmed' ? probs : contactBad; e.review = false; draw(); goto(e.shown[0].k); return; }
     var api = B(), id = e.id, me = api.who(), owner = E.identity, submitted = clone(e.d), context = api.writeContext ? api.writeContext() : null;
     e.saving = 'Saving...'; e.shown = []; draw();
@@ -588,10 +627,14 @@
   }
   function drawNow() {
     var a = document.activeElement, k = a && E.root.contains(a) && a.getAttribute('data-ff'), ss = k && a.selectionStart, se = k && a.selectionEnd;
+    // a morning or evening chip keeps the focus through a redraw too (a late change from the box redraws once more)
+    var tp = !k && a && E.root.contains(a) && a.getAttribute('data-fe') === 'tpick' ? '[data-fe="tpick"][data-k="' + a.getAttribute('data-k') + '"][data-v="' + a.getAttribute('data-v') + '"]' : '';
     var html = E.sub.length ? (E.ed ? editHTML() : '') : listHTML();
     E.root.innerHTML = '<div class="fe-wrap">' + html + '</div>';
     window.dispatchEvent(new Event('lk-nav'));
-    if (k) { var el = E.root.querySelector('[data-ff="' + k + '"]'); if (el) { el.focus({ preventScroll: true }); try { if (ss != null) el.setSelectionRange(ss, se); } catch (x) {} } }
+    var tlWas = TL.k; TL.k = ''; TL.cur = -1;
+    if (tp) { var c = E.root.querySelector(tp); if (c) c.focus({ preventScroll: true }); }
+    if (k) { var el = E.root.querySelector('[data-ff="' + k + '"]'); if (el) { el.focus({ preventScroll: true }); try { if (ss != null) el.setSelectionRange(ss, se); } catch (x) {} if (tlWas === k && document.activeElement === el && tlWanted(el)) tlShow(el); } }
   }
   function live() { var el = E.root && E.root.querySelector('#fe-live'); if (el && E.ed && E.ed.d) el.innerHTML = liveHTML(E.ed); }
   function setField(k, v, structural, quiet) {
@@ -599,10 +642,10 @@
     var e = E.ed; if (!e || !e.d) return;
     var d = e.d, m;
     if (k === 'pq') { e.pq = v; draw(); return; }
-    if (k === 'startT' || k === 'foodT' || /^rt\d+$/.test(k)) v = normT(v);
+    if (k === 'startT' || k === 'foodT' || /^rt\d+$/.test(k)) { var rd = readT(v); v = rd.k === 'ok' ? rd.t : String(v == null ? '' : v).trim(); }
     // rounds that have times (worked out or typed by hand) move with the date, each by the same days, so a round typed
     // as 20:00 stays 20:00. Only rounds with no times yet are worked out again from the start (13 Nov 2026).
-    if (k === 'date') { var timed = d.rounds.some(function (r) { return M.hmMin(r.t) === M.hmMin(r.t); }); moveDate(e, v); if (!d.foodSet && !timed) retime(e); else if (d.mode === 'stag') realloc(e); }
+    if (k === 'date') { var timed = d.rounds.some(function (r) { return cleanT(r.t); }); moveDate(e, v); if (!d.foodSet && !timed) retime(e); else if (d.mode === 'stag') realloc(e); }
     else if (k === 'startT') { d.startT = v; if (!d.foodSet) retime(e); }
     else if (k === 'foodDate' || k === 'foodT') { d[k] = v; d.foodSet = true; retime(e); }
     else if (k === 'n' || k === 'gap') { d[k] = v; if (structural) retime(e); }
@@ -642,7 +685,7 @@
     if (E.drawing) { var v = ev.target.value, editor = E.ed, owner = E.identity; setTimeout(function () { if (E.ed === editor && owned(owner)) setField(k, v, true); }, 0); return; }
     // what changes the page's shape waits for the change event (so typing "12" does not redraw at "1")
     var shape = /^(date|startT|foodDate|foodT|n|gap|qty\d+|a\d+_\d+|rt\d+)$/.test(k);
-    if (ev.type === 'input' && shape) { if (/^(a\d+_\d+|qty\d+)$/.test(k)) { setField(k, ev.target.value, false); } else { E.pending[k] = ev.target.value; saveSync(); } return; }
+    if (ev.type === 'input' && shape) { if (/^(a\d+_\d+|qty\d+)$/.test(k)) { setField(k, ev.target.value, false); } else { E.pending[k] = ev.target.value; saveSync(); if (/^(startT|foodT|rt\d+)$/.test(k)) tTyping(ev.target); } return; }
     delete E.pending[k];
     setField(k, ev.target.value, ev.type === 'change' && shape);
   }
@@ -651,13 +694,98 @@
     var pending = E.pending; E.pending = {};
     Object.keys(pending).forEach(function (k) { setField(k, pending[k], true, true); });
   }
+  /* ---------- the time list (head chef, 18 Nov 2026): on a laptop, Event start and First round at show a list of times
+     every 15 minutes under the box while it has focus, narrowed by what is typed ("18" opens at 18:00, "630" leaves
+     06:30 and 18:30). Typing still works on its own and odd minutes are typed. A phone, a tablet and the round boxes say
+     the time back under the box instead (the list would sit under a phone's keyboard, and the round grid scrolls). The
+     list is drawn into the box's own cell, and again after a redraw only while that box still has focus. ---------- */
+  var TL = { k: '', cur: -1, hold: '' };   // hold: a box given its focus back after a pick opens no list
+  var QUARTERS = []; for (var tq = 0; tq < 96; tq++) QUARTERS.push(p2(Math.floor(tq / 4)) + ':' + p2(tq % 4 * 15));
+  function tlWanted(el) {
+    var k = el && el.getAttribute && el.getAttribute('data-ff');
+    return (k === 'startT' || k === 'foodT') && !el.disabled && !!window.matchMedia && window.matchMedia('(min-width: 768px) and (pointer: fine)').matches;
+  }
+  function tlBox(k) { return E.root && E.root.querySelector('[data-ff="' + k + '"]'); }
+  function tlClose() {
+    var o = document.getElementById('fe-tl'); if (o) o.remove();
+    var b = TL.k && tlBox(TL.k); if (b) { b.setAttribute('aria-expanded', 'false'); b.removeAttribute('aria-activedescendant'); }
+    TL.k = ''; TL.cur = -1;
+  }
+  function tsay(el) {
+    var s = document.getElementById('fe-ts-' + el.getAttribute('data-ff')); if (!s) return;
+    var v = el.value.trim(), r = readT(v);
+    s.innerHTML = !v ? '' : r.k === 'ok' ? '<b>' + r.t + '</b> ' + partOf(r.t) : r.k === 'amb' ? r.a + ' or ' + r.p + '?' : '';
+  }
+  function tlShow(el) {
+    var k = el.getAttribute('data-ff'), v = el.value, r = readT(v), dg = String(v).replace(/\D/g, ''), near = '', items;
+    // one digit is the start of an hour ("1" lists 10:00 to 19:45 and 1 and 13 o'clock); "630" is the two it could be
+    if (r.k === 'amb' && dg.length >= 3) items = [r.a, r.p];
+    else if (r.k === 'ok' && dg.length !== 1) { items = QUARTERS; near = r.t.slice(0, 3) + p2(Math.floor(+r.t.slice(3) / 15) * 15); }
+    else if (dg) items = QUARTERS.filter(function (t) { var c = t.replace(':', ''); return c.indexOf(dg) === 0 || String(+t.slice(0, 2) % 12 || 12).concat(t.slice(3)).indexOf(dg) === 0; });
+    else items = QUARTERS;
+    if (!items.length) { tlClose(); return; }
+    var box = document.getElementById('fe-tl');
+    if (!box || TL.k !== k) {
+      tlClose();
+      box = document.createElement('div'); box.id = 'fe-tl'; box.className = 'fe-tl'; box.setAttribute('role', 'listbox'); box.setAttribute('aria-label', 'Times');
+      el.parentNode.appendChild(box);
+      // an older saved app.css has no list styles: no list then, rather than 96 bare lines in the form
+      if (getComputedStyle(box).position !== 'absolute') { box.remove(); return; }
+      box.style.top = (el.offsetTop + el.offsetHeight + 6) + 'px';
+    }
+    TL.k = k; TL.cur = -1;
+    box.innerHTML = items.map(function (t, i) { return '<div role="option" id="fe-tl-' + i + '" class="fe-tl-o' + (t === near ? ' is-near' : '') + '" data-t="' + t + '" aria-selected="false"><b>' + t + '</b><span>' + partOf(t) + '</span></div>'; }).join('');
+    el.setAttribute('aria-expanded', 'true'); el.removeAttribute('aria-activedescendant');
+    var n = box.querySelector('.is-near') || (!dg && box.querySelector('[data-t="18:00"]'));
+    box.scrollTop = n ? n.offsetTop - box.clientHeight / 2 + n.offsetHeight / 2 : 0;
+    var s = document.getElementById('fe-ts-' + k); if (s) s.innerHTML = '';
+  }
+  function tTyping(el) { if (tlWanted(el)) tlShow(el); else { tlClose(); tsay(el); } }
+  function tlMove(el, step) {
+    var box = document.getElementById('fe-tl'), o = box ? box.querySelectorAll('.fe-tl-o') : [];
+    if (!o.length) return;
+    if (TL.cur < 0) { var n = box.querySelector('.is-near'); TL.cur = n ? Array.prototype.indexOf.call(o, n) : step > 0 ? 0 : o.length - 1; }
+    else TL.cur = Math.max(0, Math.min(o.length - 1, TL.cur + step));
+    Array.prototype.forEach.call(o, function (x, i) { x.classList.toggle('is-cur', i === TL.cur); x.setAttribute('aria-selected', String(i === TL.cur)); });
+    o[TL.cur].scrollIntoView({ block: 'nearest' }); el.setAttribute('aria-activedescendant', o[TL.cur].id);
+  }
+  function tlPick(t) {
+    var k = TL.k; tlClose(); if (!k || !E.ed || !E.ed.d) return;
+    var el = tlBox(k); if (el) el.value = t;
+    delete E.pending[k]; TL.hold = k; setField(k, t, true); focusF(k); TL.hold = '';
+  }
+  // a redraw gives the focus back to the box: drawNow() opens the list again only if it was open
+  // a box already asking (or refusing) shows its question, not the list, until something new is typed in it
+  function tlAsking(el) { return /\bis-(ask|bad)\b/.test(el.className); }
+  document.addEventListener('focusin', function (ev) { if (!E.drawing && E.root && E.root.contains(ev.target) && tlWanted(ev.target) && !tlAsking(ev.target) && TL.hold !== ev.target.getAttribute('data-ff')) tlShow(ev.target); });
+  document.addEventListener('focusout', function (ev) { if (TL.k && ev.target.getAttribute && ev.target.getAttribute('data-ff') === TL.k) tlClose(); });
+  document.addEventListener('keydown', function (ev) {
+    var k = ev.target.getAttribute && ev.target.getAttribute('data-ff');
+    if (!k || !E.root || !E.root.contains(ev.target)) return;
+    // Tab from "630": the redraw that asks would drop the focus, so it goes to the first chip, the answer still to give
+    if (ev.key === 'Tab' && !ev.shiftKey && /^(startT|foodT|rt\d+)$/.test(k) && readT(ev.target.value).k === 'amb') {
+      ev.preventDefault(); tlClose(); delete E.pending[k]; setField(k, ev.target.value, true);
+      var c = E.root.querySelector('[data-fe="tpick"][data-k="' + k + '"]'); if (c) c.focus({ preventScroll: true }); return;
+    }
+    if (!tlWanted(ev.target)) return;
+    if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') { ev.preventDefault(); if (TL.k !== k) tlShow(ev.target); tlMove(ev.target, ev.key === 'ArrowDown' ? 1 : -1); }
+    else if (ev.key === 'Enter' && TL.k === k && TL.cur >= 0) { ev.preventDefault(); var o = document.getElementById('fe-tl-' + TL.cur); if (o) tlPick(o.getAttribute('data-t')); }
+    else if (ev.key === 'Escape' && TL.k === k) { ev.preventDefault(); ev.stopPropagation(); tlClose(); }
+  }, true);
+  // a press on the list keeps the focus in the box, so leaving the box (and its redraw) never takes the pick away
+  document.addEventListener('pointerdown', function (ev) { if (ev.target.closest && ev.target.closest('#fe-tl')) ev.preventDefault(); });
+  document.addEventListener('click', function (ev) {
+    var o = ev.target.closest && ev.target.closest('#fe-tl .fe-tl-o');
+    if (o) { tlPick(o.getAttribute('data-t')); return; }
+    if (E.root && E.root.contains(ev.target) && tlWanted(ev.target) && !tlAsking(ev.target) && !TL.k) tlShow(ev.target);
+  });
   document.addEventListener('input', onInput);
   document.addEventListener('change', function (event) { if (E.root && E.root.contains(event.target) && event.target.matches('[data-ff="pickline"]')) addPlatter(event.target.value); });
   document.addEventListener('change', onInput);
   // Keep focus in a typed time until Print or Cancel reads it. A blur's structural redraw would replace the button before
   // its click arrives. Keyboard activation still uses the same click handler and flushPending().
   document.addEventListener('pointerdown', function (ev) {
-    var el = ev.target.closest && ev.target.closest('[data-fe="print"], [data-fe="status"], [data-fe="remove"], [data-fe="remove-row"], [data-fe="restore-row"]');
+    var el = ev.target.closest && ev.target.closest('[data-fe="print"], [data-fe="tpick"], [data-fe="status"], [data-fe="remove"], [data-fe="remove-row"], [data-fe="restore-row"]');
     if (el && E.root && E.root.contains(el)) ev.preventDefault();
   });
   document.addEventListener('click', function (ev) {
@@ -691,9 +819,11 @@
       if (e.saving) return;
       if (!FN.print) { toast('Reload the book to update function printing. Your changes are kept on this device.'); return; }
       flushPending();
+      var tp = timeProblems(d); if (tp.length) { e.shown = tp; draw(); goto(tp[0].k); return; }
       var f = Object.assign({}, e.saved || {}, toDoc(e), { id: e.id, v: e.v });
       FN.print([f], { unsaved: e.isNew || dirty(), fromForm: true }, el); return;
     }
+    if (a === 'tpick') { var tk = el.getAttribute('data-k'); delete E.pending[tk]; TL.hold = tk; setField(tk, v, true); focusF(tk); TL.hold = ''; return; }
     if (a === 'addline') { addPlatter(v); return; }
     if (a === 'rmline') { if (!arm('rm' + i)) return; d.lines.splice(i, 1); keep(); draw(); return; }
     if (a === 'mode') { d.mode = v; if (v === 'stag' && int(d.n) < 2) d.n = '3'; d.custom = false; retime(e); keep(); draw(); return; }
