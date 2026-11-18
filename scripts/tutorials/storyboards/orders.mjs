@@ -117,7 +117,7 @@ export default {
     },
     {
       title: 'Ordered today',
-      say: ['A ticked line stays for ten minutes, then moves down to Ordered today.', "Tap it to see what's been ordered. Each one has its own Undo."],
+      say: ['A ticked line stays for ten minutes, then moves to Ordered today.', "Tap it to see what's been ordered. Each one has its own Undo."],
       do: [
         // ten minutes on the demo kitchen's clock, so the ticked line moves down
         { s: 0, d: 1.2, run: async page => { await page.clock.fastForward(11 * 60000); await L.settle(page, 500); } },

@@ -38,7 +38,10 @@ const extra = {
 Object.entries(FNS).forEach(([id, f]) => { extra[key('functions', id)] = f; });
 // After a tap, the next sentence waits until the page has finished redrawing and painted it, so on a busy computer
 // the voice never runs ahead of the picture.
-const settled = (page, cut, L) => L.settle(page, 2500).then(() => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))));
+// Then a tiny paint nobody can see (one pixel, almost clear), twice, so the film catches the page as it ends up: the
+// screencast skips frames while it waits for the last one, and a page that has stopped moving sends no more.
+const poke = page => page.evaluate(() => new Promise(r => { const d = document.createElement('i'); d.style.cssText = 'position:fixed;width:1px;height:1px;opacity:.01;left:0;top:0;pointer-events:none'; document.documentElement.appendChild(d); requestAnimationFrame(() => requestAnimationFrame(() => { d.remove(); r(); })); }));
+const settled = (page, cut, L) => L.settle(page, 2500).then(() => poke(page)).then(() => new Promise(r => setTimeout(r, 150))).then(() => poke(page));
 // a typed amount counts once its box loses focus (its change event), the way it does when a person taps on
 const blur = (page, cut, L) => page.evaluate(() => document.activeElement && document.activeElement.blur()).then(() => settled(page, cut, L));
 
@@ -91,7 +94,7 @@ export default {
       title: 'Cancel and Undo',
       say: ['If a function is called off, tap Cancel function on its card.', 'The kitchen is told straight away.', 'Tapped the wrong one? Tap Undo cancel, and it is back.'],
       do: [
-        { s: 0, go: '#/fn' },
+        { s: 0, go: '#/fn', run: settled },
         { s: 0, d: 1.8, tap: '[data-fn="status"][data-id="kerr"][data-v="cancel"]', run: settled },
         { s: 1, d: 0.2, circle: '.p-toast:not(.p-toast-old) .p-toast-msg' },
         { s: 2, d: 0.9, tap: '[data-fn="status"][data-id="kerr"][data-v="undo"]', run: settled }
@@ -106,9 +109,9 @@ export default {
         { s: 1, d: 1.9, tap: '.wm a[href="#/functions"]', run: settled },
         { s: 2, d: 0.3, tap: 'a[href="#/functions/new"]', run: settled },
         { s: 3, d: 0.2, type: ['[data-ff="name"]', 'Lee 30th'] },
-        { s: 3, d: 1.4, fill: ['[data-ff="date"]', day3] },
-        { s: 3, d: 2.2, fill: ['[data-ff="startT"]', '18:00'] },
-        { s: 3, d: 3.0, fill: ['[data-ff="guests"]', '40'] }
+        { s: 3, d: 1.4, fill: ['[data-ff="date"]', day3], run: settled },
+        { s: 3, d: 2.2, fill: ['[data-ff="startT"]', '18:00'], run: settled },
+        { s: 3, d: 3.0, fill: ['[data-ff="guests"]', '40'], run: settled }
       ]
     },
     {

@@ -5,7 +5,10 @@
 
 // After a tap, the next sentence waits until the page has finished redrawing and painted it, so on a busy computer
 // the voice never runs ahead of the picture.
-const settled = (page, cut, L) => L.settle(page, 2500).then(() => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))));
+// Then a tiny paint nobody can see (one pixel, almost clear), twice, so the film catches the page as it ends up: the
+// screencast skips frames while it waits for the last one, and a page that has stopped moving sends no more.
+const poke = page => page.evaluate(() => new Promise(r => { const d = document.createElement('i'); d.style.cssText = 'position:fixed;width:1px;height:1px;opacity:.01;left:0;top:0;pointer-events:none'; document.documentElement.appendChild(d); requestAnimationFrame(() => requestAnimationFrame(() => { d.remove(); r(); })); }));
+const settled = (page, cut, L) => L.settle(page, 2500).then(() => poke(page)).then(() => new Promise(r => setTimeout(r, 150))).then(() => poke(page));
 // A chip in a row that scrolls sideways (the form's parts on a phone): slid into view first, so the tap lands on it.
 const into = sel => page => page.evaluate(s => { const e = document.querySelector(s); if (e) e.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); }, sel).then(() => new Promise(r => setTimeout(r, 600)));
 // Draw it for me takes a few seconds: the next sentence waits for the drawing and its note.
@@ -78,7 +81,7 @@ export default {
       title: 'New recipe',
       say: ['Back on the list, New recipe starts an empty card.', 'Cards to come lists the cards still to write.', 'Make this card opens a new recipe for it.', 'Write the name staff see, then fill in each part.'],
       do: [
-        { s: 0, go: '#/manage' },
+        { s: 0, go: '#/manage', run: settled },
         { s: 0, d: 1.3, circle: 'a[href="#/manage/new"]', opts: { pad: 6 } },
         { s: 1, d: 0.1, run: into('[data-mg="kind"][data-v="tocome"]') },
         { s: 1, d: 0.8, tap: '[data-mg="kind"][data-v="tocome"]', run: settled },

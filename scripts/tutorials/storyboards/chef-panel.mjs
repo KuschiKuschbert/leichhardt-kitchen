@@ -33,7 +33,10 @@ const extra = Object.fromEntries([
 
 // After a tap, the next sentence waits until the page has finished redrawing and painted it, so on a busy computer
 // the voice never runs ahead of the picture.
-const settled = (page, cut, L) => L.settle(page, 2500).then(() => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))));
+// Then a tiny paint nobody can see (one pixel, almost clear), twice, so the film catches the page as it ends up: the
+// screencast skips frames while it waits for the last one, and a page that has stopped moving sends no more.
+const poke = page => page.evaluate(() => new Promise(r => { const d = document.createElement('i'); d.style.cssText = 'position:fixed;width:1px;height:1px;opacity:.01;left:0;top:0;pointer-events:none'; document.documentElement.appendChild(d); requestAnimationFrame(() => requestAnimationFrame(() => { d.remove(); r(); })); }));
+const settled = (page, cut, L) => L.settle(page, 2500).then(() => poke(page)).then(() => new Promise(r => setTimeout(r, 150))).then(() => poke(page));
 export default {
   id: 'chef-panel',
   title: 'The chef panel',
@@ -71,7 +74,7 @@ export default {
       do: [
         { s: 0, d: 0.3, tap: '.a-tabs [data-p="c-tab"][data-t="todo"]', run: settled },
         { s: 1, d: 0.2, type: ['[data-k="todo-text"]', 'Sharpen the knives'] },
-        { s: 2, d: 0.2, fill: ['[data-k="todo-due"]', L.ymd(new Date(L.NOW + 2 * DAY))] },
+        { s: 2, d: 0.2, fill: ['[data-k="todo-due"]', L.ymd(new Date(L.NOW + 2 * DAY))], run: settled },
         { s: 2, d: 1.6, tap: '.todo-for .ux-picker-trigger', run: settled },
         { s: 2, d: 2.6, tap: '.ux-picker [data-index="1"]', run: settled },
         { s: 3, d: 0.5, tap: '[data-p="todo-save"]', run: settled },

@@ -45,7 +45,10 @@ const extra = {
 
 // After a tap, the next sentence waits until the page has finished redrawing and painted it, so on a busy computer
 // the voice never runs ahead of the picture.
-const settled = (page, cut, L) => L.settle(page, 2500).then(() => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))));
+// Then a tiny paint nobody can see (one pixel, almost clear), twice, so the film catches the page as it ends up: the
+// screencast skips frames while it waits for the last one, and a page that has stopped moving sends no more.
+const poke = page => page.evaluate(() => new Promise(r => { const d = document.createElement('i'); d.style.cssText = 'position:fixed;width:1px;height:1px;opacity:.01;left:0;top:0;pointer-events:none'; document.documentElement.appendChild(d); requestAnimationFrame(() => requestAnimationFrame(() => { d.remove(); r(); })); }));
+const settled = (page, cut, L) => L.settle(page, 2500).then(() => poke(page)).then(() => new Promise(r => setTimeout(r, 150))).then(() => poke(page));
 
 export default {
   id: 'supplier-order',

@@ -9,6 +9,8 @@ const M = createRequire(import.meta.url)('../../../js/functions.js');
 const key = (...p) => ['kitchens', L.PIN].concat(p).join('/');
 const day = L.ymd(new Date(L.NOW));
 const at = (d, hm) => M.kat(d, M.hmMin(hm));
+// a sheet closed with Escape gives the keyboard ring back to its button: taken off, as a tap would leave it
+const blur = page => page.evaluate(() => document.activeElement && document.activeElement.blur());
 
 // the click tests' people plus Jo, the four sections and two shifts of the made-up kitchen
 const seedCfg = L.seed()[key('config', 'main')];
@@ -70,15 +72,6 @@ export default {
       ]
     },
     {
-      title: 'Functions',
-      say: ["Tomorrow's function shows here, with the food times and the platters.", 'Tap Got it once you have read it. Your chefs can see who has.'],
-      do: [
-        { s: 0, d: 0.3, underline: '.fn-hu .fn-hu-name' },
-        { s: 0, d: 1.8, circle: '.fn-hu .fn-hu-facts', opts: { pad: 4 } },
-        { s: 1, d: 0.5, tap: '.fn-hu-got' }
-      ]
-    },
-    {
       title: 'On with you',
       say: ['Next, who is on with you today, by section.', "Tap View today's full team to see the whole day."],
       do: [
@@ -95,14 +88,24 @@ export default {
       ]
     },
     {
+      title: 'Functions',
+      say: ["Tomorrow's function gets its own card, with the food times and the platters.", 'Tap Got it once you have read it, and the next one comes up.'],
+      do: [
+        { s: 0, d: 0.3, underline: '.fn-hu .fn-hu-name' },
+        { s: 0, d: 1.8, circle: '.fn-hu .fn-hu-facts', opts: { pad: 4 } },
+        { s: 1, clear: true },
+        { s: 1, d: 0.6, tap: '.fn-hu-got' }
+      ]
+    },
+    {
       title: 'Top bar',
       say: ['Up top, the people button shows your day in one tap.', "The bell holds today's shift pings from the chefs.", 'The clock beside them is the cooling timer.'],
       do: [
         { s: 0, top: true },
         { s: 0, d: 0.9, tap: '.tm-slot [data-tm="day"]' },
-        { s: 1, key: 'Escape' },
+        { s: 1, key: 'Escape', run: blur },
         { s: 1, d: 0.4, tap: '.nbell' },
-        { s: 2, key: 'Escape' },
+        { s: 2, key: 'Escape', run: blur },
         { s: 2, d: 0.4, circle: '.cooling-slot', opts: { pad: 3 } }
       ]
     },
@@ -113,7 +116,8 @@ export default {
         { s: 0, d: 0.2, tap: '.wtop-who' },
         { s: 0, d: 1.6, circle: '.wm .wm-grid >> nth=0', opts: { pad: 3 } },
         { s: 1, d: 0.3, circle: '.wm .wm-out', opts: { pad: 3 } },
-        { s: 1, d: 2.6, key: 'Escape' }
+        { s: 1, d: 2.5, clear: true },
+        { s: 1, d: 2.7, key: 'Escape', run: blur }
       ]
     },
     {

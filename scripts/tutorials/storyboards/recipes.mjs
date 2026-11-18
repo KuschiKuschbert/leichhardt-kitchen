@@ -50,6 +50,7 @@ export default {
       say: ['An underlined ingredient has its own recipe card. Tap it to open it.', 'The trail at the top takes you back.'],
       do: [
         { s: 0, d: 0.3, circle: '.ing .ilink', opts: { pad: 5 } },
+        { s: 0, d: 2.4, clear: true },
         { s: 0, d: 2.6, tap: '.ing .ilink' },
         { s: 1, d: 0.2, circle: 'nav.trail, nav.crumbs', opts: { pad: 4 } },
         { s: 1, d: 1.6, tap: 'nav a[href="#/r/burger"]' }
@@ -77,9 +78,10 @@ export default {
     },
     {
       title: 'Free from',
-      say: ['Cooking for an allergy? On the list, tap Free from, then choose the allergen.', 'Only the dishes without it stay on the list.'],
+      say: ['Cooking for an allergy? Back on the list, tap Free from, then choose the allergen.', 'Only the dishes without it stay on the list.'],
       do: [
         { s: 0, go: '#/recipes' },
+        { s: 0, d: 0.5, tap: '.ux-search-clear' },
         { s: 0, d: 1.4, tap: '[data-act="amode"][data-val="free"]' },
         { s: 0, d: 2.6, tap: '.ux-choice-source:has([data-act="free"]) + .ux-picker-trigger' },
         { s: 0, d: 3.6, tap: picker + ' button:has-text("Gluten")' },

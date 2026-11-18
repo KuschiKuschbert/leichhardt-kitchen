@@ -69,6 +69,7 @@ export default {
       do: [
         { s: 0, top: true },
         { s: 0, d: 0.9, circle: '.dr-mine', opts: { pad: 3 } },
+        { s: 0, d: 2.2, clear: true },
         { s: 0, d: 2.4, tap: '[data-p="dk-edit"]' }
       ]
     },
@@ -88,6 +89,7 @@ export default {
       say: ['Check your usual under the form, then tap Save my usual.', 'The order changes straight away.'],
       do: [
         { s: 0, d: 0.3, circle: '.dr-prev', opts: { pad: 4 } },
+        { s: 0, d: 2.4, clear: true },
         { s: 0, d: 2.6, tap: '[data-p="dk-save"]' },
         { s: 1, d: 0.3, circle: '.dr-order', opts: { pad: 4 } }
       ]

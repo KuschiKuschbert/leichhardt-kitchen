@@ -44,8 +44,66 @@ export default {
   steps: [
     {
       title: 'Still out',
-      say: ['This is the transfer list.'],
-      do: []
+      say: ['This is the transfer list, for stock shared with the other venues.', 'Still out comes first. Each card says which venue has it, who came for it, and since when.', 'Out for a week or more, and the card turns red.'],
+      do: [
+        { s: 0, d: 0.3, underline: '.nb-title' },
+        { s: 1, d: 0.5, circle: '.tr-card >> nth=1' },
+        { s: 2, d: 0.4, circle: '.tr-card.is-old .tr-age', opts: { pad: 6 } }
+      ]
+    },
+    {
+      title: 'Log a transfer',
+      say: ['Lent something, or borrowed it? Tap Log a transfer.', 'Pick which way it went.', 'Then write the venue, and who came for it.'],
+      do: [
+        { s: 0, d: 1.2, tap: '[data-p="tr-log"]' },
+        { s: 1, d: 0.3, circle: sheet + ' .tr-dirs .seg', opts: { pad: 6 } },
+        { s: 2, d: 0.2, clear: true },
+        { s: 2, d: 0.3, type: ['#tr-venue', 'Harbour Bar'] },
+        { s: 2, d: 1.8, tap: '#tr-person' },
+        { s: 2, d: 2.1, type: ['#tr-person', 'Jo'] }
+      ]
+    },
+    {
+      title: 'What and how much',
+      say: ['Write what they took, and how much.', 'Then tap its unit. The amount, never a price.'],
+      do: [
+        { s: 0, run: into('#tr-text') },
+        { s: 0, d: 0.3, type: ['#tr-text', 'Eggs'] },
+        { s: 0, d: 1.4, tap: '#tr-amt' },
+        { s: 0, d: 1.7, type: ['#tr-amt', '30'] },
+        { s: 1, run: into(sheet + ' .tr-units') },
+        { s: 1, d: 0.4, tap: sheet + ' [data-p="tr-unit"][data-v="pieces"]' }
+      ]
+    },
+    {
+      title: 'Log it',
+      say: ['Taking a few things? Tap Add another item for each one.', 'Then tap Log it. It goes under Still out.'],
+      do: [
+        { s: 0, run: into(sheet + ' .tr-addrow') },
+        { s: 0, d: 0.6, circle: sheet + ' [data-p="tr-bk-add"]', opts: { pad: 6 } },
+        { s: 1, d: 0.2, clear: true },
+        { s: 1, d: 0.5, tap: sheet + ' .tr-add .nb-addbtn' },
+        { s: 1, d: 1.6, tap: sheet + ' .ux-modal-close' },
+        { s: 1, d: 2.3, circle: row('Eggs') }
+      ]
+    },
+    {
+      title: 'Mark returned',
+      say: ['When all of it comes back, tap Mark returned.', 'It moves to Done today, with your name and the time.'],
+      do: [
+        { s: 0, d: 0.3, circle: row('Brioche') + ' [data-p="tr-return"]', opts: { pad: 6 } },
+        { s: 0, d: 2.0, tap: row('Brioche') + ' [data-p="tr-return"]' },
+        { s: 1, d: 0.6, circle: '.tr-done .tr-row:has-text("Brioche")' }
+      ]
+    },
+    {
+      title: 'Undo return',
+      say: ['Marked the wrong one? For two minutes, Undo return sits right beside it.', "Tap it, and it's back under Still out.", 'After two minutes, only a chef can undo it.'],
+      do: [
+        { s: 0, d: 1.6, circle: '[data-p="tr-unreturn"][data-id="t1"]', opts: { pad: 6 } },
+        { s: 1, d: 0.3, tap: '[data-p="tr-unreturn"][data-id="t1"]' },
+        { s: 1, d: 1.4, circle: row('Brioche') }
+      ]
     }
   ]
 };
