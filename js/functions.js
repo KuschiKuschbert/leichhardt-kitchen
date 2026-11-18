@@ -329,7 +329,50 @@
     for (i = 0; i < mine.length; i++) { t = allSentAt(mine[i], rec); if (!t) return null; at = Math.max(at, t); names.push(mine[i].name || 'Function'); }
     return { fid: mine[0].id, name: names.join(' and '), at: at };
   }
+  /* What the platters need, added up (one helper for Prep's What the platters need and the What it needs fold on a
+     function's Orders line, head chef 18 Nov 2026, docs/fn-order-ingredients-options/brief.md). entries: one per
+     platter booked, { fid, name: the function's name, rid: the platter recipe, n: how many, pname: the platter's short
+     name }. recipeOf(rid) gives the card (the head chef's changes laid over); A is LK_AMT; keyOf(name, a) is the key two
+     items share (Prep: its dupKey and the unit, a null when the amount cannot be read); stock: names the kitchen keeps
+     for functions (LK_DATA.fnStock), lower case. Each item: { k, name, link, kind, u, n, read, lo, plat, fns: { function
+     name: platters }, fids: { id: 1 }, per: { fid: { name, n, lo, plats: [[n, pname]] } } }. kind: 'made' (a house
+     recipe: it is prep, not an order), 'check' (kept in stock: check you have it), else 'order'. read: one clear amount
+     on the card, added up in n. A range ("6-8ea") is not read: n adds up its top and lo its bottom, so "36 to 48" can
+     be said; anything else ("handful") is neither, amount to come, never a guess. missing: platters with no card. */
+  function platterNeeds(entries, recipeOf, A, keyOf, stock) {
+    var items = {}, order = [], missing = [], st = stock || [];
+    function range(q) {
+      var m = String(q == null ? '' : q).trim().match(/^(\d+(?:[.,]\d+)?)\s*(?:-|to)\s*(.+)$/i), hi = m && A.parse(m[2]), lo = m && A.parse(m[1]);
+      return hi && lo && !lo.u && lo.n < hi.n ? { lo: lo.n, n: hi.n, u: hi.u } : null;
+    }
+    (entries || []).forEach(function (en) {
+      var plat = +en.n, r = en && recipeOf(en.rid);
+      if (!(plat > 0)) return;
+      if (!r) { if (missing.indexOf(en.pname || en.rid) < 0) missing.push(en.pname || en.rid); return; }
+      (r.ingredients || []).forEach(function (i) {
+        if (!i || !i.name) return;
+        var a = A.parse(i.q), g = a ? null : range(i.q), k = keyOf(i.name, a), e = items[k];
+        if (!e) {
+          e = items[k] = { k: k, name: i.name, link: i.link || '', kind: i.link ? 'made' : st.indexOf(String(i.name).toLowerCase()) >= 0 ? 'check' : 'order',
+            u: a ? a.u : g ? g.u : '', n: 0, lo: 0, read: !!a, ranged: !!g, plat: 0, fns: {}, fids: {}, per: {} };
+          order.push(e);
+        }
+        if (!g) e.ranged = false;
+        var p = e.per[en.fid || ''] = e.per[en.fid || ''] || { name: en.name || 'Function', n: 0, lo: 0, plats: [] };
+        if (a) { e.n += a.n * plat; p.n += a.n * plat; }
+        if (g) { e.n += g.n * plat; e.lo += g.lo * plat; p.n += g.n * plat; p.lo += g.lo * plat; }
+        e.plat += plat;
+        p.plats.push([plat, en.pname || '']);
+        var fname = en.name || 'Function';
+        e.fns[fname] = (e.fns[fname] || 0) + plat;
+        if (en.fid) e.fids[en.fid] = 1;
+      });
+    });
+    order.forEach(function (e) { if (!e.ranged) e.lo = 0; });
+    return { items: order, missing: missing };
+  }
   var M = {
+    platterNeeds: platterNeeds,
     MIN: MIN, HOUR: HOUR, DAY: DAY, MAX_LINES: MAX_LINES, SENT_EARLY: SENT_EARLY, roundSent: roundSent, allSentAt: allSentAt, lineOf: lineOf, lineOff: lineOff, MAX_ROUNDS: MAX_ROUNDS, MAX_QTY: MAX_QTY, MAX_PER: MAX_PER,
     kday: kday, kat: kat, kclock: kclock, dayStart: dayStart, addDays: addDays, isYmd: isYmd, hmMin: hmMin, dayName: dayName, when: when,
     even: even, toU: toU, fromU: fromU, sum: sum, roundTimes: roundTimes, windowOf: windowOf, derive: derive, counts: counts,
