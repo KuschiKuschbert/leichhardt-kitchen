@@ -57,6 +57,7 @@ export default {
         { s: 1, d: 0.2, circle: '.a-pane .ux-picker-trigger >> nth=0', opts: { pad: 4 } },
         { s: 1, d: 1.3, circle: '.a-pane .a-tiles' },
         { s: 2, d: 0.2, circle: '[data-p="wh-view"][data-v="history"]', opts: { pad: 6 } },
+        { s: 2, d: 1.8, clear: true },
         { s: 2, d: 2.0, tap: '[data-p="wh-view"][data-v="summary"]' },
         { s: 3, d: 0.3, circle: '[data-p="csv"][data-v="waste"]', opts: { pad: 6 } }
       ]
@@ -78,6 +79,7 @@ export default {
         ...tab('team'),
         { s: 0, d: 2.6, underline: '.tm-glance-h' },
         { s: 1, d: 0.3, circle: '.tm-glance .dsh-head >> nth=0' },
+        { s: 2, d: 0.3, clear: true },
         { s: 2, d: 0.5, tap: '.tm-glance .dsh-more >> nth=0' },
         { s: 3, d: 0.3, circle: 'table.sk-t >> nth=0' }
       ]
@@ -88,6 +90,7 @@ export default {
       do: [
         ...tab('analysis'),
         { s: 0, d: 2.6, circle: '[data-ai="item"] >> nth=0' },
+        { s: 1, d: 0.2, clear: true },
         { s: 1, d: 0.4, tap: '[data-ai="item"][data-value="ref:recipe:burger"]' },
         { s: 1, d: 2.0, circle: '.ai-detail .ai-metrics >> nth=0' },
         { s: 1, d: 3.6, circle: '.ai-detail a:has-text("Recipe")', opts: { pad: 6 } },

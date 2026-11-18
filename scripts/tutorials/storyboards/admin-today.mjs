@@ -257,9 +257,11 @@ export default {
         { s: 0, d: 0.4, tap: '.a-tab[data-t="proofreader"]' },
         { s: 0, d: 2.4, tap: '[data-pr="review"] >> nth=0' },
         { s: 1, d: 0.2, circle: '.pr-comparison', opts: { pad: 6 } },
-        { s: 2, d: 0.3, circle: '[data-pr="edit"]', opts: { pad: 6 } },
-        { s: 2, d: 0.9, tap: '[data-pr="restore"]' },
-        { s: 2, d: 2.4, circle: toast }
+        { s: 2, d: 0.3, circle: '[data-pr="restore"]', opts: { pad: 6 } },
+        { s: 2, d: 2.6, circle: '[data-pr="edit"]', opts: { pad: 6 } },
+        { s: 2, d: 3.6, clear: true },
+        { s: 2, d: 3.8, tap: '[data-pr="restore"]' },
+        { s: 2, d: 4.8, circle: toast }
       ]
     },
     {
