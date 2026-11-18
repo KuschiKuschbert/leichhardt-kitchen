@@ -1,6 +1,6 @@
 """The voice over for the tutorial videos (docs/tutorial-videos.md).
 
-  python voice.py say  --engine kokoro --voice bf_emma --script lines.json --out DIR
+  python voice.py say  --engine kokoro --voice af_heart --script lines.json --out DIR
       lines.json is [{"id": "s01", "text": "..."}]. Writes DIR/<id>.wav (24 kHz mono) for each line and
       DIR/durations.json ({"id": seconds}). A line already made with the same words, engine and voice is kept.
   python voice.py mix  --cues cues.json --out narration.wav
@@ -205,7 +205,7 @@ if __name__ == '__main__':
     for name in ('say', 'retake'):
         s = sub.add_parser(name)
         s.add_argument('--engine', default='kokoro', choices=sorted(ENGINES))
-        s.add_argument('--voice', default='bf_emma')
+        s.add_argument('--voice', default='af_heart')
         s.add_argument('--speed', type=float, default=1.0)
         s.add_argument('--script', required=True)
         s.add_argument('--out', required=True)

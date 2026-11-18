@@ -100,7 +100,7 @@ The head chef's recording is on Drive in the Leichhardt folder. It is never in t
 1. Cut it to a clean 15 to 20 seconds: `ffmpeg -ss 1.7 -to 21.9 -i recording.m4a -ac 1 -ar 24000 -af "highpass=f=70,silenceremove=stop_periods=-1:stop_duration=0.45:stop_threshold=-40dB,loudnorm=I=-18:TP=-2" ref.wav`
 2. Make the video with `--engine chatterbox --voice ref.wav --py <Chatterbox venv python>`.
 
-What copies well (18 November 2026): the head chef's first recording was 37 seconds of relaxed, natural talking, and it made the voice they chose. A second recording, 17 seconds of a passage read aloud, read back slightly cleaner in the listening check but sounded wrong to the head chef. So record natural talk, not a reading, and let the head chef's ear decide, not the check alone.
+What copies well (18 November 2026): the head chef's first recording was 37 seconds of relaxed, natural talking, and it made the better copy of their voice. A second recording, 17 seconds of a passage read aloud, read back slightly cleaner in the listening check but sounded wrong to the head chef. So record natural talk, not a reading, and let the head chef's ear decide, not the check alone.
 
 On a 4-core cloud machine Chatterbox takes about 20 seconds for each second of speech, so a 90 second video's voice is about 25 minutes. Run it in the background. Kokoro takes about a second for each second of speech.
 
@@ -131,7 +131,9 @@ All of these are free. Each was checked from a cloud session: it installs, and i
 | Piper | Fast and free. | Sounds more robotic. Not used. |
 | ElevenLabs free | The most human. | 10,000 characters a month, with attribution. Not used. |
 
-The trial was made with Kokoro `bf_emma`. The sample pack has Emma, George, Heart, Michael and the Chatterbox default voice. The head chef picks one.
+The trial was made with Kokoro `bf_emma`. The sample pack had Emma, George, Heart, Michael and the Chatterbox default voice, plus two copies of the head chef's own voice.
+
+**Chosen (head chef, 18 November 2026): Kokoro `af_heart`, the American female voice.** It is the default in `make.mjs` and `voice.py`. The head chef heard the Prep video in their own cloned voice and preferred not to use it, so the series uses Heart.
 
 ## Music
 

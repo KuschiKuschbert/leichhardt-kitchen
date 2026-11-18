@@ -3,7 +3,7 @@
 //   node scripts/tutorials/make.mjs prep                 the Prep list, both cuts
 //   node scripts/tutorials/make.mjs prep --cut phone     one cut
 //   node scripts/tutorials/make.mjs all                  every storyboard, then the whole book in one video per cut
-//   options: --engine kokoro|chatterbox|azure  --voice bf_emma  --speed 1  --py <python with the voice engine>
+//   options: --engine kokoro|chatterbox|azure  --voice af_heart  --speed 1  --py <python with the voice engine>
 //            --steps voice,film,compose (default all three)  --out <folder> (default scripts/tutorials/out)
 //
 // Needs: tests/ installed (cd tests && npm install), ffmpeg, a Python with the voice engine (see the docs), and Chrome
@@ -22,7 +22,7 @@ const opt = (k, d) => { const i = args.indexOf('--' + k); return i >= 0 ? args[i
 const names = args.filter((a, i) => !a.startsWith('--') && !(i && args[i - 1].startsWith('--')));
 const cuts = (opt('cut', 'desktop,phone')).split(',');
 const steps = (opt('steps', 'voice,film,compose')).split(',');
-const engine = opt('engine', 'kokoro'), voice = opt('voice', 'bf_emma'), speed = opt('speed', '1');
+const engine = opt('engine', 'kokoro'), voice = opt('voice', 'af_heart'), speed = opt('speed', '1');
 const py = opt('py', process.env.TUTORIAL_PY || 'python3');
 const OUT = path.resolve(opt('out', path.join(HERE, 'out')));
 const ORDER = ['prep'];   // the order of the whole-book video; each name is a file in storyboards/
