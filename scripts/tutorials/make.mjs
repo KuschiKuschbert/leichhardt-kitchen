@@ -5,6 +5,8 @@
 //   node scripts/tutorials/make.mjs all                  every storyboard, then the whole book in one video per cut
 //   options: --engine kokoro|chatterbox|azure  --voice af_heart  --speed 1  --py <python with the voice engine>
 //            --steps voice,film,compose (default all three)  --out <folder> (default scripts/tutorials/out)
+//   node scripts/tutorials/make.mjs join                 joins the videos already made, in ORDER, one per cut
+//   BASE=http://127.0.0.1:8778/ ...                      another port, so two can film at once
 //
 // Needs: tests/ installed (cd tests && npm install), ffmpeg, a Python with the voice engine (see the docs), and Chrome
 // (CHROME=/path/to/chrome, as for the click tests). Nothing here touches the real book: it runs on the click tests'
@@ -13,7 +15,7 @@ import fs from 'fs';
 import path from 'path';
 import { execFileSync } from 'child_process';
 import { createRequire } from 'module';
-import { CUTS, HERE, ROOT, launch } from './kit.mjs';
+import { L, CUTS, HERE, ROOT, launch } from './kit.mjs';
 import { film, script } from './film.mjs';
 import { compose, joinAll } from './compose.mjs';
 
@@ -25,14 +27,18 @@ const steps = (opt('steps', 'voice,film,compose')).split(',');
 const engine = opt('engine', 'kokoro'), voice = opt('voice', 'af_heart'), speed = opt('speed', '1');
 const py = opt('py', process.env.TUTORIAL_PY || 'python3');
 const OUT = path.resolve(opt('out', path.join(HERE, 'out')));
-const ORDER = ['prep'];   // the order of the whole-book video; each name is a file in storyboards/
+// The order of the whole-book video; each name is a file in storyboards/ (one video each, in this order).
+export const ORDER = ['sign-in', 'home', 'recipes', 'prep', 'orders', 'wastage', 'transfers', 'deliveries', 'guides', 'team-talk', 'drinks',
+  'todays-team', 'cleaning', 'functions', 'settings', 'chef-panel', 'supplier-order', 'recipes-manage', 'admin-today', 'admin-reports', 'admin-kitchen'];
 
-const boards = names.includes('all') ? ORDER : names;
-if (!boards.length) { console.error('Name a storyboard (' + fs.readdirSync(path.join(HERE, 'storyboards')).map(f => f.replace(/\.mjs$/, '')).join(', ') + ') or all.'); process.exit(1); }
+const joinOnly = names.includes('join');
+const boards = names.includes('all') ? ORDER : names.filter(n => n !== 'join');
+if (!boards.length && !joinOnly) { console.error('Name a storyboard (' + fs.readdirSync(path.join(HERE, 'storyboards')).map(f => f.replace(/\.mjs$/, '')).join(', ') + ') or all.'); process.exit(1); }
 
 const require = createRequire(import.meta.url);
 const server = require(path.join(ROOT, 'tests', 'serve.js'));
-await new Promise((res, rej) => server.listen(8777, '127.0.0.1', res).on('error', rej));
+// the port of the book's address (tests/lib.js reads BASE), so another run can film beside this one
+await new Promise((res, rej) => server.listen(+new URL(L.BASE).port || 80, '127.0.0.1', res).on('error', rej));
 // one Chrome per cut, each drawing at its cut's scale, and one at 1:1 for the chalkboard
 const browsers = {}, made = {};
 const browserFor = async scale => browsers[scale] || (browsers[scale] = await launch(scale));
@@ -61,8 +67,17 @@ try {
       }
     }
   }
-  if (names.includes('all') && steps.includes('compose')) {
-    for (const cut of cuts) console.log('made ' + await joinAll(browser, made[cut], cut, path.join(OUT, 'kitchen-book-' + cut + '.mp4')));
+  if (joinOnly || names.includes('all') && steps.includes('compose')) {
+    for (const cut of cuts) {
+      // every page made so far, in ORDER (a page not made yet is left out and named)
+      const have = [];
+      for (const name of ORDER) {
+        const mp4 = path.join(OUT, name + '-' + cut + '.mp4');
+        if (fs.existsSync(mp4)) have.push({ board: (await import(path.join(HERE, 'storyboards', name + '.mjs'))).default, mp4 });
+        else console.log('not in the ' + cut + ' video yet: ' + name);
+      }
+      if (have.length) console.log('made ' + await joinAll(browser, have, cut, path.join(OUT, 'kitchen-book-' + cut + '.mp4')));
+    }
   }
 } finally {
   for (const b of Object.values(browsers)) await b.close();

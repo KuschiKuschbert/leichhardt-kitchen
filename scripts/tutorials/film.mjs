@@ -43,7 +43,8 @@ async function tap(page, sel) {
   await page.evaluate(([x, y]) => window.__lkTap && window.__chalk.release(window.__lkTap, x, y), [x, y]);
 }
 
-// One action of a step. Each names what it does: circle, underline, arrow, note, tap, type, key, scroll, clear, run.
+// One action of a step. Each names what it does: circle, underline, arrow, note, tap, type, fill, key, go, wait, top,
+// scroll, clear, run.
 async function act(page, a, cut) {
   const v = k => pick(a[k], cut), o = a.opts || {};
   if (v('circle')) { const r = await rect(page, v('circle')); await page.evaluate(([r, o]) => { window.__chalk.circle(r, o); }, [r, o]); }
@@ -52,7 +53,11 @@ async function act(page, a, cut) {
   if (v('note')) { const [s, words] = v('note'), r = await rect(page, s); await page.evaluate(([r, w, o]) => { window.__chalk.note(r, w, o); }, [r, words, o]); }
   if (v('tap')) await tap(page, v('tap'));
   if (v('type')) { const [s, words] = v('type'); await loc(page, s).pressSequentially(words, { delay: 75 }); }
+  if (v('fill')) { const [s, words] = v('fill'); await loc(page, s).fill(words); }
   if (v('key')) await page.keyboard.press(v('key'));
+  // another page of the book: the address changes, the page stays (no reload), so the chalk layer stays too
+  if (v('go')) { await page.evaluate(() => window.__chalk.clear(150)); await page.evaluate(h => { location.hash = h; }, v('go')); await L.settle(page, 900); await page.evaluate(() => window.scrollTo(0, 0)); }
+  if (v('wait')) await sleep(v('wait') * 1000);
   if (v('scroll')) { await page.evaluate(() => window.__chalk.clear(150)); await page.evaluate(s => (document.querySelector(s) || document.body).scrollIntoView({ block: 'start', behavior: 'smooth' }), v('scroll')); await sleep(650); }
   if (v('top')) { await page.evaluate(() => window.__chalk.clear(150)); await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })); await sleep(650); }
   if (a.clear) await page.evaluate(() => window.__chalk.clear());

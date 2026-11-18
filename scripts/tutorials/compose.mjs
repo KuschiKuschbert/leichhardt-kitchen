@@ -126,7 +126,7 @@ export async function compose(browser, board, cut, o) {
   const IN_LEAD = 1.0, OUT_LEAD = 0.6;
   const inLen = Math.max(4.5, IN_LEAD + said(inIds) + 0.8), outLen = Math.max(5, OUT_LEAD + said(outIds) + 2.2);
   await playCard(page, cut, { cut, mode: 'intro', title: board.title, sub: board.sub }, inLen, path.join(work, 'intro'));
-  await playCard(page, cut, { cut, mode: 'outro', title: "That's the " + board.title, next: board.next, credit: MUSIC.credit }, outLen, path.join(work, 'outro'));
+  await playCard(page, cut, { cut, mode: 'outro', title: board.done || "That's the " + board.title, next: board.next, credit: MUSIC.credit }, outLen, path.join(work, 'outro'));
   await page.context().close();
   const introMp4 = path.join(work, 'intro.mp4'), outroMp4 = path.join(work, 'outro.mp4');
   filmToMp4(path.join(work, 'intro'), introMp4, W, H);
