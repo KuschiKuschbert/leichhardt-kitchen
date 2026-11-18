@@ -114,7 +114,9 @@ export default {
       say: ['Expired stock or a cooking fault gets Make it again.', "One tap puts it on today's prep list."],
       do: [
         { s: 0, tap: sheet + ' .ux-modal-close' },
-        { s: 0, d: 1.2, circle: '.w-row:has-text("Bread rolls") [data-p="w-again"]', opts: { pad: 6 } },
+        // the slip from the sheet has had its time, and the entry comes up above the bottom bar
+        { s: 0, d: 0.4, run: async page => { await page.clock.fastForward(10000); await page.locator('.w-row:has-text("Bread rolls")').evaluate(el => el.scrollIntoView({ block: 'center', behavior: 'smooth' })); await new Promise(r => setTimeout(r, 650)); } },
+        { s: 0, d: 1.4, circle: '.w-row:has-text("Bread rolls") [data-p="w-again"]', opts: { pad: 6 } },
         { s: 1, d: 0.5, tap: '.w-row:has-text("Bread rolls") [data-p="w-again"]' },
         { s: 1, d: 2.0, circle: '.w-row:has-text("Bread rolls") .w-again', opts: { pad: 6 } }
       ]
