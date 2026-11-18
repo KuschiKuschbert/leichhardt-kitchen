@@ -75,8 +75,8 @@ export default {
       title: 'Service view',
       say: ['With two functions on, tap Service view.', "Every round still to go is here, in order, with how long until it's due.", 'When a round leaves the pass, tap Send all.', 'It waits for Functions to confirm it, with Undo if you sent the wrong one.'],
       do: [
-        { s: 0, key: 'Escape' },
-        { s: 0, d: 1.0, tap: '#fn-band a.fn-svc' },
+        { s: 0, tap: '.fn-sheet .fn-close' },
+        { s: 0, d: 1.2, tap: '#fn-band a.fn-svc' },
         { s: 1, d: 0.3, circle: '.fn-svc-row >> nth=0' },
         { s: 2, d: 0.9, tap: '.fn-svc-row [data-fn="send"] >> nth=0' },
         { s: 3, d: 0.2, tap: '.fn-svc-wl' },
@@ -90,20 +90,21 @@ export default {
         { s: 0, go: '#/fn' },
         { s: 0, d: 1.8, tap: '[data-fn="status"][data-id="kerr"][data-v="cancel"]' },
         { s: 1, d: 0.2, circle: '.p-toast:not(.p-toast-old) .p-toast-msg' },
-        { s: 2, d: 1.2, tap: '[data-fn="status"][data-id="kerr"][data-v="undo"]' }
+        { s: 2, d: 0.9, tap: '[data-fn="status"][data-id="kerr"][data-v="undo"]' }
       ]
     },
     {
       title: 'Book a function',
-      say: ['Function managers book them too. Tap the chef hat, then Functions.', 'Tap New function.', 'Write the name, the date, the start time and the guests.'],
+      say: ['Function managers book them too.', 'Tap the chef hat, then Functions.', 'Tap New function.', 'Write the name, the date, the start time and the guests.'],
       do: [
-        { s: 0, d: 1.8, tap: '.wtop-who' },
-        { s: 0, d: 3.4, tap: '.wm a[href="#/functions"]' },
-        { s: 1, d: 0.3, tap: 'a[href="#/functions/new"]' },
-        { s: 2, d: 0.2, type: ['[data-ff="name"]', 'Lee 30th'] },
-        { s: 2, d: 1.4, fill: ['[data-ff="date"]', day3] },
-        { s: 2, d: 2.2, fill: ['[data-ff="startT"]', '18:00'] },
-        { s: 2, d: 3.0, fill: ['[data-ff="guests"]', '40'] }
+        { s: 0, top: true },
+        { s: 1, d: 0.2, tap: '.wtop-who' },
+        { s: 1, d: 1.9, tap: '.wm a[href="#/functions"]' },
+        { s: 2, d: 0.3, tap: 'a[href="#/functions/new"]' },
+        { s: 3, d: 0.2, type: ['[data-ff="name"]', 'Lee 30th'] },
+        { s: 3, d: 1.4, fill: ['[data-ff="date"]', day3] },
+        { s: 3, d: 2.2, fill: ['[data-ff="startT"]', '18:00'] },
+        { s: 3, d: 3.0, fill: ['[data-ff="guests"]', '40'] }
       ]
     },
     {
@@ -116,7 +117,7 @@ export default {
         { s: 1, d: 0.2, tap: '.fe-pick .ux-picker-trigger' },
         { s: 1, d: 1.1, tap: '.ux-picker-option[data-v="vege-platter"]' },
         { s: 1, d: 1.8, fill: ['[data-ff="qty1"]', '2'], run: blur },
-        { s: 2, d: 0.4, circle: '#fe-live' }
+        { s: 2, d: 0.1, circle: '#fe-live' }
       ]
     },
     {

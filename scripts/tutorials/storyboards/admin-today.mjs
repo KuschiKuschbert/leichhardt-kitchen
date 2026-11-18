@@ -84,14 +84,15 @@ function analysis(x) {
 
 // Every past day's lines, so Insights, Wastage, Transfers, Team and the Proofreader have something real to read.
 function pastLines(x) {
-  for (let i = 1; i <= 30; i++) {
+  for (let i = 1; i <= 60; i++) {
     const d = dayN(i);
     LINES.forEach(([text, station, qty, recipe], k) => {
       if ((i + k) % 7 === 0) return;   // not every line every day
       const [id, name] = WHO[(i + k) % 3], done = (i + k) % 9 !== 0;
       x[key('days', d, 'items', 'd' + k)] = { text, station, qty, recipe, addedBy: 'Sam', addedById: 'sam', addedAt: at(d, '08:' + String(10 + k).padStart(2, '0')), done, deleted: false,
-        ...(done ? { doneBy: name, doneById: id, doneAt: at(d, String(11 + (k % 5)).padStart(2, '0') + ':' + String(5 + 4 * k).padStart(2, '0')) } : {}) };
+        ...(done ? { doneBy: name, doneById: id, doneAt: at(d, String(9 + (k % 4)).padStart(2, '0') + ':' + String(5 + 4 * k).padStart(2, '0')) } : {}) };
     });
+    if (i > 30) continue;   // wastage, transfers and orders: the 30 days their reports read
     x[key('waste', d, 'lines', 'w1')] = { text: 'Chips', amount: 1.5, unit: 'kg', reason: 'excess', action: '', station: 'Fryer', addedBy: 'Bo', addedById: 'bo', addedAt: at(d, '21:30'), deleted: false };
     if (i % 2) x[key('waste', d, 'lines', 'w2')] = { text: 'Slaw', amount: 1, unit: 'tub', reason: 'expired', action: '', station: 'Larder', addedBy: 'Ann', addedById: 'ann', addedAt: at(d, '10:05'), deleted: false };
     if (i % 3 === 0) x[key('transfers', d, 'lines', 't1')] = { text: 'Lemons', amount: 12, unit: 'pieces', dir: 'out', venue: 'Venue B', person: 'Jo', note: '', addedBy: 'Ann', addedById: 'ann', addedAt: at(d, '11:00'), deleted: false, back: true };
@@ -161,6 +162,13 @@ export async function hide(page) {
   await L.settle(page, 400);
 }
 
+// A page tab that may sit past the edge of the phone's tab row: slid into view first, so the tap lands where it shows.
+export const showTab = t => page => page.evaluate(t => {
+  const e = document.querySelector('.a-tab[data-t="' + t + '"]');
+  if (e && e.offsetParent) e.parentElement.scrollLeft = Math.max(0, e.offsetLeft - 24);
+}, t);
+const toast = '.p-toast:not(.p-toast-old)';
+
 export default {
   id: 'admin-today',
   title: 'Admin: Today',
@@ -173,5 +181,101 @@ export default {
   setup: hide,
   intro: ['The admin panel, Today.', "Here's what needs you today, and how to find any page fast."],
   outro: ["That's the admin Today room. Next up, Admin: Reports."],
-  steps: []
+  steps: [
+    {
+      title: 'Five rooms',
+      say: ['The admin panel has five rooms: Today, Reports, Team, Kitchen and Prep.', 'Each room keeps its pages as tabs, under its name.', 'Today opens on the Inbox.'],
+      do: [
+        { s: 0, d: 0.6, circle: '.a-groups', opts: { pad: 6 } },
+        { s: 1, d: 0.4, underline: '.a-tabs' },
+        { s: 2, d: 0.3, circle: { phone: '.a-tab[data-t="inbox"]', desktop: '.a-quick[data-v="inbox"]' }, opts: { pad: 6 } }
+      ]
+    },
+    {
+      title: 'The Inbox',
+      say: ['The Inbox lists what needs you today.', 'Open kitchen mail comes first, the most urgent at the top.', 'Then minutes still to sign, item links to check and transfers not back.', 'Each line has a button that opens its page.'],
+      do: [
+        { s: 0, d: 0.3, underline: '.dsh-needs .dsh-panel-head' },
+        { s: 1, d: 0.5, circle: '.dsh-ml .ml-row >> nth=0' },
+        { s: 2, d: 0.2, circle: '.dsh-need >> nth=1' },
+        { s: 2, d: 2.0, circle: '.dsh-need >> nth=3' },
+        { s: 2, d: 3.4, circle: '.dsh-need >> nth=4' },
+        { s: 3, d: 0.5, circle: '.dsh-needs [data-dsh="open"][data-t="transfers"]', opts: { pad: 6 } }
+      ]
+    },
+    {
+      title: "Today's numbers",
+      say: ["Under it are today's numbers, from the nightly run.", 'Prep ticked yesterday, waste in the last seven days and functions today.', 'Tap a number to open its report. Waste opens Wastage, in Reports.', 'Tap Today to come back.'],
+      do: [
+        { s: 0, d: 0.3, underline: '.dsh-day .dsh-panel-head' },
+        { s: 1, d: 0.2, circle: '.dsh-dtile >> nth=0' },
+        { s: 1, d: 1.6, circle: '.dsh-dtile >> nth=1' },
+        { s: 1, d: 3.1, circle: '.dsh-dtile >> nth=2' },
+        { s: 2, d: 0.9, tap: '.dsh-dtile[data-t="waste"]' },
+        { s: 2, d: 2.6, circle: '.a-group[data-g="reports"]', opts: { pad: 6 } },
+        { s: 3, d: 0.4, tap: '.a-group[data-g="today"]' }
+      ]
+    },
+    {
+      title: 'Dashboard',
+      say: ['The Dashboard shows how the kitchen is going.', 'Pick 7, 30 or 90 days.', 'What changed says it in plain words, with a link to the report.', 'The week ahead lists functions and order cut-offs.'],
+      do: [
+        { s: 0, d: 0.4, tap: { phone: '.a-tab[data-t="dashboard"]', desktop: '.a-quick[data-v="dashboard"]' } },
+        { s: 1, d: 0.2, circle: '.dsh-tools', opts: { pad: 6 } },
+        { s: 1, d: 1.2, tap: '[data-dsh="period"][data-v="7"]' },
+        { s: 2, d: 0.3, circle: '.dsh-head >> nth=1' },
+        { s: 3, d: 0.3, underline: '.dsh-week .dsh-panel-head' },
+        { s: 3, d: 1.4, circle: '.dsh-wk-day >> nth=0' }
+      ]
+    },
+    {
+      title: 'Item links',
+      say: ['Item links is a review desk for the names the team writes.', 'Tap a name to check its recipe or supplier item.', 'This one already has its recipe. Tap Save and return to confirm the link.'],
+      do: [
+        { s: 0, d: 0.1, run: showTab('references') },
+        { s: 0, d: 0.4, tap: '.a-tab[data-t="references"]' },
+        { s: 0, d: 2.2, circle: '[data-ai="review-reference"] >> nth=0' },
+        { s: 1, d: 0.6, tap: '[data-ai="review-reference"][data-value="ref:recipe:burger"]' },
+        { s: 1, d: 2.2, circle: '#ai-recipeId-picker', opts: { pad: 6 } },
+        { s: 2, d: 2.4, tap: '[data-ai="save"]' },
+        { s: 2, d: 3.6, circle: toast }
+      ]
+    },
+    {
+      title: 'Proofreader',
+      say: ['The Proofreader shows lines where autocorrect saved other words.', 'Here, brie became brine.', 'Tap Restore original to put back what was typed. Or tap Edit wording.'],
+      do: [
+        { s: 0, d: 0.1, run: showTab('proofreader') },
+        { s: 0, d: 0.4, tap: '.a-tab[data-t="proofreader"]' },
+        { s: 0, d: 2.4, tap: '[data-pr="review"] >> nth=0' },
+        { s: 1, d: 0.2, circle: '.pr-comparison', opts: { pad: 6 } },
+        { s: 2, d: 0.3, circle: '[data-pr="edit"]', opts: { pad: 6 } },
+        { s: 2, d: 0.9, tap: '[data-pr="restore"]' },
+        { s: 2, d: 2.4, circle: toast }
+      ]
+    },
+    {
+      title: 'Kitchen mail',
+      say: ['Kitchen mail is what the team wrote to you, the most urgent first.', 'Change how soon it matters with this chip.', "When it's dealt with, tick it off."],
+      do: [
+        { s: 0, d: 0.1, run: showTab('mail') },
+        { s: 0, d: 0.4, tap: '.a-tab[data-t="mail"]' },
+        { s: 0, d: 2.2, circle: '.a-pane .ml-row >> nth=0' },
+        { s: 1, d: 0.3, circle: '.a-pane .ml-row >> nth=0 >> .ux-picker-trigger', opts: { pad: 6 } },
+        { s: 2, d: 0.4, tap: '.a-pane .ml-row >> nth=1 >> [data-p="ml-tick"]' },
+        { s: 2, d: 1.6, circle: toast }
+      ]
+    },
+    {
+      title: 'Find',
+      say: ['To jump to any page, tap Find. On a keyboard, press the slash key.', 'Type a few letters of a page or a name.', 'Tap it, and the page opens.'],
+      do: [
+        { s: 0, d: 0.5, tap: '[data-p="a-find"]' },
+        { s: 1, d: 0.3, type: ['#fd-q', 'rec'] },
+        { s: 1, d: 1.6, circle: '#fd-list .sheet-o >> nth=0' },
+        { s: 2, d: 0.3, tap: '#fd-list .sheet-o >> nth=0' },
+        { s: 2, d: 1.4, underline: '.ad-title' }
+      ]
+    }
+  ]
 };

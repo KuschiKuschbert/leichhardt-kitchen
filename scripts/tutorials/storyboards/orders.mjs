@@ -44,6 +44,8 @@ export default {
   hash: '#/orders',
   who: 'sam',
   extra,
+  // a phone that has not been asked about notifications yet (the test browser says no), so the cut-offs offer pushes plainly
+  open: { init: () => { try { Object.defineProperty(Notification, 'permission', { get: () => 'default', configurable: true }); } catch (e) {} } },
   intro: ['Orders.', "Here's how to ask for stock, and how the chefs tick it off once it's ordered."],
   outro: ["That's Orders. Next up, Wastage."],
   steps: [
@@ -104,7 +106,7 @@ export default {
       do: [
         // the cut-offs fold shut again first, so the list is back in view, and the cut-off's slip has had its time
         { s: 0, tap: '.o-cut-fold > summary' },
-        { s: 0, run: page => page.clock.runFor(9500) },
+        { s: 0, run: page => page.clock.fastForward(9500) },
         { s: 0, top: true },
         { s: 0, d: 1.0, tap: row('o1') + ' .nb-box' },
         { s: 1, d: 0.2, circle: '.p-toast:not(.p-toast-old) .p-toast-btn' },
@@ -118,7 +120,7 @@ export default {
       say: ['A ticked line stays for ten minutes, then moves down to Ordered today.', "Tap it to see what's been ordered. Each one has its own Undo."],
       do: [
         // ten minutes on the demo kitchen's clock, so the ticked line moves down
-        { s: 0, d: 1.2, run: async page => { await page.clock.runFor(11 * 60000); await L.settle(page, 500); } },
+        { s: 0, d: 1.2, run: async page => { await page.clock.fastForward(11 * 60000); await L.settle(page, 500); } },
         { s: 0, d: 2.6, circle: '.o-done summary' },
         { s: 1, d: 0.4, tap: '.o-done summary' },
         { s: 1, d: 2.6, circle: '.o-done .nb-undo' }
