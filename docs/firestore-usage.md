@@ -2,7 +2,7 @@
 
 ## April Fools, 17 November 2026
 
-On 1 April only: one read per person per device (their own `fools/<1 April>_<staff id>`, from the server, on their first Home view that day) and one write per person (when their joke starts). About 20 to 40 reads and 20 writes that day; none on any other day, no listener. The admin panel's April Fools row and its Preview read nothing. `docs/april-fools.md`.
+On 1 April only: one read per person per device (their own `fools/<1 April>_<staff id>`, from the server, on their first Home view that day) and one write per person (when their joke starts, with which joke it was). About 20 to 40 reads and 20 writes that day; none on any other day, no listener. The admin panel's April Fools row and its Preview read nothing. `docs/april-fools.md`.
 
 ## Function sent, lines off, 14 November 2026
 

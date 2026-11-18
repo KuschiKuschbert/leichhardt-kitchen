@@ -76,6 +76,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Wastage history and CSV reports | `docs/wastage-history.md`, `docs/report-exports.md` |
 | Transfer storage and returns | `docs/transfer-returns.md` (publish rules from the feature branch first: it indexes loans) |
 | Function sent, lines off: once the last round is ticked Sent, the function's open prep and order lines (and lines added for it) leave the lists; the 03:00 job removes them | `docs/fn-sent-tidy-options/brief.md` (the mix chosen and built), `docs/code-contracts.md` (Functions) |
+| What a function's platters need, on its Orders line (the mix chosen and built 18 Nov 2026; one sum shared with Prep, `M.platterNeeds()`) | `docs/fn-order-ingredients-options/brief.md`, `docs/code-contracts.md` (Functions) |
 | Functions: cancel, Undo, delete, print | `docs/function-cancellation.md`, `docs/function-printing.md` |
 | Functions ahead of time: the chosen mix (Function this week card, Next function line, Orders tag, who has said Got it), when a function shows before its day | `docs/function-ahead-options/brief.md` (Chosen, build plan) |
 | Functions service two-way check: the kitchen sends trips, Functions confirms each (chosen as a trial 14 Nov 2026: the mix) | `docs/function-handover-options/brief.md` (Chosen, verification) |
@@ -87,7 +88,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Publishing the site: only a merge that changes a file the phones load republishes; the book then updates silently when safe (no band unless asked) | `docs/site-publishing.md` |
 | Nightly backup and recovery | `docs/backup-recovery.md` |
 | Seasonal celebrations and festival dates; the New Year show over Home (fireworks and the cards' dance, 17 Nov 2026) | `docs/seasonal-celebrations.md`, `docs/seasonal-calendar.md`, `docs/celebration-options/brief.md` |
-| April Fools on Home (1 April, built 17 Nov 2026): 24 fake "hacked" Homes of 35 seconds on a copy of the page, once a year per person on any device, never last year's, then the mascot owns up; the admin panel's preview | `docs/april-fools.md` (the contract), `docs/april-fools-options/brief.md` and `pool.md` (the study) |
+| April Fools on Home (1 April, built 17 Nov 2026): 24 fake "hacked" Homes of 35 seconds on a copy of the page, once a year per person on any device, never last year's, then the mascot owns up; the admin panel's preview | `docs/april-fools.md` (the contract), `docs/april-fools-options/brief.md` and `pool.md` (the study); less predictable for returning staff: `docs/april-fools-smarter-options/brief.md` (round 1: Don't build yet, 3 of 5; chosen: wait, starts at 04:00, the record keeps the joke) |
 
 ## Service council (5 Nov 2026)
 
