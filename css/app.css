@@ -504,6 +504,16 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
    full ink, its box fades and the reason sits under it in the body font; the Functions tab's sentence likewise. No motion. */
 .nb-row.is-leaving .nb-box { opacity: 0.4; }
 .nb-row.is-leaving .nb-meta, .nb-row.is-leaving .nb-wrote { white-space: normal; overflow: visible; text-overflow: clip; }
+/* A later day on Prep (head chef, 17 Nov 2026: the mix, docs/prep-ahead-options/brief.md): one page, no Handy; a planned
+   line has a quiet calendar where today's lines have the tick box (nothing is ticked before its day; a dashed edge
+   already means not saved); its count is graphite, planned is not attention; the byline wraps, never cut */
+.nb-later .nb-right, .nb-later .nb-spine { display: none; }
+.nb-box.pa-cal { cursor: default; color: var(--muted); }
+.nb-box.pa-cal svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.nb-prog.pa-n { color: var(--ink); }
+.pa-for { margin: 0 0 0.6rem; font-family: var(--body); font-size: 0.95rem; line-height: 1.4; color: var(--ink); }
+.pa-for b { font-weight: 700; }
+.pa-row .nb-meta, .pa-row .nb-wrote { white-space: normal; overflow: visible; text-overflow: clip; }
 .nb-offw { font-family: var(--body); font-weight: 700; color: var(--ink); }
 .nb-fnoff { margin: 0.6rem 0 0.25rem; font-family: var(--body); font-size: 1rem; line-height: 1.4; color: var(--ink); }
 .fn-next-off { margin-top: 0.5rem; }
@@ -553,6 +563,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
   .nb-page { flex: 1 1 0; height: min(780px, calc(100vh - 15rem)); height: min(780px, calc(100dvh - 15rem)); min-height: 30rem; border-radius: 0; box-shadow: none; padding: 0 2rem 0 2.2rem; border-width: 1.5px; }
   .nb-left { border-radius: 10px 0 0 10px; border-right: 0; box-shadow: inset -14px 0 14px -14px rgba(60,40,10,0.25); }
   .nb-right { border-radius: 0 10px 10px 0; border-left: 0; box-shadow: inset 14px 0 14px -14px rgba(60,40,10,0.25); }
+  .nb-later .nb-left { flex: 1 1 100%; border-radius: 10px; border-right-width: 1.5px; border-right-style: solid; box-shadow: none; }
   .nb-left:before { content: ''; position: absolute; left: 1.2rem; top: 0; bottom: 0; width: 2px; background: #E7B7A6; }
   .nb-spine { display: block; flex: 0 0 26px; background: repeating-linear-gradient(to bottom, var(--bar) 0 10px, transparent 10px 54px); background-size: 46px 100%; background-position: center; background-repeat: repeat-y; background-color: var(--surface-work); border-top: 1.5px solid var(--surface-work-edge); border-bottom: 1.5px solid var(--surface-work-edge); }
   .nb-tabs { order: 0; flex: 0 0 8.5rem; flex-direction: column; overflow: visible; gap: 6px; margin-left: -2px; padding: 3rem 0 0; -webkit-mask-image: none; mask-image: none; }

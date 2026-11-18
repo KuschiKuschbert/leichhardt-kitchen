@@ -27,7 +27,7 @@ Short warnings. The full contract for each part is its section in `docs/code-con
 - **Shared maths lives in one file** that the phones and the server jobs both run: cut-offs in `js/cutoffs.js`, the list batch time in `js/learn.js`, amounts in `js/amounts.js`.
 - **Held-back pages.** Any new link, card or read for guides, pings, minutes or cleaning checks `featOn()`. Cleaning is off by default for the team, with canonical chef setup access and matching server rules.
 - **Admin panel.** A new block gets a `.label` or `h3.a-ch-h` (the nav chips read them). Lists that grow go through `lvHTML()`. No hand-built long tables, no second sticky bar.
-- **Prep list.** Double ups merge only through `mergeDups()`, from a server read; a `dupOk` line never merges. Tomorrow's list cut comes from `cutFor()`.
+- **Prep list.** Double ups merge only through `mergeDups()`, from a server read; a `dupOk` line never merges. Tomorrow's list cut comes from `cutFor()`. A line planned for a later day (`plan`, 18 Nov 2026) never makes its day a written day (`rollSource()`), and only `planOK()` adds on a later day: change who plans there, in one place, and the rules' `planKept()` with it.
 - **Top bar.** Pings, the chef hat and the round Today's team chip (7 Nov 2026), all the bell's size. A button with words in it wraps the page tabs on a laptop and cuts "Kitchen Book" on a phone (measured 7 Nov 2026, `docs/todays-team-options/brief.md`); anything more is a head chef decision. Sign-offs and `hist` copies are immutable; a change after publishing is a new version.
 - **Transfers.** A new line field needs the rules, `scripts/nightly-learn.mjs` and `tests/safe-text.test.js`. Six tabs is the most the phone tab bar fits.
 

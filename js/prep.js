@@ -567,7 +567,7 @@
     if (sheetPg() !== pg) return '';
     var l = justList.filter(function (x) { return x.pg === pg && x.t >= justOpenAt; }).slice(-2);
     if (!l.length) return '';
-    return '<div class="just-r"><p class="just-t">Added just now</p>' + l.map(function (x) {
+    return '<div class="just-r"><p class="just-t">' + (pg === 'p' && S.date > dayNow() ? 'Added for ' + esc(dayAbbr(S.date)) : 'Added just now') + '</p>' + l.map(function (x) {
       return '<div class="just-l' + (x.undone ? ' is-undone' : '') + '"><span class="just-n"><b>' + esc(slipName(x.text)) + '</b>' + (x.more ? ' ' + esc(x.more) : '') + '</span>' +
         (x.undone ? '<span class="just-gone">Undone</span>' : justUndoOk(x) ? '<button type="button" class="btn just-u" data-p="just-undo" data-id="' + esc(x.id) + '" aria-label="' + esc('Undo ' + x.text) + '">Undo</button>' : '') + '</div>';
     }).join('') + '</div>';
@@ -1683,6 +1683,9 @@
     chefHistoryClear(); fdLast = []; fdClose(true, true); ajClose(true, true);
     if (window.LK_UX) window.LK_UX.close();
     if (shared()) { if (fb && S.uid) fb.fs.deleteDoc(sessRef()).catch(function () {}); dropGoogle().catch(function () {}); }
+    // back on Today after the lock, and an add sheet open for a later day closes (its words stay in the box)
+    if (S.pLog && S.pLogDay && S.pLogDay !== dayNow()) { S.pLog = false; ovDone('wsheet', true); }
+    if (S.date !== dayNow()) { S.date = dayNow(); S.tab = ''; }
     admMark(false); featSync(); accessChanged(); draw(); whoSync();
     if (S.who) pickName(S.who);
   }
@@ -2468,8 +2471,9 @@
 
   /* ---------- item actions ---------- */
   function newItem(extra, date) {
-    var p = me(), f = fb.fs, ref = f.doc(itemsCol(date || S.date));
-    var data = Object.assign({ text: '', station: '', qty: '', recipe: '', addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), done: false, deleted: false }, extra);
+    var p = me(), f = fb.fs, d = date || S.date, ref = f.doc(itemsCol(d));
+    // a line for a later day is planned (17 Nov 2026): marked with its day, so the rules keep it for the admin
+    var data = Object.assign({ text: '', station: '', qty: '', recipe: '', addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), done: false, deleted: false }, extra, d > dayNow() ? { plan: d } : {});
     amtOn(data); practiceOn(data);
     var pr = sset(ref, data); pr.id = ref.id; return pr;
   }
@@ -2496,7 +2500,7 @@
   function keptSection(sec) { return S.secTyped ? sec : ''; }
   function addTyped() {
     var t = S.text.trim();
-    if (!t || !can('add')) return;
+    if (!t || !can('add') || !addDayOk()) return;
     var secInfo = {}, sec = cleanSection(S.section, secInfo), typedAs = t, pr = proofread(t), fixed = pr.changes.length || pr.text !== t;
     t = pr.text;
     var rm = matchRecipe(t);
@@ -2523,13 +2527,13 @@
       } });
     }
     else addedToast(sec, S.date, made.id, t.slice(0, 160));
-    if (pr.changes.length || secInfo.from) { justMark(made.id); justAdd('p', made.id, t.slice(0, 160), sec ? 'to ' + sec : '', 'Added ' + slipName(t) + (sec ? ' to ' + sec : ''), prepUndo(S.date, made.id)); if (sheetPg() === 'p') draw(); }
+    if (pr.changes.length || secInfo.from) { justMark(made.id); justAdd('p', made.id, t.slice(0, 160), sec ? 'to ' + sec : '', 'Added ' + slipName(t) + (sec ? ' to ' + sec : '') + forDay(S.date), prepUndo(S.date, made.id)); if (sheetPg() === 'p') draw(); }
     S.text = ''; S.qty = ''; S.section = keptSection(sec); S.pickedText = ''; draw();
     var el = S.root && S.root.querySelector('[data-k="p-text"]'); if (el) el.focus();
   }
   function addRecipe(id) {
     var r = D.recipes.filter(function (x) { return x.id === id; })[0];
-    if (!r || !can('add')) return;
+    if (!r || !can('add') || !addDayOk()) return;
     var secInfo = {}, sec = cleanSection(S.section, secInfo) || mySec();
     var q0 = S.qty, tw = openTwin(r.short || r.name, q0);
     if (tw) {
@@ -2774,6 +2778,7 @@
   function tickNow(date, id, want) {
     var it = S.items.filter(function (x) { return x.id === id; })[0], p = me();
     if (S.date !== date) it = null;   // another day's list is on screen: its lines are not this day's
+    if (date > dayNow()) return false;   // nothing is ticked before its day (17 Nov 2026)
     if (!it || !can('tick')) return false;
     if (typeof want === 'boolean' && !!it.done === want) return false;
     if (!p) { toast('Choose your name before ticking prep.');return false; }
@@ -2794,7 +2799,7 @@
   }
   function removeItem(date, id, restore) {
     var p = me(), it = S.items.filter(function (x) { return x.id === id; })[0];
-    if (!can('del')) return;
+    if (!can('del') || planLocked(it, date)) return;
     // a sent function's line put back is kept: the book and the 03:00 job never take it off again (fnOffMark())
     var kept = restore && it && (it._fnOff || it.deletedBy === 'Function sent');
     // a merged double up that is put back is kept apart, so it is not merged again
@@ -2823,8 +2828,43 @@
      never reads for the person before. retryDone(k) once the read came in, so an online event later reads nothing. */
   function retrySoon(k, fn, e) { if (e && e.code === 'cancelled') return; retryLater(k); onlineRetry[k] = function () { delete S.retryAt[k]; fn(); }; }
   function retryDone(k) { delete S.retryAt[k]; delete onlineRetry[k]; }
-  // a line that makes its day the last written day: anything not removed, apart from a function's platter lines
-  function rollSource(x) { return !x.deleted && !x.fn; }
+  /* Prep lines for a later day (head chef, 17 Nov 2026: the council's mix, admin only; docs/prep-ahead-options/brief.md).
+     The admin writes a line on a day from the day after tomorrow up to PLAN_DAYS ahead; it carries plan: '<that day>'.
+     On its day it is that day's own line; a copy rolled from it is a plain rolled line (no plan). */
+  var PLAN_DAYS = 28;
+  function planned(x) { return !!(x && x.plan && !x.rolled && !x.fn); }
+  // a planned line counts as written when its day began: never "Waiting longest" just for being written days before
+  function planStart(x) { return T.at(x.plan, 0); }
+  // the admin on this device (the owner's Google sign-in, a live head chef PIN session and its grant): only the admin
+  // plans lines for a later day (head chef, 17 Nov 2026: "But only for admins"). One helper, so another answer is one line.
+  function planOK() { return S.level === 'owner' && ownerHere(); }
+  // a day a line can be planned for: from the day after tomorrow (tomorrow is written tonight, on today's list)
+  function planDayOk(d) { var t = dayNow(); return !!d && d >= shift(t, 2) && d <= shift(t, PLAN_DAYS); }
+  // the day a planned line is for, in words: "Saturday 21 November" and "Sat 21 Nov"
+  function dayFull(d) { var x = parseYmd(d); return x.toLocaleDateString('en-AU', { weekday: 'long' }) + ' ' + x.getDate() + ' ' + x.toLocaleDateString('en-AU', { month: 'long' }); }
+  function dayAbbr(d) { var x = parseYmd(d); return x.toLocaleDateString('en-AU', { weekday: 'short' }) + ' ' + x.getDate() + ' ' + x.toLocaleDateString('en-AU', { month: 'short' }); }
+  // when a planned line was written, for its byline "Planned Wed by Kim": the weekday within the week, else "12 Nov"
+  function planWhen(x) {
+    var d = x.addedAt ? T.day(x.addedAt) : '';
+    if (!d) return '';
+    return parseYmd(d).toLocaleDateString('en-AU', d >= shift(dayNow(), -6) ? { weekday: 'short' } : { day: 'numeric', month: 'short' });
+  }
+  /* Where a new prep line goes: today, or a day the admin plans ahead. The add sheet keeps the day it opened on: when the
+     day on screen changed under it (midnight, a lock) or the admin's sign-in lapsed, nothing is written, the words stay in
+     the box and the slip says why (council findings 9 and 17). */
+  function addDayOk() {
+    var d = S.date, t = dayNow();
+    if (S.pLog && S.pLogDay && S.pLogDay !== d) { planRefuse('The day on screen changed. Open the add sheet again.'); return false; }
+    if (d === t) return true;
+    if (planDayOk(d) && planOK()) return true;
+    planRefuse(d === shift(t, 1) ? 'Tomorrow\'s list is written tonight, on today\'s list.' : d < t ? 'Lines are added on today, or planned for a later day.' :
+      !planOK() ? 'Only the head chef plans lines for a later day, signed in as admin on this device.' : 'Lines can be planned from the day after tomorrow, up to 4 weeks ahead.');
+    return false;
+  }
+  function planRefuse(msg) { toast('Not added. ' + msg, null, 6000); if (S.pLog) wSheetClose(true); }
+  // a line that makes its day the last written day: anything not removed, apart from a function's platter lines and lines
+  // planned for that day (a day nobody opened holds only those, 17 Nov 2026)
+  function rollSource(x) { return !x.deleted && !x.fn && !planned(x); }
   /* The first line (root) of every line on a day newer than the day a rollover copies from, removed ones included
      (13 Nov 2026): a copy rolled onto Tuesday and removed there must not roll from Monday again on Wednesday. Its root
      comes from root, or from a rolled copy's id (r<day>-<root>) for a copy kept without it (lk.past keeps no root). */
@@ -2854,40 +2894,62 @@
     var gone = {};
     if (dates.every(function (d) { return S.past && S.past[d]; })) {
       var last = dates.filter(function (d) { return S.past[d].some(rollSource); })[0];
-      if (!last) { lsSet('lk.prep.rolled', today); return; }
-      dates.slice(0, dates.indexOf(last)).forEach(function (d) { rollGone(gone, S.past[d]); });
-      dates = [last];
+      // a newer day nobody opened can hold open lines planned for it (17 Nov 2026): they roll too, as the server holds
+      // them now, so then every day up to the last written one is read (a few reads, only after such a day)
+      var skipped = last ? dates.slice(0, dates.indexOf(last)) : dates;
+      var plans = skipped.some(function (d) { return S.past[d].some(function (x) { return planned(x) && !x.done && !x.deleted; }); });
+      if (!last && !plans) { lsSet('lk.prep.rolled', today); return; }
+      if (!plans) { skipped.forEach(function (d) { rollGone(gone, S.past[d]); }); dates = [last]; }
+      else if (last) dates = dates.slice(0, dates.indexOf(last) + 1);
     }
     Promise.all([fb.fs.getDocs(itemsCol(today))].concat(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)); }))).then(function (res) {
-      var have = {};
-      res[0].docs.forEach(function (d) { have[d.id] = true; });
+      // mine: today's own open planned lines, so a line the night list wrote again is not copied next to one (twinPlan())
+      var have = {}, mine = [], extra = [];
+      res[0].docs.forEach(function (d) { have[d.id] = true; var x = d.data(); x.id = d.id; if (planned(x) && !x.done && !x.deleted) mine.push(x); });
       var src = null, j;
       for (j = 1; j < res.length && !src; j++) {
         var all = res[j].docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }), docs = all.filter(function (x) { return !x.deleted; });
-        if (docs.some(rollSource)) src = { date: dates[j - 1], items: docs }; else rollGone(gone, all);
+        if (docs.some(rollSource)) src = { date: dates[j - 1], items: docs };
+        else { rollGone(gone, all); docs.forEach(function (x) { if (planned(x) && !x.done && !x.fn) extra.push({ x: x, day: dates[j - 1] }); }); }
       }
-      if (!src) { lsSet('lk.prep.rolled', today); return; }
+      if (!src && !extra.length) { lsSet('lk.prep.rolled', today); return; }
       // when that day's night list started, from its lines as they are on the server now
-      var jobs = [], cut = cutFor(src.date, src.items);
-      src.items.forEach(function (x) {
-        if (x.done || x.fn) return;   // a function's platters belong to its day (js/fnedit.js), they never roll over
+      var jobs = [], cut = src ? cutFor(src.date, src.items) : -1;
+      function twinPlan(x) {
+        var k = dupKey(x.text), q = qtyKey(x.qty);
+        return !!k && mine.some(function (p) { return dupKey(p.text) === k && lineSec(p) === lineSec(x) && (!q || qtyKey(p.qty) === q); });
+      }
+      function copy(x, day, late) {
         var root = x.root || x.id, id = 'r' + today.replace(/-/g, '') + '-' + root;
-        if (have[id] || gone[root]) return;
+        if (have[id]) return;
         have[id] = true;
         jobs.push(['set', itemRef(today, id), Object.assign({
           text: x.text, station: lineSec(x), qty: x.qty || '', recipe: x.recipe || '',
           addedBy: 'Rolled over', addedById: '', addedAt: now(), done: false, deleted: false,
-          rolled: (x.rolled || 0) + 1, root: root, from: x.id, rolledFrom: src.date, origBy: x.origBy || x.addedBy || '', origAt: x.origAt || (x.rolled ? 0 : x.addedAt || 0), urgent: !!x.urgent,
-          ahead: !!(x.ahead || writtenLate(x, src.date, cut))
+          // a planned line was first on a list the day it was planned for, so "from Kim, Sat" names that day
+          rolled: (x.rolled || 0) + 1, root: root, from: x.id, rolledFrom: day, origBy: x.origBy || x.addedBy || '', origAt: planned(x) ? T.at(day, 0) : x.origAt || (x.rolled ? 0 : x.addedAt || 0), urgent: !!x.urgent,
+          ahead: !!(x.ahead || late)
         }, Array.isArray(x.fnFor) && x.fnFor.length ? { fnFor: x.fnFor.slice(0, 4) } : {}, x.keep ? { keep: true } : {})]);   // a function's link and a kept line roll with it
+      }
+      if (src) src.items.forEach(function (x) {
+        if (x.done || x.fn) return;   // a function's platters belong to its day (js/fnedit.js), they never roll over
+        if (gone[x.root || x.id]) return;
+        // the night list wrote what was planned for today (same item, section and amount, or no amount): the planned
+        // line stays, once. Another amount rolls over and both lines show Also (mergeDups()).
+        if (twinPlan(x)) return;
+        copy(x, src.date, writtenLate(x, src.date, cut));
       });
+      // the open planned lines of a day nobody opened (a closed day): before 17 Nov 2026 such a day counted as written
+      // and the open lines of the day before it were left behind for good
+      extra.forEach(function (e) { copy(e.x, e.day, false); });
       if (!jobs.length) { lsSet('lk.prep.rolled', today); return; }
-      return Wall(jobs).then(function () { lsSet('lk.prep.rolled', today); toast(jobs.length + (jobs.length === 1 ? ' line' : ' lines') + ' rolled over from ' + dayName(src.date).toLowerCase()); });
+      var from = src ? src.date : extra[0].day;
+      return Wall(jobs).then(function () { lsSet('lk.prep.rolled', today); toast(jobs.length + (jobs.length === 1 ? ' line' : ' lines') + ' rolled over from ' + dayName(from).toLowerCase()); });
     }).catch(function () { S.rolledFor = ''; retryLater('roll'); });
   }
   function toggleUrgent(id) {
     var it = S.items.filter(function (x) { return x.id === id; })[0];
-    if (!it || !can('add')) return;
+    if (!it || !can('add') || planLocked(it, S.date)) return;
     var p = me(), on = !it.urgent, dt = S.date;
     // the line keeps its place for a moment, so the next line does not slide under the same finger
     S.urgHold = { id: id, was: !!it.urgent, until: Date.now() + LINGER }; setTimeout(function () { S.urgHold = null; draw(); }, LINGER + 50);
@@ -3071,7 +3133,7 @@
     // waiting longest by when each line was really written (firstAt()), not when a copy rolled onto today: a line
     // written after last night's cut is copied just after midnight. No time in the tag (council quick check, 10 Nov
     // 2026): the line's second line already says who wrote it and when, and the copy's time read as "since 00:08".
-    take(open.slice().sort(byFirst), function () { return 'Waiting longest'; });
+    take(open.filter(function (x) { return !planned(x); }).sort(byFirst), function () { return 'Waiting longest'; });
     return picked;
   }
   /* Start here, numbered in place (3 Nov 2026, work pages redesign A): the three lines to do first carry 1, 2 and 3 on
@@ -3201,7 +3263,7 @@
     if (Array.isArray(tw.fnFor) && tw.fnFor.length) up.fnFor = [];
     var prev = unlinked(prevOf(tw, up)), changed = Object.keys(up).length;
     if (changed) supd(itemRef(dte, tw.id), up).catch(failed);
-    toast('On the list: ' + tw.text + (up.qty || tw.qty ? ', ' + (up.qty || tw.qty) : '') + '.', { label: 'Add anyway', fn: function () {
+    toast('On the list' + forDay(dte) + ': ' + tw.text + (up.qty || tw.qty ? ', ' + (up.qty || tw.qty) : '') + '.', { label: 'Add anyway', fn: function () {
       if (Object.keys(prev).length) supd(itemRef(dte, tw.id), prev).catch(failed);
       var made = newItem(Object.assign({}, data, { dupOk: true }));   // kept apart, so it keeps its own link (fnFor) if it had one
       made.catch(failed);
@@ -3337,6 +3399,7 @@
   }
   /* One-tap adds (Quick add in Handy): the line goes on with its usual amount, and the toast says where, with Undo. */
   function oneTap(text, sec) {
+    if (!addDayOk()) return;
     var rm = matchRecipe(text), uq = usualQty(text), dte = S.date, tw = openTwin(text, uq);
     if (tw) { addToTwin(tw, { text: text.slice(0, 160), station: sec, recipe: rm ? rm.id : '', qty: uq }, function () { noteSection(sec); bump({ added: 1, lastAdded: now() }); }); return; }
     var made = newItem({ text: text.slice(0, 160), station: sec, recipe: rm ? rm.id : '', qty: uq });
@@ -3348,8 +3411,10 @@
      Since 5 Nov 2026 the slip names the line (docs/action-feedback.md), cut by slipName() so a long name never covers the list. */
   function addedToast(sec, dte, mid, text) {
     justMark(mid);
-    addSay('p', mid, text, sec ? 'to ' + sec : '', 'Added ' + slipName(text) + (sec ? ' to ' + sec : ''), prepUndo(dte, mid));
+    addSay('p', mid, text, sec ? 'to ' + sec : '', 'Added ' + slipName(text) + (sec ? ' to ' + sec : '') + forDay(dte), prepUndo(dte, mid));
   }
+  // a line planned for a later day: the slip says which day it went to (" for Sat 21 Nov"), after the sheet closes too
+  function forDay(d) { return d && d > dayNow() ? ' for ' + dayAbbr(d) : ''; }
   function prepUndo(dte, mid) { return function () { supd(itemRef(dte, mid), { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).catch(failed); }; }
   /* The book's own records: book/index and book/matches. The rules allow them by name only, so a query on the whole
      book collection is refused; read the two by name instead (2 reads, on a tap). Missing ones are left out. */
@@ -3709,7 +3774,7 @@
   }
   function rolledN(x) { return Math.max(0, (x.rolled || 0) - (x.ahead ? 1 : 0)); }
   /* when a line was first written: a rolled copy keeps it in origAt (0 if it rolled before origAt was kept) */
-  function firstAt(x) { return x.rolled ? x.origAt || 0 : x.addedAt || 0; }
+  function firstAt(x) { return x.rolled ? x.origAt || 0 : planned(x) ? planStart(x) : x.addedAt || 0; }
   /* the day a rolled line was first written, short: "yesterday", "Mon" within the week, "12 Oct" before that.
      Lines that rolled before origAt was kept only know it when they rolled once. */
   function firstDay(x) {
@@ -4075,7 +4140,7 @@
   /* ---------- the last 14 days, read once a day per phone ----------
      Past days hardly change, so they are read once a day and kept on the phone. Today comes from the live list.
      The weekly badges, usual amounts, Start here, Due today, the pace card and the close-out nudge all work from this. */
-  var PAST_DAYS = 14, PAST_KEYS = ['text', 'station', 'qty', 'addedBy', 'addedById', 'addedAt', 'done', 'doneBy', 'doneById', 'doneAt', 'preparedBy', 'preparedById', 'preparedAt', 'rolled', 'ahead', 'deleted', 'urgent', 'fn'];
+  var PAST_DAYS = 14, PAST_KEYS = ['text', 'station', 'qty', 'addedBy', 'addedById', 'addedAt', 'done', 'doneBy', 'doneById', 'doneAt', 'preparedBy', 'preparedById', 'preparedAt', 'rolled', 'ahead', 'deleted', 'urgent', 'fn', 'plan'];
   function pastTag() { return S.pin + '|' + dayNow() + '|4'; }   // |4: retain reported preparation identities and their completion-cycle stamp.
   /* A change to a past day reaches the other phones (coding rules, 22 Oct 2026). Past days are kept on each phone for the
      day (lk.past, lk.ord.hist, the admin's lk.st.got). When the head chef or a sous chef ticks, unticks, removes or puts
@@ -5088,6 +5153,8 @@
   /* the line's own buttons say what they do in a word, with a small drawing above it on a phone (redesign step 1, 8 Nov 2026,
      docs/whole-app-redesign-options/brief.md): Urgent is one tap again, with its word instead of a lone !. Wider screens show the word only. */
   var AI_FLAG = '<svg class="nb-ai" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V4M6 4h11l-2 4 2 4H6"/></svg>';
+  // a planned line on a later day has a quiet calendar where the tick box is (17 Nov 2026): nothing to tick before its day
+  var AI_CAL = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>';
   var AI_BOOK = '<svg class="nb-ai" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5c3-1 6-1 9 1 3-2 6-2 9-1v14c-3-1-6-1-9 1-3-2-6-2-9-1z"/><path d="M12 6v14"/></svg>';
   var AI_ON = '<svg class="nb-ai" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6 8-6s7.2 2 8 6"/></svg>';
   var TICK = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M5 14 L11 20 L22 5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -5154,8 +5221,10 @@
   }
   function rowHTML(x, date, readonly, also) {
     if (x._leaving) return fnLeavingRow(x, date);
-    var tickOk = can('tick') && !x.deleted && (!x.done || canUntick(x)), delOk = can('del');
-    var by = x._fnOff ? '<b class="nb-offw">' + esc('Not needed: ' + x._fnOff.name + ' all sent ' + clock(x._fnOff.at)) + '</b>' : x.done && preparedWorker(x).name ? esc(preparedWorker(x).name) + (x.doneAt ? ' ' + clock(x.doneAt) : '') : (rolledN(x) ? (x.origBy ? 'from ' + esc(x.origBy) + (firstDay(x) ? ', ' + firstDay(x) : '') : '') : x.rolled ? esc(x.origBy || '') : (x.addedBy ? esc(x.addedBy) + (x.addedAt ? ' ' + clock(x.addedAt) : '') : ''));
+    // a later day (17 Nov 2026): nothing is ticked before its day, and a planned line is the admin's to change (planLocked())
+    var later = date > dayNow(), planRow = later && planned(x), locked = planLocked(x, date);
+    var tickOk = can('tick') && !later && !x.deleted && (!x.done || canUntick(x)), delOk = can('del') && !locked;
+    var by = x._fnOff ? '<b class="nb-offw">' + esc('Not needed: ' + x._fnOff.name + ' all sent ' + clock(x._fnOff.at)) + '</b>' : x.done && preparedWorker(x).name ? esc(preparedWorker(x).name) + (x.doneAt ? ' ' + clock(x.doneAt) : '') : (rolledN(x) ? (x.origBy ? 'from ' + esc(x.origBy) + (firstDay(x) ? ', ' + firstDay(x) : '') : '') : x.rolled ? esc(x.origBy || '') : planned(x) && x.addedBy ? esc('Planned ' + planWhen(x) + ' by ' + x.addedBy) : (x.addedBy ? esc(x.addedBy) + (x.addedAt ? ' ' + clock(x.addedAt) : '') : ''));
     var on = !readonly && onOf(x), onOther = on && !onMine(x) && !shared();
     var marks = (x.urgent ? '<span class="nb-urg">Urgent</span>' : '') + fnForTag(x) + (rolledN(x) ? '<span class="nb-roll" title="Not finished earlier, so it rolled over">Rolled' + (rolledN(x) > 1 ? ' x' + rolledN(x) : '') + '</span>' : '') +
       (x.deleted && x.mergedInto ? '<span class="nb-also">Double up</span>' : (also || ''));
@@ -5165,7 +5234,7 @@
     // the number is a badge drawn by CSS from data-n (.nb-t[data-n]::before), so the line's words stay its first text;
     // a screen reader hears "Start here, 1" after them
     var num = sn ? ' data-n="' + sn.n + '"' : '', numSay = sn ? '<span class="visually-hidden">. Start here, ' + sn.n + '</span>' : '';
-    var star = can('add') && !x.deleted && !readonly ? '<button type="button" class="nb-star" data-p="urgent" data-id="' + esc(x.id) + '" aria-pressed="' + !!x.urgent + '" aria-label="' + esc((x.urgent ? 'Not urgent: ' : 'Mark urgent: ') + x.text) + '">' + AI_FLAG + '<span class="nb-aw">Urgent</span></button>' : '';
+    var star = can('add') && !x.deleted && !readonly && !locked ? '<button type="button" class="nb-star" data-p="urgent" data-id="' + esc(x.id) + '" aria-pressed="' + !!x.urgent + '" aria-label="' + esc((x.urgent ? 'Not urgent: ' : 'Mark urgent: ') + x.text) + '">' + AI_FLAG + '<span class="nb-aw">Urgent</span></button>' : '';
     var rid = x.recipe || ((matchRecipe(x.text) || {}).id || ''), rr = rid ? recipeById(rid) : null;
     var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '" aria-label="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">' + AI_BOOK + '<span class="nb-aw">Recipe</span></a>' : '';
     var keep = !readonly && lineMenuOk(x, date);
@@ -5178,12 +5247,13 @@
     // a ticked line of today keeps On it's room as an empty slot, so on a phone, where the buttons sit beside the words
     // (redesign step 1, 8 Nov 2026), a tick does not widen the words and change the row's height under the finger
     if (!onBtn && tickOk && !readonly && x.done && date === dayNow()) onBtn = '<span class="nb-onslot" aria-hidden="true"></span>';
-    return '<li id="nbr-' + esc(x.id) + '" class="nb-row' + (on ? (onOther ? ' is-on-other' : ' is-on') : '') + (x.done ? ' is-done' : '') + (rolledN(x) && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(date + '/' + x.id) + '">' +
-      '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc(boxSay) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : on ? '<span class="nb-on-i" aria-hidden="true">' + esc(on.name.trim().charAt(0).toUpperCase()) + '</span>' : BOX) + '</button>' +
+    return '<li id="nbr-' + esc(x.id) + '" class="nb-row' + (on ? (onOther ? ' is-on-other' : ' is-on') : '') + (x.done ? ' is-done' : '') + (rolledN(x) && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + (planned(x) ? ' pa-row' : '') + '" data-ln="' + esc(date + '/' + x.id) + '">' +
+      (planRow ? '<span class="nb-box pa-cal" aria-hidden="true">' + AI_CAL + '</span>' :
+      '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc(boxSay) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : on ? '<span class="nb-on-i" aria-hidden="true">' + esc(on.name.trim().charAt(0).toUpperCase()) + '</span>' : BOX) + '</button>') +
       // a tap on the words ticks too (the box is the button for keyboards and screen readers); Undo and the linger cover a slip.
       // Since 5 Nov 2026 the whole text block does (words, amount and the second line): on a phone the buttons sit under
       // it, so a tap a little below the words landed on the second line and did nothing
-      '<span class="nb-main' + (tickOk && !readonly ? '" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '"') + '><span class="nb-t' + (tickOk && !readonly ? ' nb-tt' : '') + '"' + (tickOk && !readonly ? ' data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '') + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + num + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + numSay + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + unsentMark(x) + justStamp(x.id) + '</span>' +
+      '<span class="nb-main' + (tickOk && !readonly ? '" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '"') + '><span class="nb-t' + (tickOk && !readonly ? ' nb-tt' : '') + '"' + (tickOk && !readonly ? ' data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '') + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + num + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + numSay + (planRow ? '<span class="visually-hidden">. Planned for ' + esc(dayFull(date)) + '</span>' : '') + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + unsentMark(x) + justStamp(x.id) + '</span>' +
       // the stamp leads the second line (it never adds a line, so a stamp or a tick moves no row)
       metaHTML(on ? ['<b class="nb-on">' + (onMine(x) && !shared() ? 'You\'re on it' : esc(on.name) + ' on it') + '</b>'] : [], by, x.done ? 'Recorded by ' + (x.doneBy || '') : '') + '</span>' + (onBtn || star || link || del ? '<span class="nb-acts">' + onBtn + star + link + del + ((del || keep) && !readonly ? moreBtn(x, keep) : '') + '</span>' : '') + '</li>';
   }
@@ -5197,7 +5267,9 @@
      amount meant Remove and writing the line again. */
   // the ⋯ stays on today's lines for anyone ticked for Add, ticked or not, so a tick never moves the rows below (20 Oct 2026);
   // Change amount and Move to section are only on open lines
-  function lineMenuOk(x, date) { return can('add') && !!x && !x.deleted && !x.fn && date === dayNow(); }
+  function lineMenuOk(x, date) { return can('add') && !!x && !x.deleted && !x.fn && (date === dayNow() || date > dayNow() && planned(x) && planOK()); }
+  // a line planned for a later day: only the admin changes it before its day (the rules hold the same)
+  function planLocked(x, date) { return !!x && planned(x) && date > dayNow() && !planOK(); }
   function lineFixOk(x, date) { return lineMenuOk(x, date) && !x.done && !x.ordered; }
   // the admin wastage log and transfers report: an amount changed after it was logged says what it was before and who
   // changed it ("changed from 2 kg by Sam")
@@ -5727,7 +5799,8 @@
       var name = sec === FNCOL ? FNS : sec || (board ? 'No section' : ''), out;
       if (sec === TONIGHT) out = (fin && !board ? (finUsed = true, fin) : '') + '<div class="nb-hd nb-hd-tonight"><span>Tonight, for tomorrow</span><span>' + live.length + '</span></div><p class="nb-sd nb-tonight-sd">On tomorrow\'s list. Tick here if it gets done tonight.</p>' +
         '<ul class="nb-rows nb-tmr">' + rows.map(function (x) { return rowHTML(x, date, false, (lineSec(x) ? '<span class="nb-also">' + esc(lineSec(x)) + '</span>' : '') + alsoHTML(x, lineSec(x), twins)); }).join('') + '</ul>';
-      else out = (name ? '<div class="nb-hd"><span>' + esc(name) + '</span>' + secBar(live) + '<span>' + live.filter(function (x) { return x.done; }).length + '/' + live.length + '</span></div>' : '') +
+      // a later day has nothing ticked yet: its sections say how many lines are planned, with no bar (17 Nov 2026)
+      else out = (name ? '<div class="nb-hd"><span>' + esc(name) + '</span>' + (date > dayNow() ? '<span>' + live.length + (live.length === 1 ? ' line' : ' lines') + '</span>' : secBar(live) + '<span>' + live.filter(function (x) { return x.done; }).length + '/' + live.length + '</span>') + '</div>' : '') +
         '<ul class="nb-rows">' + rows.map(function (x) { return rowHTML(x, date, false, alsoHTML(x, sec === FNCOL ? FNS : sec, twins)); }).join('') + '</ul>';
       return board ? '<section class="wb-col" aria-label="' + esc(sec === TONIGHT ? 'Tonight, for tomorrow' : name) + '">' + out + '</section>' : out;
     }).join('');
@@ -5962,17 +6035,31 @@
     var flags = closeoutHTML(S.itemsState === 'offline' ? null : dayL, S.date) + wNoteHTML();
     S.startN = startNums(dayL);
     var sideH = sideHTML(today, flags);
-    var add = can('add') && S.date === today ?
+    /* A later day (head chef, 17 Nov 2026: the mix; docs/prep-ahead-options/brief.md): the admin plans lines on it from the
+       day after tomorrow up to 4 weeks ahead, with the same add sheet named for the day; everyone else reads them. It is
+       one page (no Handy: nothing is ticked before the day), its count says what is planned, in graphite, and a note at
+       the top says whose plan it is and when staff see it. */
+    var tmr = shift(today, 1), later = S.date > today, planHere = planDayOk(S.date) && planOK();
+    var planN = later ? S.items.filter(function (x) { return planned(x) && !x.deleted; }).length : 0;
+    var seeOn = S.date === tmr ? 'tomorrow' : 'on ' + dayName(S.date);
+    var planNote = !later ? '' : planHere || planN && planOK() ? '<p class="pa-for">Planned ahead for <b>' + esc(dayFull(S.date)) + '</b>. Staff see these lines ' + esc(seeOn) + ', not before.</p>' :
+      planN ? '<p class="pa-for">Planned ahead by the head chef for <b>' + esc(dayFull(S.date)) + '</b>. Only the head chef adds or changes lines on a later day. Staff see them ' + esc(seeOn) + '.</p>' : '';
+    var add = can('add') && (S.date === today || planHere) ?
       '<form class="nb-add" data-p-form="add">' +
-      '<div class="nb-add-row"><label class="visually-hidden" for="p-text">Prep item</label><input id="p-text" class="nb-in nb-in-text" data-k="p-text" enterkeyhint="done" autocomplete="off" autocapitalize="sentences" placeholder="Write a new line..." maxlength="160" value="' + esc(S.text) + '">' +
+      '<div class="nb-add-row"><label class="visually-hidden" for="p-text">Prep item</label><input id="p-text" class="nb-in nb-in-text" data-k="p-text" enterkeyhint="done" autocomplete="off" autocapitalize="sentences" placeholder="' + (planHere ? esc('Write a line for ' + dayName(S.date) + '...') : 'Write a new line...') + '" maxlength="160" value="' + esc(S.text) + '">' +
       '<div class="nb-sugg nb-sgl" id="p-sugg">' + suggestHTML() + '</div>' +
       '<div id="ps-hint" class="ps-hint" aria-live="polite">' + psHintHTML() + '</div>' +
       '<label class="visually-hidden" for="p-section">Section</label><input id="p-section" class="nb-in nb-in-sec" data-k="p-section" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(S.section || (S.secTyped ? '' : mySec())) + '">' +
       '<label class="visually-hidden" for="p-qty">Amount to make</label><input id="p-qty" class="nb-in nb-in-qty" data-k="p-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount to make" maxlength="40" value="' + esc(S.qty) + '">' +
-      '<button type="submit" class="nb-addbtn">Add</button></div>' + justHTML('p') + secChipsHTML('p-section', S.section || (S.secTyped ? '' : mySec())) + '<div class="w-pick nb-units" id="p-units">' + unitChipsHTML('p', S.qty) + '</div><div class="nb-sugg nb-qs" id="p-qsugg">' + qtyChipsHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + (S.quickChips ? '<div class="nb-qadd"><span class="nb-ql">Quick add</span><div class="nb-usual">' + S.quickChips + '</div></div>' : '') + '</form>' : '';
+      '<button type="submit" class="nb-addbtn">Add</button></div>' + justHTML('p') + secChipsHTML('p-section', S.section || (S.secTyped ? '' : mySec())) + '<div class="w-pick nb-units" id="p-units">' + unitChipsHTML('p', S.qty) + '</div><div class="nb-sugg nb-qs" id="p-qsugg">' + qtyChipsHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + (S.quickChips && !later ? '<div class="nb-qadd"><span class="nb-ql">Quick add</span><div class="nb-usual">' + S.quickChips + '</div></div>' : '') + '</form>' : '';
     // no form (another day, or read only): the reason sits at the foot of the list, and there is no Add a line
-    var addNote = add ? '' : S.date !== today ? '<p class="hint">You are looking at ' + esc(dayName(S.date)) + '. Lines are added on Today only.</p>' : '<p class="hint">You can read the book but not write in it. Ask the head chef if that is wrong.</p>';
-    var todayEmpty = !live.length && S.itemsState === 'ok' ? '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet.</p>' : '';
+    // (tomorrow is written tonight, on today's list; beyond 4 weeks nothing is planned; a later day's note is at the top)
+    var addNote = add ? '' : S.date === tmr ? '<p class="hint">Tomorrow\'s list is written tonight, on today\'s list.' + (planOK() ? ' Planning ahead starts with ' + esc(dayName(shift(today, 2))) + '.' : '') + '</p>' :
+      later ? (planOK() ? '<p class="hint">Lines can be planned up to 4 weeks ahead.</p>' : '') :
+      S.date !== today ? '<p class="hint">You are looking at ' + esc(dayName(S.date)) + '. Lines are added on Today only.</p>' : '<p class="hint">You can read the book but not write in it. Ask the head chef if that is wrong.</p>';
+    // "today", "yesterday" in a sentence, a weekday as it is ("Nothing written for Saturday yet.")
+    var dw = S.date === today || S.date === tmr || S.date === shift(today, -1) ? dayName(S.date).toLowerCase() : dayName(S.date);
+    var todayEmpty = !live.length && S.itemsState === 'ok' ? '<p class="nb-empty">' + (later ? 'Nothing planned for ' : 'Nothing written for ') + esc(dw) + ' yet.</p>' : '';
     if (!S.items.length && S.itemsState === 'loading') todayEmpty = inkWait('Loading the prep list...', 'prep', 4);
     if (live.length && doneN === live.length && !S.tab) todayEmpty = finOk(live, doneN, today) ? finHTML(doneN, live.length, tmrN) : '<p class="nb-empty">Everything ' + (tmrN ? 'for today' : 'on this list') + ' is ticked off. See Done today under Handy.</p>';
     if (S.itemsState === 'ok' && S.tab && !live.some(function (x) { return inTab(x) && (!x.done || lingers(x)); })) {
@@ -5980,20 +6067,25 @@
       var secDone = secPage(dayL, S.date);
       todayEmpty = '<p class="nb-empty"' + (secDone ? ' data-fin-sec="' + esc(secDone.done + (secDone.next ? '\n' + secDone.next : '')) + '"' : '') + '>Nothing left to do in ' + esc(S.tab === FN_TAB ? 'Functions' : S.tab) + '. Ticked lines are under Done today in Handy.</p>';
     }
-    if (!S.tab && !daily.length && fnLive.length && S.itemsState === 'ok') todayEmpty = '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet. Function platters are on the Functions tab.</p>';
+    if (!S.tab && !daily.length && fnLive.length && S.itemsState === 'ok') todayEmpty = '<p class="nb-empty">' + (later ? 'Nothing planned for ' : 'Nothing written for ') + esc(dw) + ' yet. Function platters are on the Functions tab.</p>';
     // no signal and this day not loaded yet: the note first, then only the lines this phone wrote since (listSnap)
     var offNote = S.itemsState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     if (offNote) todayEmpty = '';
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
       // Done today sits behind the count (3 Nov 2026, work pages redesign A): a tap on "3 of 13 done" goes to it
-      tmWrap(S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : doneN ? '<button type="button" class="nb-prog nb-progbtn" data-p="donejump" aria-label="' + doneN + ' of ' + live.length + ' done. Show Done today">' + doneN + ' of ' + live.length + ' done</button>' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>', S.date, tmrN && S.tab !== FN_TAB ? '\u00b7 ' + tmrN + ' for tomorrow' : '') + (add ? dockBtn('nb-addline', 'write', 'Add a line') : '') + '</header>' +
+      (later ? (S.itemsState === 'ok' ? '<div class="nb-pw"><div class="nb-prog pa-n">' + (planN ? planN + (planN === 1 ? ' line planned' : ' lines planned') : 'Nothing planned') + '</div></div>' : '') :
+      tmWrap(S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : doneN ? '<button type="button" class="nb-prog nb-progbtn" data-p="donejump" aria-label="' + doneN + ' of ' + live.length + ' done. Show Done today">' + doneN + ' of ' + live.length + ' done</button>' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>', S.date, tmrN && S.tab !== FN_TAB ? '\u00b7 ' + tmrN + ' for tomorrow' : '')) + (add ? dockBtn('nb-addline', 'write', planHere ? 'Add to ' + (S.date <= shift(today, 6) ? dayName(S.date) : dayAbbr(S.date)) : 'Add a line') : '') + '</header>' +
       (S.itemsState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' : '') +
       // the finished words go above tomorrow's lines when there are some (pageBody()), else where they always were
-      '<div class="nb-body">' + (flags ? '<div class="nb-lc">' + flags + '</div>' : '') + offNote + (S.tab === FN_TAB ? fnGone : '') + (tmrN && /nb-fin|nb-empty/.test(todayEmpty) ? pageBody(S.items, S.date, false, todayEmpty) : pageBody(S.items, S.date) + todayEmpty) + '</div>' +
+      '<div class="nb-body">' + planNote + (flags ? '<div class="nb-lc">' + flags + '</div>' : '') + offNote + (S.tab === FN_TAB ? fnGone : '') + (tmrN && /nb-fin|nb-empty/.test(todayEmpty) ? pageBody(S.items, S.date, false, todayEmpty) : pageBody(S.items, S.date) + todayEmpty) + '</div>' +
       (addNote || removed.length && can('del') ? '<div class="nb-foot">' + addNote + (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div>' : '') + '</section>';
     // the add form as a sheet (3 Nov 2026), drawn with the page from S.pLog like Log waste, so a redraw keeps what is typed
-    var pSheet = add && S.pLog ? '<div class="sheet-bg" data-p="p-log-close"></div><div class="sheet p-sheet" role="dialog" aria-modal="true" aria-labelledby="p-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="p-log-h">Add to prep</h3>' + add +
+    var pSheet = add && S.pLog ? '<div class="sheet-bg" data-p="p-log-close"></div><div class="sheet p-sheet" role="dialog" aria-modal="true" aria-labelledby="p-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="p-log-h">' + (planHere ? esc('Add to ' + dayAbbr(S.date)) : 'Add to prep') + '</h3>' +
+      (planHere ? '<p class="pa-for">For <b>' + esc(dayFull(S.date)) + '</b>. Not on today\'s list.</p>' : '') + add +
       (!can('del') ? '<p class="hint nb-who">Wrote the wrong thing? Undo it straight away, or ask the head chef or a sous chef to remove it.</p>' : '') + '<button type="button" class="btn sheet-x" data-p="p-log-close">Close</button></div>' : '';
+    // the add sheet was open for a day it can no longer write to (midnight came, the admin's sign-in lapsed): it closes,
+    // its words stay in the box, and the slip says why (council findings 9 and 17)
+    if (S.pLog && !add && S.pLogDay && S.pLogDay !== today) setTimeout(function () { if (S.pLog && S.pLogDay !== dayNow() && !(S.pLogDay === S.date && planDayOk(S.date) && planOK())) addDayOk(); }, 0);
     if (wall) {
       // the board has no Handy page: everything ticked off says so on the board itself
       if (live.length && doneN === live.length && !fnOpen) todayEmpty = '<p class="nb-empty">Everything on today\'s list is ticked off.</p>';
@@ -6012,7 +6104,7 @@
       '<button type="button" class="chip" data-p="today" aria-pressed="' + (S.date === today) + '">Today</button>' +
       '<label class="visually-hidden" for="p-day">Pick a date</label><input id="p-day" type="date" class="p-dateinput" data-k="p-day" value="' + esc(S.date) + '">' +
       '<button type="button" class="chip" data-p="day" data-d="1" aria-label="Forward one day">&rsaquo;</button></div>' : '') +
-      badgeStrip() + (psEnabled() && S.date === today ? psViewHTML() : '') + '<div class="nb-wrap"><div class="nb">' + left + '<div class="nb-spine" aria-hidden="true"></div>' + right + '</div>' + tabHTML + '</div>' + pSheet;
+      badgeStrip() + (psEnabled() && S.date === today ? psViewHTML() : '') + '<div class="nb-wrap' + (later ? ' nb-later' : '') + '"><div class="nb">' + left + '<div class="nb-spine" aria-hidden="true"></div>' + right + '</div>' + tabHTML + '</div>' + pSheet;
   }
   function ago(ms) {
     if (!ms) return 'never';
@@ -8368,6 +8460,7 @@ if (list.length) sg('oreg', 's');
      is typed; Close keeps it too. Back, Escape and the dimmed page close them. which: 'log', 'rv' or 'xlog'. */
   function wSheetOpen(which) {
     S.wLog = which === 'log'; S.wRv = which === 'rv'; S.xLog = which === 'xlog'; S.pLog = which === 'plog'; S.oLog = which === 'olog';
+    S.pLogDay = S.pLog ? S.date : '';   // the day the add sheet writes to (addDayOk())
     justOpenAt = Date.now();
     ovPush('wsheet', function () { wSheetClose(true); });
     draw(); focusK(which === 'log' ? 'w-text' : which === 'rv' ? 'w-ra' : which === 'plog' ? 'p-text' : which === 'olog' ? 'o-text' : S.xf.venue ? 'tr-text' : 'tr-venue');
@@ -16353,6 +16446,8 @@ if (list.length) sg('oreg', 's');
     mount: function (name, root, sel) {
       wire();
       S.name = name; S.root = root;
+      // Prep always opens on Today (17 Nov 2026): a chef who left it on another day never adds there by habit
+      if (name === 'prep' && S.date !== dayNow()) { S.date = dayNow(); S.tab = ''; watchItems(); }
       try { finFresh(); } catch (e) {}
       if (name === 'guides') { if ((sel || '') !== S.gSel) S.gSel = sel || ''; }
       if (name === 'admin') S.draft = S.draft || null;

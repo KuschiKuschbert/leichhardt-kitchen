@@ -64,7 +64,7 @@ Supplier splits (9 November 2026) add an optional immutable `historyFrom`/`histo
 | Included section | Scope |
 | --- | --- |
 | `config` | `config/main`, including people, canonical permission ids and settings. |
-| `days`, `orders`, `waste`, `wasteReviews`, `transfers`, `deliveries` | The selected window, normally 45 Queensland calendar days, with original document ids, values and attribution. |
+| `days`, `orders`, `waste`, `wasteReviews`, `transfers`, `deliveries` | The selected window, normally 45 Queensland calendar days, with original document ids, values and attribution. `days` also holds the next 28 days' prep lines, the ones the admin planned ahead (18 Nov 2026). |
 | `cleaningTasks`, `cleaningDone`, `cleaningActions` | Every immutable cleaning schedule revision, including closed and archived revisions; occurrence states and immutable action snapshots within the selected day window. Original task ids, methods, required checks, revision links, versions, worker, recorder, verification and server action time are preserved. The manual Backup button includes all three whole collections. |
 | `activity`, `sections`, `learned`, `ordlearned`, `learnlog`, `summary`, `analysis`, `analysisDaily`, `references`, `training`, `proofHistory`, `dashwatch`, `misses`, `views` | Included activity, analysis, source links, assessment and correction records, and the admin Dashboard's watch list. |
 | `prepStandards` | Every active and archived prep standard, with section identity, aliases, minimum, unit, instructions, recipe link, author and version. Always read fresh, regardless of the dated window or reuse. |

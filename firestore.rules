@@ -488,12 +488,24 @@ service cloud.firestore {
             && (!changed.hasAny(removals) || capability(d.by, 'del') || ownAddUndo())
             && (changed.hasOnly(ticks.concat(removals).concat(['by'])) || capability(d.by, 'add'));
       }
+      // Lines planned for a later day (head chef, 17 Nov 2026: admin only; docs/prep-ahead-options/brief.md). Before
+      // nearDay()'s window opens (the day after tomorrow and later), a line marked plan, before or after the write, is
+      // written only by the admin. Checked on ordinary writes only (the admin and a function booking's own verified
+      // lines take their own paths, so the largest function batches stay inside the expression budget). Unmarked lines
+      // are as before; on the eve, the line's own day and past days the usual capabilities hold.
+      function laterDay(day) {
+        return day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+          && request.time < timestamp.date(int(day.split('-')[0]), int(day.split('-')[1]), int(day.split('-')[2])) - duration.value(2055, 'm');
+      }
+      function planKept(day) {
+        return (request.resource.data.get('plan', '') == '' && (resource == null || resource.data.get('plan', '') == '')) || !laterDay(day);
+      }
       // Evaluate capability eligibility before the session chain, so a function exception does not spend that chain twice.
       // Function batches retain their own narrow booking revision authority; ordinary permitted lines add no booking lookup.
       function prepLineWrite(day, id, creating) {
         let admin = isAdmin();
         let priority = statusEffectFirst(creating);
-        return (admin || (priority && functionLine(day, id, true)) || (prepCapabilities(creating) && staff()) || (!priority && request.resource.data.get('fn', '') != '' && functionLine(day, id, true))) && lineOk(160) && lineWho(day, admin) && prepAttribution(admin)
+        return (admin || (priority && functionLine(day, id, true)) || (prepCapabilities(creating) && staff() && planKept(day)) || (!priority && request.resource.data.get('fn', '') != '' && functionLine(day, id, true))) && lineOk(160) && lineWho(day, admin) && prepAttribution(admin)
           && (creating ? proofLineCreate(admin) : tickKept(admin) && proofLineKept('prep', day, id, admin) && onStampOk());
       }
       allow read: if kitchenRead();
