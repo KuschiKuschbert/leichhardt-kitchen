@@ -32,7 +32,7 @@ export default {
     },
     {
       title: 'The recipe form',
-      say: ['The parts of the recipe sit along the top.', 'Ingredients opens first. Type in a row to change an amount or a name.', 'Save stays grey until something changes.'],
+      say: ['Each part of the recipe has its own tab.', 'Ingredients opens first. Type in a row to change an amount or a name.', 'Save stays grey until something changes.'],
       do: [
         { s: 0, d: 0.3, circle: '.mg-chs', opts: { pad: 4 } },
         { s: 1, d: 1.6, circle: '.mg-ing >> nth=0', opts: { pad: 6 } },

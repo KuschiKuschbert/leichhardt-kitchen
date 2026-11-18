@@ -34,7 +34,7 @@ export default {
       say: ['Every card starts with its allergens, and where they come from.', 'A question mark means check the supplier label.'],
       do: [
         { s: 0, d: 0.3, circle: '#r-allergens', opts: { pad: 3 } },
-        { s: 1, d: 0.3, circle: '#r-allergens .tag.maybe, #r-allergens [class*="maybe"]', opts: { pad: 5 } }
+        { s: 1, d: 0.3, circle: '#r-allergens .tag.maybe', opts: { pad: 5 } }
       ]
     },
     {
@@ -47,12 +47,12 @@ export default {
     },
     {
       title: 'Batch recipes',
-      say: ['An underlined ingredient is made in house. Tap it to open its own recipe.', 'The trail at the top takes you back.'],
+      say: ['An underlined ingredient has its own recipe card. Tap it to open it.', 'The trail at the top takes you back.'],
       do: [
         { s: 0, d: 0.3, circle: '.ing .ilink', opts: { pad: 5 } },
         { s: 0, d: 2.6, tap: '.ing .ilink' },
-        { s: 1, d: 0.2, circle: 'nav.trail', opts: { pad: 4 } },
-        { s: 1, d: 1.6, tap: 'nav.trail a[href="#/r/burger"]' }
+        { s: 1, d: 0.2, circle: 'nav.trail, nav.crumbs', opts: { pad: 4 } },
+        { s: 1, d: 1.6, tap: 'nav a[href="#/r/burger"]' }
       ]
     },
     {
@@ -60,7 +60,7 @@ export default {
       say: ['The method is step by step.', 'Tap a step to tick it off as you go.'],
       do: [
         { s: 0, d: 0.2, scroll: '#r-steps' },
-        { s: 0, d: 1.0, underline: '#r-steps ~ * .step >> nth=0' },
+        { s: 0, d: 1.0, underline: '[data-act="tick"] >> nth=0' },
         { s: 1, d: 0.4, tap: '[data-act="tick"] >> nth=0' },
         { s: 1, d: 1.4, tap: '[data-act="tick"] >> nth=1' }
       ]
