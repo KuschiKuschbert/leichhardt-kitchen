@@ -180,14 +180,25 @@ export async function compose(browser, board, cut, o) {
 export async function joinAll(browser, made, cut, out) {
   const list = out.replace(/\.mp4$/, '.txt'), meta = out.replace(/\.mp4$/, '.chapters.txt');
   fs.writeFileSync(list, made.map(m => "file '" + m.mp4 + "'").join('\n') + '\n');
-  let at = 0;
-  const chapters = [';FFMETADATA1', 'title=The Kitchen Book, start to finish'];
+  let at = 0, n = 0;
+  const chapters = [';FFMETADATA1', 'title=The Kitchen Book, start to finish'], subs = [];
+  const toSec = x => { const [h, m, r] = x.split(':'); return +h * 3600 + +m * 60 + parseFloat(r.replace(',', '.')); };
   for (const m of made) {
     const d = parseFloat(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', m.mp4]).toString());
     chapters.push('[CHAPTER]', 'TIMEBASE=1/1000', 'START=' + Math.round(at * 1000), 'END=' + Math.round((at + d) * 1000), 'title=' + m.board.title);
+    // each page's captions, moved to where the page starts in the whole video
+    const srt = m.mp4.replace(/\.mp4$/, '.srt');
+    if (fs.existsSync(srt)) {
+      fs.readFileSync(srt, 'utf8').trim().split(/\n\s*\n/).forEach(block => {
+        const lines = block.split('\n'), times = (lines[1] || '').split(' --> ');
+        if (times.length !== 2) return;
+        subs.push((++n) + '\n' + srtTime(at + toSec(times[0])) + ' --> ' + srtTime(at + toSec(times[1])) + '\n' + lines.slice(2).join('\n'));
+      });
+    }
     at += d;
   }
   fs.writeFileSync(meta, chapters.join('\n') + '\n');
+  fs.writeFileSync(out.replace(/\.mp4$/, '.srt'), subs.join('\n\n') + '\n');
   ff(['-f', 'concat', '-safe', '0', '-i', list, '-i', meta, '-map_metadata', '1', '-map_chapters', '1', '-c', 'copy', '-movflags', '+faststart', out], out);
   return out;
 }
