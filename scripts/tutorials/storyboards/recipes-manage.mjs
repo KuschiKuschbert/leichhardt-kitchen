@@ -76,14 +76,14 @@ export default {
     },
     {
       title: 'New recipe',
-      say: ['Back on the list, New recipe starts an empty card.', 'Cards to come lists the cards still to write.', 'Make this card opens one with its name filled in.'],
+      say: ['Back on the list, New recipe starts an empty card.', 'Cards to come lists the cards still to write.', 'Make this card opens a new recipe for it.', 'Write the name staff see, then fill in each part.'],
       do: [
         { s: 0, go: '#/manage' },
         { s: 0, d: 1.3, circle: 'a[href="#/manage/new"]', opts: { pad: 6 } },
         { s: 1, d: 0.1, run: into('[data-mg="kind"][data-v="tocome"]') },
         { s: 1, d: 0.8, tap: '[data-mg="kind"][data-v="tocome"]', run: settled },
         { s: 2, d: 0.3, tap: '#mg-results a[href^="#/manage/new/"] >> nth=0', run: settled },
-        { s: 2, d: 1.8, circle: '#mg-name', opts: { pad: 6 } }
+        { s: 3, d: 0.3, circle: '#mg-name', opts: { pad: 6 } }
       ]
     }
   ]
