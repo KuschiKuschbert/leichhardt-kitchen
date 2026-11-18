@@ -1,0 +1,1280 @@
+{
+  "source": "origin/main cd0bb25, tests/fake stand-in, made-up data, Preview (design markup laid over the Implemented app)",
+  "sums": {
+    "smith": [
+      {
+        "name": "Party pies",
+        "kind": "order",
+        "n": 40,
+        "u": "pieces",
+        "read": true,
+        "q": "10ea",
+        "plat": 4,
+        "by": {
+          "Smith 50th": [
+            "4 Aussie"
+          ]
+        },
+        "amt": "40 pieces",
+        "who": "4 Aussie"
+      },
+      {
+        "name": "Sausage rolls",
+        "kind": "order",
+        "n": 40,
+        "u": "pieces",
+        "read": true,
+        "q": "10ea",
+        "plat": 4,
+        "by": {
+          "Smith 50th": [
+            "4 Aussie"
+          ]
+        },
+        "amt": "40 pieces",
+        "who": "4 Aussie"
+      },
+      {
+        "name": "Spring rolls, duck",
+        "kind": "order",
+        "n": 32,
+        "u": "pieces",
+        "read": true,
+        "q": "8ea",
+        "plat": 4,
+        "by": {
+          "Smith 50th": [
+            "4 Aussie"
+          ]
+        },
+        "amt": "32 pieces",
+        "who": "4 Aussie"
+      },
+      {
+        "name": "Meatballs",
+        "kind": "order",
+        "n": 80,
+        "u": "pieces",
+        "read": true,
+        "q": "20ea",
+        "plat": 4,
+        "by": {
+          "Smith 50th": [
+            "4 Aussie"
+          ]
+        },
+        "amt": "80 pieces",
+        "who": "4 Aussie"
+      },
+      {
+        "name": "Quiche",
+        "kind": "order",
+        "n": 32,
+        "u": "pieces",
+        "read": true,
+        "q": "8ea",
+        "plat": 4,
+        "by": {
+          "Smith 50th": [
+            "4 Aussie"
+          ]
+        },
+        "amt": "32 pieces",
+        "who": "4 Aussie"
+      },
+      {
+        "name": "Tomato sauce",
+        "kind": "made",
+        "n": 12,
+        "u": "pieces",
+        "read": true,
+        "q": "2ea",
+        "plat": 6,
+        "by": {
+          "Smith 50th": [
+            "4 Aussie",
+            "2 Vege"
+          ]
+        },
+        "amt": "12 pots",
+        "who": "4 Aussie, 2 Vege"
+      },
+      {
+        "name": "BBQ sauce",
+        "kind": "check",
+        "n": 12,
+        "u": "pieces",
+        "read": true,
+        "q": "2ea",
+        "plat": 6,
+        "by": {
+          "Smith 50th": [
+            "4 Aussie",
+            "2 Vege"
+          ]
+        },
+        "amt": "12 pots",
+        "who": "4 Aussie, 2 Vege"
+      },
+      {
+        "name": "Sweet chilli sauce",
+        "kind": "check",
+        "n": 12,
+        "u": "pieces",
+        "read": true,
+        "q": "2ea",
+        "plat": 6,
+        "by": {
+          "Smith 50th": [
+            "4 Aussie",
+            "2 Vege"
+          ]
+        },
+        "amt": "12 pots",
+        "who": "4 Aussie, 2 Vege"
+      },
+      {
+        "name": "Spring rolls, vege",
+        "kind": "order",
+        "n": 20,
+        "u": "pieces",
+        "read": true,
+        "q": "10ea",
+        "plat": 2,
+        "by": {
+          "Smith 50th": [
+            "2 Vege"
+          ]
+        },
+        "amt": "20 pieces",
+        "who": "2 Vege"
+      },
+      {
+        "name": "Quiche, vege",
+        "kind": "order",
+        "n": 16,
+        "u": "pieces",
+        "read": true,
+        "q": "8ea",
+        "plat": 2,
+        "by": {
+          "Smith 50th": [
+            "2 Vege"
+          ]
+        },
+        "amt": "16 pieces",
+        "who": "2 Vege"
+      },
+      {
+        "name": "Mozzarella sticks",
+        "kind": "order",
+        "n": 20,
+        "u": "pieces",
+        "read": true,
+        "q": "10ea",
+        "plat": 2,
+        "by": {
+          "Smith 50th": [
+            "2 Vege"
+          ]
+        },
+        "amt": "20 pieces",
+        "who": "2 Vege"
+      },
+      {
+        "name": "Pumpkin arancini",
+        "kind": "order",
+        "n": 20,
+        "u": "pieces",
+        "read": true,
+        "q": "10ea",
+        "plat": 2,
+        "by": {
+          "Smith 50th": [
+            "2 Vege"
+          ]
+        },
+        "amt": "20 pieces",
+        "who": "2 Vege"
+      },
+      {
+        "name": "Fried haloumi",
+        "kind": "order",
+        "n": 16,
+        "u": "pieces",
+        "read": true,
+        "q": "8ea",
+        "plat": 2,
+        "by": {
+          "Smith 50th": [
+            "2 Vege"
+          ]
+        },
+        "amt": "16 pieces",
+        "who": "2 Vege"
+      },
+      {
+        "name": "Garlic bread",
+        "kind": "order",
+        "n": 2,
+        "u": "whole",
+        "read": true,
+        "q": "1 whole",
+        "plat": 2,
+        "by": {
+          "Smith 50th": [
+            "2 Vege"
+          ]
+        },
+        "amt": "2 whole",
+        "who": "2 Vege"
+      },
+      {
+        "name": "Prosciutto",
+        "kind": "order",
+        "n": 240,
+        "u": "g",
+        "read": true,
+        "q": "80 g",
+        "plat": 3,
+        "by": {
+          "Smith 50th": [
+            "3 Antipasto"
+          ]
+        },
+        "amt": "240 g",
+        "who": "3 Antipasto"
+      },
+      {
+        "name": "Leg ham",
+        "kind": "order",
+        "n": 300,
+        "u": "g",
+        "read": true,
+        "q": "100 g",
+        "plat": 3,
+        "by": {
+          "Smith 50th": [
+            "3 Antipasto"
+          ]
+        },
+        "amt": "300 g",
+        "who": "3 Antipasto"
+      },
+      {
+        "name": "Salami",
+        "kind": "order",
+        "n": 300,
+        "u": "g",
+        "read": true,
+        "q": "100 g",
+        "plat": 3,
+        "by": {
+          "Smith 50th": [
+            "3 Antipasto"
+          ]
+        },
+        "amt": "300 g",
+        "who": "3 Antipasto"
+      },
+      {
+        "name": "Cheese selection",
+        "kind": "order",
+        "n": 900,
+        "u": "g",
+        "read": true,
+        "q": "300 g total",
+        "plat": 3,
+        "by": {
+          "Smith 50th": [
+            "3 Antipasto"
+          ]
+        },
+        "amt": "900 g",
+        "who": "3 Antipasto"
+      },
+      {
+        "name": "Crackers",
+        "kind": "order",
+        "n": 1.5,
+        "u": "packs",
+        "read": true,
+        "q": "1/2 pkt",
+        "plat": 3,
+        "by": {
+          "Smith 50th": [
+            "3 Antipasto"
+          ]
+        },
+        "amt": "1.5 packs",
+        "who": "3 Antipasto"
+      },
+      {
+        "name": "Sourdough",
+        "kind": "order",
+        "n": 3,
+        "u": "cobs",
+        "read": true,
+        "q": "1 cob",
+        "plat": 3,
+        "by": {
+          "Smith 50th": [
+            "3 Antipasto"
+          ]
+        },
+        "amt": "3 cobs",
+        "who": "3 Antipasto"
+      },
+      {
+        "name": "Dried fruit salad",
+        "kind": "order",
+        "n": 360,
+        "u": "g",
+        "read": true,
+        "q": "120gm",
+        "plat": 3,
+        "by": {
+          "Smith 50th": [
+            "3 Antipasto"
+          ]
+        },
+        "amt": "360 g",
+        "who": "3 Antipasto"
+      },
+      {
+        "name": "Tomato relish",
+        "kind": "made",
+        "n": 6,
+        "u": "pieces",
+        "read": true,
+        "q": "2ea",
+        "plat": 3,
+        "by": {
+          "Smith 50th": [
+            "3 Antipasto"
+          ]
+        },
+        "amt": "6 pots",
+        "who": "3 Antipasto"
+      },
+      {
+        "name": "Caramelised onions",
+        "kind": "check",
+        "n": 6,
+        "u": "pieces",
+        "read": true,
+        "q": "2ea",
+        "plat": 3,
+        "by": {
+          "Smith 50th": [
+            "3 Antipasto"
+          ]
+        },
+        "amt": "6 pots",
+        "who": "3 Antipasto"
+      },
+      {
+        "name": "Basil pesto",
+        "kind": "check",
+        "n": 6,
+        "u": "pieces",
+        "read": true,
+        "q": "2ea",
+        "plat": 3,
+        "by": {
+          "Smith 50th": [
+            "3 Antipasto"
+          ]
+        },
+        "amt": "6 pots",
+        "who": "3 Antipasto"
+      }
+    ],
+    "lee": [
+      {
+        "name": "Party pies",
+        "kind": "order",
+        "n": 20,
+        "u": "pieces",
+        "read": true,
+        "q": "10ea",
+        "plat": 2,
+        "by": {
+          "Lee 21st": [
+            "2 Aussie"
+          ]
+        },
+        "amt": "20 pieces",
+        "who": "2 Aussie"
+      },
+      {
+        "name": "Sausage rolls",
+        "kind": "order",
+        "n": 20,
+        "u": "pieces",
+        "read": true,
+        "q": "10ea",
+        "plat": 2,
+        "by": {
+          "Lee 21st": [
+            "2 Aussie"
+          ]
+        },
+        "amt": "20 pieces",
+        "who": "2 Aussie"
+      },
+      {
+        "name": "Spring rolls, duck",
+        "kind": "order",
+        "n": 16,
+        "u": "pieces",
+        "read": true,
+        "q": "8ea",
+        "plat": 2,
+        "by": {
+          "Lee 21st": [
+            "2 Aussie"
+          ]
+        },
+        "amt": "16 pieces",
+        "who": "2 Aussie"
+      },
+      {
+        "name": "Meatballs",
+        "kind": "order",
+        "n": 40,
+        "u": "pieces",
+        "read": true,
+        "q": "20ea",
+        "plat": 2,
+        "by": {
+          "Lee 21st": [
+            "2 Aussie"
+          ]
+        },
+        "amt": "40 pieces",
+        "who": "2 Aussie"
+      },
+      {
+        "name": "Quiche",
+        "kind": "order",
+        "n": 16,
+        "u": "pieces",
+        "read": true,
+        "q": "8ea",
+        "plat": 2,
+        "by": {
+          "Lee 21st": [
+            "2 Aussie"
+          ]
+        },
+        "amt": "16 pieces",
+        "who": "2 Aussie"
+      },
+      {
+        "name": "Tomato sauce",
+        "kind": "made",
+        "n": 4,
+        "u": "pieces",
+        "read": true,
+        "q": "2ea",
+        "plat": 2,
+        "by": {
+          "Lee 21st": [
+            "2 Aussie"
+          ]
+        },
+        "amt": "4 pots",
+        "who": "2 Aussie"
+      },
+      {
+        "name": "BBQ sauce",
+        "kind": "check",
+        "n": 4,
+        "u": "pieces",
+        "read": true,
+        "q": "2ea",
+        "plat": 2,
+        "by": {
+          "Lee 21st": [
+            "2 Aussie"
+          ]
+        },
+        "amt": "4 pots",
+        "who": "2 Aussie"
+      },
+      {
+        "name": "Sweet chilli sauce",
+        "kind": "check",
+        "n": 8,
+        "u": "pieces",
+        "read": true,
+        "q": "2ea",
+        "plat": 4,
+        "by": {
+          "Lee 21st": [
+            "2 Aussie",
+            "2 Yumcha"
+          ]
+        },
+        "amt": "8 pots",
+        "who": "2 Aussie, 2 Yumcha"
+      },
+      {
+        "name": "Dim sims",
+        "kind": "order",
+        "n": 20,
+        "u": "pieces",
+        "read": true,
+        "q": "10ea",
+        "plat": 2,
+        "by": {
+          "Lee 21st": [
+            "2 Yumcha"
+          ]
+        },
+        "amt": "20 pieces",
+        "who": "2 Yumcha"
+      },
+      {
+        "name": "Spring rolls, cocktail",
+        "kind": "order",
+        "n": 20,
+        "u": "pieces",
+        "read": true,
+        "q": "10ea",
+        "plat": 2,
+        "by": {
+          "Lee 21st": [
+            "2 Yumcha"
+          ]
+        },
+        "amt": "20 pieces",
+        "who": "2 Yumcha"
+      },
+      {
+        "name": "Wontons",
+        "kind": "order",
+        "n": 20,
+        "u": "pieces",
+        "read": true,
+        "q": "10ea",
+        "plat": 2,
+        "by": {
+          "Lee 21st": [
+            "2 Yumcha"
+          ]
+        },
+        "amt": "20 pieces",
+        "who": "2 Yumcha"
+      },
+      {
+        "name": "Karage chicken",
+        "kind": "order",
+        "n": 20,
+        "u": "pieces",
+        "read": true,
+        "q": "10ea",
+        "plat": 2,
+        "by": {
+          "Lee 21st": [
+            "2 Yumcha"
+          ]
+        },
+        "amt": "20 pieces",
+        "who": "2 Yumcha"
+      },
+      {
+        "name": "Prawn crackers",
+        "kind": "order",
+        "n": 0,
+        "u": "",
+        "read": false,
+        "q": "handful",
+        "plat": 2,
+        "by": {
+          "Lee 21st": [
+            "2 Yumcha"
+          ]
+        },
+        "amt": "",
+        "who": "2 Yumcha"
+      },
+      {
+        "name": "Sweet soy sauce",
+        "kind": "check",
+        "n": 4,
+        "u": "pieces",
+        "read": true,
+        "q": "2ea",
+        "plat": 2,
+        "by": {
+          "Lee 21st": [
+            "2 Yumcha"
+          ]
+        },
+        "amt": "4 pots",
+        "who": "2 Yumcha"
+      }
+    ],
+    "both": [
+      {
+        "name": "Party pies",
+        "kind": "order",
+        "n": 60,
+        "u": "pieces",
+        "read": true,
+        "q": "10ea",
+        "plat": 6,
+        "by": {
+          "Smith 50th": [
+            "4 Aussie"
+          ],
+          "Lee 21st": [
+            "2 Aussie"
+          ]
+        },
+        "amt": "60 pieces",
+        "who": "Smith 50th: 4 Aussie · Lee 21st: 2 Aussie"
+      },
+      {
+        "name": "Sausage rolls",
+        "kind": "order",
+        "n": 60,
+        "u": "pieces",
+        "read": true,
+        "q": "10ea",
+        "plat": 6,
+        "by": {
+          "Smith 50th": [
+            "4 Aussie"
+          ],
+          "Lee 21st": [
+            "2 Aussie"
+          ]
+        },
+        "amt": "60 pieces",
+        "who": "Smith 50th: 4 Aussie · Lee 21st: 2 Aussie"
+      },
+      {
+        "name": "Spring rolls, duck",
+        "kind": "order",
+        "n": 48,
+        "u": "pieces",
+        "read": true,
+        "q": "8ea",
+        "plat": 6,
+        "by": {
+          "Smith 50th": [
+            "4 Aussie"
+          ],
+          "Lee 21st": [
+            "2 Aussie"
+          ]
+        },
+        "amt": "48 pieces",
+        "who": "Smith 50th: 4 Aussie · Lee 21st: 2 Aussie"
+      },
+      {
+        "name": "Meatballs",
+        "kind": "order",
+        "n": 120,
+        "u": "pieces",
+        "read": true,
+        "q": "20ea",
+        "plat": 6,
+        "by": {
+          "Smith 50th": [
+            "4 Aussie"
+          ],
+          "Lee 21st": [
+            "2 Aussie"
+          ]
+        },
+        "amt": "120 pieces",
+        "who": "Smith 50th: 4 Aussie · Lee 21st: 2 Aussie"
+      },
+      {
+        "name": "Quiche",
+        "kind": "order",
+        "n": 48,
+        "u": "pieces",
+        "read": true,
+        "q": "8ea",
+        "plat": 6,
+        "by": {
+          "Smith 50th": [
+            "4 Aussie"
+          ],
+          "Lee 21st": [
+            "2 Aussie"
+          ]
+        },
+        "amt": "48 pieces",
+        "who": "Smith 50th: 4 Aussie · Lee 21st: 2 Aussie"
+      },
+      {
+        "name": "Tomato sauce",
+        "kind": "made",
+        "n": 16,
+        "u": "pieces",
+        "read": true,
+        "q": "2ea",
+        "plat": 8,
+        "by": {
+          "Smith 50th": [
+            "4 Aussie",
+            "2 Vege"
+          ],
+          "Lee 21st": [
+            "2 Aussie"
+          ]
+        },
+        "amt": "16 pots",
+        "who": "Smith 50th: 4 Aussie, 2 Vege · Lee 21st: 2 Aussie"
+      },
+      {
+        "name": "BBQ sauce",
+        "kind": "check",
+        "n": 16,
+        "u": "pieces",
+        "read": true,
+        "q": "2ea",
+        "plat": 8,
+        "by": {
+          "Smith 50th": [
+            "4 Aussie",
+            "2 Vege"
+          ],
+          "Lee 21st": [
+            "2 Aussie"
+          ]
+        },
+        "amt": "16 pots",
+        "who": "Smith 50th: 4 Aussie, 2 Vege · Lee 21st: 2 Aussie"
+      },
+      {
+        "name": "Sweet chilli sauce",
+        "kind": "check",
+        "n": 20,
+        "u": "pieces",
+        "read": true,
+        "q": "2ea",
+        "plat": 10,
+        "by": {
+          "Smith 50th": [
+            "4 Aussie",
+            "2 Vege"
+          ],
+          "Lee 21st": [
+            "2 Aussie",
+            "2 Yumcha"
+          ]
+        },
+        "amt": "20 pots",
+        "who": "Smith 50th: 4 Aussie, 2 Vege · Lee 21st: 2 Aussie, 2 Yumcha"
+      },
+      {
+        "name": "Spring rolls, vege",
+        "kind": "order",
+        "n": 20,
+        "u": "pieces",
+        "read": true,
+        "q": "10ea",
+        "plat": 2,
+        "by": {
+          "Smith 50th": [
+            "2 Vege"
+          ]
+        },
+        "amt": "20 pieces",
+        "who": "Smith 50th: 2 Vege"
+      },
+      {
+        "name": "Quiche, vege",
+        "kind": "order",
+        "n": 16,
+        "u": "pieces",
+        "read": true,
+        "q": "8ea",
+        "plat": 2,
+        "by": {
+          "Smith 50th": [
+            "2 Vege"
+          ]
+        },
+        "amt": "16 pieces",
+        "who": "Smith 50th: 2 Vege"
+      },
+      {
+        "name": "Mozzarella sticks",
+        "kind": "order",
+        "n": 20,
+        "u": "pieces",
+        "read": true,
+        "q": "10ea",
+        "plat": 2,
+        "by": {
+          "Smith 50th": [
+            "2 Vege"
+          ]
+        },
+        "amt": "20 pieces",
+        "who": "Smith 50th: 2 Vege"
+      },
+      {
+        "name": "Pumpkin arancini",
+        "kind": "order",
+        "n": 20,
+        "u": "pieces",
+        "read": true,
+        "q": "10ea",
+        "plat": 2,
+        "by": {
+          "Smith 50th": [
+            "2 Vege"
+          ]
+        },
+        "amt": "20 pieces",
+        "who": "Smith 50th: 2 Vege"
+      },
+      {
+        "name": "Fried haloumi",
+        "kind": "order",
+        "n": 16,
+        "u": "pieces",
+        "read": true,
+        "q": "8ea",
+        "plat": 2,
+        "by": {
+          "Smith 50th": [
+            "2 Vege"
+          ]
+        },
+        "amt": "16 pieces",
+        "who": "Smith 50th: 2 Vege"
+      },
+      {
+        "name": "Garlic bread",
+        "kind": "order",
+        "n": 2,
+        "u": "whole",
+        "read": true,
+        "q": "1 whole",
+        "plat": 2,
+        "by": {
+          "Smith 50th": [
+            "2 Vege"
+          ]
+        },
+        "amt": "2 whole",
+        "who": "Smith 50th: 2 Vege"
+      },
+      {
+        "name": "Prosciutto",
+        "kind": "order",
+        "n": 240,
+        "u": "g",
+        "read": true,
+        "q": "80 g",
+        "plat": 3,
+        "by": {
+          "Smith 50th": [
+            "3 Antipasto"
+          ]
+        },
+        "amt": "240 g",
+        "who": "Smith 50th: 3 Antipasto"
+      },
+      {
+        "name": "Leg ham",
+        "kind": "order",
+        "n": 300,
+        "u": "g",
+        "read": true,
+        "q": "100 g",
+        "plat": 3,
+        "by": {
+          "Smith 50th": [
+            "3 Antipasto"
+          ]
+        },
+        "amt": "300 g",
+        "who": "Smith 50th: 3 Antipasto"
+      },
+      {
+        "name": "Salami",
+        "kind": "order",
+        "n": 300,
+        "u": "g",
+        "read": true,
+        "q": "100 g",
+        "plat": 3,
+        "by": {
+          "Smith 50th": [
+            "3 Antipasto"
+          ]
+        },
+        "amt": "300 g",
+        "who": "Smith 50th: 3 Antipasto"
+      },
+      {
+        "name": "Cheese selection",
+        "kind": "order",
+        "n": 900,
+        "u": "g",
+        "read": true,
+        "q": "300 g total",
+        "plat": 3,
+        "by": {
+          "Smith 50th": [
+            "3 Antipasto"
+          ]
+        },
+        "amt": "900 g",
+        "who": "Smith 50th: 3 Antipasto"
+      },
+      {
+        "name": "Crackers",
+        "kind": "order",
+        "n": 1.5,
+        "u": "packs",
+        "read": true,
+        "q": "1/2 pkt",
+        "plat": 3,
+        "by": {
+          "Smith 50th": [
+            "3 Antipasto"
+          ]
+        },
+        "amt": "1.5 packs",
+        "who": "Smith 50th: 3 Antipasto"
+      },
+      {
+        "name": "Sourdough",
+        "kind": "order",
+        "n": 3,
+        "u": "cobs",
+        "read": true,
+        "q": "1 cob",
+        "plat": 3,
+        "by": {
+          "Smith 50th": [
+            "3 Antipasto"
+          ]
+        },
+        "amt": "3 cobs",
+        "who": "Smith 50th: 3 Antipasto"
+      },
+      {
+        "name": "Dried fruit salad",
+        "kind": "order",
+        "n": 360,
+        "u": "g",
+        "read": true,
+        "q": "120gm",
+        "plat": 3,
+        "by": {
+          "Smith 50th": [
+            "3 Antipasto"
+          ]
+        },
+        "amt": "360 g",
+        "who": "Smith 50th: 3 Antipasto"
+      },
+      {
+        "name": "Tomato relish",
+        "kind": "made",
+        "n": 6,
+        "u": "pieces",
+        "read": true,
+        "q": "2ea",
+        "plat": 3,
+        "by": {
+          "Smith 50th": [
+            "3 Antipasto"
+          ]
+        },
+        "amt": "6 pots",
+        "who": "Smith 50th: 3 Antipasto"
+      },
+      {
+        "name": "Caramelised onions",
+        "kind": "check",
+        "n": 6,
+        "u": "pieces",
+        "read": true,
+        "q": "2ea",
+        "plat": 3,
+        "by": {
+          "Smith 50th": [
+            "3 Antipasto"
+          ]
+        },
+        "amt": "6 pots",
+        "who": "Smith 50th: 3 Antipasto"
+      },
+      {
+        "name": "Basil pesto",
+        "kind": "check",
+        "n": 6,
+        "u": "pieces",
+        "read": true,
+        "q": "2ea",
+        "plat": 3,
+        "by": {
+          "Smith 50th": [
+            "3 Antipasto"
+          ]
+        },
+        "amt": "6 pots",
+        "who": "Smith 50th: 3 Antipasto"
+      },
+      {
+        "name": "Dim sims",
+        "kind": "order",
+        "n": 20,
+        "u": "pieces",
+        "read": true,
+        "q": "10ea",
+        "plat": 2,
+        "by": {
+          "Lee 21st": [
+            "2 Yumcha"
+          ]
+        },
+        "amt": "20 pieces",
+        "who": "Lee 21st: 2 Yumcha"
+      },
+      {
+        "name": "Spring rolls, cocktail",
+        "kind": "order",
+        "n": 20,
+        "u": "pieces",
+        "read": true,
+        "q": "10ea",
+        "plat": 2,
+        "by": {
+          "Lee 21st": [
+            "2 Yumcha"
+          ]
+        },
+        "amt": "20 pieces",
+        "who": "Lee 21st: 2 Yumcha"
+      },
+      {
+        "name": "Wontons",
+        "kind": "order",
+        "n": 20,
+        "u": "pieces",
+        "read": true,
+        "q": "10ea",
+        "plat": 2,
+        "by": {
+          "Lee 21st": [
+            "2 Yumcha"
+          ]
+        },
+        "amt": "20 pieces",
+        "who": "Lee 21st: 2 Yumcha"
+      },
+      {
+        "name": "Karage chicken",
+        "kind": "order",
+        "n": 20,
+        "u": "pieces",
+        "read": true,
+        "q": "10ea",
+        "plat": 2,
+        "by": {
+          "Lee 21st": [
+            "2 Yumcha"
+          ]
+        },
+        "amt": "20 pieces",
+        "who": "Lee 21st: 2 Yumcha"
+      },
+      {
+        "name": "Prawn crackers",
+        "kind": "order",
+        "n": 0,
+        "u": "",
+        "read": false,
+        "q": "handful",
+        "plat": 2,
+        "by": {
+          "Lee 21st": [
+            "2 Yumcha"
+          ]
+        },
+        "amt": "",
+        "who": "Lee 21st: 2 Yumcha"
+      },
+      {
+        "name": "Sweet soy sauce",
+        "kind": "check",
+        "n": 4,
+        "u": "pieces",
+        "read": true,
+        "q": "2ea",
+        "plat": 2,
+        "by": {
+          "Lee 21st": [
+            "2 Yumcha"
+          ]
+        },
+        "amt": "4 pots",
+        "who": "Lee 21st: 2 Yumcha"
+      }
+    ]
+  },
+  "rows": {
+    "baseline@390": {
+      "rows": 2
+    },
+    "baseline@1280": {
+      "rows": 7
+    },
+    "design-a/closed@390": {
+      "rows": 2
+    },
+    "design-a/closed@1280": {
+      "rows": 6
+    },
+    "design-a/open@390": {
+      "rows": null
+    },
+    "design-a/open@1280": {
+      "rows": null
+    },
+    "design-b/open@390": {
+      "rows": null
+    },
+    "design-b/open@1280": {
+      "rows": null
+    },
+    "design-b/after@390": {
+      "rows": 3
+    },
+    "design-b/after@1280": {
+      "rows": 5
+    },
+    "design-c/orders@390": {
+      "rows": 2
+    },
+    "design-c/orders@1280": {
+      "rows": 7
+    },
+    "baseline/staff@390": {
+      "rows": 4
+    },
+    "design-b/after-staff@390": {
+      "rows": 6
+    },
+    "design-c/supplier@390": {
+      "chips": 5
+    },
+    "design-c/supplier@1280": {
+      "chips": 5
+    },
+    "design-mix/closed@390": {
+      "rows": 2
+    },
+    "design-mix/closed@768": {
+      "rows": 6
+    },
+    "design-mix/closed@1280": {
+      "rows": 6
+    },
+    "design-mix/open@390": {
+      "rows": null,
+      "tick": {
+        "tickTop": 0,
+        "tickH": 44,
+        "titleH": 132,
+        "toggleH": 44,
+        "foldH": 1494
+      }
+    },
+    "design-mix/open@768": {
+      "rows": null,
+      "tick": {
+        "tickTop": 0,
+        "tickH": 44,
+        "titleH": 58,
+        "toggleH": 44,
+        "foldH": 1225
+      }
+    },
+    "design-mix/open@1280": {
+      "rows": null,
+      "tick": {
+        "tickTop": 0,
+        "tickH": 44,
+        "titleH": 27,
+        "toggleH": 44,
+        "foldH": 1225
+      }
+    },
+    "design-mix/open-lee@390": {
+      "rows": 0,
+      "tick": {
+        "tickTop": 0,
+        "tickH": 44,
+        "titleH": 106,
+        "toggleH": 44,
+        "foldH": 1494
+      }
+    },
+    "design-mix/open-lee@768": {
+      "rows": 1,
+      "tick": {
+        "tickTop": 0,
+        "tickH": 44,
+        "titleH": 58,
+        "toggleH": 44,
+        "foldH": 1225
+      }
+    },
+    "design-mix/open-lee@1280": {
+      "rows": 1,
+      "tick": {
+        "tickTop": 0,
+        "tickH": 44,
+        "titleH": 27,
+        "toggleH": 44,
+        "foldH": 1225
+      }
+    },
+    "built/closed@390": {
+      "rows": 2
+    },
+    "built/closed@768": {
+      "rows": 6
+    },
+    "built/closed@1280": {
+      "rows": 6
+    },
+    "built/open@390": {
+      "rows": null,
+      "tick": {
+        "tickTop": 0,
+        "toggleH": 44
+      }
+    },
+    "built/open@768": {
+      "rows": null,
+      "tick": {
+        "tickTop": 0,
+        "toggleH": 44
+      }
+    },
+    "built/open@1280": {
+      "rows": null,
+      "tick": {
+        "tickTop": 0,
+        "toggleH": 44
+      }
+    }
+  }
+}

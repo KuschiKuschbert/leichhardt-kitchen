@@ -46,10 +46,16 @@
   still shows, under "Other dishes", so nothing goes missing. Batch recipes and components are not
   on the guest menu, so they sit after the menu sections.
   Specials always shows first. The head chef's Special switch in Manage Recipes puts a dish in it.
+
+  fnStock (just below) names the function platter items the kitchen keeps in stock instead of ordering them for each
+  function: the sauces and dips (head chef, 18 Nov 2026). On a function's line on the order list, What it needs lists
+  them under "Check you have", not "to order". A platter item with a link to a house recipe is made here: it shows
+  under "Made here, on Prep". Every other platter item is to order. Add or take out a name to change it.
 */
 window.LK_DATA = {
   updated: '17 November 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
+  fnStock: ['BBQ sauce', 'Sweet chilli sauce', 'Sweet soy sauce', 'Caramelised onions', 'Basil pesto'],
   menuOrder: [
     { title: 'Specials', ids: ['chicken-adobo', 'lamb-nachos', 'buffalo-corn-cob-with-cashew-crumb', 'philly-potato'] },
     { title: "Snackin' Plates", ids: ['poutine', 'beetroot-bites', 'brisket-cob', 'wings', 'haloumi-tacos', 'pork-belly-bites', 'calamari', 'riblets', 'garlic-bread', 'bacon-cheese-bread', 'chips-snack'] },
