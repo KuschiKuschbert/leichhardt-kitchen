@@ -2,6 +2,21 @@
 // nobody signed in and no device choice made yet (profile: null), the kitchen PIN already on it. Set up as the kitchen's
 // shared screen, Ann picks her name and types her PIN (2222, shown only as dots), starts an order, and the screen locks
 // after 10 minutes on its own with her work kept behind her PIN. Same shape as storyboards/prep.mjs.
+// The device question is a modal dialog, drawn above everything else on the page, the chalk layer too: the chalk
+// layer goes into a see-through popover opened after it, so it sits on top of the dialog
+const lift = page => page.evaluate(() => {
+  const g = document.getElementById('lk-chalk').closest('svg');
+  let p = document.getElementById('lk-chalk-top');
+  if (!p) {
+    p = document.createElement('div'); p.id = 'lk-chalk-top'; p.setAttribute('popover', 'manual');
+    p.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;max-width:none;max-height:none;margin:0;border:0;padding:0;background:transparent;overflow:visible;pointer-events:none';
+    document.documentElement.appendChild(p);
+  }
+  p.appendChild(g);
+  if (p.matches(':popover-open')) p.hidePopover();
+  p.showPopover();
+});
+
 export default {
   id: 'sign-in',
   title: 'Signing in',
@@ -18,7 +33,8 @@ export default {
       title: 'This device',
       say: ['The first time you open the book, it asks how this device is used.', 'My own device is just for you. Your PIN unlocks it each day after 04:00.', 'A shared kitchen screen is for the whole team. It locks after 10 minutes.'],
       do: [
-        { s: 0, d: 0.4, underline: '#lk-device-title' },
+        // after the first mark, once the chalk layer is on the page
+        { s: 0, d: 0.4, underline: '#lk-device-title', run: lift },
         { s: 1, d: 0.3, circle: '[data-device="personal"]', opts: { pad: 4 } },
         { s: 2, d: 0.3, circle: '[data-device="shared"]', opts: { pad: 4 } }
       ]
@@ -60,13 +76,13 @@ export default {
     },
     {
       title: 'Walk away',
-      say: ['Say you start an order, then get called away.', 'After 10 minutes on its own, a shared screen locks itself.'],
+      say: ['Say you start an order, then get called away.', 'Nobody touches the screen for 10 minutes.', 'So a shared screen locks itself.'],
       do: [
         { s: 0, d: 0.2, tap: { phone: '.tabbar a[href="#/orders"]', desktop: '.pnav a[href="#/orders"]' } },
         { s: 0, d: 1.3, tap: '[data-p="o-write"]' },
         { s: 0, d: 2.1, type: ['#o-text', 'Lemons'] },
         // ten minutes and a bit on the page's own clock: the shared screen's idle lock
-        { s: 1, d: 0.8, run: async page => { await page.clock.runFor(11 * 60000); } }
+        { s: 1, d: 0.1, run: async (page, cut, L) => { await page.clock.runFor(11 * 60000); await L.waitFor(page, () => !!document.querySelector('#pf1'), null, 15000).catch(() => {}); } }
       ]
     },
     {

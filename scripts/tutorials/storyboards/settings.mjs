@@ -30,7 +30,7 @@ export default {
     [key('team', day)]: { day, v: 1, at: L.NOW - 3600000, upd: L.NOW - 3600000, by: 'sam',
       on: [{ id: 'ann', sh: 'day', sec: 'larder' }, { id: 'sam', sh: 'day', sec: 'grill' }, { id: 'bo', sh: 'day', sec: 'sauce' }], br: [] }
   },
-  intro: ['Settings.', 'Your own settings, and how this phone or tablet works.'],
+  intro: ['The Settings page.', 'Your own settings, and how this phone or tablet works.'],
   outro: ["That's Settings. Next up, the chef panel."],
   steps: [
     {
@@ -79,12 +79,20 @@ export default {
     },
     {
       title: 'Recipes',
-      say: ['Recipes open with chooses the Pass or Tiles on this phone.', 'Keep the screen on stops the phone sleeping while a recipe is open.'],
+      say: ['Recipes open with chooses the Pass or Tiles on this phone.'],
       do: [
         { s: 0, d: 0.3, tap: row('opens') },
-        { s: 0, d: 1.4, circle: '#st-b-opens .ux-picker-trigger', opts: { pad: 4 } },
-        { s: 1, d: 0.1, only: 'phone', tap: row('keepon') },
-        { s: 1, d: 1.2, only: 'phone', circle: '#st-b-keepon .chips', opts: { pad: 4 } }
+        { s: 0, d: 1.4, circle: '#st-b-opens .ux-picker-trigger', opts: { pad: 4 } }
+      ]
+    },
+    {
+      // a computer does not offer it
+      title: 'Keep screen on',
+      skip: { desktop: true },
+      say: ['Keep the screen on stops the phone sleeping while a recipe is open.'],
+      do: [
+        { s: 0, d: 0.1, tap: row('keepon') },
+        { s: 0, d: 1.2, circle: '#st-b-keepon .chips', opts: { pad: 4 } }
       ]
     },
     {

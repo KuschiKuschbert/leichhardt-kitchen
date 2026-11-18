@@ -9,6 +9,20 @@ const M = createRequire(import.meta.url)('../../../js/functions.js');
 const key = (...p) => ['kitchens', L.PIN].concat(p).join('/');
 const day = L.ymd(new Date(L.NOW));
 const at = (d, hm) => M.kat(d, M.hmMin(hm));
+// The chef hat menu is drawn above everything else on the page, the chalk layer too: the chalk layer goes into a
+// see-through popover opened after it, so it sits on top of the menu
+const lift = page => page.evaluate(() => {
+  const g = document.getElementById('lk-chalk').closest('svg');
+  let p = document.getElementById('lk-chalk-top');
+  if (!p) {
+    p = document.createElement('div'); p.id = 'lk-chalk-top'; p.setAttribute('popover', 'manual');
+    p.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;max-width:none;max-height:none;margin:0;border:0;padding:0;background:transparent;overflow:visible;pointer-events:none';
+    document.documentElement.appendChild(p);
+  }
+  p.appendChild(g);
+  if (p.matches(':popover-open')) p.hidePopover();
+  p.showPopover();
+});
 // a sheet closed with Escape gives the keyboard ring back to its button: taken off, as a tap would leave it
 const blur = page => page.evaluate(() => document.activeElement && document.activeElement.blur());
 
@@ -113,7 +127,7 @@ export default {
       title: 'Chef hat',
       say: ['The chef hat is your menu: your section, functions, the drinks run, Settings and more.', 'Not you on this phone? Sign out is at the top.'],
       do: [
-        { s: 0, d: 0.2, tap: '.wtop-who' },
+        { s: 0, d: 0.2, tap: '.wtop-who', run: lift },
         { s: 0, d: 1.6, circle: '.wm .wm-grid >> nth=0', opts: { pad: 3 } },
         { s: 1, d: 0.3, circle: '.wm .wm-out', opts: { pad: 3 } },
         { s: 1, d: 2.5, clear: true },
