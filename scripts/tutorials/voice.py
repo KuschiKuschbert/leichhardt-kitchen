@@ -147,17 +147,77 @@ def mix(a):
     sf.write(a.out, out[:int(spec['length'] * RATE)], RATE, subtype='PCM_16')
 
 
+def check(a):
+    """Listens back to every line with a speech-to-text model (faster-whisper) and lists the ones that do not say their words.
+    A cloned voice can drop or mumble words; nobody has to listen to every line to find them. Exits 1 when a line is off."""
+    import difflib
+    import re
+    from faster_whisper import WhisperModel
+    nums = dict(zip('0 1 2 3 4 5 6 7 8 9 10'.split(), 'zero one two three four five six seven eight nine ten'.split()))
+    # the model writes small numbers as digits and cannot hear write from right: neither is a fault in the voice
+    same = dict(nums, right='write', its="it's")
+    words = lambda s: [same.get(w, w) for w in re.sub(r"[^a-z0-9' ]+", ' ', s.lower().replace('-', ' ')).split()]
+    model = WhisperModel(a.model, device='cpu', compute_type='int8')
+    bad = 0
+    import numpy as np
+    import soundfile as sf
+    for ln in json.load(open(a.script)):
+        # read here, at 16 kHz mono, so the model needs no audio decoder of its own (PyAV versions differ)
+        x, sr = sf.read(os.path.join(a.out, ln['id'] + '.wav'), dtype='float32')
+        if x.ndim > 1:
+            x = x.mean(axis=1)
+        if sr != 16000:
+            x = np.interp(np.arange(0, len(x), sr / 16000), np.arange(len(x)), x).astype('float32')
+        segs, _ = model.transcribe(x, language='en', beam_size=5)
+        heard = ' '.join(s.text for s in segs).strip()
+        want = words(spoken(ln['text']))
+        score = difflib.SequenceMatcher(None, want, words(heard)).ratio()
+        ok = score >= a.min
+        bad += not ok
+        print('%s %-6s %.2f  %s%s' % ('ok ' if ok else 'BAD', ln['id'], score, heard, '' if ok else '   (wanted: ' + ln['text'] + ')'))
+    print('%d of %d lines need another take' % (bad, len(json.load(open(a.script)))))
+    sys.exit(1 if bad else 0)
+
+
+def retake(a):
+    """Makes the named lines again with another seed, for a line check() flagged."""
+    import random
+    meta_path = os.path.join(a.out, 'durations.json')
+    meta = json.load(open(meta_path))
+    for i in a.ids.split(','):
+        meta.get('_made', {}).pop(i, None)
+        wav = os.path.join(a.out, i + '.wav')
+        if os.path.exists(wav):
+            os.remove(wav)
+    json.dump(meta, open(meta_path, 'w'), indent=1)
+    try:
+        import torch
+        torch.manual_seed(a.seed or random.randrange(1 << 30))
+    except ImportError:
+        pass
+    say(a)
+
+
 if __name__ == '__main__':
     p = argparse.ArgumentParser()
     sub = p.add_subparsers(dest='cmd', required=True)
-    s = sub.add_parser('say')
-    s.add_argument('--engine', default='kokoro', choices=sorted(ENGINES))
-    s.add_argument('--voice', default='bf_emma')
-    s.add_argument('--speed', type=float, default=1.0)
-    s.add_argument('--script', required=True)
-    s.add_argument('--out', required=True)
+    for name in ('say', 'retake'):
+        s = sub.add_parser(name)
+        s.add_argument('--engine', default='kokoro', choices=sorted(ENGINES))
+        s.add_argument('--voice', default='bf_emma')
+        s.add_argument('--speed', type=float, default=1.0)
+        s.add_argument('--script', required=True)
+        s.add_argument('--out', required=True)
+        if name == 'retake':
+            s.add_argument('--ids', required=True, help='line ids, comma separated')
+            s.add_argument('--seed', type=int, default=0)
     m = sub.add_parser('mix')
     m.add_argument('--cues', required=True)
     m.add_argument('--out', required=True)
+    c = sub.add_parser('check')
+    c.add_argument('--script', required=True)
+    c.add_argument('--out', required=True)
+    c.add_argument('--model', default='base.en')
+    c.add_argument('--min', type=float, default=0.8)
     a = p.parse_args()
-    say(a) if a.cmd == 'say' else mix(a)
+    {'say': say, 'mix': mix, 'check': check, 'retake': retake}[a.cmd](a)

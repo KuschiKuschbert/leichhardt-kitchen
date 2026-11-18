@@ -87,6 +87,21 @@ Other options:
 
 Filming is real time: a 90 second video takes about 90 seconds per cut, plus about a minute to compose.
 
+### Checking the voice by ear, without listening
+
+`voice.py check --script <voice folder>/lines.json --out <voice folder>` reads every line back with a speech-to-text model (faster-whisper `base.en`, in the Kokoro venv). It lists any line that does not say its words, which is how a cloned voice usually goes wrong: a dropped word or a mumble.
+- Small numbers written as digits do not count as mistakes, and neither does write and right.
+- `voice.py retake --ids s04_1,s06_0 ...` (with the same engine and voice as the first take) makes those lines again with a new seed.
+- Run `make.mjs` with `--steps film,compose` after a retake.
+
+### The head chef's own voice
+
+The head chef's recording is on Drive in the Leichhardt folder. It is never in the repo.
+1. Cut it to a clean 15 to 20 seconds: `ffmpeg -ss 1.7 -to 21.9 -i recording.m4a -ac 1 -ar 24000 -af "highpass=f=70,silenceremove=stop_periods=-1:stop_duration=0.45:stop_threshold=-40dB,loudnorm=I=-18:TP=-2" ref.wav`
+2. Make the video with `--engine chatterbox --voice ref.wav --py <Chatterbox venv python>`.
+
+On a 4-core cloud machine Chatterbox takes about 20 seconds for each second of speech, so a 90 second video's voice is about 25 minutes. Run it in the background. Kokoro takes about a second for each second of speech.
+
 After any change to a page, run its storyboard again. The steps use the same selectors as the click tests. If a button moved, the film stops and names it ("nothing visible matches ...").
 
 ## Writing a storyboard

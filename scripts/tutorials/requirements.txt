@@ -4,4 +4,6 @@ torch
 kokoro
 soundfile
 numpy
+# voice.py check: reads each line back to find dropped or mumbled words
+faster-whisper
 en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
