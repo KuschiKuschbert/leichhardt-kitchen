@@ -5908,32 +5908,24 @@
      it for that day on this phone (lk.fnneed: { day: [keys] }, out of date the next day). No reads: today's platter lines
      are on the list already, tomorrow's come from the functions listener (js/functions.js). */
   function fnNeeds() {
-    var today = dayNow(), tmr = shift(today, 1), A = window.LK_AMT, days = {}, hid = fnNeedHidden();
-    if (!A) return [];
+    var today = dayNow(), tmr = shift(today, 1), A = window.LK_AMT, N = window.LK_FN && window.LK_FN.M && window.LK_FN.M.platterNeeds, days = {}, hid = fnNeedHidden();
+    if (!A || !N) return [];
     // fid: the function, so a line added from here is linked to it (fnFor) and leaves the list once it is all sent
-    function addPlatter(day, fname, rid, plat, fid) {
-      var r = recipeById(rid); if (!r || !(plat > 0)) return;
-      var d = days[day] = days[day] || { day: day, items: {} };
-      (r.ingredients || []).forEach(function (i) {
-        if (!i || !i.name) return;
-        var a = A.parse(i.q), k = dupKey(i.name) + '|' + (a ? a.u : '?');
-        if (hid[day] && hid[day].indexOf(k) >= 0) return;
-        var e = d.items[k] = d.items[k] || { k: k, name: i.name, link: i.link || '', u: a ? a.u : '', n: 0, read: !!a, fns: {}, fids: {} };
-        if (a) e.n += a.n * plat;
-        e.fns[fname] = (e.fns[fname] || 0) + plat;
-        if (fid) e.fids[fid] = 1;
-      });
-    }
+    function addPlatter(day, fname, rid, plat, fid) { if (recipeById(rid) && plat > 0) (days[day] = days[day] || []).push({ fid: fid, name: fname, rid: rid, n: plat }); }
     S.items.filter(function (x) { return x.fn && !x.deleted && x.recipe; }).forEach(function (x) {
-      var a = A.parse(x.qty), f = window.LK_FN ? (window.LK_FN.list() || []).filter(function (y) { return y.id === x.fn; })[0] : null;
+      var a = A.parse(x.qty), f = (window.LK_FN.list() || []).filter(function (y) { return y.id === x.fn; })[0];
       if (f && window.LK_FN.allSent && window.LK_FN.allSent(f)) return;   // all sent: its platters need nothing more
       addPlatter(today, f ? f.name : 'Function', x.recipe, a ? a.n : 0, x.fn);
     });
-    if (window.LK_FN) (window.LK_FN.list() || []).filter(function (f) { return f.status === 'confirmed' && f.date === tmr; }).forEach(function (f) {
+    (window.LK_FN.list() || []).filter(function (f) { return f.status === 'confirmed' && f.date === tmr; }).forEach(function (f) {
       (f.lines || []).forEach(function (l) { addPlatter(tmr, f.name, l.rid, +l.qty || 0, f.id); });
     });
+    // the same sum as the What it needs fold on Orders (LK_FN.M.platterNeeds); Prep lists every item, house recipes too
+    function key(name, a) { return dupKey(name) + '|' + (a ? a.u : '?'); }
     return [today, tmr].filter(function (d) { return days[d]; }).map(function (d) {
-      var xs = Object.keys(days[d].items).map(function (k) { return days[d].items[k]; }).sort(function (a, b) { return a.name < b.name ? -1 : 1; });
+      var xs = N(days[d], recipeById, A, key).items.filter(function (e) { return !(hid[d] && hid[d].indexOf(e.k) >= 0); })
+        .map(function (e) { return { k: e.k, name: e.name, link: e.link, u: e.u, n: e.n, read: e.read, fns: e.fns, fids: e.fids }; })
+        .sort(function (a, b) { return a.name < b.name ? -1 : 1; });
       return { day: d, items: xs };
     });
   }
@@ -7962,7 +7954,11 @@
     return t ? Object.assign(t, { held: true }) : null;
   }
   // what the tags on the selected day's lines say, to draw again only when one would read differently (below)
-  function fnOrdSig() { return (S.ordLines || []).map(function (x) { var t = fnOrdRoom(x); return t ? [x.id, t.kind, t.day, t.od, !!t.held].join(':') : ''; }).join('|'); }
+  function fnOrdSig() {
+    return (S.ordLines || []).map(function (x) { var t = fnOrdRoom(x); return t ? [x.id, t.kind, t.day, t.od, !!t.held].join(':') : ''; }).join('|') +
+      // and what the What it needs folds would say: a booking's platters changed, or its line now matches it (fnoFn())
+      '#' + fnoGroup().map(function (g) { return g.x.id + ':' + (g.f.lines || []).map(function (l) { return l.rid + '*' + l.qty; }).join(','); }).join('|');
+  }
   /* The functions listener (js/functions.js) can answer after the order list is drawn. The tag is part of its row as
      drawn: the page is drawn again only when a tag would read differently, as Prep does for the platters it needs
      (fnNeedSig). That is the first answer just after the page opens, or a function cancelled or moved, which also
@@ -7985,18 +7981,93 @@
       when: t.kind === 'late' ? '<span class="o-fn-when' + cls + '"' + aria + '><span class="o-fn-for">For\u00a0' + whole(t.day) + '</span>' + (canBrowse() ? ' · order day was ' + whole(t.od) : '') + '</span>' : ''
     };
   }
+  /* What it needs (head chef chose the council's mix, 18 Nov 2026, docs/fn-order-ingredients-options/brief.md): a
+     function's own stock line on today's order list, still to tick, opens to what its platters need, added up from the
+     platter cards with the sum Prep's What the platters need uses (LK_FN.M.platterNeeds). Items to order come first,
+     each with its total. When other functions' stock lines are open on the list too, each of them opens to the same one
+     order: the split under each total, and the rule says to tick every line. A request already on the list for the same
+     item says so by name and is never added in. The sauces and dips the kitchen keeps (LK_DATA.fnStock) are Check you
+     have; house recipes are Made here, on Prep. Only a line whose words are still the booking's own (orderBody()) opens:
+     a line written before a change keeps its Used in links. Closed by default (S.fnoOpen, one line at a time, in memory);
+     nothing is read or written. */
+  function fnoFn(x) {
+    var fns = window.LK_FN;
+    if (!x || x.ordered || x.deleted || x._leaving || x._fnOff || !fns || !fns.M || !fns.M.platterNeeds) return null;
+    var t = fnOrdTag(x), f = t && (fns.list() || []).filter(function (g) { return g.id === t.id; })[0];
+    return f && x.text === fns.M.orderBody(f, f.id).text ? f : null;
+  }
+  // every open function stock line on the selected day's list: one order. self: a ticked line drawn with its fold
+  // (fnoHeld()), counted with the lines it was ordered with, so its fold reads as it did
+  function fnoGroup(self) { return (S.ordLines || []).map(function (x) { var f = x === self ? fnoHeld(x) : fnoFn(x); return f ? { x: x, f: f } : null; }).filter(Boolean); }
+  // a ticked line that had the fold keeps it, so a tick (or its Undo) moves no row: closed, its room stays, empty and
+  // silent, like the Orders tag; open, it stays open until its own button closes it
+  function fnoHeld(x) { return x && x.ordered && !x.deleted ? fnoFn(Object.assign({}, x, { ordered: false })) : null; }
+  function fnoNeeds(group) {
+    var M = window.LK_FN.M, ents = [];
+    group.forEach(function (g) { (g.f.lines || []).forEach(function (l) { ents.push({ fid: g.f.id, name: g.f.name, rid: l.rid, n: +l.qty || 0, pname: M.short(l.name) }); }); });
+    return M.platterNeeds(ents, recipeById, window.LK_AMT, function (name, a) { return dupKey(name) + '|' + (a ? a.u : '?'); },
+      ((window.LK_DATA || {}).fnStock || []).map(function (n) { return String(n).toLowerCase(); }));
+  }
+  // an amount to say: one clear amount, or a range from the cards ("36 to 48 pieces"); '' is amount to come.
+  // plain: a count of pots of sauce ("2ea" on the card) says the number only
+  function fnoAmt(e, plain) {
+    var A = window.LK_AMT, u = plain && e.u === 'pieces' ? '' : e.u;
+    if (e.read) return A.say(e.n, u);
+    return e.ranged && e.lo > 0 ? A.say(e.lo, '') + ' to ' + A.say(e.n, u) : '';
+  }
+  // requests for the same item already on the list (not a function's own line): "1 box (Sam)", "Low (Ann)"
+  function fnoAsked(name) {
+    var k = dupKey(name);
+    return k ? (S.ordLines || []).filter(function (x) { return !x.ordered && !x.deleted && !x._leaving && !x._fnOff && !/^fn-/.test(String(x.root || x.id || '')) && dupKey(x.text) === k; }).map(function (x) {
+      var w = x.qty || (needOf(x) ? O_NEED[needOf(x)] : 'no amount'), by = x.rolled ? x.origBy : x.addedBy;
+      return w + (by ? ' (' + by + ')' : '');
+    }) : [];
+  }
+  function fnoHTML(x, f, held) {
+    var group = fnoGroup(held ? x : null);
+    if (!group.some(function (g) { return g.x.id === x.id; })) group = [{ x: x, f: f }];
+    var res = fnoNeeds(group), many = group.length > 1, open = S.fnoOpen === x.id;
+    var buy = res.items.filter(function (e) { return e.kind === 'order'; }), chk = res.items.filter(function (e) { return e.kind === 'check'; }), made = res.items.filter(function (e) { return e.kind === 'made'; });
+    var label = (!many ? 'What it needs: ' : group.length === 2 ? 'What both functions need: ' : 'What the ' + group.length + ' functions need: ') +
+      (buy.length ? buy.length + ' to order' : chk.length + made.length + ' to check');
+    var bid = 'fno-' + x.id;
+    var hide = held && !open;
+    var btn = '<button type="button" class="fnn-sum fno-sum' + (hide ? ' fno-held' : '') + '" data-p="fno-fold" data-id="' + esc(x.id) + '" aria-expanded="' + open + '" aria-controls="' + esc(bid) + '"' +
+      (hide ? ' aria-hidden="true" tabindex="-1"' : '') + '>' + esc(label) + ' <span aria-hidden="true">' + (open ? '▴' : '▾') + '</span></button>';
+    if (!open) return btn;
+    var plats = function (p) { return p.plats.map(function (q) { return q[0] + ' ' + q[1]; }).join(', '); };
+    var split = function (e) {
+      var ps = group.map(function (g) { return e.per[g.f.id]; }).filter(Boolean);
+      if (!many) return ps.map(plats).join(', ');
+      if (ps.length === 1) return ps[0].name + ' only (' + plats(ps[0]) + ')';
+      return ps.map(function (p) { return (fnoAmt({ read: e.read, ranged: e.ranged, n: p.n, lo: p.lo, u: e.u }) || 'amount to come') + ' ' + p.name; }).join(' · ') + ' (' + ps.map(plats).join(' · ') + ')';
+    };
+    var asked = function (e, amt) { var l = fnoAsked(e.name); return l.length ? '<span class="fnn-w fno-ask">Also on the list: ' + esc(l.join(', ')) + '. Not counted in ' + (amt ? 'the ' + esc(amt) : 'this') + '.</span>' : ''; };
+    var said = function (xs) { return xs.map(function (e) { var a = fnoAmt(e, true), l = fnoAsked(e.name); return esc(e.name + (a ? ' ' + a : '')) + (l.length ? ' (also on the list: ' + esc(l.join(', ')) + ')' : ''); }).join(', '); };
+    var names = group.map(function (g) { return g.f.name; });
+    var rule = many ? 'One order for ' + andList(names) + '. Once all ' + buy.length + ' are ordered, tick ' + (group.length === 2 ? 'both lines' : 'all ' + group.length + ' lines') + '.'
+      : 'Tick this line once all ' + buy.length + ' are ordered.';
+    return btn + '<div class="fno-box" id="' + esc(bid) + '">' + (buy.length ? '<p class="fno-rule">' + esc(rule) + '</p><ul class="fnn">' + buy.map(function (e) {
+      var amt = fnoAmt(e);
+      return '<li><span class="fnn-t"><strong>' + esc(e.name) + '</strong> ' + (amt ? '<span class="fnn-q">' + esc(amt) + '</span>' : '<span class="fnn-tc">amount to come</span>') +
+        '<span class="fnn-w">' + esc(split(e)) + '</span>' + asked(e, amt) + '</span></li>';
+    }).join('') + '</ul>' : '') +
+      (chk.length ? '<p class="fno-note"><strong>Check you have:</strong> ' + said(chk) + '</p>' : '') +
+      (made.length ? '<p class="fno-note"><strong>Made here, on Prep:</strong> ' + said(made) + '</p>' : '') +
+      (res.missing.length ? '<p class="fno-note"><strong>No card in the book:</strong> ' + esc(res.missing.join(', ')) + '. Check what they need by hand.</p>' : '') + '</div>';
+  }
   function ordRow(x) {
     if (x._leaving) return fnLeavingRow(x, x.date);
-    var canTick = canBrowse() && !x.deleted, keep = lineMenuOk(x, x.date), fr = fnOrdRoom(x), fo = fnOrdHTML(fr);
+    var canTick = canBrowse() && !x.deleted, keep = lineMenuOk(x, x.date), fr = fnOrdRoom(x), fo = fnOrdHTML(fr), fnf = fnoFn(x), fnh = fnf ? null : fnoHeld(x);
     // an ordered line keeps the ⋯'s room with nothing in it, so ticking Ordered moves no row
     var held = '<span class="nb-more nb-more-held' + (keep ? ' nb-more-fix' : '') + '" aria-hidden="true"></span>';
     var by = x._fnOff ? '<b class="nb-offw">' + esc('Not needed: ' + x._fnOff.name + ' all sent ' + clock(x._fnOff.at)) + '</b>' : x.ordered && x.orderedBy ? 'Ordered by ' + esc(x.orderedBy) + (x.orderedAt ? ' ' + clock(x.orderedAt) : '') : (x.rolled ? (x.origBy ? 'from ' + esc(x.origBy) : '') : x.addedBy ? esc(x.addedBy) + (canBrowse() && x.addedAt ? ' ' + clock(x.addedAt) : '') : '');
-    return '<li class="nb-row' + (x.ordered ? ' is-done' : '') + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '">' +
+    return '<li class="nb-row' + (x.ordered ? ' is-done' : '') + (x.deleted ? ' is-removed' : '') + (fnf || fnh ? ' fno-row' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '">' +
       '<button type="button" class="nb-box" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="' + !!x.ordered + '" aria-label="' + esc('Ordered: ' + x.text) + '"' + (canTick ? '' : ' disabled') + '>' + (x.ordered ? TICK : BOX) + '</button>' +
       '<span class="nb-main"><span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + needTag(x) + fo.tag +
       // Not sent on the words' line, before Used in (a line of its own, .o-used), so its room never adds a line
-      (canBrowse() && rolledN(x) && !fr ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + unsentMark(x) + justStamp(x.id) + recipeChips(x) + '</span>' +
-      fo.when + metaHTML([], by) + '</span>' +
+      (canBrowse() && rolledN(x) && !fr ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + unsentMark(x) + justStamp(x.id) + (fnf || fnh ? '' : recipeChips(x)) + '</span>' +
+      fo.when + (fnf ? fnoHTML(x, fnf) : fnh ? fnoHTML(x, fnh, true) : '') + metaHTML([], by) + '</span>' +
       (canBrowse() && can('del') ? (x.deleted || !x.ordered ? moreBtn(x, keep) : held) : keep ? (x.ordered ? held : moreBtn(x, true)) : '') +
       (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
       (canBrowse() && can('del') && x.deleted ? '<button type="button" class="p-x" data-p="orestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') + '</li>';
@@ -13133,6 +13204,8 @@ if (list.length) sg('oreg', 's');
     if (a === 'fnneed') { fnNeedAdd(i); return; }
     if (a === 'fnneed-hide') { fnNeedHide(i); return; }
     if (a === 'fnneed-fold') { S.fnnOpen = !S.fnnOpen; draw(); focusSel('[data-p="fnneed-fold"]'); return; }
+    // What it needs on a function's order line: one open at a time, in memory; the focus stays on the same button
+    if (a === 'fno-fold') { S.fnoOpen = S.fnoOpen === id ? '' : id; draw(); focusSel('[data-p="fno-fold"][data-id="' + CSS.escape(id) + '"]'); return; }
     if (a === 'heat') { S.heat = el.getAttribute('data-v'); draw(); return; }
     if (a === 'calm') { S.calM = el.getAttribute('data-v'); draw(); return; }
     if (a === 'jump') { adminJumpTo(el.getAttribute('data-v')); return; }

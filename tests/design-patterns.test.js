@@ -46,7 +46,7 @@ const CLASSES = [
   'is-leaving', 'nb-offw', 'nb-fnoff', 'fn-next-off', 'nb-forfn',
   'fn-ahead', 'fn-ahead-b', 'fn-ahead-l', 'fn-ahead-t', 'fn-ahead-n', 'fn-ahead-p', 'fn-ahead-more', 'fn-ahead-hide', 'is-ahead',
   'fn-hm', 'fn-hm-line', 'fn-hu', 'fn-hu-got', 'fn-hu-undo', 'fn-ahead-ack', 'fn-wk', 'fn-seen', 'fn-seen-l', 'fn-seen-r', 'fn-seen-t',
-  'o-fn-tag', 'o-fn-when', 'o-fn-for', 'o-fn-held',
+  'o-fn-tag', 'o-fn-when', 'o-fn-for', 'o-fn-held', 'fno-row', 'fno-sum', 'fno-box', 'fno-rule', 'fno-note', 'fno-ask',
   'lk-fb', 'lk-ftag', 'lk-fillnote', 'lk-weigh', 'lk-why'
 ];
 const TOKENS = ['--ink', '--wall-ink', '--paper', '--bg', '--muted', '--faint', '--line', '--accent', '--accent-ink', '--tag', '--done', '--done-ink',
@@ -56,7 +56,7 @@ const TOKENS = ['--ink', '--wall-ink', '--paper', '--bg', '--muted', '--faint', 
 const HELPERS = ['tmShortPaint', 'tmShortOf', 'tmBusy', 'tmShortView', 'tmShortBandHTML', 'tmOkCovers', 'tmOkKeep', 'homeHeading', 'homeWords', 'signInBlock', 'lastNext', 'homeWelcomeWords', 'homeWelcomePaint', 'whoNamePaint', 'tmIcon', 'retrySoon', 'waiting', 'cacheOnly', 'inkLabel', 'inkWait', 'mnName', 'AdaptivePicker', 'SwipeDismiss', 'ModalFrame', 'enhance',
   'svButton', 'svStart', 'svDone', 'svFail', 'svLine', 'errMsg', 'failed', 'toast', 'slipName', 'arm', 'armed', 'W', 'canW',
   'ovPush', 'ovDone', 'trapTab', 'sheetOpen', 'sheetBusy', 'sheetNext', 'lvHTML', 'homeSlot', 'homePaint', 'homeRotaHTML', 'tmAwayHTML', 'tmNextHTML', 'tmGridShifts', 'tmPlanRowHTML', 'tmPlanHeadHTML', 'tmBarHTML', 'tmGridCellHTML', 'tmAwayPaint', 'tmAwayHidden', 'dkRunHTML', 'dkTeamHTML', 'dkFormHTML', 'panelShellHTML', 'psPanelHTML', 'psHintHTML', 'psReferenceHTML', 'psRolloutHTML',
-  'fnOrdTag', 'orderTag', 'fbHTML', 'ftagHTML', 'fillAfterTap'];
+  'fnOrdTag', 'orderTag', 'fnoHTML', 'platterNeeds', 'fbHTML', 'ftagHTML', 'fillAfterTap'];
 const GLOBALS = ['ICON', 'LK_UX', 'LK_PREP_STANDARDS'];
 HELPERS.push('pageSwipeFrom', 'navList');
 
