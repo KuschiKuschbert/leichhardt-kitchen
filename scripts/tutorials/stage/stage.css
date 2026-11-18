@@ -1,0 +1,66 @@
+/* The tutorial chalkboard (docs/tutorial-videos.md). Two sizes: desktop 1920 x 1080 and phone 1080 x 1920, set on <body>. */
+:root {
+  --chalk: #F3EFE4;
+  --chalk-dim: rgba(243, 239, 228, .55);
+  --orange: #F08A4B;
+  --board: #1F2A26;
+  --wood-a: #8A5D36;
+  --wood-b: #5E3C21;
+  --hand: 'Caveat', cursive;
+  --body: 'Barlow', system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--board); color: var(--chalk); font-family: var(--body); }
+body.transparent, body.transparent html { background: transparent; }
+#board { position: absolute; inset: 0; width: 100%; height: 100%; }
+body.transparent #board { display: none; }
+#stage { position: absolute; inset: 0; }
+
+/* the wooden frame of a specials board */
+.wood { position: absolute; inset: 0; border: 16px solid var(--wood-b); border-image: linear-gradient(135deg, var(--wood-a), var(--wood-b) 30%, var(--wood-a) 55%, var(--wood-b) 80%, var(--wood-a)) 1; box-shadow: inset 0 0 0 2px rgba(0,0,0,.35), inset 0 0 40px rgba(0,0,0,.55); pointer-events: none; }
+
+.chalk { filter: url(#chalk); }
+.hand { font-family: var(--hand); font-weight: 700; line-height: 1; }
+
+/* where the book's picture goes: a dark well with a chalk edge (desktop) or a phone (phone) */
+.slot { position: absolute; background: #000; }
+.screen-edge { position: absolute; border: 3px solid var(--chalk-dim); border-radius: 14px; filter: url(#chalk); }
+.phone, .screen { position: absolute; border-radius: 64px; background: #0d0f0e; box-shadow: 0 0 0 3px rgba(243,239,228,.45), 0 30px 60px rgba(0,0,0,.6); }
+.phone::after { content: ''; position: absolute; left: 50%; top: 9px; width: 110px; height: 6px; margin-left: -55px; border-radius: 3px; background: #2a2d2c; }
+
+/* the hole the picture shows through, drawn with a big shadow so everything round it is covered */
+.hole { position: absolute; border-radius: var(--hole-r, 12px); box-shadow: 0 0 0 4000px #0d0f0e; }
+
+.brand { position: absolute; display: flex; align-items: center; gap: 12px; font: 700 20px/1 'Barlow Condensed', var(--body); letter-spacing: .18em; text-transform: uppercase; color: var(--chalk-dim); }
+.brand b { font-family: var(--hand); font-size: 34px; letter-spacing: 0; text-transform: none; color: var(--orange); }
+.title { position: absolute; color: var(--chalk); }
+.step-now { position: absolute; color: var(--orange); }
+.step-now small { font-family: var(--body); font-weight: 600; color: var(--chalk-dim); letter-spacing: .08em; }
+
+.steps { position: absolute; list-style: none; display: grid; gap: 14px; }
+.steps li { font-family: var(--hand); font-weight: 700; font-size: 27px; line-height: 1.05; color: var(--chalk-dim); display: grid; grid-template-columns: 30px 1fr; align-items: start; }
+.steps li i { font-style: normal; font-family: var(--body); font-weight: 700; font-size: 17px; padding-top: 5px; }
+.steps li.done { color: rgba(243,239,228,.38); }
+.steps li.done i::before { content: '✓'; color: #9FE0B7; }
+.steps li.done i span { display: none; }
+.steps li.now { color: var(--orange); }
+.steps li.now b { background: linear-gradient(transparent 82%, rgba(240,138,75,.55) 82%, rgba(240,138,75,.55) 92%, transparent 92%); }
+
+.caption { position: absolute; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: 600; color: #fff; text-wrap: balance; }
+.caption span { background: rgba(0,0,0,.42); border-radius: 10px; padding: 6px 18px; box-decoration-break: clone; -webkit-box-decoration-break: clone; line-height: 1.5; }
+.caption:empty { display: none; }
+
+.mascot { position: absolute; background-repeat: no-repeat; image-rendering: pixelated; }
+
+/* intro, outro and chapter cards */
+.card { position: absolute; inset: 0; display: grid; place-items: center; }
+.card .big { color: var(--chalk); text-align: center; }
+.card .sub { color: var(--chalk-dim); font-weight: 600; text-align: center; }
+.card .next { color: var(--orange); text-align: center; }
+.card .credit { position: absolute; left: 0; right: 0; text-align: center; color: rgba(243,239,228,.5); font-size: 18px; }
+.write { clip-path: inset(0 100% 0 0); animation: write var(--write, 1.2s) cubic-bezier(.4,.1,.3,1) forwards; animation-delay: var(--delay, 0s); }
+@keyframes write { to { clip-path: inset(0 -5% 0 0); } }
+.fade { opacity: 0; animation: fade .6s ease-out forwards; animation-delay: var(--delay, 0s); }
+@keyframes fade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.rule { height: 6px; border-radius: 3px; background: var(--orange); transform-origin: left; transform: scaleX(0); animation: grow .7s ease-out forwards; animation-delay: var(--delay, 0s); }
+@keyframes grow { to { transform: scaleX(1); } }
