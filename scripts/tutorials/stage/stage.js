@@ -158,9 +158,11 @@
         // a long name ("That's the Transfer list") is made smaller until it fits inside the frame
         [].slice.call(root.querySelectorAll('.big, .title')).forEach(function (t) {
           var room = s.cut === 'phone' || t.classList.contains('title') && L.title.center ? L.W - 120 : (t.classList.contains('title') ? L.slot.w * 0.6 : L.W - 760);
-          var size = parseFloat(getComputedStyle(t).fontSize);
+          var size = parseFloat(getComputedStyle(t).fontSize), words = document.createRange();
           t.style.whiteSpace = 'nowrap';
-          while (t.scrollWidth > room && size > 30) { size -= 4; t.style.fontSize = px(size); }
+          // the width of the words themselves: a centred title's box is as wide as the frame
+          words.selectNodeContents(t);
+          while (words.getBoundingClientRect().width > room && size > 30) { size -= 4; t.style.fontSize = px(size); }
         });
         return L;
       });
