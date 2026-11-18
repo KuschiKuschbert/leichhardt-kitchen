@@ -101,7 +101,8 @@ export default {
       say: ['Once the order is placed, tap Record order placed.', 'Northside Foods now shows as ordered, and leaves the cut-offs.'],
       do: [
         { s: 0, d: 1.2, tap: '[data-su="record"]', run: settled },
-        { s: 1, d: 0.3, circle: '.su-info-line', opts: { pad: 6 } }
+        { s: 1, d: 0.3, circle: { phone: '.su-info-line', desktop: '.su-pick[data-sid="northside"]' }, opts: { pad: 6 } },
+        { s: 1, d: 2.4, circle: '#cut-band', opts: { pad: 2 } }
       ]
     },
     {
@@ -110,8 +111,8 @@ export default {
       do: [
         { s: 0, d: 0.5, tap: '[data-su="history"]', run: settled },
         { s: 0, d: 2.0, circle: '.su-disclosure:has([data-su="history"]) .su-lines', opts: { pad: 6 } },
-        { s: 1, d: 0.3, tap: { phone: '.su-history-dates .ux-picker-trigger', desktop: '[data-su="history-order"][data-id="o-last"]' }, run: settled },
-        { s: 1, d: 1.4, only: 'phone', tap: '.ux-picker [data-index="1"]', run: settled }
+        { s: 1, d: 0.3, tap: '.su-history-dates .ux-picker-trigger', run: settled },
+        { s: 1, d: 1.4, tap: '.ux-picker [data-index="1"]', run: settled }
       ]
     },
     {

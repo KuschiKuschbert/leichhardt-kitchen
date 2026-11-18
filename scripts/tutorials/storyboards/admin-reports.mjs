@@ -22,7 +22,7 @@ export default {
   steps: [
     {
       title: 'Insights',
-      say: ['Reports opens on Insights: the prep list, read over 30 days.', 'Narrow it down by the days, a section, a person or a weekday.', 'What stands out says what changed, in plain words.', 'The tiles add it up, against the 30 days before.'],
+      say: ['Insights reads the prep list over the last 30 days.', 'Narrow it down by the days, a section, a person or a weekday.', 'What stands out says what changed, in plain words.', 'The tiles add it up, against the 30 days before.'],
       do: [
         { s: 0, d: 0.5, circle: '.a-tab[data-t="insights"]', opts: { pad: 6 } },
         { s: 1, d: 0.3, circle: '.a-pane .ux-picker-trigger >> nth=0', opts: { pad: 4 } },
