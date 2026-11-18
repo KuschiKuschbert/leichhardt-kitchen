@@ -83,8 +83,10 @@ export default {
         { s: 0, d: 0.6, circle: sheet + ' [data-p="tr-bk-add"]', opts: { pad: 6 } },
         { s: 1, d: 0.2, clear: true },
         { s: 1, d: 0.5, tap: sheet + ' .tr-add .nb-addbtn' },
-        { s: 1, d: 1.6, tap: sheet + ' .ux-modal-close' },
-        { s: 1, d: 2.3, circle: row('Eggs') }
+        { s: 1, d: 1.4, tap: sheet + ' .ux-modal-close' },
+        { s: 1, d: 2.0, circle: row('Eggs') },
+        // a moment to see it there before the next step
+        { s: 1, d: 3.0, wait: 1.2 }
       ]
     },
     {
@@ -93,6 +95,8 @@ export default {
       do: [
         { s: 0, d: 0.3, circle: row('Brioche') + ' [data-p="tr-return"]', opts: { pad: 6 } },
         { s: 0, d: 2.0, tap: row('Brioche') + ' [data-p="tr-return"]' },
+        // the cards move up once it is back, so the first mark goes before the next
+        { s: 1, d: 0.2, clear: true },
         { s: 1, d: 0.6, circle: '.tr-done .tr-row:has-text("Brioche")' }
       ]
     },
@@ -102,6 +106,7 @@ export default {
       do: [
         { s: 0, d: 1.6, circle: '[data-p="tr-unreturn"][data-id="t1"]', opts: { pad: 6 } },
         { s: 1, d: 0.3, tap: '[data-p="tr-unreturn"][data-id="t1"]' },
+        { s: 1, d: 1.0, clear: true },
         { s: 1, d: 1.4, circle: row('Brioche') }
       ]
     }
