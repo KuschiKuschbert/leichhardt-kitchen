@@ -153,7 +153,16 @@ for (let k = 0; k < DAYS; k++) {
   if (review.exists) out.wasteReviews[d] = plain(review.data());
   if (trans.size) out.transfers[d] = grab(trans);
 }
+// Lines planned for a later day (17 Nov 2026, docs/prep-ahead-options/brief.md): the next 28 days' prep lines too, so a
+// restore keeps the head chef's plan. About 28 reads a night while those days hold nothing; never taken from the last backup.
+const AHEAD = 28;
+let planned = 0;
+for (let k = 1; k <= AHEAD; k++) {
+  const d = shift(today, k), items = await K.collection('days').doc(d).collection('items').get();
+  reads += Math.max(1, items.size);
+  if (items.size) { out.days[d] = grab(items); planned += items.size; }
+}
 writeFileSync(OUT, JSON.stringify(out, null, 1), { mode: 0o600, flag: 'wx' });
 console.log(taken ? taken + ' older days taken from the last backup (' + reads + ' reads).' : 'Every day read (' + reads + ' reads)' + (prev ? '' : ', no earlier backup to take older days from') + '.');
-console.log('Backed up ' + lines + ' prep lines from ' + dayN + ' of the last ' + DAYS + ' days, ' + (out.notes.length + out.directnotes.length) + ' shift pings, minutes from ' + out.minutes.length + ' meetings, ' + out.learned.length + ' learned items, ' + out.guides.length + ' guides and ' + out.recipes.length + ' recipes changed in the book (' + reads + ' reads).');
+console.log('Backed up ' + lines + ' prep lines from ' + dayN + ' of the last ' + DAYS + ' days, ' + planned + ' on the next ' + AHEAD + ' days, ' + (out.notes.length + out.directnotes.length) + ' shift pings, minutes from ' + out.minutes.length + ' meetings, ' + out.learned.length + ' learned items, ' + out.guides.length + ' guides and ' + out.recipes.length + ' recipes changed in the book (' + reads + ' reads).');
 process.exit(0);

@@ -2,9 +2,23 @@
 
 ## Status
 
-Study only, 17 Nov 2026. Round 1 and round 2 of the service council are done, with the mix recommended; the head chef has not chosen yet. After round 1 the head chef added "But only for admins" (see Admin only). Nothing in the app has changed. Evidence: [packet](packet.md), `baseline/`, `design-*/`, `preview-measurements.json`. This is role-based analysis with fresh agents, not research with staff.
+Chosen and built, 18 Nov 2026: the head chef chose the mix. Round 1 and round 2 of the service council are done. After round 1 the head chef added "But only for admins" (see Admin only). Nothing in the app has changed. Evidence: [packet](packet.md), `baseline/`, `design-*/`, `preview-measurements.json`. This is role-based analysis with fresh agents, not research with staff.
 
 The request (head chef, 17 Nov 2026): "I'd like to add the possibility to put items on the preplists for days in the future."
+
+## Chosen and built (18 November 2026)
+
+The head chef: "Go with the mix" (after "But only for admins"). Taken as the recommended defaults: admin as read here (Google sign-in, head chef PIN and grant on that device), from the day after tomorrow up to 4 weeks ahead.
+
+What was built (implemented app screens in `built/`, `capture-built.cjs`, `built/measurements.json`):
+
+- **Rollover repair first** (`maybeRoll()`, `rollSource()`, `PAST_KEYS`): a day holding only planned lines is not a written day; its open planned lines roll too, as a plain rolled line "from Kim, Sat" (`origAt` is when its day began); a line the night list wrote again with the same amount (or none) is not copied next to the plan. `tests/prep-ahead.test.js` part 1 fails 4 of 12 on main's `js/prep.js` (the lost line, the wrong first day and label, the doubled job) and passes 12 of 12 here.
+- **The page** (`listHTML()`, `rowHTML()`, `css/app.css`): as the mix. Admin only through `planOK()`; `planDayOk()` from the day after tomorrow to 28 days; `newItem()` marks the line `plan: '<day>'`; `addDayOk()` keeps the sheet's day and refuses with words when the day changed or the admin sign-in lapsed (findings 9 and 17); the slips name the day (10); nothing is ticked before its day, any line (11); read only for everyone but the admin (15); counts planned lines only (18); section heads "1 line", no bar; Prep opens on Today on the way in and after a lock; "saturday" no longer lowercase.
+- **On its day:** "Planned Sun by Kim"; `firstAt()` uses the start of its day and `startHere()` never picks it as Waiting longest (finding 2).
+- **Rules** (`firestore.rules`, `planKept()` and `laterDay()` in the prep lines block): a line marked `plan` before or after the write, on a day after tomorrow, only by the admin. On ordinary writes only: put on every write it pushed the largest function cancellation batches (12 lines, 8 rounds) over the 1000-expression budget (4 capability checks failed); the admin and function bookings take their own verified paths. `tests/rules/prep-ahead.test.mjs`: 15 of 15 here, 9 of 15 on main's rules (the 6 refusals are the new rule). Full rules suite green. **Stricter: publish after this merges.**
+- **Backup** (`scripts/nightly-backup.mjs`): the next 28 days of prep lines (finding 4). Not covered by a node test (the script runs on import); checked by `node --check` and the next nightly run's log line.
+- **Implemented app at 390, 768, 1280 px** (admin, three days ahead, two planned lines): 2 of 2 lines in view, no sideways scroll, no page errors, no new control under 44 px. Taps to put a line on Saturday: 5 (`›` x3, Add to Saturday, Add), as the preview. Today's page unchanged: chef 4 rows, staff 5 rows above the Add bar (the stand-in's fallback fonts).
+- **Not done here:** the eve is not shown on today's page (no read of tomorrow). Finding 14 is handled at the rollover instead. Rendered contrast of the muted calendar, keyboard focus and reduced motion are not measured.
 
 ## Baseline (Implemented app, main `70ce8f4`, click-test stand-in, synthetic data, 390 x 844, 14:00 Wednesday 18 Nov)
 
