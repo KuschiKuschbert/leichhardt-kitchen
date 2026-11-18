@@ -63,17 +63,19 @@ function nightly() {
   return days;
 }
 
-// Item links and Item evidence: seven days of recorded names, one already linked (Laksa paste to the Laksa recipe).
+// Item links and Item evidence: seven days of recorded names, two already linked (Laksa paste and Crumb calamari).
 function analysis(x) {
   const ref = { alias: 'Laksa paste', label: 'Laksa paste', recipeId: 'laksa', supplierId: '', itemId: '', guideId: '', v: 1, at: L.NOW - 5 * DAY, by: 'owner' };
+  const ref2 = { alias: 'Crumb calamari', label: 'Crumb calamari', recipeId: 'calamari', supplierId: '', itemId: '', guideId: '', v: 1, at: L.NOW - 4 * DAY, by: 'owner' };
   x[key('references', 'ai-laksa-paste')] = ref;
+  x[key('references', 'ai-crumb-calamari')] = ref2;
   const dailies = [];
   for (let i = 7; i >= 1; i--) {
     const d = dayN(i);
     const prep = LINES.map(([text, station, qty, recipe], k) => ({ id: 'p' + k, text, station, recipe, done: k % 5 !== 4, doneById: WHO[k % 3][0] }));
     prep.push({ id: 'h', text: 'Chop herbs', station: 'Larder', done: true, doneById: 'ann' });
     const waste = [{ id: 'w1', text: 'Chips', amount: 1.5, unit: 'kg', reason: 'excess' }].concat(i % 2 ? [{ id: 'w2', text: 'Slaw', amount: 1, unit: 'tub', reason: 'expired' }] : []);
-    const daily = C.daily(d, { prep, waste }, [{ ...ref, id: 'ai-laksa-paste' }]);
+    const daily = C.daily(d, { prep, waste }, [{ ...ref, id: 'ai-laksa-paste' }, { ...ref2, id: 'ai-crumb-calamari' }]);
     x[key('analysisDaily', 'g1_' + d)] = daily;
     dailies.push(daily);
   }
@@ -142,7 +144,7 @@ export function adminDemo(more) {
   x[key('config', 'main')] = { people: PEOPLE, sousIds: ['sam'], fnIds: ['fay'], fnOnlyIds: ['fay'], showBadges: true, staffSee: { cleaning: true }, kitSecs: SECS, kitShifts: SHIFTS, cutoffs: CUTOFFS, prepStandardsEnabled: true };
   Object.assign(x, L.mail());
   const days = nightly();
-  x[key('analysis', 'dashboard')] = { v: 1, generation: 'g1', at: L.NOW - 11 * 3600000, from: days[0].day, to: days[days.length - 1].day, days, needs: { links: 14, training: 0, inTraining: 0 } };
+  x[key('analysis', 'dashboard')] = { v: 1, generation: 'g1', at: L.NOW - 11 * 3600000, from: days[0].day, to: days[days.length - 1].day, days, needs: { links: 13, training: 0, inTraining: 0 } };
   x[key('analysis', 'health')] = { at: L.NOW - 11 * 3600000, status: 'ok' };
   const fnAt = hm => M.kat(today, M.hmMin(hm));
   x[key('functions', 'f1')] = M.derive({ id: 'f1', v: 1, status: 'confirmed', name: 'Jones 40th', date: today, start: fnAt('18:00'), loc: 'Beer garden', guests: 60, gu: false, mode: 'all', notes: '', kc: '', kcBy: '', kcAt: 0,
