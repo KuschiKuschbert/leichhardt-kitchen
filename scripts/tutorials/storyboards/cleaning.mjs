@@ -103,6 +103,8 @@ export default {
         { s: 0, d: 0.4, circle: start + ' .cln-performer' },
         { s: 0, d: 2.4, circle: start + ' h4 span' },
         { s: 1, d: 1.6, tap: '[data-cln="flow-verify"]' },
+        // the page goes back to the top after the Pass check, so the rings drawn before it are taken off
+        { s: 1, d: 2.2, clear: true },
         { s: 1, d: 2.8, circle: '.p-toast:not(.p-toast-old) .p-toast-msg' }
       ]
     },

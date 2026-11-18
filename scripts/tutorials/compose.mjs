@@ -23,6 +23,10 @@ const secs = n => n.toFixed(3);
 
 // The frames Chrome sent, held each until the next one, as a list ffmpeg reads (its concat demuxer).
 function frameList(dir, frames, end) {
+  // in the order they were painted: on a busy machine the screencast hands some frames over late, and a list in arrival
+  // order gave each late one no time and the one before it too much, so the picture fell behind the voice (up to 10 s
+  // by the end of an admin video, 18 Nov 2026)
+  frames = frames.slice().sort((a, b) => a.t - b.t);
   const lines = ['ffconcat version 1.0'];
   frames.forEach((f, i) => {
     const next = i + 1 < frames.length ? frames[i + 1].t : end;
@@ -39,9 +43,10 @@ function frameList(dir, frames, end) {
 // its voice (18 Nov 2026, seen on Admin Today: the voice was a step ahead of the picture).
 function filmToMp4(dir, out, w, h, len) {
   const { frames, end } = JSON.parse(fs.readFileSync(path.join(dir, 'frames.json'), 'utf8'));
+  const first = Math.min.apply(null, frames.map(f => f.t));
   const fit = len ? ',tpad=stop_mode=clone:stop_duration=' + Math.ceil(len + 2) : '';
   ff(['-f', 'concat', '-safe', '0', '-i', frameList(dir, frames, end), '-vf', 'fps=' + FPS + ',scale=' + w + ':' + h + ':flags=lanczos,setsar=1,format=yuv420p' + fit].concat(len ? ['-t', secs(len)] : [], ['-c:v', 'libx264', '-preset', 'medium', '-crf', '17', '-an', out]), out);
-  return len || end - frames[0].t;
+  return len || end - first;
 }
 
 async function stagePage(browser, cut) {
@@ -78,6 +83,12 @@ export async function compose(browser, board, cut, o) {
   const { dir, vdir, py, out } = o;
   const [W, H] = CUTS[cut].frame;
   const t = JSON.parse(fs.readFileSync(path.join(dir, 'timeline.json'), 'utf8'));
+  // the film's clock starts at its first frame to arrive; the picture starts at its first frame painted (a hair earlier
+  // when frames came late), so every cue and step moves by the difference
+  const painted = Math.min.apply(null, JSON.parse(fs.readFileSync(path.join(dir, 'frames', 'frames.json'), 'utf8')).frames.map(f => f.t));
+  const shift = (t.start || painted) - painted;
+  t.cues.forEach(c => { c.at += shift; });
+  t.steps.forEach(st => { st.at += shift; st.end += shift; });
   const dur = JSON.parse(fs.readFileSync(path.join(vdir, 'durations.json'), 'utf8'));
   const work = path.join(dir, 'compose');
   fs.rmSync(work, { recursive: true, force: true });
