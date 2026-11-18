@@ -100,6 +100,8 @@ The head chef's recording is on Drive in the Leichhardt folder. It is never in t
 1. Cut it to a clean 15 to 20 seconds: `ffmpeg -ss 1.7 -to 21.9 -i recording.m4a -ac 1 -ar 24000 -af "highpass=f=70,silenceremove=stop_periods=-1:stop_duration=0.45:stop_threshold=-40dB,loudnorm=I=-18:TP=-2" ref.wav`
 2. Make the video with `--engine chatterbox --voice ref.wav --py <Chatterbox venv python>`.
 
+What copies well (18 November 2026): the head chef's first recording was 37 seconds of relaxed, natural talking, and it made the voice they chose. A second recording, 17 seconds of a passage read aloud, read back slightly cleaner in the listening check but sounded wrong to the head chef. So record natural talk, not a reading, and let the head chef's ear decide, not the check alone.
+
 On a 4-core cloud machine Chatterbox takes about 20 seconds for each second of speech, so a 90 second video's voice is about 25 minutes. Run it in the background. Kokoro takes about a second for each second of speech.
 
 After any change to a page, run its storyboard again. The steps use the same selectors as the click tests. If a button moved, the film stops and names it ("nothing visible matches ...").
