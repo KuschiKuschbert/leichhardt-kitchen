@@ -33,7 +33,7 @@ export default {
     },
     {
       title: 'Your section',
-      say: ['Tap a section to see just your lines.', 'Tap All to see the whole list again.'],
+      say: ['Tap a section to see just your lines.', 'Tap the All button to see the whole list again.'],
       do: [
         { s: 0, d: 0.6, tap: '.nb-tab[data-v="Larder"]' },
         { s: 1, d: 0.5, tap: '.nb-tab[data-v=""]' }

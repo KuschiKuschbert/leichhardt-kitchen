@@ -170,8 +170,9 @@ def check(a):
             x = np.interp(np.arange(0, len(x), sr / 16000), np.arange(len(x)), x).astype('float32')
         segs, _ = model.transcribe(x, language='en', beam_size=5)
         heard = ' '.join(s.text for s in segs).strip()
-        want = words(spoken(ln['text']))
-        score = difflib.SequenceMatcher(None, want, words(heard)).ratio()
+        want, got = words(spoken(ln['text'])), words(heard)
+        # by word, or by letter with the spaces taken out (the model writes "prep list" as "preplist" now and then)
+        score = max(difflib.SequenceMatcher(None, want, got).ratio(), difflib.SequenceMatcher(None, ''.join(want), ''.join(got)).ratio() - 0.05)
         ok = score >= a.min
         bad += not ok
         print('%s %-6s %.2f  %s%s' % ('ok ' if ok else 'BAD', ln['id'], score, heard, '' if ok else '   (wanted: ' + ln['text'] + ')'))
