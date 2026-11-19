@@ -666,7 +666,7 @@
         '<nav class="dw-ctx dw-selbar" aria-label="' + esc(nm) + '">' +
         (isPiece(one) ? dk('panel', 'Colour', 'colour', { v: 'colour', exp: W.panel === 'colour' }) : one && one.t !== 'item' ? dk('panel', 'Change', 'edit', { v: 'edit', exp: W.panel === 'edit' }) : '') +
         (lab ? dk('panel', 'Label', 'label', { v: 'label', exp: W.panel === 'label', aria: one.ing ? 'Label: ' + one.ing : 'Label: which ingredient?' }) : '') +
-        dk('panel', 'More', 'more', { v: 'pmore', exp: W.panel === 'pmore' }) + dk('del', 'Delete', 'del', { cls: 'dw-dk dw-del' }) + dk('none', 'Done', 'check', { cls: 'dw-dk dw-done' }) + '</nav>';
+        dk('panel', 'More', 'more', { v: 'pmore', exp: W.panel === 'pmore' }) + dk('del', 'Delete', 'del', { cls: 'dw-dk dw-del lk-del' }) + dk('none', 'Done', 'check', { cls: 'dw-dk dw-done' }) + '</nav>';
     }
     var n = issues();
     return '<nav class="dw-ctx" aria-label="Studio">' + dk('panel', 'Add food', 'add', { v: 'lib', exp: W.panel === 'lib' }) + (side ? '' : dk('panel', 'Plate', 'plate', { v: 'ware', exp: W.panel === 'ware' })) +
@@ -827,8 +827,8 @@
   }
   function pageHTML() {
     var d = W.d, r = rec();
-    var kept = d.kept ? '<div class="box beige mg-kept" role="note"><span class="label">Changes not saved yet</span><div>This device kept changes to this drawing from ' + esc(B().dayShort(d.kept.at) + ' ' + B().clock(d.kept.at)) + '.</div><div class="btn-row">' + btn('kept-use', 'Keep editing them', { cls: 'btn dark' }) + btn('kept-drop', armed('kept-drop') ? 'Tap again to throw them away' : 'Throw them away', { cls: 'btn' }) + '</div></div>' : '';
-    var conflict = W.conflict ? '<div class="warn" role="alert"><span class="label">Changed on another device</span><span>Version ' + esc(W.conflict.v) + ' of this drawing was saved after you opened it.</span><div class="btn-row">' + btn('theirs', armed('theirs') ? 'Tap again: your changes go' : 'Open theirs', { cls: 'btn' }) + btn('mine', 'Save mine over it', { cls: 'btn dark' }) + '</div></div>' : '';
+    var kept = d.kept ? '<div class="box beige mg-kept" role="note"><span class="label">Changes not saved yet</span><div>This device kept changes to this drawing from ' + esc(B().dayShort(d.kept.at) + ' ' + B().clock(d.kept.at)) + '.</div><div class="btn-row">' + btn('kept-use', 'Keep editing them', { cls: 'btn dark' }) + btn('kept-drop', armed('kept-drop') ? 'Tap again to throw them away' : 'Throw them away', { cls: 'btn lk-del' }) + '</div></div>' : '';
+    var conflict = W.conflict ? '<div class="warn" role="alert"><span class="label">Changed on another device</span><span>Version ' + esc(W.conflict.v) + ' of this drawing was saved after you opened it.</span><div class="btn-row">' + btn('theirs', armed('theirs') ? 'Tap again: your changes go' : 'Open theirs', { cls: 'btn' + (armed('theirs') ? ' lk-del' : '') }) + btn('mine', 'Save mine over it', { cls: 'btn dark' }) + '</div></div>' : '';
     var newer = d.els.some(function (el) { var it = el.t === 'item' && itemOf(el.a); return it && it.id + '@' + it.v !== el.a; }) ? '<div class="box beige" role="note"><span class="label">Newer library drawings</span><div>Some pieces have a newer drawing in the library. This drawing keeps its own copy until you ask.</div><div class="btn-row">' + btn('newer', 'Use the newer drawings', { cls: 'btn' }) + '</div></div>' : '';
     var empty = nothingDrawn(d);
     var state = W.saving || stateWords(d);

@@ -1450,7 +1450,7 @@
   function statusHTML(f, scope, compact) {
     if (!f || !f.id || f.removed || !statusOK() || (f.status !== 'confirmed' && !undoOK(f))) return '';
     var undo = f.status === 'cancelled', busy = F.jobs[f.id], kind = scope === 'fe' ? 'fe' : 'fn';
-    return '<button type="button" class="btn fn-cancel" data-' + kind + '="status" data-v="' + (undo ? 'undo' : 'cancel') + '" data-id="' + esc(f.id) + '"' +
+    return '<button type="button" class="btn fn-cancel' + (undo ? '' : ' lk-del') + '" data-' + kind + '="status" data-v="' + (undo ? 'undo' : 'cancel') + '" data-id="' + esc(f.id) + '"' +
       (busy ? ' disabled' : '') + ' aria-label="' + esc((undo ? 'Undo cancellation of ' : 'Cancel ') + f.name) + '">' +
       (busy ? (busy.undo ? 'Restoring...' : 'Cancelling...') : undo ? (compact ? 'Undo' : 'Undo cancel') : compact ? 'Cancel' : 'Cancel function') + '</button>';
   }

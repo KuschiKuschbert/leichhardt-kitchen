@@ -34,7 +34,7 @@ const pendingBack = async (p, mod, save, field, name) => {
   const b = await L.start();
   let p = await L.open(b, '#/manage/r/burger', { who: 'ann', extra, wait: 1500 });
   await editor(p);
-  ok(p.urls.some(url => /\/js\/manage\.js\?v=11$/.test(url)), 'recipe form requests the revised editor address');
+  ok(p.urls.some(url => /\/js\/manage\.js\?v=13$/.test(url)), 'recipe form requests the revised editor address');
   ok(await p.getAttribute(back, 'aria-label') === 'Back to all recipes', 'recipe form: one header arrow names the parent list');
   ok(await p.locator('#mg-root a[href="#/manage"], [data-mg-back]').count() === 0, 'recipe form: no repeated return rows or breadcrumbs');
   // Input and Back in the same turn deliberately beat the 400 ms draft timer.

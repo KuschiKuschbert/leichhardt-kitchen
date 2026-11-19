@@ -75,6 +75,7 @@
   --bad-ink: #9B2716;
   --bad-tint: #FBE9E5;
   --bad-on-dark: #FF9C8A;
+  --del-ink: var(--bad-ink);   /* the destructive look's red (.lk-del, the consistency sweep, step 3, 20 Nov 2026); a charcoal bar sets --bad-on-dark */
   --done-on-dark: #9FE0B7;
   --steel: #CFD3D8;
   --steel-dark: #A9AFB6;
@@ -93,8 +94,8 @@
   --bar-accent: #F08A4B;
   --stone: #A39A88;
   /* One look (22 Oct 2026, Option B approved): rectangles do something, pills choose something. */
-  --r-act: 8px;      /* buttons that do something: Save, Add, Log it, Open */
-  --r-pick: 999px;   /* chips, filters and switches that choose */
+  --r-act: 8px;      /* buttons that do something: Save, Add, Log it, Open, in sheets too (the consistency sweep, step 3, 20 Nov 2026) */
+  --r-pick: 999px;   /* chips, filters and switches that choose: only these are round */
   --small-ink: #B83F15;   /* orange for small text on the page and beige colours (4.5:1 or more; --accent-ink is 4.4 on beige) */
 }
 html { font-size: 100%; -webkit-text-size-adjust: 100%; }
@@ -143,7 +144,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .chip[aria-pressed="true"] { background: var(--ink); color: #fff; }
 /* the Specials chip (27 Oct 2026): orange, so the specials are easy to find first */
 .chip.sp { border-color: var(--small-ink); color: var(--small-ink); }
-.chip.sp[aria-pressed="true"] { background: var(--small-ink); color: #fff; }
+.chip.sp[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }   /* chosen is ink (the consistency sweep, step 3, 20 Nov 2026) */
 .row-label { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.15rem 0.75rem; }
 .empty { padding: 1.25rem; border: 1.5px dashed var(--stone); border-radius: var(--radius); color: var(--muted); }
 .tag { display: inline-block; font-size: 0.8125rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 6px; border: 1.5px solid var(--ink); }
@@ -293,7 +294,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .views { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; }
 .view-opt { display: flex; flex-direction: column; gap: 0.6rem; padding: 1rem; text-align: left; background: var(--paper); border: 2px solid var(--edge); border-radius: 14px; cursor: pointer; }
 @media (hover: hover) and (pointer: fine) { .view-opt:hover { border-color: var(--ink); } }
-.view-opt[aria-checked="true"] { border-color: var(--ink); box-shadow: 0 0 0 3px var(--accent); }
+.view-opt[aria-checked="true"] { border-color: var(--ink); box-shadow: 0 0 0 3px var(--ink); }   /* chosen is ink (the consistency sweep, step 3, 20 Nov 2026) */
 .view-opt .vo-name { font-family: var(--display); font-weight: 700; font-size: 1.5rem; line-height: 1; }
 .view-opt .vo-desc { font-size: 0.9375rem; color: var(--muted); }
 .view-opt .vo-shots { display: flex; align-items: flex-end; gap: 0.75rem; }
@@ -383,7 +384,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .btn.dark, .nb-addbtn { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; }
 .nb-addbtn:focus-visible { outline-color: var(--ink); }
 @media (hover: hover) and (pointer: fine) {
-  .btn.dark:not(:disabled):hover, .nb-addbtn:not(:disabled):hover { background: var(--ink); border-color: var(--ink); }
+  .btn.dark:not(:disabled):not(.lk-del):hover, .nb-addbtn:not(:disabled):not(.lk-del):hover, .nt-got:hover, .mlp-go:hover { background: var(--ink); border-color: var(--ink); }
 }
 .btn.dark[disabled], .nb-addbtn[disabled] { background: #b9b3a8; border-color: #b9b3a8; }
 .btn-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
@@ -724,8 +725,6 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .pp-h { margin: 0; color: var(--muted); font: 700 0.78rem/1.2 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
 .pp-lv { display: flex; flex-wrap: wrap; gap: 0.2rem 1.2rem; }
 .pp-lv .p-x, .pp-end .p-link { display: inline-flex; align-items: center; min-height: 44px; }
-.pp-lv .a-del { color: var(--bad-ink); }
-.pp-lv .a-del.is-armed { font-weight: 700; }
 .pp-end { margin: 0; }
 .a-gone { align-self: center; font-weight: 700; color: var(--bad-ink); }
 @media (max-width: 599px) {
@@ -1166,8 +1165,10 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .sheet-o { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 58px; padding: 10px 6px; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
 .sheet-o strong { font: 700 1.05rem var(--body); }
 .sheet-o span { font-size: 0.875rem; color: var(--muted); }
-.sheet-o[aria-checked="true"] { background: var(--hit); }
-.sheet-o[aria-checked="true"] strong::after { content: '  \2713'; color: var(--accent-ink); }
+/* chosen is ink, like a picker's option (the consistency sweep, step 3, 20 Nov 2026) */
+.sheet-o:is([aria-checked="true"], [aria-current="true"]) { background: var(--ink); color: var(--paper); }
+.sheet-o:is([aria-checked="true"], [aria-current="true"]) span { color: var(--bar-text); }
+.sheet-o[aria-checked="true"] strong::after { content: '  \2713'; color: inherit; }
 /* the line menu (22 Oct 2026, Option B): on a phone Remove sits behind the ⋯; who wrote the line is on its second
    line since 4 Nov 2026 (S4), on every width */
 .nb-more { display: none; flex: 0 0 auto; width: 44px; min-height: 44px; padding: 0; border: 0; background: none; font: 700 1.25rem var(--body); letter-spacing: 0.05em; color: var(--muted); cursor: pointer; }
@@ -1230,8 +1231,8 @@ html.note-open, html.note-open body { overflow: hidden; }
 .nt-sum p { margin: 6px 0 0; }
 .nt-sl { font-weight: 700; color: var(--ink); }
 .nt-foot { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 14px 18px calc(14px + env(safe-area-inset-bottom)); }
-.nt-got { flex: 2 1 9rem; min-height: 52px; border: 2px solid var(--ink); border-radius: 26px; background: var(--ink); color: #fff; font-weight: 700; font-size: 1.125rem; cursor: pointer; }
-.nt-later { flex: 1 1 6rem; min-height: 52px; padding: 0 18px; border: 2px solid var(--ink); border-radius: 26px; background: transparent; color: var(--ink); font-weight: 700; font-size: 1.0625rem; cursor: pointer; }
+.nt-got { flex: 2 1 9rem; min-height: 52px; border: 2px solid var(--accent-ink); border-radius: var(--r-act); background: var(--accent-ink); color: #fff; font-weight: 700; font-size: 1.125rem; cursor: pointer; }   /* the main button, orange with 8 px corners, in sheets too (the consistency sweep, step 3, 20 Nov 2026) */
+.nt-later { flex: 1 1 6rem; min-height: 52px; padding: 0 18px; border: 2px solid var(--ink); border-radius: var(--r-act); background: transparent; color: var(--ink); font-weight: 700; font-size: 1.0625rem; cursor: pointer; }
 .nt-edit { font-weight: 600; display: inline-flex; align-items: center; min-height: 44px; }
 .mn-tbl tr.is-mine td { font-weight: 700; background: var(--hit); }
 .mn-yours { background: var(--accent); color: var(--ink); border-color: var(--accent); }
@@ -1297,8 +1298,9 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .ps-pick { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 58px; padding: 10px 6px; border: 0; background: none; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
 .ps-pick strong { font: 700 1.05rem var(--body); }
 .ps-pick span { font-size: 0.875rem; color: var(--muted); }
-.ps-pick[aria-checked="true"] { background: var(--hit); }
-.ps-pick[aria-checked="true"] strong::after { content: '  \2713'; color: var(--accent-ink); }
+.ps-pick[aria-checked="true"] { background: var(--ink); color: var(--paper); }   /* chosen is ink (the consistency sweep, step 3, 20 Nov 2026) */
+.ps-pick[aria-checked="true"] span { color: var(--bar-text); }
+.ps-pick[aria-checked="true"] strong::after { content: '  \2713'; color: inherit; }
 .ps-pick[disabled] { cursor: progress; }
 .ps-play { flex: 0 0 auto; min-height: 44px; padding: 0 1rem; }
 .n-prev { padding: 0.6rem; border: 1.5px dashed var(--ink); border-radius: 10px; background: #fff; }
@@ -1602,7 +1604,7 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 /* Safety nets (October 2026): the toast sits above the phone tab bar instead of on it, its Undo is a full-size
    target, and "Use a different kitchen PIN" (admin Tools tab) is kept apart from the move to a new PIN. */
 .p-toast { display: flex; align-items: center; gap: 0.6rem; width: max-content; }
-.p-toast-btn { min-height: 44px; min-width: 64px; padding: 0 1rem; border-radius: 22px; flex: none; }
+.p-toast-btn { min-height: 44px; min-width: 64px; padding: 0 1rem; border-radius: var(--r-act); flex: none; }
 .a-forget { margin-top: 1.6rem; padding-top: 1rem; border-top: 1px solid var(--line); }
 
 /* Not sent yet: no signal, or changes still waiting for the server (prep pages): since 4 Nov 2026 the floating band,
@@ -1780,7 +1782,7 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .gz-t { display: flex; flex-direction: column; min-width: 0; font: 700 1.2rem/1.1 var(--display); text-transform: uppercase; overflow-wrap: anywhere; }
 .gz-t small { font: 600 0.8125rem var(--body); text-transform: none; color: #E7E1D3; }
 .gz-btns { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-.gz-b { min-height: 44px; padding: 0 0.9rem; border: 2px solid var(--bar-text); border-radius: 22px; background: transparent; color: var(--bar-text); font-weight: 700; cursor: pointer; }
+.gz-b { min-height: 44px; padding: 0 0.9rem; border: 2px solid var(--bar-text); border-radius: var(--r-act); background: transparent; color: var(--bar-text); font-weight: 700; cursor: pointer; }
 .gz-b:disabled { opacity: 0.35; cursor: default; }
 .gz-x { background: var(--bar-text); color: var(--ink); }
 .gz-body { flex: 1 1 auto; min-height: 0; overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding: 0.6rem 0.6rem calc(0.6rem + env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch; }
@@ -1880,7 +1882,8 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 .wm-sh { margin: 2px 10px; padding-top: 2px; border-top: 1.5px solid var(--line); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.75rem; }
 .wm-out { margin-top: 0; border-top: 1.5px solid var(--line); border-radius: 0 0 8px 8px; }
 /* is-wait: "Not sent yet." on the head chef's own Google device, where Sign out waits until it is sent (29 Oct 2026) */
-.wm-out.is-armed small, .wm-out.is-wait small { color: var(--accent-ink); font-weight: 700; }
+.wm-out.is-wait small { color: var(--accent-ink); font-weight: 700; }
+.wm-out.lk-del small { color: inherit; font-weight: 700; }   /* armed: the red of .lk-del (the consistency sweep, step 3, 20 Nov 2026) */
 /* Admin panel in the chef hat's menu; the open mail count sits on the hat and on the menu item */
 .wm-a > svg { flex: 0 0 22px; width: 22px; height: 22px; }
 .wm-adm[aria-current="page"] { background: var(--hit); }
@@ -1997,8 +2000,8 @@ button.wm-a.wm-tile { text-align: left; }
 .mlp-h { margin: 4px 0 6px; font-family: var(--display); font-size: 1.75rem; }
 .mlp-p { margin: 0 0 16px; }
 .mlp-foot { display: flex; flex-wrap: wrap; gap: 10px; }
-.mlp-go, .mlp-later { flex: 1 1 8rem; min-height: 52px; border: 2px solid var(--ink); border-radius: 26px; font: inherit; font-weight: 700; font-size: 1.0625rem; cursor: pointer; }
-.mlp-go { background: var(--ink); color: #fff; }
+.mlp-go, .mlp-later { flex: 1 1 8rem; min-height: 52px; border: 2px solid var(--ink); border-radius: var(--r-act); font: inherit; font-weight: 700; font-size: 1.0625rem; cursor: pointer; }
+.mlp-go { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; }   /* the main button (the consistency sweep, step 3, 20 Nov 2026) */
 .mlp-later { background: var(--paper); color: var(--ink); }
 
 /* ---------- the drinks run (#/drinks, and "One more thing" after a first PIN) ---------- */
@@ -2133,7 +2136,7 @@ html.has-sync .upd-bar.is-on { transform: translateY(-110%); visibility: hidden;
 .p-sync[data-st="ok"] { border-left-color: var(--done); }
 .p-sync[data-st="ok"] strong { color: var(--done-tint); }
 @media (min-width: 720px) { .p-sync { justify-content: center; } }
-.upd-bar button { flex: none; min-height: 44px; padding: 0 1rem; border: 0; border-radius: 22px; background: var(--accent-ink); color: #fff; font: 700 0.95rem var(--body); cursor: pointer; }
+.upd-bar button { flex: none; min-height: 44px; padding: 0 1rem; border: 0; border-radius: var(--r-act); background: var(--accent-ink); color: #fff; font: 700 0.95rem var(--body); cursor: pointer; }
 .upd-bar button:focus-visible { outline-color: var(--paper); }
 /* a narrow phone with Extra large text (28 Oct 2026): "It updates once sent." stays whole, so the band is a little
    tighter there, or the page scrolled sideways at 360 px */
@@ -2299,7 +2302,6 @@ html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd .dw-stage { top: calc(
 .mg-ing-note { overflow-wrap: anywhere; }
 .mg-ing-open { display: flex; flex-direction: column; gap: 0.7rem; padding: 0.4rem 0 0 2.1rem; }
 .mg-ing-open .hint { margin: 0; }
-.mg-del { color: var(--bad-ink); }
 /* the recipe link: its box and the shared picker read as one control */
 .mg-linkbox { display: flex; min-width: 0; }
 .mg-linkbox .mg-link { flex: 1 1 auto; min-width: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; }
@@ -2662,7 +2664,7 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fn-t-off { background: var(--bad-tint); border-color: var(--bad-ink); color: var(--bad-ink); }
 .fn-t-moved { background: #E6EDFB; border-color: #9DB1DA; }
 .fn-t-ok { background: var(--done-tint); border-color: var(--done-ink); color: var(--done-ink); }
-.fn-more { display: block; margin: 0 auto 0.35rem; min-height: 36px; padding: 0 0.9rem; border: 1.5px solid var(--ink); border-radius: var(--r-pick); background: var(--paper); color: var(--ink); font-weight: 600; cursor: pointer; }
+.fn-more { display: block; margin: 0 auto 0.35rem; min-height: 36px; padding: 0 0.9rem; border: 1.5px solid var(--ink); border-radius: var(--r-act); background: var(--paper); color: var(--ink); font-weight: 600; cursor: pointer; }
 .fn-stale { margin: 0 auto; padding: 0.25rem 0.9rem 0.4rem; max-width: 1240px; font-size: 0.85rem; color: var(--small-ink); }
 .fn-pop { position: fixed; inset: 0; z-index: 86; display: flex; align-items: flex-end; justify-content: center; }
 .fn-pop-bg { position: absolute; inset: 0; background: rgba(28, 29, 31, 0.5); }
@@ -2673,7 +2675,7 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fn-sheet-t { flex: 1 1 0; min-width: 0; }
 .fn-eb { display: block; font: 700 0.75rem var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--small-ink); }
 .fn-sheet-top h2 { margin: 2px 0 0; font: 700 1.75rem/1.1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; overflow-wrap: anywhere; }
-.fn-close { flex: 0 0 auto; min-height: 44px; padding: 0 18px; border: 2px solid var(--ink); border-radius: 24px; background: transparent; color: var(--ink); font: 700 1rem var(--body); cursor: pointer; }
+.fn-close { flex: 0 0 auto; min-height: 44px; padding: 0 18px; border: 2px solid var(--ink); border-radius: var(--r-act); background: transparent; color: var(--ink); font: 700 1rem var(--body); cursor: pointer; }
 .fn-close:hover { background: var(--ink); color: var(--paper); }
 .fn-sub { margin: 0.4rem 0 0; color: var(--muted); font-weight: 600; overflow-wrap: anywhere; }
 /* what goes out next: the one box on the sheet, because it is what the kitchen acts on */
@@ -2834,7 +2836,6 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fe-conflict { padding: 0.6rem 0.8rem; border: 2px solid var(--bad-ink); border-radius: 10px; background: var(--bad-tint); }
 .fe-conflict p { margin: 0 0 0.4rem; }
 .fe-saving { margin: 0; font-weight: 600; }
-.fe-cancel { border-color: var(--bad-ink); color: var(--bad-ink); }
 .fe-review { padding: 0.8rem; border: 2px solid var(--ink); border-radius: 12px; background: var(--surface-paper); }
 .fe-review h3 { margin: 0; font: 700 1.5rem var(--display); }
 .fe-day h3 { margin: 0.6rem 0 0.35rem; font: 700 1.25rem var(--display); }
@@ -2854,7 +2855,6 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fn-page-head h2 { margin: 0; }
 .fn-card-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.4rem 1rem; padding: 0 0.7rem 0.6rem; }
 .fn-card-actions .linkish { min-height: 44px; font-size: 0.875rem; }
-.fn-cancel { color: var(--bad-ink); border-color: var(--bad-ink); }
 .fn-card-actions .fn-cancel { min-height: 44px; padding: 0 0.7rem; font-size: 0.875rem; }
 .fn-print-error { flex-basis: 100%; }
 #fn-print { display: none; }
@@ -2950,9 +2950,8 @@ a.fn-svc { display: inline-flex; align-items: center; color: var(--bar-text); te
 .fe .fe-num, .fe .fe-time { min-height: 40px; }
 .fe-row { padding: 0.4rem 0.6rem; }
 @media (min-width: 900px) { .fe .set-block .fe-row2 { grid-template-columns: repeat(2, minmax(0, 18rem)); } }
-/* the prep list's Functions tab: a function's platters, kept apart from the day's own prep (22 Oct 2026) */
-.nb-tab.nb-tab-fn { background: #FFF6D9; border-color: #E8C35A; color: #6A4A00; }
-.nb-tab.nb-tab-fn[aria-pressed="true"] { background: #E8C35A; border-color: #B8922A; color: var(--ink); }
+/* the prep list's Functions tab (22 Oct 2026): a function's platters, kept apart from the day's own prep by its name and
+   place; since the consistency sweep, step 3, 20 Nov 2026, it looks like the other section tabs, orange when chosen (no yellow) */
 .nb-tab-n { display: inline-block; min-width: 1.3em; margin-left: 0.3em; padding: 0 0.3em; border-radius: 999px; background: var(--accent); color: var(--ink); font-size: 0.8em; text-align: center; }
 /* every round as a list in the function sheet: time, what goes out, Sent (22 Oct 2026) */
 .fn-rounds { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
@@ -2995,7 +2994,6 @@ a.fn-svc { display: inline-flex; align-items: center; color: var(--bar-text); te
   .a-onpage .a-jumpbtn { display: inline-flex; align-items: center; gap: 0.3rem; }
   .a-onpage { -webkit-mask-image: none; mask-image: none; }
 }
-.sheet-o[aria-current="true"] { background: var(--hit); }
 details.a-how { margin: 0.2rem 0 0.6rem; }
 details.a-how > summary { display: flex; align-items: center; min-height: 44px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 details.a-how > p { margin: 0.2rem 0 0; max-width: 72ch; }
@@ -3117,7 +3115,7 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-onhand { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.8125rem; color: var(--muted); }
 .su-onhand .search { width: 5.5rem; min-height: 40px; height: auto; padding: 0.4rem 0.5rem; font-size: 0.9375rem; }
 .su-count .su-entry-error { flex-basis: 100%; margin-top: 0; }
-.su-use { min-height: 36px; padding: 0 0.8rem; border: 1.5px dashed var(--small-ink); border-radius: var(--r-pick); background: var(--hit); color: var(--small-ink); font: 700 0.8125rem var(--body); cursor: pointer; }
+.su-use { min-height: 36px; padding: 0 0.8rem; border: 1.5px dashed var(--small-ink); border-radius: var(--r-act); background: var(--hit); color: var(--small-ink); font: 700 0.8125rem var(--body); cursor: pointer; }
 .su-use[hidden] { display: none; }
 .su-step { display: flex; align-items: stretch; }
 .su-step .search { min-width: 0; border-radius: 0; text-align: center; }
@@ -4710,9 +4708,9 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .dr-notebook .dr-form { min-width: 0; }
 .dr-notebook .dr-form .search, .dr-notebook .dr-fold, .dr-notebook .chip,
 .dr-notebook .ux-picker-trigger { border-color: var(--faint); }
+/* chosen is ink, as everywhere but a notebook's section tabs (the consistency sweep, step 3, 20 Nov 2026) */
 .dr-notebook .chip[aria-pressed="true"], .dr-notebook .ml-sb[aria-pressed="true"],
-.dr-notebook .ux-choice-source > button[aria-pressed="true"] { background: var(--small-ink); border-color: var(--small-ink); color: var(--bar-text); }
-body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { background: var(--small-ink); border-color: var(--small-ink); color: var(--bar-text); }
+.dr-notebook .ux-choice-source > button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 .dr-notebook .dr-prev { border-color: var(--line); background: none; }
 .dr-notebook .dr-prev .label { color: var(--small-ink); }
 @media (min-width: 1100px) {
@@ -4926,8 +4924,8 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .todo-notebook .chip, .tm-notebook .chip,
 .todo-notebook .todo-ta, .todo-notebook .lv-q, .todo-notebook .ux-picker-trigger,
 .tm-notebook .tm-find, .tm-notebook .tm-pick select, .tm-notebook .ux-picker-trigger { border-color: var(--faint); }
-.todo-notebook .chip[aria-pressed="true"], .tm-notebook .chip[aria-pressed="true"] {
-  background: var(--small-ink); border-color: var(--small-ink); color: var(--bar-text);
+.todo-notebook .chip[aria-pressed="true"], .tm-notebook .chip[aria-pressed="true"] {   /* chosen is ink (the consistency sweep, step 3, 20 Nov 2026) */
+  background: var(--ink); border-color: var(--ink); color: var(--paper);
 }
 .todo-notebook .chip[aria-pressed="true"] .lv-n { opacity: 1; }
 .todo-notebook .todo-due.is-today, .todo-notebook .todo-due.is-late,
@@ -5191,7 +5189,6 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 
 /* Head-chef section standards (8 Nov 2026): the existing notebook, Add sheet and role panel, no new palette. */
 .ps-viewbar { margin: 0 0 .75rem; }
-.ps-viewbar .chip[aria-pressed="true"] { background: var(--small-ink); border-color: var(--small-ink); color: var(--bar-text); }
 .ps-hint { flex: 1 1 100%; min-width: 0; }
 .ps-hint:empty { display: none; }
 .ps-minimum { margin: .4rem 0 .6rem; padding: .4rem 0 .4rem .75rem; border-left: 3px solid var(--accent); }
@@ -5423,7 +5420,7 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .tm-daypick > span, .tm-daypick > small { max-width: 100%; font: 400 .75rem/1.2 var(--body); overflow-wrap: anywhere; }
 .tm-daypick > b { font: 700 1.25rem/1 var(--display); }
 .tm-daypick.is-today { border-color: var(--small-ink); }
-.tm-daypick[aria-pressed="true"] { border-color: var(--small-ink); background: var(--small-ink); color: var(--bar-text); }
+.tm-daypick[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--paper); }   /* chosen is ink; today keeps its orange edge (the consistency sweep, step 3, 20 Nov 2026) */
 .tm-daypick:focus-visible, .tm-weekbar button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 .tm-daypick:disabled, .tm-weekbar button:disabled { cursor: default; opacity: .65; }
 .tm-notebook .tm-nbook { grid-template-areas: 'head' 'week' 'away' 'work' 'extra'; }
@@ -5633,7 +5630,6 @@ html:has(.tm-focus-page) {
 .tm-focus-page .tm-detail-workbench .tm-picks .chip { align-self: end; justify-self: start; }
 .tm-notebook.tm-focus-page .tm-detail-workbench .ux-picker-trigger { display: block; max-width: 100%; white-space: normal; word-break: normal; overflow-wrap: break-word; }
 .tm-focus-page .tm-overlap-warning { margin: .6rem 0; padding: .5rem .6rem; border-left: 3px solid var(--bad-ink); background: var(--bad-tint); color: var(--bad-ink); font-size: .875rem; line-height: 1.4; overflow-wrap: break-word; }
-.tm-focus-page .tm-remove-service { color: var(--bad-ink); }
 .tm-focus-page .tm-person-row > .tm-detail-workbench { margin-top: .6rem; }
 /* The day grid (head chef, 15 Nov 2026, docs/team-sections-options/brief.md, the chosen mix): people down, services
    across. The rows share one set of columns (subgrid), so a long name widens the name column for every row. The
@@ -6011,7 +6007,7 @@ html:has(.tm-focus-page) {
 .tm-tlsvc-head { display: flex; flex-wrap: wrap; align-items: center; column-gap: .6rem; }
 .tm-tlsvc-head b { font: 700 1rem/1.2 var(--display); overflow-wrap: break-word; }
 .tm-notebook.tm-focus-page .tm-tloff { display: inline-flex; align-items: center; min-height: 44px; padding: 0; font-size: .8125rem; color: var(--ink); text-align: left; white-space: normal; text-decoration: underline; }
-.tm-notebook.tm-focus-page .tm-tloff.is-armed { color: var(--bad-ink); font-weight: 700; }
+.tm-notebook.tm-focus-page .tm-tloff.lk-del { padding: 0 .4rem; color: var(--del-ink); text-decoration: none; }   /* armed: the shared destructive look (the consistency sweep, step 3, 20 Nov 2026) */
 .tm-tlhint { display: block; color: var(--muted); font-size: .8125rem; line-height: 1.3; }
 .tm-notebook .tm-tlsvc .tm-tlsvc-more .tm-pick { display: inline-flex; flex: none; width: auto; max-width: 100%; margin: 0; }
 .tm-notebook.tm-focus-page .tm-tlsvc .tm-tlsvc-more :is(select, .ux-picker-trigger) { width: auto; max-width: 100%; min-height: 44px; }
@@ -6044,3 +6040,18 @@ html:has(.tm-focus-page) {
 [data-lv="people"] .ux-column-filters:empty, [data-lv="people"] .ux-active-filters:empty { display: none; }
 .pp-folds { display: flex; flex-wrap: wrap; gap: 0 1.4rem; margin-top: 0.6rem; }
 .pp-folds > * { flex: 1 1 18rem; min-width: 0; }
+
+/* ---------- one destructive look (head chef, 20 Nov 2026, the consistency sweep, step 3) ----------
+   .lk-del: red words and a red outline on every button that removes, deletes or discards (Remove, Delete, Discard,
+   Throw away, Drop, Forget), and on every armed "Tap again" (armed() in js/prep.js and the pages that share it add it
+   while the button waits for its second tap). Discard is never the orange main button: Keep working is. On paper the
+   red is --bad-ink; a charcoal bar sets --del-ink to --bad-on-dark. The words always say what goes, never colour alone.
+   A choosing chip keeps its round corners; every other button has 8 px. Placed last so a page's quiet-link look gives way. */
+:is(.btn, .nb-addbtn, .p-x, .p-link, .linkish, .nb-x, .wm-a, .sheet-o, .chip, .dw-dk).lk-del { color: var(--del-ink); border: 1.5px solid var(--del-ink); text-decoration: none; }
+:is(.btn, .nb-addbtn, .p-x, .p-link, .linkish, .nb-x, .sheet-o).lk-del { border-radius: var(--r-act); }
+:is(.btn, .nb-addbtn).lk-del, .chip.lk-del[aria-pressed="true"] { background: var(--paper); }
+:is(.p-x, .p-link, .linkish, .nb-x).lk-del { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; }
+:is(.p-link, .linkish).lk-del { padding: 0 .6rem; }   /* the quiet links had no room inside; .p-x and .nb-x keep theirs, so a row does not grow */
+.sheet-o.lk-del { margin-top: 6px; padding-left: 12px; }
+.fe-rows .fn-card-actions button.lk-del { border: 1.5px solid var(--del-ink); text-decoration: none; }
+.dw-ctx { --del-ink: var(--bad-on-dark); }

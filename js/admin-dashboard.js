@@ -390,7 +390,7 @@
       var kind = (WATCH_KINDS.filter(function (x) { return x[0] === watchParts(k).t; })[0] || ['', ''])[1];
       return '<li class="dsh-wl"><div><p class="dsh-tag dsh-tag-flat">' + esc(kind) + '</p><p class="dsh-need-title">' + esc(watchLabel(k)) + '</p><p class="dsh-need-detail">' + esc(watchLine(k, cur, prev, len)) + '</p></div>' +
         spark(len === 90 ? weeks(cur).map(function (g) { return sum(watchSeries(k, g), function (x) { return x; }); }) : watchSeries(k, cur)) +
-        '<button type="button" class="btn" data-dsh="unwatch" data-v="' + i + '"' + (state.saving ? ' disabled' : '') + ' aria-label="' + esc('Stop watching ' + watchLabel(k)) + '">Remove</button></li>';
+        '<button type="button" class="btn lk-del" data-dsh="unwatch" data-v="' + i + '"' + (state.saving ? ' disabled' : '') + ' aria-label="' + esc('Stop watching ' + watchLabel(k)) + '">Remove</button></li>';
     }).join('');
     var add = '';
     if (state.add) {

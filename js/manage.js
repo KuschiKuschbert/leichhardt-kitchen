@@ -152,7 +152,7 @@
     return off + (list.length ? '<p class="hint" role="status">' + list.length + (kind === 'templates' ? (list.length === 1 ? ' template' : ' templates') : (list.length === 1 ? ' piece or servingware' : ' pieces and servingware')) + '. Drawings made from them keep their own copy.</p><ul class="mg-list">' + list.map(function (x) {
       var k = (kind === 'templates' ? 'tpl:' : 'lib:') + x.id;
       return '<li class="mg-row">' + pic(x) + '<span class="mg-rt"><b>' + esc(x.name || x.id) + '</b><span class="hint">' + esc(what(x)) + ' · version ' + esc(x.v || 1) + (x.removed ? ' · hidden' : '') + '</span></span>' +
-        '<button type="button" class="p-x" data-mg="mine-hide" data-v="' + esc(k) + '">' + (armed('mine-hide:' + k) ? 'Tap again to ' + (x.removed ? 'show it' : 'hide it') : x.removed ? 'Show it again' : 'Hide') + '</button></li>';
+        '<button type="button" class="p-x' + (armed('mine-hide:' + k) ? ' lk-del' : '') + '" data-mg="mine-hide" data-v="' + esc(k) + '">' + (armed('mine-hide:' + k) ? 'Tap again to ' + (x.removed ? 'show it' : 'hide it') : x.removed ? 'Show it again' : 'Hide') + '</button></li>';
     }).join('') + '</ul>' : off ? '' : '<p class="hint">' + none + '</p>');
   }
   function mineHide(k) {
@@ -409,7 +409,7 @@
      checked yet". No allergens comes first, the usual answer, and on a row with allergens it asks first: they go. */
   function tagChips(list, where, i, none, hand) {
     var tags = list || [], ing = where === 'ing';
-    var noneB = ing ? '<button type="button" class="chip mg-none' + (none ? ' is-has' : '') + '" data-mg="none" data-i="' + i + '" aria-pressed="' + !!none + '">' + (armed('none:' + i) ? 'Tap again: the allergens go' : 'No allergens') + '</button>' : '';
+    var noneB = ing ? '<button type="button" class="chip mg-none' + (none ? ' is-has' : '') + (armed('none:' + i) ? ' lk-del' : '') + '" data-mg="none" data-i="' + i + '" aria-pressed="' + !!none + '">' + (armed('none:' + i) ? 'Tap again: the allergens go' : 'No allergens') + '</button>' : '';
     return (ing && !none && !tags.length && !hand ? '<p class="mg-unk" role="note"><b>Not checked yet.</b> Choose its allergens, or No allergens.</p>' : '') +
       '<div class="chips mg-tags" role="group" aria-label="Allergens in this">' + noneB + ALLERGENS.map(function (a) {
       var st = tags.indexOf(a) >= 0 ? 'has' : tags.indexOf(a + '?') >= 0 ? 'may' : '';
@@ -475,7 +475,7 @@
             (i.link ? '' : '<div class="field"><span class="label">Allergens</span>' + tagChips(i.tags, 'ing', k, i.none, e.handTags) + '</div>') +
             '<div class="btn-row mg-mini">' + (k ? '<button type="button" class="btn" data-mg="ing-up" data-i="' + k + '" aria-label="Move ingredient ' + (k + 1) + ' up">Move up</button>' : '') +
             (k < n - 1 ? '<button type="button" class="btn" data-mg="ing-down" data-i="' + k + '" aria-label="Move ingredient ' + (k + 1) + ' down">Move down</button>' : '') +
-            '<button type="button" class="p-x mg-del" data-mg="ing-del" data-i="' + k + '" aria-label="' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + ' ingredient ' + (k + 1) + '">' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + '</button></div></div>' : '') + '</li>';
+            '<button type="button" class="p-x lk-del" data-mg="ing-del" data-i="' + k + '" aria-label="' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + ' ingredient ' + (k + 1) + '">' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + '</button></div></div>' : '') + '</li>';
       }).join('') + '</ol><div class="btn-row"><button type="button" class="btn" data-mg="ing-add">Add an ingredient</button></div></section>';
   }
   function canScale() { return !!(P.bookEdit() && window.LK_AMT && window.LK_AMT.scale); }
@@ -527,7 +527,7 @@
           field('mg-ss-' + k, 'Steps', 'sec.' + k + '.steps', sc.steps.join('\n'), { area: true, rows: Math.max(4, sc.steps.length + 1) }) +
           '<div class="btn-row mg-mini">' + (k ? '<button type="button" class="p-x" data-mg="sec-up" data-i="' + k + '">Up</button>' : '') +
           (k < n - 1 ? '<button type="button" class="p-x" data-mg="sec-down" data-i="' + k + '">Down</button>' : '') +
-          '<button type="button" class="p-x" data-mg="sec-del" data-i="' + k + '">' + (armed('sec-del:' + k) ? 'Tap again to remove' : 'Remove this section') + '</button></div></div>';
+          '<button type="button" class="p-x lk-del" data-mg="sec-del" data-i="' + k + '">' + (armed('sec-del:' + k) ? 'Tap again to remove' : 'Remove this section') + '</button></div></div>';
       }).join('') + '<div class="btn-row"><button type="button" class="btn" data-mg="sec-add">Add a section</button></div></section>';
   }
   function rollTags(ro) { return ro.contains.concat(ro.check.map(function (a) { return a + '?'; })); }
@@ -544,7 +544,7 @@
     } else body = '<p class="hint">Worked out from the allergens tagged on each ingredient, and from the recipes linked.</p>';
     var change = JSON.stringify(now) === JSON.stringify(next) ? '' : '<p class="mg-change" role="status"><b>After saving:</b> ' + esc(next.length ? next.join(', ') : 'none') + (now.length || !e.isNew ? ' (now: ' + esc(now.length ? now.join(', ') : 'none') + ')' : '') + '</p>';
     return '<section class="set-block mg-sec" aria-labelledby="mg-h-alg"><h3 class="h3" id="mg-h-alg">Allergens</h3>' +
-      '<div class="chips" role="group" aria-label="How the allergens are set"><button type="button" class="chip" data-mg="hand" data-v="0" aria-pressed="' + !e.handTags + '">' + (armed('hand') ? 'Tap again: hand-set allergens go' : 'Worked out from the ingredients') + '</button><button type="button" class="chip" data-mg="hand" data-v="1" aria-pressed="' + e.handTags + '">Set by hand</button></div>' +
+      '<div class="chips" role="group" aria-label="How the allergens are set"><button type="button" class="chip' + (armed('hand') ? ' lk-del' : '') + '" data-mg="hand" data-v="0" aria-pressed="' + !e.handTags + '">' + (armed('hand') ? 'Tap again: hand-set allergens go' : 'Worked out from the ingredients') + '</button><button type="button" class="chip" data-mg="hand" data-v="1" aria-pressed="' + e.handTags + '">Set by hand</button></div>' +
       (e.handTags ? '<p class="hint">This recipe sets its allergens by hand, so the ingredient tags do not change them.</p>' : '') + body +
       '<div class="mg-alg-now"><span class="label">The card shows</span><span class="chips">' + (next.length ? next.map(function (t) { return '<span class="tag' + (/\?$/.test(t) ? ' maybe' : '') + '">' + esc(t) + '</span>'; }).join('') : '<span class="hint">' + (unk.length ? 'None found yet' : 'No allergens') + '</span>') + '</span>' +
       (ro.missing.length ? '<p class="hint">Not complete: ' + esc(ro.missing.join(', ')) + ' has no card yet.</p>' : '') +
@@ -633,7 +633,7 @@
             '<label class="field"><span class="label">Down %</span><input class="search" inputmode="decimal" data-f="pin.' + k + '.y" value="' + esc(p.y) + '"></label></div>' +
             '<div class="field"><label class="label" for="mg-pside-' + k + '">Label side</label><select id="mg-pside-' + k + '" class="search" data-f="pin.' + k + '.side"><option value=""' + (!p.side ? ' selected' : '') + '>Where it fits</option><option value="left"' + (p.side === 'left' ? ' selected' : '') + '>Left</option><option value="right"' + (p.side === 'right' ? ' selected' : '') + '>Right</option></select></div>' +
             (p.link ? '<p class="hint">Opens its recipe; its allergens come from there.</p>' : '<span class="label">Allergens in this part</span>' + tagChips(p.tags, 'pin', k) + '<p class="hint">These are the label\'s own tags, apart from the ingredient list.</p>') +
-            '<div class="btn-row mg-mini"><button type="button" class="p-x" data-mg="pin-del" data-i="' + k + '">' + (armed('pin-del:' + k) ? 'Tap again to remove' : 'Remove this label') + '</button></div>' : '') + '</li>';
+            '<div class="btn-row mg-mini"><button type="button" class="p-x lk-del" data-mg="pin-del" data-i="' + k + '">' + (armed('pin-del:' + k) ? 'Tap again to remove' : 'Remove this label') + '</button></div>' : '') + '</li>';
       }).join('') + '</ol><div class="btn-row"><button type="button" class="btn" data-mg="pin-add">Add a label</button></div>';
   }
   function histHTML(e) {
@@ -641,7 +641,7 @@
     var h = e.hist;
     var list = h === 'loading' ? loading('Reading earlier versions...', 'recipes', 2) : h === 'error' ? '<p class="p-err" role="alert">Could not read the earlier versions. Check the signal.</p>' :
       h ? (h.length ? '<ol class="mg-hist">' + h.map(function (x, k) {
-        return '<li><span><b>Version ' + esc(x.v) + '</b> · ' + esc(x.when) + (x.who ? ' · ' + esc(x.who) : '') + (x.name ? ' · ' + esc(x.name) : '') + '</span><button type="button" class="p-x" data-mg="hist-use" data-i="' + k + '">' + (armed('hist-use:' + k) ? 'Not saved. Tap again' : 'Open this version') + '</button></li>';
+        return '<li><span><b>Version ' + esc(x.v) + '</b> · ' + esc(x.when) + (x.who ? ' · ' + esc(x.who) : '') + (x.name ? ' · ' + esc(x.name) : '') + '</span><button type="button" class="p-x' + (armed('hist-use:' + k) ? ' lk-del' : '') + '" data-mg="hist-use" data-i="' + k + '">' + (armed('hist-use:' + k) ? 'Not saved. Tap again' : 'Open this version') + '</button></li>';
       }).join('') + '</ol><p class="hint">Opening a version puts it in the form. Save to make it the card again.</p>' : '<p class="hint">No earlier versions yet.</p>') : '';
     return '<section class="set-block mg-sec" aria-labelledby="mg-h-hist"><h3 class="h3" id="mg-h-hist">Earlier versions</h3>' + list +
       (h ? '' : '<div class="btn-row"><button type="button" class="btn" data-mg="hist">Show earlier versions</button></div>') + '</section>';
@@ -663,7 +663,7 @@
   function moreHTML(e) {
     if (e.isNew) return '';
     var st = status(e.id), base = X.pristine(e.id), out = '';
-    if (base && !e.meta.off && (st.changed || e.meta.v)) out += '<div class="btn-row"><button type="button" class="btn" data-mg="off">' + (armed('off') ? 'Tap again: show the book file\'s copy' : 'Go back to the book file\'s copy') + '</button></div><p class="hint">Staff then see the recipe as js/data.js has it. This version stays in the earlier versions.</p>';
+    if (base && !e.meta.off && (st.changed || e.meta.v)) out += '<div class="btn-row"><button type="button" class="btn' + (armed('off') ? ' lk-del' : '') + '" data-mg="off">' + (armed('off') ? 'Tap again: show the book file\'s copy' : 'Go back to the book file\'s copy') + '</button></div><p class="hint">Staff then see the recipe as js/data.js has it. This version stays in the earlier versions.</p>';
     if (!out) return '';
     return '<section class="set-block mg-sec" aria-labelledby="mg-h-more"><h3 class="h3" id="mg-h-more">The book file</h3>' + out + '</section>';
   }
@@ -706,10 +706,10 @@
     var head = '<div class="mg-head"><h2 id="rtitle" tabindex="-1">' + esc(e.isNew ? (d.name ? 'New: ' + d.name : 'New recipe') : 'Change ' + d.name) + '</h2>' +
       (st && !e.isNew && A.byId(e.id) ? '<a class="p-x" href="#/r/' + encodeURIComponent(e.id) + '">Open the card</a>' : '') + '</div>';
     var kept = e.kept ? '<div class="box beige mg-kept" role="note"><span class="label">Changes not saved yet</span><div>This device kept changes to this recipe from ' + esc(B().dayShort(e.kept.at) + ' ' + B().clock(e.kept.at)) + '.</div>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-mg="kept-use">Keep editing them</button><button type="button" class="btn" data-mg="kept-drop">' + (armed('kept-drop') ? 'Tap again to throw them away' : 'Throw them away') + '</button></div></div>' : '';
+      '<div class="btn-row"><button type="button" class="btn dark" data-mg="kept-use">Keep editing them</button><button type="button" class="btn lk-del" data-mg="kept-drop">' + (armed('kept-drop') ? 'Tap again to throw them away' : 'Throw them away') + '</button></div></div>' : '';
     var fileNote = st && st.fileChanged ? '<div class="box beige" role="note"><span class="label">The book file changed</span><div>js/data.js has a newer copy of this recipe than the one this change was made from. Check the steps and amounts, then Save to keep this version, or go back to the book file\'s copy (The book file, below).</div></div>' : '';
     var conflict = e.conflict ? '<div class="warn" role="alert"><span class="label">Changed on another device</span><span>Version ' + esc(e.conflict.v) + ' was saved' + (e.conflict.who ? ' by ' + esc(e.conflict.who) : '') + (e.conflict.when ? ' at ' + esc(e.conflict.when) : '') + ' after you opened this recipe.</span>' +
-      '<div class="btn-row"><button type="button" class="btn" data-mg="theirs">' + (armed('theirs') ? 'Tap again: your changes go' : 'Open theirs') + '</button><button type="button" class="btn dark" data-mg="mine">Save mine over it</button></div></div>' : '';
+      '<div class="btn-row"><button type="button" class="btn' + (armed('theirs') ? ' lk-del' : '') + '" data-mg="theirs">' + (armed('theirs') ? 'Tap again: your changes go' : 'Open theirs') + '</button><button type="button" class="btn dark" data-mg="mine">Save mine over it</button></div></div>' : '';
     var errs = e.errs.length ? '<div class="warn" role="alert"><span class="label">Not saved yet</span><ul class="mg-errs">' + e.errs.map(function (x) { return '<li><a href="#' + esc(x.at) + '" data-mg="goto" data-v="' + esc(x.at) + '">' + esc(x.msg) + '</a></li>'; }).join('') + '</ul></div>' : '';
     var warns = e.warns.length ? '<div class="box beige" role="note">' + e.warns.map(function (w) { return '<div>' + esc(w) + '</div>'; }).join('') + '</div>' : '';
     var cur = chOf(e), part = function (k, html) { return '<div class="mg-ch" data-ch="' + k + '"' + (cur === k ? '' : ' hidden') + '>' + html + '</div>'; };
@@ -719,7 +719,7 @@
       part('card', swHTML(e) + basicsHTML(e) + moreCardHTML(e)) + (e.isNew ? '' : part('hist', histHTML(e) + moreHTML(e))) + '</div></div>' +
       '<div class="mg-bar"><span class="mg-state" role="status">' + stateHTML() + '</span>' + (e.msg ? '<span class="p-err" role="alert">' + esc(e.msg) + '</span>' : '') +
       '<div class="btn-row">' + saveBtnHTML(e) +
-      (dirty() ? '<button type="button" class="btn" data-mg="undo-all">' + (armed('undo-all') ? 'Tap again to undo all' : 'Undo all changes') + '</button>' : '') + '</div></div></div>';
+      (dirty() ? '<button type="button" class="btn' + (armed('undo-all') ? ' lk-del' : '') + '" data-mg="undo-all">' + (armed('undo-all') ? 'Tap again to undo all' : 'Undo all changes') + '</button>' : '') + '</div></div></div>';
   }
 
   /* ---------- checking and saving ---------- */
@@ -1012,7 +1012,7 @@
     if (!drawLoad) {
       drawLoad = A.load('js/library.js').then(function () {
         // a category file that fails to load leaves its drawings out; the editor still opens
-        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=10')]));
+        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=11')]));
       }).then(function () {
         // without the smart creator the editor still works by hand; the recipe reader (js/compose.js) needs it first
         return A.load('js/smart.js').then(function () { return A.load('js/compose.js'); }).catch(function () {});

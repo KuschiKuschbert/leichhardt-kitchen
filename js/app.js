@@ -682,7 +682,7 @@
       // below) and the next tap signs out as usual
       var wait = !!(window.LK_PREP.sendFirst && window.LK_PREP.sendFirst());
       if (!window.LK_PREP.signOut(!wait && el.classList.contains('is-armed'))) {
-        el.classList.toggle('is-wait', wait); el.classList.toggle('is-armed', !wait);
+        el.classList.toggle('is-wait', wait); el.classList.toggle('is-armed', !wait); el.classList.toggle('lk-del', !wait);
         el.querySelector('small').textContent = wait ? 'Not sent yet.' : (window.LK_PREP.unsavedHere && !window.LK_PREP.unsavedHere() ? 'Not sent yet.' : 'Not saved yet.') + ' Tap again to sign out'; return;
       }
       // "Signed out" is the prep toast, which shows by itself off the prep pages too (toast() in js/prep.js)
@@ -1426,7 +1426,7 @@
     }
     if (window.LK_FE) { if (window.LK_FE.api === FE_API && window.LK_FN && typeof window.LK_FN.M.effects === 'function') window.LK_FE.mount(root, route); else root.innerHTML = mgNote('Reload the book', 'The functions page on this device is a different version from the book. Reload the page to update it. Changes not saved yet are kept on this device.', '<div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div>'); return; }
     root.innerHTML = mgNote('Functions', 'Opening functions...', ' ', 'chef');
-    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=10').catch(function (e) { feLoad = null; throw e; });
+    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=11').catch(function (e) { feLoad = null; throw e; });
     feLoad.then(function () { if (parseRoute().name === 'functions') mountFunctions(parseRoute()); }, function () {
       var el = document.getElementById('fe-root');
       if (el) el.innerHTML = mgNote('Could not open functions', 'It needs the signal the first time it opens on a device. Check the signal and try again.', '<div class="btn-row"><button type="button" class="btn dark" data-act="feretry">Try again</button></div>');
@@ -1440,7 +1440,7 @@
     });
   }
   function loadManage() {
-    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=11').catch(function (e) { mgLoad = null; throw e; });
+    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=13').catch(function (e) { mgLoad = null; throw e; });
     return mgLoad;
   }
   function mgNote(title, text, link, waitingIcon) {
@@ -1564,7 +1564,7 @@
       return;
     }
     root.innerHTML = mgNote('Delivery received', 'Opening delivery records...', ' ', 'orders');
-    if (!deliveryLoad) deliveryLoad = mgScript('js/deliveries.js?v=9').catch(function (e) { deliveryLoad = null; throw e; });
+    if (!deliveryLoad) deliveryLoad = mgScript('js/deliveries.js?v=12').catch(function (e) { deliveryLoad = null; throw e; });
     deliveryLoad.then(function () { if (parseRoute().name === 'deliveries') mountDeliveries(); }, function () {
       if (parseRoute().name === 'deliveries' && root.isConnected) root.innerHTML = mgNote('Could not open delivery records', 'Check the connection and try again.', '<button type="button" class="btn dark" data-delivery-retry>Try again</button>');
     });
@@ -1587,7 +1587,7 @@
       return;
     }
     root.innerHTML = mgNote('Kitchen cleaning', 'Opening kitchen cleaning...', ' ', 'prep');
-    if (!cleaningLoad) cleaningLoad = (window.LK_CLEANING_SCHEDULE ? Promise.resolve() : mgScript('js/cleaning-schedule.js?v=1')).then(function () { return mgScript('js/cleaning.js?v=2'); }).then(function () {
+    if (!cleaningLoad) cleaningLoad = (window.LK_CLEANING_SCHEDULE ? Promise.resolve() : mgScript('js/cleaning-schedule.js?v=1')).then(function () { return mgScript('js/cleaning.js?v=4'); }).then(function () {
       if (!window.LK_CLEANING) throw new Error('Kitchen cleaning did not load');
     }).catch(function (e) { cleaningLoad = null; throw e; });
     cleaningLoad.then(function () { if (parseRoute().name === 'cleaning') mountCleaning(); }, function () {
@@ -1819,7 +1819,7 @@
     // This phone: saved on this phone or tablet only (lk.settings.v1, lk.device.v2, lk.seasonal.v1)
     var deviceBody = '<p class="hint">' + (mode === 'personal' || mode === 'shared' ? DEVICE_SAY[mode][1] : 'Choose once for this browser or installed app.') + '</p>' +
       (!mode || changeDevice ? '<div class="btn-row"><button type="button" class="btn" data-act="device-choice">' + (mode ? 'Change device type' : 'Choose device type') + '</button>' +
-      (mode ? '<button type="button" class="btn" data-act="device-forget">Forget this device</button>' : '') + '</div>' : '<p class="hint">' + (mode === 'shared' ? 'The head chef can change this after signing in.' : 'Sign in with your PIN to change this.') + '</p>');
+      (mode ? '<button type="button" class="btn lk-del" data-act="device-forget">Forget this device</button>' : '') + '</div>' : '<p class="hint">' + (mode === 'shared' ? 'The head chef can change this after signing in.' : 'Sign in with your PIN to change this.') + '</p>');
     var phone = stRow('text', 'Text size', (TEXT.filter(function (t) { return t[0] === settings.text; })[0] || TEXT[0])[1], '<div class="chips" role="group" aria-label="Text size">' + TEXT.map(function (t) {
         return '<button type="button" class="chip" data-act="settext" data-val="' + t[0] + '" data-k="settext:' + t[0] + '" aria-pressed="' + (settings.text === t[0]) + '">' + esc(t[1]) + '</button>';
       }).join('') + '</div>') +
@@ -2339,8 +2339,8 @@
     // the kitchen PIN on this device: a second tap within 4 seconds, like the admin Tools button it replaces
     if (act === 'stkpin') {
       if (el.classList.contains('is-armed')) { if (window.LK_PREP && window.LK_PREP.forgetPin) window.LK_PREP.forgetPin(); return; }
-      el.classList.add('is-armed'); el.textContent = 'Tap again: this device forgets the kitchen PIN';
-      setTimeout(function () { if (el.isConnected) { el.classList.remove('is-armed'); el.textContent = 'Use a different kitchen PIN on this device'; } }, 4000);
+      el.classList.add('is-armed', 'lk-del'); el.textContent = 'Tap again: this device forgets the kitchen PIN';
+      setTimeout(function () { if (el.isConnected) { el.classList.remove('is-armed', 'lk-del'); el.textContent = 'Use a different kitchen PIN on this device'; } }, 4000);
       return;
     }
     if (act === 'stpush') { if (window.LK_PREP && window.LK_PREP.pushSet) window.LK_PREP.pushSet(val === '1'); return; }

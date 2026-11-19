@@ -126,7 +126,7 @@
     var st = svOf(o.k, o.act), busyText = o.busyText || 'Saving...', doneText = o.doneText || 'Saved';
     st = o.busy ? 'busy' : st === 'busy' ? '' : st;
     var label = st === 'busy' ? inkLabel(busyText, o.icon) : st === 'done' ? (window.LK_MOTION ? window.LK_MOTION.label(doneText, 'save', 'done') : esc(doneText)) : esc(o.ask || (st === 'fail' ? 'Try again' : o.idle));
-    return '<button type="button" class="' + (o.cls || 'btn dark') + ' ink-busy-button sv-btn" data-p="' + esc(o.p) + '" data-idle="' + esc(o.idle) + '" data-wide="' + esc(busyText) + '"' +
+    return '<button type="button" class="' + (o.cls || 'btn dark') + (o.ask ? ' lk-del' : '') + ' ink-busy-button sv-btn" data-p="' + esc(o.p) + '" data-idle="' + esc(o.idle) + '" data-wide="' + esc(busyText) + '"' +
       (st === 'done' || st === 'fail' ? ' data-sv="' + st + '"' : '') + ' aria-busy="' + (st === 'busy') + '"' + (st === 'busy' || st === 'done' || o.off ? ' disabled' : '') + '><span class="sv-now">' + label + '</span></button>';
   }
   /* The line under a Save button: the waiting line once a save is still out after 4 s, else the form's message. wait:
@@ -1265,6 +1265,9 @@
      button, when it is not the prep pages (the drawing editor and Delivery received, through bookApi()). */
   var armKey = '', armTimer = null;
   function armed(k) { return armKey === k; }
+  // the destructive look while a button waits for its second tap (head chef, 20 Nov 2026, the consistency sweep, step 3):
+  // red words and a red outline (.lk-del in css/app.css), on every page that shares this helper
+  function armCls(k) { return armKey === k ? ' lk-del' : ''; }
   function arm(k, redraw) {
     var re = typeof redraw === 'function' ? redraw : draw;
     clearTimeout(armTimer);
@@ -1967,7 +1970,7 @@
   /* "Not you?" next to "Writing as" (and Change person on the admin card) hands the phone over the way Sign out does
      (23 Oct 2026): something not saved asks a second tap, and on a shared device what this person left on it goes. What
      was typed in the add boxes goes too (leave()), so the next person starts with empty boxes. */
-  function notYouHTML() { return '<button type="button" class="p-link" data-p="who-change">' + (armed('who-change:sent') ? 'Not sent yet.' : armed('who-change') ? notSaved() + '. Tap again' : 'Not you?') + '</button>'; }
+  function notYouHTML() { return '<button type="button" class="p-link' + armCls('who-change') + '" data-p="who-change">' + (armed('who-change:sent') ? 'Not sent yet.' : armed('who-change') ? notSaved() + '. Tap again' : 'Not you?') + '</button>'; }
   /* The first words of a second tap over something not saved (28 Oct 2026): "Not saved" while something is typed or open
      here, "Not sent" when the only thing waiting is a change on its way to the server (the strip's words). On a PIN
      phone a sign-out does not lose that change while the tab stays open. */
@@ -5236,7 +5239,7 @@
   }
   function workNoticeHTML(change) {
     if (!workLock() || !S.workNotice) return '';
-    return '<p class="p-err" role="alert">' + esc(S.workNotice) + '</p>' + (change ? '<button type="button" class="btn" data-p="who-change">' + (armed('who-change') ? 'Discard work and change person' : 'Change person') + '</button>' : '');
+    return '<p class="p-err" role="alert">' + esc(S.workNotice) + '</p>' + (change ? '<button type="button" class="btn' + armCls('who-change') + '" data-p="who-change">' + (armed('who-change') ? 'Discard work and change person' : 'Change person') + '</button>' : '');
   }
   function whoHTML() {
     var list = people(), here = hereGet(), first = [], rest = [];
@@ -5252,7 +5255,7 @@
   function ownPinHTML() {
     var p = who(), step = S.pinStep;
     if (!p) return whoHTML();
-    if (step === 'error') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + esc(p.name) + '</h2>' + (S.pinOff ? '<p class="p-err" role="status">No signal. You can sign in once the phone is back online.</p>' : '<p class="p-err" role="status">Could not check your PIN.</p>') + '<div class="btn-row"><button type="button" class="btn dark" data-p="who" data-id="' + esc(p.id) + '">Try again</button><button type="button" class="btn" data-p="who-change">' + (armed('who-change') ? 'Discard work and change person' : 'Not me') + '</button></div></section>';
+    if (step === 'error') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + esc(p.name) + '</h2>' + (S.pinOff ? '<p class="p-err" role="status">No signal. You can sign in once the phone is back online.</p>' : '<p class="p-err" role="status">Could not check your PIN.</p>') + '<div class="btn-row"><button type="button" class="btn dark" data-p="who" data-id="' + esc(p.id) + '">Try again</button><button type="button" class="btn' + armCls('who-change') + '" data-p="who-change">' + (armed('who-change') ? 'Discard work and change person' : 'Not me') + '</button></div></section>';
     var setting = step === 'set', checking = step !== 'set' && step !== 'enter';
     // while the book checks whether this person has a PIN yet, the box is already there: it takes the keyboard inside
     // the tap on the name (an iPhone opens the keyboard only inside a tap), and a PIN typed early is sent once it knows
@@ -5263,7 +5266,7 @@
       (setting ? '<div class="field"><label class="label" for="pf2">Type it again</label>' + pinField('pf2', 'pf2', S.pf2, true) + '</div>' : '') +
       // a wait or a PIN just saved is a status, not an error (LF-06)
       (S.pinMsg ? S.pinMsg === 'Checking your PIN...' ? inkWait(S.pinMsg, 'chef') : S.pinMsg === PIN_AGAIN ? msgHTML(S.pinMsg) : '<p class="p-err" role="alert">' + esc(S.pinMsg) + '</p>' : '') +
-      '<div class="btn-row"><button type="submit" class="btn dark">' + (setting ? 'Save my PIN' : pinGoLabel()) + '</button><button type="button" class="btn" data-p="who-change">' + (armed('who-change') ? 'Discard work and change person' : 'Not me') + '</button></div></form>';
+      '<div class="btn-row"><button type="submit" class="btn dark">' + (setting ? 'Save my PIN' : pinGoLabel()) + '</button><button type="button" class="btn' + armCls('who-change') + '" data-p="who-change">' + (armed('who-change') ? 'Discard work and change person' : 'Not me') + '</button></div></form>';
   }
 
   var BOX = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><rect x="2.5" y="2.5" width="21" height="21" rx="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
@@ -5302,7 +5305,7 @@
     var rid = x.recipe || ((matchRecipe(x.text) || {}).id || ''), rr = rid ? recipeById(rid) : null;
     var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '" aria-label="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">' + AI_BOOK + '<span class="nb-aw">Recipe</span></a>' : '';
     var keep = !readonly && lineMenuOk(x, date);
-    var del = delOk ? '<button type="button" class="nb-x" data-p="' + (x.deleted ? 'restore' : 'del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-label="' + (x.deleted ? 'Put back ' : 'Remove ') + esc(x.text) + '">' + (x.deleted ? 'Put back' : 'Remove') + '</button>' : '';
+    var del = delOk ? '<button type="button" class="nb-x' + (x.deleted ? '' : ' lk-del') + '" data-p="' + (x.deleted ? 'restore' : 'del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-label="' + (x.deleted ? 'Put back ' : 'Remove ') + esc(x.text) + '">' + (x.deleted ? 'Put back' : 'Remove') + '</button>' : '';
     var boxSay = x.done ? 'Untick ' + x.text : 'Tick ' + x.text + (on ? ', ' + on.name + ' on it' : '');
     // I'm on it: its own button on an open line of today's list (onTap()); the box stays one tap = done
     var onBtn = tickOk && !readonly && !x.done && date === dayNow() ? '<button type="button" class="nb-onbtn" data-p="onit" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!on + '" aria-label="' +
@@ -5385,7 +5388,7 @@
     box.id = 'lm-sheet';
     box.innerHTML = '<div class="sheet-bg" data-lm="close"></div><div class="sheet lm-sheet" role="dialog" aria-modal="true" aria-labelledby="lm-h"><div class="sheet-grip" aria-hidden="true"></div>' +
       '<h3 id="lm-h">' + esc(name) + '</h3>' + (completionWho ? '<p class="lm-who">' + esc(completionWho) + '</p>' : who.trim() ? '<p class="lm-who">' + esc(/^(from|Ordered by) /.test(who.trim()) ? who.trim() : 'Written by ' + who.trim()) + '</p>' : '') +
-      fixHTML + (act ? '<button type="button" class="sheet-o lm-act" data-lm="act"><strong>' + esc(act.textContent.trim() === 'Remove' ? 'Remove line' : act.textContent.trim()) + '</strong></button>' : '') +
+      fixHTML + (act ? '<button type="button" class="sheet-o lm-act' + (/^Remove/.test(act.textContent.trim()) ? ' lk-del' : '') + '" data-lm="act"><strong>' + esc(act.textContent.trim() === 'Remove' ? 'Remove line' : act.textContent.trim()) + '</strong></button>' : '') +
       '<button type="button" class="btn sheet-x" data-lm="close">Cancel</button></div>';
     // what the button does, as well as the button: the list is often drawn again while the sheet is open
     lmOpenFrom = btn; box._act = act; box._sel = act ? guestSel(act) : ''; box._line = fix ? { kind: kind, date: ln[0], id: ln[1], name: name } : null;
@@ -5959,7 +5962,7 @@
     var paceHTML = pc ? '<div class="nb-pace' + (pc.today + 0.1 < pc.usual ? ' is-behind' : '') + '"><span class="nb-sl">Pace</span><p><strong>' + Math.round(pc.today * 100) + '%</strong> ticked now (' + pc.done + ' of ' + pc.n + '). By ' + clock(now()) + ' it is usually <strong>' + Math.round(pc.usual * 100) + '%</strong>' + (pc.sameDay ? ' on a ' + esc(dname) : '') + '.</p><span class="nb-sw">' + (pc.today + 0.1 < pc.usual ? 'Behind the usual pace. Check who needs a hand.' : 'On pace.') + ' Only the head chef and sous chefs see this.</span></div>' : '';
     var stuck = canBrowse() && S.date === dayNow() ? live.filter(function (x) { return !x.done && rolledN(x) >= 3; }) : [];
     var stuckHTML = stuck.length ? '<h3 class="nb-sh">Stuck lines</h3><p class="nb-sd">Rolled over 3 or more times. Mark it urgent with ! on its line, split it into smaller jobs, or remove it if it is not needed.</p><ul class="nb-stuck">' + stuck.map(function (x) {
-      return '<li><span>' + esc(x.text) + ' <span class="nb-us">x' + rolledN(x) + '</span></span>' + (can('del') ? '<button type="button" class="p-x" data-p="del" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '">Remove</button>' : '') + '</li>';
+      return '<li><span>' + esc(x.text) + ' <span class="nb-us">x' + rolledN(x) + '</span></span>' + (can('del') ? '<button type="button" class="p-x lk-del" data-p="del" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '">Remove</button>' : '') + '</li>';
     }).join('') + '</ul>' : '';
     var dl = live.filter(function (x) { return x.done; }).sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
     var donebox = '<h3 class="nb-sh" id="nb-donebox">' + (onToday ? 'Done today' : 'Done on ' + esc(dayShort(S.date))) + (off ? '' : ' (' + dl.length + ')') + '</h3>' +
@@ -6438,7 +6441,7 @@
   function personRowHTML(o) {
     var p = o.p, i = o.i, open = !p.gone && S.pOpen === p.id, r = ROLES[p.role] || ROLES.staff, ini = String(p.name || '').trim().charAt(0).toUpperCase();
     var acts = p.gone ? '<button type="button" class="btn pp-undo" data-p="a-undelete-person" data-i="' + i + '" aria-label="' + esc('Undo delete: ' + (p.name || 'this person')) + '">Undo delete</button>'
-      : (p.active !== false && !p.isNew ? '<button type="button" class="p-x pp-pin" data-p="a-reset-pin" data-id="' + esc(p.id) + '" aria-label="' + esc((armed('pin:' + p.id) ? 'Tap again to reset the PIN of ' : 'Reset PIN: ') + (p.name || 'this person')) + '">' + (armed('pin:' + p.id) ? 'Tap again to reset' : 'Reset PIN') + '</button>' : '') +
+      : (p.active !== false && !p.isNew ? '<button type="button" class="p-x pp-pin' + armCls('pin:' + p.id) + '" data-p="a-reset-pin" data-id="' + esc(p.id) + '" aria-label="' + esc((armed('pin:' + p.id) ? 'Tap again to reset the PIN of ' : 'Reset PIN: ') + (p.name || 'this person')) + '">' + (armed('pin:' + p.id) ? 'Tap again to reset' : 'Reset PIN') + '</button>' : '') +
         '<button type="button" class="btn pp-open" data-p="a-person-open" data-id="' + esc(p.id) + '" aria-expanded="' + open + '" aria-label="' + esc((open ? 'Close ' : 'Change ') + (p.name || 'the new person')) + '">' + (open ? 'Close ▴' : 'Change ▾') + '</button>';
     return '<li class="pp-row' + (open ? ' is-open' : '') + (p.active === false ? ' is-off' : '') + (p.gone ? ' is-gone' : '') + '" data-pid="' + esc(p.id) + '"><div class="pp-main"><span class="st-av' + (isSousP(p) ? ' is-chef' : '') + '" aria-hidden="true">' + esc(ini || '?') + '</span>' +
       '<div class="pp-w"><b class="pp-n">' + esc(p.name || 'No name yet') + '</b><small class="pp-can">' + esc(r.name + ' · ' + canWords(p)) + '</small>' + personStateHTML(p) + '</div><div class="pp-acts">' + acts + '</div></div>' + (open ? personEditHTML(p, i) : '') + '</li>';
@@ -6565,7 +6568,7 @@
   function psCanAdd() { return psEnabled() && psCanRead() && can('add') && S.date === dayNow(); }
   function psLoad() {
     if (!psCanRead() || psLoading || psError || psModule()) return;
-    psLoading = window.LK_APP.load('js/prep-standards.js?v=1').then(function () {
+    psLoading = window.LK_APP.load('js/prep-standards.js?v=2').then(function () {
       if (!psModule()) throw { code: 'workspace-version' };
       psLoading = null; if (psCanRead()) draw();
     }).catch(function () { psLoading = null; psError = true; if (psCanRead()) draw(); });
@@ -6749,7 +6752,7 @@
     if (!intelligenceAllowed()) return '';
     var p = proofModule();
     if (p) return p.render(proofAdapter());
-    if (!proofLoading && !proofError) proofLoading = window.LK_APP.load('js/proofreader-admin.js?v=2').then(function () { if (!proofModule()) throw { code: 'workspace-version' }; proofLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { proofLoading = null; proofError = true; if (intelligenceAllowed()) draw(); });
+    if (!proofLoading && !proofError) proofLoading = window.LK_APP.load('js/proofreader-admin.js?v=3').then(function () { if (!proofModule()) throw { code: 'workspace-version' }; proofLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { proofLoading = null; proofError = true; if (intelligenceAllowed()) draw(); });
     return '<section class="set-block"><h3 class="label">Proofreader</h3><p class="hint" role="status">' + (proofError ? 'Could not load the proofreader. Check the connection and reload this page.' : inkLabel('Loading...', 'chef')) + '</p></section>';
   }
   document.addEventListener('click', function (e) { var el = e.target.closest('[data-pr]'), p = proofModule(); if (el && S.root && S.root.contains(el) && intelligenceAllowed() && p) { e.preventDefault(); p.click(el); } });
@@ -6833,7 +6836,7 @@
         S.atab = tab; S.agLast = S.agLast || {}; S.agLast[adminGroupOf(tab)[0]] = tab; lsSet('lk.prep.atab', tab); draw(); adminToTop();
       }
     });
-    if (!dashLoading && !dashError) dashLoading = window.LK_APP.load('js/admin-dashboard.js?v=5').then(function () { if (!dashModule()) throw { code: 'workspace-version' }; dashLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { dashLoading = null; dashError = true; if (intelligenceAllowed()) draw(); });
+    if (!dashLoading && !dashError) dashLoading = window.LK_APP.load('js/admin-dashboard.js?v=6').then(function () { if (!dashModule()) throw { code: 'workspace-version' }; dashLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { dashLoading = null; dashError = true; if (intelligenceAllowed()) draw(); });
     return '<section class="set-block"><h3 class="label">Dashboard</h3><p class="hint" role="status">' + (dashError ? 'Could not load the dashboard. Check the connection and reload this page.' : inkLabel('Loading...', 'chef')) + '</p></section>';
   }
   function dashWeek() {
@@ -6932,20 +6935,20 @@
     if (S.privacyLocked && who() && S.user && S.ownerVerified) return '<p class="hint">Your Google account stays signed in. Enter your head chef PIN for the new kitchen day.</p>' + ownPinHTML();
     loadAdmins();
     if (S.level === 'setup') return bootstrapHTML();
-    if (S.level === 'pin' && S.ownerVerified) return '<p class="hint">Your Google account is recognised. Enter your head chef PIN to unlock this device until 04:00.</p>' + ownPinHTML() + '<p><button type="button" class="p-link" data-p="owner-reset">' + (armed('owner-reset') ? 'Confirm reset of the head chef PIN' : 'Forgot the head chef PIN?') + '</button></p>' + (S.saveMsg ? msgHTML(S.saveMsg) : '');
+    if (S.level === 'pin' && S.ownerVerified) return '<p class="hint">Your Google account is recognised. Enter your head chef PIN to unlock this device until 04:00.</p>' + ownPinHTML() + '<p><button type="button" class="p-link' + armCls('owner-reset') + '" data-p="owner-reset">' + (armed('owner-reset') ? 'Confirm reset of the head chef PIN' : 'Forgot the head chef PIN?') + '</button></p>' + (S.saveMsg ? msgHTML(S.saveMsg) : '');
     if (!S.level) return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + (S.adminsOff === (S.user.email || '') ? '<p class="p-err" role="status">' + (S.adminsWhy === 'signal' ? 'No signal. The admin panel opens when the phone is back online.' : 'Could not check your access yet. The admin panel opens once it is checked.') + '</p><div class="btn-row"><button type="button" class="btn dark" data-p="admins-retry">Try again</button><a class="btn" href="#/prep">Back to the prep book</a></div>' : inkWait('Checking your access...', 'chef')) + '</section>';
-    if (S.level === 'none') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="p-err">' + esc(S.user.email) + ' is not the head chef\'s Google account, so it cannot open the admin panel. Sign out and sign in with the head chef\'s account.</p><div class="btn-row"><button type="button" class="btn dark" data-p="signout">' + (armed('signout') ? notSaved() + '. Tap again' : 'Sign out') + '</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
+    if (S.level === 'none') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="p-err">' + esc(S.user.email) + ' is not the head chef\'s Google account, so it cannot open the admin panel. Sign out and sign in with the head chef\'s account.</p><div class="btn-row"><button type="button" class="btn dark' + armCls('signout') + '" data-p="signout">' + (armed('signout') ? notSaved() + '. Tap again' : 'Sign out') + '</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
     if (!ownerHere()) {
       var op = who();
       return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">' + (op ? esc(op.name) + ' is signed in on this device. ' : 'Nobody is signed in on this shared device. ') + 'The admin panel opens only while a chef is signed in with their PIN.</p>' +
-        '<div class="btn-row"><a class="btn dark" href="#/prep" data-p="who-change">' + (armed('who-change') ? notSaved() + '. Tap again' : op ? 'Not ' + esc(op.name.split(' ')[0]) + '? Change person' : 'Sign in') + '</a><button type="button" class="btn" data-p="signout">' + (armed('signout') ? notSaved() + '. Tap again' : 'Sign out of Google') + '</button></div></section>';
+        '<div class="btn-row"><a class="btn dark' + armCls('who-change') + '" href="#/prep" data-p="who-change">' + (armed('who-change') ? notSaved() + '. Tap again' : op ? 'Not ' + esc(op.name.split(' ')[0]) + '? Change person' : 'Sign in') + '</a><button type="button" class="btn' + armCls('signout') + '" data-p="signout">' + (armed('signout') ? notSaved() + '. Tap again' : 'Sign out of Google') + '</button></div></section>';
     }
     if (!S.draft) startDraft();
     var d = S.draft, owner = S.level === 'owner';
     if (owner && (['insights', 'team', 'waste', 'transfers', 'learning'].indexOf(S.atab || 'overview') >= 0 || S.atab === 'people' && S.personId)) { watchActivity(); loadStats(false); }
     if (S.atab === 'learning') loadSections(true);   // the Learning list's sections, today's (loadSections(), at most every 30 minutes)
     // the Google account, not the person: the chef hat's Sign out is for the person (Prep is in the top bar and tab bar)
-    var bar = '<div class="p-bar"><span>Google account: <strong>' + esc(S.user.email) + '</strong></span><span class="p-links"><button type="button" class="p-link" data-p="signout">' + (armed('signout:sent') ? 'Not sent yet.' : armed('signout') ? notSaved() + '. Tap again' : 'Sign out of Google') + '</button></span></div>';
+    var bar = '<div class="p-bar"><span>Google account: <strong>' + esc(S.user.email) + '</strong></span><span class="p-links"><button type="button" class="p-link' + armCls('signout') + '" data-p="signout">' + (armed('signout:sent') ? 'Not sent yet.' : armed('signout') ? notSaved() + '. Tap again' : 'Sign out of Google') + '</button></span></div>';
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
     var saveBlock = saveBarHTML();
     var at = S.atab || 'inbox';
@@ -6985,7 +6988,7 @@
       '<p class="hint a-step"><strong>Step 1.</strong> Ask for the new PIN to be added to the security rules. <strong>Step 2.</strong> Type it twice below and copy everything to it. The old PIN keeps working until its rules are removed.</p>' +
       '<div class="field"><label class="label" for="a-newpin">New 4 digit kitchen PIN</label><input id="a-newpin" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin" placeholder="4 digits" value="' + esc(S.newPin) + '"></div>' +
       '<div class="field"><label class="label" for="a-newpin2">Type it again</label><input id="a-newpin2" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin2" placeholder="4 digits" value="' + esc(S.newPin2 || '') + '"></div>' +
-      '<div class="btn-row"><button type="button" class="btn" data-p="move-pin"' + (S.moving ? ' disabled' : '') + '>' + (armed('move-pin') ? 'Tap again to copy everything' : 'Copy everything to the new PIN') + '</button></div>' + msgHTML(S.moveMsg) +
+      '<div class="btn-row"><button type="button" class="btn' + armCls('move-pin') + '" data-p="move-pin"' + (S.moving ? ' disabled' : '') + '>' + (armed('move-pin') ? 'Tap again to copy everything' : 'Copy everything to the new PIN') + '</button></div>' + msgHTML(S.moveMsg) +
       '<p class="hint a-forget">To use a different kitchen PIN on this device, open Settings, This phone.</p></section>');
     var resume = INTELLIGENCE_PAGES.indexOf(at) < 0 && intelligenceAllowed() && window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3 && window.LK_INTELLIGENCE.resumeHTML ? window.LK_INTELLIGENCE.resumeHTML(at) : '';
     if (at !== 'proofreader' && intelligenceAllowed() && proofModule()) resume += proofModule().resumeHTML(proofAdapter());
@@ -7146,7 +7149,7 @@
     if (isHeadP(p) && S.level !== 'owner') return '<span class="a-head">Head chef</span>';
     if (p.active === false && !p.isNew) return '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '" aria-label="' + esc('Put ' + (p.name || 'this person') + ' back on the list') + '">Put back on the list</button>';
     var lab = p.isNew ? 'Remove' : 'Stopped working here';
-    return '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '" aria-label="' + esc(lab + ': ' + (p.name || 'this person')) + '">' + (armed('rm:' + p.id) ? 'Tap again: ' + lab.toLowerCase() : lab) + '</button>';
+    return '<button type="button" class="p-x lk-del" data-p="a-remove-person" data-i="' + i + '" aria-label="' + esc(lab + ': ' + (p.name || 'this person')) + '">' + (armed('rm:' + p.id) ? 'Tap again: ' + lab.toLowerCase() : lab) + '</button>';
   }
   /* Delete for good (head chef, 19 Nov 2026, beside D6): on the admin panel's People rows only, as only the head chef's
      Google account with the head chef PIN may wipe a PIN. Two taps take the row out of the draft; Save takes the person
@@ -7156,7 +7159,7 @@
   function deletePersonBtn(p, i) {
     if (!canDelPerson(p)) return '';
     var on = armed('pdel:' + p.id), nm = p.name || 'this person';
-    return '<button type="button" class="p-x a-del' + (on ? ' is-armed' : '') + '" data-p="a-delete-person" data-i="' + i + '" aria-label="' + esc((on ? 'Tap again to delete for good: ' : 'Delete for good: ') + nm) + '">' + (on ? 'Tap again: delete for good' : 'Delete for good') + '</button>';
+    return '<button type="button" class="p-x a-del lk-del' + (on ? ' is-armed' : '') + '" data-p="a-delete-person" data-i="' + i + '" aria-label="' + esc((on ? 'Tap again to delete for good: ' : 'Delete for good: ') + nm) + '">' + (on ? 'Tap again: delete for good' : 'Delete for good') + '</button>';
   }
   /* what the draft changes, counted per person and per setting, for the Save bar */
   function draftChanges() {
@@ -7206,7 +7209,7 @@
     var n = draftChanges(), pg = draftPages(), here = S.name !== 'admin' || S.atab === 'people' ? 'people' : S.atab === 'kitchen-home' ? S.kOpen : '';
     var where = pg.length > 1 || pg.length === 1 && pg[0] !== here ? ': ' + DRAFT_PARTS.filter(function (g) { return pg.indexOf(g[0]) >= 0; }).map(function (g) { return g[2]; }).join(', ') : '';
     return '<section class="set-block a-savebar">' + staleHint() + '<div class="btn-row">' + svButton({ k: 'a', p: 'a-save', idle: 'Save changes', busy: S.busy, off: !n }) +
-      '<button type="button" class="btn" data-p="a-reset"' + (n ? '' : ' disabled') + '>' + (armed('a-reset') ? 'Tap again to undo ' + (n === 1 ? 'it' : 'all ' + n) : 'Undo unsaved changes') + '</button>' +
+      '<button type="button" class="btn' + armCls('a-reset') + '" data-p="a-reset"' + (n ? '' : ' disabled') + '>' + (armed('a-reset') ? 'Tap again to undo ' + (n === 1 ? 'it' : 'all ' + n) : 'Undo unsaved changes') + '</button>' +
       (n ? '<span class="a-unsaved">' + n + ' unsaved change' + (n === 1 ? '' : 's') + (where || draftWho()) + '</span>' : '') + draftGoneHTML() + '</div>' + svLine('a', S.busy, S.saveMsg) + '</section>';
   }
   /* The Save bar names whose changes wait (the People mix, 19 Nov 2026): ": Tom, Ann" when only the team list changed, and
@@ -8196,7 +8199,7 @@
       (canBrowse() && rolledN(x) && !fr ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + unsentMark(x) + justStamp(x.id) + (fnf || fnh ? '' : recipeChips(x)) + '</span>' +
       fo.when + (fnf ? fnoHTML(x, fnf) : fnh ? fnoHTML(x, fnh, true) : '') + metaHTML([], by) + '</span>' +
       (canBrowse() && can('del') ? (x.deleted || !x.ordered ? moreBtn(x, keep) : held) : keep ? (x.ordered ? held : moreBtn(x, true)) : '') +
-      (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
+      (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x lk-del" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
       (canBrowse() && can('del') && x.deleted ? '<button type="button" class="p-x" data-p="orestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') + '</li>';
   }
 
@@ -8618,7 +8621,7 @@ if (list.length) sg('oreg', 's');
     return '<li class="nb-row w-row' + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '"><span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + '</span>' +
       '<span class="nb-main"><span class="nb-t"><strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span>' + unsentMark(x) + justStamp(x.id) +
       (x.action ? '<span class="w-act">' + esc(x.action) + '</span>' : '') + '</span>' + metaHTML([lineSec(x) ? esc(lineSec(x)) : ''], esc(x.addedBy || '')).replace('<span class="nb-meta">', '<span class="nb-meta">' + rs + ' ') + '</span>' + wAgainHTML(x) +
-      (del ? '<button type="button" class="p-x" data-p="wdel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
+      (del ? '<button type="button" class="p-x lk-del" data-p="wdel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
       (x.deleted && wAll() ? '<button type="button" class="p-x" data-p="wrestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') +
       // the line's ⋯ (4 Nov 2026, S4): Change amount, and on a phone Remove or Put back
       (wxFixOk('w', x) || wAll() ? moreBtn(x, wxFixOk('w', x)) : '') + '</li>';
@@ -9051,7 +9054,7 @@ if (list.length) sg('oreg', 's');
   function xBtn(x) {
     if (!wAll() || !x.id) return '';
     var what = x.deleted ? 'Put back' : 'Remove';
-    return '<button type="button" class="p-x" data-p="' + (x.deleted ? 'tr-restore' : 'tr-del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc(what + ' ' + x.text) + '">' + what + '</button>';
+    return '<button type="button" class="p-x' + (x.deleted ? '' : ' lk-del') + '" data-p="' + (x.deleted ? 'tr-restore' : 'tr-del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc(what + ' ' + x.text) + '">' + what + '</button>';
   }
   function xReturnBtn(x) {
     var returning = S.xReturning && S.xReturning[x.date + '_' + x.id];
@@ -9741,9 +9744,9 @@ if (list.length) sg('oreg', 's');
     if (today) { var f = noteFrom(n, t), m = T.mins(); life = m < f ? 'Pops up at ' + tmText(f) : m < f + NOTE_LIFE ? 'On screen until ' + tmText(f + NOTE_LIFE) : 'Gone for today at ' + tmText(f + NOTE_LIFE); }
     return '<li class="nt-row t-' + esc(n.tag || 'none') + '"><div class="nt-rt"><span class="nt-tag">' + esc(noteTagName(n.tag)) + '</span><span class="nt-when">' + esc(noteWhen(n)) + (life ? '. ' + esc(life) : '') + '</span></div><p>' + esc(n.text) + '</p>' +
       '<span class="nt-by">' + esc(noteAudience(n)) + '</span>' + (who ? '<span class="nt-by">Written by ' + esc(who) + '</span>' : '') + seen +
-      '<div class="btn-row">' + (past ? '' : '<button type="button" class="p-x" data-p="n-edit" data-id="' + esc(n.id) + '">' + (armed('n-edit:' + n.id) ? 'Not saved. Tap again' : 'Edit') + '</button>') +
-      '<button type="button" class="p-x" data-p="n-reuse" data-id="' + esc(n.id) + '">' + (armed('n-reuse:' + n.id) ? 'Not saved. Tap again' : 'Use again') + '</button>' +
-      (past ? '' : '<button type="button" class="p-x" data-p="n-del" data-id="' + esc(n.id) + '">' + (armed('n-del:' + n.id) ? 'Tap again to remove' : 'Remove') + '</button>') + '</div></li>';
+      '<div class="btn-row">' + (past ? '' : '<button type="button" class="p-x' + armCls('n-edit:' + n.id) + '" data-p="n-edit" data-id="' + esc(n.id) + '">' + (armed('n-edit:' + n.id) ? 'Not saved. Tap again' : 'Edit') + '</button>') +
+      '<button type="button" class="p-x' + armCls('n-reuse:' + n.id) + '" data-p="n-reuse" data-id="' + esc(n.id) + '">' + (armed('n-reuse:' + n.id) ? 'Not saved. Tap again' : 'Use again') + '</button>' +
+      (past ? '' : '<button type="button" class="p-x lk-del" data-p="n-del" data-id="' + esc(n.id) + '">' + (armed('n-del:' + n.id) ? 'Tap again to remove' : 'Remove') + '</button>') + '</div></li>';
   }
   function notesListHTML() {
     if (S.notes == null) return '<p class="hint">Loading...</p>';
@@ -9812,7 +9815,7 @@ if (list.length) sg('oreg', 's');
       '<div class="field"><span class="label">Repeat every week on (optional)</span><div class="nt-chips" role="group" aria-label="Weekdays">' + dows + (f.dows.length ? '<button type="button" class="chip" data-p="n-dowclr">Clear weekdays</button>' : '') + '</div><span class="hint">With weekdays picked and no last day, the ping comes back every week until you remove it.</span></div>' +
       '<div class="field"><label class="label" for="n-tm">Pop up at (optional)</label><div class="nt-chips"><input id="n-tm" type="time" class="p-dateinput" data-k="n-tm" value="' + esc(f.tm || '') + '">' + (f.tm ? '<button type="button" class="chip" data-p="n-tmclr">No set time</button>' : '') + '</div><span class="hint">Empty: it pops up at 10:30. With a time, it pops up then on every phone. Either way it is gone 30 minutes later, so for a later shift set its time. Saved for today after its time, it pops up straight away.</span></div>' +
       '<p class="nt-whenline" role="status">' + esc(when) + '</p>' +
-      '<div class="btn-row">' + svButton({ k: 'n', p: 'n-save', idle: f.id ? 'Save changes' : 'Save ping', busy: S.nSaving, off: nfSame() }) + '<button type="button" class="btn" data-p="n-preview">Preview the popup</button><button type="button" class="btn" data-p="n-reset">Reset days</button><button type="button" class="btn" data-p="n-cancel">' + (armed('n-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div>' +
+      '<div class="btn-row">' + svButton({ k: 'n', p: 'n-save', idle: f.id ? 'Save changes' : 'Save ping', busy: S.nSaving, off: nfSame() }) + '<button type="button" class="btn" data-p="n-preview">Preview the popup</button><button type="button" class="btn" data-p="n-reset">Reset days</button><button type="button" class="btn' + armCls('n-cancel') + '" data-p="n-cancel">' + (armed('n-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div>' +
       svLine('n', S.nSaving, S.nMsg) + '</section>';
   }
   function notesEditorHTML() {
@@ -10270,7 +10273,7 @@ if (list.length) sg('oreg', 's');
     var actRows = f.acts.map(function (a, i) {
       if (a.carried) return '<div class="mn-act is-carried"><span class="mn-at">' + esc(a.what) + ' <small>' + esc((a.who === 'all' ? 'Everyone' : mnName(a.who)) + (a.by ? ', by ' + dayShort(a.by) : '')) + '</small></span><div class="mn-seg" role="group" aria-label="Carried action">' + [['done', 'Done'], ['open', 'Carry over'], ['dropped', 'Drop']].map(function (x) { return '<button type="button" class="chip" data-p="mn-ast" data-i="' + i + '" data-v="' + x[0] + '" aria-pressed="' + ((a.st || 'open') === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></div>';
       return '<div class="mn-act"><label class="visually-hidden" for="mn-aw' + i + '">Action</label><input id="mn-aw' + i + '" class="search" data-k="mn-aw" data-i="' + i + '" maxlength="160" placeholder="What needs doing" value="' + esc(a.what) + '">' +
-        '<div class="mn-act2">' + personSelect('mn-awho', a.who || '', i, true) + '<label class="visually-hidden" for="mn-aby' + i + '">By</label><input id="mn-aby' + i + '" type="date" class="p-dateinput" data-k="mn-aby" data-i="' + i + '" value="' + esc(a.by || '') + '"><button type="button" class="p-x mn-arem" data-p="mn-arem" data-i="' + i + '"><span>' + (armed('mn-arem:' + i) ? 'Tap again to remove' : 'Remove') + '</span></button></div></div>';
+        '<div class="mn-act2">' + personSelect('mn-awho', a.who || '', i, true) + '<label class="visually-hidden" for="mn-aby' + i + '">By</label><input id="mn-aby' + i + '" type="date" class="p-dateinput" data-k="mn-aby" data-i="' + i + '" value="' + esc(a.by || '') + '"><button type="button" class="p-x mn-arem lk-del" data-p="mn-arem" data-i="' + i + '"><span>' + (armed('mn-arem:' + i) ? 'Tap again to remove' : 'Remove') + '</span></button></div></div>';
     }).join('');
     return '<section class="set-block mn-form"><span class="label">' + (isEdit ? 'Change these minutes (becomes version ' + (f.v + 1) + ')' : f.id ? 'Draft minutes ' + pad(f.no) : 'New minutes ' + pad(f.no)) + '</span>' + prepLeaveHTML('mn-cancel') +
       (isEdit ? '<span class="hint">Everyone signs again after a change. The earlier version is kept.</span>' : '<span class="hint">Short lines, one per line. Spelling is yours to check. Recipe names link to their card. Leave out prices, PINs and private details. A line starting with # is a heading. A draft is not shown to staff in the app.</span>') +
@@ -10281,7 +10284,7 @@ if (list.length) sg('oreg', 's');
       mfTextarea('mn-menu', 'Menu changes', 3, 'What changes, and for which dish.') + mfTextarea('mn-dates', 'Dates ahead', 3, 'Deliveries, functions, events.') + mfTextarea('mn-other', 'Other', 3, '') + attBlock +
       '<div class="field"><label class="label" for="mn-next">Next meeting (optional)</label><input id="mn-next" type="date" class="p-dateinput" data-k="mn-next" value="' + esc(f.next) + '"></div>' +
       '<div class="btn-row">' + svButton({ k: 'm', act: 'pub', p: 'mn-pub', idle: isEdit ? 'Publish as version ' + (f.v + 1) : 'Publish and start sign-off', ask: armed('mn-pub') ? 'Tap again to publish to ' + people().length + ' staff' : '', busy: S.mSaving === 'pub', busyText: 'Publishing...', doneText: 'Published', off: !!S.mSaving || svHeld('m') || mfSame(true) }) +
-      (isEdit ? '' : svButton({ k: 'm', act: 'draft', p: 'mn-draft', cls: 'btn', idle: 'Save draft', busy: S.mSaving === 'draft', off: !!S.mSaving || svHeld('m') || mfSame(false) })) + '<button type="button" class="btn" data-p="mn-prev">Preview</button><button type="button" class="btn" data-p="mn-cancel">' + (armed('mn-cancel') ? 'Tap again to discard' : 'Cancel') + '</button></div>' +
+      (isEdit ? '' : svButton({ k: 'm', act: 'draft', p: 'mn-draft', cls: 'btn', idle: 'Save draft', busy: S.mSaving === 'draft', off: !!S.mSaving || svHeld('m') || mfSame(false) })) + '<button type="button" class="btn" data-p="mn-prev">Preview</button><button type="button" class="btn' + armCls('mn-cancel') + '" data-p="mn-cancel">' + (armed('mn-cancel') ? 'Tap again to discard' : 'Cancel') + '</button></div>' +
       svLine('m', !!S.mSaving, S.mMsg, 'mn-say', 'Waiting for the signal. Keep the book open: the minutes ' + (S.mSaving === 'pub' ? 'go to the team' : 'are saved') + ' when the signal is back.') + '</section>';
   }
   /* the minutes' message after a redraw: the form is long, and it closes on a save, so the page jumps. The message is
@@ -10403,14 +10406,14 @@ if (list.length) sg('oreg', 's');
     }
     return '<section class="set-block mn-print"><span class="label">Sign-off register</span><span class="hint">Minutes ' + pad(m.no || 0) + ', ' + esc(longDate(m.date)) + ', version ' + m.v + (typeof m.pubAt === 'number' ? ', published ' + esc(dayShort(T.day(m.pubAt))) + ' at ' + esc(clock(m.pubAt)) : '') + (m.v > 1 ? '. Earlier versions are kept' : '') + '. Staff who have not signed within ' + MN_LATE + ' days are marked late. Everyone on the staff list signs, including apology and absent.</span>' + chips + body +
       // no CSV until the sign-offs are in: a register that did not load is never proof that nobody signed
-      '<div class="btn-row mn-noprint"><button type="button" class="btn" data-p="mn-csv" data-id="' + esc(m.id) + '"' + (reg ? '' : ' disabled') + '>Download CSV</button><button type="button" class="btn" data-p="mn-refresh">Refresh</button>' + (mnCanWrite() ? '<button type="button" class="btn" data-p="mn-edit" data-id="' + esc(m.id) + '">' + (armed('mn-edit:' + m.id) ? 'Not saved. Tap again' : 'Change as a new version') + '</button><button type="button" class="btn" data-p="mn-remove" data-id="' + esc(m.id) + '">' + (armed('mn-del:' + m.id) ? 'Tap again to remove' : 'Remove') + '</button>' : '') + '</div></section>';
+      '<div class="btn-row mn-noprint"><button type="button" class="btn" data-p="mn-csv" data-id="' + esc(m.id) + '"' + (reg ? '' : ' disabled') + '>Download CSV</button><button type="button" class="btn" data-p="mn-refresh">Refresh</button>' + (mnCanWrite() ? '<button type="button" class="btn" data-p="mn-edit" data-id="' + esc(m.id) + '">' + (armed('mn-edit:' + m.id) ? 'Not saved. Tap again' : 'Change as a new version') + '</button><button type="button" class="btn lk-del" data-p="mn-remove" data-id="' + esc(m.id) + '">' + (armed('mn-del:' + m.id) ? 'Tap again to remove' : 'Remove') + '</button>' : '') + '</div></section>';
   }
   function minAdminHTML() {
     loadMinutes();
     if (S.mins == null) return '<p class="hint">Loading...</p>';
     var drafts = mnDrafts(), pub = mnPub();
     var intro = '<section class="set-block mn-noprint"><span class="label">Kitchen meeting minutes</span><span class="hint">Write the minutes after the meeting. Staff read them at Meeting minutes in the app and sign with their own PIN. A change after publishing makes a new version and everyone signs again.</span>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="mn-new">' + (armed('mn-new') ? 'Not saved. Tap again' : 'Write new minutes') + '</button><button type="button" class="btn" data-p="mn-tpl">' + (armed('mn-tpl') ? 'Not saved. Tap again' : 'Start from the team notes') + '</button>' + drafts.map(function (d) { return '<button type="button" class="btn" data-p="mn-draft-open" data-id="' + esc(d.id) + '">' + (armed('mn-draft-open:' + d.id) ? 'Not saved. Tap again' : 'Continue draft ' + pad(d.no || 0) + ' (' + esc(dayShort(d.date)) + ')') + '</button>'; }).join('') + '</div>' + msgHTML(S.mf ? '' : S.mMsg, 'mn-say') + '</section>';
+      '<div class="btn-row"><button type="button" class="btn dark' + armCls('mn-new') + '" data-p="mn-new">' + (armed('mn-new') ? 'Not saved. Tap again' : 'Write new minutes') + '</button><button type="button" class="btn' + armCls('mn-tpl') + '" data-p="mn-tpl">' + (armed('mn-tpl') ? 'Not saved. Tap again' : 'Start from the team notes') + '</button>' + drafts.map(function (d) { return '<button type="button" class="btn" data-p="mn-draft-open" data-id="' + esc(d.id) + '">' + (armed('mn-draft-open:' + d.id) ? 'Not saved. Tap again' : 'Continue draft ' + pad(d.no || 0) + ' (' + esc(dayShort(d.date)) + ')') + '</button>'; }).join('') + '</div>' + msgHTML(S.mf ? '' : S.mMsg, 'mn-say') + '</section>';
     if (!mnCanWrite()) intro = '<section class="set-block mn-noprint"><span class="label">Kitchen meeting minutes</span><span class="hint">See who has signed the minutes and who still needs to. Only the head chef writes and publishes minutes.</span></section>';
     return intro + (S.mf && mnCanWrite() ? mfHTML() : '') + mnRegisterHTML(pub);
   }
@@ -10694,7 +10697,7 @@ if (list.length) sg('oreg', 's');
         { h: 'Reason', html: function (x) { return esc(reasonName(x.reason)); } },
         { h: 'Section', html: function (x) { return esc(lineSec(x) || 'General'); } },
         { h: 'Logged by', html: function (x) { return esc(x.addedBy || 'Unknown'); } },
-        { h: '', html: function (x) { if (!del || !x.id) return ''; return '<button type="button" class="p-x" data-p="' + (x.deleted ? 'wrestore' : 'wdel') + '" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc((x.deleted ? 'Put back ' : 'Remove ') + x.text) + '">' + (x.deleted ? 'Put back' : 'Remove') + '</button>'; } }
+        { h: '', html: function (x) { if (!del || !x.id) return ''; return '<button type="button" class="p-x' + (x.deleted ? '' : ' lk-del') + '" data-p="' + (x.deleted ? 'wrestore' : 'wdel') + '" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc((x.deleted ? 'Put back ' : 'Remove ') + x.text) + '">' + (x.deleted ? 'Put back' : 'Remove') + '</button>'; } }
       ]
     });
   }
@@ -10735,7 +10738,7 @@ if (list.length) sg('oreg', 's');
       '<label class="a-f"><span>Review date</span><input type="date" data-k="wh-review-date" min="' + range.from + '" max="' + range.to + '" value="' + esc(d) + '"></label>' +
       '<div class="field"><label class="label" for="w-ra">Main avoidable waste</label><textarea id="w-ra" class="w-ta" data-k="w-ra" maxlength="300" rows="2">' + esc(ra) + '</textarea></div>' +
       '<div class="field"><label class="label" for="w-rc">Prep or ordering change for the next shift</label><textarea id="w-rc" class="w-ta" data-k="w-rc" maxlength="300" rows="2">' + esc(rc) + '</textarea><span class="hint">This shows at the top of the next prep list.</span></div>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="wreview" data-v="admin"' + (rvTyped(false) ? '' : ' disabled') + '>Save the review</button><button type="button" class="p-x" data-p="wh-review-cancel">' + (armed('wh-review-cancel') ? 'Tap again to discard' : 'Cancel edits') + '</button></div>' +
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="wreview" data-v="admin"' + (rvTyped(false) ? '' : ' disabled') + '>Save the review</button><button type="button" class="p-x' + armCls('wh-review-cancel') + '" data-p="wh-review-cancel">' + (armed('wh-review-cancel') ? 'Tap again to discard' : 'Cancel edits') + '</button></div>' +
       (r.reviewBy ? '<span class="hint">Last saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' at ' + clock(r.reviewAt) : '') + '.</span>' : '') + '</div>';
   }
 
@@ -11428,7 +11431,7 @@ if (list.length) sg('oreg', 's');
       (g.sum ? '<p class="g-lead">' + esc(g.sum) + '</p>' : '') + '<p class="g-meta">' + esc(gMeta(g)) + '</p>' +
       // the head chef's Change this guide sits under the title, like Change this recipe on a card (not after every page)
       (admin && g.vid ? '<p class="g-chg g-noprint"><button type="button" class="p-x g-chg-a" data-p="g-vlinks">' + pen + '<span>Change the video links</span></button></p>' :
-        admin ? '<p class="g-chg g-noprint"><button type="button" class="p-x g-chg-a" data-p="g-change" data-id="' + esc(g.id) + '">' + pen + '<span>' + (armed('g-change:' + g.id) ? 'Not saved. Tap again' : 'Change this guide') + '</span></button></p>' : '') + '</header>' +
+        admin ? '<p class="g-chg g-noprint"><button type="button" class="p-x g-chg-a' + armCls('g-change:' + g.id) + '" data-p="g-change" data-id="' + esc(g.id) + '">' + pen + '<span>' + (armed('g-change:' + g.id) ? 'Not saved. Tap again' : 'Change this guide') + '</span></button></p>' : '') + '</header>' +
       (g.vid ? gvBlockHTML(g) : '') + (g.id === G_FOOD.id ? foodRuleHTML() : '') + (g.id === G_VEG.id ? steamVegHTML() : '') +
       (g.id === G_SMOKE.id ? '<p class="g-noprint"><a class="btn" href="guides/smoke-prep-and-setup.pdf" download>Download printable sheets (PDF)</a></p>' : '') +
       (steps.length ? gStepsHTML(g, steps, pv, n) : '') +
@@ -11682,7 +11685,7 @@ if (list.length) sg('oreg', 's');
       strip = '<ol class="g-strip">' + pages.map(function (p, i) {
         return '<li><img src="' + esc(p.thumb) + '" alt="' + esc('Page ' + (i + 1)) + '"><span>Page ' + (i + 1) + ' · ' + gKb(p) + '</span><span class="g-sbtn">' +
           (i ? '<button type="button" class="p-x" data-p="g-pup" data-i="' + i + '" aria-label="' + esc('Move page ' + (i + 1) + ' earlier') + '">Earlier</button>' : '') +
-          '<button type="button" class="p-x" data-p="g-prm" data-i="' + i + '" aria-label="' + esc((armed('g-prm:' + i) ? 'Tap again to remove page ' : 'Remove page ') + (i + 1)) + '">' + (armed('g-prm:' + i) ? 'Tap again to remove' : 'Remove') + '</button></span></li>';
+          '<button type="button" class="p-x lk-del" data-p="g-prm" data-i="' + i + '" aria-label="' + esc((armed('g-prm:' + i) ? 'Tap again to remove page ' : 'Remove page ') + (i + 1)) + '">' + (armed('g-prm:' + i) ? 'Tap again to remove' : 'Remove') + '</button></span></li>';
       }).join('') + '</ol>';
     }
     // while Saved shows, the pages just written are saved, not "ready to save"
@@ -11703,7 +11706,7 @@ if (list.length) sg('oreg', 's');
       '<div class="field"><label class="label" for="g-kw">Search words (optional)</label><input id="g-kw" class="search" data-k="g-kw" maxlength="200" autocomplete="off" placeholder="For example: iCombi, oven, programme" value="' + esc(f.kw) + '"><span class="hint">Separate them with commas. A recipe card that mentions one of these words shows a link to this guide.</span></div>' +
       '<p class="g-links" id="g-links">' + esc(gLinksText(f)) + '</p>' +
       '<div class="btn-row">' + svButton({ k: 'g', p: 'g-save', idle: f.id ? 'Save changes' : 'Save guide', busy: f.saving, icon: 'guides', off: !!f.busy || svHeld('g') || gfSame() }) +
-      '<button type="button" class="btn" data-p="g-cancel">' + (armed('g-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div>' +
+      '<button type="button" class="btn' + armCls('g-cancel') + '" data-p="g-cancel">' + (armed('g-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div>' +
       svLine('g', f.saving, f.msg) + '</section>';
   }
   function gProgressHTML(f) {
@@ -11721,8 +11724,8 @@ if (list.length) sg('oreg', 's');
     return '<li class="nt-row g-row"><div class="g-rt">' + gThumbHTML(g) + '<div class="g-rb"><span class="nt-tag">' + esc(gCatName(g.cat)) + '</span>' + gWhoTag(g) + '<b>' + esc(g.title) + '</b>' + (g.sum ? '<span>' + esc(g.sum) + '</span>' : '') +
       '<span class="nt-by">' + esc(gMeta(g)) + (cards.length ? '. On ' + esc(cards.slice(0, 4).join(', ')) + (cards.length > 4 ? ' and ' + (cards.length - 4) + ' more' : '') : '') + '</span></div></div>' +
       (bundled ? '<span class="hint">Included with the book. Open to read or download the PDF.</span>' : '') +
-      '<div class="btn-row"><a class="p-x g-open" href="#/guides/' + encodeURIComponent(g.id) + '">Open</a>' + (bundled ? '' : '<button type="button" class="p-x" data-p="g-edit" data-id="' + esc(g.id) + '">' + (armed('g-edit:' + g.id) ? 'Not saved. Tap again' : 'Change') + '</button>' +
-      '<button type="button" class="p-x" data-p="g-del" data-id="' + esc(g.id) + '">' + (armed('g-del:' + g.id) ? 'Tap again to remove' : 'Remove') + '</button>') + '</div></li>';
+      '<div class="btn-row"><a class="p-x g-open" href="#/guides/' + encodeURIComponent(g.id) + '">Open</a>' + (bundled ? '' : '<button type="button" class="p-x' + armCls('g-edit:' + g.id) + '" data-p="g-edit" data-id="' + esc(g.id) + '">' + (armed('g-edit:' + g.id) ? 'Not saved. Tap again' : 'Change') + '</button>' +
+      '<button type="button" class="p-x lk-del" data-p="g-del" data-id="' + esc(g.id) + '">' + (armed('g-del:' + g.id) ? 'Tap again to remove' : 'Remove') + '</button>') + '</div></li>';
   }
   function guidesAdminHTML() {
     var open = !!S.gf, live = gAll();
@@ -12038,7 +12041,7 @@ if (list.length) sg('oreg', 's');
       (prev ? '<p class="dr-prev"><span class="label">Your usual</span>' + esc(prev) + '</p>' : '') +
       (dkMsg ? '<p class="p-err" role="alert">' + esc(dkMsg) + '</p>' : '') +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="dk-save"' + (dkBusy || dkMine() && !dkDirty() ? ' disabled' : '') + '>' + (dkBusy ? 'Saving...' : 'Save my usual') + '</button>' +
-      (first ? '<button type="button" class="btn" data-p="dk-skip">' + (armed('dk-skip') ? 'Tap again to skip' : 'Skip for now') + '</button>' : '<button type="button" class="btn" data-p="dk-cancel">' + (armed('dk-cancel') ? 'Tap again to discard' : 'Cancel') + '</button>') + '</div></div>';
+      (first ? '<button type="button" class="btn' + armCls('dk-skip') + '" data-p="dk-skip">' + (armed('dk-skip') ? 'Tap again to skip' : 'Skip for now') + '</button>' : '<button type="button" class="btn' + armCls('dk-cancel') + '" data-p="dk-cancel">' + (armed('dk-cancel') ? 'Tap again to discard' : 'Cancel') + '</button>') + '</div></div>';
   }
   function drinkAskHTML() {
     var p = who();
@@ -12961,20 +12964,20 @@ if (list.length) sg('oreg', 's');
           (ls.length > 1 ? '<div class="btn-row"><button type="button" class="btn" data-p="cut-open" data-i="' + i + '">Change one day</button></div>' : '')
         : '<ul class="cut-ls">' + ls.slice().sort(function (a, b) { return (a.d + 6) % 7 - (b.d + 6) % 7; }).map(function (l) { return cutLineHTML(s, i, l, u); }).join('') + '</ul>' +
           '<div class="cut-two">' + cutRemField(s, i) + '</div>' + '<p class="hint cut-say">' + (s.lead ? 'Reminder ' + s.lead / 60 + ' hours before each cut-off.' : 'Reminder all day on each cut-off day.') + '</p>' +
-          '<div class="btn-row"><button type="button" class="btn" data-p="cut-same" data-i="' + i + '">' + (armed('cut-same:' + i) ? 'Tap again: every day changes' : 'Set every day the same') + '</button></div>';
+          '<div class="btn-row"><button type="button" class="btn' + armCls('cut-same:' + i) + '" data-p="cut-same" data-i="' + i + '">' + (armed('cut-same:' + i) ? 'Tap again: every day changes' : 'Set every day the same') + '</button></div>';
       return '<li class="cut-ed">' +
         '<div class="field"><label class="label" for="cut-n' + i + '">Supplier' + cutStampHTML(s) + '</label><input id="cut-n' + i + '" class="search" data-k="cut-n' + i + '" maxlength="40" autocomplete="off" placeholder="Supplier name" value="' + esc(s.name) + '"></div>' +
         '<fieldset class="cut-dd"><legend class="label">Delivery days</legend><div class="chips">' + CUT_DOW.map(function (w) {
           return '<button type="button" class="chip" data-p="cut-day" data-i="' + i + '" data-v="' + w[0] + '" aria-pressed="' + (s.dd.indexOf(w[0]) >= 0) + '">' + w[1] + '</button>';
         }).join('') + '</div></fieldset>' + body +
         '<p class="p-err cut-clash" role="alert"' + (clash ? '' : ' hidden') + '>' + esc(clash) + '</p>' +
-        '<button type="button" class="p-x" data-p="cut-rm" data-i="' + i + '" aria-label="' + esc('Remove ' + (s.name || 'this supplier')) + '">' + (armed('cut-rm:' + i) ? 'Tap again to remove' : 'Remove') + '</button></li>';
+        '<button type="button" class="p-x lk-del" data-p="cut-rm" data-i="' + i + '" aria-label="' + esc('Remove ' + (s.name || 'this supplier')) + '">' + (armed('cut-rm:' + i) ? 'Tap again to remove' : 'Remove') + '</button></li>';
     }).join('');
     return '<section class="set-block a-cut"><span class="label">Order cut-offs</span><span class="hint">Tick the days the supplier delivers, then when each order has to be in. One day different, like Wednesday\'s order by Friday 16:00: Change one day.</span>' +
       '<details class="a-how"><summary>How reminders work</summary><p class="hint">You and the sous chefs get a bar at the top of every page from the time you pick under Remind us (4 hours before unless you change it) until the cut-off passes, and a push then if pushes are on. It turns orange in the last hour, with a push. An early cut-off is reminded from the night before. Today\'s cut-offs show on the order list. An order that closes 2 or more days before its delivery also shows the day before, under Tomorrow, heads-up on the order list, with a push at ' + hhmm(CUT.HEADS) + '. Two deliveries that close on the same day are one order and one tick.</p></details>' +
       (rows ? '<ul class="cut-eds">' + rows + '</ul>' : '<p class="hint">No suppliers yet, so nobody is reminded.</p>') +
       '<div class="btn-row"><button type="button" class="btn" data-p="cut-add">Add a supplier</button>' + (d.length ? '' : '<button type="button" class="btn" data-p="cut-usual">Add ' + esc(CUT_USUAL.map(function (x) { return x.name; }).join(', ')) + '</button>') + '</div>' +
-      '<div class="btn-row">' + cutSaveBtn() + '<button type="button" class="btn" data-p="cut-undo"' + (cutDirty() ? '' : ' disabled') + '>' + (armed('cut-undo') ? 'Tap again to undo' : 'Undo unsaved changes') + '</button></div>' +
+      '<div class="btn-row">' + cutSaveBtn() + '<button type="button" class="btn' + armCls('cut-undo') + '" data-p="cut-undo"' + (cutDirty() ? '' : ' disabled') + '>' + (armed('cut-undo') ? 'Tap again to undo' : 'Undo unsaved changes') + '</button></div>' +
       '<div class="cut-msg">' + cutMsgHTML() + '</div>' + (pushWhoId() ? '<h3 class="a-ch-h">Pushes on this device</h3>' + pushHTML() : '') + '</section>';
   }
   function cutSave() {
@@ -13312,7 +13315,7 @@ if (list.length) sg('oreg', 's');
     var list = d.kitSecs || [], t = dayNow();
     var rows = list.map(function (s, i) {
       return '<li class="a-ks-row' + (s.off ? ' is-off' : '') + '"><label class="visually-hidden" for="a-ks' + i + '">Section name</label><input id="a-ks' + i + '" class="search" data-k="a-ks' + i + '" data-a="ksec" data-i="' + i + '" maxlength="40" autocomplete="off" placeholder="Section name" value="' + esc(s.name) + '"' + (s.off ? ' disabled' : '') + '>' +
-        '<button type="button" class="p-x" data-p="ks-rm" data-i="' + i + '" aria-label="' + esc((s.off ? 'Put back: ' : 'Remove: ') + (s.name || 'this section')) + '">' + (s.off ? 'Put back' : armed('ks-rm:' + s.id) ? 'Tap again to remove' : 'Remove') + '</button></li>';
+        '<button type="button" class="p-x' + (s.off ? '' : ' lk-del') + '" data-p="ks-rm" data-i="' + i + '" aria-label="' + esc((s.off ? 'Put back: ' : 'Remove: ') + (s.name || 'this section')) + '">' + (s.off ? 'Put back' : armed('ks-rm:' + s.id) ? 'Tap again to remove' : 'Remove') + '</button></li>';
     }).join('');
     // in its Kitchen row, under the row's own name (5 Nov 2026), so no label of its own
     var out = '<section class="set-block a-ks"><span class="hint">Staff and leads pick one of these straight after their PIN, once a day. Their prep lines and wastage go under it unless they write another section. You and the sous chefs are not asked: your section is your role. To rename a section, change its name in its box: its old lines and counts then go under the new name. Save changes at the bottom to put them live.</span>' +
@@ -14373,8 +14376,8 @@ if (list.length) sg('oreg', 's');
       '<button type="button" class="todo-tick" data-p="todo-tick" data-id="' + id + '" aria-pressed="' + done + '" aria-label="' + esc((done ? 'Untick: ' : 'Tick off: ') + String(x.text || '').slice(0, 40)) + '">' + TICK + '</button>' +
       '<div class="todo-body"><div class="todo-top"><p class="todo-text">' + esc(x.text) + '</p></div><div class="todo-meta">' + dueTag + meta.join('') + '</div>' +
       '<div class="todo-foot">' + byLine +
-      '<div class="todo-acts">' + (done ? '' : '<button type="button" class="p-link" data-p="todo-edit" data-id="' + id + '">' + (armed('todo-edit:' + x.id) ? 'Not saved. Tap again' : 'Change') + '</button>') +
-      '<button type="button" class="p-link" data-p="todo-del" data-id="' + id + '">' + (armed('todo-del:' + x.id) ? 'Not saved. Tap again to remove' : 'Remove') + '</button></div></div></div></li>';
+      '<div class="todo-acts">' + (done ? '' : '<button type="button" class="p-link' + armCls('todo-edit:' + x.id) + '" data-p="todo-edit" data-id="' + id + '">' + (armed('todo-edit:' + x.id) ? 'Not saved. Tap again' : 'Change') + '</button>') +
+      '<button type="button" class="p-link lk-del" data-p="todo-del" data-id="' + id + '">' + (armed('todo-del:' + x.id) ? 'Not saved. Tap again to remove' : 'Remove') + '</button></div></div></div></li>';
   }
   function tdFindText(x) { return x.text + ' ' + (tdForOk(x.for) ? mnName(x.for) : '') + ' ' + tdName(x.from); }
   function tdFilters() {
@@ -14398,7 +14401,7 @@ if (list.length) sg('oreg', 's');
       '<div class="todo-more"><div class="field"><label class="label" for="todo-due">Due by (optional)</label><div class="todo-dues"><input id="todo-due" type="date" class="p-dateinput" data-k="todo-due" value="' + esc(due) + '">' +
       '<button type="button" class="chip" data-p="todo-nodue"' + (due ? '' : ' hidden') + '>No date</button></div></div>' + fr +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="todo-save"' + (!tdDirty() ? ' disabled' : '') + '>' + (editing ? 'Save changes' : 'Add to the list') + '</button>' +
-      (editing ? '<button type="button" class="btn" data-p="todo-cancel">' + (armed('todo-cancel') ? 'Tap again to discard' : 'Cancel') + '</button>' : '') + '</div></div></section>';
+      (editing ? '<button type="button" class="btn' + armCls('todo-cancel') + '" data-p="todo-cancel">' + (armed('todo-cancel') ? 'Tap again to discard' : 'Cancel') + '</button>' : '') + '</div></div></section>';
   }
   function todoPageHTML() {
     todoLoad();
@@ -15229,7 +15232,7 @@ if (list.length) sg('oreg', 's');
     var lines = shs.map(function (s, i) {
       var offKey = 'tm-off:' + day + ':' + p.id + ':' + s.id, armedOff = armed(offKey), hint = learn[p.id + '|' + s.id];
       return '<div class="tm-tlsvc" data-sh="' + esc(s.id) + '"><span class="tm-tlsvc-name"><span class="tm-tlsvc-head"><b>' + esc(s.name) + '</b>' +
-        '<button type="button" class="p-link tm-tloff' + (armedOff ? ' is-armed' : '') + '" data-p="tm-off" data-id="' + esc(p.id) + '" data-sh="' + esc(s.id) + '" data-day="' + esc(day) + '" aria-label="' + esc(armedOff ? 'Tap again to take ' + p.name + ' off ' + s.name : 'Take ' + p.name + ' off ' + s.name) + '"' + dis + '>' + esc(armedOff ? 'Tap again to take off' : 'Take off ' + s.name) + '</button></span>' +
+        '<button type="button" class="p-link tm-tloff' + (armedOff ? ' is-armed lk-del' : '') + '" data-p="tm-off" data-id="' + esc(p.id) + '" data-sh="' + esc(s.id) + '" data-day="' + esc(day) + '" aria-label="' + esc(armedOff ? 'Tap again to take ' + p.name + ' off ' + s.name : 'Take ' + p.name + ' off ' + s.name) + '"' + dis + '>' + esc(armedOff ? 'Tap again to take off' : 'Take off ' + s.name) + '</button></span>' +
         (hint ? '<small class="tm-learn tm-tlhint">' + esc(hint) + '</small>' : '') + '</span>' +
         '<div class="tm-grid-cell tm-tlsvc-sec' + (chefP(p) ? ' is-chef' : '') + '">' + tmGridCellHTML(p, s, shs) + '</div>' +
         (i === shs.length - 1 ? '<div class="tm-tlsvc-more">' + tmAddSvcHTML(p) + '</div>' : '') + '</div>';
@@ -15485,14 +15488,14 @@ if (list.length) sg('oreg', 's');
     var summary = '<aside class="tm-away hm-board tm-live-strip" aria-label="Today, on break now"' + (tmAwayHidden(away) ? ' hidden' : '') + '><div class="tm-away-slot">' + tmAwayHTML(away, true) + '</div><details class="tm-live-details"><summary data-p="tm-live-toggle">Saved details</summary><div class="tm-live-detail-slot">' + tmLiveDetailHTML(away) + '</div></details></aside><aside class="tm-extra"><details class="tm-next-overview"><summary data-p="tm-next-toggle">Next planned breaks today</summary><div class="tm-next-slot">' + tmNextHTML(true) + '</div></details>' + savedOverview + (!isToday && !glance ? '<p class="hint">No saved shifts for the selected date yet.</p>' : '') + '</aside>';
     var editor = tmAssignHTML(s);
     // Clear this day (head chef, 16 Nov 2026): the head chef's admin panel only; a second tap keyed by the date
-    var clear = adminPage('plan') ? '<div class="tm-same"><span><b>Clear ' + esc(date) + '</b><small>Takes everyone off every service on this day, with their breaks. Nothing is saved until Save. A day saved with nobody on reads as Not set, so the roster file can fill it again.</small></span><button type="button" class="btn tm-clear" data-p="tm-clear" data-day="' + esc(day) + '"' + (nobody || busy ? ' disabled' : '') + '>' + (armed('tm-clear:' + day) ? 'Tap again to clear ' + esc(date) : 'Clear this day') + '</button></div>' : '';
+    var clear = adminPage('plan') ? '<div class="tm-same"><span><b>Clear ' + esc(date) + '</b><small>Takes everyone off every service on this day, with their breaks. Nothing is saved until Save. A day saved with nobody on reads as Not set, so the roster file can fill it again.</small></span><button type="button" class="btn tm-clear' + armCls('tm-clear:' + day) + '" data-p="tm-clear" data-day="' + esc(day) + '"' + (nobody || busy ? ' disabled' : '') + '>' + (armed('tm-clear:' + day) ? 'Tap again to clear ' + esc(date) : 'Clear this day') + '</button></div>' : '';
     var tools = '<details class="tm-batch"><summary data-p="tm-batch-toggle">' + (clear ? 'Copy, clear or spread breaks' : 'Copy a day or spread breaks') + '</summary>' + clear + use + tmSel('tm-tool-sh', 'Service for break tools', shs.map(function (x) { return [x.id, x.name]; }), s.id) + (spread || '<p class="hint">Nobody is on this service yet. Add staff before spreading breaks.</p>') + tmDraftOverlapHTML() + '</details>';
     var status = busy ? 'Saving...' : svOf('t') === 'fail' ? 'Not saved. Changes kept.' : dirty ? 'Unsaved changes' : rec ? 'Saved ' + clock(rec.upd) + (rec.by ? ' · ' + mnName(rec.by) : '') : 'No team saved yet';
     if (tmQuickPending(tmUi)) status += ' · Staff selection waiting for Add';
     var shortBand = tmShortBandHTML(tmShortView(tmShortNow()));
     save = '<div class="tm-save tm-focus-save' + (shortBand.html ? ' has-short' : '') + '"><p class="tm-save-state" role="status"' + (tmShortStateHidden(shortBand) ? ' hidden' : '') + '>' + esc(status) + '</p><div class="tm-short-line" role="status"' + (shortBand.html ? '' : ' hidden') + '>' + shortBand.html + '</div>' + svButton({ k: 't', p: 'tm-save', idle: 'Save ' + date, off: !dirty, busy: busy }) + svLine('t', busy, tmMsg || tmAssignMsg) + '</div>';
     return '<section class="tm-page tm-notebook tm-focus-page' + (isToday ? '' : ' tm-planning') + '" data-day="' + esc(day) + '" aria-labelledby="rtitle">' +
-      '<div class="tm-nbook"><div class="tm-nleft"><header class="tm-nhead"><div>' + heading + '</div><div class="tm-planstate"><p class="tm-draftstate' + (dirty ? ' is-dirty' : '') + '" role="status">' + esc(status) + '</p><button type="button" class="p-link" data-p="tm-refresh"' + (busy || tmLastBusy ? ' disabled' : '') + ' title="' + esc(pe.checkedAt ? 'Last checked ' + clock(now() - Math.max(0, Date.now() - pe.checkedAt)) : 'Check the saved plan') + '">' + (armed('tm-refresh') ? 'Tap again to refresh' : 'Refresh') + '</button></div></header>' +
+      '<div class="tm-nbook"><div class="tm-nleft"><header class="tm-nhead"><div>' + heading + '</div><div class="tm-planstate"><p class="tm-draftstate' + (dirty ? ' is-dirty' : '') + '" role="status">' + esc(status) + '</p><button type="button" class="p-link' + armCls('tm-refresh') + '" data-p="tm-refresh"' + (busy || tmLastBusy ? ' disabled' : '') + ' title="' + esc(pe.checkedAt ? 'Last checked ' + clock(now() - Math.max(0, Date.now() - pe.checkedAt)) : 'Check the saved plan') + '">' + (armed('tm-refresh') ? 'Tap again to refresh' : 'Refresh') + '</button></div></header>' +
       tmDateHTML() + '<div class="tm-work">' + (!isToday ? '<p class="tm-future-note hint">Planning ' + esc(date) + '. The live board still shows today\'s saved breaks.</p>' : '') + tmFocusToolbarHTML() +
       '<div class="tm-editor">' + editor + '</div>' + save + tools + tmRsHTML() + '</div></div><div class="tm-nspine" aria-hidden="true"></div><div class="tm-nright">' +
       summary + '</div></div></section>';
@@ -16178,7 +16181,7 @@ if (list.length) sg('oreg', 's');
       var nm = s.name || 'this shift';
       return '<li class="a-ks-row a-sh-row' + (s.off ? ' is-off' : '') + '"><label class="visually-hidden" for="a-sh' + i + '">Shift name</label><input id="a-sh' + i + '" class="search" data-k="a-sh' + i + '" data-a="shname" data-i="' + i + '" maxlength="40" autocomplete="off" placeholder="Shift name, like Lunch" value="' + esc(s.name) + '"' + (s.off ? ' disabled' : '') + '>' +
         time(i, 'from', s.from, 'From, ' + nm) + time(i, 'to', s.to, 'To, ' + nm) +
-        '<button type="button" class="p-x" data-p="sh-rm" data-i="' + i + '" aria-label="' + esc((s.off ? 'Put back: ' : 'Remove: ') + nm) + '">' + (s.off ? 'Put back' : armed('sh-rm:' + s.id) ? 'Tap again to remove' : 'Remove') + '</button>' +
+        '<button type="button" class="p-x' + (s.off ? '' : ' lk-del') + '" data-p="sh-rm" data-i="' + i + '" aria-label="' + esc((s.off ? 'Put back: ' : 'Remove: ') + nm) + '">' + (s.off ? 'Put back' : armed('sh-rm:' + s.id) ? 'Tap again to remove' : 'Remove') + '</button>' +
         '<label class="a-sh-occ"><input type="checkbox" data-a="shocc" data-i="' + i + '"' + (s.occ ? ' checked' : '') + (s.off ? ' disabled' : '') + '><span>' + esc('Hide ' + (String(s.name || '').trim() || 'this shift') + ' on Today\'s team until someone is on it') + '</span></label>' +
         (s.off ? '' : shBusyHTML(s, i, nm)) + '</li>';
     }).join('');
@@ -16643,7 +16646,7 @@ if (list.length) sg('oreg', 's');
     if (!S.root) return;
     var note = S.root.querySelector('#prep-leave-note'); if (note) note.remove();
     var cancel = S.root.querySelector('[data-p="n-cancel"], [data-p="mn-cancel"], [data-p="g-cancel"]');
-    if (cancel) { var a = cancel.getAttribute('data-p'); cancel.textContent = a === 'mn-cancel' ? 'Cancel' : a === 'n-cancel' ? S.nf && S.nf.id ? 'Cancel' : 'Close' : S.gf && S.gf.id ? 'Cancel' : 'Close'; }
+    if (cancel) { var a = cancel.getAttribute('data-p'); cancel.classList.remove('lk-del'); cancel.textContent = a === 'mn-cancel' ? 'Cancel' : a === 'n-cancel' ? S.nf && S.nf.id ? 'Cancel' : 'Close' : S.gf && S.gf.id ? 'Cancel' : 'Close'; }
     window.dispatchEvent(new Event('lk-back'));
   }
   function localReturn(a) {
