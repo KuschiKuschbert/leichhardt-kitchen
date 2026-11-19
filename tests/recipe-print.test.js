@@ -49,9 +49,12 @@ async function pdfOf(p, paper) {
     ok(!!(await p.$('#r-edit a[href="#/manage/print/chicken-adobo"]')) && !!(await p.$('#r-edit a[href="#/manage/r/chicken-adobo"]')), 'head chef: Print this card sits beside Change this recipe');
     const h = await p.$eval('#r-edit a[href^="#/manage/print"]', a => a.getBoundingClientRect().height);
     ok(h >= 44, 'Print this card is a 44 px target (' + h + ' px)');
+    // The print script arrives slowly here, as it can on the live site (19 Nov 2026: the loading title "Opening
+    // Print cards" passed the old check, and the ticks were read before the page was drawn).
+    await p.route(/js\/recipe-print\.js/, r => new Promise(go => setTimeout(go, 1500)).then(() => r.fallback()));
     await p.click('#r-edit a[href^="#/manage/print"]');
-    ok(await wait(p, () => document.querySelector('#rtitle') && /Print cards/.test(document.querySelector('#rtitle').textContent)), 'Print cards opens');
-    ok(await p.evaluate(() => [...document.querySelectorAll('[data-rcp="tick"][aria-pressed="true"]')].map(e => e.getAttribute('data-v')).join() === 'chicken-adobo'), 'only Chicken Adobo is ticked');
+    ok(await wait(p, () => document.querySelector('#rtitle') && /Print cards/.test(document.querySelector('#rtitle').textContent) && !!document.querySelector('[data-rcp="print"]')), 'Print cards opens');
+    ok(await wait(p, () => [...document.querySelectorAll('[data-rcp="tick"][aria-pressed="true"]')].map(e => e.getAttribute('data-v')).join() === 'chicken-adobo'), 'only Chicken Adobo is ticked');
     ok(await wait(p, () => /Print 1 card, \d+ pages?/.test((document.querySelector('[data-rcp="print"]') || {}).textContent || '')), 'the button says the page count from the layout: ' + await label(p));
 
     // a group adds its cards and says so; Untick all clears; Print this card later never carries old ticks
