@@ -2,7 +2,7 @@
 
 ## Tutorial videos in Guides, 19 November 2026
 
-The Videos group in Guides reads nothing: the videos' titles and steps travel in `js/tutorials.js`. Opening a video guide reads its links once a day per phone and person: `tutorials/staff` (1 read), and `tutorials/chefs` too for a chef or the admin (1 more). About 1 to 2 reads per person on a day they open one, no listener. The admin's links box reads both records from the server when it opens (2 reads); Save writes both in one batch (2 writes). Both records are small (a few kB at most).
+The Videos group in Guides reads nothing: the videos' titles and steps travel in `js/tutorials.js`. Opening a video guide reads its links once a day per phone and person: `tutorials/staff` (1 read), and `tutorials/chefs` too for a chef or the admin (1 more). About 1 to 2 reads per person on a day they open one, no listener. The admin's links box reads both records from the server when it opens (2 reads); Save writes both in one batch (2 writes). Both records are small (a few kB at most). The moving previews (19 November 2026) are files on the site, not Firestore: no reads.
 
 ## April Fools, 17 November 2026
 

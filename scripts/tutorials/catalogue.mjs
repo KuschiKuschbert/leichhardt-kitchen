@@ -4,7 +4,7 @@
 //
 //   node scripts/tutorials/catalogue.mjs [--out <the make.mjs output folder, for each video's length>]
 //
-// Run it after a storyboard changes, and commit js/tutorials.js with the storyboard. The YouTube links are not here: the
+// Run it after a storyboard changes (and after previews.mjs), and commit js/tutorials.js with the storyboard. The YouTube links are not here: the
 // head chef pastes them in the admin panel, and the chefs' links are kept where only chefs can read them.
 import fs from 'fs';
 import path from 'path';
@@ -27,6 +27,8 @@ for (const [i, id] of ORDER.entries()) {
   try { len = Math.round(JSON.parse(fs.readFileSync(path.join(OUT, id, 'desktop', 'compose', 'cues-final.json'), 'utf8')).total); } catch (e) {}
   const steps = board.steps.map(s => s.title + ': ' + s.say.join(' '));
   const t = { id, n: i + 1, title: board.title, who: CHEFS.includes(id) ? 'chefs' : 'all', sum: (board.intro || [])[1] || board.sub || '', len, steps };
+  // its moving previews are in guides/videos/ (previews.mjs): the book shows them only when all four are there
+  if (['card.mp4', 'card.jpg', 'wide.mp4', 'wide.jpg'].every(k => fs.existsSync(path.join(ROOT, 'guides', 'videos', id + '-' + k)))) t.pv = 1;
   if (/—/.test(JSON.stringify(t))) throw new Error(id + ': an em dash in the words');
   list.push(t);
 }
