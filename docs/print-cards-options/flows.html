@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Print recipe cards | three ways to choose</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&amp;family=Barlow+Condensed:wght@700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="print.css">
+<style>
+  :root { --bg: #FBFAF7; --paper: #fff; --ink: #1C1D1F; --muted: #55585E; --accent-ink: #C2451A; --beige: #F2EFE8; --edge: #D9D4C8; --bar: #2B2A27; --bar-text: #FBF8F1; --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; --surface-paper: #FBF8F1; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #e9e4d8; font: 400 16px/1.4 Barlow, system-ui, sans-serif; color: var(--ink); }
+  h1 { font: 700 2rem/1 var(--display); text-transform: uppercase; margin: 24px 24px 4px; }
+  .lede { margin: 0 24px 16px; max-width: 70ch; }
+  .design { margin: 0 24px 40px; }
+  .design > h2 { font: 700 1.6rem/1 var(--display); text-transform: uppercase; margin: 0 0 4px; }
+  .design > p { margin: 0 0 12px; max-width: 80ch; }
+  .row { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+  .phone { width: 390px; height: 780px; background: var(--bg); border: 10px solid #222; border-radius: 34px; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+  .cap { width: 390px; font-size: .875rem; margin-top: 6px; }
+  .top { background: var(--bar); color: var(--bar-text); padding: 12px 14px; display: flex; align-items: center; gap: 10px; font: 700 1.1rem var(--display); text-transform: uppercase; }
+  .top .hat { margin-left: auto; width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--bar-text); }
+  .pg { padding: 12px 14px; overflow: hidden; flex: 1; }
+  .eb { font: 700 .75rem var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .nm { font: 700 1.6rem/1.05 var(--display); text-transform: uppercase; }
+  .trail { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+  .chip { min-height: 44px; padding: 0 14px; border-radius: 22px; border: 1.5px solid var(--ink); background: var(--paper); font: 600 .875rem Barlow; display: inline-flex; align-items: center; gap: 6px; }
+  .chip.on { background: var(--ink); color: #fff; }
+  .chip.sq { border-radius: 8px; }
+  .chip.hl { outline: 3px solid var(--accent-ink); outline-offset: 2px; }
+  .btn { min-height: 48px; padding: 0 18px; border-radius: 8px; border: 1.5px solid var(--ink); background: var(--paper); font: 700 1rem Barlow; display: inline-flex; align-items: center; justify-content: center; }
+  .btn.dark { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; }
+  .btn.wide { width: 100%; }
+  .dim { position: absolute; inset: 0; background: #0006; }
+  .sheet-ui { position: absolute; left: 0; right: 0; bottom: 0; background: var(--surface-paper); border-radius: 16px 16px 0 0; padding: 10px 16px 18px; }
+  .grip { width: 44px; height: 5px; border-radius: 3px; background: #bbb; margin: 0 auto 10px; }
+  .sh-h { font: 700 1.3rem var(--display); text-transform: uppercase; }
+  .lbl { font: 700 .8rem var(--display); letter-spacing: .12em; text-transform: uppercase; margin: 14px 0 6px; }
+  .papers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .paper { border: 1.5px solid var(--ink); border-radius: 8px; background: var(--paper); min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; padding: 6px 2px; font: 600 .75rem/1.1 Barlow; text-align: center; }
+  .paper.on { background: var(--ink); color: #fff; }
+  .paper i { display: block; border: 1.5px solid currentColor; background: transparent; }
+  .p4p i { width: 28px; height: 40px; } .p4l i { width: 40px; height: 28px; } .p5p i { width: 20px; height: 28px; } .p5l i { width: 28px; height: 20px; }
+  .note { font-size: .875rem; color: var(--muted); margin: 8px 0; }
+  .list { border-top: 1px solid var(--edge); }
+  .li { display: flex; align-items: center; gap: 10px; min-height: 52px; border-bottom: 1px solid var(--edge); padding: 4px 0; }
+  .li .no { font: 700 .9rem var(--display); border: 1.5px solid var(--ink); border-radius: 6px; padding: 1px 6px; }
+  .li .t { flex: 1; font-weight: 600; }
+  .li .s { font-size: .8rem; color: var(--muted); }
+  .box { width: 26px; height: 26px; border: 2px solid var(--ink); border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; }
+  .box.on { background: var(--ink); color: #fff; }
+  .chips { display: flex; gap: 8px; overflow: hidden; flex-wrap: nowrap; }
+  .bar2 { position: absolute; left: 0; right: 0; bottom: 0; background: var(--paper); border-top: 1.5px solid var(--edge); padding: 10px 14px 16px; }
+  .pack { display: flex; align-items: center; gap: 10px; min-height: 56px; border: 1.5px solid var(--ink); border-radius: 8px; background: var(--paper); padding: 6px 12px; margin-bottom: 8px; }
+  .pack b { flex: 1; } .pack span { font-size: .85rem; color: var(--muted); }
+  .pack.on { background: var(--ink); color: #fff; } .pack.on span { color: #ddd; }
+  .tile { border: 1.5px solid var(--ink); border-radius: 10px; background: var(--paper); padding: 12px; display: flex; flex-direction: column; gap: 4px; min-height: 92px; }
+  .tile b { font: 700 1.15rem var(--display); text-transform: uppercase; }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .thumb { width: 100%; height: 190px; overflow: hidden; border: 1px solid var(--edge); background: #f3f0ea; display: flex; justify-content: center; }
+  .thumb .wrap { transform-origin: top center; }
+  .say { background: var(--ink); color: #fff; border-radius: 8px; padding: 10px 12px; font-weight: 600; margin-top: 10px; }
+  .tabs { position: absolute; bottom: 0; left: 0; right: 0; height: 64px; background: var(--bar); }
+</style>
+<script src="../../js/data.js"></script>
+<script src="../../js/art.js"></script>
+<script src="print-engine.js"></script>
+</head>
+<body>
+<h1>Print recipe cards: three ways to choose</h1>
+<p class="lede">Head chef, sous chefs and admin only (owner, 19 Nov 2026). Every design opens the phone's or computer's own print dialog last, prints base amounts, and repeats the card number, name, page x of y, allergens and the print time on every page. Synthetic preview: the real book's top bar and tab bar are drawn as plain bars.</p>
+
+<section class="design" id="a">
+  <h2>A. Print from the card</h2>
+  <p>Changes the least. A <b>Print</b> chip on the recipe card's trail line, beside Keep screen on, for chefs only. One small sheet: which paper, and this card alone or with the recipes it uses. No way to print many cards at once. Layout A: the card in the screen's order.</p>
+  <div class="row">
+    <div><div class="phone"><div class="top">Recipes<span class="hat"></span></div><div class="pg">
+      <div class="eb">Main · Special</div><div class="nm">Chicken Adobo</div>
+      <div class="trail"><span class="chip">x1 amounts</span><span class="chip">Keep screen on</span><span class="chip hl">Print</span></div>
+      <p class="note">Per plate on 180 g steamed jasmine rice...</p><div class="thumb" style="height:330px;background:#fff"></div></div><div class="tabs"></div></div>
+      <div class="cap">1. A chef sees Print on the card's trail line. Cooks do not see it.</div></div>
+    <div><div class="phone"><div class="top">Recipes<span class="hat"></span></div><div class="pg"></div><div class="dim"></div>
+      <div class="sheet-ui"><div class="grip"></div><div class="sh-h">Print Chicken Adobo</div>
+        <div class="lbl">Paper</div>
+        <div class="papers"><span class="paper p4p on"><i></i>A4 upright</span><span class="paper p4l"><i></i>A4 sideways</span><span class="paper p5p"><i></i>A5 upright</span><span class="paper p5l"><i></i>A5 sideways</span></div>
+        <div class="lbl">Cards</div>
+        <div class="chips"><span class="chip on">This card</span><span class="chip">With Jasmine Rice (1 more)</span></div>
+        <p class="note">2 pages. Base amounts, not x3.</p>
+        <span class="btn dark wide">Print 1 card</span>
+        <div class="say">Opening the print dialog for Chicken Adobo...</div></div></div>
+      <div class="cap">2. Paper and cards, then Print. The phone's own dialog follows. Taps: Print, Print 1 card, then the dialog.</div></div>
+  </div>
+</section>
+
+<section class="design" id="b">
+  <h2>B. A print list in Manage Recipes</h2>
+  <p>Rethinks the flow. <b>Print cards</b> sits at the top of Manage Recipes (head chef, sous chefs, admin already). It turns the recipe list into a tick list: tick cards one by one, or a quick pick (a menu section, Batch recipes, Everything). A bar at the bottom keeps the count, the paper and Print. Layout B: a paper card, drawing and plate key in a side column, ingredients then method in the wide one.</p>
+  <div class="row">
+    <div><div class="phone"><div class="top">Manage recipes<span class="hat"></span></div><div class="pg">
+      <div class="trail"><span class="btn">+ New recipe</span><span class="btn" style="outline:3px solid #C2451A;outline-offset:2px">Print cards</span></div>
+      <div class="list">
+        <div class="li"><span class="no">124</span><span class="t">Chicken Adobo<div class="s">Special</div></span></div>
+        <div class="li"><span class="no">06</span><span class="t">Coconut Laksa<div class="s">Batch</div></span></div>
+        <div class="li"><span class="no">13</span><span class="t">Beef Burger<div class="s">Hand Held</div></span></div>
+        <div class="li"><span class="no">22</span><span class="t">Grill Board<div class="s">Big Country Feeds</div></span></div>
+      </div></div><div class="tabs"></div></div>
+      <div class="cap">1. Manage Recipes, Print cards.</div></div>
+    <div><div class="phone"><div class="top">Print cards<span class="hat"></span></div><div class="pg">
+      <div class="lbl" style="margin-top:0">Quick pick</div>
+      <div class="chips"><span class="chip on">Specials 5</span><span class="chip">Snackin' Plates 11</span><span class="chip">Batch 54</span><span class="chip">All 137</span></div>
+      <div class="list" style="margin-top:10px">
+        <div class="li"><span class="box on">✓</span><span class="no">124</span><span class="t">Chicken Adobo</span></div>
+        <div class="li"><span class="box on">✓</span><span class="no">125</span><span class="t">Lamb Nachos</span></div>
+        <div class="li"><span class="box on">✓</span><span class="no">126</span><span class="t">Buffalo Corn Cob</span></div>
+        <div class="li"><span class="box">&nbsp;</span><span class="no">06</span><span class="t">Coconut Laksa</span></div>
+        <div class="li"><span class="box">&nbsp;</span><span class="no">13</span><span class="t">Beef Burger</span></div>
+      </div></div>
+      <div class="bar2"><div class="papers" style="margin-bottom:8px"><span class="paper p4p on"><i></i>A4 upright</span><span class="paper p4l"><i></i>A4 sideways</span><span class="paper p5p"><i></i>A5 upright</span><span class="paper p5l"><i></i>A5 sideways</span></div>
+        <span class="btn dark wide">Print 5 cards, 5 pages</span></div></div>
+      <div class="cap">2. Tick or quick pick. The bar says how many cards and pages before Print.</div></div>
+    <div><div class="phone"><div class="top">Print cards<span class="hat"></span></div><div class="pg">
+      <div class="sh-h">Check the first page</div><div class="thumb" id="thumbB" style="height:520px"></div>
+      <div class="say">Opening the print dialog: 5 cards, 5 pages, A4 upright.</div></div></div>
+      <div class="cap">3. The first page is shown while the dialog opens (a real page from the paging engine).</div></div>
+  </div>
+</section>
+
+<section class="design" id="c">
+  <h2>C. Card packs in the chef panel</h2>
+  <p>Removes the most friction for the usual jobs. A <b>Print cards</b> tile in the Head chef / Sous chef panel opens one sheet of ready packs: the specials, each menu section, batch recipes, everything, or Pick cards. The paper is remembered on this device. Layout C: a station card, big ingredients and allergens to read from a metre away, the method small underneath.</p>
+  <div class="row">
+    <div><div class="phone"><div class="top">Head chef<span class="hat"></span></div><div class="pg">
+      <div class="tiles"><div class="tile"><b>Today's team</b><span class="s">Sections and breaks</span></div><div class="tile"><b>Chef to-do</b><span class="s">4 open</span></div><div class="tile"><b>Recipes</b><span class="s">Manage and drawings</span></div><div class="tile" style="outline:3px solid #C2451A;outline-offset:2px"><b>Print cards</b><span class="s">Paper cards for the line</span></div></div></div><div class="tabs"></div></div>
+      <div class="cap">1. Chef panel, Print cards tile.</div></div>
+    <div><div class="phone"><div class="top">Head chef<span class="hat"></span></div><div class="pg"></div><div class="dim"></div>
+      <div class="sheet-ui"><div class="grip"></div><div class="sh-h">Print cards</div>
+        <p class="note" style="margin:2px 0 8px">Paper: <b>A4 upright</b> (last time) <u>Change</u></p>
+        <div class="pack on"><b>Specials</b><span>5 cards</span></div>
+        <div class="pack"><b>A menu section</b><span>Snackin' Plates, Salads...</span></div>
+        <div class="pack"><b>Batch recipes</b><span>54 cards</span></div>
+        <div class="pack"><b>Every card</b><span>137 cards</span></div>
+        <div class="pack"><b>Pick cards</b><span>Search and tick</span></div>
+        <span class="btn dark wide">Print 5 cards, 6 pages</span></div></div>
+      <div class="cap">2. One tap on a pack, one on Print. Pick cards opens a search and tick list.</div></div>
+    <div><div class="phone"><div class="top">Head chef<span class="hat"></span></div><div class="pg">
+      <div class="sh-h">Station card</div><div class="thumb" id="thumbC" style="height:520px"></div></div></div>
+      <div class="cap">3. Layout C's first page (a real page from the paging engine).</div></div>
+  </div>
+</section>
+<script>
+  document.fonts.ready.then(function () {
+    [['thumbB', 'b'], ['thumbC', 'c']].forEach(function (t) {
+      var host = document.getElementById(t[0]), w = document.createElement('div'); w.className = 'wrap'; host.appendChild(w);
+      var res = PC.build(['chicken-adobo'], { layout: t[1], paper: 'a4p', when: '19 Nov 2026 14:05' }, w);
+      w.innerHTML = w.querySelector('.sheet').outerHTML;
+      var s = host.clientWidth / w.firstChild.offsetWidth; w.style.transform = 'scale(' + s + ')';
+    });
+    document.body.dataset.ready = '1';
+  });
+</script>
+</body>
+</html>

@@ -42,6 +42,8 @@ The rules behind them are in `CLAUDE.md` (Service rules, Coding rules, Things th
 - **A search** is one pill with its magnifier inside (`.find-i`) and the word Search for screen readers only. On a phone its count line shows only while a search or filter is on.
 - **Words** follow `CLAUDE.md`, Writing style: short, 24-hour times, no em dashes. A person's name comes from the staff list (`mnName()`), never typed into code.
 
+- **A print list** (Print cards, head chef 19 Nov 2026, [brief](print-cards-options/brief.md)): a page in Manage of `.rcp-row` tick rows (a 28 px box, the card number, the name; `aria-pressed`), groups as round chips that tick or untick their cards, and a fixed `.rcp-bar` above the tab bar with the paper as `.rcp-papers` picture tiles (`.rcp-paper`, the picked one filled) and one `.rcp-go` button that says the cards and the real page count. Printing goes through `LK_PRINT` in `js/controls.js`.
+
 ## Choosing
 
 - **Two to about six fixed choices:** chips in a row (`.chip` with `aria-pressed`), one tap. A count on a chip goes in a `small` inside it (Today's team's shift chips).

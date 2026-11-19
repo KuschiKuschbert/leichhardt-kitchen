@@ -1,0 +1,90 @@
+/* Print cards (head chef 19 Nov 2026, docs/print-cards-options/brief.md). Lazy: js/manage.js loads it with
+   js/recipe-print.js. The page in Manage, then the paper sheets. Meaning on paper is in words (Contains, May contain,
+   Safety, To come), so a grey printer loses nothing. */
+
+/* ---------- the page ---------- */
+.rcp-page { padding-bottom: 13rem; }
+.rcp-ticked { margin: 0.4rem 0 0.6rem; font-weight: 600; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; min-height: 44px; }
+.rcp-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.rcp-row { display: flex; align-items: center; gap: 0.7rem; width: 100%; min-height: 52px; padding: 0.3rem 0.2rem; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.rcp-box { flex: 0 0 auto; width: 28px; height: 28px; border: 2px solid var(--ink); border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; }
+.rcp-row[aria-pressed="true"] .rcp-box { background: var(--ink); color: #fff; }
+.rcp-cn { flex: 0 0 auto; min-width: 2.6rem; text-align: center; font: 700 0.9375rem/1.2 var(--display); border: 1.5px solid var(--ink); border-radius: 6px; padding: 1px 6px; }
+.rcp-rn { flex: 1 1 auto; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+.rcp-row:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: -3px; }
+.rcp-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: var(--paper); border-top: 1.5px solid var(--edge); padding: 0.6rem max(1rem, calc((100vw - 46rem) / 2)) 0.5rem; }
+.rcp-papers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.5rem; }
+.rcp-paper { min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; padding: 6px 4px; border: 1.5px solid var(--ink); border-radius: var(--r-act); background: var(--paper); color: var(--ink); font: 600 0.8125rem/1.1 var(--body); cursor: pointer; }
+.rcp-paper i { display: block; border: 1.5px solid currentColor; }
+.rcp-pp-a4p i { width: 15px; height: 21px; } .rcp-pp-a4l i { width: 21px; height: 15px; } .rcp-pp-a5l i { width: 16px; height: 11px; }
+.rcp-paper[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.rcp-paper:focus-visible, .rcp-go:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 2px; }
+.rcp-go { width: 100%; }
+.rcp-status { margin: 0.35rem 0 0; min-height: 1.2em; font-size: 0.875rem; font-weight: 600; }
+.rcp-status:empty { display: none; }
+@media (max-width: 719px) { .rcp-bar { bottom: var(--tabbar-h); } }   /* above the tab bar, like the editor's Save bar */
+
+/* the layout copy: off screen while it is measured, the only thing printed while the dialog is open */
+.rcp-measure, #rc-print { position: absolute; left: -12000px; top: 0; width: auto; pointer-events: none; }
+@media print {
+  body.rc-printing { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+  body.rc-printing > :not(#rc-print) { display: none !important; }
+  body.rc-printing #rc-print { position: static; left: auto; }
+  body.rc-printing .rcp-measure { display: none !important; }
+  #rc-print .rcp-sheet { break-after: page; box-shadow: none; }
+  #rc-print .rcp-sheet:last-child { break-after: auto; }
+}
+
+/* ---------- the sheets ---------- */
+.rcp-sheet { box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; padding: 9mm 10mm 7mm; background: #fff; color: #1c1d1f; font: 400 10pt/1.32 var(--body); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.rcp-sheet * { box-sizing: border-box; }
+.rcp-a5l { padding: 6.5mm 7mm 5mm; font-size: 9.1pt; }
+.rcp-run { display: flex; align-items: flex-start; gap: 3mm; border-bottom: 0.6mm solid #1c1d1f; padding-bottom: 2mm; margin-bottom: 2.5mm; }
+.rcp-no { font: 700 15pt/1 var(--display); border: 0.5mm solid #1c1d1f; border-radius: 2mm; padding: 1mm 2mm; }
+.rcp-pg { margin-left: auto; white-space: nowrap; font: 700 9.3pt/1.2 var(--display); text-transform: uppercase; letter-spacing: 0.06em; }
+.rcp-ttl { min-width: 0; flex: 1; }
+.rcp-eb { font: 700 9.3pt/1.2 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: #55585E; }
+.rcp-nm { font: 700 13pt/1.05 var(--display); text-transform: uppercase; overflow-wrap: anywhere; }
+.rcp-big .rcp-nm { font-size: 20pt; }
+.rcp-a5l .rcp-big .rcp-nm { font-size: 15pt; }
+.rcp-yl { margin-top: 1mm; }
+.rcp-mn { color: #55585E; font-size: 0.95em; }
+.rcp-alg { border: 0.6mm solid #1c1d1f; border-radius: 1.5mm; padding: 1.4mm 2.5mm; margin: 0 0 3mm; font: 700 11pt/1.25 var(--body); }
+.rcp-a5l .rcp-alg { font-size: 9.5pt; padding: 1mm 2mm; }
+.rcp-alg b { font-family: var(--display); text-transform: uppercase; letter-spacing: 0.1em; margin-right: 2mm; }
+.rcp-body { flex: 1 1 auto; min-height: 0; display: grid; gap: 3mm 5mm; grid-template-columns: 1fr; grid-template-rows: 1fr; }
+.rcp-body:has(.rcp-sidecol) { grid-template-columns: 34% 1fr; }
+.rcp-a4l .rcp-body:has(.rcp-sidecol) { grid-template-columns: 28% 1fr; }
+.rcp-a5l .rcp-body:has(.rcp-sidecol) { grid-template-columns: 32% 1fr; }
+.rcp-fit .rcp-body { zoom: 0.92; }
+.rcp-reg { min-height: 0; min-width: 0; overflow: hidden; }
+.rcp-cols { column-count: 2; column-gap: 5mm; column-fill: auto; }
+.rcp-blk { margin: 0 0 3mm; break-inside: avoid; }
+.rcp-lst { break-inside: auto; }
+.rcp-h { font: 700 9.3pt/1.2 var(--display); letter-spacing: 0.12em; text-transform: uppercase; border-bottom: 0.3mm solid #cfc8b8; padding-bottom: 0.6mm; margin-bottom: 1.2mm; break-after: avoid; }
+.rcp-h i { font-style: normal; color: #55585E; letter-spacing: 0.04em; }
+.rcp-a5l .rcp-eb, .rcp-a5l .rcp-h, .rcp-a5l .rcp-ref, .rcp-a5l .rcp-pin > b { font-size: 8.6pt; }
+.rcp-ing { display: grid; grid-template-columns: 25mm 1fr; gap: 2mm; padding: 0.7mm 0; border-bottom: 0.2mm dotted #cfc8b8; break-inside: avoid; }
+.rcp-wide .rcp-lst:first-child .rcp-ing, .rcp-main .rcp-ing { font-size: 12pt; }
+.rcp-a5l .rcp-ing { grid-template-columns: 18mm 1fr; }
+.rcp-a5l .rcp-wide .rcp-lst:first-child .rcp-ing, .rcp-a5l .rcp-main .rcp-ing { font-size: 10pt; }
+.rcp-q { font-weight: 700; text-align: right; }
+.rcp-note { display: block; color: #55585E; font-size: 0.95em; }
+.rcp-ref { font: 700 9.3pt var(--display); text-transform: uppercase; border: 0.25mm solid #1c1d1f; border-radius: 1mm; padding: 0 1mm; }
+.rcp-st { display: grid; grid-template-columns: 5mm 1fr; gap: 1.5mm; margin: 0 0 1.2mm; break-inside: avoid; }
+.rcp-st b { font-family: var(--display); }
+.rcp-pin { display: grid; grid-template-columns: 6mm 1fr; gap: 1.2mm; margin-bottom: 1mm; font-size: 0.95em; break-inside: avoid; }
+.rcp-pin > b { width: 5mm; height: 5mm; border-radius: 50%; background: #1c1d1f; color: #fff; text-align: center; line-height: 5mm; font-size: 9.3pt; }
+.rcp-art { display: block; width: 100%; max-height: 72mm; margin-bottom: 2mm; }
+.rcp-a5l .rcp-art { max-height: 46mm; }
+.rcp-tc { font-weight: 700; font-style: italic; }
+.rcp-tc::before { content: '['; } .rcp-tc::after { content: ']'; }
+.rcp-tc + i { font-style: italic; }
+.rcp-safety { border: 0.6mm solid #1c1d1f; padding: 2mm; border-radius: 1.5mm; }
+.rcp-tip { border: 0.3mm dashed #1c1d1f; padding: 2mm; border-radius: 1.5mm; }
+/* From the side: 0.38 mm per drawing unit on A4 (its labels 9.5 pt, 8.7 pt after the 92 % step), 0.35 on A5 */
+.rcp-side svg { display: block; width: calc(var(--vbw) * 0.38mm); max-width: 100%; height: auto; margin: 0 auto; }
+.rcp-a5l .rcp-side svg { width: calc(var(--vbw) * 0.35mm); }
+.rcp-cols .rcp-side { column-span: all; }
+.rcp-foot { border-top: 0.4mm solid #1c1d1f; margin-top: 2mm; padding-top: 1.5mm; font: 700 9.5pt/1.25 var(--body); }
+.rcp-a5l .rcp-foot { font-size: 8.6pt; }

@@ -171,7 +171,7 @@
     var toCome = A.toCome();
     var head = '<div class="mg-head"><h2 id="rtitle" tabindex="-1">Manage Recipes &amp; Drawings</h2>' +
       '<p class="hint">Change a recipe or add a new one. Staff see a saved change within half an hour. Put anything not confirmed yet in [square brackets].</p>' +
-      '<div class="btn-row"><a class="btn dark" href="#/manage/new">New recipe</a></div></div>';
+      '<div class="btn-row"><a class="btn dark" href="#/manage/new">New recipe</a><a class="btn" href="#/manage/print">Print cards</a></div></div>';
     var kind = kindOf(M.chip), n = {};
     if (kind === 'all') listRows().forEach(function (row) { var st = status(row.id); STATES.forEach(function (s) { if (chipOk({ r: row.r }, st, s[0])) n[s[0]] = (n[s[0]] || 0) + 1; }); });
     var chips = '<div class="chips scroll mg-kinds" role="group" aria-label="What to show">' + KINDS.map(function (c) {
@@ -1023,6 +1023,38 @@
       if (M.root === root) root.innerHTML = '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Could not open the drawing editor</h2><p>It needs the signal the first time it opens on a device. Check the signal and try again.</p><div class="btn-row"><button type="button" class="btn dark" data-act="mgretry">Try again</button></div></div>';
     });
   }
+  /* Print cards (head chef 19 Nov 2026, docs/print-cards-options/brief.md): js/recipe-print.js and its styles load
+     the first time a chef opens #/manage/print. Nothing is read from Firestore for it. */
+  var printLoad = null;
+  function loadPrint() {
+    if (window.LK_RCP) return Promise.resolve();
+    if (!printLoad) printLoad = new Promise(function (ok, no) {
+      var have = document.getElementById('rcp-css');
+      if (have) { ok(); return; }
+      var l = document.createElement('link'), t = setTimeout(function () { no(new Error('styles')); }, 8000);
+      l.rel = 'stylesheet'; l.href = 'css/recipe-print.css?v=1'; l.id = 'rcp-css';
+      l.onload = function () { clearTimeout(t); ok(); };
+      l.onerror = function () { clearTimeout(t); l.remove(); no(new Error('styles')); };
+      document.head.appendChild(l);
+    }).then(function () { return A.load('js/recipe-print.js?v=1'); }).catch(function (e) { printLoad = null; throw e; });
+    return printLoad;
+  }
+  function mountPrint(root, sub) {
+    var key = sub.join('/');
+    M.root = root; M.ed = null; drawn = 'print:' + key;
+    if (window.LK_RCP) {
+      if (window.LK_RCP.api === 1) window.LK_RCP.mount(root, sub);
+      else root.innerHTML = '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Reload the book</h2><p>Print cards on this device needs the current book.</p></div>';
+      var t = root.querySelector('#rtitle'); if (t) t.focus({ preventScroll: true });
+      return;
+    }
+    root.innerHTML = '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Opening Print cards</h2>' + loading('Loading the print layout...', 'recipes') + '</div>';
+    loadPrint().then(function () {
+      if (M.root === root && drawn === 'print:' + key) mountPrint(root, sub);
+    }, function () {
+      if (M.root === root && drawn === 'print:' + key) root.innerHTML = '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Could not open Print cards</h2><p>It needs the signal the first time it opens on a device. Check the signal and try again.</p><div class="btn-row"><button type="button" class="btn dark" data-act="mgretry">Try again</button></div></div>';
+    });
+  }
   function mount(root, route) {
     var sub = route.sub || [], key = sub.join('/');
     var owner = identity();
@@ -1040,6 +1072,8 @@
     M.sub = sub.slice();
     // Keep the last keystroke before a quick Back or another editor clears the current form.
     if (M.ed && M.ed.sub !== key && dirty()) keepNow();
+    if (sub[0] !== 'print' && window.LK_RCP) window.LK_RCP.unmount();
+    if (sub[0] === 'print') { if (window.LK_DRAW && window.LK_DRAW.open()) window.LK_DRAW.unmount(); mountPrint(root, sub); return; }
     if (sub[0] === 'draw') { mountDraw(root, sub); return; }
     if (window.LK_DRAW && window.LK_DRAW.open()) window.LK_DRAW.unmount();
     if (drawn.indexOf('draw:') === 0) drawn = '';
@@ -1060,9 +1094,10 @@
   }
   /* A hand-over (Sign out, Not you?, the idle lock: leave() in js/prep.js, 29 Oct 2026): the open form and drawing go
      with the person. Before, the page closing after the sign-out kept them as a draft again, for the next person. */
-  function drop() { clearTimeout(keepTimer); if (window.LK_DRAW && window.LK_DRAW.drop) window.LK_DRAW.drop(); M.ed = null; M.identity = ''; M.suspended = false; drawn = ''; unarm(); }
+  function drop() { if (window.LK_RCP) window.LK_RCP.drop(); clearTimeout(keepTimer); if (window.LK_DRAW && window.LK_DRAW.drop) window.LK_DRAW.drop(); M.ed = null; M.identity = ''; M.suspended = false; drawn = ''; unarm(); }
   function unmount() {
     var hadRoot = !!M.root;
+    if (window.LK_RCP) window.LK_RCP.unmount();
     if (window.LK_DRAW && window.LK_DRAW.open()) window.LK_DRAW.unmount();
     var lock = workLock();
     if (M.suspended && !M.root && identity() === M.identity || lock && lock.identity === M.identity) {

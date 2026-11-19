@@ -293,6 +293,7 @@
     pen: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="14" r="6.5" fill="none" stroke="currentColor" stroke-width="1.9"/><circle cx="9" cy="14" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M14.5 9.5 L20 4 L21.5 5.5 L16 11" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"/></svg>'
   };
 
+  var PRINT_ICON = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3.5h10V9M7 17.5H4.5v-7A1.5 1.5 0 0 1 6 9h12a1.5 1.5 0 0 1 1.5 1.5v7H17M7 14h10v6.5H7Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg>';
   // A card flagged done: true in data.js is 100% finished: green frame on the card and its drawings, plus a Finished chip.
   var DONE_TAG = '<span class="tag done-tag">Finished</span>';
 
@@ -1115,7 +1116,10 @@
   }
   /* "Change this recipe" for the head chef, in its own slot so a sign-in or sign-out can redraw it (lk-who, lk-admin, lk-cfg) */
   function editSlot(r) {
-    return '<div class="mg-slot" id="r-edit">' + (bookEdit() ? '<a class="p-x mg-slot-a" href="#/manage/r/' + encodeURIComponent(r.id) + '">' + ICON.pen + '<span>Change this recipe</span></a>' : '') + '</div>';
+    // Print this card (head chef 19 Nov 2026, docs/print-cards-options/brief.md): the same chefs only, beside Change
+    // this recipe, so cooks see no change; it opens Print cards with only this card ticked
+    return '<div class="mg-slot" id="r-edit">' + (bookEdit() ? '<a class="p-x mg-slot-a" href="#/manage/r/' + encodeURIComponent(r.id) + '">' + ICON.pen + '<span>Change this recipe</span></a>' +
+      '<a class="p-x mg-slot-a" href="#/manage/print/' + encodeURIComponent(r.id) + '">' + PRINT_ICON + '<span>Print this card</span></a>' : '') + '</div>';
   }
   function editSlotRedraw() {
     var el = document.getElementById('r-edit'), route = parseRoute();
