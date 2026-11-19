@@ -77,15 +77,16 @@ A secret missing from one venue's environment would otherwise quietly be the rep
 
 ### C. Add a venue
 
-1. **Firebase console** (your Google account): Add project, with an id you choose (it becomes the address, `<id>.web.app`). Check the plan and the free daily reads are per project. Then:
-   - Firestore: Create database, production mode, the same location as Leichhardt's.
-   - Authentication: turn on **Anonymous** and **Google**.
-   - Project settings, General: **Add app**, Web, with Hosting. Keep the settings it shows (apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId).
-   - App Check: register the web app with **reCAPTCHA Enterprise** for the domain `<id>.web.app`; keep the site key. Make a debug token (Apps, the web app, Manage debug tokens). Do not enforce yet.
-   - Google Cloud, APIs and Services, Credentials: restrict the Browser key to `https://<id>.web.app/*`, as Leichhardt's is.
-   - Project settings, Service accounts: **Generate new private key**. In Google Cloud, IAM, give that account the same roles Leichhardt's has, plus **Firebase Hosting Admin**.
+1. **Firebase console** (your Google account): Add project, with an id you choose (it becomes the address, `https://<id>.web.app/`). No Analytics (its `measurementId` is not one of the settings a venue file takes). The free Spark plan is enough: Firestore, Hosting, Authentication, Cloud Messaging and App Check all work on it, and the free daily reads are the project's own. Then:
+   - Firestore: Create database, id `(default)` (the publisher refuses any other), production mode, a location near the kitchen (`australia-southeast1`; it cannot be changed later). Its deny-all starting rules are replaced at the first Publish rules.
+   - Authentication: turn on **Anonymous** and **Google**. Settings, Authorized domains: `localhost`, `<id>.firebaseapp.com` and `<id>.web.app` are there by default; add nothing.
+   - Project settings, General: **Add app**, Web. Keep the settings it shows (apiKey, authDomain `<id>.firebaseapp.com`, projectId, storageBucket, messagingSenderId, appId).
+   - Hosting: **Get started** and click through (skip the command steps), so the site `<id>` exists for the first publish.
+   - App Check, Apps, the web app: **reCAPTCHA Enterprise**. Create a score-based website key in the reCAPTCHA console with the one domain `<id>.web.app`, paste it in and Save; that site key is public and goes into the venue file (`appCheckEnterpriseKey`). On Spark only some risk thresholds can be chosen and the free reCAPTCHA assessments per month are limited: check the monthly count after the first busy week. Manage debug tokens: add one for the Lock probe (`APPCHECK_DEBUG_TOKEN`). Do not enforce yet.
+   - Google Cloud, APIs and Services, Credentials, the Browser key (auto created by Firebase): Application restrictions, Websites, `https://<id>.web.app/*`, as Leichhardt's key allows only its own address; API restrictions the same list as Leichhardt's Browser key. If Google sign-in then says the request is blocked, add `https://<id>.firebaseapp.com/*` (the sign-in page lives on the authDomain).
+   - Project settings, Service accounts: **Generate new private key** and keep the file private. In Google Cloud, IAM, add **Firebase Hosting Admin** to that `firebase-adminsdk` account (it already reads and writes Firestore and publishes rules).
    - Indexes: copy Leichhardt's. In a terminal on your computer, signed in with `npx firebase-tools@13.29.1 login`: `npx firebase-tools@13.29.1 firestore:indexes --project leichhardt-kitchen > indexes.json`, then in that folder make `firebase.json` with `{ "firestore": { "indexes": "indexes.json" } }` and run `npx firebase-tools@13.29.1 deploy --only firestore:indexes --project <id>`.
-2. **GitHub**, Settings, Environments, **New environment** named like the venue (for example `strand`), no protection rules:
+2. **GitHub**, Settings, Environments, **New environment** named like the venue id (for example `strand`), with no protection rules (a reviewer or wait timer would hold the 10-minute cut-off job, and a branch limit would stop Publish rules from a branch). Making it early is safe: nothing runs for a venue until its file is merged.
    - Variable `VENUE_PROJECT` = the project id.
    - Secrets: `FIREBASE_SA` (the key file's contents), `KITCHEN_PIN` (a new PIN for that kitchen), `OWNER_EMAIL` (the venue's head chef's Google email), `PLATFORM_EMAIL` (your Google email), `BACKUP_KEY` (a new long random passphrase, saved in your password manager), `APPCHECK_DEBUG_TOKEN`. Leave `PLATFORM_STAFF_ID` for step 6.
 3. **Tell Claude** the venue's name and short name and the web app settings from step 1 (they are public). Claude opens a pull request adding `venues/<id>.json` and the venue's QR files (`venues/<id>/qr.svg`, `qr.png`, `qr-sign.pdf`, for its address). The Click tests check the file. Merge it.
