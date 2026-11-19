@@ -229,7 +229,7 @@
   // the recipe as it is now (the change saved in the book, or js/data.js), never the object js/app.js worked on
   function startFor(id) {
     var c = X.change(id), base = X.pristine(id);
-    if (c && c.r && !c.off) return { id: id, isNew: false, d: clone(c.r), meta: { v: c.v, src: c.src || (base ? 'book' : 'new'), base: c.base || '', removed: !!c.removed, off: false, by: c.by || '', upd: c.upd || 0 } };
+    if (c && c.r && !c.off) return { id: id, isNew: false, d: X.carry ? X.carry(clone(c.r)) : clone(c.r), meta: { v: c.v, src: c.src || (base ? 'book' : 'new'), base: c.base || '', removed: !!c.removed, off: false, by: c.by || '', upd: c.upd || 0 } };
     if (base) return { id: id, isNew: false, d: base, meta: { v: c ? c.v : 0, src: 'book', base: X.fingerprint(id), removed: false, off: !!(c && c.off), by: c ? c.by : '', upd: c ? c.upd : 0 } };
     return null;
   }
@@ -404,12 +404,17 @@
     el.value = c.label; el.setAttribute('data-id', c.id); setField(f, c.id);
     return true;
   }
-  function tagChips(list, where, i) {
-    var tags = list || [];
-    return '<div class="chips mg-tags" role="group" aria-label="Allergens in this">' + ALLERGENS.map(function (a) {
+  /* The ten allergens, and on an ingredient No allergens (19 Nov 2026, docs/allergen-check-options/brief.md): an
+     ingredient is checked only when it has an allergen or No allergens. With neither its card says "Allergens not
+     checked yet". No allergens on a row with allergens asks first: the allergens go. */
+  function tagChips(list, where, i, none, hand) {
+    var tags = list || [], ing = where === 'ing';
+    var noneB = ing ? '<button type="button" class="chip mg-none' + (none ? ' is-has' : '') + '" data-mg="none" data-i="' + i + '" aria-pressed="' + !!none + '">' + (armed('none:' + i) ? 'Tap again: the allergens go' : 'No allergens') + '</button>' : '';
+    return (ing && !none && !tags.length && !hand ? '<p class="mg-unk" role="note"><b>Not checked yet.</b> Choose its allergens, or No allergens.</p>' : '') +
+      '<div class="chips mg-tags" role="group" aria-label="Allergens in this">' + ALLERGENS.map(function (a) {
       var st = tags.indexOf(a) >= 0 ? 'has' : tags.indexOf(a + '?') >= 0 ? 'may' : '';
       return '<button type="button" class="chip mg-tag' + (st ? ' is-' + st : '') + '" data-mg="tag" data-w="' + where + '" data-i="' + i + '" data-v="' + esc(a) + '" aria-pressed="' + (!!st) + '">' + esc(a) + (st === 'may' ? '?' : '') + '</button>';
-    }).join('') + '</div><p class="hint">Tap once: has it. Twice: may have it (check the label). Three times: not in it.</p>';
+    }).join('') + noneB + '</div><p class="hint">Tap once: has it. Twice: may have it (check the label). Three times: not in it.' + (ing ? ' No allergens: checked, and none of the ten is in it.' : '') + '</p>';
   }
   function field(id, label, f, val, o) {
     o = o || {};
@@ -445,9 +450,10 @@
      the recipe link, the allergens and moving open from the row's arrow (e.open is the open row). The row shows what is
      behind the arrow in one short line. */
   var CHEV = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg>';
-  function ingSum(i) {
+  // hand: the recipe sets its allergens by hand, so a row's own allergens do not reach the card
+  function ingSum(i, hand) {
     var bits = i.link ? ['<span class="tag mg-ing-ln">' + esc(linkLabel(i.link)) + '</span>'] : (i.tags || []).map(function (t) { return '<span class="tag' + (/\?$/.test(t) ? ' maybe' : '') + '">' + esc(t) + '</span>'; });
-    if (!bits.length) bits.push('<span>No allergens</span>');
+    if (!bits.length && !hand) bits.push(i.none ? '<span>No allergens</span>' : '<span class="tag maybe">Not checked</span>');
     if (trimStr(i.note)) bits.push('<span class="mg-ing-note">' + esc(i.note) + '</span>');
     return '<span class="mg-ing-sum">' + bits.join('') + '</span>';
   }
@@ -461,12 +467,12 @@
         return '<li class="mg-ing' + (open ? ' open' : '') + '"><div class="mg-ing-top"><span class="mg-n" aria-hidden="true">' + (k + 1) + '</span>' +
           '<input class="search mg-q" data-f="ing.' + k + '.q" aria-label="Amount, ingredient ' + (k + 1) + '" placeholder="Amount" maxlength="40" value="' + esc(i.q || '') + '">' +
           '<input class="search mg-nm" data-f="ing.' + k + '.name" aria-label="Ingredient ' + (k + 1) + '" placeholder="Ingredient" maxlength="120" value="' + esc(i.name || '') + '">' +
-          '<button type="button" class="mg-ing-more" data-mg="ing-open" data-i="' + k + '" aria-expanded="' + open + '" aria-label="' + esc('Note, link, allergens and moving for ' + nm) + '">' + CHEV + '</button></div>' + ingSum(i) +
+          '<button type="button" class="mg-ing-more" data-mg="ing-open" data-i="' + k + '" aria-expanded="' + open + '" aria-label="' + esc('Note, link, allergens and moving for ' + nm) + '">' + CHEV + '</button></div>' + ingSum(i, e.handTags) +
           (open ? '<div class="mg-ing-open">' +
             '<div class="field"><label class="label" for="mg-note-' + k + '">Note</label><input id="mg-note-' + k + '" class="search" data-f="ing.' + k + '.note" placeholder="For example: bought in, 170 g" maxlength="200" value="' + esc(i.note || '') + '"></div>' +
             '<div class="field"><label class="label" for="mg-link-' + k + '">Recipe link</label><div class="mg-linkbox">' + linkBox('ing.' + k + '.link', i.link || '', 'mg-link-' + k, 'Recipe link, ingredient ' + (k + 1)) + '</div>' +
             '<span class="hint">A linked ingredient is tappable on the card and takes its allergens from its own recipe.</span></div>' +
-            (i.link ? '' : '<div class="field"><span class="label">Allergens</span>' + tagChips(i.tags, 'ing', k) + '</div>') +
+            (i.link ? '' : '<div class="field"><span class="label">Allergens</span>' + tagChips(i.tags, 'ing', k, i.none, e.handTags) + '</div>') +
             '<div class="btn-row mg-mini">' + (k ? '<button type="button" class="btn" data-mg="ing-up" data-i="' + k + '" aria-label="Move ingredient ' + (k + 1) + ' up">Move up</button>' : '') +
             (k < n - 1 ? '<button type="button" class="btn" data-mg="ing-down" data-i="' + k + '" aria-label="Move ingredient ' + (k + 1) + ' down">Move down</button>' : '') +
             '<button type="button" class="p-x mg-del" data-mg="ing-del" data-i="' + k + '" aria-label="' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + ' ingredient ' + (k + 1) + '">' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + '</button></div></div>' : '') + '</li>';
@@ -526,7 +532,7 @@
   }
   function rollTags(ro) { return ro.contains.concat(ro.check.map(function (a) { return a + '?'; })); }
   function allergenHTML(e) {
-    var d = e.d, clean = cleanRecipe(e), ro = A.rollFor(clean), now = A.tags(e.id), next = rollTags(ro);
+    var d = e.d, clean = cleanRecipe(e), ro = A.rollFor(clean), now = A.tags(e.id), next = rollTags(ro), unk = ro.unchecked || [];
     var users = A.usedIn(e.id).map(function (id) { return id; });
     var body;
     if (e.handTags) {
@@ -540,8 +546,9 @@
     return '<section class="set-block mg-sec" aria-labelledby="mg-h-alg"><h3 class="h3" id="mg-h-alg">Allergens</h3>' +
       '<div class="chips" role="group" aria-label="How the allergens are set"><button type="button" class="chip" data-mg="hand" data-v="0" aria-pressed="' + !e.handTags + '">' + (armed('hand') ? 'Tap again: hand-set allergens go' : 'Worked out from the ingredients') + '</button><button type="button" class="chip" data-mg="hand" data-v="1" aria-pressed="' + e.handTags + '">Set by hand</button></div>' +
       (e.handTags ? '<p class="hint">This recipe sets its allergens by hand, so the ingredient tags do not change them.</p>' : '') + body +
-      '<div class="mg-alg-now"><span class="label">The card shows</span><span class="chips">' + (next.length ? next.map(function (t) { return '<span class="tag' + (/\?$/.test(t) ? ' maybe' : '') + '">' + esc(t) + '</span>'; }).join('') : '<span class="hint">No allergens</span>') + '</span>' +
-      (ro.missing.length ? '<p class="hint">Not complete: ' + esc(ro.missing.join(', ')) + ' has no card yet.</p>' : '') + '</div>' + change +
+      '<div class="mg-alg-now"><span class="label">The card shows</span><span class="chips">' + (next.length ? next.map(function (t) { return '<span class="tag' + (/\?$/.test(t) ? ' maybe' : '') + '">' + esc(t) + '</span>'; }).join('') : '<span class="hint">' + (unk.length ? 'None found yet' : 'No allergens') + '</span>') + '</span>' +
+      (ro.missing.length ? '<p class="hint">Not complete: ' + esc(ro.missing.join(', ')) + ' has no card yet.</p>' : '') +
+      (unk.length ? '<p class="mg-unk" role="note"><b>Not checked yet:</b> ' + esc(unk.join(', ')) + '. The card says Allergens not checked yet until each has its allergens or No allergens.</p>' : '') + '</div>' + change +
       (users.length ? '<p class="hint">Used in ' + esc(users.map(nameOf).join(', ')) + ': their allergens follow this recipe.</p>' : '') +
       field('mg-lnote', 'Label note (optional)', 'labelNote', d.labelNote || '', { max: 300, ph: 'For example: check the bun label for sesame' }) + '</section>';
   }
@@ -678,7 +685,7 @@
     var d = e.d;
     if (k === 'ing') return d.ingredients.length + (d.ingredients.length === 1 ? ' line' : ' lines');
     if (k === 'method') { var st = (d.sections || []).reduce(function (m, s) { return m + s.steps.length; }, 0); return (d.sections || []).length + ((d.sections || []).length === 1 ? ' section, ' : ' sections, ') + st + (st === 1 ? ' step' : ' steps'); }
-    if (k === 'alg') { var t = rollTags(A.rollFor(cleanRecipe(e))); return t.length ? t.join(', ') : 'None'; }
+    if (k === 'alg') { var ar = A.rollFor(cleanRecipe(e)), t = rollTags(ar); return (t.length ? t.join(', ') : (ar.unchecked || []).length ? 'None found yet' : 'None') + ((ar.unchecked || []).length ? ', not checked yet' : ''); }
     if (k === 'draw') { var w = [d.art ? (DISH[d.kind] ? 'plate' : 'pan') : '', d.side ? 'side' : '', d.diagram ? 'build' : ''].filter(Boolean); return (w.length ? w.join(', ') : 'None yet') + (DISH[d.kind] ? ', ' + (d.pins || []).length + ((d.pins || []).length === 1 ? ' label' : ' labels') : ''); }
     if (k === 'card') return 'Card ' + (trimStr(d.no) || '-') + ', ' + (e.meta.removed ? 'hidden' : 'shown') + (e.menu.sec === A.specials ? ', special' : '');
     return e.meta.v ? 'Version ' + e.meta.v : 'The book file';
@@ -730,6 +737,9 @@
       if (trimStr(i.note)) o.note = trimStr(i.note);
       // a linked ingredient keeps its tags too: they are its only allergens while the linked card is to come
       if (i.tags && i.tags.length) o.tags = i.tags.slice();
+      // a plain line says whether it was checked (19 Nov 2026): true No allergens, false not checked yet. Saved both
+      // ways, so js/overlay.js never carries the file's check onto a line the head chef left not checked.
+      else if (!i.link) o.none = i.none === true;
       return o;
     });
     out.pins = (d.pins || []).filter(function (p) { return trimStr(p.label); }).map(function (p) {
@@ -775,6 +785,8 @@
       var same = Object.keys(ids).filter(function (id) { if (id === e.id) return false; var r = A.byId(id) || (X.change(id) || {}).r || X.pristine(id); return r && String(r.no) === no; });
       if (same.length) warns.push('Card number ' + no + ' is also used by ' + same.map(nameOf).join(', ') + '.');
     }
+    var unk = A.rollFor(cleanRecipe(e)).unchecked || [];
+    if (unk.length) warns.push('Allergens not checked yet: ' + unk.join(', ') + '. The card says so, and Free from leaves it out, until each has its allergens or No allergens.');
     if (!X.tidy(cleanRecipe(e), e.id) && !errs.length) errs.push({ at: 'mg-name', msg: 'This does not look like a recipe yet. Check the name and the kind.' });
     e.errs = errs; e.warns = warns;
     return !errs.length;
@@ -1186,7 +1198,16 @@
     if (a === 'ing-open' || a === 'ing-tags') { e.open = e.open === i ? -1 : i; unarm(); draw(); return; }
     if (a === 'tag') {
       var w = el.getAttribute('data-w'), obj = w === 'pin' ? d.pins[i] : d.ingredients[i];
-      obj.tags = cycleTag(obj.tags, v); keepDraft(); draw(); return;
+      obj.tags = cycleTag(obj.tags, v);
+      // an allergen and No allergens never stand together; one tapped back to Not in it leaves the row not checked
+      if (w !== 'pin') delete obj.none;
+      keepDraft(); draw(); return;
+    }
+    if (a === 'none') {
+      var ni = d.ingredients[i]; if (!ni) return;
+      if (ni.none) { delete ni.none; unarm(); keepDraft(); draw(); return; }
+      if ((ni.tags || []).length && !arm('none:' + i)) return;
+      ni.tags = []; ni.none = true; unarm(); keepDraft(); draw(); return;
     }
     if (a === 'sec-add') { d.sections = d.sections || []; d.sections.push({ title: '', steps: [] }); keepDraft(); draw(); return; }
     if (a === 'sec-del') { if (!arm('sec-del:' + i)) return; d.sections.splice(i, 1); keepDraft(); draw(); return; }

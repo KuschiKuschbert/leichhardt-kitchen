@@ -66,13 +66,16 @@ const NOT = /Allergens not checked yet/;
   s = await shown();
   ok(s === 'zz-bowl-ok,zz-hand,zz-rice-ok', 'a search for gf: only the checked ones (' + s + ')');
   ok(/not checked/i.test(await txt(p, '.s-note') || ''), 'the free-from note says recipes not checked are left out');
-  await p.fill('#find', ''); await L.settle(p, 300);
+  ok(p.errors.length === 0, 'free from: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // Contains: a recipe not checked may have it, like a card to come
-  await L.tap(p, '[data-act="amode"][data-val="lens"]'); await L.settle(p, 300);
+  p = await L.open(b, '#/recipes', { who: 'bo', extra: Object.assign(cfg(), changes()), wait: 1500 });
+  await synced(p); await go(p, '#/recipes'); await L.settle(p, 300);
   await L.tap(p, '[data-act="lens"][data-val="Gluten"]'); await L.settle(p, 300);
   const lit = await p.evaluate(() => [...document.querySelectorAll('#shelves a.dish.lit')].map(a => a.getAttribute('href').slice(4)).filter(id => /^zz-/.test(id)).sort().join());
   ok(lit === 'zz-bowl,zz-rice,zz-slaw', 'Contains gluten: the recipes not checked are marked may have it (' + lit + ')');
-  ok(p.errors.length === 0, 'cards: no page errors ' + p.errors.join(' | '));
+  ok(p.errors.length === 0, 'contains: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // Tiles: the tile says it too

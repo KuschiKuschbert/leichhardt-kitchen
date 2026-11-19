@@ -2296,7 +2296,8 @@ html.has-upd .mg-chs { top: calc(var(--fn-stick, 0px) + var(--upd-h)); }
 .mg-hand-row .search { height: 2.75rem; font-size: 1rem; }
 .mg-hand-a { font-weight: 700; }
 .mg-alg-now { display: flex; flex-direction: column; gap: 0.35rem; }
-.mg-change { margin: 0; padding: 0.6rem 0.8rem; border-left: 4px solid var(--accent); background: var(--hit); }
+/* .mg-unk: an ingredient or recipe whose allergens nobody checked yet (19 Nov 2026), in the After saving line's look */
+.mg-change, .mg-unk { margin: 0; padding: 0.6rem 0.8rem; border-left: 4px solid var(--accent); background: var(--hit); }
 /* Drawings (3 Nov 2026): the plate with its labels, then one card per other drawing with its picture */
 .mg-dh { margin: 0; font: 700 1.25rem/1.1 var(--display); }
 .mg-dplate { display: flex; flex-direction: column; gap: 0.6rem; }

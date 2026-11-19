@@ -1941,6 +1941,7 @@
           if (l.fp && fingerprint(r) !== l.fp) add('chg:' + l.rid + ':' + f.id, nm + ' changed in the book since <b>' + esc(f.name) + '</b> was booked', fnHref);
           if ((r.ingredients || []).some(function (i) { return /\[/.test(String(i.q || '')); })) add('qty:' + l.rid, nm + ': amounts to come on the card', rHref);
           if (app && app.missing && app.missing(l.rid).length) add('alg:' + l.rid, nm + ': allergens incomplete', rHref);
+          if (app && app.unchecked && app.unchecked(l.rid).length) add('unk:' + l.rid, nm + ': allergens not checked yet', rHref);
         });
       });
     return out;
