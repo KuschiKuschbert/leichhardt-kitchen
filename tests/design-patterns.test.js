@@ -50,7 +50,9 @@ const CLASSES = [
   'fn-ahead', 'fn-ahead-b', 'fn-ahead-l', 'fn-ahead-t', 'fn-ahead-n', 'fn-ahead-p', 'fn-ahead-more', 'fn-ahead-hide', 'is-ahead',
   'fn-hm', 'fn-hm-line', 'fn-hu', 'fn-hu-got', 'fn-hu-undo', 'fn-ahead-ack', 'fn-wk', 'fn-seen', 'fn-seen-l', 'fn-seen-r', 'fn-seen-t',
   'o-fn-tag', 'o-fn-when', 'o-fn-for', 'o-fn-held', 'fno-row', 'fno-sum', 'fno-box', 'fno-rule', 'fno-note', 'fno-ask',
-  'lk-fb', 'lk-ftag', 'lk-fillnote', 'lk-weigh', 'lk-why'
+  'lk-fb', 'lk-ftag', 'lk-fillnote', 'lk-weigh', 'lk-why',
+  // the day control and its step chips, the supplier mark (the consistency sweep, step 3, 20 Nov 2026)
+  'nb-nav', 'nav-step', 'o-dayctl', 'cut-mark'
 ];
 const TOKENS = ['--ink', '--wall-ink', '--paper', '--bg', '--muted', '--faint', '--line', '--accent', '--accent-ink', '--tag', '--done', '--done-ink',
   '--bar', '--bar-text', '--display', '--body', '--r-act', '--r-pick', '--small-ink', '--hit',
@@ -62,6 +64,7 @@ const HELPERS = ['tmShortPaint', 'tmShortOf', 'tmBusy', 'tmShortView', 'tmShortB
   'fnOrdTag', 'orderTag', 'fnoHTML', 'platterNeeds', 'fbHTML', 'ftagHTML', 'fillAfterTap'];
 const GLOBALS = ['ICON', 'LK_UX', 'LK_PREP_STANDARDS'];
 HELPERS.push('pageSwipeFrom', 'navList');
+HELPERS.push('dayNavHTML');
 
 const missing = [];
 CLASSES.forEach(c => { if (!new RegExp('\\.' + c.replace(/[-]/g, '\\-') + '(?![A-Za-z0-9_-])').test(css)) missing.push('.' + c); });
