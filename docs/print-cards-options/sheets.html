@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Print recipe cards | sheets</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&amp;family=Barlow+Condensed:wght@700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="print.css">
+<style>
+  body { margin: 0; background: #e9e4d8; font-family: Barlow, sans-serif; }
+  #bar { padding: 10px 16px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  #out { display: flex; flex-wrap: wrap; gap: 8mm; padding: 8mm; align-items: flex-start; }
+  #out .sheet { box-shadow: 0 1mm 3mm #0003; }
+  @media print { #bar { display: none; } body { background: none; } #out { display: block; padding: 0; } #out .sheet { box-shadow: none; break-after: page; } }
+</style>
+<script src="../../js/data.js"></script>
+<script src="../../js/art.js"></script>
+<script src="print-engine.js"></script>
+</head>
+<body>
+<div id="bar"></div>
+<div id="out"></div>
+<script>
+  /* sheets.html?layout=a|b|c&paper=a4p|a4l|a5p|a5l&ids=laksa,chicken-adobo */
+  var q = new URLSearchParams(location.search), layout = q.get('layout') || 'b', paper = q.get('paper') || 'a4p';
+  var ids = (q.get('ids') || 'chicken-adobo').split(',');
+  if (ids[0] === 'all') ids = LK_DATA.recipes.map(function (r) { return r.id; });
+  var st = document.createElement('style'); var P = PC.PAPER[paper];
+  st.textContent = '@page { size: ' + P[0] + 'mm ' + P[1] + 'mm; margin: 0; }'; document.head.appendChild(st);
+  document.fonts.ready.then(function () {
+    var res = PC.build(ids, { layout: layout, paper: paper, when: '19 Nov 2026 14:05' }, document.getElementById('out'));
+    document.getElementById('bar').textContent = 'Design ' + layout.toUpperCase() + ', ' + P[2] + ': ' + ids.length + ' cards, ' + res.sheets + ' sheets';
+    window.RESULT = res; document.body.dataset.ready = '1';
+  });
+</script>
+</body>
+</html>

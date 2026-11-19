@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Print cards, 19 November 2026 (chosen and built)
+
+The owner asked to print recipe cards: all or chosen, A4 or A5, upright or sideways, one page where it fits and keeping its context where not; then chefs only (head chef, sous chefs, admin). Round 1 Build smaller 5 of 5; round 2 B 41.5, A 38, C 32; the mix (B's list and paper card, A's one-card entry beside Change this recipe, C's remembered paper and bigger ingredients, a boxed allergen band) re-checked 8.5 and 7 of 10. Side views added after the owner asked about stacked dishes. A5 upright held back. Files: `js/recipe-print.js`, `css/recipe-print.css` (lazy, from `js/manage.js`), `LK_PRINT` in `js/controls.js` (shared with `js/functions.js`), `tests/recipe-print.test.js`. [Brief](print-cards-options/brief.md).
+
 ## Tutorial videos, 18 and 19 November 2026 (all 21 pages)
 
 The head chef asked for tutorial videos of every page, the admin included, and one video of them all. They want chalk circles, a realistic free voice over, captions, the mascot, tap ripples, quiet music, Desktop and Phone cuts, and Drive. No app change, so no council; the PR's verdict is Not needed (tooling only). Built in `scripts/tutorials/` (`make.mjs`, `film.mjs`, `kit.mjs`, `overlay.js`, `fixtures.mjs`, `compose.mjs`, `voice.py`, `stage/`, `storyboards/prep.mjs`). It films the book on the click tests' stand-in, one Chrome per cut drawing finer, with Kokoro's voice, "Easy Lemon" (CC BY, credited) and ffmpeg. The trial was the Prep list in both cuts plus a voice sample pack; the head chef chose the American female voice (Kokoro `af_heart`) after hearing their own cloned voice, then said go. All 21 pages were filmed by five helper sessions, joined with `make.mjs join`; the picture-behind-voice drift (frames out of order, long intros) was fixed in `compose.mjs`. Note: `docs/tutorial-videos.md`.

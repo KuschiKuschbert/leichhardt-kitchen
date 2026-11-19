@@ -415,7 +415,7 @@
   }
   function watch() {
     var prep = P(); if (!prep || !prep.state) return;
-    if (!prep.privateAccess()) { stop(); sheetClose(false, true); SEEN = { who: '', by: {} }; PK = { who: '', r: {}, note: {} }; F.pend = {}; F.sv++; var printed = document.getElementById('fn-print'); if (printed) printed.remove(); F.list = []; F.all = null; F.sent = {}; F.state = 'idle'; lsSet('lk.fn', null); changed(); return; }
+    if (!prep.privateAccess()) { stop(); sheetClose(false, true); SEEN = { who: '', by: {} }; PK = { who: '', r: {}, note: {} }; F.pend = {}; F.sv++; if (window.LK_PRINT && document.getElementById('fn-print')) window.LK_PRINT.end(); var printed = document.getElementById('fn-print'); if (printed) printed.remove(); F.list = []; F.all = null; F.sent = {}; F.state = 'idle'; lsSet('lk.fn', null); changed(); return; }
     var st = prep.state;
     if (!/^\d{4,6}$/.test(st.pin || '') || st.configState !== 'ok') return;
     var key = st.pin + '|' + T.day();
@@ -1597,7 +1597,6 @@
       (f.kc && f.kcAt && !opts.unsaved ? '<p class="fn-paper-by">' + esc(nameOf(f.kcBy)) + ' / ' + esc(printStamp(f.kcAt)) + '</p>' : '') + '</section>';
     return out + '<footer class="fn-paper-foot"><span>' + (opts.unsaved ? 'Unsaved copy' : 'Version ' + esc(f.v || 1) + ' / last changed ' + esc(printStamp(f.upd))) + '</span><span>Printed ' + esc(printStamp(printed)) + '</span></footer></article>';
   }
-  var printJob = null;
   function printError(button, message) {
     var row = button && button.parentNode;
     if (row && document.body.contains(row)) {
@@ -1606,18 +1605,13 @@
       el.textContent = message;
     } else { var api = P() && P().book && P().book(); if (api) api.say(message); }
   }
-  function printEnd() {
-    if (!printJob) return;
-    var job = printJob; printJob = null;
-    if (job.root.parentNode) job.root.parentNode.removeChild(job.root);
-    document.body.classList.remove('fn-printing'); document.title = job.title;
-    if (job.button && document.body.contains(job.button)) { job.button.disabled = false; job.button.focus({ preventScroll: true }); }
-  }
+  /* The print job itself is the shared one in js/controls.js (LK_PRINT, 19 Nov 2026), so a function run sheet and a
+     recipe card print never clear each other's copy. */
   function printFunctions(list, opts, button) {
-    if (printJob) { if (!printJob.returned) return; printEnd(); }
+    var LP = window.LK_PRINT;
+    if (!LP) return;
     var prep = P();
     if (!prep || !/^\d{4,6}$/.test((prep.state && prep.state.pin) || '') || !list.length) return;
-    if (typeof window.print !== 'function') { printError(button, 'Printing is not available here. Open the book in your browser to print.'); return; }
     var error = button && button.parentNode && button.parentNode.querySelector('.fn-print-error'); if (error) error.parentNode.removeChild(error);
     opts = opts || {};
     var root = document.createElement('div'), printed = now(); root.id = 'fn-print'; root.setAttribute('aria-hidden', 'true');
@@ -1625,25 +1619,11 @@
     if (opts.prep) root.className = 'fn-prep-print';
     root.innerHTML = opts.prep ? printPrepSheet(list, opts) : (opts.day ? '<header class="fn-paper-day"><h1>Service run sheet / ' + esc(printDate(opts.day)) + '</h1><p>All rounds for today\'s functions, including rounds already sent. One function per sheet.</p></header>' : '') +
       list.map(function (f) { return printSheet(f, opts, printed); }).join('');
-    printJob = { root: root, title: document.title, button: button }; if (button) button.disabled = true;
-    document.body.appendChild(root); document.body.classList.add('fn-printing'); document.title = (opts.day ? printDate(opts.day) : list[0].name || 'New function') + (opts.prep ? ' - Functions prep sheet' : ' - Function run sheet');
     // Native print keeps the current page and the unsaved form in place. The print-only copy is a snapshot, so service
-    // updates cannot change it while the dialog is open. Wait for fonts, but a failed font load still prints the fallback.
-    var ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-    Promise.race([ready.catch(function () {}), new Promise(function (resolve) { setTimeout(resolve, 1000); })]).then(function () {
-      if (!printJob || printJob.root !== root) return;
-      printJob.started = true;
-      try {
-        window.print();
-        // An embedded mobile browser can return without afterprint or focus. Leave its copy ready for printing,
-        // but allow another tap to replace it, so a missing browser event never locks the control.
-        if (printJob && printJob.root === root) { printJob.returned = true; if (button) button.disabled = false; }
-      } catch (e) { printEnd(); printError(button, 'Could not open printing. Open the book in your browser and try again.'); }
-    });
+    // updates cannot change it while the dialog is open.
+    LP.run(root, { cls: 'fn-printing', button: button, title: (opts.day ? printDate(opts.day) : list[0].name || 'New function') + (opts.prep ? ' - Functions prep sheet' : ' - Function run sheet'),
+      onError: function (m) { printError(button, m); } });
   }
-  window.addEventListener('afterprint', printEnd);
-  // Some mobile browsers do not send afterprint. Returning to the book releases that copy and the print button too.
-  window.addEventListener('focus', function () { if (printJob && printJob.started) printEnd(); });
   // the popup from the band, appended to document.body so a page redraw does not remove it; clicks use data-fn
   var sheetEl = null, sheetId = '', sheetBack = null;
   function sheetOpen(id, from) {

@@ -1,0 +1,360 @@
+{
+ "a-a4p": {
+  "minPt": {
+   "text": 5.9,
+   "sideLabels": 8.1
+  },
+  "ms": 1867,
+  "cards": 137,
+  "sheets": 155,
+  "pdfPages": 155,
+  "onePage": 119,
+  "fits": {
+   "0": 111,
+   "1": 13,
+   "2": 13
+  },
+  "splitIng": 0,
+  "twoPage": 18,
+  "more": 0,
+  "max": 2,
+  "clipped": []
+ },
+ "a-a4l": {
+  "minPt": {
+   "text": 5.9,
+   "sideLabels": 8.1
+  },
+  "ms": 1702,
+  "cards": 137,
+  "sheets": 152,
+  "pdfPages": 152,
+  "onePage": 122,
+  "fits": {
+   "0": 122,
+   "1": 7,
+   "2": 8
+  },
+  "splitIng": 0,
+  "twoPage": 15,
+  "more": 0,
+  "max": 2,
+  "clipped": []
+ },
+ "a-a5p": {
+  "minPt": {
+   "text": 6.4,
+   "sideLabels": 6.9
+  },
+  "ms": 1087,
+  "cards": 137,
+  "sheets": 216,
+  "pdfPages": 216,
+  "onePage": 67,
+  "fits": {
+   "0": 117,
+   "1": 20
+  },
+  "splitIng": 10,
+  "twoPage": 61,
+  "more": 9,
+  "max": 3,
+  "clipped": []
+ },
+ "a-a5l": {
+  "minPt": {
+   "text": 6.4,
+   "sideLabels": 8
+  },
+  "ms": 1469,
+  "cards": 137,
+  "sheets": 210,
+  "pdfPages": 210,
+  "onePage": 69,
+  "fits": {
+   "0": 130,
+   "1": 7
+  },
+  "splitIng": 2,
+  "twoPage": 63,
+  "more": 5,
+  "max": 3,
+  "clipped": []
+ },
+ "b-a4p": {
+  "minPt": {
+   "text": 5.9,
+   "sideLabels": 6.1
+  },
+  "ms": 670,
+  "cards": 137,
+  "sheets": 140,
+  "pdfPages": 140,
+  "onePage": 134,
+  "fits": {
+   "0": 130,
+   "1": 5,
+   "2": 2
+  },
+  "splitIng": 0,
+  "twoPage": 3,
+  "more": 0,
+  "max": 2,
+  "clipped": []
+ },
+ "b-a4l": {
+  "minPt": {
+   "text": 5.9,
+   "sideLabels": 8.1
+  },
+  "ms": 1067,
+  "cards": 137,
+  "sheets": 140,
+  "pdfPages": 140,
+  "onePage": 134,
+  "fits": {
+   "0": 130,
+   "1": 5,
+   "2": 2
+  },
+  "splitIng": 0,
+  "twoPage": 3,
+  "more": 0,
+  "max": 2,
+  "clipped": []
+ },
+ "b-a5p": {
+  "minPt": {
+   "text": 6.4,
+   "sideLabels": 6.9
+  },
+  "ms": 869,
+  "cards": 137,
+  "sheets": 208,
+  "pdfPages": 208,
+  "onePage": 71,
+  "fits": {
+   "0": 129,
+   "1": 8
+  },
+  "splitIng": 8,
+  "twoPage": 61,
+  "more": 5,
+  "max": 3,
+  "clipped": []
+ },
+ "b-a5l": {
+  "minPt": {
+   "text": 6.4,
+   "sideLabels": 8
+  },
+  "ms": 997,
+  "cards": 137,
+  "sheets": 166,
+  "pdfPages": 166,
+  "onePage": 111,
+  "fits": {
+   "0": 130,
+   "1": 7
+  },
+  "splitIng": 0,
+  "twoPage": 23,
+  "more": 3,
+  "max": 3,
+  "clipped": []
+ },
+ "c-a4p": {
+  "minPt": {
+   "text": 5.9,
+   "sideLabels": 8.1
+  },
+  "ms": 799,
+  "cards": 137,
+  "sheets": 146,
+  "pdfPages": 146,
+  "onePage": 128,
+  "fits": {
+   "0": 121,
+   "1": 7,
+   "2": 9
+  },
+  "splitIng": 3,
+  "twoPage": 9,
+  "more": 0,
+  "max": 2,
+  "clipped": []
+ },
+ "c-a4l": {
+  "minPt": {
+   "text": 5.9,
+   "sideLabels": 4.6
+  },
+  "ms": 625,
+  "cards": 137,
+  "sheets": 140,
+  "pdfPages": 140,
+  "onePage": 134,
+  "fits": {
+   "0": 132,
+   "1": 4,
+   "2": 1
+  },
+  "splitIng": 1,
+  "twoPage": 3,
+  "more": 0,
+  "max": 2,
+  "clipped": []
+ },
+ "c-a5p": {
+  "minPt": {
+   "text": 6.4,
+   "sideLabels": 6.9
+  },
+  "ms": 814,
+  "cards": 137,
+  "sheets": 183,
+  "pdfPages": 183,
+  "onePage": 91,
+  "fits": {
+   "0": 121,
+   "1": 16
+  },
+  "splitIng": 18,
+  "twoPage": 46,
+  "more": 0,
+  "max": 2,
+  "clipped": [
+   "Guinness Beef Pie | reg r-low cols | 506x290 in 506x255",
+   "Barramundi | reg r-low cols | 550x293 in 550x271",
+   "Chicken Schnitzel French | reg r-low cols | 506x257 in 506x243",
+   "Chicken Schnitzel Mexican | reg r-low cols | 506x254 in 506x231",
+   "Chicken Schnitzel Americana | reg r-low cols | 506x249 in 506x243",
+   "Lamb Rissoles | reg r-low cols | 506x256 in 506x249",
+   "Vegan Rissoles | reg r-low cols | 506x256 in 506x249",
+   "Pork Belly | reg r-low cols | 506x256 in 506x243",
+   "Carbonara | reg r-low cols | 506x239 in 506x237",
+   "Grill Maiden's Board | reg r-low cols | 506x286 in 506x237",
+   "Guacho Taco Share Board | reg r-low cols | 506x278 in 506x231",
+   "Senior Lamb Rissoles | reg r-low cols | 506x256 in 506x249",
+   "Sticky Toffee Pudding | reg r-low cols | 506x250 in 506x243",
+   "Smoked Pulled Lamb Nachos | reg r-low cols | 506x282 in 506x213",
+   "Buffalo BBQ Corn on the Cob | reg r-low cols | 506x258 in 506x225",
+   "Crispy Beetroot Bites | reg r-low cols | 506x266 in 506x237",
+   "Haloumi Tacos | reg r-low cols | 506x249 in 506x237",
+   "Crispy Pork Belly Bites | reg r-low cols | 506x266 in 506x243",
+   "Beef Cheek | reg r-low cols | 506x280 in 506x237",
+   "Chicken Parmy | reg r-low cols | 506x313 in 506x243",
+   "Pub Caesar | reg r-low cols | 506x339 in 506x237",
+   "Honey and Maple Roasted Pumpkin | reg r-low cols | 506x273 in 506x243",
+   "Butchers Board | reg r-low cols | 506x297 in 506x237",
+   "The Beast Board | reg r-low cols | 506x260 in 506x237",
+   "Pulled Pork Burger | reg r-low cols | 506x266 in 506x249",
+   "Brisket Board | reg r-low cols | 506x266 in 506x249",
+   "Feast of the Feather | reg r-low cols | 506x299 in 506x225",
+   "Pork Knuckle | reg r-low cols | 506x332 in 506x248",
+   "Chicken Adobo | reg r-low cols | 506x285 in 506x242"
+  ]
+ },
+ "c-a5l": {
+  "minPt": {
+   "text": 6.4,
+   "sideLabels": 3.1
+  },
+  "ms": 683,
+  "cards": 137,
+  "sheets": 160,
+  "pdfPages": 160,
+  "onePage": 114,
+  "fits": {
+   "0": 132,
+   "1": 5
+  },
+  "splitIng": 12,
+  "twoPage": 23,
+  "more": 0,
+  "max": 2,
+  "clipped": []
+ },
+ "m-a4p": {
+  "minPt": {
+   "text": 8.6,
+   "sideLabels": 8.7
+  },
+  "ms": 583,
+  "cards": 137,
+  "sheets": 147,
+  "pdfPages": 147,
+  "onePage": 127,
+  "fits": {
+   "0": 135,
+   "1": 2
+  },
+  "splitIng": 0,
+  "twoPage": 10,
+  "more": 0,
+  "max": 2,
+  "clipped": []
+ },
+ "m-a4l": {
+  "minPt": {
+   "text": 8.6,
+   "sideLabels": 8.7
+  },
+  "ms": 904,
+  "cards": 137,
+  "sheets": 147,
+  "pdfPages": 147,
+  "onePage": 127,
+  "fits": {
+   "0": 132,
+   "1": 5
+  },
+  "splitIng": 0,
+  "twoPage": 10,
+  "more": 0,
+  "max": 2,
+  "clipped": []
+ },
+ "m-a5p": {
+  "minPt": {
+   "text": 7.9,
+   "sideLabels": 6.9
+  },
+  "ms": 833,
+  "cards": 137,
+  "sheets": 222,
+  "pdfPages": 222,
+  "onePage": 61,
+  "fits": {
+   "0": 125,
+   "1": 12
+  },
+  "splitIng": 16,
+  "twoPage": 67,
+  "more": 9,
+  "max": 3,
+  "clipped": []
+ },
+ "m-a5l": {
+  "minPt": {
+   "text": 7.9,
+   "sideLabels": 8
+  },
+  "ms": 914,
+  "cards": 137,
+  "sheets": 181,
+  "pdfPages": 181,
+  "onePage": 100,
+  "fits": {
+   "0": 116,
+   "1": 21
+  },
+  "splitIng": 0,
+  "twoPage": 30,
+  "more": 7,
+  "max": 3,
+  "clipped": [
+   "Honey and Maple Roasted Pumpkin | reg r-side | 237x349 in 237x344"
+  ]
+ }
+}

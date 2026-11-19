@@ -1,0 +1,101 @@
+/* Print recipe cards: preview print styles (council study, not loaded by the book). Monochrome-safe: every meaning is in words. */
+:root { --ink: #1c1d1f; --muted: #5d5a53; --edge: #cfc8b8; --paper: #fff; --accent-ink: #9a3412; }
+.sheet { box-sizing: border-box; background: var(--paper); color: var(--ink); font: 400 10pt/1.32 Barlow, Arial, sans-serif; display: flex; flex-direction: column; padding: 9mm 10mm 7mm; overflow: hidden; position: relative; }
+.sheet.a5p, .sheet.a5l { padding: 6.5mm 7mm 5mm; font-size: 8.6pt; }
+.sheet * { box-sizing: border-box; }
+.run { display: flex; align-items: flex-start; gap: 3mm; border-bottom: 0.6mm solid var(--ink); padding-bottom: 2mm; margin-bottom: 3mm; }
+.run .no { font: 700 15pt/1 'Barlow Condensed', Arial Narrow, sans-serif; border: 0.5mm solid var(--ink); border-radius: 2mm; padding: 1mm 2mm; }
+.run .pg { margin-left: auto; white-space: nowrap; font: 700 9pt/1.2 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: .06em; }
+.ttl { min-width: 0; flex: 1; }
+.ttl .eb { font: 700 7.5pt/1.2 'Barlow Condensed', sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.ttl .nm { font: 700 13pt/1.05 'Barlow Condensed', sans-serif; text-transform: uppercase; }
+.ttl.big .nm { font-size: 20pt; }
+.a5p .ttl.big .nm, .a5l .ttl.big .nm { font-size: 15pt; }
+.ttl .yl { margin-top: 1mm; }
+.ttl .mn { color: var(--muted); font-size: .92em; }
+.body { flex: 1 1 auto; min-height: 0; display: grid; gap: 3mm 5mm; grid-template-columns: 1fr; grid-template-rows: 1fr; }
+.reg { min-height: 0; min-width: 0; overflow: hidden; }
+.reg.cols { column-count: 2; column-gap: 5mm; column-fill: auto; }
+.reg.small { font-size: .9em; }
+.blk { margin: 0 0 3mm; break-inside: avoid; }
+.blk .h { font: 700 9pt/1.2 'Barlow Condensed', sans-serif; letter-spacing: .12em; text-transform: uppercase; border-bottom: 0.3mm solid var(--edge); padding-bottom: .6mm; margin-bottom: 1.2mm; break-after: avoid; }
+.blk .h i { font-style: normal; color: var(--muted); letter-spacing: .04em; }
+.lst { break-inside: auto; }
+.ing { display: grid; grid-template-columns: 22mm 1fr; gap: 2mm; padding: .7mm 0; border-bottom: 0.2mm dotted var(--edge); break-inside: avoid; }
+.a5p .ing, .a5l .ing { grid-template-columns: 16mm 1fr; }
+.ing .q { font-weight: 700; text-align: right; }
+.ing .note { display: block; color: var(--muted); font-size: .9em; }
+.ing .ref { font: 700 7pt 'Barlow Condensed', sans-serif; text-transform: uppercase; border: .25mm solid var(--ink); border-radius: 1mm; padding: 0 1mm; }
+.big .ing { font-size: 13pt; grid-template-columns: 27mm 1fr; padding: 1.2mm 0; }
+.a5p .big .ing, .a5l .big .ing { font-size: 10.5pt; grid-template-columns: 20mm 1fr; }
+.st { display: grid; grid-template-columns: 5mm 1fr; gap: 1.5mm; margin: 0 0 1.2mm; break-inside: avoid; }
+.st b { font-family: 'Barlow Condensed', sans-serif; }
+.pin { display: grid; grid-template-columns: 5mm 1fr; gap: 1.2mm; margin-bottom: 1mm; font-size: .92em; break-inside: avoid; }
+.pin > b { width: 4.2mm; height: 4.2mm; border-radius: 50%; background: var(--ink); color: #fff; text-align: center; line-height: 4.2mm; font-size: 7.5pt; }
+.artb svg { display: block; width: 100%; max-height: 72mm; }
+.a5p .artb svg, .a5l .artb svg { max-height: 46mm; }
+.tc { font-weight: 700; font-style: italic; }
+.tc::before { content: '['; } .tc::after { content: ']'; }
+.tc + i { font-style: italic; }
+.safety { border: .6mm solid var(--ink); padding: 2mm; border-radius: 1.5mm; }
+.safety .h::before { content: 'Safety: '; }
+.tip { border: .3mm dashed var(--ink); padding: 2mm; border-radius: 1.5mm; }
+.foot { border-top: 0.4mm solid var(--ink); margin-top: 2mm; padding-top: 1.5mm; display: flex; flex-wrap: wrap; gap: 1mm 5mm; font-size: 8.5pt; }
+.a5p .foot, .a5l .foot { font-size: 7.4pt; }
+.foot .alg { flex: 1 1 60%; }
+.foot .alg b { font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: .08em; }
+.foot .stp { font-weight: 700; }
+
+/* B: side column with the drawing, plate key and boxes; wide column with ingredients and method */
+.lay-b .body:has(.r-side) { grid-template-columns: 36% 1fr; }
+.lay-b.a4l .body:has(.r-side) { grid-template-columns: 28% 1fr; }
+.lay-b.a5p .body:has(.r-side) { grid-template-columns: 1fr; grid-template-rows: 40% 1fr; }
+.lay-b.a5p .r-side { column-count: 2; column-gap: 4mm; column-fill: auto; }
+.lay-b.a5l .body:has(.r-side) { grid-template-columns: 34% 1fr; }
+/* C: station card: big ingredients and the drawing on top, the method below in small type */
+.lay-c .body:has(.r-big) { grid-template-columns: 56% 1fr; grid-template-rows: 58% 1fr; }
+.lay-c .r-low { grid-column: 1 / -1; font-size: .9em; }
+.lay-c.a4l .body:has(.r-big), .lay-c.a5l .body:has(.r-big) { grid-template-columns: 40% 24% 1fr; grid-template-rows: 1fr; }
+.lay-c.a4l .r-low, .lay-c.a5l .r-low { grid-column: auto; column-count: 1; }
+.lay-c .r-side .artb svg { max-height: 60mm; }
+.lay-c.a5p .r-side .artb svg, .lay-c.a5l .r-side .artb svg { max-height: 38mm; }
+
+.measure { position: absolute; left: -10000px; top: 0; }
+
+/* Fit before splitting: a card that runs just over a page takes slightly smaller type (zoom keeps the proportions) */
+.sheet.fit1 .body { zoom: .92; }
+.sheet.fit2 .body { zoom: .85; }
+
+/* Mix: B's layout, bigger ingredients, the allergens as a boxed bold band under the name on every page */
+.lay-m .body:has(.r-side) { grid-template-columns: 34% 1fr; }
+.lay-m.a4l .body:has(.r-side) { grid-template-columns: 28% 1fr; }
+.lay-m.a5p .body:has(.r-side) { grid-template-columns: 1fr; grid-template-rows: 40% 1fr; }
+.lay-m.a5p .r-side { column-count: 2; column-gap: 4mm; column-fill: auto; }
+.lay-m.a5l .body:has(.r-side) { grid-template-columns: 32% 1fr; }
+.lay-m .r-wide .lst:first-child .ing, .lay-m .r-main .ing { font-size: 12pt; grid-template-columns: 25mm 1fr; }
+.lay-m.a5p .r-wide .lst:first-child .ing, .lay-m.a5l .r-wide .lst:first-child .ing, .lay-m.a5p .r-main .ing, .lay-m.a5l .r-main .ing { font-size: 10pt; grid-template-columns: 18mm 1fr; }
+.algband { border: .6mm solid var(--ink); border-radius: 1.5mm; padding: 1.4mm 2.5mm; margin: -1mm 0 3mm; font: 700 11pt/1.25 Barlow, sans-serif; }
+.a5p .algband, .a5l .algband { font-size: 9.5pt; padding: 1mm 2mm; }
+.algband b { font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: .1em; margin-right: 2mm; }
+.lay-m .foot .stp { font-size: 9.5pt; }
+
+/* Mix type floor: nothing under 8.5 pt on A4 or 7.9 pt on A5 after the one smaller-type step */
+.lay-m.sheet { font-size: 10pt; }
+.lay-m.a5p, .lay-m.a5l { font-size: 9.1pt; }
+.lay-m .ing .note, .lay-m .pin, .lay-m .ttl .mn { font-size: .95em; }
+.lay-m .ing .ref { font-size: 7.5pt; }
+/* Mix: small labels lifted so the floor holds after the 92 % step (A4 8.5 pt, A5 7.9 pt) */
+.lay-m .ttl .eb, .lay-m .blk .h { font-size: 9.3pt; }
+.lay-m .ing .ref { font-size: 9.3pt; }
+.lay-m .pin > b { width: 5mm; height: 5mm; line-height: 5mm; font-size: 9.3pt; }
+.lay-m .pin { grid-template-columns: 6mm 1fr; }
+.lay-m.a5p .ttl .eb, .lay-m.a5l .ttl .eb, .lay-m.a5p .blk .h, .lay-m.a5l .blk .h, .lay-m.a5p .ing .ref, .lay-m.a5l .ing .ref, .lay-m.a5p .pin > b, .lay-m.a5l .pin > b { font-size: 8.6pt; }
+.lay-m.a5p .ing, .lay-m.a5l .ing, .lay-m.a5p .st, .lay-m.a5l .st { font-size: 9.1pt; }
+
+/* From the side: 0.38 mm per drawing unit on A4 (labels 8.8 units = 9.5 pt, 8.7 pt after the 92 % step), 0.35 on A5 */
+.sidev svg { display: block; width: calc(var(--vbw) * .38mm); max-width: 100%; height: auto; margin: 0 auto; }
+.a5p .sidev svg, .a5l .sidev svg { width: calc(var(--vbw) * .35mm); }
+
+/* a side view in two text columns spans both; an extra-wide one (lane full) is sized to the page, and the
+   wide column on page 1 takes it only when the whole drawing fits there */
+.cols .sidev { column-span: all; }
