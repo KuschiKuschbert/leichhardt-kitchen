@@ -47,8 +47,9 @@ const size = (p, sel) => p.evaluate(s => [...document.querySelectorAll(s)].map(e
 (async () => {
   const b = await L.start();
 
-  // SHEL-1, SYST-1, SHEL-2 on the head chef's Prep, on a phone
-  let p = await open(b, '#/prep', 390, 844);
+  // SHEL-1, SYST-1, SHEL-2 on the head chef's Wastage, on a phone (the full band; Prep starts with the slim strip once
+  // #773 is in)
+  let p = await open(b, '#/waste', 390, 844);
   await L.waitFor(p, () => !!document.querySelector('.fn-band .fn-fold') && !!document.querySelector('#cut-band:not([hidden]) .cut-n'), null, 10000).catch(() => {});
   // the minus stays the small circle the head chef chose (22 Oct 2026, functions.test.js checks it), its tap 44 px across
   for (const [dx, dy] of [[0, -20], [0, 20], [-20, 0], [20, 0]]) ok(await hitAt(p, '.fn-band .fn-fold', dy, dx) === 'yes', 'the band\'s Hide minus takes a tap 20 px ' + (dy < 0 ? 'above' : dy > 0 ? 'below' : dx < 0 ? 'left of' : 'right of') + ' its middle');
@@ -63,7 +64,7 @@ const size = (p, sel) => p.evaluate(s => [...document.querySelectorAll(s)].map(e
   // and the bar is no taller: the name gets no height or padding of its own (its tap area reaches past it)
   const nm = await p.evaluate(() => { const c = getComputedStyle(document.querySelector('#cut-band .cut-n')); return [parseFloat(c.minHeight) || 0, parseFloat(c.paddingTop) || 0, parseFloat(c.paddingBottom) || 0]; });
   ok(nm[0] < 44 && !nm[1] && !nm[2], 'the cut-off bar\'s supplier name keeps its own size, so the bar is no taller (' + nm.join(', ') + ')');
-  ok(!p.errors.length, 'Prep: no page errors ' + p.errors.join(' | '));
+  ok(!p.errors.length, 'Wastage: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // SYST-1: a round's Undo on the older Sent tick, and Send all, on the function's card
