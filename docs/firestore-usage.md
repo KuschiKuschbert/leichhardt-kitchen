@@ -46,7 +46,7 @@ How it was checked. Source review of every Firestore call. The server jobs' own 
 
 ## Prep lines for a later day, 18 November 2026
 
-[Planned lines](prep-ahead-options/brief.md) add no startup read, listener or polling on today's page. Opening a later day keeps the existing listener on that day while it is on screen (1 read when it is empty, 1 per line). A day nobody opened that held planned lines makes the next rollover read every day back to the last written one (at most 7 day reads, only after such a day). The nightly backup reads the next 28 days of prep lines (about 28 reads a night while they are empty).
+[Planned lines](prep-ahead-options/brief.md) add no startup read, listener or polling on today's page. Opening a later day keeps the existing listener on that day while it is on screen (1 read when it is empty, 1 per line). A day nobody opened that held planned lines makes the next rollover read every day back to the last written one (at most 7 day reads, only after such a day). The nightly backup reads the next 28 days of prep lines (about 28 reads a night while they are empty). Since 19 Nov 2026, from the evening (`nightNow()`), opening the add sheet on today's list reads tomorrow's planned lines once (1 read a line, 1 when none), kept 10 minutes in memory, for the night list's double-up check.
 
 ## Prep standards addition, 8 November 2026
 

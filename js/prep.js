@@ -1678,7 +1678,7 @@
     if (S.privacyLocked || !S.who && !S.user) return;
     S.lockHasDraft = dirtyForUpdate(); S.lockIdentity = stableIdentity();
     if (pt && pt.busy) pt.lockRetained = S.lockIdentity;
-    S.lockRecorder = S.who || ''; S.privacyLocked = true; S.lockReason = reason; S.authed = false; S.level = ''; S.grantExp = 0; accessEpoch++; digestMem = null;
+    S.lockRecorder = S.who || ''; S.privacyLocked = true; S.lockReason = reason; S.authed = false; S.level = ''; S.grantExp = 0; accessEpoch++; digestMem = null; S.tmrPlan = null;
     stopLive(); clearPrivateCache(); ptClose(true, true); ksClose(); noteClose('shut'); lmClose();
     chefHistoryClear(); fdLast = []; fdClose(true, true); ajClose(true, true);
     if (window.LK_UX) window.LK_UX.close();
@@ -1727,7 +1727,7 @@
     // review are read again for them, and an answer for this person that comes late is dropped (accessEpoch).
     S.notesErr = S.minsErr = S.gErr = false; S.retryAt = {}; S.adminsOff = null; onlineRetry = {};
     S.pastBusy = S.minsBusy = S.viewBusy = S.missBusy = S.useBusy = false; S.pastPart = null; S.ordStats = null; S.views = S.misses = null; S.viewErr = S.missErr = S.useErr = S.wReviewErr = false; S.wReview = null; S.wReviewFor = S.wNoteFor = '';
-    svReset(); S.items = []; S.ordLines = []; S.ordAll = []; S.wLines = []; S.xLines = []; S.notes = null; S.notesBusy = false; S.nSaving = false; S.notesFor = ''; S.nPast = null; S.nPastOpen = false; S.nSeen = null; S.nPrivateError = ''; S.mins = null; S.guides = null; S.activity = []; S.actState = ''; S.hist = {}; S.stats = null;
+    svReset(); S.items = []; S.tmrPlan = null; S.ordLines = []; S.ordAll = []; S.wLines = []; S.xLines = []; S.notes = null; S.notesBusy = false; S.nSaving = false; S.notesFor = ''; S.nPast = null; S.nPastOpen = false; S.nSeen = null; S.nPrivateError = ''; S.mins = null; S.guides = null; S.activity = []; S.actState = ''; S.hist = {}; S.stats = null;
     ['lk.fn', 'lk.mail.sent', 'lk.drinks', 'lk.guides', 'lk.notes', 'lk.minutes'].forEach(function (k) { lsSet(k, ''); });
  if (psModule()) psModule().reset(); psView = 'work'; psError = false; psRolloutBusy = psRolloutBad = false; psRolloutMessage = ''; psRolloutTarget = false; if (window.LK_INTELLIGENCE) window.LK_INTELLIGENCE.reset(); if (window.LK_PROOFREADER) window.LK_PROOFREADER.reset(); proofRepairStamp = {}; if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_CLEANING) window.LK_CLEANING.reset(); if (window.LK_SUP) window.LK_SUP.reset(true); if (supplierService) supplierService.reset();
     // an editor an older copy of its file has no drop(): it closes as before
@@ -2513,6 +2513,15 @@
       var el0 = S.root && S.root.querySelector('[data-k="p-text"]'); if (el0) el0.focus();
       return;
     }
+    // tonight's list writing again a line planned for tomorrow (19 Nov 2026): not added, the slip says so (Add anyway)
+    var tp = tmrTwin(t);
+    tmrPlanLoad();
+    if (tp) {
+      tmrTwinSay(tp, { text: t.slice(0, 160), qty: q0.trim().slice(0, 40), station: sec, recipe: rm ? rm.id : '' }, function () { noteSection(sec); bump({ added: 1, lastAdded: now() }); });
+      S.text = ''; S.qty = ''; S.section = keptSection(sec); S.pickedText = ''; draw();
+      var el2 = S.root && S.root.querySelector('[data-k="p-text"]'); if (el2) el2.focus();
+      return;
+    }
     var made = newItem(Object.assign({ text: t.slice(0, 160), qty: S.qty.trim().slice(0, 40), station: sec, recipe: rm ? rm.id : '' }, fixed ? { orig: typedAs.slice(0, 160) } : {}));
     made.catch(function (e) { failed(e, function () { if (!S.text.trim()) { S.text = typedAs; S.qty = q0; } }); });
     noteSection(sec); bump({ added: 1, lastAdded: now() });
@@ -2539,6 +2548,12 @@
     if (tw) {
       addToTwin(tw, { text: (r.short || r.name), recipe: r.id, qty: q0.trim().slice(0, 40), station: sec }, function () { noteSection(sec); bump({ added: 1, lastAdded: now() }); });
       S.qty = ''; S.recipeSearch = ''; S.recipeOpen = false; S.recipeAll = false; S.section = sec;
+      return;
+    }
+    var tp = tmrTwin(r.short || r.name);
+    if (tp) {
+      tmrTwinSay(tp, { text: (r.short || r.name), recipe: r.id, qty: q0.trim().slice(0, 40), station: sec }, function () { noteSection(sec); bump({ added: 1, lastAdded: now() }); });
+      S.qty = ''; S.recipeSearch = ''; S.recipeOpen = false; S.recipeAll = false; S.section = sec; draw();
       return;
     }
     var made = newItem({ text: (r.short || r.name), recipe: r.id, qty: S.qty.trim().slice(0, 40), station: sec });
@@ -2838,8 +2853,9 @@
   // the admin on this device (the owner's Google sign-in, a live head chef PIN session and its grant): only the admin
   // plans lines for a later day (head chef, 17 Nov 2026: "But only for admins"). One helper, so another answer is one line.
   function planOK() { return S.level === 'owner' && ownerHere(); }
-  // a day a line can be planned for: from the day after tomorrow (tomorrow is written tonight, on today's list)
-  function planDayOk(d) { var t = dayNow(); return !!d && d >= shift(t, 2) && d <= shift(t, PLAN_DAYS); }
+  // a day a line can be planned for: from tomorrow (head chef, 19 Nov 2026: tomorrow too; a line the night list writes
+  // again is not copied next to it at the rollover, twinPlan()) up to PLAN_DAYS ahead
+  function planDayOk(d) { var t = dayNow(); return !!d && d >= shift(t, 1) && d <= shift(t, PLAN_DAYS); }
   // the day a planned line is for, in words: "Saturday 21 November" and "Sat 21 Nov"
   function dayFull(d) { var x = parseYmd(d); return x.toLocaleDateString('en-AU', { weekday: 'long' }) + ' ' + x.getDate() + ' ' + x.toLocaleDateString('en-AU', { month: 'long' }); }
   function dayAbbr(d) { var x = parseYmd(d); return x.toLocaleDateString('en-AU', { weekday: 'short' }) + ' ' + x.getDate() + ' ' + x.toLocaleDateString('en-AU', { month: 'short' }); }
@@ -2858,10 +2874,48 @@
     if (d === t) return true;
     if (planDayOk(d) && planOK()) return true;
     planRefuse(d === shift(t, 1) ? 'Tomorrow\'s list is written tonight, on today\'s list.' : d < t ? 'Lines are added on today, or planned for a later day.' :
-      !planOK() ? 'Only the head chef plans lines for a later day, signed in as admin on this device.' : 'Lines can be planned from the day after tomorrow, up to 4 weeks ahead.');
+      !planOK() ? 'Only the head chef plans lines for a later day, signed in as admin on this device.' : 'Lines can be planned from tomorrow, up to 4 weeks ahead.');
     return false;
   }
   function planRefuse(msg) { toast('Not added. ' + msg, null, 6000); if (S.pLog) wSheetClose(true); }
+  /* Tonight's list against tomorrow's plan (head chef, 19 Nov 2026: "make sure people don't write an item 2 times").
+     From 90 minutes before tomorrow's list is usually written (or once tonight's list has started; with no usual time,
+     from 15:00), a line added on today's list is checked against the lines planned for tomorrow: the same item, at any
+     amount, is not added again, and the slip says it is planned, with Add anyway. Read: tomorrow's planned lines, one
+     query (1 read a line, 1 when there are none), when the add sheet opens in that window, kept 10 minutes. Not read yet,
+     failed or no signal: nothing is claimed and the line goes on as before. */
+  var TMR_PLAN_AGE = 600000;
+  function nightNow() {
+    var t = dayNow();
+    if (S.date !== t) return false;
+    if (nightCut(t) >= 0) return true;
+    var w = S.lists && S.lists.dow ? S.lists.dow[String(parseYmd(t).getDay())] : undefined, usual = typeof w === 'number' ? w : S.lists ? S.lists.usual : -1;
+    return T.mins() >= (typeof usual === 'number' && usual >= 0 ? usual - 90 : window.LK_LEARN ? window.LK_LEARN.FROM : 900);
+  }
+  function tmrPlanLoad() {
+    var d = shift(dayNow(), 1), c = S.tmrPlan;
+    if (!fb || !S.authed || !nightNow() || c && c.day === d && (c.busy || now() - c.at < TMR_PLAN_AGE)) return;
+    S.tmrPlan = { day: d, busy: true, at: 0, lines: null };
+    fb.fs.getDocs(fb.fs.query(itemsCol(d), fb.fs.where('plan', '==', d))).then(function (snap) {
+      if (cacheOnly(snap)) throw { code: 'offline' };
+      S.tmrPlan = { day: d, busy: false, at: now(), lines: snap.docs.map(function (x) { var v = x.data(); v.id = x.id; return v; }).filter(function (x) { return !x.deleted && !x.done; }) };
+    }).catch(function () { S.tmrPlan = { day: d, busy: false, at: 0, lines: null }; });
+  }
+  // the line planned for tomorrow that this one would write again: the same item, at any amount
+  function tmrTwin(text) {
+    var c = S.tmrPlan, k = dupKey(text);
+    if (!k || !c || !c.lines || c.day !== shift(dayNow(), 1) || !nightNow()) return null;
+    return c.lines.filter(function (x) { return dupKey(x.text) === k; })[0] || null;
+  }
+  function tmrTwinSay(tp, data, after) {
+    var dte = S.date;
+    toast('Planned for tomorrow: ' + tp.text + (tp.qty ? ', ' + tp.qty : '') + '.', { label: 'Add anyway', fn: function () {
+      var made = newItem(Object.assign({}, data, { dupOk: true }), dte);   // kept apart: the rollover copies it next to the plan
+      made.catch(failed);
+      if (after) after();
+      addedToast(data.station, dte, made.id, data.text);
+    } });
+  }
   // a line that makes its day the last written day: anything not removed, apart from a function's platter lines and lines
   // planned for that day (a day nobody opened holds only those, 17 Nov 2026)
   function rollSource(x) { return !x.deleted && !x.fn && !planned(x); }
@@ -2936,7 +2990,7 @@
         if (gone[x.root || x.id]) return;
         // the night list wrote what was planned for today (same item, section and amount, or no amount): the planned
         // line stays, once. Another amount rolls over and both lines show Also (mergeDups()).
-        if (twinPlan(x)) return;
+        if (!x.dupOk && twinPlan(x)) return;   // Add anyway on tonight's list keeps it apart (tmrTwinSay())
         copy(x, src.date, writtenLate(x, src.date, cut));
       });
       // the open planned lines of a day nobody opened (a closed day): before 17 Nov 2026 such a day counted as written
@@ -3402,6 +3456,8 @@
     if (!addDayOk()) return;
     var rm = matchRecipe(text), uq = usualQty(text), dte = S.date, tw = openTwin(text, uq);
     if (tw) { addToTwin(tw, { text: text.slice(0, 160), station: sec, recipe: rm ? rm.id : '', qty: uq }, function () { noteSection(sec); bump({ added: 1, lastAdded: now() }); }); return; }
+    var tp = tmrTwin(text);
+    if (tp) { tmrTwinSay(tp, { text: text.slice(0, 160), station: sec, recipe: rm ? rm.id : '', qty: uq }, function () { noteSection(sec); bump({ added: 1, lastAdded: now() }); }); return; }
     var made = newItem({ text: text.slice(0, 160), station: sec, recipe: rm ? rm.id : '', qty: uq });
     made.catch(failed);
     noteSection(sec); bump({ added: 1, lastAdded: now() });
@@ -6043,10 +6099,12 @@
     var planN = later ? S.items.filter(function (x) { return planned(x) && !x.deleted; }).length : 0;
     var seeOn = S.date === tmr ? 'tomorrow' : 'on ' + dayName(S.date);
     var planNote = !later ? '' : planHere || planN && planOK() ? '<p class="pa-for">Planned ahead for <b>' + esc(dayFull(S.date)) + '</b>. Staff see these lines ' + esc(seeOn) + ', not before.</p>' :
+      // the head chef without the admin sign-in on this device (19 Nov 2026): says how to plan, not "only the head chef"
+      whoHead() ? '<p class="pa-for">' + (planN ? 'Planned ahead for <b>' + esc(dayFull(S.date)) + '</b>. ' : '') + 'To plan lines ahead on this device, open the Admin panel and sign in with Google.</p>' :
       planN ? '<p class="pa-for">Planned ahead by the head chef for <b>' + esc(dayFull(S.date)) + '</b>. Only the head chef adds or changes lines on a later day. Staff see them ' + esc(seeOn) + '.</p>' : '';
     var add = can('add') && (S.date === today || planHere) ?
       '<form class="nb-add" data-p-form="add">' +
-      '<div class="nb-add-row"><label class="visually-hidden" for="p-text">Prep item</label><input id="p-text" class="nb-in nb-in-text" data-k="p-text" enterkeyhint="done" autocomplete="off" autocapitalize="sentences" placeholder="' + (planHere ? esc('Write a line for ' + dayName(S.date) + '...') : 'Write a new line...') + '" maxlength="160" value="' + esc(S.text) + '">' +
+      '<div class="nb-add-row"><label class="visually-hidden" for="p-text">Prep item</label><input id="p-text" class="nb-in nb-in-text" data-k="p-text" enterkeyhint="done" autocomplete="off" autocapitalize="sentences" placeholder="' + (planHere ? esc('Write a line for ' + (S.date === tmr ? 'tomorrow' : dayName(S.date)) + '...') : 'Write a new line...') + '" maxlength="160" value="' + esc(S.text) + '">' +
       '<div class="nb-sugg nb-sgl" id="p-sugg">' + suggestHTML() + '</div>' +
       '<div id="ps-hint" class="ps-hint" aria-live="polite">' + psHintHTML() + '</div>' +
       '<label class="visually-hidden" for="p-section">Section</label><input id="p-section" class="nb-in nb-in-sec" data-k="p-section" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(S.section || (S.secTyped ? '' : mySec())) + '">' +
@@ -6054,7 +6112,7 @@
       '<button type="submit" class="nb-addbtn">Add</button></div>' + justHTML('p') + secChipsHTML('p-section', S.section || (S.secTyped ? '' : mySec())) + '<div class="w-pick nb-units" id="p-units">' + unitChipsHTML('p', S.qty) + '</div><div class="nb-sugg nb-qs" id="p-qsugg">' + qtyChipsHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + (S.quickChips && !later ? '<div class="nb-qadd"><span class="nb-ql">Quick add</span><div class="nb-usual">' + S.quickChips + '</div></div>' : '') + '</form>' : '';
     // no form (another day, or read only): the reason sits at the foot of the list, and there is no Add a line
     // (tomorrow is written tonight, on today's list; beyond 4 weeks nothing is planned; a later day's note is at the top)
-    var addNote = add ? '' : S.date === tmr ? '<p class="hint">Tomorrow\'s list is written tonight, on today\'s list.' + (planOK() ? ' Planning ahead starts with ' + esc(dayName(shift(today, 2))) + '.' : '') + '</p>' :
+    var addNote = add ? '' : S.date === tmr ? '<p class="hint">Tomorrow\'s list is written tonight, on today\'s list.</p>' :
       later ? (planOK() ? '<p class="hint">Lines can be planned up to 4 weeks ahead.</p>' : '') :
       S.date !== today ? '<p class="hint">You are looking at ' + esc(dayName(S.date)) + '. Lines are added on Today only.</p>' : '<p class="hint">You can read the book but not write in it. Ask the head chef if that is wrong.</p>';
     // "today", "yesterday" in a sentence, a weekday as it is ("Nothing written for Saturday yet.")
@@ -6074,7 +6132,7 @@
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
       // Done today sits behind the count (3 Nov 2026, work pages redesign A): a tap on "3 of 13 done" goes to it
       (later ? (S.itemsState === 'ok' ? '<div class="nb-pw"><div class="nb-prog pa-n">' + (planN ? planN + (planN === 1 ? ' line planned' : ' lines planned') : 'Nothing planned') + '</div></div>' : '') :
-      tmWrap(S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : doneN ? '<button type="button" class="nb-prog nb-progbtn" data-p="donejump" aria-label="' + doneN + ' of ' + live.length + ' done. Show Done today">' + doneN + ' of ' + live.length + ' done</button>' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>', S.date, tmrN && S.tab !== FN_TAB ? '\u00b7 ' + tmrN + ' for tomorrow' : '')) + (add ? dockBtn('nb-addline', 'write', planHere ? 'Add to ' + (S.date <= shift(today, 6) ? dayName(S.date) : dayAbbr(S.date)) : 'Add a line') : '') + '</header>' +
+      tmWrap(S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : doneN ? '<button type="button" class="nb-prog nb-progbtn" data-p="donejump" aria-label="' + doneN + ' of ' + live.length + ' done. Show Done today">' + doneN + ' of ' + live.length + ' done</button>' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>', S.date, tmrN && S.tab !== FN_TAB ? '\u00b7 ' + tmrN + ' for tomorrow' : '')) + (add ? dockBtn('nb-addline', 'write', planHere ? 'Add to ' + (S.date === tmr ? 'tomorrow' : S.date <= shift(today, 6) ? dayName(S.date) : dayAbbr(S.date)) : 'Add a line') : '') + '</header>' +
       (S.itemsState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' : '') +
       // the finished words go above tomorrow's lines when there are some (pageBody()), else where they always were
       '<div class="nb-body">' + planNote + (flags ? '<div class="nb-lc">' + flags + '</div>' : '') + offNote + (S.tab === FN_TAB ? fnGone : '') + (tmrN && /nb-fin|nb-empty/.test(todayEmpty) ? pageBody(S.items, S.date, false, todayEmpty) : pageBody(S.items, S.date) + todayEmpty) + '</div>' +
@@ -8626,6 +8684,7 @@ if (list.length) sg('oreg', 's');
   function wSheetOpen(which) {
     S.wLog = which === 'log'; S.wRv = which === 'rv'; S.xLog = which === 'xlog'; S.pLog = which === 'plog'; S.oLog = which === 'olog';
     S.pLogDay = S.pLog ? S.date : '';   // the day the add sheet writes to (addDayOk())
+    if (S.pLog) tmrPlanLoad();   // tonight's list: what is planned for tomorrow, for the double-up check (tmrTwin())
     justOpenAt = Date.now();
     ovPush('wsheet', function () { wSheetClose(true); });
     draw(); focusK(which === 'log' ? 'w-text' : which === 'rv' ? 'w-ra' : which === 'plog' ? 'p-text' : which === 'olog' ? 'o-text' : S.xf.venue ? 'tr-text' : 'tr-venue');
