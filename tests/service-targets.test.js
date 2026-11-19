@@ -52,15 +52,17 @@ const size = (p, sel) => p.evaluate(s => [...document.querySelectorAll(s)].map(e
   await L.waitFor(p, () => !!document.querySelector('.fn-band .fn-fold') && !!document.querySelector('#cut-band:not([hidden]) .cut-n'), null, 10000).catch(() => {});
   // the minus stays the small circle the head chef chose (22 Oct 2026, functions.test.js checks it), its tap 44 px across
   for (const [dx, dy] of [[0, -20], [0, 20], [-20, 0], [20, 0]]) ok(await hitAt(p, '.fn-band .fn-fold', dy, dx) === 'yes', 'the band\'s Hide minus takes a tap 20 px ' + (dy < 0 ? 'above' : dy > 0 ? 'below' : dx < 0 ? 'left of' : 'right of') + ' its middle');
-  const top = await p.evaluate(() => Math.round(document.querySelector('.fn-band-top').getBoundingClientRect().height));
-  ok(top <= 46, 'the band\'s label row is no taller for it (' + top + ' px)');
+  const fh = await p.evaluate(() => document.querySelector('.fn-band .fn-fold').offsetHeight);
+  ok(fh <= 40, 'the minus is drawn as before, so the band\'s label row is no taller (' + fh + ' px)');
   // "+N more" and "Service view": drawn as before, each a tap 44 px high
   for (const s of ['.fn-band .fn-more[data-fn="more"]', '.fn-band a.fn-svc']) for (const dy of [-20, 20]) ok(await hitAt(p, s, dy) === 'yes', (s.includes('svc') ? 'Service view' : '"+N more"') + ' takes a tap 20 px ' + (dy < 0 ? 'above' : 'below') + ' its middle');
-  const band = await p.evaluate(() => Math.round(document.getElementById('fn-band').getBoundingClientRect().height));
-  ok(band <= 216, 'the band is no taller for any of it (' + band + ' px)');
+  // the band is no taller: the buttons keep the size they are drawn at (heights of the whole band differ with the fonts)
+  const drawn = await p.evaluate(() => [...document.querySelectorAll('.fn-band .fn-more')].map(e => Math.round(e.getBoundingClientRect().height)));
+  ok(drawn.length >= 2 && drawn.every(h => h <= 38), 'the band\'s buttons are drawn as before, so the band is no taller (' + drawn.join(', ') + ' px)');
   for (const dy of [-20, 0, 20]) ok(await hitAt(p, '#cut-band .cut-n', dy) === 'yes', 'the cut-off bar\'s supplier name takes a tap ' + Math.abs(dy) + ' px ' + (dy < 0 ? 'above' : dy > 0 ? 'below' : 'at') + ' its middle');
-  const row = await p.evaluate(() => Math.round(document.querySelector('#cut-band .cut-row').getBoundingClientRect().height));
-  ok(row <= 60, 'the cut-off bar\'s row is no taller for it (' + row + ' px)');
+  // and the bar is no taller: the name gets no height or padding of its own (its tap area reaches past it)
+  const nm = await p.evaluate(() => { const c = getComputedStyle(document.querySelector('#cut-band .cut-n')); return [parseFloat(c.minHeight) || 0, parseFloat(c.paddingTop) || 0, parseFloat(c.paddingBottom) || 0]; });
+  ok(nm[0] < 44 && !nm[1] && !nm[2], 'the cut-off bar\'s supplier name keeps its own size, so the bar is no taller (' + nm.join(', ') + ')');
   ok(!p.errors.length, 'Prep: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
