@@ -113,6 +113,7 @@ async function openCutoffs(p) {
 
   // the People tab's full save keeps the lines (the new js/cutoffs.js cleans them, it does not drop them)
   await L.adminTab(p, 'people');
+  await L.openPerson(p, 2);
   await p.fill('[data-a="name"][data-i="2"]', 'Bo P'); await p.keyboard.press('Tab');
   await p.click('[data-p="a-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k]?.people?.[2]?.name === 'Bo P', CFG, 10000);

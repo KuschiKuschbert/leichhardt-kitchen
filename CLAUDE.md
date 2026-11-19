@@ -46,12 +46,13 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Admin: analysis, proofreader, dashboard, pages, look | `docs/admin-intelligence.md`, `docs/proofreader-admin.md`, `docs/admin-dashboard-options/brief.md`, `docs/admin-pages-options/brief.md`, `docs/admin-design-options/brief.md`, `docs/admin-flow-spec.md` |
 | Cross-training without written assessments (Who has worked where, the planner hint); admin Inbox and Dashboard (chosen R, 10 Nov 2026) | `docs/cross-training-options/brief.md`, `docs/admin-dashboard-restyle-options/brief.md` |
 | Reports, Team: At a glance cards and when the counts run to (chosen A in Look 1, 12 Nov 2026) | `docs/team-glance-options/brief.md` |
+| The admin panel's People page: rows that open in place, the council's mix (chosen and built 19 Nov 2026) | `docs/people-room-options/brief.md` |
 | A smarter book (13 Nov 2026): Filled for you on Wastage, Transfers and Orders; Reports, Records with the nightly food safety count; the audit's other ideas | `docs/smart-book-options/brief.md` (chosen and built), its `audit.md`, `scripts/records-core.mjs` |
 | Head chef / sous chef panel, chosen dedicated admin-style panel | `docs/chef-panel-options/brief.md` (Chosen implementation, permissions, reads and verification) |
 | Chef panel Kitchen room: one page of rows that open each tool, and the panel's purpose line worded for the role (the mix chosen and built 15 Nov 2026) | `docs/chef-kitchen-options/brief.md` (Chosen and built) |
 | Prep, Orders, Wastage, Transfers and the chef hat; who did a Prep line on a shared screen | `docs/work-pages-design-options/brief.md`, `docs/shared-prep-attribution.md` |
 | Orders as a shared request list with compact supplier cut-offs (chosen C) | `docs/order-list-options/brief.md` |
-| Prep lines for a later day: the admin plans them from the day after tomorrow up to 4 weeks ahead, everyone sees them on the day (the mix, chosen and built 18 Nov 2026) | `docs/prep-ahead-options/brief.md` (Chosen and built) |
+| Prep lines for a later day: the admin plans them from tomorrow up to 4 weeks ahead (tomorrow since 19 Nov 2026), everyone sees them on the day (the mix, chosen and built 18 Nov 2026) | `docs/prep-ahead-options/brief.md` (Chosen and built) |
 | Head-set section minimums, Prep room, smart matching and Before service | `docs/prep-standards.md`, `docs/prep-par-options/brief.md` |
 | Renaming a kitchen section: old names kept, lines and counts under the name now (`secNow()`) | `docs/section-renames.md` |
 | Today's team and its chosen notebook, council and build record | `docs/todays-team-options/brief.md`, `docs/team-notebook-options/brief.md` (Chosen, Build, council), `docs/prep-book.md` (Today's team) |
@@ -91,7 +92,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Back arrow, page trail and left/right touch swipes between existing main tabs | `docs/navigation.md` |
 | Merging, the queue, `urgent` | `docs/auto-merge.md` |
 | Publishing the site: only a merge that changes a file the phones load republishes; the book then updates silently when safe (no band unless asked) | `docs/site-publishing.md` |
-| Nightly backup and recovery | `docs/backup-recovery.md` |
+| Backups (the nightly encrypted copy per venue; Google's own for Leichhardt) and recovery | `docs/backup-recovery.md` |
 | Seasonal celebrations and festival dates; the New Year show over Home (fireworks and the cards' dance, 17 Nov 2026) | `docs/seasonal-celebrations.md`, `docs/seasonal-calendar.md`, `docs/celebration-options/brief.md` |
 | Tutorial videos of each page (chalk marks, voice over, Desktop and Phone cuts), filmed by `scripts/tutorials/` on the stand-in, kept on Drive (all 21 pages, 18 and 19 Nov 2026); played in Guides, the chefs' videos for chefs and admin only (`js/tutorials.js`, `tutorials/staff` and `tutorials/chefs`, 19 Nov 2026), with moving previews (`guides/videos/`) | `docs/tutorial-videos.md` (In the book) |
 | April Fools on Home (1 April, built 17 Nov 2026): 24 fake "hacked" Homes of 35 seconds on a copy of the page, once a year per person on any device, never last year's, then the mascot owns up; the admin panel's preview | `docs/april-fools.md` (the contract), `docs/april-fools-options/brief.md` and `pool.md` (the study); less predictable for returning staff: `docs/april-fools-smarter-options/brief.md` (round 1: Don't build yet, 3 of 5; chosen: wait, starts at 04:00, the record keeps the joke) |

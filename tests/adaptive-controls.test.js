@@ -85,30 +85,32 @@ const { R, ok } = L.results();
   }
   const p = await L.open(b, '#/admin', { admin: true, adminPage: 'people', width: 1280, wait: 1400 });
   await L.adminTab(p, 'people');
-  const header = p.locator('[data-lv="people"] [data-p="lv-col"]').first();
-  await header.click(); ok(await header.locator('..').getAttribute('aria-sort') === 'ascending', 'admin: header starts with ascending sort');
-  await header.click(); ok(await header.locator('..').getAttribute('aria-sort') === 'descending', 'admin: second click descends');
-  await header.click(); ok(await header.locator('..').getAttribute('aria-sort') === 'none', 'admin: third click restores the default order');
+  // People is a list of rows since 19 Nov 2026 (the council's mix): its search, sort, filter and Reset All Filters are the
+  // shared list tools; a table's header sort and column filters are checked on the council records (council-tables.test.js)
+  const rows = '[data-lvb="people"] .pp-row', sort = p.locator('[data-k="lv-s:people"]');
+  ok(await p.locator('[data-lv="people"] [data-p="lv-col"]').count() === 0 && await p.locator('[data-k="lv-cf:people"]').count() === 0, 'admin: People has no table header or second Role filter, one Everyone filter');
+  await L.pick(p, '[data-k="lv-s:people"]', 'name'); await L.settle(p, 200);
+  ok((await p.locator(rows + ' .pp-n').allTextContents())[0] === 'Ann', 'admin: Name A to Z sorts the rows (' + (await p.locator(rows + ' .pp-n').allTextContents()).join(', ') + ')');
+  await L.pick(p, '[data-k="lv-s:people"]', 'order'); await L.settle(p, 200);
   const q = p.locator('[data-k="lv-q:people"]'); await q.fill('ann'); await L.settle(p, 240);
-  ok(await p.locator('[data-lvb="people"] tbody tr').count() === 1, 'admin: search filters complete list');
+  ok(await p.locator(rows).count() === 1, 'admin: search filters complete list');
   await p.locator('[data-lva="people"] [data-part="all"]').click();
-  ok(await q.inputValue() === '' && await p.locator('[data-lvb="people"] tbody tr').count() === 4, 'admin: Reset All Filters restores all four people, including the signed-in head, and clears search');
+  ok(await q.inputValue() === '' && await p.locator(rows).count() === 4, 'admin: Reset All Filters restores all four people, including the signed-in head, and clears search');
+  ok(await sort.inputValue() === 'order', 'admin: the sort is back to Order added');
   ok(p.errors.length === 0, 'admin: no browser errors ' + p.errors.join('|'));
   await p.context().close();
   const seed = L.seed(), configKey = ['kitchens', L.PIN, 'config', 'main'].join('/');
   for (let i = 22; i >= 1; i--) seed[configKey].people.push({ id: 'person-' + i, name: 'Person ' + String(i).padStart(2, '0'), role: 'staff', add: i % 2 === 0, tick: true, active: true });
   const many = await L.open(b, '#/admin', { admin: true, adminPage: 'people', width: 1280, extra: { [configKey]: seed[configKey] }, wait: 1200 });
   await L.adminTab(many, 'people');
-  await many.locator('[data-lv="people"] [data-p="lv-col"]').first().click();
-  const names = await many.locator('[data-lvb="people"] [data-a="name"]').evaluateAll(nodes => nodes.map(x => x.value));
+  await L.pick(many, '[data-k="lv-s:people"]', 'name'); await L.settle(many, 200);
+  const names = await many.locator(rows + ' .pp-n').allTextContents();
   ok(names.includes('Person 01') && names.length === 15, 'admin: sorting runs over every record before the 15-row page limit');
-  const roleFilter = many.locator('[data-k="lv-cf:people"]').first();
-  const staffValue = await roleFilter.evaluate(el => [...el.options].find(o => /staff/i.test(o.textContent)).value);
-  await L.pick(many, '[data-k="lv-cf:people"]', staffValue);
-  ok(await many.locator('[data-lva="people"] [data-part^="facet:"]').count() === 1 && !(await many.locator('[data-lvb="people"] [data-a="name"]').evaluateAll(nodes => nodes.some(x => x.value === 'Sam'))), 'admin: a categorical column filter has a removable active badge');
+  await many.evaluate(() => document.querySelector('[data-p="lv-f"][data-lv="people"][data-v="sous"]').click()); await L.settle(many, 200);   // the chips sit behind the Everyone picker
+  ok(await many.locator('[data-lva="people"] [data-part="f"]').count() === 1 && !(await many.locator(rows + ' .pp-n').allTextContents()).includes('Ann'), 'admin: the Sous chefs filter has a removable active-filter chip');
   await many.locator('[data-k="lv-q:people"]').fill('No matching person'); await L.settle(many, 250);
   await many.locator('[data-p="lv-clear"][data-lv="people"]').click();
-  ok(await many.locator('[data-lvb="people"] tbody tr').count() === 15 && await roleFilter.inputValue() === '', 'admin: the empty-state clear also resets categorical column filters');
+  ok(await many.locator(rows).count() === 15 && await many.locator('[data-lva="people"] [data-part="f"]').count() === 0, 'admin: the empty-state clear also resets the filter');
   await many.locator('[data-lva="people"] [data-part="all"]').click();
   await many.evaluate(() => {
     const box = document.createElement('div'); box.innerHTML = '<div><table id="ux-report"><thead><tr><th>Number</th><th>Date</th><th>Status</th></tr></thead><tbody><tr><td>10</td><td><time data-sort-value="2026-12-31">31 Dec</time></td><td>Open</td></tr><tr><td>2</td><td><time data-sort-value="2027-01-01">1 Jan</time></td><td>Done</td></tr></tbody></table></div>'; document.querySelector('.p-admin').append(box); LK_UX.enhance(document);

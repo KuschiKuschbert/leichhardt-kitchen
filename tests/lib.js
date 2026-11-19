@@ -659,4 +659,13 @@ async function teamDay(page, day) {
   }
   await page.locator('[data-p="tm-day"][data-day="' + day + '"]').first().click(); await settle(page, 160);
 }
-module.exports = { brKey, teamDay, teamWarm, updateNow, docked, oLog, pLog, whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, dwShow, dwAdd, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, kitchenRow, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+// People rows open one person at a time (head chef, 19 Nov 2026): open the row of the draft's person i (a number) or id
+// before using their name box, role or ticks. Does nothing when that person is already open.
+async function openPerson(page, who) {
+  await page.evaluate(w => {
+    const ps = LK_PREP.state.draft.people, id = typeof w === 'number' ? ps[w].id : w;
+    if (!document.querySelector('.pp-row.is-open[data-pid="' + id + '"]')) document.querySelector('[data-p="a-person-open"][data-id="' + id + '"]').click();
+  }, who);
+  await settle(page, 150);
+}
+module.exports = { openPerson, brKey, teamDay, teamWarm, updateNow, docked, oLog, pLog, whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, dwShow, dwAdd, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, kitchenRow, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
