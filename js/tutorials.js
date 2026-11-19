@@ -19,7 +19,8 @@ window.LK_TUTORIALS = {
     "Walk away: Say you start an order, then get called away. Nobody touches the screen for 10 minutes. So a shared screen locks itself.",
     "Kept for you: Your name stays on the lock, and your work is kept behind your PIN. Someone else? They tap Not me and sign in as themselves.",
     "Back to work: Type your PIN and you're straight back, with Lemons still there. Every device asks for your PIN again after 04:00, ready for the new day."
-   ]
+   ],
+   "pv": 1
   },
   {
    "id": "home",
@@ -37,7 +38,8 @@ window.LK_TUTORIALS = {
     "Top bar: Up top, the people button shows your day in one tap. The bell holds today's shift pings from the chefs. The clock beside them is the cooling timer.",
     "Chef hat: The chef hat is your menu: your section, functions, the drinks run, Settings and more. Not you on this phone? Sign out is at the top.",
     "Every list: The tabs open each list in one tap. Tap the logo to come back to Home from anywhere."
-   ]
+   ],
+   "pv": 1
   },
   {
    "id": "recipes",
@@ -55,7 +57,8 @@ window.LK_TUTORIALS = {
     "Keep screen on: Hands busy? Tap Keep screen on, and the phone stays awake while a recipe is open.",
     "Free from: Cooking for an allergy? Back on the list, tap Free from, then choose the allergen. Only the dishes without it stay on the list.",
     "Pass or Tiles: The Pass shows each dish on its plate. Tiles shows them as cards, with their allergens."
-   ]
+   ],
+   "pv": 1
   },
   {
    "id": "prep",
@@ -73,7 +76,8 @@ window.LK_TUTORIALS = {
     "Tick it off: When a job's done, tap its box. Ticked the wrong one? Tap Undo on the slip, straight away. Tick it again when it is really done. The book keeps your name and the time.",
     "On it: Starting a big job? Tap On it. Your letter shows on the line, so nobody doubles up.",
     "Change a line: The three dots let you change the amount, or move a line to another section. Wrote the wrong thing? Undo it straight away, or ask a chef to take it off."
-   ]
+   ],
+   "pv": 1
   },
   {
    "id": "orders",
@@ -90,7 +94,8 @@ window.LK_TUTORIALS = {
     "Supplier cut-offs: Chefs see the supplier cut-offs here. Tap the View button to open them. Each supplier shows when its order closes, and how long is left. Placed the order by phone or email? Tap Order placed. Everyone sees it's done, with your name and the time.",
     "Tick it off: When a line is ordered, tap its box. Ticked the wrong one? Tap Undo on the slip, straight away. Tick it again once it is really ordered. The book keeps your name and the time.",
     "Ordered today: A ticked line stays for ten minutes, then moves to Ordered today. Tap it to see what's been ordered. Each one has its own Undo."
-   ]
+   ],
+   "pv": 1
   },
   {
    "id": "wastage",
@@ -108,7 +113,8 @@ window.LK_TUTORIALS = {
     "Filled for you: Logged it before? Write the name. The book fills in the reason and the unit from last time, and says so under the boxes. You still weigh it, and write the amount for today.",
     "Undo: Logged the wrong thing? Tap Undo, straight away. Only a chef can undo an entry. If you're a cook, ask the head chef.",
     "Make it again: Expired stock or a cooking fault gets Make it again. One tap puts it on today's prep list."
-   ]
+   ],
+   "pv": 1
   },
   {
    "id": "transfers",
@@ -124,7 +130,8 @@ window.LK_TUTORIALS = {
     "Log it: Taking a few things? Tap Add another item for each one. Then tap Log it. It goes under Still out.",
     "Mark returned: When all of it comes back, tap Mark returned. It moves to Done today, with your name and the time.",
     "Undo return: Marked the wrong one? For two minutes, Undo return sits right beside it. Tap it, and it's back under Still out. After two minutes, only a chef can undo it."
-   ]
+   ],
+   "pv": 1
   },
   {
    "id": "deliveries",
@@ -141,7 +148,8 @@ window.LK_TUTORIALS = {
     "Items and notes: Add the items, or anything wrong with them, if you like.",
     "Save delivery: Then tap Save delivery. It's under Today's deliveries, with the time, both readings and your name.",
     "Still to come: Suppliers due today that haven't come in yet are listed at the bottom. Saved readings stay as they were recorded. To fix one, save it again with a note."
-   ]
+   ],
+   "pv": 1
   },
   {
    "id": "guides",
@@ -158,7 +166,8 @@ window.LK_TUTORIALS = {
     "Step by step: Tap Step by step to see one step at a time, big. The page from the guide shows with the step. Tap Next step when you're ready for the next one.",
     "Its pages: The guide's own pages are under the steps. Tap a page to open it big. Tap Next to turn the page.",
     "Print it: Need it on paper? Download the printable sheets here. Then print them, or keep the PDF on your phone."
-   ]
+   ],
+   "pv": 1
   },
   {
    "id": "team-talk",
@@ -176,7 +185,8 @@ window.LK_TUTORIALS = {
     "Who gets it: Send it to everyone, or pick one person. It shows today, or pick a day ahead. Then tap Save ping.",
     "Kitchen mail: Kitchen mail goes to the head chef. Pick what it is about, and how soon it matters. Write a short message, then tap Send to Chef.",
     "Sent, Seen, Done: Your mail is listed underneath. Sent means it went. Seen means Chef has read it. Done means it is sorted."
-   ]
+   ],
+   "pv": 1
   },
   {
    "id": "drinks",
@@ -193,7 +203,8 @@ window.LK_TUTORIALS = {
     "Your usual: Your usual sits at the top. Tap Change to set it.",
     "Pick it: Choose the size, and change the milk or the sugar if you need to. Anything else, like extra hot, goes in the box below.",
     "Save it: Check your usual under the form, then tap Save my usual. The order changes straight away."
-   ]
+   ],
+   "pv": 1
   },
   {
    "id": "todays-team",
@@ -211,7 +222,8 @@ window.LK_TUTORIALS = {
     "Add a service: Ann can stay on for Dinner. Tap Add a service, then Dinner. Now four are on, and the warning goes.",
     "Save: Nothing is shared until you tap Save. Then the plan is saved for everyone, with your name and the time.",
     "On break now: The card at the top shows who is on a break now. Staff see their own day from the round chip up top."
-   ]
+   ],
+   "pv": 1
   },
   {
    "id": "cleaning",
@@ -227,7 +239,8 @@ window.LK_TUTORIALS = {
     "Checks: Some jobs have checks to tick, like Cover and label all food. Tap the job to see how to do it, and its checks.",
     "Pass check: Ann ticked the start of day checks. Now they wait for the Pass check. The Pass checker looks, then taps Verify Pass check.",
     "Set it up: Chefs set the jobs in Repeat tasks. Add a job, and choose its section and the days it repeats."
-   ]
+   ],
+   "pv": 1
   },
   {
    "id": "functions",
@@ -244,7 +257,8 @@ window.LK_TUTORIALS = {
     "Book a function: Function managers book them too. Tap the chef hat, then Functions. Tap New function. Write the name, the date, the start time and the guests.",
     "Add platters: Tap Choose a platter, pick one, then write how many. Add the next one the same way. The bar at the bottom adds them up, and says when it's ready.",
     "Check and confirm: Tap Check and confirm. This is what the kitchen will see. Then tap Confirm function. The band says its stock is on the order list today."
-   ]
+   ],
+   "pv": 1
   },
   {
    "id": "settings",
@@ -263,7 +277,8 @@ window.LK_TUTORIALS = {
     "Keep screen on: Keep the screen on stops the phone sleeping while a recipe is open.",
     "This device: How this device is used says My own device, or Shared kitchen screen. Change it, or forget this device, here.",
     "Update now: The book updates by itself when nothing is waiting to send. When an update is ready, tap Update now to get it straight away."
-   ]
+   ],
+   "pv": 1
   },
   {
    "id": "chef-panel",
@@ -281,7 +296,8 @@ window.LK_TUTORIALS = {
     "Team: Team is for the people. Today's team sets who is on, their section and their break. Manage staff adds or removes a person. Meeting minutes shows who has signed the latest minutes.",
     "Kitchen: Kitchen is one page of rows. Recipes and drawings, Supplier order, Functions, Delivery received and Guides. Tap a row to open that tool.",
     "Section standards: Prep holds the section standards. Pick a section to see what it should have ready before service. Only the head chef changes them."
-   ]
+   ],
+   "pv": 1
   },
   {
    "id": "supplier-order",
@@ -298,7 +314,8 @@ window.LK_TUTORIALS = {
     "Record it: Once the order is placed, tap Record order placed. Northside Foods now shows as ordered, and leaves the cut-offs.",
     "Order history: Order history shows each order, and who recorded it. Choose a date to see that order.",
     "Order done: Ordered by phone or email instead? Open the order list. Under the cut-offs, tap Order placed beside the supplier. It shows who ordered it, with Undo."
-   ]
+   ],
+   "pv": 1
   },
   {
    "id": "recipes-manage",
@@ -314,7 +331,8 @@ window.LK_TUTORIALS = {
     "Drawings: Drawings shows the plate, with its labels. Draw it in the studio opens the drawing studio.",
     "The studio: Draw it for me draws the dish from its recipe. Try another gives a new layout. Undo takes it back. Add food puts more on the plate. Drag a part to move it. Tap Save, and the recipe shows the new drawing.",
     "New recipe: Back on the list, New recipe starts an empty card. Cards to come lists the cards still to write. Make this card opens a new recipe for it. Write the name staff see, then fill in each part."
-   ]
+   ],
+   "pv": 1
   },
   {
    "id": "admin-today",
@@ -332,7 +350,8 @@ window.LK_TUTORIALS = {
     "Proofreader: The Proofreader shows lines where autocorrect saved other words. Here, brie became brine. Tap Restore original to put back what was typed. Or tap Edit wording.",
     "Kitchen mail: Kitchen mail is what the team wrote to you, the most urgent first. Change how soon it matters with this chip. When it's dealt with, tick it off.",
     "Find: To jump to any page, tap Find. On a keyboard, press the slash key. Type a few letters of a page or a name. Tap it, and the page opens."
-   ]
+   ],
+   "pv": 1
   },
   {
    "id": "admin-reports",
@@ -349,7 +368,8 @@ window.LK_TUTORIALS = {
     "Team: Team starts with At a glance: what stands out about who worked where. Here, only Bo worked Sauce in the last 30 days. Tap See the table for who has worked where. Each number is the shifts worked in that section.",
     "Item evidence: Item evidence lists every recorded item, and where it came from. Tap one to read its evidence: how often it was written, on which days, and its recipe. The back arrow takes you to the list.",
     "Learning: Learning shows what the prep list has learned from the team. Every line written is counted. An item becomes a regular after four uses. The most written items come first."
-   ]
+   ],
+   "pv": 1
   },
   {
    "id": "admin-kitchen",
@@ -366,7 +386,8 @@ window.LK_TUTORIALS = {
     "Pings and minutes: Shift pings pop up on every phone at the time you set. Tap Write a ping to add one. Today's pings are listed under it. Minutes: write them after the meeting. The team reads them and signs with their own PIN. The register shows who has signed.",
     "Guides and links: Guides are the team's how-to sheets. Tap Add a guide to add one. Confirmed links lists every name linked to a recipe or a supplier item.",
     "Section standards: The Prep room holds Section standards: what each section should have ready before service. Pick a section, and set each item's minimum. Smart prep par levels turns it on for the whole team."
-   ]
+   ],
+   "pv": 1
   }
  ]
 };
