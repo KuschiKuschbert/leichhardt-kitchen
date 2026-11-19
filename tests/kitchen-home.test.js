@@ -70,6 +70,7 @@ const cfgKey = ['kitchens', L.PIN, 'config', 'main'].join('/');
     ok(await p.locator('.k-body').count() === 0 && await unsaved() === '2 unsaved changes: Kitchen sections, Pages staff see', 'one Save: with every row closed, the Save bar stays on the Overview (' + await unsaved() + ')');
     await L.adminTab(p, 'people'); await L.settle(p, 300);
     const bo = await p.evaluate(() => LK_PREP.state.draft.people.findIndex(x => x.id === 'bo'));
+    await L.tap(p, '[data-p="a-person-open"][data-id="bo"]'); await L.settle(p, 200);   // one person opens at a time (19 Nov 2026)
     await p.evaluate(i => document.querySelector('[data-a="perm"][data-perm="del"][data-i="' + i + '"]').click(), bo); await L.settle(p, 200);
     ok(await unsaved() === '3 unsaved changes: People, Kitchen sections, Pages staff see', 'one Save: People names all three (' + await unsaved() + ')');
     await p.click('[data-p="a-save"]');

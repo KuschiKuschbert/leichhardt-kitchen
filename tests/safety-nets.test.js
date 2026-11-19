@@ -128,6 +128,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await p.click('[data-p="a-reset-pin"][data-id="ann"]');
   await L.settle(p, 100);
   ok(/Tap again to reset/.test(await txt(p, '[data-p="a-reset-pin"][data-id="ann"]')), 'admin: Reset PIN asks again');
+  await p.click('[data-p="a-person-open"][data-id="ann"]'); await L.settle(p, 150);   // Leaving sits in the opened row (19 Nov 2026)
   ok(/Stopped working here/.test(await txt(p, '[data-p="a-remove-person"][data-i="1"]')), 'admin: Remove is now Stopped working here');
   await L.adminTab(p, 'minutes');
   await L.settle(p, 400);
