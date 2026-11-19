@@ -33,10 +33,13 @@
   // then "May contain:" as its own sentence, so a "may" never reads onto a definite allergen
   function allergenLine(r) {
     var t = A.tags(r.id), yes = t.filter(function (a) { return !/\?$/.test(a); }), may = t.filter(function (a) { return /\?$/.test(a); }).map(function (a) { return a.slice(0, -1); });
-    var s = t.length ? (yes.length ? 'Contains: ' + yes.join(', ') + '.' : '') + (may.length ? (yes.length ? ' ' : '') + 'May contain: ' + may.join(', ') + '.' : '') : 'None in the ingredients.';
+    // unk: parts nobody checked for allergens (19 Nov 2026): never "None" on paper while one is left
+    var unk = A.unchecked ? A.unchecked(r.id) : [];
+    var s = t.length ? (yes.length ? 'Contains: ' + yes.join(', ') + '.' : '') + (may.length ? (yes.length ? ' ' : '') + 'May contain: ' + may.join(', ') + '.' : '') : unk.length ? '' : 'None in the ingredients.';
     var miss = A.missing(r.id);
     if (miss.length) s += ' Not complete: ' + miss.join(', ') + (miss.length === 1 ? ' has' : ' have') + ' no card yet, so treat it as possibly any allergen.';
-    return s;
+    if (unk.length) s += ' Allergens not checked yet: ' + unk.join(', ') + '. Do not tell a guest it is free from anything.';
+    return s.trim();
   }
   // a drawing made in the book ('@<id>') is cleaned again here, every time it is drawn; its frame must be four numbers
   function body(k, raw) { return k && k.charAt(0) === '@' ? X.clean(raw) : raw; }

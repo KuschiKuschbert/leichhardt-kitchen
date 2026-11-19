@@ -44,12 +44,13 @@
 
   /* ---------- index: worked out when the page loads, and again when the head chef's recipe changes come in ----------
      (js/overlay.js lays them over js/data.js; js/prep.js says when new ones arrived: lk-rx) */
-  var byId, usedIn, rolled, rows, tags, hay, missing;
+  var byId, usedIn, rolled, rows, tags, hay, missing, unchecked;
   var MENU, PREP, placed, memb, GROUPS, SHELVES;
   var SPECIALS = 'Specials';   // the menu section the recipe form's Special switch uses (27 Oct 2026)
-  // A recipe with no contains or check list gets them worked out from its ingredient tags.
+  // A recipe with no contains or check list gets them worked out from its ingredient tags (byTags: then every own
+  // ingredient must be checked, docs/allergen-check-options/brief.md). One that sets them by hand is checked as a whole.
   function fromTags(r) {
-    r.contains = []; r.check = [];
+    r.contains = []; r.check = []; r.byTags = true;
     r.ingredients.forEach(function (i) {
       (i.tags || []).forEach(function (t) {
         var maybe = t.slice(-1) === '?', a = maybe ? t.slice(0, -1) : t, list = maybe ? r.check : r.contains, from = i.name.toLowerCase();
@@ -61,7 +62,7 @@
   }
   function index() {
     // byId has no prototype, so a link or address such as constructor or toString is not a recipe
-    byId = Object.create(null); usedIn = {}; rolled = {}; rows = {}; tags = {}; hay = {}; missing = {};
+    byId = Object.create(null); usedIn = {}; rolled = {}; rows = {}; tags = {}; hay = {}; missing = {}; unchecked = {};
     D.recipes.forEach(function (r) {
       r.ingredients = r.ingredients || []; r.sections = r.sections || []; r.pins = r.pins || [];
       if (!r.contains && !r.check) fromTags(r);
@@ -105,6 +106,7 @@
       rows[r.id] = list;
       tags[r.id] = t;
       missing[r.id] = ro.missing;
+      unchecked[r.id] = ro.unchecked;
       hay[r.id] = [r.name, r.avc || '', r.menu || '', r.yield, KIND[r.kind], r.sec || '', r.forLine, r.aka || ''].concat(r.ingredients.map(function (i) { return i.name; }), t).join(' ').toLowerCase();
     });
   }
@@ -136,22 +138,29 @@
   }
 
   function addTo(bucket, a, src) { if (!bucket[a]) bucket[a] = []; if (bucket[a].indexOf(src) < 0) bucket[a].push(src); }
+  /* An ingredient nobody has checked for allergens (19 Nov 2026): no allergen tags, no "No allergens" (none: true), no
+     recipe link, in a recipe that works its allergens out from the ingredients. Its card says "Allergens not checked
+     yet" and Free from leaves it out, so an untagged line never reads as allergen free. */
+  function notChecked(r, i) { return !!(r.byTags && !i.link && !i.none && !(i.tags && i.tags.length)); }
   function roll(id, seen) {
     if (rolled[id]) return rolled[id];
-    var r = byId[id], out = { contains: {}, check: {}, missing: [] };
+    var r = byId[id], out = { contains: {}, check: {}, missing: [], unchecked: [] };
     if (!r || seen[id]) return out;
     seen[id] = true;
     function miss(name) { if (out.missing.indexOf(name) < 0) out.missing.push(name); }
+    function unk(name) { if (out.unchecked.indexOf(name) < 0) out.unchecked.push(name); }
     r.contains.forEach(function (c) { addTo(out.contains, c.allergen, c.from); });
     r.check.forEach(function (c) { addTo(out.check, c.allergen, c.from); });
     r.ingredients.forEach(function (i) {
-      if (!i.link) return;
+      if (!i.link) { if (notChecked(r, i)) unk(i.name); return; }
       // Linked to a recipe that is not in the book yet: its allergens are unknown.
       if (!byId[i.link]) { miss(i.name); return; }
       var sub = roll(i.link, seen);
       Object.keys(sub.contains).forEach(function (a) { addTo(out.contains, a, byId[i.link].name); });
       Object.keys(sub.check).forEach(function (a) { addTo(out.check, a, byId[i.link].name); });
       sub.missing.forEach(miss);
+      // a recipe it uses with a part not checked: named by that recipe, where the check is done
+      if (sub.unchecked.length) unk(byId[i.link].name);
     });
     rolled[id] = out;
     return out;
@@ -199,8 +208,10 @@
     if (!out.length) return { list: null, rest: s };
     return { list: out, rest: rest.replace(/\b(and|or)\b|[,+&]/g, ' ').replace(/\s+/g, ' ').trim() };
   }
+  // not sure yet: a part with no card, or a part nobody checked for allergens. Never "free from" anything.
+  function unsure(id) { return !!(missing[id].length || unchecked[id].length); }
   function freeFrom(id, list) {
-    if (missing[id].length) return false;
+    if (unsure(id)) return false;
     var ro = rolled[id];
     return list.every(function (a) { return !ro.contains[a] && !ro.check[a]; });
   }
@@ -242,7 +253,7 @@
     var s = search();
     var out = '';
     if (s.fixed) out += '<p class="s-note" role="status">Nothing for "' + esc(q()) + '". Showing <b>' + esc(s.fixed) + '</b> instead.</p>';
-    if (s.free) out += '<p class="s-note" role="status"><b>Free from ' + esc(s.free.join(', ').toLowerCase()) + ':</b> recipes with none of it and no "may have". Recipes with a card still to come are left out. Always check the supplier labels before answering a guest.</p>';
+    if (s.free) out += '<p class="s-note" role="status"><b>Free from ' + esc(s.free.join(', ').toLowerCase()) + ':</b> recipes with none of it and no "may have". Recipes with a card still to come, or with allergens not checked yet, are left out. Always check the supplier labels before answering a guest.</p>';
     var gl = guideHits();
     if (gl.length) out += '<p class="s-note g-hits"><b>' + (gl.length === 1 ? 'Guide' : 'Guides') + ':</b> ' + gl.map(function (g) { return '<a href="#/guides/' + encodeURIComponent(g.id) + '">' + esc(g.title) + '</a>'; }).join(', ') + '</p>';
     return out;
@@ -251,7 +262,7 @@
   function guideHits() { return q().length >= 3 && window.LK_PREP && window.LK_PREP.guideSearch ? window.LK_PREP.guideSearch(q()) : []; }
   function freeOk(id) {
     if (!ui.free.length) return true;
-    if (missing[id].length) return false; // can't promise free-from until every part has a card
+    if (unsure(id)) return false; // can't promise free-from until every part has a card and is checked
     var ro = rolled[id];
     for (var k = 0; k < ui.free.length; k++) { if (ro.contains[ui.free[k]] || ro.check[ui.free[k]]) return false; }
     return true;
@@ -262,8 +273,8 @@
     if (t.indexOf(ui.lens + '?') >= 0) return 'may';
     return null;
   }
-  // A recipe with parts still to come counts as "may have" for every allergen.
-  function hitId(id) { return hit(tags[id]) || (ui.lens && missing[id].length ? 'may' : null); }
+  // A recipe with parts still to come, or not checked yet, counts as "may have" for every allergen.
+  function hitId(id) { return hit(tags[id]) || (ui.lens && unsure(id) ? 'may' : null); }
   function lensWord(h) { return h === 'may' ? ui.lens + '?' : ui.lens; }
   function href(stack) { return stack.length ? '#/r/' + stack.join('/') : '#/recipes'; }
   function stackTo(stack, id) { var i = stack.indexOf(id); return i >= 0 ? stack.slice(0, i + 1) : stack.concat([id]); }
@@ -919,19 +930,24 @@
       (r.menu ? '<span class="menu-line"><b>On the menu:</b> ' + esc(r.menu) + '</span>' : '') + '</div></div>';
   }
   function allergenBox(r) {
-    var list = rows[r.id], miss = missing[r.id];
+    var list = rows[r.id], miss = missing[r.id], unk = unchecked[r.id];
     var h = '<section class="box outline" id="r-allergens" aria-label="Allergens"><div class="row-label" style="justify-content: space-between"><span class="label">Allergens</span>' +
       (list.some(function (a) { return a.maybe; }) ? '<span class="hint">? = may be in it, check the supplier label</span>' : '') + '</div>';
     if (list.length) {
       h += '<div class="allergen-grid">' + list.map(function (a) {
         return '<div class="allergen-row"><span class="tag' + (a.maybe ? ' maybe' : '') + '">' + esc(a.label) + '</span><span class="from">' + esc(a.from) + '</span></div>';
       }).join('') + '</div>';
-    } else {
+    } else if (!unk.length) {
+      // never "None" while a part is not checked: that is the line a guest would be told
       h += '<div>' + (miss.length ? 'None in the listed ingredients so far.' : 'None in the ingredients.') + '</div>';
     }
     if (miss.length) {
       h += '<div class="warn" role="note"><span class="label">Not complete yet</span><span>These parts have no recipe card in the book yet, so their allergens are not listed. Treat the dish as possibly containing any allergen and check with the head chef or sous chef before answering a guest.</span>' +
         '<span class="chips">' + miss.map(function (m) { return '<span class="tag">' + esc(m) + '</span>'; }).join('') + '</span></div>';
+    }
+    if (unk.length) {
+      h += '<div class="warn" role="note"><span class="label">Allergens not checked yet</span><span>Nobody has checked these parts for allergens yet. Do not tell a guest the dish is free from anything. Ask the head chef or sous chef.</span>' +
+        '<span class="chips">' + unk.map(function (m) { return '<span class="tag">' + esc(m) + '</span>'; }).join('') + '</span></div>';
     }
     if (r.labelNote) h += '<div style="font-size: 0.875rem">' + esc(r.labelNote) + '</div>';
     if (list.length > r.contains.length + r.check.length) h += '<div class="hint">Includes allergens from the recipes it uses.</div>';
@@ -940,7 +956,7 @@
   function ingTable(r, stack, useLens) {
     return '<div class="ing">' + r.ingredients.map(function (i) {
       var linked = i.link && byId[i.link], soon = i.link && !linked;
-      var h = useLens ? (linked ? hitId(i.link) : (hit(i.tags || []) || (soon && ui.lens ? 'may' : null))) : null;
+      var h = useLens ? (linked ? hitId(i.link) : (hit(i.tags || []) || ((soon || notChecked(r, i)) && ui.lens ? 'may' : null))) : null;
       var name = linked
         ? '<a class="ilink" href="' + href(stackTo(stack, i.link)) + '"><span>' + esc(i.name) + '</span><span class="rtag">Recipe ' + esc(linked.no) + '</span></a>'
         : '<span>' + esc(i.name) + '</span>' + (soon ? '<span class="rtag soon">Card to come</span>' : '');
@@ -1191,7 +1207,8 @@
         return '<a class="tile' + (r.done ? ' done' : '') + '" href="#/r/' + esc(r.id) + '"><span class="t-top"><span class="t-kind">' + esc((r.sec || KIND[r.kind]) + (r.forLine === 'Template' ? ' · Template' : '')) + '</span>' +
           '<span class="t-no">' + esc(r.no) + '</span></span><span class="t-mid"><span class="t-txt"><span class="t-name">' + esc(r.name) + '</span><span class="t-yield">' + esc(r.yield) + '</span></span>' + art(r, 't-art') + '</span>' +
           '<span class="chips">' + (r.done ? DONE_TAG : '') + rows[r.id].map(function (a) { return '<span class="tag' + (a.maybe ? ' maybe' : '') + '">' + esc(a.label) + '</span>'; }).join('') +
-          (missing[r.id].length ? '<span class="tag maybe">Allergens incomplete</span>' : '') + '</span></a>';
+          (missing[r.id].length ? '<span class="tag maybe">Allergens incomplete</span>' : '') +
+          (unchecked[r.id].length ? '<span class="tag maybe">Allergens not checked</span>' : '') + '</span></a>';
       }).join('') + '</div></section>';
     }).filter(Boolean));
     return searchNote() + (any ? '<div class="tile-groups">' + html + '</div>' : '<div class="empty">No recipes match. <button type="button" class="btn" data-act="clearall">Clear search and filters</button></div>');
@@ -1614,7 +1631,7 @@
     var keepR = rolled, had = byId[r.id], ro;
     rolled = {}; byId[r.id] = r;
     try { ro = roll(r.id, {}); } finally { if (had) byId[r.id] = had; else delete byId[r.id]; rolled = keepR; }
-    return { contains: Object.keys(ro.contains), check: Object.keys(ro.check).filter(function (a) { return !ro.contains[a]; }), missing: ro.missing };
+    return { contains: Object.keys(ro.contains), check: Object.keys(ro.check).filter(function (a) { return !ro.contains[a]; }), missing: ro.missing, unchecked: ro.unchecked };
   }
   window.LK_APP = {
     mgApi: MG_API, KIND: KIND, isDish: isDish, esc: esc, art: art, rollFor: rollFor, load: mgScript,
@@ -1630,6 +1647,7 @@
     recipes: function () { return D.recipes; },
     tags: function (id) { return tags[id] || []; },
     missing: function (id) { return (missing[id] || []).slice(); },   // allergens incomplete: the ingredients with no allergen info yet
+    unchecked: function (id) { return (unchecked[id] || []).slice(); },   // allergens not checked yet: the parts nobody checked
     usedIn: function (id) { return (usedIn[id] || []).slice(); },
     // Specials is always offered first, even before any dish is in it
     menuTitles: function () { return [SPECIALS].concat((D.menuOrder || []).map(function (s) { return s.title; }).filter(function (t) { return t !== SPECIALS; })); },

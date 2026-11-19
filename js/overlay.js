@@ -39,9 +39,11 @@
     }
     return base;
   }
-  // a short fingerprint of a recipe as js/data.js has it, so the manage page can tell when the file changed later
+  // a short fingerprint of a recipe as js/data.js has it, so the manage page can tell when the file changed later.
+  // An ingredient's check (none, 19 Nov 2026) is left out: stamping the checks into js/data.js is not a change to the
+  // recipe, so it does not mark the head chef's own copies "Book file changed".
   function fingerprint(x) {
-    var s = JSON.stringify(x), h = 0x811c9dc5;
+    var s = JSON.stringify(x, function (k, v) { return k === 'none' ? undefined : v; }), h = 0x811c9dc5;
     for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
     return ('0000000' + h.toString(16)).slice(-8);
   }
@@ -69,6 +71,9 @@
       if (i.link) o.link = s(i.link, 48);
       if (i.note) o.note = s(i.note, 200);
       var t = tagList(i.tags); if (t.length) o.tags = t;
+      // none (19 Nov 2026, docs/allergen-check-options/brief.md): true checked, no allergens; false saved by the form as
+      // not checked yet. Only on a plain ingredient with no allergens: a link or a tag says it instead.
+      else if (typeof i.none === 'boolean' && !o.link) o.none = i.none;
       return o;
     });
     out.pins = (Array.isArray(r.pins) ? r.pins : []).filter(function (p) { return p && typeof p.label === 'string'; }).slice(0, 60).map(function (p) {
@@ -126,6 +131,18 @@
     lsSet(KEY, t);
   }
 
+  /* The checks in js/data.js carry over to the head chef's own copy of that recipe, by the ingredient's exact name
+     (19 Nov 2026). A copy saved before then had no way to say No allergens, so its plain lines have no none at all; the
+     form now saves none true or false on every plain line, so a newer copy never takes one. Only a plain line with no
+     allergens gets it, and only from the same recipe in the file. r: a recipe (changed in place), base: the file's. */
+  function carry(r, base) {
+    if (!r || !base || !Array.isArray(r.ingredients)) return r;
+    var ok = Object.create(null), nm = function (n) { return String(n || '').trim().toLowerCase(); };
+    (base.ingredients || []).forEach(function (i) { if (i && i.none === true && !i.link && !(i.tags && i.tags.length)) ok[nm(i.name)] = 1; });
+    r.ingredients.forEach(function (i) { if (i && !i.link && !(i.tags && i.tags.length) && i.none === undefined && ok[nm(i.name)]) i.none = true; });
+    return r;
+  }
+
   /* ---------- laying the changes over js/data.js ---------- */
   var skipped = false;
   // Builds LK_DATA.recipes and menuOrder again from the clean copy and the changes kept on this phone.
@@ -139,7 +156,7 @@
       if (!o || o.off) { list.push(r); return; }
       if (o.removed) return;
       var t = tidy(o.r, r.id);
-      if (t) list.push(t); else { list.push(r); dropped.push(r.id); }
+      if (t) list.push(carry(t, r)); else { list.push(r); dropped.push(r.id); }
     });
     Object.keys(over).sort().forEach(function (id) {
       if (b.byId[id]) return;
@@ -338,6 +355,8 @@
     pin: function () { return cache.pin; },
     // the recipe as js/data.js has it (a copy), or null for a recipe made in the book
     pristine: function (id) { var r = baseData().byId[id]; return r ? clone(r) : null; },
+    // a recipe from a saved copy, with the file's checks carried over (carry() above), so the form matches the card
+    carry: function (r) { return r ? carry(r, baseData().byId[r.id]) : r; },
     baseMenu: function () { return clone(baseData().menu); },
     // the change kept on this phone for a recipe ({ r, v, removed, off, src, base, upd, by }), or null
     change: function (id) { var o = cache.recipes[id]; return o ? clone(o) : null; },
