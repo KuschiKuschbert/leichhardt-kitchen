@@ -171,7 +171,8 @@ const settle = (p, ms) => L.settle(p, ms || 400);
   // 4. the band's own days are as before: the day before shows its Tomorrow line, today its rounds
   await step('band days unchanged', async () => {
     p = await L.open(b, '#/prep', { who: 'ann', extra: extra({ smith: fn({ name: 'Smith 60th', date: M.addDays(today, 1), guests: 60 }), jones: JONES }), width: 390, height: 844, wait: 1500 });
-    await L.waitFor(p, () => !!document.querySelector('#fn-band:not([hidden]) .fn-row'), null, 6000);
+    // Prep starts with the slim strip (19 Nov 2026): its Tomorrow line, not the Next function line
+    await L.waitFor(p, () => !!document.querySelector('#fn-band:not([hidden]) .fn-row, #fn-band:not([hidden]) .fn-strip-b'), null, 6000);
     const x = await band(p);
     ok(!x.ahead && /Tomorrow/.test(x.text) && /Smith 60th/.test(x.text), 'the day before: the band\'s Tomorrow line, as before, no Next function line (' + x.text.slice(0, 80) + ')');
   });
