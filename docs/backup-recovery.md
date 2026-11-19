@@ -10,7 +10,7 @@ This is an included-data backup, not a complete disaster-recovery image. The sou
 
 ## Google's own backups (Leichhardt, Plan C 4.3)
 
-Set by the head chef in Cloud Shell on 19 November 2026, with billing on (Plan C, `docs/firestore-usage.md`). They are a second, complete copy next to the nightly encrypted file above, which every venue keeps (head chef, 19 Nov 2026: a venue on the free plan cannot have these).
+Set by the head chef in Cloud Shell on 20 November 2026, with billing on (Plan C, `docs/firestore-usage.md`). They are a second, complete copy next to the nightly encrypted file above, which every venue keeps (head chef, 20 Nov 2026: a venue on the free plan cannot have these).
 
 ```
 gcloud config set project leichhardt-kitchen
