@@ -1,6 +1,6 @@
 # The admin panel's People page: council brief
 
-19 November 2026, Queensland. Asked by the owner (the head chef): "should we restyle the peoples room in the admin panel?", then "Do this task here". The page is Admin › Team › People, `peopleListHTML()` in `js/prep.js`. Role-based analysis on the click tests' stand-in with made-up people, not research with staff. **Status: chosen 19 November 2026, the head chef: "Build the mix". Built in its own pull request.**
+19 November 2026, Queensland. Asked by the owner (the head chef): "should we restyle the peoples room in the admin panel?", then "Do this task here". The page is Admin › Team › People, `peopleListHTML()` in `js/prep.js`. Role-based analysis on the click tests' stand-in with made-up people, not research with staff. **Status: chosen and built 19 November 2026, the head chef: "Build the mix".**
 
 Files in this folder: `evidence-packet.md` (round 1 evidence: today's page, measurements, contracts), `designs.md` (round 2: the three designs, measurements and taps, as given to the reviewers), `round2-brief.md` (the shared reviewer brief), `preview/designs.js` (draws every design over the real admin panel on the stand-in), `evidence/` (the pictures), `index.html` (every design side by side) and `montage-390.png` (the phone views side by side).
 
@@ -137,3 +137,24 @@ Pictures `evidence/m-390.png`, `m-390-open.png`, `m-390-working.png`, `m-390-del
 ## Chosen
 
 19 November 2026, the head chef: **"Build the mix"**: B's rows that open in place + A's deleted-row cue + C's words, as recommended, with the follow-up repairs (Undo unsaved changes kept with its second tap, deletion words only when one waits, off-the-list people keep their sort place). The build is checked against the verification plan above.
+
+## Built
+
+19 November 2026. `js/prep.js` (`peopleListHTML()`, `personRowHTML()`, `personEditHTML()`, `canWords()`, `personChanges()`, `draftWho()`, `draftGoneHTML()`; Delete marks `gone` in the draft and `saveConfig()` drops it; `lvHTML()` takes one `tool` button), `css/app.css` (`.pp-*`, `.a-gone`, the phone Save bar), `docs/design-patterns.md` (A row that opens in place).
+
+**Implemented app, stand-in, 15 people** (pictures `evidence/built-*.png`):
+
+| | Preview (the mix) | Built |
+| --- | --- | --- |
+| One person, 390 / 1280 px | 119 / 64 | 118 / 63 |
+| People fully on the first screen, 390 / 768 / 1280, nothing unsaved | 1 / 3 / 3 | 1 / 2 / 3 |
+| Page height, 390 / 768 / 1280 | 2,570 / 1,757 / 1,702 | 2,793 / 1,938 / 1,884 |
+| The Save bar on a phone, a change and a deletion waiting | about 90 px | 165 px |
+| Sideways scroll | none | none |
+
+Differences from the preview, none of them a change to the chosen design: the list's own count and filter line sit above the rows (one person fewer on a tablet's first screen); "Undo unsaved changes" wraps onto two lines in its half of the phone bar and the deletion has its own red line, so the bar is taller than drawn (still two buttons on one line); **Add several names stays open under the list** (a fold there saved no room at the top and cost a tap) with How roles and ticks work beside it as a fold; off-the-list people keep their place in the chosen sort. Taps as the mix: a role 4, a tick 3, Stopped working here 4, Delete for good 4, Reset PIN 2, a new person 2.
+
+Checked in the stand-in (`tests/people-safety.test.js`): rows in words with no field until Change; one person open at a time; Stopped working here and Put back on the list from the open row, Not saved in the row and the name in the Save bar; after Save every row closes and Off the list shows with no Reset PIN; Reset PIN from the row; Delete for good never for the head chef, two taps, the row struck through with only Undo delete, the slip and the bar naming the person; Undo delete says Undone; the keeper's check (Ann's tick changed, Bo deleted, another phone renaming Sam meanwhile, one Save keeps all three, Bo's PIN wiped and Sam's kept). `tests/targets.test.js`: fields and role 44 px, ticks 28 px with 44 px labels, Change, Reset PIN, Stopped working here and Delete for good 44 px. Twelve other test files follow the rows (one person opens before their fields are used).
+
+Still Not evidenced: rendered contrast of the orange and red words, dark mode and keyboard focus beyond the existing controls; Saving and failed states in the one-line phone bar; the live site after release.
+
