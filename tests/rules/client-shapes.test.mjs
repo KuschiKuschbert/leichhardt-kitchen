@@ -53,7 +53,7 @@ const functionModel = createRequire(import.meta.url)('../../js/functions.js');
 
 setLogLevel('silent');   // a refusal is an answer here, not something to log
 const PIN = '000000', OWNER = 'headchef@test.local', K = 'kitchens/' + PIN + '/';
-const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8').replaceAll('KITCHEN_PIN', PIN).replaceAll('OWNER_EMAIL', OWNER);
+const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8').replaceAll('KITCHEN_PIN', PIN).replaceAll('OWNER_EMAIL', OWNER).replaceAll('PLATFORM_EMAIL', OWNER).replaceAll('PLATFORM_ID', '');
 let env = await initializeTestEnvironment({ projectId: 'demo-client-shapes', firestore: { rules } });
 await env.clearFirestore();
 

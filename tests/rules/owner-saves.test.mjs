@@ -13,7 +13,7 @@ import { anonContext, dailySession, adminGrant, seedOwnerDevice, nextFour } from
 import { readFileSync } from 'node:fs';
 
 const PIN = '000000', OWNER = 'headchef@test.local', K = 'kitchens/' + PIN + '/';
-const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8').replaceAll('KITCHEN_PIN', PIN).replaceAll('OWNER_EMAIL', OWNER);
+const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8').replaceAll('KITCHEN_PIN', PIN).replaceAll('OWNER_EMAIL', OWNER).replaceAll('PLATFORM_EMAIL', OWNER).replaceAll('PLATFORM_ID', '');
 const env = await initializeTestEnvironment({ projectId: 'demo-owner-saves', firestore: { rules } });
 await env.clearFirestore();
 const NOW = Date.now(), TODAY = new Date(NOW + 10 * 3600000).toISOString().slice(0, 10), T0 = Date.parse(TODAY + 'T08:00:00Z');

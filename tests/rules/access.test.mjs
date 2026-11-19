@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 const functionModel = createRequire(import.meta.url)('../../js/functions.js');
 const pin = '000000', K = `kitchens/${pin}/`, ownerEmail = 'owner@test.local';
-const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8').replaceAll('KITCHEN_PIN', pin).replaceAll('OWNER_EMAIL', ownerEmail);
+const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8').replaceAll('KITCHEN_PIN', pin).replaceAll('OWNER_EMAIL', ownerEmail).replaceAll('PLATFORM_EMAIL', ownerEmail).replaceAll('PLATFORM_ID', '');
 const env = await initializeTestEnvironment({ projectId: 'demo-access', firestore: { rules } });
 await env.clearFirestore();
 const now = Date.now(), today = new Date(now + 10 * 3600000).toISOString().slice(0, 10);

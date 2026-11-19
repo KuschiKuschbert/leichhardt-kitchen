@@ -4,6 +4,23 @@ const path = require('node:path');
 const fs = require('node:fs'), os = require('node:os');
 const { safeRelease, safeUpload, responseStatus, install, validateInvocation } = require('./publish-rules.cjs');
 const PROJECT = 'leichhardt-kitchen', RELEASE = 'cloud.firestore', name = `projects/${PROJECT}/releases/${RELEASE}`;
+// The publisher's project comes from the venue (19 Nov 2026, docs/venues.md): Leichhardt's without VENUE, and a venue
+// no file names is refused before anything starts.
+{
+  const venues = require('./venues.cjs'), fs = require('node:fs'), os = require('node:os'), path = require('node:path');
+  assert.equal(require('./publish-rules.cjs').PROJECT, PROJECT, 'Without VENUE the publisher targets Leichhardt, as before.');
+  assert.equal(venues.scriptProject({ VENUE: 'leichhardt' }), PROJECT);
+  assert.throws(() => venues.scriptProject({ VENUE: 'no-such-venue' }), /no venue named/);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'publisher-sa-')), sa = path.join(dir, 'sa.json');
+  try {
+    const { credentialsProject } = require('./publish-rules.cjs');
+    fs.writeFileSync(sa, JSON.stringify({ project_id: 'another-venue-1' }));
+    assert.notEqual(credentialsProject({ GOOGLE_APPLICATION_CREDENTIALS: sa }), PROJECT, 'Another venue\'s service account is not this project\'s.');
+    fs.writeFileSync(sa, JSON.stringify({ project_id: PROJECT }));
+    assert.equal(credentialsProject({ GOOGLE_APPLICATION_CREDENTIALS: sa }), PROJECT);
+    assert.equal(credentialsProject({}), '', 'No credentials file names no project.');
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+}
 const intended = `projects/${PROJECT}/rulesets/synthetic-intended`, old = `projects/${PROJECT}/rulesets/synthetic-old`;
 function http(status) { return Object.assign(Error('SYNTHETIC_ORIGINAL_PATCH_ERROR'), { status, context: { response: { statusCode: status }, body: 'SYNTHETIC_PRIVATE_RESPONSE_BODY' } }); }
 let groups = 0;

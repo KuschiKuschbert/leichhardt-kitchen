@@ -14,7 +14,7 @@ import { anonContext, dailySession, seedOwnerDevice } from './device-auth-fixtur
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PIN = '000000', OWNER = 'headchef@test.local', K = 'kitchens/' + PIN + '/';
 const SID = 'test-vendor', CUT = 'test-cutoff', DAY = '2026-10-24';
-const rules = readFileSync(process.env.RULES || path.join(here, '..', '..', 'firestore.rules'), 'utf8').replace(/KITCHEN_PIN/g, PIN).replace(/OWNER_EMAIL/g, OWNER);
+const rules = readFileSync(process.env.RULES || path.join(here, '..', '..', 'firestore.rules'), 'utf8').replace(/KITCHEN_PIN/g, PIN).replace(/OWNER_EMAIL/g, OWNER).replace(/PLATFORM_EMAIL/g, OWNER).replace(/PLATFORM_ID/g, '');
 const env = await initializeTestEnvironment({ projectId: 'demo-test', firestore: { rules } });
 await env.clearFirestore();
 const source = { file: 'test-source.pdf', page: 1, row: 1, name: 'TEST BAG ITEM 5KG', par: '0' };

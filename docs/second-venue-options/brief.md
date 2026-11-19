@@ -218,7 +218,7 @@ Unresolved before readiness:
 ## Build order (if chosen)
 
 1. **The allergen fix** for every recipe: an ingredient is checked or not; a recipe with an unchecked ingredient says "Allergens not checked yet" and leaves Free from. A click test that fails on today's code. Leichhardt benefits first.
-2. **The venue plumbing:** the second venue's own Firebase project and address; its config, security header, venue name and empty book filled in when it is published; two admins (owner and head chef); server jobs, backup (keyed by project), rules publishing, lock probe and live tests once per venue.
+2. **The venue plumbing:** the second venue's own Firebase project and address; its config, security header, venue name and empty book filled in when it is published; two admins (owner and head chef); server jobs, backup (keyed by project), rules publishing, lock probe and live tests once per venue. **Built as a draft, 19 Nov 2026: [venues.md](../venues.md)** (the checklist, the owner's steps and the published-rules order). Left for a client follow-up: the book offering Admin to the platform owner at a venue, and locking his row in the venue admin's people editor.
 3. **Getting started rows and the Inbox row**, read from cached config.
 4. **The AVC reader** (made-up test cards: no money figure or code in any output) and the private draft store.
 5. **The review card** with the remembered product list, Add through the existing recipe save, re-import as Update amounts.

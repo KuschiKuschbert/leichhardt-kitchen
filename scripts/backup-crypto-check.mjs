@@ -148,10 +148,10 @@ try {
   check('new envelopes never downgrade through explicit legacy mode', () => denied('new-as-legacy', envelope, secret, 'decrypt-legacy'));
   check('the actual nightly workflow writes an authenticated encrypted artifact and always removes plaintext', () => {
     const temp = join(folder, 'workflow'); mkdirSync(temp); writeFileSync(join(temp, 'backup.json'), plain, { mode: 0o600 });
-    const env = { ...process.env, BACKUP_KEY: secret, RUNNER_TEMP: temp };
+    const env = { ...process.env, BACKUP_KEY: secret, RUNNER_TEMP: temp, VENUE: 'leichhardt' };
     const encryption = spawnSync('bash', ['-euo', 'pipefail', '-c', workflowStep('Encrypt and verify').command], { cwd: root, env, encoding: 'utf8' });
     assert.equal(encryption.status, 0);
-    const files = readdirSync(join(temp, 'out')); assert.equal(files.length, 1); assert.match(files[0], /^kitchen-book-\d{4}-\d{2}-\d{2}\.json\.enc$/);
+    const files = readdirSync(join(temp, 'out')); assert.equal(files.length, 1); assert.match(files[0], /^kitchen-book-leichhardt-\d{4}-\d{2}-\d{2}\.json\.enc$/); // each venue its own file (docs/venues.md)
     assert.deepEqual(decryptBackup(readFileSync(join(temp, 'out', files[0])), secret), plain);
     assert.deepEqual(readFileSync(join(temp, 'backup-verified.json')), plain); assert.equal(statSync(join(temp, 'backup-verified.json')).mode & 0o777, 0o600);
     const cleanup = workflowStep('Remove plaintext'); assert.match(cleanup.block, /if: always\(\)/);
@@ -162,7 +162,7 @@ try {
   });
   check('workflow cleanup still removes plaintext after encryption fails', () => {
     const temp = join(folder, 'failed-workflow'); mkdirSync(temp); writeFileSync(join(temp, 'backup.json'), plain);
-    const env = { ...process.env, BACKUP_KEY: '', RUNNER_TEMP: temp };
+    const env = { ...process.env, BACKUP_KEY: '', RUNNER_TEMP: temp, VENUE: 'leichhardt' };
     const encryption = spawnSync('bash', ['-euo', 'pipefail', '-c', workflowStep('Encrypt and verify').command], { cwd: root, env, encoding: 'utf8' });
     assert.notEqual(encryption.status, 0);
     assert.equal(spawnSync('bash', ['-euo', 'pipefail', '-c', workflowStep('Remove plaintext').command], { cwd: root, env }).status, 0);
@@ -173,7 +173,7 @@ try {
     writeFileSync(join(temp, 'backup.json'), plain, { mode: 0o600 });
     const shellQuote = s => "'" + s.replaceAll("'", "'\\''") + "'";
     writeFileSync(join(bin, 'node'), '#!/usr/bin/env bash\nset -euo pipefail\numask 077\nif [ "$2" = decrypt ]; then printf \'{"mismatched":true}\' > "$4"; exit 0; fi\nexec ' + shellQuote(process.execPath) + ' "$@"\n', { mode: 0o700 });
-    const env = { ...process.env, BACKUP_KEY: secret, RUNNER_TEMP: temp, PATH: bin + ':' + process.env.PATH };
+    const env = { ...process.env, BACKUP_KEY: secret, RUNNER_TEMP: temp, VENUE: 'leichhardt', PATH: bin + ':' + process.env.PATH };
     const result = spawnSync('bash', ['-euo', 'pipefail', '-c', workflowStep('Encrypt and verify').command], { cwd: root, env, encoding: 'utf8' });
     assert.notEqual(result.status, 0); assert.match(result.stdout, /verification failed/);
     assert(!(result.stdout + result.stderr).includes(secret));

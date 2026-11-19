@@ -2,6 +2,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync, statSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
+import venues from './venues.cjs';
 import { isDeepStrictEqual } from 'node:util';
 
 const MAX_INPUT = 200, MAX_EXISTING = 2000;
@@ -120,11 +121,11 @@ async function main() {
   let serviceAccount, projectId;
   if (emulator) {
     projectId = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'demo-test';
-    if (projectId !== 'leichhardt-kitchen' && !/^demo-[a-z0-9-]{1,55}$/.test(projectId)) refuse('project');
+    if (projectId !== venues.scriptProject() && !/^demo-[a-z0-9-]{1,55}$/.test(projectId)) refuse('project');
   } else {
     try { serviceAccount = JSON.parse(process.env.FIREBASE_SA || '{}'); } catch { refuse('credentials'); }
     projectId = serviceAccount.project_id;
-    if (projectId !== 'leichhardt-kitchen' || [process.env.GCLOUD_PROJECT, process.env.GOOGLE_CLOUD_PROJECT].some(value => value && value !== projectId)) refuse('project');
+    if (projectId !== venues.scriptProject() || [process.env.GCLOUD_PROJECT, process.env.GOOGLE_CLOUD_PROJECT].some(value => value && value !== projectId)) refuse('project');
   }
   const { initializeApp, cert, deleteApp } = await import('firebase-admin/app');
   const { getFirestore } = await import('firebase-admin/firestore');

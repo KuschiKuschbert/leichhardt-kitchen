@@ -3,7 +3,7 @@ import { doc, collection, getDoc, getDocs, setDoc, updateDoc, deleteDoc, writeBa
 import { readFileSync } from 'node:fs';
 import { anonContext, dailySession, seedOwnerDevice } from './device-auth-fixtures.mjs';
 const K = 'kitchens/000000/', email = 'owner@test.local';
-const env = await initializeTestEnvironment({ projectId: 'demo-intelligence', firestore: { rules: readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8').replaceAll('KITCHEN_PIN', '000000').replaceAll('OWNER_EMAIL', email) } });
+const env = await initializeTestEnvironment({ projectId: 'demo-intelligence', firestore: { rules: readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8').replaceAll('KITCHEN_PIN', '000000').replaceAll('OWNER_EMAIL', email).replaceAll('PLATFORM_EMAIL', email).replaceAll('PLATFORM_ID', '') } });
 await env.clearFirestore();
 await env.withSecurityRulesDisabled(async c => {
   const db = c.firestore();
