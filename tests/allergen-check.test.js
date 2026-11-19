@@ -19,10 +19,21 @@ const R0 = [
   { id: 'zz-bowl-ok', no: '905', kind: 'main', forLine: 'Plate', name: 'Zz Test Checked Bowl', yield: 'Per plate', ingredients: [ing('Rice', { link: 'zz-rice-ok' }), ing('Spring onion', { none: true })] },
   { id: 'zz-hand', no: '906', kind: 'side', forLine: 'Plate', name: 'Zz Test Hand Salad', yield: 'Per plate', ingredients: [ing('Lettuce')], contains: [], check: [] }
 ];
-const rec = r => ({ r, v: 1, upd: L.NOW - 3600000, by: 'ann', src: 'new', base: '', removed: false });
+// the head chef's own copies of two file recipes: one saved before 19 Nov 2026 (no none anywhere: the file's checks
+// carry over by name), one saved by the new form with a line left not checked (none: false: nothing carries)
+global.window = {}; require('../js/data.js');
+const FILE = global.window.LK_DATA, file = id => JSON.parse(JSON.stringify(FILE.recipes.find(r => r.id === id)));
+const old = Object.assign(file('mushy-peas'), { yield: 'Old copy' });
+old.ingredients.forEach(i => { delete i.none; });
+const kept = Object.assign(file('cowboy-candy'), { yield: 'New copy' });
+const left = kept.ingredients.find(i => i.none === true);
+left.none = false;
+const rec = (r, src) => ({ r, v: 1, upd: L.NOW - 3600000, by: 'ann', src: src || 'new', base: '', removed: false });
 function changes() {
-  const out = { [fsKey(['book', 'index'])]: { r: Object.fromEntries(R0.map(r => [r.id, 1])) } };
+  const out = { [fsKey(['book', 'index'])]: { r: Object.fromEntries(R0.map(r => [r.id, 1]).concat([['mushy-peas', 1], ['cowboy-candy', 1]])) } };
   R0.forEach(r => { out[fsKey(['recipes', r.id])] = rec(r); });
+  out[fsKey(['recipes', 'mushy-peas'])] = rec(old, 'book');
+  out[fsKey(['recipes', 'cowboy-candy'])] = rec(kept, 'book');
   return out;
 }
 const wait = (p, fn, arg, t) => L.waitFor(p, fn, arg, t || 6000).catch(() => false);
@@ -32,8 +43,15 @@ const box = p => txt(p, '#r-allergens').then(t => t || '');
 const NOT = /Allergens not checked yet/;
 
 (async () => {
+  // js/data.js: every plain ingredient of a recipe worked out from its tags has its allergens or No allergens
+  const open = FILE.recipes.filter(r => !r.contains && !r.check).flatMap(r => r.ingredients.filter(i => !i.link && !(i.tags && i.tags.length) && i.none !== true).map(i => r.id + ': ' + i.name));
+  ok(open.length === 0, 'js/data.js: no ingredient is left not checked (' + open.slice(0, 5).join(', ') + ')');
   const b = await L.start();
-  let p = await L.open(b, '#/recipes', { who: 'bo', extra: Object.assign(cfg(), changes()), wait: 1500 });
+  let p = await L.open(b, '#/recipes', { noPin: true, who: '', wait: 1500 });
+  const none = await p.evaluate(() => window.LK_DATA.recipes.filter(r => window.LK_APP.unchecked(r.id).length).map(r => r.id));
+  ok(none.length === 0, 'the book as js/data.js has it: no card says Allergens not checked yet (' + none.join(', ') + ')');
+  await p.context().close();
+  p = await L.open(b, '#/recipes', { who: 'bo', extra: Object.assign(cfg(), changes()), wait: 1500 });
   ok(await synced(p), 'the test recipes came in');
 
   // the card says it in words, names the parts, and never says None
@@ -52,6 +70,13 @@ const NOT = /Allergens not checked yet/;
     t = await box(p);
     ok(/None in the ingredients\./.test(t) && !NOT.test(t), what + ': None in the ingredients, nothing not checked (' + t.replace(/\s+/g, ' ') + ')');
   }
+  // the head chef's own copies of file recipes
+  await go(p, '#/r/mushy-peas');
+  t = await box(p);
+  ok(/Old copy/.test(await txt(p, '.yield') || '') && !NOT.test(t), 'a copy saved before: the file\'s checks carry over by name (' + t.replace(/\s+/g, ' ') + ')');
+  await go(p, '#/r/cowboy-candy');
+  t = await box(p);
+  ok(/New copy/.test(await txt(p, '.yield') || '') && NOT.test(t) && t.includes(left.name), 'a copy saved by the form with a line not checked: nothing carries onto it (' + t.replace(/\s+/g, ' ') + ')');
   ok(await p.evaluate(() => typeof window.LK_APP.unchecked === 'function' && window.LK_APP.unchecked('zz-rice').join() === 'Long grain rice,Water' && window.LK_APP.unchecked('zz-rice-ok').length === 0), 'the book tells the other pages which parts are not checked');
 
   // Free from leaves out what nobody checked, on the Pass and in a search
