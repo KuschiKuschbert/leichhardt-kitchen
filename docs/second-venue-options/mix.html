@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Second venue · the mix</title>
+<link rel="stylesheet" href="../../css/app.css"><link rel="stylesheet" href="preview.css">
+<style>
+  /* the mix: chips at 44 px, the same ten allergens on every row (as tagChips() in js/manage.js), plus No allergens */
+  .mx .sv-chip { min-height: 44px; }
+  .mx .sv-chip.may { border-style: dashed; border-color: var(--accent); color: var(--small-ink); }
+  .mx .sv-ing .st { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 0 0; gap: 8px; }
+  .mx .sv-fill { margin-bottom: 8px; font-size: .88rem; color: var(--muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .mx .sv-fill button { min-height: 44px; }
+  .mx .sv-bar { position: sticky; bottom: 0; background: var(--bg); border-top: 1px solid var(--line); padding: 8px 0; }
+  .mx .sv-bar p { margin: 0 0 6px; font-size: .9rem; }
+  .mx .sv-bar .sv-btns { margin: 0; justify-content: flex-end; }
+  .mx .sv-inbox .sv-drow { min-height: 64px; }
+</style></head>
+<body class="sv mx">
+
+<!-- M1: Today, Inbox: one row, not a page -->
+<section class="sv-frame" id="inbox">
+  <div class="sv-note">The mix · Preview, made-up venue · Admin, Today, Inbox (B's row)</div>
+  <header class="sv-top"><div><span class="k">Riverside Hotel kitchen</span><b>Kitchen Book</b></div><span class="sv-venue">Riverside Hotel</span></header>
+  <div class="sv-shell">
+    <nav class="sv-rail" aria-label="Admin rooms"><span class="sv-rl">Admin panel</span><a href="#" aria-current="page">Today</a><a href="#">Reports</a><a href="#">Team</a><a href="#">Kitchen</a><a href="#">Prep</a></nav>
+    <main class="sv-pane sv-inbox">
+      <p class="sv-kick">Today</p><h1>Inbox</h1>
+      <p class="hint">What needs you first.</p>
+      <ul class="sv-list">
+        <li class="sv-drow"><b>Finish setting up the kitchen</b><span class="go"><button class="sv-btn">Open ›</button></span><span class="s"><span class="sv-word w-not">3 of 6 needed set</span>Next: Kitchen sections</span></li>
+        <li class="sv-drow"><b>6 recipes from AVC Live not checked</b><span class="go"><button class="sv-btn">Check ›</button></span><span class="s"><span class="sv-word w-opt">Hidden from staff</span>Next: Beef burger</span></li>
+      </ul>
+    </main>
+  </div>
+</section>
+
+<!-- M2: Kitchen, Overview: Getting started links to rows; everyday rows stay where they are -->
+<section class="sv-frame" id="setup">
+  <div class="sv-note">The mix · Preview · Admin, Kitchen, Overview (A's rows, everyday rows unmoved)</div>
+  <header class="sv-top"><div><span class="k">Riverside Hotel kitchen</span><b>Kitchen Book</b></div><span class="sv-venue">Riverside Hotel</span></header>
+  <div class="sv-shell">
+    <nav class="sv-rail" aria-label="Admin rooms"><span class="sv-rl">Admin panel</span><a href="#">Today</a><a href="#">Reports</a><a href="#">Team</a><a href="#" aria-current="page">Kitchen</a><a href="#">Prep</a></nav>
+    <main class="sv-pane">
+      <p class="sv-kick">Kitchen administration</p>
+      <h1>Kitchen</h1>
+      <nav class="sv-tabs"><span aria-current="page">Overview</span><span>Order cut-offs</span><span>Suppliers &amp; pars</span><span>Shift pings</span><span>Backup and PIN</span></nav>
+      <section class="sv-block" aria-labelledby="gs">
+        <h3 id="gs">Getting started <small>3 of 6 needed set</small></h3>
+        <p class="hint">What a new kitchen needs before the team starts, in order. Staff never see this. When all six are set it becomes one line.</p>
+        <a class="sv-row" href="#"><span class="n">1</span><span class="t">Kitchen sections</span><span class="go">Open ›</span><span class="s"><span class="sv-word w-not">Not set yet</span>Needed for prep lines and Today's team</span></a>
+        <a class="sv-row" href="#"><span class="n">2</span><span class="t">Shifts</span><span class="go">Open ›</span><span class="s"><span class="sv-word w-set">✓ Set</span>Lunch, Dinner</span></a>
+        <a class="sv-row" href="#"><span class="n">3</span><span class="t">People and PINs</span><span class="go">Open ›</span><span class="s"><span class="sv-word w-set">✓ Set</span>6 people. 2 have not set a PIN yet</span></a>
+        <a class="sv-row" href="#"><span class="n">4</span><span class="t">Suppliers and order cut-offs</span><span class="go">Open ›</span><span class="s"><span class="sv-word w-not">Not set yet</span>No order reminders until set</span></a>
+        <a class="sv-row" href="#"><span class="n">5</span><span class="t">Cleaning</span><span class="go">Try again</span><span class="s"><span class="sv-word w-bad">Could not check</span>No signal at 14:02. Not read, so not counted as missing</span></a>
+        <a class="sv-row" href="#"><span class="n">6</span><span class="t">Recipes</span><span class="go">Open ›</span><span class="s"><span class="sv-word w-not">6 to check</span>14 in the book. 6 drafts from AVC Live</span></a>
+        <p class="hint" style="margin-top:8px">Optional: Prep standards (in Admin, Prep), Pages staff see and Shift pings (in the rows below).</p>
+      </section>
+      <section class="sv-block"><h3>The kitchen</h3>
+        <a class="sv-row" href="#"><span class="n"></span><span class="t">Order cut-offs</span><span class="go">Not set yet ›</span></a>
+        <a class="sv-row" href="#"><span class="n"></span><span class="t">Kitchen sections</span><span class="go">Not set yet ›</span></a>
+        <a class="sv-row" href="#"><span class="n"></span><span class="t">Shifts</span><span class="go">2 shifts ›</span></a>
+      </section>
+    </main>
+  </div>
+</section>
+
+<!-- M3: the recipe editor on an AVC draft, in B's card order, with C's words on every ingredient -->
+<section class="sv-frame" id="draft">
+  <div class="sv-note">The mix · Preview · Manage, From AVC: B's review card, the only draft editor (C's words and remembered products)</div>
+  <header class="sv-top"><div><span class="k">Riverside Hotel kitchen</span><b>Kitchen Book</b></div><span class="sv-venue">Riverside Hotel</span></header>
+  <main class="sv-pane">
+    <p class="hint" style="margin:0">Draft 2 of 6 from AVC Live · <span class="sv-ftag">From AVC</span> kept private, hidden from staff</p>
+    <h1>Garden salad portion</h1>
+    <p style="margin:6px 0 2px"><b>What is it?</b> <span class="hint">The card said PLEASE SELECT, so the book did not guess.</span></p>
+    <div class="sv-chips"><button class="sv-chip">Main</button><button class="sv-chip">Snack</button><button class="sv-chip">Side</button><button class="sv-chip">Dessert</button><button class="sv-chip">Batch</button><button class="sv-chip" aria-pressed="true">✓ Component</button></div>
+    <p class="hint">Makes 1 serve <span class="sv-ftag">AVC</span></p>
+    <p style="margin:12px 0 0"><b>Ingredients and allergens</b> <span class="hint">· 1 of 3 checked</span></p>
+    <div class="sv-ing"><p class="st"><b>Mixed leaves</b><span class="sv-word w-not">Not checked</span></p><div class="r1"><span class="sv-field sv-q">40 g</span><span class="sv-field">Mixed leaves <span class="sv-ftag">AVC</span></span></div>
+      <div class="sv-fill">Name tidied from "LETT MIXED LEAVES 1.5K CASE" <button class="sv-btn">Empty it</button></div>
+      <div class="sv-chips"><button class="sv-chip">Gluten</button><button class="sv-chip">Milk</button><button class="sv-chip">Egg</button><button class="sv-chip">Soy</button><button class="sv-chip">Peanut</button><button class="sv-chip">Tree nut</button><button class="sv-chip">Fish</button><button class="sv-chip">Crustacean</button><button class="sv-chip">Mollusc</button><button class="sv-chip">Sesame</button><button class="sv-chip">No allergens</button></div>
+      <p class="hint">Tap once: has it. Twice: may have it.</p></div>
+    <div class="sv-ing"><p class="st"><b>House dressing</b><span class="sv-word w-opt">Checked before</span></p><div class="r1"><span class="sv-field sv-q">20 ml</span><span class="sv-field">House dressing <span class="sv-ftag">Last time</span></span></div>
+      <div class="sv-fill">Name and allergens filled from your check on 12 Nov (Beef burger) <button class="sv-btn">Empty it</button></div>
+      <div class="sv-chips"><button class="sv-chip">Gluten</button><button class="sv-chip">Milk</button><button class="sv-chip" aria-pressed="true">✓ Egg</button><button class="sv-chip">Soy</button><button class="sv-chip">Peanut</button><button class="sv-chip">Tree nut</button><button class="sv-chip">Fish</button><button class="sv-chip">Crustacean</button><button class="sv-chip">Mollusc</button><button class="sv-chip may" aria-pressed="true">Sesame?</button><button class="sv-chip">No allergens</button></div>
+      <p class="hint">Egg, may have sesame. Change it here and the book lists the 2 recipes already using it, each with Open.</p></div>
+    <div class="sv-ing"><p class="st"><b>Shallots</b><span class="sv-word w-not">Not checked</span></p><div class="r1"><span class="sv-field sv-q">[Qty]</span><span class="sv-field">Shallots <span class="sv-ftag">AVC</span></span></div>
+      <div class="sv-bad">Odd line: the card says 1 g. Type the amount you use, or keep [Qty] so it shows To come.</div>
+      <div class="sv-chips"><button class="sv-chip">Gluten</button><button class="sv-chip">Milk</button><button class="sv-chip">Egg</button><button class="sv-chip">Soy</button><button class="sv-chip">Peanut</button><button class="sv-chip">Tree nut</button><button class="sv-chip">Fish</button><button class="sv-chip">Crustacean</button><button class="sv-chip">Mollusc</button><button class="sv-chip">Sesame</button><button class="sv-chip">No allergens</button></div>
+      </div>
+    <p style="margin:12px 0 2px"><b>Anything free missing?</b> <span class="hint">AVC leaves out water, fryer oil and other free items.</span></p>
+    <div class="sv-chips"><button class="sv-chip">None missing</button><button class="sv-chip">Add a line</button></div>
+    <p class="hint">Method: To come. Write it now or later in Method.</p>
+    <div class="sv-bar">
+      <p><b>Add to the book is off:</b> 2 ingredients not checked, and say if anything free is missing.</p>
+      <div class="sv-btns"><button class="sv-btn">Save draft</button><button class="sv-btn dark" disabled>Add to the book, next draft</button></div>
+    </div>
+  </main>
+</section>
+
+<!-- M4: after Add, a refusal, and a card already in the book -->
+<section class="sv-frame" id="states">
+  <div class="sv-note">The mix · Preview · Add to the book: waiting, added, refused; a card already in the book</div>
+  <header class="sv-top"><div><span class="k">Riverside Hotel kitchen</span><b>Kitchen Book</b></div><span class="sv-venue">Riverside Hotel</span></header>
+  <main class="sv-pane">
+    <p class="hint">The card moves on only after the book has the recipe.</p>
+    <div class="sv-bar" style="position:static"><p>Adding Garden salad portion to the book…</p><div class="sv-btns"><button class="sv-btn" disabled>Save draft</button><button class="sv-btn dark" disabled>Adding…</button></div></div>
+    <div class="sv-sum" role="status"><span class="sv-word w-set">✓ Added 14:12</span><b>Garden salad portion is in the book.</b> Staff see it now. Next: Beef burger (draft 3 of 6).</div>
+    <div class="sv-bad" role="alert"><b>Not added: no signal.</b> Garden salad portion is still a draft, with your checks kept. <button class="sv-btn">Try again</button></div>
+    <section class="sv-block" style="margin-top:16px"><h3>From AVC, not checked <small>4</small></h3>
+      <ul class="sv-list">
+        <li class="sv-drow"><b>Beef burger</b><span class="go"><button class="sv-btn">Check ›</button></span><span class="s"><span class="sv-ftag">From AVC</span> 3 names to tidy · 9 of 12 checked before</span></li>
+        <li class="sv-drow"><b>Gravy</b><span class="go"><button class="sv-btn">Update amounts ›</button></span><span class="s"><span class="sv-word w-opt">Already in the book</span>Same AVC recipe. Gravy mix 120 g to 110 g. Method, allergens and drawings stay</span></li>
+      </ul>
+    </section>
+  </main>
+</section>
+<script src="frames.js"></script>
+</body></html>
