@@ -1,0 +1,18 @@
+{
+  "id": "strand",
+  "name": "Strand Hotel",
+  "short": "Strand",
+  "address": "https://strand-kitchen.web.app/",
+  "host": "firebase",
+  "book": "empty",
+  "secrets": "environment",
+  "firebase": {
+    "apiKey": "AIzaSyBhzQUJ9Wm5ihOd8-9WvNsTY4TTSHoi4ns",
+    "authDomain": "strand-kitchen.firebaseapp.com",
+    "projectId": "strand-kitchen",
+    "storageBucket": "strand-kitchen.firebasestorage.app",
+    "messagingSenderId": "1062679183245",
+    "appId": "1:1062679183245:web:7ed93391114422d6a0c7c4",
+    "appCheckEnterpriseKey": "6Lc6wScuAAAAAETn5S8ONcgJX95Y_Ww8RTFiIz_R"
+  }
+}
