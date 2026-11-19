@@ -2107,12 +2107,13 @@ button.wm-a.wm-tile { text-align: left; }
   body:not(:has(.tabbar)) { --toast-lift: 0px; }
   body:has(.mg-bar, .fe-bar, .ai-task-actions) { --toast-lift: calc(var(--tabbar-h) + 72px); }
   /* the function form's bar holds its summary and Save buttons since 20 Nov 2026 (two rows, three with a long summary) */
-  body:has(.fe-bar) { --toast-lift: calc(var(--tabbar-h) + 128px); }
+  body:has(.fe-bar) { --toast-lift: calc(var(--tabbar-h) + var(--fe-bar-h, 128px)); }
   body:has(.p-toasts .p-toast) #app:not(:has(.wall)) { padding-bottom: calc(76px + 64px); }
 }
 @media (min-width: 720px) {
   .p-toasts { left: 50%; right: auto; bottom: var(--toast-lift, 1.2rem); width: min(34rem, calc(100vw - 2rem)); transform: translateX(-50%); }
   body:has(.mg-bar, .fe-bar) { --toast-lift: 84px; }
+  body:has(.fe-bar) { --toast-lift: calc(var(--fe-bar-h, 72px) + 12px); }
   .p-toasts .p-toast { border: 1.5px solid var(--ink); border-top-width: 2.5px; border-radius: 10px; box-shadow: 0 8px 22px rgba(28, 29, 31, 0.18); }
   .p-toasts .p-toast.p-toast-bad { border-color: var(--bad-ink); }
   .p-toasts .p-toast[style*="--toast-life"]::before { left: 10px; right: 10px; }

@@ -667,6 +667,20 @@
     if (!active() || E.drawing) return;
     E.drawing = true;
     try { drawNow(); } finally { E.drawing = false; }
+    feBarWatch();
+  }
+  /* The slip after a save sits above the bar (the consistency sweep, step 3, 20 Nov 2026): the bar now holds Save and
+     its height follows its words and the fonts, so the slip's lift (--toast-lift in css/app.css) reads the bar's own
+     height from --fe-bar-h, kept right by a ResizeObserver, instead of a fixed guess. */
+  var feBarObs = null, feBarEl = null;
+  function feBarSize() { var h = feBarEl && feBarEl.isConnected ? feBarEl.offsetHeight : 0; if (h) document.documentElement.style.setProperty('--fe-bar-h', h + 'px'); else document.documentElement.style.removeProperty('--fe-bar-h'); }
+  function feBarWatch() {
+    var bar = E.root && E.root.querySelector('.fe-bar');
+    if (bar === feBarEl) { feBarSize(); return; }
+    if (feBarObs) feBarObs.disconnect();
+    feBarEl = bar;
+    if (bar && window.ResizeObserver) { feBarObs = new ResizeObserver(feBarSize); feBarObs.observe(bar); }
+    feBarSize();
   }
   function drawNow() {
     var a = document.activeElement, k = a && E.root.contains(a) && a.getAttribute('data-ff'), ss = k && a.selectionStart, se = k && a.selectionEnd;
@@ -925,7 +939,7 @@
   function drop() { unarm(); E.pending = {}; E.ed = null; E.list = null; E.listAsk = 0; E.removing = {}; E.sub = []; E.identity = ''; E.suspended = false; E.root = null; }
   function unmount() {
     var hadRoot = !!E.root, lock = workLock();
-    flushPending(); E.root = null;
+    flushPending(); E.root = null; feBarWatch();
     if (lock && lock.identity === E.identity || E.suspended && E.identity === identity()) E.suspended = true;
     else { E.sub = []; E.ed = null; E.suspended = false; }
     if (toastEl) toastEl.innerHTML = '';
