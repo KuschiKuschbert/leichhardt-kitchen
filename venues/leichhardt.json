@@ -5,7 +5,7 @@
   "address": "https://kuschikuschbert.github.io/leichhardt-kitchen/",
   "host": "pages",
   "book": "full",
-  "secrets": "repository",
+  "secrets": "environment",
   "firebase": {
     "apiKey": "AIzaSyDKnqjVhe4U_mCaOCeqbiQqcazEiezRJT4",
     "authDomain": "leichhardt-kitchen.firebaseapp.com",
