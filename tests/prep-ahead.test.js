@@ -103,17 +103,39 @@ const plan = (d, x) => line(Object.assign({ addedBy: 'Kim', addedById: 'kim', ad
     await p.context().close();
   }
 
-  // 4. Tomorrow takes no plans (written tonight, on today's list); beyond four weeks neither.
+  // 4. Tomorrow takes plans too (head chef, 19 Nov 2026: "Couldn't add" for tomorrow); beyond four weeks nothing.
   {
     const p = await L.open(b, '#/prep', { admin: true, wait: 3000 });
     await L.settle(p, 800);
     await forward(p, 1);
-    ok(!(await p.evaluate(() => !!document.querySelector('.nb-addline'))), 'tomorrow: no add for the admin');
-    ok(/^Tomorrow's list is written tonight, on today's list\. Planning ahead starts with \w+\.$/.test(await txt(p, '.nb-foot .hint')), 'tomorrow: says why (' + await txt(p, '.nb-foot .hint') + ')');
+    ok((await txt(p, '.nb-addline')) === 'Add to tomorrow', 'tomorrow: the admin can add (' + await txt(p, '.nb-addline') + ')');
+    ok(/^Planned ahead for \w+ \d+ \w+\. Staff see these lines tomorrow, not before\.$/.test(await txt(p, '.nb-left .pa-for')), 'tomorrow: the note says staff see them tomorrow (' + await txt(p, '.nb-left .pa-for') + ')');
+    await p.click('.nb-addline'); await L.settle(p, 500);
+    ok((await txt(p, '#p-log-h')) === 'Add to ' + abbr(tmr), 'tomorrow: the sheet title is Add to ' + abbr(tmr) + ' (' + await txt(p, '#p-log-h') + ')');
+    ok((await p.getAttribute('#p-text', 'placeholder')) === 'Write a line for tomorrow...', 'tomorrow: the box says Write a line for tomorrow');
+    await p.fill('#p-text', 'Pick coriander'); await p.fill('#p-section', 'Larder');
+    await p.click('.nb-addbtn'); await L.settle(p, 600);
+    const st = await p.evaluate(() => window.__fake.dump());
+    const made = Object.entries(st).filter(([k, v]) => k.indexOf('/days/' + tmr + '/items/') > 0 && v && v.text === 'Pick coriander');
+    ok(made.length === 1 && made[0][1].plan === tmr, 'tomorrow: the line is written on tomorrow, marked plan');
+    await p.click('.sheet-x'); await L.settle(p, 500);
+    ok((await slip(p)) === 'Added Pick coriander to Larder for ' + abbr(tmr), 'tomorrow: the slip names the day (' + await slip(p) + ')');
     await p.fill('#p-day', L.ymd(new Date(L.NOW + 30 * DAY))); await L.settle(p, 800);
     ok(!(await p.evaluate(() => !!document.querySelector('.nb-addline'))), '30 days ahead: no add');
     ok(/up to 4 weeks ahead/.test(await txt(p, '.nb-foot .hint')), '30 days ahead: says planning goes up to 4 weeks (' + await txt(p, '.nb-foot .hint') + ')');
     ok(p.errors.length === 0, 'tomorrow: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
+  // 4b. The head chef on a device without the admin sign-in: no add, and the page says how to plan (not "only the head chef")
+  {
+    const p = await L.open(b, '#/prep', { admin: true, ownerGoogle: false, wait: 3000 });
+    await L.settle(p, 800);
+    await forward(p, 1);
+    ok(!(await p.evaluate(() => !!document.querySelector('.nb-addline'))), 'head chef without admin: no add on tomorrow');
+    ok(/open the Admin panel and sign in with Google/.test(await txt(p, '.nb-left .pa-for')), 'head chef without admin: says how to plan (' + await txt(p, '.nb-left .pa-for') + ')');
+    ok(/^Tomorrow's list is written tonight, on today's list\.$/.test(await txt(p, '.nb-foot .hint')), 'head chef without admin: tomorrow says it is written tonight');
+    ok(p.errors.length === 0, 'head chef without admin: no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }
 
@@ -145,6 +167,42 @@ const plan = (d, x) => line(Object.assign({ addedBy: 'Kim', addedById: 'kim', ad
     ok(row && !row.why && !row.n, 'on its day: not Waiting longest, no Start here number');
     ok(row && row.box, 'on its day: staff tick it as usual');
     ok(p.errors.length === 0, 'on its day: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
+  // 7. Tonight's list against tomorrow's plan (head chef, 19 Nov 2026: "make sure people don't write an item 2 times").
+  // At 20:00 Ann writes Brine pork, 3 kg; Brine pork, 2 kg is planned for tomorrow: not added, the slip says so.
+  {
+    const extra = {};
+    extra[item(tmr, 'tp1')] = plan(tmr, { text: 'Brine pork', station: 'Larder', qty: '2 kg', addedBy: 'Head chef', addedById: 'head', addedAt: L.NOW - DAY });
+    const p = await L.open(b, '#/prep', { who: 'ann', extra, clock: L.NOW + 6 * 3600000, wait: 3000 });
+    await L.settle(p, 800);
+    await p.click('.nb-addline'); await L.settle(p, 800);
+    await p.fill('#p-text', 'Brine pork'); await p.fill('#p-section', 'Larder'); await p.fill('#p-qty', '3 kg');
+    await p.click('.nb-addbtn'); await L.settle(p, 600);
+    const pork = st => Object.entries(st).filter(([k, v]) => k.indexOf('/days/' + today + '/items/') > 0 && v && v.text === 'Brine pork');
+    ok(pork(await p.evaluate(() => window.__fake.dump())).length === 0, 'tonight: a line planned for tomorrow is not written again');
+    ok((await slip(p)) === 'Planned for tomorrow: Brine pork, 2 kg.', 'tonight: the slip says it is planned for tomorrow (' + await slip(p) + ')');
+    await p.click('.p-toast .p-toast-btn'); await L.settle(p, 600);
+    const anyway = pork(await p.evaluate(() => window.__fake.dump()));
+    ok(anyway.length === 1 && anyway[0][1].dupOk === true && anyway[0][1].qty === '3 kg', 'tonight: Add anyway writes it, kept apart');
+    await p.fill('#p-text', 'Peel garlic'); await p.fill('#p-section', 'Larder');
+    await p.click('.nb-addbtn'); await L.settle(p, 600);
+    ok(Object.values(await p.evaluate(() => window.__fake.dump())).some(v => v && v.text === 'Peel garlic'), 'tonight: a line not planned goes on as usual');
+    ok(p.errors.length === 0, 'tonight: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+  // 7b. At 14:00 the same line is today's job: it goes on as usual.
+  {
+    const extra = {};
+    extra[item(tmr, 'tp1')] = plan(tmr, { text: 'Brine pork', station: 'Larder', qty: '2 kg', addedBy: 'Head chef', addedById: 'head', addedAt: L.NOW - DAY });
+    const p = await L.open(b, '#/prep', { who: 'ann', extra, wait: 3000 });
+    await L.settle(p, 800);
+    await p.click('.nb-addline'); await L.settle(p, 800);
+    await p.fill('#p-text', 'Brine pork'); await p.fill('#p-section', 'Larder');
+    await p.click('.nb-addbtn'); await L.settle(p, 600);
+    ok(Object.entries(await p.evaluate(() => window.__fake.dump())).some(([k, v]) => k.indexOf('/days/' + today + '/items/') > 0 && v && v.text === 'Brine pork'), 'afternoon: the same line is today\'s job and goes on');
+    ok(p.errors.length === 0, 'afternoon: no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }
 

@@ -37,7 +37,7 @@ const same = (a, b) => (a || []).slice().sort().join(',') === b.slice().sort().j
   const bo = s[CFG].people.filter(x => x.id === 'bo')[0];
   ok(bo.role === 'staff' && bo.del === false && same(s[CFG].sousIds, ['sam', 'head']), 'admin: Undo puts Bo back to Staff with Staff permissions');
   ok(await p.$('.a-ids') === null, 'admin: the card goes once settled');
-  ok(await p.evaluate(() => document.querySelector('#a-r2') && document.querySelector('#a-r2').value) === 'staff', 'admin: the People tab shows Bo as Staff again');
+  ok(/^Staff ·/.test(await txt(p, '.pp-row[data-pid="bo"] .pp-can') || ''), 'admin: the People tab shows Bo as Staff again');
   ok(p.errors.length === 0, 'admin: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -79,6 +79,7 @@ const same = (a, b) => (a || []).slice().sort().join(',') === b.slice().sort().j
   // Finish the returning owner's canonical setup save before editing this fixture's original Staff row.
   await L.waitFor(p, () => { const c = LK_PREP.state.config; return ['addIds', 'tickIds', 'delIds'].every(k => c[k].includes(c.headId)) && !LK_PREP.unsent(); });
   // A redraw while the picker is open (any write tells every listener again) no longer loses the choice: see below
+  await p.click('[data-p="a-person-open"][data-id="bo"]'); await L.settle(p, 200);   // one person opens at a time (19 Nov 2026)
   await L.pick(p, '#a-r2', 'sous');
   await L.waitFor(p, () => LK_PREP.state.draft.people.find(x => x.id === 'bo').role === 'sous' && !document.querySelector('[data-p="a-save"]').disabled);
   await p.click('[data-p="a-save"]');
@@ -94,6 +95,7 @@ const same = (a, b) => (a || []).slice().sort().join(',') === b.slice().sort().j
   p = await L.open(b, '#/admin', { admin: true, extra: cfg(), wait: 1800 });
   await L.adminTab(p, 'people');
   await L.waitFor(p, () => { const c = LK_PREP.state.config; return ['addIds', 'tickIds', 'delIds'].every(k => c[k].includes(c.headId)) && !LK_PREP.unsent(); });
+  await p.click('[data-p="a-person-open"][data-id="bo"]'); await L.settle(p, 200);
   await p.evaluate(() => { const s = document.querySelector('#a-r2'); s.dataset.was = '1'; s.nextElementSibling.click(); });
   await L.waitFor(p, () => !!document.querySelector('.ux-picker[open]'));
   await p.evaluate(path => { const c = JSON.parse(JSON.stringify(__fake.dump()[path])); c.people.push({ id: 'cal', name: 'Cal', role: 'staff', add: true, tick: true, del: false, ping: false, active: true }); __fake.write(path, c); }, CFG);

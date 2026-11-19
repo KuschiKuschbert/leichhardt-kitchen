@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>People page designs</title>
+<style>
+  :root { --ink: #1d1b18; --muted: #5d574e; --paper: #fbf8f1; --line: #d9d2c4; --people: #eaf5ee; --edge: #8aa391; --accent: #b4410f; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1500px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 1.9rem; margin: 0 0 .3rem; }
+  h2 { font-size: 1.3rem; margin: 2rem 0 .3rem; padding-top: 1rem; border-top: 2px solid var(--ink); }
+  p { max-width: 70ch; margin: .3rem 0; }
+  .note { color: var(--muted); font-size: .9rem; }
+  .rec { background: var(--people); border-left: 4px solid var(--edge); padding: .8rem 1rem; max-width: 80ch; }
+  .row { display: flex; gap: 14px; overflow-x: auto; padding: .6rem 0; }
+  figure { margin: 0; flex: none; }
+  figure img { display: block; border: 1px solid var(--line); background: #fff; }
+  figcaption { font-size: .85rem; color: var(--muted); margin-top: .3rem; max-width: 300px; }
+  .phone img { width: 260px; }
+  .laptop img { width: 640px; }
+  #montage { display: flex; gap: 12px; padding: 12px; background: var(--paper); width: max-content; }
+  #montage figure { width: 250px; }
+  #montage img { width: 250px; }
+  #montage figcaption { font-weight: 700; color: var(--ink); font-size: .95rem; }
+  #montage figcaption small { display: block; font-weight: 400; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>The admin panel's People page</h1>
+  <p>The council's study, 19 November 2026. Previews drawn over the real admin panel on the test stand-in with 15 made-up people. Nothing here is in the book yet. The full record is in <code>brief.md</code>.</p>
+  <p class="rec"><b>Recommended: B's rows that open in place, with A's deleted-row cue and C's words.</b> One person a row with their rights in words; Change opens them in place; leaving and Delete for good sit under one heading that says they wait for Save; the Save bar names who will be deleted. Main downside: one more tap for every change.</p>
+
+  <h2>On a phone, side by side</h2>
+  <div id="montage">
+    <figure><img src="evidence/now-390-first.png" alt="Today on a phone"><figcaption>Today<small>375 px a person, nobody on the first screen</small></figcaption></figure>
+    <figure><img src="evidence/a-390-working.png" alt="Design A on a phone"><figcaption>A. Tidy table<small>263 px a person, every box live</small></figcaption></figure>
+    <figure><img src="evidence/b-390-open.png" alt="Design B on a phone, Tom open"><figcaption>B. Rows that open in place<small>119 px a person, Tom open</small></figcaption></figure>
+    <figure><img src="evidence/c-390-page.png" alt="Design C on a phone, Tom's page"><figcaption>C. A page per person<small>57 px a person, changes on Tom's page</small></figcaption></figure>
+    <figure><img src="evidence/m-390-open.png" alt="The recommended mix on a phone, Tom open"><figcaption>Recommended mix<small>119 px a person, Ann waiting to be deleted</small></figcaption></figure>
+  </div>
+
+  <h2>The recommended mix</h2>
+  <div class="row phone">
+    <figure><img src="evidence/m-390.png" alt="Mix, phone, nothing changed"><figcaption>Phone, nothing changed</figcaption></figure>
+    <figure><img src="evidence/m-390-open.png" alt="Mix, phone, Tom open"><figcaption>Phone, Tom open, his role changed</figcaption></figure>
+    <figure><img src="evidence/m-390-deleted.png" alt="Mix, phone, Ann deleted"><figcaption>Phone, Ann deleted: struck through, only Undo delete</figcaption></figure>
+  </div>
+  <div class="row laptop">
+    <figure><img src="evidence/m-1280-open.png" alt="Mix, laptop, Tom open"><figcaption>Laptop, Tom open</figcaption></figure>
+    <figure><img src="evidence/m-1280.png" alt="Mix, laptop"><figcaption>Laptop, nothing changed</figcaption></figure>
+  </div>
+
+  <h2>A. Tidy table (changes the least)</h2>
+  <div class="row laptop"><figure><img src="evidence/a-1280-working.png" alt="A, laptop"><figcaption>Laptop with changes waiting</figcaption></figure></div>
+
+  <h2>B. Rows that open in place</h2>
+  <div class="row laptop"><figure><img src="evidence/b-1280-open.png" alt="B, laptop"><figcaption>Laptop, Tom open</figcaption></figure></div>
+
+  <h2>C. Each person's page holds the changes</h2>
+  <div class="row laptop">
+    <figure><img src="evidence/c-1280-working.png" alt="C, laptop list"><figcaption>Laptop, the grouped list</figcaption></figure>
+    <figure><img src="evidence/c-1280-page.png" alt="C, laptop, Tom's page"><figcaption>Laptop, Tom's page</figcaption></figure>
+  </div>
+
+  <h2>Today</h2>
+  <div class="row laptop"><figure><img src="evidence/now-1280-first.png" alt="Today, laptop"><figcaption>Laptop, the first screen: no person on it</figcaption></figure></div>
+  <p class="note">All numbers are previews on the stand-in. The built page is measured again before release.</p>
+</main>
+</body>
+</html>

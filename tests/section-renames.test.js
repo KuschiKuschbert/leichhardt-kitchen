@@ -105,6 +105,7 @@ function dash() {
   ok(ann[head.findIndex(h => /^Saute/.test(h))] === '7', 'team: Ann\'s seven shifts count under Saute, five of them written as Pans (' + head.join(',') + ' / ' + ann.join(',') + ')');
   ok(!/Not counted/.test(t), 'team: no shifts are left uncounted under the old name');
   await L.adminTab(p, 'people'); await L.settle(p, 400);
+  await L.openPerson(p, 'ann');
   await L.tap(p, '[data-p="a-person"][data-id="ann"]'); await L.settle(p, 500);
   const pp = await L.txt(p, '.a-personpage') || '';
   ok(/Ticked off by section: Saute 3\./.test(pp) && !/Pans/.test(pp), 'person: Ann\'s ticks under Pans and Saute are one count (' + ((pp.match(/Ticked off by section[^.]*\./) || [''])[0]) + ')');

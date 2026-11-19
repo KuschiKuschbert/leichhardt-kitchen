@@ -96,7 +96,7 @@ const { R, ok } = L.results(), { txt } = L;
   ok(await p.evaluate(() => window.LK_PREP.unsaved()), 'admin: unsaved staff changes block the self-update');
   await p.click('[data-p="a-bulk-add"]');
   await L.settle(p, 200);
-  ok(await p.inputValue('#a-bulk') === '' && (await p.$$('.a-name')).length >= 6, 'admin: Add these names adds them and clears the box');
+  ok(await p.inputValue('#a-bulk') === '' && (await p.$$('.pp-row')).length >= 6, 'admin: Add these names adds them and clears the box');
   ok(p.errors.length === 0, 'admin: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

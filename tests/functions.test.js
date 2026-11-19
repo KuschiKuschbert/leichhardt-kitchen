@@ -507,14 +507,17 @@ function hasPrivateContact(value) {
   // 8. the admin People tab: only the head chef's save gives Functions; the role ticks it, the tick is what counts
   p = await L.open(b, '#/admin', { admin: true, who: '', extra: base, wait: 1800 });
   await L.adminTab(p, 'people'); await L.settle(p, 300);
+  await L.openPerson(p, 1);
   ok(await p.evaluate(() => [...document.querySelectorAll('#a-r1 option')].some(o => o.value === 'fnc' && /Functions coordinator/.test(o.textContent))), 'admin: Functions coordinator is a role');
   await L.pick(p, '#a-r1', 'fnc'); await L.settle(p, 200);
+  await L.openPerson(p, 2);
   await p.click('input[data-perm="fn"][data-i="2"]'); await L.settle(p, 100);
   await p.click('[data-p="a-save"]'); await L.settle(p, 600);
   s = await store(p);
   let c = s[fsKey(['config', 'main'])];
   ok(['ann', 'bo', 'fay', 'finn'].every(x => c.fnIds.indexOf(x) >= 0) && c.fnIds.indexOf('sam') < 0, 'admin: picking the role and ticking Bo give both Functions (' + c.fnIds.join(',') + ')');
   ok(c.people.filter(x => x.id === 'ann')[0].add === false && c.sousIds.indexOf('ann') < 0, 'admin: the coordinator role gives no other rights');
+  await L.openPerson(p, 3);
   await p.click('input[data-perm="fn"][data-i="3"]'); await L.settle(p, 100);
   await p.click('[data-p="a-save"]'); await L.settle(p, 600);
   c = (await store(p))[fsKey(['config', 'main'])];

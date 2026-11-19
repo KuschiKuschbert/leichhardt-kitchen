@@ -699,9 +699,58 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .a-table .p-select { min-height: 40px; }
 .a-table .a-act { white-space: nowrap; text-align: right; }
 .a-table .a-act .p-x { margin-left: 0.3rem; }
-/* Delete for good on a People row: red words, bold once armed (19 Nov 2026) */
-.a-table .a-act .p-x.a-del { color: var(--bad-ink); }
-.a-table .a-act .p-x.a-del.is-armed { font-weight: 700; border-color: var(--bad-ink); }
+/* The People page (head chef, 19 Nov 2026, the council's mix, docs/people-room-options/brief.md): one row a person in
+   words, one person open in place on paper with the people edge (never a sage fill, which could read as done), the state
+   in words, a deleted row struck through until Save. */
+.lv-tool { flex: 0 0 auto; align-self: flex-end; }
+.lv-tool .btn { min-height: 44px; }
+.pp-row { border-bottom: 1px solid var(--line); list-style: none; }
+.lv-cards:has(> .pp-row) { gap: 0; }
+.lv-cards > .pp-row:first-child { border-top: 2px solid var(--ink); }
+.pp-row.is-open { background: var(--paper); box-shadow: inset 4px 0 0 var(--surface-people-edge); border-top: 1.5px solid var(--surface-people-edge); }
+.pp-main { display: flex; align-items: center; gap: 0.7rem; min-height: 56px; padding: 0.5rem 0.4rem; }
+.pp-main .st-av { margin-top: 0; }
+.pp-w { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.pp-n { font-size: 1.05rem; overflow-wrap: anywhere; }
+.pp-can { color: var(--muted); font-size: 0.875rem; }
+.pp-st { color: var(--accent-ink); font-size: 0.84rem; font-weight: 700; }
+.pp-st.is-off { color: var(--muted); }
+.pp-st.is-bad { color: var(--bad-ink); }
+.pp-row.is-off .pp-n, .pp-row.is-gone .pp-n { color: var(--muted); }
+.pp-row.is-gone .pp-n { text-decoration: line-through; }
+.pp-acts { flex: none; display: flex; align-items: center; gap: 0.6rem; }
+.pp-acts .btn, .pp-acts .p-x { min-height: 44px; }
+.pp-pin { display: inline-flex; align-items: center; padding: 0 0.3rem; }
+.pp-ed { display: grid; gap: 0.6rem; padding: 0.2rem 0.7rem 1rem 3.6rem; }
+.pp-two { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; }
+.pp-f { display: grid; gap: 0.25rem; flex: 1 1 14rem; max-width: 22rem; min-width: 0; }
+.pp-f .a-name, .pp-f .p-select { width: 100%; min-height: 44px; }
+.pp-ticks { display: flex; flex-wrap: wrap; gap: 0.1rem 1.4rem; margin: 0; padding: 0; border: 0; }
+.pp-ticks legend { margin-bottom: 0.2rem; padding: 0; }
+.pp-tk { display: inline-flex; align-items: center; gap: 0.45rem; min-height: 44px; font-weight: 600; }
+.pp-tk input { width: 28px; height: 28px; }
+.pp-note { margin: 0; }
+.pp-leave { display: grid; gap: 0.1rem; padding-top: 0.5rem; border-top: 1px solid var(--line); }
+.pp-h { margin: 0; color: var(--muted); font: 700 0.78rem/1.2 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+.pp-lv { display: flex; flex-wrap: wrap; gap: 0.2rem 1.2rem; }
+.pp-lv .p-x, .pp-end .p-link { display: inline-flex; align-items: center; min-height: 44px; }
+.pp-lv .a-del { color: var(--bad-ink); }
+.pp-lv .a-del.is-armed { font-weight: 700; }
+.pp-end { margin: 0; }
+.a-gone { align-self: center; font-weight: 700; color: var(--bad-ink); }
+@media (max-width: 599px) {
+  .lv-tools:has(.lv-tool) { flex-wrap: wrap; }
+  .lv-tools:has(.lv-tool) .lv-tool { flex: 1 1 100%; }
+  .pp-main { flex-wrap: wrap; align-items: flex-start; }
+  .pp-w { flex: 1 1 calc(100% - 3rem); }
+  .pp-acts { flex: 1 1 100%; justify-content: space-between; padding-left: 2.9rem; }
+  .pp-acts .pp-undo { margin-left: auto; }
+  .pp-ed { padding-left: 0.7rem; }
+  /* the shared admin Save bar keeps its two buttons on one line, so less of the page is covered */
+  .a-pane .set-block.a-savebar .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .a-pane .set-block.a-savebar .btn-row .btn { width: 100%; min-width: 0; white-space: normal; padding-left: 0.6rem; padding-right: 0.6rem; }
+  .a-pane .set-block.a-savebar .btn-row .a-unsaved, .a-pane .set-block.a-savebar .btn-row .a-gone { grid-column: 1 / -1; }
+}
 .a-table tr.is-off .a-name { opacity: 0.55; }
 .a-table tbody th { position: sticky; left: 0; background: inherit; z-index: 1; }
 .a-table tbody tr:nth-child(odd) th { background: var(--paper); }
@@ -6014,3 +6063,6 @@ html:has(.tm-focus-page) {
   .tm-tlsvc > .tm-tlsvc-sec { flex: 0 0 12rem; }
   .tm-tlsvc > .tm-tlsvc-more { margin-left: auto; }
 }
+[data-lv="people"] .ux-column-filters:empty, [data-lv="people"] .ux-active-filters:empty { display: none; }
+.pp-folds { display: flex; flex-wrap: wrap; gap: 0 1.4rem; margin-top: 0.6rem; }
+.pp-folds > * { flex: 1 1 18rem; min-width: 0; }
