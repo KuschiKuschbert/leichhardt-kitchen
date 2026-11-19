@@ -500,16 +500,27 @@
       '<section class="set-block fe-kcb"><span class="label">Kitchen comment</span><span class="hint">The kitchen reads this with your name and the time. No phone numbers or emails.</span>' +
       '<label class="visually-hidden" for="fe-kc">Kitchen comment</label><textarea id="fe-kc" class="search fe-ta" data-ff="kc" maxlength="2000" rows="4">' + esc(d.kc) + '</textarea>' +
       (s && s.kc ? '<span class="hint">Saved comment by ' + esc(FN.nameOf(s.kcBy)) + ', ' + esc(stamp(s.kcAt)) + '.</span>' : '') + '</section>' +
-      '<div class="fe-bar" id="fe-live">' + liveHTML(e) + '</div>' + problemsHTML(e) + msgHTML(e) + buttonsHTML(e) + (e.isNew ? '' : histHTML(e));
+      // the bar holds the Save buttons, like the recipe editor's (the consistency sweep, step 3, head chef 20 Nov 2026): the
+      // summary (#fe-live, drawn again while typing, so the buttons are never replaced under a finger), Saving... or the red
+      // reason, a conflict, each right above the Save that was tapped, then Save. Duplicate, Cancel function and History
+      // stay at the foot.
+      '<div class="fe-bar sv-dock"><div class="fe-live" id="fe-live">' + liveHTML(e) + '</div>' + stateHTML(e) + conflictHTML(e) + saveRowHTML(e) + '</div>' +
+      problemsHTML(e) + moreRowHTML(e) + (e.isNew ? '' : histHTML(e));
     return out;
   }
-  function msgHTML(e) {
+  function msgHTML(e) { return conflictHTML(e) + stateHTML(e); }
+  function conflictHTML(e) {
     var out = '';
     if (e.conflict) {
       var c = e.conflict;
       out += '<div class="fe-conflict" role="alert"><p><b>Someone else saved this function</b> (' + esc(c.who || 'another device') + ', ' + esc(stamp(c.when)) + ', version ' + c.v + ') after you opened it. Saving now would put your copy over theirs.</p>' +
         '<div class="btn-row"><button type="button" class="btn" data-fe="theirs">' + (armed('theirs') ? 'Tap again: your changes go' : 'Load theirs (yours here go)') + '</button><button type="button" class="btn dark" data-fe="mine">Keep mine and save over theirs</button></div></div>';
     }
+    return out;
+  }
+  // Saving..., the waiting line, or the red reason a save failed
+  function stateHTML(e) {
+    var out = '';
     if (e.saving) out += '<p class="fe-saving" role="status">' + esc(e.saving) + '</p>';
     if (e.msg) out += '<p class="p-err" role="alert">' + esc(e.msg) + '</p>';
     return out;
@@ -518,7 +529,8 @@
     if (!e.shown || !e.shown.length) return '';
     return '<div class="fe-probs" role="alert"><b>Before it can be confirmed:</b><ul>' + e.shown.map(function (p) { return '<li><button type="button" class="linkish" data-fe="goto" data-v="' + esc(p.k) + '">' + esc(p.t) + '</button></li>'; }).join('') + '</ul></div>';
   }
-  function buttonsHTML(e) {
+  // the Save buttons, in the bar
+  function saveRowHTML(e) {
     var st = e.status, dis = e.saving || E.removing[e.id] || FN.statusBusy(e.id) ? ' disabled' : '', b = [];
     // Save draft and Save changes are off with nothing to save (saveSync() keeps them in step while typing)
     var sdis = e.saving ? ' disabled aria-busy="true"' : dis || (!canSave() ? ' disabled' : '');
@@ -526,11 +538,15 @@
     if (st === 'draft') { b.push('<button type="button" class="btn dark" data-fe="review"' + dis + '>Check and confirm</button>'); b.push('<button type="button" class="btn ink-busy-button" data-fe="save"' + sdis + '>' + (e.saving ? inkLabel('Saving...') : again || 'Save draft') + '</button>'); }
     else if (st === 'confirmed') b.push('<button type="button" class="btn dark ink-busy-button" data-fe="save"' + sdis + '>' + (e.saving ? inkLabel('Saving...') : again || 'Save changes') + '</button>');
     else b.push('<button type="button" class="btn dark" data-fe="review"' + dis + '>Put it back on</button>');
+    return '<div class="btn-row fe-btns">' + b.join('') + '</div>';
+  }
+  // the rest, at the foot of the form: Duplicate, Cancel function or Delete, Drop my changes
+  function moreRowHTML(e) {
     var more = [];
     if (!e.isNew) more.push('<button type="button" class="btn" data-fe="dup">Duplicate</button>');
     if (!e.isNew && e.saved) { more.push(FN.statusHTML(e.saved, 'fe')); more.push(removeHTML(e.saved, true)); }
     if (dirty()) more.push('<button type="button" class="btn" data-fe="drop">' + (armed('drop') ? 'Tap again to drop your changes' : 'Drop my changes') + '</button>');
-    return '<div class="btn-row fe-btns">' + b.join('') + '</div>' + (more.length ? '<div class="btn-row">' + more.join('') + '</div>' : '');
+    return more.length ? '<div class="btn-row">' + more.join('') + '</div>' : '';
   }
   function histHTML(e) {
     var h = e.hist;

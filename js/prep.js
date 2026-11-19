@@ -4906,7 +4906,7 @@
     {
       var fl = (c.filters || []).map(function (f) { return { f: f, n: f[2] ? c.items.filter(f[2]).length : c.items.length }; }).filter(function (x, i) { return i === 0 || x.n > 0 || x.f[0] === s.f; });
       bar = '<div class="lv-tools">' + (c.heading ? '<h3 class="a-ch-h">' + esc(c.heading) + '</h3>' : '') +
-        '<div class="lv-qw"><label class="visually-hidden" for="lv-q-' + key + '">Search</label><input id="lv-q-' + key + '" type="search" class="search lv-q" data-k="lv-q:' + key + '" placeholder="' + esc(c.ph || 'Search') + '" value="' + esc(s.q) + '" autocomplete="off" enterkeyhint="search"></div>' +
+        '<div class="lv-qw"><label class="visually-hidden" for="lv-q-' + key + '">Search</label>' + findPill('<input id="lv-q-' + key + '" type="search" class="search lv-q" data-k="lv-q:' + key + '" placeholder="' + esc(c.ph || 'Search') + '" value="' + esc(s.q) + '" autocomplete="off" enterkeyhint="search">') + '</div>' +
         (c.sorts && c.sorts.length > 1 ? '<label class="a-f lv-sort"><span>Sort</span><select data-k="lv-s:' + key + '" aria-label="Sort">' + c.sorts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === s.sort ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>' : '') + (c.tool ? '<div class="lv-tool">' + c.tool + '</div>' : '') + '</div>' +
         (fl.length > 1 ? '<div class="chips lv-chips scroll" role="group" aria-label="Filter">' + fl.map(function (x) { return '<button type="button" class="chip" data-p="lv-f" data-lv="' + key + '" data-v="' + esc(x.f[0]) + '" aria-pressed="' + (x.f[0] === s.f) + '">' + esc(x.f[1]) + ' <span class="lv-n">' + x.n + '</span></button>'; }).join('') + '</div>' : '');
     }
@@ -6947,7 +6947,7 @@
     // the Google account, not the person: the chef hat's Sign out is for the person (Prep is in the top bar and tab bar)
     var bar = '<div class="p-bar"><span>Google account: <strong>' + esc(S.user.email) + '</strong></span><span class="p-links"><button type="button" class="p-link" data-p="signout">' + (armed('signout:sent') ? 'Not sent yet.' : armed('signout') ? notSaved() + '. Tap again' : 'Sign out of Google') + '</button></span></div>';
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
-    var saveBlock = saveBarHTML();
+    var saveBlock = saveBarHTML(true);
     var at = S.atab || 'inbox';
     // a sous chef on the head chef's device has no Kitchen mail page until the head chef switches it on (23 Oct 2026)
     if (at === 'mail' && !mlOwner()) at = S.atab = 'notes';
@@ -7202,10 +7202,12 @@
     var old = draftBase(); if (!S.draft || !old) return [];
     return DRAFT_PARTS.filter(function (g) { return JSON.stringify(S.draft[g[1]]) !== JSON.stringify(old[g[1]]); }).map(function (g) { return g[0]; });
   }
-  function saveBarHTML() {
+  // dock: the bar stays at the bottom of a panel page, in the one Save bar frame (.sv-dock, the consistency sweep, step 3,
+  // 20 Nov 2026); the chef's own Manage staff page keeps it in the flow, under the list
+  function saveBarHTML(dock) {
     var n = draftChanges(), pg = draftPages(), here = S.name !== 'admin' || S.atab === 'people' ? 'people' : S.atab === 'kitchen-home' ? S.kOpen : '';
     var where = pg.length > 1 || pg.length === 1 && pg[0] !== here ? ': ' + DRAFT_PARTS.filter(function (g) { return pg.indexOf(g[0]) >= 0; }).map(function (g) { return g[2]; }).join(', ') : '';
-    return '<section class="set-block a-savebar">' + staleHint() + '<div class="btn-row">' + svButton({ k: 'a', p: 'a-save', idle: 'Save changes', busy: S.busy, off: !n }) +
+    return '<section class="set-block a-savebar' + (dock ? ' sv-dock' : '') + '">' + staleHint() + '<div class="btn-row">' + svButton({ k: 'a', p: 'a-save', idle: 'Save changes', busy: S.busy, off: !n }) +
       '<button type="button" class="btn" data-p="a-reset"' + (n ? '' : ' disabled') + '>' + (armed('a-reset') ? 'Tap again to undo ' + (n === 1 ? 'it' : 'all ' + n) : 'Undo unsaved changes') + '</button>' +
       (n ? '<span class="a-unsaved">' + n + ' unsaved change' + (n === 1 ? '' : 's') + (where || draftWho()) + '</span>' : '') + draftGoneHTML() + '</div>' + svLine('a', S.busy, S.saveMsg) + '</section>';
   }
@@ -7683,7 +7685,7 @@
   function staffContentHTML(heading) {
     var d = S.draft || (startDraft(), S.draft);
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
-    return '<section class="set-block">' + (heading ? '<h3 class="a-ch-h">Manage staff</h3>' : '') + '<span class="hint">Add a person or remove one, then save. New people start as Staff. Removing someone keeps their name on old lines. Roles and PINs are looked after by the head chef.</span>' + staffListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + saveBarHTML();
+    return '<section class="set-block">' + (heading ? '<h3 class="a-ch-h">Manage staff</h3>' : '') + '<span class="hint">Add a person or remove one, then save. New people start as Staff. Removing someone keeps their name on old lines. Roles and PINs are looked after by the head chef.</span>' + staffListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + saveBarHTML(!!heading);
   }
   /* While connecting, show the page that is opening (not a generic prep book card), so nothing flashes. */
   // the pages other scripts draw are named too: before the kitchen's settings are in, they show this card (27 Oct 2026)
@@ -11387,7 +11389,7 @@ if (list.length) sg('oreg', 's');
     return '<section class="g-page">' + head +
       // the same box as the recipe search: no autocorrect (iOS turns "icombi" into something else), the Search key
       // drops the keyboard (onKey), and a 44 px Clear while something is typed (g-qx, toggled in onInput)
-      '<div class="g-find"><label class="visually-hidden" for="g-q">Search the guides</label><span class="g-qwrap' + (S.gq ? ' has-q' : '') + '"><input id="g-q" type="search" class="search" data-k="g-q" placeholder="Search: oven, fryer, cleaning" value="' + esc(S.gq) + '" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">' +
+      '<div class="g-find"><label class="visually-hidden" for="g-q">Search the guides</label><span class="g-qwrap find-wrap' + (S.gq ? ' has-q' : '') + '">' + homeIcon('find') + '<input id="g-q" type="search" class="search" data-k="g-q" placeholder="Search: oven, fryer, cleaning" value="' + esc(S.gq) + '" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">' +
       '<button type="button" class="g-qx" data-p="g-clear" aria-label="Clear the search">&times;</button></span></div>' + chips +
       (S.gErr ? '<p class="p-err" role="status">Could not load the guides uploaded by the head chef. Check the signal. The guides that come with the book are below.</p>' : '') +
       '<div id="g-list" class="g-list">' + gListHTML() + '</div>' + gAdminLink() + '</section>';
@@ -12317,6 +12319,8 @@ if (list.length) sg('oreg', 's');
      cut-off tick and when the functions change. The function band and the cut-off bar stay on every other page. */
   function homeOn() { return privateAccess() && !functionOnly(); }
   function homeIcon(k) { return window.LK_APP && window.LK_APP.icon ? window.LK_APP.icon(k) : ''; }
+  // a search box as the Recipes pill (the consistency sweep, step 3, 20 Nov 2026): the shared one in js/app.js
+  function findPill(input) { return window.LK_APP && window.LK_APP.findWrap ? window.LK_APP.findWrap(input) : input; }
   function homeLeft(m) { return m < 60 ? m + ' min left' : Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') + ' left'; }
   // today's own lines (not a function's platters), from the live list; null until the server answered for today
   // today's own lines, tomorrow's left out with a real night list (dayLines(), 17 Nov 2026)
@@ -15490,7 +15494,7 @@ if (list.length) sg('oreg', 's');
     var status = busy ? 'Saving...' : svOf('t') === 'fail' ? 'Not saved. Changes kept.' : dirty ? 'Unsaved changes' : rec ? 'Saved ' + clock(rec.upd) + (rec.by ? ' · ' + mnName(rec.by) : '') : 'No team saved yet';
     if (tmQuickPending(tmUi)) status += ' · Staff selection waiting for Add';
     var shortBand = tmShortBandHTML(tmShortView(tmShortNow()));
-    save = '<div class="tm-save tm-focus-save' + (shortBand.html ? ' has-short' : '') + '"><p class="tm-save-state" role="status"' + (tmShortStateHidden(shortBand) ? ' hidden' : '') + '>' + esc(status) + '</p><div class="tm-short-line" role="status"' + (shortBand.html ? '' : ' hidden') + '>' + shortBand.html + '</div>' + svButton({ k: 't', p: 'tm-save', idle: 'Save ' + date, off: !dirty, busy: busy }) + svLine('t', busy, tmMsg || tmAssignMsg) + '</div>';
+    save = '<div class="tm-save tm-focus-save sv-dock' + (shortBand.html ? ' has-short' : '') + '"><p class="tm-save-state" role="status"' + (tmShortStateHidden(shortBand) ? ' hidden' : '') + '>' + esc(status) + '</p><div class="tm-short-line" role="status"' + (shortBand.html ? '' : ' hidden') + '>' + shortBand.html + '</div>' + svButton({ k: 't', p: 'tm-save', idle: 'Save ' + date, off: !dirty, busy: busy }) + svLine('t', busy, tmMsg || tmAssignMsg) + '</div>';
     return '<section class="tm-page tm-notebook tm-focus-page' + (isToday ? '' : ' tm-planning') + '" data-day="' + esc(day) + '" aria-labelledby="rtitle">' +
       '<div class="tm-nbook"><div class="tm-nleft"><header class="tm-nhead"><div>' + heading + '</div><div class="tm-planstate"><p class="tm-draftstate' + (dirty ? ' is-dirty' : '') + '" role="status">' + esc(status) + '</p><button type="button" class="p-link" data-p="tm-refresh"' + (busy || tmLastBusy ? ' disabled' : '') + ' title="' + esc(pe.checkedAt ? 'Last checked ' + clock(now() - Math.max(0, Date.now() - pe.checkedAt)) : 'Check the saved plan') + '">' + (armed('tm-refresh') ? 'Tap again to refresh' : 'Refresh') + '</button></div></header>' +
       tmDateHTML() + '<div class="tm-work">' + (!isToday ? '<p class="tm-future-note hint">Planning ' + esc(date) + '. The live board still shows today\'s saved breaks.</p>' : '') + tmFocusToolbarHTML() +
