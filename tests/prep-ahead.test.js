@@ -103,17 +103,39 @@ const plan = (d, x) => line(Object.assign({ addedBy: 'Kim', addedById: 'kim', ad
     await p.context().close();
   }
 
-  // 4. Tomorrow takes no plans (written tonight, on today's list); beyond four weeks neither.
+  // 4. Tomorrow takes plans too (head chef, 19 Nov 2026: "Couldn't add" for tomorrow); beyond four weeks nothing.
   {
     const p = await L.open(b, '#/prep', { admin: true, wait: 3000 });
     await L.settle(p, 800);
     await forward(p, 1);
-    ok(!(await p.evaluate(() => !!document.querySelector('.nb-addline'))), 'tomorrow: no add for the admin');
-    ok(/^Tomorrow's list is written tonight, on today's list\. Planning ahead starts with \w+\.$/.test(await txt(p, '.nb-foot .hint')), 'tomorrow: says why (' + await txt(p, '.nb-foot .hint') + ')');
+    ok((await txt(p, '.nb-addline')) === 'Add to tomorrow', 'tomorrow: the admin can add (' + await txt(p, '.nb-addline') + ')');
+    ok(/^Planned ahead for \w+ \d+ \w+\. Staff see these lines tomorrow, not before\.$/.test(await txt(p, '.nb-left .pa-for')), 'tomorrow: the note says staff see them tomorrow (' + await txt(p, '.nb-left .pa-for') + ')');
+    await p.click('.nb-addline'); await L.settle(p, 500);
+    ok((await txt(p, '#p-log-h')) === 'Add to ' + abbr(tmr), 'tomorrow: the sheet title is Add to ' + abbr(tmr) + ' (' + await txt(p, '#p-log-h') + ')');
+    ok((await p.getAttribute('#p-text', 'placeholder')) === 'Write a line for tomorrow...', 'tomorrow: the box says Write a line for tomorrow');
+    await p.fill('#p-text', 'Pick coriander'); await p.fill('#p-section', 'Larder');
+    await p.click('.nb-addbtn'); await L.settle(p, 600);
+    const st = await p.evaluate(() => window.__fake.dump());
+    const made = Object.entries(st).filter(([k, v]) => k.indexOf('/days/' + tmr + '/items/') > 0 && v && v.text === 'Pick coriander');
+    ok(made.length === 1 && made[0][1].plan === tmr, 'tomorrow: the line is written on tomorrow, marked plan');
+    await p.click('.sheet-x'); await L.settle(p, 500);
+    ok((await slip(p)) === 'Added Pick coriander to Larder for ' + abbr(tmr), 'tomorrow: the slip names the day (' + await slip(p) + ')');
     await p.fill('#p-day', L.ymd(new Date(L.NOW + 30 * DAY))); await L.settle(p, 800);
     ok(!(await p.evaluate(() => !!document.querySelector('.nb-addline'))), '30 days ahead: no add');
     ok(/up to 4 weeks ahead/.test(await txt(p, '.nb-foot .hint')), '30 days ahead: says planning goes up to 4 weeks (' + await txt(p, '.nb-foot .hint') + ')');
     ok(p.errors.length === 0, 'tomorrow: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
+  // 4b. The head chef on a device without the admin sign-in: no add, and the page says how to plan (not "only the head chef")
+  {
+    const p = await L.open(b, '#/prep', { admin: true, ownerGoogle: false, wait: 3000 });
+    await L.settle(p, 800);
+    await forward(p, 1);
+    ok(!(await p.evaluate(() => !!document.querySelector('.nb-addline'))), 'head chef without admin: no add on tomorrow');
+    ok(/open the Admin panel and sign in with Google/.test(await txt(p, '.nb-left .pa-for')), 'head chef without admin: says how to plan (' + await txt(p, '.nb-left .pa-for') + ')');
+    ok(/^Tomorrow's list is written tonight, on today's list\.$/.test(await txt(p, '.nb-foot .hint')), 'head chef without admin: tomorrow says it is written tonight');
+    ok(p.errors.length === 0, 'head chef without admin: no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }
 

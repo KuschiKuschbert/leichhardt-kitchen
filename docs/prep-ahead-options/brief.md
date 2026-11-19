@@ -20,6 +20,15 @@ What was built (implemented app screens in `built/`, `capture-built.cjs`, `built
 - **Implemented app at 390, 768, 1280 px** (admin, three days ahead, two planned lines): 2 of 2 lines in view, no sideways scroll, no page errors, no new control under 44 px. Taps to put a line on Saturday: 5 (`›` x3, Add to Saturday, Add), as the preview. Today's page unchanged: chef 4 rows, staff 5 rows above the Add bar (the stand-in's fallback fonts).
 - **Not done here:** the eve is not shown on today's page (no read of tomorrow). Finding 14 is handled at the rollover instead. Rendered contrast of the muted calendar, keyboard focus and reduced motion are not measured.
 
+## Changed 19 November 2026: tomorrow too
+
+The head chef tried to put a line on tomorrow's list and "couldn't add". The build started planning on the day after tomorrow, the skeptic's round 1 point (the night crew cannot see tomorrow's page and might write the job again). Since then the rollover skips a night-list line that matches a planned one (finding 14), so the remaining cost is a line with another amount showing Also on both. Quick check (small change, an existing button on an existing page, no new read or rule): **Build**. Taps to put a line on tomorrow: not possible before; 3 now (`›`, Add to tomorrow, Add). Today's lines unchanged.
+
+- `planDayOk()` from tomorrow. The button reads "Add to tomorrow", the box "Write a line for tomorrow...", the sheet "Add to Fri 20 Nov", the note "Staff see these lines tomorrow, not before."
+- The head chef on a device without the admin sign-in (no Google, or its grant lapsed) is told "To plan lines ahead on this device, open the Admin panel and sign in with Google." instead of "Only the head chef...".
+- Rules: unchanged. Tomorrow is inside `nearDay()`'s window, where the stricter rule never applied.
+- Tests: `tests/prep-ahead.test.js` parts 4 and 4b (68 checks); on main's `js/prep.js` part 4 fails (no Add on tomorrow).
+
 ## Baseline (Implemented app, main `70ce8f4`, click-test stand-in, synthetic data, 390 x 844, 14:00 Wednesday 18 Nov)
 
 - Staff see only today on Prep. The head chef and sous chefs have a day row (`‹ Today [date] ›`) and can open any day, but on any day other than today the add form is not drawn: "You are looking at Saturday. Lines are added on Today only." (`baseline/chef-ahead-3.png`).

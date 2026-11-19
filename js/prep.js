@@ -2838,8 +2838,9 @@
   // the admin on this device (the owner's Google sign-in, a live head chef PIN session and its grant): only the admin
   // plans lines for a later day (head chef, 17 Nov 2026: "But only for admins"). One helper, so another answer is one line.
   function planOK() { return S.level === 'owner' && ownerHere(); }
-  // a day a line can be planned for: from the day after tomorrow (tomorrow is written tonight, on today's list)
-  function planDayOk(d) { var t = dayNow(); return !!d && d >= shift(t, 2) && d <= shift(t, PLAN_DAYS); }
+  // a day a line can be planned for: from tomorrow (head chef, 19 Nov 2026: tomorrow too; a line the night list writes
+  // again is not copied next to it at the rollover, twinPlan()) up to PLAN_DAYS ahead
+  function planDayOk(d) { var t = dayNow(); return !!d && d >= shift(t, 1) && d <= shift(t, PLAN_DAYS); }
   // the day a planned line is for, in words: "Saturday 21 November" and "Sat 21 Nov"
   function dayFull(d) { var x = parseYmd(d); return x.toLocaleDateString('en-AU', { weekday: 'long' }) + ' ' + x.getDate() + ' ' + x.toLocaleDateString('en-AU', { month: 'long' }); }
   function dayAbbr(d) { var x = parseYmd(d); return x.toLocaleDateString('en-AU', { weekday: 'short' }) + ' ' + x.getDate() + ' ' + x.toLocaleDateString('en-AU', { month: 'short' }); }
@@ -2858,7 +2859,7 @@
     if (d === t) return true;
     if (planDayOk(d) && planOK()) return true;
     planRefuse(d === shift(t, 1) ? 'Tomorrow\'s list is written tonight, on today\'s list.' : d < t ? 'Lines are added on today, or planned for a later day.' :
-      !planOK() ? 'Only the head chef plans lines for a later day, signed in as admin on this device.' : 'Lines can be planned from the day after tomorrow, up to 4 weeks ahead.');
+      !planOK() ? 'Only the head chef plans lines for a later day, signed in as admin on this device.' : 'Lines can be planned from tomorrow, up to 4 weeks ahead.');
     return false;
   }
   function planRefuse(msg) { toast('Not added. ' + msg, null, 6000); if (S.pLog) wSheetClose(true); }
@@ -6043,10 +6044,12 @@
     var planN = later ? S.items.filter(function (x) { return planned(x) && !x.deleted; }).length : 0;
     var seeOn = S.date === tmr ? 'tomorrow' : 'on ' + dayName(S.date);
     var planNote = !later ? '' : planHere || planN && planOK() ? '<p class="pa-for">Planned ahead for <b>' + esc(dayFull(S.date)) + '</b>. Staff see these lines ' + esc(seeOn) + ', not before.</p>' :
+      // the head chef without the admin sign-in on this device (19 Nov 2026): says how to plan, not "only the head chef"
+      whoHead() ? '<p class="pa-for">' + (planN ? 'Planned ahead for <b>' + esc(dayFull(S.date)) + '</b>. ' : '') + 'To plan lines ahead on this device, open the Admin panel and sign in with Google.</p>' :
       planN ? '<p class="pa-for">Planned ahead by the head chef for <b>' + esc(dayFull(S.date)) + '</b>. Only the head chef adds or changes lines on a later day. Staff see them ' + esc(seeOn) + '.</p>' : '';
     var add = can('add') && (S.date === today || planHere) ?
       '<form class="nb-add" data-p-form="add">' +
-      '<div class="nb-add-row"><label class="visually-hidden" for="p-text">Prep item</label><input id="p-text" class="nb-in nb-in-text" data-k="p-text" enterkeyhint="done" autocomplete="off" autocapitalize="sentences" placeholder="' + (planHere ? esc('Write a line for ' + dayName(S.date) + '...') : 'Write a new line...') + '" maxlength="160" value="' + esc(S.text) + '">' +
+      '<div class="nb-add-row"><label class="visually-hidden" for="p-text">Prep item</label><input id="p-text" class="nb-in nb-in-text" data-k="p-text" enterkeyhint="done" autocomplete="off" autocapitalize="sentences" placeholder="' + (planHere ? esc('Write a line for ' + (S.date === tmr ? 'tomorrow' : dayName(S.date)) + '...') : 'Write a new line...') + '" maxlength="160" value="' + esc(S.text) + '">' +
       '<div class="nb-sugg nb-sgl" id="p-sugg">' + suggestHTML() + '</div>' +
       '<div id="ps-hint" class="ps-hint" aria-live="polite">' + psHintHTML() + '</div>' +
       '<label class="visually-hidden" for="p-section">Section</label><input id="p-section" class="nb-in nb-in-sec" data-k="p-section" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(S.section || (S.secTyped ? '' : mySec())) + '">' +
@@ -6054,7 +6057,7 @@
       '<button type="submit" class="nb-addbtn">Add</button></div>' + justHTML('p') + secChipsHTML('p-section', S.section || (S.secTyped ? '' : mySec())) + '<div class="w-pick nb-units" id="p-units">' + unitChipsHTML('p', S.qty) + '</div><div class="nb-sugg nb-qs" id="p-qsugg">' + qtyChipsHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + (S.quickChips && !later ? '<div class="nb-qadd"><span class="nb-ql">Quick add</span><div class="nb-usual">' + S.quickChips + '</div></div>' : '') + '</form>' : '';
     // no form (another day, or read only): the reason sits at the foot of the list, and there is no Add a line
     // (tomorrow is written tonight, on today's list; beyond 4 weeks nothing is planned; a later day's note is at the top)
-    var addNote = add ? '' : S.date === tmr ? '<p class="hint">Tomorrow\'s list is written tonight, on today\'s list.' + (planOK() ? ' Planning ahead starts with ' + esc(dayName(shift(today, 2))) + '.' : '') + '</p>' :
+    var addNote = add ? '' : S.date === tmr ? '<p class="hint">Tomorrow\'s list is written tonight, on today\'s list.</p>' :
       later ? (planOK() ? '<p class="hint">Lines can be planned up to 4 weeks ahead.</p>' : '') :
       S.date !== today ? '<p class="hint">You are looking at ' + esc(dayName(S.date)) + '. Lines are added on Today only.</p>' : '<p class="hint">You can read the book but not write in it. Ask the head chef if that is wrong.</p>';
     // "today", "yesterday" in a sentence, a weekday as it is ("Nothing written for Saturday yet.")
@@ -6074,7 +6077,7 @@
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
       // Done today sits behind the count (3 Nov 2026, work pages redesign A): a tap on "3 of 13 done" goes to it
       (later ? (S.itemsState === 'ok' ? '<div class="nb-pw"><div class="nb-prog pa-n">' + (planN ? planN + (planN === 1 ? ' line planned' : ' lines planned') : 'Nothing planned') + '</div></div>' : '') :
-      tmWrap(S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : doneN ? '<button type="button" class="nb-prog nb-progbtn" data-p="donejump" aria-label="' + doneN + ' of ' + live.length + ' done. Show Done today">' + doneN + ' of ' + live.length + ' done</button>' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>', S.date, tmrN && S.tab !== FN_TAB ? '\u00b7 ' + tmrN + ' for tomorrow' : '')) + (add ? dockBtn('nb-addline', 'write', planHere ? 'Add to ' + (S.date <= shift(today, 6) ? dayName(S.date) : dayAbbr(S.date)) : 'Add a line') : '') + '</header>' +
+      tmWrap(S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : doneN ? '<button type="button" class="nb-prog nb-progbtn" data-p="donejump" aria-label="' + doneN + ' of ' + live.length + ' done. Show Done today">' + doneN + ' of ' + live.length + ' done</button>' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>', S.date, tmrN && S.tab !== FN_TAB ? '\u00b7 ' + tmrN + ' for tomorrow' : '')) + (add ? dockBtn('nb-addline', 'write', planHere ? 'Add to ' + (S.date === tmr ? 'tomorrow' : S.date <= shift(today, 6) ? dayName(S.date) : dayAbbr(S.date)) : 'Add a line') : '') + '</header>' +
       (S.itemsState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' : '') +
       // the finished words go above tomorrow's lines when there are some (pageBody()), else where they always were
       '<div class="nb-body">' + planNote + (flags ? '<div class="nb-lc">' + flags + '</div>' : '') + offNote + (S.tab === FN_TAB ? fnGone : '') + (tmrN && /nb-fin|nb-empty/.test(todayEmpty) ? pageBody(S.items, S.date, false, todayEmpty) : pageBody(S.items, S.date) + todayEmpty) + '</div>' +

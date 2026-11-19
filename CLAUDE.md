@@ -52,7 +52,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Chef panel Kitchen room: one page of rows that open each tool, and the panel's purpose line worded for the role (the mix chosen and built 15 Nov 2026) | `docs/chef-kitchen-options/brief.md` (Chosen and built) |
 | Prep, Orders, Wastage, Transfers and the chef hat; who did a Prep line on a shared screen | `docs/work-pages-design-options/brief.md`, `docs/shared-prep-attribution.md` |
 | Orders as a shared request list with compact supplier cut-offs (chosen C) | `docs/order-list-options/brief.md` |
-| Prep lines for a later day: the admin plans them from the day after tomorrow up to 4 weeks ahead, everyone sees them on the day (the mix, chosen and built 18 Nov 2026) | `docs/prep-ahead-options/brief.md` (Chosen and built) |
+| Prep lines for a later day: the admin plans them from tomorrow up to 4 weeks ahead (tomorrow since 19 Nov 2026), everyone sees them on the day (the mix, chosen and built 18 Nov 2026) | `docs/prep-ahead-options/brief.md` (Chosen and built) |
 | Head-set section minimums, Prep room, smart matching and Before service | `docs/prep-standards.md`, `docs/prep-par-options/brief.md` |
 | Renaming a kitchen section: old names kept, lines and counts under the name now (`secNow()`) | `docs/section-renames.md` |
 | Today's team and its chosen notebook, council and build record | `docs/todays-team-options/brief.md`, `docs/team-notebook-options/brief.md` (Chosen, Build, council), `docs/prep-book.md` (Today's team) |
