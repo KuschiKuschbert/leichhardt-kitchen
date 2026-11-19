@@ -53,11 +53,11 @@
   under "Made here, on Prep". Every other platter item is to order. Add or take out a name to change it.
 */
 window.LK_DATA = {
-  updated: '17 November 2026',
+  updated: '19 November 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
   fnStock: ['BBQ sauce', 'Sweet chilli sauce', 'Sweet soy sauce', 'Caramelised onions', 'Basil pesto'],
   menuOrder: [
-    { title: 'Specials', ids: ['chicken-adobo', 'lamb-nachos', 'buffalo-corn-cob-with-cashew-crumb', 'philly-potato'] },
+    { title: 'Specials', ids: ['chicken-adobo', 'lamb-nachos', 'buffalo-corn-cob-with-cashew-crumb', 'philly-potato', 'loaded-fries'] },
     { title: "Snackin' Plates", ids: ['poutine', 'beetroot-bites', 'brisket-cob', 'wings', 'haloumi-tacos', 'pork-belly-bites', 'calamari', 'riblets', 'garlic-bread', 'bacon-cheese-bread', 'chips-snack'] },
     { title: 'Salads', ids: ['caesar', 'green-bowl', 'pumpkin-salad'] },
     { title: 'Big Country Feeds', ids: ['beef-cheek', 'ribs', 'barra', 'carbonara', 'fish-chips', 'lamb-rissoles', 'vegan-rissoles', 'pork-belly', 'pie'] },
@@ -1886,6 +1886,40 @@ window.LK_DATA = {
         ] }
       ],
       labelNote: 'Check the crispy fried onion, caramelised onion, roast capsicum and brisket labels.'
+    },
+    /* Card 138 (19 Nov 2026): the special from the guest menu wording only. No amounts confirmed yet, so every
+       amount is [Qty] (shows "To come"). The drawing follows the menu, not a photo of the real dish. */
+    {
+      id: 'loaded-fries', art: 'loaded-fries', no: '138', kind: 'snack', forLine: 'Special', name: 'BBQ Pulled Beef Loaded Fries', short: 'Loaded fries',
+      menu: 'BBQ Pulled Beef Loaded Fries: crispy fries with fork tender slow cooked BBQ pulled beef brisket, gooey cheddar sauce, smokey Alabama white sauce, crunchy fried shallots and cowboy candy.',
+      yield: 'Per serve. Crispy chips loaded with pulled BBQ brisket and cheese sauce, with Alabama white sauce, fried shallots and cowboy candy on top. [Amounts, build order and bowl or board to come]',
+      ingredients: [
+        { q: '[Qty]', name: 'Chips', note: 'crispy, from the fryer' },
+        { q: '[Qty]', name: 'Pulled BBQ brisket', link: 'brisket', note: '[smoked brisket (card 79) or oven brisket (card 121), and which BBQ sauce, to confirm]' },
+        { q: '[Qty]', name: 'Cheese sauce', link: 'american-cheese-sauce', note: 'the gooey cheddar sauce on the menu [American cheese sauce (card 117) to confirm]' },
+        { q: '[Qty]', name: 'Alabama white sauce', link: 'alabama-white-sauce' },
+        { q: '[Qty]', name: 'Fried shallots', note: 'on top [house fried onions (card 73) or bought in, to confirm]', tags: ['Gluten?'] },
+        { q: '[Qty]', name: 'Cowboy candy', link: 'cowboy-candy', note: 'on top' }
+      ],
+      pins: [
+        { label: 'Chips', x: 24.5, y: 66, side: 'left', tags: [], note: 'Crispy, under everything. [Amount to come]' },
+        { label: 'Pulled BBQ brisket', x: 53.8, y: 59.4, side: 'right', link: 'brisket', note: 'Loaded over the chips. [Amount to come]' },
+        { label: 'Cheese sauce', x: 27.4, y: 45.3, side: 'left', link: 'american-cheese-sauce', note: 'Over the brisket. [Amount to come]' },
+        { label: 'Alabama white sauce', x: 49.1, y: 39.6, side: 'left', link: 'alabama-white-sauce', note: 'Over the top. [Amount to come]' },
+        { label: 'Fried shallots', x: 62.8, y: 63.8, side: 'right', tags: ['Gluten?'], note: 'On top. [House or bought in, and amount, to come]' },
+        { label: 'Cowboy candy', x: 66, y: 45.3, side: 'right', link: 'cowboy-candy', note: 'On top. [Amount to come]' }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          '[These steps follow the guest menu. Build order, amounts and bowl or board to confirm]',
+          'Fry the chips until crispy.',
+          'Load with the pulled BBQ brisket. [How it is warmed to come]',
+          'Cheese sauce over the brisket.',
+          'Alabama white sauce over the top.',
+          'Finish with the fried shallots and cowboy candy.'
+        ] }
+      ],
+      labelNote: 'Check the fried shallot, BBQ sauce and brisket labels.'
     },
     {
       id: 'pork-knuckle', art: 'pork-knuckle', no: '92', kind: 'main', forLine: 'Special', name: 'Pork Knuckle',
