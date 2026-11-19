@@ -46,6 +46,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Admin: analysis, proofreader, dashboard, pages, look | `docs/admin-intelligence.md`, `docs/proofreader-admin.md`, `docs/admin-dashboard-options/brief.md`, `docs/admin-pages-options/brief.md`, `docs/admin-design-options/brief.md`, `docs/admin-flow-spec.md` |
 | Cross-training without written assessments (Who has worked where, the planner hint); admin Inbox and Dashboard (chosen R, 10 Nov 2026) | `docs/cross-training-options/brief.md`, `docs/admin-dashboard-restyle-options/brief.md` |
 | Reports, Team: At a glance cards and when the counts run to (chosen A in Look 1, 12 Nov 2026) | `docs/team-glance-options/brief.md` |
+| The admin panel's People page: rows that open in place, the council's mix (chosen 19 Nov 2026) | `docs/people-room-options/brief.md` |
 | A smarter book (13 Nov 2026): Filled for you on Wastage, Transfers and Orders; Reports, Records with the nightly food safety count; the audit's other ideas | `docs/smart-book-options/brief.md` (chosen and built), its `audit.md`, `scripts/records-core.mjs` |
 | Head chef / sous chef panel, chosen dedicated admin-style panel | `docs/chef-panel-options/brief.md` (Chosen implementation, permissions, reads and verification) |
 | Chef panel Kitchen room: one page of rows that open each tool, and the panel's purpose line worded for the role (the mix chosen and built 15 Nov 2026) | `docs/chef-kitchen-options/brief.md` (Chosen and built) |
