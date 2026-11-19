@@ -42,6 +42,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Long amounts, recipe headings and phone overflow repairs (16 Nov 2026) | `docs/responsive-overflow.md` |
 | Shared controls, search and tables | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
 | A whole-app audit | `docs/whole-app-audit.md`, `docs/ux-council-audit.md`, `docs/whole-app-inventory.md` |
+| Restyle every page for consistency? (council 19 Nov 2026: no restyle, Build smaller 3 of 5; a sweep in four grouped pull requests, not chosen yet) and the 102 confirmed findings | `docs/consistency-sweep-options/brief.md`, its `findings.md` |
 | Shared surface and operational colours, banners and category exceptions | `docs/surface-colours.md` (chosen hybrid), `docs/colour-coding.md`, `docs/design-patterns.md` |
 | Admin: analysis, proofreader, dashboard, pages, look | `docs/admin-intelligence.md`, `docs/proofreader-admin.md`, `docs/admin-dashboard-options/brief.md`, `docs/admin-pages-options/brief.md`, `docs/admin-design-options/brief.md`, `docs/admin-flow-spec.md` |
 | Cross-training without written assessments (Who has worked where, the planner hint); admin Inbox and Dashboard (chosen R, 10 Nov 2026) | `docs/cross-training-options/brief.md`, `docs/admin-dashboard-restyle-options/brief.md` |
