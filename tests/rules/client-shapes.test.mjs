@@ -650,6 +650,10 @@ row('js/prep.js saveConfig(), a sous chef: people and staffIds merged into confi
       ['set', 'login/roster', { people, staffIds: IDS, sousIds: CFG.sousIds, headId: 'kit', fnIds: CFG.fnIds, fnOnlyIds: CFG.fnOnlyIds }]]); } });
 row('js/prep.js saveConfig(), the Google device: config/main and login/roster (batch, no by)', { ok: GOOGLE, asks: GOOGLE,
   run: db => { const b = writeBatch(db); b.set(D(db, 'config/main'), Object.assign({}, CFG, { updated: Date.now(), updatedBy: 'Head chef' })); b.set(D(db, 'login/roster'), ROSTER); return b.commit(); } });
+// Delete for good (19 Nov 2026): the person leaves the list and their PIN goes in the same batch; only the Google device
+row('js/prep.js saveConfig(cfg, null, gone), the Google device: Delete for good (config/main, login/roster, staffpins and pinset deleted; batch, no by)', { ok: GOOGLE, asks: GOOGLE,
+  prep: () => put({ 'staffpins/finn': { hash: 'f'.repeat(64) }, 'pinset/finn': { at: 1 } }),
+  run: db => { const b = writeBatch(db); b.set(D(db, 'config/main'), Object.assign({}, CFG, { updated: Date.now(), updatedBy: 'Head chef' })); b.set(D(db, 'login/roster'), ROSTER); b.delete(D(db, 'staffpins/finn')); b.delete(D(db, 'pinset/finn')); return b.commit(); } });
 row('js/prep.js resetPin(): Reset PIN (staffpins and pinset deleted, pinOpen merged; batch, no by)', { ok: GOOGLE, asks: GOOGLE,
   prep: () => put({ 'staffpins/finn': { hash: 'f'.repeat(64) }, 'pinset/finn': { at: 1 } }),
   run: db => { const b = writeBatch(db); b.delete(D(db, 'staffpins/finn')); b.delete(D(db, 'pinset/finn')); b.set(D(db, 'config/main'), { pinOpen: { finn: Date.now() + 30 * MIN } }, { merge: true }); return b.commit(); } });

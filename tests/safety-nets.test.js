@@ -92,6 +92,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await L.settle(p, 100);
   ok(/Tap again: stopped working here/.test(await txt(p, '[data-p="a-remove-person"][data-i="2"]')), 'staff: first Stopped working here tap arms');
   ok(/Stopped working here/.test(await txt(p, '[data-p="a-remove-person"][data-i="1"]')), 'staff: Remove is now Stopped working here');
+  ok(await p.$('[data-p="a-delete-person"]') === null, 'staff: a sous chef has no Delete for good (the head chef\'s admin panel only)');
   await p.click('[data-p="a-remove-person"][data-i="2"]');
   await L.settle(p, 100);
   ok(/Put back/.test(await txt(p, '[data-p="a-remove-person"][data-i="2"]')), 'staff: second tap takes them off the list, with Put back');
