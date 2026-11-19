@@ -31,7 +31,7 @@ A script films the book. The videos also play inside the book, under Guides (see
 | `scripts/tutorials/catalogue.mjs` | Makes `js/tutorials.js` from the storyboards: each video as a guide with its steps written out. |
 | `js/tutorials.js` | The videos as guides, for the book's Guides page. Made by `catalogue.mjs`, never by hand. Lazy: loaded when Guides opens. |
 | `scripts/tutorials/previews.mjs` | Makes the moving previews in `guides/videos/` from the app recordings in `out/`. |
-| `guides/videos/` | The moving previews: `<id>-card` (the list card) and `<id>-wide` (the video's page), each an MP4 loop and a JPG still. About 3.9 MB for all 21, loaded only on screen. |
+| `guides/videos/` | The moving previews: `<id>-card` (the list card) and `<id>-wide` (the video's page), each an MP4 loop and a JPG still. About 3.9 MB for all 21; a loop loads only under a mouse, a touch screen loads only the stills. |
 
 Finished videos go to Drive: 02 Leichhardt Hotel / Step by Step Guides / Kitchen Book Tutorial Videos.
 - Names follow the filing rule: "04 VIDEO - Prep list - Desktop - v0.1.mp4", "04 CAPTIONS - ... .srt" and "00 VOICE SAMPLE - ...".
@@ -184,15 +184,15 @@ The head chef asked for the videos in Guides: the ones staff use for everyone, c
 
 **Moving previews (head chef, 19 November 2026, chose Both from a mock-up)**
 - Each video card in the list shows a short, silent, sped-up loop of its page in action (the top of the phone recording, about 6 s, about 40 kB), with a small Play mark. The video's page shows a bigger loop (the computer recording, 16:9, about 120 kB) behind a round Play with "Play the video" on a dark fade. Before a link is saved, the page shows the loop with "Video to come" and no Play.
-- A loop loads only when a quarter of it is on screen and plays only while there (`gvLoops()` in `js/prep.js`, an IntersectionObserver after each draw). The player stops them; closing it starts the ones on screen again.
-- A phone set to reduce motion, or to save data, shows the still picture and loads no loop.
+- A loop plays only while a mouse is over its card or the page's Play, and stops and shows its still again when the mouse leaves (head chef, 19 November 2026: "only when we hover, never on a touch screen"). `gvLoops()` in `js/prep.js` adds the hover to each after a draw. The player stops them.
+- A phone or tablet (no hover: `(hover: hover) and (pointer: fine)` does not match), or a screen set to reduce motion or to save data, only ever shows the still picture and never loads a loop.
 - Made by `node scripts/tutorials/previews.mjs --out <make.mjs output>` from `out/<id>/{phone,desktop}/compose/app.mp4`, then `catalogue.mjs` marks each video that has all four files (`pv`). Remade previews: raise `GV_PV` in `js/prep.js`.
 - The addresses carry `?v=` so the saved copy (`sw.js`) passes them straight to the site and never keeps a video: an iPhone plays a video only when it can fetch it in parts.
 - The files are public on the site, like `js/tutorials.js`. They show only the stand-in's made-up kitchen.
 
 **After a storyboard changes**: run `node scripts/tutorials/catalogue.mjs --out <make.mjs output>` and commit `js/tutorials.js`. A new video in `ORDER` gets a guide and a row in the admin box by itself. If its `?v=` must change for phones to see it, bump it in `gVids()` in `js/prep.js`.
 
-**Checks**: `tests/guide-videos.test.js` (who sees which, the moving previews (every file there, loaded and played only on screen, stopped under the player, still with reduce motion, shown before a link), Play on a phone and a computer, the player fits, Video to come, a bad saved link never played, the admin box and its save, no Save without the server); the `tutorials` rows in `tests/rules/rules.test.mjs`, `client-shapes.test.mjs` and `access.test.mjs`.
+**Checks**: `tests/guide-videos.test.js` (who sees which, the moving previews (every file there, still until a mouse is over it, playing under the mouse and still again after, stopped under the player, never loaded on a touch screen or with reduce motion, shown before a link), Play on a phone and a computer, the player fits, Video to come, a bad saved link never played, the admin box and its save, no Save without the server); the `tutorials` rows in `tests/rules/rules.test.mjs`, `client-shapes.test.mjs` and `access.test.mjs`.
 
 ## The series, 18 and 19 November 2026
 

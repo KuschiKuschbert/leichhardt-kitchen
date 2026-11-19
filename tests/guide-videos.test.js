@@ -146,53 +146,77 @@ async function open(...a) {
   ok(await p.inputValue('[data-k="tv:prep:t"]') === 'https://youtu.be/BBBBBBBBBBB', 'admin videos: Try again loads the links');
   await p.context().close();
 
-  // the moving previews (19 Nov 2026): a silent loop of each page on its card and behind the page's Play, loaded and played
-  // only on screen, paused under the player, still pictures for a phone set to reduce motion
+  // the moving previews (19 Nov 2026): a silent loop of each page on its card and behind the page's Play. They play only
+  // while a mouse is over them (head chef: "only when we hover, never on a touch screen"); a phone or tablet, or a screen
+  // set to reduce motion, shows the still and never loads a loop
   const fs = require('fs'), path = require('path');
   global.window = {}; require('../js/tutorials.js');
   const cat = global.window.LK_TUTORIALS.list, gone = [];
   cat.forEach(t => ['card.mp4', 'card.jpg', 'wide.mp4', 'wide.jpg'].forEach(k => { if (!fs.existsSync(path.join(__dirname, '..', 'guides', 'videos', t.id + '-' + k))) gone.push(t.id + '-' + k); }));
   ok(cat.every(t => t.pv === 1) && !gone.length, 'previews: every video has its card and page loops and stills in guides/videos (' + (gone.join(', ') || 'none missing') + ')');
   const loopOf = (pg, sel) => pg.evaluate(sel => { const v = document.querySelector(sel); return v ? { poster: v.getAttribute('poster'), data: v.getAttribute('data-src'), src: v.getAttribute('src') || '', playing: !v.paused, loop: v.loop, muted: v.muted, hidden: v.getAttribute('aria-hidden') } : null; }, sel);
+  // reduce motion, set before the book starts (the mouse and the touch screen are the test browser's own answers)
+  const fake = (hover, calmMotion) => `(() => { const m = window.matchMedia.bind(window), no = () => {};
+    const ans = (q, v) => ({ matches: v, media: q, onchange: null, addListener: no, removeListener: no, addEventListener: no, removeEventListener: no, dispatchEvent: () => false });
+    window.matchMedia = function (q) { return q.indexOf('hover: hover') >= 0 ? ans(q, ${hover}) : q.indexOf('prefers-reduced-motion: reduce') >= 0 ? ans(q, ${calmMotion}) : m(q); }; })();`;
+  const CARD = '.g-card[href="#/guides/v-prep"]', CARD_V = CARD + ' video.g-vloop', PAGE_V = '.g-vposter video.g-vloop';
   for (const width of [390, 1280]) {
-    p = await open(b, '#/guides', { who: 'ann', width, extra: links, wait: 1200 });
+    p = await open(b, '#/guides', { who: 'ann', width, extra: links, wait: 1200 });   // the browser's own answer: a mouse
     await L.waitFor(p, () => !!document.querySelector('.g-grp[aria-label="Videos"] video.g-vloop'));
-    let c = await loopOf(p, '.g-card[href="#/guides/v-prep"] video.g-vloop');
-    ok(c && c.poster === 'guides/videos/prep-card.jpg?v=1' && c.data === 'guides/videos/prep-card.mp4?v=1' && c.loop && c.hidden === 'true', 'previews: the Prep list card carries its loop and still at ' + width + ' ' + JSON.stringify(c));
-    ok(!(await loopOf(p, '.g-card[href="#/guides/v-settings"] video.g-vloop')).src, 'previews: a card off screen loads nothing at ' + width);
-    await p.evaluate(() => document.querySelector('.g-card[href="#/guides/v-prep"]').scrollIntoView({ block: 'center' }));
-    await L.waitFor(p, () => { const v = document.querySelector('.g-card[href="#/guides/v-prep"] video.g-vloop'); return !!v && !v.paused; }).catch(() => {});
-    c = await loopOf(p, '.g-card[href="#/guides/v-prep"] video.g-vloop');
-    ok(c.src === 'guides/videos/prep-card.mp4?v=1' && c.playing && c.muted, 'previews: on screen, the card loads its loop and plays it, muted, at ' + width + ' ' + JSON.stringify(c));
+    ok(await p.evaluate(() => window.matchMedia('(hover: hover) and (pointer: fine)').matches && !window.matchMedia('(prefers-reduced-motion: reduce)').matches), 'previews: this screen has a mouse at ' + width);
+    let c = await loopOf(p, CARD_V);
+    ok(c && c.poster === 'guides/videos/prep-card.jpg?v=1' && c.data === 'guides/videos/prep-card.mp4?v=1' && c.loop && c.hidden === 'true' && !c.src, 'previews: the Prep list card shows its still and loads no loop before a hover at ' + width + ' ' + JSON.stringify(c));
+    await p.evaluate(sel => document.querySelector(sel).scrollIntoView({ block: 'center' }), CARD);
+    await L.settle(p, 300);
+    ok(!(await loopOf(p, CARD_V)).src, 'previews: on screen with no mouse over it, the card stays still at ' + width);
+    await p.hover(CARD);
+    await L.waitFor(p, sel => { const v = document.querySelector(sel); return !!v && !v.paused; }, CARD_V).catch(() => {});
+    c = await loopOf(p, CARD_V);
+    ok(c.src === 'guides/videos/prep-card.mp4?v=1' && c.playing && c.muted, 'previews: a mouse over the card plays its loop, muted, at ' + width + ' ' + JSON.stringify(c));
+    await p.mouse.move(1, 1);
+    await L.waitFor(p, sel => { const v = document.querySelector(sel); return !!v && v.paused && !v.getAttribute('src'); }, CARD_V).catch(() => {});
+    c = await loopOf(p, CARD_V);
+    ok(!c.playing && !c.src, 'previews: the mouse leaving stops the loop and shows the still again at ' + width + ' ' + JSON.stringify(c));
     const res = await p.request.get(L.BASE + 'guides/videos/prep-card.mp4?v=1');
     ok(res.ok() && /video\/mp4/.test(res.headers()['content-type'] || ''), 'previews: the loop is served as a video');
-    await p.click('.g-card[href="#/guides/v-prep"]');
-    await L.waitFor(p, () => !!document.querySelector('.g-vposter video.g-vloop'));
-    await L.waitFor(p, () => { const v = document.querySelector('.g-vposter video.g-vloop'); return !!v && !v.paused; }).catch(() => {});
-    c = await loopOf(p, '.g-vposter video.g-vloop');
-    ok(c && c.poster === 'guides/videos/prep-wide.jpg?v=1' && c.src === 'guides/videos/prep-wide.mp4?v=1' && c.playing, 'previews: the page shows its loop behind Play at ' + width + ' ' + JSON.stringify(c));
+    await p.click(CARD);
+    await L.waitFor(p, sel => !!document.querySelector(sel), PAGE_V);
+    await p.mouse.move(1, 1); await L.settle(p, 300);
+    c = await loopOf(p, PAGE_V);
+    ok(c && c.poster === 'guides/videos/prep-wide.jpg?v=1' && !c.src && !c.playing, 'previews: the page shows the still behind Play until a mouse is over it at ' + width + ' ' + JSON.stringify(c));
     ok(/Play the video/i.test(await p.locator('.g-vposter').innerText()) && await p.locator('.g-vposter .g-vring').count() === 1, 'previews: the poster says Play the video, with the round Play');
+    await p.hover('.g-vposter');
+    await L.waitFor(p, sel => { const v = document.querySelector(sel); return !!v && !v.paused; }, PAGE_V).catch(() => {});
+    c = await loopOf(p, PAGE_V);
+    ok(c.src === 'guides/videos/prep-wide.mp4?v=1' && c.playing, 'previews: a mouse over the page Play plays its loop at ' + width + ' ' + JSON.stringify(c));
     await p.click('.g-vplay');
     await L.waitFor(p, () => !!document.querySelector('.gv-wrap iframe'));
-    ok(await p.evaluate(() => [...document.querySelectorAll('video.g-vloop')].every(v => v.paused)), 'previews: the loops stop under the player at ' + width);
+    ok(await p.evaluate(() => [...document.querySelectorAll('video.g-vloop')].every(v => v.paused && !v.getAttribute('src'))), 'previews: the loops stop under the player at ' + width);
     await p.keyboard.press('Escape');
-    await L.waitFor(p, () => { const v = document.querySelector('.g-vposter video.g-vloop'); return !document.querySelector('.gv-wrap') && !!v && !v.paused; }).catch(() => {});
-    ok((await loopOf(p, '.g-vposter video.g-vloop')).playing, 'previews: closing the player starts the loop again at ' + width);
+    await L.waitFor(p, () => !document.querySelector('.gv-wrap'));
     ok(!(await L.overflow(p)), 'previews: no sideways scroll at ' + width);
     ok(p.errors.length === 0, 'previews: no page errors at ' + width + ' ' + p.errors.join(' | '));
     if (width === 390) await p.screenshot({ path: __dirname + '/shots/guide-videos-poster-phone.png' });
     await p.context().close();
   }
-  // a phone set to reduce motion keeps the still pictures: nothing loads, nothing plays
-  const calm = () => { const m = window.matchMedia.bind(window); window.matchMedia = q => /prefers-reduced-motion:\s*reduce/.test(q) ? { matches: true, media: q, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} } : m(q); };
-  p = await open(b, '#/guides/v-prep', { who: 'ann', width: 390, extra: links, wait: 1200, init: calm });
-  await L.waitFor(p, () => !!document.querySelector('.g-vposter video.g-vloop'));
-  await L.settle(p, 600);
-  const still = await loopOf(p, '.g-vposter video.g-vloop');
-  ok(still && still.poster === 'guides/videos/prep-wide.jpg?v=1' && !still.src && !still.playing, 'previews: reduce motion shows the still picture and loads no loop ' + JSON.stringify(still));
-  await p.click('.g-vplay');
-  await L.waitFor(p, () => !!document.querySelector('.gv-wrap iframe'));
-  ok(true, 'previews: Play still opens the video with reduce motion on');
-  await p.context().close();
+  // a phone or tablet (no hover), and a computer set to reduce motion, keep the stills: nothing loads, nothing plays, even
+  // when the browser sends the mouse events a tap makes
+  for (const [label, init, touch] of [['a touch screen', null, true], ['reduce motion', fake(true, true), false]]) {
+    p = await open(b, '#/guides', { who: 'ann', width: 390, extra: links, wait: 1200, init: init ? { content: init } : undefined, touch });
+    await L.waitFor(p, () => !!document.querySelector('.g-grp[aria-label="Videos"] video.g-vloop'));
+    ok(await p.evaluate(touchScreen => touchScreen ? !window.matchMedia('(hover: hover) and (pointer: fine)').matches : window.matchMedia('(prefers-reduced-motion: reduce)').matches, touch), 'previews: this screen is ' + label);
+    await p.evaluate(sel => document.querySelector(sel).scrollIntoView({ block: 'center' }), CARD);
+    await p.hover(CARD); await L.settle(p, 500);
+    const card = await loopOf(p, CARD_V);
+    await p.evaluate(() => { location.hash = '#/guides/v-prep'; });
+    await L.waitFor(p, sel => !!document.querySelector(sel), PAGE_V);
+    await p.hover('.g-vposter'); await L.settle(p, 500);
+    const page = await loopOf(p, PAGE_V);
+    ok(!card.src && !card.playing && page.poster === 'guides/videos/prep-wide.jpg?v=1' && !page.src && !page.playing, 'previews: ' + label + ' shows the stills and never loads a loop ' + JSON.stringify([card, page]));
+    await p.click('.g-vplay');
+    await L.waitFor(p, () => !!document.querySelector('.gv-wrap iframe'));
+    ok(p.errors.length === 0, 'previews: with ' + label + ', Play still opens the video, no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
   await b.close(); L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });
