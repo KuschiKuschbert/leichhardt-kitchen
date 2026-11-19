@@ -1174,6 +1174,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .nb-more { display: none; flex: 0 0 auto; width: 44px; min-height: 44px; padding: 0; border: 0; background: none; font: 700 1.25rem var(--body); letter-spacing: 0.05em; color: var(--muted); cursor: pointer; }
 .lm-who { margin: 0 0 6px; font-size: 0.9375rem; color: var(--muted); }
 .lm-act strong { color: var(--small-ink); }
+.lm-act.lk-del strong { color: inherit; }   /* Remove line: the red of .lk-del (the consistency sweep, step 3, 20 Nov 2026) */
 @media (max-width: 719px) {
   .nb-more { display: inline-flex; align-items: center; justify-content: center; }
   .nb-row:has(.nb-more) .nb-x, .nb-row:has(.nb-more) > .p-x { display: none; }
@@ -1423,6 +1424,7 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 /* An action's Remove keeps its width when it asks again (29 Oct 2026): "Tap again to remove" holds its room from the
    start, unseen, so the row never moves under the second tap (it did at 390 px with Normal text). Only this button. */
 .mn-arem { display: inline-grid; justify-items: start; align-items: center; }
+.p-x.mn-arem.lk-del { display: inline-grid; }   /* the red outline keeps the room for Tap again to remove (the consistency sweep, step 3, 20 Nov 2026) */
 .mn-arem > span, .mn-arem::after { grid-area: 1 / 1; }
 .mn-arem::after { content: 'Tap again to remove'; visibility: hidden; }
 .mn-at small { color: var(--muted); }
@@ -6052,6 +6054,6 @@ html:has(.tm-focus-page) {
 :is(.btn, .nb-addbtn).lk-del, .chip.lk-del[aria-pressed="true"] { background: var(--paper); }
 :is(.p-x, .p-link, .linkish, .nb-x).lk-del { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; }
 :is(.p-link, .linkish).lk-del { padding: 0 .6rem; }   /* the quiet links had no room inside; .p-x and .nb-x keep theirs, so a row does not grow */
-.sheet-o.lk-del { margin-top: 6px; padding-left: 12px; }
+.sheet-o.lk-del { justify-content: center; margin-top: 6px; padding-left: 12px; padding-right: 12px; }
 .fe-rows .fn-card-actions button.lk-del { border: 1.5px solid var(--del-ink); text-decoration: none; }
 .dw-ctx { --del-ink: var(--bad-on-dark); }

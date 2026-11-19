@@ -126,6 +126,17 @@ const editorCfg = { [key('config', 'main')]: { people: [{ id: 'sam', name: 'Sam'
   await act(p, '.p-toasts .p-toast-btn', 'the slip: Undo');
   await clean(p, 'prep 1280');
 
+  // on a phone, Remove sits in the line's menu: Remove line is red, Change amount and Move to section are not
+  p = await open(b, '#/prep', { who: 'sam', wait: 1500 });
+  await L.waitFor(p, () => !!document.querySelector('.nb-more'), null, 6000).catch(() => {});
+  await p.locator('.nb-more').first().click(); await L.settle(p, 400);
+  await del(p, '.sheet-o.lm-act', 'line menu: Remove line');
+  s = await look(p, '.sheet-o.lm-act strong');
+  ok(s.color === T.bad, 'line menu: the words of Remove line are red too (' + say(s) + ')');
+  ok(!/lk-del/.test((await look(p, '.sheet-o.lm-fix')).cls), 'line menu: Change amount keeps its plain look');
+  await shot(p, '.sheet:has(.lm-act)', 'prep-line-menu', 0);
+  await clean(p, 'prep line menu');
+
   p = await open(b, '#/fn', { who: 'sam', extra: fns, wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('.fn-card-actions .fn-cancel'), null, 6000).catch(() => {});
   await del(p, '.fn-card-actions .fn-cancel', 'functions: Cancel');
