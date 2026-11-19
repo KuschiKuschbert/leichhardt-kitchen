@@ -43,13 +43,16 @@ const box = p => txt(p, '#r-allergens').then(t => t || '');
 const NOT = /Allergens not checked yet/;
 
 (async () => {
-  // js/data.js: every plain ingredient of a recipe worked out from its tags has its allergens or No allergens
-  const open = FILE.recipes.filter(r => !r.contains && !r.check).flatMap(r => r.ingredients.filter(i => !i.link && !(i.tags && i.tags.length) && i.none !== true).map(i => r.id + ': ' + i.name));
-  ok(open.length === 0, 'js/data.js: no ingredient is left not checked (' + open.slice(0, 5).join(', ') + ')');
+  // js/data.js: every plain ingredient of a recipe worked out from its tags has its allergens or No allergens (the
+  // head chef's choice A, 19 Nov 2026). A card left not checked on purpose goes in NOT_YET with the head chef's reason,
+  // so it is never silent; its card then says Allergens not checked yet.
+  const NOT_YET = [];
+  const open = FILE.recipes.filter(r => !r.contains && !r.check && NOT_YET.indexOf(r.id) < 0).flatMap(r => r.ingredients.filter(i => !i.link && !(i.tags && i.tags.length) && i.none !== true).map(i => r.id + ': ' + i.name));
+  ok(open.length === 0, 'js/data.js: no ingredient is left not checked, outside NOT_YET (' + open.slice(0, 5).join(', ') + ')');
   const b = await L.start();
   let p = await L.open(b, '#/recipes', { noPin: true, who: '', wait: 1500 });
   const none = await p.evaluate(() => window.LK_DATA.recipes.filter(r => window.LK_APP.unchecked(r.id).length).map(r => r.id));
-  ok(none.length === 0, 'the book as js/data.js has it: no card says Allergens not checked yet (' + none.join(', ') + ')');
+  ok(none.every(id => NOT_YET.indexOf(id) >= 0 || FILE.recipes.find(r => r.id === id).ingredients.some(i => NOT_YET.indexOf(i.link) >= 0)), 'the book as js/data.js has it: no card says Allergens not checked yet, outside NOT_YET (' + none.join(', ') + ')');
   await p.context().close();
   p = await L.open(b, '#/recipes', { who: 'bo', extra: Object.assign(cfg(), changes()), wait: 1500 });
   ok(await synced(p), 'the test recipes came in');

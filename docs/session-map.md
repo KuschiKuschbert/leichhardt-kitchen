@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Allergens checked or not, 19 November 2026 (built, the file's choice pending)
+
+The second venue council found that an ingredient with no allergen tags read as allergen free: the card said "None in the ingredients." and Free from listed it. Reproduced in the stand-in (13 of 19 checks failed on the old code). Now an ingredient is checked (its allergens, No allergens `none: true`, or a checked recipe it links) or not; a recipe with a part not checked says "Allergens not checked yet", leaves Free from and counts as may have under Contains; the recipe form offers No allergens first on every row. Hand-set recipes are checked as a whole. Quick check: build it. The head chef chooses how `js/data.js` counts: A (recommended, in the draft) stamps `none: true` on its 235 untagged lines, B checks all 80 cards again, C a recipe-level tick. Older copies of file recipes take the file's checks by exact name (`LK_RX.carry()`). Files: `js/app.js`, `js/manage.js`, `js/overlay.js`, `js/recipe-print.js`, `js/functions.js`, `css/app.css`, `js/data.js`, `tests/allergen-check.test.js`. [Brief](allergen-check-options/brief.md).
+
 ## Print cards, 19 November 2026 (chosen and built)
 
 The owner asked to print recipe cards: all or chosen, A4 or A5, upright or sideways, one page where it fits and keeping its context where not; then chefs only (head chef, sous chefs, admin). Round 1 Build smaller 5 of 5; round 2 B 41.5, A 38, C 32; the mix (B's list and paper card, A's one-card entry beside Change this recipe, C's remembered paper and bigger ingredients, a boxed allergen band) re-checked 8.5 and 7 of 10. Side views added after the owner asked about stacked dishes. A5 upright held back. Files: `js/recipe-print.js`, `css/recipe-print.css` (lazy, from `js/manage.js`), `LK_PRINT` in `js/controls.js` (shared with `js/functions.js`), `tests/recipe-print.test.js`. [Brief](print-cards-options/brief.md).
