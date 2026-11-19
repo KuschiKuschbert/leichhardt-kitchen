@@ -1,5 +1,7 @@
 # One-time, head-requested catalogue setup. The app already reads these private standards.
 # Importing never changes saved standards, staff permissions, daily prep or the rollout switch.
+# Leichhardt's own minimums (the encrypted file is for its service account): it runs in Leichhardt's GitHub environment
+# and the scripts refuse any other venue's project (docs/venues.md).
 name: Set up Grill and Pans minimums
 
 on:
@@ -23,6 +25,11 @@ jobs:
   import:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    environment:
+      name: leichhardt
+      deployment: false
+    env:
+      VENUE: leichhardt
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

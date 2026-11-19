@@ -58,6 +58,7 @@ eq(needs(['js/app.js', 'js/data.js', 'css/app.css', 'index.html', 'sw.js', 'mani
 eq(needs(['tests/contact.html', 'tests/compose-read.js']), ['tests/contact.html', 'tests/compose-read.js'], 'the test page the live click tests open from the site is published');
 eq(needs(['newfolder/thing.js']), ['newfolder/thing.js'], 'a file in a folder nobody named counts as needed');
 eq(needs(['README.md', 'js/prep.js']), ['js/prep.js'], 'a mixed change publishes');
+eq(needs(['venues/leichhardt.json', 'venues/demo/qr.svg']), [], 'the venue files are read by the workflows only: nothing to publish (19 Nov 2026)');
 
 // A made-up repository and a stand-in gh
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'lk-site-'));

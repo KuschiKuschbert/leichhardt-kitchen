@@ -8,7 +8,7 @@ import { anonContext, dailySession, seedOwnerDevice } from './device-auth-fixtur
 setLogLevel('silent');
 const K = 'kitchens/000000/', OWNER = 'headchef@test.local';
 const source = process.env.RULES || new URL('../../firestore.rules', import.meta.url);
-const rules = readFileSync(source, 'utf8').replaceAll('KITCHEN_PIN', '000000').replaceAll('OWNER_EMAIL', OWNER);
+const rules = readFileSync(source, 'utf8').replaceAll('KITCHEN_PIN', '000000').replaceAll('OWNER_EMAIL', OWNER).replaceAll('PLATFORM_EMAIL', OWNER).replaceAll('PLATFORM_ID', '');
 const env = await initializeTestEnvironment({ projectId: 'demo-cleaning', firestore: { rules } });
 await env.clearFirestore();
 const NOW = Date.now(), DAY = 86400000, MIN = 60000, OPEN = 253402178400000;

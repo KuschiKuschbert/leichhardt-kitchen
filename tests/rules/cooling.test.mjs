@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { anonContext, dailySession, seedOwnerDevice } from './device-auth-fixtures.mjs';
 setLogLevel('silent');
 const K = 'kitchens/000000/', NOW = Date.parse('2026-01-02T08:00:00Z'), OWNER = 'owner@test.local';
-const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8').replaceAll('KITCHEN_PIN', '000000').replaceAll('OWNER_EMAIL', OWNER);
+const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8').replaceAll('KITCHEN_PIN', '000000').replaceAll('OWNER_EMAIL', OWNER).replaceAll('PLATFORM_EMAIL', OWNER).replaceAll('PLATFORM_ID', '');
 // Fixed 18:00 Queensland source variation keeps role/deadline cases deterministic during overnight CI.
 // Exact boundary cases below and an unmodified real-clock environment cover the production clock separately.
 // Firestore stores data timestamps at microsecond precision. At nanosecond clock probes, compare saved

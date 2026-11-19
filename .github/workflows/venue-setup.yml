@@ -1,0 +1,116 @@
+# Set up a venue (19 Nov 2026, docs/venues.md): run by hand from the Actions tab once a venue's Firebase project, its
+# GitHub environment (named like the venue) and its file venues/<id>.json are in place, and again after a change to
+# that file. Nothing here creates a project, an environment or a secret: the owner does that, step by step, in
+# docs/venues.md. This run
+#   1. checks the environment has what the venue needs (VENUE_PROJECT, FIREBASE_SA of that project, KITCHEN_PIN,
+#      OWNER_EMAIL, PLATFORM_EMAIL, BACKUP_KEY, and PLATFORM_STAFF_ID once the platform owner's profile exists), saying
+#      only set or not set,
+#   2. fills the rules template with them and compiles it on the emulator (nothing is published),
+#   3. makes the venue's own copy of the book and publishes it on its own address, then reads it back.
+# Then run Publish rules for the venue (tick "First publish" while its book has no settings yet), in its release window.
+name: Set up a venue
+
+on:
+  workflow_dispatch:
+    inputs:
+      venue:
+        description: The venue's id (venues/<id>.json)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: venue-setup-${{ inputs.venue }}
+  cancel-in-progress: false
+
+jobs:
+  pick:
+    name: Venue
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      env: ${{ steps.v.outputs.env }}
+      project: ${{ steps.v.outputs.project }}
+      host: ${{ steps.v.outputs.host }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        env:
+          PICK: ${{ inputs.venue }}
+        run: |
+          set -euo pipefail
+          node scripts/venues.cjs check
+          node -e 'const v=require("./scripts/venues.cjs").venueById(process.env.PICK);const o=require("fs").createWriteStream(process.env.GITHUB_OUTPUT,{flags:"a"});o.end("env="+v.id+"\nproject="+v.firebase.projectId+"\nhost="+v.host+"\n")'
+  setup:
+    needs: pick
+    name: Set up (${{ inputs.venue }})
+    environment:
+      name: ${{ needs.pick.outputs.env }}
+      deployment: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VENUE: ${{ inputs.venue }}
+      PROJECT: ${{ needs.pick.outputs.project }}
+      VENUE_PROJECT: ${{ vars.VENUE_PROJECT }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tests/rules/package-lock.json
+      - name: This venue's own project
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: node scripts/venues.cjs guard "$VENUE"
+      - name: What the environment holds
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
+          OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+          PLATFORM_EMAIL: ${{ secrets.PLATFORM_EMAIL }}
+          PLATFORM_ID: ${{ secrets.PLATFORM_STAFF_ID }}
+          BACKUP_KEY: ${{ secrets.BACKUP_KEY }}
+          APPCHECK_DEBUG_TOKEN: ${{ secrets.APPCHECK_DEBUG_TOKEN }}
+        run: |
+          set -uo pipefail
+          email='^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'; bad=0
+          say() { if [ "$2" = ok ]; then echo "Set: $1"; else echo "::error::$1: $2"; bad=1; fi; }
+          [ -n "$VENUE_PROJECT" ] && say VENUE_PROJECT ok || say VENUE_PROJECT "not set (a variable in the environment)"
+          [ -n "$FIREBASE_SA" ] && say FIREBASE_SA ok || say FIREBASE_SA "not set"
+          [[ "$KITCHEN_PIN" =~ ^[0-9]{4,8}$ ]] && say KITCHEN_PIN ok || say KITCHEN_PIN "not set, or not 4 to 8 digits"
+          [[ "$OWNER_EMAIL" =~ $email ]] && say OWNER_EMAIL ok || say OWNER_EMAIL "not set, or not an email address"
+          [[ "$PLATFORM_EMAIL" =~ $email ]] && say PLATFORM_EMAIL ok || say PLATFORM_EMAIL "not set, or not an email address"
+          [ "${#BACKUP_KEY}" -ge 16 ] && say BACKUP_KEY ok || say BACKUP_KEY "not set, or shorter than 16 characters"
+          if [ -z "$PLATFORM_ID" ]; then echo "Not set yet: PLATFORM_STAFF_ID (set it once the platform owner's own profile exists at this venue)"
+          elif [[ "$PLATFORM_ID" =~ ^[A-Za-z0-9_-]{1,80}$ ]]; then echo "Set: PLATFORM_STAFF_ID"; else say PLATFORM_STAFF_ID "not a profile id"; fi
+          [ -n "$APPCHECK_DEBUG_TOKEN" ] && echo "Set: APPCHECK_DEBUG_TOKEN" || echo "Not set: APPCHECK_DEBUG_TOKEN (needed by the Lock probe once App Check is enforced)"
+          if [ -n "$OWNER_EMAIL" ] && [ "$OWNER_EMAIL" = "$PLATFORM_EMAIL" ] && [ -n "$PLATFORM_ID" ]; then say PLATFORM_EMAIL "is the venue owner's email; the platform owner's profile needs his own"; fi
+          exit $bad
+      - name: Install the Firebase CLI (the copy the rules tests use)
+        working-directory: tests/rules
+        run: npm ci --no-audit --no-fund
+      - name: Fill in the rules and compile them on the emulator (nothing is published)
+        env:
+          KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
+          OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+          PLATFORM_EMAIL: ${{ secrets.PLATFORM_EMAIL }}
+          PLATFORM_ID: ${{ secrets.PLATFORM_STAFF_ID }}
+        run: |
+          set -euo pipefail
+          T="$RUNNER_TEMP/rules-check"; mkdir -p "$T"; trap 'rm -rf "$T"' EXIT
+          sed "s/KITCHEN_PIN/$KITCHEN_PIN/g;s/OWNER_EMAIL/$OWNER_EMAIL/g;s/PLATFORM_EMAIL/$PLATFORM_EMAIL/g;s/PLATFORM_ID/$PLATFORM_ID/g" firestore.rules > "$T/firestore.rules"
+          if grep -q 'KITCHEN_PIN\|OWNER_EMAIL\|PLATFORM_EMAIL\|PLATFORM_ID' "$T/firestore.rules"; then echo "A placeholder was left in."; exit 1; fi
+          (cd tests/rules && ./node_modules/.bin/firebase emulators:exec --only firestore --project demo-venue-check "node ../../scripts/rules-compile-check.mjs '$T/firestore.rules'")
+      - name: Make the venue's copy and publish it on its own address
+        if: needs.pick.outputs.host == 'firebase'
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: bash scripts/venue-deploy.sh
+      - name: Check the live copy
+        run: sleep 20 && node scripts/venue-live-check.cjs "$VENUE"
+      - name: Next
+        run: echo "Next, in the venue's release window - Actions, Publish rules, Run workflow, venue $VENUE, mode publish, and tick First publish while its book has no settings yet."

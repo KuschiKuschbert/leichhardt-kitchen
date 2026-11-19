@@ -30,7 +30,7 @@ try {
   await K.collection('waste').doc(day(17)).collection('lines').doc('w').set({ text: 'Brisket now' });
   const standard = { sectionId: 'synthetic-section', name: 'Synthetic dressing', aliases: ['Synthetic sauce'], minimum: 1.25, unit: 'L', instruction: 'Check the labelled date.', recipe: '', archived: false, v: 2, at: NOW - 60 * 86400000, by: 'synthetic-head' };
   await K.collection('prepStandards').doc('synthetic-standard').set(standard);
-  const lastNight = { exportedAt: new Date(NOW - 86400000).toISOString(), by: 'nightly backup',
+  const lastNight = { exportedAt: new Date(NOW - 86400000).toISOString(), by: 'nightly backup', project: 'demo-test',
     days: { [day(16)]: [{ id: 'b', text: 'Bread last night' }], [day(2)]: [{ id: 'm', text: 'Milk last night' }] },
     orders: {}, waste: { [day(17)]: [{ id: 'w', text: 'Brisket last night' }] }, wasteReviews: { [day(17)]: { note: 'Review last night' } }, transfers: {},
     prepStandards: [{ id: 'synthetic-standard', ...standard, minimum: 9, v: 1 }] };
@@ -40,10 +40,13 @@ try {
   assert.equal(text(r.out, 'days', day(2)), 'Milk now', 'The last 14 days are read.');
   assert.deepEqual(r.out.prepStandards, [{ id: 'synthetic-standard', ...standard }], 'Prep standards are read fresh even when old dated records are reused.');
   assert.match(r.log, /^6 older days taken from the last backup/m, 'The log says how many days were taken: ' + r.log);
+  assert.equal(r.out.project, 'demo-test', 'The file names the project it is a backup of (19 Nov 2026).');
 
   for (const [why, prev, extra] of [
     ['no earlier file', undefined], ['an unreadable file', '{not json'], ['a file more than 36 hours old', { ...lastNight, exportedAt: new Date(NOW - 40 * 3600000).toISOString() }],
-    ['a Sunday', { ...lastNight, exportedAt: new Date(NOW).toISOString() }, { BACKUP_NOW: String(NOW + 86400000) }]]) {
+    ['a Sunday', { ...lastNight, exportedAt: new Date(NOW).toISOString() }, { BACKUP_NOW: String(NOW + 86400000) }],
+    // a second venue (19 Nov 2026, docs/venues.md): another project's file, or one from before files named their project
+    ['another venue\'s file', { ...lastNight, project: 'demo-other-venue' }], ['a file that names no project', (({ project, ...rest }) => rest)(lastNight)]]) {
     r = backup(prev, extra);
     assert.equal(text(r.out, 'days', day(16)), 'Bread now', 'With ' + why + ', every day is read.');
   }

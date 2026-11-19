@@ -30,6 +30,9 @@ const {spawnSync}=require('node:child_process'), path=require('node:path');
  const approved=structuredClone(data.get(prefix+'config/main').addIds);data.get(prefix+'config/main').addIds='invalid';await assert.rejects(()=>bootstrapAccess(db,'000000'),/capability list is invalid/);data.get(prefix+'config/main').addIds=approved;
  const missing={runTransaction:fn=>fn({get:r=>r.get()}),collection:()=>({doc:()=>({collection:()=>({doc:()=>({get:async()=>({exists:false})})})})})};
  await assert.rejects(()=>bootstrapAccess(missing,'1111'),/configuration is missing/);
+ // a new venue's first publish (19 Nov 2026, docs/venues.md): no settings yet, nothing prepared, only the public index made
+ assert.deepEqual(await bootstrapAccess(missing,'1111',{newVenue:true,verifyOnly:true}),{roster:0,recipeAssets:0,capabilityLists:0,functionBookings:0,bookingsScanned:0,dryRun:true});
+ await assert.rejects(()=>bootstrapAccess(missing,'1111',{newVenue:false}),/configuration is missing/,'only the first publish for a new venue goes on without settings');
  for(let i=0;i<4100;i++)data.set(prefix+'functions/overflow-'+String(i).padStart(4,'0'),{v:1,date:'2026-11-09',name:'Synthetic bound',lines:[],rounds:[]});
  const overflow=JSON.stringify([...data]), readsBeforeBound=queryDocs;await assert.rejects(()=>bootstrapAccess(db,'000000',{dryRun:true}),/4000-record bound/);assert.equal(JSON.stringify([...data]),overflow,'an oversized preview changes nothing');assert.equal(queryDocs-readsBeforeBound,4001,'scope refusal reads at most4000 bookings plus one overflow sentinel');
  console.log('PASS access preparation: CLI mode guard, read-only preview, minimal roster, current public assets, preserved approvals, idempotency, missing config and 4100-record overflow refusal after 4001 reads');
