@@ -10937,9 +10937,10 @@ if (list.length) sg('oreg', 's');
     }, function () { gvl.state = 'error'; gvl.retry = Date.now() + 60000; draw(); });
   }
   /* The moving previews (head chef, 19 Nov 2026): a short silent loop of each page in action, made from the videos by
-     scripts/tutorials/previews.mjs and kept with the book in guides/videos/ (never in the saved shell). The card's loop
-     (about 40 kB) and the page's (about 120 kB) load only when on screen and play only while there; a phone set to reduce
-     motion or to save data keeps the still picture. No reads, no writes. */
+     scripts/tutorials/previews.mjs and kept with the book in guides/videos/ (never in the saved shell). A loop plays only
+     while a mouse is over its card or the page's Play (head chef, 19 Nov 2026), and stops and shows its still again when
+     the mouse leaves. A phone or tablet (no hover), or a screen set to reduce motion or to save data, only ever shows the
+     still picture and never loads a loop. The card's loop is about 40 kB, the page's about 120 kB. No reads, no writes. */
   // ?v: the saved copy (sw.js) passes an address with a version straight to the site, so a phone never plays a video
   // from the saved copy (an iPhone wants it in parts) and a remade preview arrives at once: raise it with previews.mjs
   var GV_PV = 1;
@@ -10948,18 +10949,23 @@ if (list.length) sg('oreg', 's');
     var still = gvSrc(g, kind, 'jpg');
     return still ? '<video class="g-vloop" muted loop playsinline preload="none" aria-hidden="true" tabindex="-1" poster="' + esc(still) + '" data-src="' + esc(gvSrc(g, kind, 'mp4')) + '"></video>' : '';
   }
-  var gvIO = null;
-  function gvStill() { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches || !!(navigator.connection && navigator.connection.saveData); } catch (e) { return false; } }
-  function gvRun(v) { if (!v.getAttribute('src')) v.setAttribute('src', v.getAttribute('data-src') || ''); v.muted = true; var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); }
-  // after each draw: watch the loops now on the page (a redraw makes new ones), each plays while a quarter of it shows
+  function gvStill() {
+    try { return !window.matchMedia('(hover: hover) and (pointer: fine)').matches || window.matchMedia('(prefers-reduced-motion: reduce)').matches || !!(navigator.connection && navigator.connection.saveData); } catch (e) { return true; }
+  }
+  function gvRun(v) { if (gv) return; if (!v.getAttribute('src')) v.setAttribute('src', v.getAttribute('data-src') || ''); v.muted = true; var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); }
+  // stopped: back to its still (without a src the video shows its poster again; the next hover plays it from the cache)
+  function gvStop(v) { if (!v.getAttribute('src')) return; v.pause(); v.removeAttribute('src'); try { v.load(); } catch (e) {} }
+  // after each draw: the card or Play that holds a loop plays it while the mouse is over it (a redraw makes new ones)
   function gvLoops() {
-    if (gvIO) gvIO.disconnect();
     var vs = S.root ? S.root.querySelectorAll('video.g-vloop') : [];
-    if (!vs.length || gv || gvStill() || !('IntersectionObserver' in window)) return;
-    if (!gvIO) gvIO = new IntersectionObserver(function (es) {
-      es.forEach(function (e) { if (e.isIntersecting && !gv) gvRun(e.target); else if (!e.target.paused) e.target.pause(); });
-    }, { threshold: 0.25 });
-    Array.prototype.forEach.call(vs, function (v) { gvIO.observe(v); });
+    if (!vs.length || gvStill()) return;
+    Array.prototype.forEach.call(vs, function (v) {
+      var host = v.closest('.g-card, .g-vposter') || v;
+      if (host._gvHover) return;
+      host._gvHover = 1;
+      host.addEventListener('mouseenter', function () { gvRun(v); });
+      host.addEventListener('mouseleave', function () { gvStop(v); });
+    });
   }
   function gvLink(g) { return gvl.links && gvl.who === gViewer() && gvl.links[g.vid] || { w: '', t: '' }; }
   // the video for this screen: the computer one from 700 px wide, the phone one below, else whichever there is
@@ -10994,8 +11000,7 @@ if (list.length) sg('oreg', 's');
       '<div class="gv-body"><div class="gv-frame' + (v.tall ? ' tall' : '') + '"><iframe src="https://www.youtube-nocookie.com/embed/' + v.id + '?autoplay=1&amp;rel=0&amp;playsinline=1" title="' + esc(g.title + ' video') +
       '" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div></div>';
     document.body.appendChild(el);
-    if (gvIO) gvIO.disconnect();
-    Array.prototype.forEach.call(document.querySelectorAll('video.g-vloop'), function (v) { if (!v.paused) v.pause(); });
+    Array.prototype.forEach.call(document.querySelectorAll('video.g-vloop'), gvStop);
     ovPush('gv', function () { gvClose(true); });
     document.documentElement.classList.add('gz-open');
     var c = el.querySelector('[data-gv="close"]'); if (c) c.focus({ preventScroll: true });
@@ -11007,7 +11012,6 @@ if (list.length) sg('oreg', 's');
     if (gv.el.parentNode) gv.el.parentNode.removeChild(gv.el);
     gv = null;
     document.documentElement.classList.remove('gz-open');
-    gvLoops();
     if (prev && prev.focus && document.body.contains(prev)) { try { prev.focus({ preventScroll: true }); } catch (e) {} }
   }
   document.addEventListener('click', function (e) { var b = gv && e.target.closest && e.target.closest('[data-gv="close"]'); if (b && gv.el.contains(b)) gvClose(); });
