@@ -1,5 +1,33 @@
 # Head chef decisions
 
+- **20 November 2026, the look choices of the consistency sweep: all 22 of the recommended picks.** The sweep (`docs/consistency-sweep-options/brief.md`, step 3) put the 25 choices the audit found on one page as 22 questions. The head chef answered "All my picks":
+  - **The look:**
+    1. The main button is the orange button with 8 px corners everywhere, in sheets too (Got it, the mail pop-up).
+    2. Round corners only for chips that choose; every button that does something has 8 px corners.
+    3. One destructive look: red words and outline for Remove, Delete and Discard. "Tap again" turns red everywhere, and Discard is never the orange main button.
+    4. A chosen chip or picker is black; orange only for a notebook's section tabs. The yellow Functions tab and the orange tints come into line.
+    5. Every search is the Recipes pill with the magnifier inside.
+    6. One frame for every Save bar that stays at the bottom: the page colour, an ink line on top, what is not saved yet on the left, the main button on the right.
+    7. The function form's Save and Check and confirm sit in its bar, like the recipe editor.
+    8. Empty lists: the grey handwritten line inside the notebooks, a plain grey sentence everywhere else, no dashed boxes.
+    9. One size and one header form for page titles outside the notebooks. Delivery received's title takes the focus.
+    10. One size for handwritten titles, with Today's team kept small. Mail becomes a notebook like To-do and Drinks.
+    11. Insights uses plain headings.
+    12. Prep's day control (‹ Today date ›) wherever a day is chosen.
+  - **Words and behaviour:**
+    13. "Cleaning" everywhere, and the duplicate chef hat row goes. "Recipes & drawings" everywhere.
+    14. On Orders the words tick the line. The "Used in" links and the fold keep their own taps.
+    15. Transfers counts what its list shows: "3 still out · 1 today".
+    16. Supplier rows on Chef to-do get a supplier mark, not a tick box.
+    17. Slips name the job on Added and Saved. Removals stay unnamed.
+    18. Home's three notices take Home's pinned paper card look.
+  - **Bigger pieces:**
+    19. The Team report gets its own council study.
+    20. The function form's block headings are bigger than its field labels, with even columns on a laptop and the Room picker on one line.
+    21. The supplier order's small controls are 44 px, checking the first To order box still clears the Review bar.
+    22. The design rule book takes these choices, and its test checks that pages use them.
+  - They are built in grouped drafts, each on hold until the head chef has tried it.
+
 - **19 November 2026, venues are files and GitHub environments, and a venue has two admins.** Build step 2 of the second venue mix. Each venue is `venues/<id>.json` and its own GitHub environment with its own secrets; every server job, backup, rules publish, Lock probe and live check runs once per venue and stops on another venue's project. A new venue gets its own copy of the book on its own Firebase address with an empty book. Admin at a venue is its head chef (the venue owner's Google with the head chef PIN) or the owner of every venue (his Google with his own profile there), and the venue's admin cannot change, lock out or reset that profile. At Leichhardt both are the owner and nothing changes. Venues are added and head chefs changed by the owner in GitHub and the Firebase console, step by step in [venues](venues.md).
 
 - **19 November 2026, a person can be deleted for good from the admin panel's Team room.** The head chef asked for a delete "in line with the staff member", so they are gone completely. D6 (20 Oct 2026) stays for everyday use: Stopped working here keeps the person and Put back brings them back. Delete sits beside it on each People row in the admin panel only (the head chef's Google account and head chef PIN, the only authority that may wipe a PIN; never the head chef's own row). Two taps, Undo, then Save takes the person off the team list and wipes their PIN together. Typed names on old lines stay; names kept by id say "Former staff". Sous chefs keep Stopped working here only (chosen by the head chef: Admin panel only).
