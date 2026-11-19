@@ -8,6 +8,34 @@ The nightly job reads the existing included-data export, encrypts it, decrypts i
 
 This is an included-data backup, not a complete disaster-recovery image. The source export uses several reads, not one transactional database snapshot. Authentication and the runner's round trip confirm the exact included JSON bytes and format parameters, not freshness or cross-document consistency. Check the run, source revision and decrypted `exportedAt`, and reconcile relevant records before a real repair.
 
+## Google's own backups (Leichhardt, Plan C 4.3)
+
+Set by the head chef in Cloud Shell on 19 November 2026, with billing on (Plan C, `docs/firestore-usage.md`). They are a second, complete copy next to the nightly encrypted file above, which every venue keeps (head chef, 19 Nov 2026: a venue on the free plan cannot have these).
+
+```
+gcloud config set project leichhardt-kitchen
+gcloud firestore backups schedules create --database='(default)' --recurrence=daily --retention=7d
+gcloud firestore backups schedules create --database='(default)' --recurrence=weekly --day-of-week=SUN --retention=14w
+gcloud firestore backups schedules list --database='(default)'
+```
+
+- **What they hold.** The whole database at one moment, including what the encrypted file leaves out on purpose (PIN fingerprints, sessions and device grants, guide page pictures, push addresses). Not in them: the security rules, sign-in accounts (Firebase Authentication) and anything outside Firestore.
+- **Limits.** One daily and one weekly schedule per database, kept at most 14 weeks. Google picks the time of day. A deleted backup cannot be brought back. Backups stay in the database's location and outlive the database.
+- **Cost.** Billed for storage and for a restore, by size; no reads. At this book's size, a fraction of a cent a day.
+- **Another venue** on the pay as you go plan can have the same with its own project id in the first line.
+- **See them.** `gcloud firestore backups list --format="table(name, database, state)"`.
+- **Restore.** A restore always makes a new database; it never writes over `(default)`. Pick a backup from the list, then:
+
+```
+gcloud firestore databases restore \
+  --source-backup=projects/leichhardt-kitchen/locations/LOCATION/backups/BACKUP_ID \
+  --destination-database=restore-YYYYMMDD
+gcloud firestore operations list --database=restore-YYYYMMDD
+```
+
+  The new database starts with no security rules, so no phone can read it, which is right for a recovery copy. Compare it with the live book, then bring back only what was lost with a reviewed script, with the same care as the encrypted file (Isolated recovery assurance, below). Never point the book at it, and delete it when done (`gcloud firestore databases delete --database=restore-YYYYMMDD`), as it is billed while it exists.
+- **Checked from Google's docs, not yet rehearsed.** The commands are from Google's Firestore backup page (read 14 Nov 2026). Try one restore on a quiet day and note the result here.
+
 ## Read a new archive
 
 Use Node 22 or later and a trusted checkout containing `scripts/backup-crypto.mjs`. Download the artifact from the intended successful Nightly backup run, unzip it into a private folder outside this public repository, and select a new output filename. Do not put the key in a command, source file or shell history.
