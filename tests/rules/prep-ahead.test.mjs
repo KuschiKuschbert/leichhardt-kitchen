@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { anonContext, dailySession, seedOwnerDevice } from './device-auth-fixtures.mjs';
 setLogLevel('silent');
 const source = process.env.RULES || new URL('../../firestore.rules', import.meta.url);
-const rules = readFileSync(source, 'utf8').replaceAll('KITCHEN_PIN', '000000').replaceAll('OWNER_EMAIL', 'headchef@test.local');
+const rules = readFileSync(source, 'utf8').replaceAll('KITCHEN_PIN', '000000').replaceAll('OWNER_EMAIL', 'headchef@test.local').replaceAll('PLATFORM_EMAIL', 'headchef@test.local').replaceAll('PLATFORM_ID', '');
 const env = await initializeTestEnvironment({ projectId: 'demo-prep-ahead', firestore: { rules } });
 const K = 'kitchens/000000/', NOW = Date.now(), DAY = 86400000;
 const qld = ms => new Date(ms + 36000000).toISOString().slice(0, 10);

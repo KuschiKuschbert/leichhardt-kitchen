@@ -20,7 +20,8 @@
   the runner's temporary folder. The prep, order, wastage, review and transfer days older than REUSE_DAYS are taken from
   it instead of read again (5 queries and their lines a day), unless a past-day fix names the day (config/main.pastEdit,
   read as pastChanged() reads it on the phones). Every file is still the whole window. Every day is read on Sundays
-  (kitchen time), without a usable earlier file (missing, unreadable, more than 36 hours old), after a past transfer fix
+  (kitchen time), without a usable earlier file (missing, unreadable, more than 36 hours old, or of another project or
+  from before files named their project, 19 Nov 2026), after a past transfer fix
   (its stamp names no day) or a stamp that cannot tell. A past prep, order or wastage fix names its days (wDays since 7
   Nov 2026), so it is in the next night's backup. BACKUP_NOW (milliseconds) sets the time for the emulator check only.
 */
@@ -34,10 +35,14 @@ const OUT = process.argv[2] || 'backup.json';
 const ZONE = 10 * 3600000; // Queensland: UTC+10, no daylight saving
 if (!/^\d{4,8}$/.test(PIN)) { console.error('KITCHEN_PIN is missing or not 4 to 8 digits.'); process.exit(1); }
 
-if (process.env.FIRESTORE_EMULATOR_HOST) initializeApp({ projectId: process.env.GCLOUD_PROJECT || 'demo-test' });
+// The project this backup is of (19 Nov 2026, docs/venues.md): written into the file, and last night's file is only
+// reused when it names the same project, so one venue's backup is never built from another venue's days.
+let PROJECT;
+if (process.env.FIRESTORE_EMULATOR_HOST) { PROJECT = process.env.GCLOUD_PROJECT || 'demo-test'; initializeApp({ projectId: PROJECT }); }
 else {
   let sa;
   try { sa = JSON.parse(process.env.FIREBASE_SA || ''); } catch (e) { console.error('FIREBASE_SA is missing or not JSON.'); process.exit(1); }
+  PROJECT = sa.project_id;
   initializeApp({ credential: cert(sa), projectId: sa.project_id });
 }
 const db = getFirestore();
@@ -63,7 +68,7 @@ async function subs(list, top, name) {
 
 const NOW = process.env.FIRESTORE_EMULATOR_HOST && +process.env.BACKUP_NOW > 0 ? +process.env.BACKUP_NOW : Date.now();
 const today = kitchenDay(NOW);
-const out = { exportedAt: new Date(NOW).toISOString(), by: 'nightly backup', days: {}, orders: {}, waste: {}, wasteReviews: {}, transfers: {} };
+const out = { exportedAt: new Date(NOW).toISOString(), by: 'nightly backup', project: PROJECT, days: {}, orders: {}, waste: {}, wasteReviews: {}, transfers: {} };
 let reads = 0;
 const cfg = await K.collection('config').doc('main').get(); reads++;
 out.config = cfg.exists ? plain(cfg.data()) : null;
@@ -126,7 +131,7 @@ function namedSince(pe, kind, since) {
 let prev = null;
 if (process.env.PREV_BACKUP) { try { prev = JSON.parse(readFileSync(process.env.PREV_BACKUP, 'utf8')); } catch (e) { prev = null; } }
 const since = prev ? Date.parse(prev.exportedAt) : NaN, fixed = new Set();
-let reuse = !!prev && new Date(NOW + ZONE).getUTCDay() !== 0 && Number.isFinite(since) && since < NOW && NOW - since < 36 * 3600000 &&
+let reuse = !!prev && prev.project === PROJECT && new Date(NOW + ZONE).getUTCDay() !== 0 && Number.isFinite(since) && since < NOW && NOW - since < 36 * 3600000 &&
   DATED.every(k => prev[k] && typeof prev[k] === 'object' && !Array.isArray(prev[k]));
 const pe = (out.config && out.config.pastEdit) || {};
 for (const kind of ['p', 'o', 'w']) { const d = reuse ? namedSince(pe, kind, since) : []; if (d === null) reuse = false; else d.forEach(x => fixed.add(x)); }

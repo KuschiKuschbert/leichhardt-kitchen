@@ -7,4 +7,6 @@
 # A file not named below counts as needed, so a new folder the book loads is never missed.
 # tests/run.js, tests/lib.js and the *.test.js files run in node; tests/contact.html and the files it loads
 # are opened from the live site by the live click tests, so they still count.
-grep -vE '^(docs/|scripts/|\.github/|\.claude/|tests/rules/|tests/fake/)|\.md$|^tests/.*\.test\.m?js$|^tests/(lib|run)\.js$|^tests/package(-lock)?\.json$|^firestore\.rules$|^\.gitignore$' || true
+# venues/ (19 Nov 2026, docs/venues.md) is read by the workflows only: Leichhardt's settings the phones load are
+# js/firebase-config.js, which scripts/venues.cjs check keeps word for word in step with venues/leichhardt.json.
+grep -vE '^(docs/|scripts/|\.github/|\.claude/|tests/rules/|tests/fake/|venues/)|\.md$|^tests/.*\.test\.m?js$|^tests/(lib|run)\.js$|^tests/package(-lock)?\.json$|^firestore\.rules$|^\.gitignore$' || true

@@ -6,6 +6,10 @@
 # only when scripts/site-changed.sh finds a file the site needs. Run it by hand (Run workflow) to publish anyway.
 # Needs Settings, Pages, Source: GitHub Actions. While Pages still publishes from the branch this only says so.
 # Live click tests follow the Deploy job; Publish rules follows the Published job (it also runs when nothing was published).
+# A venue served by its own Firebase project (venues/*.json with host firebase, docs/venues.md) gets its own copy of the
+# same publish (scripts/venue-site.cjs: its settings, security header, name and an empty book) on its own address, in its
+# own GitHub environment, straight after the Pages publish. Published waits for those too, so no venue's rules are ever
+# published ahead of its code.
 name: Publish site
 
 on:
@@ -33,11 +37,15 @@ jobs:
     outputs:
       deploy: ${{ steps.decide.outputs.deploy }}
       source: ${{ steps.decide.outputs.source }}
+      hosted: ${{ steps.hosted.outputs.list }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           filter: blob:none
+      - name: The venues on their own address
+        id: hosted
+        run: echo "list=$(node scripts/venues.cjs matrix --hosted)" >> "$GITHUB_OUTPUT"
       - name: Decide whether the phones need a new copy
         id: decide
         env:
@@ -91,10 +99,50 @@ jobs:
       - id: deployment
         uses: actions/deploy-pages@v4
 
+  venue-sites:
+    name: Venue site (${{ matrix.venue.id }})
+    needs: [check, deploy]
+    if: ${{ needs.deploy.result == 'success' && needs.check.outputs.hosted != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        venue: ${{ fromJSON(needs.check.outputs.hosted) }}
+    environment:
+      name: ${{ matrix.venue.env }}
+      deployment: false
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VENUE: ${{ matrix.venue.id }}
+      PROJECT: ${{ matrix.venue.project }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tests/rules/package-lock.json
+      - name: This venue's own project
+        env:
+          VENUE_PROJECT: ${{ vars.VENUE_PROJECT }}
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: node scripts/venues.cjs guard "$VENUE"
+      - name: Install the Firebase CLI (the copy the rules tests use)
+        working-directory: tests/rules
+        run: npm ci --no-audit --no-fund
+      - name: Make the venue's copy and publish it on its own address
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: bash scripts/venue-deploy.sh
+      - name: Check the live copy
+        run: sleep 20 && node scripts/venue-live-check.cjs "$VENUE"
+
   published:
     name: Published
-    needs: [check, deploy]
-    if: ${{ always() && needs.check.result == 'success' && needs.check.outputs.source != 'legacy' && (needs.deploy.result == 'success' || needs.deploy.result == 'skipped') }}
+    needs: [check, deploy, venue-sites]
+    if: ${{ always() && needs.check.result == 'success' && needs.check.outputs.source != 'legacy' && (needs.deploy.result == 'success' || needs.deploy.result == 'skipped') && (needs.venue-sites.result == 'success' || needs.venue-sites.result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
