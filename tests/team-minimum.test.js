@@ -57,6 +57,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   // an admin People save (a name changed) keeps every shift's busy time
   p = await L.open(b, '#/admin', { admin: true, width: 1280, adminPage: 'people', wait: 2500, extra: fixture() });
   await L.adminTab(p, 'people');
+  await L.openPerson(p, 2);
   await p.fill('[data-a="name"][data-i="2"]', 'Ari B'); await p.keyboard.press('Tab');
   await p.click('[data-p="a-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k]?.people?.[2]?.name === 'Ari B', CFG, 10000);

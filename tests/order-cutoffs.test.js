@@ -142,6 +142,7 @@ const names = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cu
   ok(/^Saved \d\d:\d\d$/.test(await txt(p, '.a-cut .lk-stamp') || ''), 'admin: Saved shows');
   // the People tab's full save keeps the cut-offs
   await L.adminTab(p, 'people');
+  await L.openPerson(p, 2);
   await p.fill('[data-a="name"][data-i="2"]', 'Bo B'); await L.settle(p, 200);
   await p.click('[data-p="a-save"]'); await L.settle(p, 800);
   s = await store(p);

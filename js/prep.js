@@ -6367,7 +6367,8 @@
   }
   function personEditHTML(p, i) {
     var first = String(p.name || '').trim().split(/\s+/)[0] || 'this person', head = isHeadP(p);
-    function tk(perm, label) { return '<label class="pp-tk"><input type="checkbox" data-k="a-p-' + perm + i + '" data-a="perm" data-perm="' + perm + '" data-i="' + i + '"' + (p[perm] || head && perm !== 'fn' ? ' checked' : '') + (head && perm !== 'fn' ? ' disabled title="The head chef can always do this"' : '') + '> ' + label + '</label>'; }
+    var said = { add: 'Add lines', tick: 'Tick lines', del: 'Remove lines', fn: 'Create and edit functions' };
+    function tk(perm, label) { return '<label class="pp-tk"><input type="checkbox" aria-label="' + esc(said[perm] + ' for ' + (p.name || 'the new person')) + '" data-k="a-p-' + perm + i + '" data-a="perm" data-perm="' + perm + '" data-i="' + i + '"' + (p[perm] || head && perm !== 'fn' ? ' checked' : '') + (head && perm !== 'fn' ? ' disabled title="The head chef can always do this"' : '') + '> ' + label + '</label>'; }
     var leave = removePersonBtn(p, i) + deletePersonBtn(p, i);
     return '<div class="pp-ed"><div class="pp-two"><div class="pp-f"><label class="label" for="a-n' + i + '">Name</label><input id="a-n' + i + '" class="search a-name" data-k="a-n' + i + '" data-a="name" data-i="' + i + '" value="' + esc(p.name) + '" maxlength="40"></div>' +
       '<div class="pp-f"><label class="label" for="a-r' + i + '">Role</label><select id="a-r' + i + '" class="p-select" data-k="a-r' + i + '" data-a="role" data-i="' + i + '">' + Object.keys(ROLES).map(function (k) { return '<option value="' + k + '"' + (p.role === k ? ' selected' : '') + '>' + ROLES[k].name + '</option>'; }).join('') + '</select></div></div>' +

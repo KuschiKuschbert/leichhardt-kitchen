@@ -97,6 +97,7 @@ const picks = p => p.evaluate(() => [...document.querySelectorAll('.ps-pick')].m
   // the People save carries the sound over (it writes the whole of config/main)
   await p.click('[data-p="ps-pick"][data-v="chime"]'); await L.settle(p, 600);
   await L.adminTab(p, 'people');
+  await L.openPerson(p, 2);
   await p.fill('[data-a="name"][data-i="2"]', 'Bo B'); await L.settle(p, 200);
   await p.click('[data-p="a-save"]'); await L.settle(p, 800);
   s = await store(p);
@@ -207,6 +208,7 @@ const picks = p => p.evaluate(() => [...document.querySelectorAll('.ps-pick')].m
   await L.waitFor(p, () => !!document.querySelector('.ps-block'), null, 6000).catch(() => {});
   ok(/could not load/.test(await txt(p, '.ps-block') || '') && !(await p.$('.ps-pick')), 'no js/chime.js: the admin tab says the sounds could not load, with nothing to pick');
   await L.adminTab(p, 'people');
+  await L.openPerson(p, 2);
   await p.fill('[data-a="name"][data-i="2"]', 'Bo C'); await L.settle(p, 200);
   await p.click('[data-p="a-save"]'); await L.settle(p, 800);
   s = await store(p);
