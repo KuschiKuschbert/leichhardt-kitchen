@@ -10,7 +10,7 @@ const model = createRequire(import.meta.url)('../../js/functions.js');
 const today = model.kday(Date.now()), pinned = Date.parse(today + 'T14:00:30Z'), cancelAt = pinned - 60000;
 const cancelledDay = model.kday(cancelAt), undoDay = model.kday(pinned), future = model.addDays(undoDay, 2), start = model.kat(future, 1080);
 const template = readFileSync(process.env.RULES || new URL('../../firestore.rules', import.meta.url), 'utf8');
-const rules = template.replaceAll('KITCHEN_PIN', '000000').replaceAll('OWNER_EMAIL', 'headchef@test.local')
+const rules = template.replaceAll('KITCHEN_PIN', '000000').replaceAll('OWNER_EMAIL', 'headchef@test.local').replaceAll('PLATFORM_EMAIL', 'headchef@test.local').replaceAll('PLATFORM_ID', '')
   .replaceAll('request.time', 'timestamp.value("' + new Date(pinned).toISOString() + '")');
 const env = await initializeTestEnvironment({ projectId: 'demo-function-midnight', firestore: { rules } });
 const K = 'kitchens/000000/', id = 'midnight';

@@ -3,7 +3,7 @@ import { collection, doc, getDoc, getDocs, query, where, setDoc, updateDoc, dele
 import { readFileSync } from 'node:fs';
 import { anonContext, dailySession, seedOwnerDevice } from './device-auth-fixtures.mjs';
 const K='kitchens/000000/', now=Date.now(), day=new Date(now+36000000).toISOString().slice(0,10);
-const rules=readFileSync(new URL('../../firestore.rules',import.meta.url),'utf8').replaceAll('KITCHEN_PIN','000000').replaceAll('OWNER_EMAIL','owner@test.local');
+const rules=readFileSync(new URL('../../firestore.rules',import.meta.url),'utf8').replaceAll('KITCHEN_PIN','000000').replaceAll('OWNER_EMAIL','owner@test.local').replaceAll('PLATFORM_EMAIL', 'owner@test.local').replaceAll('PLATFORM_ID', '');
 const env=await initializeTestEnvironment({projectId:'demo-direct-pings',firestore:{rules}});
 const cfg={people:[],staffIds:['head','sam','ann','bo','fn'],sousIds:['head','sam'],headId:'head',pingIds:['head','sam','ann'],fnOnlyIds:['fn']};
 const ping={text:'Private test message',tag:'none',start:day,until:day,dows:[],tm:840,removed:false,at:now,upd:now,author:'sam',by:'sam',to:'ann'};

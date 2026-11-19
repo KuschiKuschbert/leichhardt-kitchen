@@ -6,7 +6,7 @@ import { anonContext, dailySession, seedOwnerDevice } from './device-auth-fixtur
 setLogLevel(process.env.RULE_DEBUG ? 'error' : 'silent');
 const K = 'kitchens/000000/', email = 'owner@test.local', at = Date.now();
 const today = new Date(at + 10 * 3600000).toISOString().slice(0, 10);
-const env = await initializeTestEnvironment({ projectId: 'demo-proofreader', firestore: { rules: readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8').replaceAll('KITCHEN_PIN', '000000').replaceAll('OWNER_EMAIL', email) } });
+const env = await initializeTestEnvironment({ projectId: 'demo-proofreader', firestore: { rules: readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8').replaceAll('KITCHEN_PIN', '000000').replaceAll('OWNER_EMAIL', email).replaceAll('PLATFORM_EMAIL', email).replaceAll('PLATFORM_ID', '') } });
 await env.clearFirestore();
 const roles = { owner: '', ownkit: 'kit', kit: 'kit', sam: 'sam', ann: 'ann', lou: 'lou', vic: 'vic', fay: 'fay', tab: 'bo', anonymous: '', unverified: '', other: '' };
 const dbs = Object.fromEntries(Object.keys(roles).map(r => [r, (r === 'unverified' ? env.authenticatedContext(r, { email, email_verified: false })

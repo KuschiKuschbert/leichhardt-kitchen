@@ -11,6 +11,10 @@ export async function bootstrapAccess(db, pin, options = {}) {
   // One configuration transaction per deployment. Only missing canonical lists are seeded; approved lists survive reruns.
   const people = await db.runTransaction(async tx => {
     const config = kitchen.collection('config').doc('main'), snap = await tx.get(config);
+    // A new venue (19 Nov 2026, docs/venues.md) has no settings until its first head chef is set up in the book, which
+    // needs its rules published first. Only the first publish for a new venue (VENUE_NEW=1) goes on with nothing to
+    // prepare; anywhere else a missing configuration still stops the run (a wrong PIN would point at an empty path).
+    if (!snap.exists && options.newVenue === true) return null;
     if (!snap.exists) throw new Error('Kitchen configuration is missing. No access migration was performed.');
     const c = snap.data(), people = (c.people || []).filter(p => p.active !== false);
     capabilityLists = 0;
@@ -28,6 +32,10 @@ export async function bootstrapAccess(db, pin, options = {}) {
     if (!dryRun) { tx.set(config, additions, { merge: true }); tx.set(kitchen.collection('login').doc('roster'), roster); }
     return people;
   });
+  if (people === null) {
+    if (dryRun) return { roster: 0, recipeAssets: 0, capabilityLists: 0, functionBookings: 0, bookingsScanned: 0, dryRun: true };
+    return { roster: 0, recipeAssets: await mirrorPublic(db, kitchen), capabilityLists: 0, functionBookings: 0, bookingsScanned: 0, dryRun: false };
+  }
   // Existing bookings gain canonical status effects without changing versions, history or contacts.
   // Each bounded query and its writes share a transaction, protecting concurrent saves without per-item rereads.
   // An unexpectedly large kitchen requires a separately reviewed migration before rules publication.
@@ -59,6 +67,10 @@ export async function bootstrapAccess(db, pin, options = {}) {
     cursor = page.last;
   }
   if (dryRun) return { roster: people.length, recipeAssets: 0, capabilityLists, functionBookings, bookingsScanned, dryRun: true };
+  return { roster: people.length, recipeAssets: await mirrorPublic(db, kitchen), capabilityLists, functionBookings, bookingsScanned, dryRun: false };
+}
+// The public recipe copy: the current book index, recipes and drawings, as the phones' saves mirror them.
+async function mirrorPublic(db, kitchen) {
   let count = 0;
   for (const [source, target] of [['book', 'publicBook'], ['recipes', 'publicRecipes'], ['drawings', 'publicDrawings']]) {
     const docs = source === 'book' ? await Promise.all(['index', 'matches'].map(id => kitchen.collection(source).doc(id).get())) : (await kitchen.collection(source).get()).docs;
@@ -73,7 +85,7 @@ export async function bootstrapAccess(db, pin, options = {}) {
       await db.collection(target).doc(doc.id).set(doc.data()); count++;
     }
   }
-  return { roster: people.length, recipeAssets: count, capabilityLists, functionBookings, bookingsScanned, dryRun: false };
+  return count;
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
@@ -83,7 +95,13 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const pin = process.env.KITCHEN_PIN || '';
   if (!/^\d{4,8}$/.test(pin)) throw new Error('Kitchen PIN is missing or invalid.');
   if (process.env.FIRESTORE_EMULATOR_HOST) initializeApp({ projectId: process.env.GCLOUD_PROJECT || 'demo-test' });
-  else { const sa = JSON.parse(process.env.FIREBASE_SA || '{}'); initializeApp({ credential: cert(sa), projectId: sa.project_id }); }
-  const result = await bootstrapAccess(getFirestore(), pin, { dryRun: args[0] === '--dry-run', verifyOnly: args[0] === '--verify' });
+  else {
+    const sa = JSON.parse(process.env.FIREBASE_SA || '{}');
+    // only the venue this run is for (docs/venues.md): another venue's service account is refused before any read
+    const { default: venues } = await import('./venues.cjs');
+    if (sa.project_id !== venues.scriptProject()) throw new Error('The service account is not this venue\'s. No access migration was performed.');
+    initializeApp({ credential: cert(sa), projectId: sa.project_id });
+  }
+  const result = await bootstrapAccess(getFirestore(), pin, { dryRun: args[0] === '--dry-run', verifyOnly: args[0] === '--verify', newVenue: process.env.VENUE_NEW === '1' });
   console.log((args[0] === '--verify' ? 'Verified preparation' : result.dryRun ? 'Preparation preview' : 'Prepared access') + ': ' + result.roster + ' people, ' + result.recipeAssets + ' public assets, ' + result.capabilityLists + ' capability lists, ' + result.functionBookings + ' effect sets from ' + result.bookingsScanned + ' bookings.');
 }

@@ -3,7 +3,8 @@
 // make.mjs films (out/<id>/<cut>/compose/app.mp4), and a still picture for phones set to reduce motion:
 //   guides/videos/<id>-card.mp4 and .jpg   the list card: the top of the phone recording, 152 x 202 (twice the card's size)
 //   guides/videos/<id>-wide.mp4 and .jpg   the video's page: the computer recording, 640 x 360
-// The book loads them only on the Guides page, only when on screen, and never in the saved shell. They show the
+// The book shows the stills on the Guides page and plays a loop only under a mouse (never on a touch screen), never in
+// the saved shell. They show the
 // stand-in's made-up kitchen only, like the videos.
 //
 //   node scripts/tutorials/previews.mjs [--out <the make.mjs output folder>] [<id> ...]
