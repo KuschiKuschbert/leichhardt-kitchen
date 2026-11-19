@@ -151,4 +151,4 @@ function registry(extra) {
     }
   } finally { await b.close(); server.close(); fs.rmSync(tmp, { recursive: true, force: true }); }
   L.report(R);
-})().catch(e => { console.log('FAIL ' + (e.stack || e)); fs.rmSync(tmp, { recursive: true, force: true }); process.exitCode = 1; });
+})().catch(e => { console.log('FAIL ' + (e.stack || e)); fs.rmSync(tmp, { recursive: true, force: true }); process.exit(1); });
