@@ -42,7 +42,7 @@ const cfg = p => p.evaluate(k => window.__fake.dump()[k], CFG);
   await L.tap(p, '[data-p="a-delete-person"][data-i="2"]'); await L.settle(p, 200);
   ok(!(await names()).includes('Bo') && /Bo is deleted when you save/.test(await txt(p, '.p-toast') || '') && /1 unsaved change/.test(await txt(p, '.a-unsaved') || ''), 'Bo leaves the list, named, with 1 unsaved change');
   await L.tap(p, '.p-toast .p-toast-btn'); await L.settle(p, 200);
-  ok((await names()).includes('Bo') && await p.$('.a-unsaved') === null, 'Undo brings Bo back, nothing to save');
+  ok((await names()).includes('Bo') && await p.$('.a-unsaved') === null && /Undone: Bo stays on the team list/.test(await txt(p, '.p-toast') || ''), 'Undo brings Bo back, says Undone, nothing to save');
   await L.tap(p, '[data-p="a-delete-person"][data-i="2"]'); await L.settle(p, 150);
   await L.tap(p, '[data-p="a-delete-person"][data-i="2"]'); await L.settle(p, 200);
   ok(JSON.stringify(await pinOf('bo')) === '[true,true]', 'Bo\'s PIN stays until Save');

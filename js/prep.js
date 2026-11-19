@@ -13591,7 +13591,7 @@ if (list.length) sg('oreg', 's');
       toast((dp.name || 'This person') + ' is deleted when you save', { label: 'Undo', fn: function () {
         if (S.draft !== d) { toast('Already saved: ' + (dp.name || 'this person') + ' is deleted.'); return; }
         if (d.people.some(function (x) { return x.id === dp.id; })) return;
-        d.people.splice(Math.min(i, d.people.length), 0, dp); draw();
+        d.people.splice(Math.min(i, d.people.length), 0, dp); toast('Undone: ' + (dp.name || 'this person') + ' stays on the team list.');
       } });
       draw(); return;
     }
