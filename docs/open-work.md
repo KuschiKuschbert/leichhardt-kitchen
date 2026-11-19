@@ -14,6 +14,8 @@ Done on 22 Oct 2026 by the head chef: the Browser key works only from `kuschikus
 
 3. **A line ticked on your other screen stays struck on this one** (found 11 Nov 2026 by the review of the wide-screen finished words, read in code, not yet seen in a browser). When the same person is signed in on two screens and ticks a prep line on one, the other draws it struck through for its 3.5 second linger (`lingers()` in `js/prep.js` is true for that person's own tick), but only the screen that made the tick sets the draw that ends the linger (`tickNow()`, `ptComplete()`). So the struck line stays until that screen's next draw, and a finished section's words (and the tab's plain words) wait with it. The finished list's card sets that draw itself (`finFit()`, 11 Nov 2026), so only a section's tab and an unfinished list still wait. A fix sets one draw where a lingering line is seen (the list listener), not only where it is ticked, with a check as that person on a second screen. Its own pull request: it touches the prep list for every phone.
 
+4. **A second venue, after the venue plumbing** (19 Nov 2026, [venues](venues.md)). The owner's steps in that note, parts A to C. Then, before the second venue opens: the client offering Admin to the platform owner at a venue (today `loadAdmins()` asks for the `headId` PIN only) and locking his row in the venue admin's people editor; the venue name visible on a 390 px phone; then build steps 3 to 5 of the second venue brief.
+
 Remove each item here once it is done.
 
 ### Bringing the code in line (22 Oct 2026)

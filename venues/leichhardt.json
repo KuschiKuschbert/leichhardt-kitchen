@@ -1,0 +1,18 @@
+{
+  "id": "leichhardt",
+  "name": "Leichhardt Hotel",
+  "short": "Leichhardt",
+  "address": "https://kuschikuschbert.github.io/leichhardt-kitchen/",
+  "host": "pages",
+  "book": "full",
+  "secrets": "repository",
+  "firebase": {
+    "apiKey": "AIzaSyDKnqjVhe4U_mCaOCeqbiQqcazEiezRJT4",
+    "authDomain": "leichhardt-kitchen.firebaseapp.com",
+    "projectId": "leichhardt-kitchen",
+    "storageBucket": "leichhardt-kitchen.firebasestorage.app",
+    "messagingSenderId": "674594425985",
+    "appId": "1:674594425985:web:4e545f61102189329ad180",
+    "appCheckEnterpriseKey": "6LfIyfYtAAAAAGhFk-Cbb2biycRCkCD3uhAQcbvT"
+  }
+}

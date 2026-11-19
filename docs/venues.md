@@ -1,0 +1,114 @@
+# Venues: each kitchen its own project, address and book
+
+19 November 2026. Build step 2 of [the second venue brief](second-venue-options/brief.md) (the mix chosen that day), with no Venues room in the app ([venues room brief](venues-room-options/brief.md), agreed the same day). A venue is added, and its head chef changed, in GitHub and the Firebase console with this checklist and two hand-run workflows. Nothing here changes Leichhardt's data, its rules or what its phones load.
+
+## What a venue is
+
+- **One file**, `venues/<id>.json`: its id, name ("Leichhardt Hotel"), short name ("Leichhardt"), web address, where it is served (`pages` for GitHub Pages, `firebase` for its own Firebase project), its book (`full` for Leichhardt, `empty` for every new venue), where its secrets are (`repository` or `environment`) and its project's public web settings. Nothing in it is secret. `scripts/venues.cjs` checks it word by word: a wrong field stops every job, it never falls back to another venue.
+- **Its own Firebase project.** Data, reads, sign-in, App Check, rules, backups and the free daily reads are its own.
+- **Its own address.** Leichhardt stays on GitHub Pages. A new venue is served by its own project at `https://<project>.web.app/`, a separate origin, so nothing a phone keeps (drafts, PIN sessions, the saved book) crosses between kitchens, and the installed app is its own.
+- **Its own copy of the book**, made by `scripts/venue-site.cjs` from the same code: its `js/firebase-config.js`, the security header in `index.html` naming its own sign-in host, its name wherever Leichhardt's is (the top bar, titles, prints, saved file names, the installed app), an empty `js/data.js` and its own QR files from `venues/<id>/`. The copy is refused if anything in it still names Leichhardt or Leichhardt's project.
+- **Its own GitHub environment**, named like the venue, holding its secrets and one variable:
+
+| Name | Kind | What |
+| --- | --- | --- |
+| `VENUE_PROJECT` | variable | The venue's Firebase project id. Every job compares it with the venue file and stops on a mismatch. |
+| `FIREBASE_SA` | secret | The venue project's service account key (JSON). Every job checks its project is the venue's. |
+| `KITCHEN_PIN` | secret | The venue's kitchen PIN, 4 to 8 digits. Its own, never Leichhardt's. |
+| `OWNER_EMAIL` | secret | The venue owner: the venue's head chef's Google email. |
+| `PLATFORM_EMAIL` | secret | The platform owner's Google email (the owner of every venue). At Leichhardt it may be left out: it is `OWNER_EMAIL`. |
+| `PLATFORM_STAFF_ID` | secret | The platform owner's own profile id at that venue. Left out at Leichhardt. |
+| `BACKUP_KEY` | secret | The venue's backup passphrase, at least 16 characters. Keep a copy in the password manager. |
+| `APPCHECK_DEBUG_TOKEN` | secret | For the Lock probe once App Check is enforced. |
+
+## What runs once per venue
+
+Every job that holds a venue's secrets runs in that venue's environment (with no deployment record) and runs `node scripts/venues.cjs guard <id>` first. `tests/venues.test.js` fails the Click tests if a workflow job holds a venue secret without both.
+
+| Workflow | Per venue |
+| --- | --- |
+| Nightly learning, Cut-off pushes | One job per venue, its own service account and kitchen PIN |
+| Nightly backup | One job per venue. Its artifact is `kitchen-book-<venue>-backup-<run>`; the file names its project, and last night's file is reused only for the same venue and project ([backup-recovery.md](backup-recovery.md)) |
+| Publish rules | One job per venue (input `venue`: one id or `all`), filled with that venue's secrets, published only to its project (`scripts/publish-rules.cjs` refuses any other), then that venue's Lock probe |
+| Lock probe | One job per venue, against its own project and address |
+| Publish site | Leichhardt on GitHub Pages as before; then each `firebase` venue's copy on its own address. Published waits for both, so no venue's rules go ahead of its code |
+| Live click tests | The click tests on Leichhardt's copy as before; each venue's live copy read back by `scripts/venue-live-check.cjs` (its settings, security header, book and name) |
+| Set up a venue (new, by hand) | Checks the environment, compiles the venue's filled-in rules on the emulator, publishes its copy and reads it back |
+| Set up Grill and Pans minimums | Leichhardt only (its encrypted file), in Leichhardt's environment |
+
+## Two admins at a venue
+
+The venue's head chef is admin of his own venue: the venue owner's Google (`OWNER_EMAIL`) with the `headId` PIN, as at Leichhardt. The platform owner is admin at every venue: his Google (`PLATFORM_EMAIL`) with his own profile's PIN at that venue (`PLATFORM_STAFF_ID`). The rules template has two placeholders for this, `PLATFORM_EMAIL` and `PLATFORM_ID`.
+
+The venue admin (and a sous chef, and the venue owner's Google alone) cannot change, lock out or reset the PIN of the platform owner's profile: not take it off the list, not make it functions only, not change its role, ticks or pings, not make it head chef, not open its PIN set-up window, not delete or replace its PIN, not end its device session, not take back its admin grant, not write a sign-in roster without it, and not delete the kitchen settings. The platform owner changes his own profile himself.
+
+At Leichhardt the owner is the platform owner: `PLATFORM_EMAIL` is `OWNER_EMAIL` and `PLATFORM_ID` is empty, so every platform line is off and every rule is as it was. `tests/rules/venues.test.mjs` proves both shapes on the emulator for every role (signed out, kitchen PIN alone, staff, view only, functions only, sous chef, head chef PIN, venue admin, platform owner PIN, platform admin, wrong and unverified Google): 78 rows. On `main`'s rules, 18 of them fail (every platform row) and the 24 Leichhardt rows pass, the same as on these rules.
+
+**Not covered by the rules:** the name, role label and ticks shown for the platform owner in the people list are display; the rules protect what grants access (the lists, the PIN, the session and the grant). The venue admin can read the platform owner's PIN fingerprint, as admin reads every fingerprint for Move PIN and backups.
+
+**Not built yet (client):** the book still opens Admin only for the head chef's own PIN (`loadAdmins()` in `js/prep.js` asks for `headId`). Until the client follow-up, the platform owner at a venue signs in as himself with his own PIN and the rules let him through, but the admin panel does not offer him Admin. The follow-up also locks his row in the venue admin's people editor, so a save that touches it says why instead of failing. It is the next step before a second venue opens.
+
+## Published-rules order
+
+- **This change (venue plumbing).** At Leichhardt the filled-in rules mean exactly what they did (neither looser nor stricter). No file the phones load changes, so Publish site publishes nothing; its Published job then runs Publish rules for Leichhardt by itself, filled from the repository secrets (`PLATFORM_EMAIL` absent becomes `OWNER_EMAIL`, `PLATFORM_STAFF_ID` absent is empty). The Lock probe runs after. The full rules suite passes with Leichhardt's fill.
+- **A new venue.** Its copy of the book first (Set up a venue), then its rules (Publish rules, First publish ticked), then its first head chef in the book. Rules never go ahead of the code.
+- **The platform owner's profile.** Once it exists, `PLATFORM_STAFF_ID`, then Publish rules for that venue in its release window, then the Lock probe.
+- **A head chef change.** `OWNER_EMAIL` changed, then Publish rules for that venue in its release window, then the Lock probe.
+- **The client follow-up.** If it adds a rule (for example a read of the platform owner's profile id), that is looser: publish it before the client.
+
+## Owner's list, step by step
+
+Claude does none of these: they create projects, environments and secrets, or hold a PIN or an email.
+
+### A. Before the first merge (one time)
+
+1. GitHub, the repository, Settings, Environments, **New environment** `leichhardt`. Leave it empty and add no protection rules. (Its jobs then still use the repository secrets.)
+2. Merge this change when you say go. Then Actions: **Publish rules** runs by itself after the merge; check it is green, with its Lock probe.
+
+### B. Move Leichhardt's secrets into its environment (before any second venue)
+
+A secret missing from one venue's environment would otherwise quietly be the repository's, which is Leichhardt's. The Click tests refuse a second venue file until this is done.
+
+1. Settings, Environments, `leichhardt`: add the **variable** `VENUE_PROJECT` = `leichhardt-kitchen`.
+2. Add the **secrets** `FIREBASE_SA`, `KITCHEN_PIN`, `OWNER_EMAIL`, `BACKUP_KEY` and `APPCHECK_DEBUG_TOKEN` with the same values as the repository secrets. Keep `BACKUP_KEY` the same, or older backups need the old key. If the service account JSON is not to hand, Firebase console, Project settings, Service accounts, Generate new private key (then delete the old key in Google Cloud, IAM, Service accounts, once the new one works).
+3. Actions: run **Lock probe** and **Nightly learning** by hand. Both green.
+4. Settings, Secrets and variables, Actions: delete the repository secrets `FIREBASE_SA`, `KITCHEN_PIN`, `OWNER_EMAIL`, `BACKUP_KEY` and `APPCHECK_DEBUG_TOKEN`. Keep the others (`AUTOMERGE_TOKEN`).
+5. Ask Claude to set `"secrets": "environment"` in `venues/leichhardt.json` (a small pull request).
+
+### C. Add a venue
+
+1. **Firebase console** (your Google account): Add project, with an id you choose (it becomes the address, `<id>.web.app`). Check the plan and the free daily reads are per project. Then:
+   - Firestore: Create database, production mode, the same location as Leichhardt's.
+   - Authentication: turn on **Anonymous** and **Google**.
+   - Project settings, General: **Add app**, Web, with Hosting. Keep the settings it shows (apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId).
+   - App Check: register the web app with **reCAPTCHA Enterprise** for the domain `<id>.web.app`; keep the site key. Make a debug token (Apps, the web app, Manage debug tokens). Do not enforce yet.
+   - Google Cloud, APIs and Services, Credentials: restrict the Browser key to `https://<id>.web.app/*`, as Leichhardt's is.
+   - Project settings, Service accounts: **Generate new private key**. In Google Cloud, IAM, give that account the same roles Leichhardt's has, plus **Firebase Hosting Admin**.
+   - Indexes: copy Leichhardt's. In a terminal on your computer, signed in with `npx firebase-tools@13.29.1 login`: `npx firebase-tools@13.29.1 firestore:indexes --project leichhardt-kitchen > indexes.json`, then in that folder make `firebase.json` with `{ "firestore": { "indexes": "indexes.json" } }` and run `npx firebase-tools@13.29.1 deploy --only firestore:indexes --project <id>`.
+2. **GitHub**, Settings, Environments, **New environment** named like the venue (for example `strand`), no protection rules:
+   - Variable `VENUE_PROJECT` = the project id.
+   - Secrets: `FIREBASE_SA` (the key file's contents), `KITCHEN_PIN` (a new PIN for that kitchen), `OWNER_EMAIL` (the venue's head chef's Google email), `PLATFORM_EMAIL` (your Google email), `BACKUP_KEY` (a new long random passphrase, saved in your password manager), `APPCHECK_DEBUG_TOKEN`. Leave `PLATFORM_STAFF_ID` for step 6.
+3. **Tell Claude** the venue's name and short name and the web app settings from step 1 (they are public). Claude opens a pull request adding `venues/<id>.json` and the venue's QR files (`venues/<id>/qr.svg`, `qr.png`, `qr-sign.pdf`, for its address). The Click tests check the file. Merge it.
+4. Actions, **Set up a venue**, venue `<id>`. Green means the environment has everything, the venue's rules compile, and its copy of the book is live at its address.
+5. Actions, **Publish rules**, venue `<id>`, mode publish, tick **First publish** (its book has no settings yet). Its Lock probe runs after.
+6. **First sign-in.** The venue's head chef opens the address, signs in with Google and sets himself up as head chef with his PIN. In the admin panel he adds you as a person. You set your PIN at the venue's address within the set-up window. Find your profile id (Firebase console, Firestore, `kitchens`, the kitchen, `config/main`, `people`, your `id`), add it as the secret `PLATFORM_STAFF_ID`, and run **Publish rules** for the venue again. From then on the venue's admin cannot change, lock out or reset your profile.
+7. Once the copy works on a phone, App Check, Firestore: **Enforce**, as at Leichhardt.
+
+### D. Change a venue's head chef
+
+1. The new head chef is a person at the venue with his own PIN (the venue admin or you add him).
+2. In the admin panel's staff list (People), set his role to Head chef and Save (one head chef: the old one becomes a sous chef).
+3. GitHub, Settings, Environments, the venue: change `OWNER_EMAIL` to the new head chef's Google email.
+4. In the venue's release window: Actions, **Publish rules**, venue `<id>`, mode publish. Its Lock probe runs after.
+5. Done only when the new head chef has signed in with Google at his venue and opened Admin. If the probe fails, run Publish rules again; the last good rules are the ones from before the change.
+
+### The platform owner's own PIN at a venue
+
+The venue admin cannot reset it. If you forget it: Firebase console, Firestore, `kitchens`, the kitchen, delete `staffpins/<your id>` and `pinset/<your id>`, and in `config/main` set `pinOpen.<your id>` to a time 30 minutes ahead (milliseconds). Then set a new PIN at the venue's address.
+
+## Files
+
+- `venues/<id>.json` and `venues/<id>/` (QR files): the venues. Read by the workflows and scripts, never by the phones (`scripts/site-changed.sh` leaves `venues/` out of a publish).
+- `scripts/venues.cjs`: check, matrix and guard. `scripts/venue-site.cjs`: a venue's copy. `scripts/venue-deploy.sh`: publish it to its project. `scripts/venue-live-check.cjs`: read it back. `scripts/rules-compile-check.mjs`: compile filled-in rules on the emulator.
+- `.github/workflows/venue-setup.yml`: Set up a venue.
+- Tests: `tests/venues.test.js` (Click tests: venue files, guard, workflows, the copy in Chrome at 390, 768 and 1280 px), `tests/rules/venues.test.mjs` (emulator: every role at both venues), and the venue rows in `scripts/backup-reuse-check.mjs`, `scripts/rules-publisher-check.cjs`, `tests/access-bootstrap.test.js` and `tests/site-publish.test.js`.

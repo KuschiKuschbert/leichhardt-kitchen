@@ -8,7 +8,7 @@ import { anonContext, dailySession, seedOwnerDevice } from './device-auth-fixtur
 setLogLevel('silent');
 const PIN = '000000', OWNER = 'headchef@test.local', K = 'kitchens/' + PIN + '/';
 const rules = readFileSync(process.env.RULES || new URL('../../firestore.rules', import.meta.url), 'utf8')
-  .replaceAll('KITCHEN_PIN', PIN).replaceAll('OWNER_EMAIL', OWNER);
+  .replaceAll('KITCHEN_PIN', PIN).replaceAll('OWNER_EMAIL', OWNER).replaceAll('PLATFORM_EMAIL', OWNER).replaceAll('PLATFORM_ID', '');
 
 async function main() {
   const env = await initializeTestEnvironment({ projectId: 'demo-prep-standards', firestore: { rules } });

@@ -37,7 +37,7 @@ const ARRAY_COLLECTIONS = ['activity', 'sections', 'prepStandards', 'learned', '
   'deliveries', 'cleaningTasks', 'cleaningDone', 'cleaningActions', 'notes', 'directnotes', 'minutes', 'book', 'recipes', 'drawings', 'drawtpl', 'drawlib', 'suppliers', 'supplierlinks', 'functions', 'fncontact', 'fnsent', 'fnseen'];
 const HISTORIES = { referencesHist: ['references', 'hist'], trainingHist: ['training', 'hist'], notesSeen: ['notes', 'seen'], directnotesSeen: ['directnotes', 'seen'], minutesHist: ['minutes', 'hist'], minutesSigns: ['minutes', 'signs'], recipesHist: ['recipes', 'hist'], drawingsHist: ['drawings', 'hist'], supplierOrders: ['suppliers', 'orders'], supplierAudit: ['suppliers', 'audit'], functionsHist: ['functions', 'hist'] };
 const DATED = { days: ['days', 'items'], orders: ['orders', 'lines'], waste: ['waste', 'lines'], transfers: ['transfers', 'lines'] };
-const EXPECTED_FIELDS = ['exportedAt', 'by', 'config', 'pins', 'wasteReviews', 'coolingCurrent', 'coolingRecorded', ...ARRAY_COLLECTIONS, ...Object.keys(HISTORIES), ...Object.keys(DATED)].sort();
+const EXPECTED_FIELDS = ['exportedAt', 'by', 'project', 'config', 'pins', 'wasteReviews', 'coolingCurrent', 'coolingRecorded', ...ARRAY_COLLECTIONS, ...Object.keys(HISTORIES), ...Object.keys(DATED)].sort();
 const identities = Object.fromEntries(ARRAY_COLLECTIONS.map(name => [name, name + '-sample']));
 Object.assign(identities, { activity: 'cook-a', drinks: 'cook-a', book: 'index', references: 'ref-a', training: 'training-a', notes: 'note-a', directnotes: 'direct-a', minutes: 'meeting-a', recipes: 'recipe-a', drawings: 'drawing-a', suppliers: 'supplier-a', functions: 'function-a' });
 identities.cleaningDone = day(2) + '_' + identities.cleaningTasks + '__daily';

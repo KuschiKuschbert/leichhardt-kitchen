@@ -1,5 +1,6 @@
 // Add only the personal-ping index. Never delete or replace existing indexes or kitchen records.
 import { pathToFileURL } from 'node:url';
+import venues from './venues.cjs';
 const fields=[{fieldPath:'to',order:'ASCENDING'},{fieldPath:'until',order:'ASCENDING'}];
 export async function ensurePingIndex(api, pause=ms=>new Promise(r=>setTimeout(r,ms)), conflicts=0) {
   const parent='collectionGroups/directnotes/indexes';
@@ -39,7 +40,8 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href) {
   const {getFirestore}=await import('firebase-admin/firestore');
   let account;
   try {account=JSON.parse(process.env.FIREBASE_SA||'{}');} catch {throw new Error('The existing Firebase service-account configuration is invalid.');}
-  if(account.project_id!=='leichhardt-kitchen')throw new Error('Use the existing Leichhardt Firebase service account.');
+  // the venue this job runs for (docs/venues.md): its own service account only
+  if(account.project_id!==venues.scriptProject())throw new Error('Use this venue\'s own Firebase service account.');
   const credential=cert(account), app=initializeApp({credential});
   const base='projects/'+account.project_id+'/databases/(default)/';
   const api=async (path,method='GET',body)=>{

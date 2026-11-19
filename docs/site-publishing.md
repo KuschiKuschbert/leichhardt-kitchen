@@ -22,6 +22,10 @@ Measured on the live site, 13 November 2026: `index.html` last changed on 9 Nove
 
 When nothing needs publishing, the live site keeps the earlier copy of the notes too. They go out with the next app change, or straight away with **Run workflow** on Publish site, which always publishes.
 
+## A venue on its own address (19 Nov 2026)
+
+A venue served by its own Firebase project (`venues/<id>.json` with `host: firebase`, [venues.md](venues.md)) gets its own copy of the same publish straight after the Pages Deploy: the Venue site job makes it with `scripts/venue-site.cjs` (its settings, security header, name, an empty book, its QR) and publishes it with `scripts/venue-deploy.sh`, in the venue's GitHub environment, then reads it back (`scripts/venue-live-check.cjs`). Published waits for every venue, so no venue's rules are published ahead of its code. `venues/` itself is left out of a publish: it is read by the workflows only.
+
 ## What follows it
 
 - **Live click tests** run after the Deploy job publishes, and not after a merge that published nothing.

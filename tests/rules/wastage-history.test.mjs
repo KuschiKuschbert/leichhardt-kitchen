@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { anonContext, dailySession, seedOwnerDevice } from './device-auth-fixtures.mjs';
 const PIN = '000000', OWNER = 'headchef@test.local', K = 'kitchens/' + PIN + '/';
-const rules = readFileSync('../../firestore.rules', 'utf8').replaceAll('KITCHEN_PIN', PIN).replaceAll('OWNER_EMAIL', OWNER);
+const rules = readFileSync('../../firestore.rules', 'utf8').replaceAll('KITCHEN_PIN', PIN).replaceAll('OWNER_EMAIL', OWNER).replaceAll('PLATFORM_EMAIL', OWNER).replaceAll('PLATFORM_ID', '');
 const env = await initializeTestEnvironment({ projectId: 'demo-test', firestore: { rules } });
 try {
   await env.clearFirestore();

@@ -13,7 +13,7 @@ import path from 'path';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PIN = '000000', OWNER = 'headchef@test.local';
-const rules = readFileSync(process.env.RULES || path.join(here, '..', '..', 'firestore.rules'), 'utf8').replace(/KITCHEN_PIN/g, PIN).replace(/OWNER_EMAIL/g, OWNER);
+const rules = readFileSync(process.env.RULES || path.join(here, '..', '..', 'firestore.rules'), 'utf8').replace(/KITCHEN_PIN/g, PIN).replace(/OWNER_EMAIL/g, OWNER).replace(/PLATFORM_EMAIL/g, OWNER).replace(/PLATFORM_ID/g, '');
 const sha = s => createHash('sha256').update(s).digest('hex');
 const pins = { sam: '1111', ann: '2222', bo: '3333', hd: '4444' };
 const hash = (id, pin) => sha('lk:' + id + ':' + pin);
