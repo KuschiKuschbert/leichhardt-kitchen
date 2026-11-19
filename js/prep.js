@@ -3873,6 +3873,7 @@
   }
   // gone: ids deleted for good in this save (adminSave); the head chef's batch wipes their PIN with the list
   function saveConfig(cfg, hold, gone) {
+    cfg = Object.assign({}, cfg, { people: (cfg.people || []).filter(function (p) { return !p.gone; }) });   // Delete for good, marked in the draft
     var clean = {
       people: cfg.people.filter(function (p) { return String(p.name).trim(); }).map(function (p) {
         return { id: p.id, name: String(p.name).trim().slice(0, 40), role: p.role || 'staff', add: !!p.add, tick: !!p.tick, del: !!p.del, ping: !!p.ping, fn: !!p.fn, active: p.active !== false };
@@ -3908,10 +3909,10 @@
     if (!draftDirty()) { draw(); return; }   // nothing changed: nothing saved, and a button left on goes off
     S.busy = true; S.saveMsg = ''; svStart('a'); draw();
     // rows this draft deleted for good (deletePersonBtn): only saved rows, and only the head chef's Google save sends them
-    var base = draftBase(), kept = {}; S.draft.people.forEach(function (p) { kept[p.id] = 1; });
-    var gone = ((base && base.people) || []).filter(function (p) { return p.id && !kept[p.id]; });
+    var base = draftBase(), was = {}; ((base && base.people) || []).forEach(function (p) { was[p.id] = 1; });
+    var gone = S.draft.people.filter(function (p) { return p.gone && p.id && was[p.id]; });
     var goneMsg = gone.length ? 'Deleted: ' + gone.map(function (p) { return p.name || 'no name'; }).join(', ') + '. ' : '';
-    saveConfig(mergeDraft(), null, gone.map(function (p) { return p.id; })).then(function () { S.busy = false; startDraft(); svDone('a', !!S.draft, function () { S.saveMsg = 'Saved. ' + goneMsg + 'Everyone sees the changes now.'; }); draw(); },
+    saveConfig(mergeDraft(), null, gone.map(function (p) { return p.id; })).then(function () { S.busy = false; S.pOpen = ''; startDraft(); svDone('a', !!S.draft, function () { S.saveMsg = 'Saved. ' + goneMsg + 'Everyone sees the changes now.'; }); draw(); },
       function (e) { S.busy = false; S.saveMsg = errMsg(e && e.code === 'permission-denied' ? 'Not allowed to change these settings.' : 'Could not save. Check the connection.'); svFail('a', !!S.draft, function () { S.saveMsg = ''; }); draw(); });
   }
   function resetPin(id) {
@@ -4850,7 +4851,7 @@
       var fl = (c.filters || []).map(function (f) { return { f: f, n: f[2] ? c.items.filter(f[2]).length : c.items.length }; }).filter(function (x, i) { return i === 0 || x.n > 0 || x.f[0] === s.f; });
       bar = '<div class="lv-tools">' + (c.heading ? '<h3 class="a-ch-h">' + esc(c.heading) + '</h3>' : '') +
         '<div class="lv-qw"><label class="visually-hidden" for="lv-q-' + key + '">Search</label><input id="lv-q-' + key + '" type="search" class="search lv-q" data-k="lv-q:' + key + '" placeholder="' + esc(c.ph || 'Search') + '" value="' + esc(s.q) + '" autocomplete="off" enterkeyhint="search"></div>' +
-        (c.sorts && c.sorts.length > 1 ? '<label class="a-f lv-sort"><span>Sort</span><select data-k="lv-s:' + key + '" aria-label="Sort">' + c.sorts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === s.sort ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>' : '') + '</div>' +
+        (c.sorts && c.sorts.length > 1 ? '<label class="a-f lv-sort"><span>Sort</span><select data-k="lv-s:' + key + '" aria-label="Sort">' + c.sorts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === s.sort ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>' : '') + (c.tool ? '<div class="lv-tool">' + c.tool + '</div>' : '') + '</div>' +
         (fl.length > 1 ? '<div class="chips lv-chips scroll" role="group" aria-label="Filter">' + fl.map(function (x) { return '<button type="button" class="chip" data-p="lv-f" data-lv="' + key + '" data-v="' + esc(x.f[0]) + '" aria-pressed="' + (x.f[0] === s.f) + '">' + esc(x.f[1]) + ' <span class="lv-n">' + x.n + '</span></button>'; }).join('') + '</div>' : '');
     }
     var facets = (c.cols || []).map(function (column, i) {
@@ -6340,29 +6341,64 @@
       (lines.length ? '<h3 class="a-ch-h">By day</h3>' + dayList + '<h3 class="a-ch-h">By person</h3>' + perList + '<h3 class="a-ch-h">Ordered most often</h3>' + itemList : '<p class="hint">Nothing has been written on the order list in this time.</p>') + '</section>';
   }
 
-  /* The People tab: every person with role, permissions and PIN reset. Search, filter chips and Show more once the list is long. */
+  /* The People tab (head chef, 19 Nov 2026, the council's mix, docs/people-room-options/brief.md): one row a person that
+     says who they are and what they may do in words, built from their ticks in the draft (never from the role), with the
+     state in words; Change opens one person in place to change. Everything still goes in the one draft and one Save. */
+  function canWords(p) {
+    if (isHeadP(p)) return 'Everything';
+    return ([p.add ? 'Add' : '', p.tick ? 'Tick' : '', p.del ? 'Remove' : ''].filter(Boolean).join(', ') || 'Reads only') + (p.fn ? ' · Functions' : '');
+  }
+  // what this draft changed for one person, in words ("Staff to Lead, Remove on"), against the list as it was read
+  function personChanges(p) {
+    var was = (draftBase() || { people: [] }).people.filter(function (x) { return x.id === p.id; })[0], out = [];
+    if (!was) return null;
+    if (String(was.name || '').trim() !== String(p.name || '').trim()) out.push('name');
+    if (was.role !== p.role) out.push(((ROLES[was.role] || {}).name || was.role) + ' to ' + ((ROLES[p.role] || {}).name || p.role));
+    else [['add', 'Add'], ['tick', 'Tick'], ['del', 'Remove'], ['fn', 'Functions']].forEach(function (c) { if (!!was[c[0]] !== !!p[c[0]]) out.push(c[1] + (p[c[0]] ? ' on' : ' off')); });
+    if ((was.active !== false) !== (p.active !== false)) out.push(p.active === false ? 'stopped working here' : 'back on the list');
+    return out;
+  }
+  function personStateHTML(p) {
+    if (p.gone) return '<small class="pp-st is-bad">Deleted when you save</small>';
+    if (p.isNew) return '<small class="pp-st">New: not saved yet</small>';
+    var ch = personChanges(p);
+    if (ch && ch.length) return '<small class="pp-st">Not saved: ' + esc(ch.join(', ')) + '</small>';
+    return p.active === false ? '<small class="pp-st is-off">Off the list</small>' : '';
+  }
+  function personEditHTML(p, i) {
+    var first = String(p.name || '').trim().split(/\s+/)[0] || 'this person', head = isHeadP(p);
+    var said = { add: 'Add lines', tick: 'Tick lines', del: 'Remove lines', fn: 'Create and edit functions' };
+    function tk(perm, label) { return '<label class="pp-tk"><input type="checkbox" aria-label="' + esc(said[perm] + ' for ' + (p.name || 'the new person')) + '" data-k="a-p-' + perm + i + '" data-a="perm" data-perm="' + perm + '" data-i="' + i + '"' + (p[perm] || head && perm !== 'fn' ? ' checked' : '') + (head && perm !== 'fn' ? ' disabled title="The head chef can always do this"' : '') + '> ' + label + '</label>'; }
+    var leave = removePersonBtn(p, i) + deletePersonBtn(p, i);
+    return '<div class="pp-ed"><div class="pp-two"><div class="pp-f"><label class="label" for="a-n' + i + '">Name</label><input id="a-n' + i + '" class="search a-name" data-k="a-n' + i + '" data-a="name" data-i="' + i + '" value="' + esc(p.name) + '" maxlength="40"></div>' +
+      '<div class="pp-f"><label class="label" for="a-r' + i + '">Role</label><select id="a-r' + i + '" class="p-select" data-k="a-r' + i + '" data-a="role" data-i="' + i + '">' + Object.keys(ROLES).map(function (k) { return '<option value="' + k + '"' + (p.role === k ? ' selected' : '') + '>' + ROLES[k].name + '</option>'; }).join('') + '</select></div></div>' +
+      '<fieldset class="pp-ticks"><legend class="label">What ' + esc(first) + ' may do</legend>' + tk('add', 'Add') + tk('tick', 'Tick') + tk('del', 'Remove') + tk('fn', 'Functions') + '</fieldset>' +
+      (p.isNew ? '' : '<p class="hint pp-note">Reset PIN works at once. Everything else here waits for Save changes.</p>') +
+      (leave.indexOf('<button') >= 0 ? '<div class="pp-leave"><p class="pp-h">' + (p.isNew ? 'Not wanted?' : 'Leaving · waits for Save changes') + '</p><div class="pp-lv">' + leave + '</div></div>' : '') +
+      (p.id && !p.isNew ? '<p class="pp-end"><button type="button" class="p-link" data-p="a-person" data-id="' + esc(p.id) + '">Open ' + esc(first) + '\'s page ›</button></p>' : '') + '</div>';
+  }
+  function personRowHTML(o) {
+    var p = o.p, i = o.i, open = !p.gone && S.pOpen === p.id, r = ROLES[p.role] || ROLES.staff, ini = String(p.name || '').trim().charAt(0).toUpperCase();
+    var acts = p.gone ? '<button type="button" class="btn pp-undo" data-p="a-undelete-person" data-i="' + i + '" aria-label="' + esc('Undo delete: ' + (p.name || 'this person')) + '">Undo delete</button>'
+      : (p.active !== false && !p.isNew ? '<button type="button" class="p-x pp-pin" data-p="a-reset-pin" data-id="' + esc(p.id) + '" aria-label="' + esc((armed('pin:' + p.id) ? 'Tap again to reset the PIN of ' : 'Reset PIN: ') + (p.name || 'this person')) + '">' + (armed('pin:' + p.id) ? 'Tap again to reset' : 'Reset PIN') + '</button>' : '') +
+        '<button type="button" class="btn pp-open" data-p="a-person-open" data-id="' + esc(p.id) + '" aria-expanded="' + open + '" aria-label="' + esc((open ? 'Close ' : 'Change ') + (p.name || 'the new person')) + '">' + (open ? 'Close ▴' : 'Change ▾') + '</button>';
+    return '<li class="pp-row' + (open ? ' is-open' : '') + (p.active === false ? ' is-off' : '') + (p.gone ? ' is-gone' : '') + '" data-pid="' + esc(p.id) + '"><div class="pp-main"><span class="st-av' + (isSousP(p) ? ' is-chef' : '') + '" aria-hidden="true">' + esc(ini || '?') + '</span>' +
+      '<div class="pp-w"><b class="pp-n">' + esc(p.name || 'No name yet') + '</b><small class="pp-can">' + esc(r.name + ' · ' + canWords(p)) + '</small>' + personStateHTML(p) + '</div><div class="pp-acts">' + acts + '</div></div>' + (open ? personEditHTML(p, i) : '') + '</li>';
+  }
   function peopleListHTML(d) {
     var items = d.people.map(function (p, i) { return { p: p, i: i }; });
-    function cb(o, kind, perm, on, label, off) { return '<label class="a-cl"><input type="checkbox" aria-label="' + label + ' for ' + esc(o.p.name) + '" data-a="' + kind + '"' + (perm ? ' data-perm="' + perm + '"' : '') + ' data-i="' + o.i + '"' + (on ? ' checked' : '') + (off ? ' disabled title="The head chef can always do this"' : '') + '></label>'; }
+    if (S.pOpen && !d.people.some(function (p) { return p.id === S.pOpen && !p.gone; })) S.pOpen = '';
     function nm(o) { return String(o.p.name || '').toLowerCase(); }
     return lvHTML({
-      key: 'people', items: items, step: 15, tools: 8, noun: ['person', 'people'], ph: 'Search names', table: 'lv-people', empty: 'No names yet.',
+      key: 'people', items: items, step: 15, tools: 8, noun: ['person', 'people'], ph: 'Search names', empty: 'No names yet.',
+      tool: '<button type="button" class="btn dark" data-p="a-add-person">Add a person</button>',
       find: function (o) { return o.p.name + ' ' + ((ROLES[o.p.role] || {}).name || ''); },
-      rowCls: function (o) { return o.p.active === false ? 'is-off' : ''; },
       filters: [['all', 'Everyone'], ['on', 'On the list', function (o) { return o.p.active !== false; }], ['sous', 'Sous chefs', function (o) { return isSousP(o.p) || o.p.role === 'lead'; }],
         ['staff', 'Staff', function (o) { return o.p.role === 'staff'; }], ['view', 'View only', function (o) { return o.p.role === 'view'; }], ['fn', 'Functions', function (o) { return !!o.p.fn; }], ['off', 'Off the list', function (o) { return o.p.active === false; }]],
       sorts: [['order', 'Order added', function (a, b) { return a.i - b.i; }],
         ['name', 'Name A to Z', function (a, b) { return (b.p.isNew ? 1 : 0) - (a.p.isNew ? 1 : 0) || nm(a).localeCompare(nm(b)); }],
         ['role', 'Role', function (a, b) { return Object.keys(ROLES).indexOf(a.p.role) - Object.keys(ROLES).indexOf(b.p.role) || nm(a).localeCompare(nm(b)); }]],
-      cols: [
-        { h: 'Name', th: true, html: function (o) { return '<label class="visually-hidden" for="a-n' + o.i + '">Name</label><input id="a-n' + o.i + '" class="search a-name" data-k="a-n' + o.i + '" data-a="name" data-i="' + o.i + '" value="' + esc(o.p.name) + '" maxlength="40">'; } },
-        { h: 'Role', wide: true, html: function (o) { return '<label class="visually-hidden" for="a-r' + o.i + '">Role</label><select id="a-r' + o.i + '" class="p-select" data-k="a-r' + o.i + '" data-a="role" data-i="' + o.i + '">' + Object.keys(ROLES).map(function (k) { return '<option value="' + k + '"' + (o.p.role === k ? ' selected' : '') + '>' + ROLES[k].name + '</option>'; }).join('') + '</select>'; } },
-        { h: 'Write', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'add', o.p.add, 'Write', isHeadP(o.p)); } },
-        { h: 'Tick', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'tick', o.p.tick, 'Tick', isHeadP(o.p)); } },
-        { h: 'Remove', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'del', o.p.del, 'Remove', isHeadP(o.p)); } },
-        { h: 'Create/edit functions', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'fn', o.p.fn, 'Create and edit functions', false); } },
-        { h: '', cls: 'a-act', html: function (o) { return (o.p.id && !o.p.isNew ? '<button type="button" class="p-x" data-p="a-person" data-id="' + esc(o.p.id) + '">Open page</button>' : '') + '<button type="button" class="p-x" data-p="a-reset-pin" data-id="' + esc(o.p.id) + '">' + (armed('pin:' + o.p.id) ? 'Tap again to reset' : 'Reset PIN') + '</button>' + removePersonBtn(o.p, o.i) + deletePersonBtn(o.p, o.i); } }
-      ]
+      card: personRowHTML
     });
   }
   /* A page for each person (5 Nov 2026, admin pages step 5, design B): what they may do, read from the team list (it is
@@ -6373,10 +6409,10 @@
     var p = d.people.filter(function (x) { return x.id === id; })[0];
     var back = '<p><button type="button" class="p-link" data-p="a-person-back">‹ All people</button></p>';
     if (!p) return '<section class="set-block">' + back + '<p class="hint">This person is not on the team list any more.</p></section>' + saveBlock;
-    var head = isHeadP(p), can = [['add', 'Write'], ['tick', 'Tick'], ['del', 'Remove'], ['fn', 'Create and edit functions']].filter(function (c) { return c[0] !== 'fn' && head || p[c[0]]; }).map(function (c) { return c[1]; });
+    var head = isHeadP(p), can = [['add', 'Add'], ['tick', 'Tick'], ['del', 'Remove'], ['fn', 'Functions']].filter(function (c) { return c[0] !== 'fn' && head || p[c[0]]; }).map(function (c) { return c[1]; });
     var top = '<section class="set-block a-personpage">' + back + '<span class="label">' + esc(p.name || 'No name yet') + '</span>' +
       '<p class="a-pp-role"><b>' + esc((ROLES[p.role] || {}).name || 'No role') + '</b>' + (p.active === false ? ', off the list' : '') + '. Can: ' + esc(can.length ? can.join(', ') : 'read only') + '.</p>' +
-      '<p class="hint">Change the role and ticks in the team list, then save.</p>';
+      '<p class="hint">Change the role and ticks with Change on the People list, then save.</p>';
     return top + personActivityHTML(id) + '</section>' + saveBlock;
   }
   // the person's last N days over the shared report period, counted by the Team report's own code
@@ -6881,9 +6917,9 @@
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
     var pane = at === 'prep-standards' ? psPanelHTML() : at === 'plan' ? (teamOK() ? teamPageHTML() : teamNoHTML()) : at === 'dashboard' || at === 'inbox' ? dashHTML(at) : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'kitchen-home' ? kitchenHomeHTML(d, saveBlock) : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'records' ? recordsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' && owner && S.personId ? personPageHTML(d, S.personId, saveBlock) : at === 'people' ? (
-      '<section class="set-block"><span class="label">People</span><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Shift pings are written by you and the sous chefs. Create/edit functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it gets the kitchen and sous chef pages, and a sous chef cannot change or remove it. Function editing still has its own tick.</p></details>' +
+      '<section class="set-block"><span class="label">People</span>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
-      '<p class="hint">Tick Create/edit functions beside a person, then save. Their kitchen role stays the same.</p>' + peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + saveBlock
+      peopleListHTML(d) + '<div class="pp-folds"><div class="pp-bulk">' + bulk + '</div><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then open that person with Change and adjust their ticks if you need to: Add writes lines, Tick ticks them off, Remove takes lines off, Functions enters and changes function bookings. Shift pings are written by you and the sous chefs. Functions coordinator ticks Functions for you; only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Stopped working here keeps their name on old lines, and their PIN stops working for anything. Delete for good takes them off the list and wipes their PIN when you save. Head chef is for your own name: it gets the kitchen and sous chef pages, and a sous chef cannot change or remove it.</p></details></div></section>' + saveBlock
     ) : (
       '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds as one file on this device. The server also backs the book up every night at 03:30.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div>' +
         '<details class="a-how"><summary>What a backup holds</summary><p class="hint">People, prep lines, orders, wastage, delivery temperatures and transfers between venues from the last 400 days, shift pings and who has seen them, meeting minutes with earlier versions and sign-offs, function bookings with their contacts and earlier versions, the chef to-do list, what the prep and order lists have learned, tallies and the guides\' words. The current Operandio timer and its start times are included. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files).</p></details></section>' +
@@ -7050,7 +7086,7 @@
      old lines and they can be put back. Only a new row that was never saved is really removed. */
   function removePersonBtn(p, i) {
     if (isHeadP(p) && S.level !== 'owner') return '<span class="a-head">Head chef</span>';
-    if (p.active === false && !p.isNew) return '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '" aria-label="' + esc('Put ' + (p.name || 'this person') + ' back on the list') + '">Put back</button>';
+    if (p.active === false && !p.isNew) return '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '" aria-label="' + esc('Put ' + (p.name || 'this person') + ' back on the list') + '">Put back on the list</button>';
     var lab = p.isNew ? 'Remove' : 'Stopped working here';
     return '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '" aria-label="' + esc(lab + ': ' + (p.name || 'this person')) + '">' + (armed('rm:' + p.id) ? 'Tap again: ' + lab.toLowerCase() : lab) + '</button>';
   }
@@ -7062,7 +7098,7 @@
   function deletePersonBtn(p, i) {
     if (!canDelPerson(p)) return '';
     var on = armed('pdel:' + p.id), nm = p.name || 'this person';
-    return '<button type="button" class="p-x a-del' + (on ? ' is-armed' : '') + '" data-p="a-delete-person" data-i="' + i + '" aria-label="' + esc((on ? 'Tap again to delete for good: ' : 'Delete for good: ') + nm) + '">' + (on ? 'Tap again: delete for good' : 'Delete') + '</button>';
+    return '<button type="button" class="p-x a-del' + (on ? ' is-armed' : '') + '" data-p="a-delete-person" data-i="' + i + '" aria-label="' + esc((on ? 'Tap again to delete for good: ' : 'Delete for good: ') + nm) + '">' + (on ? 'Tap again: delete for good' : 'Delete for good') + '</button>';
   }
   /* what the draft changes, counted per person and per setting, for the Save bar */
   function draftChanges() {
@@ -7089,11 +7125,11 @@
       if (old.innerHTML !== fresh.innerHTML) old.innerHTML = fresh.innerHTML;
       ['aria-busy', 'data-sv'].forEach(function (at) { if (fresh.hasAttribute(at)) old.setAttribute(at, fresh.getAttribute(at)); else old.removeAttribute(at); });
     });
-    ['.a-unsaved', '.a-stale'].forEach(function (selector) {
+    ['.a-unsaved', '.a-gone', '.a-stale'].forEach(function (selector) {
       var old = sb.querySelector(selector), fresh = next.querySelector(selector);
       if (!fresh) { if (old) old.remove(); return; }
       if (old) { if (old.textContent !== fresh.textContent) old.textContent = fresh.textContent; }
-      else if (selector === '.a-unsaved') sb.querySelector('.btn-row').appendChild(fresh);
+      else if (selector === '.a-unsaved' || selector === '.a-gone') sb.querySelector('.btn-row').appendChild(fresh);
       else sb.insertBefore(fresh, sb.firstChild);
     });
     // the line under the button is grey, red or the waiting line: swapped whole when it changes
@@ -7113,7 +7149,19 @@
     var where = pg.length > 1 || pg.length === 1 && pg[0] !== here ? ': ' + DRAFT_PARTS.filter(function (g) { return pg.indexOf(g[0]) >= 0; }).map(function (g) { return g[2]; }).join(', ') : '';
     return '<section class="set-block a-savebar">' + staleHint() + '<div class="btn-row">' + svButton({ k: 'a', p: 'a-save', idle: 'Save changes', busy: S.busy, off: !n }) +
       '<button type="button" class="btn" data-p="a-reset"' + (n ? '' : ' disabled') + '>' + (armed('a-reset') ? 'Tap again to undo ' + (n === 1 ? 'it' : 'all ' + n) : 'Undo unsaved changes') + '</button>' +
-      (n ? '<span class="a-unsaved">' + n + ' unsaved change' + (n === 1 ? '' : 's') + where + '</span>' : '') + '</div>' + svLine('a', S.busy, S.saveMsg) + '</section>';
+      (n ? '<span class="a-unsaved">' + n + ' unsaved change' + (n === 1 ? '' : 's') + (where || draftWho()) + '</span>' : '') + draftGoneHTML() + '</div>' + svLine('a', S.busy, S.saveMsg) + '</section>';
+  }
+  /* The Save bar names whose changes wait (the People mix, 19 Nov 2026): ": Tom, Ann" when only the team list changed, and
+     the people deleted for good in red on their own, so a permanent delete never rides along unnoticed in one Save. */
+  function draftWho() {
+    var pg = draftPages(); if (pg.length !== 1 || pg[0] !== 'people') return '';
+    var base = draftBase(), was = {}; ((base && base.people) || []).forEach(function (p) { was[p.id] = JSON.stringify(p); });
+    var names = (S.draft.people || []).filter(function (p) { return !p.gone && was[p.id] !== JSON.stringify(p) && String(p.name || '').trim(); }).map(function (p) { return String(p.name).trim(); });
+    return names.length ? ': ' + esc(names.length > 4 ? names.slice(0, 4).join(', ') + ' and ' + (names.length - 4) + ' more' : names.join(', ')) : '';
+  }
+  function draftGoneHTML() {
+    var gone = ((S.draft && S.draft.people) || []).filter(function (p) { return p.gone; }).map(function (p) { return String(p.name || '').trim() || 'no name'; });
+    return gone.length ? '<span class="a-gone">Deleted when you save: ' + esc(gone.join(', ')) + '</span>' : '';
   }
   function supplierAdminHTML() {
     return '<section class="set-block"><h2 class="p-h">Suppliers &amp; pars</h2><p>Current pars, manual items and the original supplier records are kept in the catalogue.</p>' +
@@ -13564,7 +13612,7 @@ if (list.length) sg('oreg', 's');
     if (a === 'stats-refresh') { loadStats(true); if (el.getAttribute('data-v') === 'team') loadOrdStats(true); draw(); return; }
     if (!S.draft) return;
     var d = S.draft;
-    if (a === 'a-add-person') { lvReveal('people'); lvReveal('staff'); d.people.push({ id: slug('person') + '-' + Date.now().toString(36), name: '', role: 'staff', add: true, tick: true, del: false, active: true, isNew: true }); draw(); var n = S.root.querySelector('[data-k="a-n' + (d.people.length - 1) + '"]'); if (n) n.focus(); return; }
+    if (a === 'a-add-person') { lvReveal('people'); lvReveal('staff'); d.people.push({ id: slug('person') + '-' + Date.now().toString(36), name: '', role: 'staff', add: true, tick: true, del: false, active: true, isNew: true }); S.pOpen = d.people[d.people.length - 1].id; draw(); var n = S.root.querySelector('[data-k="a-n' + (d.people.length - 1) + '"]'); if (n) n.focus(); return; }
     if (a.indexOf('sh-') === 0 && shAdminClick(a, el, d)) return;
     if (a === 'ks-add') { d.kitSecs = d.kitSecs || []; d.kitSecs.push({ id: 'ks-' + Date.now().toString(36), name: '', off: false, isNew: true }); draw(); var kn = S.root.querySelector('[data-k="a-ks' + (d.kitSecs.length - 1) + '"]'); if (kn) kn.focus(); return; }
     if (a === 'ks-usual') { d.kitSecs = KS_USUAL.map(function (n) { return { id: slug(n), name: n, off: false }; }); draw(); return; }
@@ -13588,17 +13636,23 @@ if (list.length) sg('oreg', 's');
       draw(); return;
     }
     // Delete for good: out of the draft on the second tap, named with Undo; Save makes it final (deletePersonBtn)
-    if (a === 'a-delete-person') {
+    // Delete for good (the mix, 19 Nov 2026): the row stays, struck through, until Save; Undo delete or the slip's Undo
+    // takes it back. Only Save takes the person off the list and wipes their PIN (adminSave(), saveConfig()).
+    if (a === 'a-delete-person' || a === 'a-undelete-person') {
       var dp = d.people[i];
-      if (!canDelPerson(dp) || !arm('pdel:' + dp.id)) return;
-      d.people.splice(i, 1);
-      toast((dp.name || 'This person') + ' is deleted when you save', { label: 'Undo', fn: function () {
-        if (S.draft !== d) { toast('Already saved: ' + (dp.name || 'this person') + ' is deleted.'); return; }
-        if (d.people.some(function (x) { return x.id === dp.id; })) return;
-        d.people.splice(Math.min(i, d.people.length), 0, dp); toast('Undone: ' + (dp.name || 'this person') + ' stays on the team list.');
-      } });
+      if (!dp) return;
+      var undo = function () {
+        if (S.draft !== d || !dp.gone) { if (S.draft !== d) toast('Already saved: ' + (dp.name || 'this person') + ' is deleted.'); return; }
+        delete dp.gone; toast('Undone: ' + (dp.name || 'this person') + ' stays on the team list.');
+      };
+      if (a === 'a-undelete-person') { undo(); return; }
+      if (!canDelPerson(dp) || dp.gone || !arm('pdel:' + dp.id)) return;
+      dp.gone = true; if (S.pOpen === dp.id) S.pOpen = '';
+      toast((dp.name || 'This person') + ' is deleted when you save', { label: 'Undo', fn: undo });
       draw(); return;
     }
+    // one person open to change at a time (the mix): Change ▾ opens, Close ▴ closes; the draft keeps what was changed
+    if (a === 'a-person-open') { S.pOpen = S.pOpen === id ? '' : id; draw(); return; }
     if (a === 'a-save') { adminSave(); return; }
     if (a === 'a-ids-keep') { idDecide(true); return; }
     if (a === 'a-ids-undo') { idDecide(false); return; }
@@ -13765,7 +13819,7 @@ if (list.length) sg('oreg', 's');
       if (el.value === 'head') S.draft.people.forEach(function (q) { if (q !== p && q.role === 'head') q.role = 'sous'; });   // one head chef
       p.role = el.value; var r = ROLES[el.value]; p.add = r.add; p.tick = r.tick; p.del = r.del; p.ping = r.ping; p.fn = !!r.fn || (p.fn && el.value !== 'view'); draw();
     }
-    else if (a === 'perm') { p[el.getAttribute('data-perm')] = el.checked; }
+    else if (a === 'perm') { p[el.getAttribute('data-perm')] = el.checked; if (el.closest('.pp-row')) draw(); }
     else if (a === 'active') { p.active = el.checked; draw(); }
   }
   function onSubmit(e) {

@@ -161,6 +161,7 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   await L.waitFor(p, () => /could not load/.test((document.querySelector('.a-cut') || {}).textContent || ''), null, 10000);
   ok(!(await p.$('[data-p="cut-save"]')), 'no js/cutoffs.js: the Order cut-offs page says it could not load, with no Save');
   await L.adminTab(p, 'people');
+  await L.openPerson(p, 2);
   await p.fill('[data-a="name"][data-i="2"]', 'Bo B'); await L.settle(p, 200);
   await p.click('[data-p="a-save"]'); await L.settle(p, 800);
   s = await store(p);

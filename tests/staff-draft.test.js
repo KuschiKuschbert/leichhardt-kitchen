@@ -25,7 +25,8 @@ const elsewhere = (page, change) => page.evaluate(([k, ch]) => {
   await L.settle(p, 300);
   await elsewhere(p, { add: 'Dee' });
   await L.settle(p, 400);
-  const names = page => page.evaluate(() => Array.from(document.querySelectorAll('#prep-root input')).map(i => i.value));
+  // People rows say each name in words (19 Nov 2026); the sous chef's list and an opened row still use name boxes
+  const names = page => page.evaluate(() => Array.from(document.querySelectorAll('#prep-root input')).map(i => i.value).concat(Array.from(document.querySelectorAll('#prep-root .pp-n')).map(e => e.textContent)));
   ok((await names(p)).indexOf('Dee') >= 0, 'people: a person added on another phone shows up without saving');
   ok(await p.$('.a-stale') === null, 'people: no stale hint while nothing is changed here');
 
