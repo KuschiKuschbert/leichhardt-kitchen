@@ -7684,6 +7684,7 @@
     finFit();
     finPaint();
     secFit();
+    gvLoops();
     window.dispatchEvent(new Event('lk-back'));
   }
 
@@ -10901,12 +10902,12 @@ if (list.length) sg('oreg', 's');
   var G_PLAY = '<svg viewBox="0 0 64 64" width="40" height="40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="12" width="52" height="40" rx="6"/><path d="M27 23l14 9-14 9z" fill="currentColor"/></svg>';
   function gVids() {
     if (G_VIDS || gvLoading || gvFailed || !window.LK_APP || !window.LK_APP.load) return G_VIDS || [];
-    gvLoading = window.LK_APP.load('js/tutorials.js?v=1').then(function () {
+    gvLoading = window.LK_APP.load('js/tutorials.js?v=2').then(function () {
       var T = window.LK_TUTORIALS;
       if (!T || !Array.isArray(T.list)) throw { code: 'workspace-version' };
       G_VIDS = T.list.map(function (t) {
         return { id: 'v-' + t.id, vid: t.id, n: t.n, title: t.title, cat: 'video', who: t.who === 'chefs' ? 'chefs' : 'all', sum: t.sum, len: +t.len || 0,
-          steps: (t.steps || []).join('\n'), kw: 'video, tutorial, how to', pages: 0 };
+          steps: (t.steps || []).join('\n'), kw: 'video, tutorial, how to', pages: 0, pv: !!t.pv };
       });
       gvLoading = null; draw();
     }).catch(function () { gvLoading = null; gvFailed = true; draw(); });
@@ -10935,6 +10936,31 @@ if (list.length) sg('oreg', 's');
       gvl.links = links; gvl.day = day; gvl.who = who; gvl.state = 'ok'; draw();
     }, function () { gvl.state = 'error'; gvl.retry = Date.now() + 60000; draw(); });
   }
+  /* The moving previews (head chef, 19 Nov 2026): a short silent loop of each page in action, made from the videos by
+     scripts/tutorials/previews.mjs and kept with the book in guides/videos/ (never in the saved shell). The card's loop
+     (about 40 kB) and the page's (about 120 kB) load only when on screen and play only while there; a phone set to reduce
+     motion or to save data keeps the still picture. No reads, no writes. */
+  // ?v: the saved copy (sw.js) passes an address with a version straight to the site, so a phone never plays a video
+  // from the saved copy (an iPhone wants it in parts) and a remade preview arrives at once: raise it with previews.mjs
+  var GV_PV = 1;
+  function gvSrc(g, kind, ext) { return g.pv && /^[a-z0-9-]+$/.test(g.vid || '') ? 'guides/videos/' + g.vid + '-' + kind + '.' + ext + '?v=' + GV_PV : ''; }
+  function gvLoopHTML(g, kind) {
+    var still = gvSrc(g, kind, 'jpg');
+    return still ? '<video class="g-vloop" muted loop playsinline preload="none" aria-hidden="true" tabindex="-1" poster="' + esc(still) + '" data-src="' + esc(gvSrc(g, kind, 'mp4')) + '"></video>' : '';
+  }
+  var gvIO = null;
+  function gvStill() { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches || !!(navigator.connection && navigator.connection.saveData); } catch (e) { return false; } }
+  function gvRun(v) { if (!v.getAttribute('src')) v.setAttribute('src', v.getAttribute('data-src') || ''); v.muted = true; var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); }
+  // after each draw: watch the loops now on the page (a redraw makes new ones), each plays while a quarter of it shows
+  function gvLoops() {
+    if (gvIO) gvIO.disconnect();
+    var vs = S.root ? S.root.querySelectorAll('video.g-vloop') : [];
+    if (!vs.length || gv || gvStill() || !('IntersectionObserver' in window)) return;
+    if (!gvIO) gvIO = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting && !gv) gvRun(e.target); else if (!e.target.paused) e.target.pause(); });
+    }, { threshold: 0.25 });
+    Array.prototype.forEach.call(vs, function (v) { gvIO.observe(v); });
+  }
   function gvLink(g) { return gvl.links && gvl.who === gViewer() && gvl.links[g.vid] || { w: '', t: '' }; }
   // the video for this screen: the computer one from 700 px wide, the phone one below, else whichever there is
   function gvPick(g) {
@@ -10944,10 +10970,15 @@ if (list.length) sg('oreg', 's');
   function gvBlockHTML(g) {
     gvLinksLoad();
     var v = gvPick(g), len = gvLen(g);
-    if (!v) return '<section class="g-vid g-noprint" aria-label="Video"><p class="g-vnone">' + (gvl.state === 'loading' || gvl.state === 'idle' ? 'Loading the video...' :
-      gvl.state === 'error' && !gvl.links ? 'Could not load the video. Check the signal. The steps below show the same.' : 'Video to come: the head chef adds it here. The steps below show the same.') + '</p></section>';
-    return '<section class="g-vid g-noprint" aria-label="Video"><button type="button" class="g-vplay" data-p="g-play" data-id="' + esc(g.id) + '">' + G_PLAY +
-      '<span class="g-vt">Play the video</span><span class="g-vs">' + esc((len ? len + '. ' : '') + 'Sound on, or read the steps below.') + '</span></button></section>';
+    var soon = gvl.state !== 'loading' && gvl.state !== 'idle' && !(gvl.state === 'error' && !gvl.links), still = !v && soon ? gvLoopHTML(g, 'wide') : '';
+    // no link yet: the moving preview still shows what the video is about, with no Play on it
+    if (still) return '<section class="g-vid g-noprint" aria-label="Video"><div class="g-vposter g-vsoon">' + still + '<span class="g-vcap"><span class="g-vt">Video to come</span>' +
+      '<span class="g-vs">The head chef adds it here. The steps below show the same.</span></span></div></section>';
+    if (!v) return '<section class="g-vid g-noprint" aria-label="Video"><p class="g-vnone">' + (!soon && gvl.state !== 'error' ? 'Loading the video...' :
+      !soon ? 'Could not load the video. Check the signal. The steps below show the same.' : 'Video to come: the head chef adds it here. The steps below show the same.') + '</p></section>';
+    var loop = gvLoopHTML(g, 'wide'), words = '<span class="g-vt">Play the video</span><span class="g-vs">' + esc((len ? len + '. ' : '') + 'Sound on, or read the steps below.') + '</span>';
+    return '<section class="g-vid g-noprint" aria-label="Video"><button type="button" class="g-vplay' + (loop ? ' g-vposter' : '') + '" data-p="g-play" data-id="' + esc(g.id) + '">' +
+      (loop ? loop + '<span class="g-vring" aria-hidden="true"></span><span class="g-vcap">' + words + '</span>' : G_PLAY + words) + '</button></section>';
   }
   /* The player, over the page like a guide page opened big (gzOpen): Back or Close stops it. */
   var gv = null;
@@ -10963,6 +10994,8 @@ if (list.length) sg('oreg', 's');
       '<div class="gv-body"><div class="gv-frame' + (v.tall ? ' tall' : '') + '"><iframe src="https://www.youtube-nocookie.com/embed/' + v.id + '?autoplay=1&amp;rel=0&amp;playsinline=1" title="' + esc(g.title + ' video') +
       '" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div></div>';
     document.body.appendChild(el);
+    if (gvIO) gvIO.disconnect();
+    Array.prototype.forEach.call(document.querySelectorAll('video.g-vloop'), function (v) { if (!v.paused) v.pause(); });
     ovPush('gv', function () { gvClose(true); });
     document.documentElement.classList.add('gz-open');
     var c = el.querySelector('[data-gv="close"]'); if (c) c.focus({ preventScroll: true });
@@ -10974,6 +11007,7 @@ if (list.length) sg('oreg', 's');
     if (gv.el.parentNode) gv.el.parentNode.removeChild(gv.el);
     gv = null;
     document.documentElement.classList.remove('gz-open');
+    gvLoops();
     if (prev && prev.focus && document.body.contains(prev)) { try { prev.focus({ preventScroll: true }); } catch (e) {} }
   }
   document.addEventListener('click', function (e) { var b = gv && e.target.closest && e.target.closest('[data-gv="close"]'); if (b && gv.el.contains(b)) gvClose(); });
@@ -11184,7 +11218,10 @@ if (list.length) sg('oreg', 's');
   }
 
   /* ---- the Guides page, as staff use it ---- */
-  function gThumbHTML(g) { return '<span class="g-thumb' + (g.vid ? ' g-vthumb' : '') + '" aria-hidden="true">' + (g.thumb ? '<img src="' + esc(g.thumb) + '" alt="">' : g.vid ? G_PLAY : G_ICON) + '</span>'; }
+  function gThumbHTML(g) {
+    var loop = g.vid ? gvLoopHTML(g, 'card') : '';
+    return '<span class="g-thumb' + (g.vid ? ' g-vthumb' : '') + (loop ? ' g-vmove' : '') + '" aria-hidden="true">' + (g.thumb ? '<img src="' + esc(g.thumb) + '" alt="">' : loop ? loop + '<span class="g-vbadge"></span>' : g.vid ? G_PLAY : G_ICON) + '</span>';
+  }
   function gCardHTML(g, q) {
     var snip = q ? gSnip(g, q) : '';
     return '<li><a class="g-card" href="#/guides/' + encodeURIComponent(g.id) + '">' + gThumbHTML(g) + '<span class="g-cb"><span class="g-ct">' + esc(gCatName(g.cat)) + (gIsNew(g) ? '<span class="g-new">New</span>' : '') + gWhoTag(g) + '</span>' +

@@ -5,7 +5,7 @@
 */
 const http = require('http'), fs = require('fs'), path = require('path');
 const root = path.resolve(__dirname, '..');
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.json': 'application/json', '.pdf': 'application/pdf' };
+const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.json': 'application/json', '.pdf': 'application/pdf', '.jpg': 'image/jpeg', '.mp4': 'video/mp4' };
 /* over (tests only): files the server answers differently, by path: { body, lastModified, trickle, etag, headEtag }
    (etag: its ETag, headEtag: the one a HEAD gets, if different, like a zipped answer marked weak); over.delay holds
    every answer back that many ms, like slow wifi; a file's trickle sends its headers at once and the rest of it that
