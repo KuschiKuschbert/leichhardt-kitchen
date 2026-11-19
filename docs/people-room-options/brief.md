@@ -1,6 +1,6 @@
 # The admin panel's People page: council brief
 
-19 November 2026, Queensland. Asked by the owner (the head chef): "should we restyle the peoples room in the admin panel?", then "Do this task here". The page is Admin › Team › People, `peopleListHTML()` in `js/prep.js`. Role-based analysis on the click tests' stand-in with made-up people, not research with staff. **Status: the council has advised; the head chef has not chosen yet. Nothing in the app has changed.**
+19 November 2026, Queensland. Asked by the owner (the head chef): "should we restyle the peoples room in the admin panel?", then "Do this task here". The page is Admin › Team › People, `peopleListHTML()` in `js/prep.js`. Role-based analysis on the click tests' stand-in with made-up people, not research with staff. **Status: chosen 19 November 2026, the head chef: "Build the mix". Built in its own pull request.**
 
 Files in this folder: `evidence-packet.md` (round 1 evidence: today's page, measurements, contracts), `designs.md` (round 2: the three designs, measurements and taps, as given to the reviewers), `round2-brief.md` (the shared reviewer brief), `preview/designs.js` (draws every design over the real admin panel on the stand-in), `evidence/` (the pictures), `index.html` (every design side by side) and `montage-390.png` (the phone views side by side).
 
@@ -136,4 +136,4 @@ Pictures `evidence/m-390.png`, `m-390-open.png`, `m-390-working.png`, `m-390-del
 
 ## Chosen
 
-To come: the head chef's choice.
+19 November 2026, the head chef: **"Build the mix"**: B's rows that open in place + A's deleted-row cue + C's words, as recommended, with the follow-up repairs (Undo unsaved changes kept with its second tap, deletion words only when one waits, off-the-list people keep their sort place). The build is checked against the verification plan above.
