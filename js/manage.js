@@ -406,15 +406,15 @@
   }
   /* The ten allergens, and on an ingredient No allergens (19 Nov 2026, docs/allergen-check-options/brief.md): an
      ingredient is checked only when it has an allergen or No allergens. With neither its card says "Allergens not
-     checked yet". No allergens on a row with allergens asks first: the allergens go. */
+     checked yet". No allergens comes first, the usual answer, and on a row with allergens it asks first: they go. */
   function tagChips(list, where, i, none, hand) {
     var tags = list || [], ing = where === 'ing';
     var noneB = ing ? '<button type="button" class="chip mg-none' + (none ? ' is-has' : '') + '" data-mg="none" data-i="' + i + '" aria-pressed="' + !!none + '">' + (armed('none:' + i) ? 'Tap again: the allergens go' : 'No allergens') + '</button>' : '';
     return (ing && !none && !tags.length && !hand ? '<p class="mg-unk" role="note"><b>Not checked yet.</b> Choose its allergens, or No allergens.</p>' : '') +
-      '<div class="chips mg-tags" role="group" aria-label="Allergens in this">' + ALLERGENS.map(function (a) {
+      '<div class="chips mg-tags" role="group" aria-label="Allergens in this">' + noneB + ALLERGENS.map(function (a) {
       var st = tags.indexOf(a) >= 0 ? 'has' : tags.indexOf(a + '?') >= 0 ? 'may' : '';
       return '<button type="button" class="chip mg-tag' + (st ? ' is-' + st : '') + '" data-mg="tag" data-w="' + where + '" data-i="' + i + '" data-v="' + esc(a) + '" aria-pressed="' + (!!st) + '">' + esc(a) + (st === 'may' ? '?' : '') + '</button>';
-    }).join('') + noneB + '</div><p class="hint">Tap once: has it. Twice: may have it (check the label). Three times: not in it.' + (ing ? ' No allergens: checked, and none of the ten is in it.' : '') + '</p>';
+    }).join('') + '</div><p class="hint">' + (ing ? 'No allergens: checked, and none of the ten is in it. ' : '') + 'Tap once: has it. Twice: may have it (check the label). Three times: not in it.</p>';
   }
   function field(id, label, f, val, o) {
     o = o || {};
