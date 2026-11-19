@@ -1121,7 +1121,7 @@
     if (x) {
       var undo = '', last = st && st.trips.length ? st.trips[st.trips.length - 1] : null;
       if (last && !last.outAt && !F.pend[last.id] && (isChef() || last.sentBy === me && now() - last.sentAt < 2 * MIN)) undo = '<button type="button" class="linkish fn-svc-link" data-fn="trip-undo" data-id="' + esc(last.id) + '">Undo</button>';
-      else if (!last && (isChef() || me && x.sentBy === me && now() - x.sentAt < 2 * MIN)) undo = '<button type="button" class="linkish" data-fn="unsent"' + d + '>Undo</button>';
+      else if (!last && (isChef() || me && x.sentBy === me && now() - x.sentAt < 2 * MIN)) undo = '<button type="button" class="linkish fn-svc-link" data-fn="unsent"' + d + '>Undo</button>';
       return '<span class="fn-sent-ok">' + esc(kclock(x.sentAt)) + '<small>' + esc(nameOf(x.sentBy)) + '</small></span>' + undo;
     }
     var part = st && st.sentTot && !quiet ? '<span class="fn-sent-part">' + st.sentTot + ' of ' + st.bookedTot + ' sent</span>' : '';

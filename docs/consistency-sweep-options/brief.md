@@ -82,6 +82,15 @@ All are Risk / Not evidenced. None was reproduced.
 
 Why this beats a restyle: it fixes every confirmed finding, including all four service ones, without moving what staff have learned. It costs four reloads, not eight or more, and the stronger check stops the drift coming back. The main downside: the 25 choices still need the head chef's time, and the function form stays the weakest page until its Save choice is made.
 
+## Build
+
+| Step | State |
+| --- | --- |
+| 1. Service fixes | Built as a draft on hold for the head chef to test, 19 Nov 2026. Delivery received: Save docked above the tab bar on a phone (ORDE-1). Orders: Remove before the ⋯ (ORDE-3). The band's minus, "+N more", Service view and the cut-off bar's supplier name take 44 px taps and look as before, with the bands no taller (SHEL-1, SHEL-2, SYST-1). A sent round's older Undo is 44 px. Measured at 390 px, before and after: Save delivery 266 px under the tab bar, now on the first screen; the bands 310 px both times; Prep lines on the first screen unchanged. `tests/service-targets.test.js`: 14 of its 23 checks failed on the old code. |
+| 2 to 4 | Not started |
+
+**Found while measuring step 1.** On a busy function day (three functions, a cut-off due) the two bands take 310 px of an 844 px phone. That leaves the head chef's Prep with one prep line fully on the first screen. Changing how the bands look or fold is the head chef's call, so step 1 leaves them as they are.
+
 ## Limits
 
 - Not covered: sheets as drawn on screen (they were judged from source), the sous chef and function manager roles, measured contrast, and signed-out Home.

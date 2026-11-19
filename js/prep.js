@@ -8089,9 +8089,11 @@
       // Not sent on the words' line, before Used in (a line of its own, .o-used), so its room never adds a line
       (canBrowse() && rolledN(x) && !fr ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + unsentMark(x) + justStamp(x.id) + (fnf || fnh ? '' : recipeChips(x)) + '</span>' +
       fo.when + (fnf ? fnoHTML(x, fnf) : fnh ? fnoHTML(x, fnh, true) : '') + metaHTML([], by) + '</span>' +
-      (canBrowse() && can('del') ? (x.deleted || !x.ordered ? moreBtn(x, keep) : held) : keep ? (x.ordered ? held : moreBtn(x, true)) : '') +
+      // Remove (or Put back) before the ⋯, as on Prep, Wastage and Transfers, so the last control on every list opens
+      // the menu (consistency sweep, 19 Nov 2026, ORDE-3)
       (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
-      (canBrowse() && can('del') && x.deleted ? '<button type="button" class="p-x" data-p="orestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') + '</li>';
+      (canBrowse() && can('del') && x.deleted ? '<button type="button" class="p-x" data-p="orestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') +
+      (canBrowse() && can('del') ? (x.deleted || !x.ordered ? moreBtn(x, keep) : held) : keep ? (x.ordered ? held : moreBtn(x, true)) : '') + '</li>';
   }
 
   var MISS_TEXT = 'Could not load every day. Check the signal. The book tries again by itself in a few minutes.';
