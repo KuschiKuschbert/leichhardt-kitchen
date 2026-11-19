@@ -61,6 +61,7 @@ await env.clearFirestore();
 const NOW = Date.now(), MIN = 60000, DAY = 86400000;
 const kday = ms => new Date(ms + 10 * 3600000).toISOString().slice(0, 10);
 const TODAY = kday(NOW), YDAY = kday(NOW - DAY), TMW = kday(NOW + DAY), PAST = kday(NOW - 5 * DAY);
+const LATER = kday(NOW + 5 * DAY);   // a day the admin plans prep lines for (docs/prep-ahead-options/brief.md)
 const TEAM_WEEK_START = kday(NOW - ((new Date(TODAY + 'T12:00:00+10:00').getUTCDay() + 6) % 7) * DAY);
 const TEAM_WEEK_END = kday(Date.parse(TEAM_WEEK_START + 'T12:00:00+10:00') + 6 * DAY);
 const MIDNIGHT = Date.parse(TODAY + 'T00:00:00Z') - 10 * 3600000, T0 = Date.parse(TODAY + 'T08:00:00Z');
@@ -237,6 +238,8 @@ row('js/prep.js loadLearned(): learned, the 500 most used (summary missing or ol
 row('js/prep.js loadSections(): the sections, once a day (a listener until 7 Nov 2026)', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(C(db, 'sections')) });
 row('js/prep.js watchActivity(): activity listener (the Google device)', { ok: KITCHEN, asks: GOOGLE, run: db => listen(C(db, 'activity')) });
 row('js/prep.js maybeRoll(): the last written day\'s prep lines', { ok: KITCHEN, asks: not('owner', 'vic', 'fay'), run: db => getDocs(C(db, `days/${YDAY}/items`)) });
+row('js/prep.js tmrPlanLoad(): tomorrow\'s planned lines, for the night list\'s double-up check (19 Nov 2026)', { ok: KITCHEN, asks: ADDS,
+  run: db => getDocs(query(C(db, `days/${TMW}/items`), where('plan', '==', TMW))) });
 row('js/prep.js loadPast(): a past day\'s prep lines (14 days, dayCache)', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(C(db, `days/${YDAY}/items`)) });
 row('js/prep.js mergeDups(): today\'s lines by id from the server', { ok: KITCHEN, asks: DELS.filter(r => r !== 'owner'), run: db => getDocsFromServer(query(C(db, `days/${TODAY}/items`), where(documentId(), 'in', ['l1', 'l9']))) });
 row('js/prep.js loadUsage(): summary/usage get (admin)', { ok: KITCHEN, asks: GOOGLE, run: db => getDoc(D(db, 'summary/usage')) });
@@ -387,6 +390,8 @@ row('js/prep.js flushViews() and flushMisses(): views/<id> and misses/<q> merges
   run: (db, w, r) => W(r, [['set', 'views/burger', { name: 'Burger', n: increment(1), last: Date.now() }, true], ['set', 'misses/tofu', { q: 'tofu', n: increment(1), last: Date.now(), lastBy: NAME[r] }, true]]) });
 row('js/prep.js newItem(): a prep line on today\'s list', { ok: ADDS, asks: ADDS,
   run: (db, w, r) => W(r, [['set', `days/${TODAY}/items/${MINE(r)}`, newLine({ text: 'Dice carrot', addedBy: NAME[r], addedById: w, addedAt: Date.now() })]]) });
+row('js/prep.js newItem(): a prep line the admin plans for a later day (plan, 18 Nov 2026)', { ok: ['owner', 'ownkit'], asks: ['owner', 'ownkit'],
+  run: (db, w, r) => W(r, [['set', `days/${LATER}/items/${MINE(r)}`, newLine({ text: 'Thaw brisket', addedBy: NAME[r], addedById: w, addedAt: Date.now(), plan: LATER })]]) });
 row('js/prep.js maybeRoll(): a line rolled onto today (addedById empty)', { ok: ADDS, asks: not('owner', 'vic', 'fay'),
   run: (db, w, r) => W(r, [['set', `days/${TODAY}/items/r-${r}`, newLine({ addedBy: 'Rolled over', addedById: '', addedAt: Date.now(), rolled: 1, root: 'l0', from: 'l0', rolledFrom: YDAY, origBy: 'Ann', origAt: NOW - DAY, urgent: false, ahead: false })]]) });
 row('js/prep.js tickNow(): tick a prep line', { ok: TICKS, asks: TICKS,
