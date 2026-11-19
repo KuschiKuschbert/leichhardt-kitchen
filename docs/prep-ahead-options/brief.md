@@ -29,6 +29,16 @@ The head chef tried to put a line on tomorrow's list and "couldn't add". The bui
 - Rules: unchanged. Tomorrow is inside `nearDay()`'s window, where the stricter rule never applied.
 - Tests: `tests/prep-ahead.test.js` parts 4 and 4b (68 checks); on main's `js/prep.js` part 4 fails (no Add on tomorrow).
 
+## Changed 19 November 2026: tonight's list checks tomorrow's plan
+
+The head chef then asked for "a check for double ups in the tomorrow list with the [night] list, to make sure people don't write an item 2 times". Quick check (small change: the existing double-up slip, no new tab, button, pop-up or step): **Build**. The night crew's task: a line already planned for tomorrow was 2 taps and a second line before; now 2 taps and the slip "Planned for tomorrow: Brine pork, 2 kg." (Add anyway is a third tap when they mean it). Today's rows unchanged.
+
+- When: from 90 minutes before tomorrow's list is usually written that weekday (or any night), or once tonight's list has started (`nightCut()`); with no usual time yet, from 15:00 (`nightNow()`). Earlier the same item is today's job.
+- What: the same item (the double-up words match, `dupKey()`) at any amount, open and not removed on tomorrow, through every add on today's list: typed, a suggestion's Add, Add from the recipes and Quick add (`tmrTwin()`, `tmrTwinSay()`). Add anyway writes it with `dupOk`, and the rollover then keeps it apart.
+- Read: tomorrow's planned lines, one query (`plan == tomorrow`: 1 read a line, 1 when none), when the add sheet opens in that window, kept 10 minutes in memory (`tmrPlanLoad()`), cleared on a lock or sign-out. Not read yet, failed or no signal: nothing is claimed and the line goes on as before; the rollover still skips a twin with the same amount.
+- Not covered: the reverse (the admin planning tomorrow after tonight's list has the line) stays with the rollover's twin check; a Quick add tapped before the read came in is not checked.
+- Tests: `tests/prep-ahead.test.js` parts 7 and 7b (75 checks; part 7 fails without the change); `tests/rules/client-shapes.test.mjs` rows for the query (everyone in the kitchen may read it) and for the admin's planned line.
+
 ## Baseline (Implemented app, main `70ce8f4`, click-test stand-in, synthetic data, 390 x 844, 14:00 Wednesday 18 Nov)
 
 - Staff see only today on Prep. The head chef and sous chefs have a day row (`‹ Today [date] ›`) and can open any day, but on any day other than today the add form is not drawn: "You are looking at Saturday. Lines are added on Today only." (`baseline/chef-ahead-3.png`).

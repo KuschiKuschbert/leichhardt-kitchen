@@ -170,6 +170,42 @@ const plan = (d, x) => line(Object.assign({ addedBy: 'Kim', addedById: 'kim', ad
     await p.context().close();
   }
 
+  // 7. Tonight's list against tomorrow's plan (head chef, 19 Nov 2026: "make sure people don't write an item 2 times").
+  // At 20:00 Ann writes Brine pork, 3 kg; Brine pork, 2 kg is planned for tomorrow: not added, the slip says so.
+  {
+    const extra = {};
+    extra[item(tmr, 'tp1')] = plan(tmr, { text: 'Brine pork', station: 'Larder', qty: '2 kg', addedBy: 'Head chef', addedById: 'head', addedAt: L.NOW - DAY });
+    const p = await L.open(b, '#/prep', { who: 'ann', extra, clock: L.NOW + 6 * 3600000, wait: 3000 });
+    await L.settle(p, 800);
+    await p.click('.nb-addline'); await L.settle(p, 800);
+    await p.fill('#p-text', 'Brine pork'); await p.fill('#p-section', 'Larder'); await p.fill('#p-qty', '3 kg');
+    await p.click('.nb-addbtn'); await L.settle(p, 600);
+    const pork = st => Object.entries(st).filter(([k, v]) => k.indexOf('/days/' + today + '/items/') > 0 && v && v.text === 'Brine pork');
+    ok(pork(await p.evaluate(() => window.__fake.dump())).length === 0, 'tonight: a line planned for tomorrow is not written again');
+    ok((await slip(p)) === 'Planned for tomorrow: Brine pork, 2 kg.', 'tonight: the slip says it is planned for tomorrow (' + await slip(p) + ')');
+    await p.click('.p-toast .p-toast-btn'); await L.settle(p, 600);
+    const anyway = pork(await p.evaluate(() => window.__fake.dump()));
+    ok(anyway.length === 1 && anyway[0][1].dupOk === true && anyway[0][1].qty === '3 kg', 'tonight: Add anyway writes it, kept apart');
+    await p.fill('#p-text', 'Peel garlic'); await p.fill('#p-section', 'Larder');
+    await p.click('.nb-addbtn'); await L.settle(p, 600);
+    ok(Object.values(await p.evaluate(() => window.__fake.dump())).some(v => v && v.text === 'Peel garlic'), 'tonight: a line not planned goes on as usual');
+    ok(p.errors.length === 0, 'tonight: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+  // 7b. At 14:00 the same line is today's job: it goes on as usual.
+  {
+    const extra = {};
+    extra[item(tmr, 'tp1')] = plan(tmr, { text: 'Brine pork', station: 'Larder', qty: '2 kg', addedBy: 'Head chef', addedById: 'head', addedAt: L.NOW - DAY });
+    const p = await L.open(b, '#/prep', { who: 'ann', extra, wait: 3000 });
+    await L.settle(p, 800);
+    await p.click('.nb-addline'); await L.settle(p, 800);
+    await p.fill('#p-text', 'Brine pork'); await p.fill('#p-section', 'Larder');
+    await p.click('.nb-addbtn'); await L.settle(p, 600);
+    ok(Object.entries(await p.evaluate(() => window.__fake.dump())).some(([k, v]) => k.indexOf('/days/' + today + '/items/') > 0 && v && v.text === 'Brine pork'), 'afternoon: the same line is today\'s job and goes on');
+    ok(p.errors.length === 0, 'afternoon: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
   await b.close();
   R.forEach(r => console.log(r));
   const bad = R.filter(r => r.startsWith('FAIL')).length;
