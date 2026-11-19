@@ -32,6 +32,25 @@ const cfg = p => p.evaluate(k => window.__fake.dump()[k], CFG);
   await L.tap(p, '[data-p="a-reset-pin"][data-id="ann"]'); await L.settle(p, 100);
   await L.tap(p, '[data-p="a-reset-pin"][data-id="ann"]'); await L.settle(p, 500);
   ok(/Ann's PIN is reset/.test(await txt(p, '.p-toast') || ''), 'Reset PIN names the person (' + await txt(p, '.p-toast') + ')');
+  // Delete for good (head chef, 19 Nov 2026): on each saved row but the head chef's, two taps, Undo, then Save takes the
+  // person off the list itself and wipes their PIN in the same write
+  const pinOf = id => p.evaluate(o => { const s = window.__fake.dump(); return [!!s[o.r + '/staffpins/' + o.id], !!s[o.r + '/pinset/' + o.id]]; }, { r: ['kitchens', L.PIN].join('/'), id });
+  const names = () => p.$$eval('.a-name', els => els.map(e => e.value));
+  ok((await p.$$('[data-p="a-delete-person"]')).length === 3 && !(await p.$('[data-p="a-delete-person"][data-i="3"]')), 'Delete on Sam, Ann and Bo, not on the head chef');
+  await L.tap(p, '[data-p="a-delete-person"][data-i="2"]'); await L.settle(p, 150);
+  ok(/Tap again: delete for good/.test(await txt(p, '[data-p="a-delete-person"][data-i="2"]')) && (await names()).includes('Bo'), 'Delete asks again and Bo is still there');
+  await L.tap(p, '[data-p="a-delete-person"][data-i="2"]'); await L.settle(p, 200);
+  ok(!(await names()).includes('Bo') && /Bo is deleted when you save/.test(await txt(p, '.p-toast') || '') && /1 unsaved change/.test(await txt(p, '.a-unsaved') || ''), 'Bo leaves the list, named, with 1 unsaved change');
+  await L.tap(p, '.p-toast .p-toast-btn'); await L.settle(p, 200);
+  ok((await names()).includes('Bo') && await p.$('.a-unsaved') === null, 'Undo brings Bo back, nothing to save');
+  await L.tap(p, '[data-p="a-delete-person"][data-i="2"]'); await L.settle(p, 150);
+  await L.tap(p, '[data-p="a-delete-person"][data-i="2"]'); await L.settle(p, 200);
+  ok(JSON.stringify(await pinOf('bo')) === '[true,true]', 'Bo\'s PIN stays until Save');
+  await L.tap(p, '[data-p="a-save"]'); await L.settle(p, 1800);
+  const after = await cfg(p);
+  ok(!(after.people || []).some(x => x.id === 'bo') && !(after.staffIds || []).includes('bo'), 'saved: Bo is off the team list itself');
+  ok(JSON.stringify(await pinOf('bo')) === '[false,false]' && JSON.stringify(await pinOf('sam')) === '[true,true]', 'saved: Bo\'s PIN is wiped, Sam\'s is kept');
+  ok(/Deleted: Bo\./.test(await p.evaluate(() => document.body.innerText)), 'the Save line names who was deleted');
   ok(p.errors.length === 0, 'no page errors ' + p.errors.join(' | '));
   await p.context().close();
   await b.close();

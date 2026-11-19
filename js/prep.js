@@ -3871,7 +3871,8 @@
     var po = pinOpenFor(ids);
     (S.user ? track(fb.fs.setDoc(cfgDoc(), { pinOpen: po }, { merge: true })) : sset(cfgDoc(), { pinOpen: po }, true)).catch(function () {});
   }
-  function saveConfig(cfg, hold) {
+  // gone: ids deleted for good in this save (adminSave); the head chef's batch wipes their PIN with the list
+  function saveConfig(cfg, hold, gone) {
     var clean = {
       people: cfg.people.filter(function (p) { return String(p.name).trim(); }).map(function (p) {
         return { id: p.id, name: String(p.name).trim().slice(0, 40), role: p.role || 'staff', add: !!p.add, tick: !!p.tick, del: !!p.del, ping: !!p.ping, fn: !!p.fn, active: p.active !== false };
@@ -3895,6 +3896,8 @@
     return sdk().then(function () { if (S.user && S.level === 'owner') {
       var b = fb.fs.writeBatch(fb.db); b.set(cfgDoc(), clean);
       b.set(docRef('login', 'roster'), { people: clean.people, staffIds: clean.staffIds, sousIds: clean.sousIds, headId: clean.headId, fnIds: clean.fnIds, fnOnlyIds: clean.fnOnlyIds });
+      // a person deleted for good loses their PIN in the same batch, so the list and the PIN never disagree
+      (gone || []).forEach(function (id) { if (id && id !== clean.headId && !clean.people.some(function (p) { return p.id === id; })) { b.delete(docRef('staffpins', id)); b.delete(docRef('pinset', id)); } });
       return track(b.commit());
     } return Wall([['set', cfgDoc(), { people: clean.people, staffIds: clean.staffIds, pinOpen: clean.pinOpen, updated: clean.updated, updatedBy: clean.updatedBy }, true], ['set', docRef('login', 'roster'), { people: clean.people, staffIds: clean.staffIds, sousIds: S.config.sousIds || [], headId: S.config.headId || '', fnIds: S.config.fnIds || [], fnOnlyIds: S.config.fnOnlyIds || [] }]]); }).then(function () { return clean; });
   }
@@ -3904,7 +3907,11 @@
     if (S.busy || psRolloutBusy || svHeld('a')) return;
     if (!draftDirty()) { draw(); return; }   // nothing changed: nothing saved, and a button left on goes off
     S.busy = true; S.saveMsg = ''; svStart('a'); draw();
-    saveConfig(mergeDraft()).then(function () { S.busy = false; startDraft(); svDone('a', !!S.draft, function () { S.saveMsg = 'Saved. Everyone sees the changes now.'; }); draw(); },
+    // rows this draft deleted for good (deletePersonBtn): only saved rows, and only the head chef's Google save sends them
+    var base = draftBase(), kept = {}; S.draft.people.forEach(function (p) { kept[p.id] = 1; });
+    var gone = ((base && base.people) || []).filter(function (p) { return p.id && !kept[p.id]; });
+    var goneMsg = gone.length ? 'Deleted: ' + gone.map(function (p) { return p.name || 'no name'; }).join(', ') + '. ' : '';
+    saveConfig(mergeDraft(), null, gone.map(function (p) { return p.id; })).then(function () { S.busy = false; startDraft(); svDone('a', !!S.draft, function () { S.saveMsg = 'Saved. ' + goneMsg + 'Everyone sees the changes now.'; }); draw(); },
       function (e) { S.busy = false; S.saveMsg = errMsg(e && e.code === 'permission-denied' ? 'Not allowed to change these settings.' : 'Could not save. Check the connection.'); svFail('a', !!S.draft, function () { S.saveMsg = ''; }); draw(); });
   }
   function resetPin(id) {
@@ -6354,7 +6361,7 @@
         { h: 'Tick', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'tick', o.p.tick, 'Tick', isHeadP(o.p)); } },
         { h: 'Remove', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'del', o.p.del, 'Remove', isHeadP(o.p)); } },
         { h: 'Create/edit functions', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'fn', o.p.fn, 'Create and edit functions', false); } },
-        { h: '', cls: 'a-act', html: function (o) { return (o.p.id && !o.p.isNew ? '<button type="button" class="p-x" data-p="a-person" data-id="' + esc(o.p.id) + '">Open page</button>' : '') + '<button type="button" class="p-x" data-p="a-reset-pin" data-id="' + esc(o.p.id) + '">' + (armed('pin:' + o.p.id) ? 'Tap again to reset' : 'Reset PIN') + '</button>' + removePersonBtn(o.p, o.i); } }
+        { h: '', cls: 'a-act', html: function (o) { return (o.p.id && !o.p.isNew ? '<button type="button" class="p-x" data-p="a-person" data-id="' + esc(o.p.id) + '">Open page</button>' : '') + '<button type="button" class="p-x" data-p="a-reset-pin" data-id="' + esc(o.p.id) + '">' + (armed('pin:' + o.p.id) ? 'Tap again to reset' : 'Reset PIN') + '</button>' + removePersonBtn(o.p, o.i) + deletePersonBtn(o.p, o.i); } }
       ]
     });
   }
@@ -7046,6 +7053,16 @@
     if (p.active === false && !p.isNew) return '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '" aria-label="' + esc('Put ' + (p.name || 'this person') + ' back on the list') + '">Put back</button>';
     var lab = p.isNew ? 'Remove' : 'Stopped working here';
     return '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '" aria-label="' + esc(lab + ': ' + (p.name || 'this person')) + '">' + (armed('rm:' + p.id) ? 'Tap again: ' + lab.toLowerCase() : lab) + '</button>';
+  }
+  /* Delete for good (head chef, 19 Nov 2026, beside D6): on the admin panel's People rows only, as only the head chef's
+     Google account with the head chef PIN may wipe a PIN. Two taps take the row out of the draft; Save takes the person
+     off the team list itself and wipes their PIN (saveConfig). Their typed name stays on old lines; what is kept by id
+     says "Former staff". Never the head chef, and never a new row (its Remove already drops it). */
+  function canDelPerson(p) { return !!(S.user && S.level === 'owner' && p && p.id && !p.isNew && !isHeadP(p)); }
+  function deletePersonBtn(p, i) {
+    if (!canDelPerson(p)) return '';
+    var on = armed('pdel:' + p.id), nm = p.name || 'this person';
+    return '<button type="button" class="p-x a-del' + (on ? ' is-armed' : '') + '" data-p="a-delete-person" data-i="' + i + '" aria-label="' + esc((on ? 'Tap again to delete for good: ' : 'Delete for good: ') + nm) + '">' + (on ? 'Tap again: delete for good' : 'Delete') + '</button>';
   }
   /* what the draft changes, counted per person and per setting, for the Save bar */
   function draftChanges() {
@@ -13195,7 +13212,7 @@ if (list.length) sg('oreg', 's');
     loadShifts();
     if (!S.shifts) return out + (S.shiftsErr ? '<p class="hint" role="status">Could not load who is on today. Check the signal. The book tries again by itself in a few minutes.</p>' : '<p class="hint">Reading who is on today...</p>') + '</section>';
     var today = S.shifts.filter(function (x) { return x.day === t && x.sec; }), by = {};
-    today.forEach(function (x) { var n = ksSecNow(x); (by[n] = by[n] || []).push(ksName(x.by) || x.by); });
+    today.forEach(function (x) { var n = ksSecNow(x); (by[n] = by[n] || []).push(ksName(x.by) || 'Former staff'); });
     var names = kitSecs().map(function (s) { return s.name; }).concat([KS_AUTO.head, KS_AUTO.sous]);
     Object.keys(by).forEach(function (n) { if (names.indexOf(n) < 0) names.push(n); });
     out += '<h3 class="a-ks-h">On today</h3><ul class="a-ks-today">' + names.filter(function (n) { return by[n] || (n !== KS_AUTO.head && n !== KS_AUTO.sous); }).map(function (n) {
@@ -13206,7 +13223,7 @@ if (list.length) sg('oreg', 's');
        picks and moves), today from the picks read here; until the job has run, from the picks alone, a day each. */
     var per = Object.create(null), from = shift(t, -13), past = tsCan() ? (tsLoad(), tsum.st === 'ok' && tsum.rec) : null;
     var addSec = function (id, day, sec) {
-      var r = per[id] = per[id] || { id: id, name: ksName(id) || id, days: 0, secs: Object.create(null), last: '' };
+      var r = per[id] = per[id] || { id: id, name: ksName(id) || 'Former staff', days: 0, secs: Object.create(null), last: '' };
       r.days++; r.secs[sec] = (r.secs[sec] || 0) + 1; if (day > r.last) r.last = day;
     };
     S.shifts.forEach(function (x) { if (x.sec && (!past || x.day === t)) addSec(x.by, x.day, ksSecNow(x)); });
@@ -13564,6 +13581,18 @@ if (list.length) sg('oreg', 's');
       // a row just added and still blank goes in one tap; anyone else needs a second tap
       if (!(rp.isNew && !String(rp.name).trim()) && !arm('rm:' + rp.id)) return;
       if (rp.isNew) d.people.splice(i, 1); else rp.active = false;
+      draw(); return;
+    }
+    // Delete for good: out of the draft on the second tap, named with Undo; Save makes it final (deletePersonBtn)
+    if (a === 'a-delete-person') {
+      var dp = d.people[i];
+      if (!canDelPerson(dp) || !arm('pdel:' + dp.id)) return;
+      d.people.splice(i, 1);
+      toast((dp.name || 'This person') + ' is deleted when you save', { label: 'Undo', fn: function () {
+        if (S.draft !== d) { toast('Already saved: ' + (dp.name || 'this person') + ' is deleted.'); return; }
+        if (d.people.some(function (x) { return x.id === dp.id; })) return;
+        d.people.splice(Math.min(i, d.people.length), 0, dp); draw();
+      } });
       draw(); return;
     }
     if (a === 'a-save') { adminSave(); return; }

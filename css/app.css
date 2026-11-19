@@ -689,6 +689,9 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .a-table .p-select { min-height: 40px; }
 .a-table .a-act { white-space: nowrap; text-align: right; }
 .a-table .a-act .p-x { margin-left: 0.3rem; }
+/* Delete for good on a People row: red words, bold once armed (19 Nov 2026) */
+.a-table .a-act .p-x.a-del { color: var(--bad-ink); }
+.a-table .a-act .p-x.a-del.is-armed { font-weight: 700; border-color: var(--bad-ink); }
 .a-table tr.is-off .a-name { opacity: 0.55; }
 .a-table tbody th { position: sticky; left: 0; background: inherit; z-index: 1; }
 .a-table tbody tr:nth-child(odd) th { background: var(--paper); }
