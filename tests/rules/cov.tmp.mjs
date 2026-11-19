@@ -1,0 +1,24 @@
+import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
+import { doc, setDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { createHash } from 'crypto';
+import { readFileSync, writeFileSync } from 'fs';
+const PIN = '000000', K = 'kitchens/' + PIN + '/';
+const rules = readFileSync('../../firestore.rules', 'utf8').replace(/KITCHEN_PIN/g, PIN).replace(/OWNER_EMAIL/g, 'o@x');
+const sha = s => createHash('sha256').update(s).digest('hex'), hash = (id, p) => sha('lk:' + id + ':' + p);
+const env = await initializeTestEnvironment({ projectId: 'demo-cov', firestore: { rules } });
+await env.withSecurityRulesDisabled(async ctx => { const db = ctx.firestore();
+  await setDoc(doc(db, K + 'config/main'), { fnIds: ['fay'], staffIds: ['fay'] });
+  await setDoc(doc(db, K + 'staffpins/fay'), { hash: hash('fay', '1') }); });
+const T0 = 1000000, n = +process.env.NL, m = +process.env.NR;
+const lines = Array.from({ length: n }, (_, i) => ({ rid: 'p' + i, name: 'P', unit: 'platter', spec: '', fp: '', qty: m, u: Array.from({ length: m }, (_, k) => k) }));
+const rounds = Array.from({ length: m }, (_, i) => ({ at: T0 + i * 1000, note: '' }));
+const d = { v: 1, status: 'confirmed', name: 'S', date: '2026-10-24', start: T0, loc: '', guests: 6, mode: m > 1 ? 'stag' : 'all', lines, rounds, notes: '', kc: '', kcBy: '', kcAt: 0, first: T0, last: T0 + (m - 1) * 1000, from: 0, until: T0 + 99999, kq: 0, was: {}, chg: [], cBy: 'fay', cAt: 1, upd: 1, by: 'fay' };
+const db = env.unauthenticatedContext().firestore(), b = writeBatch(db);
+b.set(doc(db, K + 'proofs/fay'), { tok: hash('fay', '1'), at: serverTimestamp() });
+b.set(doc(db, K + 'functions/x'), d);
+try { await b.commit(); console.log('R ok'); } catch (e) { console.log('R fail'); }
+const r = await fetch('http://127.0.0.1:8080/emulator/v1/projects/demo-cov:ruleCoverage');
+const j = await r.json();
+writeFileSync('/tmp/claude-0/-home-user-leichhardt-kitchen/83f89a06-9b90-5b6f-9111-28a42d443b61/scratchpad/cov.json', JSON.stringify(j));
+console.log('R saved', Object.keys(j).join(','));
+await env.cleanup(); process.exit(0);
