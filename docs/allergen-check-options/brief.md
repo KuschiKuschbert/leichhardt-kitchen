@@ -1,6 +1,14 @@
 # Allergens checked or not, 19 November 2026
 
-**Status:** built in a draft pull request. The fix for every card is ready. How the recipes already in `js/data.js` count is the head chef's choice (below); the draft carries the recommended choice A as its own commit, so B or C drops or replaces that one commit. Nothing changes for staff until the head chef chooses and the pull request merges.
+**Status:** chosen and built (19 Nov 2026). The head chef took the recommendation: **A, with the label-dependent products left to check** ("I take the recommendation", relayed by the second venue session). Every other plain line in `js/data.js` says No allergens; the products listed under Chosen stay Not checked until he reads their labels.
+
+## Chosen
+
+A, except these 29 label-dependent products, which stay **Not checked** (no `none`) on all **49 lines** that use them in `js/data.js`: chips, fries, sweet potato chips, chicken tenders, fried shallots, corn flour, dark beef stock, Heinz BBQ sauce, buffalo sauce, red hot sauce, sweet chilli sauce, Napoli sauce, sauce of choice, side sauce of choice, Szechuan seasoning, mild curry powder, Chinese five spice, icing sugar mix, bacon, shortcut bacon, diced bacon, crispy bacon, leg ham, shaved leg ham, Virginian ham, salami, pulled pork, pulled lamb, smoked pulled lamb.
+
+That leaves **39 of 137 cards** saying Allergens not checked yet and out of Free from: 34 of 81 dishes, **29 of the 74 guest menu dishes**, and 5 batch recipes (Bourbon BBQ Sauce, Braised Beef Cheek, Carolina Gold BBQ Sauce, House BBQ Sauce, Alabama White Sauce, whose dishes roll it up). Guest menu dishes that show it: Smash Burger, The OZ Smash Burger, Fish Burger, Chickpea Mushroom Burger, Steak Sandwich, New Pork Ribs, Pork Belly, Carbonara, Grill Maiden's Board, Senior Parmy, Wedges, Donut Fries, Poutine Fries, Smoked Pulled Lamb Nachos, Salt and Szechuan Pepper Calamari, Smoked BBQ Pork Riblets, Bacon and Cheese Bread, Chips, Beef Cheek, Chicken Schnitzel, Chicken Parmy, Pub Caesar, BBQ Pulled Beef Loaded Fries, the Aussie, Vege, Yumcha, Antipasto and Seafood Platters, and Chicken Topper. Off the menu: Butchers Board, The Beast Board, Pulled Pork Burger, Brisket Board, Beast Burger.
+
+Each warning goes when the head chef opens the recipe in Manage and gives the product its allergens or No allergens (2 taps a line: open the row, then No allergens or the allergen). Chips alone clears 10 cards. `tests/allergen-check.test.js` holds the list (`LABELS`): take a product out when its lines are checked.
 
 ## The gap
 
@@ -33,9 +41,9 @@ Counted from `js/data.js` at d63d5f0: 137 recipes. 44 set their allergens by han
 | Build | Built: `none: true` stamped on the 235 lines (one-off, proved by parsing that nothing else changed) | Drop the stamp commit | A new recipe field means a rules change, published before the code |
 | Risk | Rubber-stamps 148 products as allergen free because the file never tagged them | Warning fatigue: a card that always says "not checked" teaches the line to ignore it | Same as B, plus a rules publish |
 
-**Recommendation: A**, plus a look over the products whose label can carry an allergen. The file is the head chef's confirmed book; A keeps the warning rare, so it means something when it shows.
+**Recommendation: A**, with the products whose label can carry an allergen left Not checked until the head chef reads the labels (chosen, above). The file is the head chef's confirmed book; A keeps the warning rare, so it means something when it shows.
 
-Products in that list worth a second look under A (label-dependent, not a claim that any contains an allergen): chips, fries, sweet potato chips, chicken tenders, fried shallots, corn flour (wheaten cornflour is common), dark beef stock, Heinz BBQ sauce, buffalo sauce, red hot sauce, sweet chilli sauce, Napoli sauce, sauce of choice, side sauce of choice, Szechuan seasoning, mild curry powder, Chinese five spice, icing sugar mix, bacon, shortcut bacon, diced bacon, crispy bacon, leg ham, shaved leg ham, Virginian ham, salami, pulled pork, pulled lamb, smoked pulled lamb. Any one of these can be tagged in Manage in the row's Allergens.
+The label-dependent products (not a claim that any contains an allergen): chips, fries, sweet potato chips, chicken tenders, fried shallots, corn flour (wheaten cornflour is common), dark beef stock, Heinz BBQ sauce, buffalo sauce, red hot sauce, sweet chilli sauce, Napoli sauce, sauce of choice, side sauce of choice, Szechuan seasoning, mild curry powder, Chinese five spice, icing sugar mix, bacon, shortcut bacon, diced bacon, crispy bacon, leg ham, shaved leg ham, Virginian ham, salami, pulled pork, pulled lamb, smoked pulled lamb. Any one of these can be tagged in Manage in the row's Allergens.
 
 ## Council: quick check
 
@@ -63,7 +71,7 @@ Products in that list worth a second look under A (label-dependent, not a claim 
 
 Future edits to `js/data.js`: a new plain line with no tags and no `none` makes its card say Allergens not checked yet. `tests/allergen-check.test.js` lists the file's cards not checked (none today); a session that adds one on purpose names it there with the head chef's reason, so it is never silent.
 
-**Verdict:** Small change, quick check: build it, with choice A recommended. The head chef decides A, B or C.
+**Verdict:** Small change, quick check: build it, with choice A recommended. The head chef chose A with the label-dependent products left Not checked.
 
 ## Screens (Implemented app, click-test stand-in, 390 px, synthetic recipe)
 
@@ -76,7 +84,7 @@ Future edits to `js/data.js`: a new plain line with no tags and no `none` makes 
 
 ## Files
 
-`js/app.js` (roll(), the card, tile, Free from, search, Contains, `LK_APP.unchecked()`), `js/manage.js` (No allergens, Not checked, the warning, saved `none`), `js/overlay.js` (keeps `none`, carries the file's checks to older copies, `LK_RX.carry()`, fingerprint without `none`), `js/recipe-print.js` (the paper card), `js/functions.js` (function checks), `css/app.css` (`.mg-unk`, `.mg-none`), `js/data.js` (choice A: `none: true` on 235 lines; the field guide), `tests/allergen-check.test.js`.
+`js/app.js` (roll(), the card, tile, Free from, search, Contains, `LK_APP.unchecked()`), `js/manage.js` (No allergens, Not checked, the warning, saved `none`), `js/overlay.js` (keeps `none`, carries the file's checks to older copies, `LK_RX.carry()`, fingerprint without `none`), `js/recipe-print.js` (the paper card), `js/functions.js` (function checks), `css/app.css` (`.mg-unk`, `.mg-none`), `js/data.js` (the choice: `none: true` on 186 lines, the 49 lines of the 29 label-dependent products left Not checked; the field guide), `tests/allergen-check.test.js`.
 
 ## Rollback
 

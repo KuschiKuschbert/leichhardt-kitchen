@@ -43,16 +43,27 @@ const box = p => txt(p, '#r-allergens').then(t => t || '');
 const NOT = /Allergens not checked yet/;
 
 (async () => {
-  // js/data.js: every plain ingredient of a recipe worked out from its tags has its allergens or No allergens (the
-  // head chef's choice A, 19 Nov 2026). A card left not checked on purpose goes in NOT_YET with the head chef's reason,
-  // so it is never silent; its card then says Allergens not checked yet.
-  const NOT_YET = [];
-  const open = FILE.recipes.filter(r => !r.contains && !r.check && NOT_YET.indexOf(r.id) < 0).flatMap(r => r.ingredients.filter(i => !i.link && !(i.tags && i.tags.length) && i.none !== true).map(i => r.id + ': ' + i.name));
-  ok(open.length === 0, 'js/data.js: no ingredient is left not checked, outside NOT_YET (' + open.slice(0, 5).join(', ') + ')');
+  // js/data.js (the head chef's choice, 19 Nov 2026: A, with the label-dependent products left to check): every plain
+  // ingredient of a recipe worked out from its tags has its allergens or No allergens, except these products, which
+  // stay not checked until the head chef reads their labels. Take one out of LABELS when its lines are checked; a new
+  // line left not checked on purpose adds its product here with the head chef's word, so it is never silent.
+  const LABELS = ['chips', 'fries', 'sweet potato chips', 'chicken tenders', 'fried shallots', 'corn flour', 'dark beef stock',
+    'heinz bbq sauce', 'buffalo sauce', 'red hot sauce', 'sweet chilli sauce', 'napoli sauce', 'sauce of choice', 'side sauce of choice',
+    'szechuan seasoning', 'mild curry powder', 'chinese five spice', 'icing sugar mix', 'bacon', 'shortcut bacon', 'diced bacon',
+    'crispy bacon', 'leg ham', 'shaved leg ham', 'virginian ham', 'salami', 'pulled pork', 'pulled lamb', 'smoked pulled lamb'];
+  const plain = FILE.recipes.filter(r => !r.contains && !r.check).flatMap(r => r.ingredients.filter(i => !i.link && !(i.tags && i.tags.length)).map(i => ({ r: r.id, i })));
+  const lab = x => LABELS.indexOf(x.i.name.trim().toLowerCase()) >= 0;
+  const open = plain.filter(x => !lab(x) && x.i.none !== true).map(x => x.r + ': ' + x.i.name);
+  ok(open.length === 0, 'js/data.js: every plain line outside the label list is checked (' + open.slice(0, 5).join(', ') + ')');
+  const stamped = plain.filter(x => lab(x) && x.i.none !== undefined).map(x => x.r + ': ' + x.i.name);
+  ok(stamped.length === 0 && plain.filter(lab).length === 49, 'js/data.js: the 49 lines of the label-dependent products stay not checked (' + stamped.join(', ') + ')');
   const b = await L.start();
   let p = await L.open(b, '#/recipes', { noPin: true, who: '', wait: 1500 });
-  const none = await p.evaluate(() => window.LK_DATA.recipes.filter(r => window.LK_APP.unchecked(r.id).length).map(r => r.id));
-  ok(none.every(id => NOT_YET.indexOf(id) >= 0 || FILE.recipes.find(r => r.id === id).ingredients.some(i => NOT_YET.indexOf(i.link) >= 0)), 'the book as js/data.js has it: no card says Allergens not checked yet, outside NOT_YET (' + none.join(', ') + ')');
+  const shows = await p.evaluate(() => window.LK_DATA.recipes.filter(r => window.LK_APP.unchecked(r.id).length).map(r => [r.id, window.LK_APP.unchecked(r.id)]));
+  const names = new Set(FILE.recipes.map(r => r.name));
+  ok(shows.length === 39 && shows.every(([, parts]) => parts.every(n => LABELS.indexOf(n.toLowerCase()) >= 0 || names.has(n))), 'the book as js/data.js has it: 39 cards say Allergens not checked yet, each for a label-dependent product or a recipe that uses one (' + shows.length + ')');
+  await go(p, '#/r/smash'); const sm = await box(p);
+  ok(NOT.test(sm) && /Chips/.test(sm), 'the Smash Burger says its chips are not checked (' + sm.replace(/\s+/g, ' ') + ')');
   await p.context().close();
   p = await L.open(b, '#/recipes', { who: 'bo', extra: Object.assign(cfg(), changes()), wait: 1500 });
   ok(await synced(p), 'the test recipes came in');

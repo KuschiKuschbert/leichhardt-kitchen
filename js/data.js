@@ -20,7 +20,9 @@
                  note, tags: allergens in this ingredient, add "?" for "may contain",
                  none: true once checked and none of the ten allergens is in it }
                Every ingredient needs tags, none: true or a link. One with none of them shows
-               "Allergens not checked yet" on the card and is left out of Free from (19 Nov 2026).
+               "Allergens not checked yet" on the card and is left out of Free from (19 Nov 2026). The head
+               chef left 29 label-dependent products not checked (chips, bacon, the bought-in sauces...) until
+               he reads their labels: tests/allergen-check.test.js lists them (LABELS).
     pins       (plated dishes, The Pass view) where each part sits on the plate drawing:
                { label, x, y (percent across and down), side ('left' or 'right' for the label,
                optional), link or tags, note }
@@ -474,7 +476,7 @@ window.LK_DATA = {
         { q: '20 ml', name: 'American mustard', note: 'top and bottom', none: true },
         { q: '40 ml', name: 'Tomato sauce', link: 'tomato-sauce', note: 'ketchup, top and bottom' },
         { q: '[Qty]', name: 'Oak leaf lettuce', none: true },
-        { q: '1 portion', name: 'Chips', note: '200 g raw', none: true }
+        { q: '1 portion', name: 'Chips', note: '200 g raw' }
       ],
       sections: [
         { title: 'Plating, bottom to top', steps: ['Bun base.', 'Tomato sauce and American mustard on the base.', 'Smashed patty, cheese on top.', 'Smashed patty, cheese on top.', 'Bun top: tomato sauce, American mustard and pickles.', 'Close the burger.', 'Chips on the side.'] }
@@ -493,14 +495,14 @@ window.LK_DATA = {
         { q: '1', name: 'Milk bun', note: 'sliced', tags: ['Gluten', 'Milk', 'Egg?', 'Soy?'] },
         { q: '180 g', name: 'Smash patty', link: 'smash-patty' },
         { q: '1 slice', name: 'Burger cheese', tags: ['Milk'] },
-        { q: '90 g', name: 'Shortcut bacon', none: true },
+        { q: '90 g', name: 'Shortcut bacon' },
         { q: '50 g', name: 'Sliced beetroot', none: true },
         { q: '50 g', name: 'Tomato', none: true },
         { q: '10 g', name: 'Red onion', none: true },
         { q: '10 g', name: 'Bread and butter pickles', note: 'bought in', none: true },
         { q: '40 ml', name: 'Tomato ketchup', none: true },
         { q: '[Qty]', name: 'Oak leaf lettuce', none: true },
-        { q: '½ portion', name: 'Chips', note: 'of the 200 g raw portion', none: true }
+        { q: '½ portion', name: 'Chips', note: 'of the 200 g raw portion' }
       ],
       sections: [
         { title: 'Plating, bottom to top', steps: ['Bun base.', 'Tomato sauce.', 'Oak leaf.', 'Tomato.', 'Red onion.', 'Beetroot.', 'Smashed patty, cheese on top.', 'Bacon.', 'Pickles.', 'Bun top.', 'Half portion of chips on the side.'] }
@@ -523,7 +525,7 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Green oak lettuce', none: true },
         { q: '50 g', name: 'Tomato', none: true },
         { q: '50 g', name: 'Red onion', none: true },
-        { q: '1 portion', name: 'Chips', note: '200 g raw', none: true }
+        { q: '1 portion', name: 'Chips', note: '200 g raw' }
       ],
       sections: [
         { title: 'Plating, bottom to top', steps: ['Bun base.', 'Green oak.', 'Tomato.', 'Red onion.', 'Battered blue grenadier.', 'Tartare.', 'Bun top.', 'Chips on the side.'] }
@@ -545,7 +547,7 @@ window.LK_DATA = {
         { q: '60 g', name: 'Chunky avocado', none: true },
         { q: '50 g', name: 'Tomato', none: true },
         { q: '[Qty]', name: 'Green oak lettuce', none: true },
-        { q: '1 portion', name: 'Chips', note: '200 g raw', none: true }
+        { q: '1 portion', name: 'Chips', note: '200 g raw' }
       ],
       sections: [
         { title: 'Plating, bottom to top', steps: ['Bun base.', 'Vegan aioli.', 'Green oak.', 'Tomato.', '3 beetroot falafel.', 'Chunky avocado.', 'Bun top.', 'Chips on the side.'] }
@@ -564,14 +566,14 @@ window.LK_DATA = {
         { q: '1', name: 'Turkish roll', note: 'oval, 130 g', tags: ['Gluten', 'Sesame?', 'Soy?'] },
         { q: '150 g', name: 'Topside steak', none: true },
         { q: '1 slice', name: 'Cheese', tags: ['Milk'] },
-        { q: '90 g', name: 'Shortcut bacon', none: true },
+        { q: '90 g', name: 'Shortcut bacon' },
         { q: '1', name: 'Egg', tags: ['Egg'] },
         { q: '[Qty]', name: 'Tomato relish', link: 'tomato-relish' },
         { q: '[Qty]', name: 'Aioli', link: 'aioli', note: 'on the top half of the roll', tags: ['Egg'] },
         { q: '1 leaf', name: 'Oak leaf lettuce', none: true },
         { q: '3 slices', name: 'Tomato', none: true },
-        { q: '1 portion', name: 'Chips', note: '200 g raw', none: true },
-        { q: '[Qty]', name: 'Side sauce of choice', note: 'guest chooses', none: true }
+        { q: '1 portion', name: 'Chips', note: '200 g raw' },
+        { q: '[Qty]', name: 'Side sauce of choice', note: 'guest chooses' }
       ],
       sections: [
         { title: 'Cooking', steps: ['Grill the steak to the guest\'s wished doneness.'] },
@@ -644,7 +646,7 @@ window.LK_DATA = {
         { q: '150 g', name: 'Mash', link: 'mash' },
         { q: '50 ml', name: 'Spinach purée', note: 'a wavy squiggle across the whole plate', link: 'spinach-puree' },
         { q: '80 g', name: 'Peas', none: true },
-        { q: '80 g', name: 'Diced bacon', note: 'bacon rasher, diced', none: true },
+        { q: '80 g', name: 'Diced bacon', note: 'bacon rasher, diced' },
         { q: '50 ml', name: 'Red wine jus', link: 'red-wine-jus' },
         { q: '40 g', name: 'Fried shallots', note: 'fried onions, made in house', link: 'fried-onions' },
         { q: '50 g', name: 'Green garnish', note: 'snow pea tendrils, sliced spring onion, parsley or finely sliced chives', none: true }
@@ -684,7 +686,7 @@ window.LK_DATA = {
       ingredients: [
         { q: '250 g', name: 'Fettuccine', note: 'cooked, one wrapped portion', link: 'fettuccine', tags: ['Gluten'] },
         { q: '400 ml', name: 'Creamy garlic sauce', note: 'the carbonara sauce', link: 'carbonara-sauce' },
-        { q: '120 g', name: 'Bacon', none: true },
+        { q: '120 g', name: 'Bacon' },
         { q: '10 ml', name: 'White cooking wine', note: 'AVC costing [where it goes to confirm]', none: true },
         { q: '[Qty]', name: 'Parmesan', note: 'a little in the pan with the sauce', tags: ['Milk'] },
         { q: '20 g', name: 'Shaved parmesan', note: 'to garnish', tags: ['Milk'] },
@@ -728,7 +730,7 @@ window.LK_DATA = {
         { q: '90 g', name: 'Pork Cumberland sausage', note: 'thick, bought in', tags: ['Gluten?', 'Soy?'] },
         { q: '1 portion', name: 'Diane sauce', note: '50 ml, first sauce of choice', link: 'diane-sauce' },
         { q: '1.5 portions', name: 'Mushroom sauce', note: '75 ml, second sauce of choice, as costed', link: 'mushroom-sauce' },
-        { q: '1.1 portions', name: 'Chips', note: '200 g raw portion', none: true },
+        { q: '1.1 portions', name: 'Chips', note: '200 g raw portion' },
         { q: '1', name: 'Side salad', note: 'standard size', link: 'side-salad' }
       ],
       pins: [
@@ -819,7 +821,7 @@ window.LK_DATA = {
       ingredients: [
         { q: '½', name: 'Chicken schnitzel', note: 'half a 350 g double butterfly, bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
         { q: '30 g', name: 'Pizza sauce', link: 'pizza-sauce', note: 'Mutti; Napoli on the menu' },
-        { q: '20 g', name: 'Virginian ham', note: 'shaved leg ham on the menu', none: true },
+        { q: '20 g', name: 'Virginian ham', note: 'shaved leg ham on the menu' },
         { q: '30 g', name: 'Shredded mozzarella', tags: ['Milk'] },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
       ],
@@ -913,7 +915,7 @@ window.LK_DATA = {
       ingredients: [
         { q: '400 g', name: 'Seasoned potato wedges', note: 'McCain, bought in', tags: ['Gluten?', 'Soy?'] },
         { q: '80 ml', name: 'Light sour cream', tags: ['Milk'] },
-        { q: '80 ml', name: 'Sweet chilli sauce', none: true }
+        { q: '80 ml', name: 'Sweet chilli sauce' }
       ],
       pins: [
         { label: 'Wedges', x: 39.6, y: 49.1, side: 'right', tags: ['Gluten?', 'Soy?'], note: '400 g, seasoned.' },
@@ -1006,7 +1008,7 @@ window.LK_DATA = {
         { q: '50 ml', name: 'Maple syrup', none: true },
         { q: '20 g', name: 'Whipped cream', note: 'aerosol', tags: ['Milk'] },
         { q: '3 g', name: 'Ground cinnamon', none: true },
-        { q: '5 g', name: 'Icing sugar mix', none: true }
+        { q: '5 g', name: 'Icing sugar mix' }
       ],
       pins: [
         { label: 'Donut fries', x: 42.5, y: 45.3, side: 'right', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'], note: '110 g, cinnamon and icing sugar.' },
@@ -1040,11 +1042,11 @@ window.LK_DATA = {
       id: 'poutine', art: 'poutine', no: '46', kind: 'snack', forLine: 'Snack', name: 'Poutine Fries', menu: 'Poutine Fries: fries, melted cheddar and mozzarella, gravy.',
       yield: 'Per serve, in a bowl. 200 g of chips, grated mozzarella, 160 ml of gravy, a thin zigzag of American cheese sauce, topped with fried shallots.',
       ingredients: [
-        { q: '200 g', name: 'Chips', none: true },
+        { q: '200 g', name: 'Chips' },
         { q: '80 g', name: 'Grated mozzarella', link: 'grated-mozzarella', note: 'bought in' },
         { q: '160 ml', name: 'Gravy', link: 'gravy', note: 'smothered over the mozzarella' },
         { q: '50 ml', name: 'American cheese sauce', link: 'american-cheese-sauce', note: 'bought in, thin zigzag over the gravy' },
-        { q: '[Qty]', name: 'Fried shallots', note: 'bought in, on top', none: true }
+        { q: '[Qty]', name: 'Fried shallots', note: 'bought in, on top' }
       ],
       pins: [
         { label: 'Chips', x: 34, y: 58.5, side: 'left', tags: [], note: '200 g, in a bowl.' },
@@ -1064,7 +1066,7 @@ window.LK_DATA = {
       ingredients: [
         { q: '[Qty]', name: 'Corn chips', note: 'on a baking tray', tags: ['Gluten?'] },
         { q: '[Qty]', name: 'Grated mozzarella', link: 'grated-mozzarella', note: 'on the chips, through the impinger halfway' },
-        { q: '[Qty]', name: 'Smoked pulled lamb', note: 'from the smoker, on its own tray, through the impinger all the way', none: true },
+        { q: '[Qty]', name: 'Smoked pulled lamb', note: 'from the smoker, on its own tray, through the impinger all the way' },
         { q: '[Qty]', name: 'Smashed avocado puree', note: 'on one side', none: true },
         { q: '[Qty]', name: 'Sour cream', note: 'on the other side', tags: ['Milk'] },
         { q: '[Qty]', name: 'Feta', note: 'crumbled all over', tags: ['Milk'] },
@@ -1217,8 +1219,8 @@ window.LK_DATA = {
       yield: 'Per serve. 12 strips of calamari, dusted in corn flour, fried and tossed in Szechuan seasoning. Lime aioli and a lemon wedge.',
       ingredients: [
         { q: '12 pieces', name: 'Calamari', note: 'strips, not rings', tags: ['Mollusc'] },
-        { q: '[Qty]', name: 'Corn flour', note: 'to dust', none: true },
-        { q: '[Qty]', name: 'Szechuan seasoning', note: 'bought in, tossed through after frying', none: true },
+        { q: '[Qty]', name: 'Corn flour', note: 'to dust' },
+        { q: '[Qty]', name: 'Szechuan seasoning', note: 'bought in, tossed through after frying' },
         { q: '[Qty]', name: 'Lime aioli', note: 'bought in', link: 'lime-aioli', tags: ['Egg?'] },
         { q: '1', name: 'Lemon wedge', none: true }
       ],
@@ -1273,7 +1275,7 @@ window.LK_DATA = {
       yield: 'Per serve. Cut diagonally through the centre and placed on the plate.',
       ingredients: [
         { q: '[Qty]', name: 'Bread', tags: ['Gluten'] },
-        { q: '[Qty]', name: 'Bacon', none: true },
+        { q: '[Qty]', name: 'Bacon' },
         { q: '[Qty]', name: 'Cheese', tags: ['Milk'] }
       ],
       pins: [
@@ -1290,7 +1292,7 @@ window.LK_DATA = {
       menu: 'Chips with a choice of aioli or gravy.',
       yield: 'Per serve, in a bowl. Aioli or gravy.',
       ingredients: [
-        { q: '[Qty]', name: 'Chips', none: true },
+        { q: '[Qty]', name: 'Chips' },
         { q: '[Qty]', name: 'Aioli', link: 'aioli', note: 'or gravy, guest\'s choice', tags: ['Egg'] },
         { q: '[Qty]', name: 'Gravy', note: 'or aioli', link: 'gravy' }
       ],
@@ -1349,7 +1351,7 @@ window.LK_DATA = {
       yield: 'Per plate. Sauce of choice, chips and salad.',
       ingredients: [
         { q: '1', name: 'Chicken schnitzel', note: 'bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
-        { q: '[Qty]', name: 'Sauce of choice', note: 'gravy, mushroom, pepper, garlic, jus, Diane or béarnaise', none: true },
+        { q: '[Qty]', name: 'Sauce of choice', note: 'gravy, mushroom, pepper, garlic, jus, Diane or béarnaise' },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
       ],
       pins: [
@@ -1365,8 +1367,8 @@ window.LK_DATA = {
       yield: 'Per plate. Napoli, shaved leg ham and mozzarella, chips and salad.',
       ingredients: [
         { q: '1', name: 'Chicken schnitzel', note: 'bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
-        { q: '[Qty]', name: 'Napoli sauce', none: true },
-        { q: '[Qty]', name: 'Shaved leg ham', none: true },
+        { q: '[Qty]', name: 'Napoli sauce' },
+        { q: '[Qty]', name: 'Shaved leg ham' },
         { q: '[Qty]', name: 'Mozzarella', tags: ['Milk'] },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
       ],
@@ -1387,7 +1389,7 @@ window.LK_DATA = {
       yield: 'Per bowl. Cos, crispy bacon, poached egg, sourdough, parmesan, Caesar dressing.',
       ingredients: [
         { q: '[Qty]', name: 'Cos lettuce', none: true },
-        { q: '[Qty]', name: 'Crispy bacon', none: true },
+        { q: '[Qty]', name: 'Crispy bacon' },
         { q: '1', name: 'Poached egg', tags: ['Egg'] },
         { q: '[Qty]', name: 'Toasted sourdough', tags: ['Gluten'] },
         { q: '[Qty]', name: 'Parmesan', tags: ['Milk'] },
@@ -1495,8 +1497,8 @@ window.LK_DATA = {
       yield: 'Per board. Brisket, pulled pork, pulled lamb, Texas sausages, coleslaw and cornbread.',
       ingredients: [
         { q: '[Qty]', name: 'Smoked brisket', link: 'brisket' },
-        { q: '[Qty]', name: 'Pulled pork', note: 'from the smoker', none: true },
-        { q: '[Qty]', name: 'Pulled lamb', note: 'from the smoker', none: true },
+        { q: '[Qty]', name: 'Pulled pork', note: 'from the smoker' },
+        { q: '[Qty]', name: 'Pulled lamb', note: 'from the smoker' },
         { q: '[Qty]', name: 'Texas sausages', tags: ['Gluten?', 'Soy?'] },
         { q: '[Qty]', name: 'New slaw', note: 'the coleslaw', link: 'slaw' },
         { q: '[Qty]', name: 'Cornbread', link: 'cornbread' },
@@ -1530,8 +1532,8 @@ window.LK_DATA = {
       yield: 'Per board. Brisket, pulled pork, pulled lamb, sliders, Texas sausages, chicken wings, coleslaw and cornbread.',
       ingredients: [
         { q: '[Qty]', name: 'Smoked brisket', link: 'brisket' },
-        { q: '[Qty]', name: 'Pulled pork', note: 'from the smoker', none: true },
-        { q: '[Qty]', name: 'Pulled lamb', note: 'from the smoker', none: true },
+        { q: '[Qty]', name: 'Pulled pork', note: 'from the smoker' },
+        { q: '[Qty]', name: 'Pulled lamb', note: 'from the smoker' },
         { q: '[Qty]', name: 'Sliders', note: '[filling to confirm]', tags: ['Gluten?'] },
         { q: '[Qty]', name: 'Texas sausages', tags: ['Gluten?', 'Soy?'] },
         { q: '380 to 420 g', name: 'Chicken wings', note: '[seasoning to confirm]', none: true },
@@ -1569,10 +1571,10 @@ window.LK_DATA = {
       yield: 'Per plate. Pulled pork and slaw in the bun, Carolina BBQ, fries on the side.',
       ingredients: [
         { q: '[Qty]', name: 'Burger bun', tags: ['Gluten?', 'Sesame?'] },
-        { q: '[Qty]', name: 'Pulled pork', note: 'from the smoker', none: true },
+        { q: '[Qty]', name: 'Pulled pork', note: 'from the smoker' },
         { q: '[Qty]', name: 'Carolina BBQ sauce', tags: ['Gluten?', 'Soy?'] },
         { q: '[Qty]', name: 'New slaw', link: 'slaw', note: 'in the burger, under the pulled pork' },
-        { q: '[Qty]', name: 'Fries', note: 'on the side', none: true }
+        { q: '[Qty]', name: 'Fries', note: 'on the side' }
       ],
       pins: [
         { label: 'Pulled pork burger', x: 35.8, y: 39.6, side: 'right', tags: ['Gluten?'], note: 'Bottom to top: bun base, new slaw, pulled pork with Carolina BBQ, bun top. [Quantities to confirm]' },
@@ -1591,7 +1593,7 @@ window.LK_DATA = {
       ingredients: [
         { q: '[Qty]', name: 'Smoked brisket', link: 'brisket' },
         { q: '[Qty]', name: 'New slaw', link: 'slaw' },
-        { q: '[Qty]', name: 'Fries', none: true }
+        { q: '[Qty]', name: 'Fries' }
       ],
       pins: [
         { label: 'Brisket', x: 30.2, y: 29.2, side: 'right', tags: [], note: 'Smoked, sliced.' },
@@ -1818,12 +1820,12 @@ window.LK_DATA = {
         { q: '2 slices', name: 'Burger cheese', note: 'on the patties', tags: ['Milk'] },
         { q: '2', name: 'Southern-style chicken tenders', note: 'bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
         { q: '80 g', name: 'Pork belly', note: 'sliced', link: 'pork-belly-batch' },
-        { q: '120 g', name: 'Smoked pulled lamb', note: 'from the smoker', none: true },
+        { q: '120 g', name: 'Smoked pulled lamb', note: 'from the smoker' },
         { q: '50 ml', name: 'American cheese sauce', note: 'the liquid cheese', link: 'american-cheese-sauce' },
         { q: '50 g', name: 'Cowboy candy', link: 'cowboy-candy' },
         { q: '5', name: 'Onion rings', note: 'bought in', tags: ['Gluten', 'Egg?', 'Soy?'] },
         { q: '50 ml', name: 'Alabama white sauce', link: 'alabama-white-sauce' },
-        { q: '160 g', name: 'Chips', note: 'on the side', none: true }
+        { q: '160 g', name: 'Chips', note: 'on the side' }
       ],
       pins: [
         { label: 'Beast burger', x: 59.4, y: 35.8, side: 'left', tags: ['Gluten', 'Milk', 'Egg'], note: 'Sourdough cob as the bun. Bottom to top: house BBQ sauce, oak leaf, pickles, smashed patties, cheese, 2 tenders, pork belly, pulled lamb, cheese sauce, cowboy candy, 5 onion rings, Alabama white sauce, cob top.' },
@@ -1897,7 +1899,7 @@ window.LK_DATA = {
       menu: 'BBQ Pulled Beef Loaded Fries: crispy fries with fork tender slow cooked BBQ pulled beef brisket, gooey cheddar sauce, smokey Alabama white sauce, crunchy fried shallots and cowboy candy.',
       yield: 'Per serve. Crispy chips loaded with pulled BBQ brisket and cheese sauce, with Alabama white sauce, fried shallots and cowboy candy on top. [Amounts, build order and bowl or board to come]',
       ingredients: [
-        { q: '[Qty]', name: 'Chips', note: 'crispy, from the fryer', none: true },
+        { q: '[Qty]', name: 'Chips', note: 'crispy, from the fryer' },
         { q: '[Qty]', name: 'Pulled BBQ brisket', link: 'brisket', note: '[smoked brisket (card 79) or oven brisket (card 121), and which BBQ sauce, to confirm]' },
         { q: '[Qty]', name: 'Cheese sauce', link: 'american-cheese-sauce', note: 'the gooey cheddar sauce on the menu [American cheese sauce (card 117) to confirm]' },
         { q: '[Qty]', name: 'Alabama white sauce', link: 'alabama-white-sauce' },
@@ -2057,7 +2059,7 @@ window.LK_DATA = {
         { q: '8ea', name: 'Quiche', tags: ['Gluten', 'Milk', 'Egg'] },
         { q: '2ea', name: 'Tomato sauce', link: 'tomato-sauce' },
         { q: '2ea', name: 'BBQ sauce', tags: ['Gluten?', 'Soy?'] },
-        { q: '2ea', name: 'Sweet chilli sauce', none: true }
+        { q: '2ea', name: 'Sweet chilli sauce' }
       ],
       pins: [
         { label: 'Party pies', x: 19.8, y: 29.2, side: 'left', tags: ['Gluten', 'Milk?', 'Soy?'], note: '10.' },
@@ -2086,7 +2088,7 @@ window.LK_DATA = {
         { q: '1 whole', name: 'Garlic bread', note: 'G. Banga on the functions menu', tags: ['Gluten', 'Milk?', 'Soy?'] },
         { q: '2ea', name: 'Tomato sauce', link: 'tomato-sauce' },
         { q: '2ea', name: 'BBQ sauce', tags: ['Gluten?', 'Soy?'] },
-        { q: '2ea', name: 'Sweet chilli sauce', none: true }
+        { q: '2ea', name: 'Sweet chilli sauce' }
       ],
       pins: [
         { label: 'Vege spring rolls', x: 19.3, y: 29.2, side: 'left', tags: ['Gluten', 'Soy?', 'Sesame?'], note: '10.' },
@@ -2114,7 +2116,7 @@ window.LK_DATA = {
         { q: '10ea', name: 'Karage chicken', tags: ['Gluten', 'Soy?', 'Egg?'] },
         { q: 'handful', name: 'Prawn crackers', tags: ['Crustacean', 'Gluten?'] },
         { q: '2ea', name: 'Sweet soy sauce', tags: ['Soy', 'Gluten?'] },
-        { q: '2ea', name: 'Sweet chilli sauce', none: true }
+        { q: '2ea', name: 'Sweet chilli sauce' }
       ],
       pins: [
         { label: 'Dim sims', x: 19.3, y: 29.7, side: 'left', tags: ['Gluten', 'Soy?', 'Sesame?', 'Egg?'], note: '10.' },
@@ -2135,8 +2137,8 @@ window.LK_DATA = {
       yield: 'Per platter. Prosciutto, leg ham, salami, cheese, crackers, grilled sourdough, dried fruit salad, 3 dips, 2 of each: tomato relish, caramelised onions and basil pesto.',
       ingredients: [
         { q: '80 g', name: 'Prosciutto', none: true },
-        { q: '100 g', name: 'Leg ham', none: true },
-        { q: '100 g', name: 'Salami', none: true },
+        { q: '100 g', name: 'Leg ham' },
+        { q: '100 g', name: 'Salami' },
         { q: '300 g total', name: 'Cheese selection', note: 'Cracker Barrel, blue cheese and brie', tags: ['Milk'] },
         { q: '1/2 pkt', name: 'Crackers', tags: ['Gluten', 'Sesame?', 'Soy?'] },
         { q: '1 cob', name: 'Sourdough', note: 'cut and grilled', tags: ['Gluten'] },
@@ -2173,10 +2175,10 @@ window.LK_DATA = {
         { q: '100 g', name: 'Fried squid', tags: ['Mollusc', 'Gluten?', 'Egg?'] },
         { q: '6-8ea', name: 'King prawns', tags: ['Crustacean'] },
         { q: '10ea', name: 'Oysters', tags: ['Mollusc'] },
-        { q: 'Large handful', name: 'Sweet potato chips', none: true },
+        { q: 'Large handful', name: 'Sweet potato chips' },
         { q: '8', name: 'Lemon wedges', none: true },
         { q: '2ea', name: 'Tartare sauce', link: 'tartare' },
-        { q: '2ea', name: 'Sweet chilli sauce', none: true }
+        { q: '2ea', name: 'Sweet chilli sauce' }
       ],
       pins: [
         { label: 'Scallops', x: 17.9, y: 29.2, side: 'left', tags: ['Mollusc'], note: '6-8.' },
@@ -2224,7 +2226,7 @@ window.LK_DATA = {
       menu: 'Chicken topper: chicken tenders.',
       yield: 'Per topper. Chicken tenders cooked in Italian herbs. [Number of tenders to confirm]',
       ingredients: [
-        { q: '[Qty]', name: 'Chicken tenders', none: true },
+        { q: '[Qty]', name: 'Chicken tenders' },
         { q: '[Qty]', name: 'Italian herbs', none: true }
       ],
       pins: [
@@ -2708,7 +2710,7 @@ window.LK_DATA = {
       id: 'bourbon-bbq-sauce', art: 'bourbon-bbq-sauce', no: '105', kind: 'batch', forLine: 'For the ribs, riblets and smoked boards', name: 'Bourbon BBQ Sauce', short: 'Bourbon BBQ', avc: 'Bourbon BBQ Sauce Batch A25',
       yield: 'Batch: 5 L.',
       ingredients: [
-        { q: '4 kg', name: 'Heinz BBQ sauce', note: 'gluten free', none: true },
+        { q: '4 kg', name: 'Heinz BBQ sauce', note: 'gluten free' },
         { q: '250 g', name: 'Bourbon BBQ dry rub', note: 'Krio Krush', tags: ['Gluten?', 'Soy?'] },
         { q: '1 kg', name: 'Hickory smoked BBQ sauce', note: 'Sunshine', tags: ['Gluten?', 'Soy?'] }
       ],
@@ -2798,7 +2800,7 @@ window.LK_DATA = {
         { q: '300 g', name: 'Garlic', none: true },
         { q: '200 g', name: 'Tomato paste', none: true },
         { q: '3 L', name: 'Dry red wine', note: 'shiraz or cabernet, 4 standard bottles', none: true },
-        { q: '5 to 6 L', name: 'Dark beef stock', note: 'good quality or glace base, enough to submerge the meat', none: true },
+        { q: '5 to 6 L', name: 'Dark beef stock', note: 'good quality or glace base, enough to submerge the meat' },
         { q: '1 large bunch', name: 'Fresh thyme', none: true },
         { q: '5 sprigs', name: 'Fresh rosemary', none: true },
         { q: '10 pieces', name: 'Bay leaves', note: 'dried', none: true },
@@ -2948,8 +2950,7 @@ window.LK_DATA = {
         },
         {
           "q": "75 ml",
-          "name": "Buffalo sauce",
-          "none": true
+          "name": "Buffalo sauce"
         },
         {
           "q": "40 g",
@@ -3038,8 +3039,7 @@ window.LK_DATA = {
         },
         {
           "q": "6 g",
-          "name": "Chinese five spice",
-          "none": true
+          "name": "Chinese five spice"
         },
         {
           "q": "4 L",
@@ -3048,8 +3048,7 @@ window.LK_DATA = {
         },
         {
           "q": "6 g",
-          "name": "Mild curry powder",
-          "none": true
+          "name": "Mild curry powder"
         },
         {
           "q": "1.125 kg",
@@ -3114,8 +3113,7 @@ window.LK_DATA = {
         {
           "q": "375 ml",
           "name": "Red hot sauce",
-          "note": "Franks",
-          "none": true
+          "note": "Franks"
         },
         {
           "q": "100 g",
