@@ -42,8 +42,9 @@ const said = async p => ((await txt(p, 'main')) || '').replace(/\s+/g, ' ');
 
   // Supplier order: the reason and the time, not "Check the connection"
   p = await L.open(b, '#/suppliers', { who: 'bo', extra: F.fixture(), exhausted: '/suppliers$', wait: 1800 });
-  await L.waitFor(p, () => !!document.querySelector('.su-error'), null, 15000).catch(() => {});
-  t = ((await txt(p, '.su-error')) || '').replace(/\s+/g, ' ');
+  // a failed read is the shared failed-read line since the consistency sweep, step 2 (20 Nov 2026)
+  await L.waitFor(p, () => !!document.querySelector('.su-error, .p-readerr'), null, 15000).catch(() => {});
+  t = ((await txt(p, '.p-readerr')) || (await txt(p, '.su-error')) || '').replace(/\s+/g, ' ');
   ok(/used up today's free reads/.test(t) && BACK.test(t) && !/Check the connection/.test(t) && /usual way/.test(t), 'Supplier order: the reads are used up, when they come back, and to order the usual way until then (' + t + ')');
   ok(p.errors.length === 0, 'Supplier order: no page errors ' + p.errors.join(' | '));
   await p.context().close();
