@@ -104,10 +104,14 @@ const editorCfg = { [key('config', 'main')]: { people: [{ id: 'sam', name: 'Sam'
   await clean(p, 'mail pop-up');
 
   // 2 and 3 on Prep at 1280: the band's Service view, the row's Remove, the slip's Undo; the Functions tab is orange
-  p = await open(b, '#/prep', { who: 'sam', width: 1280, height: 900, extra: fns, wait: 1800 });
-  await L.waitFor(p, () => !!document.querySelector('#fn-band .fn-more') && !!document.querySelector('.nb-x[data-p="del"]'), null, 6000).catch(() => {});
+  // the full band on Wastage (Prep starts with the slim strip once #773 is in, so the band is checked where it stays full)
+  p = await open(b, '#/waste', { who: 'sam', width: 1280, height: 900, extra: fns, wait: 1800 });
+  await L.waitFor(p, () => !!document.querySelector('#fn-band .fn-more'), null, 6000).catch(() => {});
   await act(p, '#fn-band .fn-more', 'function band: ' + (await txt(p, '#fn-band .fn-more') || 'Service view'));
   await shot(p, '#fn-band .fn-more', 'fn-band-service-view');
+  await p.context().close();
+  p = await open(b, '#/prep', { who: 'sam', width: 1280, height: 900, extra: fns, wait: 1800 });
+  await L.waitFor(p, () => !!document.querySelector('.nb-x[data-p="del"]'), null, 6000).catch(() => {});
   await del(p, '.nb-x[data-p="del"]', 'prep row: Remove');
   await shot(p, '.nb-row:has(.nb-x[data-p="del"])', 'prep-row-remove', 4);
   if (!(await p.locator('.nb-tab-fn').count())) await inject(p, '#prep-root', '<button type="button" class="nb-tab nb-tab-fn" aria-pressed="true">Functions</button>');
