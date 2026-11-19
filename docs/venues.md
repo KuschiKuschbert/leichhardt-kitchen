@@ -2,6 +2,13 @@
 
 19 November 2026. Build step 2 of [the second venue brief](second-venue-options/brief.md) (the mix chosen that day), with no Venues room in the app ([venues room brief](venues-room-options/brief.md), agreed the same day). A venue is added, and its head chef changed, in GitHub and the Firebase console with this checklist and two hand-run workflows. Nothing here changes Leichhardt's data, its rules or what its phones load.
 
+## The venues now
+
+| Venue | Address | Book | Secrets | State |
+| --- | --- | --- | --- | --- |
+| `leichhardt` | GitHub Pages, as before | full | `leichhardt` environment since 20 Nov 2026 | Live. Moved by the owner on 20 Nov 2026: Publish rules in verify mode found the kitchen, Nightly learning and the Lock probe were green on the environment's secrets, then the five repository copies were deleted (only `AUTOMERGE_TOKEN` stays at repository level). |
+| `strand` | https://strand-kitchen.web.app/ | empty | `strand` environment | Venue file and QR files added 20 Nov 2026. Still to do: `OWNER_EMAIL` (the Strand head chef's Google email), Actions **Set up a venue** (strand), **Publish rules** (strand, First publish), the first sign-in and `PLATFORM_STAFF_ID`, then App Check Enforce. |
+
 ## What a venue is
 
 - **One file**, `venues/<id>.json`: its id, name ("Leichhardt Hotel"), short name ("Leichhardt"), web address, where it is served (`pages` for GitHub Pages, `firebase` for its own Firebase project), its book (`full` for Leichhardt, `empty` for every new venue), where its secrets are (`repository` or `environment`) and its project's public web settings. Nothing in it is secret. `scripts/venues.cjs` checks it word by word: a wrong field stops every job, it never falls back to another venue.
@@ -73,7 +80,7 @@ A secret missing from one venue's environment would otherwise quietly be the rep
 2. Add the **secrets** `FIREBASE_SA`, `KITCHEN_PIN`, `OWNER_EMAIL`, `BACKUP_KEY` and `APPCHECK_DEBUG_TOKEN` with the same values as the repository secrets. Keep `BACKUP_KEY` the same, or older backups need the old key. If the service account JSON is not to hand, Firebase console, Project settings, Service accounts, Generate new private key (then delete the old key in Google Cloud, IAM, Service accounts, once the new one works).
 3. Actions: run **Lock probe** and **Nightly learning** by hand. Both green.
 4. Settings, Secrets and variables, Actions: delete the repository secrets `FIREBASE_SA`, `KITCHEN_PIN`, `OWNER_EMAIL`, `BACKUP_KEY` and `APPCHECK_DEBUG_TOKEN`. Keep the others (`AUTOMERGE_TOKEN`).
-5. Ask Claude to set `"secrets": "environment"` in `venues/leichhardt.json` (a small pull request).
+5. Ask Claude to set `"secrets": "environment"` in `venues/leichhardt.json` (a small pull request). Done for Leichhardt on 20 Nov 2026, with the Strand's venue file.
 
 ### C. Add a venue
 
