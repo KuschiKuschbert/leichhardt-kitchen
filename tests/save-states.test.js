@@ -64,8 +64,8 @@ const count = (p, scope, word) => p.evaluate(([s, w]) => ((document.querySelecto
     ok(await p.evaluate(() => window.LK_PREP.state.nOpen), 'ping: the editor stays open while it says Saved');
     await p.clock.runFor(1300);
     await wait(p, () => !window.LK_PREP.state.nOpen);
-    ok(await p.evaluate(() => /^Saved\. Shows:/.test(window.LK_PREP.state.nMsg)), 'ping: after 1.2 s the editor closes and says what it shows');
-    ok(/^Saved\. Shows:/.test(await L.txt(p, '.n-lst .saved') || '') && !(await p.$('.n-lst .p-err')), 'ping: the confirmation is the grey status line, not an error');
+    ok(await p.evaluate(() => /^Saved: .+\. Shows:/.test(window.LK_PREP.state.nMsg)), 'ping: after 1.2 s the editor closes and says what it shows');
+    ok(/^Saved: .+\. Shows:/.test(await L.txt(p, '.n-lst .saved') || '') && !(await p.$('.n-lst .p-err')), 'ping: the confirmation is the grey status line, not an error');
     await p.clock.resume();
     ok(await p.evaluate(() => Object.entries(window.__fake.dump()).filter(([k, v]) => /\/notes\/[^/]+$/.test(k) && v.text === 'Barramundi is off until Thursday').length) === 1, 'ping: one ping is written');
 

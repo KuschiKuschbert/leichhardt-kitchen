@@ -1,4 +1,5 @@
-// Kitchen cleaning takes the sixth main tab; Guides remains a private kitchen link in the chef hat.
+// Cleaning takes the sixth main tab; Guides remains a private kitchen link in the chef hat. Since 20 Nov 2026 (the
+// consistency sweep, step 3) the hat has no Cleaning row: the tab is the way in, and everything says Cleaning.
 const L = require('./lib'), { R, ok } = L.results();
 const go = async (p, hash) => { await p.evaluate(h => { location.hash = h; }, hash); await L.settle(p, 400); };
 const back = '.wtop [data-act="back"]';
@@ -15,8 +16,8 @@ const back = '.wtop [data-act="back"]';
       const a = document.querySelector('.wm a[href="#/' + id + '"]'), h = a && a.closest('.wm-grid').previousElementSibling;
       return { group: h && h.textContent.trim(), label: a && a.textContent.trim(), icon: !!(a && a.querySelector('svg[aria-hidden="true"][stroke="currentColor"]')), height: a && a.getBoundingClientRect().height };
     }));
-    ok(groups[0].group === 'Every day' && groups[0].label === 'Kitchen cleaning' && groups[1].group === 'More' && groups[1].label === 'Guides', width + ' px: Kitchen cleaning is under Every day and Guides under More');
-    ok(groups.every(x => x.icon && x.height >= 44), width + ' px: both rows use the existing ink icons and full touch targets');
+    ok(groups[0].label === null && groups[1].group === 'More' && groups[1].label === 'Guides', width + ' px: no Cleaning row beside its tab, and Guides under More');
+    ok(groups[1].icon && groups[1].height >= 44, width + ' px: the Guides row uses the existing ink icon and a full touch target');
     ok(!(await L.overflow(p)), width + ' px: the navigation and hat have no sideways overflow');
     await p.click('.wm a[href="#/guides"]');
     await L.waitFor(p, () => !!document.querySelector('.g-card'));
@@ -33,10 +34,10 @@ const back = '.wtop [data-act="back"]';
   const p = await L.open(b, '#/recipes', { who: 'ann', block: 'js/cleaning\\.js', wait: 1600 });
   await go(p, '#/cleaning');
   await L.waitFor(p, () => !!document.querySelector('[data-cleaning-retry]'));
-  ok(await p.locator('#cleaning-root').innerText().then(t => /Could not open kitchen cleaning/.test(t)), 'failed first download gives a visible Retry action');
+  ok(await p.locator('#cleaning-root').innerText().then(t => /Could not open Cleaning/.test(t)), 'failed first download gives a visible Retry action');
   const failedLoadErrors = p.errors.splice(0);
   ok(failedLoadErrors.every(e => e === 'console: Failed to load resource: net::ERR_FAILED'), 'the deliberately blocked download reports only its expected network failure');
-  ok(await p.evaluate(() => document.title === 'Kitchen cleaning · Leichhardt Kitchen Book' && [...document.querySelectorAll('.pnav [aria-current], .tabbar [aria-current]')].every(a => a.getAttribute('href') === '#/cleaning')), 'cleaning route has its own title and active main tab');
+  ok(await p.evaluate(() => document.title === 'Cleaning · Leichhardt Kitchen Book' && [...document.querySelectorAll('.pnav [aria-current], .tabbar [aria-current]')].every(a => a.getAttribute('href') === '#/cleaning')), 'cleaning route has its own title and active main tab');
   await p.context().route(/js\/cleaning\.js/, r => r.fulfill({ status: 200, contentType: 'text/javascript', body: 'window.LK_CLEANING = { api: 2, mount: function (root) { root.innerHTML = \'<h2 id="rtitle" tabindex="-1">Kitchen cleaning</h2>\'; window.cleaningMounted = true; }, unmount: function () { window.cleaningMounted = false; }, reset: function () { window.cleaningMounted = false; }, dirty: function () { return false; } };' }));
   await p.click('[data-cleaning-retry]');
   await L.waitFor(p, () => !!window.cleaningMounted);

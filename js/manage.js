@@ -169,7 +169,7 @@
   function listHTML() {
     var q = M.q.trim().toLowerCase(), words = q ? q.split(/\s+/) : [];
     var toCome = A.toCome();
-    var head = '<div class="mg-head"><h2 id="rtitle" tabindex="-1">Manage Recipes &amp; Drawings</h2>' +
+    var head = '<div class="mg-head"><h2 id="rtitle" tabindex="-1">Recipes &amp; drawings</h2>' +
       '<p class="hint">Change a recipe or add a new one. Staff see a saved change within half an hour. Put anything not confirmed yet in [square brackets].</p>' +
       '<div class="btn-row"><a class="btn dark" href="#/manage/new">New recipe</a><a class="btn" href="#/manage/print">Print cards</a></div></div>';
     var kind = kindOf(M.chip), n = {};

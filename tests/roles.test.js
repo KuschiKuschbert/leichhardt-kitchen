@@ -57,7 +57,8 @@ function extra() {
 // the 8 sign-ins: who is on the phone, and what its menu and tabs must and must not hold. Guides shows for everyone in
 // the kitchen while staff see it (SEE.guides), and never for functions only
 const KITCHEN_TABS = ['Recipes', 'Prep', 'Orders', 'Wastage', 'Transfers', 'Cleaning'];
-const KITCHEN_MENU = ['cleaning'].concat(SEE.guides ? ['guides'] : []);
+// Cleaning has no chef hat row since 20 Nov 2026 (the consistency sweep, step 3): its tab is the way in
+const KITCHEN_MENU = SEE.guides ? ['guides'] : [];
 const CREW_NO = ['admin', 'chef', 'todo', 'manage', 'pings', 'staff', 'functions', 'suppliers'];
 const SIGNINS = [
   { id: 'staff', name: 'staff (Ann)', o: { who: 'ann' }, has: ['mail', 'drinks', 'fn', 'deliveries', 'settings', 'out'], no: CREW_NO, tabs: KITCHEN_TABS },

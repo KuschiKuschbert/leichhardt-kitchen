@@ -473,7 +473,9 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 /* ---------- prep book (notebook) ---------- */
 .nb-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.4rem 1rem; font-size: 0.9375rem; }
 .nb-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
-.nb-nav .chip:first-child, .nb-nav .chip:last-child { min-width: 48px; font-size: 1.4rem; padding: 0; }
+/* The day control's ‹ and › (head chef, 20 Nov 2026, the consistency sweep, step 3): one step chip wherever a day or a
+   week is stepped (Prep, Orders, Cleaning's week, Today's team's week). dayNavHTML() in js/prep.js draws the day control. */
+.chip.nav-step { min-width: 48px; font-size: 1.4rem; padding: 0; }
 .nb-wrap { position: relative; display: flex; flex-direction: column; gap: 0.6rem; }
 .nb { display: flex; flex-direction: column; gap: 1rem; }
 .nb-page { --rule: #DDD5C5; display: flex; flex-direction: column; min-width: 0; background: var(--surface-paper); border: 1.5px solid var(--surface-work-edge); border-radius: 10px; padding: 0 1rem; position: relative; box-shadow: 0 6px 0 rgba(28,29,31,0.12); }
@@ -492,7 +494,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .nb-row { display: flex; align-items: center; gap: 0.6rem; min-height: 44px; padding: 3px 0; border-bottom: 1px solid var(--rule); font-family: 'Caveat', cursive; font-weight: 700; font-size: 1.65rem; line-height: 1.1; }
 .nb-box { flex: 0 0 34px; width: 34px; height: 34px; display: grid; place-items: center; padding: 0; border: 0; background: none; color: var(--ink); cursor: pointer; }
 .nb-box svg { width: 33px; height: 33px; }
-.nb-tt, .nb-main[data-p="tick"] { cursor: pointer; }
+.nb-tt, .nb-main[data-p="tick"], .nb-main[data-p="otick"] { cursor: pointer; }
 /* Not sent (27 Oct 2026): in a slot inside the words (.nb-mk), so on a phone it wraps with them like Urgent and never
    narrows them. Shown only while the No signal or Not sent yet strip is up. */
 .nb-unsent, .nb-held { display: inline-block; margin-left: 0.3rem; vertical-align: 0.25em; padding: 0 0.4rem; border-radius: 999px; background: var(--accent-ink); color: #fff; font: 700 0.75rem/1.5 var(--body); white-space: nowrap; }
@@ -2624,9 +2626,13 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .cut-box { width: 44px; height: 44px; padding: 0; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: #fff; font-size: 1.4rem; font-weight: 700; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
 .cut-box[aria-pressed="true"] { background: var(--done); border-color: var(--done); }
 .cut-box:disabled { opacity: 0.5; cursor: default; }
-/* Chef to-do shows the supplier orders without a tick (ticked on the order list only, 5 Nov 2026): the same box, not a button */
-.cut-mark { width: 30px; height: 30px; margin: 7px; border-width: 1.5px; font-size: 1rem; cursor: default; }
-.cut-o.is-done .cut-mark { background: var(--done); border-color: var(--done); }
+/* Chef to-do shows the supplier orders without a tick (ticked on the order list only, 5 Nov 2026). Since 20 Nov 2026 (the
+   consistency sweep, step 3) a supplier mark where the box was, not an empty box: quiet ink like Prep's calendar for a
+   planned line (.pa-cal), green once the order is in. */
+.cut-o .cut-mark { grid-area: box; width: 44px; height: 44px; display: grid; place-items: center; color: var(--muted); cursor: default; }
+.cut-mark svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.cut-mark svg circle { fill: var(--paper); }
+.cut-o.is-done .cut-mark { color: var(--done-ink); }
 .cut-tl li.is-done .cut-n, .cut-tl li.is-done .cut-t { color: var(--muted); }
 .cut-tl li.is-done .cut-st { color: var(--done-ink); }
 .cut-how { margin: 0 0 0.4rem; }
@@ -3993,6 +3999,12 @@ button.nb-prog { min-height: 44px; padding: 0; border: 0; background: none; curs
 .o-nav { align-items: center; flex-wrap: wrap; }
 /* the day arrows' big type (.nb-nav .chip:first-child/:last-child) is not for these chips */
 .nb-nav.o-nav .chip { min-width: 0; padding: 0 0.85rem; font-size: 0.875rem; }
+/* Orders' day control is Prep's (the consistency sweep, step 3, 20 Nov 2026): its chips keep Prep's look, not the
+   Orders chips' bolder type above. On a phone the control fills its row and Delivery received goes under it. */
+.o-nav .o-dayctl { display: flex; align-items: center; gap: 0.5rem; flex: 0 1 auto; min-width: 0; }
+.nb-nav.o-nav .o-dayctl .chip { font: inherit; font-weight: 600; font-size: 0.875rem; padding: 0 0.85rem; }
+.nb-nav.o-nav .o-dayctl .chip.nav-step { min-width: 48px; font-size: 1.4rem; padding: 0; }
+@media (max-width: 599px) { .o-nav .o-dayctl { flex: 1 1 100%; } }
 .o-nav .o-deliv { display: inline-flex; align-items: center; color: var(--ink); text-decoration: none; }
 .o-ro { padding: 0 12px; }
 .o-done summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; list-style: none; }
@@ -5289,7 +5301,6 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .cln-empty .nb-empty { color: var(--muted); }
 .cln-empty .hint { margin: -.5rem 0 .75rem; }
 .cln-week-nav { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .6rem; }
-.cln-week-nav > .chip { width: 44px; padding: 0; font-size: 1.5rem; }
 .cln-week-nav > span { font-weight: 600; font-size: .9375rem; }
 .cln-week-nav > .p-link { margin-left: auto; font-size: .8125rem; }
 .cln-legend { margin: .5rem 0 .7rem; line-height: 1.5; }
@@ -5451,6 +5462,8 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .tm-weekbar { display: flex; align-items: center; gap: .3rem; margin-bottom: .35rem; }
 .tm-weekbar > span { flex: 1 1 auto; min-width: 0; text-align: center; font-size: .875rem; font-weight: 600; overflow-wrap: anywhere; }
 .tm-weekbar .chip { flex: 0 0 auto; min-width: 44px; min-height: 44px; padding: .4rem .65rem; }
+/* the week arrows are the shared step chips (the consistency sweep, step 3, 20 Nov 2026) */
+.tm-weekbar .chip.nav-step { min-width: 48px; padding: 0; }
 .tm-weekscroll { min-width: 0; overflow-x: auto; scrollbar-width: thin; }
 .tm-weekscroll.has-more { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1rem), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 1rem), transparent); }
 .tm-weekdays { display: grid; grid-template-columns: repeat(7, minmax(44px, 1fr)); min-width: 320px; gap: 2px; }
