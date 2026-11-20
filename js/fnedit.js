@@ -268,7 +268,7 @@
   function removeHTML(f, form) {
     if (!P.fnOK() || !f || !f.id || (!f.removed && f.status === 'confirmed')) return '';
     var busy = E.removing[f.id] || FN.statusBusy(f.id), restore = !!f.removed, confirm = armed('remove:' + f.id);
-    return '<button type="button" class="linkish" data-fe="' + (restore ? 'restore-row' : form ? 'remove' : 'remove-row') + '" data-id="' + esc(f.id) + '"' +
+    return '<button type="button" class="linkish' + (restore ? '' : ' lk-del') + '" data-fe="' + (restore ? 'restore-row' : form ? 'remove' : 'remove-row') + '" data-id="' + esc(f.id) + '"' +
       (busy ? ' disabled' : '') + ' aria-label="' + esc((restore ? 'Restore ' : confirm ? 'Tap again to delete ' : 'Delete ') + f.name) + '">' +
       (busy ? inkLabel('Saving...') : restore ? (form ? 'Restore function' : 'Restore') : confirm ? 'Tap again to delete function' : form ? 'Delete function' : 'Delete') + '</button>';
   }
@@ -407,7 +407,7 @@
       var flag = !r ? '<span class="fe-flag">No longer in the book. Check with the head chef.</span>' : now_ && l.fp && now_.fp !== l.fp ? '<span class="fe-flag">Changed in the book since it was booked: ' + esc(now_.name) + '. Check it still suits.</span>' : '';
       return '<li class="fe-line"><div class="fe-ln"><b>' + esc(l.name) + '</b><small>' + esc(l.spec) + '</small>' + flag + '</div>' +
         '<div class="fe-lq"><label class="visually-hidden" for="fe-qty' + i + '">How many ' + esc(l.name) + '</label><input id="fe-qty' + i + '" class="search fe-num" type="number" inputmode="numeric" min="1" max="' + M.MAX_QTY + '" step="1" data-ff="qty' + i + '" value="' + esc(l.qty) + '"' + ((e.shown || []).some(function (x) { return x.k === 'qty' + i; }) ? ' aria-invalid="true"' : '') + '><span>' + esc(M.unitOf(l, +l.qty)) + '</span></div>' +
-        '<button type="button" class="p-x" data-fe="rmline" data-i="' + i + '" aria-label="Take ' + esc(l.name) + ' off">' + (armed('rm' + i) ? 'Tap again' : 'Take off') + '</button>' + fieldErr('qty' + i) + '</li>';
+        '<button type="button" class="p-x' + (armed('rm' + i) ? ' lk-del' : '') + '" data-fe="rmline" data-i="' + i + '" aria-label="Take ' + esc(l.name) + ' off">' + (armed('rm' + i) ? 'Tap again' : 'Take off') + '</button>' + fieldErr('qty' + i) + '</li>';
     }).join('') + '</ul>';
     var left = cat.filter(function (c) { return !have[c.rid] && (!q || c.name.toLowerCase().indexOf(q) >= 0); });
     if (d.lines.length < M.MAX_LINES) {
@@ -425,7 +425,7 @@
         '<label class="visually-hidden" for="fe-rt' + ri + '">Round ' + (ri + 1) + ' time</label>' + tboxHTML('rt' + ri, r.t) +
         (nextDay ? '<small class="fe-nd">' + esc(M.dayName(r.d)) + (r.d === M.addDays(d.date, 1) ? ' (next day)' : '') + '</small>' : '') +
         '<label class="visually-hidden" for="fe-rn' + ri + '">Round ' + (ri + 1) + ' note</label><input id="fe-rn' + ri + '" class="search fe-rnote" data-ff="rn' + ri + '" value="' + esc(r.note) + '" placeholder="Note (optional)" maxlength="80">' +
-        (t ? '' : '<button type="button" class="p-x" data-fe="rmround" data-i="' + ri + '">Remove round</button>') + '</div></th>' +
+        (t ? '' : '<button type="button" class="p-x lk-del" data-fe="rmround" data-i="' + ri + '">Remove round</button>') + '</div></th>' +
         d.lines.map(function (l, li) { return '<td><label class="visually-hidden" for="fe-a' + li + '_' + ri + '">' + esc(M.short(l.name)) + ', round ' + (ri + 1) + '</label><input id="fe-a' + li + '_' + ri + '" class="search fe-num" type="number" inputmode="numeric" min="0" step="1" data-ff="a' + li + '_' + ri + '" value="' + esc(l.a[ri] == null ? 0 : l.a[ri]) + '"></td>'; }).join('') +
         '<td><b>' + t + '</b></td></tr>';
     }).join('');
@@ -442,7 +442,7 @@
     out += '<div class="fe-row2">' + inp('foodDate', d.mode === 'all' ? 'Food goes out on' : 'First round on', d.foodDate, ' type="date"') + '<div class="field fe-f"><label class="label" for="fe-foodT">' + (d.mode === 'all' ? 'Food goes out at' : 'First round at') + '</label>' + tboxHTML('foodT', d.foodT) + (d.foodSet ? '' : '<span class="hint">Same as the event start until you change it.</span>') + '</div></div>';
     if (d.mode === 'stag') {
       out += '<div class="fe-row2">' + inp('n', 'Rounds', d.n, ' type="number" inputmode="numeric" min="2" max="' + M.MAX_ROUNDS + '" step="1"') + inp('gap', 'Minutes between rounds', d.gap, ' type="number" inputmode="numeric" min="1" max="600" step="5"') + '</div>' + handHTML(d) +
-        '<p class="hint">' + (d.custom ? 'Split by hand. Changing the rounds keeps your numbers; ' : 'Split evenly, earlier rounds first (5 over 3 is 2, 2, 1). Type in the grid to split by hand. ') + '<button type="button" class="linkish" data-fe="even">' + (armed('even') ? 'Tap again to split evenly' : 'Split evenly again') + '</button></p>' + gridHTML(e);
+        '<p class="hint">' + (d.custom ? 'Split by hand. Changing the rounds keeps your numbers; ' : 'Split evenly, earlier rounds first (5 over 3 is 2, 2, 1). Type in the grid to split by hand. ') + '<button type="button" class="linkish' + (armed('even') ? ' lk-del' : '') + '" data-fe="even">' + (armed('even') ? 'Tap again to split evenly' : 'Split evenly again') + '</button></p>' + gridHTML(e);
     } else if (d.lines.length) {
       out += '<p class="fe-allline">All at ' + esc(cleanT(d.foodT) ? d.foodT : 'a time to come') + ': ' + esc(d.lines.map(function (l) { return (int(l.qty) || 0) + ' ' + M.short(l.name); }).join(', ')) + '</p>';
     }
@@ -457,7 +457,7 @@
     var names = and(hs.map(function (i) { return String(i + 1); })), times = and(hs.map(function (i) { return d.rounds[i].t || 'no time'; }));
     var go = one ? 'Tap again: round ' + names + (g ? ' goes to ' + M.kclock(g) : ' follows the gap') : 'Tap again: rounds ' + names + ' follow the gap';
     return '<p class="hint fe-hand">' + esc((one ? 'Round ' : 'Rounds ') + names + ' set by hand (' + times + '). Changing the first round, Rounds or the gap keeps ' + (one ? 'it' : 'them') + '; ') +
-      '<button type="button" class="linkish" data-fe="regrid">' + esc(armed('regrid') ? go : 'Work the times out again') + '</button></p>';
+      '<button type="button" class="linkish' + (armed('regrid') ? ' lk-del' : '') + '" data-fe="regrid">' + esc(armed('regrid') ? go : 'Work the times out again') + '</button></p>';
   }
   function and(xs) { return xs.length < 2 ? xs.join('') : xs.slice(0, -1).join(', ') + ' and ' + xs[xs.length - 1]; }
   function liveHTML(e) {
@@ -484,7 +484,7 @@
     if (e.review) return '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(d.name || 'New function') + '</h2></div>' + reviewHTML(e);
     var stTag = st === 'draft' ? '<span class="fn-tag">Draft: the kitchen does not see it</span>' : st === 'cancelled' ? '<span class="fn-tag fn-t-off">Cancelled</span>' : '<span class="fn-tag fn-t-ok">Confirmed: in the kitchen\'s band on the day</span>';
     var out = '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(e.isNew ? 'New function' : (s.name || 'Function')) + '</h2><div class="btn-row">' + stTag + (e.savedAt && !dirty() ? '<span class="lk-stamp">Saved ' + esc(e.savedAt) + '</span>' : '') + '<button type="button" class="btn" data-fe="print"' + (e.saving ? ' disabled' : '') + '>Print function</button></div></div>' +
-      (e.restored ? '<p class="fe-note">Changes not saved yet were kept on this device and are back in the form. <button type="button" class="linkish" data-fe="drop">' + (armed('drop') ? 'Tap again to drop them' : 'Drop them') + '</button></p>' : '') +
+      (e.restored ? '<p class="fe-note">Changes not saved yet were kept on this device and are back in the form. <button type="button" class="linkish lk-del" data-fe="drop">' + (armed('drop') ? 'Tap again to drop them' : 'Drop them') + '</button></p>' : '') +
       (!e.isNew ? '<p class="hint">Last changed by ' + esc(FN.nameOf(s.by)) + ', ' + esc(stamp(s.upd)) + '. Version ' + s.v + '.</p>' : '') +
       '<section class="set-block"><span class="label">The function</span>' + inp('name', 'Name or reference', d.name, ' maxlength="80" autocomplete="off" placeholder="Smith birthday"') +
       '<div class="fe-row2">' + inp('date', 'Date', d.date, ' type="date"') + startHTML(d) + '</div>' +
@@ -514,7 +514,7 @@
     if (e.conflict) {
       var c = e.conflict;
       out += '<div class="fe-conflict" role="alert"><p><b>Someone else saved this function</b> (' + esc(c.who || 'another device') + ', ' + esc(stamp(c.when)) + ', version ' + c.v + ') after you opened it. Saving now would put your copy over theirs.</p>' +
-        '<div class="btn-row"><button type="button" class="btn" data-fe="theirs">' + (armed('theirs') ? 'Tap again: your changes go' : 'Load theirs (yours here go)') + '</button><button type="button" class="btn dark" data-fe="mine">Keep mine and save over theirs</button></div></div>';
+        '<div class="btn-row"><button type="button" class="btn' + (armed('theirs') ? ' lk-del' : '') + '" data-fe="theirs">' + (armed('theirs') ? 'Tap again: your changes go' : 'Load theirs (yours here go)') + '</button><button type="button" class="btn dark" data-fe="mine">Keep mine and save over theirs</button></div></div>';
     }
     return out;
   }
@@ -545,7 +545,7 @@
     var more = [];
     if (!e.isNew) more.push('<button type="button" class="btn" data-fe="dup">Duplicate</button>');
     if (!e.isNew && e.saved) { more.push(FN.statusHTML(e.saved, 'fe')); more.push(removeHTML(e.saved, true)); }
-    if (dirty()) more.push('<button type="button" class="btn" data-fe="drop">' + (armed('drop') ? 'Tap again to drop your changes' : 'Drop my changes') + '</button>');
+    if (dirty()) more.push('<button type="button" class="btn lk-del" data-fe="drop">' + (armed('drop') ? 'Tap again to drop your changes' : 'Drop my changes') + '</button>');
     return more.length ? '<div class="btn-row">' + more.join('') + '</div>' : '';
   }
   function histHTML(e) {

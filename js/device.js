@@ -89,7 +89,8 @@
       var d = reuse ? reuse.dialog : document.createElement('dialog'); d.className = 'ux-picker'; d.id = 'lk-device-discard';
       d.setAttribute('aria-labelledby', 'lk-device-discard-title');
       d.removeAttribute('aria-describedby');
-      d.innerHTML = '<header class="ux-picker-head"><h2 id="lk-device-discard-title">Unsaved changes</h2></header><div class="ux-picker-options"><p class="hint">Changing this device signs you out. Your unsaved changes will be discarded.</p></div><footer class="ux-picker-footer"><button class="btn" type="button" data-keep>Keep working</button><button class="btn dark" type="button" data-discard>Discard and continue</button></footer>';
+      // Keep working is the main button and Discard the red one, never the orange (head chef, 20 Nov 2026, the consistency sweep, step 3)
+      d.innerHTML = '<header class="ux-picker-head"><h2 id="lk-device-discard-title">Unsaved changes</h2></header><div class="ux-picker-options"><p class="hint">Changing this device signs you out. Your unsaved changes will be discarded.</p></div><footer class="ux-picker-footer"><button class="btn dark" type="button" data-keep>Keep working</button><button class="btn lk-del" type="button" data-discard>Discard and continue</button></footer>';
       if (!reuse) { document.body.appendChild(d); d.showModal(); }
       var finishHistory = null, fromHistory = false, settled = false;
       function finish(yes) { if (settled) return; settled = true; if (reuse) reuse.finish(); else { d.close(); d.remove(); if (finishHistory) finishHistory(fromHistory); } resolve(yes); }

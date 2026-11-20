@@ -123,7 +123,7 @@
     var words = (api.words() || []).slice().sort();
     return '<section class="set-block"><h3 class="ai-queue-title">Words to always keep</h3><p class="hint">These exact words are left alone by autocorrect across the kitchen. Add one word at a time, for example brie. Uppercase and lowercase are treated alike. This does not replace wording on existing lines.</p><div class="pr-word-form"><div class="field"><label class="label" for="pr-word">Word to keep</label><input id="pr-word" class="search" data-k="pr-field-word" data-pr-field="word" maxlength="40" value="' + esc(state.word) + '" autocomplete="off" autocapitalize="none" spellcheck="false" aria-describedby="pr-word-note"' + (state.busy ? ' disabled' : '') + '><p class="hint" id="pr-word-note">Use 2 to 40 letters, a to z. Up to 200 shared words.</p></div>' + button('keep', state.busy ? 'Saving…' : 'Always keep this word', null, state.busy || words.length >= 200, 'dark') + '</div><p class="hint">' + words.length + ' of 200 shared words. Removing a word lets the usual autocorrect rules apply again. Immediate Undo still keeps a word only on that device.</p><div class="pr-words">' + api.listHTML({
       key: 'pr-words', items: words, step: 20, tools: 8, noun: ['word', 'words'], ph: 'Search shared words', empty: 'No shared words yet.', find: function (word) { return word; },
-      cols: [{ h: 'Always keep', th: true, html: esc }, { h: '', html: function (word) { return button('release', 'Remove from shared list', word, state.busy); } }]
+      cols: [{ h: 'Always keep', th: true, html: esc }, { h: '', html: function (word) { return button('release', 'Remove from shared list', word, state.busy, 'lk-del'); } }]
     }) + '</div></section>';
   }
   function loadHistory() {
