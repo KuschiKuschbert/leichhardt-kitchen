@@ -1,5 +1,33 @@
 # Head chef decisions
 
+- **20 November 2026, the look choices of the consistency sweep: all 22 of the recommended picks.** The sweep (`docs/consistency-sweep-options/brief.md`, step 3) put the 25 choices the audit found on one page as 22 questions. The head chef answered "All my picks":
+  - **The look:**
+    1. The main button is the orange button with 8 px corners everywhere, in sheets too (Got it, the mail pop-up).
+    2. Round corners only for chips that choose; every button that does something has 8 px corners.
+    3. One destructive look: red words and outline for Remove, Delete and Discard. "Tap again" turns red everywhere, and Discard is never the orange main button.
+    4. A chosen chip or picker is black; orange only for a notebook's section tabs. The yellow Functions tab and the orange tints come into line.
+    5. Every search is the Recipes pill with the magnifier inside.
+    6. One frame for every Save bar that stays at the bottom: the page colour, an ink line on top, what is not saved yet on the left, the main button on the right.
+    7. The function form's Save and Check and confirm sit in its bar, like the recipe editor.
+    8. Empty lists: the grey handwritten line inside the notebooks, a plain grey sentence everywhere else, no dashed boxes.
+    9. One size and one header form for page titles outside the notebooks. Delivery received's title takes the focus.
+    10. One size for handwritten titles, with Today's team kept small. Mail becomes a notebook like To-do and Drinks.
+    11. Insights uses plain headings.
+    12. Prep's day control (‹ Today date ›) wherever a day is chosen.
+  - **Words and behaviour:**
+    13. "Cleaning" everywhere, and the duplicate chef hat row goes. "Recipes & drawings" everywhere.
+    14. On Orders the words tick the line. The "Used in" links and the fold keep their own taps.
+    15. Transfers counts what its list shows: "3 still out · 1 today".
+    16. Supplier rows on Chef to-do get a supplier mark, not a tick box.
+    17. Slips name the job on Added and Saved. Removals stay unnamed.
+    18. Home's three notices take Home's pinned paper card look.
+  - **Bigger pieces:**
+    19. The Team report gets its own council study.
+    20. The function form's block headings are bigger than its field labels, with even columns on a laptop and the Room picker on one line.
+    21. The supplier order's small controls are 44 px, checking the first To order box still clears the Review bar.
+    22. The design rule book takes these choices, and its test checks that pages use them.
+  - They are built in grouped drafts, each on hold until the head chef has tried it.
+
 - **19 November 2026, Prep opens with the slim functions strip and keeps your place.** On a busy day, with three functions tonight and a cut-off due, the function band (216 px) and the cut-off bar (94 px) left the head chef's Prep one line on the opening screen of a 390 px phone. Coming back from Orders, Wastage or Transfers, Prep always started at the top again.
   - The head chef asked for alternatives to the minus, and proposed a split bar. Three council rounds followed (`docs/band-options/brief.md`). The split bar came last in round 2; the head chef then asked for something more practical.
   - In round 3, all six reviewers put two things first (48.5 points): the slim strip the book already pins once the band scrolls away, used on Prep from the start, and Prep keeping your place.
@@ -10,6 +38,7 @@
   - This changes the 22 October decision that the full band shows on every page: on Prep it starts as the strip. The other pages keep the band and its minus.
   - The cut-off in the strip (F) is held: at 390 px the names are cut to "N…".
 
+
 - **20 November 2026, the push timer and Google's backups are on; the encrypted backup stays nightly.** The owner set both Plan C follow-ups up in Cloud Shell: a Cloud Scheduler job starts the cut-off push job every 10 minutes (chosen 14 Nov over moving the push job into Google), and Firestore's own backups keep Leichhardt's whole database daily for 7 days and Sundays for 14 weeks. Asked whether the encrypted GitHub backup should still drop to Sundays now that a venue may run on the free plan without Google's backups, the owner chose to keep it nightly for every venue. The timer's GitHub token is renewed before 19 Nov 2027 (`docs/firestore-usage.md`).
 
 
@@ -18,6 +47,7 @@
 
 
 - **19 November 2026, the admin panel's People page: the council's mix.** The head chef asked whether to restyle it: every person was an open form, 375 px a person on a phone, nobody on the first screen. The council said Build smaller (4 of 5) and ranked B, rows that open in place, first (5 of 6). The head chef chose the recommended mix: one row a person with their role and rights in words, Change opens one person in place, leaving and Delete for good under "waits for Save changes", a deleted row struck through with Undo delete, and a Save bar that names who will be deleted. One more tap for each change, in exchange for a list you can read. [Brief](people-room-options/brief.md).
+
 
 - **19 November 2026, venues are files and GitHub environments, and a venue has two admins.** Build step 2 of the second venue mix. Each venue is `venues/<id>.json` and its own GitHub environment with its own secrets; every server job, backup, rules publish, Lock probe and live check runs once per venue and stops on another venue's project. A new venue gets its own copy of the book on its own Firebase address with an empty book. Admin at a venue is its head chef (the venue owner's Google with the head chef PIN) or the owner of every venue (his Google with his own profile there), and the venue's admin cannot change, lock out or reset that profile. At Leichhardt both are the owner and nothing changes. Venues are added and head chefs changed by the owner in GitHub and the Firebase console, step by step in [venues](venues.md).
 

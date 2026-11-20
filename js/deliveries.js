@@ -178,9 +178,9 @@
       (noteOpen ? '<label class="dl-field" for="dl-note"><span class="label">Items / notes <span class="hint">(optional)</span></span><textarea id="dl-note" data-dl-field="note" maxlength="300" rows="2" placeholder="Items checked, condition or action taken"' + errorAttrs('note') + '>' + esc(d.note) + '</textarea></label>' :
         '<div><button type="button" class="p-x dl-add-note" data-dl="note" aria-expanded="false" aria-controls="dl-note">Add items or notes (optional)</button></div>') +
       '</fieldset>' +
-      '<p id="dl-save-note" class="' + (M.error ? 'dl-error' : 'dl-message') + '" role="' + (M.error ? 'alert' : 'status') + '">' + (M.error ? esc(M.error) : M.busy ? 'Saving...' : M.message ? inkLabel(M.message, 'save', 'done') : '') + '</p>' +
+      '<div class="dl-dock"><p id="dl-save-note" class="' + (M.error ? 'dl-error' : 'dl-message') + '" role="' + (M.error ? 'alert' : 'status') + '">' + (M.error ? esc(M.error) : M.busy ? 'Saving...' : M.message ? inkLabel(M.message, 'save', 'done') : '') + '</p>' +
       '<div class="btn-row dl-actions"><button class="btn dark ink-busy-button" type="submit" data-dl="save"' + (M.busy ? ' disabled aria-busy="true"' : '') + '>' + (M.busy ? inkLabel('Saving...') : M.attempt ? 'Check and retry save' : 'Save delivery') + '</button>' +
-      (!M.attempt ? '<button class="btn' + (armed('dl-clear') ? ' lk-del' : '') + '" type="button" data-dl="clear"' + (M.busy ? ' disabled' : '') + '>' + (armed('dl-clear') ? 'Tap again to clear' : 'Clear form') + '</button>' : '') + '</div>' +
+      (!M.attempt ? '<button class="btn' + (armed('dl-clear') ? ' lk-del' : '') + '" type="button" data-dl="clear"' + (M.busy ? ' disabled' : '') + '>' + (armed('dl-clear') ? 'Tap again to clear' : 'Clear form') + '</button>' : '') + '</div></div>' +
       '<p class="hint">Saved readings are kept as recorded.</p></form>' +
       '<section class="dl-history" aria-labelledby="dl-records"><div class="dl-history-head"><h2 id="dl-records">' + (today ? 'Today\'s deliveries' : 'Delivery records') + '</h2><button class="btn" type="button" data-dl="refresh">Refresh</button></div>' +
       (admin() ? '<div class="dl-range"><label class="dl-field dl-filter" for="dl-view-day"><span class="label">From</span><input type="date" id="dl-view-day" value="' + esc(M.day) + '" max="' + T.day() + '"></label>' +
