@@ -2926,6 +2926,13 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fn-strip-b { display: flex; align-items: center; gap: 0.5rem; width: 100%; max-width: 1240px; margin: 0 auto; min-height: 44px; padding: 0.45rem 0.9rem; border: 0; background: none; color: inherit; text-decoration: none; text-align: left; font-size: 0.95rem; line-height: 1.3; cursor: pointer; }
 .fn-strip-t { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fn-strip-n { flex: 0 0 auto; }
+/* The strip mended (19 Nov 2026, docs/band-options/brief.md, Round 3): the word Functions first, a chevron that says a
+   tap opens something, the stale line under it; on Prep the band itself starts as the strip (.fn-band.is-strip) */
+.fn-strip-l { flex: 0 0 auto; font: 700 0.75rem/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--bar-accent); }
+.fn-strip-b::after { content: ''; flex: 0 0 auto; width: 7px; height: 7px; margin: 0 2px 0 0.15rem; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); opacity: 0.8; }
+.fn-strip-stale { max-width: 1240px; margin: 0 auto; padding: 0 0.9rem 0.45rem; }
+.fn-strip .fn-stale, .fn-band.is-strip .fn-stale { color: var(--bar-text); }
+.fn-band.is-strip .fn-strip-in { max-width: 1240px; margin: 0 auto; }
 /* the band's two lines (22 Oct 2026): the time of the next round not sent leads */
 .fn-due { font-weight: 700; font-variant-numeric: tabular-nums; }
 .fn-due.is-late { color: var(--bad-ink); }

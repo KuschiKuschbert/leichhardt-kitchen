@@ -22,6 +22,16 @@ The rules behind them are in `CLAUDE.md` (Service rules, Coding rules, Things th
 
 ## A page
 
+- **The functions strip** (19 Nov 2026, [brief](band-options/brief.md)): one 44 px line in the band's charcoal.
+  - It starts with `.fn-strip-l` (the word Functions), then the lead in words, tags first so a narrow screen cuts the name and never them, then "+N" apart, then a chevron.
+  - `stripItems()` puts a cancelled, then a rescheduled, then a changed function, then a trip waiting for this Functions person, first. Every other function and the order and tomorrow lines are counted in "+N".
+  - `stripInner()` draws it, with `.fn-strip-stale` and the band's own words from `staleWords()` when the copy is old or a read failed.
+  - It pins to the top once the band scrolls away, on every page.
+  - On Prep the band itself starts as the strip (`prepStrip()`, `.fn-band.is-strip`, `.fn-strip-in`). A tap opens the service view with two or more functions on, otherwise the sheet.
+- **Prep keeps your place** (19 Nov 2026):
+  - `prepPlaceSave()` keeps the line at the top of the screen and its offset, in memory, for one person, day, section and board.
+  - `prepPlaceBack()` puts it back once, after Prep has drawn, and never while a finger is down.
+  - Tapping Prep while on Prep goes to the top. A reload or the 04:00 refresh starts at the top.
 - **Main-tab touch navigation** uses `pageSwipeFrom()` and the existing permitted `navList()` in `js/app.js`. A clear horizontal swipe moves one main tab without wrapping. `.page-swipe-surface` follows the finger slightly inside `.page-swiping`, then settles in 180 ms. Header, tabs and fixed controls stay anchored. Reduced motion removes movement. Fields, sheets, selected text, zoom and scrollable rows retain their own gestures. [Contract](navigation.md#main-tab-swipes-15-november-2026).
 
 - **The card:** `section.p-card` with `h2.p-h` (id `rtitle`, so the page's Back and focus land on it), a `.hint` line for what the page is for and when it was read, then the work. Buttons sit in a `.btn-row`: `.btn` for most, `.btn.dark` for the one main action. A quiet action in a sentence is a `.p-link` (Refresh, Try again).
