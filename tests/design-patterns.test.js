@@ -53,13 +53,14 @@ const CLASSES = [
   'lk-fb', 'lk-ftag', 'lk-fillnote', 'lk-weigh', 'lk-why',
   // the consistency sweep, step 3 (20 Nov 2026): every search the pill, one Save bar frame, the function form's bar, empty lists
   'find-wrap', 'sv-dock', 'a-savebar', 'mg-bar', 'fe-bar', 'fe-live', 'fe-btns', 'su-order-actions', 'empty', 'ux-table-empty', 'lv-none', 'nt-none', 'nb-empty',
-  'fn-strip-l', 'fn-strip-stale', 'fn-strip-in', 'is-strip'
+  'fn-strip-l', 'fn-strip-stale', 'fn-strip-in', 'is-strip',
+  'p-readerr', 'fn-strip-l', 'fn-strip-stale', 'fn-strip-in', 'is-strip'
 ];
 const TOKENS = ['--ink', '--wall-ink', '--paper', '--bg', '--muted', '--faint', '--line', '--accent', '--accent-ink', '--tag', '--done', '--done-ink',
   '--bar', '--bar-text', '--display', '--body', '--r-act', '--r-pick', '--small-ink', '--hit',
   '--bad-ink', '--bad-tint', '--bad-on-dark', '--done-on-dark',
   '--surface-work', '--surface-work-edge', '--surface-people', '--surface-people-edge', '--surface-paper', '--surface-reference'];
-const HELPERS = ['stripItems', 'stripInner', 'staleWords', 'prepStrip', 'prepPlaceSave', 'prepPlaceBack', 'tmShortPaint', 'tmShortOf', 'tmBusy', 'tmShortView', 'tmShortBandHTML', 'tmOkCovers', 'tmOkKeep', 'homeHeading', 'homeWords', 'signInBlock', 'lastNext', 'homeWelcomeWords', 'homeWelcomePaint', 'whoNamePaint', 'tmIcon', 'retrySoon', 'waiting', 'cacheOnly', 'inkLabel', 'inkWait', 'mnName', 'AdaptivePicker', 'SwipeDismiss', 'ModalFrame', 'enhance',
+const HELPERS = ['readErr', 'readRetry', 'tmShortPaint', 'tmShortOf', 'tmBusy', 'tmShortView', 'tmShortBandHTML', 'tmOkCovers', 'tmOkKeep', 'homeHeading', 'homeWords', 'signInBlock', 'lastNext', 'homeWelcomeWords', 'homeWelcomePaint', 'whoNamePaint', 'tmIcon', 'retrySoon', 'waiting', 'cacheOnly', 'inkLabel', 'inkWait', 'mnName', 'AdaptivePicker', 'SwipeDismiss', 'ModalFrame', 'enhance', 'stripItems', 'stripInner', 'staleWords', 'prepStrip', 'prepPlaceSave', 'prepPlaceBack',
   'svButton', 'svStart', 'svDone', 'svFail', 'svLine', 'errMsg', 'failed', 'toast', 'slipName', 'arm', 'armed', 'W', 'canW',
   'ovPush', 'ovDone', 'trapTab', 'sheetOpen', 'sheetBusy', 'sheetNext', 'lvHTML', 'homeSlot', 'homePaint', 'homeRotaHTML', 'tmAwayHTML', 'tmNextHTML', 'tmGridShifts', 'tmPlanRowHTML', 'tmPlanHeadHTML', 'tmBarHTML', 'tmGridCellHTML', 'tmAwayPaint', 'tmAwayHidden', 'dkRunHTML', 'dkTeamHTML', 'dkFormHTML', 'panelShellHTML', 'psPanelHTML', 'psHintHTML', 'psReferenceHTML', 'psRolloutHTML',
   'fnOrdTag', 'orderTag', 'fnoHTML', 'platterNeeds', 'fbHTML', 'ftagHTML', 'fillAfterTap'];

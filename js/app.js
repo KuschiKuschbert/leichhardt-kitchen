@@ -1570,7 +1570,7 @@
       return;
     }
     root.innerHTML = mgNote('Delivery received', 'Opening delivery records...', ' ', 'orders');
-    if (!deliveryLoad) deliveryLoad = mgScript('js/deliveries.js?v=9').catch(function (e) { deliveryLoad = null; throw e; });
+    if (!deliveryLoad) deliveryLoad = mgScript('js/deliveries.js?v=11').catch(function (e) { deliveryLoad = null; throw e; });
     deliveryLoad.then(function () { if (parseRoute().name === 'deliveries') mountDeliveries(); }, function () {
       if (parseRoute().name === 'deliveries' && root.isConnected) root.innerHTML = mgNote('Could not open delivery records', 'Check the connection and try again.', '<button type="button" class="btn dark" data-delivery-retry>Try again</button>');
     });
@@ -1593,7 +1593,7 @@
       return;
     }
     root.innerHTML = mgNote('Kitchen cleaning', 'Opening kitchen cleaning...', ' ', 'prep');
-    if (!cleaningLoad) cleaningLoad = (window.LK_CLEANING_SCHEDULE ? Promise.resolve() : mgScript('js/cleaning-schedule.js?v=1')).then(function () { return mgScript('js/cleaning.js?v=2'); }).then(function () {
+    if (!cleaningLoad) cleaningLoad = (window.LK_CLEANING_SCHEDULE ? Promise.resolve() : mgScript('js/cleaning-schedule.js?v=1')).then(function () { return mgScript('js/cleaning.js?v=3'); }).then(function () {
       if (!window.LK_CLEANING) throw new Error('Kitchen cleaning did not load');
     }).catch(function (e) { cleaningLoad = null; throw e; });
     cleaningLoad.then(function () { if (parseRoute().name === 'cleaning') mountCleaning(); }, function () {

@@ -482,6 +482,16 @@
   }
   // a list that could not load: with the reads used up the line at the top says why, so no "check the connection"
   function pageErr() { return quotaOn() ? 'Could not load this page.' : 'Could not load this page. Check the connection.'; }
+  /* A failed read, one look on every page (the consistency sweep, step 2, 20 Nov 2026, docs/design-patterns.md, A page):
+     red words with role status that say what could not load, never "nothing", then Try again. k: the read's retry key
+     (liveRetry(), retrySoon()); Try again runs that read now, the one the book would run after its 5-minute wait or when
+     the signal comes back, and a second tap finds nothing waiting, so it never starts a second listener. attr: another
+     page's own Try again (js/functions.js, js/deliveries.js and the other lazy pages call LK_PREP.readErr). */
+  function readErr(words, k, attr) {
+    var at = attr || (k ? 'data-p="read-retry" data-r="' + esc(k) + '"' : '');
+    return '<p class="p-err p-readerr" role="status">' + esc(words) + (at ? ' <button type="button" class="p-link" ' + at + '>Try again</button>' : '') + '</p>';
+  }
+  function readRetry(k) { var f = onlineRetry[k]; if (!f) return false; delete onlineRetry[k]; delete S.retryAt[k]; f(); return true; }
   /* No signal is said only when the signal is the cause (13 Nov 2026, docs/open-work.md): the phone says it is offline,
      or the server did not answer (unavailable, deadline-exceeded; an answer only from the copy in memory is unavailable
      too, sdk()). The reads used up, a refusal or any other failure says it could not check, so nobody goes to check the
@@ -6133,7 +6143,7 @@
       // Done today sits behind the count (3 Nov 2026, work pages redesign A): a tap on "3 of 13 done" goes to it
       (later ? (S.itemsState === 'ok' ? '<div class="nb-pw"><div class="nb-prog pa-n">' + (planN ? planN + (planN === 1 ? ' line planned' : ' lines planned') : 'Nothing planned') + '</div></div>' : '') :
       tmWrap(S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : doneN ? '<button type="button" class="nb-prog nb-progbtn" data-p="donejump" aria-label="' + doneN + ' of ' + live.length + ' done. Show Done today">' + doneN + ' of ' + live.length + ' done</button>' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>', S.date, tmrN && S.tab !== FN_TAB ? '\u00b7 ' + tmrN + ' for tomorrow' : '')) + (add ? dockBtn('nb-addline', 'write', planHere ? 'Add to ' + (S.date === tmr ? 'tomorrow' : S.date <= shift(today, 6) ? dayName(S.date) : dayAbbr(S.date)) : 'Add a line') : '') + '</header>' +
-      (S.itemsState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' : '') +
+      (S.itemsState === 'error' ? readErr(pageErr(), 'items') : '') +
       // the finished words go above tomorrow's lines when there are some (pageBody()), else where they always were
       '<div class="nb-body">' + planNote + (flags ? '<div class="nb-lc">' + flags + '</div>' : '') + offNote + (S.tab === FN_TAB ? fnGone : '') + (tmrN && /nb-fin|nb-empty/.test(todayEmpty) ? pageBody(S.items, S.date, false, todayEmpty) : pageBody(S.items, S.date) + todayEmpty) + '</div>' +
       (addNote || removed.length && can('del') ? '<div class="nb-foot">' + addNote + (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div>' : '') + '</section>';
@@ -6150,7 +6160,7 @@
       return whoTopHTML() + badgeStrip() + '<section class="wb" aria-labelledby="rtitle"><header class="nb-ph wb-h"><button type="button" class="chip wb-list" data-p="wall" data-v="0"><span aria-hidden="true">&lsaquo; </span>Back to the prep list</button><div class="wb-t"><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
         (S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>') +
         (add ? dockBtn('nb-addline', 'write', 'Add a line') : '') + '</header>' +
-        (S.itemsState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' : '') + (flags ? '<div class="wb-flags">' + flags + '</div>' : '') + offNote +
+        (S.itemsState === 'error' ? readErr(pageErr(), 'items') : '') + (flags ? '<div class="wb-flags">' + flags + '</div>' : '') + offNote +
         '<div class="wb-cols">' + pageBody(S.items, S.date, true) + '</div>' + todayEmpty + '</section>' + pSheet;
     }
     if (!psEnabled()) psView = 'work';
@@ -8325,7 +8335,7 @@ if (list.length) sg('oreg', 's');
     // no signal and the list not loaded yet: the note first, then only the lines this phone wrote since (listSnap)
     var offO = S.ordState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     var body =
-      (S.ordState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' :
+      (S.ordState === 'error' ? readErr(pageErr(), 'orders') :
         offO + (shown.length ? '<ul class="nb-rows' + (br && onToday ? ' o-requests' : '') + '">' + shown.slice().sort(br && onToday ? requestOrder : byAdded).map(ordRow).join('') + '</ul>' : (offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : inkWait('Loading the order list...', 'orders', 4))));
     return whoTopHTML() + tabs +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Order list</h2><span class="nb-date">' + esc(longDate(S.ordDate)) + '</span></div>' +
@@ -8733,7 +8743,7 @@ if (list.length) sg('oreg', 's');
     // no signal and not loaded yet: the note, then only the lines this phone wrote since (listSnap), and no totals
     var offW = S.wState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     var tot = offW ? '' : totalsText(wTotals(live));
-    var body = S.wState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' :
+    var body = S.wState === 'error' ? readErr(pageErr(), 'waste') :
       offW + (shown.length ? '<ul class="nb-rows">' + shown.map(wRow).join('') + '</ul>' : (offW ? '' : S.wState !== 'ok' ? inkWait('Loading wastage...', 'waste', 4) : '<p class="nb-empty">Nothing logged for ' + esc(dayName(S.wDate).toLowerCase()) + ' yet. Log waste when it happens: prep waste, expired stock, cooking faults, returns and excess production.</p>'));
     // today first (3 Nov 2026, work pages redesign A): the total and a bar of the reasons, then Log waste and, for chefs,
     // the review, then the entries. The form and the review open as sheets.
@@ -9193,10 +9203,10 @@ if (list.length) sg('oreg', 's');
     var add = can('add') ? xFormHTML() : '';
     var earlier = (S.xOpen || []).filter(function (x) { return x.date !== today && !x.deleted && !x.returned; }).sort(byTime);
     var todayOpen = shown.filter(function (x) { return !x.deleted && !x.returned; }), done = shown.filter(function (x) { return x.deleted || x.returned; });
-    var earlierNote = S.xOpenState === 'error' ? '<p class="p-err">Could not load what is still out from earlier days. This list may be incomplete. Reload to try again.</p>' :
+    var earlierNote = S.xOpenState === 'error' ? readErr('Could not load what is still out from earlier days. This list may be incomplete.', 'xopen') :
       S.xOpenState === 'offline' ? '<p class="nb-empty" role="status">No signal. What is still out from earlier days shows when the phone is back online.</p>' :
       S.xOpenState !== 'ok' ? inkWait('Loading what is still out...', 'transfers', 2) : '';
-    var todayNote = S.xState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' : offX || (S.xState !== 'ok' ? inkWait('Loading transfers...', 'transfers', 4) : '');
+    var todayNote = S.xState === 'error' ? readErr(pageErr(), 'xfer') : offX || (S.xState !== 'ok' ? inkWait('Loading transfers...', 'transfers', 4) : '');
     var openRows = earlier.concat(todayOpen);
     var stillOut = '<h3 class="a-ch-h">Still out</h3>' + (openRows.length ? '<p class="hint">Mark returned when all of it is back.</p>' : '') +
       earlierNote + (openRows.length ? '<div class="tr-outstanding tr-cards">' + xCardsHTML(openRows) + '</div>' : '') + todayNote +
@@ -9490,7 +9500,7 @@ if (list.length) sg('oreg', 's');
     var editor = pv ? '' : admDev() ? '<a class="nt-edit" href="#/admin" data-note="edit">Write or edit pings</a>' : (canPing() ? '<a class="nt-edit" href="#/prep" data-note="edit-sous">Write or edit pings</a>' : '');
     var h = pv ? 'Preview' : showPings || !mins.length ? 'Today\'s shift pings' : 'Minutes to sign';
     var out = '<header class="nt-head"><span class="nt-eb">' + esc(p ? p.name : 'Leichhardt Hotel Kitchen') + '</span><h2 class="nt-h" id="nt-h">' + h + '</h2><span class="nt-date">' + esc(pv ? pv.label : parseYmd(t).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span></header><div class="nt-body">';
-    if (!pv && showPings && (notesFailed() || S.nPrivateError)) out += '<p class="warn" role="status">' + esc(notesFailed() ? 'Could not check the pings. Check the signal.' : S.nPrivateError) + ' <button type="button" class="btn" data-note="refresh">Refresh pings</button></p>';
+    if (!pv && showPings && (notesFailed() || S.nPrivateError)) out += readErr(notesFailed() ? 'Could not check the pings. Check the signal.' : S.nPrivateError, null, 'data-note="refresh"');
     if (showPings && list.length) {
       // the dot (and "New" for a screen reader): not read on this phone yet today (8 Nov 2026, the inbox look); before, only
       // a ping that popped up after the others were read was marked New
@@ -9804,7 +9814,7 @@ if (list.length) sg('oreg', 's');
           '<p class="hint">The last ' + S.nPast.length + ' pings that have finished. Use again copies one into a new ping.</p>' + (moreOld ? '<div class="btn-row"><button type="button" class="btn" data-p="n-past-more">Load 30 older pings</button></div>' : '');
       } else pastList = '<p class="hint">No finished pings yet.</p>';
     }
-    return (notesFailed() || S.nPrivateError ? '<p class="warn" role="status">' + esc(notesFailed() ? 'Could not load the pings. Check the signal.' : S.nPrivateError) + ' <button type="button" class="btn" data-p="n-refresh">Refresh pings</button></p>' : '') + out + '<div class="btn-row n-pastrow">' + pastBtn + '</div>' + pastList;
+    return (notesFailed() || S.nPrivateError ? readErr(notesFailed() ? 'Could not load the pings. Check the signal.' : S.nPrivateError, null, 'data-p="n-refresh"') : '') + out + '<div class="btn-row n-pastrow">' + pastBtn + '</div>' + pastList;
   }
   function dayGridHTML(f) {
     var t = dayNow(), lead = (parseYmd(t).getDay() + 6) % 7, first = shift(t, -lead), end = f.until || f.start, cells = '', i;
@@ -10144,12 +10154,12 @@ if (list.length) sg('oreg', 's');
     // top bar only carries See who has signed, for chefs
     var reg = list.length ? mnRegLink(true) : '', top = reg ? '<div class="nb-top mn-noprint"><span></span><span class="p-links">' + reg + '</span></div>' : '';
     // loading and nothing published yet: the same notebook card as the order list and wastage
-    function card(msg) {
+    function card(msg, failed) {
       return top + '<section class="nb-page o-page mn-empty"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Meeting minutes</h2><span class="nb-date">Last ' + MN_DAYS + ' days</span></div></header>' +
-        '<div class="nb-body"><p class="nb-empty">' + msg + '</p>' + mnWriteLink() + '</div></section>';
+        '<div class="nb-body">' + (failed ? readErr(msg, 'mins') : '<p class="nb-empty">' + msg + '</p>') + mnWriteLink() + '</div></section>';
     }
     if (S.mins == null) return card('Loading...');
-    if (!list.length) return card(minsFailed() ? MINS_ERR : 'No meeting minutes yet. When Chef publishes them, they show here to read and sign.');
+    if (!list.length) return minsFailed() ? card(MINS_ERR, true) : card('No meeting minutes yet. When Chef publishes them, they show here to read and sign.');
     var m = list.filter(function (x) { return x.id === S.mSel; })[0] || list[0], older = list.filter(function (x) { return x.id !== m.id; }).slice(0, 12);
     // minutes this person still has to sign come first among the earlier ones, marked To sign
     function toSign(x) { return S.mmine[mnKey(x)] === null; }
@@ -10404,7 +10414,7 @@ if (list.length) sg('oreg', 's');
     return latest ? (latest.acts || []).filter(function (a) { return a.st === 'open' && a.by && a.by < t; }) : [];
   }
   function mnRegisterHTML(pub) {
-    if (!pub.length) return '<section class="set-block"><span class="label">Register</span><p class="hint"' + (minsFailed() ? ' role="status">' + MINS_ERR : '>No minutes have been published yet.') + '</p></section>';
+    if (!pub.length) return '<section class="set-block"><span class="label">Register</span>' + (minsFailed() ? readErr(MINS_ERR, 'mins') : '<p class="hint">No minutes have been published yet.</p>') + '</section>';
     var m = pub.filter(function (x) { return x.id === S.mSel; })[0] || pub[0]; loadSigns(m.id, false);
     var reg = mnRegister(m), od = mnOverdue();
     var recent = pub.slice(0, 6), older = pub.slice(6), inOlder = older.some(function (x) { return x.id === m.id; });
@@ -11405,7 +11415,7 @@ if (list.length) sg('oreg', 's');
     if (S.gSel) return guideDocHTML();
     var live = gShown(), head = '<header class="g-head"><span class="g-eb">Leichhardt Hotel Kitchen</span><h2 class="g-title" id="rtitle" tabindex="-1">Guides</h2><p class="g-lead">How to work the equipment, clean it and find things. Written by the head chef.</p></header>';
     if (S.guides == null && !live.length) return '<section class="g-page">' + head + '<p class="hint">Loading...</p></section>';
-    if (!live.length && S.gErr) return '<section class="g-page">' + head + '<p class="p-err" role="status">Could not load the guides. Check the signal. The book tries again by itself.</p></section>';
+    if (!live.length && S.gErr) return '<section class="g-page">' + head + readErr('Could not load the guides. Check the signal. The book tries again by itself.', 'guides') + '</section>';
     if (!live.length) return '<section class="g-page">' + head + '<p class="p-empty">No guides yet. The head chef adds them in the admin panel.</p>' + gAdminLink() + '</section>';
     gVids();
     var cats = G_SHOW.filter(function (c) { return live.some(function (g) { return g.cat === c[0]; }); });
@@ -11419,7 +11429,7 @@ if (list.length) sg('oreg', 's');
       // drops the keyboard (onKey), and a 44 px Clear while something is typed (g-qx, toggled in onInput)
       '<div class="g-find"><label class="visually-hidden" for="g-q">Search the guides</label><span class="g-qwrap find-wrap' + (S.gq ? ' has-q' : '') + '">' + homeIcon('find') + '<input id="g-q" type="search" class="search" data-k="g-q" placeholder="Search: oven, fryer, cleaning" value="' + esc(S.gq) + '" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">' +
       '<button type="button" class="g-qx" data-p="g-clear" aria-label="Clear the search">&times;</button></span></div>' + chips +
-      (S.gErr ? '<p class="p-err" role="status">Could not load the guides uploaded by the head chef. Check the signal. The guides that come with the book are below.</p>' : '') +
+      (S.gErr ? readErr('Could not load the guides uploaded by the head chef. Check the signal. The guides that come with the book are below.', 'guides') : '') +
       '<div id="g-list" class="g-list">' + gListHTML() + '</div>' + gAdminLink() + '</section>';
   }
   function foodRuleHTML() {
@@ -11756,7 +11766,7 @@ if (list.length) sg('oreg', 's');
   }
   function guidesAdminHTML() {
     var open = !!S.gf, live = gAll();
-    var list = (S.guides == null ? '<p class="hint">Loading uploaded guides...</p>' : S.gErr ? '<p class="p-err" role="status">Could not load uploaded guides. Check the signal. The guides included with the book are available below.</p>' : '') + lvHTML({
+    var list = (S.guides == null ? '<p class="hint">Loading uploaded guides...</p>' : S.gErr ? readErr('Could not load uploaded guides. Check the signal. The guides included with the book are available below.', 'guides') : '') + lvHTML({
       key: 'guides', items: live, step: 10, tools: 6, noun: ['guide', 'guides'], ph: 'Search guides', empty: 'No guides yet. Tap Add a guide to upload the first one.',
       find: gHay,
       filters: [['all', 'All guides']].concat(G_CATS.map(function (c) { return [c[0], c[1], function (g) { return g.cat === c[0]; }]; })),
@@ -12126,10 +12136,11 @@ if (list.length) sg('oreg', 's');
     var top = dkEditing ? dkFormHTML(false)
       : '<div class="dr-mine"><span class="dr-txt"><span class="label">Your usual' + (sum && dkToday(S.who) ? ' · you\'re in' : '') + '</span><span class="dr-what">' + (sum ? esc(sum) : dkList ? 'Not set yet.' : 'Loading...') + '</span></span>' +
         '<button type="button" class="dr-chg" data-p="dk-edit">' + (sum ? 'Change' : 'Set my usual') + '</button></div>';
-    var order = !dkList ? (dkErr ? '<p class="p-err">Could not load the team\'s drinks. Check the connection.</p><div class="btn-row"><button type="button" class="btn" data-p="dk-retry">Try again</button></div>' : '<p class="hint">' + inkLabel('Loading...', 'chef') + '</p>')
+    var order = !dkList ? (dkErr ? readErr('Could not load the team\'s drinks. Check the connection.', null, 'data-p="dk-retry"') : '<p class="hint">' + inkLabel('Loading...', 'chef') + '</p>')
       : dkRunHTML() || '<p class="hint">Nothing on the order yet.</p>';
     return '<section class="p-card dr-page dr-notebook" aria-labelledby="rtitle"><div class="dr-book' + (dkEditing ? ' is-edit' : '') + '">' +
-      '<header class="dr-bookhead"><h2 class="p-h" id="rtitle" tabindex="-1">Drinks run</h2></header>' +
+      '<header class="dr-bookhead"><h2 class="p-h" id="rtitle" tabindex="-1">Drinks run</h2>' +
+        (dkList && dkAt && !dkEditing ? '<p class="hint dr-read">' + (dkErr ? 'Could not check for changes. Showing the order read ' : 'Read ') + esc(clock(dkAt)) + '. <button type="button" class="p-link" data-p="dk-retry"' + (dkLoading ? ' disabled' : '') + '>' + (dkLoading ? 'Checking...' : 'Refresh') + '</button></p>' : '') + '</header>' +
       (dkEditing ? '' : '<aside class="dr-usual" aria-label="Your usual">' + top + '</aside>') +
       '<section class="dr-work" aria-label="' + (dkEditing ? 'Change your usual' : 'The order') + '">' + (dkEditing ? top : order) + '</section>' +
       (dkEditing ? '' : '<div class="dr-spine" aria-hidden="true"></div>' + (dkList ? '<aside class="dr-people" aria-label="Team drinks">' + dkTeamHTML() + '</aside>' : '')) + '</div></section>';
@@ -13392,6 +13403,8 @@ if (list.length) sg('oreg', 's');
     if (!el || !S.root || !S.root.contains(el)) return;
     var a = el.getAttribute('data-p'), id = el.getAttribute('data-id'), i = +el.getAttribute('data-i'), dt = el.getAttribute('data-d');
     if (a === 'ps-load') { psError = false; psLoad(); draw(); return; }
+    if (a === 'read-retry') { readRetry(el.getAttribute('data-r')); draw(); return; }
+    if (a === 'mail-retry') { loadMail(true); return; }
     if (a === 'ps-rollout-retry') { psRolloutSet(psRolloutTarget); return; }
     if (a === 'ps-view' && S.name === 'prep' && psEnabled() && psCanRead() && S.date === dayNow()) { psView = el.getAttribute('data-v') === 'reference' ? 'reference' : 'work'; draw(); focusSel('#rtitle'); return; }
     if (a === 'device-request') { window.LK_DEVICE.request(); return; }
@@ -14157,7 +14170,7 @@ if (list.length) sg('oreg', 's');
     var how = Array.isArray(hint) ? '<details class="a-how"><summary>How this works</summary><p class="hint">' + hint[1] + '</p></details>' : '';
     if (how) hint = hint[0];
     loadMail(); loadMailDone();
-    if (!mlOpen || mlErr) return '<section class="set-block"><span class="label">' + title + '</span><p class="hint">' + (mlErr ? 'Could not load the mail. Check the signal. The book tries again in a few minutes.' : 'Loading...') + '</p></section>';
+    if (!mlOpen || mlErr) return '<section class="set-block"><span class="label">' + title + '</span>' + (mlErr ? readErr('Could not load the mail. Check the signal. The book tries again in a few minutes.', null, 'data-p="mail-retry"') : '<p class="hint">Loading...</p>') + '</section>';
     var done = (mlDone || []).slice().sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
     // the done list only once it came in from the server, and its count only while it is the newest: no "(0)" and no
     // "Nothing ticked off" from a read that failed (a list read earlier stays under the note)
@@ -16943,6 +16956,7 @@ if (list.length) sg('oreg', 's');
     featOn: featOn,
     ownerHere: ownerHere,
     whoName: whoName,
+    readErr: readErr,
     homeGreet: homeGreet,
     // The signed-in person's staff id, only while their name shows (the kitchen mascot keeps one shuffled set per person).
     whoId: function () { return whoName() ? S.who : ''; },
