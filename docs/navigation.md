@@ -124,6 +124,8 @@ Supplier review, item/par editing, supplier settings and import replace the work
 current-task heading. Returning restores the workspace, its supplier and its quantities. Supplier history keeps
 its disclosure layout. The supplier sidebar remains collapsible in the workspace.
 
+Prep keeps your place (19 Nov 2026, `docs/band-options/brief.md`): coming back to Prep from another page the same day puts the list back by its top line, not by pixels. The place is kept per person, day, section and board. It is put back after Prep draws and never while a finger is down. Tapping Prep while on Prep goes to the top. It is held in `js/prep.js` beside the route trail, in memory only.
+
 The route trail and scroll positions live only in memory. Browser history holds an opaque entry key, alongside
 the existing sheet marker. It holds no form values, catalogue items or staff details. A contextual page return
 skips a stale same-address sheet entry left by a link, so one press reaches the destination on its label. Ordinary
