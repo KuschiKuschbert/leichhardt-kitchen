@@ -65,11 +65,11 @@ async function pair(p, selector, outline) {
 
     p = await L.open(b, '#/prep', { width, who: 'ann', failReads: 'directnotes', wait: 1500 });
     if (!await p.$('.nt')) await p.click('.nbell');
-    await L.waitFor(p, () => !!document.querySelector('.nt .warn [data-note="refresh"]'));
-    const refresh = await pair(p, '.nt .warn [data-note="refresh"]');
+    await L.waitFor(p, () => !!document.querySelector('.nt .p-readerr [data-note="refresh"]'));
+    const refresh = await pair(p, '.nt .p-readerr [data-note="refresh"]');
     ok(refresh.ratio >= 4.5, width + ': failed-ping Refresh keeps readable secondary-button words (' + refresh.ratio.toFixed(3) + ')');
-    await p.focus('.nt .warn [data-note="refresh"]'); await p.keyboard.press('Tab'); await p.keyboard.press('Shift+Tab');
-    const refreshFocus = await pair(p, '.nt .warn [data-note="refresh"]', true);
+    await p.focus('.nt .p-readerr [data-note="refresh"]'); await p.keyboard.press('Tab'); await p.keyboard.press('Shift+Tab');
+    const refreshFocus = await pair(p, '.nt .p-readerr [data-note="refresh"]', true);
     ok(refreshFocus.ratio >= 3 && refreshFocus.outline !== 'none' && refreshFocus.width >= 2, width + ': failed-ping Refresh retains a visible keyboard ring (' + refreshFocus.ratio.toFixed(3) + ')');
     ok(!p.errors.length && !await L.overflow(p), width + ': failed-ping recovery warning fits without browser errors');
     await p.keyboard.press('Escape');

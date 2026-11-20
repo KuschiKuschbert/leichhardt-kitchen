@@ -340,9 +340,10 @@ async function open(b, options = {}) {
   // A failed or incomplete server answer is never an empty cleaning list.
   for (const source of ['cleaningTasks', 'cleaningDone']) await step(source + ' failed read', async () => {
     p = await open(b, { failReads: '/' + source + '$' });
-    await L.waitFor(p, () => /Could not (load|read)/.test(document.querySelector('.cln-page').textContent));
+    // a read lost to the signal says No signal since the consistency sweep, step 2 (20 Nov 2026)
+    await L.waitFor(p, () => /Could not (load|read|check)/.test(document.querySelector('.cln-page').textContent));
     const words = await L.txt(p, '.cln-page');
-    ok(/Could not (load|read)/.test(words) && !/No (cleaning )?(jobs|tasks)|0 of 0/.test(words), source + ': failure says it could not load, without a false empty count');
+    ok(/Could not (load|read|check)/.test(words) && !/No (cleaning )?(jobs|tasks)|0 of 0/.test(words), source + ': failure says it could not load, without a false empty count');
     ok(!(await p.$('.cln-row')), source + ': partial results cannot be ticked');
     await p.evaluate(() => { __fake.failReads = null; }); await p.locator('[data-cln="refresh"]').first().click();
     await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 2);
