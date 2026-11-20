@@ -11,6 +11,8 @@
 (function () {
   'use strict';
   var A = window.LK_APP, X = window.LK_RX, ART = window.LK_ART, D = window.LK_DATA, T = window.LK_TIME;
+  // a search box as the Recipes pill (the consistency sweep, step 3, 20 Nov 2026); an older js/app.js draws the plain box
+  function findPill(input) { return A && A.findWrap ? A.findWrap(input) : input; }
   var esc = A.esc;
   var PAPERS = [['a4p', 'A4 upright', 210, 297], ['a4l', 'A4 sideways', 297, 210], ['a5l', 'A5 sideways', 210, 148]];
   var KEY = 'lk.rcp.paper';
@@ -224,9 +226,9 @@
         return '<button type="button" class="chip" data-rcp="group" data-v="' + esc(g.k) + '" aria-pressed="' + full + '">' + esc(g.t) + ' ' + g.ids.length + '</button>';
       }).join('') + '</div></div>' +
       '<p class="rcp-ticked" role="status">' + (n ? n + (n === 1 ? ' card' : ' cards') + ' ticked. <button type="button" class="p-x" data-rcp="none">Untick all</button>' : 'No cards ticked yet. Add a group, or find a card and tick it.') + '</p>' +
-      '<div class="field"><label class="label" for="rcp-q">Find a card</label><input id="rcp-q" class="search" type="search" data-rcp-q autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Name or card number" value="' + esc(S.q) + '"></div>' +
+      '<div class="field"><label class="visually-hidden" for="rcp-q">Find a card</label>' + findPill('<input id="rcp-q" class="search" type="search" data-rcp-q autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Name or card number" value="' + esc(S.q) + '">') + '</div>' +
       '<div id="rcp-rows">' + rowsHTML() + '</div>' +
-      '<div class="rcp-bar"><div class="rcp-papers" role="group" aria-label="Paper">' + PAPERS.map(function (p) {
+      '<div class="rcp-bar sv-dock"><div class="rcp-papers" role="group" aria-label="Paper">' + PAPERS.map(function (p) {
         return '<button type="button" class="rcp-paper rcp-pp-' + p[0] + '" data-rcp="paper" data-v="' + p[0] + '" aria-pressed="' + (S.paper === p[0]) + '"><i aria-hidden="true"></i>' + esc(p[1]) + '</button>';
       }).join('') + '</div>' +
       '<button type="button" class="btn dark rcp-go" data-rcp="print"' + (n && !S.busy ? '' : ' disabled') + '>' + esc(S.busy ? 'Laying out the pages...' : printLabel()) + '</button>' +

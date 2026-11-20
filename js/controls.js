@@ -201,6 +201,9 @@
     if (searchMemory.size > 150) searchMemory.delete(searchMemory.keys().next().value);
     var placeholder = input.placeholder || 'Search', wrap = node('span', 'ux-search'), clear = node('button', 'ux-search-clear', '×'), status = node('span', 'ux-search-status');
     input.parentNode.insertBefore(wrap, input); wrap.appendChild(input); wrap.appendChild(clear); wrap.appendChild(status);
+    // the search pill's magnifier (.find-i) goes in with the box, so it stays centred on the box at any height while the
+    // status line shows under it (the consistency sweep, step 3, 20 Nov 2026)
+    var icon = wrap.previousElementSibling; if (icon && icon.classList && icon.classList.contains('find-i')) wrap.insertBefore(icon, input);
     clear.type = 'button'; clear.setAttribute('aria-label', 'Clear search'); input.dataset.smartSearch = 'true';
     status.id = 'ux-search-status-' + (++serial); status.setAttribute('role', 'status'); status.setAttribute('aria-atomic', 'true');
     input.setAttribute('aria-describedby', [input.getAttribute('aria-describedby'), status.id].filter(Boolean).join(' '));

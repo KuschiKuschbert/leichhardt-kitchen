@@ -103,13 +103,14 @@ const changed = (before, after, fields) => fields.every(field => JSON.stringify(
     }, audit[0]);
     ok(immutable && (await dump(p))[audit[0]].after === edited, width + ': an existing audit event cannot be overwritten');
 
+    // a search box's own magnifier (.find-i, the consistency sweep, step 3, 20 Nov 2026) is the book's icon, not injected markup
     await search(p, ''); await review(p, 'prep', 'pr-hostile');
-    ok((await L.txt(p, '.pr-comparison')).includes(hostileTyped) && !(await p.locator('.pr-workspace img, .pr-workspace svg').count()) && !(await p.evaluate(() => window.__proofInjected)), width + ': hostile typed and saved wording is displayed as text');
+    ok((await L.txt(p, '.pr-comparison')).includes(hostileTyped) && !(await p.locator('.pr-workspace img, .pr-workspace svg:not(.find-i)').count()) && !(await p.evaluate(() => window.__proofInjected)), width + ': hostile typed and saved wording is displayed as text');
     await p.click('[data-pr="edit"]'); const literal = '<b>Keep brie</b> & "quotes"'; await p.fill('#pr-text', literal);
     await p.click('[data-pr="save"]'); await status(p, 'Correction saved');
     await p.click('[data-pr="tab"][data-value="history"]');
     await L.waitFor(p, () => /Wording edited/.test((document.querySelector('.pr-history') || {}).textContent || ''));
-    ok((await dump(p))[hostileKey].text === literal && (await L.txt(p, '.pr-history')).includes(literal) && !(await p.locator('.pr-history b, .pr-history img, .pr-history svg').count()) && !(await p.evaluate(() => window.__proofInjected)), width + ': exact manual wording and history stay escaped instead of creating markup');
+    ok((await dump(p))[hostileKey].text === literal && (await L.txt(p, '.pr-history')).includes(literal) && !(await p.locator('.pr-history b, .pr-history img, .pr-history svg:not(.find-i)').count()) && !(await p.evaluate(() => window.__proofInjected)), width + ': exact manual wording and history stay escaped instead of creating markup');
     ok(!(await L.overflow(p)), width + ': correction lists, details and history fit without sideways scroll');
     if (width === 1280) {
       await p.click('[data-pr="tab"][data-value="words"]'); await p.fill('#pr-word', 'brie');

@@ -27,6 +27,8 @@
 
   var API = 5;
   var D = window.LK_DATA, X = window.LK_RX, A = window.LK_APP, P = window.LK_PREP, LIB = window.LK_LIB;
+  // a search box as the Recipes pill (the consistency sweep, step 3, 20 Nov 2026); an older js/app.js draws the plain box
+  function findPill(input) { return A && A.findWrap ? A.findWrap(input) : input; }
   var esc = A.esc;
   // Optional in lazy files: an older saved shell keeps its existing text feedback.
   function inkLabel(text, icon, state) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', state || 'busy') : esc(text); }
@@ -729,7 +731,7 @@
     // other ways to start at the bottom
     return '<section class="dw-panel" aria-labelledby="dw-h-lib"><h3 class="h3" id="dw-h-lib">' + (W.swap ? 'Swap the drawing' : 'Add food') + '</h3>' +
       (W.swap ? '<p class="hint">Pick the drawing to swap in for <b>' + esc(W.pendingIng) + '</b>. It takes the part\'s place and stays when the book draws the plate again.</p>' : W.pendingIng ? '<p class="hint">Pick the drawing for <b>' + esc(W.pendingIng) + '</b>. It is labelled with that ingredient.</p>' : missingHTML()) +
-      '<div class="field"><label class="label" for="dw-q">Find a drawing</label><input id="dw-q" class="search" type="search" data-dwf="q" autocomplete="off" spellcheck="false" placeholder="For example: chips, pepper sauce, lemon wedge" value="' + esc(W.q) + '"></div>' +
+      '<div class="field"><label class="visually-hidden" for="dw-q">Find a drawing</label>' + findPill('<input id="dw-q" class="search" type="search" data-dwf="q" autocomplete="off" spellcheck="false" placeholder="For example: chips, pepper sauce, lemon wedge" value="' + esc(W.q) + '">') + '</div>' +
       '<div class="chips scroll" role="group" aria-label="Category">' + btn('cat', 'All', { v: '', on: !W.cat, cls: 'chip' }) + cats.map(function (c) { return btn('cat', c.name, { v: c.id, on: W.cat === c.id, cls: 'chip' }); }).join('') + '</div>' +
       (W.cat ? '<div class="chips scroll" role="group" aria-label="Kind">' + btn('sub', 'All ' + (cats.filter(function (c) { return c.id === W.cat; })[0] || {}).name.toLowerCase(), { v: '', on: !W.sub, cls: 'chip' }) + LIB.subs(W.cat).map(function (s) { return btn('sub', s, { v: s, on: W.sub === s, cls: 'chip' }); }).join('') + '</div>' : '') +
       '<p class="hint" role="status">' + list.length + (list.length === 1 ? ' drawing' : ' drawings') + '. Tap one to put it on the ' + (W.d.slot === 'pan' ? 'pan' : W.d.slot === 'plate' ? 'plate' : 'drawing') + ', or drag it there.</p>' +
@@ -854,10 +856,18 @@
   function drawPage() {
     var a = document.activeElement, keep = a && W.root.contains(a) ? (a.getAttribute('data-dwf') ? '[data-dwf="' + a.getAttribute('data-dwf') + '"]' : a.classList.contains('dw-svg') ? '.dw-svg' : a.getAttribute('data-dw') ? '[data-dw="' + a.getAttribute('data-dw') + '"]' + (a.getAttribute('data-v') != null ? '[data-v="' + a.getAttribute('data-v') + '"]' : '') : '') : '';
     var y = window.scrollY, ps = a && a.selectionStart;
-    W.root.innerHTML = pageHTML();
+    // Find a drawing keeps the cursor while it finds (the consistency sweep, step 3, 20 Nov 2026): the shared search bar
+    // wraps the new box before the focus goes back, as js/prep.js's redraw does; before, it lost the cursor at 2 letters
+    var find = !!keep && a.type === 'search' && !!(window.LK_UX && window.LK_UX.restoreFocus);
+    if (find) a._uxRedrawing = true;
+    try { W.root.innerHTML = pageHTML(); } finally { if (find) delete a._uxRedrawing; }
     window.dispatchEvent(new Event('lk-nav'));
     window.scrollTo(0, y);
-    if (keep) { var el = W.root.querySelector(keep); if (el) { el.focus({ preventScroll: true }); if (ps != null && el.setSelectionRange) try { el.setSelectionRange(ps, ps); } catch (e) {} } }
+    if (keep) {
+      var el = W.root.querySelector(keep);
+      if (el && find) { window.LK_UX.enhance(W.root); window.LK_UX.restoreFocus(el); } else if (el) el.focus({ preventScroll: true });
+      if (el && ps != null && el.setSelectionRange) try { el.setSelectionRange(ps, ps); } catch (e) {}
+    }
   }
   function drawCanvas() {
     if (drawing) return;
