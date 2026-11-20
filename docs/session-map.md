@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Consistency sweep, 19 November 2026 (council, not chosen yet)
+
+The head chef asked whether to restyle every page for consistency. Nine auditors and nine verifiers checked every page against `docs/design-patterns.md` and the colour contracts (main `83f8ddd`, 390, 768 and 1280 px). They found 126 findings: 102 confirmed, 16 deliberate and 8 refuted. None needs a page redrawn, and 4 touch service. Round 1 said Build smaller, 3 of 5; the other 2 said Don't build the restyle. The recommendation is no restyle, but a sweep in four grouped pull requests: the service fixes, one failed-read and empty state, the head chef's 25 choices with a stronger `tests/design-patterns.test.js`, then names and the cosmetic tidy. `docs/consistency-sweep-options/brief.md`, register in its `findings.md`.
+
 ## The functions strip and Prep keeping your place, 19 November 2026 (chosen and built)
 
 On a busy day the two bars take 310 px and the head chef's Prep shows 1 line when it opens on a 390 px phone. Coming back from another tab, Prep always starts at the top. There were three council rounds, all Preview on the real book in the stand-in:
@@ -12,6 +16,7 @@ The head chef chose all three steps, built on `ux/prep-strip-place`:
 - Prep starting with the strip (`prepStrip()`).
 
 F (the cut-off in the strip) is held. Tests: `tests/prep-strip-place.test.js`. `docs/band-options/brief.md`, `variants.js`, `shoot.js`, `shoot-strip.js`, `previews/`.
+
 
 ## Venues: each kitchen its own project, address and book, 19 November 2026 (build step 2, merged)
 

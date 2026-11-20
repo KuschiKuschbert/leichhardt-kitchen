@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   var P = window.LK_PREP, T = window.LK_TIME, esc = window.LK_APP.esc, B = P.book();
-  var generation = 0, stop = null, watchKey = '', context = '', recorder = '', timer = null;
+  var generation = 0, stop = null, watchKey = '', context = '', recorder = '', timer = null, readAgain = null;
   var M = blank();
   // Optional in lazy files: an older saved shell keeps its existing text feedback.
   function inkLabel(text, icon, state) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', state || 'busy') : esc(text); }
@@ -12,7 +12,8 @@
   // lives in this form's memory only. A box that is not showing saves null, exactly like an empty box before.
   var MODES = [['chilled', 'Chilled'], ['frozen', 'Frozen'], ['both', 'Both']];
   function form() { var day = T.day(), time = T.clock(); return { day: day, time: time, initial: day + '|' + time, supplier: '', chilled: '', frozen: '', note: '', mode: 'chilled' }; }
-  function blank() { return { root: null, form: form(), day: T.day(), to: T.day(), sup: '', followToday: true, rows: [], state: 'idle', error: '', invalid: [], message: '', busy: false, attempt: null, suspended: false, showTime: false, showNote: false, cache: Object.create(null) }; }
+  // readWords: what a failed read of the records says (readWords()), drawn while state is 'error'
+  function blank() { return { root: null, form: form(), day: T.day(), to: T.day(), sup: '', followToday: true, rows: [], state: 'idle', readWords: '', error: '', invalid: [], message: '', busy: false, attempt: null, suspended: false, showTime: false, showNote: false, cache: Object.create(null) }; }
   function shows(name) { return M.form.mode === 'both' || M.form.mode === name; }
   function modeName(m) { return (MODES.filter(function (x) { return x[0] === m; })[0] || MODES[0])[1]; }
   function allowed() { return P.privateAccess(); }
@@ -26,8 +27,30 @@
   function arm(k) { return B.arm ? B.arm(k, draw) : true; }
   function armed(k) { return !!(B.armed && B.armed(k)); }
   function unwatch() { if (stop) stop(); stop = null; watchKey = ''; }
-  function reset() { var root = M.root; generation++; unwatch(); clearTimeout(timer); context = recorder = ''; M = blank(); M.root = root; }
-  function clearReads() { generation++; unwatch(); clearTimeout(timer); M.rows = []; M.cache = Object.create(null); M.state = 'idle'; }
+  function reset() { var root = M.root; generation++; unwatch(); againStop(); clearTimeout(timer); context = recorder = ''; M = blank(); M.root = root; }
+  function clearReads() { generation++; unwatch(); againStop(); clearTimeout(timer); M.rows = []; M.cache = Object.create(null); M.state = 'idle'; }
+  /* A failed read, one look on every page (the consistency sweep, step 2, 20 Nov 2026, docs/design-patterns.md, A
+     page): one red line with role status that says what could not be read, and Try again, which is Refresh's own
+     data-dl="refresh". LK_PREP.readErr() draws it; an older js/prep.js without it gets the same markup here. */
+  function readLine(words) {
+    var at = 'data-dl="refresh"';
+    return P.readErr ? P.readErr(words, null, at) : '<p class="p-err p-readerr" role="status">' + esc(words) + ' <button type="button" class="p-link" ' + at + '>Try again</button></p>';
+  }
+  // No signal only when the signal is the cause: the phone says it is offline, or the server did not answer
+  function noSignal(e) { return navigator.onLine === false || !!e && (e.code === 'unavailable' || e.code === 'deadline-exceeded'); }
+  function readWords(e) {
+    var back = e && e.code === 'resource-exhausted' ? (T.quotaBack ? T.quotaBack() : 0) || -1 : 0;
+    return (noSignal(e) ? 'No signal. ' : '') + 'Could not read the delivery records.' + (back ? ' The book has used up today\'s free reads. They come back ' + (back > 0 ? 'at ' + T.clock(back) : 'later today') + '.' : '');
+  }
+  /* A failed read also tries once more by itself (the consistency sweep, step 2, 20 Nov 2026): after 5 minutes or a
+     moment after the phone is back online, whichever comes first, like retrySoon() in js/prep.js. One timer, armed
+     only by a failed read, so nothing is read when nothing failed. The try costs what Refresh costs (one query, or
+     today's listener again) and arms again only if it fails too. A new read, leaving the page or a new sign-in
+     clears it. Time passing on the phone. */
+  var AGAIN_MS = 5 * 60000;
+  function againArm() { againStop(); readAgain = { g: generation, t: setTimeout(againRun, AGAIN_MS) }; }
+  function againStop() { if (readAgain) clearTimeout(readAgain.t); readAgain = null; }
+  function againRun() { var a = readAgain; againStop(); if (a && a.g === generation && M.root && document.body.contains(M.root) && M.state === 'error') load(true); }
   /* Admin history (design A, step 3, 3 Nov 2026): From and To, up to 92 days, one query on a change or Refresh.
      Staff and ordinary roles always view today only. */
   var MAX_DAYS = 92;
@@ -58,7 +81,7 @@
     M.suspended = false; context = next;
     return true;
   }
-  function unmount() { M.root = null; unwatch(); clearTimeout(timer); timer = null; }
+  function unmount() { M.root = null; unwatch(); againStop(); clearTimeout(timer); timer = null; }
   function validDay(day) { return /^\d{4}-\d{2}-\d{2}$/.test(day) && T.day(T.at(day)) === day; }
   function temp(text) {
     var s = String(text).trim().replace(',', '.');
@@ -155,18 +178,20 @@
       (noteOpen ? '<label class="dl-field" for="dl-note"><span class="label">Items / notes <span class="hint">(optional)</span></span><textarea id="dl-note" data-dl-field="note" maxlength="300" rows="2" placeholder="Items checked, condition or action taken"' + errorAttrs('note') + '>' + esc(d.note) + '</textarea></label>' :
         '<div><button type="button" class="p-x dl-add-note" data-dl="note" aria-expanded="false" aria-controls="dl-note">Add items or notes (optional)</button></div>') +
       '</fieldset>' +
-      '<p id="dl-save-note" class="' + (M.error ? 'dl-error' : 'dl-message') + '" role="' + (M.error ? 'alert' : 'status') + '">' + (M.error ? esc(M.error) : M.busy ? 'Saving...' : M.message ? inkLabel(M.message, 'save', 'done') : '') + '</p>' +
+      '<div class="dl-dock"><p id="dl-save-note" class="' + (M.error ? 'dl-error' : 'dl-message') + '" role="' + (M.error ? 'alert' : 'status') + '">' + (M.error ? esc(M.error) : M.busy ? 'Saving...' : M.message ? inkLabel(M.message, 'save', 'done') : '') + '</p>' +
       '<div class="btn-row dl-actions"><button class="btn dark ink-busy-button" type="submit" data-dl="save"' + (M.busy ? ' disabled aria-busy="true"' : '') + '>' + (M.busy ? inkLabel('Saving...') : M.attempt ? 'Check and retry save' : 'Save delivery') + '</button>' +
-      (!M.attempt ? '<button class="btn" type="button" data-dl="clear"' + (M.busy ? ' disabled' : '') + '>' + (armed('dl-clear') ? 'Tap again to clear' : 'Clear form') + '</button>' : '') + '</div>' +
+      (!M.attempt ? '<button class="btn" type="button" data-dl="clear"' + (M.busy ? ' disabled' : '') + '>' + (armed('dl-clear') ? 'Tap again to clear' : 'Clear form') + '</button>' : '') + '</div></div>' +
       '<p class="hint">Saved readings are kept as recorded.</p></form>' +
       '<section class="dl-history" aria-labelledby="dl-records"><div class="dl-history-head"><h2 id="dl-records">' + (today ? 'Today\'s deliveries' : 'Delivery records') + '</h2><button class="btn" type="button" data-dl="refresh">Refresh</button></div>' +
       (admin() ? '<div class="dl-range"><label class="dl-field dl-filter" for="dl-view-day"><span class="label">From</span><input type="date" id="dl-view-day" value="' + esc(M.day) + '" max="' + T.day() + '"></label>' +
         '<label class="dl-field dl-filter" for="dl-view-to"><span class="label">To</span><input type="date" id="dl-view-to" value="' + esc(M.to) + '" min="' + esc(M.day) + '" max="' + T.day() + '"></label></div>' +
         (M.state === 'ok' && suppliersIn(M.rows).length > 1 ? '<label class="dl-field dl-filter" for="dl-sup-filter"><span class="label">Supplier</span><select id="dl-sup-filter"><option value="">All suppliers</option>' + suppliersIn(M.rows).map(function (n) { return '<option value="' + esc(n) + '"' + (same(n, M.sup) ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select></label>' : '') : '') +
       '<p class="hint">' + esc(single() ? longDay(M.day) : M.day + ' to ' + M.to + ' (' + span() + ' days)') + (M.state === 'ok' && admin() ? ' · ' + shownRows().length + (shownRows().length === 1 ? ' delivery' : ' deliveries') : '') + '</p>' +
-      (admin() && B.csv && M.state === 'ok' && shownRows().length ? '<div class="btn-row"><button class="btn" type="button" data-dl="csv">Download CSV</button></div>' : '') + (M.state === 'error' ? '<p class="dl-error" role="alert">Could not read delivery records. Check the connection and tap Refresh.</p>' :
-        // no signal, not loaded yet: the note, then only this phone's receipts still waiting to send
-        M.state === 'offline' ? '<p class="dl-error" role="status">No signal. Today\'s deliveries show when the phone is back online.</p>' + (M.rows.length ? '<ol class="dl-receipts">' + M.rows.map(row).join('') + '</ol>' : '') :
+      (admin() && B.csv && M.state === 'ok' && shownRows().length ? '<div class="btn-row"><button class="btn" type="button" data-dl="csv">Download CSV</button></div>' : '') + (M.state === 'error' ? readLine(M.readWords || 'Could not read the delivery records.') :
+        // no signal, not loaded yet: a neutral note, not a failure (the consistency sweep, step 2, 20 Nov 2026,
+        // docs/colour-coding.md: waiting stays neutral) that says what still works, then only this phone's receipts
+        // still waiting to send. The listener stays on and brings the list when the signal is back: no retry needed
+        M.state === 'offline' ? '<p class="dl-offline" role="status">No signal. Today\'s deliveries show when the phone is back online. What you type in the form is kept: save it then.</p>' + (M.rows.length ? '<ol class="dl-receipts">' + M.rows.map(row).join('') + '</ol>' : '') :
         M.state !== 'ok' ? loading('Loading deliveries...', 'orders', 3) :
         (shownRows().length ? '<ol class="dl-receipts">' + (today ? shownRows().slice().reverse() : shownRows()).map(row).join('') + '</ol>' : '<p class="hint">' + (M.sup ? 'No deliveries from this supplier in these dates.' : single() ? 'No deliveries recorded for this date.' : 'No deliveries recorded in these dates.') + '</p>') +
         // only once the server answered for today: a supplier due by the cut-offs with no receipt of that exact name yet
@@ -186,7 +211,9 @@
     if (!admin()) { M.day = M.to = T.day(); M.sup = ''; }
     var wk = key() + '|' + M.day + '|' + M.to;
     if (!force && watchKey === wk && M.state !== 'error') return;
-    unwatch(); watchKey = wk;
+    // Refresh or Try again tapped while this same read is still out: it is coming, so no second read (20 Nov 2026)
+    if (force && watchKey === wk && M.state === 'loading') return;
+    unwatch(); againStop(); watchKey = wk;
     var g = ++generation, date = M.day, to = M.to, ck = date + '|' + to, live = date === T.day() && to === date;
     M.rows = []; M.state = 'loading'; draw();
     // Past records are immutable. Reuse a complete successful query of past days in this sign-in only, unless Refresh
@@ -205,10 +232,11 @@
         if (live && B.listSnap) B.listSnap(sn, M.state, last);
         M.rows = rows(sn); M.state = last.st === 'offline' ? 'offline' : 'ok'; if (to < T.day()) M.cache[ck] = M.rows; draw();
       };
-      var failed = function () { if (g !== generation) return; M.rows = []; M.state = 'error'; draw(); };
+      // a failed read: the line that says so with Try again, and one try by itself later (againArm())
+      var failed = function (e) { if (g !== generation) return; M.rows = []; M.state = 'error'; M.readWords = readWords(e); againArm(); draw(); };
       if (live) stop = f.onSnapshot(q, { includeMetadataChanges: true }, done, failed);
       else return f.getDocsFromServer(q).then(done, failed);
-    }).catch(function () { if (g === generation) { M.state = 'error'; draw(); } });
+    }).catch(function (e) { if (g === generation) { M.state = 'error'; M.readWords = readWords(e); againArm(); draw(); } });
   }
   function confirmed(attempt) {
     if (M.attempt !== attempt || recorder !== identity()) return;
@@ -301,6 +329,7 @@
   document.addEventListener('click', function (e) {
     if (!M.root || !M.root.contains(e.target) || !allowed()) return;
     var el = e.target.closest('[data-dl]'); if (!el) return;
+    // Refresh, and Try again on a failed read (the same action); load() ignores a tap while the read is out
     if (el.getAttribute('data-dl') === 'refresh') load(true);
     // the book's shared CSV boundary (docs/report-exports.md): numbers stay numbers, text is marked safe; no read
     if (el.getAttribute('data-dl') === 'csv' && admin() && B.csv && M.state === 'ok') { B.csv('leichhardt-deliveries-' + M.day + (single() ? '' : '-to-' + M.to) + (M.sup ? '-' + M.sup.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : '') + '.csv', csvRows()); return; }
@@ -352,6 +381,8 @@
   });
   ['lk-access', 'lk-who', 'lk-admin', 'lk-cfg'].forEach(function (name) { window.addEventListener(name, function () { var open = access(); if (open && M.attempt && M.attempt.acknowledged) confirmed(M.attempt); draw(); if (open && M.root && document.body.contains(M.root)) { load(); tick(); } }); });
   window.addEventListener('lk-clock', tick);
+  // back online: a failed read tries once more, a moment later so Firestore has its connection back (againArm())
+  window.addEventListener('online', function () { if (readAgain) setTimeout(againRun, 1500); });
   // Update now's second tap already said the readings may go (LK_UPDATE.letGo() in js/upkeep.js): no second question
   window.addEventListener('beforeunload', function (e) { if (dirty() && !(window.LK_UPDATE && window.LK_UPDATE.letGo && window.LK_UPDATE.letGo())) { e.preventDefault(); e.returnValue = ''; } });
   window.LK_DELIVERY = { api: 2, mount: mount, unmount: unmount, reset: reset, dirty: dirty };

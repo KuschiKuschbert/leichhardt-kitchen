@@ -421,7 +421,10 @@
     var key = st.pin + '|' + T.day();
     if (key === F.key && (F.unsub || F.wait === key)) return;
     if (F.unsub) { F.unsub(); F.unsub = null; }
-    F.key = key; F.wait = key; if (!F.list.length || F.state === 'idle') F.state = 'loading';
+    clearTimeout(retryT); retryT = 0;   // starting now: a try still waiting is not needed (retryLater())
+    // a failed read with nothing known goes back to the loading words while it reads again (the consistency sweep,
+    // step 2, 20 Nov 2026), so its Try again goes and a second tap finds nothing to start
+    F.key = key; F.wait = key; if (!F.list.length || F.state === 'idle' || F.state === 'error' && !F.at) F.state = 'loading';
     var api = prep.book();
     api.ready().then(function () {
       // asked again while the Firebase files loaded, or stopped since: only the last ask starts the listener (Plan B 2.7,
@@ -453,10 +456,28 @@
         if (!F.offline) { F.at = now(); F.cached = false; F.state = 'ok';  }
         else if (F.state !== 'ok') F.state = navigator.onLine === false ? 'offline' : 'loading';
         changed();
-      }, function (e) { F.state = 'error'; F.err = e && e.code || ''; F.unsub = null; F.key = ''; changed(); });
-    }, function () { if (F.wait === key) F.wait = ''; F.state = 'error'; changed(); });
+      }, function (e) { F.state = 'error'; F.err = e && e.code || ''; F.unsub = null; F.key = ''; retryLater(e); changed(); });
+    }, function () { if (F.wait === key) F.wait = ''; F.state = 'error'; F.err = ''; retryLater(); changed(); });
   }
-  function stop() { if (F.unsub) F.unsub(); if (F.unsub2) F.unsub2(); F.unsub = F.unsub2 = null; F.key = F.wait = ''; F.sentState = ''; }
+  function stop() { clearTimeout(retryT); retryT = 0; if (F.unsub) F.unsub(); if (F.unsub2) F.unsub2(); F.unsub = F.unsub2 = null; F.key = F.wait = ''; F.sentState = ''; }
+  /* A failed read of the functions tries again by itself (the consistency sweep, step 2, 20 Nov 2026), like the work
+     lists in js/prep.js (liveRetry()): after 5 minutes, or as soon as the phone is back online (the 'online' listener
+     below calls watch()), whichever comes first. One timer, and any start of the listener clears it (watch()), so each
+     failure tries once. A try costs what opening the list costs; a refused one reads nothing. One cut short because the
+     person changed ('cancelled') arms nothing. A plain timer: time passing on the phone, nothing saved. */
+  var RETRY_WAIT = 5 * MIN, retryT = 0;
+  function retryLater(e) {
+    clearTimeout(retryT); retryT = 0;
+    if (e && e.code === 'cancelled') return;
+    retryT = setTimeout(function () { retryT = 0; retryNow(); }, RETRY_WAIT);
+  }
+  // Try again, and the 5-minute wait: start the listener again now. Only after a failure, and never while a listener is
+  // running or starting (a second tap before the answer), so there is never a second listener.
+  function retryNow() {
+    clearTimeout(retryT); retryT = 0;
+    if (F.state !== 'error' || F.unsub || F.wait) return;
+    watch(); changed();
+  }
   /* Rounds ticked as sent (fnsent/<function>_<round time>): one more small listener, on yesterday and later, so an
      overnight round is still there after midnight. A round whose time was changed after it was ticked shows as not sent.
      No signal (28 Oct 2026): started again at midnight, the listener answers at once from the copy in memory, which holds
@@ -1168,7 +1189,7 @@
     if (x) {
       var undo = '', last = st && st.trips.length ? st.trips[st.trips.length - 1] : null;
       if (last && !last.outAt && !F.pend[last.id] && (isChef() || last.sentBy === me && now() - last.sentAt < 2 * MIN)) undo = '<button type="button" class="linkish fn-svc-link" data-fn="trip-undo" data-id="' + esc(last.id) + '">Undo</button>';
-      else if (!last && (isChef() || me && x.sentBy === me && now() - x.sentAt < 2 * MIN)) undo = '<button type="button" class="linkish" data-fn="unsent"' + d + '>Undo</button>';
+      else if (!last && (isChef() || me && x.sentBy === me && now() - x.sentAt < 2 * MIN)) undo = '<button type="button" class="linkish fn-svc-link" data-fn="unsent"' + d + '>Undo</button>';
       return '<span class="fn-sent-ok">' + esc(kclock(x.sentAt)) + '<small>' + esc(nameOf(x.sentBy)) + '</small></span>' + undo;
     }
     var part = st && st.sentTot && !quiet ? '<span class="fn-sent-part">' + st.sentTot + ' of ' + st.bookedTot + ' sent</span>' : '';
@@ -1720,12 +1741,27 @@
     if (!rows || !rows.length) return '';
     return '<div class="fn-dtot"><span class="label">To make for the day</span><ul>' + rows.map(function (r) { return '<li><b>' + r.qty + '</b> \u00d7 ' + esc(r.name) + '</li>'; }).join('') + '</ul></div>';
   }
+  /* The freshness line, in one place on every functions page: right under the page heading (the consistency sweep,
+     step 2, 20 Nov 2026, FUNC-4), so a cook on the service board sees an old copy at once. A failed read with nothing
+     known is one failed-read line with Try again (FUNC-3): it said Loading and Could not load at once, with no way to
+     read again. */
   function stateNote() {
     var t = now();
-    if (F.state === 'error') return '<p class="p-err" role="alert">Could not load functions.' + (F.at ? ' Showing the copy from ' + esc(dayName(kday(F.at)) + ' ' + kclock(F.at)) + '.' : (quota() ? '' : ' Check the signal and open this page again.')) + '</p>';
+    if (F.state === 'error' && !F.at) return failHTML();
+    if (F.state === 'error') return '<p class="p-err" role="alert">Could not load functions. Showing the copy from ' + esc(dayName(kday(F.at)) + ' ' + kclock(F.at)) + '.</p>';
     if (F.state === 'loading' || F.state === 'idle') return F.at ? '<p class="hint" role="status">Checking for changes. Showing the copy from ' + esc(when(F.at, kday(t))) + '.</p>' : '';
     if (F.offline || navigator.onLine === false) return F.at ? '<p class="hint" role="status">No signal. Last updated ' + esc(dayName(kday(F.at)) + ' ' + kclock(F.at)) + '.</p>' : '';
     return '<p class="hint fn-fresh">Up to date, ' + esc(kclock(F.at)) + '. Changes show here by themselves.</p>';
+  }
+  /* The failed-read line, one look on every page (LK_PREP.readErr(), docs/design-patterns.md, A page): what could not
+     load, never "nothing", then Try again (data-fn="retry", retryNow()). No signal only when the signal is the cause
+     (js/prep.js noSignal()); with today's reads used up the line at the top says why, so no "Check the connection". */
+  function failHTML() {
+    var off = navigator.onLine === false || F.err === 'unavailable' || F.err === 'deadline-exceeded';
+    var w = off ? 'No signal. Could not load functions.' : 'Could not load functions.' + (quota() ? '' : ' Check the connection.');
+    var p = P(), at = 'data-fn="retry"';
+    if (p && p.readErr) return p.readErr(w, null, at);
+    return '<p class="p-err p-readerr" role="status">' + esc(w) + ' <button type="button" class="p-link" ' + at + '>Try again</button></p>';
   }
   /* #/fn/now, the service view (22 Oct 2026): everything that goes out now across all functions, late first, each with
      its Sent; what to plate for those, added together; and the rounds coming up in the next hour. It redraws itself as
@@ -1786,7 +1822,8 @@
        about its time: how long until it goes, or how late it is. */
     function left(at) { var m = Math.round((at - t) / MIN); return m < 0 ? -m + ' min late' : !m ? 'Now' : m < 60 ? 'In ' + m + ' min' : 'In ' + Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + m % 60 + ' min' : ''); }
     var out = '<section class="set-block fn-page fn-svc-page"><div class="fn-page-head"><h2 id="rtitle" tabindex="-1">Service</h2></div><p class="hint">' +
-      (coord ? 'What the kitchen has sent, waiting for you to confirm, then every round still to go out.' : 'Every round still to go out, in order. Tap what goes now, + for more of a kind, then Send. Functions confirms each trip.') + '</p>' + (known() ? '' : waitHTML());
+      (coord ? 'What the kitchen has sent, waiting for you to confirm, then every round still to go out.' : 'Every round still to go out, in order. Tap what goes now, + for more of a kind, then Send. Functions confirms each trip.') + '</p>' +
+      stateNote() + (known() ? '' : waitHTML());   // the freshness line under the heading, above the board (20 Nov 2026)
     if (known() && !sv.all.length && !wt.length) out += '<p class="hint">Nothing to send: no function has a round still to go out.</p>';
     var rows = sv.all.length ? '<ul class="fn-svc-rows">' + sv.all.map(function (r) {
       var n = r.f.rounds.length, st = roundState(r.f, r.k), key = r.f.id + '_' + r.f.rounds[r.k].at, pk = cook ? pickOf(r.f, r.k, st) : {}, pq = sum(Object.keys(pk).map(function (x) { return pk[x]; }));
@@ -1812,7 +1849,7 @@
       '<p class="fn-next-s">Late and due in the next 15 minutes, all functions together. What was sent is not counted.</p><ul class="fn-next-list">' + sv.plate.map(function (p) {
         return bigRow(p.qty, p.name, p.rid);
       }).join('') + '</ul></section>';
-    return out + stateNote() + '<div class="btn-row fn-svc-prints">' + prepButton(kday(t), t) + '<button type="button" class="btn" data-fn="print-day"' + (!known() || !printDayList(t).length ? ' disabled' : '') + '>Print run sheet</button></div>' +
+    return out + '<div class="btn-row fn-svc-prints">' + prepButton(kday(t), t) + '<button type="button" class="btn" data-fn="print-day"' + (!known() || !printDayList(t).length ? ' disabled' : '') + '>Print run sheet</button></div>' +
       '<div class="btn-row"><a class="btn" href="#/fn">All functions</a></div></section>';
   }
   // the list has come from the server at least once (an empty answer from the copy in memory is not known)
@@ -1879,8 +1916,9 @@
       SEEN.by[id] = { state: 'error' }; changed();
     });
   }
-  // what a page says while the list is not known yet: no signal, or still loading
-  function waitHTML() { return F.state === 'offline' ? '<p role="status">No signal. Functions show here when the phone is back online.</p>' : '<p role="status">Loading functions...</p>'; }
+  // what a page says while the list is not known yet: no signal, or still loading. A failed read says nothing here: the
+  // failed-read line under the heading (stateNote()) takes the place of the loading words (20 Nov 2026)
+  function waitHTML() { return F.state === 'error' ? '' : F.state === 'offline' ? '<p role="status">No signal. Functions show here when the phone is back online.</p>' : '<p role="status">Loading functions...</p>'; }
   function pageHTML(id) {
     if (!window.LK_PREP || !window.LK_PREP.privateAccess()) return '';
     var t = now(), today = kday(t), prep = P();
@@ -1888,9 +1926,10 @@
     if (id === 'now') return serviceHTML(t);
     if (id) {
       var f = byId(id);
-      if (!f) return '<section class="set-block"><h2 id="rtitle" tabindex="-1">Function</h2>' + (known() ? '<p>This function is not on the kitchen\'s list: it may be a draft, over, or cancelled a while ago.</p>' : waitHTML()) + stateNote() + '<div class="btn-row"><a class="btn" href="#/fn">All functions</a></div></section>';
+      // the freshness line right under the heading, as on #/fn and the service view (20 Nov 2026, the consistency sweep, step 2)
+      if (!f) return '<section class="set-block"><h2 id="rtitle" tabindex="-1">Function</h2>' + stateNote() + (known() ? '<p>This function is not on the kitchen\'s list: it may be a draft, over, or cancelled a while ago.</p>' : waitHTML()) + '<div class="btn-row"><a class="btn" href="#/fn">All functions</a></div></section>';
       // the function as one card (redesign step 5): the eyebrow and the name, then the sheet on its paper
-      return '<section class="set-block fn-page fn-one"><span class="fn-eb">Function</span><h2 id="rtitle" tabindex="-1">' + esc(f.name) + '</h2><div class="fn-cardbox">' + sheetHTML(f, false) + '</div>' + seenHTML(f) + stateNote() + '<div class="btn-row"><a class="btn" href="#/fn">All functions</a></div></section>';
+      return '<section class="set-block fn-page fn-one"><span class="fn-eb">Function</span><h2 id="rtitle" tabindex="-1">' + esc(f.name) + '</h2>' + stateNote() + '<div class="fn-cardbox">' + sheetHTML(f, false) + '</div>' + seenHTML(f) + '<div class="btn-row"><a class="btn" href="#/fn">All functions</a></div></section>';
     }
     /* Today, then Upcoming (redesign step 5, 8 Nov 2026): two headings on one page, not tabs, so the coming days need no
        extra tap. Upcoming shows only the days with a function, each with its Print prep sheet; the days with nothing
@@ -2059,6 +2098,14 @@
     }
     if (a === 'more') { F.more = !F.more; lastBand = null; paint(); var mb = document.querySelector('#fn-band [data-fn="more"]'); if (mb) mb.focus({ preventScroll: true }); return; }
     if (a === 'days') { pageDays = +el.getAttribute('data-v') || 7; try { window.dispatchEvent(new Event('lk-fn')); } catch (x) {} }
+    // Try again on a failed read (20 Nov 2026, the consistency sweep, step 2): the page is drawn again at once with the
+    // loading words, so the focus goes to the page heading rather than nowhere
+    if (a === 'retry') {
+      retryNow();
+      var ae = document.activeElement, rt = document.getElementById('rtitle');
+      if (rt && (!ae || ae === document.body || !document.contains(ae))) rt.focus({ preventScroll: true });
+      return;
+    }
   });
   document.addEventListener('input', function (e) {
     var el = e.target && e.target.closest && e.target.closest('[data-fn="pick-num"]');
