@@ -1769,7 +1769,7 @@
     if (can('del')) out.push('Remove prep lines');
     if (canPing()) out.push('Shift pings');
     if (todoOK()) out.push('Chef to-do');
-    if (bookEdit()) out.push('Recipes and drawings');
+    if (bookEdit()) out.push('Recipes & drawings');
     if (fnOK()) out.push('Function bookings');
     if (isSous() && !adminTabs()) out.push('Manage staff');
     if (adminTabs()) out.push('Admin panel on this device');
@@ -5232,6 +5232,9 @@
   var AI_FLAG = '<svg class="nb-ai" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V4M6 4h11l-2 4 2 4H6"/></svg>';
   // a planned line on a later day has a quiet calendar where the tick box is (17 Nov 2026): nothing to tick before its day
   var AI_CAL = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>';
+  // the supplier mark on Chef to-do's supplier rows (.cut-mark, the consistency sweep, step 3, 20 Nov 2026): the truck the
+  // chef hat's Supplier order row wears, drawn in the line's ink like the calendar above
+  var AI_TRUCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 6h11v10h-11ZM13.5 9.5h4l3 3.5v3h-7Z"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>';
   var AI_BOOK = '<svg class="nb-ai" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5c3-1 6-1 9 1 3-2 6-2 9-1v14c-3-1-6-1-9 1-3-2-6-2-9-1z"/><path d="M12 6v14"/></svg>';
   var AI_ON = '<svg class="nb-ai" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6 8-6s7.2 2 8 6"/></svg>';
   var TICK = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M5 14 L11 20 L22 5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -6171,11 +6174,18 @@
     var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">' + (S.date === today ? 'Done today<span class="nb-qsub"> and quick add</span>' : 'Done on ' + esc(dayShort(S.date))) + '</span></div></header>' +
       '<div class="nb-body nb-side">' + sideH + '</div></section>';
     return whoTopHTML() +
-      (canBrowse() ? '<div class="nb-nav"><button type="button" class="chip" data-p="day" data-d="-1" aria-label="Back one day">&lsaquo;</button>' +
-      '<button type="button" class="chip" data-p="today" aria-pressed="' + (S.date === today) + '">Today</button>' +
-      '<label class="visually-hidden" for="p-day">Pick a date</label><input id="p-day" type="date" class="p-dateinput" data-k="p-day" value="' + esc(S.date) + '">' +
-      '<button type="button" class="chip" data-p="day" data-d="1" aria-label="Forward one day">&rsaquo;</button></div>' : '') +
+      (canBrowse() ? '<div class="nb-nav">' + dayNavHTML(S.date, 'day', 'today', 'p-day') + '</div>' : '') +
       badgeStrip() + (psEnabled() && S.date === today ? psViewHTML() : '') + '<div class="nb-wrap' + (later ? ' nb-later' : '') + '"><div class="nb">' + left + '<div class="nb-spine" aria-hidden="true"></div>' + right + '</div>' + tabHTML + '</div>' + pSheet;
+  }
+  /* The day control (head chef, 20 Nov 2026, the consistency sweep, step 3): ‹ Today date ›, one piece wherever a day is
+     chosen (Prep, and Orders for chefs). day: the day shown; step: the data-p of the ‹ and › chips (data-d -1 or 1);
+     todayP: the data-p of Today, pressed on today; k: the date box's id and data-k. The ‹ and › are the shared step chips
+     (.nav-step), which Cleaning's and Today's team's week arrows use too. */
+  function dayNavHTML(day, step, todayP, k) {
+    return '<button type="button" class="chip nav-step" data-p="' + step + '" data-d="-1" aria-label="Back one day">&lsaquo;</button>' +
+      '<button type="button" class="chip" data-p="' + todayP + '" aria-pressed="' + (day === dayNow()) + '">Today</button>' +
+      '<label class="visually-hidden" for="' + k + '">Pick a date</label><input id="' + k + '" type="date" class="p-dateinput" data-k="' + k + '" value="' + esc(day) + '">' +
+      '<button type="button" class="chip nav-step" data-p="' + step + '" data-d="1" aria-label="Forward one day">&rsaquo;</button>';
   }
   function ago(ms) {
     if (!ms) return 'never';
@@ -7701,7 +7711,7 @@
   /* While connecting, show the page that is opening (not a generic prep book card), so nothing flashes. */
   // the pages other scripts draw are named too: before the kitchen's settings are in, they show this card (27 Oct 2026)
   var PAGE_NAME = { prep: 'Prep list', orders: 'Order list', waste: 'Wastage', transfers: 'Transfers', admin: 'Admin panel', chef: 'Chef panel', minutes: 'Meeting minutes', guides: 'Guides', cleaning: 'Cleaning', mail: 'Kitchen mail', drinks: 'Drinks run', todo: 'Chef to-do',
-    fn: 'Functions', functions: 'Manage functions', deliveries: 'Delivery received', suppliers: 'Supplier order', manage: 'Manage Recipes & Drawings' };
+    fn: 'Functions', functions: 'Manage functions', deliveries: 'Delivery received', suppliers: 'Supplier order', manage: 'Recipes & drawings' };
   function loadingHTML() {
     var t = esc(PAGE_NAME[S.name] || 'Prep book');
     var icon = ['prep', 'orders', 'waste', 'transfers', 'guides'].indexOf(S.name) >= 0 ? S.name : 'chef';
@@ -8232,7 +8242,9 @@
     var by = x._fnOff ? '<b class="nb-offw">' + esc('Not needed: ' + x._fnOff.name + ' all sent ' + clock(x._fnOff.at)) + '</b>' : x.ordered && x.orderedBy ? 'Ordered by ' + esc(x.orderedBy) + (x.orderedAt ? ' ' + clock(x.orderedAt) : '') : (x.rolled ? (x.origBy ? 'from ' + esc(x.origBy) : '') : x.addedBy ? esc(x.addedBy) + (canBrowse() && x.addedAt ? ' ' + clock(x.addedAt) : '') : '');
     return '<li class="nb-row' + (x.ordered ? ' is-done' : '') + (x.deleted ? ' is-removed' : '') + (fnf || fnh ? ' fno-row' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '">' +
       '<button type="button" class="nb-box" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="' + !!x.ordered + '" aria-label="' + esc('Ordered: ' + x.text) + '"' + (canTick ? '' : ' disabled') + '>' + (x.ordered ? TICK : BOX) + '</button>' +
-      '<span class="nb-main"><span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + needTag(x) + fo.tag +
+      // a tap on the words ticks too, as on Prep since 5 Nov 2026 (head chef, 20 Nov 2026, the consistency sweep, step 3):
+      // the same rights as the box (canTick), and onClick() leaves the Used in links and What it needs to their own taps
+      '<span class="nb-main' + (canTick ? '" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '"' : '"') + '><span class="nb-t' + (canTick ? ' nb-tt' : '') + '"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + needTag(x) + fo.tag +
       // Not sent on the words' line, before Used in (a line of its own, .o-used), so its room never adds a line
       (canBrowse() && rolledN(x) && !fr ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + unsentMark(x) + justStamp(x.id) + (fnf || fnh ? '' : recipeChips(x)) + '</span>' +
       fo.when + (fnf ? fnoHTML(x, fnf) : fnh ? fnoHTML(x, fnh, true) : '') + metaHTML([], by) + '</span>' +
@@ -8314,8 +8326,10 @@ if (list.length) sg('oreg', 's');
     var nextHide = Infinity;
     if (S.ordDate === today) live.forEach(function (x) { if (x.ordered && x.orderedAt) { var left = x.orderedAt + ORD_HIDE - now(); if (left > 0 && left < nextHide) nextHide = left; } });
     if (nextHide < Infinity) ordHideTimer = setTimeout(function () { if (S.name === 'orders') draw(); }, nextHide + 500);
-    var tabs = br ? '<div class="nb-nav o-nav"><label class="visually-hidden" for="o-day">Pick a date</label><input id="o-day" type="date" class="p-dateinput o-dateinput" data-k="o-day" value="' + esc(S.ordDate) + '">' +
-      (onToday ? '<a class="chip o-deliv" href="#/deliveries">Delivery received</a>' : '<button type="button" class="chip" data-p="otoday">Back to today</button>') + '</div>' : '';
+    // chefs step the day with Prep's control (head chef, 20 Nov 2026, the consistency sweep, step 3); Today replaces Back
+    // to today, and Delivery received follows it on today (under it on a phone, where the row is full)
+    var tabs = br ? '<div class="nb-nav o-nav"><span class="o-dayctl">' + dayNavHTML(S.ordDate, 'oday', 'otoday', 'o-day') + '</span>' +
+      (onToday ? '<a class="chip o-deliv" href="#/deliveries">Delivery received</a>' : '') + '</div>' : '';
     var add = can('add') && S.ordDate === today ?
       '<form class="nb-add" data-p-form="oadd"><div class="nb-add-row"><label class="visually-hidden" for="o-text">Item to order</label><input id="o-text" class="nb-in nb-in-text" data-k="o-text" enterkeyhint="done" autocomplete="off" placeholder="What do we need to order?" maxlength="120" value="' + esc(S.otext) + '">' +
       '<label class="visually-hidden" for="o-qty">Amount</label>' + fbHTML('nb-in-qty', '<input id="o-qty" class="nb-in" data-k="o-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"' + (oFilled() ? ' aria-describedby="o-fill"' : '') + '>', 'Usual', oFilled()) + '<button type="submit" class="nb-addbtn">Add</button></div>' +
@@ -9202,7 +9216,8 @@ if (list.length) sg('oreg', 's');
     var nOut = live.filter(function (x) { return x.dir !== 'in'; }).length, nIn = live.length - nOut;
     // no signal and not loaded yet: the note, then only the lines this phone wrote since (listSnap), and no counts
     var offX = S.xState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
-    var sub = offX ? '' : [nOut ? nOut + ' out' : '', nIn ? nIn + ' in' : ''].filter(Boolean).join(', ');
+    // the date line counts what was logged today, in the cards' own words (Lent to, Borrowed from)
+    var sub = offX ? '' : [nOut ? nOut + ' lent' : '', nIn ? nIn + ' borrowed' : ''].filter(Boolean).join(', ') + (live.length ? ' today' : '');
     var add = can('add') ? xFormHTML() : '';
     var earlier = (S.xOpen || []).filter(function (x) { return x.date !== today && !x.deleted && !x.returned; }).sort(byTime);
     var todayOpen = shown.filter(function (x) { return !x.deleted && !x.returned; }), done = shown.filter(function (x) { return x.deleted || x.returned; });
@@ -9220,7 +9235,10 @@ if (list.length) sg('oreg', 's');
       '<p class="w-rule">Stock shared with the other venues, both ways. Write the amount and unit, not a price.</p>' + add + '<button type="button" class="btn sheet-x" data-p="tr-log-close">Close</button></div>' : '';
     return whoTopHTML() +
       '<section class="nb-page o-page tr-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Transfers</h2><span class="nb-date">' + esc(longDate(S.xDate)) + (sub ? ' &middot; ' + esc(sub) : '') + '</span></div>' +
-      (S.xState === 'offline' || S.xState !== 'ok' && !live.length ? '' : '<div class="nb-prog">' + live.length + (live.length === 1 ? ' transfer' : ' transfers') + '</div>') + (add ? dockBtn('tr-logbtn', 'tr-log', 'Log a transfer') : '') + '</header>' +
+      // the big count is what the page shows under Still out, earlier days' loans too (head chef, 20 Nov 2026, the
+      // consistency sweep, step 3: it counted only today's lines, "0 transfers" above loans still out). Only once both
+      // lists are in: while either is loading, offline or failed, no count rather than a wrong one
+      (S.xState !== 'ok' || S.xOpenState !== 'ok' ? '' : '<div class="nb-prog">' + (openRows.length ? openRows.length + ' still out' : 'Nothing out') + '</div>') + (add ? dockBtn('tr-logbtn', 'tr-log', 'Log a transfer') : '') + '</header>' +
       acts + '<div class="nb-body">' + stillOut + doneHTML + '</div></section>' +
       (wAll() ? '<p class="hint w-past">Past days and the totals per venue are in the <a href="#/admin" data-p="tr-go-admin">admin panel, Transfers</a>.</p>' : '') + sheet;
   }
@@ -9900,7 +9918,8 @@ if (list.length) sg('oreg', 's');
         if (epoch !== accessEpoch) return;
         if (S.nf === f && nfDirty()) { var was = JSON.parse(saved); f.id = was.id = sid; S.nfSnap = JSON.stringify(was); }
         else if (S.nf === f) { S.nf = nfNew(); S.nOpen = false; }
-        if (!S.nOpen || S.nf === f) S.nMsg = 'Saved. Shows: ' + when + '.';
+        // the ping's own words, short (the consistency sweep, step 3, 20 Nov 2026); msgHTML() escapes them. Removed. stays unnamed
+        if (!S.nOpen || S.nf === f) S.nMsg = 'Saved: ' + slipName(text) + '. Shows: ' + when + '.';
       });
       loadNotes(true); draw();
     }, function (e) {
@@ -12798,7 +12817,9 @@ if (list.length) sg('oreg', 's');
         '<span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span>' +
         '<button type="button" class="cut-box o-cut-action" data-p="cut-tick" data-id="' + esc(t.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Undo order placed for ' : 'Order placed for ') + c.s.name + (roll ? ', ' + cutDel(roll) : c.at >= 1440 ? ', for tomorrow' : '')) + '"' + (cutCanTick() ? '' : ' disabled') + '>' + (d ? 'Undo' : 'Order placed' + (ahead ? ' for tomorrow' : '')) + '</button></li>';
     }
-    return '<li class="cut-o ' + cls + '">' + (ro ? '<span class="cut-box cut-mark" aria-hidden="true">' + (d ? '&#10003;' : '') + '</span>' : '<button type="button" class="cut-box" data-p="cut-tick" data-id="' + esc(t.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Ordered from ' : 'Tick when ordered from ') + c.s.name + (roll ? ', ' + cutDel(roll) : '')) + '"' + (cutCanTick() ? '' : ' disabled') + '><span aria-hidden="true">' + (d ? '&#10003;' : '') + '</span></button>') +
+    // Chef to-do (ro): a supplier mark where the box is, not a control and not an empty box like the to-do's own ticks
+    // (head chef, 20 Nov 2026, the consistency sweep, step 3); the words beside it say Ordered by whom, as before
+    return '<li class="cut-o ' + cls + '">' + (ro ? '<span class="cut-mark" aria-hidden="true">' + AI_TRUCK + '</span>' : '<button type="button" class="cut-box" data-p="cut-tick" data-id="' + esc(t.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Ordered from ' : 'Tick when ordered from ') + c.s.name + (roll ? ', ' + cutDel(roll) : '')) + '"' + (cutCanTick() ? '' : ' disabled') + '><span aria-hidden="true">' + (d ? '&#10003;' : '') + '</span></button>') +
       '<a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a><span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span></li>';
   }
   /* Orders C (9 Nov 2026): one compact disclosure, separate from the staff requests. Reuse the existing cut-off
@@ -13546,11 +13567,19 @@ if (list.length) sg('oreg', 's');
     if (a === 'g-pup') { var gp = S.gf && S.gf.pages; if (gp && i > 0 && gp[i]) { gp.splice(i - 1, 0, gp.splice(i, 1)[0]); draw(); } return; }
     // a page is a picture made on this device: getting it back means choosing the file again, so a second tap first
     if (a === 'g-prm') { var gp2 = S.gf && S.gf.pages; if (gp2 && gp2[i]) { if (!arm('g-prm:' + i)) return; gp2.splice(i, 1); S.gf.msg = ''; draw(); } return; }
-    if (a === 'otick') { tickOrderLine(el.getAttribute('data-d'), id, el.getAttribute('aria-pressed') !== 'true'); return; }
+    if (a === 'otick') {
+      // the words of an Orders line (the consistency sweep, step 3, 20 Nov 2026): the line's box says which way the tick
+      // goes, and a tap on a link, a button or the open What it needs inside the words keeps its own job
+      var obx = el.classList.contains('nb-main') ? el.parentNode.querySelector('.nb-box[data-p="otick"]') : el;
+      if (el !== obx && (!obx || obx.disabled || e.target.closest('a, button, .o-used, .fno-box'))) return;
+      tickOrderLine(el.getAttribute('data-d'), id, obx.getAttribute('aria-pressed') !== 'true'); return;
+    }
     if (a === 'odel') { removeOrderLine(el.getAttribute('data-d'), id); return; }
     if (a === 'orestore') { removeOrderLine(el.getAttribute('data-d'), id, true); return; }
     if (a === 'oremoved') { S.oShowRemoved = !S.oShowRemoved; draw(); return; }
     if (a === 'otoday') { S.ordDate = dayNow(); watchOrders(); draw(); return; }
+    // the day control's ‹ and › on Orders (chefs only, as the date box): one day back or on, like Prep's
+    if (a === 'oday') { if (canBrowse()) { S.ordDate = shift(S.ordDate || dayNow(), +el.getAttribute('data-d') || 0); watchOrders(); draw(); } return; }
     if (a === 'o-write') { wSheetOpen('olog'); return; }
     if (a === 'o-done-toggle') { e.preventDefault(); S.oDoneOpen = !S.oDoneOpen; draw(); return; }
     if (a === 'osugg') { var st = (S.osugg || [])[i]; if (st) { sg('otype', 't'); S.otext = st; if (!S.oqty.trim()) S.oqty = (ordQtyList(st)[0] || {}).q || ''; draw(); var oe = S.root.querySelector('[data-k="o-text"]'); if (oe) { oe.focus(); try { oe.setSelectionRange(oe.value.length, oe.value.length); } catch (x) {} } } return; }
@@ -14361,7 +14390,10 @@ if (list.length) sg('oreg', 's');
       if (!x) { tdMsg = 'That job is not on the list any more.'; draw(); return; }
       var was = { text: x.text, due: x.due, for: x.for, upd: x.upd };
       x.text = t; x.due = due; x.for = fr; x.upd = at; tdf = tdBlank(); tdSnap = ''; tdEditX = null; tdMsg = ''; draw();
-      W([['upd', docRef('todos', x.id), { text: t, due: due, for: fr, upd: at }]]).then(function () { toast('Job saved.'); }, function (e) {
+      // Saved and Added name the job, like Done (head chef, 20 Nov 2026, the consistency sweep, step 3), and only to the
+      // chef who wrote it: a save answered after a hand-over says nothing. Removed stays unnamed (todoRemove())
+      var sBy = S.who;
+      W([['upd', docRef('todos', x.id), { text: t, due: due, for: fr, upd: at }]]).then(function () { if (S.who === sBy) toast('Saved: ' + slipName(t)); }, function (e) {
         x.text = was.text; x.due = was.due; x.for = was.for; x.upd = was.upd; failed(e, function () { tdf = keep; tdEditX = ex; }); draw();
       });
       return;
@@ -14369,7 +14401,8 @@ if (list.length) sg('oreg', 's');
     var ref = fb.fs.doc(colRef('todos')), d = { text: t, st: 'open', due: due, for: fr, from: tdMe(), at: at, doneAt: 0, doneBy: '', upd: at };
     var y = Object.assign({ id: ref.id }, d);
     tdPlace(y); lvReveal('todo'); tdf = tdBlank(); tdMsg = ''; draw();
-    W([['set', ref, d]]).then(function () { toast('Added to the list.'); }, function (e) {
+    var aBy = S.who;
+    W([['set', ref, d]]).then(function () { if (S.who === aBy) toast('Added: ' + slipName(t)); }, function (e) {
       if (tdOpen) tdOpen = tdOpen.filter(function (m) { return m.id !== y.id; }); failed(e, function () { tdf = keep; }); draw();
     });
   }
@@ -14792,7 +14825,10 @@ if (list.length) sg('oreg', 's');
       var weekday = parseYmd(d).toLocaleDateString('en-AU', { weekday: 'short' });
       days.push('<button type="button" class="tm-daypick' + (d === dayNow() ? ' is-today' : '') + '" data-p="tm-day" data-day="' + d + '" data-d="' + d + '" aria-pressed="' + (d === day) + '" aria-label="' + esc(tmPlanDate(d) + (d === dayNow() ? ', today' : '') + ', ' + status) + '"' + dis + '><span>' + esc(weekday) + '</span><b>' + parseYmd(d).getDate() + '</b><small>' + status + '</small></button>');
     }
-    return '<nav class="tm-weeknav" aria-label="Team planning dates"><div class="tm-weekbar"><button type="button" class="chip" data-p="tm-week-prev" aria-label="Previous week"' + dis + '>‹</button><span>' + esc(smallDate(start) + ' to ' + smallDate(shift(start, 6))) + '</span><button type="button" class="chip" data-p="tm-week-next" aria-label="Next week"' + dis + '>›</button><button type="button" class="chip" data-p="tm-today"' + dis + '>Today</button></div><div class="tm-weekscroll"><div class="tm-weekdays">' + days.join('') + '</div></div></nav>';
+    // Today's team keeps its own date picker, not Prep's day control (the consistency sweep, step 3, 20 Nov 2026): each
+    // day here says Draft, Saved or Not set from one bounded week read, which a date box cannot show. Its week arrows
+    // are the book's step chips (.nav-step), as on Prep and Cleaning's week.
+    return '<nav class="tm-weeknav" aria-label="Team planning dates"><div class="tm-weekbar"><button type="button" class="chip nav-step" data-p="tm-week-prev" aria-label="Previous week"' + dis + '>‹</button><span>' + esc(smallDate(start) + ' to ' + smallDate(shift(start, 6))) + '</span><button type="button" class="chip nav-step" data-p="tm-week-next" aria-label="Next week"' + dis + '>›</button><button type="button" class="chip" data-p="tm-today"' + dis + '>Today</button></div><div class="tm-weekscroll"><div class="tm-weekdays">' + days.join('') + '</div></div></nav>';
   }
   function tmDateHTML() {
     var busy = svOf('t') === 'busy' || tmLastBusy;

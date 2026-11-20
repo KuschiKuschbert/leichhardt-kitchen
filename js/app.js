@@ -581,9 +581,6 @@
     if (!window.LK_PREP || !window.LK_PREP.privateAccess()) return '';
     return '<a class="wm-a wm-tile wm-delivery" href="#/deliveries" data-who="go"' + (parseRoute().name === 'deliveries' ? ' aria-current="page"' : '') + '>' + ICON.temp + '<span><b>Delivery received</b></span></a>';
   }
-  function cleaningItem() {
-    return cleaningOK() ? '<a class="wm-a wm-tile" href="#/cleaning" data-who="go"' + (parseRoute().name === 'cleaning' ? ' aria-current="page"' : '') + '>' + NAV_ICON.cleaning + '<span><b>Kitchen cleaning</b></span></a>' : '';
-  }
   function guidesItem() {
     return guidesOK() ? '<a class="wm-a wm-tile" href="#/guides" data-who="go"' + (parseRoute().name === 'guides' ? ' aria-current="page"' : '') + '>' + NAV_ICON.guides + '<span><b>Guides</b></span></a>' : '';
   }
@@ -632,9 +629,11 @@
         '<button type="button" class="wm-a wm-out" data-who="out">' + ICON.exit + '<span><b>Not ' + esc(n) + '? Sign out</b><small aria-live="polite"></small></span></button>' +
         // a list since 8 Nov 2026 (redesign step 7): the jobs of every day first, then the rest. The same items for the same
         // people as the tiles had; only the order and the look changed.
+        // no Cleaning row: its main tab is the way in, and the hat does not repeat a tab (head chef, 20 Nov 2026, the
+        // consistency sweep, step 3)
         grid('Every day', [
           m.sec ? tile('data-who="sec" data-v="section"', ICON.spot, 'My section', '<small>' + esc(m.sec) + '</small>') : '',
-          m.fn ? fnItem() : fnViewItem(), deliveryItem(), cleaningItem(), supplierOK() ? supplierItem() : '',
+          m.fn ? fnItem() : fnViewItem(), deliveryItem(), supplierOK() ? supplierItem() : '',
           m.team ? teamItem(m.teamUnset) : '',
           m.head || fnOnly ? '' : tile('href="#/mail" data-who="go"', ICON.mail, 'Kitchen mail'),
           m.chef ? tile('data-who="open" data-v="pings"', ICON.bell, 'Shift pings') : ''
@@ -653,7 +652,7 @@
       // Sign in, which would forget them (28 Oct 2026)
       body = (offline() ? '<p class="wm-h">' + esc(offline()) + '</p>' : '<p class="wm-h">Nobody signed in on this phone</p>' +
         '<a class="wm-a wm-in" href="#/prep" data-who="signin">' + ICON.chef + '<span><b>Sign in</b></span></a>') +
-        grid('Every day', [deliveryItem(), cleaningItem(), window.LK_PREP && window.LK_PREP.teamOK && window.LK_PREP.teamOK() ? teamItem(false) : '', supplierOK() ? supplierItem() : '', fnOK() ? fnItem() : '']) +
+        grid('Every day', [deliveryItem(), window.LK_PREP && window.LK_PREP.teamOK && window.LK_PREP.teamOK() ? teamItem(false) : '', supplierOK() ? supplierItem() : '', fnOK() ? fnItem() : '']) +
         grid('More', [adm, guidesItem(), bookEdit() ? manageItem() : '', todoOK() ? todoItem() : '']) + set;
     }
     el.innerHTML = '<div class="wm-bg" data-who="close"></div><nav class="wm" aria-label="' + (n ? esc(n) : 'Menu') + '" style="--wm-top:' + Math.round(r.bottom + 8) + 'px;top:var(--wm-top);right:' + Math.max(8, Math.round(window.innerWidth - r.right)) + 'px"><span class="wm-grip" aria-hidden="true"></span>' + body + '</nav>';
@@ -734,7 +733,7 @@
     return '<div class="wall-mn">' + (window.LK_PREP && window.LK_PREP.minNudge ? window.LK_PREP.minNudge() : '') + '</div>';
   }
   /* Under the top bar, the recipe pages get their own tools row: how many recipes, and the Pass / Tiles switch. */
-  var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders'], ['04', 'Wastage', '#/waste', 'waste'], ['05', 'Transfers', '#/transfers', 'transfers', 'What other venues took from us, and what we took from them'], ['06', 'Cleaning', '#/cleaning', 'cleaning', 'The kitchen cleaning jobs for today and the week']];
+  var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders'], ['04', 'Wastage', '#/waste', 'waste'], ['05', 'Transfers', '#/transfers', 'transfers', 'What other venues took from us, and what we took from them'], ['06', 'Cleaning', '#/cleaning', 'cleaning', 'The cleaning jobs for today and the week']];
   // Chosen welcome A (10 Nov 2026): the complete authenticated staff name, with the kitchen date below.
   // Only presentation of the held identity; public and locked visitors retain their neutral heading.
   var HOME_WELCOMES = ['Welcome', 'Hello', 'Hi there', 'G’day'];
@@ -1440,7 +1439,7 @@
     });
   }
   function loadManage() {
-    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=16').catch(function (e) { mgLoad = null; throw e; });
+    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=18').catch(function (e) { mgLoad = null; throw e; });
     return mgLoad;
   }
   function mgNote(title, text, link, waitingIcon) {
@@ -1451,9 +1450,9 @@
     var root = document.getElementById('mg-root');
     if (!root) return;
     var st = window.LK_PREP && window.LK_PREP.bookState ? window.LK_PREP.bookState() : 'no';
-    if (st === 'offline') { root.innerHTML = mgNote('Manage Recipes & Drawings', offline()); return; }
-    if (st === 'wait') { root.innerHTML = mgNote('Manage Recipes & Drawings', 'Checking who is signed in on this device...', ' ', 'chef'); return; }
-    if (st === 'nopin') { root.innerHTML = mgNote('Manage Recipes & Drawings', 'This device has no kitchen PIN yet. Open the Prep list and enter it, then sign in as the head chef.', '<div class="btn-row"><a class="btn dark" href="#/prep">Open the Prep list</a></div>'); return; }
+    if (st === 'offline') { root.innerHTML = mgNote('Recipes & drawings', offline()); return; }
+    if (st === 'wait') { root.innerHTML = mgNote('Recipes & drawings', 'Checking who is signed in on this device...', ' ', 'chef'); return; }
+    if (st === 'nopin') { root.innerHTML = mgNote('Recipes & drawings', 'This device has no kitchen PIN yet. Open the Prep list and enter it, then sign in as the head chef.', '<div class="btn-row"><a class="btn dark" href="#/prep">Open the Prep list</a></div>'); return; }
     if (st !== 'yes') {
       if (window.LK_MG) window.LK_MG.unmount();
       root.innerHTML = mgNote('Only the head chef can change recipes', 'Everyone can read the recipes and their drawings on the recipe cards. To change one, the head chef signs in with their own PIN, or uses their own device with the Google sign-in.' +
@@ -1461,7 +1460,7 @@
       return;
     }
     if (window.LK_MG) { if (window.LK_MG.api === MG_API) window.LK_MG.mount(root, route); else root.innerHTML = mgNote('Reload the book', 'The recipe editor on this device is a different version from the book. Reload the page to update it.', '<div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div>'); return; }
-    root.innerHTML = mgNote('Manage Recipes & Drawings', 'Opening the recipe editor...', ' ', 'recipes');
+    root.innerHTML = mgNote('Recipes & drawings', 'Opening the recipe editor...', ' ', 'recipes');
     loadManage().then(function () {
       if (parseRoute().name === 'manage') mountManage(parseRoute());
     }, function () {
@@ -1575,23 +1574,23 @@
   function mountCleaning() {
     var root = document.getElementById('cleaning-root'); if (!root) return;
     if (!window.LK_PREP || !window.LK_PREP.cleaningOK) {
-      root.innerHTML = mgNote('Reload the book', 'Kitchen cleaning needs the current book.', '<button type="button" class="btn dark" data-act="reload">Reload</button>'); return;
+      root.innerHTML = mgNote('Reload the book', 'Cleaning needs the current book.', '<button type="button" class="btn dark" data-act="reload">Reload</button>'); return;
     }
     if (!cleaningOK()) {
       if (window.LK_CLEANING) window.LK_CLEANING.unmount();
-      root.innerHTML = mgNote('Kitchen cleaning', 'Cleaning is not open to the team yet. The head chef will turn it on when setup is ready.', '<a class="btn dark" href="#/">Back to the start</a>'); return;
+      root.innerHTML = mgNote('Cleaning', 'Cleaning is not open to the team yet. The head chef will turn it on when setup is ready.', '<a class="btn dark" href="#/">Back to the start</a>'); return;
     }
     if (window.LK_CLEANING) {
       if (window.LK_CLEANING.api === 2) window.LK_CLEANING.mount(root);
-      else root.innerHTML = mgNote('Reload the book', 'Kitchen cleaning needs the current book.', '<button type="button" class="btn dark" data-act="reload">Reload</button>');
+      else root.innerHTML = mgNote('Reload the book', 'Cleaning needs the current book.', '<button type="button" class="btn dark" data-act="reload">Reload</button>');
       return;
     }
-    root.innerHTML = mgNote('Kitchen cleaning', 'Opening kitchen cleaning...', ' ', 'prep');
-    if (!cleaningLoad) cleaningLoad = (window.LK_CLEANING_SCHEDULE ? Promise.resolve() : mgScript('js/cleaning-schedule.js?v=1')).then(function () { return mgScript('js/cleaning.js?v=7'); }).then(function () {
-      if (!window.LK_CLEANING) throw new Error('Kitchen cleaning did not load');
+    root.innerHTML = mgNote('Cleaning', 'Opening Cleaning...', ' ', 'prep');
+    if (!cleaningLoad) cleaningLoad = (window.LK_CLEANING_SCHEDULE ? Promise.resolve() : mgScript('js/cleaning-schedule.js?v=1')).then(function () { return mgScript('js/cleaning.js?v=8'); }).then(function () {
+      if (!window.LK_CLEANING) throw new Error('Cleaning did not load');
     }).catch(function (e) { cleaningLoad = null; throw e; });
     cleaningLoad.then(function () { if (parseRoute().name === 'cleaning') mountCleaning(); }, function () {
-      if (parseRoute().name === 'cleaning' && root.isConnected) root.innerHTML = mgNote('Could not open kitchen cleaning', 'Check the connection and try again.', '<button type="button" class="btn dark" data-cleaning-retry>Try again</button>');
+      if (parseRoute().name === 'cleaning' && root.isConnected) root.innerHTML = mgNote('Could not open Cleaning', 'Check the connection and try again.', '<button type="button" class="btn dark" data-cleaning-retry>Try again</button>');
     });
   }
   document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-cleaning-retry]')) mountCleaning(); });
@@ -1935,7 +1934,7 @@
     return '#/';
   }
   function backTitle(hash) {
-    var r = parseRoute(hash), names = { landing: 'Kitchen Book', home: 'recipes', prep: 'prep list', orders: 'order list', waste: 'wastage', transfers: 'transfers', minutes: 'meeting minutes', mail: 'kitchen mail', drinks: 'drinks run', todo: 'Chef to-do', admin: 'admin panel', chef: 'chef panel', settings: 'Settings', guides: 'guides', fn: 'functions', functions: 'Manage functions', manage: 'Manage recipes', suppliers: 'Supplier order', deliveries: 'Delivery received', cleaning: 'kitchen cleaning' };
+    var r = parseRoute(hash), names = { landing: 'Kitchen Book', home: 'recipes', prep: 'prep list', orders: 'order list', waste: 'wastage', transfers: 'transfers', minutes: 'meeting minutes', mail: 'kitchen mail', drinks: 'drinks run', todo: 'Chef to-do', admin: 'admin panel', chef: 'chef panel', settings: 'Settings', guides: 'guides', fn: 'functions', functions: 'Manage functions', manage: 'Recipes & drawings', suppliers: 'Supplier order', deliveries: 'Delivery received', cleaning: 'cleaning' };
     if (r.name === 'recipe') return 'recipe';
     return names[r.name] || 'Kitchen Book';
   }
@@ -2094,7 +2093,7 @@
     foolsSync();
     koSync();   // Keep screen on: holds on a recipe page when chosen, lets go everywhere else and while this device is locked
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
-    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'transfers' ? 'Transfers · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'todo' ? 'Chef to-do · ' : route.name === 'team' ? 'Today\'s team · ' : route.name === 'suppliers' ? 'Supplier order · ' : route.name === 'manage' ? 'Manage Recipes & Drawings · ' : route.name === 'fn' ? 'Functions · ' : route.name === 'functions' ? 'Manage functions · ' : route.name === 'cleaning' ? 'Kitchen cleaning · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : route.name === 'chef' ? 'Chef panel · ' : '')) + 'Leichhardt Kitchen Book';
+    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'transfers' ? 'Transfers · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'todo' ? 'Chef to-do · ' : route.name === 'team' ? 'Today\'s team · ' : route.name === 'suppliers' ? 'Supplier order · ' : route.name === 'manage' ? 'Recipes & drawings · ' : route.name === 'fn' ? 'Functions · ' : route.name === 'functions' ? 'Manage functions · ' : route.name === 'cleaning' ? 'Cleaning · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : route.name === 'chef' ? 'Chef panel · ' : '')) + 'Leichhardt Kitchen Book';
     var prevRoute = lastRoute; lastRoute = route.name;
     if (changed && route.name === 'recipe') noteView(route.stack[route.stack.length - 1]);
     // opening the recipes checks for the head chef's recipe changes when the last check is 30 minutes old (one read)

@@ -53,6 +53,8 @@ const CLASSES = [
   'lk-fb', 'lk-ftag', 'lk-fillnote', 'lk-weigh', 'lk-why',
   // the consistency sweep, step 3 (20 Nov 2026): the main button, corners, the destructive look and the chosen state
   'lk-del', 'nt-later', 'mlp-go', 'mlp-later', 'sheet-o', 'ps-pick', 'view-opt', 'nb-tab', 'nb-onbtn', 'mg-sw', 'fn-more', 'gz-b', 'su-use', 'p-toast-btn', 'upd-bar',
+  // the day control and its step chips, the supplier mark (the consistency sweep, step 3, 20 Nov 2026)
+  'nb-nav', 'nav-step', 'o-dayctl', 'cut-mark',
   'fn-strip-l', 'fn-strip-stale', 'fn-strip-in', 'is-strip',
   'p-readerr'
 ];
@@ -66,6 +68,7 @@ const HELPERS = ['stripItems', 'stripInner', 'staleWords', 'prepStrip', 'prepPla
   'fnOrdTag', 'orderTag', 'fnoHTML', 'platterNeeds', 'fbHTML', 'ftagHTML', 'fillAfterTap'];
 const GLOBALS = ['ICON', 'LK_UX', 'LK_PREP_STANDARDS'];
 HELPERS.push('pageSwipeFrom', 'navList', 'armCls');
+HELPERS.push('dayNavHTML');
 
 const missing = [];
 CLASSES.forEach(c => { if (!new RegExp('\\.' + c.replace(/[-]/g, '\\-') + '(?![A-Za-z0-9_-])').test(css)) missing.push('.' + c); });

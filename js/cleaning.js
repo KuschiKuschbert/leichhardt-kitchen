@@ -249,7 +249,8 @@
   }
   function weekly() {
     var days = dates();
-    return '<div class="cln-week-nav"><button type="button" class="chip" data-cln="previous" aria-label="Previous week">‹</button><span>' + esc('Week commencing ' + shortDay(M.week)) + '</span><button type="button" class="chip" data-cln="next" aria-label="Next week">›</button><button type="button" class="p-link" data-cln="this-week">This week</button></div>' +
+    // the ‹ and › are the book's step chips, as on Prep's day control (the consistency sweep, step 3, 20 Nov 2026)
+    return '<div class="cln-week-nav"><button type="button" class="chip nav-step" data-cln="previous" aria-label="Previous week">‹</button><span>' + esc('Week commencing ' + shortDay(M.week)) + '</span><button type="button" class="chip nav-step" data-cln="next" aria-label="Next week">›</button><button type="button" class="p-link" data-cln="this-week">This week</button></div>' +
       '<p class="hint cln-legend">Review one day at a time. Only today can be recorded. Repeated service, prep and use coverage is not configured.</p>' +
       (Object.keys(M.tickErrors).length ? '<p class="p-err" role="alert">' + esc(Object.keys(M.tickErrors).map(function (key) { return M.tickErrors[key]; }).join(' ')) + ' Refresh to check the list.</p>' : '') +
       '<div class="cln-day-pick chips" role="group" aria-label="Day to view">' + days.map(function (day, i) { return '<button type="button" class="chip" data-cln="day" data-day="' + day + '" aria-pressed="' + (M.selected === day) + '">' + DAYS[i][1] + '<small>' + shortDay(day) + '</small></button>'; }).join('') + '</div><div class="cln-week-day"><h3 class="cln-selected-day">' + esc(longDay(M.selected)) + '</h3>' + chefDaily(M.selected) + '</div>';
