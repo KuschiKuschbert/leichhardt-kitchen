@@ -28,11 +28,23 @@
     22. The design rule book takes these choices, and its test checks that pages use them.
   - They are built in grouped drafts, each on hold until the head chef has tried it.
 
+- **19 November 2026, Prep opens with the slim functions strip and keeps your place.** On a busy day, with three functions tonight and a cut-off due, the function band (216 px) and the cut-off bar (94 px) left the head chef's Prep one line on the opening screen of a 390 px phone. Coming back from Orders, Wastage or Transfers, Prep always started at the top again.
+  - The head chef asked for alternatives to the minus, and proposed a split bar. Three council rounds followed (`docs/band-options/brief.md`). The split bar came last in round 2; the head chef then asked for something more practical.
+  - In round 3, all six reviewers put two things first (48.5 points): the slim strip the book already pins once the band scrolls away, used on Prep from the start, and Prep keeping your place.
+  - The head chef chose all three steps:
+    1. The strip mended: cancelled, rescheduled and changed functions lead and are never dropped, it says Functions, and it carries the No signal and Could not load words.
+    2. Prep keeps your place for the day, per person, day, section and board, by line. Tapping Prep while on Prep goes to the top.
+    3. Prep starts with the strip.
+  - This changes the 22 October decision that the full band shows on every page: on Prep it starts as the strip. The other pages keep the band and its minus.
+  - The cut-off in the strip (F) is held: at 390 px the names are cut to "N…".
+
+
 - **20 November 2026, the push timer and Google's backups are on; the encrypted backup stays nightly.** The owner set both Plan C follow-ups up in Cloud Shell: a Cloud Scheduler job starts the cut-off push job every 10 minutes (chosen 14 Nov over moving the push job into Google), and Firestore's own backups keep Leichhardt's whole database daily for 7 days and Sundays for 14 weeks. Asked whether the encrypted GitHub backup should still drop to Sundays now that a venue may run on the free plan without Google's backups, the owner chose to keep it nightly for every venue. The timer's GitHub token is renewed before 19 Nov 2027 (`docs/firestore-usage.md`).
 
 
 - **19 November 2026, tonight's list checks what is planned for tomorrow.** The owner asked for "a check for double ups in the tomorrow list with the [night] list, to make sure people don't write an item 2 times". From 90 minutes before tomorrow's list is usually written (or once it has started; with no usual time, from 15:00), a line added on today's list that is already planned for tomorrow, at any amount, is not added: the slip says "Planned for tomorrow: Brine pork, 2 kg." with Add anyway. Earlier in the day the same line is today's job and goes on. [Brief](prep-ahead-options/brief.md).
 - **19 November 2026, planning ahead starts with tomorrow.** The owner tried to put a line on tomorrow's prep list and "couldn't add": the build of 18 Nov started planning on the day after tomorrow (tomorrow being written tonight, on today's list). Now the admin plans from tomorrow too, with the same Add to tomorrow sheet. The night crew still cannot see tomorrow's page; a line they write again under Tonight, for tomorrow with the same amount is not copied next to the plan at the rollover, another amount shows Also on both. The head chef on a device without the admin sign-in is told how to plan ("open the Admin panel and sign in with Google"). [Brief](prep-ahead-options/brief.md).
+
 
 - **19 November 2026, the admin panel's People page: the council's mix.** The head chef asked whether to restyle it: every person was an open form, 375 px a person on a phone, nobody on the first screen. The council said Build smaller (4 of 5) and ranked B, rows that open in place, first (5 of 6). The head chef chose the recommended mix: one row a person with their role and rights in words, Change opens one person in place, leaving and Delete for good under "waits for Save changes", a deleted row struck through with Undo delete, and a Save bar that names who will be deleted. One more tap for each change, in exchange for a list you can read. [Brief](people-room-options/brief.md).
 

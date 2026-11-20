@@ -634,9 +634,13 @@
      decided when the slot is drawn (ahOpen()) and keeps its place and its two rows until the next open; later changes
      swap its words only, so the list under it never moves under a finger. A function today is the one exception: the
      full band replaces the line, once no finger is down (ahWait()). */
+  // Prep starts with the slim strip instead of the full band (head chef, 19 Nov 2026, docs/band-options/brief.md,
+  // Round 3): the list gets the first screen; a tap on the strip opens the service view or the function's sheet, and the
+  // other pages keep the full band. The Next function line is unchanged.
+  function prepStrip() { return location.hash.split('?')[0] === '#/prep'; }
   function bandHTML() {
     var base = bandBase();
-    if (!AH.on && !AH.gone) return base;
+    if (!AH.on && !AH.gone) return base && prepStrip() ? '<div class="fn-strip-in">' + stripInner(now()) + '</div>' : base;
     // locked or signed out since the open: nothing private stays on screen
     if (!window.LK_PREP || !window.LK_PREP.privateAccess()) { AH.on = AH.gone = false; return ''; }
     var t = now(), xs = showing(F.list, t, isSentK);
@@ -644,13 +648,17 @@
     if (AH.gone) return '';   // hidden with its minus until the next open
     return ahHTML(t, xs);
   }
+  // the band's words for an old copy or a failed read (the strip says the same, 19 Nov 2026): never "nothing" when a read failed
+  function staleWords(t, xs) {
+    if (F.state === 'error' && F.at) return 'Could not load functions. Showing the copy from ' + when(F.at, kday(t)) + '.';
+    if (F.state === 'error') return !xs.length && /^\d{4,6}$/.test((P() && P().state && P().state.pin) || '') ? 'Could not load functions.' + (quota() ? '' : ' Check the signal.') : '';
+    if ((F.offline || navigator.onLine === false) && F.at && xs.length) return 'No signal. Functions last updated ' + when(F.at, kday(t)) + '.';
+    return '';
+  }
   function bandBase() {
     if (!window.LK_PREP || !window.LK_PREP.privateAccess()) return '';
     if (location.hash === '#/fn/now') return '';   // the service view shows the same rounds in full: no band above it
-    var t = now(), R = bandRows(t), xs = R.xs, stale = '';
-    if (F.state === 'error' && F.at) stale = 'Could not load functions. Showing the copy from ' + when(F.at, kday(t)) + '.';
-    else if (F.state === 'error') stale = !xs.length && /^\d{4,6}$/.test((P() && P().state && P().state.pin) || '') ? 'Could not load functions.' + (quota() ? '' : ' Check the signal.') : '';
-    else if ((F.offline || navigator.onLine === false) && F.at && xs.length) stale = 'No signal. Functions last updated ' + when(F.at, kday(t)) + '.';
+    var t = now(), R = bandRows(t), xs = R.xs, stale = staleWords(t, xs);
     var ys = R.ys;
     if (!xs.length && !ys.length && !stale) return '';
     var a = R.a, b = R.b, left = xs.length + ys.length - a.length - b.length;
@@ -1037,7 +1045,7 @@
       // compared with what this element was given (el.lkH), not its innerHTML: the browser writes text back differently
       // (a no-break space as &nbsp;), so that never matched and the slot was rebuilt every 20 seconds, losing focus
       var h = bandHTML(); if (h !== lastBand || el.lkH !== h) { el.innerHTML = h; lastBand = h; el.lkH = h; } el.hidden = !h; fitFold();
-      el.classList.toggle('is-ahead', AH.on); el.setAttribute('aria-label', AH.on ? 'Next function' : 'Functions');
+      el.classList.toggle('is-ahead', AH.on); el.classList.toggle('is-strip', !AH.on && !!h && prepStrip()); el.setAttribute('aria-label', AH.on ? 'Next function' : 'Functions');
     }
     strip();
     // Home's Function this week slot: drawn again only when its words change (el.lkH)
@@ -1055,19 +1063,58 @@
      redraw does not remove it). Bars that already stick to the top (search, signal, update, admin nav) move down by its
      height through --fn-stick. */
   var stripEl = null, stripH = 0, padH = -1;
+  /* What the strip leads with (mended 19 Nov 2026, docs/band-options/brief.md, Round 3): a cancelled function, then a
+     rescheduled one, then one changed in the last 3 hours, then a trip waiting for this Functions person, then what goes
+     out next, then the order and tomorrow lines. Every other function and line is counted in "+N", never dropped (it
+     used to leave out a rescheduled function and lead with a cancellation only when that was the earliest). */
+  function stripItems(t) {
+    var R = bandRows(t), me = ahWho(), mine = fnPerson(me);
+    var rank = function (x) {
+      if (x.kind === 'cancelled') return 0;
+      if (x.kind === 'moved') return 1;
+      if (x.kind === 'on' && recent(x.f)) return 2;
+      if (x.kind === 'on' && mine && waitingTrips(x.f.id).some(function (y) { return y.t.sentBy !== me; })) return 3;
+      return x.kind === 'on' ? 4 : 5;
+    };
+    return R.xs.concat(R.ys).map(function (x, i) { return { x: x, r: rank(x), i: i }; }).sort(function (a, b) { return a.r - b.r || a.i - b.i; }).map(function (o) { return o.x; });
+  }
+  // the strip's line: the word Functions, the lead in words (its tags first, so a narrow screen cuts the name, never
+  // them), "+N" apart, then the stale line when the copy is old or a read failed. With two or more functions on, a tap
+  // opens the service view; otherwise the lead's sheet.
+  function stripInner(t) {
+    var items = stripItems(t), on = items.filter(function (x) { return x.kind === 'on'; });
+    var stale = staleWords(t, items.filter(function (x) { return x.kind !== 'order' && x.kind !== 'tomorrow'; }));
+    if (!items.length && !stale) return '';
+    var x = items[0], words = '', many = on.length >= 2;
+    if (x) {
+      var f = x.f;
+      if (x.kind === 'cancelled') words = '<span class="fn-late">Cancelled, do not send</span> · <s>' + esc(f.name) + '</s>';
+      else if (x.kind === 'moved') words = '<span class="fn-tag fn-t-moved">Rescheduled</span> ' + esc(f.name) + ' · now ' + esc(dayName(f.date));
+      else if (x.kind === 'order') words = '<span class="fn-tag fn-t-order">Order today</span> ' + esc(f.name);
+      else if (x.kind === 'tomorrow') words = '<span class="fn-tag fn-t-tom">Tomorrow</span> ' + esc(f.name) + (f.first ? ' · food ' + esc(when(f.first, f.date)) : '');
+      else {
+        var w = nowOf(f, t), c = recent(f), me = ahWho();
+        var waits = fnPerson(me) && waitingTrips(f.id).some(function (y) { return y.t.sentBy !== me; });
+        words = '<b class="fn-due' + (w.late ? ' is-late' : '') + '">' + esc(w.time) + '</b> ' + (c ? '<span class="fn-tag fn-t-new">Changed ' + esc(kclock(c.at)) + '</span> ' : '') +
+          (waits ? '<span class="fn-tag fn-t-kc">Confirm out</span> ' : '') + w.html.replace(/<span class="fn-of">[\s\S]*?<\/span>/, '') + ' · ' + esc(f.name);
+      }
+    }
+    var inner = '<span class="fn-strip-l">Functions</span><span class="fn-strip-t">' + words + '</span>' + (items.length > 1 ? '<span class="fn-tag fn-strip-n">+' + (items.length - 1) + '</span>' : '');
+    var row = !x ? '' : many ? '<a class="fn-strip-b" href="#/fn/now">' + inner + '<span class="visually-hidden">. Opens the service view.</span></a>'
+      : '<button type="button" class="fn-strip-b" data-fn="open" data-id="' + esc(x.f.id) + '" aria-haspopup="dialog">' + inner + '</button>';
+    return row + (stale ? '<p class="fn-stale fn-strip-stale" role="status">' + (x ? '' : '<span class="fn-strip-l">Functions</span> ') + esc(stale) + '</p>' : '');
+  }
+  /* The strip (22 Oct 2026): once the band has scrolled off the top, one line stays pinned to the top of the screen
+     (stripInner()). It is appended to document.body (a page redraw does not remove it). Bars that already stick to the
+     top (search, signal, update, admin nav) move down by its height through --fn-stick. On Prep the band itself starts
+     as the same strip (prepStrip()), so it pins the moment it scrolls away. */
   function strip() {
-    var band = document.getElementById('fn-band'), t = now(), xs = showing(F.list, t, isSentK).filter(function (x) { return x.kind !== 'moved'; });
+    var band = document.getElementById('fn-band'), t = now(), h = band && !band.hidden && !AH.on ? stripInner(t) : '';
     // --fn-pad: room at the top for the strip while it could show, so a jump (a recipe's Ingredients chip) lands below it
-    setPad(!!band && !band.hidden && xs.length ? stripH || 46 : 0);
-    var off = !!band && !band.hidden && xs.length && band.getBoundingClientRect().bottom < 0 && !sheetEl;
+    setPad(h ? stripH || 46 : 0);
+    var off = !!h && band.getBoundingClientRect().bottom < 0 && !sheetEl;
     if (!off) { if (stripEl) { stripEl.hidden = true; } setStick(0); return; }
     if (!stripEl) { stripEl = document.createElement('div'); stripEl.className = 'fn-strip'; stripEl.setAttribute('role', 'region'); stripEl.setAttribute('aria-label', 'Functions'); document.body.appendChild(stripEl); }
-    // the most urgent first: its time, what goes out, then the name; "+2" sits apart so it is never cut off. With two or
-    // more functions on, a tap opens the service view; with one, its sheet.
-    var x = xs[0], f = x.f, w = x.kind === 'cancelled' ? null : nowOf(f, t), many = xs.filter(function (y) { return y.kind === 'on'; }).length >= 2;
-    var inner = '<span class="fn-strip-t">' + (w ? '<b class="fn-due' + (w.late ? ' is-late' : '') + '">' + esc(w.time) + '</b> ' + w.html.replace(/<span class="fn-of">[\s\S]*?<\/span>/, '') : '<span class="fn-late">Cancelled, do not send</span>') + ' · ' + esc(f.name) + '</span>' +
-      (xs.length > 1 ? '<span class="fn-tag fn-strip-n">+' + (xs.length - 1) + '</span>' : '');
-    var h = many ? '<a class="fn-strip-b" href="#/fn/now">' + inner + '</a>' : '<button type="button" class="fn-strip-b" data-fn="open" data-id="' + esc(f.id) + '" aria-haspopup="dialog">' + inner + '</button>';
     if (stripEl.innerHTML !== h) stripEl.innerHTML = h;
     stripEl.hidden = false;
     setStick(stripEl.offsetHeight);
@@ -2074,7 +2121,7 @@
     // every booking from today on as the live list has them, removed ones included; null until the server answered
     live: function () { return F.state === 'ok' && F.all ? F.all.slice() : null; },
     // a page draws the slot: an open, so the Next function line is decided here (ahOpen())
-    bandSlot: function () { ahOpen(); var h = bandHTML(); lastBand = h; return '<div class="fn-band' + (AH.on ? ' is-ahead' : '') + '" id="fn-band" role="region" aria-label="' + (AH.on ? 'Next function' : 'Functions') + '"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
+    bandSlot: function () { ahOpen(); var h = bandHTML(); lastBand = h; return '<div class="fn-band' + (AH.on ? ' is-ahead' : h && prepStrip() ? ' is-strip' : '') + '" id="fn-band" role="region" aria-label="' + (AH.on ? 'Next function' : 'Functions') + '"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
     landSlot: function (home) { landHome = !!home; var h = landHTML(); return '<div id="fn-land"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
     homeRows: fnHomeRows,
     // Home's Function this week card and Next function line, under Your day (js/prep.js homeSlot()): drawn at Home's open
