@@ -639,7 +639,8 @@
   function histHTML(e) {
     if (e.isNew) return '';
     var h = e.hist;
-    var list = h === 'loading' ? loading('Reading earlier versions...', 'recipes', 2) : h === 'error' ? '<p class="p-err" role="alert">Could not read the earlier versions. Check the signal.</p>' :
+    // a failed read (the consistency sweep, step 2, 20 Nov 2026): the shared line, its Try again reads them again
+    var list = h === 'loading' ? loading('Reading earlier versions...', 'recipes', 2) : h === 'error' ? histErr((e.histSig ? 'No signal. ' : '') + 'Could not read the earlier versions.') :
       h ? (h.length ? '<ol class="mg-hist">' + h.map(function (x, k) {
         return '<li><span><b>Version ' + esc(x.v) + '</b> · ' + esc(x.when) + (x.who ? ' · ' + esc(x.who) : '') + (x.name ? ' · ' + esc(x.name) : '') + '</span><button type="button" class="p-x" data-mg="hist-use" data-i="' + k + '">' + (armed('hist-use:' + k) ? 'Not saved. Tap again' : 'Open this version') + '</button></li>';
       }).join('') + '</ol><p class="hint">Opening a version puts it in the form. Save to make it the card again.</p>' : '<p class="hint">No earlier versions yet.</p>') : '';
@@ -944,9 +945,20 @@
     el.scrollIntoView({ block: 'center' });
     if (el.focus) el.focus({ preventScroll: true });
   }
+  /* A failed read, one look on every page (the consistency sweep, step 2, 20 Nov 2026, docs/design-patterns.md, A
+     page): red words with role status, then Try again, which is Show earlier versions' own data-mg="hist". Before,
+     the failed state drew no button, so nothing could read them again. LK_PREP.readErr() draws it; an older
+     js/prep.js without it gets the same markup here. */
+  function histErr(words) {
+    var at = 'data-mg="hist"';
+    return P.readErr ? P.readErr(words, null, at) : '<p class="p-err p-readerr" role="status">' + esc(words) + ' <button type="button" class="p-link" ' + at + '>Try again</button></p>';
+  }
+  // Earlier versions: one read of the recipe's hist records on a tap (Show earlier versions or Try again), one read
+  // per kept version. A tap while it is out reads nothing more. histSig: No signal was the cause (said only then).
   function loadHist() {
     var e = M.ed, api = B();
-    e.hist = 'loading'; draw();
+    if (!e || e.hist === 'loading') return;
+    e.hist = 'loading'; e.histSig = false; draw();
     api.ready().then(function () {
       var fs = api.fs();
       return fs.getDocs(fs.collection(api.db(), 'kitchens', api.pin(), 'recipes', e.id, 'hist'));
@@ -957,7 +969,7 @@
         return { v: w.v || +dd.id, when: when(w.upd || x.at), who: w.by ? api.nameOf(w.by) : '', name: w.r ? w.r.name : '', rec: w };
       }).sort(function (a, b) { return b.v - a.v; });
       draw();
-    }, function () { if (M.ed === e) { e.hist = 'error'; draw(); } });
+    }, function (x) { if (M.ed === e) { e.hist = 'error'; e.histSig = navigator.onLine === false || !!x && (x.code === 'unavailable' || x.code === 'deadline-exceeded'); draw(); } });
   }
 
   /* A change to a recipe made from somewhere else (the drawing editor links its drawing and makes its Pass labels): the

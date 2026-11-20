@@ -11,7 +11,8 @@
   function loading(text, icon, rows) { return window.LK_MOTION ? window.LK_MOTION.status(text, { icon: icon, state: 'busy', rows: rows || 0 }) : '<p class="hint" role="status">' + esc(text) + '</p>'; }
   function blank() {
     var collapsed = false; try { collapsed = localStorage.getItem('lk.sup.sidebar') === 'hide'; } catch (e) {}
-    return { root: null, route: {}, routeKey: '', openItems: Object.create(null), suppliers: null, unread: [], sid: '', mode: 'order', busy: false, err: '', msg: '', validation: null,
+    // readFail: what a failed catalogue read says (readText()); err stays for saves and checks
+    return { root: null, route: {}, routeKey: '', openItems: Object.create(null), suppliers: null, unread: [], sid: '', mode: 'order', busy: false, readFail: '', err: '', msg: '', validation: null,
       sidebar: !collapsed, q: '', group: '', filter: '', infoOpen: null, requestsWant: false, page: 0, drafts: Object.create(null), history: Object.create(null),
       audit: Object.create(null), historyOpen: false, historyId: '', historyQ: '', smart: false, requests: null,
       requestsBusy: false, requestsError: '', requestsDay: '', cutQ: '', ed: null, supplierEd: null, review: null, additional: '',
@@ -135,6 +136,46 @@
     var why = code ? String(code) : e && (e.name || e.message) ? String((e.name || 'Error') + (e.message ? ': ' + e.message : '')) : '';
     return 'Could not finish. Check the connection and try again. Your draft is kept.' + (why ? ' (' + why.slice(0, 120) + ')' : '');
   }
+  /* A failed read, one look on every page (the consistency sweep, step 2, 20 Nov 2026, docs/design-patterns.md, A
+     page): one red line with role status that says what could not load, never "nothing", and Try again as a link in
+     the line, which runs that read's own action (data-su="retry" for the catalogue, history-retry, audit-retry,
+     requests-retry). LK_PREP.readErr() draws it; an older js/prep.js without it gets the same markup here. With no
+     signal the neutral note at the top says so, so the line does not say it twice. */
+  function readLine(words, at) {
+    if (navigator.onLine === false) words = String(words).replace(/^No signal\. /, '');
+    return P.readErr ? P.readErr(words, null, at) : '<p class="p-err p-readerr" role="status">' + esc(words) + ' <button type="button" class="p-link" ' + at + '>Try again</button></p>';
+  }
+  // No signal only when the signal is the cause: the phone says it is offline, or the server did not answer
+  function noSignal(e) { var code = e && e.code || ''; return navigator.onLine === false || code === 'unavailable' || code === 'deadline-exceeded' || code === 'offline'; }
+  // what: what could not load. The reads used up, an old copy of the supplier tools or a record the catalogue check
+  // refused keep their own words (errorText()), which say what to do.
+  function readText(e, what) {
+    var code = e && e.code || '';
+    if (code === 'resource-exhausted' || code === 'version' || code === 'invalid' || e && typeof e.field === 'string') return errorText(e);
+    return (noSignal(e) ? 'No signal. ' : '') + 'Could not load ' + what + '.' + (code === 'permission' || code === 'permission-denied' ? ' The read was refused.' : '');
+  }
+  /* A failed read also tries once more by itself (the consistency sweep, step 2, 20 Nov 2026): after 5 minutes or a
+     moment after the phone is back online, whichever comes first, like retrySoon() in js/prep.js. One timer per read
+     (k: 'cat' the catalogue, 'hist' a supplier's order history), armed only by a failure, so nothing is read when
+     nothing failed. Each try costs what its Try again costs and arms again only if it fails too. A new read of the
+     same kind, leaving the page or another sign-in clears it. Never while a save or a form is open (a catalogue read
+     there could change what the form was checked against): Try again stays in the line. Time passing on the phone. */
+  var AGAIN_MS = 5 * 60000, readAgain = Object.create(null);
+  // e: the failure. A saved record the check refused, or supplier tools that need the book reloaded, fail the same way
+  // again, so they wait for Try again and arm nothing (a history try costs up to 21 reads).
+  function againArm(k, fn, e) {
+    againStop(k); var code = e && e.code || '';
+    if (code === 'invalid' || code === 'version' || e && typeof e.field === 'string') return;
+    var t = setTimeout(function () { againRun(k); }, AGAIN_MS); readAgain[k] = { g: generation, fn: fn, t: t };
+  }
+  function againStop(k) { var a = readAgain[k]; if (a) clearTimeout(a.t); delete readAgain[k]; }
+  function againAll() { Object.keys(readAgain).forEach(againStop); }
+  function againRun(k) {
+    var a = readAgain[k], task = activeTask(); againStop(k);
+    if (!a || a.g !== generation || !M.root || !document.body.contains(M.root) || M.saving || !canRead()) return;
+    if (task === 'editor' || task === 'supplier' || task === 'import' || task === 'review') return;
+    a.fn();
+  }
   function fieldUnit(field, i, d) {
     return Object.prototype.hasOwnProperty.call(d.units[field], i.id) ? d.units[field][i.id] : field === 'qty' ? i.orderUnit : i.parUnit;
   }
@@ -220,10 +261,11 @@
     }).catch(function (e) { loadingCode = null; throw e; });
     return loadingCode;
   }
-  function load(force) {
+  // auto: the try by itself after a failed read (againRun()); it leaves a save's message where it is
+  function load(force, auto) {
     if (M.busy || (!force && M.suppliers)) return Promise.resolve();
     if (!canRead()) { draw(); return Promise.resolve(); }
-    var g = generation, key = ctx(); M.busy = true; M.err = ''; M.validation = null; draw();
+    var g = generation, key = ctx(); againStop('cat'); M.busy = true; M.readFail = ''; if (!auto) { M.err = ''; M.validation = null; } draw();
     return deps().then(function () { return B().ready(); }).then(function () {
       if (g !== generation || key !== ctx() || !canRead()) throw { code: 'context' };
       C = window.LK_SUP_CORE; if (!store) store = window.LK_SUP_STORE.create(B());
@@ -235,7 +277,10 @@
       if (!supplier()) M.sid = M.suppliers.length ? M.suppliers[0].id : '';
       // the card reads no supplier's history: none of them is this cut-off's
       draw(); if (M.sid && !cutCard()) loadHistory(M.historyOpen, false); if (M.smart) loadRequests();
-    }, function (e) { if (g === generation && key === ctx()) { M.busy = false; M.err = errorText(e); draw(); } });
+    }, function (e) {
+      // a failed read (20 Nov 2026): its own line with Try again, never the save box, and one try by itself later
+      if (g === generation && key === ctx()) { M.busy = false; M.readFail = readText(e, 'the supplier catalogue'); againArm('cat', function () { if (M.readFail) load(true, true); }, e); draw(); }
+    });
   }
   function loadHistory(full, more) {
     if (!M.sid || !store || !canRead()) return Promise.resolve();
@@ -249,7 +294,16 @@
       // A record acknowledged while this query was in flight must survive its older response.
       h.rows = more || h.rows !== before ? (h.rows || []).concat(r.rows).filter(function (o, i, a) { return a.findIndex(function (v) { return v.id === o.id; }) === i; }) : r.rows;
       h.cursor = r.cursor; h.more = r.more; h.full = true; h.busy = false; indexHistory(h); draw();
-    }, function (e) { if (g === generation) { h.busy = false; h.err = errorText(e); draw(); } });
+    }, function (e) {
+      // the failed-read line with Try again (history-retry), and one try by itself later while this supplier is open
+      if (g === generation) { h.busy = false; h.err = readText(e, 'the order history for this supplier'); againArm('hist', function () { if (M.sid === sid && hist(sid).err) historyAgain(); }, e); draw(); }
+    });
+  }
+  // Try again on a failed history read: page one again, so a completeness claim from the lost page goes too. One read
+  // per tap: a tap while the read is out reads nothing more (20 Nov 2026).
+  function historyAgain() {
+    var h = hist(); if (h.busy) return;
+    againStop('hist'); h.rows = null; h.byItem = Object.create(null); h.full = false; h.more = false; h.cursor = null; loadHistory(M.historyOpen, false);
   }
   function loadRequests() {
     if ((M.requests !== null && M.requestsDay === day()) || M.requestsBusy) return;
@@ -259,12 +313,12 @@
       // asked for from the chip: show what staff asked for at once, or say there is nothing for this supplier
       if (M.requestsWant) { M.requestsWant = false; if (matchInfo().matches.length) { M.filter = 'asked'; M.page = 0; } else M.msg = 'No staff requests on today\'s Order list match this supplier\'s items. Others stay on the Order list.'; }
       draw();
-    }, function (e) { if (g === generation) { M.requestsBusy = false; M.requestsWant = false; M.requestsError = errorText(e); draw(); } });
+    }, function (e) { if (g === generation) { M.requestsBusy = false; M.requestsWant = false; M.requestsError = readText(e, 'today\'s staff requests'); draw(); } });
   }
   function loadAudit() {
     var sid = M.sid, a = M.audit[sid]; if (a && (a.busy || a.rows)) return;
     a = M.audit[sid] = { rows: null, busy: true, err: '' }; var g = generation; draw();
-    store.audit(sid, 20).then(function (r) { if (g === generation) { a.rows = r.rows; a.busy = false; draw(); } }, function (e) { if (g === generation) { a.busy = false; a.err = errorText(e); draw(); } });
+    store.audit(sid, 20).then(function (r) { if (g === generation) { a.rows = r.rows; a.busy = false; draw(); } }, function (e) { if (g === generation) { a.busy = false; a.err = readText(e, 'the catalogue changes'); draw(); } });
   }
   function button(cmd, text, extra, primary) { return '<button type="button" class="btn' + (primary ? ' dark ink-busy-button' : '') + '" data-su="' + cmd + '"' + (extra || '') + '>' + text + '</button>'; }
   function smallButton(cmd, text, extra) { return '<button type="button" class="p-x" data-su="' + cmd + '"' + (extra || '') + '>' + text + '</button>'; }
@@ -294,7 +348,11 @@
   function statusHTML() {
     var task = activeTask(), note = M.armedLeave && (task === 'editor' || task === 'supplier' || task === 'import'), msg = M.armedLeave && !note ? '' : (M.msgAt === 'history' && M.historyOpen || M.msgAt === 'import' && task === 'catalogue') ? '' : M.msg;
     var pending = M.review && task !== 'review' && (M.saving || M.review.uncertain) ? '<p id="su-recording-status" class="su-status" role="status">Recording for ' + esc(M.review.supplierName) + (M.saving ? ' is still in progress. ' : ' needs confirmation. ') + '<a href="#/suppliers/' + encodeURIComponent(M.review.sid) + '" data-su-recovery>Return to review</a>' + (M.saving ? ' to check its outcome.' : ' to retry safely.') + '</p>' : '';
-    return (M.err ? '<div id="su-order-error" class="su-error" role="alert" tabindex="-1">' + esc(M.err) + (M.validation || pending ? '' : '<div class="btn-row">' + (M.err === LINKED_ERR ? button('additional', 'Additional order') : button('retry', 'Try again')) + '</div>') + '</div>' : '') + pending + (msg ? '<p class="su-status' + (note ? ' su-leave-note' : '') + '"' + (note ? ' id="su-leave-note"' : '') + ' role="status">' + esc(msg) + '</p>' : '') + (navigator.onLine === false ? '<p class="su-error" role="status">No signal. Supplier reads and saves need a connection. Do not close a draft you still need.</p>' : '');
+    // No signal is not a failure (the consistency sweep, step 2, 20 Nov 2026, docs/colour-coding.md: waiting stays
+    // neutral): a neutral note that says what still works. A failed catalogue read is its own line with Try again;
+    // the red box below is for a save or a check that failed.
+    var off = navigator.onLine === false ? '<p class="su-offline" role="status">No signal. Reading and saving supplier orders wait for the connection. Drafts on this page are kept while it stays open.</p>' : '';
+    return off + (M.readFail ? readLine(M.readFail, 'data-su="retry"') : '') + (M.err ? '<div id="su-order-error" class="su-error" role="alert" tabindex="-1">' + esc(M.err) + (M.validation || pending ? '' : '<div class="btn-row">' + (M.err === LINKED_ERR ? button('additional', 'Additional order') : button('retry', 'Try again')) + '</div>') + '</div>' : '') + pending + (msg ? '<p class="su-status' + (note ? ' su-leave-note' : '') + '"' + (note ? ' id="su-leave-note"' : '') + ' role="status">' + esc(msg) + '</p>' : '');
   }
   function headerHTML() {
     return '<div class="su-head"><div><span class="eyebrow">Chef tools</span><h2 id="rtitle" tabindex="-1">' + (M.mode === 'manage' ? 'Suppliers &amp; pars' : 'Supplier order') + '</h2><p class="hint">' + (M.mode === 'manage' ? 'Current pars and manual items. Original PDF records and past orders stay unchanged.' : 'Choose a supplier, check its last order and build the next one.') + '</p></div><div class="btn-row">' + button('refresh', M.busy ? inkLabel('Refreshing...', 'orders') : 'Refresh', M.busy ? ' disabled' : '') + '</div></div>' +
@@ -315,7 +373,7 @@
   function latestHTML() {
     var h = hist(), o = latest();
     if (h.busy && !h.rows) return loading('Reading the latest supplier order...', 'orders');
-    if (h.err) return '<p class="su-error">' + esc(h.err) + ' ' + smallButton('history-retry', 'Try again') + '</p>';
+    if (h.err) return readLine(h.err, 'data-su="history-retry"');
     return '<div class="su-latest"><b>' + (o ? 'Last order: ' + esc(dateText(o.at)) : 'No order recorded for this supplier yet') + '</b><span class="hint">' + (o ? o.lines.length + ' items. Each row shows when that item was last ordered in the loaded history.' : 'Last order quantities appear after an order is recorded here.') + '</span></div>';
   }
   function matchInfo() { try { return C.matchRequests(items(), M.requests || []); } catch (e) { return { matches: [], unmatched: [] }; } }
@@ -398,7 +456,7 @@
     var d = draft(), suggestions = items().map(function (i) { var p = C.suggestQuantity(i, latest(), d.stock[i.id] || '', fieldUnit('stock', i, d)); return p ? { item: i, pick: p } : null; }).filter(function (s) { return s && !d.dismissed[s.item.id] && !String(d.qty[s.item.id] || '').trim(); });
     var body = '<p class="hint">Suggestions need Apply. Previous quantities are a reference, not a demand forecast.</p>';
     if (M.requestsBusy) body += loading('Reading staff requests...', 'orders');
-    if (M.requestsError) body += '<p class="hint">' + esc(M.requestsError) + ' ' + smallButton('requests-retry', 'Try again') + '</p>';
+    if (M.requestsError) body += readLine(M.requestsError, 'data-su="requests-retry"');
     if (!suggestions.length) body += '<p class="hint">' + (latest() ? 'No further suggestions. Review the quantities you need.' : 'Learning, no recommendation yet. Record an order or enter a stock count with compatible confirmed units.') + '</p>';
     body += suggestions.slice(0, 12).map(function (s) { return '<div class="su-suggestion"><div><b>' + esc(quantityText(s.pick)) + ' · ' + esc(s.item.name) + '</b><p class="hint">' + esc(s.pick.reason) + '</p></div><div class="btn-row">' + button('apply', 'Apply', ' data-i="' + esc(s.item.id) + '"') + smallButton('dismiss', 'Dismiss', ' data-i="' + esc(s.item.id) + '"') + '</div></div>'; }).join('');
     var matched = matchInfo();
@@ -432,7 +490,7 @@
   function historyHTML() {
     var h = hist(), rows = h.rows || [], selected = rows.filter(function (o) { return o.id === M.historyId; })[0] || rows[0];
     var body = '<p class="hint">Last order on each item shows its latest recorded quantity and date in the loaded history.' + (h.more ? ' Choose Older orders to check items marked Earlier orders not checked.' : '') + '</p>'; if (h.busy) body += loading('Reading order history...', 'orders', h.rows ? 0 : 3);
-    if (h.err) body += '<p class="su-error">' + esc(h.err) + ' ' + smallButton('history-retry', 'Try again') + '</p>';
+    if (h.err) body += readLine(h.err, 'data-su="history-retry"');
     if (selected) {
       body += field('historyQ', 'Find an order', M.historyQ, { type: 'search', placeholder: 'Date or item name' }) + '<div class="su-history-dates">' + rows.filter(function (o) { return (dateText(o.at) + ' ' + o.lines.map(function (l) { return l.name; }).join(' ')).toLowerCase().indexOf(M.historyQ.toLowerCase()) >= 0; }).map(function (o) { return '<button type="button" class="chip" data-su="history-order" data-id="' + esc(o.id) + '" aria-pressed="' + (o.id === selected.id) + '">' + esc(dateText(o.at)) + '</button>'; }).join('') + '</div><h4>' + esc(dateText(selected.at)) + '</h4><p class="hint">' + selected.lines.length + ' items · Recorded by ' + esc(B().name(selected.by) || 'Chef') + '</p>' + (selected.inheritedFrom ? '<p class="hint">From the original ' + esc(selected.supplierName) + ' order, before these suppliers were separated. Only this supplier\'s items are shown.</p>' : '') + (selected.lines.length ? linesHTML(selected.lines) : '<p class="hint">No items for this supplier in that order.</p>') + '<div class="btn-row">' + button('reuse', 'Use quantities again', ' data-id="' + esc(selected.id) + '"' + (selected.lines.length ? '' : ' disabled')) + button('copy-history', 'Copy this order', ' data-id="' + esc(selected.id) + '"' + (selected.lines.length ? '' : ' disabled')) + '</div>';
     } else if (!h.busy && !h.err) body += '<p class="hint">No orders recorded for this supplier.</p>';
@@ -539,7 +597,7 @@
   }
   function archiveHTML() { var i = item(M.archive); return i ? '<div class="su-confirm"><h4>Archive ' + esc(i.name) + '?</h4><p>It leaves new order sheets. Its original record and past orders stay.' + (String(draft().qty[i.id] || '').trim() ? ' This also removes its quantity from the current draft.' : '') + '</p><div class="btn-row">' + button('archive-confirm', 'Archive item', ' data-i="' + esc(i.id) + '"', true) + button('archive-cancel', 'Cancel') + '</div></div>' : ''; }
   function auditHTML() {
-    var a = M.audit[M.sid] || {}, body = a.busy ? loading('Reading changes...', 'orders', 2) : a.err ? '<p class="su-error">' + esc(a.err) + '</p>' : (a.rows || []).length ? a.rows.map(function (r) { return '<article class="su-audit-row"><b>' + esc(r.action) + '</b><span class="hint">' + esc(dateText(r.at)) + ' · ' + esc(B().name(r.by) || 'Chef') + '</span><p class="hint">Before: ' + esc(JSON.stringify(r.before)) + '</p><p class="hint">After: ' + esc(JSON.stringify(r.after)) + '</p></article>'; }).join('') : '<p class="hint">No changes recorded yet.</p>';
+    var a = M.audit[M.sid] || {}, body = a.busy ? loading('Reading changes...', 'orders', 2) : a.err ? readLine(a.err, 'data-su="audit-retry"') : (a.rows || []).length ? a.rows.map(function (r) { return '<article class="su-audit-row"><b>' + esc(r.action) + '</b><span class="hint">' + esc(dateText(r.at)) + ' · ' + esc(B().name(r.by) || 'Chef') + '</span><p class="hint">Before: ' + esc(JSON.stringify(r.before)) + '</p><p class="hint">After: ' + esc(JSON.stringify(r.after)) + '</p></article>'; }).join('') : '<p class="hint">No changes recorded yet.</p>';
     return '<section class="su-disclosure"><button type="button" class="su-disclosure-button" data-su="audit" aria-expanded="' + M.auditOpen + '">Changes <span class="hint">' + (M.auditOpen ? 'Hide' : 'Show') + '</span></button>' + (M.auditOpen ? '<div class="su-disclosure-body">' + body + '</div>' : '') + '</section>';
   }
   function manageHTML() {
@@ -905,7 +963,7 @@
     M.busy = false; M.requestsBusy = false; M.requestsError = ''; M.requestsDay = ''; M.validation = null;
     if (M.review) { M.review.checking = false; if (M.saving) M.review.uncertain = true; }
     if (M.saving) M.msg = 'Your supplier draft is kept. Check the latest records, then retry the save. Nothing will retry automatically.';
-    M.saving = false; M.err = ''; M.armedLeave = '';
+    M.saving = false; M.err = ''; M.readFail = ''; M.armedLeave = ''; againAll();
   }
   function retainLock() {
     var lock = P.workLock && P.workLock();
@@ -918,7 +976,7 @@
     // App access checks may run between the daily PIN and its refreshed catalogue permissions. A deliberate
     // handover calls reset(true), so another person never inherits the retained form.
     if (!force && (retainLock() || lockedIdentity && identity() === lockedIdentity)) return;
-    var root = M.root; generation++; if (store) store.reset(); store = null; contextKey = ''; identityKey = ''; lockedIdentity = ''; M = blank(); M.root = root;
+    var root = M.root; generation++; againAll(); if (store) store.reset(); store = null; contextKey = ''; identityKey = ''; lockedIdentity = ''; M = blank(); M.root = root;
   }
   function syncContext() {
     if (retainLock()) return false;
@@ -944,7 +1002,9 @@
     draw(); load(false);
     if (M.suppliers && M.sid && !cutCard()) loadHistory(false, false);
   }
-  function unmount() { M.root = null; }
+  // leaving the page drops a waiting try (againArm()): opening it again reads what never loaded, and a line that
+  // stays keeps its Try again
+  function unmount() { M.root = null; againAll(); }
   document.addEventListener('click', function (ev) {
     if (!M.root || !M.root.contains(ev.target)) return;
     var el = ev.target.closest('[data-su]'); if (!el || el.disabled) return;
@@ -996,7 +1056,7 @@
     if (cmd === 'share-review' && M.review) shareOrder(M.review.lines, M.review.supplierName);
     if (cmd === 'history') { M.historyOpen = !M.historyOpen; draw(); if (M.historyOpen) loadHistory(true, false); }
     if (cmd === 'history-close') closeHistory();
-    if (cmd === 'history-retry') { var retryHistory = hist(); retryHistory.rows = null; retryHistory.byItem = Object.create(null); retryHistory.full = false; retryHistory.more = false; retryHistory.cursor = null; loadHistory(M.historyOpen, false); }
+    if (cmd === 'history-retry') historyAgain();
     if (cmd === 'history-more') loadHistory(true, true);
     if (cmd === 'history-order') { M.historyId = el.getAttribute('data-id'); draw(); }
     if (cmd === 'reuse') reuseOrder(el.getAttribute('data-id'), false); if (cmd === 'reuse-confirm') reuseOrder(el.getAttribute('data-id'), true); if (cmd === 'reuse-cancel') { M.reuse = ''; draw(); }
@@ -1006,6 +1066,8 @@
     if (cmd === 'archive' && canEdit()) { M.archive = id; draw(); } if (cmd === 'archive-cancel') { M.archive = ''; draw(); } if (cmd === 'archive-confirm') archiveItem(id, false); if (cmd === 'restore') archiveItem(id, true);
     if (cmd === 'reload-form' && M.ed) { var ed = M.ed, g = generation; store.load(M.sid).then(function (s) { if (g !== generation || M.ed !== ed) return; rememberSupplier(s); var current = s.items.filter(function (i) { return i.id === ed.value.id; })[0] || null, before = JSON.parse(ed.start), merged = current ? clone(current) : clone(ed.value); Object.keys(ed.value).forEach(function (f) { if (JSON.stringify(ed.value[f]) !== JSON.stringify(before[f])) merged[f] = clone(ed.value[f]); }); ed.baseV = s.v; ed.original = current ? clone(current) : null; ed.value = merged; ed.start = JSON.stringify(current || before); ed.stale = false; M.err = ''; message('Latest catalogue loaded. Your edits are still here. Check them before saving.'); }, function (e) { M.err = errorText(e); draw(); }); }
     if (cmd === 'audit') { M.auditOpen = !M.auditOpen; draw(); if (M.auditOpen) loadAudit(); }
+    // Try again on a failed read of the changes: one read, none while one is out (loadAudit())
+    if (cmd === 'audit-retry' && M.auditOpen) loadAudit();
     if (cmd === 'supplier-settings') openSupplierEditor(true); if (cmd === 'add-supplier') openSupplierEditor(false); if (cmd === 'save-supplier') saveSupplier(); if (cmd === 'supplier-close') closeEditor('supplier-close');
     if (cmd === 'import' && canEdit() && leaveForm('import')) { var file = M.root.querySelector('[data-sf="import"]'); if (file) file.click(); }
     if (cmd === 'import-cancel') closeImport(); if (cmd === 'import-apply') applyImport();
@@ -1039,7 +1101,8 @@
     if (!canEdit() && !M.saving && (M.ed || M.supplierEd || M.importing)) { M.ed = null; M.supplierEd = null; M.importing = null; M.archive = ''; M.armedLeave = ''; }
     if (M.root) { draw(); load(false); }
   }); });
-  window.addEventListener('online', function () { if (M.root) draw(); }); window.addEventListener('offline', function () { if (M.root) draw(); });
+  // back online: the note goes, and a failed read tries once more a moment later, so Firestore has its connection back
+  window.addEventListener('online', function () { if (M.root) draw(); Object.keys(readAgain).forEach(function (k) { setTimeout(function () { againRun(k); }, 1500); }); }); window.addEventListener('offline', function () { if (M.root) draw(); });
   // Drafts live in this tab's memory only (docs/supplier-workspace.md): a reload or closing the tab asks first, like
   // the other editors. iPhone Safari never asks, and nothing is kept past the page.
   // Update now's second tap already said the draft may go (LK_UPDATE.letGo() in js/upkeep.js): no second question
