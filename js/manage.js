@@ -18,6 +18,8 @@
 
   var API = 5;
   var D = window.LK_DATA, X = window.LK_RX, A = window.LK_APP, P = window.LK_PREP;
+  // a search box as the Recipes pill; an older js/app.js without it draws the plain box (20 Nov 2026)
+  function findPill(input) { return A && A.findWrap ? A.findWrap(input) : input; }
   var esc = A.esc, KIND = A.KIND, ALLERGENS = D.allergens;
   // Optional in lazy files: an older saved shell keeps its existing text feedback.
   function inkLabel(text, icon, state) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', state || 'busy') : esc(text); }
@@ -181,7 +183,8 @@
     }).join('') + '</div>' + (STATES.some(function (s) { return n[s[0]] || M.chip === s[0]; }) ? '<div class="chips mg-need" role="group" aria-label="Needs a look"><span class="label">Needs a look</span>' + STATES.filter(function (s) { return n[s[0]] || M.chip === s[0]; }).map(function (s) {
       return '<button type="button" class="chip" data-mg="chip" data-v="' + s[0] + '" aria-pressed="' + (M.chip === s[0]) + '">' + esc(s[1]) + ' · ' + (n[s[0]] || 0) + '</button>';
     }).join('') + '</div>' : '') + '</div>');
-    var find = '<div class="field"><label class="label" for="mg-q">Find a recipe</label><input id="mg-q" class="search" type="search" data-f="q" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Name, card number or ingredient" value="' + esc(M.q) + '"></div>';
+    // the Recipes pill (the consistency sweep, step 3, 20 Nov 2026): the magnifier inside, the label for screen readers
+    var find = '<div class="field"><label class="visually-hidden" for="mg-q">Find a recipe</label>' + findPill('<input id="mg-q" class="search" type="search" data-f="q" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Name, card number or ingredient" value="' + esc(M.q) + '">') + '</div>';
     var body;
     if (M.chip === 'templates' || M.chip === 'mylib') body = mineHTML(M.chip, words);
     else if (M.chip === 'drawings') {
@@ -718,7 +721,7 @@
       '<div class="mg-body">' + chNavHTML(e) + '<div class="mg-chap">' +
       part('ing', ingHTML(e)) + part('method', methodHTML(e)) + part('alg', allergenHTML(e)) + part('draw', drawingHTML(e)) +
       part('card', swHTML(e) + basicsHTML(e) + moreCardHTML(e)) + (e.isNew ? '' : part('hist', histHTML(e) + moreHTML(e))) + '</div></div>' +
-      '<div class="mg-bar"><span class="mg-state" role="status">' + stateHTML() + '</span>' + (e.msg ? '<span class="p-err" role="alert">' + esc(e.msg) + '</span>' : '') +
+      '<div class="mg-bar sv-dock"><span class="mg-state" role="status">' + stateHTML() + '</span>' + (e.msg ? '<span class="p-err" role="alert">' + esc(e.msg) + '</span>' : '') +
       '<div class="btn-row">' + saveBtnHTML(e) +
       (dirty() ? '<button type="button" class="btn" data-mg="undo-all">' + (armed('undo-all') ? 'Tap again to undo all' : 'Undo all changes') + '</button>' : '') + '</div></div></div>';
   }
@@ -1024,7 +1027,7 @@
     if (!drawLoad) {
       drawLoad = A.load('js/library.js').then(function () {
         // a category file that fails to load leaves its drawings out; the editor still opens
-        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=10')]));
+        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=12')]));
       }).then(function () {
         // without the smart creator the editor still works by hand; the recipe reader (js/compose.js) needs it first
         return A.load('js/smart.js').then(function () { return A.load('js/compose.js'); }).catch(function () {});
@@ -1056,11 +1059,11 @@
       var have = document.getElementById('rcp-css');
       if (have) { ok(); return; }
       var l = document.createElement('link'), t = setTimeout(function () { no(new Error('styles')); }, 8000);
-      l.rel = 'stylesheet'; l.href = 'css/recipe-print.css?v=1'; l.id = 'rcp-css';
+      l.rel = 'stylesheet'; l.href = 'css/recipe-print.css?v=3'; l.id = 'rcp-css';
       l.onload = function () { clearTimeout(t); ok(); };
       l.onerror = function () { clearTimeout(t); l.remove(); no(new Error('styles')); };
       document.head.appendChild(l);
-    }).then(function () { return A.load('js/recipe-print.js?v=1'); }).catch(function (e) { printLoad = null; throw e; });
+    }).then(function () { return A.load('js/recipe-print.js?v=3'); }).catch(function (e) { printLoad = null; throw e; });
     return printLoad;
   }
   function mountPrint(root, sub) {

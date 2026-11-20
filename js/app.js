@@ -281,6 +281,8 @@
   function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
 
   var ICON = {
+    // the search pill's magnifier (.find-i), drawn inside every search box since the consistency sweep, step 3 (20 Nov 2026)
+    find: '<svg class="find-i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.5 15.5 L21 21" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
     todo: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5H7a1.5 1.5 0 0 0-1.5 1.5v13A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V6A1.5 1.5 0 0 0 17 4.5h-2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><rect x="9" y="3" width="6" height="3" rx="1" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M9 13l2 2 4-4.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     chef: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 14.2A3.6 3.6 0 1 1 8.6 7.4a4.6 4.6 0 0 1 6.8 0A3.6 3.6 0 1 1 17 14.2V20H7Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M7 16.8h10" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>',
     cup: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h11v5.5A4.5 4.5 0 0 1 11.5 19h-2A4.5 4.5 0 0 1 5 14.5Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8.5 3.5c-.8 1 .8 2 0 3M12 3.5c-.8 1 .8 2 0 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
@@ -877,7 +879,7 @@
   /* Search, with the recipe count above it and the Pass / Tiles switch right next to it. Since the redesign's step 6
      (8 Nov 2026) it is one search pill with its magnifier inside, and the word Search is for screen readers only: on a
      phone the count line shows only while a search or filter is on, so the list starts one line higher. */
-  var FIND_ICON = '<svg class="find-i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.5 15.5 L21 21" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
+  var FIND_ICON = ICON.find;
   function searchField(placeholder, count) {
     var on = count != null && / of /.test(count);
     return '<div class="field find-bar"><div class="field-head' + (on ? ' is-on' : '') + '"><label class="visually-hidden" for="find">Search</label>' + (count != null ? '<span class="count' + (on ? ' is-on' : '') + '" id="count">' + esc(count) + '</span>' : '') + '</div>' +
@@ -885,6 +887,10 @@
       '<div class="search-row"><span class="find-wrap' + (ui.query ? ' has-q' : '') + '">' + FIND_ICON + '<input id="find" class="search" type="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" data-k="find" placeholder="' + esc(placeholder) + '" value="' + esc(ui.query) + '">' +
       '<button type="button" class="find-x" data-act="clearfind" aria-label="Clear the search">&times;</button></span>' + viewSwitch() + '</div></div>';
   }
+  /* Every search is the Recipes pill (the consistency sweep, step 3, head chef 20 Nov 2026): a search box drawn anywhere
+     goes inside .find-wrap with the magnifier at its left end; its label stays, for screen readers only. Lazy pages and
+     js/prep.js reach it through LK_APP.findWrap. */
+  function findWrap(input) { return '<span class="find-wrap">' + ICON.find + input + '</span>'; }
   function freeChips(scroll) {
     return '<div class="field"><span class="label" id="free-label">Free from</span><div class="chips' + (scroll ? ' scroll' : '') + '" role="group" aria-labelledby="free-label">' +
       D.allergens.map(function (a) {
@@ -1425,7 +1431,7 @@
     }
     if (window.LK_FE) { if (window.LK_FE.api === FE_API && window.LK_FN && typeof window.LK_FN.M.effects === 'function') window.LK_FE.mount(root, route); else root.innerHTML = mgNote('Reload the book', 'The functions page on this device is a different version from the book. Reload the page to update it. Changes not saved yet are kept on this device.', '<div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div>'); return; }
     root.innerHTML = mgNote('Functions', 'Opening functions...', ' ', 'chef');
-    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=10').catch(function (e) { feLoad = null; throw e; });
+    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=12').catch(function (e) { feLoad = null; throw e; });
     feLoad.then(function () { if (parseRoute().name === 'functions') mountFunctions(parseRoute()); }, function () {
       var el = document.getElementById('fe-root');
       if (el) el.innerHTML = mgNote('Could not open functions', 'It needs the signal the first time it opens on a device. Check the signal and try again.', '<div class="btn-row"><button type="button" class="btn dark" data-act="feretry">Try again</button></div>');
@@ -1439,7 +1445,7 @@
     });
   }
   function loadManage() {
-    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=15').catch(function (e) { mgLoad = null; throw e; });
+    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=17').catch(function (e) { mgLoad = null; throw e; });
     return mgLoad;
   }
   function mgNote(title, text, link, waitingIcon) {
@@ -1613,7 +1619,7 @@
       return;
     }
     root.innerHTML = mgNote('Supplier order', 'Opening supplier tools...', ' ', 'orders');
-    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=27').catch(function (e) { supLoad = null; throw e; });
+    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=29').catch(function (e) { supLoad = null; throw e; });
     supLoad.then(function () { if (parseRoute().name === 'suppliers') mountSuppliers(parseRoute()); }, function () {
       if (parseRoute().name === 'suppliers') root.innerHTML = mgNote('Could not open supplier tools', 'Check the connection and try again. The other kitchen pages still work.', '<div class="btn-row"><button type="button" class="btn dark" data-sup-retry>Try again</button><a class="btn" href="#/orders">Order list</a></div>');
     });
@@ -1642,6 +1648,7 @@
       else navVisit();
     },
     icon: function (k) { return ICON[k] || ''; },   // the book's icons, for the pings sheet's rows and Change this guide
+    findWrap: findWrap,   // a search box as the Recipes pill (the consistency sweep, step 3, 20 Nov 2026)
     byId: function (id) { return byId[id] || null; },
     recipes: function () { return D.recipes; },
     tags: function (id) { return tags[id] || []; },
@@ -1857,7 +1864,7 @@
       stRow('where', 'Where settings are saved', '', '<dl class="st-kv"><div><dt>This phone</dt><dd>Saved here only</dd></div><div><dt>You</dt><dd>Any phone you sign in on</dd></div><div><dt>The kitchen</dt><dd>Every phone, set by the head chef</dd></div></dl>');
     return '<div class="page">' + '<main id="main" class="settings st"><div class="st-head">' +
       '<h2 tabindex="-1" id="rtitle">Settings</h2><a class="btn dark" href="#/" data-act="done">Done</a></div>' + stCard() +
-      (m.tab ? '<div class="st-find"><label class="label" for="st-find">Find a setting</label><input id="st-find" type="search" class="search" autocomplete="off" placeholder="Sound, PIN, sections..." value="' + esc(stFind) + '"><p class="hint st-none" role="status" hidden></p></div>' : '') +
+      (m.tab ? '<div class="st-find"><label class="visually-hidden" for="st-find">Find a setting</label>' + findWrap('<input id="st-find" type="search" class="search" autocomplete="off" placeholder="Sound, PIN, sections..." value="' + esc(stFind) + '">') + '<p class="hint st-none" role="status" hidden></p></div>' : '') +
       stGroup('you', 'You', 'Follows you to any phone you sign in on.', you) +
       stGroup('phone', 'This phone', 'Saved on this phone or tablet only.', phone) +
       stGroup('alerts', 'Notifications', 'What this phone does when something needs you.', alerts) +

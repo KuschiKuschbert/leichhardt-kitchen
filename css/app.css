@@ -159,7 +159,12 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .chip.sp { border-color: var(--small-ink); color: var(--small-ink); }
 .chip.sp[aria-pressed="true"] { background: var(--small-ink); color: #fff; }
 .row-label { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.15rem 0.75rem; }
-.empty { padding: 1.25rem; border: 1.5px dashed var(--stone); border-radius: var(--radius); color: var(--muted); }
+.empty { margin: 0.75rem 0; color: var(--muted); }
+/* Empty lists outside the notebooks are a plain grey sentence, no dashed box (the consistency sweep, step 3, head chef
+   20 Nov 2026): Recipes, Suppliers, Functions (.fn-quiet) and the admin tables (.ux-table-empty). Inside the notebooks the
+   grey handwritten line (.nb-empty) stays. A heading in one (No supplier catalogue yet) reads as its first sentence. */
+.empty > .h3 { font: 600 1rem/1.45 var(--body); letter-spacing: 0; text-transform: none; }
+.empty > p { margin: 0.3rem 0 0; }
 .tag { display: inline-block; font-size: 0.8125rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 6px; border: 1.5px solid var(--ink); }
 .tag.maybe { border-style: dashed; }
 .tag.dark { background: var(--ink); color: #fff; }
@@ -689,7 +694,10 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 }
 @media (max-width: 599px) { .a-pane .set-block { padding: 1.2rem 0 1.4rem; } }
 .a-pane .set-block.a-savebar:not(:has(.a-unsaved, .sv-line:not(:empty), .sv-btn[data-sv])) { display: none; }
-.a-pane .set-block.a-savebar { position: sticky; bottom: 0; z-index: 11; padding: 0.8rem 1rem; border: 1.5px solid var(--edge); border-radius: var(--radius); background: var(--paper); box-shadow: 0 -6px 12px rgba(0, 0, 0, 0.08); }
+.a-pane .set-block.a-savebar { position: sticky; bottom: 0; z-index: 11; padding: 0.8rem 1rem; }
+/* the frame is the one Save bar frame (.sv-dock); what is not saved comes first, the buttons after it (20 Nov 2026) */
+.a-savebar.sv-dock .btn-row > :is(.a-unsaved, .a-gone) { order: -1; }
+@media (min-width: 600px) { .a-savebar.sv-dock .btn-row > :is(.a-unsaved, .a-gone):last-child { margin-right: auto; } }
 @media (max-width: 719px) { .nb-badges { order: 5; } }
 
 /* people table */
@@ -2114,11 +2122,14 @@ button.wm-a.wm-tile { text-align: left; }
 @media (max-width: 719px) {
   body:not(:has(.tabbar)) { --toast-lift: 0px; }
   body:has(.mg-bar, .fe-bar, .ai-task-actions) { --toast-lift: calc(var(--tabbar-h) + 72px); }
+  /* the function form's bar holds its summary and Save buttons since 20 Nov 2026 (two rows, three with a long summary) */
+  body:has(.fe-bar) { --toast-lift: calc(var(--tabbar-h) + var(--fe-bar-h, 128px)); }
   body:has(.p-toasts .p-toast) #app:not(:has(.wall)) { padding-bottom: calc(76px + 64px); }
 }
 @media (min-width: 720px) {
   .p-toasts { left: 50%; right: auto; bottom: var(--toast-lift, 1.2rem); width: min(34rem, calc(100vw - 2rem)); transform: translateX(-50%); }
   body:has(.mg-bar, .fe-bar) { --toast-lift: 84px; }
+  body:has(.fe-bar) { --toast-lift: calc(var(--fe-bar-h, 72px) + 12px); }
   .p-toasts .p-toast { border: 1.5px solid var(--ink); border-top-width: 2.5px; border-radius: 10px; box-shadow: 0 8px 22px rgba(28, 29, 31, 0.18); }
   .p-toasts .p-toast.p-toast-bad { border-color: var(--bad-ink); }
   .p-toasts .p-toast[style*="--toast-life"]::before { left: 10px; right: 10px; }
@@ -2388,13 +2399,20 @@ html.has-upd .mg-chs { top: calc(var(--fn-stick, 0px) + var(--upd-h)); }
 .mg-errs { margin: 0; padding-left: 1.2rem; }
 .mg-errs a { color: #fff; font-weight: 700; }
 .mg-kept .btn-row { margin-top: 0.3rem; }
-.mg-bar { position: sticky; bottom: 0; z-index: 11; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin: 0 -0.25rem; padding: 0.7rem 0.75rem; background: var(--bg); border-top: 3px solid var(--ink); box-shadow: 0 -6px 12px rgba(0, 0, 0, 0.08); }
+.mg-bar { position: sticky; bottom: 0; z-index: 11; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin: 0 -0.25rem; padding: 0.7rem 0.75rem; }
 .mg-state { font-weight: 600; font-size: 0.9375rem; }
 .mg-slot:empty { display: none; }
 .mg-slot { display: flex; flex-wrap: wrap; gap: 0 0.75rem; }   /* Change this recipe and Print this card (19 Nov 2026) */
 .mg-slot-a { display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; color: var(--ink); }
 .mg-slot-a svg { width: 18px; height: 18px; }
 @media (max-width: 719px) { .mg-bar { bottom: var(--tabbar-h); } }
+/* ---------- One Save bar frame (the consistency sweep, step 3, head chef 20 Nov 2026) ----------
+   Every Save bar that stays at the bottom wears .sv-dock: the page's own colour (--sv-dock-bg; on Today's team the
+   notebook's paper is its page), an ink line on top, and no box, corners or shadow. What is not saved yet sits first, on
+   the left; the main button last, on the right. Each bar keeps its own place: sticky or fixed, above the tab bar on a
+   phone, its padding and the slip's lift (--toast-lift). The admin panel's and the notebook's own block rules are named
+   too, so the frame wins over them. The work pages' Add dock (.wk-dock) is an add button, not a Save bar: its own look. */
+.sv-dock, .tm-notebook .tm-save.sv-dock, .a-pane .set-block.sv-dock, .p-admin.ad-admin .a-pane .set-block.sv-dock { background: var(--sv-dock-bg, var(--bg)); border: 0; border-top: 2px solid var(--ink); border-radius: 0; box-shadow: none; }
 @media (max-width: 599px) {
   .mg-wrap h2, .mg-note h2 { font-size: 1.8rem; }
   .mg-two { grid-template-columns: minmax(0, 1fr); }
@@ -2852,8 +2870,14 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fe-picks { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .fe-mode { margin-bottom: 0.5rem; }
 .fe-allline { margin: 0.4rem 0 0; font-weight: 600; }
-.fe-bar { position: sticky; bottom: calc(var(--tabbar-h) + 6px); z-index: 5; padding: 0.55rem 0.8rem; border: 2px solid var(--ink); border-radius: 10px; background: var(--paper); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12); }
-@media (min-width: 720px) { .fe-bar { bottom: 8px; } }   /* no tab bar from 720 px */
+/* The function form's bar (the consistency sweep, step 3, head chef 20 Nov 2026): the one Save bar frame (.sv-dock), like
+   the recipe editor's. The summary on the left (#fe-live, drawn again while typing), then Saving... or a red reason, then
+   Save changes, or Check and confirm and Save draft, on the right. Flush above the tab bar now it is a bar, not a card. */
+.fe-bar { position: sticky; bottom: var(--tabbar-h); z-index: 5; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin: 0 -0.25rem; padding: 0.7rem 0.75rem; }
+@media (min-width: 720px) { .fe-bar { bottom: 0; } }   /* no tab bar from 720 px */
+.fe-live { flex: 1 1 14rem; min-width: 0; }
+.fe-bar > .fe-btns { margin-left: auto; }
+.fe-bar > :is(.fe-conflict, .fe-saving, .p-err) { flex: 1 1 100%; margin: 0; }
 .fe-bad { color: var(--bad-ink); font-weight: 700; }
 .fe-good { color: var(--done-ink); font-weight: 700; }
 .fe-probs { padding: 0.6rem 0.8rem; border: 2px solid var(--bad-ink); border-radius: 10px; background: var(--bad-tint); }
@@ -3226,7 +3250,7 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-asked-ask .p-x { padding-left: 0; }
 .su-request { display: inline-block; color: var(--small-ink); font-size: 0.8125rem; margin-top: 0.35rem; }
 .su-order-actions, .su-pager { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem 1rem; margin: 1rem 0; }
-.su-order-actions { position: sticky; bottom: 0; z-index: 6; padding: 0.7rem 0; border-top: 1.5px solid var(--ink); background: var(--bg); }
+.su-order-actions { position: sticky; bottom: 0; z-index: 6; padding: 0.7rem 0; }   /* the frame: .sv-dock */
 .su-history-dates { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .su-history-dates .chip { height: auto; padding: 0.55rem 0.75rem; white-space: normal; text-align: left; }
 .su-disclosure-body h4 { margin: 0.4rem 0 0; font: 700 1.2rem var(--display); }
@@ -3441,7 +3465,7 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
 .a-pp-assess small { display: block; color: var(--muted); }
 @media (max-width: 599px) { .p-admin.ad-admin .a-pane .a-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; } .p-admin.ad-admin .a-pane .a-tile > strong { font-size: 1.9rem; } }
 .p-admin.ad-admin .a-pane .p-bulk { width: 100%; min-width: 0; }
-.p-admin.ad-admin .a-pane .set-block.a-savebar { z-index: 11; padding: .8rem 1rem; border: 1px solid var(--edge); border-top: 2px solid var(--ink); border-radius: var(--r-act); background: var(--paper); }
+.p-admin.ad-admin .a-pane .set-block.a-savebar { z-index: 11; padding: .8rem 1rem; }
 .p-admin.ad-admin .a-tablewrap { max-width: 100%; border-width: 1px; border-radius: 0; }
 .p-admin.ad-admin .a-table td, .p-admin.ad-admin .a-table th { padding-top: .7rem; padding-bottom: .7rem; }
 .p-admin.ad-admin .a-table input[type="checkbox"] { flex-shrink: 0; }
@@ -3668,7 +3692,7 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
 .ux-table-tools .ux-active-filters { flex-basis: 100%; }
 .ux-table-status { flex-basis: 100%; margin: 0; color: var(--muted); font-size: .875rem; }
 .ux-table-empty { margin-block: .8rem; }
-.ux-table-empty p { margin: 0 0 .5rem; }
+.ux-table-empty p { margin: 0 0 .5rem; color: var(--muted); }
 .ux-record-advanced { margin-block: .4rem; }
 .ux-record-advanced > summary { min-height: 44px; padding-block: .65rem; cursor: pointer; }
 
@@ -4490,7 +4514,7 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .fn-page .fn-card-actions { padding: 0 0.9rem 0.6rem; border-top: 1px solid var(--line); padding-top: 0.4rem; }
 .fn-day-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.4rem 0.8rem; margin: 0.9rem 0 0.4rem; }
 .fn-day-h h4 { margin: 0; font: 700 1.05rem var(--display); }
-.fn-quiet { margin: 0.9rem 0 0.4rem; padding: 0.6rem 0.8rem; border: 1px dashed var(--edge); border-radius: 8px; color: var(--muted); }
+.fn-quiet { margin: 0.9rem 0 0.4rem; color: var(--muted); }   /* a plain grey sentence, no dashed box (20 Nov 2026) */
 /* the function card: the sheet on its paper, Next out on the dark board, Cancel alone at the end */
 .fn-one .fn-eb { margin-bottom: 2px; }
 .fn-cardbox { padding: 0.4rem 1rem 1rem; border: 1.5px solid var(--ink); border-radius: 14px; background: var(--surface-paper); box-shadow: 0 4px 0 rgba(28, 29, 31, 0.12); }
@@ -4600,9 +4624,16 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 
 /* ---------- Redesign step 6 (8 Nov 2026, head chef): Recipes and the recipe card. docs/whole-app-redesign-options/brief.md
    (Build step 6), every-page.html e-recipes and e-recipe. ---------- */
-/* the search is one pill with its magnifier inside; on a phone the count line shows only while a search or filter is on */
-.find-wrap .find-i { position: absolute; z-index: 1; left: 0.95rem; top: 50%; width: 20px; height: 20px; margin-top: -10px; color: var(--muted); pointer-events: none; }
-.find-wrap .search { padding-left: 2.75rem; border-radius: var(--r-pick); }
+/* the search is one pill with its magnifier inside; on a phone the count line shows only while a search or filter is on.
+   Every search box since the consistency sweep, step 3 (head chef, 20 Nov 2026): Manage, Print cards, Settings, Guides,
+   the shared lists (lvHTML) and Find a drawing too. The magnifier is centred on the box (--find-h, its height), not on the
+   wrapper, so the "Filtering by" line under a box no longer pulls it down. */
+.find-wrap { --find-h: 3.1rem; }
+.find-wrap .find-i { position: absolute; z-index: 1; left: 0.95rem; top: calc(var(--find-h) / 2 - 10px); width: 20px; height: 20px; color: var(--muted); pointer-events: none; }
+.find-wrap .search, .p-admin.ad-admin .a-pane .find-wrap .search { padding-left: 2.75rem; border-radius: var(--r-pick); }
+.lv-qw .find-wrap { --find-h: 2.75rem; }
+/* once the shared search bar wraps the box (LK_UX), the magnifier sits in the box's own cell, centred whatever its height */
+.find-wrap .ux-search > .find-i { position: relative; top: auto; left: auto; grid-area: 1 / 1; align-self: center; justify-self: start; margin-left: 0.95rem; }
 @media (max-width: 719px) { .find-bar .field-head:not(.is-on) { display: none; } }
 /* the card's head: the name with its card number beside it, then the plating line across the whole card */
 .card-head.ch-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; column-gap: 1rem; row-gap: 0.55rem; }
@@ -5750,8 +5781,7 @@ html:has(.tm-focus-page) {
   position: sticky; bottom: var(--tm-focus-nav-height, 0px); z-index: 5;
   display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .75rem;
   min-width: 0; margin: .65rem 0 0; padding: .65rem .85rem;
-  border-top: 2px solid var(--ink); background: var(--surface-paper);
-  box-shadow: 0 -1px 0 var(--line);
+  --sv-dock-bg: var(--surface-paper);   /* the one Save bar frame (.sv-dock) on the notebook's paper, 20 Nov 2026 */
 }
 .tm-notebook.tm-focus-page .tm-focus-save .btn { flex: 0 1 auto; width: auto; max-width: 100%; min-height: 44px; margin-left: auto; }
 .tm-notebook.tm-focus-page .tm-save-state { flex: 1 1 10rem; min-width: 0; margin: 0; font-size: .8125rem; line-height: 1.4; overflow-wrap: break-word; }

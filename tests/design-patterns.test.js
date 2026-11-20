@@ -51,10 +51,9 @@ const CLASSES = [
   'fn-hm', 'fn-hm-line', 'fn-hu', 'fn-hu-got', 'fn-hu-undo', 'fn-ahead-ack', 'fn-wk', 'fn-seen', 'fn-seen-l', 'fn-seen-r', 'fn-seen-t',
   'o-fn-tag', 'o-fn-when', 'o-fn-for', 'o-fn-held', 'fno-row', 'fno-sum', 'fno-box', 'fno-rule', 'fno-note', 'fno-ask',
   'lk-fb', 'lk-ftag', 'lk-fillnote', 'lk-weigh', 'lk-why',
+  // the consistency sweep, step 3 (20 Nov 2026): every search the pill, one Save bar frame, the function form's bar, empty lists
   // the day control and its step chips, the supplier mark (the consistency sweep, step 3, 20 Nov 2026)
-  'nb-nav', 'nav-step', 'o-dayctl', 'cut-mark',
-  'fn-strip-l', 'fn-strip-stale', 'fn-strip-in', 'is-strip',
-  'p-readerr'
+  'find-wrap', 'sv-dock', 'a-savebar', 'mg-bar', 'fe-bar', 'fe-live', 'fe-btns', 'su-order-actions', 'empty', 'ux-table-empty', 'lv-none', 'nt-none', 'nb-empty', 'fn-strip-l', 'fn-strip-stale', 'fn-strip-in', 'is-strip', 'p-readerr', 'nb-nav', 'nav-step', 'o-dayctl', 'cut-mark'
 ];
 const TOKENS = ['--ink', '--wall-ink', '--paper', '--bg', '--muted', '--faint', '--line', '--accent', '--accent-ink', '--tag', '--done', '--done-ink',
   '--bar', '--bar-text', '--display', '--body', '--r-act', '--r-pick', '--small-ink', '--hit',
@@ -65,7 +64,7 @@ const HELPERS = ['readErr', 'readRetry', 'tmShortPaint', 'tmShortOf', 'tmBusy', 
   'ovPush', 'ovDone', 'trapTab', 'sheetOpen', 'sheetBusy', 'sheetNext', 'lvHTML', 'homeSlot', 'homePaint', 'homeRotaHTML', 'tmAwayHTML', 'tmNextHTML', 'tmGridShifts', 'tmPlanRowHTML', 'tmPlanHeadHTML', 'tmBarHTML', 'tmGridCellHTML', 'tmAwayPaint', 'tmAwayHidden', 'dkRunHTML', 'dkTeamHTML', 'dkFormHTML', 'panelShellHTML', 'psPanelHTML', 'psHintHTML', 'psReferenceHTML', 'psRolloutHTML',
   'fnOrdTag', 'orderTag', 'fnoHTML', 'platterNeeds', 'fbHTML', 'ftagHTML', 'fillAfterTap'];
 const GLOBALS = ['ICON', 'LK_UX', 'LK_PREP_STANDARDS'];
-HELPERS.push('pageSwipeFrom', 'navList');
+HELPERS.push('pageSwipeFrom', 'navList', 'findWrap');
 HELPERS.push('dayNavHTML');
 
 const missing = [];
