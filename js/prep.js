@@ -7768,6 +7768,33 @@
       if (sub) a.removeAttribute('aria-current'); else if (here) a.setAttribute('aria-current', 'page');
     });
   }
+  /* Prep keeps your place (19 Nov 2026, docs/band-options/brief.md, Round 3). Coming back to Prep from another page the
+     same day puts the list where you left it: by the line at the top of the screen and its offset, not by pixels, so
+     lines ticked or added by others while you were away do not move it. Kept in memory only, for one person, day,
+     section and board: a reload, the 04:00 refresh, the next person on a shared tablet or another section starts at
+     the top. It is put back once, after Prep has drawn, and never while a finger is down. Tapping Prep while on Prep
+     goes to the top. */
+  var prepPlace = null, prepPlaceWant = null, prepPlaceFrame = 0, prepFingerDown = false, prepFingerUp = 0;
+  function prepPlaceKey() { return (S.who || '') + '|' + S.date + '|' + (S.tab || '') + '|' + (wallOn() ? 'wall' : ''); }
+  function prepPlaceHere() { return S.name === 'prep' && !!S.root && document.body.contains(S.root) && location.hash.split('?')[0] === '#/prep'; }
+  function prepPlaceSave() {
+    prepPlaceFrame = 0;
+    if (!prepPlaceHere() || prepPlaceWant) return;
+    if (window.scrollY < 8) { prepPlace = null; return; }
+    var pin = document.querySelector('body > .fn-strip:not([hidden])'), top = pin ? pin.getBoundingClientRect().bottom : 0;
+    var rows = S.root.querySelectorAll('.nb-row[id]'), row = null;
+    for (var i = 0; i < rows.length && !row; i++) if (rows[i].getBoundingClientRect().bottom > top + 4) row = rows[i];
+    prepPlace = { k: prepPlaceKey(), id: row ? row.id : '', off: row ? row.getBoundingClientRect().top : 0, y: window.scrollY };
+  }
+  function prepPlaceBack() {
+    if (!prepPlaceWant || !prepPlaceHere()) return;
+    if (prepPlaceWant.k !== prepPlaceKey()) { prepPlaceWant = null; return; }
+    if (S.itemsState !== 'ok' && !S.items.length) return;   // the list is not drawn yet: the draw that brings it puts the place back
+    if (prepFingerDown || Date.now() - prepFingerUp < 400) { setTimeout(prepPlaceBack, 450); return; }
+    var w = prepPlaceWant, row = w.id && document.getElementById(w.id);
+    prepPlaceWant = null;
+    window.scrollTo(0, row ? row.getBoundingClientRect().top + window.scrollY - w.off : w.y);
+  }
   function draw() {
     if (holdDraw) { heldDraw = true; return; }
     svTidy();
@@ -7811,6 +7838,7 @@
     finPaint();
     secFit();
     gvLoops();
+    if (prepPlaceWant) requestAnimationFrame(prepPlaceBack);
     window.dispatchEvent(new Event('lk-back'));
   }
 
@@ -13919,6 +13947,13 @@ if (list.length) sg('oreg', 's');
     if (wired) return; wired = true;
     var app = document.getElementById('app');
     app.addEventListener('click', onClick);
+    window.addEventListener('scroll', function () { if (!prepPlaceFrame && prepPlaceHere()) prepPlaceFrame = requestAnimationFrame(prepPlaceSave); }, { passive: true });
+    document.addEventListener('pointerdown', function () { prepFingerDown = true; }, { capture: true, passive: true });
+    ['pointerup', 'pointercancel'].forEach(function (ev) { document.addEventListener(ev, function () { prepFingerDown = false; prepFingerUp = Date.now(); }, { capture: true, passive: true }); });
+    document.addEventListener('click', function (e) {
+      var a = e.target && e.target.closest && e.target.closest('a[href="#/prep"]');
+      if (a && location.hash === '#/prep') { prepPlace = null; prepPlaceWant = null; window.scrollTo(0, 0); }
+    }, true);
     app.addEventListener('pointerdown', toastDown);
     app.addEventListener('pointerdown', fillTapDown, true);
     app.addEventListener('pointerdown', fillPtrDown, true);
@@ -16881,6 +16916,7 @@ if (list.length) sg('oreg', 's');
       S.name = name; S.root = root;
       // Prep always opens on Today (17 Nov 2026): a chef who left it on another day never adds there by habit
       if (name === 'prep' && S.date !== dayNow()) { S.date = dayNow(); S.tab = ''; watchItems(); }
+      prepPlaceWant = name === 'prep' && prepPlace && prepPlace.k === prepPlaceKey() ? prepPlace : null;
       try { finFresh(); } catch (e) {}
       if (name === 'guides') { if ((sel || '') !== S.gSel) S.gSel = sel || ''; }
       if (name === 'admin') S.draft = S.draft || null;

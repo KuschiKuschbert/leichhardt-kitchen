@@ -198,7 +198,7 @@ function hasPrivateContact(value) {
   const gone = fn({ name: 'Jones wake', status: 'cancelled', start: '15:00', rounds: ['15:00'] });
   const moved = fn({ name: 'Brown 21st', date: day2, was: { date: today, start: at(today, '17:00'), first: at(today, '17:00'), from: at(today, '00:00'), until: at(today, '19:00') } });
   const draft = fn({ name: 'Draft do', status: 'draft' });
-  p = await L.open(b, '#/prep', { who: 'ann', extra: extra({ smith, gone, moved, draft }), wait: 1200 });
+  p = await L.open(b, '#/waste', { who: 'ann', extra: extra({ smith, gone, moved, draft }), wait: 1200 });   // the full band (Prep starts with the strip)
   await L.waitFor(p, () => document.querySelectorAll('#fn-band .fn-row').length >= 2);
   let bt = await txt(p, '#fn-band') || '';
   ok(/\+1 more/.test(bt) && (await p.$$('#fn-band .fn-row')).length === 2, 'several: two show, then "+1 more"');
@@ -339,13 +339,14 @@ function hasPrivateContact(value) {
   const bj = (await txt(p, '#fn-band') || '').replace(/\s+/g, ' ');
   ok(bj.indexOf('Jones 40th') >= 0 && bj.indexOf('Jones 40th') < bj.indexOf('Smith 50th'), 'band: sorted by what is still to go out, so Jones comes before Smith once Smith round 1 is sent');
   await p.evaluate(() => { document.body.style.minHeight = '4000px'; window.scrollTo(0, 1500); }); await L.settle(p, 300);
-  ok(await p.$eval('.fn-strip', e => !e.hidden && /^18:40/.test(e.textContent.trim()) && /\+1/.test(e.textContent)) && !!(await p.$('.fn-strip a.fn-strip-b[href="#/fn/now"]')), 'strip: the most urgent leads, +1 apart, and a tap opens the service view');
+  ok(await p.$eval('.fn-strip', e => !e.hidden && /^Functions\s*18:40/.test(e.textContent.trim()) && /\+1/.test(e.textContent)) && !!(await p.$('.fn-strip a.fn-strip-b[href="#/fn/now"]')), 'strip: the word Functions, the most urgent leads, +1 apart, and a tap opens the service view');
   ok(p.errors.length === 0, 'service: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // the band the day before: an order reminder on the order day, and tomorrow's function; and the strip while scrolling
   const tm = fn({ name: 'Tomorrow do', date: tomorrow, rounds: ['12:00'] }); tm.od = today;
-  p = await L.open(b, '#/prep', { who: 'ann', extra: extra({ smith, tm }), wait: 1500 });
+  // (Prep starts with the slim strip since 19 Nov 2026, tests/prep-strip-place.test.js: the full band is checked on Wastage)
+  p = await L.open(b, '#/waste', { who: 'ann', extra: extra({ smith, tm }), wait: 1500 });
   await L.waitFor(p, () => /Tomorrow do/.test((document.getElementById('fn-band') || {}).textContent || ''));
   const bn = (await txt(p, '#fn-band') || '').replace(/\s+/g, ' ');
   ok(/Order today\s*Short notice Stock for Tomorrow do/.test(bn) && /on the order list/.test(bn), 'order: the band reminds the kitchen to order on the order day (' + bn.slice(0, 260) + ')');
