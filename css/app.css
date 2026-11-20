@@ -55,6 +55,16 @@
 .dl-sign-note, .dl-hidden-note { margin: -.4rem 0 0; color: var(--small-ink); font-weight: 600; }
 .dl-form .dl-add-note { padding-left: 0; }
 .dl-actions .btn[type="submit"] { flex: 1 1 12rem; }
+/* On a phone Save delivery and the line that says what happened dock above the tab bar while the form is on screen,
+   like Review order on the supplier sheet, and scroll away with the form. With the function band and the cut-off bar
+   showing, Save sat under the tab bar until you scrolled (consistency sweep, 19 Nov 2026, ORDE-1). */
+@media (max-width: 719px) {
+  .dl-dock { position: sticky; bottom: var(--tabbar-h); z-index: 6; margin-top: .4rem; padding: 6px 0 8px; background: var(--bg); border-top: 1px solid var(--line); }
+  .dl-dock .dl-message:empty { display: none; }
+  .dl-dock .dl-message, .dl-dock .dl-error { margin: 0 0 .4rem; }
+  .dl-dock .dl-actions { margin: 0; }
+  html:has(.dl-dock) { scroll-padding-bottom: calc(var(--tabbar-h) + 84px); }
+}
 .dl-waiting { margin: 1rem 0 0; padding-top: .9rem; border-top: 1px solid var(--line); color: var(--small-ink); }
 .dl-waiting b { color: var(--ink); }
 @media (max-width: 380px) { .dl-pair { grid-template-columns: 1fr; } }
@@ -2561,6 +2571,14 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fn-band-top:has(.fn-fold) { align-items: center; }
 .fn-fold { flex: 0 0 auto; margin-left: auto; width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1.5px solid var(--ink); border-radius: 50%; background: var(--paper); color: var(--ink); font-size: 1.35rem; font-weight: 600; line-height: 1; cursor: pointer; }
 .fn-band-n + .fn-fold { margin-left: 0; }
+/* the small round minus (head chef, 22 Oct 2026) takes a tap 44 px across, like the same minus on the Next function
+   line, without growing: the tap area reaches 4 px past the circle, into the band's own space (consistency sweep,
+   19 Nov 2026, SHEL-1) */
+.fn-band-top .fn-fold { position: relative; }
+.fn-band-top .fn-fold::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; z-index: 1; }
+/* "+N more", "Show fewer" and "Service view" the same way: drawn 36 px high, a tap 44 px high (SHEL-1) */
+.fn-band .fn-more { position: relative; }
+.fn-band .fn-more::after { content: ''; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px; z-index: 1; }
 .fn-band-top.is-fold { padding-bottom: 0.4rem; }
 .fn-band-top.is-fold .fn-band-h { flex: 0 0 auto; }
 .fn-band-sum { flex: 1 1 auto; min-width: 0; display: flex; gap: 1.1rem; white-space: nowrap; overflow: hidden; font-size: 0.95rem; }
@@ -2912,7 +2930,7 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fe-gu { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 1rem; }
 .fn-late { color: var(--bad-ink); font-weight: 700; }
 .fn-sent { white-space: nowrap; }
-.fn-sent-b { min-height: 40px; padding: 0 0.8rem; }
+.fn-sent-b { min-height: 44px; padding: 0 0.8rem; }
 .fn-sent-ok { display: inline-flex; flex-direction: column; align-items: center; font-weight: 700; color: var(--done-ink); line-height: 1.2; margin-right: 0.4rem; }
 .fn-sent-ok small { font-weight: 400; color: var(--muted); }
 /* the order reminder and tomorrow's functions in the band, and the strip pinned to the top once the band scrolls away */
@@ -4222,6 +4240,10 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .cut-band .cut-h { color: var(--bar-accent); }
 .cut-band .cut-go, .cut-band .cut-n { color: var(--bar-text); }
 .cut-band .cut-go:focus-visible, .cut-band .cut-n:focus-visible { outline: 3px solid var(--bar-accent); outline-offset: 2px; }
+/* the supplier's name takes a tap 44 px high, as it does in Orders' cut-off fold, without making the bar taller: the tap
+   area reaches into the row's own space above and below the name (consistency sweep, 19 Nov 2026, SHEL-2) */
+.cut-band .cut-n { position: relative; }
+.cut-band .cut-n::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 44px; transform: translateY(-50%); z-index: 1; }
 .cut-band .cut-t { color: rgba(251, 248, 241, 0.78); }
 .cut-band .cut-t b { color: var(--bar-text); }
 .cut-band .cut-row + .cut-row { border-top-color: rgba(251, 248, 241, 0.16); }
