@@ -62,9 +62,29 @@
       M.cache[key] = data; useData(data); M.tickErrors = Object.create(null); draw();
     }, function (error) {
       if (gen !== generation || !C.allowed() || C.identity() !== who) return;
-      M.state = 'error'; M.error = error && error.code === 'too-many' ? 'Cleaning list is too large to show safely. Ask a chef to review the schedule.' : error && error.message || 'Could not load cleaning. Check the connection and tap Refresh.'; draw();
+      M.state = 'error'; M.error = clnErrWords(error); draw();
+      // a failed read tries once more by itself after 5 minutes or when the signal is back, whichever is first
+      // (the consistency sweep, step 2, 20 Nov 2026); a refusal for size waits for a chef instead
+      if (!error || error.code !== 'too-many') clnRetryArm(gen);
     });
   }
+  /* The words for a failed cleaning read (the consistency sweep, step 2, 20 Nov 2026): never the database's own
+     English, and No signal only when the signal is the cause, as the rest of the book (docs/design-patterns.md). */
+  function clnErrWords(error) {
+    var code = error && error.code;
+    if (code === 'too-many') return 'Cleaning list is too large to show safely. Ask a chef to review the schedule.';
+    if (navigator.onLine === false || code === 'unavailable' || code === 'deadline-exceeded') return 'No signal. Could not check the cleaning list.';
+    return 'Could not load the cleaning list. Check the connection.';
+  }
+  var clnRetryT = 0, clnRetryOn = null;
+  function clnRetryArm(gen) {
+    clearTimeout(clnRetryT); if (clnRetryOn) window.removeEventListener('online', clnRetryOn);
+    var go = function () { clearTimeout(clnRetryT); window.removeEventListener('online', clnRetryOn); clnRetryOn = null; if (gen === generation && M.state === 'error' && M.root && document.body.contains(M.root)) load(true); };
+    clnRetryOn = function () { setTimeout(go, 1500); };
+    clnRetryT = setTimeout(go, 5 * 60000); window.addEventListener('online', clnRetryOn);
+  }
+  // the failed-read line, the same on every page (js/prep.js readErr): Try again is the page's own Refresh
+  function clnFailLine() { return window.LK_PREP && window.LK_PREP.readErr ? window.LK_PREP.readErr(M.error, null, 'data-cln="refresh"') : '<p class="p-err p-readerr" role="status">' + esc(M.error) + ' <button type="button" class="p-link" data-cln="refresh">Try again</button></p>'; }
   function due(task, day) { return C.due(task, day); }
   function tasksOn(day) { return M.tasks.filter(function (task) { return due(task, day); }); }
   function record(task, day) { return M.done.filter(function (r) { return r.task === task.id && r.day === day; })[0] || null; }
@@ -295,7 +315,7 @@
     if (!d) items += '<li class="cln-template-item cln-new-editor" role="listitem"><div class="cln-editor"><p class="hint">Choose Edit beside a task, or Add cleaning task. One editor opens here.</p></div></li>';
     return '<section class="nb-page cln-plan" aria-labelledby="rtitle"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Cleaning</h2><p class="nb-date" id="cln-plan-title" tabindex="-1">Repeat tasks' + (M.state === 'ok' ? ' · ' + current.length + ' current tasks' : '') + '</p></div><button type="button" class="p-link" data-cln="hide-setup">Back to Today</button></header><div class="cln-plan-body">' + readLine() + earlierNotice() +
       '<p class="hint">New tasks start today. Changes and archiving start tomorrow. Earlier cleaning records stay as recorded.</p>' + workNotices(tasksOn(T.day()), T.day()) +
-      (M.state === 'error' ? '<p class="p-err" role="alert">' + esc(M.error) + '</p>' : M.state !== 'ok' ? loading() : '') +
+      (M.state === 'error' ? clnFailLine() : M.state !== 'ok' ? loading() : '') +
       (M.saveError && !d ? '<p class="p-err" role="alert">' + esc(M.saveError) + '</p>' : '') +
       '<div class="cln-repeat-browser"><div class="cln-searchbar"><label class="visually-hidden" for="cln-repeat-search">Find a repeat task in all groups</label><input type="search" class="search" id="cln-repeat-search" data-cln-control="repeat-query" placeholder="Find a repeat task or area" value="' + esc(M.repeatQuery) + '"><button type="button" class="btn dark" data-cln="add"' + (M.state !== 'ok' || M.saveBusy || M.archiveBusy ? ' disabled' : '') + '>Add cleaning task</button></div><label class="field" for="cln-repeat-group"><span class="label">Work group</span><select id="cln-repeat-group" data-cln-control="repeat-group"><option value="all">All groups</option>' + CHEF_GROUPS.map(function (group) { return '<option value="' + group[0] + '"' + (M.repeatGroup === group[0] ? ' selected' : '') + '>' + esc(group[1]) + '</option>'; }).join('') + '</select></label>' + (M.repeatQuery.trim() ? '<p class="hint cln-repeat-scope" role="status">Searching all groups. Clear search to use the selected work group.</p>' : '') + pager(matching.length, M.repeatPage, 'repeat-page', M.repeatGroup) +
       (!matching.length ? '<p class="hint" role="status">' + (current.length ? 'No tasks match this search or group.' : M.state === 'ok' ? 'No repeat tasks set yet. Add a task or load a schedule below.' : 'The task list is not available yet. Your draft is kept.') + '</p>' : '') + '<ul class="cln-templates cln-repeat-layout" role="list">' + items + '</ul></div><div class="cln-setup-imports">' + importPanel() + '</div></div></section>';
@@ -314,7 +334,7 @@
       '<section class="nb-page cln-book" aria-labelledby="rtitle"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Cleaning</h2><span class="nb-date">' + esc(week ? 'Week commencing ' + longDay(M.week) : longDay(T.day())) + '</span></div>' + (!week && M.state === 'ok' && today.length ? '<div class="nb-prog cln-progress">' + totals.complete + '/' + totals.total + '<small>' + (totals.events ? 'recorded; repeats apply' : 'done today') + '</small></div>' : '') + '</header>' + readLine() +
       '<div class="cln-temperature"><button type="button" class="p-link" data-cln="temperature" aria-expanded="' + M.temperatureOpen + '">Temperature logs: morning and before dinner service</button>' + (M.temperatureOpen ? '<p class="hint">Temperature logs must be completed first thing in the morning and before dinner service. The temperature log is not connected here. Record readings in the venue\'s temperature log. Cleaning checks do not record or validate temperatures.</p>' : '') + '</div>' + earlierNotice() +
       (!week && M.state === 'ok' && (totals.events || totals.awaiting || totals.blocked) ? '<p class="hint cln-coverage">' + (totals.events ? 'Record every required service, prep or use. The count covers known occurrences; repeat coverage is not configured. ' : '') + (totals.awaiting ? totals.awaiting + ' awaiting Pass check. ' : '') + (totals.blocked ? totals.blocked + ' unable to complete.' : '') + '</p>' : '') +
-      '<div class="nb-body cln-body">' + (M.state === 'error' ? '<p class="p-err" role="alert">' + esc(M.error) + '</p>' : M.state !== 'ok' ? loading() : week ? weekly() : chef ? chefDaily(T.day()) : daily(T.day())) + '</div></section>') + '</div>';
+      '<div class="nb-body cln-body">' + (M.state === 'error' ? clnFailLine() : M.state !== 'ok' ? loading() : week ? weekly() : chef ? chefDaily(T.day()) : daily(T.day())) + '</div></section>') + '</div>';
     if (busy()) Array.prototype.forEach.call(M.root.querySelectorAll('[data-cln="refresh"], [data-cln="today"], [data-cln="week"], [data-cln="setup"], [data-cln="previous"], [data-cln="next"], [data-cln="this-week"]'), function (button) { button.disabled = true; });
     if (window.LK_UX) window.LK_UX.enhance(M.root);
     if (focusAttribute) { var el = Array.prototype.filter.call(M.root.querySelectorAll('input, textarea, select'), function (element) { return element.getAttribute(focusAttribute) === field; })[0]; if (el && !el.disabled) { el.focus({ preventScroll: true }); if (pos && el.setSelectionRange) el.setSelectionRange(pos[0], pos[1]); } }

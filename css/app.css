@@ -15,6 +15,10 @@
 .dl-message, .dl-error { min-height: 1.4em; margin: .6rem 0; }
 .dl-message { color: var(--ink); }
 .dl-error { color: var(--bad-ink); font-weight: 600; }
+/* No signal is not a failure: a neutral note (the consistency sweep, step 2, 20 Nov 2026); a failed read is the
+   shared .p-readerr line, spaced like the other lines here */
+.dl-offline { margin: .6rem 0; color: var(--ink); }
+.dl-history .p-readerr { margin: .6rem 0; }
 .dl-history { margin-top: 2rem; border-top: 2px solid var(--ink); padding-top: 1rem; }
 .dl-history h2 { margin: 0; font: 700 1.6rem/1.1 var(--display); }
 .dl-history-head, .dl-receipt-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
@@ -3228,10 +3232,12 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-lines strong { text-align: right; }
 .su-review .h3 { margin-bottom: 0.65rem; }
 .su-review > p { margin: 0.8rem 0; }
-.su-error, .su-status { margin: 0; padding: 0.75rem 0.9rem; border-left: 4px solid var(--bad-ink); background: var(--bad-tint); font-size: 0.9375rem; overflow-wrap: anywhere; }
+.su-error, .su-status, .su-offline { margin: 0; padding: 0.75rem 0.9rem; border-left: 4px solid var(--bad-ink); background: var(--bad-tint); font-size: 0.9375rem; overflow-wrap: anywhere; }
 .su-error { color: var(--bad-ink); }
 .su-error .btn-row { margin-top: 0.7rem; }
-.su-status { border-left-color: var(--ink); background: var(--surface-reference); }
+/* No signal is not a failure (the consistency sweep, step 2, 20 Nov 2026): .su-offline wears the neutral note's look */
+.su-status, .su-offline { border-left-color: var(--ink); background: var(--surface-reference); }
+.su-offline { color: var(--ink); }
 .su-confirm { padding: 1rem; margin: 1rem 0; background: var(--hit); border: 1px solid var(--edge); border-radius: var(--radius); }
 .su-confirm h4 { margin: 0 0 0.7rem; overflow-wrap: anywhere; }
 .su-confirm p { margin: 0.6rem 0 1rem; }
