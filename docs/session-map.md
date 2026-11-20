@@ -1,9 +1,5 @@
 # Session map: which note to read, and every file
 
-## AVC card reader, 19 November 2026 (second venue build step 4, the reader only)
-
-The owner asked to build the AVC reader early, while the venue plumbing is built in its own session. `js/avc-reader.js` (`LK_AVC.read()` on text items, `LK_AVC.fromPdf()` on a pdf.js document) turns an AVC Live "Print Recipe" PDF into a hidden recipe draft: names and amounts only, money and codes never read or returned, kind and allergens left for the chef, house batches flagged to link, fails closed. Lazy and loaded by nothing yet. Owner's 13 real cards: 13 of 13 read, 60 lines (run locally, never in the repo). Tests `tests/avc-reader.test.js` (48), fixture `tests/avc-fixture.js` (made-up cards in both real layouts, and a small real PDF for pdf.js). Next: the private draft store, then the review card. `docs/second-venue-options/brief.md` (Built so far).
-
 ## The functions strip and Prep keeping your place, 19 November 2026 (chosen and built)
 
 On a busy day the two bars take 310 px and the head chef's Prep shows 1 line when it opens on a 390 px phone. Coming back from another tab, Prep always starts at the top. There were three council rounds, all Preview on the real book in the stand-in:
@@ -20,6 +16,10 @@ F (the cut-off in the strip) is held. Tests: `tests/prep-strip-place.test.js`. `
 ## Venues: each kitchen its own project, address and book, 19 November 2026 (build step 2, merged)
 
 Build step 2 of the second venue mix (`docs/second-venue-options/brief.md`), with no Venues room (`docs/venues-room-options/brief.md`). Each venue is `venues/<id>.json` (name, address, its own Firebase project and web settings; nothing secret) and its own GitHub environment (`VENUE_PROJECT` variable; `FIREBASE_SA`, `KITCHEN_PIN`, `OWNER_EMAIL`, `PLATFORM_EMAIL`, `PLATFORM_STAFF_ID`, `BACKUP_KEY`, `APPCHECK_DEBUG_TOKEN`). Every job that holds a venue's secrets runs once per venue in its environment and guards first (`scripts/venues.cjs guard`): nightly learning, cut-off pushes, backup (its artifact and file keyed by venue and project), Publish rules, Lock probe, live checks; Publish site makes each new venue's own copy (`scripts/venue-site.cjs`: its config, security header, name, an empty book and its QR) on `<project>.web.app`. Rules: two admins, the venue owner's Google with the `headId` PIN or the platform owner's Google with his own profile's PIN (`PLATFORM_EMAIL`, `PLATFORM_ID`), the venue admin unable to change, lock out or reset that profile; at Leichhardt both are one person and every rule is as it was (78 emulator rows, 18 of them fail on `main`'s rules, the 24 Leichhardt rows pass on both). The checklist for adding a venue and changing its head chef, the owner's steps and the published-rules order: `docs/venues.md`. Not built yet: the client offering Admin to the platform owner at a venue. 20 Nov 2026: #766 merged; Leichhardt's secrets moved into its `leichhardt` environment (verify, Nightly learning and Lock probe green, repository copies deleted); `venues/strand.json` and `venues/strand/` (qr.svg, qr.png, qr-sign.pdf, the same QR settings and sign as Leichhardt's) added. State of each venue: `docs/venues.md` (The venues now).
+
+## AVC card reader, 19 November 2026 (second venue build step 4, the reader only)
+
+The owner asked to build the AVC reader early, while the venue plumbing is built in its own session. `js/avc-reader.js` (`LK_AVC.read()` on text items, `LK_AVC.fromPdf()` on a pdf.js document) turns an AVC Live "Print Recipe" PDF into a hidden recipe draft: names and amounts only, money and codes never read or returned, kind and allergens left for the chef, house batches flagged to link, fails closed. Lazy and loaded by nothing yet. Owner's 13 real cards: 13 of 13 read, 60 lines (run locally, never in the repo). Tests `tests/avc-reader.test.js` (48), fixture `tests/avc-fixture.js` (made-up cards in both real layouts, and a small real PDF for pdf.js). Next: the private draft store, then the review card. `docs/second-venue-options/brief.md` (Built so far).
 
 ## Allergens checked or not, 19 November 2026 (chosen and built)
 
