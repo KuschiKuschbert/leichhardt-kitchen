@@ -59,20 +59,22 @@ function registry(extra) {
   bad({ book: 'full' }, /empty book/, 'a new venue with the full book');
   bad({ name: "O'Reilly Hotel" }, /name/, 'a name that would break a quoted string');
   bad({ extra: true }, /exactly these fields/, 'an unknown field');
-  const two = [Object.assign(copy(home)), copy(demo)];
+  const two = [Object.assign(copy(home), { secrets: 'repository' }), copy(demo)];
   ok(throws(() => V.checkRegistry(two), /repository secrets/), 'two venues while one still uses repository secrets is refused (a missing secret would be the other venue\'s)');
   ok(throws(() => V.checkRegistry([Object.assign(copy(home), { secrets: 'environment' }), copy(demo), Object.assign(copy(demo), { id: 'demo2', address: 'https://demo-venue-kb.firebaseapp.com/' })]), /share one project/), 'two venues on one project are refused');
   ok(!throws(() => V.checkRegistry([Object.assign(copy(home), { secrets: 'environment' }), copy(demo)]), /./), 'two venues, each with its own environment, are fine');
 
   // 2. The guard each job runs first
   const sa = p => JSON.stringify({ type: 'service_account', project_id: p, private_key: '-----BEGIN PRIVATE KEY-----made-up' });
-  ok(V.guard(home, sa('leichhardt-kitchen'), '') === 'leichhardt-kitchen', 'guard: Leichhardt with its repository secrets, as today');
-  ok(throws(() => V.guard(home, sa('demo-venue-kb'), ''), /not leichhardt's service account/), 'guard: another venue\'s service account is refused');
+  ok(V.guard(Object.assign(copy(home), { secrets: 'repository' }), sa('leichhardt-kitchen'), '') === 'leichhardt-kitchen', 'guard: a venue on repository secrets (Leichhardt until 20 Nov 2026)');
+  ok(V.guard(home, sa('leichhardt-kitchen'), 'leichhardt-kitchen') === 'leichhardt-kitchen', 'guard: Leichhardt with its own environment (since 20 Nov 2026)');
+  ok(throws(() => V.guard(home, sa('leichhardt-kitchen'), ''), /VENUE_PROJECT is not set/), 'guard: Leichhardt without its environment is refused now, with no fall back to repository secrets');
+  ok(throws(() => V.guard(home, sa('demo-venue-kb'), 'leichhardt-kitchen'), /not leichhardt's service account/), 'guard: another venue\'s service account is refused');
   ok(throws(() => V.guard(home, sa('leichhardt-kitchen'), 'demo-venue-kb'), /VENUE_PROJECT is not/), 'guard: an environment naming another project is refused');
   ok(throws(() => V.guard(demo, sa('demo-venue-kb'), ''), /VENUE_PROJECT is not set/), 'guard: a venue whose environment is not set up is refused (no fall back to repository secrets)');
   ok(V.guard(demo, sa('demo-venue-kb'), 'demo-venue-kb') === 'demo-venue-kb', 'guard: a venue\'s own environment and service account pass');
   let said = '';
-  try { V.guard(home, sa('demo-venue-kb'), ''); } catch (e) { said = e.message; }
+  try { V.guard(home, sa('demo-venue-kb'), 'leichhardt-kitchen'); } catch (e) { said = e.message; }
   ok(said && !/PRIVATE KEY|made-up|demo-venue-kb/.test(said), 'guard: the refusal names no secret and no other project');
   ok(V.scriptProject({}) === 'leichhardt-kitchen' && V.scriptProject({ VENUE: 'leichhardt' }) === 'leichhardt-kitchen' && throws(() => V.scriptProject({ VENUE: 'nowhere' }), /no venue/), 'server scripts: Leichhardt without VENUE, and an unknown venue refused');
 
