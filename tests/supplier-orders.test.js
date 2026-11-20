@@ -90,7 +90,8 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   p = await L.open(b, '#/todo', { who: 'sam', extra: extra(tickOf('veg', 'sam', L.NOW - 600000)), wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('.todo-cut .cut-mark'), null, 10000);
   ok(/Supplier orders today/.test(await txt(p, '.todo-cut')), 'Chef to-do: Supplier orders today at the top');
-  ok(!(await p.$('.todo-cut button, .todo-cut [data-p="cut-tick"]')) && /Ordered by Sam/.test(await txt(p, '.todo-cut li:nth-child(3)')) && /✓/.test(await txt(p, '.todo-cut li:nth-child(3) .cut-mark')), 'Chef to-do: Veg shows ticked by Sam, with no tick box to tap');
+  // a supplier mark, not a box (the consistency sweep, step 3, 20 Nov 2026): nothing to tap, Ordered by Sam in its words
+  ok(!(await p.$('.todo-cut button, .todo-cut [data-p="cut-tick"], .todo-cut .cut-box')) && /Ordered by Sam/.test(await txt(p, '.todo-cut li:nth-child(3)')) && await p.$eval('.todo-cut li:nth-child(3) .cut-mark', e => e.getAttribute('aria-hidden') === 'true' && !!e.querySelector('svg') && e.closest('li').classList.contains('is-done')), 'Chef to-do: Veg shows ordered by Sam, with a supplier mark and no tick box to tap');
   ok(!!(await p.$('.todo-cut a[href="#/orders"]')) && /Tick them on the order list/.test(await txt(p, '.todo-cut')), 'Chef to-do: says where to tick them, with a link');
   ok(!(await L.overflow(p)), 'Chef to-do: fits a phone');
   ok(p.errors.length === 0, 'Chef to-do: no page errors ' + p.errors.join(' | '));

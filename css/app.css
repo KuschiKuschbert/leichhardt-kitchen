@@ -55,6 +55,16 @@
 .dl-sign-note, .dl-hidden-note { margin: -.4rem 0 0; color: var(--small-ink); font-weight: 600; }
 .dl-form .dl-add-note { padding-left: 0; }
 .dl-actions .btn[type="submit"] { flex: 1 1 12rem; }
+/* On a phone Save delivery and the line that says what happened dock above the tab bar while the form is on screen,
+   like Review order on the supplier sheet, and scroll away with the form. With the function band and the cut-off bar
+   showing, Save sat under the tab bar until you scrolled (consistency sweep, 19 Nov 2026, ORDE-1). */
+@media (max-width: 719px) {
+  .dl-dock { position: sticky; bottom: var(--tabbar-h); z-index: 6; margin-top: .4rem; padding: 6px 0 8px; background: var(--bg); border-top: 1px solid var(--line); }
+  .dl-dock .dl-message:empty { display: none; }
+  .dl-dock .dl-message, .dl-dock .dl-error { margin: 0 0 .4rem; }
+  .dl-dock .dl-actions { margin: 0; }
+  html:has(.dl-dock) { scroll-padding-bottom: calc(var(--tabbar-h) + 84px); }
+}
 .dl-waiting { margin: 1rem 0 0; padding-top: .9rem; border-top: 1px solid var(--line); color: var(--small-ink); }
 .dl-waiting b { color: var(--ink); }
 @media (max-width: 380px) { .dl-pair { grid-template-columns: 1fr; } }
@@ -468,7 +478,9 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 /* ---------- prep book (notebook) ---------- */
 .nb-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.4rem 1rem; font-size: 0.9375rem; }
 .nb-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
-.nb-nav .chip:first-child, .nb-nav .chip:last-child { min-width: 48px; font-size: 1.4rem; padding: 0; }
+/* The day control's ‹ and › (head chef, 20 Nov 2026, the consistency sweep, step 3): one step chip wherever a day or a
+   week is stepped (Prep, Orders, Cleaning's week, Today's team's week). dayNavHTML() in js/prep.js draws the day control. */
+.chip.nav-step { min-width: 48px; font-size: 1.4rem; padding: 0; }
 .nb-wrap { position: relative; display: flex; flex-direction: column; gap: 0.6rem; }
 .nb { display: flex; flex-direction: column; gap: 1rem; }
 .nb-page { --rule: #DDD5C5; display: flex; flex-direction: column; min-width: 0; background: var(--surface-paper); border: 1.5px solid var(--surface-work-edge); border-radius: 10px; padding: 0 1rem; position: relative; box-shadow: 0 6px 0 rgba(28,29,31,0.12); }
@@ -487,7 +499,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .nb-row { display: flex; align-items: center; gap: 0.6rem; min-height: 44px; padding: 3px 0; border-bottom: 1px solid var(--rule); font-family: 'Caveat', cursive; font-weight: 700; font-size: 1.65rem; line-height: 1.1; }
 .nb-box { flex: 0 0 34px; width: 34px; height: 34px; display: grid; place-items: center; padding: 0; border: 0; background: none; color: var(--ink); cursor: pointer; }
 .nb-box svg { width: 33px; height: 33px; }
-.nb-tt, .nb-main[data-p="tick"] { cursor: pointer; }
+.nb-tt, .nb-main[data-p="tick"], .nb-main[data-p="otick"] { cursor: pointer; }
 /* Not sent (27 Oct 2026): in a slot inside the words (.nb-mk), so on a phone it wraps with them like Urgent and never
    narrows them. Shown only while the No signal or Not sent yet strip is up. */
 .nb-unsent, .nb-held { display: inline-block; margin-left: 0.3rem; vertical-align: 0.25em; padding: 0 0.4rem; border-radius: 999px; background: var(--accent-ink); color: #fff; font: 700 0.75rem/1.5 var(--body); white-space: nowrap; }
@@ -2579,6 +2591,14 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fn-band-top:has(.fn-fold) { align-items: center; }
 .fn-fold { flex: 0 0 auto; margin-left: auto; width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1.5px solid var(--ink); border-radius: 50%; background: var(--paper); color: var(--ink); font-size: 1.35rem; font-weight: 600; line-height: 1; cursor: pointer; }
 .fn-band-n + .fn-fold { margin-left: 0; }
+/* the small round minus (head chef, 22 Oct 2026) takes a tap 44 px across, like the same minus on the Next function
+   line, without growing: the tap area reaches 4 px past the circle, into the band's own space (consistency sweep,
+   19 Nov 2026, SHEL-1) */
+.fn-band-top .fn-fold { position: relative; }
+.fn-band-top .fn-fold::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; z-index: 1; }
+/* "+N more", "Show fewer" and "Service view" the same way: drawn 36 px high, a tap 44 px high (SHEL-1) */
+.fn-band .fn-more { position: relative; }
+.fn-band .fn-more::after { content: ''; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px; z-index: 1; }
 .fn-band-top.is-fold { padding-bottom: 0.4rem; }
 .fn-band-top.is-fold .fn-band-h { flex: 0 0 auto; }
 .fn-band-sum { flex: 1 1 auto; min-width: 0; display: flex; gap: 1.1rem; white-space: nowrap; overflow: hidden; font-size: 0.95rem; }
@@ -2624,9 +2644,13 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .cut-box { width: 44px; height: 44px; padding: 0; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: #fff; font-size: 1.4rem; font-weight: 700; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
 .cut-box[aria-pressed="true"] { background: var(--done); border-color: var(--done); }
 .cut-box:disabled { opacity: 0.5; cursor: default; }
-/* Chef to-do shows the supplier orders without a tick (ticked on the order list only, 5 Nov 2026): the same box, not a button */
-.cut-mark { width: 30px; height: 30px; margin: 7px; border-width: 1.5px; font-size: 1rem; cursor: default; }
-.cut-o.is-done .cut-mark { background: var(--done); border-color: var(--done); }
+/* Chef to-do shows the supplier orders without a tick (ticked on the order list only, 5 Nov 2026). Since 20 Nov 2026 (the
+   consistency sweep, step 3) a supplier mark where the box was, not an empty box: quiet ink like Prep's calendar for a
+   planned line (.pa-cal), green once the order is in. */
+.cut-o .cut-mark { grid-area: box; width: 44px; height: 44px; display: grid; place-items: center; color: var(--muted); cursor: default; }
+.cut-mark svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.cut-mark svg circle { fill: var(--paper); }
+.cut-o.is-done .cut-mark { color: var(--done-ink); }
 .cut-tl li.is-done .cut-n, .cut-tl li.is-done .cut-t { color: var(--muted); }
 .cut-tl li.is-done .cut-st { color: var(--done-ink); }
 .cut-how { margin: 0 0 0.4rem; }
@@ -2936,7 +2960,7 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fe-gu { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 1rem; }
 .fn-late { color: var(--bad-ink); font-weight: 700; }
 .fn-sent { white-space: nowrap; }
-.fn-sent-b { min-height: 40px; padding: 0 0.8rem; }
+.fn-sent-b { min-height: 44px; padding: 0 0.8rem; }
 .fn-sent-ok { display: inline-flex; flex-direction: column; align-items: center; font-weight: 700; color: var(--done-ink); line-height: 1.2; margin-right: 0.4rem; }
 .fn-sent-ok small { font-weight: 400; color: var(--muted); }
 /* the order reminder and tomorrow's functions in the band, and the strip pinned to the top once the band scrolls away */
@@ -3999,6 +4023,12 @@ button.nb-prog { min-height: 44px; padding: 0; border: 0; background: none; curs
 .o-nav { align-items: center; flex-wrap: wrap; }
 /* the day arrows' big type (.nb-nav .chip:first-child/:last-child) is not for these chips */
 .nb-nav.o-nav .chip { min-width: 0; padding: 0 0.85rem; font-size: 0.875rem; }
+/* Orders' day control is Prep's (the consistency sweep, step 3, 20 Nov 2026): its chips keep Prep's look, not the
+   Orders chips' bolder type above. On a phone the control fills its row and Delivery received goes under it. */
+.o-nav .o-dayctl { display: flex; align-items: center; gap: 0.5rem; flex: 0 1 auto; min-width: 0; }
+.nb-nav.o-nav .o-dayctl .chip { font: inherit; font-weight: 600; font-size: 0.875rem; padding: 0 0.85rem; }
+.nb-nav.o-nav .o-dayctl .chip.nav-step { min-width: 48px; font-size: 1.4rem; padding: 0; }
+@media (max-width: 599px) { .o-nav .o-dayctl { flex: 1 1 100%; } }
 .o-nav .o-deliv { display: inline-flex; align-items: center; color: var(--ink); text-decoration: none; }
 .o-ro { padding: 0 12px; }
 .o-done summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; list-style: none; }
@@ -4246,6 +4276,10 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .cut-band .cut-h { color: var(--bar-accent); }
 .cut-band .cut-go, .cut-band .cut-n { color: var(--bar-text); }
 .cut-band .cut-go:focus-visible, .cut-band .cut-n:focus-visible { outline: 3px solid var(--bar-accent); outline-offset: 2px; }
+/* the supplier's name takes a tap 44 px high, as it does in Orders' cut-off fold, without making the bar taller: the tap
+   area reaches into the row's own space above and below the name (consistency sweep, 19 Nov 2026, SHEL-2) */
+.cut-band .cut-n { position: relative; }
+.cut-band .cut-n::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 44px; transform: translateY(-50%); z-index: 1; }
 .cut-band .cut-t { color: rgba(251, 248, 241, 0.78); }
 .cut-band .cut-t b { color: var(--bar-text); }
 .cut-band .cut-row + .cut-row { border-top-color: rgba(251, 248, 241, 0.16); }
@@ -5298,7 +5332,6 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .cln-empty .nb-empty { color: var(--muted); }
 .cln-empty .hint { margin: -.5rem 0 .75rem; }
 .cln-week-nav { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .6rem; }
-.cln-week-nav > .chip { width: 44px; padding: 0; font-size: 1.5rem; }
 .cln-week-nav > span { font-weight: 600; font-size: .9375rem; }
 .cln-week-nav > .p-link { margin-left: auto; font-size: .8125rem; }
 .cln-legend { margin: .5rem 0 .7rem; line-height: 1.5; }
@@ -5460,6 +5493,8 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .tm-weekbar { display: flex; align-items: center; gap: .3rem; margin-bottom: .35rem; }
 .tm-weekbar > span { flex: 1 1 auto; min-width: 0; text-align: center; font-size: .875rem; font-weight: 600; overflow-wrap: anywhere; }
 .tm-weekbar .chip { flex: 0 0 auto; min-width: 44px; min-height: 44px; padding: .4rem .65rem; }
+/* the week arrows are the shared step chips (the consistency sweep, step 3, 20 Nov 2026) */
+.tm-weekbar .chip.nav-step { min-width: 48px; padding: 0; }
 .tm-weekscroll { min-width: 0; overflow-x: auto; scrollbar-width: thin; }
 .tm-weekscroll.has-more { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1rem), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 1rem), transparent); }
 .tm-weekdays { display: grid; grid-template-columns: repeat(7, minmax(44px, 1fr)); min-width: 320px; gap: 2px; }

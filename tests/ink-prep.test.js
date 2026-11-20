@@ -57,7 +57,7 @@ const { R, ok } = L.results();
     await L.waitFor(p, () => !window.LK_PREP.state.nSaving);
     // 4 Nov 2026: Saved with a tick on the button for 1.2 s after the acknowledgement, then the editor closes
     await L.waitFor(p, () => !window.LK_PREP.state.nOpen);
-    ok(await p.evaluate(() => /^Saved\. Shows:/.test(window.LK_PREP.state.nMsg) && !window.LK_PREP.state.nOpen), 'acknowledgement closes the editor and reports Saved');
+    ok(await p.evaluate(() => /^Saved: .+\. Shows:/.test(window.LK_PREP.state.nMsg) && !window.LK_PREP.state.nOpen), 'acknowledgement closes the editor and reports Saved');
     ok(await p.evaluate(text => Object.entries(window.__fake.dump()).filter(([key, value]) => /\/notes\/[^/]+$/.test(key) && value.text === text).length, ping) === 1, 'one ping is written');
     ok(p.errors.length === 0, 'ping save has no browser errors ' + p.errors.join(' | '));
     await p.context().close();

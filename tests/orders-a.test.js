@@ -44,9 +44,10 @@ extra[fsKey(['orders', today, 'lines', 'r-f1'])] = { text: 'Flour', qty: '2 bags
   await p.click('.o-done summary'); await L.settle(p, 200);
   ok(await p.evaluate(() => document.querySelector('.o-done').open && document.querySelectorAll('.o-done .nb-done li').length === 1), 'a tap opens it');
   await p.fill('#o-day', back(1)); await L.settle(p, 600);
-  ok(/Back to today/.test(await txt(p, '.o-nav') || '') && !(await p.$('.o-deliv')) && !(await p.$('[data-p="o-write"]')), 'chef: another day from the date chip, with Back to today and no Add request');
+  // Prep's day control since 20 Nov 2026 (the consistency sweep, step 3): Today, not pressed, in place of Back to today
+  ok(await p.getAttribute('.o-nav [data-p="otoday"]', 'aria-pressed') === 'false' && !(await p.$('.o-deliv')) && !(await p.$('[data-p="o-write"]')), 'chef: another day from the date chip, with Today not pressed and no Add request');
   await p.click('.o-nav [data-p="otoday"]'); await L.settle(p, 500);
-  ok(await p.inputValue('#o-day') === today && !!(await p.$('.o-deliv')), 'Back to today');
+  ok(await p.inputValue('#o-day') === today && !!(await p.$('.o-deliv')) && await p.getAttribute('.o-nav [data-p="otoday"]', 'aria-pressed') === 'true', 'Today brings today back');
   ok(!(await L.overflow(p)) && p.errors.length === 0, 'chef phone: no sideways scroll, no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

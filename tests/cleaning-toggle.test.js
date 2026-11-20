@@ -113,7 +113,8 @@ async function save(p) {
     ok(enabled.staffSee.cleaning === true && enabled.staffSee.guides === false && enabled.staffSee.pings === true && enabled.staffSee.minutes === false, 'admin: Save releases Cleaning and preserves the other page settings');
     const staff = await open(b, '#/', { extra: { ...extra, [CFG]: enabled } });
     try {
-      ok(await shown(staff, '.tabbar a[href="#/cleaning"], .pnav a[href="#/cleaning"]') && await menuLink(staff), 'saved release: staff see Cleaning in the navigation and chef hat');
+      // the chef hat has no Cleaning row since 20 Nov 2026 (the consistency sweep, step 3): the tab is the way in
+      ok(await shown(staff, '.tabbar a[href="#/cleaning"], .pnav a[href="#/cleaning"]') && !(await menuLink(staff)), 'saved release: staff see the Cleaning tab, and the chef hat does not repeat it');
       ok(!(await reads(staff)).length, 'saved release: visibility does not preload private cleaning data');
       await route(staff, '#/cleaning'); await loaded(staff);
       ok(!(await shown(staff, '[data-cln="setup"], [data-cln="week"]')), 'saved release: staff receive daily ticks without chef setup controls');

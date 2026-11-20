@@ -253,7 +253,7 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     const writes = () => S(p, () => window.__fake.writes.length), w0 = await writes();
     ok(await disabled(p, '[data-p="todo-save"]') === true, 'to-do: Save changes is off on a job not changed');
     await force(p, '[data-p="todo-save"]'); await L.settle(p, 600);
-    ok(await writes() === w0 && !/Job saved/.test(await txt(p, '.p-toast') || ''), 'to-do: an unchanged Save changes writes nothing');
+    ok(await writes() === w0 && !/Saved/.test(await txt(p, '.p-toast') || ''), 'to-do: an unchanged Save changes writes nothing');
     await p.fill('[data-k="todo-text"]', 'Order 6 new tongs'); await L.settle(p, 150);
     ok(await disabled(p, '[data-p="todo-save"]') === false, 'to-do: a change turns Save changes on');
     // the job already open carries on with its changes
