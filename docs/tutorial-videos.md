@@ -171,8 +171,10 @@ The head chef asked for the videos in Guides: the ones staff use for everyone, c
 
 **Adding the links (the head chef)**
 1. Upload each MP4 to YouTube as **Unlisted** (not Private: a private video does not play for the team). Unlisted videos do not show in YouTube search; anyone with the link can watch.
-2. Admin, Kitchen, Guides, **Video tutorials**: one row per video, Computer (wide) and Phone (tall). Paste the link from YouTube's Share button. youtu.be, watch, shorts and embed links all work.
-3. Save video links. A box that is not a YouTube link is marked, and Save names it.
+2. Admin, Kitchen, Guides, **Video tutorial links** jumps straight to the editor. **Change the video links** on a video guide opens the same editor. Each video has one row with Computer (wide) and Phone (tall). Paste the link from YouTube's Share button. youtu.be, watch, shorts and embed links all work.
+3. **Go to Save video links** jumps to the end of the form. A box that is not a YouTube link is marked, and Save names it.
+
+**Quick check, 22 November 2026.** Build smaller. From Manage Guides, one tap reaches the editor, and one tap from its heading reaches Save. The shortcuts use the usual admin scroll position and move keyboard focus to the destination. All 42 fields stay in the same form, and saved links still use the staff and chefs records.
 
 **How it is kept**
 - `kitchens/<PIN>/tutorials/staff` and `tutorials/chefs`, each `{ links: { <video>: { w, t } }, at, by }`: w the wide video's id, t the tall one's. Only the 11-character YouTube id is kept, never the link as typed, and the book plays only an id.

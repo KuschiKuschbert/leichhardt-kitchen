@@ -31,9 +31,19 @@ const mins = (no, date, decisions, x) => Object.assign({ no, v: 1, status: 'publ
   ok(/Sign as Ann/.test(await txt(p, '.mn-signbtn') || ''), 'the button says who signs');
   ok(await p.evaluate(() => document.querySelectorAll('.mn-tbl tr.is-mine').length) === 2, 'Ann\'s own and everyone\'s actions are marked Yours');
   ok(/Your actions: 2/.test(await txt(p, '.mn-sign') || ''), 'the sign box counts her actions');
+  const jump = p.locator('[data-p="mn-sign-jump"]');
+  const trail = await p.evaluate(() => [location.hash, history.length]);
+  await jump.press('Enter');
+  ok(await p.evaluate(() => document.activeElement.id === 'mn-sign-heading'), 'Go to sign-off gives focus to the heading beside the existing attestation');
+  ok(JSON.stringify(await p.evaluate(() => [location.hash, history.length])) === JSON.stringify(trail), 'the jump keeps the selected minutes and browser history');
+  ok(!(await p.evaluate(k => window.__fake.dump()[k], fsKey(['minutes', 'mold', 'signs', '1_ann']))), 'the jump does not sign the minutes');
+  await p.emulateMedia({ media: 'print' });
+  ok(await jump.isHidden() && await p.locator('.mn-doc').isVisible(), 'print keeps the minutes and omits the jump');
+  await p.emulateMedia({ media: 'screen' });
   await p.click('.mn-signbtn');
   await L.settle(p, 800);
   ok(!!(await p.evaluate(k => window.__fake.dump()[k], fsKey(['minutes', 'mold', 'signs', '1_ann']))), 'one tap signs them');
+  ok(await jump.count() === 0, 'the jump is gone after sign-off is acknowledged');
   await p.context().close();
 
   // minutes 4 days old and not signed: the slim row on the landing page, never on the prep list
@@ -72,6 +82,7 @@ const mins = (no, date, decisions, x) => Object.assign({ no, v: 1, status: 'publ
   p = await L.open(b, '#/minutes', { who: 'ann', extra: one, wait: 1800, failReads: '/minutes/[^/]+/signs/' });
   await L.waitFor(p, () => /Could not check/.test((document.querySelector('.mn-sign') || {}).textContent || ''), null, 5000).catch(() => {});
   ok(/Could not check your sign-off\. Open the minutes again in a few minutes\./.test(await txt(p, '.mn-sign') || ''), 'own sign-off not read: the sign box says it could not check and what to do (' + await txt(p, '.mn-sign') + ')');
+  ok(await p.locator('[data-p="mn-sign-jump"]').count() === 0, 'own sign-off not read: the document has no jump to an unavailable action');
   for (const h of ['#/prep', '#/minutes', '#/prep', '#/minutes']) { await p.evaluate(x => { location.hash = x; }, h); await L.settle(p, 400); }
   const asked = await p.evaluate(() => window.__fake.reads.filter(k => /\/minutes\/mone\/signs\//.test(k)).length);
   ok(asked === 1, 'own sign-off not read: asked once, not again on every redraw (' + asked + ')');
