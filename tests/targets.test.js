@@ -6,12 +6,12 @@ const { R, ok } = L.results();
   const b = await L.start();
   const p = await L.open(b, '#/admin', { admin: true, width: 1280, height: 900, wait: 1800 });
   if (L.adminTab) await L.adminTab(p, 'people'); else { await p.click('[data-p="a-tab"][data-t="people"]'); await L.settle(p, 300); }
-  // People rows (the mix, 19 Nov 2026): the name opens one person; their fields, ticks and the row's buttons keep the sizes
+  // The name opens one editor. Its fields, ticks and buttons keep the target sizes.
   await L.tap(p, '[data-p="a-person-open"][data-id="ann"]'); await L.settle(p, 200);
   const m = await p.evaluate(() => {
     const h = s => { const e = document.querySelector(s); return e ? Math.round(e.getBoundingClientRect().height) : -1; };
-    return { name: h('.pp-row.is-open .a-name'), sel: h('.pp-row.is-open .p-select + .ux-picker-trigger'), cb: h('.pp-row.is-open input[type=checkbox]'), tk: h('.pp-row.is-open .pp-tk'),
-      open: h('.pp-row:not(.is-open) [data-p="a-person-open"]'), pin: h('.pp-row:not(.is-open) [data-p="a-reset-pin"]'), leave: h('.pp-row.is-open [data-p="a-remove-person"]'), del: h('.pp-row.is-open [data-p="a-delete-person"]'),
+    return { name: h('#pp-editor .a-name'), sel: h('#pp-editor .p-select + .ux-picker-trigger'), cb: h('#pp-editor input[type=checkbox]'), tk: h('#pp-editor .pp-tk'),
+      open: h('.pp-row:not(.is-open) [data-p="a-person-open"]'), pin: h('#pp-editor [data-p="a-reset-pin"]'), leave: h('#pp-editor [data-p="a-remove-person"]'), del: h('#pp-editor [data-p="a-delete-person"]'),
       faint: getComputedStyle(document.documentElement).getPropertyValue('--faint').trim() };
   });
   ok(m.name >= 44 && m.sel >= 44, 'admin: name fields and role menus are 44 px (' + m.name + ', ' + m.sel + ')');

@@ -24,7 +24,10 @@ extra[CFG] = Object.assign({}, L.seed()[CFG], { kitSecs: SECS });
 const tsum = to => { const days = []; for (let i = 1; i <= 30; i++) days.push({ day: ago(i), s: [{ p: 'sam', sec: i % 4 === 1 ? 'Grill' : 'Larder', sh: 'lunch' }, { p: 'ann', sec: 'Grill', sh: 'lunch' }] }); return { v: 1, at: L.NOW - 11 * 3600000, day: ago(0), from: ago(30), to: ago(to), days, usual: {}, learn: {} }; };
 extra[fsKey(['teamsum', 'main'])] = tsum(1);
 const shiftLine = p => p.evaluate(() => { const e = [...document.querySelectorAll('.a-personpage p')].filter(x => /shift/i.test(x.textContent))[0]; return e ? { t: e.textContent, err: e.classList.contains('p-err') } : null; });
-const openPage = async (p, id) => { if (!await p.$('[data-p="a-person"][data-id="' + id + '"]')) { await L.tap(p, '[data-p="a-person-open"][data-id="' + id + '"]'); await L.settle(p, 200); } await L.tap(p, '[data-p="a-person"][data-id="' + id + '"]'); };   // Open page sits in the opened row (19 Nov 2026)
+const openPage = async (p, id) => {
+  await L.openPerson(p, id);
+  await p.locator('#pp-editor [data-p="a-person"][data-id="' + id + '"]').click();
+};
 (async () => {
   const b = await L.start();
   for (const width of [390, 1280]) {
@@ -34,7 +37,7 @@ const openPage = async (p, id) => { if (!await p.$('[data-p="a-person"][data-id=
     // the Team report has read its days; the person page reads nothing more
     await L.adminTab(p, 'people'); await L.settle(p, 600);
     const before = await p.evaluate(() => window.__fake.reads.length);
-    await L.tap(p, '[data-p="a-person-open"][data-id="sam"]'); await L.settle(p, 200);   // Change opens Sam in place (19 Nov 2026)
+    await L.openPerson(p, 'sam');
     ok(await p.locator('[data-p="a-person"][data-id="sam"]').count() === 1, width + ': a saved person, opened, has Open Sam\'s page');
     await openPage(p, 'sam'); await L.settle(p, 500);
     const page = await L.txt(p, '.a-personpage') || '';
@@ -57,7 +60,6 @@ const openPage = async (p, id) => { if (!await p.$('[data-p="a-person"][data-id=
     // the top bar's Back goes back to the list, and so does changing page
     await p.click('.wtop [data-act="back"]'); await L.settle(p, 300);
     ok(await p.evaluate(() => !LK_PREP.state.personId) && await p.locator('[data-p="a-person"][data-id="sam"]').count() === 1, width + ': Back returns to all people');
-    await L.tap(p, '[data-p="a-person-open"][data-id="ann"]'); await L.settle(p, 200);
     await openPage(p, 'ann'); await L.settle(p, 300);
     await L.adminTab(p, 'insights'); await L.settle(p, 300);
     await L.adminTab(p, 'people'); await L.settle(p, 300);
@@ -65,7 +67,6 @@ const openPage = async (p, id) => { if (!await p.$('[data-p="a-person"][data-id=
     // an unsaved change in the list keeps its Save bar on a person's page
     await p.evaluate(() => { const c = document.querySelector('[data-a="perm"][data-perm="del"][data-i="1"]'); if (c) c.click(); });
     await L.settle(p, 300);
-    await L.tap(p, '[data-p="a-person-open"][data-id="bo"]'); await L.settle(p, 200);
     await openPage(p, 'bo'); await L.settle(p, 300);
     ok(await p.locator('[data-p="a-save"]').count() === 1, width + ': an unsaved change in the list keeps its Save bar on the person page');
     const bo = await L.txt(p, '.a-personpage') || '';
