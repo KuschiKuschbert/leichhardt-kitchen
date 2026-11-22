@@ -4,6 +4,8 @@
 
 - **22 November 2026, reach Before service items sooner.** Keep one title and group the section chooser, search and read time with the existing Prep reference controls. [Section prep standards](prep-standards.md#what-it-does)
 
+- **22 November 2026, compact People roster and focused editor.** Put Name, Role and Permissions in columns on a wide screen. A name opens the editor alongside the list, or takes the page on a phone with Back to the same list. Reset PIN sits in the selected person's editor. [Decision and checks](people-room-options/brief.md#compact-roster-and-focused-editor-22-november-2026).
+
 - **22 November 2026, Sunday sales suggestions stay in Supplier order.** The head chef chose A's inline suggestion, B's visible current amount in a **Keep** or **Replace** step and C's calculation and return of focus to **To order**. One weekly POS export and confirmed links support the chef's draft. The head chef or verified admin publishes the report and manages links. The chef places the order with the supplier. [Decision, council and pending release checks](supplier-sales.md)
 - **22 November 2026, two guide pages fit beside each other.** A guide with two pages shows both page buttons on screen. Either one opens its page at full reading size. The printed pages keep their usual order. [Guides](prep-book.md#guides)
 

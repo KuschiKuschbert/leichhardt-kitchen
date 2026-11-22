@@ -731,35 +731,49 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .a-table .p-select { min-height: 40px; }
 .a-table .a-act { white-space: nowrap; text-align: right; }
 .a-table .a-act .p-x { margin-left: 0.3rem; }
-/* The People page (head chef, 19 Nov 2026, the council's mix, docs/people-room-options/brief.md): one row a person in
-   words, one person open in place on paper with the people edge (never a sage fill, which could read as done), the state
-   in words, a deleted row struck through until Save. */
+/* People: one roster in words, paper and a sage edge for the open editor, and the draft state beside each name. */
 .lv-tool { flex: 0 0 auto; align-self: flex-end; }
 .lv-tool .btn { min-height: 44px; }
+.pp-workspace { display: grid; grid-template-columns: minmax(0, 1fr); }
+.pp-room .lv-tools { flex-wrap: wrap; align-items: stretch; gap: .5rem; }
+.pp-room .lv-qw { flex: 1 1 12rem; }
+.pp-room .lv-qw .ux-search > .lv-q:placeholder-shown { padding-right: .65rem !important; }
+.pp-room .lv-tools > :is(.lv-chips, .lv-sort, .lv-tool) { flex: 0 1 auto; min-width: 0; }
+.pp-room .lv-chips.scroll { flex-wrap: wrap; overflow: visible; padding: 0; -webkit-mask-image: none; mask-image: none; }
+.pp-room .lv-chips.scroll::after { display: none; }
+.pp-room .lv-sort > span:not(.ux-choice-source) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.pp-room .lv-sort select { min-width: 0; }
+.pp-room .lv-sort .ux-picker-trigger { flex: 1; font: 600 1rem/1.3 var(--body); letter-spacing: normal; text-transform: none; }
+.pp-room .lv-tool { display: flex; align-self: stretch; }
+.pp-room .lv-cards { gap: 0; border-top: 2px solid var(--ink); }
+.pp-head { display: none; }
 .pp-row { border-bottom: 1px solid var(--line); list-style: none; }
-.lv-cards:has(> .pp-row) { gap: 0; }
-.lv-cards > .pp-row:first-child { border-top: 2px solid var(--ink); }
-.pp-row.is-open { background: var(--paper); box-shadow: inset 4px 0 0 var(--surface-people-edge); border-top: 1.5px solid var(--surface-people-edge); }
-.pp-main { display: flex; align-items: center; gap: 0.7rem; min-height: 56px; padding: 0.5rem 0.4rem; }
+.pp-row.is-open { background: var(--paper); box-shadow: inset 4px 0 0 var(--surface-people-edge); }
+.pp-main { display: grid; grid-template-columns: 36px minmax(0, 1fr); align-items: center; column-gap: .7rem; min-height: 56px; padding: 0 .4rem .2rem; }
 .pp-main .st-av { margin-top: 0; }
-.pp-w { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.pp-w { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: center; min-width: 0; }
+.pp-identity { display: grid; justify-items: start; min-width: 0; }
 .pp-n { font-size: 1.05rem; overflow-wrap: anywhere; }
-.pp-name-toggle.p-link { display: grid; align-content: center; align-self: flex-start; gap: 1px; max-width: 100%; min-height: 44px; text-align: left; text-decoration: none; font-weight: 400; }
+.pp-name-toggle.p-link { display: flex; align-items: center; gap: .25rem; min-width: 44px; max-width: 100%; min-height: 44px; padding: 0; text-align: left; text-decoration: none; font-weight: 400; }
 .pp-name-toggle .pp-n { font-weight: 700; text-decoration: underline; }
-.pp-can { color: var(--muted); font-size: 0.875rem; }
-.pp-st { color: var(--accent-ink); font-size: 0.84rem; font-weight: 700; }
+.pp-can { grid-column: 2; color: var(--muted); font-size: .875rem; overflow-wrap: anywhere; }
+.pp-st { color: var(--accent-ink); font-size: .84rem; font-weight: 700; overflow-wrap: anywhere; }
 .pp-st.is-off { color: var(--muted); }
 .pp-st.is-bad { color: var(--bad-ink); }
 .pp-row.is-off .pp-n, .pp-row.is-gone .pp-n { color: var(--muted); }
 .pp-row.is-gone .pp-n { text-decoration: line-through; }
-.pp-acts { flex: none; display: flex; align-items: center; gap: 0.6rem; }
-.pp-acts .btn, .pp-acts .p-x { min-height: 44px; }
-.pp-pin { display: inline-flex; align-items: center; padding: 0 0.3rem; }
-.pp-ed { display: grid; gap: 0.6rem; padding: 0.2rem 0.7rem 1rem 3.6rem; }
+.pp-editor { min-width: 0; padding: 1rem; border-top: 3px solid var(--surface-people-edge); background: var(--paper); overflow-wrap: anywhere; }
+.pp-editor-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: .25rem .6rem; margin-bottom: .7rem; }
+.pp-editor-head h3 { margin: 0; font: 700 1.75rem/1.15 var(--display); }
+.pp-editor-head h3:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.pp-editor-head .pp-back { display: none; }
+.pp-editor .pp-acts { display: grid; justify-items: start; gap: .15rem; }
+.pp-pin { display: inline-flex; align-items: center; min-height: 44px; max-width: 100%; }
+.pp-ed { display: grid; gap: .65rem; }
 .pp-two { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; }
 .pp-f { display: grid; gap: 0.25rem; flex: 1 1 14rem; max-width: 22rem; min-width: 0; }
-.pp-f .a-name, .pp-f .p-select { width: 100%; min-height: 44px; }
-.pp-ticks { display: flex; flex-wrap: wrap; gap: 0.1rem 1.4rem; margin: 0; padding: 0; border: 0; }
+.pp-f :is(.a-name, .p-select, .ux-picker-trigger) { width: 100%; min-height: 44px; }
+.pp-ticks { display: flex; flex-wrap: wrap; gap: 0.1rem 1.4rem; min-width: 0; margin: 0; padding: 0; border: 0; }
 .pp-ticks legend { margin-bottom: 0.2rem; padding: 0; }
 .pp-tk { display: inline-flex; align-items: center; gap: 0.45rem; min-height: 44px; font-weight: 600; }
 .pp-tk input { width: 28px; height: 28px; }
@@ -769,11 +783,37 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .pp-lv { display: flex; flex-wrap: wrap; gap: 0.2rem 1.2rem; }
 .pp-lv .p-x, .pp-end .p-link { display: inline-flex; align-items: center; min-height: 44px; }
 .pp-end { margin: 0; }
+@media (min-width: 1000px) {
+  .pp-room { --pp-columns: minmax(0, 1.1fr) minmax(0, .72fr) minmax(0, 1.25fr); }
+  .pp-workspace.has-editor { grid-template-columns: minmax(0, 1fr) minmax(17.5rem, .62fr); align-items: start; gap: clamp(1rem, 2vw, 1.8rem); }
+  .pp-workspace.has-editor .lv-qw { flex-basis: 9rem; }
+  .pp-head, .pp-main { display: grid; grid-template-columns: var(--pp-columns); column-gap: .7rem; }
+  .pp-head { padding: .45rem .4rem; border-bottom: 1px solid var(--line); color: var(--muted); font: 700 .78rem/1.2 var(--display); letter-spacing: .05em; text-transform: uppercase; }
+  .pp-head > :first-child { padding-left: calc(36px + .7rem); }
+  .pp-main { min-height: 0; padding-block: .18rem; }
+  .pp-w { grid-column: 1; grid-template-columns: 36px minmax(0, 1fr); column-gap: .7rem; }
+  .pp-can { display: grid; grid-column: 2 / -1; grid-template-columns: subgrid; align-items: center; }
+  .pp-sep { display: none; }
+  .pp-editor { position: sticky; top: calc(var(--fn-stick, 0px) + var(--upd-h, 0px) + 1rem); max-height: calc(100dvh - var(--fn-stick, 0px) - var(--upd-h, 0px) - 6.5rem); overflow-y: auto; }
+  .pp-editor-head .pp-back { display: inline-flex; align-items: center; min-height: 44px; }
+}
+@media (max-width: 999px) {
+  .pp-room:has(.pp-editor) > :is(.label, .a-nohead, .pp-folds),
+  .pp-workspace.has-editor > .lv,
+  .p-admin.ad-admin:has(.pp-room .pp-editor) :is(.a-nav, .ad-heading, .ad-main > .a-tabs, .ad-main > .a-onpage, .a-pane > :not(.pp-room, .a-savebar)),
+  .p-admin.ad-admin:has(.pp-room .pp-editor) > .p-bar { display: none; }
+  .p-admin.ad-admin .a-pane .pp-room:has(.pp-editor) { padding-top: .65rem; border-top: 0; }
+  .pp-editor { padding: .8rem 0 .2rem; background: transparent; }
+}
 .a-gone { align-self: center; font-weight: 700; color: var(--bad-ink); }
 @media (max-width: 599px) {
   .lv-tools:has(.lv-tool) { flex-wrap: wrap; }
   .lv-tools:has(.lv-tool) .lv-tool { flex: 1 1 100%; }
-  .pp-ed { padding-left: 0.7rem; }
+  .pp-room .lv-qw { flex-basis: 10rem; }
+  .pp-room .lv-tools > :is(.lv-chips, .lv-sort) { flex: 1 1 40%; }
+  .pp-room .lv-tools > .lv-tool { flex: 0 1 auto; }
+  .pp-room .lv-tools :is(.lv-chips .ux-picker-trigger, .lv-sort select) { width: 100%; }
+  .p-admin.ad-admin .pp-room .lv-tool .btn { padding-inline: .6rem; font-size: .875rem; }
   /* the shared admin Save bar keeps its two buttons on one line, so less of the page is covered */
   .a-pane .set-block.a-savebar .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
   .a-pane .set-block.a-savebar .btn-row .btn { width: 100%; min-width: 0; white-space: normal; padding-left: 0.6rem; padding-right: 0.6rem; }

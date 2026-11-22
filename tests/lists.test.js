@@ -177,10 +177,10 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   await L.adminTab(p, 'people');
   await L.settle(p, 200);
   await L.openPerson(p, 1);
-  const cl = await p.evaluate(() => { const r = document.querySelector('.pp-row.is-open .pp-tk').getBoundingClientRect(); return [r.width, r.height]; });
+  const cl = await p.evaluate(() => { const r = document.querySelector('#pp-editor .pp-tk').getBoundingClientRect(); return [r.width, r.height]; });
   ok(cl[0] >= 44 && cl[1] >= 44, 'admin: permission tick boxes are 44x44 ' + JSON.stringify(cl));
   await L.openPerson(p, 0);
-  await p.click('.pp-row.is-open .pp-tk >> nth=2');   // Sam's Remove
+  await p.click('#pp-editor .pp-tk >> nth=2');   // Sam's Remove
   await L.settle(p, 100);
   ok(await p.evaluate(() => window.LK_PREP.state.draft.people[0].del === false), 'admin: tapping the cell toggles the box');
   await p.context().close();

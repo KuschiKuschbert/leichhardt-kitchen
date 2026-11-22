@@ -85,10 +85,9 @@ const { R, ok } = L.results();
   }
   const p = await L.open(b, '#/admin', { admin: true, adminPage: 'people', width: 1280, wait: 1400 });
   await L.adminTab(p, 'people');
-  // People is a list of rows since 19 Nov 2026 (the council's mix): its search, sort, filter and Reset All Filters are the
-  // shared list tools; a table's header sort and column filters are checked on the council records (council-tables.test.js)
+  // People uses the shared search, sort, filter and Reset All Filters controls. The council records test column filters.
   const rows = '[data-lvb="people"] .pp-row', sort = p.locator('[data-k="lv-s:people"]');
-  ok(await p.locator('[data-lv="people"] [data-p="lv-col"]').count() === 0 && await p.locator('[data-k="lv-cf:people"]').count() === 0, 'admin: People has no table header or second Role filter, one Everyone filter');
+  ok(await p.locator('[data-lv="people"] [data-p="lv-col"]').count() === 0 && await p.locator('[data-k="lv-cf:people"]').count() === 0, 'admin: People has one sort and one Everyone filter');
   await L.pick(p, '[data-k="lv-s:people"]', 'name'); await L.settle(p, 200);
   ok((await p.locator(rows + ' .pp-n').allTextContents())[0] === 'Ann', 'admin: Name A to Z sorts the rows (' + (await p.locator(rows + ' .pp-n').allTextContents()).join(', ') + ')');
   await L.pick(p, '[data-k="lv-s:people"]', 'order'); await L.settle(p, 200);
