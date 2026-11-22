@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Sunday sales suggestions in Supplier order, 22 November 2026 (chosen)
+
+The head chef chose A's inline amount and Use, B's visible current amount in a Keep or Replace step and C's calculation disclosure and focus on the draft field. Round 1 was Build smaller, four of five. All six round 2 reviewers ranked A first. One weekly CSV or XLSX and confirmed links feed the chef's manual draft. A single private weekly snapshot serves authorised chefs. [Design, preview measurements, data contract and pending checks](supplier-sales.md)
+
 ## Consistency sweep, 19 November 2026 (council, not chosen yet)
 
 The head chef asked whether to restyle every page for consistency. Nine auditors and nine verifiers checked every page against `docs/design-patterns.md` and the colour contracts (main `83f8ddd`, 390, 768 and 1280 px). They found 126 findings: 102 confirmed, 16 deliberate and 8 refuted. None needs a page redrawn, and 4 touch service. Round 1 said Build smaller, 3 of 5; the other 2 said Don't build the restyle. The recommendation is no restyle, but a sweep in four grouped pull requests: the service fixes, one failed-read and empty state, the head chef's 25 choices with a stronger `tests/design-patterns.test.js`, then names and the cosmetic tidy. `docs/consistency-sweep-options/brief.md`, register in its `findings.md`.

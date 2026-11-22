@@ -3,7 +3,7 @@ const L = require('./lib');
 const F = require('./supplier-fixtures');
 const { R, ok } = L.results();
 const supplierUrls = p => p.urls.filter(url => /\/js\/(suppliers|supplier-core|supplier-store)\.js(?:\?|$)/.test(url));
-const revision = (p, file) => supplierUrls(p).filter(url => new URL(url).pathname.endsWith('/js/' + file)).every(url => new URL(url).searchParams.get('v') === (file === 'suppliers.js' ? '29' : file === 'supplier-core.js' ? '8' : '8'));
+const revision = (p, file) => supplierUrls(p).filter(url => new URL(url).pathname.endsWith('/js/' + file)).every(url => new URL(url).searchParams.get('v') === (file === 'suppliers.js' ? '30' : file === 'supplier-core.js' ? '8' : '9'));
 const staleCore = () => { window.LK_SUP_CORE = { API: 3 }; window.LK_SUP_STORE = { API: 1 }; };
 
 async function openCutoffs(p) {
@@ -17,7 +17,7 @@ async function openCutoffs(p) {
   await L.waitFor(p, () => !!document.querySelector('input[data-sf="qty"]'), null, 15000);
   ok(supplierUrls(p).some(url => new URL(url).pathname.endsWith('/js/suppliers.js')) && revision(p, 'suppliers.js'), 'supplier page requests the revised workspace address');
   ok(supplierUrls(p).some(url => new URL(url).pathname.endsWith('/js/supplier-core.js')) && revision(p, 'supplier-core.js'), 'supplier page replaces an older core through the revised address');
-  ok(supplierUrls(p).some(url => new URL(url).pathname.endsWith('/js/supplier-store.js')) && revision(p, 'supplier-store.js') && await p.evaluate(() => window.LK_SUP_STORE.API === 5), 'supplier page replaces the older store before preserving reviewed units');
+  ok(supplierUrls(p).some(url => new URL(url).pathname.endsWith('/js/supplier-store.js')) && revision(p, 'supplier-store.js') && await p.evaluate(() => window.LK_SUP_STORE.API === 5 && window.LK_SUP_STORE.sales === 1), 'supplier page replaces the older store before preserving reviewed units');
   ok(await p.evaluate(() => window.LK_SUP.api === 12 && window.LK_SUP_CORE.API === 7), 'supplier page mounts only the matching workspace and core revision');
   ok(p.errors.length === 0, 'revised supplier page has no page errors ' + p.errors.join(' | '));
   await p.context().close();
@@ -29,7 +29,7 @@ async function openCutoffs(p) {
   await p.click('.cut-tl a.cut-n[href*="/northside/"]');
   await L.waitFor(p, () => !!document.querySelector('input[data-sf="qty"]'), null, 15000);
   ok(revision(p, 'supplier-core.js') && await p.evaluate(() => window.LK_SUP_CORE.API === 7), 'reminder entry replaces an old core with the current revision');
-  ok(revision(p, 'supplier-store.js') && await p.evaluate(() => window.LK_SUP_STORE.API === 5), 'detailed reminder entry replaces an older store too');
+  ok(revision(p, 'supplier-store.js') && await p.evaluate(() => window.LK_SUP_STORE.API === 5 && window.LK_SUP_STORE.sales === 1), 'detailed reminder entry replaces an older store too');
   ok(await p.evaluate(({ day, key }) => location.hash === '#/suppliers/cutoff/northside/' + day && !window.__fake.dump()[key], { day: F.today, key: F.key(['cutdone', F.today + '_northside']) }), 'revised reminder entry opens the linked sheet without recording an order');
   ok(p.errors.length === 0, 'revised reminder entry has no page errors ' + p.errors.join(' | '));
   await p.context().close();

@@ -45,7 +45,7 @@
 */
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import { doc, getDoc, getDocs, getDocFromServer, getDocsFromServer, onSnapshot, collection, query, where, orderBy, limit, documentId, startAfter,
-  setDoc, deleteDoc, writeBatch, increment, serverTimestamp, Timestamp, setLogLevel } from 'firebase/firestore';
+  setDoc, deleteDoc, writeBatch, runTransaction, increment, serverTimestamp, Timestamp, setLogLevel } from 'firebase/firestore';
 import { anonContext, dailySession, adminGrant, seedOwnerDevice, nextFour } from './device-auth-fixtures.mjs';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -89,6 +89,7 @@ const DB = Object.fromEntries(ALL.map(r => [r, anonContext(env, UID[r]).firestor
 const not = (...x) => ALL.filter(r => !x.includes(r));
 const KITCHEN = not('fay'), PINS = ALL, KPINS = not('fay'), GOOGLE = ['owner', 'ownkit'];
 const CHEFS = ['owner', 'ownkit', 'kit', 'sam'], CREW = ['ann', 'lou', 'vic', 'tab'];
+const HEAD_CHEFS = ['owner', 'ownkit', 'kit'];
 const ADDS = not('vic', 'fay'), TICKS = ADDS, DELS = ['owner', 'ownkit', 'kit', 'sam', 'lou'];   // can('add'), can('tick'), can('del')
 const MAIL = ['sam', 'ann', 'lou', 'vic', 'tab'];   // Kitchen mail in the chef hat: everyone signed in but the head chef
 const FNMGR = ['owner', 'fay'], FNCANCEL = ['owner', 'ownkit', 'kit', 'sam', 'fay'];   // fnOK(), fnCancelOK()
@@ -338,6 +339,21 @@ row('js/supplier-store.js: a supplier\'s own orders, including before lineage at
 row('js/supplier-store.js: inherited split history before its fixed cutoff (parent orders, bounded 21)', { ok: CHEFS, asks: CHEFS,
   run: db => getDocs(query(C(db, 'suppliers/s1/orders'), where('at', '<=', NOW), orderBy('at', 'desc'), limit(21))) });
 row('js/supplier-store.js: a cut-off\'s link (supplierlinks/<day>_<cut-off>)', { ok: CHEFS, asks: CHEFS, run: db => getDoc(D(db, `supplierlinks/${TODAY}_northside`)) });
+const SALES_PATH = 'suppliersales/weekly';
+const weeklySales = { v: 1, report: { start: kday(NOW - 7 * DAY), end: YDAY, rows: [{ name: 'Synthetic meal', qty: 20 }] }, links: [], at: NOW - MIN, by: 'kit' };
+row('js/supplier-store.js loadSales() and exportAll(): one private weekly sales document', { ok: CHEFS, asks: CHEFS,
+  prep: () => put({ [SALES_PATH]: weeklySales }), run: db => getDoc(D(db, SALES_PATH)) });
+function saveWeeklySales(db, who) {
+  const ref = D(db, SALES_PATH);
+  return runTransaction(db, async tx => {
+    const old = (await tx.get(ref)).data();
+    tx.set(ref, { ...weeklySales, v: old ? old.v + 1 : 1, at: NOW, by: who });
+  });
+}
+row('js/supplier-store.js saveSales(): first weekly sales report transaction', { ok: HEAD_CHEFS, asks: HEAD_CHEFS,
+  prep: () => put({ [SALES_PATH]: null }), run: saveWeeklySales });
+row('js/supplier-store.js saveSales(): next revision of the weekly sales report', { ok: HEAD_CHEFS, asks: HEAD_CHEFS,
+  prep: () => put({ [SALES_PATH]: { ...weeklySales, report: { ...weeklySales.report, rows: [{ name: 'Synthetic meal', qty: 19 }] } } }), run: saveWeeklySales });
 // the admin Backup (exportAll(), the Google device only): one row per list that has a rule of its own, so a rule
 // loosened for one of them shows on its own row. The lists every kitchen phone reads are rows above.
 const EXP_ALL = 'js/prep.js exportAll() (admin Backup): ';

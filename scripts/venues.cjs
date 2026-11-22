@@ -29,7 +29,10 @@ function fail(file, what) { throw new Error((file ? file + ': ' : '') + what); }
 function validVenue(v, file) {
   if (!v || typeof v !== 'object' || Array.isArray(v)) fail(file, 'not a venue');
   const keys = Object.keys(v);
-  if (keys.length !== FIELDS.length || !FIELDS.every(k => keys.includes(k))) fail(file, 'needs exactly these fields: ' + FIELDS.join(', '));
+  if (!FIELDS.every(k => keys.includes(k)) || keys.some(k => !FIELDS.includes(k) && k !== 'supplierSales')) {
+    fail(file, 'needs exactly these fields: ' + FIELDS.join(', ') + ', with optional supplierSales');
+  }
+  if (keys.includes('supplierSales') && typeof v.supplierSales !== 'boolean') fail(file, 'supplierSales is true or false');
   if (typeof v.id !== 'string' || !/^[a-z][a-z0-9-]{1,30}$/.test(v.id)) fail(file, 'id is lower case letters, digits and -');
   if (file && path.basename(file) !== v.id + '.json') fail(file, 'the file is named after its id');
   if (typeof v.name !== 'string' || !NAME.test(v.name) || /Kitchen/.test(v.name)) fail(file, 'name is plain letters and spaces, 3 to 40, like "Leichhardt Hotel"');
@@ -125,7 +128,9 @@ function configJs(v) {
     "  // App Check (Fraud Defense, reCAPTCHA Enterprise): the site key is public too. With it every phone sends a token that\n" +
     "  // says the request came from the real site; once Enforce is on in the Firebase console, nothing else gets through.\n" +
     "  appCheckEnterpriseKey: '" + f.appCheckEnterpriseKey + "'\n" +
-    "};\n";
+    "};\n" + (v.supplierSales === true
+      ? "\n// The weekly sales pilot is enabled for this book. Other venues get their own generated settings.\nwindow.LK_SUPPLIER_SALES_ENABLED = true;\n"
+      : "");
 }
 
 // The security header's Firebase sign-in hosts: every https://<host>.firebaseapp.com or .web.app it names.

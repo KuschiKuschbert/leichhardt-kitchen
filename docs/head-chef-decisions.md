@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **22 November 2026, Sunday sales suggestions stay in Supplier order.** The head chef chose A's inline suggestion, B's visible current amount in a **Keep** or **Replace** step and C's calculation and return of focus to **To order**. One weekly POS export and confirmed links support the chef's draft. The head chef or verified admin publishes the report and manages links. The chef places the order with the supplier. [Decision, council and pending release checks](supplier-sales.md)
+
 - **22 November 2026, names open the People editor.** In Admin, Team, People, tap the person's name to open or close their editor in the row. [People page](people-room-options/brief.md#tap-the-name-to-edit-22-november-2026)
 
 - **22 November 2026, full hours in Today's team.** The green Rostered hours box shows the original CSV start and finish on imported team plans so the chef can see the person's hours while assigning shifts and sections. See [Roster import](roster-import-options/brief.md#full-roster-times-in-the-planner-22-nov-2026).

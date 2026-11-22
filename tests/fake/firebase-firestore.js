@@ -232,6 +232,7 @@ function colRefused(ref, list) {
   if (ref.path[0] !== 'kitchens' || ref.group) return false;
   // A live kitchen session reads the shared timer and declarations, including View only. No list exception.
   if (coolingCollection(ref)) return list || rel.length !== 2 || !['current', 'recorded'].includes(rel[1]) || !kitchenReader(ref);
+  if (c === 'suppliersales') return list || rel.length !== 2 || rel[1] !== 'weekly' || !chefReader(ref);
   if (c === 'adminDevices') return list || !(rawOwner(ref) || authUid(ref) && rel[1] === authUid(ref));
   if (c === 'sessions') return list || !authUid(ref) || rel[1] !== authUid(ref);
   if (c === 'push' || c === 'tries' || c === 'proofs') return true;
@@ -717,6 +718,24 @@ function commitOps(ops) {
       !!old && next.sectionId !== old.sectionId || !Number.isFinite(next.at) || next.at < 0 || next.at > requestNow() + 300000;
   });
   if (badPrepStandard) return Promise.reject({ code: 'permission-denied' });
+
+  // Weekly sales use one private document with a bounded payload and a protected revision.
+  const badSupplierSales = ops.some(o => {
+    const path = key(o.ref.path);
+    if (!at3(path, 'suppliersales(/|$)')) return false;
+    if (!at3(path, 'suppliersales/weekly$') || o.kind === 'delete') return true;
+    const old = store[path], next = after(o), by = kitchenReader(o.ref), owner = isAdmin(o.ref);
+    if (!owner && (!by || by !== cfgOf(o.ref).headId || next.by !== by)) return true;
+    const day = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+    const report = next.report;
+    if (!exactKeys(next, ['v', 'report', 'links', 'at', 'by']) || !Number.isSafeInteger(next.v) || next.v < 1 ||
+      !Number.isSafeInteger(next.at) || next.at < 0 || typeof next.by !== 'string' || !next.by || next.by.length > 80 ||
+      !exactKeys(report, ['start', 'end', 'rows']) || !day(report.start) || !day(report.end) ||
+      !Array.isArray(report.rows) || !report.rows.length || report.rows.length > 1000 || !Array.isArray(next.links) || next.links.length > 1000) return true;
+    if (owner && old && equalField(next, old)) return false;
+    return old ? next.v !== old.v + 1 || next.at <= old.at : !owner && next.v !== 1;
+  });
+  if (badSupplierSales) return Promise.reject({ code: 'permission-denied' });
 
   // Shared prep attributes reported work separately from the PIN-session recorder. Match the prep-only rules;
   // preparedAt ties the report to this tick so an old client's retained fields never credit its later re-tick.

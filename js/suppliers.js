@@ -17,7 +17,7 @@
       audit: Object.create(null), historyOpen: false, historyId: '', historyQ: '', smart: false, requests: null,
       requestsBusy: false, requestsError: '', requestsDay: '', cutQ: '', ed: null, supplierEd: null, review: null, additional: '',
       archive: '', reuse: '', importing: null, importPlan: null, importReuses: [], importMap: Object.create(null), importQ: '',
-      includeArchived: false, auditOpen: false, armedLeave: '', saving: false };
+      includeArchived: false, auditOpen: false, armedLeave: '', saving: false, sales: blankSales() };
   }
   function B() { return P.supplier(); }
   function canRead() { try { return !!B().read(); } catch (e) { return false; } }
@@ -60,7 +60,7 @@
     if (M.review && M.review.sid === M.sid) return 'review';
     return M.historyOpen ? M.reuse ? 'reuse' : 'history' : '';
   }
-  function dirty() { return formDirty() || hasDraft() || !!M.importing || M.saving; }
+  function dirty() { return formDirty() || hasDraft() || !!M.importing || !!M.sales.preview || !!M.sales.link || M.saving; }
   function items(all) { var s = supplier(); return s ? s.items.filter(function (i) { return all || !i.archived; }) : []; }
   function item(id) { return items(true).filter(function (i) { return i.id === id; })[0] || null; }
   function hist(sid) { sid = sid || M.sid; return M.history[sid] || (M.history[sid] = { rows: null, byItem: Object.create(null), busy: false, err: '', more: false, cursor: null, full: false }); }
@@ -186,7 +186,7 @@
   function rememberSupplier(s) {
     var at = (M.suppliers || []).findIndex(function (x) { return x.id === s.id; });
     if (at < 0) M.suppliers.push(s); else M.suppliers[at] = s;
-    M.suppliers.sort(function (a, b) { return a.name.localeCompare(b.name); });
+    M.suppliers.sort(function (a, b) { return a.name.localeCompare(b.name); }); M.sales.calc = null;
     if (M.drafts[s.id]) M.drafts[s.id].suggestions = Object.create(null);
   }
   function splitDraftConflict(suppliers) {
@@ -251,11 +251,11 @@
   }
   function deps() {
     function coreReady() { return window.LK_SUP_CORE && window.LK_SUP_CORE.API === 7 && typeof window.LK_SUP_CORE.planTemplateOrder === 'function' && typeof window.LK_SUP_CORE.resolveCatalogueDestinations === 'function'; }
-    function storeReady() { return window.LK_SUP_STORE && window.LK_SUP_STORE.API === 5 && window.LK_SUP_STORE.templateOrder === 1 && window.LK_SUP_STORE.catalogueOrder === 1 && window.LK_SUP_STORE.splitCatalogue === 1; }
+    function storeReady() { return window.LK_SUP_STORE && window.LK_SUP_STORE.API === 5 && window.LK_SUP_STORE.sales === 1 && window.LK_SUP_STORE.templateOrder === 1 && window.LK_SUP_STORE.catalogueOrder === 1 && window.LK_SUP_STORE.splitCatalogue === 1; }
     if (coreReady() && storeReady()) return Promise.resolve();
     if (!loadingCode) loadingCode = Promise.all([
       coreReady() ? null : A.load('js/supplier-core.js?v=8'),
-      storeReady() ? null : A.load('js/supplier-store.js?v=8')
+      storeReady() ? null : A.load('js/supplier-store.js?v=9')
     ]).then(function () {
       if (!coreReady() || !storeReady()) throw { code: 'version' };
     }).catch(function (e) { loadingCode = null; throw e; });
@@ -276,7 +276,7 @@
       if (M.route.cutoffId) { var linked = list.filter(function (s) { return s.cutoffId === M.route.cutoffId; }); if (linked.length === 1) M.sid = linked[0].id; }
       if (!supplier()) M.sid = M.suppliers.length ? M.suppliers[0].id : '';
       // the card reads no supplier's history: none of them is this cut-off's
-      draw(); if (M.sid && !cutCard()) loadHistory(M.historyOpen, false); if (M.smart) loadRequests();
+      draw(); if (M.sid && !cutCard()) loadHistory(M.historyOpen, false); if (M.smart) loadRequests(); loadSales(force && !auto);
     }, function (e) {
       // a failed read (20 Nov 2026): its own line with Try again, never the save box, and one try by itself later
       if (g === generation && key === ctx()) { M.busy = false; M.readFail = readText(e, 'the supplier catalogue'); againArm('cat', function () { if (M.readFail) load(true, true); }, e); draw(); }
@@ -355,7 +355,7 @@
     return off + (M.readFail ? readLine(M.readFail, 'data-su="retry"') : '') + (M.err ? '<div id="su-order-error" class="su-error" role="alert" tabindex="-1">' + esc(M.err) + (M.validation || pending ? '' : '<div class="btn-row">' + (M.err === LINKED_ERR ? button('additional', 'Additional order') : button('retry', 'Try again')) + '</div>') + '</div>' : '') + pending + (msg ? '<p class="su-status' + (note ? ' su-leave-note' : '') + '"' + (note ? ' id="su-leave-note"' : '') + ' role="status">' + esc(msg) + '</p>' : '');
   }
   function headerHTML() {
-    return '<div class="su-head"><div><span class="eyebrow">Chef tools</span><h2 id="rtitle" tabindex="-1">' + (M.mode === 'manage' ? 'Suppliers &amp; pars' : 'Supplier order') + '</h2><p class="hint">' + (M.mode === 'manage' ? 'Current pars and manual items. Original PDF records and past orders stay unchanged.' : 'Choose a supplier, check its last order and build the next one.') + '</p></div><div class="btn-row">' + button('refresh', M.busy ? inkLabel('Refreshing...', 'orders') : 'Refresh', M.busy ? ' disabled' : '') + '</div></div>' +
+    return '<div class="su-head"><div><span class="eyebrow">Chef tools</span><h2 id="rtitle" tabindex="-1">' + (M.mode === 'manage' ? 'Suppliers &amp; pars' : 'Supplier order') + '</h2><p class="hint">' + (M.mode === 'manage' ? 'Current pars and manual items. Original PDF records and past orders stay unchanged.' : 'Choose a supplier, check its last order and build the next one.') + '</p></div><div class="btn-row">' + button('refresh', M.busy ? inkLabel('Refreshing...', 'orders') : 'Refresh', M.busy ? ' disabled' : '') + salesImportHTML() + '</div></div>' +
       (canEdit() ? '<nav class="chips su-tools" aria-label="Supplier tools"><button type="button" class="chip" data-su="order-mode" aria-pressed="' + (M.mode === 'order') + '">Supplier order</button><button type="button" class="chip" data-su="manage" aria-pressed="' + (M.mode === 'manage') + '">Manage catalogue</button></nav>' : '');
   }
   function sidebarHTML() {
@@ -450,7 +450,7 @@
       '<div class="su-par"><span class="su-mobile-label">Par</span><b>' + esc(currentPar(i)) + '</b><small>' + esc(i.parUnit || 'To confirm') + '</small></div>' + lastOrderHTML(found, h) +
       '<label class="su-qty"><span class="su-mobile-label">To order</span>' + stepper(i, d, qtyInput) + '<small class="hint">' + esc(orderUnitHint(i, d)) + '</small>' + entryError('qty', i) + '</label>' +
       '<div class="su-count"><label class="su-onhand"><span>On hand' + (stockUnit ? ' (' + esc(stockUnit) + ')' : String(d.stock[i.id] || '').trim() ? ' (unit not set)' : '') + '</span><input class="search" data-sf="stock" data-i="' + esc(i.id) + '" aria-label="Stock count: ' + esc(i.name) + '" placeholder="e.g. 4" value="' + esc(d.stock[i.id] || '') + '" maxlength="40"' + validationAttrs('stock', i.id) + '></label>' +
-      (top ? '<button type="button" class="su-use" data-su="apply" data-i="' + esc(i.id) + '" title="' + esc(top.reason) + '" aria-label="Use top-up ' + esc(quantityText(top)) + ' for ' + esc(i.name) + '">Top up ' + esc(quantityText(top)) + ' · Use</button>' : '') + entryError('stock', i) + '</div></div>';
+      (top ? '<button type="button" class="su-use" data-su="apply" data-i="' + esc(i.id) + '" title="' + esc(top.reason) + '" aria-label="Use top-up ' + esc(quantityText(top)) + ' for ' + esc(i.name) + '">Top up ' + esc(quantityText(top)) + ' · Use</button>' : '') + entryError('stock', i) + '</div>' + salesRowHTML(i, d) + '</div>';
   }
   function suggestionsHTML() {
     var d = draft(), suggestions = items().map(function (i) { var p = C.suggestQuantity(i, latest(), d.stock[i.id] || '', fieldUnit('stock', i, d)); return p ? { item: i, pick: p } : null; }).filter(function (s) { return s && !d.dismissed[s.item.id] && !String(d.qty[s.item.id] || '').trim(); });
@@ -479,7 +479,8 @@
   }
   function toolbarHTML() {
     var groups = []; items(M.mode === 'manage').forEach(function (i) { if (i.group && groups.indexOf(i.group) < 0) groups.push(i.group); });
-    return '<div class="su-toolbar">' + supplierSelect() + field('q', 'Find an item', M.q, { type: 'search', placeholder: 'Item name or alias', max: 180 }) + (M.mode === 'manage' ? button('add', 'Add item', '', true) : '') + '</div>' + (groups.length > 1 ? '<div class="chips su-groups"><button type="button" class="chip" data-su="group" data-group="" aria-pressed="' + !M.group + '">All items</button>' + groups.map(function (g) { return '<button type="button" class="chip" data-su="group" data-group="' + esc(g) + '" aria-pressed="' + (M.group === g) + '">' + esc(g) + '</button>'; }).join('') + '</div>' : '');
+    var links = salesLinksButtonHTML();
+    return '<div class="su-toolbar' + (links ? ' su-toolbar-sales' : '') + '">' + supplierSelect() + field('q', 'Find an item', M.q, { type: 'search', placeholder: 'Item name or alias', max: 180 }) + (M.mode === 'manage' ? button('add', 'Add item', '', true) : links) + '</div>' + (groups.length > 1 ? '<div class="chips su-groups"><button type="button" class="chip" data-su="group" data-group="" aria-pressed="' + !M.group + '">All items</button>' + groups.map(function (g) { return '<button type="button" class="chip" data-su="group" data-group="' + esc(g) + '" aria-pressed="' + (M.group === g) + '">' + esc(g) + '</button>'; }).join('') + '</div>' : '');
   }
   function linesHTML(lines) { return '<div class="su-lines">' + lines.map(function (l) { return '<div><span><b>' + esc(l.name) + '</b><small class="hint">Pack: ' + esc(l.pack || 'Not set') + '</small></span><strong>' + esc(quantityText(l)) + '</strong></div>'; }).join('') + '</div>'; }
   function reviewHTML() {
@@ -583,11 +584,378 @@
     return '<div class="su-info' + (open ? ' open' : '') + '"><button type="button" class="su-info-line' + (attn ? ' attn' : '') + (green ? ' done' : '') + '" data-su="info" aria-expanded="' + open + '" aria-controls="su-info-body"><span>' + esc(line.charAt(0).toUpperCase() + line.slice(1)) + '</span><span class="su-info-more" aria-hidden="true">' + (open ? 'Less' : 'More') + '</span></button>' +
       '<div id="su-info-body" class="su-info-body">' + cutoffHTML() + latestHTML() + '</div></div>';
   }
+  var SALES_VENUE = 'Leichhardt Hotel', SALES_PAGE = 20;
+  var salesCoreLoad = null, salesReportLoad = null;
+  function blankSales() {
+    return { ready: false, reading: false, readingFile: false, data: null, calc: null, problem: '', note: '',
+      preview: null, link: null, opened: false, all: false, q: '', page: 0, details: '', replace: null, stale: false };
+  }
+  function salesEnabled() { return window.LK_SUPPLIER_SALES_ENABLED === true; }
+  function salesCore() { return window.LK_SUP_SALES_CORE; }
+  function salesWithAssets() {
+    if (!salesCoreLoad) salesCoreLoad = (salesCore() && salesCore().API === 1 ? Promise.resolve() : A.load('js/supplier-sales-core.js?v=1')).then(function () {
+      if (!salesCore() || salesCore().API !== 1) throw { code: 'version' };
+    }).catch(function (e) { salesCoreLoad = null; throw e; });
+    return salesCoreLoad;
+  }
+  function loadSales(force) {
+    var sale = M.sales;
+    if (!salesEnabled() || !store || !canRead() || M.mode !== 'order' || !supplier() || cutCard() || sale.reading || (!force && (sale.ready || sale.problem))) return;
+    var g = generation, key = ctx();
+    var prior = sale.data, hadProblem = !!sale.problem;
+    sale.reading = true; sale.problem = '';
+    syncSalesImport();
+    // One private document on entering Supplier order or on Refresh. All supplier rows and links reuse this read.
+    return salesWithAssets().then(function () {
+      if (g !== generation || key !== ctx() || !store) throw { code: 'context' };
+      return store.loadSales();
+    }).then(function (saved) {
+      if (g !== generation || key !== ctx()) return;
+      sale.data = saved; sale.calc = null; sale.ready = true; sale.reading = false; sale.replace = null;
+      if (sale.stale) {
+        sale.stale = false;
+        if (sale.preview) sale.preview.baseV = saved ? saved.v : 0;
+        if (sale.link) sale.link.baseV = saved ? saved.v : 0;
+        sale.note = 'Latest sales links loaded. Check your changes, then save again.';
+      }
+      // An empty snapshot only enables the import button. Keep an existing order field or history control in place.
+      if (!saved && !prior && !hadProblem) syncSalesImport();
+      else draw();
+    }, function (e) {
+      if (g !== generation || key !== ctx()) return;
+      sale.reading = false; sale.ready = false;
+      sale.problem = readText(e, 'the sales report and links'); draw();
+    });
+  }
+  function salesResults() {
+    var sale = M.sales;
+    if (!sale.ready || sale.reading || !sale.data || !sale.data.report || !salesCore()) return null;
+    if (!sale.calc || sale.calc.catalogue !== M.suppliers) {
+      var data = sale.data, core = salesCore();
+      sale.calc = {
+        catalogue: M.suppliers,
+        result: core.suggest(data.report, data.links, M.suppliers || []),
+        links: new Map(data.links.map(function (l) { return [core.nameKey(l.name), l]; }))
+      };
+    }
+    return sale.calc;
+  }
+  function salesSuggestion(sid, iid) {
+    var current = salesResults();
+    return current ? current.result.suggestions.get(salesCore().itemKey(sid, iid)) || null : null;
+  }
+  function salesDate(date) { return window.LK_CUT ? window.LK_CUT.dateText(date) : date; }
+  function salesPeriod(report) {
+    return salesDate(report.start) + ' to ' + salesDate(report.end) + ' ' + report.end.slice(0, 4);
+  }
+  function salesVenueKey(name) { return C.normaliseName(name).replace(/ hotel$/, ''); }
+  function salesError(e, fallback) {
+    return e && (e.field || /^sales[-_]/.test(e.code || '') || e.code === 'invalid') && e.message ? e.message : fallback;
+  }
+  function showSalesFile(file) {
+    if (!file || !canEdit() || !M.sales.ready || M.sales.reading || M.sales.readingFile || M.saving) return;
+    var sale = M.sales, g = generation, key = ctx();
+    sale.readingFile = true; sale.problem = ''; sale.note = ''; sale.preview = null; sale.link = null; draw();
+    if (!salesReportLoad) salesReportLoad = (window.LK_SUP_SALES_REPORT ? Promise.resolve() : A.load('js/supplier-sales-report.js?v=1')).then(function () {
+      if (!window.LK_SUP_SALES_REPORT || window.LK_SUP_SALES_REPORT.api !== 1) throw { code: 'version' };
+      return window.LK_SUP_SALES_REPORT;
+    }).catch(function (e) { salesReportLoad = null; throw e; });
+    salesReportLoad.then(function (reader) { return reader.parse(file); }).then(function (parsed) {
+      if (g !== generation || key !== ctx() || !canEdit()) return;
+      sale.readingFile = false;
+      if (parsed.venue && salesVenueKey(parsed.venue) !== salesVenueKey(SALES_VENUE)) {
+        sale.problem = 'This sales report is for ' + parsed.venue + '. Choose the report for ' + SALES_VENUE + '.';
+      } else {
+        sale.preview = { name: file.name, rows: parsed.rows, adjustments: parsed.adjustments || [], exclude: false,
+          venue: parsed.venue, venueOK: !!parsed.venue, start: parsed.start, end: parsed.end,
+          startKnown: !!parsed.start, endKnown: !!parsed.end,
+          baseV: sale.data ? sale.data.v : 0 };
+      }
+      draw(); focusBack(sale.preview ? '#su-sales-preview' : '#su-sales-status');
+    }, function (e) {
+      if (g !== generation || key !== ctx()) return;
+      sale.readingFile = false;
+      sale.problem = e && typeof e.message === 'string' ? e.message : 'Could not read this sales report. Choose a CSV or XLSX file and try again.';
+      draw(); focusBack('#su-sales-status');
+    });
+  }
+  function salesPreviewHTML(p) {
+    var report = M.sales.data && M.sales.data.report;
+    var periodWarning = report ? '<p class="hint">The current report covers ' + esc(salesPeriod(report)) + '. Saving a new or corrected report keeps your current order quantities.</p>' : '';
+    return '<section class="su-sales-form" aria-labelledby="su-sales-preview"><h3 id="su-sales-preview" tabindex="-1">Review sales report</h3>' +
+      '<p>' + esc(p.name) + ' · ' + itemCount(p.rows.length) + '</p><p class="hint">Check the dates cover seven completed trading days.</p>' +
+      (p.venue ? '<p>Venue · <b>' + esc(SALES_VENUE) + '</b></p>' : '<label class="su-sales-check"><input type="checkbox" data-sf="sales-venue"' + (p.venueOK ? ' checked' : '') + '><span>This report is for ' + esc(SALES_VENUE) + '</span></label>') +
+      '<div class="su-form-grid">' + field('sales-start', 'First trading day', p.start, { type: 'date', readonly: p.startKnown }) +
+      field('sales-end', 'Last trading day', p.end, { type: 'date', readonly: p.endKnown }) + '</div>' +
+      (p.adjustments.length ? '<div class="su-confirm"><p><b>Check negative quantities</b></p><ul>' + p.adjustments.map(function (a) {
+        return '<li>' + esc(a.name) + ' · ' + esc(a.qty) + ' (row ' + esc(a.row) + ')</li>';
+      }).join('') + '</ul><label class="su-sales-check"><input type="checkbox" data-sf="sales-adjustments"' + (p.exclude ? ' checked' : '') +
+      '><span>Exclude these rows. They are adjustments outside this supplier order.</span></label></div>' : '') +
+      periodWarning + '<div class="btn-row">' + button('sales-save', M.saving ? inkLabel('Saving...') : 'Save sales report', M.saving || M.sales.stale ? ' disabled' : '', true) +
+      button('sales-close-preview', 'Cancel') + '</div></section>';
+  }
+  function salesLinksHTML(summary) {
+    var sale = M.sales, core = salesCore(), report = sale.data.report, query = C.normaliseName(sale.q);
+    var review = new Map(summary.result.review.map(function (row) { return [core.nameKey(row.name), row]; }));
+    var visible = report.rows.filter(function (row) {
+      var key = core.nameKey(row.name);
+      return (sale.all || review.has(key)) && (!query || C.normaliseName(row.name).includes(query));
+    });
+    sale.page = Math.max(0, Math.min(sale.page, Math.ceil(visible.length / SALES_PAGE) - 1));
+    return '<div id="su-sales-links" tabindex="-1" class="su-disclosure-body su-sales-links"><p><b>Sales report</b> · ' + esc(salesPeriod(report)) +
+      '</p><p class="hint">' + (canEdit() ? 'Link each sales item to the supplier items and amounts used in one sale. Mark anything outside this order as ignored.' :
+        'The head chef manages the sales links. Linked items show sales suggestions beside To order.') + '</p>' +
+      '<div class="chips" aria-label="Sales link status">' + button('sales-needs', 'Needs review', ' aria-pressed="' + !sale.all + '"') +
+      button('sales-all', 'All sales items', ' aria-pressed="' + sale.all + '"') + '</div>' +
+      field('sales-q', 'Find a sales item', sale.q, { type: 'search', max: 180 }) +
+      (sale.link ? salesLinkHTML(sale.link) : '') +
+      '<div class="su-sales-link-list">' + (visible.length ? visible.slice(sale.page * SALES_PAGE, (sale.page + 1) * SALES_PAGE).map(function (row) {
+        var key = core.nameKey(row.name), issue = review.get(key), link = summary.links.get(key);
+        var reason = issue ? issue.reason : link && !link.parts.length ? 'Ignored' : link ? 'Linked' : 'No usage in this report';
+        return '<div class="su-sales-link-row"><div><b>' + esc(row.name) + '</b><p class="hint">' + esc(row.qty) + ' sold · ' + esc(reason) +
+          '</p></div>' + (canEdit() ? button('sales-link', link ? 'Edit link' : 'Link item', ' data-name="' + esc(row.name) + '" aria-label="' + esc((link ? 'Edit link for ' : 'Link item ') + row.name) + '"') : '') + '</div>';
+      }).join('') : '<p class="hint">' + (query ? 'No sales items match this search.' : 'No sales items need review.') + '</p>') + '</div>' +
+      (visible.length > SALES_PAGE ? '<div class="su-pager"><span class="hint">' + (sale.page * SALES_PAGE + 1) + ' to ' + Math.min((sale.page + 1) * SALES_PAGE, visible.length) + ' of ' + visible.length + '</span><div class="btn-row">' +
+        button('sales-prev', 'Previous', sale.page ? '' : ' disabled') +
+        button('sales-next', 'Next', (sale.page + 1) * SALES_PAGE < visible.length ? '' : ' disabled') + '</div></div>' : '') + '</div>';
+  }
+  function salesCatalogueItem(sid, iid) {
+    var s = (M.suppliers || []).find(function (candidate) { return candidate.id === sid; });
+    return s && s.items.find(function (i) { return i.id === iid && !i.archived; }) || null;
+  }
+  function blankSalesPart() { return { sid: M.sid, iid: '', amount: '', unit: '', perOrder: '', orderUnit: '', q: '' }; }
+  function salesPartField(f, label, value, index, opts) {
+    opts = opts || {};
+    return '<label class="field"><span class="label">' + label + '</span><input class="search" data-sf="' + f + '" data-part="' + index +
+      '" value="' + esc(value || '') + '"' + (opts.decimal ? ' inputmode="decimal"' : '') +
+      (opts.readonly ? ' readonly' : '') + (opts.list ? ' list="su-sales-units"' : '') +
+      (opts.search ? ' type="search"' : '') + ' maxlength="' + (opts.search ? 180 : 40) + '"></label>';
+  }
+  function salesPartOptions(p) {
+    var s = (M.suppliers || []).find(function (candidate) { return candidate.id === p.sid; });
+    var q = C.normaliseName(p.q || '');
+    return '<option value="">Choose an item</option>' + (s ? s.items.filter(function (i) {
+      return !i.archived && (i.id === p.iid || !q || C.normaliseName(i.name + ' ' + i.pack + ' ' + (i.aliases || []).join(' ')).includes(q));
+    }).map(function (i) {
+      return '<option value="' + esc(i.id) + '"' + (i.id === p.iid ? ' selected' : '') + '>' + esc(i.name + (i.pack ? ' · ' + i.pack : '')) + '</option>';
+    }).join('') : '');
+  }
+  function salesPartHTML(p, n, multiple) {
+    var i = salesCatalogueItem(p.sid, p.iid);
+    return '<fieldset class="su-sales-part"><legend>Supplier item' + (multiple ? ' ' + (n + 1) : '') + '</legend>' +
+      '<div class="su-form-grid"><label class="field"><span class="label">Supplier</span><select class="search" data-sf="sales-supplier" data-part="' + n + '">' +
+      (M.suppliers || []).map(function (s) { return '<option value="' + esc(s.id) + '"' + (s.id === p.sid ? ' selected' : '') + '>' + esc(s.name) + '</option>'; }).join('') +
+      '</select></label>' + salesPartField('sales-item-q', 'Find a supplier item', p.q, n, { search: true }) +
+      '<label class="field"><span class="label">Catalogue item</span><select class="search" data-sf="sales-item" data-part="' + n + '">' +
+      salesPartOptions(p) + '</select></label>' + (i ? '<p class="hint">Pack · ' + esc(i.pack || 'Check the supplier pack') + '</p>' : '') +
+      salesPartField('sales-amount', 'Amount used in one sale', p.amount, n, { decimal: true }) +
+      salesPartField('sales-unit', 'Portion unit', p.unit, n, { list: true }) +
+      salesPartField('sales-order-unit', 'Supplier order unit', i && i.orderUnit || p.orderUnit, n, { list: true, readonly: !!(i && i.orderUnit) }) +
+      salesPartField('sales-per-order', 'Portion units in one order unit', p.perOrder, n, { decimal: true }) + '</div>' +
+      (multiple ? button('sales-drop-part', 'Remove item', ' data-part="' + n + '"') : '') + '</fieldset>';
+  }
+  function salesLinkHTML(form) {
+    return '<section class="su-sales-form" aria-labelledby="su-sales-link-title"><h3 id="su-sales-link-title" tabindex="-1">Link ' + esc(form.name) + '</h3>' +
+      '<p class="hint">Enter the amount as bought, allowing for cooking or trim loss. For one piece from a pack of 30, enter 1 piece per sale and 30 pieces per pack. Leave the conversion blank when both units match.</p>' +
+      form.parts.map(function (p, n) { return salesPartHTML(p, n, form.parts.length > 1); }).join('') +
+      '<datalist id="su-sales-units">' + ['kg', 'g', 'L', 'ml', 'pieces', 'packs', 'cases', 'cartons', 'bags', 'trays'].map(function (u) { return '<option value="' + u + '"></option>'; }).join('') + '</datalist>' +
+      (form.ignore ? '<div class="su-confirm"><p>Exclude ' + esc(form.name) + ' from sales suggestions?</p>' +
+      '<div class="btn-row">' + button('sales-confirm-ignore', 'Confirm ignore', '', true) + button('sales-cancel-ignore', 'Keep linking') + '</div></div>' :
+      '<div class="btn-row">' + button('sales-save-link', M.saving ? inkLabel('Saving...') : 'Save link', M.saving || M.sales.stale ? ' disabled' : '', true) +
+      button('sales-add-part', 'Add another supplier item', form.parts.length >= 8 ? ' disabled' : '') +
+      button('sales-ignore', 'Ignore sales item') + button('sales-close-link', 'Cancel') + '</div>') + '</section>';
+  }
+  function salesImportBlocked() {
+    return !M.sales.ready || M.sales.reading || M.sales.readingFile || !!M.sales.link;
+  }
+  function syncSalesImport() {
+    var control = M.root && M.root.querySelector('[data-su="sales-import"]');
+    if (control) control.disabled = salesImportBlocked() || M.saving;
+  }
+  function salesImportHTML() {
+    if (!salesEnabled() || !canEdit() || M.mode !== 'order' || !supplier() || cutCard()) return '';
+    var sale = M.sales;
+    return button('sales-import', sale.readingFile ? 'Reading report...' : '<span class="su-sales-wide">Import sales report</span><span class="su-sales-compact" aria-hidden="true">Import sales</span>',
+      (salesImportBlocked() ? ' disabled' : '') + ' aria-label="' + (sale.readingFile ? 'Reading report...' : 'Import sales report') + '"') +
+      '<input class="visually-hidden" type="file" tabindex="-1" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" data-sf="sales-file" aria-label="Sales report file">';
+  }
+  function salesLinksButtonHTML() {
+    if (!salesEnabled() || M.mode !== 'order' || cutCard()) return '';
+    var summary = salesResults(), sale = M.sales;
+    if (!summary) return '';
+    var count = summary.result.review.length;
+    var label = 'Sales links' + (count ? ' (' + count + ')' : '');
+    return button('sales-links', esc(label), ' aria-label="' + esc(label + (count ? ' · ' + count + ' to review' : '')) + '" aria-expanded="' + sale.opened +
+      '" aria-controls="su-sales-links" title="' + esc(salesPeriod(sale.data.report)) + '"');
+  }
+  function salesPanelHTML() {
+    var sale = M.sales, summary = salesResults();
+    var status = sale.problem ? '<p class="su-error" id="su-sales-status" tabindex="-1" role="alert">' + esc(sale.problem) +
+      (!sale.ready || sale.stale ? ' ' + smallButton('sales-refresh', 'Try again') : '') + '</p>' :
+      sale.note ? '<p class="su-status" id="su-sales-status" tabindex="-1" role="status">' + esc(sale.note) + '</p>' : '';
+    var editor = sale.preview && canEdit() ? salesPreviewHTML(sale.preview) : '';
+    var links = sale.opened && summary ? salesLinksHTML(summary) : summary ? '<div id="su-sales-links" hidden></div>' : '';
+    return status || editor || sale.opened && summary ? '<section class="su-sales" aria-label="Weekly sales report">' + status + editor + links + '</section>' : links;
+  }
+  function salesRowHTML(i, d) {
+    var suggestion = salesSuggestion(M.sid, i.id);
+    if (!suggestion) return '';
+    var sale = M.sales, id = salesCore().itemKey(M.sid, i.id), attrs = ' data-i="' + esc(i.id) + '"';
+    var open = sale.details === id, saved = String(d.qty[i.id] || '').trim(), swap = sale.replace;
+    var confirm = swap && swap.id === id && swap.saved === saved && swap.qty === suggestion.qty;
+    var current = saved && C.parseQuantity(saved, fieldUnit('qty', i, d));
+    var currentText = current ? current.amount + (current.unit ? ' ' + current.unit : '') : saved;
+    return '<div class="su-sales-row">' +
+      smallButton('sales-calc', 'Sales suggests ' + esc(suggestion.qty) + ' <small class="su-sales-week">Week to ' +
+        esc(salesDate(sale.data.report.end)) + '</small>', attrs + ' aria-expanded="' + open + '"') +
+      button('sales-use', 'Use in draft', attrs + ' aria-label="Use in draft for ' + esc(i.name) + '"') +
+      (open ? '<p class="hint su-sales-explain">' + esc(suggestion.reason) + ' Sales for ' +
+        esc(salesPeriod(sale.data.report)) + '. Check what you have before ordering.</p>' : '') +
+      (confirm ? '<div class="su-confirm su-sales-replace"><p>Replace your draft amount for ' + esc(i.name) + '?</p><div class="btn-row">' +
+        button('sales-keep', 'Keep ' + esc(currentText), attrs) +
+        button('sales-replace', 'Replace with ' + esc(suggestion.qty), attrs, true) + '</div></div>' : '') + '</div>';
+  }
+  function saveSalesChange(baseV, report, links, note, kind) {
+    var sale = M.sales, g = generation, key = ctx(), prior = sale.data;
+    M.saving = true; sale.problem = ''; sale.note = ''; draw();
+    store.saveSales(baseV, report, links).then(function (saved) {
+      if (g !== generation || key !== ctx()) return;
+      M.saving = false; sale.data = saved; sale.calc = null; sale.replace = null;
+      sale.note = kind === 'report' && prior && saved.v === prior.v ? 'This report is already loaded. Your draft quantities are kept.' : note;
+      if (kind === 'report') { sale.preview = null; sale.opened = false; sale.q = ''; sale.page = 0; }
+      else sale.link = null;
+      draw(); focusBack('#su-sales-status');
+    }, function (e) {
+      if (g !== generation || key !== ctx()) return;
+      M.saving = false; sale.stale = e.code === 'stale';
+      sale.problem = sale.stale ? 'The sales report or links changed on another device. Load the latest version before retrying. Your edits are kept.' :
+        salesError(e, 'Could not confirm the sales save. Check the connection and retry. Your edits are kept.');
+      draw(); focusBack('#su-sales-status');
+    });
+  }
+  function saveSalesReport() {
+    var sale = M.sales, p = sale.preview, data = sale.data, report;
+    if (!p || !canEdit() || !sale.ready || sale.reading || sale.stale) return;
+    try {
+      if (!p.venueOK) throw { code: 'invalid', message: 'Confirm the report is for ' + SALES_VENUE + '.' };
+      if (p.adjustments.length && !p.exclude) throw { code: 'invalid', message: 'Check the negative rows and confirm they are outside this order, or choose a corrected sales report.' };
+      report = salesCore().validateReport({ start: p.start, end: p.end, rows: p.rows }, day());
+      if (data && data.report && report.end < data.report.end) throw { code: 'invalid', message: 'Choose a report for the current or a later trading week.' };
+    } catch (e) { sale.problem = salesError(e, 'Check the seven report dates and try again.'); draw(); focusBack('#su-sales-status'); return; }
+    saveSalesChange(p.baseV, report, data ? data.links : [], 'Sales report saved. Review the sales items and use the suggestions you want.', 'report');
+  }
+  function showSalesLink(name) {
+    var sale = M.sales, summary = salesResults();
+    if (!summary || !canEdit() || sale.preview || sale.link) return;
+    var core = salesCore(), key = core.nameKey(name);
+    if (!sale.data.report.rows.some(function (r) { return core.nameKey(r.name) === key; })) return;
+    var current = summary.links.get(key);
+    sale.link = { name: name, baseV: sale.data.v, ignore: false,
+      parts: current && current.parts.length ? clone(current.parts) : [blankSalesPart()] };
+    sale.problem = ''; sale.note = ''; draw(); focusBack('#su-sales-link-title');
+  }
+  function saveSalesLink(ignored) {
+    var sale = M.sales, form = sale.link, data = sale.data, core = salesCore();
+    if (!form || !data || !canEdit() || !sale.ready || sale.reading || sale.stale || (ignored && !form.ignore)) return;
+    var link, links, key = core.nameKey(form.name);
+    try {
+      link = core.validateLink({ name: form.name, parts: ignored ? [] : form.parts.map(function (p) {
+        var i = salesCatalogueItem(p.sid, p.iid);
+        if (!i) throw { code: 'invalid', message: 'Choose an active catalogue item for each supplier link.' };
+        if (p.unit === '' || String(p.amount).trim() === '') throw { code: 'invalid', message: 'Enter the portion amount and its unit for each supplier item.' };
+        return { sid: p.sid, iid: p.iid, amount: Number(p.amount), unit: p.unit,
+          perOrder: String(p.perOrder || '').trim() ? Number(p.perOrder) : undefined,
+          orderUnit: i.orderUnit || p.orderUnit, catalogueKey: core.catalogKey(i) };
+      }) });
+      links = data.links.filter(function (l) { return core.nameKey(l.name) !== key; }).concat([link]);
+      var issue = core.suggest(data.report, links, M.suppliers).review.find(function (row) { return core.nameKey(row.name) === key; });
+      if (issue) throw { code: 'invalid', message: issue.reason };
+    } catch (e) { sale.problem = salesError(e, 'Check the item, portion and supplier order unit.'); draw(); focusBack('#su-sales-status'); return; }
+    saveSalesChange(form.baseV, data.report, links, form.name + (ignored ? ' is ignored in sales suggestions.' : ' linked to the supplier catalogue.'), 'link');
+  }
+  function updateSalesField(el, fieldName, changed) {
+    var sale = M.sales, p = sale.preview, form = sale.link;
+    if (p && !p.startKnown && fieldName === 'sales-start') p.start = el.value;
+    if (p && !p.endKnown && fieldName === 'sales-end') p.end = el.value;
+    if (p && fieldName === 'sales-venue') p.venueOK = el.checked;
+    if (p && fieldName === 'sales-adjustments') p.exclude = el.checked;
+    if (fieldName === 'sales-q' && !changed) { sale.q = el.value; sale.page = 0; draw(); return; }
+    if (!form) return;
+    var n = Number(el.getAttribute('data-part')), part = form.parts[n], i;
+    if (!part || !el.hasAttribute('data-part')) return;
+    if (changed && fieldName === 'sales-supplier') {
+      form.parts[n] = Object.assign(blankSalesPart(), { sid: el.value });
+      draw(); return;
+    }
+    if (changed && fieldName === 'sales-item') {
+      i = salesCatalogueItem(part.sid, el.value);
+      form.parts[n] = Object.assign(blankSalesPart(), { sid: part.sid, iid: i ? i.id : '', q: part.q,
+        unit: i ? i.parUnit : '', orderUnit: i ? i.orderUnit : '', perOrder: i && i.factor > 0 ? i.factor : '' });
+      draw(); return;
+    }
+    if (fieldName === 'sales-item-q' && !changed) {
+      part.q = el.value;
+      var select = el.closest('fieldset').querySelector('[data-sf="sales-item"]');
+      if (select) select.innerHTML = salesPartOptions(part);
+    }
+    if (fieldName === 'sales-amount') part.amount = el.value;
+    if (fieldName === 'sales-unit') part.unit = el.value;
+    if (fieldName === 'sales-order-unit') part.orderUnit = el.value;
+    if (fieldName === 'sales-per-order') part.perOrder = el.value;
+  }
+  function salesCancelReplacement(id) {
+    var sale = M.sales;
+    if (!sale.replace || sale.replace.id !== salesCore().itemKey(M.sid, id)) return;
+    sale.replace = null;
+    var row = rowEl(id), panel = row && row.querySelector('.su-sales-replace');
+    if (panel) panel.remove();
+  }
+  function useSalesSuggestion(id, confirmed) {
+    var sale = M.sales, i = item(id), suggestion = i && salesSuggestion(M.sid, id);
+    if (!suggestion || !C.parseQuantity(suggestion.qty, suggestion.unit)) return;
+    var key = salesCore().itemKey(M.sid, id), d = draft(), before = String(d.qty[id] || '').trim();
+    var current = before && C.parseQuantity(before, fieldUnit('qty', i, d));
+    if (confirmed) {
+      if (!sale.replace || sale.replace.id !== key || sale.replace.saved !== before || sale.replace.qty !== suggestion.qty) return;
+    } else if (before && !(current && current.amount === suggestion.amount && current.unit === suggestion.unit)) {
+      sale.replace = { id: key, saved: before, qty: suggestion.qty }; draw(); focusBack('[data-su="sales-keep"][data-i="' + id + '"]'); return;
+    }
+    sale.replace = null; d.qty[id] = suggestion.qty; d.units.qty[id] = suggestion.unit; delete d.suggestions[id]; M.review = null;
+    clearEntryError('qty', id, suggestion.qty); redrawRow(id);
+    focusBack('[data-sf="qty"][data-i="' + id + '"]');
+    P.book().say(i.name + ' added to the supplier draft. ' + suggestion.qty + '.');
+  }
+  function salesClick(cmd, el, id) {
+    var sale = M.sales;
+    if (cmd === 'sales-use') { useSalesSuggestion(id, false); return; }
+    if (cmd === 'sales-replace') { useSalesSuggestion(id, true); return; }
+    if (cmd === 'sales-refresh') { loadSales(true); return; }
+    if (cmd === 'sales-calc') {
+      var key = salesCore().itemKey(M.sid, id);
+      sale.details = sale.details === key ? '' : key; draw(); focusBack('[data-su="sales-calc"][data-i="' + id + '"]'); return;
+    }
+    if (cmd === 'sales-keep') { sale.replace = null; draw(); focusBack('[data-su="sales-use"][data-i="' + id + '"]'); return; }
+    if (cmd === 'sales-links') { sale.opened = !sale.opened; sale.note = ''; draw(); focusBack(sale.opened ? '#su-sales-links' : '[data-su="sales-links"]'); return; }
+    if (cmd === 'sales-all' || cmd === 'sales-needs') { sale.all = cmd === 'sales-all'; sale.page = 0; draw(); focusBack('[data-su="' + cmd + '"]'); return; }
+    if (cmd === 'sales-prev' || cmd === 'sales-next') { sale.page += cmd === 'sales-prev' ? -1 : 1; draw(); focusBack('[data-sf="sales-q"]'); return; }
+    if (!canEdit()) return;
+    if (cmd === 'sales-import') { var file = M.root.querySelector('[data-sf="sales-file"]'); if (file) file.click(); return; }
+    if (cmd === 'sales-close-preview') { sale.preview = null; sale.problem = ''; draw(); focusBack('[data-su="sales-import"]'); return; }
+    if (cmd === 'sales-save') { saveSalesReport(); return; }
+    if (cmd === 'sales-link') { showSalesLink(el.getAttribute('data-name')); return; }
+    if (!sale.link) return;
+    if (cmd === 'sales-save-link' || cmd === 'sales-confirm-ignore') { saveSalesLink(cmd === 'sales-confirm-ignore'); return; }
+    if (cmd === 'sales-close-link') { sale.link = null; sale.problem = ''; draw(); focusBack('[data-su="sales-links"]'); return; }
+    if (cmd === 'sales-add-part' && sale.link.parts.length < 8) sale.link.parts.push(blankSalesPart());
+    if (cmd === 'sales-drop-part' && sale.link.parts.length > 1) sale.link.parts.splice(Number(el.getAttribute('data-part')), 1);
+    if (cmd === 'sales-ignore' || cmd === 'sales-cancel-ignore') sale.link.ignore = cmd === 'sales-ignore';
+    draw(); focusBack(cmd === 'sales-ignore' ? '[data-su="sales-cancel-ignore"]' : '#su-sales-link-title');
+  }
   function orderHTML() {
     var s = supplier(), d = draft(), list = filterItems(false).filter(function (i) { return shown(i, d); }), last = ''; M.page = Math.max(0, Math.min(M.page, Math.ceil(list.length / 20) - 1));
     if (activeTask() === 'review') return reviewHTML();
     var table = list.map(function (i) { var title = i.category !== last ? '<div class="su-category" data-cat="' + esc(i.category || 'Other items') + '" tabindex="-1">' + esc(i.category || 'Other items') + '</div>' : ''; last = i.category; return title + rowHTML(i); }).join('');
-    return toolbarHTML() + '<div class="su-supplier-title"><h3 class="h3">' + esc(s.name) + '</h3><span class="hint">' + items().length + ' items</span></div>' + infoHTML() + filterChips(d) + jumpsHTML(list) + (M.filter === 'asked' ? requestsHTML() : '') + '<div class="su-table-head"><span>Item / pack</span><span>Par</span><span>Last bought</span><span>To order</span></div>' + (table || '<p class="empty">' + (M.filter ? 'No items match this filter.' : 'No items match.') + '</p>') + '<div class="su-order-actions sv-dock"><span class="hint">' + itemCount(Object.keys(d.qty).filter(function (k) { return String(d.qty[k]).trim(); }).length) + ' in this supplier draft</span>' + button('review', 'Review order', Object.keys(d.qty).some(function (k) { return String(d.qty[k]).trim(); }) ? '' : ' disabled', true) + '</div>' + (M.filter === 'asked' ? '' : requestsHTML()) + suggestionsHTML() + '<p class="hint su-help">A number uses the order unit shown; type a unit for another, e.g. 2 kg. Par blank is Not set; 0 stays 0.</p>' + historyHTML();
+    return toolbarHTML() + '<div class="su-supplier-title"><h3 class="h3">' + esc(s.name) + '</h3>' + '<span class="hint">' + items().length + ' items</span></div>' + salesPanelHTML() + infoHTML() + filterChips(d) + jumpsHTML(list) + (M.filter === 'asked' ? requestsHTML() : '') + '<div class="su-table-head"><span>Item / pack</span><span>Par</span><span>Last bought</span><span>To order</span></div>' + (table || '<p class="empty">' + (M.filter ? 'No items match this filter.' : 'No items match.') + '</p>') + '<div class="su-order-actions sv-dock"><span class="hint">' + itemCount(Object.keys(d.qty).filter(function (k) { return String(d.qty[k]).trim(); }).length) + ' in this supplier draft</span>' + button('review', 'Review order', Object.keys(d.qty).some(function (k) { return String(d.qty[k]).trim(); }) ? '' : ' disabled', true) + '</div>' + (M.filter === 'asked' ? '' : requestsHTML()) + suggestionsHTML() + '<p class="hint su-help">A number uses the order unit shown; type a unit for another, e.g. 2 kg. Par blank is Not set; 0 stays 0.</p>' + historyHTML();
   }
   function sourceHTML(i) { return '<details class="su-source"><summary>Original record</summary><dl><dt>Item name</dt><dd>' + esc(i.manual ? 'Added manually' : i.source.name) + '</dd><dt>PDF par</dt><dd>' + esc(i.manual ? 'Not applicable' : i.source.par === '' ? 'Not set' : i.source.par) + '</dd><dt>Source</dt><dd>' + esc(i.manual ? 'Manual item' : i.source.file + ', page ' + i.source.page) + '</dd></dl></details>'; }
   function unitField(k, label, value) { return '<label class="field"><span class="label">' + label + '</span><input class="search" data-sf="' + k + '" value="' + esc(value || '') + '" list="su-unit-list" maxlength="40" placeholder="Unconfirmed"></label>'; }
@@ -668,10 +1036,10 @@
     if (M.stampNext) { landOnItem(M.stampNext.id, M.stampNext.word); return; }
     if (M.stamp && activeTask() !== 'catalogue') M.stamp = null;   // the stamp goes with the catalogue view
     if (!M.msg) M.msgAt = '';
-    var active = document.activeElement, keep = active && M.root.contains(active) ? { field: active.getAttribute('data-sf'), id: active.getAttribute('data-i'), start: active.selectionStart, end: active.selectionEnd } : null;
+    var active = document.activeElement, keep = active && M.root.contains(active) ? { field: active.getAttribute('data-sf'), id: active.getAttribute('data-i'), part: active.getAttribute('data-part'), start: active.selectionStart, end: active.selectionEnd } : null;
     var y = window.scrollY; M.root.innerHTML = mainHTML(); if (M.saving) Array.prototype.forEach.call(M.root.querySelectorAll('input,select,textarea,button'), function (n) { n.disabled = true; }); window.scrollTo(0, y);
     if (keep && keep.field) {
-      var candidates = M.root.querySelectorAll('[data-sf]'), found = Array.prototype.filter.call(candidates, function (n) { return n.getAttribute('data-sf') === keep.field && n.getAttribute('data-i') === keep.id; })[0];
+      var candidates = M.root.querySelectorAll('[data-sf]'), found = Array.prototype.filter.call(candidates, function (n) { return n.getAttribute('data-sf') === keep.field && n.getAttribute('data-i') === keep.id && n.getAttribute('data-part') === keep.part; })[0];
       if (found) { found.focus({ preventScroll: true }); if (typeof keep.start === 'number') try { found.setSelectionRange(keep.start, keep.end); } catch (e) {} }
     }
     window.dispatchEvent(new Event('lk-nav'));
@@ -747,7 +1115,7 @@
   function orderMode() {
     M.mode = 'order'; M.q = ''; M.group = ''; M.page = 0;
     if (M.route.mode === 'manage') A.returnTo('#/suppliers' + (M.route.sid && M.sid ? '/' + encodeURIComponent(M.sid) : ''));
-    else draw();
+    else { draw(); loadSales(false); }
   }
   function pick(sid) {
     if (!leaveForm('pick:' + sid)) return;
@@ -964,6 +1332,8 @@
     if (M.review) { M.review.checking = false; if (M.saving) M.review.uncertain = true; }
     if (M.saving) M.msg = 'Your supplier draft is kept. Check the latest records, then retry the save. Nothing will retry automatically.';
     M.saving = false; M.err = ''; M.readFail = ''; M.armedLeave = ''; againAll();
+    M.sales.ready = false; M.sales.reading = false; M.sales.readingFile = false; M.sales.data = null; M.sales.calc = null;
+    M.sales.replace = null; M.sales.problem = ''; M.sales.note = '';
   }
   function retainLock() {
     var lock = P.workLock && P.workLock();
@@ -1000,7 +1370,7 @@
     if (editorHere() && M.ed.routeKey === routeKey || supplierEditorHere() && M.supplierEd.routeKey === routeKey) M.mode = 'manage';
     if (M.route.cutoffId && M.suppliers) { var linked = M.suppliers.filter(function (s) { return s.cutoffId === M.route.cutoffId; }); if (linked.length === 1) M.sid = linked[0].id; }
     draw(); load(false);
-    if (M.suppliers && M.sid && !cutCard()) loadHistory(false, false);
+    if (M.suppliers && M.sid && !cutCard()) { loadHistory(false, false); loadSales(false); }
   }
   // leaving the page drops a waiting try (againArm()): opening it again reads what never loaded, and a line that
   // stays keeps its Try again
@@ -1011,6 +1381,7 @@
     var cmd = el.getAttribute('data-su'), id = el.getAttribute('data-i');
     if (M.saving) return;
     if (!canRead()) { reset(); draw(); return; }
+    if (cmd.indexOf('sales-') === 0) { salesClick(cmd, el, id); return; }
     if (cmd === 'retry' || cmd === 'refresh') { load(true); return; }
     if (cmd === 'collapse') { M.sidebar = !M.sidebar; try { localStorage.setItem('lk.sup.sidebar', M.sidebar ? 'show' : 'hide'); } catch (e) {} draw(); }
     if (cmd === 'pick') pick(el.getAttribute('data-sid'));
@@ -1043,7 +1414,7 @@
         var n = Math.max(0, Math.round(((mm ? Number(mm[1].replace(',', '.')) : 0) + Number(el.getAttribute('data-d'))) * 1000) / 1000);
         var next = n > 0 ? String(n) + (mm && mm[2] ? mm[2] : '') : '';
         sd.qty[id] = next; if (next) sd.units.qty[id] = si.orderUnit; else delete sd.units.qty[id];
-        delete sd.suggestions[id]; M.review = null; clearEntryError('qty', id, next); redrawRow(id);
+        delete sd.suggestions[id]; salesCancelReplacement(id); M.review = null; clearEntryError('qty', id, next); redrawRow(id);
       }
     }
     if (cmd === 'apply') { var d = draft(), i = item(id), suggestion = i && C.suggestQuantity(i, latest(), d.stock[id] || '', fieldUnit('stock', i, d)); if (suggestion && !String(d.qty[id] || '').trim()) { d.qty[id] = suggestion.qty; d.units.qty[id] = suggestion.unit; d.suggestions[id] = suggestion; M.review = null; if (M.smart) message('Suggestion added. Check its quantity and unit before ordering.'); else { M.msg = ''; redrawRow(id); try { P.book().say('Suggestion added. Check its quantity and unit before ordering.'); } catch (e) {} } } }
@@ -1072,13 +1443,26 @@
     if (cmd === 'import' && canEdit() && leaveForm('import')) { var file = M.root.querySelector('[data-sf="import"]'); if (file) file.click(); }
     if (cmd === 'import-cancel') closeImport(); if (cmd === 'import-apply') applyImport();
   });
+  // Tab can focus an order field that is still in the viewport but covered by the sticky Review bar.
+  document.addEventListener('focusin', function (ev) {
+    var target = ev.target;
+    if (!M.root || !M.root.contains(target) || !target.closest('.su-row')) return;
+    requestAnimationFrame(function () {
+      if (document.activeElement !== target || !M.root || !M.root.contains(target)) return;
+      var dock = M.root.querySelector('.su-order-actions');
+      if (!dock) return;
+      var limit = Math.min(window.innerHeight, dock.getBoundingClientRect().top);
+      if (target.getBoundingClientRect().bottom > limit) target.scrollIntoView({ block: 'center' });
+    });
+  });
   document.addEventListener('input', function (ev) {
     if (!M.root || !M.root.contains(ev.target) || !canRead() || M.saving) return;
     var el = ev.target, f = el.getAttribute('data-sf'), id = el.getAttribute('data-i'); if (!f) return;
+    if (f.indexOf('sales-') === 0) { updateSalesField(el, f, false); return; }
     if (f === 'q') { M.q = el.value; M.page = 0; draw(); return; }
     if (f === 'cutQ') { M.cutQ = el.value; draw(); return; }
     if (f === 'historyQ') { M.historyQ = el.value; draw(); return; } if (f === 'importQ') { M.importQ = el.value; draw(); return; }
-    if (f === 'qty' || f === 'stock') { draft()[f][id] = el.value; var enteredItem = item(id); if (String(el.value).trim() && enteredItem) draft().units[f][id] = f === 'qty' ? enteredItem.orderUnit : enteredItem.parUnit; else delete draft().units[f][id]; if (f === 'qty') delete draft().suggestions[id]; M.review = null; clearEntryError(f, id, el.value); if (M.smart) draw(); else if (f === 'stock') redrawRow(id); else { var hint = el.closest('.su-qty').querySelector('.hint'); if (hint) hint.textContent = orderUnitHint(item(id), draft()); var count = M.root.querySelector('.su-order-actions > .hint'); if (count) count.textContent = itemCount(Object.keys(draft().qty).filter(function (k) { return String(draft().qty[k]).trim(); }).length) + ' in this supplier draft'; var reviewButton = M.root.querySelector('[data-su="review"]'); if (reviewButton) reviewButton.disabled = !Object.keys(draft().qty).some(function (k) { return String(draft().qty[k]).trim(); });
+    if (f === 'qty' || f === 'stock') { draft()[f][id] = el.value; var enteredItem = item(id); if (String(el.value).trim() && enteredItem) draft().units[f][id] = f === 'qty' ? enteredItem.orderUnit : enteredItem.parUnit; else delete draft().units[f][id]; if (f === 'qty') { delete draft().suggestions[id]; salesCancelReplacement(id); } M.review = null; clearEntryError(f, id, el.value); if (M.smart) draw(); else if (f === 'stock') redrawRow(id); else { var hint = el.closest('.su-qty').querySelector('.hint'); if (hint) hint.textContent = orderUnitHint(item(id), draft()); var count = M.root.querySelector('.su-order-actions > .hint'); if (count) count.textContent = itemCount(Object.keys(draft().qty).filter(function (k) { return String(draft().qty[k]).trim(); }).length) + ' in this supplier draft'; var reviewButton = M.root.querySelector('[data-su="review"]'); if (reviewButton) reviewButton.disabled = !Object.keys(draft().qty).some(function (k) { return String(draft().qty[k]).trim(); });
       // the row's Use chip steps aside once a quantity is typed; In this order keeps its count (no redraw, the caret stays)
       var use = Array.prototype.filter.call(M.root.querySelectorAll('.su-use'), function (b) { return b.getAttribute('data-i') === id; })[0]; if (use) use.hidden = !!String(el.value).trim();
       var inOrder = M.root.querySelector('[data-su="filter"][data-f="inorder"] .su-n'); if (inOrder) inOrder.textContent = Object.keys(draft().qty).filter(function (k) { return String(draft().qty[k]).trim(); }).length; } return; }
@@ -1089,6 +1473,8 @@
   document.addEventListener('change', function (ev) {
     if (!M.root || !M.root.contains(ev.target) || !canRead() || M.saving) return;
     var el = ev.target, f = el.getAttribute('data-sf');
+    if (f === 'sales-file') { showSalesFile(el.files && el.files[0]); return; }
+    if (f && f.indexOf('sales-') === 0) { updateSalesField(el, f, true); return; }
     if (f === 'supplier') pick(el.value); if (f === 'includeArchived') { M.includeArchived = el.checked; M.page = 0; draw(); }
     if (f === 'import') importFile(el.files && el.files[0]);
     if (f === 'import-cutoff') { disarmLeave(); M.importMap[el.getAttribute('data-sid')] = el.value; }
@@ -1099,7 +1485,8 @@
   ['lk-who', 'lk-admin', 'lk-cfg'].forEach(function (event) { window.addEventListener(event, function () {
     if (!syncContext()) { draw(); return; }
     if (!canEdit() && !M.saving && (M.ed || M.supplierEd || M.importing)) { M.ed = null; M.supplierEd = null; M.importing = null; M.archive = ''; M.armedLeave = ''; }
-    if (M.root) { draw(); load(false); }
+    if (!canEdit() && !M.saving) { M.sales.preview = null; M.sales.link = null; }
+    if (M.root) { draw(); load(false); loadSales(false); }
   }); });
   // back online: the note goes, and a failed read tries once more a moment later, so Firestore has its connection back
   window.addEventListener('online', function () { if (M.root) draw(); Object.keys(readAgain).forEach(function (k) { setTimeout(function () { againRun(k); }, 1500); }); }); window.addEventListener('offline', function () { if (M.root) draw(); });

@@ -1,5 +1,9 @@
 # Firestore reads and writes: audit, 5 November 2026
 
+## Supplier sales suggestions, 22 November 2026
+
+[Sales suggestions](supplier-sales.md#private-data-and-read-budget) use one direct server read of `suppliersales/weekly` when requested in the authorised Supplier order workspace. The same document holds the latest normalised report and its links. Publishing or editing reads the current revision in a transaction and writes one document when the content changed. An identical retry writes nothing. Review and calculations reuse memory, with zero startup reads, listeners, polling or per-item queries. The existing private backup and PIN copy include the one record. These are expected source costs. Confirm them in the final read-budget check before release.
+
 ## Tutorial videos in Guides, 19 November 2026
 
 The Videos group in Guides reads nothing: the videos' titles and steps travel in `js/tutorials.js`. Opening a video guide reads its links once a day per phone and person: `tutorials/staff` (1 read), and `tutorials/chefs` too for a chef or the admin (1 more). About 1 to 2 reads per person on a day they open one, no listener. The admin's links box reads both records from the server when it opens (2 reads); Save writes both in one batch (2 writes). Both records are small (a few kB at most). The moving previews (19 November 2026) are files on the site, not Firestore: no reads.

@@ -82,7 +82,35 @@ for (const [name, db, allowed] of [
   await ok(getDocs(query(collection(db, K + 'suppliers/' + SID + '/orders'), orderBy('at', 'desc'), limit(20))), allowed, name + ' bounded history query');
   await ok(getDocs(collection(db, K + 'suppliers/' + SID + '/audit')), allowed, name + ' audit read');
   await ok(snap(db, 'supplierlinks/2026-10-20_' + CUT), allowed, name + ' occurrence read');
+  await ok(snap(db, 'suppliersales/weekly'), allowed, name + ' weekly sales read');
 }
+
+const salesDoc = db => doc(db, K + 'suppliersales/weekly');
+const firstSales = {
+  v: 1, at: 100, by: 'head',
+  report: { start: '2026-10-19', end: '2026-10-25', rows: [{ name: 'Test dish', qty: 12 }] },
+  links: [{ name: 'Test dish', parts: [{ sid: SID, iid: item.id, amount: 0.5, unit: 'kg', perOrder: 5, orderUnit: 'bag', catalogueKey: 'test-key' }] }]
+};
+await ok(getDocs(collection(head, K + 'suppliersales')), false, 'head may get the weekly report but cannot list sales');
+await ok(setDoc(doc(owner, K + 'suppliersales/history'), firstSales), false, 'admin cannot create sales history documents');
+await ok(setDoc(salesDoc(sous), { ...firstSales, by: 'sous' }), false, 'sous cannot publish sales');
+await ok(setDoc(salesDoc(staff), firstSales), false, 'staff cannot spoof the sales publisher');
+await ok(setDoc(salesDoc(head), { ...firstSales, by: 'sous' }), false, 'head cannot publish as another chef');
+await ok(setDoc(salesDoc(head), { ...firstSales, v: 2 }), false, 'head creates the first version only');
+await ok(setDoc(salesDoc(head), { ...firstSales, file: 'raw.xlsx' }), false, 'raw report is refused');
+await ok(setDoc(salesDoc(head), { ...firstSales, report: { ...firstSales.report, revenue: 300 } }), false, 'revenue is refused in the report envelope');
+await ok(setDoc(salesDoc(head), { ...firstSales, report: { ...firstSales.report, rows: [] } }), false, 'an empty sales report is refused');
+await ok(setDoc(salesDoc(head), { ...firstSales, report: { ...firstSales.report, rows: Array(1001).fill(firstSales.report.rows[0]) } }), false, 'more than 1000 sales rows are refused');
+await ok(setDoc(salesDoc(head), { ...firstSales, links: Array(1001).fill(firstSales.links[0]) }), false, 'more than 1000 sales links are refused');
+await ok(setDoc(salesDoc(head), firstSales), true, 'head publishes the weekly sales report and mapping together');
+await ok(snap(sous, 'suppliersales/weekly').then(read => assert.deepEqual(read.data(), firstSales)), true, 'sous sees exactly the published sales and mapping');
+const correctedSales = { ...firstSales, v: 2, at: 110, links: [{ name: 'Test dish', parts: [] }] };
+await ok(setDoc(salesDoc(head), { ...correctedSales, v: 1 }), false, 'stale sales revision is refused');
+await ok(setDoc(salesDoc(head), { ...correctedSales, v: 3 }), false, 'skipped sales revision is refused');
+await ok(setDoc(salesDoc(head), { ...correctedSales, at: firstSales.at }), false, 'replacement must advance sales timestamp');
+await ok(setDoc(salesDoc(head), correctedSales), true, 'head replaces sales and saves an explicit ignored item');
+await ok(setDoc(salesDoc(owner), correctedSales), true, 'owner may retry an exact sales copy during PIN move');
+await ok(deleteDoc(salesDoc(owner)), false, 'even an admin cannot delete published sales');
 
 await ok(saveCatalogue(sous, catalogue({ v: 2, at: 20, by: 'sous' })), false, 'sous cannot change catalogue');
 await ok(saveCatalogue(staff, catalogue({ v: 2, at: 20, by: 'head' })), false, 'staff cannot spoof head chef writer');
