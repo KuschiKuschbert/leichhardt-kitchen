@@ -1865,6 +1865,8 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .g-vposter .g-vt { color: #fff; }
 .g-vsoon { max-width: 32rem; border-radius: 12px; background: var(--bar); color: var(--bar-text); }
 /* the head chef's video links (admin, Kitchen, Guides): one row per video, a wide and a tall link */
+.tv-nav { margin: 0; }
+.tv-save-jump { align-self: flex-start; padding-inline-start: 0; }
 .tv-list { list-style: none; margin: 0; padding: 0; }
 .tv-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 0.75rem; padding: 0.6rem 0; border-top: 1px solid var(--line); }
 .tv-name { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.6rem; min-width: 0; }
