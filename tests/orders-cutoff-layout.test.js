@@ -14,12 +14,13 @@ const parts = p => p.evaluate(() => {
   const areas = [...document.querySelectorAll('.o-cut-row')].filter(row => row.getClientRects().length);
   const fold = document.querySelector('.o-cut-fold');
   const dock = document.querySelector('.wk-dock');
-  const bottom = Math.min(document.querySelector('.tabbar')?.getBoundingClientRect().top ?? innerHeight,
+  const tabs = document.querySelector('.tabbar')?.getBoundingClientRect();
+  const bottom = Math.min(tabs?.height ? tabs.top : innerHeight,
     getComputedStyle(dock).position === 'fixed' ? dock.getBoundingClientRect().top : innerHeight);
   const rows = [...main.querySelectorAll('.nb-row')].map(row => row.getBoundingClientRect());
   const short = document.querySelector('.o-cut-more')?.getBoundingClientRect();
   return { x: fold.getBoundingClientRect().left, right: main.getBoundingClientRect().right, y: rows[0].top,
-    requests: rows.filter(row => row.bottom <= bottom).length, targets: areas.map(row => row.querySelector('button').getBoundingClientRect().height),
+    requests: rows.filter(row => row.top >= 0 && row.bottom <= bottom).length, targets: areas.map(row => row.querySelector('button').getBoundingClientRect().height),
     suppliers: areas.map(row => row.dataset.cutRow), short: short?.height || 0 };
 });
 const fixture = (more = suppliers) => ({
@@ -52,7 +53,7 @@ async function open(browser, width, height, options = {}) {
       ok((await parts(p)).suppliers.length === 3, width + ': Other cut-offs shows today and tomorrow, including the same-named supplier');
       await p.click(other);
     } else {
-      ok(cut.x >= cut.right && cut.y === closed.y && cut.requests === closed.requests, 'desktop: the cut-offs open in a rail and the requests stay in place');
+      ok(cut.x >= cut.right && cut.y === closed.y && cut.requests === 4 && cut.requests === closed.requests, 'desktop: the rail keeps all four requests visible in their original position');
       ok(cut.suppliers.length === 3 && cut.short === 0, 'desktop: all cut-offs and reminder settings are available through the main fold');
     }
     ok(cut.targets.every(h => h >= 44) && !(await L.overflow(p)), width + ': named actions fit at 44 px or more');
