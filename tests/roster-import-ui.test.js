@@ -25,7 +25,9 @@ const fixture = () => ({
   [CFG]: { people, headId: 'gus', sousIds: ['sam'], staffIds: ['gus', 'sam', 'ann', 'bo', 'mj', 'fn'], fnOnlyIds: ['fn'], kitShifts: services, kitSecs: sections },
   [key('team', days[2])]: wed
 });
-const csv = o => ({ name: 'WeeklyDepartmentRosterReport.csv', mimeType: 'text/csv', buffer: Buffer.from(build(Object.assign({ monday }, o || {}))) });
+const roster = PEOPLE.map(person => person[0] === 'Bo Tran'
+  ? [person[0], person[1], { ...person[2], 0: '09:30-22:30' }] : person);
+const csv = o => ({ name: 'WeeklyDepartmentRosterReport.csv', mimeType: 'text/csv', buffer: Buffer.from(build(Object.assign({ monday, people: roster }, o || {}))) });
 const dump = (p, k) => p.evaluate(x => __fake.dump()[x], k);
 const reads = p => p.evaluate(() => __fake.reads.filter(k => /\/team(\/|$)/.test(k)).length);
 const text = (p, sel) => p.evaluate(s => { const e = document.querySelector(s); return e ? e.textContent.replace(/\s+/g, ' ').trim() : ''; }, sel);
@@ -61,6 +63,8 @@ async function choose(p, file, done) {
   const chips = await p.$$eval('.tm-roster-days .chip', l => l.map(e => e.getAttribute('data-day') + '|' + e.textContent));
   ok(chips.length === 6 && chips.every(c => / · Draft$/.test(c)) && !chips.some(c => c.startsWith(days[2] + '|')), 'one chip for each filled day, each saying Draft in the week list\'s word: ' + chips.join(', '));
   ok(JSON.stringify(await dump(p, key('team', days[2]))) === JSON.stringify(wed) && !await dump(p, key('team', days[0])), 'nothing is saved by the import: Wednesday as it was, Monday still unsaved');
+  await p.locator('.tm-roster-days [data-day="' + days[0] + '"]').click(); await planner(p); await L.settle(p, 200);
+  ok(await text(p, '.tm-person-row[data-id="bo"] .tm-rostered') === 'Rostered hours: 09:30 to 22:30', 'the draft green label shows both CSV endpoints outside the kitchen services');
   // a chip opens that day: the same selection as the week list
   await p.locator('.tm-roster-days [data-day="' + days[3] + '"]').click(); await planner(p); await L.settle(p, 200);
   ok(await p.locator('.tm-notebook').getAttribute('data-day') === days[3], 'a day chip selects that date in the planner');
@@ -135,15 +139,16 @@ async function choose(p, file, done) {
   await L.waitFor(p, d => (document.querySelector('.tm-notebook') || {}).getAttribute && document.querySelector('.tm-notebook').getAttribute('data-day') === d && !!document.querySelector('.tm-person-row'), days[0], 9000);
   const seen = await p.$$eval('.tm-tlrow', l => l.map(e => e.getAttribute('data-id')));
   ok(seen.includes('ann') && seen.includes('bo') && !await p.locator('.tm-roster').count(), 'the sous chef sees Monday\'s imported team (' + seen.join(', ') + '), without the roster tool');
-  const boParts = saved[0].on.filter(o => o.id === 'bo'), boHours = { from: Math.min(...boParts.map(o => o.from)), to: Math.max(...boParts.map(o => o.to)) }, boWords = await text(p, '.tm-person-row[data-id="bo"] .tm-rostered');
-  ok(new RegExp('Rostered hours: ' + [boHours.from, boHours.to].map(m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0')).join(' to ')).test(boWords), 'on another phone, after the import\'s memory is gone, the sous chef sees Bo\'s saved roster hours as one time, the parts joined (' + boWords + ')');
+  const boParts = saved[0].on.filter(o => o.id === 'bo');
+  ok(boParts.every(o => part(o, 570, 1350)), 'the service entries still keep their own parts of the roster');
+  ok(await text(p, '.tm-person-row[data-id="bo"] .tm-rostered') === 'Rostered hours: 09:30 to 22:30', 'the sous chef sees the original CSV times on another phone after Save');
   if (!await p.locator('[data-p="tm-spread"]').isVisible()) { await p.locator('[data-p="tm-batch-toggle"]').click(); await L.settle(p, 150); }
   await L.pick(p, 'select[data-k="tm-tool-sh"]', 'dinner'); await L.settle(p, 150);
   await p.locator('[data-p="tm-spread"]').click(); await L.settle(p, 200);
   await p.locator('[data-p="tm-save"]').click();
   await L.waitFor(p, k => { const r = __fake.dump()[k]; return !!r && r.v === 2; }, key('team', days[0]), 8000);
   const resaved = await dump(p, key('team', days[0]));
-  ok(JSON.stringify(resaved.on.map(o => [o.id, o.sh, o.from, o.to])) === JSON.stringify(saved[0].on.map(o => [o.id, o.sh, o.from, o.to])), 'the sous chef\'s Save keeps every roster hour as it was');
+  ok(JSON.stringify(resaved.on.map(o => [o.id, o.sh, o.from, o.to, o.roster])) === JSON.stringify(saved[0].on.map(o => [o.id, o.sh, o.from, o.to, o.roster])), 'the sous chef\'s Save keeps every roster hour as it was');
   const mon = await dump(p, key('team', days[0]));
   ok(mon.v === 2 && mon.br.length >= 2 && mon.br.every(x => x.sh === 'dinner') && JSON.stringify(mon.on) === JSON.stringify(saved[0].on), 'the sous chef sets the Dinner breaks and saves; the imported team stays as it was (' + mon.br.length + ' breaks)');
   ok(!p.errors.length, 'sous chef breaks: no browser errors ' + p.errors.join(' | '));

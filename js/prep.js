@@ -14628,7 +14628,13 @@ if (list.length) sg('oreg', 's');
       .map(function (o) {
         // roster hours (15 Nov 2026): the person's own start and finish for this shift, checked minutes, from before to
         var r = { id: o.id, sh: o.sh, sec: o.sec || '' }, f = tmMin(o.from), t = tmMin(o.to);
-        if (f !== null && t !== null && f < t && f === o.from && t === o.to) { r.from = f; r.to = t; }
+        if (f !== null && t !== null && f < t && f === o.from && t === o.to) {
+          r.from = f; r.to = t;
+          if (Array.isArray(o.roster) && o.roster.length === 2) {
+            var a = o.roster[0], b = o.roster[1];
+            if (Number.isInteger(a) && Number.isInteger(b) && a >= 0 && a <= f && b >= t && b < 1440) r.roster = [a, b];
+          }
+        }
         return r;
       });
     // Keep only an in-memory warning for dropped or normalised times. The saved-status panel must not call them zero.
@@ -14694,7 +14700,14 @@ if (list.length) sg('oreg', 's');
      times accepted for the day [{ sh, from, to, n, low, by, at }], at 0 until a Save shares it (16 Nov 2026) */
   function tmFrom(rec, day) {
     var on = {}, br = [], hrs = {};
-    (rec ? rec.on : []).forEach(function (o) { (on[o.id] = on[o.id] || {})[o.sh] = o.sec; if (o.from != null) (hrs[o.id] = hrs[o.id] || {})[o.sh] = [o.from, o.to]; });
+    (rec ? rec.on : []).forEach(function (o) {
+      (on[o.id] = on[o.id] || {})[o.sh] = o.sec;
+      if (o.from != null) {
+        var h = [o.from, o.to];
+        if (o.roster) h.push(o.roster);
+        (hrs[o.id] = hrs[o.id] || {})[o.sh] = h;
+      }
+    });
     // the same break saved twice for a person (an older plan could hold it on two services) is one break here, so
     // each break has one picker (tm-bat:<id>:<at>:<n>); the snapshot is made the same way, so it reads as unchanged
     (rec ? rec.br : []).forEach(function (b) { if (!br.some(function (x) { return x.id === b.id && x.at === b.at && x.len === b.len; })) br.push({ id: b.id, sh: b.sh, at: b.at, len: b.len }); });
@@ -14706,7 +14719,10 @@ if (list.length) sg('oreg', 's');
     var on = [];
     Object.keys(f.on).sort().forEach(function (id) { Object.keys(f.on[id]).sort().forEach(function (sh) {
       var e = { id: id, sh: sh, sec: f.on[id][sh] || '' }, h = f.hrs && f.hrs[id] && f.hrs[id][sh];
-      if (h) { e.from = h[0]; e.to = h[1]; }   // the roster hours, saved with the plan (15 Nov 2026)
+      if (h) {
+        e.from = h[0]; e.to = h[1];   // the part of the roster inside this service
+        if (h[2]) e.roster = h[2];    // the original CSV start and finish
+      }
       on.push(e);
     }); });
     var br = f.br.filter(function (b) { return f.on[b.id] && f.on[b.id][b.sh] !== undefined && tmMin(b.at) !== null; })
@@ -14881,7 +14897,7 @@ if (list.length) sg('oreg', 's');
   function tmRosterOff(id) { var h = tmf.hrs && tmf.hrs[id]; return tmRosterDay(tmf) && tmf.on[id] ? tmServiceChoices().filter(function (s) { return tmOnShift(id, s.id) && !(h && h[s.id]); }) : []; }
   function tmRosterFlag(id) {
     var off = tmRosterOff(id), h = tmf.hrs && tmf.hrs[id]; if (!off.length) return '';
-    return h && Object.keys(h).length ? 'Not on the roster for ' + off.map(function (s) { return s.name; }).join(', ') + ': rostered ' + tmHoursWords(h) : 'Not on the roster this day';
+    return h && Object.keys(h).length ? 'Not on the roster for ' + off.map(function (s) { return s.name; }).join(', ') + ': rostered ' + tmPartsWords(tmRosterParts(h)) : 'Not on the roster this day';
   }
   /* A shift hidden until someone is on it (head chef, 15 Nov 2026, docs/occasional-shifts-options/brief.md, B repaired):
      set in Admin, Kitchen, Shifts. Only the planner's choices follow it: Add staff's service boxes and a person's service
@@ -15304,9 +15320,9 @@ if (list.length) sg('oreg', 's');
   // so the chef placing sections reads name and hours together (head chef, 17 Nov 2026: "a colour coded line or label
   // with Rostered hours"). Only hours from the roster file; a service's own hours stay in the sentence.
   function tmRosteredHTML(id) {
-    var rs = tmSpans(id).filter(function (o) { return o.roster; });
+    var rs = tmRosterParts(tmf.hrs && tmf.hrs[id]);
     if (!rs.length) return '';
-    return '<span class="tm-rostered"><span class="tm-rostered-k">Rostered hours<span class="visually-hidden">: </span></span>' + rs.map(function (o, i) { return '<b class="tm-hrs">' + (i ? '<span class="visually-hidden"> and </span>' : '') + tmHHMM(o.from) + ' to ' + tmHHMM(o.to) + '</b>'; }).join('') + '</span>';
+    return '<span class="tm-rostered"><span class="tm-rostered-k">Rostered hours<span class="visually-hidden">: </span></span>' + rs.map(function (o, i) { return '<b class="tm-hrs">' + (i ? '<span class="visually-hidden"> and </span>' : '') + tmHHMM(o[0]) + ' to ' + tmHHMM(o[1]) + '</b>'; }).join('') + '</span>';
   }
   // the sticky head: each service worked, in time order, with its hours and who has no section yet; then the hour marks
   function tmPlanHeadHTML(r) {
@@ -15890,10 +15906,10 @@ if (list.length) sg('oreg', 's');
     if (tmRs && tmRs.st === 'checking' && tmRs.epoch !== accessEpoch) { tmRs.st = 'bad'; tmRs.why = 'The book locked before the week was checked.'; }
     return !!tmRs && (tmRs.st === 'reading' || tmRs.st === 'checking');
   }
-  // a person's roster hours in words from { shift: [from, to] }: "10:00 to 21:30", or "10:00 to 14:00, 17:00 to 22:00"
-  // Parts that touch or overlap read as one time (16 Nov 2026: the roster's time is cut to each service, so Lunch
-  // 10:00 to 15:00, All day dining 15:00 to 17:00 and Dinner 17:00 to 21:00 read "10:00 to 21:00" again)
-  function tmHoursWords(hrs) { return tmPartsWords(tmJoin(Object.keys(hrs || {}).map(function (sh) { return hrs[sh]; }))); }
+  // Use the CSV range when saved. Older plans only have the hours on each assigned service.
+  function tmRosterParts(hrs) {
+    return tmJoin(Object.keys(hrs || {}).map(function (sh) { var h = hrs[sh]; return h[2] || h; }));
+  }
   // [from, to] parts in time order, parts that touch or overlap joined into one: Lunch 10:00 to 15:00 and Dinner 15:00 to
   // 21:00 are one day, 10:00 to 21:00; a split (08:00 to 15:00, 17:00 to 21:00) keeps its gap
   function tmJoin(parts) {
@@ -15985,7 +16001,7 @@ if (list.length) sg('oreg', 's');
     list.forEach(function (x) {
       tmAddShift(x.id, x.sh); var whole = x.day || [x.from, x.to]; times[x.id] = tmHHMM(whole[0]) + ' to ' + tmHHMM(whole[1]);
       // kept with the plan, so every phone on the day sees who comes in when (15 Nov 2026)
-      if (tmMin(x.from) !== null && tmMin(x.to) !== null && x.from < x.to) { var h = tmf.hrs = tmf.hrs || {}; (h[x.id] = h[x.id] || {})[x.sh] = [x.from, x.to]; }
+      if (tmMin(x.from) !== null && tmMin(x.to) !== null && x.from < x.to) { var h = tmf.hrs = tmf.hrs || {}; (h[x.id] = h[x.id] || {})[x.sh] = [x.from, x.to, whole]; }
     });
   }
   /* Link a roster name to a person in the book (head chef, 14 Nov 2026: nicknames), or take a link away. The whole list
