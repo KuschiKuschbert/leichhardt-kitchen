@@ -2,6 +2,8 @@
 
 - **22 November 2026, keep a failed Prep tick on its line and make the older Undo readable.** On a personal device the failed tick names the line and the same box retries it once. A success on another line gets its own slip. On a phone the older Undo can wrap its label. [Feedback contract](action-feedback.md#the-rule)
 
+- **22 November 2026, reach Before service items sooner.** Keep one title and group the section chooser, search and read time with the existing Prep reference controls. [Section prep standards](prep-standards.md#what-it-does)
+
 - **22 November 2026, Sunday sales suggestions stay in Supplier order.** The head chef chose A's inline suggestion, B's visible current amount in a **Keep** or **Replace** step and C's calculation and return of focus to **To order**. One weekly POS export and confirmed links support the chef's draft. The head chef or verified admin publishes the report and manages links. The chef places the order with the supplier. [Decision, council and pending release checks](supplier-sales.md)
 
 - **22 November 2026, Functions Service spacing and waiting trips.** Bring the live board higher on a phone and place the waiting shelf beside active rounds on wide kitchen screens. Keep the coordinator’s confirmation queue first. [Service board](design-patterns.md#inside-a-list)
@@ -13,6 +15,8 @@
 - **22 November 2026, full hours in Today's team.** The green Rostered hours box shows the original CSV start and finish on imported team plans so the chef can see the person's hours while assigning shifts and sections. See [Roster import](roster-import-options/brief.md#full-roster-times-in-the-planner-22-nov-2026).
 
 - **22 November 2026, jump to delivery records.** Put one jump in the phone's Delivery received heading. It leads to the existing receipt scope and keeps the form. [Council quick check](delivery-received.md#delivery-records-jump-22-nov-2026)
+
+- **22 November 2026, more room for Delivery received.** Tighten the form spacing and place receipts beside it from 1100 px. Keep the existing fields, Save and receiving rules. [Delivery received](delivery-received.md#more-room-for-the-form-and-receipts-22-nov-2026)
 
 - **20 November 2026, the look choices of the consistency sweep: all 22 of the recommended picks.** The sweep (`docs/consistency-sweep-options/brief.md`, step 3) put the 25 choices the audit found on one page as 22 questions. The head chef answered "All my picks":
   - **The look:**

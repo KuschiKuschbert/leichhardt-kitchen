@@ -4958,7 +4958,7 @@
     var s = lvState(c), key = esc(c.key), bar = '';
     {
       var fl = (c.filters || []).map(function (f) { return { f: f, n: f[2] ? c.items.filter(f[2]).length : c.items.length }; }).filter(function (x, i) { return i === 0 || x.n > 0 || x.f[0] === s.f; });
-      bar = '<div class="lv-tools">' + (c.heading ? '<h3 class="a-ch-h">' + esc(c.heading) + '</h3>' : '') +
+      bar = '<div class="lv-tools">' + (c.heading ? '<h3 class="a-ch-h">' + esc(c.heading) + '</h3>' : '') + (c.leadingTool || '') +
         '<div class="lv-qw"><label class="visually-hidden" for="lv-q-' + key + '">Search</label>' + findPill('<input id="lv-q-' + key + '" type="search" class="search lv-q" data-k="lv-q:' + key + '" placeholder="' + esc(c.ph || 'Search') + '" value="' + esc(s.q) + '" autocomplete="off" enterkeyhint="search">') + '</div>' +
         (c.sorts && c.sorts.length > 1 ? '<label class="a-f lv-sort"><span>Sort</span><select data-k="lv-s:' + key + '" aria-label="Sort">' + c.sorts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === s.sort ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>' : '') + (c.tool ? '<div class="lv-tool">' + c.tool + '</div>' : '') + '</div>' +
         (fl.length > 1 ? '<div class="chips lv-chips scroll" role="group" aria-label="Filter">' + fl.map(function (x) { return '<button type="button" class="chip" data-p="lv-f" data-lv="' + key + '" data-v="' + esc(x.f[0]) + '" aria-pressed="' + (x.f[0] === s.f) + '">' + esc(x.f[1]) + ' <span class="lv-n">' + x.n + '</span></button>'; }).join('') + '</div>' : '');
@@ -6721,7 +6721,7 @@
   function psHintPaint() { var box = document.getElementById('ps-hint'); if (box) box.innerHTML = psHintHTML(); }
   function psReferenceHTML() {
     var p = psModule();
-    return '<section class="nb-page nb-left ps-reference-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Before service</h2><span class="nb-date">The head chef\'s section standards</span></div></header><div class="nb-body">' + (p ? p.reference(psAdapter(), psDefaultSection()) : psWaitHTML()) + '</div></section>';
+    return '<section class="nb-page nb-left ps-reference-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Before service</h2></div></header><div class="nb-body">' + (p ? p.reference(psAdapter(), psDefaultSection()) : psWaitHTML()) + '</div></section>';
   }
   function psViewHTML() {
     return '<div class="chips ps-viewbar" role="group" aria-label="Prep view"><button type="button" class="chip" data-p="ps-view" data-v="work" aria-pressed="' + (psView === 'work') + '">Work</button><button type="button" class="chip" data-p="ps-view" data-v="reference" aria-pressed="' + (psView === 'reference') + '">Before service</button></div>';
@@ -10174,8 +10174,9 @@ if (list.length) sg('oreg', 's');
     att.forEach(function (x) { if (by[x.st]) by[x.st].push(mnName(x.id)); });
     var cells = [['Time', m.start || ''], ['Location', m.loc || ''], ['Run by', mnName(m.chair)], ['Minutes taken by', mnName(m.taker)]].filter(function (c) { return c[1]; }).map(function (c) { return '<div class="mn-cell"><span>' + esc(c[0]) + '</span><b>' + esc(c[1]) + '</b></div>'; }).join('');
     var counts = by.present.length + ' present' + (by.apology.length ? ', ' + by.apology.length + ' apology' : '') + (by.absent.length ? ', ' + by.absent.length + ' absent' : '');
+    var signJump = sign && me() && featOn('minutes') && S.mmine[mnKey(m)] === null ? '<button type="button" class="p-link mn-sign-jump" data-p="mn-sign-jump" aria-controls="mn-sign-heading">Go to sign-off</button>' : '';
     var out = '<article class="mn-doc"><header class="mn-head"><div><span class="mn-eb">Kitchen meeting &middot; Version ' + (m.v || 1) + '</span><h2 class="mn-title" id="rtitle" tabindex="-1">' + esc(d.toLocaleDateString('en-AU', { weekday: 'long' })) + '<br>' + esc(d.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })) + '</h2></div><div class="mn-no"><span>Minutes</span><b>' + pad(m.no || 0) + '</b></div></header>' +
-      '<div class="mn-strip">' + cells + '<div class="mn-cell mn-wide"><span>Attendance</span><b>' + esc(counts) + '</b></div></div>';
+      '<div class="mn-strip">' + cells + '<div class="mn-cell mn-wide"><span>Attendance</span><b>' + esc(counts) + '</b>' + signJump + '</div></div>';
     function boxes(t, title, inner) { mnParts(t).forEach(function (x) { out += mnBox(nx(), x.h || title, inner(x.l)); }); }
     var sp = mnParts(m.safety);
     if (sp.length) out += '<div class="mn-safety" role="note"><span class="mn-sl">Safety</span>' + sp.map(function (x) { return (x.h ? '<b class="mn-sh">' + esc(x.h) + '</b>' : '') + mnUl(x.l, true); }).join('') + '</div>';
@@ -10203,7 +10204,7 @@ if (list.length) sg('oreg', 's');
     if (s === undefined || s === 'loading') return '<section class="mn-sign mn-noprint"><p class="hint">Checking your sign-off...</p></section>';
     // one tap: the person already typed their own PIN to open this page (20 Oct 2026, no second PIN)
     var mineN = mnMineN(m);
-    return '<section class="mn-sign mn-noprint"><h3 class="mn-bh">Sign off</h3>' +
+    return '<section class="mn-sign mn-noprint"><h3 class="mn-bh" id="mn-sign-heading" tabindex="-1">Sign off</h3>' +
       ((m.v || 1) > 1 ? '<p class="mn-changed">These minutes were changed after they were first published (version ' + m.v + '). If you signed before, read them again and sign this version.</p>' : '') +
       (mineN ? '<p class="mn-mine">Your actions: ' + mineN + ', marked Yours above.</p>' : '') +
       '<p>' + (st === 'present' ? 'I attended and have read and understood these minutes.' : 'I have read and understood these minutes.') + '</p>' +
@@ -13601,6 +13602,11 @@ if (list.length) sg('oreg', 's');
     // the register from #/minutes, the same as the old Minutes register in the chef hat menu: on a tap, one small minutes query
     if (a === 'mn-sous') { chefOpen('register'); return; }
     if (a === 'mn-pickdoc') { S.mSel = id; S.mErr = ''; draw(); window.scrollTo(0, 0); return; }
+    if (a === 'mn-sign-jump') {
+      var signHeading = S.root.querySelector('#mn-sign-heading');
+      if (signHeading) { signHeading.focus({ preventScroll: true }); signHeading.scrollIntoView({ block: 'start' }); }
+      return;
+    }
     if (a === 'mn-sign') { signMinutes(id); return; }
     if (a === 'mn-csv') { csvMinutes(id); return; }
     if (a === 'mn-refresh') { var mr = S.mSel || (mnPub()[0] || {}).id; S.mnSay = mr || ''; loadMinutes(true); loadSigns(mr, true); draw(); return; }
