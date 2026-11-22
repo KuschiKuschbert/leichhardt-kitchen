@@ -1942,6 +1942,28 @@ service cloud.firestore {
           && request.resource.data.day == resource.data.day && request.resource.data.cutoffId == resource.data.cutoffId && supLinkPair()));
       allow delete: if false;
     }
+    // The weekly sales report and confirmed mappings share one private revision. The supplier client validates
+    // every row and component before saving and on read. Rules enforce access, the bounded envelope and version.
+    match /kitchens/KITCHEN_PIN/suppliersales/{id} {
+      function salesShape() {
+        let d = request.resource.data;
+        let report = d.report;
+        return d.keys().hasOnly(['v', 'report', 'links', 'at', 'by'])
+          && d.v is int && d.v > 0 && d.v <= 9007199254740991
+          && d.at is int && d.at >= 0 && d.at <= 9007199254740991
+          && d.by is string && d.by.size() > 0 && d.by.size() <= 80
+          && report is map && report.keys().hasOnly(['start', 'end', 'rows'])
+          && supDay(report.start) && supDay(report.end)
+          && report.rows is list && report.rows.size() > 0 && report.rows.size() <= 1000
+          && d.links is list && d.links.size() <= 1000;
+      }
+      allow get: if id == 'weekly' && supRead();
+      // The admin may also restore the exact saved revision and original writer to a new PIN.
+      allow create: if id == 'weekly' && (isAdmin() || (headWrite() && request.resource.data.v == 1)) && salesShape();
+      allow update: if id == 'weekly' && (isAdmin() || headWrite()) && salesShape()
+        && ((isAdmin() && request.resource.data == resource.data)
+          || (nextVersion() && request.resource.data.at > resource.data.at));
+    }
     match /kitchens/KITCHEN_PIN/drinks/{id} {
       // pushsent (what the server has sent) has no rule: only the server reads and writes it.
       // The drinks run: each person's usual coffee or drink, one record per person (the record id is their id).

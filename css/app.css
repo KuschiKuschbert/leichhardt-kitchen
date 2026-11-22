@@ -3337,6 +3337,34 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
   .su-lines > div { grid-template-columns: minmax(0, 1fr) 5.5rem; gap: 0.7rem; }
 }
 
+/* Weekly sales on Supplier order. Use the existing sheet and ruled rows. */
+.su-sales { margin: 0 0 1rem; padding-bottom: 0.45rem; border-bottom: 1px solid var(--line); }
+.su-sales-link-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.2rem 0.7rem; }
+.su-head [data-su^="sales-"], .su-sales-row .btn { min-height: 44px; }
+.su-sales-form, .su-sales-links { padding: 0.7rem 0 0.9rem; overflow-wrap: anywhere; }
+.su-sales-form h3 { margin: 0 0 0.45rem; font: 700 1.35rem var(--display); }
+.su-sales-form p { margin: 0.4rem 0; }
+.su-sales-check { display: flex; align-items: center; gap: 0.65rem; min-height: 44px; cursor: pointer; }
+.su-sales-check input { flex-shrink: 0; width: 1.35rem; height: 1.35rem; }
+.su-sales-part { min-width: 0; margin: 0.7rem 0; padding: 0.55rem 0.7rem; border: 1px solid var(--edge); border-radius: var(--radius); }
+.su-sales-part .su-form-grid { margin-block: 0.55rem; }
+.su-sales-part .search, .su-sales-links .search { max-width: 100%; min-height: 44px; }
+.su-sales-link-row { padding: 0.55rem 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.su-sales-link-row > div { min-width: 0; flex: 1 1 12rem; }
+.su-sales-link-row p { margin: 0.2rem 0 0; }
+.su-sales-row { grid-column: 2 / -1; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0 0.65rem; min-width: 0; }
+.su-sales-row [data-su="sales-calc"] { min-height: 44px; font-weight: 700; text-align: left; overflow-wrap: anywhere; }
+.su-sales-week { display: block; font-size: 0.8125rem; font-weight: 400; color: var(--muted); }
+.su-sales-explain, .su-sales-replace { flex: 1 0 100%; min-width: 0; overflow-wrap: anywhere; margin: 0.2rem 0 0; }
+.su-sales-compact { display: none; }
+.su-sales-replace .btn { height: auto; white-space: normal; text-align: left; }
+@media (max-width: 719px) {
+  .su-sales-row { grid-column: 1 / -1; }
+  .su-head .su-sales-compact { display: inline; }
+  .su-head .su-sales-wide { display: none; }
+  .su-head [data-su], .su-sales-link-row .btn, .su-sales-row .btn { padding-inline: 0.65rem; }
+}
+
 /* Physical stock return: the familiar tick box keeps room for the item on a phone. */
 .tr-return-box { flex-basis: 44px; width: 44px; height: 44px; }
 

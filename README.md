@@ -214,6 +214,8 @@ This guide is bundled with the book, searchable and readable without extra Fires
 
 **Chef hat > Supplier order** (`#/suppliers`) is for the head chef, sous chefs and the verified admin; staff cannot open it or read its data. The catalogue, private import, order sheet and cut-offs are described in full in [docs/supplier-order.md](docs/supplier-order.md); the data contract is [docs/supplier-workspace.md](docs/supplier-workspace.md).
 
+**Sunday sales suggestions** use one reviewed POS export and confirmed product links to show weekly amounts beside **To order**. The chef chooses what to put in the draft and places the order with the supplier. Final checks and live release are pending. [Sales suggestions and the chosen design](docs/supplier-sales.md)
+
 ## Delivery temperatures (26 Oct 2026)
 
 Open **Delivery received** in the chef-hat dropdown. Enter the supplier, or tap one of the suppliers due today (from the order cut-offs). Pick **What came in?**: Chilled, Frozen or Both. It starts on Chilled, and only the boxes for that choice show. Enter the reading; the **−** key in front of each box makes it below zero, so both boxes use the number pad. Zero, negative readings and decimals are accepted. The Queensland time shows on one line; **Change time** opens the date and time. **Add items or notes** opens the notes box. Then **Save delivery**. On a phone, Save delivery and Clear form stay just above the tab bar while the form is on screen (19 Nov 2026), so Save is on the first screen even with the function band and the cut-off bar showing. The saved receipt includes who received it. Everyone with a personal login can use it, including Functions and View only. Signed-out visitors cannot open delivery records.
