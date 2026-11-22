@@ -1248,9 +1248,9 @@
       var r = byId[route.stack[route.stack.length - 1]];
       return '<div class="page">' + '<main id="main">' + recipeCard(r, route.stack, true) + '</main>' + footer() + '</div>';
     }
-    return '<div class="page">' + '<main id="main" style="display: flex; flex-direction: column; gap: 1.1rem">' +
+    return '<div class="page"><main id="main" class="rx-browse rx-browse--tiles">' +
       searchField('Dish, ingredient or allergen', countText()) +
-      kindChips() + freeChips(true) + recipeStatusHTML() +
+      '<div class="rx-filters">' + kindChips() + freeChips(true) + '</div>' + recipeStatusHTML() +
       '<div id="results">' + tilesHTML() + '</div><div class="hint">Allergen tags with a ? may be in it: check the supplier label.</div></main>' + footer() + '</div>';
   }
 
@@ -1304,8 +1304,10 @@
   function viewPass(route) {
     var stack = route.stack;
     if (!stack.length) {
-      return '<div class="page">' + '<main id="main" style="display: flex; flex-direction: column; gap: 1.1rem">' +
-        searchField('Dish, ingredient or allergen', passCount()) + kindChips() + allergenRow() + recipeStatusHTML() + '<div id="shelves" class="shelves">' + shelvesHTML() + '</div></main>' + footer() + '</div>';
+      return '<div class="page"><main id="main" class="rx-browse rx-browse--pass">' +
+        searchField('Dish, ingredient or allergen', passCount()) +
+        '<div class="rx-filters">' + kindChips() + allergenRow() + '</div>' + recipeStatusHTML() +
+        '<div id="shelves" class="shelves">' + shelvesHTML() + '</div></main>' + footer() + '</div>';
     }
     var r = byId[stack[stack.length - 1]], dish = isDish(r);
     var trail = koRow('<nav class="trail crumbs" aria-label="Breadcrumb"><a href="#/recipes">The pass</a>' + stack.map(function (id, i) {
@@ -2030,6 +2032,9 @@
   function backHome() {
     var a = homeAt && app.querySelectorAll('a[href="' + homeAt.href + '"]')[homeAt.n];
     if (!a) { window.scrollTo(0, homeY); return; }
+    // The compact filters take their final height once the shared controls replace the source chips.
+    var browse = app.querySelector('.rx-browse');
+    if (browse && window.LK_UX) window.LK_UX.enhance(browse);
     // a plate in a group not drawn yet has no true position: draw every group once (as before this change), place the
     // plate, then go back to drawing only what is near; each group keeps the height it was drawn at, so nothing jumps
     app.classList.add('cv-all');

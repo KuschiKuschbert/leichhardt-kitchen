@@ -558,6 +558,14 @@ The public saved book now publishes one complete generation at a time. A failed 
 
 On screens below 480 px (since 5 Nov 2026; before, below 360 px, or below 480 px with Extra large text), the tick stays beside the prep words and the same On it, priority, recipe and More actions sit below them: with I'm on it's own button beside them the words had 58 px of a 390 px row and broke mid-word (head chef's pick A, 5 Nov 2026). An amount stays beside the words while it fits whole and a long one drops below them and wraps within the row; below 360 px, or with Extra large text, the amount and the marks always sit under the words. The notebook, personal one-tap ticking, shared-screen worker choice and Undo stay the same. Normal phone, tablet, desktop and landscape rows keep their existing arrangement where the exception does not apply. [Selected option and checks](adaptive-controls.md#narrow-prep-rows-selected-option-a).
 
+### More room on Prep Work on a phone
+
+**Verdict: Build smaller (quick check).** On 360–479 px screens, today's Work notebook with Add uses shorter gaps above the lines and less cover padding. Linear's approach puts more of the work above Add. Flighty's approach keeps the Functions and supplier notices first, with their actual times and warning words. The existing date, progress, row text and controls keep their size and meaning.
+
+**Implemented app evidence.** Chromium stand-in, baseline `f29eb56`, synthetic bookings and a live cut-off. At 390 × 844 with normal text, the sous chef sees three complete rows above Add, up from two. The third line ends at y693, above the dock at y707. Its 44 × 44 px Tick works in one tap without scrolling, and Add opens in one tap. The staff fixture still shows four rows. At Extra large, the first work line moves up 55 px for the sous chef and 44 px for staff, with the same complete row counts and usable Add and Tick. At 768 × 900 and 1280 × 800, the measured Work rows stay in place.
+
+**Contract fit.** The synthetic cancellation still leads with “Cancelled, do not send”. The date, row and dock checks showed no sideways scroll or browser errors. Before service, the wall board and other days use their existing spacing. The Prep click checks cover stale notices, Add dock clearance and restoring the same line after leaving. This spacing change uses the existing steel cover, status colours and focus rules. Real service legibility and production behaviour were not measured.
+
 ### Staff save presses
 
 Manage staff and the People panel update their save feedback in place. The Save and Undo buttons stay in place while a name field loses focus, so a held press is not cancelled by the input-change redraw. The New pages regression uses a held Save press after editing a name and checks the saved staff list and retained visibility settings. The Practice settings test waits for its owner-only control before checking it, matching the account check that the next click already waits for.
