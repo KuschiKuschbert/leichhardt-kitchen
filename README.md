@@ -242,6 +242,8 @@ On a phone, **Go to delivery records** moves focus to the existing receipt list.
 
 ## Adding or changing a recipe
 
+The ingredient arrow keeps the related details beside the list on a wide screen and under the row on a smaller one. Amount and ingredient stay in the row. Closing the details keeps the draft for the recipe’s existing Save action. [Recipe editor](docs/recipe-editor-options/brief.md#ingredient-details-beside-the-list-22-november-2026)
+
 All recipes are in **`js/data.js`**. The top of that file explains every field. Recipes the head chef changes or adds in the book itself are kept in Firestore and laid over this file, and the book's copy wins (see Recipes changed in the book below). To add one here:
 
 1. Copy an existing recipe block, from `{` to `},`.

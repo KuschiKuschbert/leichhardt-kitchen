@@ -460,25 +460,37 @@
     if (trimStr(i.note)) bits.push('<span class="mg-ing-note">' + esc(i.note) + '</span>');
     return '<span class="mg-ing-sum">' + bits.join('') + '</span>';
   }
-  function ingHTML(e) {
-    var d = e.d, n = d.ingredients.length;
+  var ingPanelMedia = window.matchMedia('(min-width: 1150px)');
+  function ingDetailHTML(e, k) {
+    var i = e.d.ingredients[k], n = e.d.ingredients.length;
+    return '<div class="mg-ing-open" id="mg-ing-detail-' + k + '">' +
+      '<div class="field mg-ing-field"><label class="label" for="mg-note-' + k + '">Note</label><input id="mg-note-' + k + '" class="search" data-f="ing.' + k + '.note" placeholder="For example: bought in, 170 g" maxlength="200" value="' + esc(i.note || '') + '"></div>' +
+      '<div class="field mg-ing-field"><label class="label" for="mg-link-' + k + '">Recipe link</label><div class="mg-linkbox">' + linkBox('ing.' + k + '.link', i.link || '', 'mg-link-' + k, 'Recipe link, ingredient ' + (k + 1)) + '</div>' +
+      '<span class="hint">A linked ingredient is tappable on the card and takes its allergens from its own recipe.</span></div>' +
+      (i.link ? '' : '<div class="field"><span class="label">Allergens</span>' + tagChips(i.tags, 'ing', k, i.none, e.handTags) + '</div>') +
+      '<div class="btn-row mg-mini">' + (k ? '<button type="button" class="btn" data-mg="ing-up" data-i="' + k + '" aria-label="Move ingredient ' + (k + 1) + ' up">Move up</button>' : '') +
+      (k < n - 1 ? '<button type="button" class="btn" data-mg="ing-down" data-i="' + k + '" aria-label="Move ingredient ' + (k + 1) + ' down">Move down</button>' : '') +
+      '<button type="button" class="p-x lk-del" data-mg="ing-del" data-i="' + k + '" aria-label="' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + ' ingredient ' + (k + 1) + '">' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + '</button></div></div>';
+  }
+  function ingPanelHTML(e, k) {
+    return '<aside class="mg-ing-panel" aria-labelledby="mg-ing-panel-name"><header class="mg-ing-panel-head"><div>' +
+      '<span class="label">Ingredient ' + (k + 1) + '</span><h3 class="h3" id="mg-ing-panel-name">' +
+      esc(trimStr(e.d.ingredients[k].name) || 'Ingredient details') + '</h3></div>' +
+      '<button type="button" class="btn" data-mg="ing-close" data-i="' + k + '">Close</button></header>' +
+      ingDetailHTML(e, k) + '</aside>';
+  }
+  function ingHTML(e, side) {
     return '<section class="set-block mg-sec" aria-labelledby="mg-h-ing"><div class="mg-sec-head"><h3 class="h3" id="mg-h-ing">Ingredients</h3>' + scaleBtn(e) + '</div>' +
       multiplierHTML(e) +
       '<p class="hint">Type the amount and the name in the row. The arrow opens the note, the recipe link, the allergens and moving.</p>' +
-      '<ol class="mg-ings">' + d.ingredients.map(function (i, k) {
+      '<ol class="mg-ings">' + e.d.ingredients.map(function (i, k) {
         var open = e.open === k, nm = trimStr(i.name) || 'ingredient ' + (k + 1);
         return '<li class="mg-ing' + (open ? ' open' : '') + '"><div class="mg-ing-top"><span class="mg-n" aria-hidden="true">' + (k + 1) + '</span>' +
           '<input class="search mg-q" data-f="ing.' + k + '.q" aria-label="Amount, ingredient ' + (k + 1) + '" placeholder="Amount" maxlength="40" value="' + esc(i.q || '') + '">' +
           '<input class="search mg-nm" data-f="ing.' + k + '.name" aria-label="Ingredient ' + (k + 1) + '" placeholder="Ingredient" maxlength="120" value="' + esc(i.name || '') + '">' +
-          '<button type="button" class="mg-ing-more" data-mg="ing-open" data-i="' + k + '" aria-expanded="' + open + '" aria-label="' + esc('Note, link, allergens and moving for ' + nm) + '">' + CHEV + '</button></div>' + ingSum(i, e.handTags) +
-          (open ? '<div class="mg-ing-open">' +
-            '<div class="field"><label class="label" for="mg-note-' + k + '">Note</label><input id="mg-note-' + k + '" class="search" data-f="ing.' + k + '.note" placeholder="For example: bought in, 170 g" maxlength="200" value="' + esc(i.note || '') + '"></div>' +
-            '<div class="field"><label class="label" for="mg-link-' + k + '">Recipe link</label><div class="mg-linkbox">' + linkBox('ing.' + k + '.link', i.link || '', 'mg-link-' + k, 'Recipe link, ingredient ' + (k + 1)) + '</div>' +
-            '<span class="hint">A linked ingredient is tappable on the card and takes its allergens from its own recipe.</span></div>' +
-            (i.link ? '' : '<div class="field"><span class="label">Allergens</span>' + tagChips(i.tags, 'ing', k, i.none, e.handTags) + '</div>') +
-            '<div class="btn-row mg-mini">' + (k ? '<button type="button" class="btn" data-mg="ing-up" data-i="' + k + '" aria-label="Move ingredient ' + (k + 1) + ' up">Move up</button>' : '') +
-            (k < n - 1 ? '<button type="button" class="btn" data-mg="ing-down" data-i="' + k + '" aria-label="Move ingredient ' + (k + 1) + ' down">Move down</button>' : '') +
-            '<button type="button" class="p-x lk-del" data-mg="ing-del" data-i="' + k + '" aria-label="' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + ' ingredient ' + (k + 1) + '">' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + '</button></div></div>' : '') + '</li>';
+          '<button type="button" class="mg-ing-more" data-mg="ing-open" data-i="' + k + '" aria-expanded="' + open + '"' +
+          (open ? ' aria-controls="mg-ing-detail-' + k + '"' : '') + ' aria-label="' + esc('Note, link, allergens and moving for ' + nm) + '">' + CHEV + '</button></div>' + ingSum(i, e.handTags) +
+          (open && !side ? ingDetailHTML(e, k) : '') + '</li>';
       }).join('') + '</ol><div class="btn-row"><button type="button" class="btn" data-mg="ing-add">Add an ingredient</button></div></section>';
   }
   function canScale() { return !!(P.bookEdit() && window.LK_AMT && window.LK_AMT.scale); }
@@ -717,10 +729,11 @@
     var errs = e.errs.length ? '<div class="warn" role="alert"><span class="label">Not saved yet</span><ul class="mg-errs">' + e.errs.map(function (x) { return '<li><a href="#' + esc(x.at) + '" data-mg="goto" data-v="' + esc(x.at) + '">' + esc(x.msg) + '</a></li>'; }).join('') + '</ul></div>' : '';
     var warns = e.warns.length ? '<div class="box beige" role="note">' + e.warns.map(function (w) { return '<div>' + esc(w) + '</div>'; }).join('') + '</div>' : '';
     var cur = chOf(e), part = function (k, html) { return '<div class="mg-ch" data-ch="' + k + '"' + (cur === k ? '' : ' hidden') + '>' + html + '</div>'; };
-    return '<div class="mg-wrap mg-ed">' + linkList() + head + kept + fileNote + conflict + errs + warns +
+    var side = cur === 'ing' && ingPanelMedia.matches && !!d.ingredients[e.open];
+    return '<div class="mg-wrap mg-ed' + (side ? ' mg-with-ing-panel' : '') + '">' + linkList() + head + kept + fileNote + conflict + errs + warns +
       '<div class="mg-body">' + chNavHTML(e) + '<div class="mg-chap">' +
-      part('ing', ingHTML(e)) + part('method', methodHTML(e)) + part('alg', allergenHTML(e)) + part('draw', drawingHTML(e)) +
-      part('card', swHTML(e) + basicsHTML(e) + moreCardHTML(e)) + (e.isNew ? '' : part('hist', histHTML(e) + moreHTML(e))) + '</div></div>' +
+      part('ing', ingHTML(e, side)) + part('method', methodHTML(e)) + part('alg', allergenHTML(e)) + part('draw', drawingHTML(e)) +
+      part('card', swHTML(e) + basicsHTML(e) + moreCardHTML(e)) + (e.isNew ? '' : part('hist', histHTML(e) + moreHTML(e))) + '</div>' + (side ? ingPanelHTML(e, e.open) : '') + '</div>' +
       '<div class="mg-bar sv-dock"><span class="mg-state" role="status">' + stateHTML() + '</span>' + (e.msg ? '<span class="p-err" role="alert">' + esc(e.msg) + '</span>' : '') +
       '<div class="btn-row">' + saveBtnHTML(e) +
       (dirty() ? '<button type="button" class="btn' + (armed('undo-all') ? ' lk-del' : '') + '" data-mg="undo-all">' + (armed('undo-all') ? 'Tap again to undo all' : 'Undo all changes') + '</button>' : '') + '</div></div></div>';
@@ -1003,14 +1016,56 @@
 
   /* ---------- drawing the page ---------- */
   var drawn = '';
+  var stopIngPanelFit = null;
+  function watchIngPanel(panel) {
+    if (stopIngPanelFit) stopIngPanelFit();
+    stopIngPanelFit = null;
+    if (!panel) return;
+    var dock = M.root.querySelector('.mg-bar'), frame = 0;
+    function fit() {
+      frame = 0;
+      // The panel starts below the page heading and then sticks. Fit to the real dock at its current position.
+      var bottom = Math.min(window.innerHeight, dock.getBoundingClientRect().top);
+      var room = Math.max(0, Math.floor(bottom - panel.getBoundingClientRect().top - 8)) + 'px';
+      if (panel.style.getPropertyValue('--mg-ing-panel-room') !== room) panel.style.setProperty('--mg-ing-panel-room', room);
+    }
+    function schedule() { if (!frame) frame = window.requestAnimationFrame(fit); }
+    var observer = window.ResizeObserver ? new ResizeObserver(schedule) : null;
+    if (observer) { observer.observe(dock); observer.observe(document.getElementById('app')); }
+    window.addEventListener('resize', schedule);
+    window.addEventListener('scroll', schedule, { passive: true });
+    stopIngPanelFit = function () {
+      if (observer) observer.disconnect();
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener('resize', schedule);
+      window.removeEventListener('scroll', schedule);
+    };
+    fit();
+  }
   function draw() {
     if (window.LK_DRAW && window.LK_DRAW.open()) return;
     if (!M.root || !document.body.contains(M.root)) return;
     var ae = document.activeElement, keep = ae && M.root.contains(ae) ? (ae.getAttribute('data-f') || ae.getAttribute('data-mg') + ':' + (ae.getAttribute('data-i') || '')) : '', fl = ae && M.root.contains(ae) ? ae.getAttribute('data-fl') : '';
-    var y = window.scrollY;
+    var scrollBox = M.root.querySelector('.mg-ing-panel .mg-ing-open'), detailTop = scrollBox && scrollBox.scrollTop, y = window.scrollY;
+    var source = ae && ae._uxSource ? ae._uxSource.querySelector('[data-mg="tag"]') : ae;
+    var tag = source && scrollBox && scrollBox.contains(source) && source.matches('[data-mg="tag"]') ? source.getAttribute('data-v') : null;
     M.root.innerHTML = M.ed ? editorHTML() : listHTML();
     window.scrollTo(0, y);
+    watchIngPanel(M.root.querySelector('.mg-ing-panel'));
+    var reappeared = scrollBox && M.root.querySelector('#' + scrollBox.id);
+    if (reappeared && reappeared.closest('.mg-ing-panel')) reappeared.scrollTop = detailTop;
     window.dispatchEvent(new Event('lk-nav'));
+    // Keep the focused allergen when the existing picker changes its source button and redraws the panel.
+    if (tag && reappeared) {
+      var tagButton = Array.from(reappeared.querySelectorAll('[data-mg="tag"]')).find(function (b) { return b.getAttribute('data-v') === tag; });
+      if (tagButton) {
+        if (window.LK_UX) window.LK_UX.enhance(reappeared);
+        var group = tagButton.closest('.ux-choice-source');
+        reappeared.scrollTop = detailTop;
+        (group ? group.nextElementSibling : tagButton).focus({ preventScroll: true });
+        return;
+      }
+    }
     // a recipe link box (data-fl) keeps the focus too
     if (fl) { var lb = M.root.querySelector('[data-fl="' + fl + '"]'); if (lb) lb.focus({ preventScroll: true }); }
     else if (keep) {
@@ -1018,6 +1073,15 @@
       if (el && el.focus) el.focus({ preventScroll: true });
     }
   }
+  ingPanelMedia.addEventListener('change', function () {
+    if (!M.root || !M.ed || !M.ed.d || !M.ed.d.ingredients[M.ed.open] || chOf(M.ed) !== 'ing') return;
+    var el = document.activeElement, close = el && el.getAttribute('data-mg') === 'ing-close', caret = el && el.selectionStart, end = el && el.selectionEnd;
+    draw();
+    if (close && !ingPanelMedia.matches) {
+      var arrow = M.root.querySelector('[data-mg="ing-open"][data-i="' + M.ed.open + '"]');
+      if (arrow) arrow.focus({ preventScroll: true });
+    } else if (caret != null && document.activeElement.setSelectionRange) document.activeElement.setSelectionRange(caret, end);
+  });
   /* The drawing editor (js/draw.js), the library (js/library.js, js/lib/) and the smart creator (js/smart.js) load the
      first time a drawing opens. */
   var drawLoad = null;
@@ -1099,6 +1163,7 @@
     M.sub = sub.slice();
     // Keep the last keystroke before a quick Back or another editor clears the current form.
     if (M.ed && M.ed.sub !== key && dirty()) keepNow();
+    if (sub[0] === 'print' || sub[0] === 'draw') watchIngPanel(null);
     if (sub[0] !== 'print' && window.LK_RCP) window.LK_RCP.unmount();
     if (sub[0] === 'print') { if (window.LK_DRAW && window.LK_DRAW.open()) window.LK_DRAW.unmount(); mountPrint(root, sub); return; }
     if (sub[0] === 'draw') { mountDraw(root, sub); return; }
@@ -1121,9 +1186,10 @@
   }
   /* A hand-over (Sign out, Not you?, the idle lock: leave() in js/prep.js, 29 Oct 2026): the open form and drawing go
      with the person. Before, the page closing after the sign-out kept them as a draft again, for the next person. */
-  function drop() { if (window.LK_RCP) window.LK_RCP.drop(); clearTimeout(keepTimer); if (window.LK_DRAW && window.LK_DRAW.drop) window.LK_DRAW.drop(); M.ed = null; M.identity = ''; M.suspended = false; drawn = ''; unarm(); }
+  function drop() { watchIngPanel(null); if (window.LK_RCP) window.LK_RCP.drop(); clearTimeout(keepTimer); if (window.LK_DRAW && window.LK_DRAW.drop) window.LK_DRAW.drop(); M.ed = null; M.identity = ''; M.suspended = false; drawn = ''; unarm(); }
   function unmount() {
     var hadRoot = !!M.root;
+    watchIngPanel(null);
     if (window.LK_RCP) window.LK_RCP.unmount();
     if (window.LK_DRAW && window.LK_DRAW.open()) window.LK_DRAW.unmount();
     var lock = workLock();
@@ -1179,7 +1245,7 @@
     if (a === 'mine') { save(true); return; }
     // a change while the kept box shows: the kept changes come back first, and this tap does nothing else (its row may
     // not be the same row in the kept changes)
-    if (e.kept && !/^(kept-use|kept-drop|hist|ing-tags|ing-open|scale|ch|more-card|pin-pick|theirs)$/.test(a)) { keptBack(e); return; }
+    if (e.kept && !/^(kept-use|kept-drop|hist|ing-tags|ing-open|ing-close|scale|ch|more-card|pin-pick|theirs)$/.test(a)) { keptBack(e); return; }
     if (a === 'ch') { if (chOf(e) !== v) { e.ch = v; unarm(); draw(); var top = M.root.querySelector('.mg-body'); if (top && top.getBoundingClientRect().top < 0) top.scrollIntoView({ block: 'start' }); } return; }
     if (a === 'more-card') { e.moreOpen = !e.moreOpen; draw(); return; }
     if (a === 'theirs') {
@@ -1210,7 +1276,14 @@
       var mb = M.root.querySelector('[data-mg="' + a + '"][data-i="' + to + '"]') || M.root.querySelector('[data-mg="ing-open"][data-i="' + to + '"]'); if (mb) mb.focus({ preventScroll: true });
       return;
     }
-    if (a === 'ing-open' || a === 'ing-tags') { e.open = e.open === i ? -1 : i; unarm(); draw(); return; }
+    if (a === 'ing-open' || a === 'ing-tags' || a === 'ing-close') {
+      e.open = a === 'ing-close' || e.open === i ? -1 : i;
+      unarm(); draw();
+      var control = a === 'ing-close' ? M.root.querySelector('[data-mg="ing-open"][data-i="' + i + '"]') :
+        e.open === i && M.root.querySelector('[data-mg="ing-close"]');
+      if (control) control.focus({ preventScroll: a !== 'ing-close' });
+      return;
+    }
     if (a === 'tag') {
       var w = el.getAttribute('data-w'), obj = w === 'pin' ? d.pins[i] : d.ingredients[i];
       obj.tags = cycleTag(obj.tags, v);
@@ -1258,7 +1331,13 @@
     var val = ev.target.type === 'checkbox' ? ev.target.checked : ev.target.value;
     setField(f, val);
     if (f === 'q') return;
-    if (M.ed) dirtyNote();
+    if (M.ed) {
+      dirtyNote();
+      if (f === 'ing.' + M.ed.open + '.name') {
+        var title = M.root.querySelector('#mg-ing-panel-name');
+        if (title) title.textContent = trimStr(val) || 'Ingredient details';
+      }
+    }
     // a change that alters what else the page shows (kind, drawing, section, links, allergens by hand): draw again
     if (ev.type === 'change' && /^(kind|art|menu\.sec|hand\.|ing\.\d+\.link|pin\.\d+\.link|pin\.\d+\.(x|y)|done)/.test(f)) draw();
   }
@@ -1284,7 +1363,13 @@
   document.addEventListener('keydown', function (ev) {
     if (!M.root || !M.root.contains(ev.target) || ev.key !== 'Enter') return;
     var f = ev.target.getAttribute('data-f') || '';
-    if (/^ing\.\d+\.(q|name|note)$/.test(f)) { ev.preventDefault(); var nx = ev.target.parentNode.parentNode.querySelector('[data-f$=".note"]'); if (/\.note$/.test(f) || !nx) { var b = M.root.querySelector('[data-mg="ing-add"]'); if (b) b.click(); } else if (/\.q$/.test(f)) ev.target.nextElementSibling.focus(); else nx.focus(); }
+    var ing = /^ing\.(\d+)\.(q|name|note)$/.exec(f);
+    if (!ing) return;
+    ev.preventDefault();
+    var note = M.root.querySelector('#mg-note-' + ing[1]);
+    if (ing[2] === 'note' || !note) M.root.querySelector('[data-mg="ing-add"]').click();
+    else if (ing[2] === 'q') ev.target.nextElementSibling.focus();
+    else note.focus();
   });
   /* Dragging a plate label (mouse, finger or pen): the number follows, and lets go where the part sits. */
   var drag = null, dragMoved = false;
