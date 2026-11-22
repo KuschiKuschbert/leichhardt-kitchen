@@ -85,3 +85,90 @@ wastage and reviews need no rollback; older clients ignore the added stamp.
 
 Official query guidance checked 25 October 2026:
 https://firebase.google.com/docs/firestore/security/rules-query
+
+## History entries first (22 November 2026)
+
+In Admin › Reports › Wastage, the full-width History list comes before the range
+totals. The period, exact dates, Refresh, Export CSV, view choices and existing
+report-wide filters are above the results. **Search report** affects History,
+Summary, totals and CSV. **Filter displayed entries** and the list's column
+filters narrow the displayed results. The existing sort choices, row actions and
+Show more controls stay with the list. Summary keeps the totals with its dates.
+Daily reviews covers the whole selected range and keeps its independent draft,
+Save and Cancel edits.
+
+### Council and choice
+
+**Verdict: Build smaller (5 of 5).** The 45-entry synthetic audit fixture put
+the first History row at y1209 on a 390×844 phone, y1321 at 768×900 and y1230 on a
+1280×800 desktop. The opening viewport showed zero complete entries at each
+size. The council asked for a shorter path to History entries with the dated
+export and report scope intact. The existing Transfers report jumps were
+verified separately. This was a role-based review using synthetic records.
+
+| Design | Structure | Trade-off |
+| --- | --- | --- |
+| A | Keep one History report and put its totals below the entries. Tighten the gaps around the existing toolbar. | One flow and no extra tap. Totals require scrolling under the currently displayed rows. |
+| B | Separate the main list from a date, filter, totals and export rail on desktop. Put totals under a disclosure on smaller screens. | The rail exposes desktop entries sooner but narrows the table. Smaller screens gain less and require a tap to see totals. |
+| C | Add a focused entry view with separate report and list filter disclosures. | Compact when selected, but adds a tap and can conceal active report-wide filters behind the disclosure. |
+
+| Reviewer | Round 2 rank |
+| --- | --- |
+| Cook | A, C, B |
+| Head chef reviewer | A, B, C |
+| Skeptic | A, B, C |
+| New starter | A, C, B |
+| Keeper | A, B, C |
+| Screen designer | A, C, B |
+
+The owner delegated the choice for this cycle, and all six reviewers ranked A
+first. A puts everyday entries first with the existing search, table and
+navigation. This applies the useful Things 3 and Linear principles of a
+full-width working list and direct access. For the all-three combination, keep
+A's placement and C's precise scope wording in the existing inputs. B's
+context rail and C's extra mode would make controls harder to locate across
+devices. Keep both out of the build. The implemented layout uses the existing paper
+surface, control colours, unit tiles and action targets.
+
+### Implementation and checks
+
+The DOM order puts the list ahead of the named range-total section. Empty list
+filter containers take no space. The list and totals use the original
+`lvHTML()` and `whTotals()` paths. This change adds no reads, writes, storage,
+permissions or release dependency.
+
+Matched captures of the full app on the Firebase stand-in used the same 45
+records, note text and saved review from the audit, plus a synthetic amount
+correction. The positions below give the first record's top relative to the
+opening viewport, before scrolling.
+
+| Viewport | Normal first row, before → after | Extra large first row, before → after |
+| --- | ---: | ---: |
+| 390×844 | 1,209 → 946 px | 1,535 → 1,263 px |
+| 768×900 | 1,321 → 1,131 px | 1,553 → 1,316 px |
+| 1280×800 | 1,230 → 1,041 px | 1,447 → 1,210 px |
+
+The opening view still has zero complete records at those sizes. From the same
+scroll position at the report's start, normal type shows two complete entries
+on the tablet and one on the desktop, up from zero on both.
+
+**Break-it findings in the local synthetic fixture**
+
+- **Reproduced and checked.** The shared narrow toolbar clipped the
+  **Filter displayed entries** wording in the initial build. The History list
+  controls now wrap on a phone, and the Reason and Section filters share a row
+  when they fit. The full label is readable at all three widths in Normal and
+  Extra large text, with no horizontal page or table overflow in the captures.
+- **Checked in the click tests.** List search and column facets preserve the
+  report totals and identical CSV bytes. Report search changes the CSV, and
+  custom dates agree with the export name and contents. The expanded action
+  note, changed-from quantity, unit totals, Remove and Put back, saved review
+  and its draft and cancel guard keep their original scope.
+- **Checked in the click tests.** A failed range read shows its error, keeps
+  export disabled and stores no successful empty range. Refresh recovers it.
+  Staff and a shared device without the chef PIN do not query private history.
+- **Trade-off.** History totals require scrolling below the displayed entries.
+  Summary keeps them near the date.
+
+[History click checks](../tests/wastage-history.test.js) ·
+[Admin tile and control checks](../tests/admin-kit.test.js)

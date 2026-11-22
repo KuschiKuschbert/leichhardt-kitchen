@@ -8,7 +8,7 @@ const monthStart = monthEnd.slice(0, 8) + '01';
 const extra = {}, put = (d, id, text, amount, unit, more) => {
   extra[key('waste', d, 'lines', id)] = Object.assign({ text, amount, unit, reason: 'excess', station: 'Grill', action: '', addedBy: 'Ann', addedById: 'ann', addedAt: new Date(d + 'T18:00:00+10:00').getTime(), deleted: false }, more);
 };
-put(ago(2), 'fillet', 'Fish fillets', 2, 'kg', { reason: 'expired', action: 'Order smaller packs' });
+put(ago(2), 'fillet', 'Fish fillets', 2, 'kg', { reason: 'expired', action: 'Order smaller packs', was: { amount: 3, unit: 'kg' }, chgBy: 'Sam' });
 put(ago(9), 'crumb', 'Fish fillets', 500, 'g', { reason: 'prep', station: 'Larder', addedBy: 'Bo', addedById: 'bo' });
 put(ago(9), 'cream', 'Cream', 1, 'L', { station: 'Larder' });
 put(ago(2), 'gone', 'Removed fish', 50, 'kg', { deleted: true, deletedBy: 'Sam' });
@@ -54,6 +54,22 @@ async function csv(p) {
   ok(t.some(x => x.label === 'kg' && x.n === '2.5') && t.some(x => /logged entries/.test(x.label) && x.n === '2'), 'search updates totals; 500 g and 2 kg combine into 2.5 kg');
   let file = await csv(p);
   ok((file.text.match(/Fish fillets/g) || []).length === 2 && !/Cream|Removed fish/.test(file.text), 'CSV matches the search');
+  const reportCsv = file;
+  const displaySearch = p.getByRole('searchbox', { name: 'Filter displayed entries' });
+  await displaySearch.fill('Expired stock');
+  await L.waitFor(p, () => /1 matching entry/.test(document.querySelector('.wh-history .lv-count')?.textContent));
+  await L.pick(p, '[data-k="lv-cf:waste-log"][data-col="3"]', 'Prep waste');
+  ok(await p.locator('.wh-history .lv-none').isVisible(), 'the entry-only search and reason filter combine on the displayed list');
+  file = await csv(p);
+  ok(file.name === reportCsv.name && file.text === reportCsv.text && JSON.stringify(await totals(p)) === JSON.stringify(t),
+    'entry-only filters leave the same dated CSV and report totals');
+  await p.click('[data-p="lv-reset"][data-lv="waste-log"][data-part="all"]');
+  ok((await rows(p)).length === 2 && await p.getByRole('searchbox', { name: 'Search report' }).inputValue() === 'Fish fillets',
+    'resetting displayed entries leaves Search report applied');
+  await p.locator('.wh-note > summary').click();
+  ok(await p.getByText('Order smaller packs', { exact: true }).isVisible() &&
+    await p.getByText('changed from 3 kg by Sam', { exact: true }).isVisible() && /3 kg,Sam/.test(file.text),
+    'the expanded note and original quantity stay with the corrected row and CSV');
   await p.click('.wh-filters > summary');
   await L.pick(p, '[data-k="af-reason"]', 'expired');
   await p.fill('[data-k="wh-who"]', 'Ann');
@@ -100,6 +116,9 @@ async function csv(p) {
   await p.fill('[data-k="wh-from"]', '2026-07-01'); await p.fill('[data-k="wh-to"]', '2026-07-31');
   await p.click('[data-p="wh-apply"]'); await ready(p);
   ok((await rows(p)).some(x => /Older schnitzels/.test(x)), 'custom dates load records older than the former 60-day window');
+  file = await csv(p);
+  ok(file.name.includes('2026-07-01-to-2026-07-31') && /Older schnitzels/.test(file.text) && !/Fish fillets/.test(file.text),
+    'custom dates remain the same inclusive boundaries in the export name and contents');
   const customReads = await reads(p);
   await p.fill('[data-k="wh-from"]', '2026-08-02'); await p.fill('[data-k="wh-to"]', '2026-07-01');
   await p.click('[data-p="wh-apply"]');
@@ -144,14 +163,33 @@ async function csv(p) {
     await p.context().close();
   }
 
-  for (const width of [390, 768, 1280]) {
-    p = await report(b, { width });
+  for (const [width, text] of [[390, 'normal'], [768, 'normal'], [1280, 'normal'], [390, 'xlarge'], [768, 'xlarge'], [1280, 'xlarge']]) {
+    p = await report(b, { width, settings: { text } });
+    const layout = await p.evaluate(() => {
+      const list = document.querySelector('.wh-history .lv[data-lv="waste-log"]');
+      const totals = document.querySelector('.wh-history-totals');
+      const blank = list.querySelector(':scope > .ux-active-filters');
+      const targets = [...document.querySelectorAll('.wh-period > .chip, .wh-tabs .chip, .wh-filters > summary, .wh-note > summary')];
+      const query = list.querySelector('.lv-q'), style = getComputedStyle(query);
+      const measure = document.createElement('canvas').getContext('2d');
+      measure.font = style.font;
+      const labelFits = query.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) >= measure.measureText(query.placeholder).width;
+      return { text: document.documentElement.dataset.text, totalsAfter: Boolean(list.compareDocumentPosition(totals) & Node.DOCUMENT_POSITION_FOLLOWING),
+        noBlankGap: getComputedStyle(blank).display === 'none', targets: targets.length > 0 && targets.every(e => e.getBoundingClientRect().height >= 44), labelFits };
+    });
+    ok(layout.text === text && layout.totalsAfter && layout.noBlankGap && layout.targets,
+      width + ' ' + text + ': entries precede totals, empty filters leave no gap and controls remain at least 44 px tall');
+    ok(layout.labelFits, width + ' ' + text + ': the full Filter displayed entries placeholder fits');
     for (const view of ['history', 'summary', 'reviews']) {
       await p.click('[data-p="wh-view"][data-v="' + view + '"]');
       await L.waitFor(p, () => !document.querySelector('.wh-report [role="status"]')?.textContent.startsWith('Loading wastage'));
-      ok(!(await L.overflow(p)), width + ': ' + view + ' fits without sideways scroll');
+      ok(!(await L.overflow(p)), width + ' ' + text + ': ' + view + ' fits without sideways scroll');
+      if (view === 'summary') ok(await p.locator('.wh-summary > .wh-range + .wh-totals').isVisible(),
+        width + ' ' + text + ': Summary keeps its totals beside its selected dates');
+      if (view === 'reviews') ok(await p.locator('#w-ra').isVisible() && !await p.locator('.wh-history-totals').count(),
+        width + ' ' + text + ': Daily reviews keeps its own editor and scope');
     }
-    ok(p.errors.length === 0, width + ': all views have no page errors: ' + p.errors.join(' | '));
+    ok(p.errors.length === 0, width + ' ' + text + ': all views have no page errors: ' + p.errors.join(' | '));
     await p.context().close();
   }
   for (const who of ['ann', 'sam']) {
