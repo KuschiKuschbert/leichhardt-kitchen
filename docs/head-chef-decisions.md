@@ -1,5 +1,9 @@
 # Head chef decisions
 
+- **23 November 2026, Orders starts with the existing Functions fold.** Keep routine details one tap away on Orders, show every current warning and its action, and wait until the finger lifts before the band moves. [Council, decision and checks](band-options/brief.md#orders-starts-with-the-existing-functions-fold-23-november-2026).
+
+- **23 November 2026, bring the recipe results closer to Search.** The space audit's smaller layout groups the current recipe type and allergen controls. Both allergen modes stay visible on Pass, and Search opens in one tap. [Council quick check](whole-app-redesign-options/brief.md#compact-recipe-browse-filters-23-november-2026)
+
 - **22 November 2026, keep a failed Prep tick on its line and make the older Undo readable.** On a personal device the failed tick names the line and the same box retries it once. A success on another line gets its own slip. On a phone the older Undo can wrap its label. [Feedback contract](action-feedback.md#the-rule)
 
 - **22 November 2026, reach Before service items sooner.** Keep one title and group the section chooser, search and read time with the existing Prep reference controls. [Section prep standards](prep-standards.md#what-it-does)
@@ -7,6 +11,7 @@
 - **22 November 2026, compact People roster and focused editor.** Put Name, Role and Permissions in columns on a wide screen. A name opens the editor alongside the list, or takes the page on a phone with Back to the same list. Reset PIN sits in the selected person's editor. [Decision and checks](people-room-options/brief.md#compact-roster-and-focused-editor-22-november-2026).
 
 - **22 November 2026, Sunday sales suggestions stay in Supplier order.** The head chef chose A's inline suggestion, B's visible current amount in a **Keep** or **Replace** step and C's calculation and return of focus to **To order**. One weekly POS export and confirmed links support the chef's draft. The head chef or verified admin publishes the report and manages links. The chef places the order with the supplier. [Decision, council and pending release checks](supplier-sales.md)
+- **22 November 2026, Supplier order context and History.** The delegated audit choice puts the current cut-off and Last order beside quantities when the supplier rail fits. Keep the compact More line and bring the existing History within a tap, with Back to the same place. [Council and chosen layout](supplier-order-rail-options/brief.md)
 - **22 November 2026, two guide pages fit beside each other.** A guide with two pages shows both page buttons on screen. Either one opens its page at full reading size. The printed pages keep their usual order. [Guides](prep-book.md#guides)
 
 - **22 November 2026, Functions Service spacing and waiting trips.** Bring the live board higher on a phone and place the waiting shelf beside active rounds on wide kitchen screens. Keep the coordinator’s confirmation queue first. [Service board](design-patterns.md#inside-a-list)
@@ -15,6 +20,8 @@
 
 - **22 November 2026, names open the People editor.** In Admin, Team, People, tap the person's name to open or close their editor in the row. [People page](people-room-options/brief.md#tap-the-name-to-edit-22-november-2026)
 - **22 November 2026, a shorter Shift pings form.** Today and Tomorrow are direct choices. Dates, repeats and custom times sit under Custom schedule. The preview names the person chosen in Send to, and Save shares with that person. [Individual pings](ping-recipients.md#compact-composer-22-november-2026)
+
+- **22 November 2026, bring Wastage History entries higher.** The delegated council choice places report totals after the full-width entry list. Search report and Filter list name the two existing scopes. [Council and verification](wastage-history.md#history-entries-first-22-november-2026)
 
 - **22 November 2026, End-of-day review within reach.** The head chef approved bringing Wastage's existing review action into the first screen. The action sits by the daily total and opens the existing review sheet. [Quick check and measurement](work-pages-design-options/brief.md#end-of-day-review-placement-22-november-2026)
 

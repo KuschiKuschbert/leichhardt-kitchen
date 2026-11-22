@@ -585,7 +585,14 @@
   function canSend() { var p = P(); return !(p && p.functionOnly && p.functionOnly()); }
   function isChef() { var p = P(); return !!(p && p.chefMenu && p.chefMenu().chef); }
   // tell the pages: the band and the landing card redraw themselves, #/fn redraws through js/app.js
-  function changed() { ahFirst(); huFirst(); paint(); try { window.dispatchEvent(new Event('lk-fn')); } catch (e) {} }
+  var ordersFnPending = false;
+  function changed() {
+    ahFirst(); huFirst(); paint();
+    // The Orders stock tags and platter needs also follow lk-fn. Keep their tick targets in the same place until lift.
+    if (ordersBandBusy()) { ordersFnPending = true; return; }
+    ordersFnPending = false;
+    try { window.dispatchEvent(new Event('lk-fn')); } catch (e) {}
+  }
 
   /* ---------- the band under the top bar ---------- */
   // amounts read "2 × Pizza" in every function view (22 Oct 2026); the prep and order lines keep their own words
@@ -657,8 +664,28 @@
      full band replaces the line, once no finger is down (ahWait()). */
   // Prep starts with the slim strip instead of the full band (head chef, 19 Nov 2026, docs/band-options/brief.md,
   // Round 3): the list gets the first screen; a tap on the strip opens the service view or the function's sheet, and the
-  // other pages keep the full band. The Next function line is unchanged.
+  // other workbooks keep their regular band. The Next function line is unchanged.
   function prepStrip() { return location.hash.split('?')[0] === '#/prep'; }
+  function ordersBand() { return location.hash.split('?')[0] === '#/orders'; }
+  var ordersBandWho = '', ordersBandShown = '';
+  function ordersBandPerson() {
+    var who = ahWho();
+    if (who !== ordersBandWho) {
+      ordersBandWho = who; ordersBandShown = ''; ordersFnPending = false; stripWords = '';
+    }
+  }
+  function ordersBandBusy() {
+    return ordersBand() && !!ordersBandWho && ordersBandWho === ahWho() && P().privateAccess() && ahWait();
+  }
+  function ordersBandAlert(x, t, me) {
+    if (x.kind !== 'on') return true;
+    var f = x.f, w = nowOf(f, t);
+    return !!recent(f) || !!f.kc || (!w.done && (!f.first || f.rounds[w.k].at <= t + HOUR)) ||
+      (fnPerson(me) && waitingTrips(f.id).some(function (y) { return y.t.sentBy !== me; }));
+  }
+  function alertsFirst(ordinary, alerts) {
+    return alerts.concat(ordinary.filter(function (x) { return alerts.indexOf(x) < 0; }));
+  }
   function bandHTML() {
     var base = bandBase();
     if (!AH.on && !AH.gone) return base && prepStrip() ? '<div class="fn-strip-in">' + stripInner(now()) + '</div>' : base;
@@ -682,16 +709,28 @@
     var t = now(), R = bandRows(t), xs = R.xs, stale = staleWords(t, xs);
     var ys = R.ys;
     if (!xs.length && !ys.length && !stale) return '';
-    var a = R.a, b = R.b, left = xs.length + ys.length - a.length - b.length;
+    var a = R.a, b = R.b, orders = ordersBand(), warn = false;
+    if (orders) {
+      var me = ahWho();
+      var todayAlerts = xs.filter(function (x) { return ordersBandAlert(x, t, me); });
+      var soonAlerts = ys.filter(function (x) { return x.kind === 'order' && x.short; });
+      warn = !!(stale || todayAlerts.length || soonAlerts.length);
+      a = alertsFirst(a, todayAlerts);
+      b = alertsFirst(b, soonAlerts);
+    }
+    var left = xs.length + ys.length - a.length - b.length;
     var more = left > 0 ? '<button type="button" class="fn-more" data-fn="more" aria-expanded="false">+' + left + ' more</button>' : F.more && (xs.length > 2 || ys.length > 2) ? '<button type="button" class="fn-more" data-fn="more" aria-expanded="true">Show fewer</button>' : '';
     // two or more functions on at once: one view of everything that goes out now
     var svc = xs.filter(function (x) { return x.kind === 'on'; }).length >= 2 ? '<a class="fn-more fn-svc" href="#/fn/now">Service view</a>' : '';
     // a label says what the band holds: today's functions, the coming ones (order and tomorrow lines), or both
     var on = xs.filter(function (x) { return x.kind === 'on'; }).length;
     var lab = xs.length && ys.length ? 'Functions today and soon' : xs.length ? 'Functions today' : ys.length ? 'Functions coming up' : 'Functions';
-    // the round minus (Hide) folds the band to its label and one line; plus (Show) opens it, for the rest of the kitchen day on this phone (lk.fn.fold: the
-    // kitchen day it was folded; out of date the next day, so the band opens again by itself)
-    var fold = (a.length + b.length) && lsGet('lk.fn.fold') === kday(t), btn = a.length + b.length ? '<button type="button" class="fn-fold" data-fn="fold" aria-expanded="' + !fold + '" aria-label="' + (fold ? 'Show functions' : 'Hide functions') + '" title="' + (fold ? 'Show' : 'Hide') + '">' + (fold ? '+' : '\u2212') + '</button>' : '';
+    // Orders opens folded for routine information. Show lasts for this person and kitchen day in this tab.
+    // Other pages keep their usual per-day minus (lk.fn.fold). A warning on Orders cannot be folded away.
+    var fold = (a.length + b.length) && (orders ? !warn && ordersBandShown !== kday(t) : lsGet('lk.fn.fold') === kday(t));
+    var foldLabel = warn ? 'Function alerts are shown' : fold ? 'Show functions' : 'Hide functions';
+    var btn = a.length + b.length ? '<button type="button" class="fn-fold" data-fn="fold" aria-expanded="' + !fold + '" aria-label="' + foldLabel +
+      '" title="' + (warn ? foldLabel : fold ? 'Show' : 'Hide') + '"' + (warn ? ' aria-disabled="true"' : '') + '>' + (fold ? '+' : '\u2212') + '</button>' : '';
     if (fold) {
       // every function in a row, as many as fit across the screen (fitFold() hides the rest and counts them in "+N")
       var sum = xs.concat(ys).map(function (x) {
@@ -747,7 +786,9 @@
     if (Date.now() - touchUp < 400) { AH.wait = true; ahLater(); return true; }
     AH.wait = false; return false;
   }
-  function ahLater() { clearTimeout(ahTimer); ahTimer = setTimeout(function () { if (AH.wait && !touchDown) paint(); }, 450); }
+  function ahLater() { clearTimeout(ahTimer); ahTimer = setTimeout(function () {
+    if (AH.wait && !touchDown) { if (ordersFnPending) changed(); else paint(); }
+  }, 450); }
   function lift() { touchDown = false; touchUp = Date.now(); if (AH.wait) ahLater(); }
   document.addEventListener('pointerdown', function () { touchDown = true; touchAt = Date.now(); }, true);
   document.addEventListener('pointerup', lift, true);
@@ -1060,12 +1101,31 @@
   }
   // js/app.js draws the empty slot under the top bar; this fills it, and refills it when anything changes
   var lastBand = null;
-  function paint() {
+  function ordersBandFocus(el, from) {
+    var fn = from.getAttribute('data-fn'), id = from.getAttribute('data-id'), href = from.getAttribute('href');
+    var next = Array.prototype.find.call(el.querySelectorAll('button[data-fn],a[href]'), function (x) {
+      return fn ? x.getAttribute('data-fn') === fn && x.getAttribute('data-id') === id : href && x.getAttribute('href') === href;
+    });
+    next = next || el.querySelector('.fn-fold') || document.getElementById('rtitle');
+    if (next) next.focus({ preventScroll: true });
+  }
+  function paint(userDisclosure) {
     var el = document.getElementById('fn-band');
-    if (el) {
+    if (el && (userDisclosure === true || !ordersBandBusy())) {
+      ordersBandPerson();
       // compared with what this element was given (el.lkH), not its innerHTML: the browser writes text back differently
       // (a no-break space as &nbsp;), so that never matched and the slot was rebuilt every 20 seconds, losing focus
-      var h = bandHTML(); if (h !== lastBand || el.lkH !== h) { el.innerHTML = h; lastBand = h; el.lkH = h; } el.hidden = !h; fitFold();
+      var h = bandHTML(), from = document.activeElement;
+      if (h !== lastBand || el.lkH !== h) {
+        var restore = ordersBand() && el.contains(from);
+        el.innerHTML = h; lastBand = h; el.lkH = h;
+        el.hidden = !h;
+        if (restore) ordersBandFocus(el, from);
+        if (ordersBand() && document.fonts && document.fonts.status === 'loading' && el.querySelector('.fn-band-sum')) {
+          document.fonts.ready.then(function () { if (el.isConnected && ordersBand() && !ordersBandBusy()) fitFold(); });
+        }
+      }
+      el.hidden = !h; fitFold();
       el.classList.toggle('is-ahead', AH.on); el.classList.toggle('is-strip', !AH.on && !!h && prepStrip()); el.setAttribute('aria-label', AH.on ? 'Next function' : 'Functions');
     }
     strip();
@@ -1083,7 +1143,7 @@
      with today's next function and what goes out next; a tap opens its sheet. It is appended to document.body (a page
      redraw does not remove it). Bars that already stick to the top (search, signal, update, admin nav) move down by its
      height through --fn-stick. */
-  var stripEl = null, stripH = 0, padH = -1;
+  var stripEl = null, stripH = 0, padH = -1, stripWords = '';
   /* What the strip leads with (mended 19 Nov 2026, docs/band-options/brief.md, Round 3): a cancelled function, then a
      rescheduled one, then one changed in the last 3 hours, then a trip waiting for this Functions person, then what goes
      out next, then the order and tomorrow lines. Every other function and line is counted in "+N", never dropped (it
@@ -1130,13 +1190,19 @@
      top (search, signal, update, admin nav) move down by its height through --fn-stick. On Prep the band itself starts
      as the same strip (prepStrip()), so it pins the moment it scrolls away. */
   function strip() {
-    var band = document.getElementById('fn-band'), t = now(), h = band && !band.hidden && !AH.on ? stripInner(t) : '';
+    var band = document.getElementById('fn-band'), held = ordersBandBusy();
+    var h = band && !band.hidden && !AH.on ? held ? stripWords : stripInner(now()) : '';
+    if (!held) stripWords = h;
     // --fn-pad: room at the top for the strip while it could show, so a jump (a recipe's Ingredients chip) lands below it
     setPad(h ? stripH || 46 : 0);
     var off = !!h && band.getBoundingClientRect().bottom < 0 && !sheetEl;
     if (!off) { if (stripEl) { stripEl.hidden = true; } setStick(0); return; }
     if (!stripEl) { stripEl = document.createElement('div'); stripEl.className = 'fn-strip'; stripEl.setAttribute('role', 'region'); stripEl.setAttribute('aria-label', 'Functions'); document.body.appendChild(stripEl); }
-    if (stripEl.innerHTML !== h) stripEl.innerHTML = h;
+    if (ordersBand() ? stripEl.lkH !== h : stripEl.innerHTML !== h) {
+      var from = document.activeElement, restore = ordersBand() && stripEl.contains(from);
+      stripEl.innerHTML = h; stripEl.lkH = h;
+      if (restore) ordersBandFocus(stripEl, from);
+    }
     stripEl.hidden = false;
     setStick(stripEl.offsetHeight);
   }
@@ -1149,6 +1215,9 @@
   function fitFold() {
     var box = document.querySelector('#fn-band .fn-band-sum'), more = document.querySelector('#fn-band .fn-sum-more');
     if (!box || !more) return;
+    // Measure the items at full width before the first can shorten. Otherwise a partly clipped second name can
+    // disappear beyond the edge without being counted, after the font arrives or a one-name summary is refitted.
+    if (ordersBand()) box.classList.remove('is-one');
     var it = box.querySelectorAll('.fn-sum-i'), n = it.length, i;
     for (i = 0; i < n; i++) it[i].hidden = false;
     more.hidden = true;
@@ -2085,7 +2154,14 @@
     }
     if (a === 'go') { sheetClose(false, true); return; }
     if (a === 'ckhide') { try { localStorage.setItem('lk.fn.ckhide', kday(now())); } catch (x) {} if (window.LK_PREP && window.LK_PREP.sg) window.LK_PREP.sg('checks', 'd'); paint(); return; }
-    if (a === 'fold') { lsSet('lk.fn.fold', lsGet('lk.fn.fold') === kday(now()) ? null : kday(now())); lastBand = null; paint(); var fb = document.querySelector('#fn-band [data-fn="fold"]'); if (fb) fb.focus({ preventScroll: true }); return; }
+    if (a === 'fold') {
+      if (el.getAttribute('aria-disabled') === 'true') return;
+      if (ordersBand()) ordersBandShown = el.getAttribute('aria-expanded') === 'false' ? kday(now()) : '';
+      else lsSet('lk.fn.fold', lsGet('lk.fn.fold') === kday(now()) ? null : kday(now()));
+      lastBand = null; paint(true);
+      var fb = document.querySelector('#fn-band [data-fn="fold"]'); if (fb) fb.focus({ preventScroll: true });
+      return;
+    }
     // the Next function line's minus: this person, this phone, until tomorrow (lk.fn.ahead.fold), with Undo in the slip
     if (a === 'hu-got') { huGot(el); return; }
     if (a === 'seen') { if (el.getAttribute('aria-disabled') !== 'true') seenLoad(el.getAttribute('data-id')); return; }
@@ -2104,7 +2180,7 @@
       }
       return;
     }
-    if (a === 'more') { F.more = !F.more; lastBand = null; paint(); var mb = document.querySelector('#fn-band [data-fn="more"]'); if (mb) mb.focus({ preventScroll: true }); return; }
+    if (a === 'more') { F.more = !F.more; lastBand = null; paint(true); var mb = document.querySelector('#fn-band [data-fn="more"]'); if (mb) mb.focus({ preventScroll: true }); return; }
     if (a === 'days') { pageDays = +el.getAttribute('data-v') || 7; try { window.dispatchEvent(new Event('lk-fn')); } catch (x) {} }
     // Try again on a failed read (20 Nov 2026, the consistency sweep, step 2): the page is drawn again at once with the
     // loading words, so the focus goes to the page heading rather than nowhere
@@ -2176,7 +2252,7 @@
     // every booking from today on as the live list has them, removed ones included; null until the server answered
     live: function () { return F.state === 'ok' && F.all ? F.all.slice() : null; },
     // a page draws the slot: an open, so the Next function line is decided here (ahOpen())
-    bandSlot: function () { ahOpen(); var h = bandHTML(); lastBand = h; return '<div class="fn-band' + (AH.on ? ' is-ahead' : h && prepStrip() ? ' is-strip' : '') + '" id="fn-band" role="region" aria-label="' + (AH.on ? 'Next function' : 'Functions') + '"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
+    bandSlot: function () { ordersBandPerson(); ahOpen(); var h = bandHTML(); lastBand = h; return '<div class="fn-band' + (AH.on ? ' is-ahead' : h && prepStrip() ? ' is-strip' : '') + '" id="fn-band" role="region" aria-label="' + (AH.on ? 'Next function' : 'Functions') + '"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
     landSlot: function (home) { landHome = !!home; var h = landHTML(); return '<div id="fn-land"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
     homeRows: fnHomeRows,
     // Home's Function this week card and Next function line, under Your day (js/prep.js homeSlot()): drawn at Home's open

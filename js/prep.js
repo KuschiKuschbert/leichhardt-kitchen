@@ -4956,13 +4956,13 @@
     if (!c.find) c.find = function (item) { return c.cols ? c.cols.map(function (column) { return window.LK_UX.cellValue(column.html(item)); }).join(' ') : window.LK_UX.cellValue(c.card(item)); };
     if (!c.sorts || !c.sorts.length) c.sorts = [['default', 'Default order', function () { return 0; }], ['az', 'A to Z', function (a, b) { return window.LK_UX.compare(c.find(a), c.find(b)); }], ['za', 'Z to A', function (a, b) { return window.LK_UX.compare(c.find(b), c.find(a)); }]];
     LVR[c.key] = c;
-    var s = lvState(c), key = esc(c.key), bar = '';
+    var s = lvState(c), key = esc(c.key), bar = '', qLabel = c.qLabel || 'Search';
     {
       var fl = (c.filters || []).map(function (f) { return { f: f, n: f[2] ? c.items.filter(f[2]).length : c.items.length }; }).filter(function (x, i) { return i === 0 || x.n > 0 || x.f[0] === s.f; });
       var filterBar = fl.length > 1 ? '<div class="chips lv-chips scroll" role="group" aria-label="Filter">' + fl.map(function (x) { return '<button type="button" class="chip" data-p="lv-f" data-lv="' + key + '" data-v="' + esc(x.f[0]) + '" aria-pressed="' + (x.f[0] === s.f) + '">' + esc(x.f[1]) + ' <span class="lv-n">' + x.n + '</span></button>'; }).join('') + '</div>' : '';
       var tool = c.tool ? '<div class="lv-tool">' + c.tool + '</div>' : '';
       bar = '<div class="lv-tools">' + (c.heading ? '<h3 class="a-ch-h">' + esc(c.heading) + '</h3>' : '') + (c.leadingTool || '') +
-        '<div class="lv-qw"><label class="visually-hidden" for="lv-q-' + key + '">Search</label>' + findPill('<input id="lv-q-' + key + '" type="search" class="search lv-q" data-k="lv-q:' + key + '" placeholder="' + esc(c.ph || 'Search') + '" value="' + esc(s.q) + '" autocomplete="off" enterkeyhint="search">') + '</div>' +
+        '<div class="lv-qw"><label class="visually-hidden" for="lv-q-' + key + '">' + esc(qLabel) + '</label>' + findPill('<input id="lv-q-' + key + '" type="search" class="search lv-q" data-k="lv-q:' + key + '" placeholder="' + esc(c.ph || qLabel) + '" value="' + esc(s.q) + '" autocomplete="off" enterkeyhint="search">') + '</div>' +
         (c.inlineFilter ? tool + filterBar : '') +
         (c.sorts && c.sorts.length > 1 ? '<label class="a-f lv-sort"><span>Sort</span><select data-k="lv-s:' + key + '" aria-label="Sort">' + c.sorts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === s.sort ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>' : '') + (c.inlineFilter ? '' : tool) + '</div>' +
         (c.inlineFilter ? '' : filterBar);
@@ -7496,10 +7496,10 @@
     if (!REC.board) return '<section class="set-block rec-page"><h3 class="a-title">Records</h3>' + inkWait('Reading the records...', 'chef') + '</section>';
     var y = shift(dayNow(), -1), month = REC.month || y.slice(0, 7), days = recDays(month), firstM = ((REC.board.from) || y).slice(0, 7);
     var pm = shift(month + '-01', -1).slice(0, 7), nm = shift(month + '-28', 7).slice(0, 7);
-    var list = '<div class="rec-month"><div class="rec-head"><h4 class="a-ch-h">' + esc(recMonthName(month)) + '</h4><div class="rec-acts">' +
+    var list = '<div class="rec-month"><div class="rec-head"><div class="rec-month-nav"><h4 class="a-ch-h">' + esc(recMonthName(month)) + '</h4>' +
       '<button type="button" class="chip" data-p="rec-month" data-v="' + pm + '"' + (pm < firstM ? ' disabled' : '') + '>‹ ' + esc(recMonthName(pm).split(' ')[0]) + '</button>' +
       '<button type="button" class="chip" data-p="rec-month" data-v="' + nm + '"' + (nm > y.slice(0, 7) ? ' disabled' : '') + '>' + esc(recMonthName(nm).split(' ')[0]) + ' ›</button>' +
-      '<button type="button" class="chip" data-p="rec-print" data-v="month"' + (days.length ? '' : ' disabled') + '>Print this month</button><button type="button" class="chip" data-p="rec-csv" data-v="month"' + (days.length ? '' : ' disabled') + '>Export CSV</button><button type="button" class="chip" data-p="rec-refresh">Refresh</button></div></div>' +
+      '</div><div class="rec-acts"><button type="button" class="chip" data-p="rec-print" data-v="month"' + (days.length ? '' : ' disabled') + '>Print this month</button><button type="button" class="chip" data-p="rec-csv" data-v="month"' + (days.length ? '' : ' disabled') + '>Export CSV</button><button type="button" class="chip" data-p="rec-refresh">Refresh</button></div></div>' +
       '<p class="hint">Each finished day: deliveries recorded, and cleaning missed, not possible or awaiting Pass check. Counted by the nightly run' + (REC.board.to ? ' to ' + esc(recShort(REC.board.to)) + ' ' + esc(recMonthName(REC.board.to.slice(0, 7)).split(' ')[0]) : '') + '. Read ' + esc(clock(REC.at)) + '. ' + esc(REC_COOL) + ' Equipment temperature logs are not in the book.</p>' +
       (days.length ? '<ul class="rec-days">' + days.map(function (d) { return '<li><button type="button" class="rec-dayrow' + (d === REC.day ? ' is-on' : '') + '" data-p="rec-day" data-d="' + d + '"' + (d === REC.day ? ' aria-current="true"' : '') + '><span class="rec-d"><b>' + esc(recShort(d)) + '</b></span><span class="rec-t">' + recWords(d) + '</span><span class="rec-go" aria-hidden="true">›</span></button></li>'; }).join('') + '</ul>'
         : '<p class="rec-line">No finished days counted in ' + esc(recMonthName(month)) + '.</p>') + '</div>';
@@ -7956,9 +7956,13 @@
     finPaint();
     secFit();
     gvLoops();
-    if (S.gVideoJump && S.root.querySelector('#tv-links')) {
-      S.gVideoJump = false;
-      requestAnimationFrame(function () { adminJumpTo('tv-links', true); });
+    if (S.gVideoJump && (location.hash !== '#/admin' || S.name === 'admin' && S.atab !== 'guides')) S.gVideoJump = '';
+    if (S.gVideoJump && S.root.querySelector('#tv-links') && S.vf && S.vf.state !== 'loading') {
+      var videoTarget = S.gVideoJump;
+      S.gVideoJump = '';
+      requestAnimationFrame(function () {
+        if (S.name === 'admin' && S.atab === 'guides') adminJumpTo(document.getElementById(videoTarget) ? videoTarget : 'tv-links', true);
+      });
     }
     if (prepPlaceWant) requestAnimationFrame(prepPlaceBack);
     if (previousPerson || S.name === 'admin' && S.atab === 'people' && S.pOpen) peopleAfterDraw(previousPerson, previousY, previousEditorY);
@@ -10773,7 +10777,7 @@ if (list.length) sg('oreg', 's');
     if (value && !options.some(function (o) { return o[0] === value; })) options = [[value, value]].concat(options);
     return '<label class="a-f"><span>' + esc(label) + '</span><select data-k="' + esc(key) + '">' + options.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === value ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>';
   }
-  // totals: the Wastage numbers, shown first under the dates (5 Nov 2026, admin pages step 4)
+  // Summary keeps its totals under the dates. History places them after the entry list.
   function whControls(r, ready, totals) {
     var h = whState(), a = AF(), period = whSelect('wh-period', 'Period', h.period, [['7', '1 week'], ['14', '2 weeks'], ['30', '30 days'], ['this', 'This month'], ['last', 'Last month'], ['months3', '3 months'], ['custom', 'Custom dates']]);
     var out = '<div class="a-filters wh-period">' + period + '<button type="button" class="chip" data-p="w-refresh">Refresh</button>' +
@@ -10788,7 +10792,9 @@ if (list.length) sg('oreg', 's');
     ((S.wStats && S.wStats.lines) || []).forEach(function (x) { if (x.addedBy) names[x.addedBy] = 1; });
     Object.keys(names).sort().forEach(function (n) { opts.push('<option value="' + esc(n) + '"></option>'); });
     var active = a.sec || a.reason || a.dow !== '' || h.who || h.unit || h.removed;
-    out += '<label class="visually-hidden" for="wh-search">Search wastage entries</label><input id="wh-search" type="search" class="search wh-search" data-k="wh-search" placeholder="Search items, reasons or notes" value="' + esc(h.q) + '" autocomplete="off">' +
+    var qLabel = h.view === 'history' ? 'Search report' : 'Search wastage entries';
+    var qPlaceholder = h.view === 'history' ? qLabel : 'Search items, reasons or notes';
+    out += '<label class="visually-hidden" for="wh-search">' + qLabel + '</label><input id="wh-search" type="search" class="search wh-search" data-k="wh-search" placeholder="' + qPlaceholder + '" value="' + esc(h.q) + '" autocomplete="off">' +
       '<details class="wh-filters"' + (active ? ' open' : '') + '><summary>More filters' + (active ? ' (applied)' : '') + '</summary><div class="a-filters">' +
       whSelect('af-sec', 'Section', a.sec, [['', 'All sections']].concat(afSections().map(function (x) { return [x, x]; }))) +
       whSelect('af-reason', 'Reason', a.reason, [['', 'All reasons']].concat(REASONS.map(function (x) { return [x[0], x[1]]; }))) +
@@ -10828,13 +10834,15 @@ if (list.length) sg('oreg', 's');
     var ws = S.wStats, ready = !r.error && ws && !ws.loading && !ws.error && ws.tag === whTag() && ws.from <= r.from && ws.to >= r.to;
     var lines = null, prev = null;
     if (ready && h.view !== 'reviews') { lines = whLines(r, false); prev = h.view === 'summary' ? whLines(r.prev, false) : null; }
-    var head = '<section class="set-block wh-report wh-' + h.view + '"><h3 class="a-title">Wastage</h3>' + whControls(r, ready, lines ? whTotals(lines, r, prev) : '');
+    var totals = lines ? whTotals(lines, r, prev) : '';
+    var head = '<section class="set-block wh-report wh-' + h.view + '"><h3 class="a-title">Wastage</h3>' + whControls(r, ready, h.view === 'history' ? '' : totals);
     if (r.error) return head + '<p class="p-err" role="alert">' + esc(r.error) + '</p></section>';
     if (ws && ws.error) return head + '<p class="p-err wh-error" role="alert">' + esc(ws.error) + '</p></section>';
     if (!ready) return head + inkWait('Loading wastage for ' + whSpan(r) + '...', 'waste', 4) + '</section>';
     var foot = '<p class="hint a-upd">Updated ' + esc(clock(ws.at)) + '. Refresh reads the newest.</p></section>';
     if (h.view === 'reviews') return head + whReviewsHTML(r) + foot;
-    if (h.view === 'history') return head + wLogHTML(r) + foot;
+    if (h.view === 'history') return head + wLogHTML(r) +
+      '<section class="wh-history-totals" aria-labelledby="wh-history-totals-title"><h4 id="wh-history-totals-title">Wastage totals for these dates</h4>' + totals + '</section>' + foot;
     return head + whSummaryHTML(r, lines, prev) + foot;
   }
   function whSummaryHTML(r, lines, prev) {
@@ -10876,6 +10884,7 @@ if (list.length) sg('oreg', 's');
     var del = wAll();
     return lvHTML({
       key: 'waste-log', heading: 'Every entry', items: whLines(r, whState().removed), step: 15, tools: 0, noun: ['entry', 'entries'], empty: 'Nothing logged for these dates and filters.',
+      ph: 'Filter list', qLabel: 'Filter displayed entries',
       sorts: [['new', 'Newest first', function (a, b) { return b.date.localeCompare(a.date) || (+b.addedAt || 0) - (+a.addedAt || 0) || String(b.id).localeCompare(String(a.id)); }], ['old', 'Oldest first', function (a, b) { return a.date.localeCompare(b.date) || (+a.addedAt || 0) - (+b.addedAt || 0) || String(a.id).localeCompare(String(b.id)); }], ['az', 'A to Z', function (a, b) { return String(a.text).toLowerCase().localeCompare(String(b.text).toLowerCase()); }]],
       cols: [
         { h: 'Date / time', value: function (x) { return x.addedAt || Date.parse(x.date + 'T00:00:00+10:00'); }, html: function (x) { return esc(x.date.split('-').reverse().join('/')) + (x.addedAt ? ' ' + clock(x.addedAt) : ''); } },
@@ -11965,7 +11974,7 @@ if (list.length) sg('oreg', 's');
       return '<label class="tv-in"><span>' + words + '</span><input type="url" inputmode="url" autocomplete="off" spellcheck="false" data-k="tv:' + esc(g.vid) + ':' + k + '" value="' + esc(v) + '" placeholder="https://youtu.be/..."' + (ytId(v) === '!' ? ' aria-invalid="true"' : '') + '></label>';
     };
     var rows = vids.map(function (g) {
-      return '<li class="tv-row"><div class="tv-name"><b>' + (g.n < 10 ? '0' : '') + g.n + ' ' + esc(g.title) + '</b>' + (g.who === 'chefs' ? '<span class="g-who">For chefs</span>' : '<span class="tv-all">Everyone</span>') +
+      return '<li class="tv-row"><div class="tv-name" id="tv-video-' + esc(g.vid) + '" role="heading" aria-level="4" tabindex="-1"><b>' + (g.n < 10 ? '0' : '') + g.n + ' ' + esc(g.title) + '</b>' + (g.who === 'chefs' ? '<span class="g-who">For chefs</span>' : '<span class="tv-all">Everyone</span>') +
         (gvLen(g) ? '<span class="nt-by">' + esc(gvLen(g)) + '</span>' : '') + '</div>' + input(g, 'w', 'Computer, wide') + input(g, 't', 'Phone, tall') + '</li>';
     }).join('');
     return '<section class="set-block tv-blk">' + head + '<button type="button" class="p-x tv-save-jump" data-p="tv-save-jump">Go to Save video links</button><ol class="tv-list">' + rows + '</ol><div class="btn-row" id="tv-actions" role="group" aria-label="Video link save" tabindex="-1">' +
@@ -13726,7 +13735,14 @@ if (list.length) sg('oreg', 's');
     if (a === 'g-step') { var gsv = +el.getAttribute('data-v'); if (gsv >= 0) { gStep = { id: S.gSel, i: gsv }; draw(); focusSel('[data-p="g-step"][data-v="' + (gsv + 1) + '"], [data-p="g-mode"][data-v="all"].btn, [data-p="g-step"]:not([disabled])'); } return; }
     if (a === 'g-retry') { var grg = gById(S.gSel); if (grg) { delete gPg[grg.id + ':' + (grg.v || 1)]; draw(); } return; }
     if (a === 'g-admin') { S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin'; return; }
-    if (a === 'g-vlinks') { S.atab = 'guides'; S.gVideoJump = true; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin'; return; }
+    if (a === 'g-vlinks') {
+      var vidGuide = gById(S.gSel);
+      if (!admDev() || !vidGuide || !vidGuide.vid) return;
+      S.atab = 'guides';
+      S.gVideoJump = 'tv-video-' + vidGuide.vid;
+      lsSet('lk.prep.atab', 'guides');
+      location.hash = '#/admin'; return;
+    }
     if (a === 'g-change') {
       var gcg = gById(id); if (!gcg || gcg.vid) return;
       if (!(gfDirty() && S.gf.id === id)) { if (gfDirty() && !arm('g-change:' + id)) return; S.gf = gfFrom(gcg); S.gfSnap = gfSnap(S.gf); }

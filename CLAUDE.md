@@ -43,7 +43,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Shared controls, search and tables | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
 | A whole-app audit | `docs/whole-app-audit.md`, `docs/ux-council-audit.md`, `docs/whole-app-inventory.md` |
 | Restyle every page for consistency? (council 19 Nov 2026: no restyle, Build smaller 3 of 5; a sweep in grouped pull requests; the head chef chose all 22 look picks, 20 Nov 2026) and the 102 confirmed findings | `docs/consistency-sweep-options/brief.md`, its `findings.md` |
-| The functions strip and Prep keeping your place: Prep opens with the slim strip, the strip leads with cancelled, moved and changed functions, back on Prep the same line is at the top (chosen and built 19 Nov 2026) | `docs/band-options/brief.md` (Chosen and built), `docs/design-patterns.md` |
+| The functions strip and Prep keeping your place: Prep opens with the slim strip, the strip leads with cancelled, moved and changed functions, back on Prep the same line is at the top (19 Nov 2026); Orders starts folded for routine functions while alerts stay open (23 Nov 2026) | `docs/band-options/brief.md` (Chosen and built), `docs/design-patterns.md` |
 | Shared surface and operational colours, banners and category exceptions | `docs/surface-colours.md` (chosen hybrid), `docs/colour-coding.md`, `docs/design-patterns.md` |
 | Admin: analysis, proofreader, dashboard, pages, look | `docs/admin-intelligence.md`, `docs/proofreader-admin.md`, `docs/admin-dashboard-options/brief.md`, `docs/admin-pages-options/brief.md`, `docs/admin-design-options/brief.md`, `docs/admin-flow-spec.md` |
 | Cross-training without written assessments (Who has worked where, the planner hint); admin Inbox and Dashboard (chosen R, 10 Nov 2026) | `docs/cross-training-options/brief.md`, `docs/admin-dashboard-restyle-options/brief.md` |
@@ -77,7 +77,8 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Recipe amounts, the recipe and drawing editor, the drawing studio, smoker batches | `docs/recipe-multiplier.md`, `docs/recipe-editor-options/brief.md`, `docs/studio-options/brief.md`, `docs/smoker-batches.md` |
 | Suppliers, order cut-offs, the supplier order and Delivery received | `docs/supplier-workspace.md`, `docs/cutoff-options/brief.md`, `docs/receiving-design-options/brief.md`, `docs/delivery-received.md`; chosen Latest/Earlier purchase labels: `docs/supplier-last-order-status-options/brief.md` |
 | Sunday sales suggestions in Supplier order | `docs/supplier-sales.md` (chosen mix, private report and links, release checks) |
-| Wastage history and CSV reports | `docs/wastage-history.md`, `docs/report-exports.md` |
+| Supplier order desktop rail and direct Order history | `docs/supplier-order-rail-options/brief.md` (A chosen, responsive fallback and verification) |
+| Wastage history, entries first (A, built 22 November 2026) and CSV reports | `docs/wastage-history.md`, `docs/report-exports.md` |
 | Transfer storage and returns | `docs/transfer-returns.md` (publish rules from the feature branch first: it indexes loans) |
 | Function sent, lines off: once the last round is ticked Sent, the function's open prep and order lines (and lines added for it) leave the lists; the 03:00 job removes them | `docs/fn-sent-tidy-options/brief.md` (the mix chosen and built), `docs/code-contracts.md` (Functions) |
 | What a function's platters need, on its Orders line (the mix chosen and built 18 Nov 2026; one sum shared with Prep, `M.platterNeeds()`) | `docs/fn-order-ingredients-options/brief.md`, `docs/code-contracts.md` (Functions) |

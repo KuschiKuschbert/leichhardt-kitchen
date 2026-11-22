@@ -96,15 +96,23 @@ async function open(...a) {
   await p.context().close();
 
   // the admin on a video guide: no Change this guide (videos are not written here), a way to the links instead
-  p = await open(b, '#/guides/v-prep', { admin: true, who: '', width: 1280, extra: links, wait: 1500 });
-  await L.waitFor(p, () => !!document.querySelector('.g-vplay'));
-  ok(await p.locator('[data-p="g-change"]').count() === 0 && await p.locator('[data-p="g-vlinks"]').count() === 1, 'admin videos: a video guide offers Change the video links, not Change this guide');
-  await p.click('[data-p="g-vlinks"]');
-  await L.waitFor(p, () => location.hash === '#/admin' && document.querySelectorAll('.tv-row').length > 0);
-  ok(await p.locator('.tv-blk').count() === 1, 'admin videos: Change the video links opens the admin Guides tab with the links');
-  ok(await p.locator('#tv-links').evaluate(e => e.getBoundingClientRect().top < innerHeight && scrollY > 0), 'admin videos: Change the video links lands on the editor');
-  ok(p.errors.length === 0, 'admin videos: no page errors from a video guide ' + p.errors.join(' | '));
-  await p.context().close();
+  for (const width of [390, 1280]) {
+    p = await open(b, '#/guides/v-admin-reports', { admin: true, who: '', width, extra: links, wait: 1500 });
+    await p.locator('[data-p="g-vlinks"]').waitFor();
+    ok(await p.locator('[data-p="g-change"]').count() === 0, 'admin videos: the guide offers its video links at ' + width);
+    await p.click('[data-p="g-vlinks"]');
+    await L.waitFor(p, () => location.hash === '#/admin' && !!document.querySelector('[data-k="tv:admin-reports:w"]'));
+    await L.settle(p, 200);
+    const destination = await p.locator('[data-k="tv:admin-reports:w"]').evaluate(input => {
+      const row = input.closest('.tv-row'), title = row.querySelector('.tv-name'), tabbar = document.querySelector('.tabbar');
+      const floor = tabbar && tabbar.getClientRects().length ? tabbar.getBoundingClientRect().top : innerHeight;
+      return { field: input.getBoundingClientRect().bottom <= floor, named: title.textContent.includes('Admin: Reports'),
+        focused: document.activeElement === title && title.getBoundingClientRect().top >= 0 };
+    });
+    ok(destination.named && destination.focused && destination.field, 'admin videos: the guide focuses its own named link fields at ' + width);
+    ok(await p.locator('.tv-row input[type="url"]').count() === 2 * ALL_V && p.errors.length === 0, 'admin videos: all fields load with no page errors at ' + width);
+    await p.context().close();
+  }
 
   // the admin: the links box, typed links kept as ids, the chefs' in their own record
   for (const width of [390, 1280]) {
@@ -146,11 +154,13 @@ async function open(...a) {
     await p.context().close();
   }
   // the admin box starts only from the server: a phone without signal cannot save an empty list over the links
-  p = await open(b, '#/admin', { admin: true, who: '', width: 1280, extra: links, wait: 1200 });
+  p = await open(b, '#/guides/v-admin-reports', { admin: true, who: '', width: 1280, extra: links, wait: 1200 });
+  await p.locator('[data-p="g-vlinks"]').waitFor();
   await p.evaluate(() => { window.__fake.failReads = /tutorials/; });
-  await L.adminTab(p, 'guides');
+  await p.click('[data-p="g-vlinks"]');
   await L.waitFor(p, () => /Could not check the saved links/.test((document.querySelector('.tv-blk') || {}).textContent || ''));
   ok(await p.locator('[data-p="tv-save"]').count() === 0 && await p.locator('[data-p="tv-retry"]').count() === 1, 'admin videos: no Save until the saved links come from the server, and Try again is offered');
+  await L.waitFor(p, () => document.activeElement.id === 'tv-links');
   await p.evaluate(() => { window.__fake.failReads = null; });
   await p.click('[data-p="tv-retry"]');
   await L.waitFor(p, () => document.querySelectorAll('.tv-row').length > 0);

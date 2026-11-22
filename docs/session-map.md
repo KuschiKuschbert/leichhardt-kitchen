@@ -8,6 +8,10 @@ Round 1 Build smaller, five of five. Round 2 ranked C first with all six. It put
 
 The head chef chose the combined view. View opens one supplier on phone and tablet, with other cut-offs and reminder settings one tap away. It opens the same details in a laptop rail. Original request ticks and Add request stay in reach. [Decision and checks](order-list-options/brief.md#orders-cut-offs-beside-the-list-22-november-2026).
 
+## Supplier order context and History, 22 November 2026 (A chosen and built)
+
+The existing cut-off and Last order sit in the wide supplier rail, with More on narrower screens and when the rail is hidden. One opening Order history action jumps to the existing list. Back keeps the draft and return position. [Two council rounds and measurements](supplier-order-rail-options/brief.md).
+
 ## Sunday sales suggestions in Supplier order, 22 November 2026 (chosen)
 
 The head chef chose A's inline amount and Use, B's visible current amount in a Keep or Replace step and C's calculation disclosure and focus on the draft field. Round 1 was Build smaller, four of five. All six round 2 reviewers ranked A first. One weekly CSV or XLSX and confirmed links feed the chef's manual draft. A single private weekly snapshot serves authorised chefs. [Design, preview measurements, data contract and pending checks](supplier-sales.md)
@@ -28,6 +32,8 @@ The head chef chose all three steps, built on `ux/prep-strip-place`:
 - Prep starting with the strip (`prepStrip()`).
 
 F (the cut-off in the strip) is held. Tests: `tests/prep-strip-place.test.js`. `docs/band-options/brief.md`, `variants.js`, `shoot.js`, `shoot-strip.js`, `previews/`.
+
+23 November 2026. Orders starts with the existing fold for routine functions. Live warnings keep their detail and actions, and the band and function-derived list updates wait through a held touch. [Council, decision and checks](band-options/brief.md#orders-starts-with-the-existing-functions-fold-23-november-2026). `tests/orders-functions-fold.test.js`.
 
 
 ## Venues: each kitchen its own project, address and book, 19 November 2026 (build step 2, merged)
@@ -316,7 +322,7 @@ Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records
 | Suppliers, order history, cut-off sheets | `docs/supplier-workspace.md` |
 | Order cut-off patterns (a day and time per delivery day) and the heads-up the day before, selected the recommended mix (5 Nov 2026) | `docs/cutoff-options/brief.md` |
 | Supplier order and Delivery received redesign, selected A: The Order Sheet (3 Nov 2026) | `docs/receiving-design-options/brief.md` |
-| Wastage history, ranges, CSV | `docs/wastage-history.md` |
+| Wastage history, ranges and CSV, including entries first (22 November 2026, chosen A and built) | `docs/wastage-history.md` |
 | CSV text, quoting and numeric values across reports | `docs/report-exports.md` |
 | Transfer storage and returns | `docs/transfer-returns.md`: 16 November 2026, phone card width repair in `css/app.css`, verified by `tests/transfer-overflow.test.js`. The original index migration needs rules published first; this CSS repair needs no rule or data change. |
 | Function cancel, Undo, delete | `docs/function-cancellation.md` |
