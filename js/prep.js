@@ -10880,7 +10880,7 @@ if (list.length) sg('oreg', 's');
     var del = wAll();
     return lvHTML({
       key: 'waste-log', heading: 'Every entry', items: whLines(r, whState().removed), step: 15, tools: 0, noun: ['entry', 'entries'], empty: 'Nothing logged for these dates and filters.',
-      qLabel: 'Filter displayed entries',
+      ph: 'Filter list', qLabel: 'Filter displayed entries',
       sorts: [['new', 'Newest first', function (a, b) { return b.date.localeCompare(a.date) || (+b.addedAt || 0) - (+a.addedAt || 0) || String(b.id).localeCompare(String(a.id)); }], ['old', 'Oldest first', function (a, b) { return a.date.localeCompare(b.date) || (+a.addedAt || 0) - (+b.addedAt || 0) || String(a.id).localeCompare(String(b.id)); }], ['az', 'A to Z', function (a, b) { return String(a.text).toLowerCase().localeCompare(String(b.text).toLowerCase()); }]],
       cols: [
         { h: 'Date / time', value: function (x) { return x.addedAt || Date.parse(x.date + 'T00:00:00+10:00'); }, html: function (x) { return esc(x.date.split('-').reverse().join('/')) + (x.addedAt ? ' ' + clock(x.addedAt) : ''); } },

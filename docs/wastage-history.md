@@ -91,8 +91,8 @@ https://firebase.google.com/docs/firestore/security/rules-query
 In Admin › Reports › Wastage, the full-width History list comes before the range
 totals. The period, exact dates, Refresh, Export CSV, view choices and existing
 report-wide filters are above the results. **Search report** affects History,
-Summary, totals and CSV. **Filter displayed entries** and the list's column
-filters narrow the displayed results. The existing sort choices, row actions and
+Summary, totals and CSV. **Filter list** and the list's column filters narrow the displayed results.
+The list search has the accessible name **Filter displayed entries**. The existing sort choices, row actions and
 Show more controls stay with the list. Summary keeps the totals with its dates.
 Daily reviews covers the whole selected range and keeps its independent draft,
 Save and Cancel edits.
@@ -154,11 +154,11 @@ on the tablet and one on the desktop, up from zero on both.
 
 **Break-it findings in the local synthetic fixture**
 
-- **Reproduced and checked.** The shared narrow toolbar clipped the
-  **Filter displayed entries** wording in the initial build. The History list
-  controls now wrap on a phone, and the Reason and Section filters share a row
-  when they fit. The full label is readable at all three widths in Normal and
-  Extra large text, with no horizontal page or table overflow in the captures.
+- **Reproduced and checked.** The longer placeholder clipped at 320 px in
+  Extra large fallback text, where it needed 212.5 px and had 163 px.
+  **Filter list** fits in the same control and retains the longer accessible
+  name. The History list controls wrap on a phone, and the Reason and Section
+  filters share a row when they fit.
 - **Checked in the click tests.** List search and column facets preserve the
   report totals and identical CSV bytes. Report search changes the CSV, and
   custom dates agree with the export name and contents. The expanded action

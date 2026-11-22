@@ -163,7 +163,7 @@ async function csv(p) {
     await p.context().close();
   }
 
-  for (const [width, text] of [[390, 'normal'], [768, 'normal'], [1280, 'normal'], [390, 'xlarge'], [768, 'xlarge'], [1280, 'xlarge']]) {
+  for (const [width, text] of [[390, 'normal'], [768, 'normal'], [1280, 'normal'], [320, 'xlarge'], [390, 'xlarge'], [768, 'xlarge'], [1280, 'xlarge']]) {
     p = await report(b, { width, settings: { text } });
     const layout = await p.evaluate(() => {
       const list = document.querySelector('.wh-history .lv[data-lv="waste-log"]');
@@ -171,15 +171,25 @@ async function csv(p) {
       const blank = list.querySelector(':scope > .ux-active-filters');
       const targets = [...document.querySelectorAll('.wh-period > .chip, .wh-tabs .chip, .wh-filters > summary, .wh-note > summary')];
       const query = list.querySelector('.lv-q'), style = getComputedStyle(query);
-      const measure = document.createElement('canvas').getContext('2d');
-      measure.font = style.font;
-      const labelFits = query.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) >= measure.measureText(query.placeholder).width;
+      // Measure the visible placeholder in the browser's rendered fallback font.
+      const placeholder = getComputedStyle(query, '::placeholder');
+      const probe = document.createElement('span');
+      probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre';
+      probe.style.font = placeholder.font;
+      probe.style.letterSpacing = placeholder.letterSpacing;
+      probe.textContent = query.placeholder;
+      document.body.append(probe);
+      const labelWidth = probe.getBoundingClientRect().width;
+      probe.remove();
+      const space = query.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
       return { text: document.documentElement.dataset.text, totalsAfter: Boolean(list.compareDocumentPosition(totals) & Node.DOCUMENT_POSITION_FOLLOWING),
-        noBlankGap: getComputedStyle(blank).display === 'none', targets: targets.length > 0 && targets.every(e => e.getBoundingClientRect().height >= 44), labelFits };
+        noBlankGap: getComputedStyle(blank).display === 'none', targets: targets.length > 0 && targets.every(e => e.getBoundingClientRect().height >= 44),
+        label: query.placeholder, labelWidth, space };
     });
     ok(layout.text === text && layout.totalsAfter && layout.noBlankGap && layout.targets,
       width + ' ' + text + ': entries precede totals, empty filters leave no gap and controls remain at least 44 px tall');
-    ok(layout.labelFits, width + ' ' + text + ': the full Filter displayed entries placeholder fits');
+    ok(layout.label === 'Filter list' && layout.space >= layout.labelWidth, width + ' ' + text +
+      ': the Filter list placeholder fits (' + Math.round(layout.labelWidth) + ' px in ' + Math.round(layout.space) + ' px)');
     for (const view of ['history', 'summary', 'reviews']) {
       await p.click('[data-p="wh-view"][data-v="' + view + '"]');
       await L.waitFor(p, () => !document.querySelector('.wh-report [role="status"]')?.textContent.startsWith('Loading wastage'));
