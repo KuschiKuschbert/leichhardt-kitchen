@@ -58,6 +58,11 @@ async function csv(p) {
   const displaySearch = p.getByRole('searchbox', { name: 'Filter displayed entries' });
   await displaySearch.fill('Expired stock');
   await L.waitFor(p, () => /1 matching entry/.test(document.querySelector('.wh-history .lv-count')?.textContent));
+  ok(await displaySearch.evaluate(query => {
+    const clear = query.parentElement.querySelector('.ux-search-clear');
+    const width = clear.getBoundingClientRect().width;
+    return width >= 44 && parseFloat(getComputedStyle(query).paddingRight) >= width;
+  }), 'a typed list search keeps the full Clear target beside the text on phone');
   await L.pick(p, '[data-k="lv-cf:waste-log"][data-col="3"]', 'Prep waste');
   ok(await p.locator('.wh-history .lv-none').isVisible(), 'the entry-only search and reason filter combine on the displayed list');
   file = await csv(p);
@@ -181,7 +186,9 @@ async function csv(p) {
       document.body.append(probe);
       const labelWidth = probe.getBoundingClientRect().width;
       probe.remove();
-      const space = query.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      const box = query.getBoundingClientRect();
+      const edges = [style.paddingLeft, style.paddingRight, style.borderLeftWidth, style.borderRightWidth].reduce((n, width) => n + parseFloat(width), 0);
+      const space = box.width - edges;
       return { text: document.documentElement.dataset.text, totalsAfter: Boolean(list.compareDocumentPosition(totals) & Node.DOCUMENT_POSITION_FOLLOWING),
         noBlankGap: getComputedStyle(blank).display === 'none', targets: targets.length > 0 && targets.every(e => e.getBoundingClientRect().height >= 44),
         label: query.placeholder, labelWidth, space };

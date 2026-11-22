@@ -1188,6 +1188,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
   .wh-history [data-lv="waste-log"] .lv-tools { flex-wrap: wrap; row-gap: 0.35rem; }
   .wh-history [data-lv="waste-log"] .lv-tools h3 { flex-basis: 100%; }
   .wh-history [data-lv="waste-log"] .lv-qw { flex: 1 1 16rem; }
+  .wh-history [data-lv="waste-log"] .ux-search > .lv-q:placeholder-shown { padding-right: 0.65rem !important; }
   .wh-history [data-lv="waste-log"] .ux-column-filters .a-f { flex: 1 1 min(9rem, 100%); }
 }
 .a-step { margin: 0.4rem 0 0.6rem; }

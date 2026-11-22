@@ -156,9 +156,10 @@ on the tablet and one on the desktop, up from zero on both.
 
 - **Reproduced and checked.** The longer placeholder clipped at 320 px in
   Extra large fallback text, where it needed 212.5 px and had 163 px.
-  **Filter list** fits in the same control and retains the longer accessible
-  name. The History list controls wrap on a phone, and the Reason and Section
-  filters share a row when they fit.
+  **Filter list** retains the longer accessible name. The blank phone search
+  uses the space beside the placeholder, and typed text reserves space for
+  the full Clear target. The History list controls wrap on a phone, and the
+  Reason and Section filters share a row when they fit.
 - **Checked in the click tests.** List search and column facets preserve the
   report totals and identical CSV bytes. Report search changes the CSV, and
   custom dates agree with the export name and contents. The expanded action
