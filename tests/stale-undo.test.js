@@ -7,20 +7,24 @@ const { R, ok } = L.results(), { txt } = L;
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const today = L.ymd(new Date(L.NOW));
 const item = (p, id) => p.evaluate(k => window.__fake.dump()[k] || {}, fsKey(['days', today, 'items', id]));
+const itemWrites = (p, id) => p.evaluate(k => window.__fake.writes.flat().filter(w => w.path === k).length, fsKey(['days', today, 'items', id]));
 (async () => {
   const b = await L.start();
 
-  // 1. a tick that fails: the line stays unticked and no Undo for it is offered
+  // 1. a retryable personal Prep failure leaves the line open with its own error
   let p = await L.open(b, '#/prep', { wait: 1500 });
   await p.evaluate(() => { window.__fake.mode = 'fail'; });
-  await L.tap(p, '[data-p="tick"][data-id="i3"]'); await L.settle(p, 800);
-  ok((await item(p, 'i3')).done !== true, 'failed tick: the line is not ticked');
-  ok(/Not saved/.test(await txt(p, '.p-toast:not(.p-toast-old)') || ''), 'failed tick: the toast says Not saved');
-  const stale = await p.$('.p-toast-old [data-p="toast-old"]');
-  ok(stale === null, 'failed tick: no "Undo ticked" is left on screen (' + (stale ? await txt(p, '.p-toast-old') : 'none') + ')');
+  await L.tap(p, '#nbr-i3 .nb-box');
+  await L.waitFor(p, () => !!document.querySelector('#nbr-i3 .nb-tick-status, .p-toast-bad'));
+  ok((await item(p, 'i3')).done !== true && await p.getAttribute('#nbr-i3 .nb-box', 'aria-pressed') === 'false', 'failed tick: the line stays open on screen and on the server');
+  ok(/^Not saved\. Tap the box to retry\.$/.test(await txt(p, '#nbr-i3 .nb-tick-status') || ''), 'failed tick: its own line says Not saved and offers retry');
+  const stale = p.locator('.p-toasts').getByRole('button', { name: /^Undo\b/ });
+  const staleCount = await stale.count();
+  ok(staleCount === 0, 'failed tick: neither toast slot offers Undo');
+  const before = await itemWrites(p, 'i3');
   await p.evaluate(() => { window.__fake.mode = 'ok'; });
-  if (stale) { await p.click('.p-toast-old [data-p="toast-old"]'); await L.settle(p, 600); }
-  ok((await item(p, 'i3')).done !== true, 'failed tick: nothing on screen can tick the line by itself');
+  if (staleCount) { await stale.first().click(); await L.settle(p, 600); }
+  ok((await item(p, 'i3')).done !== true && await itemWrites(p, 'i3') === before, 'failed tick: restoring writes without retrying leaves the line open');
   ok(p.errors.length === 0, 'failed tick: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

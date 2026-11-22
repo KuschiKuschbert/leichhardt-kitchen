@@ -28,6 +28,14 @@ The head chef chose design A (`docs/receiving-design-options/brief.md`). Only th
 
 Tests: `tests/deliveries.test.js` (108 checks: the three choices, the hidden reading not saved, the − key and sign note, arrow keys, the clock tick, due-today chips for staff and a sous chef with no read on a tap, Not received yet, Functions-only with no chips, the admin range in one query, the supplier filter and the CSV), plus the updated `delivery-validation-focus`, `device-delivery-lock` and `functions-activity` journeys.
 
+## Delivery records jump, 22 Nov 2026
+
+**Go to delivery records** sits in the Delivery received heading on phones. One tap or Enter moves focus to Today's deliveries or Delivery records in the same page. The selected date range and supplier, the current draft and Save keep their existing scope. It makes no read or write.
+
+**Council quick check. Verdict: Build.** The link names the destination and reuses the existing receipt section and page frame (Linear and Headspace). Receiving still uses the same Save action. The quiet link needs no new form row, pop-up, tab or permission.
+
+**Implemented app.** At 390 × 844 with the book's fonts, the same synthetic staff session showed three complete inputs above the Save dock in both views. Save stayed at y720. The receipt heading moved from below the screen to y309 in one activation. Edge taps verified a 44 px hit area at 390 px and 320 px with Extra large text. The link uses ink on the page colour at 16.16:1 in the rendered fixture. Browser checks covered focus through a live receipt update, exact mixed-temperature Save and the admin's selected range and supplier at Extra large. The jump is absent at 768 and 1280 px. Physical devices were outside the check.
+
 ## Reads and recovery
 
 `js/deliveries.js` loads only on `#/deliveries`. Today's page has one filtered live listener, removed when leaving. A past-date selection uses one server query and retains only successful complete results in this sign-in's memory; Refresh bypasses that copy. No extra reads at normal app startup, polling or persistent private cache. Each save checks one exact id before writing, also used to recover a lost acknowledgement. Read failures are visible and never recorded as an empty history. With no signal, Today says so until the server answers (27 Oct 2026), and shows only this phone's receipts still waiting to send, never "No deliveries recorded for this date".
