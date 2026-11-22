@@ -1,6 +1,6 @@
 // The two-way check on the service view (head chef, 14 Nov 2026, docs/function-handover-options/brief.md, Chosen): the
-// kitchen taps what goes and sends it as a trip; every trip waiting for Functions sits on the shelf at the end of the
-// board; Functions people confirm each trip; a head or sous chef may confirm for Functions after 10 minutes. Picks are
+// kitchen taps what goes and sends it as a trip; every trip waiting for Functions sits on the shelf in the board;
+// Functions people confirm each trip; a head or sous chef may confirm for Functions after 10 minutes. Picks are
 // never saved until Send, survive a redraw and shrink when another phone sends; a double tap sends one trip; a refusal
 // keeps the picks; no signal says Not sent yet. No reads of its own. All records and people here are made up.
 const L = require('./lib'), M = require('../js/functions.js');
@@ -40,6 +40,11 @@ const moreOff = (p, rid) => p.$eval(wedRow + ' [data-fn="pick-more"][data-r="0|'
   // 1. a cook at 18:35: the wedding goes out in trips
   let p = await L.open(b, '#/fn/now', { who: 'ann', extra: base(), clock: at(today, '18:35'), width: 390, wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('.fn-svc-row [data-fn="pick"]'));
+  ok(await p.evaluate(() => {
+    const fresh = document.querySelector('.fn-svc-page .fn-fresh').getBoundingClientRect();
+    const board = document.querySelector('.fn-svc-board').getBoundingClientRect();
+    return board.top - fresh.bottom <= 16;
+  }), '390 px Service: the live board starts just below the freshness line');
   const bill = await reads(p), asked = await p.evaluate(() => window.__fake.reads.length);
   ok(await p.$$eval(wedRow + ' [data-fn="pick"]', l => l.length) === 5 && await sendText(p) === 'Send all 14', 'cook: every kind left is a button, and Send all 14 (' + await sendText(p) + ')');
   // a tap puts one platter in (head chef, 14 Nov 2026, after trying it), + one more; a tap on a picked kind takes it out
@@ -176,8 +181,20 @@ const moreOff = (p, rid) => p.$eval(wedRow + ' [data-fn="pick-more"][data-r="0|'
   // 5. every size: no sideways scroll, no errors, picks and the shelf on screen
   for (const w of [768, 1280]) {
     for (const who of ['ann', 'fay']) {
-      p = await L.open(b, '#/fn/now', { who, extra: Object.assign({}, s), clock: at(today, '18:40'), width: w, height: 900, wait: 1500 });
+      p = await L.open(b, '#/fn/now', { who, extra: Object.assign({}, s), clock: at(today, '18:40'), width: w, height: 800, wait: 1500 });
       await L.waitFor(p, () => !!document.querySelector('.fn-svc-board'));
+      const layout = await p.evaluate(() => {
+        const rounds = document.querySelector('.fn-svc-rows').getBoundingClientRect();
+        const shelf = document.querySelector('#fn-shelf').getBoundingClientRect();
+        return { beside: shelf.left >= rounds.right && shelf.top < rounds.bottom, above: shelf.bottom <= rounds.top };
+      });
+      const beside = who === 'ann' && w === 1280;
+      ok(layout.beside === beside && layout.above === (who === 'fay'), w + ' px ' + who + ': only the wide kitchen view puts the shelf beside the rounds');
+      if (beside) {
+        const scroll = await p.evaluate(() => scrollY);
+        await p.click('.fn-svc-wl');
+        ok(await p.evaluate(y => scrollY === y && document.activeElement.id === 'fn-shelf', scroll), 'the waiting count focuses the visible shelf without moving the rounds');
+      }
       if (who === 'ann') { await pick(p, 'cheese-platter').catch(() => {}); await L.settle(p, 200); }
       ok(p.errors.length === 0 && !(await L.overflow(p)), w + ' px ' + who + ': no page errors, no sideways scroll ' + p.errors.join(' | '));
       await p.context().close();
