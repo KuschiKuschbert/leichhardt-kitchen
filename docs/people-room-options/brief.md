@@ -158,3 +158,11 @@ Checked in the stand-in (`tests/people-safety.test.js`): rows in words with no f
 
 Still Not evidenced: rendered contrast of the orange and red words, dark mode and keyboard focus beyond the existing controls; Saving and failed states in the one-line phone bar; the live site after release.
 
+
+## Tap the name to edit (22 November 2026)
+
+Tap the underlined name to open or close the same editor in the row. Its chevron and expanded state follow the row. Only one editor opens at a time, and closing it keeps the draft. Reset PIN stays a separate action.
+
+The quick check favoured one direct action beside the person's role and permissions. Keyboard focus stays on the name after the editor closes. The reset and removal flows use their existing controls. Opening a row is one tap before and after.
+
+Measured in the implemented admin panel with 15 synthetic people and the list scrolled to its first row in a 900 px-high viewport. At 390 px the first row is 65 px high, down from 120 px, and 14 rows fit where 7 fit before. At 768 and 1280 px, the first row stays 65 px and 14 rows fit. The name's touch target is at least 44 px at all three widths.
