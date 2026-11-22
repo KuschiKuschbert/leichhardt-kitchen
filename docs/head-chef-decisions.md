@@ -18,6 +18,8 @@
 - **22 November 2026, names open the People editor.** In Admin, Team, People, tap the person's name to open or close their editor in the row. [People page](people-room-options/brief.md#tap-the-name-to-edit-22-november-2026)
 - **22 November 2026, a shorter Shift pings form.** Today and Tomorrow are direct choices. Dates, repeats and custom times sit under Custom schedule. The preview names the person chosen in Send to, and Save shares with that person. [Individual pings](ping-recipients.md#compact-composer-22-november-2026)
 
+- **22 November 2026, bring Wastage History entries higher.** The delegated council choice places report totals after the full-width entry list. Search report and Filter list name the two existing scopes. [Council and verification](wastage-history.md#history-entries-first-22-november-2026)
+
 - **22 November 2026, End-of-day review within reach.** The head chef approved bringing Wastage's existing review action into the first screen. The action sits by the daily total and opens the existing review sheet. [Quick check and measurement](work-pages-design-options/brief.md#end-of-day-review-placement-22-november-2026)
 
 - **22 November 2026, Manage Functions search and status.** Set the existing controls together where there is width. The booking list, permissions and editor returns use the same flow. [Choosing](design-patterns.md#choosing)

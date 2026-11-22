@@ -4956,13 +4956,13 @@
     if (!c.find) c.find = function (item) { return c.cols ? c.cols.map(function (column) { return window.LK_UX.cellValue(column.html(item)); }).join(' ') : window.LK_UX.cellValue(c.card(item)); };
     if (!c.sorts || !c.sorts.length) c.sorts = [['default', 'Default order', function () { return 0; }], ['az', 'A to Z', function (a, b) { return window.LK_UX.compare(c.find(a), c.find(b)); }], ['za', 'Z to A', function (a, b) { return window.LK_UX.compare(c.find(b), c.find(a)); }]];
     LVR[c.key] = c;
-    var s = lvState(c), key = esc(c.key), bar = '';
+    var s = lvState(c), key = esc(c.key), bar = '', qLabel = c.qLabel || 'Search';
     {
       var fl = (c.filters || []).map(function (f) { return { f: f, n: f[2] ? c.items.filter(f[2]).length : c.items.length }; }).filter(function (x, i) { return i === 0 || x.n > 0 || x.f[0] === s.f; });
       var filterBar = fl.length > 1 ? '<div class="chips lv-chips scroll" role="group" aria-label="Filter">' + fl.map(function (x) { return '<button type="button" class="chip" data-p="lv-f" data-lv="' + key + '" data-v="' + esc(x.f[0]) + '" aria-pressed="' + (x.f[0] === s.f) + '">' + esc(x.f[1]) + ' <span class="lv-n">' + x.n + '</span></button>'; }).join('') + '</div>' : '';
       var tool = c.tool ? '<div class="lv-tool">' + c.tool + '</div>' : '';
       bar = '<div class="lv-tools">' + (c.heading ? '<h3 class="a-ch-h">' + esc(c.heading) + '</h3>' : '') + (c.leadingTool || '') +
-        '<div class="lv-qw"><label class="visually-hidden" for="lv-q-' + key + '">Search</label>' + findPill('<input id="lv-q-' + key + '" type="search" class="search lv-q" data-k="lv-q:' + key + '" placeholder="' + esc(c.ph || 'Search') + '" value="' + esc(s.q) + '" autocomplete="off" enterkeyhint="search">') + '</div>' +
+        '<div class="lv-qw"><label class="visually-hidden" for="lv-q-' + key + '">' + esc(qLabel) + '</label>' + findPill('<input id="lv-q-' + key + '" type="search" class="search lv-q" data-k="lv-q:' + key + '" placeholder="' + esc(c.ph || qLabel) + '" value="' + esc(s.q) + '" autocomplete="off" enterkeyhint="search">') + '</div>' +
         (c.inlineFilter ? tool + filterBar : '') +
         (c.sorts && c.sorts.length > 1 ? '<label class="a-f lv-sort"><span>Sort</span><select data-k="lv-s:' + key + '" aria-label="Sort">' + c.sorts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === s.sort ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>' : '') + (c.inlineFilter ? '' : tool) + '</div>' +
         (c.inlineFilter ? '' : filterBar);
@@ -10777,7 +10777,7 @@ if (list.length) sg('oreg', 's');
     if (value && !options.some(function (o) { return o[0] === value; })) options = [[value, value]].concat(options);
     return '<label class="a-f"><span>' + esc(label) + '</span><select data-k="' + esc(key) + '">' + options.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === value ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>';
   }
-  // totals: the Wastage numbers, shown first under the dates (5 Nov 2026, admin pages step 4)
+  // Summary keeps its totals under the dates. History places them after the entry list.
   function whControls(r, ready, totals) {
     var h = whState(), a = AF(), period = whSelect('wh-period', 'Period', h.period, [['7', '1 week'], ['14', '2 weeks'], ['30', '30 days'], ['this', 'This month'], ['last', 'Last month'], ['months3', '3 months'], ['custom', 'Custom dates']]);
     var out = '<div class="a-filters wh-period">' + period + '<button type="button" class="chip" data-p="w-refresh">Refresh</button>' +
@@ -10792,7 +10792,9 @@ if (list.length) sg('oreg', 's');
     ((S.wStats && S.wStats.lines) || []).forEach(function (x) { if (x.addedBy) names[x.addedBy] = 1; });
     Object.keys(names).sort().forEach(function (n) { opts.push('<option value="' + esc(n) + '"></option>'); });
     var active = a.sec || a.reason || a.dow !== '' || h.who || h.unit || h.removed;
-    out += '<label class="visually-hidden" for="wh-search">Search wastage entries</label><input id="wh-search" type="search" class="search wh-search" data-k="wh-search" placeholder="Search items, reasons or notes" value="' + esc(h.q) + '" autocomplete="off">' +
+    var qLabel = h.view === 'history' ? 'Search report' : 'Search wastage entries';
+    var qPlaceholder = h.view === 'history' ? qLabel : 'Search items, reasons or notes';
+    out += '<label class="visually-hidden" for="wh-search">' + qLabel + '</label><input id="wh-search" type="search" class="search wh-search" data-k="wh-search" placeholder="' + qPlaceholder + '" value="' + esc(h.q) + '" autocomplete="off">' +
       '<details class="wh-filters"' + (active ? ' open' : '') + '><summary>More filters' + (active ? ' (applied)' : '') + '</summary><div class="a-filters">' +
       whSelect('af-sec', 'Section', a.sec, [['', 'All sections']].concat(afSections().map(function (x) { return [x, x]; }))) +
       whSelect('af-reason', 'Reason', a.reason, [['', 'All reasons']].concat(REASONS.map(function (x) { return [x[0], x[1]]; }))) +
@@ -10832,13 +10834,15 @@ if (list.length) sg('oreg', 's');
     var ws = S.wStats, ready = !r.error && ws && !ws.loading && !ws.error && ws.tag === whTag() && ws.from <= r.from && ws.to >= r.to;
     var lines = null, prev = null;
     if (ready && h.view !== 'reviews') { lines = whLines(r, false); prev = h.view === 'summary' ? whLines(r.prev, false) : null; }
-    var head = '<section class="set-block wh-report wh-' + h.view + '"><h3 class="a-title">Wastage</h3>' + whControls(r, ready, lines ? whTotals(lines, r, prev) : '');
+    var totals = lines ? whTotals(lines, r, prev) : '';
+    var head = '<section class="set-block wh-report wh-' + h.view + '"><h3 class="a-title">Wastage</h3>' + whControls(r, ready, h.view === 'history' ? '' : totals);
     if (r.error) return head + '<p class="p-err" role="alert">' + esc(r.error) + '</p></section>';
     if (ws && ws.error) return head + '<p class="p-err wh-error" role="alert">' + esc(ws.error) + '</p></section>';
     if (!ready) return head + inkWait('Loading wastage for ' + whSpan(r) + '...', 'waste', 4) + '</section>';
     var foot = '<p class="hint a-upd">Updated ' + esc(clock(ws.at)) + '. Refresh reads the newest.</p></section>';
     if (h.view === 'reviews') return head + whReviewsHTML(r) + foot;
-    if (h.view === 'history') return head + wLogHTML(r) + foot;
+    if (h.view === 'history') return head + wLogHTML(r) +
+      '<section class="wh-history-totals" aria-labelledby="wh-history-totals-title"><h4 id="wh-history-totals-title">Wastage totals for these dates</h4>' + totals + '</section>' + foot;
     return head + whSummaryHTML(r, lines, prev) + foot;
   }
   function whSummaryHTML(r, lines, prev) {
@@ -10880,6 +10884,7 @@ if (list.length) sg('oreg', 's');
     var del = wAll();
     return lvHTML({
       key: 'waste-log', heading: 'Every entry', items: whLines(r, whState().removed), step: 15, tools: 0, noun: ['entry', 'entries'], empty: 'Nothing logged for these dates and filters.',
+      ph: 'Filter list', qLabel: 'Filter displayed entries',
       sorts: [['new', 'Newest first', function (a, b) { return b.date.localeCompare(a.date) || (+b.addedAt || 0) - (+a.addedAt || 0) || String(b.id).localeCompare(String(a.id)); }], ['old', 'Oldest first', function (a, b) { return a.date.localeCompare(b.date) || (+a.addedAt || 0) - (+b.addedAt || 0) || String(a.id).localeCompare(String(b.id)); }], ['az', 'A to Z', function (a, b) { return String(a.text).toLowerCase().localeCompare(String(b.text).toLowerCase()); }]],
       cols: [
         { h: 'Date / time', value: function (x) { return x.addedAt || Date.parse(x.date + 'T00:00:00+10:00'); }, html: function (x) { return esc(x.date.split('-').reverse().join('/')) + (x.addedAt ? ' ' + clock(x.addedAt) : ''); } },
