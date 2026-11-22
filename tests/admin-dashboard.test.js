@@ -83,8 +83,8 @@ const toDash = async p => { await L.adminTab(p, 'dashboard'); await ready(p); };
       pubAt: L.NOW - 5 * DAY, removed: false, at: L.NOW - 5 * DAY, upd: L.NOW - 5 * DAY },
     [path('minutes', 'mx', 'signs', '1_sam')]: { v: 1, st: 'read', at: L.NOW - 4 * DAY, name: 'Sam', by: 'sam' },
     [path('transfers', ago(9), 'lines', 'l1')]: loan, [path('transferOpen', ago(9) + '_l1')]: { date: ago(9), lineId: 'l1', record: loan, open: true } };
-  for (const width of [390, 1280]) {
-    const q = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width, height: 900, extra: waiting, wait: 1600 });
+  for (const width of [390, 768, 1280]) {
+    const q = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width, height: 844, extra: waiting, wait: 1600 });
     await inboxNums(q);
     await L.waitFor(q, () => { const t = (document.querySelector('.dsh-needs') || {}).textContent || ''; return /kitchen mails open/.test(t) && /still to sign/.test(t) && /not returned/.test(t); }, null, 10000).catch(() => {});
     const needs = await L.txt(q, '.dsh-needs');
@@ -92,6 +92,24 @@ const toDash = async p => { await L.adminTab(p, 'dashboard'); await ready(p); };
     // To do (4 Nov 2026, design B), the Inbox since redesign step 8 (8 Nov 2026): Today opens on it, today's numbers above
     // it, with the open mail itself, most urgent first, worked in place
     ok(await q.evaluate(() => { const t = document.querySelector('.dsh-needs'), day = document.querySelector('.dsh-day'); return !!t && !!day && /Inbox/.test(t.querySelector('h3').textContent) && !!(t.compareDocumentPosition(day) & Node.DOCUMENT_POSITION_FOLLOWING); }), width + ': the Inbox is Today\'s first page, what needs you above today\'s numbers');
+    const priorities = await q.evaluate(() => {
+      const list = document.querySelector('.dsh-inbox .dsh-need-list');
+      const mail = list.querySelector('.dsh-todo-mail');
+      const actions = [...list.querySelectorAll('.dsh-need > .btn')];
+      const last = [...list.querySelectorAll('.dsh-need')].at(-1);
+      const minutes = list.querySelector('.dsh-need > [data-t="minutes"]');
+      const button = minutes.getBoundingClientRect();
+      const row = minutes.closest('li').getBoundingClientRect();
+      const tabs = document.querySelector('.tabbar')?.getBoundingClientRect();
+      const fold = tabs?.height ? Math.min(tabs.top, innerHeight) : innerHeight;
+      return { mailLast: list.lastElementChild === mail && mail.getBoundingClientRect().top >= last.getBoundingClientRect().bottom,
+        targets: actions.every(action => { const rect = action.getBoundingClientRect(); return rect.height >= 44 && rect.width >= 44; }),
+        beside: button.right === row.right && button.top < row.bottom && button.top >= row.top,
+        minutesVisible: !!minutes && button.top >= 0 && button.bottom <= fold && scrollY === 0 };
+    });
+    ok(priorities.mailLast, width + ': the priority queue is before the actual mail details in reading and visual order');
+    ok(priorities.targets && priorities.beside, width + ': the original priority controls sit on the right and have 44 px targets');
+    ok(priorities.minutesVisible, width + ': late minutes can be opened from the first screen without revealing anything');
     const rows = await q.$$eval('.dsh-needs .dsh-ml .ml-row', els => els.map(e => e.querySelector('.ml-text').textContent));
     ok(rows.length === 3 && /Cool room door seal/.test(rows[0]) && /Fryer 2/.test(rows[1]), width + ': To do lists the open mail, food safety first (' + rows.join(' | ') + ')');
     await L.waitFor(q, () => ['m1', 'm2', 'm3'].every(id => (window.__fake.dump()['kitchens/000000/mail/' + id] || {}).seen === true), null, 8000).catch(() => {});

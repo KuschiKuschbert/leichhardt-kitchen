@@ -52,6 +52,7 @@ const notesReads = p => p.evaluate(k => window.__fake.reads.filter(r => r === k)
   await L.chef(p, 'pings'); await L.settle(p, 400);
   await tap(p, '[data-p="n-new"]'); await L.settle(p, 200);
   await p.fill('[data-k="n-text"]', 'Pre-service briefing at the pass');
+  await tap(p, '[data-p="n-schedule"]');
   await p.fill('[data-k="n-tm"]', '15:30'); await p.$eval('[data-k="n-tm"]', e => e.dispatchEvent(new Event('change', { bubbles: true }))); await L.settle(p, 150);
   ok(/Today, from 15:30/.test(await txt(p, '.nt-whenline') || ''), 'editor: the time shows in when it shows (' + await txt(p, '.nt-whenline') + ')');
   await tap(p, '[data-p="n-save"]'); await L.settle(p, 600);
@@ -60,6 +61,7 @@ const notesReads = p => p.evaluate(k => window.__fake.reads.filter(r => r === k)
   ok(s[CFG].pastEdit && s[CFG].pastEdit.n > 0, 'a ping for today stamps config/main.pastEdit.n, so the other phones read the pings again');
   await tap(p, '[data-p="n-edit"][data-id="' + id.split('/').pop() + '"]'); await L.settle(p, 200);
   ok(await p.inputValue('[data-k="n-tm"]') === '15:30', 'editor: an edit opens with its time');
+  await tap(p, '[data-p="n-schedule"]');
   await tap(p, '[data-p="n-tmclr"]'); await L.settle(p, 150);
   await tap(p, '[data-p="n-save"]'); await L.settle(p, 600);
   s = await store(p);
