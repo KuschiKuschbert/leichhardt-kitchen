@@ -1,7 +1,7 @@
 // The add button on the four work pages, as drawn in the agreed design (docs/work-pages-design-options/options.html,
 // Option A, 3 Nov 2026): one full-width bar with a plus, docked right above the tab bar on a phone, the list scrolling
 // above it and never hidden under it; in the page header on wider screens, with the count beside it. Wastage's
-// end-of-day review is one button at the foot of the entries. Delivery received on Orders reads as an ordinary chip.
+// end-of-day review has one button by the total. Delivery received on Orders reads as an ordinary chip.
 const L = require('./lib');
 const { R, ok } = L.results();
 const root = 'kitchens/' + L.PIN + '/', today = L.ymd(new Date(L.NOW));
@@ -29,7 +29,7 @@ const PAGES = [['#/prep', '.nb-addline', 'Add a line'], ['#/orders', '.nb-addlin
         ok(gap >= 0 && gap <= 40, tag + 'the count sits beside the button (' + gap + ' px apart)');
       }
       if (hash === '#/waste') {
-        ok(await p.evaluate(() => { const rows = document.querySelectorAll('.nb-rows .nb-row'), rv = document.querySelector('.w-rvbtn'); return !!rv && rows.length > 0 && rv.getBoundingClientRect().top >= rows[rows.length - 1].getBoundingClientRect().bottom - 1; }), tag + 'the end-of-day review is at the foot of the entries');
+        ok(await p.evaluate(() => { const rows = document.querySelectorAll('.nb-rows .nb-row'), rv = document.querySelector('.w-rvbtn'); return !!rv && rows.length > 0 && rv.getBoundingClientRect().bottom <= rows[0].getBoundingClientRect().top; }), tag + 'the end-of-day review is before the entries');
       }
       if (hash === '#/orders') {
         ok(await p.evaluate(() => { const d = document.querySelector('.o-deliv'); if (!d) return false; const fs = parseFloat(getComputedStyle(d).fontSize); return fs <= 16 && d.scrollWidth <= d.clientWidth + 1 && d.scrollHeight <= d.clientHeight + 1; }), tag + 'Delivery received reads as an ordinary chip, its words inside it');
