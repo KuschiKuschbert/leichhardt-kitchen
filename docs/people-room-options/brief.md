@@ -166,3 +166,25 @@ Tap the underlined name to open or close the same editor in the row. Its chevron
 The quick check favoured one direct action beside the person's role and permissions. Keyboard focus stays on the name after the editor closes. The reset and removal flows use their existing controls. Opening a row is one tap before and after.
 
 Measured in the implemented admin panel with 15 synthetic people and the list scrolled to its first row in a 900 px-high viewport. At 390 px the first row is 65 px high, down from 120 px, and 14 rows fit where 7 fit before. At 768 and 1280 px, the first row stays 65 px and 14 rows fit. The name's touch target is at least 44 px at all three widths.
+
+## Compact roster and focused editor (22 November 2026)
+
+**Verdict: Build smaller.** The head chef chose a mix after looking at the compact roster, an editor next to the roster and a roster grouped by role on desktop and mobile. Use the compact roster by default and open the editor only when someone is selected. Keep the role filter and Role sort in the shared toolbar.
+
+- At 1000 px and wider, Name, Role and Permissions line up. The selected person's form sits alongside the roster and stays reachable as the list scrolls. Close editor or the selected name returns keyboard focus to the roster.
+- Below 1000 px, the role and permissions sit below each name. Selecting someone takes the page with their name and fields. The existing header Back restores search, filter, scroll and focus. Draft edits remain available both in the form and in the room's Save dock.
+- Opening an editor still takes one tap. Reset PIN takes one tap to pick the person and two taps to confirm the immediate action. That puts the person's name and the reminder about immediate reset beside the action. The row and Save dock still name draft permissions and pending deletions. The same config reads and writes serve both layouts.
+
+The simple roster applies Linear's one frame and Things 3's occasional details. The phone view gives the form the whole width and keeps Headspace's plain labels. Draft words and the acknowledged Save preserve Duolingo's feedback principle. The paper editor uses the sage people edge. Role-group headings were left out of this choice since the existing filter and sort provide access by role.
+
+**Break-it checks.** The 390 px stand-in journey found a 71 px scroll shift after Back with a permission draft. Returning after widening the viewport to 600 px also moved the selected name in the roster. Back restores the name to its previous height after the layout settles. Crossing 1000 px switches the header Back action with the layout. The click test checks the return position, search, filter, focus and the permission draft through both layouts. Desktop clicks check the single selected editor, alignment and keyboard focus. Existing checks cover PIN confirmation, off-list people, deletion and Undo, and preserving another device's save while a draft is open.
+
+**Implemented app measurements.** Chromium with the Firebase stand-in and 15 synthetic people. Counted complete roster rows on the first screen from the top of the admin page, before opening an editor. The baseline was #781, the same People layout as branch base #782. The layouts also fit at 320, 999 and 1000 px without horizontal overflow.
+
+| Viewport | First row before / after | Complete rows before / after |
+| --- | --- | --- |
+| 390 × 844 | 65 / 68 px | 2 / 3 |
+| 768 × 844 | 65 / 68 px | 2 / 3 |
+| 1280 × 900 | 65 / 51 px | 3 / 5 |
+
+[Desktop roster and editor](evidence/mixed-desktop-editor.png) · [Mobile roster](evidence/mixed-mobile-roster.png) · [Mobile editor](evidence/mixed-mobile-editor.png)

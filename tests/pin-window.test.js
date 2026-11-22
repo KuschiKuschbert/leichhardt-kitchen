@@ -15,6 +15,7 @@ const DAY = 86400000;
   ok(po && ['sam', 'ann', 'bo'].every(id => po[id] > L.NOW + 6 * DAY && po[id] < L.NOW + 8 * DAY), 'admin open: Sam, Ann and Bo get 7 days to set a first PIN (' + JSON.stringify(po) + ')');
   // Reset PIN: 30 minutes
   await L.adminTab(p, 'people'); await L.settle(p, 300);
+  await L.openPerson(p, 'bo');
   await p.click('[data-p="a-reset-pin"][data-id="bo"]'); await L.settle(p, 150);
   await p.click('[data-p="a-reset-pin"][data-id="bo"]'); await L.settle(p, 500);
   po = await cfg(p);

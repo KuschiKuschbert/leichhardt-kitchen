@@ -26,12 +26,12 @@ const cfg = (people, lists) => { const e = {}; e[CFG] = Object.assign({ people, 
   await p.fill('#pf1', '2222');
   await L.waitFor(p, () => LK_PREP.state.level === 'owner' && !!document.querySelector('.a-groups'), null, 8000);
   await L.adminTab(p, 'people'); await L.settle(p, 250);
-  // one person opens at a time on People (the mix, 19 Nov 2026): Change opens Ann, then Bo
-  await L.tap(p, '[data-p="a-person-open"][data-id="ann"]'); await L.settle(p, 200);
+  // One person opens at a time on People. Select Ann, then Bo.
+  await L.openPerson(p, 'ann');
   ok(await p.evaluate(() => [...document.querySelectorAll('#a-r1 option')].some(o => o.value === 'head')), 'admin: Head chef is available after the verified daily unlock');
   ok(await p.$('.a-nohead') === null, 'admin: the hint goes once a head chef is set');
   // only one head chef: picking Bo makes Ann a sous chef
-  await L.tap(p, '[data-p="a-person-open"][data-id="bo"]'); await L.settle(p, 200);
+  await L.openPerson(p, 'bo');
   await L.pick(p, '#a-r2', 'head');
   await L.settle(p, 200);
   ok(await p.evaluate(() => LK_PREP.state.draft.people[1].role) === 'sous' && /Sous chef/.test(await L.txt(p, '.pp-row[data-pid="ann"] .pp-can') || ''), 'admin: a second Head chef turns the first into Sous chef');
