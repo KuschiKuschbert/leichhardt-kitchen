@@ -6424,7 +6424,7 @@
 
   /* The People tab (head chef, 19 Nov 2026, the council's mix, docs/people-room-options/brief.md): one row a person that
      says who they are and what they may do in words, built from their ticks in the draft (never from the role), with the
-     state in words; Change opens one person in place to change. Everything still goes in the one draft and one Save. */
+     state in words. Tapping the person's name opens their editor in place. Everything still goes in the one draft and one Save. */
   function canWords(p) {
     if (isHeadP(p)) return 'Everything';
     return ([p.add ? 'Add' : '', p.tick ? 'Tick' : '', p.del ? 'Remove' : ''].filter(Boolean).join(', ') || 'Reads only') + (p.fn ? ' · Functions' : '');
@@ -6460,11 +6460,15 @@
   }
   function personRowHTML(o) {
     var p = o.p, i = o.i, open = !p.gone && S.pOpen === p.id, r = ROLES[p.role] || ROLES.staff, ini = String(p.name || '').trim().charAt(0).toUpperCase();
+    var name = esc(p.name || 'No name yet'), canId = 'pp-can-' + i;
+    var can = '<small class="pp-can" id="' + canId + '">' + esc(r.name + ' · ' + canWords(p)) + '</small>';
+    var label = p.gone ? '<b class="pp-n">' + name + '</b>' + can
+      : '<button type="button" class="p-link pp-name-toggle" data-p="a-person-open" data-id="' + esc(p.id) + '" aria-expanded="' + open + '" aria-label="' + name + '" aria-describedby="' + canId + '"><span><span class="pp-n">' + name + '</span> <span aria-hidden="true">' + (open ? '▴' : '▾') + '</span></span>' + can + '</button>';
     var acts = p.gone ? '<button type="button" class="btn pp-undo" data-p="a-undelete-person" data-i="' + i + '" aria-label="' + esc('Undo delete: ' + (p.name || 'this person')) + '">Undo delete</button>'
-      : (p.active !== false && !p.isNew ? '<button type="button" class="p-x pp-pin' + armCls('pin:' + p.id) + '" data-p="a-reset-pin" data-id="' + esc(p.id) + '" aria-label="' + esc((armed('pin:' + p.id) ? 'Tap again to reset the PIN of ' : 'Reset PIN: ') + (p.name || 'this person')) + '">' + (armed('pin:' + p.id) ? 'Tap again to reset' : 'Reset PIN') + '</button>' : '') +
-        '<button type="button" class="btn pp-open" data-p="a-person-open" data-id="' + esc(p.id) + '" aria-expanded="' + open + '" aria-label="' + esc((open ? 'Close ' : 'Change ') + (p.name || 'the new person')) + '">' + (open ? 'Close ▴' : 'Change ▾') + '</button>';
+      : p.active !== false && !p.isNew ? '<button type="button" class="p-x pp-pin' + armCls('pin:' + p.id) + '" data-p="a-reset-pin" data-id="' + esc(p.id) + '" aria-label="' + esc((armed('pin:' + p.id) ? 'Tap again to reset the PIN of ' : 'Reset PIN: ') + (p.name || 'this person')) + '">' + (armed('pin:' + p.id) ? 'Tap again to reset' : 'Reset PIN') + '</button>' : '';
     return '<li class="pp-row' + (open ? ' is-open' : '') + (p.active === false ? ' is-off' : '') + (p.gone ? ' is-gone' : '') + '" data-pid="' + esc(p.id) + '"><div class="pp-main"><span class="st-av' + (isSousP(p) ? ' is-chef' : '') + '" aria-hidden="true">' + esc(ini || '?') + '</span>' +
-      '<div class="pp-w"><b class="pp-n">' + esc(p.name || 'No name yet') + '</b><small class="pp-can">' + esc(r.name + ' · ' + canWords(p)) + '</small>' + personStateHTML(p) + '</div><div class="pp-acts">' + acts + '</div></div>' + (open ? personEditHTML(p, i) : '') + '</li>';
+      '<div class="pp-w">' + label + personStateHTML(p) + '</div>' +
+      (acts ? '<div class="pp-acts">' + acts + '</div>' : '') + '</div>' + (open ? personEditHTML(p, i) : '') + '</li>';
   }
   function peopleListHTML(d) {
     var items = d.people.map(function (p, i) { return { p: p, i: i }; });
@@ -6493,7 +6497,7 @@
     var head = isHeadP(p), can = [['add', 'Add'], ['tick', 'Tick'], ['del', 'Remove'], ['fn', 'Functions']].filter(function (c) { return c[0] !== 'fn' && head || p[c[0]]; }).map(function (c) { return c[1]; });
     var top = '<section class="set-block a-personpage">' + back + '<span class="label">' + esc(p.name || 'No name yet') + '</span>' +
       '<p class="a-pp-role"><b>' + esc((ROLES[p.role] || {}).name || 'No role') + '</b>' + (p.active === false ? ', off the list' : '') + '. Can: ' + esc(can.length ? can.join(', ') : 'read only') + '.</p>' +
-      '<p class="hint">Change the role and ticks with Change on the People list, then save.</p>';
+      '<p class="hint">Tap the name on the People list to change the role and ticks, then save.</p>';
     return top + personActivityHTML(id) + '</section>' + saveBlock;
   }
   // the person's last N days over the shared report period, counted by the Team report's own code
@@ -7000,7 +7004,7 @@
     var pane = at === 'prep-standards' ? psPanelHTML() : at === 'plan' ? (teamOK() ? teamPageHTML() : teamNoHTML()) : at === 'dashboard' || at === 'inbox' ? dashHTML(at) : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'kitchen-home' ? kitchenHomeHTML(d, saveBlock) : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'records' ? recordsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' && owner && S.personId ? personPageHTML(d, S.personId, saveBlock) : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
-      peopleListHTML(d) + '<div class="pp-folds"><div class="pp-bulk">' + bulk + '</div><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then open that person with Change and adjust their ticks if you need to: Add writes lines, Tick ticks them off, Remove takes lines off, Functions enters and changes function bookings. Shift pings are written by you and the sous chefs. Functions coordinator ticks Functions for you; only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Stopped working here keeps their name on old lines, and their PIN stops working for anything. Delete for good takes them off the list and wipes their PIN when you save. Head chef is for your own name: it gets the kitchen and sous chef pages, and a sous chef cannot change or remove it.</p></details></div></section>' + saveBlock
+      peopleListHTML(d) + '<div class="pp-folds"><div class="pp-bulk">' + bulk + '</div><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then tap their name and adjust their ticks if you need to: Add writes lines, Tick ticks them off, Remove takes lines off, Functions enters and changes function bookings. Shift pings are written by you and the sous chefs. Functions coordinator ticks Functions for you; only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Stopped working here keeps their name on old lines, and their PIN stops working for anything. Delete for good takes them off the list and wipes their PIN when you save. Head chef is for your own name: it gets the kitchen and sous chef pages, and a sous chef cannot change or remove it.</p></details></div></section>' + saveBlock
     ) : (
       '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds as one file on this device. The server also backs the book up every night at 03:30.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div>' +
         '<details class="a-how"><summary>What a backup holds</summary><p class="hint">People, prep lines, orders, wastage, delivery temperatures and transfers between venues from the last 400 days, shift pings and who has seen them, meeting minutes with earlier versions and sign-offs, function bookings with their contacts and earlier versions, the chef to-do list, what the prep and order lists have learned, tallies and the guides\' words. The current Operandio timer and its start times are included. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files).</p></details></section>' +
@@ -13789,7 +13793,7 @@ if (list.length) sg('oreg', 's');
       toast((dp.name || 'This person') + ' is deleted when you save', { label: 'Undo', fn: undo });
       draw(); return;
     }
-    // one person open to change at a time (the mix): Change ▾ opens, Close ▴ closes; the draft keeps what was changed
+    // one person open to change at a time (the mix): tap the name to open or close; the draft keeps what was changed
     if (a === 'a-person-open') { S.pOpen = S.pOpen === id ? '' : id; draw(); return; }
     if (a === 'a-save') { adminSave(); return; }
     if (a === 'a-ids-keep') { idDecide(true); return; }

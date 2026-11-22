@@ -12,10 +12,19 @@ const cfg = p => p.evaluate(k => window.__fake.dump()[k], CFG);
   const row = id => '.pp-row[data-pid="' + id + '"]';
   const open = async id => { await L.tap(p, '[data-p="a-person-open"][data-id="' + id + '"]'); await L.settle(p, 200); };
   ok(await p.$('[data-p="a-save"][disabled]') !== null && await p.$('.a-unsaved') === null, 'nothing changed: Save is off, no count');
-  // People rows (the mix, 19 Nov 2026): who they are and what they may do in words, built from the ticks; nothing to edit until Change
-  ok(/Staff · Add, Tick/.test(await txt(p, row('bo') + ' .pp-can') || '') && /Head chef · Everything/.test(await txt(p, row('head') + ' .pp-can') || '') && await p.$$eval('.pp-row input, .pp-row select', e => e.length) === 0, 'rows say role and rights in words; no field until Change');
-  await open('bo');
-  ok(await p.$$eval('.pp-row.is-open', e => e.length) === 1 && await p.$(row('bo') + '.is-open .a-name') !== null && /Close/.test(await txt(p, row('bo') + ' [data-p="a-person-open"]')), 'Change opens Bo in place, one person at a time, with Close');
+  // People rows (the mix, 19 Nov 2026): who they are and what they may do in words, built from the ticks; nothing to edit until their name is tapped
+  ok(/Staff · Add, Tick/.test(await txt(p, row('bo') + ' .pp-can') || '') && /Head chef · Everything/.test(await txt(p, row('head') + ' .pp-can') || '') && await p.$$eval('.pp-row input, .pp-row select', e => e.length) === 0, 'rows say role and rights in words; no field until a name is tapped');
+  const boName = p.locator(row('bo')).getByRole('button', { name: 'Bo', exact: true });
+  ok(await boName.count() === 1 && await boName.getAttribute('aria-expanded') === 'false' &&
+    !await p.locator('.pp-row button').filter({ hasText: /^Change/ }).count(), 'the name is the only toggle, with no separate Change button');
+  await boName.locator('.pp-n').click(); await L.settle(p, 200);
+  ok(await p.locator('.pp-row.is-open').count() === 1 && await p.locator(row('bo') + '.is-open .a-name').count() === 1 &&
+    await boName.getAttribute('aria-expanded') === 'true', 'tapping Bo opens his editor in place');
+  await boName.press('Enter'); await L.settle(p, 200);
+  ok(await boName.getAttribute('aria-expanded') === 'false' && !await p.locator('.pp-row.is-open').count() &&
+    await boName.evaluate(e => e === document.activeElement && e.matches(':focus-visible')), 'Enter closes the editor and leaves visible focus on Bo');
+  await boName.press('Space'); await L.settle(p, 200);
+  ok(await boName.getAttribute('aria-expanded') === 'true', 'Space opens Bo again');
   await open('ann');
   ok(await p.$(row('bo') + '.is-open') === null && await p.$(row('ann') + '.is-open') !== null, 'opening Ann closes Bo');
   await open('bo');

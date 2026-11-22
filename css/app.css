@@ -727,6 +727,8 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .pp-main .st-av { margin-top: 0; }
 .pp-w { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .pp-n { font-size: 1.05rem; overflow-wrap: anywhere; }
+.pp-name-toggle.p-link { display: grid; align-content: center; align-self: flex-start; gap: 1px; max-width: 100%; min-height: 44px; text-align: left; text-decoration: none; font-weight: 400; }
+.pp-name-toggle .pp-n { font-weight: 700; text-decoration: underline; }
 .pp-can { color: var(--muted); font-size: 0.875rem; }
 .pp-st { color: var(--accent-ink); font-size: 0.84rem; font-weight: 700; }
 .pp-st.is-off { color: var(--muted); }
@@ -754,10 +756,6 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 @media (max-width: 599px) {
   .lv-tools:has(.lv-tool) { flex-wrap: wrap; }
   .lv-tools:has(.lv-tool) .lv-tool { flex: 1 1 100%; }
-  .pp-main { flex-wrap: wrap; align-items: flex-start; }
-  .pp-w { flex: 1 1 calc(100% - 3rem); }
-  .pp-acts { flex: 1 1 100%; justify-content: space-between; padding-left: 2.9rem; }
-  .pp-acts .pp-undo { margin-left: auto; }
   .pp-ed { padding-left: 0.7rem; }
   /* the shared admin Save bar keeps its two buttons on one line, so less of the page is covered */
   .a-pane .set-block.a-savebar .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
