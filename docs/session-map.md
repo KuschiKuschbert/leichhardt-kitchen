@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Private booking contact in the function editor, 23 November 2026
+
+Round 1 Build smaller, five of five. Round 2 ranked C first with all six. It puts the private contact name or state beside the booking facts and reveals the existing inputs there with Add contact or Edit contact. The same Save writes a changed contact with its booking. The editor carries forward contact fields this person edited and uses the newly read contact for the rest. Older local drafts use the existing conflict decision when saved contact values may have changed. See `js/fnedit.js`, `css/app.css` and `tests/function-booking-contact.test.js`. [Council and checks](function-booking-contact-options/brief.md).
+
 ## Orders cut-offs beside the requests, 22 November 2026 (chosen)
 
 The head chef chose the combined view. View opens one supplier on phone and tablet, with other cut-offs and reminder settings one tap away. It opens the same details in a laptop rail. Original request ticks and Add request stay in reach. [Decision and checks](order-list-options/brief.md#orders-cut-offs-beside-the-list-22-november-2026).
