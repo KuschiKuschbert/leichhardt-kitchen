@@ -4661,6 +4661,20 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .fn-svc-board .fn-for-b { min-height: 48px; padding: 0 0.9rem; border-color: var(--bar-text); background: transparent; color: var(--bar-text); }
 .fn-svc-outs { margin: 0.3rem 0 0.6rem; color: rgba(251, 248, 241, 0.86); }
 .fn-svc-outs .fn-i, .fn-next .fn-trip-out { color: var(--done-on-dark); }
+
+@media (max-width: 719px) {
+  .fn-svc-page { gap: 0.4rem; }
+  .fn-svc-page > .hint { margin-block: 0.2rem; }
+  .fn-svc-page > .fn-svc-board { margin-block-start: 0.15rem; }
+}
+/* Keep the kitchen's rounds the same width as trips enter or leave the shelf. The coordinator's rounds are inside .fn-svc-sec. */
+@media (min-width: 1100px) {
+  .fn-svc-board:has(> .fn-svc-rows) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(270px, 0.52fr); grid-template-rows: auto auto 1fr; column-gap: 1.25rem; align-items: start; }
+  .fn-svc-board > .fn-svc-bh { grid-column: 1 / -1; }
+  .fn-svc-board > .fn-svc-wl { grid-area: 2 / 1; }
+  .fn-svc-board > .fn-svc-rows { grid-area: 3 / 1; }
+  .fn-svc-board > .fn-svc-rows + .fn-svc-shelf { grid-area: 2 / 2 / span 2; min-width: 0; margin: 0; padding: 0.65rem 0 0.35rem 1rem; border-top: 0; border-inline-start: 1px solid rgba(251, 248, 241, 0.32); scroll-margin-block-start: 5rem; }
+}
 .fn-band .fn-li-out { display: flex; align-items: center; gap: 0.5rem; border-top: 1px solid rgba(251, 248, 241, 0.16); }
 .fn-band .fn-li-out:first-child { border-top: 0; }
 .fn-band .fn-li-out > .fn-row { flex: 1 1 auto; min-width: 0; border-top: 0; }
