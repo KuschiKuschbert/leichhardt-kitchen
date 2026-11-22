@@ -27,6 +27,9 @@ const CUTS = [
 const withCuts = (cuts) => ({ [CFG]: { people, sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], showBadges: true, cutoffs: cuts } });
 const bad = p => p.evaluate(() => ({ i: document.querySelectorAll('#pwn').length, img: document.querySelectorAll('img[src="x"]').length, attr: document.querySelectorAll('[data-pwn]').length, run: !!window.__pwn }));
 async function openCuts(p) { await L.waitFor(p, () => !!document.querySelector('.o-cut-fold'), null, 10000); if (!(await p.$eval('.o-cut-fold', e => e.open))) { await p.click('.o-cut-fold > summary'); await L.settle(p, 200); } }
+async function openOtherCuts(p) {
+  if (await p.locator('.o-cut-more[aria-expanded="false"]').isVisible()) await p.click('.o-cut-more');
+}
 const names = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cut-n')].map(e => e.textContent));
 
 (async () => {
@@ -54,6 +57,7 @@ const names = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cu
   await L.waitFor(p, () => !!document.querySelector('.cut-tl [data-p="cut-tick"][data-id^="pfd|"]'), null, 10000);
   ok(!(await p.$eval('.o-cut-fold', e => e.open)) && !(await p.$('#cut-band:not([hidden])')), 'Orders starts with compact cut-offs closed and no duplicate bar');
   await openCuts(p);
+  await openOtherCuts(p);
   await p.click('.cut-tl [data-p="cut-tick"][data-id^="pfd|"]');
   await L.waitFor(p, k => { const d = window.__fake.dump()[k]; return d && d.on === true; }, fsKey(['cutdone', L.ymd(new Date(L.NOW)) + '_pfd']), 10000);
   await p.evaluate(() => { location.hash = '#/recipes'; });
@@ -65,7 +69,7 @@ const names = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cu
   // the one at 13:00 Closed, the ordered one ticked by Sam
   const tl = await p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].map(e => e.querySelector('.cut-n').textContent + e.querySelector('.cut-t').textContent + e.querySelector('.cut-st').textContent));
   ok(tl.length === 5 && /^Chickenby 13:00.*Closed, not confirmed$/.test(tl[0]) && /^PFDby 15:00.*Ordered by Sam, \d\d:\d\d$/.test(tl[1]) && /Late Meatsby 20:00/.test(tl[4]), 'order list: today\'s cut-offs in time order, as a tick list (' + tl.join(' | ') + ')');
-  ok(await p.$eval('.cut-tl li:nth-child(2) .cut-box', e => e.getAttribute('aria-pressed') === 'true'), 'order list: PFD\'s box is ticked');
+  ok(await p.$eval('.cut-tl [data-p="cut-tick"][data-id^="pfd|"]', e => e.getAttribute('aria-pressed') === 'true'), 'order list: PFD\'s box is ticked');
   ok(!tl.some(t => /Other Day|To Come/.test(t)), 'order list: another day\'s and a to-come cut-off are left off');
   ok(!(await p.$('#cut-band:not([hidden])')), 'order list: the compact cut-offs replace the duplicate bar');
   await p.context().close();
