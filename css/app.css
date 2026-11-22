@@ -4578,6 +4578,7 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .fn-band .fn-band-h { color: var(--bar-accent); }
 .fn-band .fn-band-n { color: rgba(251, 248, 241, 0.75); }
 .fn-band .fn-fold { border-color: rgba(251, 248, 241, 0.7); background: transparent; color: var(--bar-text); }
+.fn-band .fn-fold[aria-disabled="true"] { opacity: .6; cursor: default; }
 .fn-band .fn-list { gap: 0; padding-bottom: 0.45rem; }
 .fn-band .fn-row { padding: 0.5rem 0; border: 0; border-top: 1px solid rgba(251, 248, 241, 0.16); border-radius: 0; background: none; color: var(--bar-text); }
 .fn-band .fn-li:first-child .fn-row { border-top: 0; }
