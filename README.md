@@ -129,7 +129,7 @@ Two-page guides (22 Nov 2026) show both page buttons side by side. Tap either on
 
 Guides has a Videos group, last, with its own chip: a short video of how each page of the book works, with every step written out under it. Staff see the 14 videos of the pages they use. The head chef, the sous chefs and the admin also see Today's team, the chef panel, Supplier order, Recipes and drawings and the three admin videos, marked For chefs. A video guide has one Play button; the video opens over the page, the tall cut on a phone and the wide cut on a computer, and Back or Close shuts it. Until its link is saved it says Video to come, and the written steps carry it.
 
-The videos are unlisted on YouTube and play from youtube-nocookie.com, now the one video site in the security header. The head chef opens Video tutorial links in Admin, Kitchen, Guides and pastes a wide and a tall link per video. Go to Save video links jumps to the Save button. The chefs' links are kept in a record only the chefs and the admin can read. The list reads nothing; a video guide reads its links once a day (1 read, 2 for a chef). Each video card and video page shows a still of the page; on a computer, a short silent loop of the page in action plays while the mouse is over it (made from the videos, kept in `guides/videos/`). Phones and tablets, and screens set to reduce motion, only ever show the still. How it works and how to add a video: [docs/tutorial-videos.md](docs/tutorial-videos.md) (In the book).
+The videos are unlisted on YouTube and play from youtube-nocookie.com, now the one video site in the security header. The head chef opens Video tutorial links in Admin, Kitchen, Guides and pastes a wide and a tall link per video. Change the video links on a guide goes to that video's fields. Go to Save video links jumps to the Save button. The chefs' links are kept in a record only the chefs and the admin can read. The list reads nothing; a video guide reads its links once a day (1 read, 2 for a chef). Each video card and video page shows a still of the page; on a computer, a short silent loop of the page in action plays while the mouse is over it (made from the videos, kept in `guides/videos/`). Phones and tablets, and screens set to reduce motion, only ever show the still. How it works and how to add a video: [docs/tutorial-videos.md](docs/tutorial-videos.md) (In the book).
 
 ## Steamed veg on the iCombi guide (17 November 2026)
 
@@ -182,6 +182,7 @@ This guide is bundled with the book, searchable and readable without extra Fires
 - **Two ways to look at the recipes.** The Pass opens first. The Pass / Tiles switch next to the search box changes it any time (and **Settings** sets which one opens):
   - **Tiles:** every recipe as a card with its small drawn dish, with search, recipe type and "Free from" filters on top.
   - **The Pass:** dishes drawn as plates and batch recipes as GN pans. Tap a plate to zoom in, then tap the laksa on the barramundi to open the laksa. The allergen lens shows where an allergen is at every level.
+  - The recipe type and allergen controls sit together under Search where they fit. Pass shows both **Contains** and **Free from**, and the pickers show which choices are active. [Layout and checks](docs/whole-app-redesign-options/brief.md#compact-recipe-browse-filters-23-november-2026)
 - **Linked batch recipes.** Any ingredient that has its own recipe is underlined orange with a "Recipe 06" tag, so tapping it opens that recipe. Batch recipes show which dishes they go on. A dish used on another dish shows it too ("Goes on": Side Salad on the Grill Maiden's Board), and a dish's tip box shows on the Pass as well as in Tiles (23 Oct 2026).
 - **Allergens roll up.** A dish picks up the allergens of the batch recipes it uses, and names where each one comes from. A "?" means "may be in it, check the supplier label".
 - **Cards to come.** A batch recipe that isn't in the book yet shows as "Card to come". Every dish that uses one is marked "Allergens incomplete", is left out of the Free from filter, and counts as "may have" under the allergen lens, until that card is added.
@@ -397,6 +398,7 @@ Dated decisions, newest first, are in [docs/head-chef-decisions.md](docs/head-ch
 
 The detail is in [docs/prep-book.md](docs/prep-book.md) (moved 3 Nov 2026). Search it for one of these headings and read that part:
 
+- [More room on Prep Work on a phone](docs/prep-book.md#more-room-on-prep-work-on-a-phone). Shorter gaps put the working lines higher above Add while keeping the date and notices in view.
 - Roles, rollover, insights, badges and recipe links
 - Undo and second taps (October 2026)
 - No signal and failed saves (October 2026)

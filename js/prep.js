@@ -7956,9 +7956,13 @@
     finPaint();
     secFit();
     gvLoops();
-    if (S.gVideoJump && S.root.querySelector('#tv-links')) {
-      S.gVideoJump = false;
-      requestAnimationFrame(function () { adminJumpTo('tv-links', true); });
+    if (S.gVideoJump && (location.hash !== '#/admin' || S.name === 'admin' && S.atab !== 'guides')) S.gVideoJump = '';
+    if (S.gVideoJump && S.root.querySelector('#tv-links') && S.vf && S.vf.state !== 'loading') {
+      var videoTarget = S.gVideoJump;
+      S.gVideoJump = '';
+      requestAnimationFrame(function () {
+        if (S.name === 'admin' && S.atab === 'guides') adminJumpTo(document.getElementById(videoTarget) ? videoTarget : 'tv-links', true);
+      });
     }
     if (prepPlaceWant) requestAnimationFrame(prepPlaceBack);
     if (previousPerson || S.name === 'admin' && S.atab === 'people' && S.pOpen) peopleAfterDraw(previousPerson, previousY, previousEditorY);
@@ -11965,7 +11969,7 @@ if (list.length) sg('oreg', 's');
       return '<label class="tv-in"><span>' + words + '</span><input type="url" inputmode="url" autocomplete="off" spellcheck="false" data-k="tv:' + esc(g.vid) + ':' + k + '" value="' + esc(v) + '" placeholder="https://youtu.be/..."' + (ytId(v) === '!' ? ' aria-invalid="true"' : '') + '></label>';
     };
     var rows = vids.map(function (g) {
-      return '<li class="tv-row"><div class="tv-name"><b>' + (g.n < 10 ? '0' : '') + g.n + ' ' + esc(g.title) + '</b>' + (g.who === 'chefs' ? '<span class="g-who">For chefs</span>' : '<span class="tv-all">Everyone</span>') +
+      return '<li class="tv-row"><div class="tv-name" id="tv-video-' + esc(g.vid) + '" role="heading" aria-level="4" tabindex="-1"><b>' + (g.n < 10 ? '0' : '') + g.n + ' ' + esc(g.title) + '</b>' + (g.who === 'chefs' ? '<span class="g-who">For chefs</span>' : '<span class="tv-all">Everyone</span>') +
         (gvLen(g) ? '<span class="nt-by">' + esc(gvLen(g)) + '</span>' : '') + '</div>' + input(g, 'w', 'Computer, wide') + input(g, 't', 'Phone, tall') + '</li>';
     }).join('');
     return '<section class="set-block tv-blk">' + head + '<button type="button" class="p-x tv-save-jump" data-p="tv-save-jump">Go to Save video links</button><ol class="tv-list">' + rows + '</ol><div class="btn-row" id="tv-actions" role="group" aria-label="Video link save" tabindex="-1">' +
@@ -13726,7 +13730,14 @@ if (list.length) sg('oreg', 's');
     if (a === 'g-step') { var gsv = +el.getAttribute('data-v'); if (gsv >= 0) { gStep = { id: S.gSel, i: gsv }; draw(); focusSel('[data-p="g-step"][data-v="' + (gsv + 1) + '"], [data-p="g-mode"][data-v="all"].btn, [data-p="g-step"]:not([disabled])'); } return; }
     if (a === 'g-retry') { var grg = gById(S.gSel); if (grg) { delete gPg[grg.id + ':' + (grg.v || 1)]; draw(); } return; }
     if (a === 'g-admin') { S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin'; return; }
-    if (a === 'g-vlinks') { S.atab = 'guides'; S.gVideoJump = true; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin'; return; }
+    if (a === 'g-vlinks') {
+      var vidGuide = gById(S.gSel);
+      if (!admDev() || !vidGuide || !vidGuide.vid) return;
+      S.atab = 'guides';
+      S.gVideoJump = 'tv-video-' + vidGuide.vid;
+      lsSet('lk.prep.atab', 'guides');
+      location.hash = '#/admin'; return;
+    }
     if (a === 'g-change') {
       var gcg = gById(id); if (!gcg || gcg.vid) return;
       if (!(gfDirty() && S.gf.id === id)) { if (gfDirty() && !arm('g-change:' + id)) return; S.gf = gfFrom(gcg); S.gfSnap = gfSnap(S.gf); }

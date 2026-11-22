@@ -71,7 +71,7 @@ const withoutViewChoice = async p => {
   const seen = await linesSeen(p);
   ok(seen === 3, 'prep list: a sous chef sees 3 list lines with Before service and Set today\'s team showing (' + seen + ')');
   const chefWithoutChoice = await withoutViewChoice(p);
-  ok(chefWithoutChoice.height === 44 && chefWithoutChoice.shift === 72 && chefWithoutChoice.rowsSame && chefWithoutChoice.seen === 4, 'prep list: the view choice and its spacing shift unchanged rows by 72 px; removing it restores the previous 4 sous-chef rows (' + JSON.stringify(chefWithoutChoice) + ')');
+  ok(chefWithoutChoice.height === 44 && chefWithoutChoice.shift === 52 && chefWithoutChoice.rowsSame && chefWithoutChoice.seen === 4, 'prep list: the 44 px view choice and its 8 px gap move rows down by 52 px. Hiding it fits four sous-chef rows at the same heights (' + JSON.stringify(chefWithoutChoice) + ')');
   const headWith = await p.evaluate(() => document.querySelector('.nb-left .nb-ph').getBoundingClientRect().height);
   ok(!(await titleCut(p)), 'top bar: "Kitchen Book" is whole at 390 px with the chip');
   await p.click('.wtop-who'); await L.settle(p, 300);
@@ -191,7 +191,7 @@ const withoutViewChoice = async p => {
   // space and unchanged rows below; prep-lines.test.js verifies the approved density with the real app fonts.
   ok(staffSeen >= 3 && staffSeen <= 4, 'staff prep list: 3 to 4 fallback-font lines with Before service and her day showing (' + staffSeen + ')');
   const staffWithoutChoice = await withoutViewChoice(p);
-  ok(staffWithoutChoice.height === 44 && staffWithoutChoice.shift === 72 && staffWithoutChoice.rowsSame && staffWithoutChoice.seen === 5, 'staff prep list: the view choice and its spacing shift unchanged rows by 72 px; removing it restores the previous 5 rows (' + JSON.stringify(staffWithoutChoice) + ')');
+  ok(staffWithoutChoice.height === 44 && staffWithoutChoice.shift === 52 && staffWithoutChoice.rowsSame && staffWithoutChoice.seen === 5, 'staff prep list: the 44 px view choice and its 8 px gap move rows down by 52 px. Hiding it fits five staff rows at the same heights (' + JSON.stringify(staffWithoutChoice) + ')');
   const hh = await p.evaluate(() => { const h = () => document.querySelector('.nb-left .nb-ph').getBoundingClientRect().height, a = h(), l = document.querySelector('.nb-tmday'); l.style.display = 'none'; const z = h(); l.style.display = ''; return [a, z]; });
   ok(Math.abs(hh[0] - hh[1]) < 0.5, 'staff prep list: the header keeps its height with the day line (' + JSON.stringify(hh) + ')');
   ok(!(await p.$('.ks-wrap')) && !(await p.$('.ux-section-picker')), 'staff section: not asked, the chef set it');
