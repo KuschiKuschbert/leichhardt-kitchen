@@ -68,6 +68,16 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   await p.click('.g-card[href="#/guides/combi"]');
   await L.waitFor(p, () => document.querySelectorAll('.g-pgb img[src^="blob:"]').length === 2, null, 5000).catch(() => {});
   ok(await p.locator('.g-pgb img[src^="blob:"]').count() === 2, 'guide: both pages show');
+  const pages = await p.locator('.g-pages .g-pgb').evaluateAll(buttons => buttons.map(b => {
+    const box = b.getBoundingClientRect();
+    return { top: box.top, left: box.left, bottom: box.bottom, width: box.width, height: box.height };
+  }));
+  const barTop = await p.locator('.tabbar').evaluate(e => e.getBoundingClientRect().top);
+  ok(pages.length === 2 && pages[0].top === pages[1].top && pages[0].left < pages[1].left &&
+    pages.every(b => b.width >= 44 && b.height >= 44 && b.bottom <= barTop), 'guide: both phone page buttons fit side by side above the tab bar');
+  await p.emulateMedia({ media: 'print' });
+  ok(await p.locator('.g-pages').evaluate(e => getComputedStyle(e).display) !== 'grid', 'guide: desktop or phone print keeps the page order in one column');
+  await p.emulateMedia({ media: 'screen' });
   const pageReads = await S(p, n => window.__fake.readLog.slice(n).filter(k => /\/pages\//.test(k)).length, before);
   ok(pageReads === 2, 'guide: the two pages are read once (' + pageReads + ')');
   ok(await p.locator('.g-rchip[href="#/r/pork-belly"]').count() === 1 && await p.locator('.g-rchip[href="#/r/rice"]').count() === 1, 'guide: on the recipe cards it names (Pork Belly) and that mention its search word (Rice)');
@@ -77,14 +87,18 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   await L.settle(p, 400);
   const again = await S(p, n => window.__fake.readLog.slice(n).filter(k => /\/pages\//.test(k)).length, before);
   ok(again === 2 && await p.locator('.g-pgb img[src^="blob:"]').count() === 2, 'guide: opened again, the pages are not read again');
-  await p.click('[data-p="g-zoom"][data-i="0"]');
-  ok(await p.locator('.gz-wrap').count() === 1 && /Page 1 of 2/.test(await p.locator('.gz-t').innerText()), 'page big: opens on page 1 of 2');
+  const pageTwo = p.locator('.g-pgb[data-i="1"]');
+  await pageTwo.click();
+  ok(await p.locator('.gz-wrap').count() === 1 && /Page 2 of 2/.test(await p.locator('.gz-t').innerText()), 'page big: page 2 opens directly');
+  await p.click('[data-gz="prev"]:visible');
+  ok(/Page 1 of 2/.test(await p.locator('.gz-t').innerText()), 'page big: Previous goes to page 1');
   await p.click('[data-gz="next"]:visible');
   ok(/Page 2 of 2/.test(await p.locator('.gz-t').innerText()) && await p.locator('[data-gz="next"]:visible').isDisabled(), 'page big: Next goes to page 2, the last');
   await p.click('[data-gz="size"]:visible');
   ok(await p.locator('.gz-body.is-full').count() === 1, 'page big: Full size');
   await p.keyboard.press('Escape');
   ok(await p.locator('.gz-wrap').count() === 0 && !(await S(p, () => document.documentElement.classList.contains('gz-open'))), 'page big: Escape closes it');
+  ok(await pageTwo.evaluate(e => document.activeElement === e), 'page big: Close returns focus to the page button that opened it');
   await p.goto(L.BASE + '#/guides/fryer'); await L.settle(p, 600);
   ok(await p.locator('.g-ol li').count() === 3, 'guide: written steps are numbered');
   await p.goto(L.BASE + '#/guides/nope'); await L.settle(p, 600);

@@ -102,6 +102,7 @@ async function open(...a) {
   await p.click('[data-p="g-vlinks"]');
   await L.waitFor(p, () => location.hash === '#/admin' && document.querySelectorAll('.tv-row').length > 0);
   ok(await p.locator('.tv-blk').count() === 1, 'admin videos: Change the video links opens the admin Guides tab with the links');
+  ok(await p.locator('#tv-links').evaluate(e => e.getBoundingClientRect().top < innerHeight && scrollY > 0), 'admin videos: Change the video links lands on the editor');
   ok(p.errors.length === 0, 'admin videos: no page errors from a video guide ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -111,9 +112,19 @@ async function open(...a) {
     await L.adminTab(p, 'guides');
     await L.waitFor(p, () => document.querySelectorAll('.tv-row').length > 0);
     ok(await p.locator('.tv-row').count() === ALL_V, 'admin videos: one row per video at ' + width);
+    ok(await p.locator('.tv-row input[type="url"]').count() === 2 * ALL_V, 'admin videos: all wide and tall link boxes are present at ' + width);
+    await p.click('[data-p="g-new"]');
+    await p.click('[data-p="g-cancel"]');
+    const jump = p.locator('[data-p="tv-links-jump"]');
+    ok((await jump.boundingBox()).height >= 44, 'admin videos: the editor shortcut has a 44 px touch target at ' + width);
+    await jump.click();
+    ok(await p.locator('#tv-links').evaluate(e => document.activeElement === e && e.getBoundingClientRect().top < innerHeight), 'admin videos: the shortcut focuses the editor after closing a guide draft at ' + width);
     ok(await p.inputValue('[data-k="tv:prep:w"]') === 'https://youtu.be/AAAAAAAAAAA' && await p.inputValue('[data-k="tv:chef-panel:w"]') === 'https://youtu.be/CCCCCCCCCCC', 'admin videos: the saved links fill the boxes, the chefs\' too');
     ok(/For chefs/i.test(await p.locator('.tv-row').filter({ hasText: 'Chef panel' }).first().innerText()) && /Everyone/i.test(await p.locator('.tv-row').filter({ hasText: 'Prep list' }).first().innerText()), 'admin videos: each row says who sees it');
     ok(await p.locator('[data-p="tv-save"]').isDisabled(), 'admin videos: Save is off with nothing changed');
+    await p.click('[data-p="tv-save-jump"]');
+    const saveActions = await p.locator('#tv-actions').evaluate(e => ({ focused: document.activeElement === e, bottom: e.getBoundingClientRect().bottom, limit: innerHeight }));
+    ok(saveActions.focused && saveActions.bottom <= saveActions.limit, 'admin videos: Go to Save focuses and reveals the existing action at ' + width);
     await p.fill('[data-k="tv:orders:w"]', 'hello');
     ok(await p.getAttribute('[data-k="tv:orders:w"]', 'aria-invalid') === 'true' && !(await p.locator('[data-p="tv-save"]').isDisabled()), 'admin videos: a box that is not a YouTube link is marked');
     await p.click('[data-p="tv-save"]');

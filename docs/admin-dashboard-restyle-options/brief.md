@@ -114,3 +114,19 @@ Built on branch `ccr-87b66b00-enk63u` (pull request #666), commit "Admin Today: 
 | Dashboard, 1280 px, charts shut | 2452 px | 1907 px |
 
 Differences from the preview: the Inbox keeps its block heading bands (approved surface), today's numbers stay as three lines with their own words, and on a phone the comparison table drops the "days before" column so it fits without sideways scroll; the earlier number is still in the change words. The darkest-but-one heat step became `#C2451A` so white text reads 5.05:1 (was 4.43:1). Checks: `tests/admin-dashboard.test.js` and `tests/admin-inbox.test.js` (names, order, no pane, the table, 90 days with no "Same as before", charts open through a redraw with no reads, the week ahead's quiet line) and the other admin, roles, read-budget and safe-text files: 34 files, 0 failed.
+
+## Priority rows first (22 November 2026)
+
+**Verdict: Build smaller (council quick check).** Approved after comparing real app captures. The Inbox priority summaries appear before the full kitchen mail. The original action sits beside each priority and stays at least 44 × 44 px. Mail still shows the same messages, most urgent first, with their usual Seen, Done and urgency controls. A separate mail section or extra tap would add work. Things 3 and Flighty support giving each urgent task a line before the longer details. Linear supports aligning the existing actions.
+
+The move is in the rendered list, so keyboard and reading order match visual order. The quiet paper, warning words and categories stay in their existing colours. The earlier, wider Inbox redesign already chose this page's shell and a single summary queue. This change keeps it and adds no new destination, control, data read or write. The full message text starts further down; the original All kitchen mail action is still in the first summary row. Existing mail row actions and navigation are exercised below.
+
+The earlier source-based comparison at `7fd2aa8` showed one fully visible priority row before the change, then three at 390 × 844 and four at 1280 × 800 with the change. Actual checkout measurements use the same synthetic head chef and messages in the stand-in and are recorded below.
+
+| Browser viewport | Complete priority rows in the implemented Inbox | Late minutes row starts |
+| --- | --- | --- |
+| 390 × 844 | 3 | 513 px |
+| 768 × 844 | 4 | 618 px |
+| 1280 × 800 | 4 | 564 px |
+
+Implemented app evidence uses the actual shell and fonts, the head-chef stand-in and the same five priority summaries and three open kitchen messages. The existing Open minutes button opened Minutes at all three sizes. The capture found all 14 priority and message controls, no sideways scroll or browser errors, and unchanged Seen and Done state before an action. The click regression covers reading and visual order, first-screen minute access, 44 px targets, food safety first within mail, and the original tick and navigation paths. A separate 390 px stand-in check exercised the original urgency picker and Done action, and confirmed that a sous chef without admin access neither saw the Inbox nor read the nightly dashboard. Real device use and assistive technology were not exercised.
