@@ -2074,7 +2074,15 @@
     if (a === 'pick-clear') { var cf = byId(el.getAttribute('data-id')), cr = cf && (cf.rounds || [])[+el.getAttribute('data-r')]; if (cr) { delete PK.r[cf.id + '_' + cr.at]; delete PK.note[cf.id + '_' + cr.at]; } changed(); return; }
     if (a === 'trip-out' || a === 'trip-for') { tripOut(el.getAttribute('data-id'), a === 'trip-for'); return; }
     if (a === 'trip-undo') { tripUndo(el.getAttribute('data-id')); return; }
-    if (a === 'shelf') { var sh = document.getElementById('fn-shelf'); if (sh) { sh.scrollIntoView({ block: 'start' }); sh.setAttribute('tabindex', '-1'); sh.focus({ preventScroll: true }); } return; }
+    if (a === 'shelf') {
+      var sh = document.getElementById('fn-shelf');
+      if (sh) {
+        var shelfBounds = sh.getBoundingClientRect();
+        if (window.innerWidth < 1100 || shelfBounds.top < 0 || shelfBounds.bottom > window.innerHeight) sh.scrollIntoView({ block: 'start' });
+        sh.setAttribute('tabindex', '-1'); sh.focus({ preventScroll: true });
+      }
+      return;
+    }
     if (a === 'go') { sheetClose(false, true); return; }
     if (a === 'ckhide') { try { localStorage.setItem('lk.fn.ckhide', kday(now())); } catch (x) {} if (window.LK_PREP && window.LK_PREP.sg) window.LK_PREP.sg('checks', 'd'); paint(); return; }
     if (a === 'fold') { lsSet('lk.fn.fold', lsGet('lk.fn.fold') === kday(now()) ? null : kday(now())); lastBand = null; paint(); var fb = document.querySelector('#fn-band [data-fn="fold"]'); if (fb) fb.focus({ preventScroll: true }); return; }
