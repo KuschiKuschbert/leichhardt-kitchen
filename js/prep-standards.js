@@ -245,8 +245,18 @@
     if (!sectionById(state.reference)) state.reference = sectionById(defaultId) ? defaultId : initialSection();
     var sec = sectionById(state.reference);
     if (!sec) return '<p class="hint">No configured sections yet. Ask the head chef to set them up.</p>';
-    var c = ensure(sec.id, false, 'staff'), items = active(c);
-    return '<section class="ps-reference"><h3 class="nb-sh">Before service</h3><p class="nb-sd">Check every item against the head chef’s minimum. This includes prep absent from today’s list and work already ticked.</p>' + sectionPicker(sec.id, 'reference-section', false) + readStatus(sec.id, c, 'staff') + (c && c.items ? api.listHTML({ key: 'ps-reference-' + sec.id, items: items, step: 100, tools: 12, noun: ['item to check', 'items to check'], ph: 'Find a prep item', empty: 'No active standards set for this section.', find: function (r) { return r.name + ' ' + r.aliases.join(' ') + ' ' + r.instruction; }, sorts: [['az', 'A to Z', function (a, b) { return a.name.localeCompare(b.name); }]], card: function (x) { return referenceRow(x, c.status === 'ok'); } }) : '') + '</section>';
+    var c = ensure(sec.id, false, 'staff'), items = active(c), ready = c && c.status === 'ok';
+    var section = sectionPicker(sec.id, 'reference-section', false), status = readStatus(sec.id, c, 'staff');
+    var list = c && c.items ? api.listHTML({
+      key: 'ps-reference-' + sec.id, items: items, step: 100, tools: 12, noun: ['item to check', 'items to check'],
+      leadingTool: ready ? section : '', tool: ready ? status : '',
+      ph: 'Find a prep item', empty: 'No active standards set for this section.',
+      find: function (r) { return r.name + ' ' + r.aliases.join(' ') + ' ' + r.instruction; },
+      sorts: [['az', 'A to Z', function (a, b) { return a.name.localeCompare(b.name); }]],
+      card: function (x) { return referenceRow(x, ready); }
+    }) : '';
+    return '<section class="ps-reference" aria-labelledby="rtitle"><p class="nb-sd">Check the head chef’s minimums, including items already ticked or absent from today’s list.</p>' +
+      (ready ? '' : section + status) + list + '</section>';
   }
   function save(archived) {
     if (!valid() || !api.canEdit() || state.busy || api.saveHeld(SAVE)) return;

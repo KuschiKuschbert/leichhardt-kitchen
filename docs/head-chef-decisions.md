@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **22 November 2026, reach Before service items sooner.** Keep one title and group the section chooser, search and read time with the existing Prep reference controls. [Section prep standards](prep-standards.md#what-it-does)
+
 - **22 November 2026, Sunday sales suggestions stay in Supplier order.** The head chef chose A's inline suggestion, B's visible current amount in a **Keep** or **Replace** step and C's calculation and return of focus to **To order**. One weekly POS export and confirmed links support the chef's draft. The head chef or verified admin publishes the report and manages links. The chef places the order with the supplier. [Decision, council and pending release checks](supplier-sales.md)
 
 - **22 November 2026, names open the People editor.** In Admin, Team, People, tap the person's name to open or close their editor in the row. [People page](people-room-options/brief.md#tap-the-name-to-edit-22-november-2026)
