@@ -2032,6 +2032,9 @@
   function backHome() {
     var a = homeAt && app.querySelectorAll('a[href="' + homeAt.href + '"]')[homeAt.n];
     if (!a) { window.scrollTo(0, homeY); return; }
+    // The compact filters take their final height once the shared controls replace the source chips.
+    var browse = app.querySelector('.rx-browse');
+    if (browse && window.LK_UX) window.LK_UX.enhance(browse);
     // a plate in a group not drawn yet has no true position: draw every group once (as before this change), place the
     // plate, then go back to drawing only what is near; each group keeps the height it was drawn at, so nothing jumps
     app.classList.add('cv-all');
