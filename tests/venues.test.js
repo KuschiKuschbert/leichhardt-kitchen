@@ -41,6 +41,8 @@ function registry(extra) {
   ok(list.length >= 1 && list.some(v => v.id === 'leichhardt' && v.host === 'pages' && v.book === 'full'), 'venues/leichhardt.json: Leichhardt on GitHub Pages with the full book');
   ok(!throws(() => V.checkPagesFiles(list), /./), 'js/firebase-config.js and the security header are word for word Leichhardt\'s venue file');
   ok(fs.readFileSync(path.join(root, 'js', 'firebase-config.js'), 'utf8') === V.configJs(home), 'the settings the phones load are made from venues/leichhardt.json');
+  ok(V.configJs(home).includes('window.LK_SUPPLIER_SALES_ENABLED = true;') &&
+    !V.configJs(demo).includes('LK_SUPPLIER_SALES_ENABLED'), 'the generated settings enable the supplier sales pilot only for an opted-in venue');
   const other = Object.assign(copy(home), { firebase: Object.assign(copy(home.firebase), { projectId: 'another-project', authDomain: 'another-project.firebaseapp.com', storageBucket: 'another-project.firebasestorage.app' }) });
   const fake = fs.mkdtempSync(path.join(tmp, 'pages-'));
   fs.mkdirSync(path.join(fake, 'js'));
@@ -52,6 +54,7 @@ function registry(extra) {
   ok(throws(() => V.checkPagesFiles(list, fake), /security header/), 'a security header naming a second sign-in host is refused');
 
   const bad = (change, re, msg) => ok(throws(() => V.validVenue(Object.assign(copy(demo), change)), re), 'a venue file is refused: ' + msg);
+  bad({ supplierSales: 'true' }, /supplierSales/, 'its sales pilot setting must be a boolean');
   bad({ firebase: Object.assign(copy(demo.firebase), { authDomain: 'other-project.firebaseapp.com' }) }, /authDomain/, 'its sign-in host is another project\'s');
   bad({ firebase: Object.assign(copy(demo.firebase), { appId: '1:999999999:web:abcdef0123' }) }, /appId/, 'its web app is another project\'s');
   bad({ firebase: Object.assign(copy(demo.firebase), { projectId: 'Bad_Project' }) }, /projectId/, 'its project id is not one');
