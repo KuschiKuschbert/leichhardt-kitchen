@@ -1,10 +1,11 @@
 /* Leichhardt Kitchen Recipe Book. Locked Leichhardt card look. */
 /* Delivery records use the book's existing type, buttons and paper colours. No extra bottom navigation tab. */
-.dl-page { max-width: 860px; margin: 0 auto; padding: 1.2rem 0 2rem; }
-.dl-heading h1 { font: 700 2.3rem/1.05 var(--display); margin: .25rem 0 .6rem; }
-.dl-heading { margin-bottom: 1.4rem; }
+.dl-page { max-width: 860px; margin: 0 auto; padding: .5rem 0 2rem; }
+.dl-heading h1 { font: 700 2.3rem/1.05 var(--display); margin: .25rem 0 .3rem; }
+.dl-heading { margin-bottom: .7rem; }
+.dl-heading .hint { margin: 0; }
 .dl-form legend { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.dl-form fieldset { margin: 0; padding: 0; border: 0; min-width: 0; display: grid; gap: 1rem; }
+.dl-form fieldset { margin: 0; padding: 0; border: 0; min-width: 0; display: grid; gap: .65rem; }
 .dl-field { display: grid; gap: .35rem; min-width: 0; }
 .dl-field input, .dl-field textarea { width: 100%; min-width: 0; min-height: 44px; border: 1.5px solid var(--edge); border-radius: var(--r-act); padding: .6rem .7rem; background: var(--paper); color: var(--ink); font: inherit; }
 .dl-field input:focus-visible, .dl-field textarea:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
@@ -39,7 +40,7 @@
 .dl-when-line > span { min-width: 0; overflow-wrap: anywhere; }
 .dl-due-pick { align-items: center; margin-top: -.4rem; }
 .dl-due-pick .hint { margin: 0 .2rem 0 0; }
-.dl-what { display: grid; gap: .45rem; }
+.dl-what { display: grid; gap: .25rem; }
 .dl-what .hint { margin: 0; }
 .dl-temps.one { grid-template-columns: minmax(0, 1fr); }
 .dl-temp { display: flex; align-items: stretch; min-height: 56px; border: 1.5px solid var(--edge); border-radius: var(--r-act); background: var(--paper); overflow: hidden; }
@@ -54,6 +55,7 @@
 .dl-sign-note:empty { display: none; }
 .dl-sign-note, .dl-hidden-note { margin: -.4rem 0 0; color: var(--small-ink); font-weight: 600; }
 .dl-form .dl-add-note { padding-left: 0; }
+.dl-dock .dl-actions { margin-top: .35rem; }
 .dl-actions .btn[type="submit"] { flex: 1 1 12rem; }
 /* On a phone Save delivery and the line that says what happened dock above the tab bar while the form is on screen,
    like Review order on the supplier sheet, and scroll away with the form. With the function band and the cut-off bar
@@ -68,6 +70,19 @@
 .dl-waiting { margin: 1rem 0 0; padding-top: .9rem; border-top: 1px solid var(--line); color: var(--small-ink); }
 .dl-waiting b { color: var(--ink); }
 @media (max-width: 380px) { .dl-pair { grid-template-columns: 1fr; } }
+@media (min-width: 1100px) {
+  .dl-page { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); align-items: start; gap: 16px 28px; max-width: 1136px; }
+  .dl-heading { grid-column: 1 / -1; margin-bottom: 0; }
+  .dl-form, .dl-history { min-width: 0; }
+  .dl-history { margin-top: 0; padding: 14px 18px; border: 1px solid var(--line); border-top: 2px solid var(--ink); border-radius: var(--r-act); background: var(--surface-paper); }
+  /* Larger text keeps the full form width for the two temperature readings. */
+  html[data-text="normal"] .dl-form fieldset { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); column-gap: 14px; }
+  html[data-text="normal"] .dl-form fieldset > * { grid-column: 1 / -1; }
+  html[data-text="normal"] .dl-form .dl-what { grid-column: 1; align-self: start; }
+  html[data-text="normal"] .dl-form .dl-temps { grid-column: 2; align-self: start; }
+  .dl-temps:not(.one) .dl-unit { padding-inline: 7px; }
+  .dl-dock .dl-message:empty { min-height: 0; margin: 0; }
+}
 :root {
   --bg: #FBFAF7;
   --paper: #FFFFFF;
@@ -517,6 +532,8 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .nb-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .nb-meta { display: block; min-height: 1.35em; font: 400 0.75rem/1.35 var(--body); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nb-row.is-done .nb-meta { text-decoration: none; }
+.nb-tick-status { display: block; margin-top: 2px; color: var(--bad-ink); font: 700 0.8125rem/1.23 var(--body); overflow-wrap: anywhere; }
+.nb-tick-status.is-waiting { color: var(--ink); }
 .nb-q { font-size: 1.25rem; color: var(--muted); margin-left: 0.3rem; }
 .nb-go { flex: 0 0 auto; font-family: var(--display); font-weight: 700; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); text-decoration: none; border-bottom: 1.5px dotted var(--accent-ink); }
 .nb-x { flex: 0 0 auto; min-height: 44px; padding: 0 0.5rem; border: 0; background: none; font-family: var(--body); font-weight: 600; font-size: 0.8125rem; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
@@ -1307,6 +1324,27 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 
 /* Notes workspace (admin Notes tab and the sous chef's Daily notes): list first, editor beside it on a big screen */
 .n-ws { display: flex; flex-direction: column; gap: 1rem; }
+/* A short scheduled ping opens with the recipient, date and actions in reach. */
+.n-edit { gap: .45rem; padding: .8rem .75rem .9rem; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-paper); }
+.n-edit .field { margin: 0 0 .35rem; min-width: 0; }
+.n-edit .n-picks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem .65rem; margin-top: .2rem; }
+.n-edit .n-picks + .hint { margin: 0; }
+.n-picks .field { margin: 0; }
+.n-picks .ux-picker-trigger { width: 100%; min-height: 44px; }
+.n-edit #n-text { min-height: 70px; }
+.n-quickdays { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin: .35rem 0; }
+.n-quickdays .label { margin: 0 auto 0 0; }
+.n-quickdays .chip { min-width: 44px; min-height: 44px; }
+.n-schedule { border: 1px solid var(--line); border-radius: var(--r-act); background: var(--surface-reference); }
+.n-schedule > .btn { display: block; width: 100%; min-height: 44px; border: 0; background: transparent; text-align: left; }
+.n-schedule-fields { padding: 0 .55rem .55rem; }
+.n-schedule .n-grid { grid-template-columns: repeat(7, minmax(44px, 1fr)); gap: 3px; overflow-x: auto; margin-inline: -.4rem; }
+.n-edit .nt-whenline { margin: .3rem 0 .25rem; font-size: .875rem; }
+@media (max-width: 599px) { html[data-text="xlarge"] .n-edit .nt-whenline { margin-block: 0; } }
+.n-edit .n-actions { margin: 0; }
+.n-actions .sv-btn { flex: 1 1 auto; }
+.n-actions .btn { min-height: 44px; }
+
 .n-lh { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0.6rem 1rem; }
 .n-lh .label, .n-lh .hint { display: block; }
 .n-gh3 { margin: 0.9rem 0 0.4rem; font: 700 1.1rem var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
@@ -1398,6 +1436,11 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .mn-cell span { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .mn-cell b { font-weight: 600; overflow-wrap: anywhere; }
 .mn-cell.mn-wide { grid-column: 1 / -1; border-top: 1px solid var(--ink); }
+@media screen {
+  .mn-cell.mn-wide:has(.mn-sign-jump) { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: .75rem; }
+  .mn-sign-jump { grid-column: 2; grid-row: 1 / span 2; align-self: center; margin-block: -.35rem; text-align: right; }
+}
+@media print { .p-link.mn-sign-jump { display: none; } }
 .mn-safety { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.8rem 0.9rem; border-radius: 8px; background: var(--accent-ink); color: #fff; font-weight: 500; }
 .mn-sl { font: 700 1.125rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; }
 .mn-safety .mn-ul { margin: 0; }
@@ -1785,6 +1828,15 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .g-pgb img { width: 100%; height: auto; }
 .g-ph { display: flex; align-items: center; justify-content: center; width: 100%; padding: 1rem; border: 1.5px dashed var(--edge); border-radius: 6px; background: #fff; color: var(--muted); text-align: center; }
 .g-pg figcaption { font-size: 0.8125rem; color: var(--muted); text-align: center; }
+/* Both page buttons are in reach when a guide has just two sheets. Keep print's original sequence. */
+@media screen {
+  .g-pages-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; align-items: start; }
+  .g-pages-pair > :not(.g-pg) { grid-column: 1 / -1; }
+  .g-pages-pair .g-pg { min-width: 0; }
+  .g-pages-pair .g-pgb { min-height: 44px; }
+  .g-pages-pair .g-pgb img { display: block; max-height: min(60vw, 310px); object-fit: contain; }
+}
+
 .g-rchips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .g-rchip { display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.9rem; border: 1.5px solid var(--ink); border-radius: 22px; background: var(--paper); color: var(--ink); font-weight: 600; text-decoration: none; }
 .g-rchip:hover { border-color: var(--accent-ink); }
@@ -2121,6 +2173,9 @@ button.wm-a.wm-tile { text-align: left; }
 .p-toasts .p-toast-bad .p-toast-btn { background: var(--bad-ink); }
 .p-toasts .p-toast.p-toast-old { align-self: flex-start; min-height: 0; margin: 0 0 0 12px; padding: 0; border: 0; background: transparent; box-shadow: none; }
 .p-toasts .p-toast-chip { display: block; max-width: min(22rem, calc(100vw - 24px)); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; border-radius: 8px 8px 0 0; font-weight: 600; }
+@media (max-width: 719px) {
+  .p-toasts .p-toast-chip { white-space: normal; overflow-wrap: anywhere; text-overflow: clip; text-align: left; line-height: 1.12; }
+}
 @keyframes slip-in { from { translate: 0 10px; opacity: 0.4; } to { translate: 0 0; opacity: 1; } }
 @keyframes slip-time { from { transform: scaleX(1); } to { transform: scaleX(0); } }
 /* on a phone: no tab bar, no lift; a sticky Save bar lifts the slip above it; the page makes room for the slip */
@@ -2331,6 +2386,13 @@ html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd .dw-stage { top: calc(
 .mg-ing-note { overflow-wrap: anywhere; }
 .mg-ing-open { display: flex; flex-direction: column; gap: 0.7rem; padding: 0.4rem 0 0 2.1rem; }
 .mg-ing-open .hint { margin: 0; }
+/* The same ingredient fields fit in fewer lines while the details stay inline. */
+@media (min-width: 350px) and (max-width: 999px) {
+  .mg-ed .mg-ing-open { padding-left: 0; gap: .5rem; }
+  .mg-ed .mg-ing-field { display: grid; grid-template-columns: 5.25rem minmax(0, 1fr); align-items: center; gap: .35rem .55rem; }
+  .mg-ed .mg-ing-field > .hint { grid-column: 1 / -1; }
+}
+
 /* the recipe link: its box and the shared picker read as one control */
 .mg-linkbox { display: flex; min-width: 0; }
 .mg-linkbox .mg-link { flex: 1 1 auto; min-width: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; }
@@ -2366,6 +2428,26 @@ html.has-upd .mg-chs { top: calc(var(--fn-stick, 0px) + var(--upd-h)); }
   .mg-chb[aria-current="true"] .mg-chx { color: var(--bad-ink); }
   .mg-ed .mg-bar { grid-column: 2; }
 }
+/* The open ingredient uses the same details in a non-modal panel beside the wide chapter. */
+@media (min-width: 1150px) {
+  .mg-wrap.mg-ed.mg-with-ing-panel { max-width: 75rem; }
+  .mg-with-ing-panel .mg-body { grid-template-columns: 10rem minmax(0, 1fr) minmax(22rem, 26rem); gap: 1.05rem; }
+  .mg-ing-panel {
+    position: sticky; top: calc(var(--fn-stick, 0px) + var(--upd-h, 0px) + 1rem);
+    align-self: start; display: flex; min-width: 0; flex-direction: column; overflow: hidden;
+    max-height: var(--mg-ing-panel-room, calc(100dvh - var(--fn-stick, 0px) - var(--upd-h, 0px) - 15rem));
+    border: 1.5px solid var(--ink); border-radius: var(--r-act); background: var(--surface-paper);
+  }
+  .mg-ing-panel-head { display: flex; align-items: center; gap: .65rem; justify-content: space-between; padding: .55rem .75rem .55rem .9rem; border-bottom: 1px solid var(--line); }
+  .mg-ing-panel-head > div { min-width: 0; }
+  .mg-ing-panel-head h3 { margin: .15rem 0 0; overflow-wrap: anywhere; }
+  .mg-ing-panel-head button { flex: none; min-width: 44px; min-height: 44px; }
+  .mg-ing-panel .mg-ing-open { min-height: 0; padding: .75rem .9rem .9rem; overflow-y: auto; overscroll-behavior: contain; }
+  .mg-ing-panel .mg-ing-open:focus-within { scroll-padding-block: .4rem; }
+  .mg-ing-panel .mg-ing-open button { min-height: 44px; }
+  .mg-ing-panel .mg-mini { padding-top: .4rem; border-top: 1px solid var(--line); }
+}
+
 .mg-more { display: flex; flex-direction: column; gap: 1rem; }
 .mg-more-b { align-self: flex-start; }
 .mg-more-box { display: flex; flex-direction: column; gap: 1rem; }
@@ -3927,7 +4009,7 @@ i.dsh-c-w { background: var(--dsh-w); } i.dsh-c-t { background: var(--dsh-t); }
 /* Needs you (Dashboard, step 3): a row per thing waiting, its state in a word and a mark, its page one tap away. */
 .dsh-needs { background: var(--surface-reference); border-color: transparent; }
 .dsh-need-list { list-style: none; margin: 0; padding: 0; display: grid; }
-/* To do (4 Nov 2026): the open kitchen mail sits under its line, ticked off in place with the Kitchen mail page's rows */
+/* The open kitchen mail uses the Kitchen mail page's rows and is ticked off in place. */
 .dsh-todo-mail { padding: 0 0 .5rem 1.4rem; }
 .dsh-ml { list-style: none; margin: 0; padding: 0; }
 .dsh-ml .ml-row:first-child { border-top: 0; }
@@ -4042,6 +4124,25 @@ html:has(.w-sheet, .tr-sheet, .p-sheet, .o-sheet) .p-toasts { top: calc(12px + e
 .w-rvfoot { margin: 14px 0 4px; }
 .w-rvfoot .w-rvbtn { width: 100%; align-items: flex-start; text-align: left; }
 .w-rvfoot .hint { margin: 6px 0 0; }
+@media screen {
+  .w-page:has(> .w-rvfoot) {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+    grid-template-areas: 'head head' 'total review' 'bar bar' 'legend legend' 'read read' 'list list';
+  }
+  .w-page:has(> .w-rvfoot) > .nb-ph { grid-area: head; }
+  .w-page:has(> .w-rvfoot) > .w-today { display: contents; }
+  .w-page:has(> .w-rvfoot) .w-tot { grid-area: total; align-self: center; margin: .35rem .75rem; }
+  .w-page:has(> .w-rvfoot) .w-bar { grid-area: bar; margin-inline: .75rem; }
+  .w-page:has(> .w-rvfoot) .w-legend { grid-area: legend; margin-inline: .75rem; margin-bottom: 12px; }
+  .w-page:has(> .w-rvfoot) > .w-ro { grid-area: read; }
+  .w-page:has(> .w-rvfoot) > .nb-body { grid-area: list; }
+  .w-page > .w-rvfoot { grid-area: review; align-self: center; max-width: min(52vw, 16rem); margin: .35rem .75rem .35rem 0; }
+  .w-page:not(:has(> .w-today)) > .w-rvfoot { grid-column: 1 / -1; justify-self: start; margin-left: .75rem; }
+  .w-page .w-rvfoot .w-rvbtn { min-width: 44px; min-height: 44px; padding: .2rem .6rem; white-space: normal; overflow-wrap: anywhere; }
+  .w-page .w-rvfoot .hint { display: none; }
+}
+@media print { .w-page > .w-rvfoot { order: 1; } }
+
 button.nb-prog { min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .nb-t[data-n]::before { content: attr(data-n); content: attr(data-n) / ''; display: inline-flex; align-items: center; justify-content: center; min-width: 1.45em; height: 1.45em; margin-right: 0.35em; border-radius: 50%; background: var(--accent-ink); color: #fff; font: 700 0.62em var(--body); vertical-align: 0.2em; }
 .nb-why { display: inline-block; padding: 0 6px; border: 1.5px solid var(--muted); border-radius: 999px; font: 600 0.75rem var(--body); color: var(--muted); white-space: nowrap; }
@@ -4334,6 +4435,15 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .dl-rb .dl-readings dt { font: 700 0.75rem/1.2 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: inherit; }
 .dl-rb .dl-readings dd { font-size: 1rem; color: inherit; }
 .dl-rb .hint { margin: 0.2rem 0 0; }
+.dl-records-jump { display: none; }
+@media (max-width: 719px) {
+  .dl-heading-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 0.5rem; }
+  .dl-records-jump { display: inline-block; position: relative; min-width: 44px; min-height: 0; font-size: 0.875rem; color: var(--ink); }
+  .dl-records-jump:focus-visible { outline-color: var(--ink); }
+  /* The whole 44 px target fits across the existing heading, whose neighbouring text is static. */
+  .dl-records-jump::after { content: ''; position: absolute; inset-inline: 0; top: 50%; height: 44px; transform: translateY(-50%); }
+  #dl-records { scroll-margin-block-start: 4.5rem; }
+}
 /* Supplier reference stays quiet until the existing attn flag asks for a look. Keep the same line and height
    so the first To order box stays clear of the Review bar. */
 @media (max-width: 899px) {
@@ -4639,6 +4749,20 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .fn-svc-board .fn-for-b { min-height: 48px; padding: 0 0.9rem; border-color: var(--bar-text); background: transparent; color: var(--bar-text); }
 .fn-svc-outs { margin: 0.3rem 0 0.6rem; color: rgba(251, 248, 241, 0.86); }
 .fn-svc-outs .fn-i, .fn-next .fn-trip-out { color: var(--done-on-dark); }
+
+@media (max-width: 719px) {
+  .fn-svc-page { gap: 0.4rem; }
+  .fn-svc-page > .hint { margin-block: 0.2rem; }
+  .fn-svc-page > .fn-svc-board { margin-block-start: 0.15rem; }
+}
+/* Keep the kitchen's rounds the same width as trips enter or leave the shelf. The coordinator's rounds are inside .fn-svc-sec. */
+@media (min-width: 1100px) {
+  .fn-svc-board:has(> .fn-svc-rows) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(270px, 0.52fr); grid-template-rows: auto auto 1fr; column-gap: 1.25rem; align-items: start; }
+  .fn-svc-board > .fn-svc-bh { grid-column: 1 / -1; }
+  .fn-svc-board > .fn-svc-wl { grid-area: 2 / 1; }
+  .fn-svc-board > .fn-svc-rows { grid-area: 3 / 1; }
+  .fn-svc-board > .fn-svc-rows + .fn-svc-shelf { grid-area: 2 / 2 / span 2; min-width: 0; margin: 0; padding: 0.65rem 0 0.35rem 1rem; border-top: 0; border-inline-start: 1px solid rgba(251, 248, 241, 0.32); scroll-margin-block-start: 5rem; }
+}
 .fn-band .fn-li-out { display: flex; align-items: center; gap: 0.5rem; border-top: 1px solid rgba(251, 248, 241, 0.16); }
 .fn-band .fn-li-out:first-child { border-top: 0; }
 .fn-band .fn-li-out > .fn-row { flex: 1 1 auto; min-width: 0; border-top: 0; }
@@ -5092,6 +5216,14 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .dsh-dtile-sub.dsh-up { color: var(--accent-ink); }
 .dsh-dtile-sub.dsh-down { color: var(--done-ink); }
 .dsh-inbox .dsh-needs { margin-top: 1rem; }
+.dsh-inbox .dsh-needs > .dsh-panel-head { margin-bottom: .15rem; }
+.dsh-inbox .dsh-need { grid-template-columns: 4px minmax(0, 1fr) auto; gap: .5rem; padding: .36rem 0; }
+.dsh-inbox .dsh-need > .btn { grid-column: 3; justify-self: end; text-align: center; min-width: 44px; line-height: 1.2; white-space: normal; }
+.dsh-inbox .dsh-todo-mail { margin-top: .45rem; padding: 0 0 .5rem; border-top: 1px solid var(--line); }
+.dsh-inbox .dsh-ml .ml-row { padding-block: .4rem; }
+@media (max-width: 560px) {
+  .dsh-inbox .dsh-need > .btn { max-width: 7.1rem; padding: .3rem .5rem; }
+}
 @media (min-width: 1000px) {
   .p-admin.ad-admin .a-find-head { display: none; }
   .p-admin.ad-admin .a-nav { padding: 1rem .75rem 1.25rem; border: 0; border-radius: 12px; background: var(--bar); color: var(--bar-text); }
@@ -5309,6 +5441,15 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .ps-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 2rem; align-items: start; margin-top: 1rem; }
 .ps-grid > *, .ps-fields, .ps-form-grid > * { min-width: 0; }
 .ps-section { max-width: 24rem; margin: .85rem 0; }
+.ps-reference .lv-tools { flex-wrap: wrap; align-items: flex-end; gap: .25rem .5rem; }
+.ps-reference .lv-tools > .ps-section { flex: 0 1 8rem; min-width: 0; margin: 0; }
+.ps-reference .lv-tools > .ps-section select { min-width: 0; width: 100%; }
+.ps-reference .lv-qw { flex-basis: 10rem; }
+.ps-reference .lv-q { min-height: 44px; }
+.ps-reference .lv-tool { max-width: 100%; }
+.ps-reference .ps-read { display: flex; flex-wrap: wrap; align-items: center; gap: 0 .5rem; margin: 0; }
+.ps-reference .p-err .p-link { display: inline-flex; min-width: 44px; min-height: 44px; align-items: center; }
+.ps-reference .ux-column-filters:empty, .ps-reference .ux-active-filters:empty { display: none; }
 .ps-fields { display: grid; gap: 1rem; }
 .ps-fields .search, .ps-fields .p-select { width: 100%; max-width: 100%; }
 .ps-fields textarea { min-height: 92px; resize: vertical; }
@@ -5347,7 +5488,7 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .cln-body { min-height: 8rem; max-height: none; overflow: visible; padding-bottom: 1rem; }
 .cln-body .nb-hd { gap: .6rem; margin: .3rem 0 0; overflow-wrap: anywhere; }
 .cln-group-count { flex: none; font: 400 .8125rem var(--body); letter-spacing: 0; color: var(--muted); }
-.cln-packdown-title { margin: 1.1rem 0 .2rem; font: 700 2rem/1.2 'Caveat', cursive; }
+.cln-packdown-title { margin: 1.1rem 0 .2rem; font: 700 2rem/1.2 'Caveat', cursive; scroll-margin-top: .5rem; }
 .cln-packdown > .hint { margin: .2rem 0 .65rem; line-height: 1.4; }
 .cln-row { flex-wrap: nowrap; }
 .cln-row .nb-box { align-self: center; margin-top: 0; }
@@ -5875,6 +6016,20 @@ html:has(.tm-focus-page) {
 @media (min-width: 1100px) {
   .tm-focus-page .tm-focus-grid { grid-template-columns: minmax(0, 1fr); }
   .tm-focus-page .tm-focus-grid > .tm-detail-workbench { position: sticky; top: 1rem; }
+  /* On a wide screen the closed date control and the roster tools share one row. */
+  .tm-notebook.tm-focus-page .tm-nbook:has(.tm-week-reveal[hidden]):not(:has(.tm-live-strip:not([hidden]), .tm-future-note)) {
+    grid-template-columns: max-content minmax(0, 1fr);
+    grid-template-areas: 'head head' 'date toolbar' 'week week' 'away away' 'notice notice' 'editor editor' 'save save' 'review review' 'tools tools' 'roster roster' 'extra extra';
+  }
+  .tm-focus-page .tm-nbook:has(.tm-week-reveal[hidden]):not(:has(.tm-live-strip:not([hidden]), .tm-future-note)) .tm-date-controls {
+    align-self: center; margin: .65rem 0 .65rem .85rem;
+  }
+  .tm-focus-page .tm-nbook:has(.tm-week-reveal[hidden]):not(:has(.tm-live-strip:not([hidden]), .tm-future-note)) .tm-date-controls > button:first-child {
+    flex-basis: auto; min-width: 12rem;
+  }
+  .tm-focus-page .tm-nbook:has(.tm-week-reveal[hidden]):not(:has(.tm-live-strip:not([hidden]), .tm-future-note)) .tm-focus-toolbar {
+    align-self: center; justify-self: end; width: min(100% - 1.7rem, 30rem); margin: .65rem .85rem;
+  }
 }
 @media (max-width: 1099px) {
   .tm-focus-page .tm-focus-grid > .tm-detail-workbench.is-empty { display: none; }
@@ -5882,6 +6037,11 @@ html:has(.tm-focus-page) {
 @media (max-width: 719px) {
   .p-admin.ad-admin.tm-focus-panel .a-nav { margin-bottom: 0; }
   .p-admin.ad-admin.tm-focus-panel .ad-heading { margin-bottom: .2rem; }
+  .tm-notebook.tm-focus-page .tm-nhead { padding-block: .375rem; }
+  /* The header already says Saved. Keep the phone dock for work, live staffing notices and save feedback. */
+  .tm-notebook.tm-focus-page:not(:has(.tm-quick-add:not([hidden]))) .tm-focus-save:has(.sv-btn:disabled[aria-busy="false"]:not([data-sv])):not(.has-short):not(:has(.sv-line:not(:empty))) {
+    display: none;
+  }
   .tm-notebook.tm-focus-page .tm-nhead .p-h { font-size: 1.7rem; }
   .tm-focus-page .tm-row-fields { gap: .35rem; }
   .tm-notebook.tm-focus-page .tm-row-fields .ux-picker-trigger { padding-inline: .5rem; }
@@ -5925,6 +6085,33 @@ html:has(.tm-focus-page) {
 .o-cut-detail.has-deadline { display: flex; min-width: 0; }
 .o-cut-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .o-cut-at { flex-shrink: 0; white-space: pre; }
+
+/* Orders keeps one named deadline in reach on a narrow screen; the same rows make up the wide rail. */
+.o-cut-more {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  width: 100%; min-height: 44px; padding: 0.3rem 0; border: 0; border-bottom: 1px solid var(--line);
+  background: transparent; color: var(--ink); font: 600 0.875rem var(--body); text-align: left; cursor: pointer;
+}
+.o-cut-more::after { content: '+'; }
+.o-cut-more[aria-expanded="true"]::after { content: '−'; }
+@media (max-width: 999px) {
+  .o-cut-more[aria-expanded="false"] + .o-cut-rest { display: none; }
+  .o-cut-body { padding-block: 0.25rem; }
+  .o-cut-body li.o-cut-row { padding-block: 0.15rem; }
+  .o-cut-body .cut-how { margin-bottom: 0.2rem; }
+  .o-cut-row .o-cut-action { width: clamp(5.25rem, 30vw, 7rem); overflow-wrap: anywhere; }
+}
+@media (min-width: 1000px) {
+  .o-page:has(> .o-cut-fold) {
+    display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(330px, 1fr);
+    column-gap: 1.5rem; align-items: start;
+  }
+  .o-page:has(> .o-cut-fold) > .nb-ph { grid-column: 1 / -1; }
+  .o-page > .o-work { grid-column: 1; grid-row: 2; min-width: 0; }
+  .o-page > .o-cut-fold { grid-column: 2; grid-row: 2; }
+  .o-page:has(> .o-cut-fold) .o-cols:has(> .o-ordered) { display: block; }
+  .o-cut-more { display: none; }
+}
 
 .o-requests .nb-roll { display: inline-block; white-space: nowrap; }
 

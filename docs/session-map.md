@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Orders cut-offs beside the requests, 22 November 2026 (chosen)
+
+The head chef chose the combined view. View opens one supplier on phone and tablet, with other cut-offs and reminder settings one tap away. It opens the same details in a laptop rail. Original request ticks and Add request stay in reach. [Decision and checks](order-list-options/brief.md#orders-cut-offs-beside-the-list-22-november-2026).
+
 ## Sunday sales suggestions in Supplier order, 22 November 2026 (chosen)
 
 The head chef chose A's inline amount and Use, B's visible current amount in a Keep or Replace step and C's calculation disclosure and focus on the draft field. Round 1 was Build smaller, four of five. All six round 2 reviewers ranked A first. One weekly CSV or XLSX and confirmed links feed the chef's manual draft. A single private weekly snapshot serves authorised chefs. [Design, preview measurements, data contract and pending checks](supplier-sales.md)
@@ -372,7 +376,7 @@ Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records
 | `js/deliveries.js` | Delivery received (`#/deliveries`). Lazy. `docs/delivery-received.md` |
 | `js/cleaning.js`, `js/cleaning-schedule.js` | Cleaning (`#/cleaning`), lazy API 2 workspace plus version 1 schedule drafts. Unbranded explicit imports, ordered section pack down, inline methods/checks, anchored intervals, independent recorded events and mapped Pass verification. `docs/cleaning-schedule.md`, focused Cleaning browser and rules checks |
 | `js/fnedit.js` | Manage functions (`#/functions`). Lazy, for someone ticked for Functions |
-| `js/admin-dashboard.js` | The admin Dashboard (`LK_DASH`): headlines, tiles and charts from the nightly `analysis/dashboard` record. Lazy, from `js/prep.js` when the page opens. `docs/admin-dashboard-options/brief.md` |
+| `js/admin-dashboard.js` | The admin Dashboard (`LK_DASH`): headlines, tiles and charts from the nightly `analysis/dashboard` record. Inbox priority rows precede the detailed kitchen mail. Lazy, from `js/prep.js` when the page opens. `docs/admin-dashboard-restyle-options/brief.md` |
 | `js/analysis-core.js`, `js/admin-intelligence.js`, `js/proofreader-admin.js` | Admin Review desk: analysis maths (shared with node), the analysis workspace, the proofreader. Lazy, from `js/prep.js`, admin only. `docs/admin-intelligence.md`, `docs/proofreader-admin.md` |
 | `firestore.rules` | Rules template (see Never in this repo). A helper one collection uses lives inside its match block (14 Nov 2026). `PLATFORM_EMAIL` and `PLATFORM_ID` (19 Nov 2026): the platform owner at a venue, off at Leichhardt (`docs/venues.md`) |
 | `venues/<id>.json`, `venues/<id>/`, `scripts/venues.cjs`, `scripts/venue-site.cjs`, `scripts/venue-deploy.sh`, `scripts/venue-live-check.cjs`, `scripts/rules-compile-check.mjs`, `.github/workflows/venue-setup.yml` | The venues (19 Nov 2026): each its own project, address, environment and copy of the book; check, matrix and guard; a venue's copy, its publish to its own project and its live check; Set up a venue. Never loaded by the phones. `tests/venues.test.js`, `tests/rules/venues.test.mjs`, `docs/venues.md` |
