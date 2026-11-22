@@ -5382,6 +5382,15 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .ps-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 2rem; align-items: start; margin-top: 1rem; }
 .ps-grid > *, .ps-fields, .ps-form-grid > * { min-width: 0; }
 .ps-section { max-width: 24rem; margin: .85rem 0; }
+.ps-reference .lv-tools { flex-wrap: wrap; align-items: flex-end; gap: .25rem .5rem; }
+.ps-reference .lv-tools > .ps-section { flex: 0 1 8rem; min-width: 0; margin: 0; }
+.ps-reference .lv-tools > .ps-section select { min-width: 0; width: 100%; }
+.ps-reference .lv-qw { flex-basis: 10rem; }
+.ps-reference .lv-q { min-height: 44px; }
+.ps-reference .lv-tool { max-width: 100%; }
+.ps-reference .ps-read { display: flex; flex-wrap: wrap; align-items: center; gap: 0 .5rem; margin: 0; }
+.ps-reference .p-err .p-link { display: inline-flex; min-width: 44px; min-height: 44px; align-items: center; }
+.ps-reference .ux-column-filters:empty, .ps-reference .ux-active-filters:empty { display: none; }
 .ps-fields { display: grid; gap: 1rem; }
 .ps-fields .search, .ps-fields .p-select { width: 100%; max-width: 100%; }
 .ps-fields textarea { min-height: 92px; resize: vertical; }

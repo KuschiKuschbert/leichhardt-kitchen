@@ -4958,7 +4958,7 @@
     var s = lvState(c), key = esc(c.key), bar = '';
     {
       var fl = (c.filters || []).map(function (f) { return { f: f, n: f[2] ? c.items.filter(f[2]).length : c.items.length }; }).filter(function (x, i) { return i === 0 || x.n > 0 || x.f[0] === s.f; });
-      bar = '<div class="lv-tools">' + (c.heading ? '<h3 class="a-ch-h">' + esc(c.heading) + '</h3>' : '') +
+      bar = '<div class="lv-tools">' + (c.heading ? '<h3 class="a-ch-h">' + esc(c.heading) + '</h3>' : '') + (c.leadingTool || '') +
         '<div class="lv-qw"><label class="visually-hidden" for="lv-q-' + key + '">Search</label>' + findPill('<input id="lv-q-' + key + '" type="search" class="search lv-q" data-k="lv-q:' + key + '" placeholder="' + esc(c.ph || 'Search') + '" value="' + esc(s.q) + '" autocomplete="off" enterkeyhint="search">') + '</div>' +
         (c.sorts && c.sorts.length > 1 ? '<label class="a-f lv-sort"><span>Sort</span><select data-k="lv-s:' + key + '" aria-label="Sort">' + c.sorts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === s.sort ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>' : '') + (c.tool ? '<div class="lv-tool">' + c.tool + '</div>' : '') + '</div>' +
         (fl.length > 1 ? '<div class="chips lv-chips scroll" role="group" aria-label="Filter">' + fl.map(function (x) { return '<button type="button" class="chip" data-p="lv-f" data-lv="' + key + '" data-v="' + esc(x.f[0]) + '" aria-pressed="' + (x.f[0] === s.f) + '">' + esc(x.f[1]) + ' <span class="lv-n">' + x.n + '</span></button>'; }).join('') + '</div>' : '');
@@ -6721,7 +6721,7 @@
   function psHintPaint() { var box = document.getElementById('ps-hint'); if (box) box.innerHTML = psHintHTML(); }
   function psReferenceHTML() {
     var p = psModule();
-    return '<section class="nb-page nb-left ps-reference-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Before service</h2><span class="nb-date">The head chef\'s section standards</span></div></header><div class="nb-body">' + (p ? p.reference(psAdapter(), psDefaultSection()) : psWaitHTML()) + '</div></section>';
+    return '<section class="nb-page nb-left ps-reference-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Before service</h2></div></header><div class="nb-body">' + (p ? p.reference(psAdapter(), psDefaultSection()) : psWaitHTML()) + '</div></section>';
   }
   function psViewHTML() {
     return '<div class="chips ps-viewbar" role="group" aria-label="Prep view"><button type="button" class="chip" data-p="ps-view" data-v="work" aria-pressed="' + (psView === 'work') + '">Work</button><button type="button" class="chip" data-p="ps-view" data-v="reference" aria-pressed="' + (psView === 'reference') + '">Before service</button></div>';

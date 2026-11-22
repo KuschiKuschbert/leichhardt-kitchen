@@ -2,6 +2,8 @@
 
 - **22 November 2026, keep a failed Prep tick on its line and make the older Undo readable.** On a personal device the failed tick names the line and the same box retries it once. A success on another line gets its own slip. On a phone the older Undo can wrap its label. [Feedback contract](action-feedback.md#the-rule)
 
+- **22 November 2026, reach Before service items sooner.** Keep one title and group the section chooser, search and read time with the existing Prep reference controls. [Section prep standards](prep-standards.md#what-it-does)
+
 - **22 November 2026, Sunday sales suggestions stay in Supplier order.** The head chef chose A's inline suggestion, B's visible current amount in a **Keep** or **Replace** step and C's calculation and return of focus to **To order**. One weekly POS export and confirmed links support the chef's draft. The head chef or verified admin publishes the report and manages links. The chef places the order with the supplier. [Decision, council and pending release checks](supplier-sales.md)
 
 - **22 November 2026, Functions Service spacing and waiting trips.** Bring the live board higher on a phone and place the waiting shelf beside active rounds on wide kitchen screens. Keep the coordinator’s confirmation queue first. [Service board](design-patterns.md#inside-a-list)
