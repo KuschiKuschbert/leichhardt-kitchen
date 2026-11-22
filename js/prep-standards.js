@@ -250,7 +250,7 @@
     var list = c && c.items ? api.listHTML({
       key: 'ps-reference-' + sec.id, items: items, step: 100, tools: 12, noun: ['item to check', 'items to check'],
       leadingTool: ready ? section : '', tool: ready ? status : '',
-      ph: 'Find a prep item', empty: 'No active standards set for this section.',
+      ph: 'Find prep', empty: 'No active standards set for this section.',
       find: function (r) { return r.name + ' ' + r.aliases.join(' ') + ' ' + r.instruction; },
       sorts: [['az', 'A to Z', function (a, b) { return a.name.localeCompare(b.name); }]],
       card: function (x) { return referenceRow(x, ready); }

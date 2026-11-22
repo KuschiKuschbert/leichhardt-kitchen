@@ -21,7 +21,9 @@ const reads = p => p.evaluate(() => __fake.reads.filter(path => /\/prepStandards
 
 (async () => {
   const browser = await L.start();
-  for (const [width, height, text] of [[390, 844, 'normal'], [1280, 800, 'normal'], [390, 844, 'xlarge']]) {
+  const viewports = [[390, 844], [768, 900], [1280, 800]];
+  const layouts = viewports.flatMap(([width, height]) => ['normal', 'xlarge'].map(text => [width, height, text]));
+  for (const [width, height, text] of layouts) {
     const p = await L.open(browser, '#/prep', { who: 'bo', width, height, extra, init, settings: { text } });
     await p.click(reference);
     await L.waitFor(p, () => !!document.querySelector('.ps-reference [data-ps="add"]:enabled'), null, 8000);
@@ -39,6 +41,8 @@ const reads = p => p.evaluate(() => __fake.reads.filter(path => /\/prepStandards
     console.log(width + ' ' + text + ' ' + JSON.stringify(view));
     ok(view.headings === 1 && (await p.getAttribute(reference, 'aria-pressed')) === 'true', width + ' ' + text + ': the one page title and selected mode identify Before service');
     ok([view.section, view.search, view.read, view.add].every(r => r && r.height >= 43.9 && r.width >= 43.9) && !(await L.overflow(p)), width + ' ' + text + ': all four controls fit and have 44 px targets');
+    const search = p.locator('.ps-reference').getByRole('searchbox', { name: 'Search', exact: true });
+    ok(await search.count() === 1 && await search.getAttribute('placeholder') === 'Find prep', width + ' ' + text + ': the concise prompt keeps the same accessible Search label');
     if (text === 'normal') {
       ok(view.section && view.search && Math.abs(view.section.bottom - view.search.bottom) < 1, width + ': section and search share one aligned row');
       if (width === 1280) ok(view.read && view.search && Math.abs(view.read.bottom - view.search.bottom) < 1, 'desktop: read freshness and Refresh share the toolbar row');
@@ -55,7 +59,12 @@ const reads = p => p.evaluate(() => __fake.reads.filter(path => /\/prepStandards
       await p.evaluate(() => { __fake.failReads = /\/prepStandards$/; });
       await p.click(selectors.read);
       await L.waitFor(p, () => /last complete copy/.test(document.querySelector('.ps-reference').textContent), null, 8000);
-      ok(await p.locator('.ps-reference [role="alert"]').isVisible() && await p.getByRole('button', { name: 'Try again' }).isVisible() && await p.locator(selectors.add).isDisabled(), 'Extra large: failed refresh keeps and labels the stale list, Retry and disabled Add');
+      const retry = p.getByRole('button', { name: 'Try again' });
+      ok(await p.locator('.ps-reference [role="alert"]').isVisible() && await retry.isVisible() && await p.locator(selectors.add).isDisabled(), 'Extra large: failed refresh keeps and labels the stale list, Retry and disabled Add');
+      await p.evaluate(() => { __fake.failReads = null; });
+      await retry.click();
+      await L.waitFor(p, () => !!document.querySelector('[data-ps="add"][data-id="grill-lemons"]:enabled'));
+      ok(await search.getAttribute('placeholder') === 'Find prep' && !await p.locator('.ps-reference [role="alert"]').count(), 'Extra large: a successful retry restores fresh Add and the search prompt');
     }
     ok(!p.errors.length, width + ' ' + text + ': no browser errors');
     await p.context().close();
