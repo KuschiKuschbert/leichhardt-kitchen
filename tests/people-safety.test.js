@@ -133,7 +133,14 @@ const resetPin = id => '[data-p="a-reset-pin"][data-id="' + id + '"]';
   ok(/Not saved: Remove on/.test(await txt(mobile, row('person-10') + ' .pp-st') || ''), 'phone: the roster shows the unsaved edit');
   const beforeResize = await openOnMobile();
   ok(await remove.isChecked() && !(await cfg(mobile)).people.find(x => x.id === 'person-10').del, 'phone: reopening keeps the permission draft pending Save');
+  await mobile.setViewportSize({ width: 1000, height: 844 });
+  await L.settle(mobile, 150);
+  ok(await search.isVisible() && await mobileEditor.getByRole('button', { name: 'Close editor' }).isVisible() &&
+    !await back.isVisible() && await remove.isChecked(), 'at desktop width the roster and Close editor appear and the header Back returns to page navigation');
   await mobile.setViewportSize({ width: 600, height: 844 });
+  await L.settle(mobile, 150);
+  ok(!await search.isVisible() && await back.isVisible() && await remove.isChecked(),
+    'at phone width the header Back returns to People and the permission draft stays open');
   await back.click();
   await L.settle(mobile, 150);
   const afterResize = await person.evaluate(e => ({ top: e.getBoundingClientRect().top, focused: document.activeElement === e }));

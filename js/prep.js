@@ -6540,8 +6540,11 @@
     });
     return '<div class="pp-workspace' + (editing ? ' has-editor' : '') + '">' + list + (editing ? personEditHTML(editing.p, editing.i) : '') + '</div>';
   }
-  var peopleRosterPlace = null;
-  function peopleTaskView() { return window.matchMedia('(max-width: 999px)').matches; }
+  var peopleRosterPlace = null, peopleTaskMedia = window.matchMedia('(max-width: 999px)');
+  function peopleTaskView() { return peopleTaskMedia.matches; }
+  peopleTaskMedia.addEventListener('change', function () {
+    if (S.name === 'admin' && S.atab === 'people' && S.pOpen) window.dispatchEvent(new Event('lk-back'));
+  });
   function peopleAfterDraw(previous, scrollY, editorY) {
     var list = S.root.querySelector('.pp-workspace > .lv');
     if (!list) {
