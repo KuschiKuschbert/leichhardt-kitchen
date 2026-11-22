@@ -5,7 +5,7 @@
        Could not load words.
     2. Prep keeps your place: back on Prep from another page the same line is at the top; tapping Prep on Prep goes to
        the top; never put back while a finger is down.
-    3. Prep starts with the strip instead of the full band; a tap opens the service view; other pages keep the band.
+    3. Prep starts with the strip instead of the full band; a tap opens the service view; Wastage keeps the full band.
   The checks marked (old) failed on the code before this change.
 */
 const L = require('./lib');
@@ -46,8 +46,8 @@ const open = (b, hash, fns, o) => L.open(b, hash, Object.assign({ who: 'sam', wi
   ok(/^Functions\s*18:30 .*Early lunch/.test(bt) && /\+1/.test(bt), '(old) the strip says Functions, then the next function, then +1 (' + bt + ')');
   const sb = await p.$('#fn-band .fn-strip-b'); if (sb) { await sb.click(); await L.settle(p, 600); }
   ok(await p.evaluate(() => location.hash) === '#/fn/now', 'with two functions on, a tap on the strip opens the service view');
-  await p.goto(L.BASE + '#/orders'); await L.settle(p, 1400);
-  ok(await p.evaluate(() => { const e = document.getElementById('fn-band'); return !!e && !e.classList.contains('is-strip') && e.querySelectorAll('.fn-row').length >= 2; }), 'Orders keeps the full band');
+  await p.goto(L.BASE + '#/waste'); await L.settle(p, 1400);
+  ok(await p.evaluate(() => { const e = document.getElementById('fn-band'); return !!e && !e.classList.contains('is-strip') && e.querySelectorAll('.fn-row').length >= 2; }), 'Wastage keeps the full band');
   ok(!p.errors.length, 'no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
