@@ -10174,8 +10174,9 @@ if (list.length) sg('oreg', 's');
     att.forEach(function (x) { if (by[x.st]) by[x.st].push(mnName(x.id)); });
     var cells = [['Time', m.start || ''], ['Location', m.loc || ''], ['Run by', mnName(m.chair)], ['Minutes taken by', mnName(m.taker)]].filter(function (c) { return c[1]; }).map(function (c) { return '<div class="mn-cell"><span>' + esc(c[0]) + '</span><b>' + esc(c[1]) + '</b></div>'; }).join('');
     var counts = by.present.length + ' present' + (by.apology.length ? ', ' + by.apology.length + ' apology' : '') + (by.absent.length ? ', ' + by.absent.length + ' absent' : '');
+    var signJump = sign && me() && featOn('minutes') && S.mmine[mnKey(m)] === null ? '<button type="button" class="p-link mn-sign-jump" data-p="mn-sign-jump" aria-controls="mn-sign-heading">Go to sign-off</button>' : '';
     var out = '<article class="mn-doc"><header class="mn-head"><div><span class="mn-eb">Kitchen meeting &middot; Version ' + (m.v || 1) + '</span><h2 class="mn-title" id="rtitle" tabindex="-1">' + esc(d.toLocaleDateString('en-AU', { weekday: 'long' })) + '<br>' + esc(d.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })) + '</h2></div><div class="mn-no"><span>Minutes</span><b>' + pad(m.no || 0) + '</b></div></header>' +
-      '<div class="mn-strip">' + cells + '<div class="mn-cell mn-wide"><span>Attendance</span><b>' + esc(counts) + '</b></div></div>';
+      '<div class="mn-strip">' + cells + '<div class="mn-cell mn-wide"><span>Attendance</span><b>' + esc(counts) + '</b>' + signJump + '</div></div>';
     function boxes(t, title, inner) { mnParts(t).forEach(function (x) { out += mnBox(nx(), x.h || title, inner(x.l)); }); }
     var sp = mnParts(m.safety);
     if (sp.length) out += '<div class="mn-safety" role="note"><span class="mn-sl">Safety</span>' + sp.map(function (x) { return (x.h ? '<b class="mn-sh">' + esc(x.h) + '</b>' : '') + mnUl(x.l, true); }).join('') + '</div>';
@@ -10203,7 +10204,7 @@ if (list.length) sg('oreg', 's');
     if (s === undefined || s === 'loading') return '<section class="mn-sign mn-noprint"><p class="hint">Checking your sign-off...</p></section>';
     // one tap: the person already typed their own PIN to open this page (20 Oct 2026, no second PIN)
     var mineN = mnMineN(m);
-    return '<section class="mn-sign mn-noprint"><h3 class="mn-bh">Sign off</h3>' +
+    return '<section class="mn-sign mn-noprint"><h3 class="mn-bh" id="mn-sign-heading" tabindex="-1">Sign off</h3>' +
       ((m.v || 1) > 1 ? '<p class="mn-changed">These minutes were changed after they were first published (version ' + m.v + '). If you signed before, read them again and sign this version.</p>' : '') +
       (mineN ? '<p class="mn-mine">Your actions: ' + mineN + ', marked Yours above.</p>' : '') +
       '<p>' + (st === 'present' ? 'I attended and have read and understood these minutes.' : 'I have read and understood these minutes.') + '</p>' +
@@ -13601,6 +13602,11 @@ if (list.length) sg('oreg', 's');
     // the register from #/minutes, the same as the old Minutes register in the chef hat menu: on a tap, one small minutes query
     if (a === 'mn-sous') { chefOpen('register'); return; }
     if (a === 'mn-pickdoc') { S.mSel = id; S.mErr = ''; draw(); window.scrollTo(0, 0); return; }
+    if (a === 'mn-sign-jump') {
+      var signHeading = S.root.querySelector('#mn-sign-heading');
+      if (signHeading) { signHeading.focus({ preventScroll: true }); signHeading.scrollIntoView({ block: 'start' }); }
+      return;
+    }
     if (a === 'mn-sign') { signMinutes(id); return; }
     if (a === 'mn-csv') { csvMinutes(id); return; }
     if (a === 'mn-refresh') { var mr = S.mSel || (mnPub()[0] || {}).id; S.mnSay = mr || ''; loadMinutes(true); loadSigns(mr, true); draw(); return; }
