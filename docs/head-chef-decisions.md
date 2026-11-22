@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **23 November 2026, bring the recipe results closer to Search.** The space audit's smaller layout groups the current recipe type and allergen controls. Both allergen modes stay visible on Pass, and Search opens in one tap. [Council quick check](whole-app-redesign-options/brief.md#compact-recipe-browse-filters-23-november-2026)
+
 - **22 November 2026, keep a failed Prep tick on its line and make the older Undo readable.** On a personal device the failed tick names the line and the same box retries it once. A success on another line gets its own slip. On a phone the older Undo can wrap its label. [Feedback contract](action-feedback.md#the-rule)
 
 - **22 November 2026, reach Before service items sooner.** Keep one title and group the section chooser, search and read time with the existing Prep reference controls. [Section prep standards](prep-standards.md#what-it-does)

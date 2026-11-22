@@ -1784,6 +1784,23 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 /* Recipe book, finding and reading (October 2026) */
 /* the search bar stays at the top while the list scrolls */
 .find-bar { position: sticky; top: var(--fn-stick, 0px); z-index: 6; margin: 0 -1.25rem; padding: 0.6rem 1.25rem 0.7rem; background: var(--bg); }
+#main.rx-browse { display: flex; flex-direction: column; gap: .65rem; }
+.rx-browse .rx-filters { display: flex; flex-wrap: wrap; align-items: start; gap: .45rem .75rem; }
+.rx-filters > [aria-label="Recipe type"] { flex: 0 1 auto; max-width: 100%; }
+.rx-filters > .field { min-width: 0; max-width: 100%; }
+.rx-filters .row-label { align-items: center; }
+.rx-filters .amode { margin-left: 0; }
+/* The adaptive picker is one button. The source chip strip's scroll fade and spacer can go. */
+.rx-filters .chips.scroll:has(> .ux-picker-trigger) { overflow: visible; padding-bottom: 0; -webkit-mask-image: none; mask-image: none; }
+.rx-filters .chips.scroll:has(> .ux-picker-trigger)::after { content: none; }
+.rx-browse--pass .rx-filters > .field { flex: 1 0 24rem; }
+.rx-browse--tiles .rx-filters > .field { display: flex; flex-flow: row wrap; align-items: center; gap: .35rem .65rem; }
+.rx-browse--tiles .rx-filters .chips { min-width: 0; }
+@media (min-width: 720px) {
+  /* Keep the two mode buttons alongside their label even when a long Free from selection wraps. */
+  .rx-browse--pass .rx-filters > .field { display: grid; grid-template-columns: minmax(min(100%, 17rem), max-content) minmax(0, auto); align-items: start; justify-content: start; column-gap: .75rem; }
+  .rx-browse--pass .rx-filters .amode { flex: 0 0 var(--ux-pair-width, auto); }
+}
 @media (max-width: 719px) { .count.is-on { display: inline; } }
 .vsw button { min-width: 44px; justify-content: center; }
 /* a search read as something else ("gluten free", or a near miss) says so above the results */
@@ -5479,6 +5496,12 @@ html.tm-open, html.tm-open body { overflow: hidden; }
    area but takes less of the row, the Start here number sits in the margin as drawn, and the section headings are shorter.
    The list header keeps its height (Set today's team, a person's day). Large text and under 360 px keep their layout. */
 @media (min-width: 360px) and (max-width: 479px) {
+  /* Leave more room between the live bands and Add for today's Prep lines. */
+  #prep-root.is-book:has(> .nb-wrap:not(.nb-later) .nb-left .wk-dock) { row-gap: .5rem; }
+  #prep-root.is-book:has(> .nb-wrap:not(.nb-later) .nb-left .wk-dock) > .ps-viewbar { margin-bottom: 0; }
+  #prep-root.is-book:has(> .nb-wrap:not(.nb-later) .nb-left .wk-dock) > .nb-wrap { row-gap: .375rem; }
+  #prep-root.is-book > .nb-wrap:not(.nb-later) .nb-left .nb-ph:has(.wk-dock) { padding-block: .375rem; }
+
   html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-row { grid-template-columns: 34px minmax(0, 1fr) auto; column-gap: 4px; padding-top: 3px; padding-bottom: 3px; min-height: 44px; }
   html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-box { margin-left: -8px; }
   html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-t { font-size: 1.3rem; line-height: 1.02; }
@@ -6278,7 +6301,9 @@ html:has(.tm-focus-page) {
 .rec-wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
 .rec-wrap.has-day .rec-month { display: none; }
 .rec-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
-.rec-acts { display: flex; flex-wrap: wrap; gap: .5rem; }
+.rec-month-nav, .rec-acts { display: flex; flex-wrap: wrap; gap: .5rem; }
+.rec-month-nav { align-items: center; }
+.rec-month-nav h4 { margin: 0; }
 .rec-days { list-style: none; margin: .3rem 0 0; padding: 0; }
 .rec-dayrow { display: grid; grid-template-columns: 4.2rem minmax(0, 1fr) 1rem; gap: .5rem; align-items: center; width: 100%; min-height: 56px; padding: .45rem .5rem; border: 0; border-bottom: 1px solid var(--line); background: none; text-align: left; font: 500 .875rem/1.35 var(--body); color: var(--ink); cursor: pointer; }
 .rec-dayrow .rec-d b { font: 700 1rem var(--display); }
