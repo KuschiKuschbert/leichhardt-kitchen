@@ -35,6 +35,7 @@ const CLASSES = [
   'tm-weeknav', 'tm-daypick',
   'nb-later', 'pa-cal', 'pa-for', 'pa-n', 'pa-row',
   'rcp-row', 'rcp-papers', 'rcp-paper', 'rcp-bar', 'rcp-go',
+  'mg-ing-field', 'mg-with-ing-panel', 'mg-ing-panel', 'mg-ing-panel-head',
   'pp-row', 'pp-main', 'pp-name-toggle', 'pp-can', 'pp-st', 'pp-acts', 'pp-ed', 'pp-ticks', 'pp-leave', 'a-gone', 'lv-tool',
   'tm-focus-page', 'tm-date-controls', 'tm-week-reveal', 'tm-row-fields', 'tm-row-summary', 'tm-detail-workbench', 'tm-focus-grid', 'tm-focus-save', 'tm-live-strip', 'tm-focus-panel', 'tm-admin-plan',
   'tm-grid', 'tm-grid-head', 'tm-grid-row', 'tm-grid-who', 'tm-grid-sh', 'tm-grid-count', 'tm-grid-cell', 'tm-grid-off', 'tm-grid-brk', 'tm-grid-note', 'tm-bench-shifts', 'tm-occ-add', 'tm-occ-row', 'a-sh-occ',
