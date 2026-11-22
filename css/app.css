@@ -4356,6 +4356,15 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .dl-rb .dl-readings dt { font: 700 0.75rem/1.2 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: inherit; }
 .dl-rb .dl-readings dd { font-size: 1rem; color: inherit; }
 .dl-rb .hint { margin: 0.2rem 0 0; }
+.dl-records-jump { display: none; }
+@media (max-width: 719px) {
+  .dl-heading-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 0.5rem; }
+  .dl-records-jump { display: inline-block; position: relative; min-width: 44px; min-height: 0; font-size: 0.875rem; color: var(--ink); }
+  .dl-records-jump:focus-visible { outline-color: var(--ink); }
+  /* The whole 44 px target fits across the existing heading, whose neighbouring text is static. */
+  .dl-records-jump::after { content: ''; position: absolute; inset-inline: 0; top: 50%; height: 44px; transform: translateY(-50%); }
+  #dl-records { scroll-margin-block-start: 4.5rem; }
+}
 /* Supplier reference stays quiet until the existing attn flag asks for a look. Keep the same line and height
    so the first To order box stays clear of the Review bar. */
 @media (max-width: 899px) {

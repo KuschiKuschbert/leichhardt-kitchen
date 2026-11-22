@@ -51,6 +51,7 @@ const CLASSES = [
   'fn-hm', 'fn-hm-line', 'fn-hu', 'fn-hu-got', 'fn-hu-undo', 'fn-ahead-ack', 'fn-wk', 'fn-seen', 'fn-seen-l', 'fn-seen-r', 'fn-seen-t',
   'o-fn-tag', 'o-fn-when', 'o-fn-for', 'o-fn-held', 'fno-row', 'fno-sum', 'fno-box', 'fno-rule', 'fno-note', 'fno-ask',
   'lk-fb', 'lk-ftag', 'lk-fillnote', 'lk-weigh', 'lk-why',
+  'dl-heading-line', 'dl-records-jump',
   // the consistency sweep, step 3 (20 Nov 2026): the main button, corners, the destructive look and the chosen state
   // the consistency sweep, step 3 (20 Nov 2026): every search the pill, one Save bar frame, the function form's bar, empty lists
   'lk-del', 'nt-later', 'mlp-go', 'mlp-later', 'sheet-o', 'ps-pick', 'view-opt', 'nb-tab', 'nb-onbtn', 'mg-sw', 'fn-more', 'gz-b', 'su-use', 'p-toast-btn', 'upd-bar',
