@@ -77,6 +77,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Recipe amounts, the recipe and drawing editor, the drawing studio, smoker batches | `docs/recipe-multiplier.md`, `docs/recipe-editor-options/brief.md`, `docs/studio-options/brief.md`, `docs/smoker-batches.md` |
 | Suppliers, order cut-offs, the supplier order and Delivery received | `docs/supplier-workspace.md`, `docs/cutoff-options/brief.md`, `docs/receiving-design-options/brief.md`, `docs/delivery-received.md`; chosen Latest/Earlier purchase labels: `docs/supplier-last-order-status-options/brief.md` |
 | Sunday sales suggestions in Supplier order | `docs/supplier-sales.md` (chosen mix, private report and links, release checks) |
+| Supplier order desktop rail and direct Order history | `docs/supplier-order-rail-options/brief.md` (A chosen, responsive fallback and verification) |
 | Wastage history, entries first (A, built 22 November 2026) and CSV reports | `docs/wastage-history.md`, `docs/report-exports.md` |
 | Transfer storage and returns | `docs/transfer-returns.md` (publish rules from the feature branch first: it indexes loans) |
 | Function sent, lines off: once the last round is ticked Sent, the function's open prep and order lines (and lines added for it) leave the lists; the 03:00 job removes them | `docs/fn-sent-tidy-options/brief.md` (the mix chosen and built), `docs/code-contracts.md` (Functions) |

@@ -235,6 +235,8 @@ Orders' progress count opens Ordered today when the fold has entries. Transfers 
 
 **Chef hat > Supplier order** (`#/suppliers`) is for the head chef, sous chefs and the verified admin; staff cannot open it or read its data. The catalogue, private import, order sheet and cut-offs are described in full in [docs/supplier-order.md](docs/supplier-order.md); the data contract is [docs/supplier-workspace.md](docs/supplier-workspace.md).
 
+The supplier rail shows the current cut-off, delivery and last order beside the quantities on wide screens. **More** gives the same context on a smaller screen or with the rail hidden. **Order history** opens the existing list directly, and **Back to draft** restores the place and draft. [Chosen layout and checks](docs/supplier-order-rail-options/brief.md)
+
 **Sunday sales suggestions** use one reviewed POS export and confirmed product links to show weekly amounts beside **To order**. The chef chooses what to put in the draft and places the order with the supplier. Final checks and live release are pending. [Sales suggestions and the chosen design](docs/supplier-sales.md)
 
 ## Delivery temperatures (26 Oct 2026)

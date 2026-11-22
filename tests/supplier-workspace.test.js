@@ -33,7 +33,7 @@ async function clearForm(p, par) { await p.fill('[data-sf="par"]', par); await a
   await action(p, 'history');
   await L.waitFor(p, () => !!document.querySelector('[data-su="history-order"][data-id="older"]'), null, 5000);
   await action(p, 'history-order', '[data-id="older"]');
-  ok(/Recorded by Sam/.test(await txt(p, '.su-disclosure:has([data-su="history"])')), 'history identifies the chef who placed the previous order');
+  ok(/Recorded by Sam/.test(await txt(p, '#su-order-history')), 'history identifies the chef who placed the previous order');
   ok(/2 kg/.test(await txt(p, '[data-item="t-stock"] .su-last')), 'selecting an older history sheet leaves latest-order comparison unchanged');
   await p.fill(qtySel('t-stock'), '4 kg');
   await action(p, 'collapse'); await L.settle(p, 100);

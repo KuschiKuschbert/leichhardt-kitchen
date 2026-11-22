@@ -3352,9 +3352,44 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-jumps { margin: 0.2rem 0 0.6rem; -webkit-mask-image: linear-gradient(to right, #000 86%, transparent); mask-image: linear-gradient(to right, #000 86%, transparent); }
 .su-jumps .chip { min-height: 38px; }
 .su-jumps .su-n { font-weight: 400; opacity: 0.8; }
+.su-order-workspace { gap: 0.6rem; }
+.su-order-heading { display: flex; flex-direction: column; gap: 0.6rem; }
+.su-order-heading .su-head { align-items: center; gap: 0.5rem 0.85rem; padding-block: 0.35rem 0.5rem; }
+.su-order-heading .su-head h2 { margin-block: 0.15rem; font-size: 2rem; }
+.su-order-heading .su-head :is(.eyebrow, .hint) { display: none; }
+.su-order-heading .su-tools { margin: 0; }
+.su-order-workspace .su-toolbar { margin-bottom: 0; gap: 0.5rem; }
+.su-order-workspace .su-supplier-title { margin-block: 0.3rem 0; }
+.su-order-workspace .su-supplier-title .h3 { font-size: 1.4rem; }
+.su-order-workspace .su-filters { margin-block: 0.5rem; }
+.su-order-context { display: grid; grid-template-columns: minmax(0, 1fr) max-content; align-items: start; gap: 0.45rem; margin-top: 0.45rem; }
+.su-order-context:empty { display: none; }
+.su-order-workspace [data-su="history"], .su-history-head .btn { min-height: 44px; }
+.su-history-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.45rem 0.8rem; padding: 0.65rem 0; }
+.su-history-head h3 { margin: 0; font-size: 1.6rem; scroll-margin-top: 4rem; }
+@media (min-width: 900px) {
+  .su-order-heading { flex-flow: row wrap; align-items: center; gap: 0.4rem 0.65rem; padding-block: 0.35rem 0.5rem; border-bottom: 3px solid var(--ink); }
+  .su-order-heading .su-head { display: contents; }
+  .su-order-heading .su-head > :first-child { margin-inline-end: auto; }
+  .su-order-heading :is(.btn, .chip) { min-height: 44px; }
+  .su-order-workspace .su-toolbar > .field { flex-basis: 12rem; }
+  .su-order-workspace .su-side > .su-info { margin-top: 0.8rem; }
+  .su-order-workspace .su-side .su-cutoff { margin-bottom: 0.45rem; padding: 0.55rem; }
+}
+@media (max-width: 479px) {
+  .su-order-context > .btn { padding-inline: 0.55rem; }
+  html[data-text="xlarge"] .su-order-context > [data-su="history"] { inline-size: min-content; white-space: normal; }
+}
 /* List first on a phone or tablet (4 Nov 2026, the Prep list's rule from work pages design A): the cut-off and the
-   last order fold into one line, the heading is one line, the picker and search lose their visible labels. */
-.su-info-line { display: none; }
+   last order fold into one line, the heading is one line, the picker and search lose their visible labels.
+   A hidden supplier rail shows the same disclosure in the order column at every width. */
+.su-info-line { display: none; align-items: center; justify-content: space-between; gap: 0.75rem; width: 100%; min-height: 44px; padding: 0.4rem 0.75rem; border: 0; border-left: 3px solid var(--surface-work-edge); border-radius: 0; background: var(--surface-reference); color: var(--ink); font: 600 0.8125rem var(--body); text-align: left; cursor: pointer; }
+.su-info-line.attn { border-left-color: var(--small-ink); background: var(--hit); }
+.su-info-line > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.su-info-more { flex: none; color: var(--small-ink); text-decoration: underline; }
+.su-order-context .su-info-line { display: flex; }
+.su-order-context .su-info-body { display: none; }
+.su-order-context .su-info.open .su-info-body { display: block; margin-top: 0.5rem; }
 @media (max-width: 899px) {
   /* one line at normal text; at Extra large text Refresh drops under the title rather than off the screen */
   .su-head { flex-wrap: wrap; align-items: center; gap: 0.5rem; padding-bottom: 0.5rem; border-bottom-width: 2px; }
@@ -3374,10 +3409,7 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
   #supplier-root .su-order-actions { flex-wrap: nowrap; }
   #supplier-root .su-order-actions > .hint { flex: 1 1 auto; min-width: 0; }
   #supplier-root .su-order-actions > .btn { flex: none; }
-  .su-info-line { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; width: 100%; min-height: 44px; padding: 0.4rem 0.75rem; border: 0; border-left: 3px solid var(--surface-work-edge); border-radius: 0; background: var(--surface-reference); color: var(--ink); font: 600 0.8125rem var(--body); text-align: left; cursor: pointer; }
-  .su-info-line.attn { border-left-color: var(--small-ink); background: var(--hit); }
-  .su-info-line > span:first-child { min-width: 0; overflow-wrap: anywhere; }
-  .su-info-more { flex: none; color: var(--small-ink); text-decoration: underline; }
+  .su-info-line { display: flex; }
   .su-info-body { display: none; }
   .su-info.open .su-info-body { display: block; margin-top: 0.5rem; }
   .su-filters { margin-top: 0.5rem; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-mask-image: linear-gradient(to right, #000 86%, transparent); mask-image: linear-gradient(to right, #000 86%, transparent); }

@@ -187,6 +187,8 @@ Tests: `tests/supplier-rows.test.js` adds a 300-item example supplier: all rows 
 
 ### List first on a phone, 4 November 2026
 
+The [22 November Supplier order layout](supplier-order-rail-options/brief.md#built) moves the wide context into the supplier rail, keeps More with a hidden rail and brings Order history into the opening controls. The narrow info states, placed-order details and existing read limits still apply.
+
 The head chef found the order sheet took a lot of scrolling on a phone before ordering could start, and asked for the same treatment as the Prep list in the work pages design (design A, Clean notebook, PR #464: the list first, extras folded to one line, the action in a bar above the tabs). Measured at 390 by 844 with the test stand-in, a supplier with a cut-off today and a last order:
 
 | | Before | After |
