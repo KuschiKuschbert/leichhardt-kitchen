@@ -1323,6 +1323,7 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .n-schedule-fields { padding: 0 .55rem .55rem; }
 .n-schedule .n-grid { grid-template-columns: repeat(7, minmax(44px, 1fr)); gap: 3px; overflow-x: auto; margin-inline: -.4rem; }
 .n-edit .nt-whenline { margin: .3rem 0 .25rem; font-size: .875rem; }
+@media (max-width: 599px) { html[data-text="xlarge"] .n-edit .nt-whenline { margin-block: 0; } }
 .n-edit .n-actions { margin: 0; }
 .n-actions .sv-btn { flex: 1 1 auto; }
 .n-actions .btn { min-height: 44px; }
