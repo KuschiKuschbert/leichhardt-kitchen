@@ -106,7 +106,7 @@ async function open(browser, width, height, options = {}) {
     width: document.documentElement.scrollWidth, screen: innerWidth,
     overflow: [...document.querySelectorAll('body *')].filter(e => e.getClientRects().length && e.getBoundingClientRect().right > innerWidth + 1).slice(0, 6).map(e => String(e.className))
   }));
-  ok(await small.getByText(long, { exact: true }).first().isVisible() && compact.short >= 44 && !(await L.overflow(small)),
+  ok(await small.locator('.o-cut-row .cut-n').filter({ hasText: long }).first().isVisible() && compact.short >= 44 && !(await L.overflow(small)),
     '320 px Extra large: the long supplier and disclosure fit without horizontal overflow (' + JSON.stringify(narrow) + ')');
   await small.click(other);
   ok((await parts(small)).suppliers.length === 2, 'other tomorrow-only suppliers remain accessible');

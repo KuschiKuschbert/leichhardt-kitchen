@@ -5934,12 +5934,9 @@ html:has(.tm-focus-page) {
 .o-cut-more[aria-expanded="true"]::after { content: '−'; }
 @media (max-width: 999px) {
   .o-cut-more[aria-expanded="false"] + .o-cut-rest { display: none; }
-  .o-cut-fold .cut-st { min-height: 0; }
-  .o-cut-body { padding-block: 0.45rem; }
+  .o-cut-body { padding-block: 0.25rem; }
+  .o-cut-body li.o-cut-row { padding-block: 0.15rem; }
   .o-cut-body .cut-how { margin-bottom: 0.2rem; }
-  .o-cut-copy strong, .o-cut-detail, .o-cut-name { white-space: normal; overflow-wrap: anywhere; }
-  .o-cut-detail.has-deadline { display: block; }
-  .o-cut-at { white-space: normal; }
   .o-cut-row .o-cut-action { width: clamp(5.25rem, 30vw, 7rem); overflow-wrap: anywhere; }
 }
 @media (min-width: 1000px) {
