@@ -202,8 +202,7 @@ const readyNext = p => L.waitFor(p, () => document.querySelectorAll('.tm-person-
   await click(p, '[data-p="tm-clear"]');
   ok(await p.$eval('[data-p="tm-clear"]', e => e.textContent) === 'Tap again to clear ' + await p.$eval('[data-p="tm-date-toggle"]', e => e.textContent.replace(/\s*▾[\s\S]*$/, '').trim()) && await p.locator('.tm-person-row').count() === 5, 'Clear: the first tap only asks again, naming the date');
   // a date pick in between cancels the second tap, so it never lands on another date
-  await click(p, '[data-p="tm-date-toggle"]');
-  await click(p, '[data-p="tm-day"][data-day="' + tomorrow + '"]');
+  await L.teamDay(p, tomorrow);
   await click(p, '[data-p="tm-today"]');
   await L.waitFor(p, () => document.querySelectorAll('.tm-person-row').length >= 5, null, 6000);
   if (!await p.locator('details.tm-batch[open]').count()) await click(p, 'details.tm-batch > summary');
