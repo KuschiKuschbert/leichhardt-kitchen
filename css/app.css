@@ -4040,6 +4040,25 @@ html:has(.w-sheet, .tr-sheet, .p-sheet, .o-sheet) .p-toasts { top: calc(12px + e
 .w-rvfoot { margin: 14px 0 4px; }
 .w-rvfoot .w-rvbtn { width: 100%; align-items: flex-start; text-align: left; }
 .w-rvfoot .hint { margin: 6px 0 0; }
+@media screen {
+  .w-page:has(> .w-rvfoot) {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+    grid-template-areas: 'head head' 'total review' 'bar bar' 'legend legend' 'read read' 'list list';
+  }
+  .w-page:has(> .w-rvfoot) > .nb-ph { grid-area: head; }
+  .w-page:has(> .w-rvfoot) > .w-today { display: contents; }
+  .w-page:has(> .w-rvfoot) .w-tot { grid-area: total; align-self: center; margin: .35rem .75rem; }
+  .w-page:has(> .w-rvfoot) .w-bar { grid-area: bar; margin-inline: .75rem; }
+  .w-page:has(> .w-rvfoot) .w-legend { grid-area: legend; margin-inline: .75rem; margin-bottom: 12px; }
+  .w-page:has(> .w-rvfoot) > .w-ro { grid-area: read; }
+  .w-page:has(> .w-rvfoot) > .nb-body { grid-area: list; }
+  .w-page > .w-rvfoot { grid-area: review; align-self: center; max-width: min(52vw, 16rem); margin: .35rem .75rem .35rem 0; }
+  .w-page:not(:has(> .w-today)) > .w-rvfoot { grid-column: 1 / -1; justify-self: start; margin-left: .75rem; }
+  .w-page .w-rvfoot .w-rvbtn { min-width: 44px; min-height: 44px; padding: .2rem .6rem; white-space: normal; overflow-wrap: anywhere; }
+  .w-page .w-rvfoot .hint { display: none; }
+}
+@media print { .w-page > .w-rvfoot { order: 1; } }
+
 button.nb-prog { min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .nb-t[data-n]::before { content: attr(data-n); content: attr(data-n) / ''; display: inline-flex; align-items: center; justify-content: center; min-width: 1.45em; height: 1.45em; margin-right: 0.35em; border-radius: 50%; background: var(--accent-ink); color: #fff; font: 700 0.62em var(--body); vertical-align: 0.2em; }
 .nb-why { display: inline-block; padding: 0 6px; border: 1.5px solid var(--muted); border-radius: 999px; font: 600 0.75rem var(--body); color: var(--muted); white-space: nowrap; }
