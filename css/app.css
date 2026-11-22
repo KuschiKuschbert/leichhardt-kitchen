@@ -1415,6 +1415,11 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .mn-cell span { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .mn-cell b { font-weight: 600; overflow-wrap: anywhere; }
 .mn-cell.mn-wide { grid-column: 1 / -1; border-top: 1px solid var(--ink); }
+@media screen {
+  .mn-cell.mn-wide:has(.mn-sign-jump) { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: .75rem; }
+  .mn-sign-jump { grid-column: 2; grid-row: 1 / span 2; align-self: center; margin-block: -.35rem; text-align: right; }
+}
+@media print { .p-link.mn-sign-jump { display: none; } }
 .mn-safety { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.8rem 0.9rem; border-radius: 8px; background: var(--accent-ink); color: #fff; font-weight: 500; }
 .mn-sl { font: 700 1.125rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; }
 .mn-safety .mn-ul { margin: 0; }
@@ -3945,7 +3950,7 @@ i.dsh-c-w { background: var(--dsh-w); } i.dsh-c-t { background: var(--dsh-t); }
 /* Needs you (Dashboard, step 3): a row per thing waiting, its state in a word and a mark, its page one tap away. */
 .dsh-needs { background: var(--surface-reference); border-color: transparent; }
 .dsh-need-list { list-style: none; margin: 0; padding: 0; display: grid; }
-/* To do (4 Nov 2026): the open kitchen mail sits under its line, ticked off in place with the Kitchen mail page's rows */
+/* The open kitchen mail uses the Kitchen mail page's rows and is ticked off in place. */
 .dsh-todo-mail { padding: 0 0 .5rem 1.4rem; }
 .dsh-ml { list-style: none; margin: 0; padding: 0; }
 .dsh-ml .ml-row:first-child { border-top: 0; }
@@ -5152,6 +5157,14 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .dsh-dtile-sub.dsh-up { color: var(--accent-ink); }
 .dsh-dtile-sub.dsh-down { color: var(--done-ink); }
 .dsh-inbox .dsh-needs { margin-top: 1rem; }
+.dsh-inbox .dsh-needs > .dsh-panel-head { margin-bottom: .15rem; }
+.dsh-inbox .dsh-need { grid-template-columns: 4px minmax(0, 1fr) auto; gap: .5rem; padding: .36rem 0; }
+.dsh-inbox .dsh-need > .btn { grid-column: 3; justify-self: end; text-align: center; min-width: 44px; line-height: 1.2; white-space: normal; }
+.dsh-inbox .dsh-todo-mail { margin-top: .45rem; padding: 0 0 .5rem; border-top: 1px solid var(--line); }
+.dsh-inbox .dsh-ml .ml-row { padding-block: .4rem; }
+@media (max-width: 560px) {
+  .dsh-inbox .dsh-need > .btn { max-width: 7.1rem; padding: .3rem .5rem; }
+}
 @media (min-width: 1000px) {
   .p-admin.ad-admin .a-find-head { display: none; }
   .p-admin.ad-admin .a-nav { padding: 1rem .75rem 1.25rem; border: 0; border-radius: 12px; background: var(--bar); color: var(--bar-text); }
@@ -5407,7 +5420,7 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .cln-body { min-height: 8rem; max-height: none; overflow: visible; padding-bottom: 1rem; }
 .cln-body .nb-hd { gap: .6rem; margin: .3rem 0 0; overflow-wrap: anywhere; }
 .cln-group-count { flex: none; font: 400 .8125rem var(--body); letter-spacing: 0; color: var(--muted); }
-.cln-packdown-title { margin: 1.1rem 0 .2rem; font: 700 2rem/1.2 'Caveat', cursive; }
+.cln-packdown-title { margin: 1.1rem 0 .2rem; font: 700 2rem/1.2 'Caveat', cursive; scroll-margin-top: .5rem; }
 .cln-packdown > .hint { margin: .2rem 0 .65rem; line-height: 1.4; }
 .cln-row { flex-wrap: nowrap; }
 .cln-row .nb-box { align-self: center; margin-top: 0; }
