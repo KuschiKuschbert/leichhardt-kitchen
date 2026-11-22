@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **23 November 2026, Orders starts with the existing Functions fold.** Keep routine details one tap away on Orders, show every current warning and its action, and wait until the finger lifts before the band moves. [Council, decision and checks](band-options/brief.md#orders-starts-with-the-existing-functions-fold-23-november-2026).
+
 - **22 November 2026, keep a failed Prep tick on its line and make the older Undo readable.** On a personal device the failed tick names the line and the same box retries it once. A success on another line gets its own slip. On a phone the older Undo can wrap its label. [Feedback contract](action-feedback.md#the-rule)
 
 - **22 November 2026, reach Before service items sooner.** Keep one title and group the section chooser, search and read time with the existing Prep reference controls. [Section prep standards](prep-standards.md#what-it-does)

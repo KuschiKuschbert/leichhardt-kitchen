@@ -25,6 +25,8 @@ The head chef chose all three steps, built on `ux/prep-strip-place`:
 
 F (the cut-off in the strip) is held. Tests: `tests/prep-strip-place.test.js`. `docs/band-options/brief.md`, `variants.js`, `shoot.js`, `shoot-strip.js`, `previews/`.
 
+23 November 2026. Orders starts with the existing fold for routine functions. Live warnings keep their detail and actions, and the band and function-derived list updates wait through a held touch. [Council, decision and checks](band-options/brief.md#orders-starts-with-the-existing-functions-fold-23-november-2026). `tests/orders-functions-fold.test.js`.
+
 
 ## Venues: each kitchen its own project, address and book, 19 November 2026 (build step 2, merged)
 

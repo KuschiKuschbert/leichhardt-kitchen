@@ -30,6 +30,7 @@ The rules behind them are in `CLAUDE.md` (Service rules, Coding rules, Things th
   - `stripInner()` draws it, with `.fn-strip-stale` and the band's own words from `staleWords()` when the copy is old or a read failed.
   - It pins to the top once the band scrolls away, on every page.
   - On Prep the band itself starts as the strip (`prepStrip()`, `.fn-band.is-strip`, `.fn-strip-in`). A tap opens the service view with two or more functions on, otherwise the sheet.
+- **The Functions fold in Orders** (23 Nov 2026, [brief](band-options/brief.md#orders-starts-with-the-existing-functions-fold-23-november-2026)) uses the existing `.fn-fold` and named summary for ordinary bookings. Urgent and stale states open the existing band, with every named warning and its current action. The fold remains focusable and tells the person alerts are shown. A held touch keeps the full band and pinned strip in place until release.
 - **Prep keeps your place** (19 Nov 2026):
   - `prepPlaceSave()` keeps the line at the top of the screen and its offset, in memory, for one person, day, section and board.
   - `prepPlaceBack()` puts it back once, after Prep has drawn, and never while a finger is down.

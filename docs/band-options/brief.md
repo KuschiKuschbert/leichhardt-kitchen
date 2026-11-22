@@ -327,3 +327,33 @@ The head chef chose all three steps ("Build all three"). Built on `ux/prep-strip
 - a new urgent line above a kept place;
 - Extra large text;
 - measured contrast.
+
+
+## Orders starts with the existing Functions fold (23 November 2026)
+
+The remaining-space audit found the same three bookings above Orders. Round 1 was unanimously Build smaller for Orders. Round 2 split three first choices for A, the existing fold, and three for B, the named strip that opens Functions. C, a disclosure beside Orders, came third. The head chef delegated the choice for this cycle. The lead selected A to keep the existing details and return on the order list. C's desktop rail fits one extra request but adds layout and disclosure work. B recovers only 6 extra pixels over A and fits the same number of requests, with a page change to see more. Bringing B's route link or C's second disclosure into A would duplicate the way into Functions. Keep A with named alerts first and the existing controls.
+
+| Council reference | Selected result |
+| --- | --- |
+| Linear | The order list gains space while the Add request, tick and supplier cut-offs stay where the team expects them. |
+| Things 3 | Routine details take one tap to reveal. Service view on a routine opening takes two taps, previously one. |
+| Flighty | The actual round time leads the summary. Named urgent states and old or failed results stay in words. The screen waits until the pointer lifts before the band moves. |
+| Headspace and Duolingo | The disclosure says Show functions or Hide functions. When alerts need the full band, it says Function alerts are shown. Order placed, Undo, Confirm out and their named responses keep their existing actions and acknowledgement. |
+
+The routine Orders band opens in place for a cancelled, rescheduled or recently changed booking, a kitchen comment, a trip waiting to be confirmed by this person, a short-notice order reminder, an unknown round time or a next unsent round due by an hour from Queensland time. An overdue round stays open and says it has not been sent yet. The existing paint checks the clock every 20 seconds. It also opens for the existing No signal or Could not load functions message. All named alerts are visible even if the usual row limit would have put one behind Show more. When an alert clears, the view follows the person's Show or Hide choice for this kitchen day in the current tab. Prep starts with its strip as before. The sheet, service view, access, listeners, data and written records keep their own rules.
+
+Before a live redraw of the Orders band, the pinned strip and function-driven updates to the Orders list, the book uses the existing pointer guard. While a finger is down or has just lifted, it keeps the drawn content and the focused control. It applies the queued update after the quiet interval. An explicit Show or Hide responds to the person's tap. If a focused alert control survives a repaint, the replacement gets focus without a scroll; the disclosure or Orders heading receives focus when that control is gone.
+
+### Measured in the app
+
+Chromium using the checked-in Barlow and Caveat, synthetic Firebase and the unchanged Orders shell. The chef opened the same three routine functions, including a long name, and seven outstanding requests with a stock tag and two open supplier cut-offs at 14:00 Queensland. Before means released commit `f29eb5660be4`. Complete counts stop above the fixed Add request dock where it covers the list.
+
+| Viewport | First request before | First request with fold | Complete requests before → with fold |
+| --- | ---: | ---: | ---: |
+| 390 × 844 | y598 | y411 | 1 → 3 |
+| 768 × 900 | y611 | y443 | 3 → 6 |
+| 1280 × 800 | y498 | y330 | 4 → 6 |
+
+On the phone the third request takes 184 px of scroll on the old opening and fits without a swipe with the fold. Extra large shows one complete request instead of none. When three simultaneous alerts all need their own rows, the longer warning band takes 34 px of scroll to uncover the first full tick. Orders still shows its one-tap Add request. The same normal text and accent colours on charcoal measured 13.53:1 and 5.77:1. The design keeps the existing 44 px effective target around the round Show and Hide control.
+
+The new browser tests cover the first fold, inline keyboard open and close, scope on other workbooks, stable order ticks over repeated held updates and release or cancellation, exact Queensland-hour boundary, Extra large fit, the named warnings and permissions for Confirm out, offline and failed reads, real order and supplier actions and their Undo. The test stand-in uses synthetic records and does not measure physical touch hardware or production connections. See `tests/orders-functions-fold.test.js`, `tests/prep-strip-place.test.js` and `tests/service-targets.test.js`.
