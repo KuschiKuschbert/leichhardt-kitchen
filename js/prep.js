@@ -9794,10 +9794,15 @@ if (list.length) sg('oreg', 's');
     return out.charAt(0).toUpperCase() + out.slice(1);
   }
   function nfUntil(f) { return f.until || (f.dows.length ? NOTE_FAR : f.start); }
-  function nfDraft(f) { return { id: 'draft', text: f.text.replace(/^\s+|\s+$/g, ''), tag: f.tag, start: f.start, until: nfUntil(f), dows: f.dows.slice(), tm: nfTm(f) }; }
+  // Preview uses the same audience renderer as a saved ping. This id is only for that preview.
+  function nfDraft(f) { return { id: f.to ? 'direct/draft' : 'draft', to: f.to, text: f.text.replace(/^\s+|\s+$/g, ''), tag: f.tag, start: f.start, until: nfUntil(f), dows: f.dows.slice(), tm: nfTm(f) }; }
   function draftPreviewHTML(f) {
     var d = nfDraft(f);
     return d.text ? '<ul class="nt-list n-pl">' + noteRowHTML(d) + '</ul>' : '<p class="hint">Type the ping to see how it will look.</p>';
+  }
+  function draftPreviewPaint() {
+    var prev = S.root.querySelector('#n-prev');
+    if (prev && S.nf && S.nScheduleOpen) prev.innerHTML = draftPreviewHTML(S.nf);
   }
   function noteRowAdmin(n, t, past) {
     var who = personName(n.author || n.by), sn = S.nSeen && S.nSeen[n.id], today = !past && noteOn(n, t), seen = '';
@@ -9862,27 +9867,35 @@ if (list.length) sg('oreg', 's');
     var list = pingPeople(), found = list.some(function (p) { return p.id === f.to; });
     var options = '<option value="">Everyone</option>' + list.map(function (p) { return '<option value="' + esc(p.id) + '"' + (p.id === f.to ? ' selected' : '') + '>' + esc(p.name) + '</option>'; }).join('');
     if (f.to && !found) options += '<option value="' + esc(f.to) + '" selected>' + esc(personName(f.to) || 'Former staff member') + ' (not available)</option>';
-    return '<div class="field"><label class="label" for="n-to">Send to</label><select id="n-to" class="p-select" data-k="n-to"' + (f.id ? ' disabled' : '') + '>' + options + '</select><span class="hint">' + (f.id ? 'The recipient stays fixed. Use again makes a copy for someone else.' : 'Choose one person or Everyone. Individual pings are visible to that person and the chefs who manage pings.') + '</span></div>';
+    return '<div class="field"><label class="label" for="n-to">Send to</label><select id="n-to" class="p-select" data-k="n-to"' + (f.id ? ' disabled' : '') + '>' + options + '</select></div>';
   }
   function noteEditForm() {
-    var f = S.nf || (S.nf = nfNew()), t = dayNow(), until = nfUntil(f);
+    var f = S.nf || (S.nf = nfNew()), t = dayNow(), until = nfUntil(f), tomorrow = shift(t, 1);
     var tags = NOTE_TAGS.map(function (x) { return '<button type="button" class="chip" data-p="n-tag" data-v="' + x[0] + '" aria-pressed="' + (f.tag === x[0]) + '">' + esc(x[1]) + '</button>'; }).join('');
     var dows = DOW.map(function (d, i) { return '<button type="button" class="chip sq" data-p="n-dow" data-v="' + d + '" aria-pressed="' + (f.dows.indexOf(d) >= 0) + '" aria-label="' + DOWN[i] + '">' + DOWN[i] + '</button>'; }).join('');
-    var when = f.start && until >= f.start ? 'Shows: ' + noteWhen({ start: f.start, until: until, dows: f.dows, tm: nfTm(f) }) + '.' : 'The last day cannot be before the first day.';
-    var single = !f.run && !f.until;
+    var single = !f.run && !f.until, quick = single && !f.dows.length;
+    var soon = quick && (f.start === t || f.start === tomorrow), tm = nfTm(f);
+    var when = 'The last day cannot be before the first day.';
+    if (f.start && until >= f.start) {
+      var words = noteWhen({ start: f.start, until: until, dows: f.dows, tm: tm });
+      when = 'Shows: ' + words + '.' + (soon ? ' ' + dayShort(f.start) + '.' : '') + (tm == null ? ' Default popup time 10:30.' : '');
+    }
     return '<section class="set-block n-edit"><span class="label">' + (f.id ? 'Edit this ping' : 'Write a ping') + '</span>' + prepLeaveHTML('n-cancel') +
-      '<span class="hint">Short and plain. It pops up at 10:30, or at the time you set below, and is gone for everyone 30 minutes later. No prices, PINs or staff names. A recipe name links to its card.</span>' +
-      noteRecipientField(f) + '<div class="field"><label class="label" for="n-text">Ping</label><textarea id="n-text" class="p-bulk" data-k="n-text" rows="4" maxlength="400" placeholder="For example: Barramundi is off until Thursday.">' + esc(f.text) + '</textarea><span class="hint" id="n-count">' + f.text.length + ' of 400. Ctrl+Enter saves.</span></div>' +
-      '<div class="field"><span class="label">Tag (starts the ping for you)</span><div class="nt-chips" role="group" aria-label="Tag">' + tags + '</div></div>' +
-      '<div class="field"><span class="label">How it will look</span><div id="n-prev" class="n-prev">' + draftPreviewHTML(f) + '</div></div>' +
-      '<div class="field"><span class="label">Show on</span><div class="nt-chips"><button type="button" class="chip" data-p="n-quick" data-v="0" aria-pressed="' + (f.start === t && single && !f.dows.length) + '">Today</button><button type="button" class="chip" data-p="n-quick" data-v="1" aria-pressed="' + (f.start === shift(t, 1) && single && !f.dows.length) + '">Tomorrow</button>' +
-      '<button type="button" class="chip" data-p="n-mode" data-v="one" aria-pressed="' + (!f.run && !f.until) + '">One day</button><button type="button" class="chip" data-p="n-mode" data-v="run" aria-pressed="' + (f.run || !!f.until) + '">Several days</button></div>' +
-      '<span class="hint">' + (f.run || f.until ? 'Tap the first day, then the last day. Tap the last day again to take it back.' : 'Tap a day to schedule the ping ahead of time.') + '</span>' + dayGridHTML(f) +
+      '<div class="n-picks">' + noteRecipientField(f) + '<div class="field"><span class="label">Tag</span><div class="nt-chips" role="group" aria-label="Tag">' + tags + '</div></div></div>' +
+      '<p class="hint">' + (f.id ? 'The recipient stays fixed. Use again makes a copy for someone else.' : 'Individual pings are visible to the recipient and the chefs who manage pings.') + '</p>' +
+      '<div class="field"><label class="label" for="n-text">Ping</label><textarea id="n-text" class="p-bulk" data-k="n-text" rows="2" maxlength="400" placeholder="For example: Barramundi is off until Thursday.">' + esc(f.text) + '</textarea><span class="hint">No prices, PINs or staff names.</span><span class="hint" id="n-count">' + f.text.length + ' of 400. Ctrl+Enter saves.</span></div>' +
+      '<div class="n-quickdays" role="group" aria-label="Show on"><span class="label">Show on</span><button type="button" class="chip" data-p="n-quick" data-v="0" aria-pressed="' + (quick && f.start === t) + '">Today</button><button type="button" class="chip" data-p="n-quick" data-v="1" aria-pressed="' + (quick && f.start === tomorrow) + '">Tomorrow</button></div>' +
+      '<div class="n-schedule"><button type="button" class="btn" data-p="n-schedule" aria-expanded="' + !!S.nScheduleOpen + '" aria-controls="n-schedule-fields"><span aria-hidden="true">' + (S.nScheduleOpen ? '▾' : '▸') + '</span> Custom schedule' + (!soon || f.tm ? ' set' : '') + '</button>' +
+      '<div class="n-schedule-fields" id="n-schedule-fields"' + (S.nScheduleOpen ? '' : ' hidden') + '>' +
+      '<div class="field"><span class="label">Choose a day or range</span><div class="nt-chips"><button type="button" class="chip" data-p="n-mode" data-v="one" aria-pressed="' + single + '">One day</button><button type="button" class="chip" data-p="n-mode" data-v="run" aria-pressed="' + !single + '">Several days</button></div>' +
+      '<span class="hint">' + (single ? 'Tap a day to schedule the ping ahead of time.' : 'Tap the first day, then the last day. Tap the last day again to take it back.') + '</span>' + dayGridHTML(f) +
       '<details class="n-more"' + (f.start > shift(t, 34) || (f.until && f.until > shift(t, 34)) ? ' open' : '') + '><summary>A date further ahead</summary><div class="nt-dates"><label class="nt-dl">From<input type="date" class="p-dateinput" data-k="n-start" value="' + esc(f.start) + '"' + (f.id ? '' : ' min="' + t + '"') + '></label><label class="nt-dl">Until (optional)<input type="date" class="p-dateinput" data-k="n-until" value="' + esc(f.until) + '"' + (f.start ? ' min="' + esc(f.start) + '"' : '') + '></label></div></details></div>' +
       '<div class="field"><span class="label">Repeat every week on (optional)</span><div class="nt-chips" role="group" aria-label="Weekdays">' + dows + (f.dows.length ? '<button type="button" class="chip" data-p="n-dowclr">Clear weekdays</button>' : '') + '</div><span class="hint">With weekdays picked and no last day, the ping comes back every week until you remove it.</span></div>' +
-      '<div class="field"><label class="label" for="n-tm">Pop up at (optional)</label><div class="nt-chips"><input id="n-tm" type="time" class="p-dateinput" data-k="n-tm" value="' + esc(f.tm || '') + '">' + (f.tm ? '<button type="button" class="chip" data-p="n-tmclr">No set time</button>' : '') + '</div><span class="hint">Empty: it pops up at 10:30. With a time, it pops up then on every phone. Either way it is gone 30 minutes later, so for a later shift set its time. Saved for today after its time, it pops up straight away.</span></div>' +
+      '<div class="field"><label class="label" for="n-tm">Pop up at (optional)</label><div class="nt-chips"><input id="n-tm" type="time" class="p-dateinput" data-k="n-tm" value="' + esc(f.tm || '') + '">' + (f.tm ? '<button type="button" class="chip" data-p="n-tmclr">No set time</button>' : '') + '</div><span class="hint">The default is 10:30. Pings stay on screen for 30 minutes. A ping saved for today after its set time pops up straight away.</span></div>' +
+      '<div class="field"><span class="label">How it will look</span><div id="n-prev" class="n-prev">' + draftPreviewHTML(f) + '</div></div><p class="hint">A recipe name links to its card.</p>' +
+      '<button type="button" class="btn" data-p="n-reset">Reset days</button></div></div>' +
       '<p class="nt-whenline" role="status">' + esc(when) + '</p>' +
-      '<div class="btn-row">' + svButton({ k: 'n', p: 'n-save', idle: f.id ? 'Save changes' : 'Save ping', busy: S.nSaving, off: nfSame() }) + '<button type="button" class="btn" data-p="n-preview">Preview the popup</button><button type="button" class="btn" data-p="n-reset">Reset days</button><button type="button" class="btn' + armCls('n-cancel') + '" data-p="n-cancel">' + (armed('n-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div>' +
+      '<div class="btn-row n-actions">' + svButton({ k: 'n', p: 'n-save', idle: f.id ? 'Save changes' : 'Save ping', busy: S.nSaving, off: nfSame() }) + '<button type="button" class="btn" data-p="n-preview">Preview</button><button type="button" class="btn' + armCls('n-cancel') + '" data-p="n-cancel">' + (armed('n-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div>' +
       svLine('n', S.nSaving, S.nMsg) + '</section>';
   }
   function notesEditorHTML() {
@@ -9901,9 +9914,9 @@ if (list.length) sg('oreg', 's');
     var text = f.text.replace(/\s+$/g, '').replace(/^\s+/g, ''), start = f.start, until = nfUntil(f), re = /^\d{4}-\d{2}-\d{2}$/;
     if (!f.id && f.to && !pingPeople().some(function (p) { return p.id === f.to; })) { S.nMsg = errMsg('Choose an active person who can receive Shift pings.'); draw(); focusSel('#n-to'); return; }
     if (!text) { S.nMsg = errMsg('Write the ping first.'); draw(); return; }
-    if (!re.test(start || '') || !re.test(until)) { S.nMsg = errMsg('Pick the first day.'); draw(); return; }
-    if (until < start) { S.nMsg = errMsg('The last day cannot be before the first day.'); draw(); return; }
-    if (f.tm && nfTm(f) == null) { S.nMsg = errMsg('Pick a time, or tap No set time.'); draw(); return; }
+    if (!re.test(start || '') || !re.test(until)) { S.nMsg = errMsg('Pick the first day.'); S.nScheduleOpen = true; draw(); return; }
+    if (until < start) { S.nMsg = errMsg('The last day cannot be before the first day.'); S.nScheduleOpen = true; draw(); return; }
+    if (f.tm && nfTm(f) == null) { S.nMsg = errMsg('Pick a time, or tap No set time.'); S.nScheduleOpen = true; draw(); return; }
     // tm is always written (null for no set time), so an edit that takes the time away clears it
     var data = { text: text.slice(0, 400), tag: f.tag, start: start, until: until, dows: f.dows.slice().sort(), tm: nfTm(f), removed: false, upd: now() };
     // author is who wrote the ping and never changes; by is who saved it last (the rules need by to be the writer)
@@ -9971,7 +9984,7 @@ if (list.length) sg('oreg', 's');
     if (!n) return;
     var tm = noteTm(n);
     // the copy as it opens is nothing typed yet, so Close, another Edit or Sign out does not ask until it is changed
-    S.nf = nfNew(); S.nf.to = directNote(n.id) ? n.to : ''; S.nf.text = n.text; S.nf.tag = n.tag || 'none'; S.nf.tm = tm == null ? '' : tmText(tm); S.nfSnap = JSON.stringify(S.nf); S.nOpen = true; S.nMsg = '';
+    S.nf = nfNew(); S.nf.to = directNote(n.id) ? n.to : ''; S.nf.text = n.text; S.nf.tag = n.tag || 'none'; S.nf.tm = tm == null ? '' : tmText(tm); S.nfSnap = JSON.stringify(S.nf); S.nOpen = true; S.nScheduleOpen = false; S.nMsg = '';
     draw(); var tx = S.root.querySelector('[data-k="n-text"]'); if (tx) { focusNoteText(tx); }
   }
   /* who tapped Got it today for one note (one small query, only when asked) */
@@ -13472,7 +13485,7 @@ if (list.length) sg('oreg', 's');
     // head chef only (admin Tools tab): this device forgets the kitchen PIN and goes to the PIN screen of the prep book
     if (a === 'retry') { cfgKey = ''; connect(); return; }
     if (a === 'notes-open') { if (canPing()) { S.notesOpen = true; if (!nfDirty()) { S.nf = null; S.nOpen = false; } S.nMsg = ''; loadNotes(); draw(); window.scrollTo(0, 0); } return; }
-    if (a === 'n-new') { S.nf = nfNew(); S.nfSnap = JSON.stringify(S.nf); S.nOpen = true; S.nMsg = ''; draw(); var ntx = S.root.querySelector('[data-k="n-text"]'); if (ntx) { focusNoteText(ntx); } return; }
+    if (a === 'n-new') { S.nf = nfNew(); S.nfSnap = JSON.stringify(S.nf); S.nOpen = true; S.nScheduleOpen = false; S.nMsg = ''; draw(); var ntx = S.root.querySelector('[data-k="n-text"]'); if (ntx) { focusNoteText(ntx); } return; }
     if (a === 'n-tag') {
       var tg = el.getAttribute('data-v'), ft = S.nf, old = NOTE_START[ft.tag] || '', cur = ft.text.replace(/^\s+/, '');
       if (!cur || (old && cur === old) || (old && cur.indexOf(old) === 0 && cur.length === old.length)) ft.text = NOTE_START[tg] || '';
@@ -13481,7 +13494,12 @@ if (list.length) sg('oreg', 's');
     if (a === 'n-dow') { var dv = +el.getAttribute('data-v'), dx = S.nf.dows.indexOf(dv); if (dx >= 0) S.nf.dows.splice(dx, 1); else S.nf.dows.push(dv); draw(); return; }
     if (a === 'n-dowclr') { S.nf.dows = []; draw(); return; }
     if (a === 'n-tmclr') { S.nf.tm = ''; draw(); return; }
-    if (a === 'n-quick') { S.nf.start = shift(dayNow(), +el.getAttribute('data-v')); S.nf.until = ''; S.nf.run = false; S.nf.dows = []; draw(); return; }
+    if (a === 'n-schedule') { S.nScheduleOpen = !S.nScheduleOpen; draw(); focusSel('[data-p="n-schedule"]'); return; }
+    if (a === 'n-quick') {
+      var offset = +el.getAttribute('data-v');
+      S.nf.start = shift(dayNow(), offset); S.nf.until = ''; S.nf.run = false; S.nf.dows = []; S.nScheduleOpen = false;
+      draw(); focusSel('[data-p="n-quick"][data-v="' + offset + '"]'); return;
+    }
     if (a === 'n-mode') { var nm = el.getAttribute('data-v'); S.nf.run = nm === 'run'; if (nm === 'one') S.nf.until = ''; draw(); return; }
     if (a === 'n-reset') { S.nf.start = dayNow(); S.nf.until = ''; S.nf.run = false; S.nf.dows = []; draw(); return; }
     if (a === 'n-day') {
@@ -13501,7 +13519,7 @@ if (list.length) sg('oreg', 's');
        tapped: the editor just carries on with the changes. */
     if (a === 'n-edit') {
       var nn = (S.notes || []).filter(function (x) { return x.id === id; })[0]; if (!nn) return;
-      if (!(nfDirty() && S.nf.id === id)) { if (nfDirty() && !arm('n-edit:' + id)) return; S.nf = nfFrom(nn); S.nfSnap = JSON.stringify(S.nf); }
+      if (!(nfDirty() && S.nf.id === id)) { if (nfDirty() && !arm('n-edit:' + id)) return; S.nf = nfFrom(nn); S.nfSnap = JSON.stringify(S.nf); S.nScheduleOpen = false; }
       S.nOpen = true; S.nMsg = ''; draw(); var tx = S.root.querySelector('[data-k="n-text"]'); if (tx) { focusNoteText(tx); }
       return;
     }
@@ -13894,7 +13912,7 @@ if (list.length) sg('oreg', 's');
       var gln = S.root.querySelector('#g-links'); if (gln) gln.textContent = gLinksText(S.gf);
       saveSync(); return;
     }
-    if (k === 'n-text') { if (S.nf) S.nf.text = el.value; var nc = S.root.querySelector('#n-count'); if (nc) nc.textContent = el.value.length + ' of 400. Ctrl+Enter saves.'; var npv = S.root.querySelector('#n-prev'); if (npv && S.nf) npv.innerHTML = draftPreviewHTML(S.nf); saveSync(); return; }
+    if (k === 'n-text') { if (S.nf) S.nf.text = el.value; var nc = S.root.querySelector('#n-count'); if (nc) nc.textContent = el.value.length + ' of 400. Ctrl+Enter saves.'; draftPreviewPaint(); saveSync(); return; }
     if (k && k.indexOf('tr-') === 0) { trInput(k, el); return; }
     if (k === 'w-text') {
       S.wf.text = el.value; var wg = S.root.querySelector('#w-sugg'); if (wg) wg.innerHTML = wSuggHTML();
@@ -13945,7 +13963,7 @@ if (list.length) sg('oreg', 's');
     if (k === 'o-day') { if (/^\d{4}-\d\d-\d\d$/.test(el.value) && canBrowse()) { S.ordDate = el.value; watchOrders(); draw(); } return; }
     if (k === 'n-start') { if (S.nf && el.value) { S.nf.start = el.value; if (S.nf.until && S.nf.until < el.value) S.nf.until = ''; draw(); } return; }
     if (k === 'n-until') { if (S.nf) { S.nf.until = el.value; S.nf.run = !!el.value; draw(); } return; }
-    if (k === 'n-to') { if (S.nf && !S.nf.id) { S.nf.to = el.value; } return; }
+    if (k === 'n-to') { if (S.nf && !S.nf.id) { S.nf.to = el.value; draftPreviewPaint(); } return; }
     if (k === 'n-tm') { if (S.nf) { S.nf.tm = el.value; draw(); } return; }
     if (k === 'p-section' || k === 'w-sec') { checkSectionBox(el, k); return; }
     if (k === 'w-text') { fillAfterTap(wTypedFill); return; }

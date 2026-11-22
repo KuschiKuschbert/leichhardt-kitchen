@@ -4,6 +4,12 @@ The existing Write a ping form has a Send to dropdown. Everyone is the default. 
 
 Individual pings use the existing date, weekday, optional time, 30-minute lifetime, bell and Got it behaviour. A person's bell shows Everyone plus their own individual pings. Chefs manage all pings and see recipient labels and their read receipts, but their bells do not announce pings intended for someone else. Head chef and sous chefs may write and manage individual pings; historical pingIds permissions on other roles do not grant access.
 
+## Compact composer (22 November 2026)
+
+Write a ping puts Send to and Tag together, followed by the message and Today or Tomorrow. The form shows the calendar date and default or chosen time before Preview and Save. Custom schedule keeps the calendar, date range, weekly repeat, popup time and Reset days. Selecting Today or Tomorrow closes the schedule and uses that single date, with any chosen popup time kept.
+
+Preview and the sample inside Custom schedule show the exact selected recipient. Preview does not save. Save uses the existing private or Everyone path, with the same lifetime, acknowledgement and retry. No new reads or writes enter those paths.
+
 ## Private data and reads
 
 Everyone pings remain under kitchens/<PIN>/notes. Individual pings live under kitchens/<PIN>/directnotes with the same fields plus `to`, the recipient's staff id. Their text never enters the Everyone collection. Client ids use an internal direct/ prefix so general and individual records cannot collide. Firestore checks the recipient's personal session; unauthenticated, expired, removed, functions-only and other staff sessions cannot read individual messages. The verified owner and current chefs retain management access. Recipient, author and creation time are immutable after creation. The verified owner can copy historical recipients and authors during a kitchen-PIN move.

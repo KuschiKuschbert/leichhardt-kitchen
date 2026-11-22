@@ -452,7 +452,7 @@
   // Explicit choice actions exclude command buttons such as tick, delete, add and page navigation.
   var choiceActions = {
     'data-act': 'view free lens amode kind setview settext setshared setpractice',
-    'data-p': 'tr-vpick tr-ppick range heat calm hrm lv-f wunit punit ounit wreason tr-dir tr-unit n-tag n-dow n-quick n-mode mn-ast g-cat g-fcat g-fwho dk-pick cut-day ml-cat ml-pri todo-for',
+    'data-p': 'tr-vpick tr-ppick range heat calm hrm lv-f wunit punit ounit wreason tr-dir tr-unit n-tag n-dow n-mode mn-ast g-cat g-fcat g-fwho dk-pick cut-day ml-cat ml-pri todo-for',
     'data-mg': 'chip hand', 'data-fe': 'chip mode', 'data-dw': 'sm-st cat sub wfam ware tintc setIng', 'data-ai': 'range', 'data-su': 'group history-order'
   };
   function choiceAction(b) { var found; Object.keys(choiceActions).some(function (attr) { var v = b.getAttribute(attr); if (v && choiceActions[attr].split(' ').indexOf(v) >= 0) { found = attr + ':' + v; return true; } return false; }); return found; }
