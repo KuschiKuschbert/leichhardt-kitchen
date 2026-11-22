@@ -7637,11 +7637,12 @@
     if (e.key === 'Tab') trapTab(e, box.querySelector('.sheet'), 'button');
   });
   window.addEventListener('hashchange', function () { ajClose(true, true); });
-  function adminJumpTo(id) {
+  function adminJumpTo(id, focus) {
     var tg = document.getElementById(id);
     if (!tg) return;
+    if (focus) tg.focus({ preventScroll: true });
     navJump = id; navJumpAt = Date.now();
-    window.scrollTo({ top: Math.max(0, window.scrollY + tg.getBoundingClientRect().top - adminTopEdge() - 10), behavior: 'smooth' });
+    window.scrollTo({ top: Math.max(0, window.scrollY + tg.getBoundingClientRect().top - adminTopEdge() - 10), behavior: focus ? 'instant' : 'smooth' });
   }
   /* Find (redesign step 8, 8 Nov 2026, admin B as the head chef chose): one box that goes to any admin page, a part of
      the open page or a person, with / on a laptop. Built from what is already on the page and in memory (the rooms'
@@ -7912,6 +7913,10 @@
     finPaint();
     secFit();
     gvLoops();
+    if (S.gVideoJump && S.root.querySelector('#tv-links')) {
+      S.gVideoJump = false;
+      requestAnimationFrame(function () { adminJumpTo('tv-links', true); });
+    }
     if (prepPlaceWant) requestAnimationFrame(prepPlaceBack);
     window.dispatchEvent(new Event('lk-back'));
   }
@@ -11864,7 +11869,8 @@ if (list.length) sg('oreg', 's');
     });
     return '<div class="n-ws' + (open ? ' has-ed' : '') + '">' + (open ? '<div class="n-ed">' + gEditHTML() + '</div>' : '') +
       '<section class="set-block n-lst"><div class="n-lh"><div><span class="label">Guides</span><span class="hint">Staff open them from Guides in the menu, search them, and find them on the recipe cards they mention.</span></div>' +
-      (open ? '' : '<button type="button" class="btn dark" data-p="g-new">Add a guide</button>') + '</div>' +
+      '<div class="btn-row tv-nav">' + (open ? '' : '<button type="button" class="btn dark" data-p="g-new">Add a guide</button>') +
+      '<button type="button" class="p-x" data-p="tv-links-jump">Video tutorial links</button></div></div>' +
       (open ? '' : msgHTML(S.gMsg)) + list + '</section></div>' + vfHTML();
   }
   /* The video links (head chef, 19 Nov 2026): one row per video, the computer (wide) and phone (tall) YouTube links, one
@@ -11894,7 +11900,7 @@ if (list.length) sg('oreg', 's');
   function vfHTML() {
     var vids = gVids(), f;
     vfLoad(); f = S.vf;
-    var head = '<div class="n-lh"><div><span class="label">Video tutorials</span><span class="hint">Upload each video to YouTube as Unlisted, then paste its link here: the wide one for computers, the tall one for phones. ' +
+    var head = '<div class="n-lh"><div><span class="label" id="tv-links" role="heading" aria-level="3" tabindex="-1">Video tutorials</span><span class="hint">Upload each video to YouTube as Unlisted, then paste its link here: the wide one for computers, the tall one for phones. ' +
       'Staff see the videos marked Everyone. The chefs\' links are kept where only the head chef, the sous chefs and the admin can read them.</span></div></div>';
     if (!vids.length || !f || f.state === 'loading') return '<section class="set-block tv-blk">' + head + '<p class="hint" role="status">' + (gvFailed ? 'Could not load the video list. Reload the page.' : 'Loading the videos...') + '</p></section>';
     if (f.state === 'error') return '<section class="set-block tv-blk">' + head + '<p class="p-err" role="status">Could not check the saved links. Check the signal. <button type="button" class="p-x" data-p="tv-retry">Try again</button></p></section>';
@@ -11906,7 +11912,7 @@ if (list.length) sg('oreg', 's');
       return '<li class="tv-row"><div class="tv-name"><b>' + (g.n < 10 ? '0' : '') + g.n + ' ' + esc(g.title) + '</b>' + (g.who === 'chefs' ? '<span class="g-who">For chefs</span>' : '<span class="tv-all">Everyone</span>') +
         (gvLen(g) ? '<span class="nt-by">' + esc(gvLen(g)) + '</span>' : '') + '</div>' + input(g, 'w', 'Computer, wide') + input(g, 't', 'Phone, tall') + '</li>';
     }).join('');
-    return '<section class="set-block tv-blk">' + head + '<ol class="tv-list">' + rows + '</ol><div class="btn-row">' +
+    return '<section class="set-block tv-blk">' + head + '<button type="button" class="p-x tv-save-jump" data-p="tv-save-jump">Go to Save video links</button><ol class="tv-list">' + rows + '</ol><div class="btn-row" id="tv-actions" role="group" aria-label="Video link save" tabindex="-1">' +
       svButton({ k: 'v', p: 'tv-save', idle: 'Save video links', busy: f.saving, icon: 'guides', off: svHeld('v') || vfSame() }) + '</div>' + svLine('v', f.saving, f.msg) + '</section>';
   }
   function saveVidLinks() {
@@ -13655,6 +13661,8 @@ if (list.length) sg('oreg', 's');
     }
     if (a === 'g-zoom') { var gzg = gById(S.gSel); if (gzg) gzOpen(gzg.id, i); return; }
     if (a === 'g-play') { var gpv = gById(el.getAttribute('data-id')); if (gpv && gpv.vid && gSees(gpv)) gvOpen(gpv); return; }
+    if (a === 'tv-links-jump') { adminJumpTo('tv-links', true); return; }
+    if (a === 'tv-save-jump') { adminJumpTo('tv-actions', true); return; }
     if (a === 'tv-save') { saveVidLinks(); return; }
     if (a === 'tv-retry') { S.vf = null; draw(); return; }
     // a guide's steps: All steps, or Step by step with Back and Next (in memory only)
@@ -13662,7 +13670,7 @@ if (list.length) sg('oreg', 's');
     if (a === 'g-step') { var gsv = +el.getAttribute('data-v'); if (gsv >= 0) { gStep = { id: S.gSel, i: gsv }; draw(); focusSel('[data-p="g-step"][data-v="' + (gsv + 1) + '"], [data-p="g-mode"][data-v="all"].btn, [data-p="g-step"]:not([disabled])'); } return; }
     if (a === 'g-retry') { var grg = gById(S.gSel); if (grg) { delete gPg[grg.id + ':' + (grg.v || 1)]; draw(); } return; }
     if (a === 'g-admin') { S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin'; return; }
-    if (a === 'g-vlinks') { S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin'; return; }
+    if (a === 'g-vlinks') { S.atab = 'guides'; S.gVideoJump = true; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin'; return; }
     if (a === 'g-change') {
       var gcg = gById(id); if (!gcg || gcg.vid) return;
       if (!(gfDirty() && S.gf.id === id)) { if (gfDirty() && !arm('g-change:' + id)) return; S.gf = gfFrom(gcg); S.gfSnap = gfSnap(S.gf); }
