@@ -1,10 +1,11 @@
 /* Leichhardt Kitchen Recipe Book. Locked Leichhardt card look. */
 /* Delivery records use the book's existing type, buttons and paper colours. No extra bottom navigation tab. */
-.dl-page { max-width: 860px; margin: 0 auto; padding: 1.2rem 0 2rem; }
-.dl-heading h1 { font: 700 2.3rem/1.05 var(--display); margin: .25rem 0 .6rem; }
-.dl-heading { margin-bottom: 1.4rem; }
+.dl-page { max-width: 860px; margin: 0 auto; padding: .5rem 0 2rem; }
+.dl-heading h1 { font: 700 2.3rem/1.05 var(--display); margin: .25rem 0 .3rem; }
+.dl-heading { margin-bottom: .7rem; }
+.dl-heading .hint { margin: 0; }
 .dl-form legend { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.dl-form fieldset { margin: 0; padding: 0; border: 0; min-width: 0; display: grid; gap: 1rem; }
+.dl-form fieldset { margin: 0; padding: 0; border: 0; min-width: 0; display: grid; gap: .65rem; }
 .dl-field { display: grid; gap: .35rem; min-width: 0; }
 .dl-field input, .dl-field textarea { width: 100%; min-width: 0; min-height: 44px; border: 1.5px solid var(--edge); border-radius: var(--r-act); padding: .6rem .7rem; background: var(--paper); color: var(--ink); font: inherit; }
 .dl-field input:focus-visible, .dl-field textarea:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
@@ -39,7 +40,7 @@
 .dl-when-line > span { min-width: 0; overflow-wrap: anywhere; }
 .dl-due-pick { align-items: center; margin-top: -.4rem; }
 .dl-due-pick .hint { margin: 0 .2rem 0 0; }
-.dl-what { display: grid; gap: .45rem; }
+.dl-what { display: grid; gap: .25rem; }
 .dl-what .hint { margin: 0; }
 .dl-temps.one { grid-template-columns: minmax(0, 1fr); }
 .dl-temp { display: flex; align-items: stretch; min-height: 56px; border: 1.5px solid var(--edge); border-radius: var(--r-act); background: var(--paper); overflow: hidden; }
@@ -54,6 +55,7 @@
 .dl-sign-note:empty { display: none; }
 .dl-sign-note, .dl-hidden-note { margin: -.4rem 0 0; color: var(--small-ink); font-weight: 600; }
 .dl-form .dl-add-note { padding-left: 0; }
+.dl-dock .dl-actions { margin-top: .35rem; }
 .dl-actions .btn[type="submit"] { flex: 1 1 12rem; }
 /* On a phone Save delivery and the line that says what happened dock above the tab bar while the form is on screen,
    like Review order on the supplier sheet, and scroll away with the form. With the function band and the cut-off bar
@@ -68,6 +70,19 @@
 .dl-waiting { margin: 1rem 0 0; padding-top: .9rem; border-top: 1px solid var(--line); color: var(--small-ink); }
 .dl-waiting b { color: var(--ink); }
 @media (max-width: 380px) { .dl-pair { grid-template-columns: 1fr; } }
+@media (min-width: 1100px) {
+  .dl-page { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); align-items: start; gap: 16px 28px; max-width: 1136px; }
+  .dl-heading { grid-column: 1 / -1; margin-bottom: 0; }
+  .dl-form, .dl-history { min-width: 0; }
+  .dl-history { margin-top: 0; padding: 14px 18px; border: 1px solid var(--line); border-top: 2px solid var(--ink); border-radius: var(--r-act); background: var(--surface-paper); }
+  /* Larger text keeps the full form width for the two temperature readings. */
+  html[data-text="normal"] .dl-form fieldset { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); column-gap: 14px; }
+  html[data-text="normal"] .dl-form fieldset > * { grid-column: 1 / -1; }
+  html[data-text="normal"] .dl-form .dl-what { grid-column: 1; align-self: start; }
+  html[data-text="normal"] .dl-form .dl-temps { grid-column: 2; align-self: start; }
+  .dl-temps:not(.one) .dl-unit { padding-inline: 7px; }
+  .dl-dock .dl-message:empty { min-height: 0; margin: 0; }
+}
 :root {
   --bg: #FBFAF7;
   --paper: #FFFFFF;

@@ -60,6 +60,10 @@ Today's deliveries show as arrivals (Flighty, as drawn in `docs/whole-app-redesi
 
 With the function band and the cut-off bar showing, Save delivery sat 266 px under the tab bar on a 390 px phone until you scrolled (finding ORDE-1, `docs/consistency-sweep-options/brief.md`). Below 720 px the message line and the buttons now sit in one `.dl-dock`, sticky just above the tab bar while the form is on screen, like Review order on the supplier sheet. The dock scrolls away with the form, so the records are never under it. An empty message line takes no room, and the page keeps room under a focused box for the dock. Wider screens are unchanged. `js/deliveries.js?v=10`. Checked by `tests/service-targets.test.js`.
 
+## More room for the form and receipts, 22 Nov 2026
+
+The heading and form use less vertical space, so the notes action is easier to reach above the phone Save dock. From 1100 px, the same receipt list and its due suppliers sit beside the form. At normal text size What came in? sits beside the temperature boxes on that layout. With larger text the boxes get the full form width. The form remains first in keyboard and reading order. Time, notes, the Save message, the admin history controls and the original receipt contract still apply.
+
 ## Working rules (moved from CLAUDE.md, 3 Nov 2026)
 
 `#/deliveries` loads `js/deliveries.js` only when opened. Every personal login may record and read today's temperatures, including Functions and View only; this grants no other kitchen access. The verified admin can pick a From and To range of up to 92 days (Design A on screen, above). `deliveries/<id>` records are immutable, including their receiver. A retry checks the same id before writing. Preserve null versus zero, negative readings, the Queensland clock and in-memory draft clearing on handover. Keep receipts in manual/nightly backups and PIN moves. `tests/deliveries.test.js`, the real rules suite and `scripts/delivery-backup-check.mjs` cover the flows. Do not invent food acceptance limits from the technical numeric input range.
