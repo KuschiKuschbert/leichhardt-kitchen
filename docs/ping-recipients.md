@@ -10,6 +10,8 @@ Write a ping puts Send to and Tag together, followed by the message and Today or
 
 Preview and the sample inside Custom schedule show the exact selected recipient. Preview does not save. Save uses the existing private or Everyone path, with the same lifetime, acknowledgement and retry. No new reads or writes enter those paths.
 
+At 390 × 844 with Extra large text, the Ann, Safety and Tomorrow fixture shows the date and 10:30 default popup time above a fully visible 44 px Save button. The bottom of Save moved from 3 px behind the tabs to 8 px above them when the schedule summary's outer margins were removed at this text size.
+
 ## Private data and reads
 
 Everyone pings remain under kitchens/<PIN>/notes. Individual pings live under kitchens/<PIN>/directnotes with the same fields plus `to`, the recipient's staff id. Their text never enters the Everyone collection. Client ids use an internal direct/ prefix so general and individual records cannot collide. Firestore checks the recipient's personal session; unauthenticated, expired, removed, functions-only and other staff sessions cannot read individual messages. The verified owner and current chefs retain management access. Recipient, author and creation time are immutable after creation. The verified owner can copy historical recipients and authors during a kitchen-PIN move.
