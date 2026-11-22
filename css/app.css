@@ -1324,6 +1324,27 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 
 /* Notes workspace (admin Notes tab and the sous chef's Daily notes): list first, editor beside it on a big screen */
 .n-ws { display: flex; flex-direction: column; gap: 1rem; }
+/* A short scheduled ping opens with the recipient, date and actions in reach. */
+.n-edit { gap: .45rem; padding: .8rem .75rem .9rem; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-paper); }
+.n-edit .field { margin: 0 0 .35rem; min-width: 0; }
+.n-edit .n-picks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem .65rem; margin-top: .2rem; }
+.n-edit .n-picks + .hint { margin: 0; }
+.n-picks .field { margin: 0; }
+.n-picks .ux-picker-trigger { width: 100%; min-height: 44px; }
+.n-edit #n-text { min-height: 70px; }
+.n-quickdays { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin: .35rem 0; }
+.n-quickdays .label { margin: 0 auto 0 0; }
+.n-quickdays .chip { min-width: 44px; min-height: 44px; }
+.n-schedule { border: 1px solid var(--line); border-radius: var(--r-act); background: var(--surface-reference); }
+.n-schedule > .btn { display: block; width: 100%; min-height: 44px; border: 0; background: transparent; text-align: left; }
+.n-schedule-fields { padding: 0 .55rem .55rem; }
+.n-schedule .n-grid { grid-template-columns: repeat(7, minmax(44px, 1fr)); gap: 3px; overflow-x: auto; margin-inline: -.4rem; }
+.n-edit .nt-whenline { margin: .3rem 0 .25rem; font-size: .875rem; }
+@media (max-width: 599px) { html[data-text="xlarge"] .n-edit .nt-whenline { margin-block: 0; } }
+.n-edit .n-actions { margin: 0; }
+.n-actions .sv-btn { flex: 1 1 auto; }
+.n-actions .btn { min-height: 44px; }
+
 .n-lh { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0.6rem 1rem; }
 .n-lh .label, .n-lh .hint { display: block; }
 .n-gh3 { margin: 0.9rem 0 0.4rem; font: 700 1.1rem var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
