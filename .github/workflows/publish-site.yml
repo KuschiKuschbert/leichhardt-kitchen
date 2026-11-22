@@ -86,6 +86,14 @@ jobs:
     if: needs.check.outputs.deploy == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+      pages: write
+      id-token: write
+      deployments: read
+    env:
+      PAGES_ARTIFACT_NAME: github-pages-${{ github.run_attempt }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -93,11 +101,37 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
       # v3 keeps dotfiles such as .nojekyll and leaves out .git and .github, like the publish from the branch
-      - uses: actions/upload-pages-artifact@v3
+      - id: upload
+        uses: actions/upload-pages-artifact@v3
         with:
           path: .
+          name: ${{ env.PAGES_ARTIFACT_NAME }}
+      - name: Wait for this attempt's Pages artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PAGES_ARTIFACT_ID: ${{ steps.upload.outputs.artifact_id }}
+        run: |
+          # A rerun can still see older attempts, and a successful upload can take a moment to appear in the list.
+          if ! [[ "$PAGES_ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
+            echo "::error::The Pages upload did not return an artifact ID."
+            exit 1
+          fi
+          for attempt in {1..8}; do
+            if gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=$PAGES_ARTIFACT_NAME&per_page=100" |
+              jq -e --arg name "$PAGES_ARTIFACT_NAME" --arg id "$PAGES_ARTIFACT_ID" \
+                '[.artifacts[] | select(.name == $name and .expired == false)] | length == 1 and (.[0].id | tostring) == $id' >/dev/null; then
+              # The deploy action reads through the separate Actions Results endpoint.
+              sleep 5
+              exit 0
+            fi
+            if [ "$attempt" -lt 8 ]; then sleep 5; fi
+          done
+          echo "::error::Pages artifact $PAGES_ARTIFACT_NAME ($PAGES_ARTIFACT_ID) did not become visible."
+          exit 1
       - id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: ${{ env.PAGES_ARTIFACT_NAME }}
 
   venue-sites:
     name: Venue site (${{ matrix.venue.id }})
