@@ -60,6 +60,24 @@ const count = p => p.evaluate(() => document.getElementById('count').textContent
   const rad = await t.evaluate(() => [document.querySelector('[data-act="free"]'), document.querySelector('[data-act="kind"][data-val="all"]')].map(e => e ? getComputedStyle(e).borderTopLeftRadius : ''));
   ok(rad[0] && rad[0] === rad[1], 'tiles: Free from chips are as round as the other chips (' + rad + ')');
   await t.context().close();
+
+  const tablet = await L.open(b, '#/recipes', { width: 768, height: 1024, settings: { view: 'pass', text: 'xlarge' } });
+  await L.tap(tablet, '[data-act="kind"][data-val="component"]');
+  await tablet.click('.amode [data-val="free"]');
+  const freePicker = '.chips[aria-labelledby="free-label"] > .ux-picker-trigger';
+  await tablet.click(freePicker);
+  const options = await tablet.locator('.ux-picker [data-index]').all();
+  for (const option of options) await option.click();
+  await tablet.click('.ux-picker-footer .dark');
+  await L.settle(tablet, 300);
+  const layout = await tablet.evaluate(picker => {
+    const mode = document.querySelector('.amode'), choice = document.querySelector(picker);
+    return { inline: mode.classList.contains('ux-inline-pair'), choice: choice.textContent,
+      pageWidth: document.documentElement.scrollWidth, width: innerWidth, right: choice.getBoundingClientRect().right };
+  }, freePicker);
+  ok(options.length === 10 && layout.inline && layout.choice.includes('Sesame') && layout.pageWidth === layout.width && layout.right <= layout.width,
+    '768 extra-large: all ten Free from choices fit with both mode buttons still visible (' + options.length + ', ' + JSON.stringify(layout) + ')');
+  await tablet.context().close();
   await b.close();
   L.report(R);
 })();
