@@ -2378,7 +2378,7 @@ html.has-upd .mg-chs { top: calc(var(--fn-stick, 0px) + var(--upd-h)); }
   .mg-ing-panel {
     position: sticky; top: calc(var(--fn-stick, 0px) + var(--upd-h, 0px) + 1rem);
     align-self: start; display: flex; min-width: 0; flex-direction: column; overflow: hidden;
-    max-height: max(12rem, calc(100dvh - var(--fn-stick, 0px) - var(--upd-h, 0px) - 15rem));
+    max-height: var(--mg-ing-panel-room, calc(100dvh - var(--fn-stick, 0px) - var(--upd-h, 0px) - 15rem));
     border: 1.5px solid var(--ink); border-radius: var(--r-act); background: var(--surface-paper);
   }
   .mg-ing-panel-head { display: flex; align-items: center; gap: .65rem; justify-content: space-between; padding: .55rem .75rem .55rem .9rem; border-bottom: 1px solid var(--line); }

@@ -10,6 +10,17 @@ const height = [844, 900, 800];
 const checkedWidths = [390, 768, 1280];
 const focused = (p, selector) => p.evaluate(s => document.activeElement === document.querySelector(s), selector);
 const box = (el) => el.boundingBox();
+const inspectorActionsFit = p => p.evaluate(() => {
+  const panel = document.querySelector('.mg-ing-panel .mg-ing-open');
+  const dock = document.querySelector('.mg-bar').getBoundingClientRect();
+  const pageY = scrollY;
+  panel.scrollTop = panel.scrollHeight;
+  const actions = [...panel.querySelectorAll('[data-mg="ing-down"], [data-mg="ing-del"]')];
+  return actions.length === 2 && scrollY === pageY && actions.every(button => {
+    const r = button.getBoundingClientRect();
+    return r.bottom <= dock.top && button.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
+  });
+});
 
 (async () => {
   const b = await L.start();
@@ -29,6 +40,11 @@ const box = (el) => el.boundingBox();
     if (desktop) {
       ok((await box(row)).height - base.height < 20 && await focused(p, close), 'desktop: opening details keeps the row short and focuses the panel');
       ok((await box(p.locator(close))).height >= 44, 'desktop: Close is at least 44 px high');
+      ok(await inspectorActionsFit(p), 'desktop: Move down and Remove clear Save when only the inspector scrolls');
+      await p.setViewportSize({ width, height: 650 });
+      await L.settle(p, 200);
+      ok(await inspectorActionsFit(p), 'shorter desktop: both inspector actions remain tappable above Save');
+      await p.setViewportSize({ width, height: height[i] });
       await p.focus('[data-f="ing.0.name"]');
       await p.keyboard.press('Enter');
       ok(await focused(p,note), 'desktop: Enter on the name reaches Note in the panel');

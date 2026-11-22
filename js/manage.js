@@ -1016,6 +1016,32 @@
 
   /* ---------- drawing the page ---------- */
   var drawn = '';
+  var stopIngPanelFit = null;
+  function watchIngPanel(panel) {
+    if (stopIngPanelFit) stopIngPanelFit();
+    stopIngPanelFit = null;
+    if (!panel) return;
+    var dock = M.root.querySelector('.mg-bar'), frame = 0;
+    function fit() {
+      frame = 0;
+      // The panel starts below the page heading and then sticks. Fit to the real dock at its current position.
+      var bottom = Math.min(window.innerHeight, dock.getBoundingClientRect().top);
+      var room = Math.max(0, Math.floor(bottom - panel.getBoundingClientRect().top - 8)) + 'px';
+      if (panel.style.getPropertyValue('--mg-ing-panel-room') !== room) panel.style.setProperty('--mg-ing-panel-room', room);
+    }
+    function schedule() { if (!frame) frame = window.requestAnimationFrame(fit); }
+    var observer = window.ResizeObserver ? new ResizeObserver(schedule) : null;
+    if (observer) { observer.observe(dock); observer.observe(document.getElementById('app')); }
+    window.addEventListener('resize', schedule);
+    window.addEventListener('scroll', schedule, { passive: true });
+    stopIngPanelFit = function () {
+      if (observer) observer.disconnect();
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener('resize', schedule);
+      window.removeEventListener('scroll', schedule);
+    };
+    fit();
+  }
   function draw() {
     if (window.LK_DRAW && window.LK_DRAW.open()) return;
     if (!M.root || !document.body.contains(M.root)) return;
@@ -1025,6 +1051,7 @@
     var tag = source && scrollBox && scrollBox.contains(source) && source.matches('[data-mg="tag"]') ? source.getAttribute('data-v') : null;
     M.root.innerHTML = M.ed ? editorHTML() : listHTML();
     window.scrollTo(0, y);
+    watchIngPanel(M.root.querySelector('.mg-ing-panel'));
     var reappeared = scrollBox && M.root.querySelector('#' + scrollBox.id);
     if (reappeared && reappeared.closest('.mg-ing-panel')) reappeared.scrollTop = detailTop;
     window.dispatchEvent(new Event('lk-nav'));
@@ -1136,6 +1163,7 @@
     M.sub = sub.slice();
     // Keep the last keystroke before a quick Back or another editor clears the current form.
     if (M.ed && M.ed.sub !== key && dirty()) keepNow();
+    if (sub[0] === 'print' || sub[0] === 'draw') watchIngPanel(null);
     if (sub[0] !== 'print' && window.LK_RCP) window.LK_RCP.unmount();
     if (sub[0] === 'print') { if (window.LK_DRAW && window.LK_DRAW.open()) window.LK_DRAW.unmount(); mountPrint(root, sub); return; }
     if (sub[0] === 'draw') { mountDraw(root, sub); return; }
@@ -1158,9 +1186,10 @@
   }
   /* A hand-over (Sign out, Not you?, the idle lock: leave() in js/prep.js, 29 Oct 2026): the open form and drawing go
      with the person. Before, the page closing after the sign-out kept them as a draft again, for the next person. */
-  function drop() { if (window.LK_RCP) window.LK_RCP.drop(); clearTimeout(keepTimer); if (window.LK_DRAW && window.LK_DRAW.drop) window.LK_DRAW.drop(); M.ed = null; M.identity = ''; M.suspended = false; drawn = ''; unarm(); }
+  function drop() { watchIngPanel(null); if (window.LK_RCP) window.LK_RCP.drop(); clearTimeout(keepTimer); if (window.LK_DRAW && window.LK_DRAW.drop) window.LK_DRAW.drop(); M.ed = null; M.identity = ''; M.suspended = false; drawn = ''; unarm(); }
   function unmount() {
     var hadRoot = !!M.root;
+    watchIngPanel(null);
     if (window.LK_RCP) window.LK_RCP.unmount();
     if (window.LK_DRAW && window.LK_DRAW.open()) window.LK_DRAW.unmount();
     var lock = workLock();

@@ -127,6 +127,8 @@ At phone and tablet widths the original fields stay inline. Putting the Note and
 
 The before and after browser sample used the actual Chicken Burger editor and sample session. The expanded desktop row went from 556 to 86 px with the same ten allergen names. Inline spacing saved 61 px on the phone and 80 px on the tablet. These are measurements of the approved captures. The implementation keeps this layout in the app renderer. It uses one shared detail form, one draft and the existing save path. It adds no data reads or writes.
 
+The desktop panel ends above the actual Save dock. Scrolling only the panel reaches Move down and Remove while Save stays available. The browser check reproduces the earlier overlap at 1280 × 800 and verifies both actions at that size and at 1280 × 650.
+
 ## Every capability stays
 
 | Capability | A | B |
