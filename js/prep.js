@@ -713,6 +713,9 @@
       var k = listSnap(snap, S.itemsState, itemsLast), coldTurn = cacheOnly(snap) !== itemsCold;
       itemsCold = cacheOnly(snap);
       S.items = snapLines(snap, '');
+      if (!itemsCold && S.date === prepTickFaultDay && prepTickFaults.size) S.items.forEach(function (x) {
+        if ((x.done || x.deleted) && !x._unsent && prepTickFaults.get(x.id) === 'failed') prepTickFaults.delete(x.id);
+      });
       if (pt && (pt.busy || pt.uncertain) && ptContext(pt)) S.items = S.items.map(function (x) {
         if (x.id !== pt.id) return x;
         pt.latest = Object.assign({}, x);pt.latestServer = !cacheOnly(snap) && !x._unsent;
@@ -1692,7 +1695,7 @@
     S.lockHasDraft = dirtyForUpdate(); S.lockIdentity = stableIdentity();
     if (pt && pt.busy) pt.lockRetained = S.lockIdentity;
     S.lockRecorder = S.who || ''; S.privacyLocked = true; S.lockReason = reason; S.authed = false; S.level = ''; S.grantExp = 0; accessEpoch++; digestMem = null; S.tmrPlan = null;
-    stopLive(); clearPrivateCache(); ptClose(true, true); ksClose(); noteClose('shut'); lmClose();
+    prepTickFaults.clear(); stopLive(); clearPrivateCache(); ptClose(true, true); ksClose(); noteClose('shut'); lmClose();
     chefHistoryClear(); fdLast = []; fdClose(true, true); ajClose(true, true);
     if (window.LK_UX) window.LK_UX.close();
     if (shared()) { if (fb && S.uid) fb.fs.deleteDoc(sessRef()).catch(function () {}); dropGoogle().catch(function () {}); }
@@ -1730,7 +1733,7 @@
     cleaningAttempt = null; cleaningActionAttempts = Object.create(null);
     S.privacyLocked = false; S.unlocking = false; S.lockRecorder = ''; S.lockHasDraft = false; S.lockIdentity = ''; S.workNotice = ''; S.grantExp = 0;
     S.ctab = 'dashboard'; S.cgLast = {}; S.cDate = ''; chefHistoryClear(); fdLast = []; fdClose(true, true);
-    accessEpoch++; digestMem = null;   // the day digests read for the person before
+    prepTickFaults.clear(); accessEpoch++; digestMem = null;   // the day digests read for the person before
     stopLive(); if (coolingController) coolingController.stop(); clearPrivateCache();
     S.text = S.qty = S.otext = S.oqty = ''; S.wf = { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }; S.xf = xBlank();
     if (mlf) mlf.text = '';
@@ -2804,6 +2807,8 @@
     toast(S.date !== date ? 'Nothing changed. ' + nm + ' is on ' + (/^(Today|Yesterday|Tomorrow)$/.test(d) ? d.toLowerCase() : d) + '\'s list.' : 'Nothing changed. ' + nm + ' has changed since.');
     return false;
   }
+  // Keep a failed personal tick on its own line for this session and kitchen day.
+  var prepTickFaultDay = '', prepTickFaults = new Map();
   function tickNow(date, id, want) {
     var it = S.items.filter(function (x) { return x.id === id; })[0], p = me();
     if (S.date !== date) it = null;   // another day's list is on screen: its lines are not this day's
@@ -2811,18 +2816,50 @@
     if (!it || !can('tick')) return false;
     if (typeof want === 'boolean' && !!it.done === want) return false;
     if (!p) { toast('Choose your name before ticking prep.');return false; }
-    var done = !it.done;
+    var todayPrep = S.name === 'prep' && !shared() && date === dayNow(), epoch = accessEpoch;
+    if (todayPrep && prepTickFaultDay !== date) {
+      prepTickFaults.clear(); prepTickFaultDay = date;
+    }
+    var fault = todayPrep && prepTickFaults.get(id);
+    if (fault === 'retrying') return false;
+    var done = !it.done, retry = done && fault === 'failed';
     if (!done && !canUntick(it)) { toast('Ticked lines stay ticked. Ask the head chef or sous chef to undo it.'); return false; }
     // the tick keeps the On it stamp (10 Nov 2026): doneAt less onAt is how long the job took (onItHTML())
     var at = done ? now() : 0, w = p;
     // the tick's own slip (its Undo): once the server has the tick it may gain the section's sentence (secSay())
     var act = done ? { label: 'Undo', fn: function () { return tick(date, id, false) || undoMiss(date, it.text); } } : null;
-    supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: at, preparedBy: done ? w.name : '', preparedById: done ? w.id : '', preparedAt: at }).then(function () { markPast('p', date); if (done) secSay(date, id, at, p.id, act); }, failed);
+    if (retry) prepTickFaults.set(id, 'retrying');
+    supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: at, preparedBy: done ? w.name : '', preparedById: done ? w.id : '', preparedAt: at }).then(function () {
+      markPast('p', date);
+      if (epoch !== accessEpoch) return;
+      if (retry && prepTickFaultDay === date) {
+        prepTickFaults.delete(id);
+        if (S.name === 'prep' && S.date === date) toast('Ticked ' + slipName(it.text), act);
+      }
+      if (done) secSay(date, id, at, p.id, act);
+    }, function (error) {
+      if (epoch !== accessEpoch) return;
+      if (!todayPrep || !done || prepTickFaultDay !== date || date !== dayNow() || !error || error.code !== 'unavailable' || error.terminalWork) {
+        if (retry && prepTickFaultDay === date) prepTickFaults.delete(id);
+        failed(error);
+        return;
+      }
+      prepTickFaults.set(id, 'failed');
+      if (S.name === 'prep' && S.date === date) liveSay('Not saved: ' + slipName(it.text) + '. Tap the box to retry.');
+      // Discard only this write's Undo. A different line may already have its own success slip.
+      if (S.toastAct === act) toastAway('new');
+      else if (S.toastOld && S.toastOld.act === act) toastAway('old');
+      else draw();
+    });
     // the stamp's Undo means nothing once the line is ticked: the Ticked toast takes its place, not a chip above it
     if (done && S.toastAct && S.toastAct.stampFor === id) { S.toast = ''; S.toastAct = null; }
     finNote(date, id, done);
-    if (done) { bump({ ticked: 1 }); toast('Ticked ' + slipName(it.text), act); setTimeout(draw, LINGER + 100); }
-    else toast('Unticked ' + slipName(it.text) + '. It is open again.');
+    if (done) {
+      bump({ ticked: 1 });
+      if (retry) { liveSay('Retrying: ' + slipName(it.text) + '. Waiting to send.'); draw(); }
+      else toast('Ticked ' + slipName(it.text), act);
+      setTimeout(draw, LINGER + 100);
+    } else toast('Unticked ' + slipName(it.text) + '. It is open again.');
     if (!done && it.doneById && fb) sset(docRef('activity', it.doneById), { name: it.doneBy || '', ticked: fb.fs.increment(-1) }, true).catch(function () {});
     return true;
   }
@@ -5322,7 +5359,11 @@
     var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '" aria-label="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">' + AI_BOOK + '<span class="nb-aw">Recipe</span></a>' : '';
     var keep = !readonly && lineMenuOk(x, date);
     var del = delOk ? '<button type="button" class="nb-x' + (x.deleted ? '' : ' lk-del') + '" data-p="' + (x.deleted ? 'restore' : 'del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-label="' + (x.deleted ? 'Put back ' : 'Remove ') + esc(x.text) + '">' + (x.deleted ? 'Put back' : 'Remove') + '</button>' : '';
-    var boxSay = x.done ? 'Untick ' + x.text : 'Tick ' + x.text + (on ? ', ' + on.name + ' on it' : '');
+    var tickFault = tickOk && !readonly && !shared() && S.name === 'prep' && date === dayNow() && date === prepTickFaultDay && prepTickFaults.get(x.id);
+    var tickStatusId = tickFault ? 'nb-tick-status-' + esc(x.id) : '';
+    var tickStatus = tickFault ? '<span id="' + tickStatusId + '" class="nb-tick-status' + (tickFault === 'retrying' ? ' is-waiting' : '') + '">' +
+      (tickFault === 'retrying' ? 'Retrying. Waiting to send.' : 'Not saved. Tap the box to retry.') + '</span>' : '';
+    var boxSay = tickFault === 'retrying' ? 'Retrying ' + x.text : x.done ? 'Untick ' + x.text : 'Tick ' + x.text + (on ? ', ' + on.name + ' on it' : '');
     // I'm on it: its own button on an open line of today's list (onTap()); the box stays one tap = done
     var onBtn = tickOk && !readonly && !x.done && date === dayNow() ? '<button type="button" class="nb-onbtn" data-p="onit" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!on + '" aria-label="' +
       esc(!on ? (shared() ? 'Who\'s on it: ' : 'I\'m on it: ') + x.text : shared() ? 'Take ' + on.name + ' off ' + x.text : onMine(x) ? 'Take me off ' + x.text : 'Take over ' + x.text + ' from ' + on.name) + '">' + AI_ON + '<span class="nb-onp">' +
@@ -5332,13 +5373,14 @@
     if (!onBtn && tickOk && !readonly && x.done && date === dayNow()) onBtn = '<span class="nb-onslot" aria-hidden="true"></span>';
     return '<li id="nbr-' + esc(x.id) + '" class="nb-row' + (on ? (onOther ? ' is-on-other' : ' is-on') : '') + (x.done ? ' is-done' : '') + (rolledN(x) && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + (planned(x) ? ' pa-row' : '') + '" data-ln="' + esc(date + '/' + x.id) + '">' +
       (planRow ? '<span class="nb-box pa-cal" aria-hidden="true">' + AI_CAL + '</span>' :
-      '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc(boxSay) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : on ? '<span class="nb-on-i" aria-hidden="true">' + esc(on.name.trim().charAt(0).toUpperCase()) + '</span>' : BOX) + '</button>') +
+      '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc(boxSay) + '"' + (tickStatusId ? ' aria-describedby="' + tickStatusId + '"' : '') +
+      (tickFault === 'retrying' ? ' aria-busy="true" aria-disabled="true"' : '') + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : on ? '<span class="nb-on-i" aria-hidden="true">' + esc(on.name.trim().charAt(0).toUpperCase()) + '</span>' : BOX) + '</button>') +
       // a tap on the words ticks too (the box is the button for keyboards and screen readers); Undo and the linger cover a slip.
       // Since 5 Nov 2026 the whole text block does (words, amount and the second line): on a phone the buttons sit under
       // it, so a tap a little below the words landed on the second line and did nothing
       '<span class="nb-main' + (tickOk && !readonly ? '" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '"') + '><span class="nb-t' + (tickOk && !readonly ? ' nb-tt' : '') + '"' + (tickOk && !readonly ? ' data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '') + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + num + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + numSay + (planRow ? '<span class="visually-hidden">. Planned for ' + esc(dayFull(date)) + '</span>' : '') + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + unsentMark(x) + justStamp(x.id) + '</span>' +
       // the stamp leads the second line (it never adds a line, so a stamp or a tick moves no row)
-      metaHTML(on ? ['<b class="nb-on">' + (onMine(x) && !shared() ? 'You\'re on it' : esc(on.name) + ' on it') + '</b>'] : [], by, x.done ? 'Recorded by ' + (x.doneBy || '') : '') + '</span>' + (onBtn || star || link || del ? '<span class="nb-acts">' + onBtn + star + link + del + ((del || keep) && !readonly ? moreBtn(x, keep) : '') + '</span>' : '') + '</li>';
+      metaHTML(on ? ['<b class="nb-on">' + (onMine(x) && !shared() ? 'You\'re on it' : esc(on.name) + ' on it') + '</b>'] : [], by, x.done ? 'Recorded by ' + (x.doneBy || '') : '') + tickStatus + '</span>' + (onBtn || star || link || del ? '<span class="nb-acts">' + onBtn + star + link + del + ((del || keep) && !readonly ? moreBtn(x, keep) : '') + '</span>' : '') + '</li>';
   }
   /* The line menu (22 Oct 2026, Option B): on a phone, Remove (or Put back) and who wrote the line move behind a ⋯ on
      the line, so the item and the amount lead. On a laptop everything stays in the line and the ⋯ is not shown. The sheet
@@ -5506,9 +5548,12 @@
     if (e.key === 'Tab') trapTab(e, box.querySelector('.sheet'), 'button, input');
   });
   window.addEventListener('hashchange', function () { lmClose(true); });
-  /* A line ticked on this phone stays where it is, struck through, for 3.5 seconds before it leaves the list. */
+  /* A line ticked on this phone stays where it is, struck through, for 3.5 seconds or while its retry is waiting. */
   var LINGER = 3500;
-  function lingers(x) { return x.done && !x.deleted && x.doneById === S.who && now() - (x.doneAt || 0) < LINGER; }
+  function lingers(x) {
+    var waitingForRetry = S.date === prepTickFaultDay && prepTickFaults.get(x.id) === 'retrying';
+    return x.done && !x.deleted && x.doneById === S.who && (waitingForRetry || now() - (x.doneAt || 0) < LINGER);
+  }
   /* The finished list (owner, 10 Nov 2026; docs/kitchen-mascot.md, the council's record is pull request #670).
      When every line of today's own list is ticked and the server has every tick, the mascot stands beside the
      words where the page already says the list is ticked off: "Every line ticked. 6 of 6." It is the list's state,
