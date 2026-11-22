@@ -517,6 +517,8 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .nb-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .nb-meta { display: block; min-height: 1.35em; font: 400 0.75rem/1.35 var(--body); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nb-row.is-done .nb-meta { text-decoration: none; }
+.nb-tick-status { display: block; margin-top: 2px; color: var(--bad-ink); font: 700 0.8125rem/1.23 var(--body); overflow-wrap: anywhere; }
+.nb-tick-status.is-waiting { color: var(--ink); }
 .nb-q { font-size: 1.25rem; color: var(--muted); margin-left: 0.3rem; }
 .nb-go { flex: 0 0 auto; font-family: var(--display); font-weight: 700; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); text-decoration: none; border-bottom: 1.5px dotted var(--accent-ink); }
 .nb-x { flex: 0 0 auto; min-height: 44px; padding: 0 0.5rem; border: 0; background: none; font-family: var(--body); font-weight: 600; font-size: 0.8125rem; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
@@ -2119,6 +2121,9 @@ button.wm-a.wm-tile { text-align: left; }
 .p-toasts .p-toast-bad .p-toast-btn { background: var(--bad-ink); }
 .p-toasts .p-toast.p-toast-old { align-self: flex-start; min-height: 0; margin: 0 0 0 12px; padding: 0; border: 0; background: transparent; box-shadow: none; }
 .p-toasts .p-toast-chip { display: block; max-width: min(22rem, calc(100vw - 24px)); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; border-radius: 8px 8px 0 0; font-weight: 600; }
+@media (max-width: 719px) {
+  .p-toasts .p-toast-chip { white-space: normal; overflow-wrap: anywhere; text-overflow: clip; text-align: left; line-height: 1.12; }
+}
 @keyframes slip-in { from { translate: 0 10px; opacity: 0.4; } to { translate: 0 0; opacity: 1; } }
 @keyframes slip-time { from { transform: scaleX(1); } to { transform: scaleX(0); } }
 /* on a phone: no tab bar, no lift; a sticky Save bar lifts the slip above it; the page makes room for the slip */
