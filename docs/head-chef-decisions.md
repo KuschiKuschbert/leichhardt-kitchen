@@ -14,6 +14,7 @@
 - **22 November 2026, End-of-day review within reach.** The head chef approved bringing Wastage's existing review action into the first screen. The action sits by the daily total and opens the existing review sheet. [Quick check and measurement](work-pages-design-options/brief.md#end-of-day-review-placement-22-november-2026)
 
 - **22 November 2026, full hours in Today's team.** The green Rostered hours box shows the original CSV start and finish on imported team plans so the chef can see the person's hours while assigning shifts and sections. See [Roster import](roster-import-options/brief.md#full-roster-times-in-the-planner-22-nov-2026).
+- **22 November 2026, more room for Today's team.** The head chef approved the matched app comparisons for build. Date and tools share a row when there is room. A phone gives up the idle Save dock while keeping the saved status in the heading and showing the dock for edits, warnings and save feedback. [Planner implementation](team-page-options/implementation.md#compact-planner-controls-22-november-2026)
 
 - **22 November 2026, jump to delivery records.** Put one jump in the phone's Delivery received heading. It leads to the existing receipt scope and keeps the form. [Council quick check](delivery-received.md#delivery-records-jump-22-nov-2026)
 

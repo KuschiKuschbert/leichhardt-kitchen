@@ -54,12 +54,14 @@ async function pause(p) {
     await L.settle(p, 150);
     const idle = await button(p);
     ok(idle.text === 'Save ' + label, day + ': Save names the full selected date (' + idle.text + ')');
-    ok(idle.fits && idle.page <= idle.viewport && idle.rect.width >= 44 && idle.rect.height >= 44,
-      day + ': the full date fits its 44 px target and the 320 px page at largest text (' + JSON.stringify(idle) + ')');
+    ok(idle.disabled && idle.rect.height === 0 && idle.page <= idle.viewport &&
+      /Saved/.test(await L.txt(p, '.tm-draftstate')), day + ': the idle dock clears the roster and the header says Saved');
 
     await L.pick(p, 'select[data-k="tm-sec:sam:lunch"]', 'grill');
     await L.waitFor(p, () => !document.querySelector('[data-p="tm-save"]').disabled, null, 4000);
     const dirty = await button(p);
+    ok(dirty.text === 'Save ' + label && dirty.fits && dirty.page <= dirty.viewport && dirty.rect.width >= 44 && dirty.rect.height >= 44,
+      day + ': the enabled dated Save fits its 44 px target and the 320 px page at largest text (' + JSON.stringify(dirty) + ')');
     await pause(p);
     await p.evaluate(() => { window.__fake.mode = 'hold'; });
     await L.tap(p, '[data-p="tm-save"]');
