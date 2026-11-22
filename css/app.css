@@ -5484,6 +5484,12 @@ html.tm-open, html.tm-open body { overflow: hidden; }
    area but takes less of the row, the Start here number sits in the margin as drawn, and the section headings are shorter.
    The list header keeps its height (Set today's team, a person's day). Large text and under 360 px keep their layout. */
 @media (min-width: 360px) and (max-width: 479px) {
+  /* Leave more room between the live bands and Add for today's Prep lines. */
+  #prep-root.is-book:has(> .nb-wrap:not(.nb-later) .nb-left .wk-dock) { row-gap: .5rem; }
+  #prep-root.is-book:has(> .nb-wrap:not(.nb-later) .nb-left .wk-dock) > .ps-viewbar { margin-bottom: 0; }
+  #prep-root.is-book:has(> .nb-wrap:not(.nb-later) .nb-left .wk-dock) > .nb-wrap { row-gap: .375rem; }
+  #prep-root.is-book > .nb-wrap:not(.nb-later) .nb-left .nb-ph:has(.wk-dock) { padding-block: .375rem; }
+
   html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-row { grid-template-columns: 34px minmax(0, 1fr) auto; column-gap: 4px; padding-top: 3px; padding-bottom: 3px; min-height: 44px; }
   html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-box { margin-left: -8px; }
   html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-t { font-size: 1.3rem; line-height: 1.02; }

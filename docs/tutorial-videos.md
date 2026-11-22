@@ -171,10 +171,12 @@ The head chef asked for the videos in Guides: the ones staff use for everyone, c
 
 **Adding the links (the head chef)**
 1. Upload each MP4 to YouTube as **Unlisted** (not Private: a private video does not play for the team). Unlisted videos do not show in YouTube search; anyone with the link can watch.
-2. Admin, Kitchen, Guides, **Video tutorial links** jumps straight to the editor. **Change the video links** on a video guide opens the same editor. Each video has one row with Computer (wide) and Phone (tall). Paste the link from YouTube's Share button. youtu.be, watch, shorts and embed links all work.
+2. Admin, Kitchen, Guides, **Video tutorial links** jumps straight to the editor. **Change the video links** on a video guide focuses that video's row after the saved links load. If the read fails, it focuses the editor's heading with the existing retry underneath. Each video has one row with Computer (wide) and Phone (tall). Paste the link from YouTube's Share button. youtu.be, watch, shorts and embed links all work.
 3. **Go to Save video links** jumps to the end of the form. A box that is not a YouTube link is marked, and Save names it.
 
 **Quick check, 22 November 2026.** Build smaller. From Manage Guides, one tap reaches the editor, and one tap from its heading reaches Save. The shortcuts use the usual admin scroll position and move keyboard focus to the destination. All 42 fields stay in the same form, and saved links still use the staff and chefs records.
+
+**Named video links, 23 November 2026.** The space audit council kept batch editing on one form. Linear favours sending the guide's existing action to its own fields, and Headspace favours focusing the title that names the destination. With synthetic links, opening Admin: Reports skipped about 3,500 px on a 390 px phone and put its first link field at 343 px. The same one tap reached the field on desktop. Both captures kept all 42 fields. The browser check also exercises the failed read and retry.
 
 **How it is kept**
 - `kitchens/<PIN>/tutorials/staff` and `tutorials/chefs`, each `{ links: { <video>: { w, t } }, at, by }`: w the wide video's id, t the tall one's. Only the 11-character YouTube id is kept, never the link as typed, and the book plays only an id.
