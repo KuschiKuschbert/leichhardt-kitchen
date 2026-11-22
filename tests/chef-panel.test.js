@@ -97,6 +97,8 @@ async function visit(b, label, options, fn) {
     await L.waitFor(p, k => (__fake.dump()[k].people || []).some(x => x.name === 'Synthetic Cy'), CFG);
     const s = await store(p), fields = await p.evaluate(k => [].concat(...__fake.writes).filter(x => x.path === k).map(x => Object.keys(x.data).sort().join(',')), CFG);
     ok(s[CFG].headId === 'ann' && s[CFG].sousIds.join() === 'sam,ann' && s[CFG].fnIds.length === 0 && fields.length === 1 && fields[0] === 'by,people,pinOpen,staffIds,updated,updatedBy', 'Manage staff keeps canonical authority lists and the existing limited save payload');
+    // The stand-in exposes the new config before the write is acknowledged. Navigation waits for Save to settle.
+    await L.waitFor(p, () => !!document.querySelector('[data-p="a-save"][aria-busy="false"]'));
     await tab(p, 'minutes');
     ok(!(await p.$('[data-p="mn-new"], [data-p="mn-edit"], [data-p="mn-remove"], [data-p="mn-save"], [data-p="mn-publish"]')), 'Minutes register does not expose owner editing');
     ok(!(await ownerReads(p)).length && !(await refused(p)).length, 'embedded pages make no owner-only queries or refused requests');
