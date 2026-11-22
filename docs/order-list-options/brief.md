@@ -159,3 +159,12 @@ Local implementation verification is complete. Hosted CI and the normal release 
 ## Rollback
 
 Revert the Orders renderer and scoped styles through a new branch and PR. Keep unrelated main changes, existing access rules, cut-off calculations, saved-shell recovery and supplier history. No data migration or saved-field rollback is needed. The isolated review files can be removed independently without application or data effects.
+
+
+## Orders cut-offs beside the list, 22 November 2026
+
+The head chef chose the combined layout after a new review of space and task continuity. **Verdict: Build smaller (5 of 5)**. The council compared in-place disclosure, a wide rail with phone sheet, and a separate focused view (22, 14 and 15 of 30). The Combined preview used the familiar in-place fold on smaller screens and the rail on desktop. No service overlay is needed for an optional supplier lookup.
+
+Below 1000 px, View opens with one supplier. Other cut-offs opens the existing remaining deadlines, tomorrow heads-up rows and notification settings. This adds one tap for those secondary details. The selected occurrence stays stable while its fold is open so a confirmation or Undo does not move its action. From 1000 px the existing fold shows all details in a rail beside the requests. The same rendered controls serve both widths. Requests, Add request, Delivery received, the date picker, the original tickboxes and named Undo retain their paths. Use the existing listener, permission checks and reminder writes. Order placed still records only the supplier confirmation.
+
+Linear’s stable frame, Flighty’s named deadlines and Todoist’s progressive disclosure guided the decision. Steel still identifies the work notebook and the quiet paper still holds its details. Pending and acknowledged states keep their existing words and timing. The click tests exercise an acknowledged and held reminder, duplicate names, tomorrow-only suppliers, visibility and focus after resizing, and 320 px Extra large text. See the pull request for the matched source captures and measurements.

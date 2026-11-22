@@ -178,7 +178,7 @@
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, recipeAll: false, tab: '',
     authed: false, tok: '', pinStep: '', pinOff: false, pinData: null, pf1: '', pf2: '', pinMsg: '',
     sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: startTab(), ordDate: dayNow(), ordLines: [], ordState: 'idle', otext: '', oqty: '', oneed: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
-    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wLog: false, wRv: false, wAgain: {}, xLog: false, pLog: false, oLog: false, oDoneOpen: false, oCutOpen: false, startN: {}, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
+    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wLog: false, wRv: false, wAgain: {}, xLog: false, pLog: false, oLog: false, oDoneOpen: false, oCutOpen: false, oCutMore: false, oCutLead: '', startN: {}, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
     mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, minOpen: false, mErr: '',
     guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
     adminsFor: '', adminsOff: null, adminsWhy: '', level: '', stats: null, statsRange: 30, week: null, weekAt: 0, weekBusy: false,
@@ -8367,10 +8367,10 @@ if (list.length) sg('oreg', 's');
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Order list</h2><span class="nb-date">' + esc(longDate(S.ordDate)) + '</span></div>' +
       (S.ordState !== 'offline' && (S.ordState === 'ok' || live.length) ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') +
       (add ? dockBtn('nb-addline', 'o-write', 'Add request') : '') + '</header>' +
-      (onToday ? cutOrdHTML() : '') +
+      (onToday ? cutOrdHTML() : '') + '<div class="o-work">' +
       (can('add') || S.ordDate !== today ? '' : '<p class="hint o-ro">You can read the order list but not write in it.</p>') +
       closeoutHTML(null, S.ordDate) +
-      '<div class="o-cols"><div class="nb-body o-main">' + body + removedBox + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div></section>' +
+      '<div class="o-cols"><div class="nb-body o-main">' + body + removedBox + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div></div></section>' +
       // the add form as a sheet (3 Nov 2026), like Add a line on the prep list
       (add && S.oLog ? '<div class="sheet-bg" data-p="o-log-close"></div><div class="sheet o-sheet" role="dialog" aria-modal="true" aria-labelledby="o-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="o-log-h">Add request</h3>' + add +
         (canBrowse() ? '' : '<p class="hint nb-who">Only the head chef or a sous chef ticks a line as ordered or removes it. Wrote the wrong thing? Undo it straight away, or ask them.</p>') + '<button type="button" class="btn sheet-x" data-p="o-log-close">Close</button></div>' : '');
@@ -12824,7 +12824,7 @@ if (list.length) sg('oreg', 's');
     if (named) {
       var pending = !!cutWrites[t.key], known = cutState === 'ok';
       st = pending ? 'Not sent' : d ? st : !known ? 'Confirmation not checked' : past ? 'Closed, not confirmed' : ahead ? 'For tomorrow' : st;
-      return '<li class="cut-o o-cut-row ' + (pending ? 'is-pending' : cls) + '"><a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a>' +
+      return '<li class="cut-o o-cut-row ' + (pending ? 'is-pending' : cls) + '" data-cut-row="' + esc(c.key) + '"><a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a>' +
         '<span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span>' +
         '<button type="button" class="cut-box o-cut-action" data-p="cut-tick" data-id="' + esc(t.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Undo order placed for ' : 'Order placed for ') + c.s.name + (roll ? ', ' + cutDel(roll) : c.at >= 1440 ? ', for tomorrow' : '')) + '"' + (cutCanTick() ? '' : ' disabled') + '>' + (d ? 'Undo' : 'Order placed' + (ahead ? ' for tomorrow' : '')) + '</button></li>';
     }
@@ -12856,7 +12856,25 @@ if (list.length) sg('oreg', 's');
   function cutOrdBodyHTML() {
     var warning = cutState === 'error' ? '<p class="p-err" role="status">Could not check supplier confirmations. Known cut-offs are shown below.</p>' :
       cutState === 'loading' ? '<p class="hint" role="status">Checking supplier confirmations...</p>' : '';
-    return warning + '<p class="hint cut-how">Confirm only after placing the order in your ordering system, by phone or email. Requests stay on the list until you tick them.</p>' + cutRowsHTML(false, true) + pushHTML();
+    var offline = cutState === 'offline' ? '<p class="hint cut-note" role="status">' + CUT_OFF + '</p>' : '';
+    var how = '<p class="hint cut-how">Confirm only after placing the order in your ordering system, by phone or email. Requests stay on the list until you tick them.</p>';
+    var today = cutRowsNow(), ahead = cutAhead(), rows = today.concat(ahead).sort(function (a, b) { return a.at - b.at; }), pushes = pushHTML();
+    // Keep the named action in place while the fold is open, including when its confirmation changes the next deadline.
+    var lead = rows.find(function (c) { return c.key === S.oCutLead; }) || rows.find(function (c) { return !cutTickFor(c).d; }) || rows[0];
+    if (!lead) return warning + how + offline + '<p class="hint">No cut-offs today.</p>' + pushes;
+    if (S.oCutOpen) S.oCutLead = lead.key;
+    function list(xs, isAhead) {
+      return xs.length ? '<ul class="' + (isAhead ? 'cut-hl' : 'cut-tl') + '">' + xs.map(function (c) { return cutRowHTML(c, false, true, ahead.indexOf(c) >= 0); }).join('') + '</ul>' : '';
+    }
+    var otherToday = today.filter(function (c) { return c !== lead; });
+    var otherAhead = ahead.filter(function (c) { return c !== lead; });
+    var count = otherToday.length + otherAhead.length;
+    var label = count ? 'Other cut-offs (' + count + ')' + (pushes ? ' and reminders' : '') : 'Reminder settings';
+    var more = count || pushes ? '<button type="button" class="o-cut-more" data-p="o-cut-more" aria-controls="o-cut-rest" aria-expanded="' + S.oCutMore + '">' +
+      esc(label) + '</button><div class="o-cut-rest" id="o-cut-rest">' + list(otherToday) +
+      (otherAhead.length ? '<h4 class="cut-ah">Tomorrow, heads-up</h4>' + list(otherAhead, true) : '') + pushes + '</div>' : '';
+    var leadAhead = ahead.indexOf(lead) >= 0;
+    return warning + how + (leadAhead ? '<h4 class="cut-ah">Tomorrow, heads-up</h4>' : '') + offline + list([lead], leadAhead) + more;
   }
   function cutOrdHTML() {
     if (!cutHas()) return '';
@@ -12871,9 +12889,12 @@ if (list.length) sg('oreg', 's');
     if (summary.lkH !== sh) { summary.innerHTML = sh; summary.lkH = sh; }
     if (body.lkH !== bh) {
       var active = document.activeElement, inside = active && body.contains(active);
+      var row = inside && active.closest('[data-cut-row]'), rowKey = row && row.getAttribute('data-cut-row');
       var sel = inside && active.hasAttribute('data-p') ? guestSel(active) : '', href = inside && active.getAttribute('href');
       body.innerHTML = bh; body.lkH = bh;
-      var back = sel ? body.querySelector(sel) : href ? Array.prototype.find.call(body.querySelectorAll('a[href]'), function (a) { return a.getAttribute('href') === href; }) : null;
+      var sameRow = rowKey && Array.prototype.find.call(body.querySelectorAll('[data-cut-row]'), function (li) { return li.getAttribute('data-cut-row') === rowKey; });
+      var back = sameRow && sel ? sameRow.querySelector('.o-cut-action') : sel ? body.querySelector(sel) :
+        href ? Array.prototype.find.call(body.querySelectorAll('a[href]'), function (a) { return a.getAttribute('href') === href; }) : null;
       if (back) back.focus({ preventScroll: true });
     }
   }
@@ -13449,7 +13470,19 @@ if (list.length) sg('oreg', 's');
     if (localReturn(a)) return;
     if (a.indexOf('lv-') === 0) { lvClick(a, el); return; }
     if (a.indexOf('dk-') === 0) { dkClick(a, el); return; }
-    if (a === 'o-cut-toggle') { e.preventDefault(); var fold = el.closest('details'); if (fold) { fold.open = !fold.open; S.oCutOpen = fold.open; } return; }
+    if (a === 'o-cut-toggle') {
+      e.preventDefault();
+      var fold = el.closest('details'); if (!fold) return;
+      S.oCutOpen = fold.open = !fold.open;
+      if (!fold.open) { S.oCutLead = ''; S.oCutMore = false; }
+      cutOrdPaint();
+      return;
+    }
+    if (a === 'o-cut-more') {
+      S.oCutMore = !S.oCutMore;
+      el.setAttribute('aria-expanded', String(S.oCutMore));
+      return;
+    }
     if (a === 'cut-tick') { var ck = el.getAttribute('data-id') || ''; if (el.getAttribute('aria-pressed') !== 'true') cutConfirm(ck); else cutOrdered(ck, false).catch(function (er) { failed(er); }); return; }
     if (a === 'cut-push-on') { pushOn(); return; }
     if (a === 'cut-push-off') { pushOff(); return; }
