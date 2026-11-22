@@ -110,6 +110,24 @@ const resetPin = id => '[data-p="a-reset-pin"][data-id="' + id + '"]';
   await L.waitFor(mobile, () => document.querySelectorAll('.pp-row').length === 12);
   const personSelector = row('person-10') + ' [data-p="a-person-open"]';
   const person = mobile.locator(personSelector);
+  await person.evaluate(e => {
+    e.scrollIntoView({ block: 'center' });
+    window.peopleNameBeforeRefresh = e;
+  });
+  await L.settle(mobile, 70);
+  const beforeRefresh = await person.evaluate(e => e.getBoundingClientRect().top);
+  await mobile.evaluate(k => {
+    const config = JSON.parse(JSON.stringify(window.__fake.dump()[k]));
+    config.people.find(p => p.id === 'sam').name = 'Sam B';
+    config.updated = Date.now();
+    window.__fake.write(k, config);
+  }, CFG);
+  await L.waitFor(mobile, () => !window.peopleNameBeforeRefresh.isConnected);
+  await L.settle(mobile, 150);
+  const afterRefresh = await person.evaluate(e => e.getBoundingClientRect().top);
+  ok(Math.abs(beforeRefresh - afterRefresh) <= 2,
+    'phone: a background roster refresh keeps the same visible row position (' + beforeRefresh + ' to ' + afterRefresh + ')');
+
   const openOnMobile = async () => {
     await person.evaluate((e, selector) => {
       e.scrollIntoView({ block: 'center' });
@@ -136,10 +154,11 @@ const resetPin = id => '[data-p="a-reset-pin"][data-id="' + id + '"]';
   await remove.check();
   await back.click();
   await L.settle(mobile, 150);
-  const afterY = await mobile.evaluate(() => scrollY);
+  const returnedPosition = await person.evaluate(e => ({ y: scrollY, top: e.getBoundingClientRect().top, focused: document.activeElement === e }));
   ok(!await mobileEditor.isVisible() && await search.inputValue() === 'Person' && await mobile.locator('.pp-row').count() === 12 &&
-    await mobile.locator(activeFilter).getAttribute('aria-pressed') === 'true' && before.y > 0 && Math.abs(before.y - afterY) <= 2 &&
-    await person.evaluate(e => e === document.activeElement), 'phone: Back restores the filtered roster, scroll position and focus (' + before.y + ' to ' + afterY + ')');
+    await mobile.locator(activeFilter).getAttribute('aria-pressed') === 'true' && before.y > 0 && returnedPosition.y > 0 &&
+    Math.abs(before.top - returnedPosition.top) <= 2 && returnedPosition.focused,
+    'phone: Back restores the filtered roster, visible name position and focus (' + before.top + ' to ' + returnedPosition.top + ')');
   ok(/Not saved: Remove on/.test(await txt(mobile, row('person-10') + ' .pp-st') || ''), 'phone: the roster shows the unsaved edit');
   const beforeResize = await openOnMobile();
   ok(await remove.isChecked() && !(await cfg(mobile)).people.find(x => x.id === 'person-10').del, 'phone: reopening keeps the permission draft pending Save');

@@ -798,6 +798,8 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
   .pp-editor-head .pp-back { display: inline-flex; align-items: center; min-height: 44px; }
 }
 @media (max-width: 999px) {
+  /* People restores its own place. The admin jump row briefly changes height during a roster redraw. */
+  #prep-root:has(.pp-room) { overflow-anchor: none; }
   .pp-room:has(.pp-editor) > :is(.label, .a-nohead, .pp-folds),
   .pp-workspace.has-editor > .lv,
   .p-admin.ad-admin:has(.pp-room .pp-editor) :is(.a-nav, .ad-heading, .ad-main > .a-tabs, .ad-main > .a-onpage, .a-pane > :not(.pp-room, .a-savebar)),

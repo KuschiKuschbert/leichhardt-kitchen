@@ -179,6 +179,8 @@ The simple roster applies Linear's one frame and Things 3's occasional details. 
 
 **Break-it checks.** The 390 px stand-in journey found a 71 px scroll shift after Back with a permission draft. Returning after widening the viewport to 600 px also moved the selected name in the roster. Back restores the name to its previous height after the layout settles. Crossing 1000 px switches the header Back action with the layout. The click test checks the return position, search, filter, focus and the permission draft through both layouts. Desktop clicks check the single selected editor, alignment and keyboard focus. Existing checks cover PIN confirmation, off-list people, deletion and Undo, and preserving another device's save while a draft is open.
 
+On a phone, a roster refresh can briefly change the height of the admin jump row. Chromium's automatic scroll anchoring then moved the list by 72 px. The phone People page leaves the position to the roster itself. A synthetic update from another device now checks that the selected row stays at the same height during that refresh.
+
 **Implemented app measurements.** Chromium with the Firebase stand-in and 15 synthetic people. Counted complete roster rows on the first screen from the top of the admin page, before opening an editor. The baseline was #781, the same People layout as branch base #782. The layouts also fit at 320, 999 and 1000 px without horizontal overflow.
 
 | Viewport | First row before / after | Complete rows before / after |
