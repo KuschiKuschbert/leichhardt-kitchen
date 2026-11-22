@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Orders cut-offs beside the requests, 22 November 2026 (chosen)
+
+The head chef chose the combined view. View opens one supplier on phone and tablet, with other cut-offs and reminder settings one tap away. It opens the same details in a laptop rail. Original request ticks and Add request stay in reach. [Decision and checks](order-list-options/brief.md#orders-cut-offs-beside-the-list-22-november-2026).
+
 ## Sunday sales suggestions in Supplier order, 22 November 2026 (chosen)
 
 The head chef chose A's inline amount and Use, B's visible current amount in a Keep or Replace step and C's calculation disclosure and focus on the draft field. Round 1 was Build smaller, four of five. All six round 2 reviewers ranked A first. One weekly CSV or XLSX and confirmed links feed the chef's manual draft. A single private weekly snapshot serves authorised chefs. [Design, preview measurements, data contract and pending checks](supplier-sales.md)
