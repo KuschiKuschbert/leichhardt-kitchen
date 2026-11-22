@@ -6289,7 +6289,9 @@ html:has(.tm-focus-page) {
 .rec-wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
 .rec-wrap.has-day .rec-month { display: none; }
 .rec-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
-.rec-acts { display: flex; flex-wrap: wrap; gap: .5rem; }
+.rec-month-nav, .rec-acts { display: flex; flex-wrap: wrap; gap: .5rem; }
+.rec-month-nav { align-items: center; }
+.rec-month-nav h4 { margin: 0; }
 .rec-days { list-style: none; margin: .3rem 0 0; padding: 0; }
 .rec-dayrow { display: grid; grid-template-columns: 4.2rem minmax(0, 1fr) 1rem; gap: .5rem; align-items: center; width: 100%; min-height: 56px; padding: .45rem .5rem; border: 0; border-bottom: 1px solid var(--line); background: none; text-align: left; font: 500 .875rem/1.35 var(--body); color: var(--ink); cursor: pointer; }
 .rec-dayrow .rec-d b { font: 700 1rem var(--display); }
