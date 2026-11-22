@@ -226,6 +226,8 @@ An invalid save moves keyboard focus to the field that needs correcting, with it
 
 Design A (3 Nov 2026, `docs/receiving-design-options/brief.md`) changed only the screen. The saved receipt is the same: a box that is not showing saves nothing (null), like an empty box before. A reading typed into a box that then hides stays in the form, and the page says it will not be saved. A frozen reading above 0 °C says "Reads as +18 °C. Tap − if it is below zero." Under today's list, **Not received yet today** names suppliers due today by the cut-offs with no receipt of that exact name. Functions-only logins cannot read the cut-offs, so they get the plain supplier box.
 
+On a phone, **Go to delivery records** moves focus to the existing receipt list. The form and any selected dates or supplier stay as entered. [Delivery records jump](docs/delivery-received.md#delivery-records-jump-22-nov-2026)
+
 `js/deliveries.js` loads only for `#/deliveries`. Today's page uses one live filtered query, removed on exit; admin history uses one date query on selection or Refresh. No delivery reads on normal startup and no persistent private cache. The database enforces login, today's staff access, input shape and immutable readings. The existing 400-day manual and 45-day nightly backup windows include receipts. PIN moves carry all receipts. See `docs/delivery-received.md` for the data contract and release evidence.
 
 ## Adding or changing a recipe
