@@ -2938,7 +2938,8 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fe-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem; }
 .fe-head h2 { margin: 0; font: 700 2rem var(--display); overflow-wrap: anywhere; }
 /* the status tag keeps its own height beside Print function: the row stretched it to 48 px from 768 px (audit, 15 Nov 2026) */
-.fe-head .btn-row { align-items: center; }
+.fe-head .btn-row { align-items: center; min-width: 0; }
+.fe-head .btn-row .fn-tag { white-space: normal; overflow-wrap: anywhere; }
 /* The chef panel's Kitchen tools (the mix chosen 15 Nov 2026, docs/chef-kitchen-options/brief.md): one row per tool, the
    whole row the link, its name, what this role can do there and Open in words. One layout at every width, the block
    capped so the rows do not stop short of it on a laptop. */

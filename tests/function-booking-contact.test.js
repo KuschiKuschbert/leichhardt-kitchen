@@ -141,6 +141,9 @@ async function twoManagers(browser, changeEmail, legacy = false) {
       await page.getByRole('button', { name: 'Edit contact' }).waitFor();
       assert.equal(await page.locator('.fe-sum').textContent(), contact.cname);
       assert.equal(await L.overflow(page), false);
+      // The confirmed label is wider with some fallback fonts while the app font loads.
+      await page.locator('.fe-head .fn-tag').evaluate(tag => { tag.style.fontFamily = 'monospace'; });
+      assert.equal(await L.overflow(page), false, 'the booking header fits with a wide fallback font');
       assert(await page.locator('.fn-tw:has(> .fe-grid)').evaluate(node => node.scrollWidth > node.clientWidth));
       await fields(page);
       assert.equal(await page.locator('#fe-email').inputValue(), contact.email);

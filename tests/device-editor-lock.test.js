@@ -23,7 +23,10 @@ async function prepare(b, c, boundary) {
     await L.dwShow(p, '[data-dw="dup"]'); await p.click('[data-dw="dup"]');
   } else {
     await L.reveal(p, c.field); await p.fill(c.field, c.value);
-    if (c.name === 'function') await p.fill('[data-ff="phone"]', '0400 000 000');
+    if (c.name === 'function') {
+      await p.getByRole('button', { name: 'Add contact', exact: true }).click();
+      await p.fill('[data-ff="phone"]', '0400 000 000');
+    }
   }
   await L.settle(p, 500);
   return p;
@@ -98,6 +101,7 @@ async function lock(p, boundary) {
   await unlock(p, 'sam', '1111');
   await p.evaluate(() => { location.hash = '#/functions/new'; });
   await L.waitFor(p, () => !!document.querySelector('#fe-name'));
+  await p.getByRole('button', { name: 'Add contact', exact: true }).click();
   ok(await p.inputValue('#fe-name') === '' && await p.inputValue('[data-ff="phone"]') === '' && !await p.evaluate(() => LK_FE.dirty()), 'explicit hand-over gives the next permitted manager a clean function and contact form');
   await p.context().close(); await b.close(); L.report(R);
 })().catch(e => { console.error(e); console.log(R.join('\n')); process.exit(1); });
