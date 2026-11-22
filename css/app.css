@@ -4060,6 +4060,9 @@ button.nb-prog { min-height: 44px; padding: 0; border: 0; background: none; curs
 @media (max-width: 599px) { .o-nav .o-dayctl { flex: 1 1 100%; } }
 .o-nav .o-deliv { display: inline-flex; align-items: center; color: var(--ink); text-decoration: none; }
 .o-ro { padding: 0 12px; }
+.o-page [data-p="o-done-jump"] { min-width: 44px; min-height: 44px; padding: 0; border: 0; background: none; color: var(--accent-ink); text-decoration: underline; cursor: pointer; }
+.tr-list-head { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
+.tr-list-head .nb-link { min-width: 44px; min-height: 44px; text-align: end; }
 .o-done summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; list-style: none; }
 .o-done summary::-webkit-details-marker { display: none; }
 .o-done summary::after { content: ''; width: 8px; height: 8px; margin-left: 10px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); }

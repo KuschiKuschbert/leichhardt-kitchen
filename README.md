@@ -210,6 +210,8 @@ This guide is bundled with the book, searchable and readable without extra Fires
   - **About and help:** Version (Up to date or Update ready, when this copy was published, and Check for an update: the same header-only look as the automatic one; since 13 Nov 2026 the button says Update now once a new version is known, and a check that finds one starts the update, the strip saying what it does), Open on another phone (computers and wide tablets only, 900 px and wider: the QR code `qr.svg`, Print the A4 sign `qr-sign.pdf`, Download the QR code `qr.png`), the recipe count, and where settings are saved.
   - Click tests: `tests/settings.test.js`; other tests open a row first with `L.setRow()`.
 
+Orders' progress count opens Ordered today when the fold has entries. Transfers has a Done today jump beside Still out. The jumps take you straight to the existing finished lists. [Work pages](docs/work-pages-design-options/brief.md#quick-council-check-for-the-finished-lists-22-november-2026)
+
 ## Supplier order and catalogue (24 Oct 2026)
 
 **Chef hat > Supplier order** (`#/suppliers`) is for the head chef, sous chefs and the verified admin; staff cannot open it or read its data. The catalogue, private import, order sheet and cut-offs are described in full in [docs/supplier-order.md](docs/supplier-order.md); the data contract is [docs/supplier-workspace.md](docs/supplier-workspace.md).

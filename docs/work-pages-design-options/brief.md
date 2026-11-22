@@ -85,3 +85,12 @@ With the same synthetic personal-admin fixture, actual project fonts and 390 x 8
 The updated wall-board test failed three personal-device checks out of 23 against the old app; both wall-board and new account tests pass with the change. The role matrix covers personal admin, head, sous, staff, lead and view-only accounts, plus signed-out, Functions-only, expired-session and Google-without-head-PIN exclusions. Personal tick/On it attribution, shared pickers, reload/Back, past-day exclusion and read reuse pass. Existing On it, read-budget and design-pattern checks pass locally. CI and release verification are recorded in the pull request.
 
 Synthetic screenshots: [personal account's Wall board entry](wall-accounts-entry-1280.png), [the board open on that account](wall-accounts-board-1280.png).
+
+
+## Quick council check for the finished lists (22 November 2026)
+
+Verdict: Build. Use the Prep notebook's progress jump to reach finished work without scrolling through active requests. Orders makes the existing progress count a button once the original Ordered today fold has lines. Transfers puts a named jump beside Still out. It goes to the existing Done today section. A tap opens Orders' current fold if needed and puts focus on its summary. The Transfers jump puts focus on the Done today heading.
+
+The existing control names and placement follow Linear's familiar frame. Things 3's separation of work still to do from finished work stays. Headspace's plain labels identify the destination. The jumps use the notebook's existing surfaces and ink or action colour. They show no completion or delivery result and add no reads, writes or overlays. The kitchen can still add, tick and mark a return as before. The end-of-day Wastage review stays in its chosen footer.
+
+Checked in the app fixture: marking an order stays on its original line through the ten-minute Undo window. The count becomes a jump only when the existing fold has entries. A normal jump leaves the posted and saved records alone, while the focus moves to a real heading or summary. Physical devices and assistive technology are outside the browser check.
