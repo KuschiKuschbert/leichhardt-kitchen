@@ -42,9 +42,15 @@ async function layout(p, stage, withSuggestion = false) {
         const rect = element.getBoundingClientRect();
         return rect.height > 0 && rect.top >= 0 && rect.bottom <= bottom;
       };
+      const toolbar = document.querySelector('.su-toolbar');
+      const find = toolbar.querySelector('[data-sf="q"]').getBoundingClientRect();
+      const sales = toolbar.querySelector('[data-su="sales-links"]')?.getBoundingClientRect();
       return {
         rows: [...document.querySelectorAll('.su-row')].filter(fits).length,
-        inputs: [...document.querySelectorAll('[data-sf="qty"]')].filter(fits).length
+        inputs: [...document.querySelectorAll('[data-sf="qty"]')].filter(fits).length,
+        headerHeight: document.querySelector('.su-head').getBoundingClientRect().height,
+        toolbarHeight: toolbar.getBoundingClientRect().height,
+        linksBesideSearch: !!sales && sales.right <= innerWidth && sales.top < find.bottom && sales.bottom > find.top
       };
     });
     const overflow = await L.overflow(p);
@@ -125,6 +131,8 @@ async function run(browser) {
     const first = before[width], next = after[width];
     console.log(width + ' px full-app counts before and after linking: ' + first.rows + ' → ' + next.rows + ' complete rows, ' + first.inputs + ' → ' + next.inputs + ' visible To order fields');
   }
+  ok(after[390].linksBesideSearch && Math.abs(after[390].headerHeight - before[390].headerHeight) <= 1 &&
+    Math.abs(after[390].toolbarHeight - before[390].toolbarHeight) <= 1, 'phone sales links share the item search row without adding height');
   ok(after[390].inputs >= Math.min(before[390].inputs, 1), 'weekly sales keep the first visible To order field in the phone workspace');
   await p.setViewportSize({ width: 390, height: 844 });
   const weekCaption = p.locator(onItem('calc') + ' .su-sales-week');

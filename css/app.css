@@ -3340,7 +3340,7 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 /* Weekly sales on Supplier order. Use the existing sheet and ruled rows. */
 .su-sales { margin: 0 0 1rem; padding-bottom: 0.45rem; border-bottom: 1px solid var(--line); }
 .su-sales-link-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.2rem 0.7rem; }
-.su-head [data-su^="sales-"], .su-sales-row .btn { min-height: 44px; }
+.su-head [data-su="sales-import"], .su-toolbar-sales [data-su="sales-links"], .su-sales-row .btn { min-height: 44px; }
 .su-sales-form, .su-sales-links { padding: 0.7rem 0 0.9rem; overflow-wrap: anywhere; }
 .su-sales-form h3 { margin: 0 0 0.45rem; font: 700 1.35rem var(--display); }
 .su-sales-form p { margin: 0.4rem 0; }
@@ -3359,6 +3359,9 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-sales-compact { display: none; }
 .su-sales-replace .btn { height: auto; white-space: normal; text-align: left; }
 @media (max-width: 719px) {
+  /* Keep links on the Find an item row so opening a report does not add a header line. */
+  .su-toolbar-sales { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) auto; align-items: center; }
+  .su-toolbar-sales > [data-su="sales-links"] { grid-column: auto; align-self: center; max-width: 42vw; min-width: 0; padding-inline: 0.65rem; white-space: normal; }
   .su-sales-row { grid-column: 1 / -1; }
   .su-head .su-sales-compact { display: inline; }
   .su-head .su-sales-wide { display: none; }
