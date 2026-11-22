@@ -1828,6 +1828,15 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .g-pgb img { width: 100%; height: auto; }
 .g-ph { display: flex; align-items: center; justify-content: center; width: 100%; padding: 1rem; border: 1.5px dashed var(--edge); border-radius: 6px; background: #fff; color: var(--muted); text-align: center; }
 .g-pg figcaption { font-size: 0.8125rem; color: var(--muted); text-align: center; }
+/* Both page buttons are in reach when a guide has just two sheets. Keep print's original sequence. */
+@media screen {
+  .g-pages-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; align-items: start; }
+  .g-pages-pair > :not(.g-pg) { grid-column: 1 / -1; }
+  .g-pages-pair .g-pg { min-width: 0; }
+  .g-pages-pair .g-pgb { min-height: 44px; }
+  .g-pages-pair .g-pgb img { display: block; max-height: min(60vw, 310px); object-fit: contain; }
+}
+
 .g-rchips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .g-rchip { display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.9rem; border: 1.5px solid var(--ink); border-radius: 22px; background: var(--paper); color: var(--ink); font-weight: 600; text-decoration: none; }
 .g-rchip:hover { border-color: var(--accent-ink); }
