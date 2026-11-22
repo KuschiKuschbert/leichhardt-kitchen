@@ -178,7 +178,7 @@
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, recipeAll: false, tab: '',
     authed: false, tok: '', pinStep: '', pinOff: false, pinData: null, pf1: '', pf2: '', pinMsg: '',
     sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: startTab(), ordDate: dayNow(), ordLines: [], ordState: 'idle', otext: '', oqty: '', oneed: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
-    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wLog: false, wRv: false, wAgain: {}, xLog: false, pLog: false, oLog: false, oDoneOpen: false, oCutOpen: false, startN: {}, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
+    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wLog: false, wRv: false, wAgain: {}, xLog: false, pLog: false, oLog: false, oDoneOpen: false, oCutOpen: false, oCutMore: false, oCutLead: '', startN: {}, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
     mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, minOpen: false, mErr: '',
     guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
     adminsFor: '', adminsOff: null, adminsWhy: '', level: '', stats: null, statsRange: 30, week: null, weekAt: 0, weekBusy: false,
@@ -713,6 +713,9 @@
       var k = listSnap(snap, S.itemsState, itemsLast), coldTurn = cacheOnly(snap) !== itemsCold;
       itemsCold = cacheOnly(snap);
       S.items = snapLines(snap, '');
+      if (!itemsCold && S.date === prepTickFaultDay && prepTickFaults.size) S.items.forEach(function (x) {
+        if ((x.done || x.deleted) && !x._unsent && prepTickFaults.get(x.id) === 'failed') prepTickFaults.delete(x.id);
+      });
       if (pt && (pt.busy || pt.uncertain) && ptContext(pt)) S.items = S.items.map(function (x) {
         if (x.id !== pt.id) return x;
         pt.latest = Object.assign({}, x);pt.latestServer = !cacheOnly(snap) && !x._unsent;
@@ -1692,7 +1695,7 @@
     S.lockHasDraft = dirtyForUpdate(); S.lockIdentity = stableIdentity();
     if (pt && pt.busy) pt.lockRetained = S.lockIdentity;
     S.lockRecorder = S.who || ''; S.privacyLocked = true; S.lockReason = reason; S.authed = false; S.level = ''; S.grantExp = 0; accessEpoch++; digestMem = null; S.tmrPlan = null;
-    stopLive(); clearPrivateCache(); ptClose(true, true); ksClose(); noteClose('shut'); lmClose();
+    prepTickFaults.clear(); stopLive(); clearPrivateCache(); ptClose(true, true); ksClose(); noteClose('shut'); lmClose();
     chefHistoryClear(); fdLast = []; fdClose(true, true); ajClose(true, true);
     if (window.LK_UX) window.LK_UX.close();
     if (shared()) { if (fb && S.uid) fb.fs.deleteDoc(sessRef()).catch(function () {}); dropGoogle().catch(function () {}); }
@@ -1730,7 +1733,7 @@
     cleaningAttempt = null; cleaningActionAttempts = Object.create(null);
     S.privacyLocked = false; S.unlocking = false; S.lockRecorder = ''; S.lockHasDraft = false; S.lockIdentity = ''; S.workNotice = ''; S.grantExp = 0;
     S.ctab = 'dashboard'; S.cgLast = {}; S.cDate = ''; chefHistoryClear(); fdLast = []; fdClose(true, true);
-    accessEpoch++; digestMem = null;   // the day digests read for the person before
+    prepTickFaults.clear(); accessEpoch++; digestMem = null;   // the day digests read for the person before
     stopLive(); if (coolingController) coolingController.stop(); clearPrivateCache();
     S.text = S.qty = S.otext = S.oqty = ''; S.wf = { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }; S.xf = xBlank();
     if (mlf) mlf.text = '';
@@ -2804,6 +2807,8 @@
     toast(S.date !== date ? 'Nothing changed. ' + nm + ' is on ' + (/^(Today|Yesterday|Tomorrow)$/.test(d) ? d.toLowerCase() : d) + '\'s list.' : 'Nothing changed. ' + nm + ' has changed since.');
     return false;
   }
+  // Keep a failed personal tick on its own line for this session and kitchen day.
+  var prepTickFaultDay = '', prepTickFaults = new Map();
   function tickNow(date, id, want) {
     var it = S.items.filter(function (x) { return x.id === id; })[0], p = me();
     if (S.date !== date) it = null;   // another day's list is on screen: its lines are not this day's
@@ -2811,18 +2816,50 @@
     if (!it || !can('tick')) return false;
     if (typeof want === 'boolean' && !!it.done === want) return false;
     if (!p) { toast('Choose your name before ticking prep.');return false; }
-    var done = !it.done;
+    var todayPrep = S.name === 'prep' && !shared() && date === dayNow(), epoch = accessEpoch;
+    if (todayPrep && prepTickFaultDay !== date) {
+      prepTickFaults.clear(); prepTickFaultDay = date;
+    }
+    var fault = todayPrep && prepTickFaults.get(id);
+    if (fault === 'retrying') return false;
+    var done = !it.done, retry = done && fault === 'failed';
     if (!done && !canUntick(it)) { toast('Ticked lines stay ticked. Ask the head chef or sous chef to undo it.'); return false; }
     // the tick keeps the On it stamp (10 Nov 2026): doneAt less onAt is how long the job took (onItHTML())
     var at = done ? now() : 0, w = p;
     // the tick's own slip (its Undo): once the server has the tick it may gain the section's sentence (secSay())
     var act = done ? { label: 'Undo', fn: function () { return tick(date, id, false) || undoMiss(date, it.text); } } : null;
-    supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: at, preparedBy: done ? w.name : '', preparedById: done ? w.id : '', preparedAt: at }).then(function () { markPast('p', date); if (done) secSay(date, id, at, p.id, act); }, failed);
+    if (retry) prepTickFaults.set(id, 'retrying');
+    supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: at, preparedBy: done ? w.name : '', preparedById: done ? w.id : '', preparedAt: at }).then(function () {
+      markPast('p', date);
+      if (epoch !== accessEpoch) return;
+      if (retry && prepTickFaultDay === date) {
+        prepTickFaults.delete(id);
+        if (S.name === 'prep' && S.date === date) toast('Ticked ' + slipName(it.text), act);
+      }
+      if (done) secSay(date, id, at, p.id, act);
+    }, function (error) {
+      if (epoch !== accessEpoch) return;
+      if (!todayPrep || !done || prepTickFaultDay !== date || date !== dayNow() || !error || error.code !== 'unavailable' || error.terminalWork) {
+        if (retry && prepTickFaultDay === date) prepTickFaults.delete(id);
+        failed(error);
+        return;
+      }
+      prepTickFaults.set(id, 'failed');
+      if (S.name === 'prep' && S.date === date) liveSay('Not saved: ' + slipName(it.text) + '. Tap the box to retry.');
+      // Discard only this write's Undo. A different line may already have its own success slip.
+      if (S.toastAct === act) toastAway('new');
+      else if (S.toastOld && S.toastOld.act === act) toastAway('old');
+      else draw();
+    });
     // the stamp's Undo means nothing once the line is ticked: the Ticked toast takes its place, not a chip above it
     if (done && S.toastAct && S.toastAct.stampFor === id) { S.toast = ''; S.toastAct = null; }
     finNote(date, id, done);
-    if (done) { bump({ ticked: 1 }); toast('Ticked ' + slipName(it.text), act); setTimeout(draw, LINGER + 100); }
-    else toast('Unticked ' + slipName(it.text) + '. It is open again.');
+    if (done) {
+      bump({ ticked: 1 });
+      if (retry) { liveSay('Retrying: ' + slipName(it.text) + '. Waiting to send.'); draw(); }
+      else toast('Ticked ' + slipName(it.text), act);
+      setTimeout(draw, LINGER + 100);
+    } else toast('Unticked ' + slipName(it.text) + '. It is open again.');
     if (!done && it.doneById && fb) sset(docRef('activity', it.doneById), { name: it.doneBy || '', ticked: fb.fs.increment(-1) }, true).catch(function () {});
     return true;
   }
@@ -4921,7 +4958,7 @@
     var s = lvState(c), key = esc(c.key), bar = '';
     {
       var fl = (c.filters || []).map(function (f) { return { f: f, n: f[2] ? c.items.filter(f[2]).length : c.items.length }; }).filter(function (x, i) { return i === 0 || x.n > 0 || x.f[0] === s.f; });
-      bar = '<div class="lv-tools">' + (c.heading ? '<h3 class="a-ch-h">' + esc(c.heading) + '</h3>' : '') +
+      bar = '<div class="lv-tools">' + (c.heading ? '<h3 class="a-ch-h">' + esc(c.heading) + '</h3>' : '') + (c.leadingTool || '') +
         '<div class="lv-qw"><label class="visually-hidden" for="lv-q-' + key + '">Search</label>' + findPill('<input id="lv-q-' + key + '" type="search" class="search lv-q" data-k="lv-q:' + key + '" placeholder="' + esc(c.ph || 'Search') + '" value="' + esc(s.q) + '" autocomplete="off" enterkeyhint="search">') + '</div>' +
         (c.sorts && c.sorts.length > 1 ? '<label class="a-f lv-sort"><span>Sort</span><select data-k="lv-s:' + key + '" aria-label="Sort">' + c.sorts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === s.sort ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>' : '') + (c.tool ? '<div class="lv-tool">' + c.tool + '</div>' : '') + '</div>' +
         (fl.length > 1 ? '<div class="chips lv-chips scroll" role="group" aria-label="Filter">' + fl.map(function (x) { return '<button type="button" class="chip" data-p="lv-f" data-lv="' + key + '" data-v="' + esc(x.f[0]) + '" aria-pressed="' + (x.f[0] === s.f) + '">' + esc(x.f[1]) + ' <span class="lv-n">' + x.n + '</span></button>'; }).join('') + '</div>' : '');
@@ -5322,7 +5359,11 @@
     var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '" aria-label="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">' + AI_BOOK + '<span class="nb-aw">Recipe</span></a>' : '';
     var keep = !readonly && lineMenuOk(x, date);
     var del = delOk ? '<button type="button" class="nb-x' + (x.deleted ? '' : ' lk-del') + '" data-p="' + (x.deleted ? 'restore' : 'del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-label="' + (x.deleted ? 'Put back ' : 'Remove ') + esc(x.text) + '">' + (x.deleted ? 'Put back' : 'Remove') + '</button>' : '';
-    var boxSay = x.done ? 'Untick ' + x.text : 'Tick ' + x.text + (on ? ', ' + on.name + ' on it' : '');
+    var tickFault = tickOk && !readonly && !shared() && S.name === 'prep' && date === dayNow() && date === prepTickFaultDay && prepTickFaults.get(x.id);
+    var tickStatusId = tickFault ? 'nb-tick-status-' + esc(x.id) : '';
+    var tickStatus = tickFault ? '<span id="' + tickStatusId + '" class="nb-tick-status' + (tickFault === 'retrying' ? ' is-waiting' : '') + '">' +
+      (tickFault === 'retrying' ? 'Retrying. Waiting to send.' : 'Not saved. Tap the box to retry.') + '</span>' : '';
+    var boxSay = tickFault === 'retrying' ? 'Retrying ' + x.text : x.done ? 'Untick ' + x.text : 'Tick ' + x.text + (on ? ', ' + on.name + ' on it' : '');
     // I'm on it: its own button on an open line of today's list (onTap()); the box stays one tap = done
     var onBtn = tickOk && !readonly && !x.done && date === dayNow() ? '<button type="button" class="nb-onbtn" data-p="onit" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!on + '" aria-label="' +
       esc(!on ? (shared() ? 'Who\'s on it: ' : 'I\'m on it: ') + x.text : shared() ? 'Take ' + on.name + ' off ' + x.text : onMine(x) ? 'Take me off ' + x.text : 'Take over ' + x.text + ' from ' + on.name) + '">' + AI_ON + '<span class="nb-onp">' +
@@ -5332,13 +5373,14 @@
     if (!onBtn && tickOk && !readonly && x.done && date === dayNow()) onBtn = '<span class="nb-onslot" aria-hidden="true"></span>';
     return '<li id="nbr-' + esc(x.id) + '" class="nb-row' + (on ? (onOther ? ' is-on-other' : ' is-on') : '') + (x.done ? ' is-done' : '') + (rolledN(x) && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + (planned(x) ? ' pa-row' : '') + '" data-ln="' + esc(date + '/' + x.id) + '">' +
       (planRow ? '<span class="nb-box pa-cal" aria-hidden="true">' + AI_CAL + '</span>' :
-      '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc(boxSay) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : on ? '<span class="nb-on-i" aria-hidden="true">' + esc(on.name.trim().charAt(0).toUpperCase()) + '</span>' : BOX) + '</button>') +
+      '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc(boxSay) + '"' + (tickStatusId ? ' aria-describedby="' + tickStatusId + '"' : '') +
+      (tickFault === 'retrying' ? ' aria-busy="true" aria-disabled="true"' : '') + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : on ? '<span class="nb-on-i" aria-hidden="true">' + esc(on.name.trim().charAt(0).toUpperCase()) + '</span>' : BOX) + '</button>') +
       // a tap on the words ticks too (the box is the button for keyboards and screen readers); Undo and the linger cover a slip.
       // Since 5 Nov 2026 the whole text block does (words, amount and the second line): on a phone the buttons sit under
       // it, so a tap a little below the words landed on the second line and did nothing
       '<span class="nb-main' + (tickOk && !readonly ? '" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '"') + '><span class="nb-t' + (tickOk && !readonly ? ' nb-tt' : '') + '"' + (tickOk && !readonly ? ' data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '') + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + num + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + numSay + (planRow ? '<span class="visually-hidden">. Planned for ' + esc(dayFull(date)) + '</span>' : '') + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + unsentMark(x) + justStamp(x.id) + '</span>' +
       // the stamp leads the second line (it never adds a line, so a stamp or a tick moves no row)
-      metaHTML(on ? ['<b class="nb-on">' + (onMine(x) && !shared() ? 'You\'re on it' : esc(on.name) + ' on it') + '</b>'] : [], by, x.done ? 'Recorded by ' + (x.doneBy || '') : '') + '</span>' + (onBtn || star || link || del ? '<span class="nb-acts">' + onBtn + star + link + del + ((del || keep) && !readonly ? moreBtn(x, keep) : '') + '</span>' : '') + '</li>';
+      metaHTML(on ? ['<b class="nb-on">' + (onMine(x) && !shared() ? 'You\'re on it' : esc(on.name) + ' on it') + '</b>'] : [], by, x.done ? 'Recorded by ' + (x.doneBy || '') : '') + tickStatus + '</span>' + (onBtn || star || link || del ? '<span class="nb-acts">' + onBtn + star + link + del + ((del || keep) && !readonly ? moreBtn(x, keep) : '') + '</span>' : '') + '</li>';
   }
   /* The line menu (22 Oct 2026, Option B): on a phone, Remove (or Put back) and who wrote the line move behind a ⋯ on
      the line, so the item and the amount lead. On a laptop everything stays in the line and the ⋯ is not shown. The sheet
@@ -5506,9 +5548,12 @@
     if (e.key === 'Tab') trapTab(e, box.querySelector('.sheet'), 'button, input');
   });
   window.addEventListener('hashchange', function () { lmClose(true); });
-  /* A line ticked on this phone stays where it is, struck through, for 3.5 seconds before it leaves the list. */
+  /* A line ticked on this phone stays where it is, struck through, for 3.5 seconds or while its retry is waiting. */
   var LINGER = 3500;
-  function lingers(x) { return x.done && !x.deleted && x.doneById === S.who && now() - (x.doneAt || 0) < LINGER; }
+  function lingers(x) {
+    var waitingForRetry = S.date === prepTickFaultDay && prepTickFaults.get(x.id) === 'retrying';
+    return x.done && !x.deleted && x.doneById === S.who && (waitingForRetry || now() - (x.doneAt || 0) < LINGER);
+  }
   /* The finished list (owner, 10 Nov 2026; docs/kitchen-mascot.md, the council's record is pull request #670).
      When every line of today's own list is ticked and the server has every tick, the mascot stands beside the
      words where the page already says the list is ticked off: "Every line ticked. 6 of 6." It is the list's state,
@@ -6676,7 +6721,7 @@
   function psHintPaint() { var box = document.getElementById('ps-hint'); if (box) box.innerHTML = psHintHTML(); }
   function psReferenceHTML() {
     var p = psModule();
-    return '<section class="nb-page nb-left ps-reference-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Before service</h2><span class="nb-date">The head chef\'s section standards</span></div></header><div class="nb-body">' + (p ? p.reference(psAdapter(), psDefaultSection()) : psWaitHTML()) + '</div></section>';
+    return '<section class="nb-page nb-left ps-reference-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Before service</h2></div></header><div class="nb-body">' + (p ? p.reference(psAdapter(), psDefaultSection()) : psWaitHTML()) + '</div></section>';
   }
   function psViewHTML() {
     return '<div class="chips ps-viewbar" role="group" aria-label="Prep view"><button type="button" class="chip" data-p="ps-view" data-v="work" aria-pressed="' + (psView === 'work') + '">Work</button><button type="button" class="chip" data-p="ps-view" data-v="reference" aria-pressed="' + (psView === 'reference') + '">Before service</button></div>';
@@ -6863,7 +6908,7 @@
         S.atab = tab; S.agLast = S.agLast || {}; S.agLast[adminGroupOf(tab)[0]] = tab; lsSet('lk.prep.atab', tab); draw(); adminToTop();
       }
     });
-    if (!dashLoading && !dashError) dashLoading = window.LK_APP.load('js/admin-dashboard.js?v=6').then(function () { if (!dashModule()) throw { code: 'workspace-version' }; dashLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { dashLoading = null; dashError = true; if (intelligenceAllowed()) draw(); });
+    if (!dashLoading && !dashError) dashLoading = window.LK_APP.load('js/admin-dashboard.js?v=7').then(function () { if (!dashModule()) throw { code: 'workspace-version' }; dashLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { dashLoading = null; dashError = true; if (intelligenceAllowed()) draw(); });
     return '<section class="set-block"><h3 class="label">Dashboard</h3><p class="hint" role="status">' + (dashError ? 'Could not load the dashboard. Check the connection and reload this page.' : inkLabel('Loading...', 'chef')) + '</p></section>';
   }
   function dashWeek() {
@@ -8367,10 +8412,10 @@ if (list.length) sg('oreg', 's');
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Order list</h2><span class="nb-date">' + esc(longDate(S.ordDate)) + '</span></div>' +
       (S.ordState !== 'offline' && (S.ordState === 'ok' || live.length) ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') +
       (add ? dockBtn('nb-addline', 'o-write', 'Add request') : '') + '</header>' +
-      (onToday ? cutOrdHTML() : '') +
+      (onToday ? cutOrdHTML() : '') + '<div class="o-work">' +
       (can('add') || S.ordDate !== today ? '' : '<p class="hint o-ro">You can read the order list but not write in it.</p>') +
       closeoutHTML(null, S.ordDate) +
-      '<div class="o-cols"><div class="nb-body o-main">' + body + removedBox + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div></section>' +
+      '<div class="o-cols"><div class="nb-body o-main">' + body + removedBox + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div></div></section>' +
       // the add form as a sheet (3 Nov 2026), like Add a line on the prep list
       (add && S.oLog ? '<div class="sheet-bg" data-p="o-log-close"></div><div class="sheet o-sheet" role="dialog" aria-modal="true" aria-labelledby="o-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="o-log-h">Add request</h3>' + add +
         (canBrowse() ? '' : '<p class="hint nb-who">Only the head chef or a sous chef ticks a line as ordered or removes it. Wrote the wrong thing? Undo it straight away, or ask them.</p>') + '<button type="button" class="btn sheet-x" data-p="o-log-close">Close</button></div>' : '');
@@ -8771,17 +8816,16 @@ if (list.length) sg('oreg', 's');
     var tot = offW ? '' : totalsText(wTotals(live));
     var body = S.wState === 'error' ? readErr(pageErr(), 'waste') :
       offW + (shown.length ? '<ul class="nb-rows">' + shown.map(wRow).join('') + '</ul>' : (offW ? '' : S.wState !== 'ok' ? inkWait('Loading wastage...', 'waste', 4) : '<p class="nb-empty">Nothing logged for ' + esc(dayName(S.wDate).toLowerCase()) + ' yet. Log waste when it happens: prep waste, expired stock, cooking faults, returns and excess production.</p>'));
-    // today first (3 Nov 2026, work pages redesign A): the total and a bar of the reasons, then Log waste and, for chefs,
-    // the review, then the entries. The form and the review open as sheets.
+    // The entries still follow the totals and reason bar. The one review action sits by today's totals in the book.
     var sum = tot ? '<div class="w-today"><p class="w-tot"><strong>' + esc(tot) + '</strong> logged today</p>' + wReasonBar(live) + '</div>' : '';
     var rv = '';
     if (rvChef()) {
       loadPageReview();
       var r = S.wReview;
-      rv = '<button type="button" class="btn w-rvbtn" data-p="w-rv" aria-haspopup="dialog">End-of-day review<small>' + (!r ? (S.wReviewErr ? 'Could not load it' : 'Loading...') : r.reviewBy ? 'Saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' ' + clock(r.reviewAt) : '') : 'Not written yet') + '</small></button>';
+      rv = '<button type="button" class="btn w-rvbtn" data-p="w-rv" aria-haspopup="dialog" aria-describedby="w-review-help">End-of-day review<small>' + (!r ? (S.wReviewErr ? 'Could not load it' : 'Loading...') : r.reviewBy ? 'Saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' ' + clock(r.reviewAt) : '') : 'Not written yet') + '</small></button>';
     }
-    // Log waste docked like every page's add button; the review is one button at the foot of the entries (as drawn)
-    var rvFoot = rv ? '<div class="w-rvfoot">' + rv + '<p class="hint">Chefs only. What you write shows on the next prep list.</p></div>' : '';
+    // Print puts the same review status at the foot of the entries.
+    var rvFoot = rv ? '<div class="w-rvfoot">' + rv + '<p class="hint" id="w-review-help">Chefs only. What you write shows on the next prep list.</p></div>' : '';
     var logSheet = add && S.wLog ? '<div class="sheet-bg" data-p="w-log-close"></div><div class="sheet w-sheet" role="dialog" aria-modal="true" aria-labelledby="w-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="w-log-h">Log waste</h3>' +
       '<p class="w-rule">Write the actual amount and unit, not a dollar value. Unsafe food must never be reused to avoid logging waste.</p>' + add + '<button type="button" class="btn sheet-x" data-p="w-log-close">Close</button></div>' : '';
     var rvSheet = rv && S.wRv ? '<div class="sheet-bg" data-p="w-rv-close"></div><div class="sheet w-sheet" role="dialog" aria-modal="true" aria-labelledby="w-rv-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="w-rv-h">End-of-day review</h3>' +
@@ -8789,7 +8833,7 @@ if (list.length) sg('oreg', 's');
     return whoTopHTML() +
       '<section class="nb-page o-page w-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + '</span></div>' +
       (S.wState === 'offline' || S.wState !== 'ok' && !live.length ? '' : wCountHTML(live)) + (add ? dockBtn('w-logbtn', 'w-log', 'Log waste') : '') + '</header>' +
-      sum + (can('add') ? '' : '<p class="hint w-ro">You can read the wastage log but not write in it.</p>') + '<div class="nb-body">' + body + '</div>' + rvFoot + '</section>' +
+      sum + rvFoot + (can('add') ? '' : '<p class="hint w-ro">You can read the wastage log but not write in it.</p>') + '<div class="nb-body">' + body + '</div></section>' +
       (wAll() ? '<p class="hint w-past">Past days and earlier reviews are in the <a href="#/admin" data-p="a-go-waste">admin panel, Wastage</a>.</p>' : '') + logSheet + rvSheet + sheetHTML();
   }
   /* Today's count and, under it, the sections the waste came from (redesign step 4, 8 Nov 2026, as drawn): in the header's
@@ -10143,8 +10187,9 @@ if (list.length) sg('oreg', 's');
     att.forEach(function (x) { if (by[x.st]) by[x.st].push(mnName(x.id)); });
     var cells = [['Time', m.start || ''], ['Location', m.loc || ''], ['Run by', mnName(m.chair)], ['Minutes taken by', mnName(m.taker)]].filter(function (c) { return c[1]; }).map(function (c) { return '<div class="mn-cell"><span>' + esc(c[0]) + '</span><b>' + esc(c[1]) + '</b></div>'; }).join('');
     var counts = by.present.length + ' present' + (by.apology.length ? ', ' + by.apology.length + ' apology' : '') + (by.absent.length ? ', ' + by.absent.length + ' absent' : '');
+    var signJump = sign && me() && featOn('minutes') && S.mmine[mnKey(m)] === null ? '<button type="button" class="p-link mn-sign-jump" data-p="mn-sign-jump" aria-controls="mn-sign-heading">Go to sign-off</button>' : '';
     var out = '<article class="mn-doc"><header class="mn-head"><div><span class="mn-eb">Kitchen meeting &middot; Version ' + (m.v || 1) + '</span><h2 class="mn-title" id="rtitle" tabindex="-1">' + esc(d.toLocaleDateString('en-AU', { weekday: 'long' })) + '<br>' + esc(d.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })) + '</h2></div><div class="mn-no"><span>Minutes</span><b>' + pad(m.no || 0) + '</b></div></header>' +
-      '<div class="mn-strip">' + cells + '<div class="mn-cell mn-wide"><span>Attendance</span><b>' + esc(counts) + '</b></div></div>';
+      '<div class="mn-strip">' + cells + '<div class="mn-cell mn-wide"><span>Attendance</span><b>' + esc(counts) + '</b>' + signJump + '</div></div>';
     function boxes(t, title, inner) { mnParts(t).forEach(function (x) { out += mnBox(nx(), x.h || title, inner(x.l)); }); }
     var sp = mnParts(m.safety);
     if (sp.length) out += '<div class="mn-safety" role="note"><span class="mn-sl">Safety</span>' + sp.map(function (x) { return (x.h ? '<b class="mn-sh">' + esc(x.h) + '</b>' : '') + mnUl(x.l, true); }).join('') + '</div>';
@@ -10172,7 +10217,7 @@ if (list.length) sg('oreg', 's');
     if (s === undefined || s === 'loading') return '<section class="mn-sign mn-noprint"><p class="hint">Checking your sign-off...</p></section>';
     // one tap: the person already typed their own PIN to open this page (20 Oct 2026, no second PIN)
     var mineN = mnMineN(m);
-    return '<section class="mn-sign mn-noprint"><h3 class="mn-bh">Sign off</h3>' +
+    return '<section class="mn-sign mn-noprint"><h3 class="mn-bh" id="mn-sign-heading" tabindex="-1">Sign off</h3>' +
       ((m.v || 1) > 1 ? '<p class="mn-changed">These minutes were changed after they were first published (version ' + m.v + '). If you signed before, read them again and sign this version.</p>' : '') +
       (mineN ? '<p class="mn-mine">Your actions: ' + mineN + ', marked Yours above.</p>' : '') +
       '<p>' + (st === 'present' ? 'I attended and have read and understood these minutes.' : 'I have read and understood these minutes.') + '</p>' +
@@ -12837,7 +12882,7 @@ if (list.length) sg('oreg', 's');
     if (named) {
       var pending = !!cutWrites[t.key], known = cutState === 'ok';
       st = pending ? 'Not sent' : d ? st : !known ? 'Confirmation not checked' : past ? 'Closed, not confirmed' : ahead ? 'For tomorrow' : st;
-      return '<li class="cut-o o-cut-row ' + (pending ? 'is-pending' : cls) + '"><a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a>' +
+      return '<li class="cut-o o-cut-row ' + (pending ? 'is-pending' : cls) + '" data-cut-row="' + esc(c.key) + '"><a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a>' +
         '<span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span>' +
         '<button type="button" class="cut-box o-cut-action" data-p="cut-tick" data-id="' + esc(t.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Undo order placed for ' : 'Order placed for ') + c.s.name + (roll ? ', ' + cutDel(roll) : c.at >= 1440 ? ', for tomorrow' : '')) + '"' + (cutCanTick() ? '' : ' disabled') + '>' + (d ? 'Undo' : 'Order placed' + (ahead ? ' for tomorrow' : '')) + '</button></li>';
     }
@@ -12869,7 +12914,25 @@ if (list.length) sg('oreg', 's');
   function cutOrdBodyHTML() {
     var warning = cutState === 'error' ? '<p class="p-err" role="status">Could not check supplier confirmations. Known cut-offs are shown below.</p>' :
       cutState === 'loading' ? '<p class="hint" role="status">Checking supplier confirmations...</p>' : '';
-    return warning + '<p class="hint cut-how">Confirm only after placing the order in your ordering system, by phone or email. Requests stay on the list until you tick them.</p>' + cutRowsHTML(false, true) + pushHTML();
+    var offline = cutState === 'offline' ? '<p class="hint cut-note" role="status">' + CUT_OFF + '</p>' : '';
+    var how = '<p class="hint cut-how">Confirm only after placing the order in your ordering system, by phone or email. Requests stay on the list until you tick them.</p>';
+    var today = cutRowsNow(), ahead = cutAhead(), rows = today.concat(ahead).sort(function (a, b) { return a.at - b.at; }), pushes = pushHTML();
+    // Keep the named action in place while the fold is open, including when its confirmation changes the next deadline.
+    var lead = rows.find(function (c) { return c.key === S.oCutLead; }) || rows.find(function (c) { return !cutTickFor(c).d; }) || rows[0];
+    if (!lead) return warning + how + offline + '<p class="hint">No cut-offs today.</p>' + pushes;
+    if (S.oCutOpen) S.oCutLead = lead.key;
+    function list(xs, isAhead) {
+      return xs.length ? '<ul class="' + (isAhead ? 'cut-hl' : 'cut-tl') + '">' + xs.map(function (c) { return cutRowHTML(c, false, true, ahead.indexOf(c) >= 0); }).join('') + '</ul>' : '';
+    }
+    var otherToday = today.filter(function (c) { return c !== lead; });
+    var otherAhead = ahead.filter(function (c) { return c !== lead; });
+    var count = otherToday.length + otherAhead.length;
+    var label = count ? 'Other cut-offs (' + count + ')' + (pushes ? ' and reminders' : '') : 'Reminder settings';
+    var more = count || pushes ? '<button type="button" class="o-cut-more" data-p="o-cut-more" aria-controls="o-cut-rest" aria-expanded="' + S.oCutMore + '">' +
+      esc(label) + '</button><div class="o-cut-rest" id="o-cut-rest">' + list(otherToday) +
+      (otherAhead.length ? '<h4 class="cut-ah">Tomorrow, heads-up</h4>' + list(otherAhead, true) : '') + pushes + '</div>' : '';
+    var leadAhead = ahead.indexOf(lead) >= 0;
+    return warning + how + (leadAhead ? '<h4 class="cut-ah">Tomorrow, heads-up</h4>' : '') + offline + list([lead], leadAhead) + more;
   }
   function cutOrdHTML() {
     if (!cutHas()) return '';
@@ -12884,9 +12947,12 @@ if (list.length) sg('oreg', 's');
     if (summary.lkH !== sh) { summary.innerHTML = sh; summary.lkH = sh; }
     if (body.lkH !== bh) {
       var active = document.activeElement, inside = active && body.contains(active);
+      var row = inside && active.closest('[data-cut-row]'), rowKey = row && row.getAttribute('data-cut-row');
       var sel = inside && active.hasAttribute('data-p') ? guestSel(active) : '', href = inside && active.getAttribute('href');
       body.innerHTML = bh; body.lkH = bh;
-      var back = sel ? body.querySelector(sel) : href ? Array.prototype.find.call(body.querySelectorAll('a[href]'), function (a) { return a.getAttribute('href') === href; }) : null;
+      var sameRow = rowKey && Array.prototype.find.call(body.querySelectorAll('[data-cut-row]'), function (li) { return li.getAttribute('data-cut-row') === rowKey; });
+      var back = sameRow && sel ? sameRow.querySelector('.o-cut-action') : sel ? body.querySelector(sel) :
+        href ? Array.prototype.find.call(body.querySelectorAll('a[href]'), function (a) { return a.getAttribute('href') === href; }) : null;
       if (back) back.focus({ preventScroll: true });
     }
   }
@@ -13462,7 +13528,19 @@ if (list.length) sg('oreg', 's');
     if (localReturn(a)) return;
     if (a.indexOf('lv-') === 0) { lvClick(a, el); return; }
     if (a.indexOf('dk-') === 0) { dkClick(a, el); return; }
-    if (a === 'o-cut-toggle') { e.preventDefault(); var fold = el.closest('details'); if (fold) { fold.open = !fold.open; S.oCutOpen = fold.open; } return; }
+    if (a === 'o-cut-toggle') {
+      e.preventDefault();
+      var fold = el.closest('details'); if (!fold) return;
+      S.oCutOpen = fold.open = !fold.open;
+      if (!fold.open) { S.oCutLead = ''; S.oCutMore = false; }
+      cutOrdPaint();
+      return;
+    }
+    if (a === 'o-cut-more') {
+      S.oCutMore = !S.oCutMore;
+      el.setAttribute('aria-expanded', String(S.oCutMore));
+      return;
+    }
     if (a === 'cut-tick') { var ck = el.getAttribute('data-id') || ''; if (el.getAttribute('aria-pressed') !== 'true') cutConfirm(ck); else cutOrdered(ck, false).catch(function (er) { failed(er); }); return; }
     if (a === 'cut-push-on') { pushOn(); return; }
     if (a === 'cut-push-off') { pushOff(); return; }
@@ -13542,6 +13620,11 @@ if (list.length) sg('oreg', 's');
     // the register from #/minutes, the same as the old Minutes register in the chef hat menu: on a tap, one small minutes query
     if (a === 'mn-sous') { chefOpen('register'); return; }
     if (a === 'mn-pickdoc') { S.mSel = id; S.mErr = ''; draw(); window.scrollTo(0, 0); return; }
+    if (a === 'mn-sign-jump') {
+      var signHeading = S.root.querySelector('#mn-sign-heading');
+      if (signHeading) { signHeading.focus({ preventScroll: true }); signHeading.scrollIntoView({ block: 'start' }); }
+      return;
+    }
     if (a === 'mn-sign') { signMinutes(id); return; }
     if (a === 'mn-csv') { csvMinutes(id); return; }
     if (a === 'mn-refresh') { var mr = S.mSel || (mnPub()[0] || {}).id; S.mnSay = mr || ''; loadMinutes(true); loadSigns(mr, true); draw(); return; }
