@@ -314,7 +314,7 @@ Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records
 | Suppliers, order history, cut-off sheets | `docs/supplier-workspace.md` |
 | Order cut-off patterns (a day and time per delivery day) and the heads-up the day before, selected the recommended mix (5 Nov 2026) | `docs/cutoff-options/brief.md` |
 | Supplier order and Delivery received redesign, selected A: The Order Sheet (3 Nov 2026) | `docs/receiving-design-options/brief.md` |
-| Wastage history, ranges, CSV | `docs/wastage-history.md` |
+| Wastage history, ranges and CSV, including entries first (22 November 2026, chosen A and built) | `docs/wastage-history.md` |
 | CSV text, quoting and numeric values across reports | `docs/report-exports.md` |
 | Transfer storage and returns | `docs/transfer-returns.md`: 16 November 2026, phone card width repair in `css/app.css`, verified by `tests/transfer-overflow.test.js`. The original index migration needs rules published first; this CSS repair needs no rule or data change. |
 | Function cancel, Undo, delete | `docs/function-cancellation.md` |
