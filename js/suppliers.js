@@ -589,6 +589,7 @@
     return { ready: false, reading: false, readingFile: false, data: null, calc: null, problem: '', note: '',
       preview: null, link: null, opened: false, all: false, q: '', page: 0, details: '', replace: null, stale: false };
   }
+  function salesEnabled() { return window.LK_SUPPLIER_SALES_ENABLED === true; }
   function salesCore() { return window.LK_SUP_SALES_CORE; }
   function salesWithAssets() {
     if (!salesCoreLoad) salesCoreLoad = (salesCore() && salesCore().API === 1 ? Promise.resolve() : A.load('js/supplier-sales-core.js?v=1')).then(function () {
@@ -598,7 +599,7 @@
   }
   function loadSales(force) {
     var sale = M.sales;
-    if (!store || !canRead() || M.mode !== 'order' || !supplier() || cutCard() || sale.reading || (!force && (sale.ready || sale.problem))) return;
+    if (!salesEnabled() || !store || !canRead() || M.mode !== 'order' || !supplier() || cutCard() || sale.reading || (!force && (sale.ready || sale.problem))) return;
     var g = generation, key = ctx();
     var prior = sale.data, hadProblem = !!sale.problem;
     sale.reading = true; sale.problem = '';
@@ -771,14 +772,14 @@
     if (control) control.disabled = salesImportBlocked() || M.saving;
   }
   function salesImportHTML() {
-    if (!canEdit() || M.mode !== 'order' || !supplier() || cutCard()) return '';
+    if (!salesEnabled() || !canEdit() || M.mode !== 'order' || !supplier() || cutCard()) return '';
     var sale = M.sales;
     return button('sales-import', sale.readingFile ? 'Reading report...' : '<span class="su-sales-wide">Import sales report</span><span class="su-sales-compact" aria-hidden="true">Import sales</span>',
       (salesImportBlocked() ? ' disabled' : '') + ' aria-label="' + (sale.readingFile ? 'Reading report...' : 'Import sales report') + '"') +
       '<input class="visually-hidden" type="file" tabindex="-1" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" data-sf="sales-file" aria-label="Sales report file">';
   }
   function salesLinksButtonHTML() {
-    if (M.mode !== 'order' || cutCard()) return '';
+    if (!salesEnabled() || M.mode !== 'order' || cutCard()) return '';
     var summary = salesResults(), sale = M.sales;
     if (!summary) return '';
     var count = summary.result.review.length;

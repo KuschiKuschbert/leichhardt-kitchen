@@ -1,12 +1,12 @@
 # Sales suggestions in Supplier order
 
-Chosen 22 November 2026. Source implementation and synthetic checks complete. Live rules and client release are pending.
+Chosen 22 November 2026. Source implementation and synthetic checks complete. Leichhardt rules were staged and passed the live Lock probe before the client release.
 
 ## The Sunday job
 
 Open **Chef hat → Supplier order** and choose **Import sales report**. The weekly input is one POS export in CSV or XLSX with **Product Name** and **Quantity** columns. Review the venue and exact seven completed trading dates, inclusive, in Queensland local time before publishing. Confirm the venue and dates when the export leaves them out. Combine repeated product rows within the report. Negative rows are shown for review. A chef can confirm their exclusion when they are adjustments outside this order, or choose a corrected report. Malformed quantities call for a corrected file.
 
-The first trial uses confirmed protein links. Open the sales links editor from the workspace to link a report product to the relevant active catalogue item or items by stable supplier and item IDs. Confirm the quantity as bought per sale, allowing for cooking or trim loss, and its conversion to one catalogue order unit. Use **Ignore sales item** for an irrelevant report product. Missing, ambiguous and archived items require review. A changed pack, order unit, par unit or conversion pauses the link until the chef confirms it again.
+The first trial is enabled in the Leichhardt book and uses confirmed protein links. Other venue copies use their own settings. Open the sales links editor from the workspace to link a report product to the relevant active catalogue item or items by stable supplier and item IDs. Confirm the quantity as bought per sale, allowing for cooking or trim loss, and its conversion to one catalogue order unit. Use **Ignore sales item** for an irrelevant report product. Missing, ambiguous and archived items require review. A changed pack, order unit, par unit or conversion pauses the link until the chef confirms it again.
 
 The order sheet labels each matched quantity as a sales suggestion and shows which week it covers. Open its calculation to see the contributing sales, portions and conversions. The book sums the confirmed contributions for an item before rounding up once. Countable order units round to a whole unit and metric quantities to 0.001 of their order unit. The amount is a weekly estimate. The chef decides how to split it across deliveries and how to account for stock, demand and functions. The existing **On hand** and par suggestions keep their own controls. Confirmed links can be reused for the next report.
 

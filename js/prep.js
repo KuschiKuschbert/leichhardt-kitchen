@@ -2325,6 +2325,7 @@
     return {
       ready: function () { return sdk().then(function () { return fb; }); },
       read: supplierRead, edit: supplierEdit, state: supplierState, context: supplierContext,
+      salesEnabled: window.LK_SUPPLIER_SALES_ENABLED === true,
       // Existing owner maintenance (backup and PIN move) retains its established admin-device gate. It grants no
       // catalogue editor rights to a sous-chef persona: edit() remains the narrower check above.
       owner: function () { return !!(S.user && S.level === 'owner' && ownerHere() && supplierRead()); },
@@ -3704,7 +3705,7 @@
         var m = (out.suppliers || []).length + (out.supplierlinks || []).length;
         (out.suppliers || []).forEach(function (s) { m += ((out.supplierAudit || {})[s.id] || []).length + ((out.supplierOrders || {})[s.id] || []).length; });
         // The weekly sales document is a single read even when this kitchen has no import yet.
-        reads += Math.max(1, m) + 2 * (out.suppliers || []).length + 1;
+        reads += Math.max(1, m) + 2 * (out.suppliers || []).length + (window.LK_SUPPLIER_SALES_ENABLED === true ? 1 : 0);
         n += m + (out.supplierSales ? 1 : 0); guard();
         steps.push({ run: function () { return store.copyTo(np, out).then(function (r) { done += r.suppliers + r.orders + r.audits + r.links + (r.sales || 0); }); } });
       }); }); })

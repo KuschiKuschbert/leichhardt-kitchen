@@ -544,7 +544,7 @@
       });
       tasks.push(onlineRead(c.fs.getDocs(col(c, ['supplierlinks']))).then(function (links) { out.supplierlinks = links.docs.map(data); }));
       // One read of the weekly record in the owner backup or PIN move. An absent record leaves old backups compatible.
-      tasks.push(onlineRead(c.fs.getDoc(ref(c, SALES_PATH))).then(function (sales) { if (sales.exists()) out.supplierSales = copy(sales.data()); }));
+      if (B.salesEnabled) tasks.push(onlineRead(c.fs.getDoc(ref(c, SALES_PATH))).then(function (sales) { if (sales.exists()) out.supplierSales = copy(sales.data()); }));
       await Promise.all(tasks); check(c.ctx, false, true); return out;
     }
     // Explicit owner PIN migration only. Same online-only client; copied records retain their original author and time.

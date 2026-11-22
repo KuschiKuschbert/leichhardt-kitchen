@@ -189,6 +189,15 @@ async function run(browser) {
   ok(sous.errors.length === 0, 'sous chef sales journey has no browser errors ' + sous.errors.join(' | '));
   await sous.context().close();
 
+  const otherVenue = await L.open(browser, '#/suppliers/northside', {
+    who: 'bo', extra: savedFixture,
+    init: () => Object.defineProperty(window, 'LK_SUPPLIER_SALES_ENABLED', { get: () => false, set() {} })
+  });
+  await ready(otherVenue);
+  ok(!await otherVenue.locator(action('sales-import')).count() && !await otherVenue.locator(onItem('use')).count() &&
+    !(await salesReads(otherVenue)).length, 'a venue outside the pilot keeps manual supplier ordering and reads no sales data');
+  await otherVenue.context().close();
+
   const staff = await L.open(browser, '#/suppliers/northside', { who: 'ann', extra: savedFixture });
   await staff.getByText('Chef access needed', { exact: true }).waitFor({ state: 'visible' });
   ok(!await staff.locator(qty).count() && !await staff.locator(onItem('use')).count() && !await staff.evaluate(key => window.__fake.reads.includes(key), salesDoc), 'ordinary staff see the existing chef access gate with no sales read or controls');
@@ -201,4 +210,4 @@ async function run(browser) {
   try { await run(browser); }
   finally { await browser.close(); }
   L.report(R);
-})().catch(error => { console.log(R.join('\n')); console.error(error); process.exitCode = 1; });
+})().catch(error => { console.log(R.join('\n')); console.error(error); process.exit(1); });
