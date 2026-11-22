@@ -85,3 +85,11 @@ With the same synthetic personal-admin fixture, actual project fonts and 390 x 8
 The updated wall-board test failed three personal-device checks out of 23 against the old app; both wall-board and new account tests pass with the change. The role matrix covers personal admin, head, sous, staff, lead and view-only accounts, plus signed-out, Functions-only, expired-session and Google-without-head-PIN exclusions. Personal tick/On it attribution, shared pickers, reload/Back, past-day exclusion and read reuse pass. Existing On it, read-budget and design-pattern checks pass locally. CI and release verification are recorded in the pull request.
 
 Synthetic screenshots: [personal account's Wall board entry](wall-accounts-entry-1280.png), [the board open on that account](wall-accounts-board-1280.png).
+
+## End-of-day review placement, 22 November 2026
+
+**Verdict: Build (quick check).** Put the existing chef review action beside today's Wastage total. After a long service the chef can see whether a note was written and open it in one tap from the first screen. The approved notebook keeps its entry list, total, reason split and primary Log waste action. The existing responsive sheet keeps its fields, draft, Save behaviour and focus return. The print layout keeps the review status and hint at the foot. The adjustment adds zero reads, writes and stored fields.
+
+Linear's status near a decision and Things 3's direct action fit this review. Headspace's clear next action is reflected in Log waste remaining primary. Opening the editor still takes one tap. With twelve synthetic entries and the app's fonts in Chromium, the action moved from y1252 to y247 at 390 × 844 px, y1034 to y262 at 768 × 900 px, and y976 to y226 at 1280 × 800 px. Each new target is 44 px high. The first entry moves down 27 px on the phone and 19 px at the other sizes in that fixture. At these viewport heights, each shows one fewer complete row before scrolling.
+
+The existing Wastage fixture and the targeted browser checks cover screen placement, print ordering and hint, chef and staff access, a failed review read, keyboard and focus return, draft retention, and the existing save payload and feedback. The comparison uses the app source and synthetic records in Chromium.

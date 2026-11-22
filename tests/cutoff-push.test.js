@@ -29,6 +29,8 @@ const withPerm = perm => '(' + init.toString().replace('PERM', JSON.stringify(pe
 async function openCutoffs(p) {
   await L.waitFor(p, () => !!document.querySelector('.o-cut-fold > summary'), null, 10000);
   if (!(await p.$eval('.o-cut-fold', e => e.open))) await p.click('.o-cut-fold > summary');
+  const more = p.locator('.o-cut-more[aria-expanded="false"]');
+  if (await more.isVisible()) await more.click();
 }
 
 (async () => {

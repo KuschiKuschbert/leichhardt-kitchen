@@ -532,6 +532,8 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .nb-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .nb-meta { display: block; min-height: 1.35em; font: 400 0.75rem/1.35 var(--body); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nb-row.is-done .nb-meta { text-decoration: none; }
+.nb-tick-status { display: block; margin-top: 2px; color: var(--bad-ink); font: 700 0.8125rem/1.23 var(--body); overflow-wrap: anywhere; }
+.nb-tick-status.is-waiting { color: var(--ink); }
 .nb-q { font-size: 1.25rem; color: var(--muted); margin-left: 0.3rem; }
 .nb-go { flex: 0 0 auto; font-family: var(--display); font-weight: 700; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); text-decoration: none; border-bottom: 1.5px dotted var(--accent-ink); }
 .nb-x { flex: 0 0 auto; min-height: 44px; padding: 0 0.5rem; border: 0; background: none; font-family: var(--body); font-weight: 600; font-size: 0.8125rem; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
@@ -2134,6 +2136,9 @@ button.wm-a.wm-tile { text-align: left; }
 .p-toasts .p-toast-bad .p-toast-btn { background: var(--bad-ink); }
 .p-toasts .p-toast.p-toast-old { align-self: flex-start; min-height: 0; margin: 0 0 0 12px; padding: 0; border: 0; background: transparent; box-shadow: none; }
 .p-toasts .p-toast-chip { display: block; max-width: min(22rem, calc(100vw - 24px)); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; border-radius: 8px 8px 0 0; font-weight: 600; }
+@media (max-width: 719px) {
+  .p-toasts .p-toast-chip { white-space: normal; overflow-wrap: anywhere; text-overflow: clip; text-align: left; line-height: 1.12; }
+}
 @keyframes slip-in { from { translate: 0 10px; opacity: 0.4; } to { translate: 0 0; opacity: 1; } }
 @keyframes slip-time { from { transform: scaleX(1); } to { transform: scaleX(0); } }
 /* on a phone: no tab bar, no lift; a sticky Save bar lifts the slip above it; the page makes room for the slip */
@@ -4055,6 +4060,25 @@ html:has(.w-sheet, .tr-sheet, .p-sheet, .o-sheet) .p-toasts { top: calc(12px + e
 .w-rvfoot { margin: 14px 0 4px; }
 .w-rvfoot .w-rvbtn { width: 100%; align-items: flex-start; text-align: left; }
 .w-rvfoot .hint { margin: 6px 0 0; }
+@media screen {
+  .w-page:has(> .w-rvfoot) {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+    grid-template-areas: 'head head' 'total review' 'bar bar' 'legend legend' 'read read' 'list list';
+  }
+  .w-page:has(> .w-rvfoot) > .nb-ph { grid-area: head; }
+  .w-page:has(> .w-rvfoot) > .w-today { display: contents; }
+  .w-page:has(> .w-rvfoot) .w-tot { grid-area: total; align-self: center; margin: .35rem .75rem; }
+  .w-page:has(> .w-rvfoot) .w-bar { grid-area: bar; margin-inline: .75rem; }
+  .w-page:has(> .w-rvfoot) .w-legend { grid-area: legend; margin-inline: .75rem; margin-bottom: 12px; }
+  .w-page:has(> .w-rvfoot) > .w-ro { grid-area: read; }
+  .w-page:has(> .w-rvfoot) > .nb-body { grid-area: list; }
+  .w-page > .w-rvfoot { grid-area: review; align-self: center; max-width: min(52vw, 16rem); margin: .35rem .75rem .35rem 0; }
+  .w-page:not(:has(> .w-today)) > .w-rvfoot { grid-column: 1 / -1; justify-self: start; margin-left: .75rem; }
+  .w-page .w-rvfoot .w-rvbtn { min-width: 44px; min-height: 44px; padding: .2rem .6rem; white-space: normal; overflow-wrap: anywhere; }
+  .w-page .w-rvfoot .hint { display: none; }
+}
+@media print { .w-page > .w-rvfoot { order: 1; } }
+
 button.nb-prog { min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .nb-t[data-n]::before { content: attr(data-n); content: attr(data-n) / ''; display: inline-flex; align-items: center; justify-content: center; min-width: 1.45em; height: 1.45em; margin-right: 0.35em; border-radius: 50%; background: var(--accent-ink); color: #fff; font: 700 0.62em var(--body); vertical-align: 0.2em; }
 .nb-why { display: inline-block; padding: 0 6px; border: 1.5px solid var(--muted); border-radius: 999px; font: 600 0.75rem var(--body); color: var(--muted); white-space: nowrap; }
@@ -4347,6 +4371,15 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .dl-rb .dl-readings dt { font: 700 0.75rem/1.2 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: inherit; }
 .dl-rb .dl-readings dd { font-size: 1rem; color: inherit; }
 .dl-rb .hint { margin: 0.2rem 0 0; }
+.dl-records-jump { display: none; }
+@media (max-width: 719px) {
+  .dl-heading-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 0.5rem; }
+  .dl-records-jump { display: inline-block; position: relative; min-width: 44px; min-height: 0; font-size: 0.875rem; color: var(--ink); }
+  .dl-records-jump:focus-visible { outline-color: var(--ink); }
+  /* The whole 44 px target fits across the existing heading, whose neighbouring text is static. */
+  .dl-records-jump::after { content: ''; position: absolute; inset-inline: 0; top: 50%; height: 44px; transform: translateY(-50%); }
+  #dl-records { scroll-margin-block-start: 4.5rem; }
+}
 /* Supplier reference stays quiet until the existing attn flag asks for a look. Keep the same line and height
    so the first To order box stays clear of the Review bar. */
 @media (max-width: 899px) {
@@ -4652,6 +4685,20 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .fn-svc-board .fn-for-b { min-height: 48px; padding: 0 0.9rem; border-color: var(--bar-text); background: transparent; color: var(--bar-text); }
 .fn-svc-outs { margin: 0.3rem 0 0.6rem; color: rgba(251, 248, 241, 0.86); }
 .fn-svc-outs .fn-i, .fn-next .fn-trip-out { color: var(--done-on-dark); }
+
+@media (max-width: 719px) {
+  .fn-svc-page { gap: 0.4rem; }
+  .fn-svc-page > .hint { margin-block: 0.2rem; }
+  .fn-svc-page > .fn-svc-board { margin-block-start: 0.15rem; }
+}
+/* Keep the kitchen's rounds the same width as trips enter or leave the shelf. The coordinator's rounds are inside .fn-svc-sec. */
+@media (min-width: 1100px) {
+  .fn-svc-board:has(> .fn-svc-rows) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(270px, 0.52fr); grid-template-rows: auto auto 1fr; column-gap: 1.25rem; align-items: start; }
+  .fn-svc-board > .fn-svc-bh { grid-column: 1 / -1; }
+  .fn-svc-board > .fn-svc-wl { grid-area: 2 / 1; }
+  .fn-svc-board > .fn-svc-rows { grid-area: 3 / 1; }
+  .fn-svc-board > .fn-svc-rows + .fn-svc-shelf { grid-area: 2 / 2 / span 2; min-width: 0; margin: 0; padding: 0.65rem 0 0.35rem 1rem; border-top: 0; border-inline-start: 1px solid rgba(251, 248, 241, 0.32); scroll-margin-block-start: 5rem; }
+}
 .fn-band .fn-li-out { display: flex; align-items: center; gap: 0.5rem; border-top: 1px solid rgba(251, 248, 241, 0.16); }
 .fn-band .fn-li-out:first-child { border-top: 0; }
 .fn-band .fn-li-out > .fn-row { flex: 1 1 auto; min-width: 0; border-top: 0; }
@@ -5938,6 +5985,33 @@ html:has(.tm-focus-page) {
 .o-cut-detail.has-deadline { display: flex; min-width: 0; }
 .o-cut-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .o-cut-at { flex-shrink: 0; white-space: pre; }
+
+/* Orders keeps one named deadline in reach on a narrow screen; the same rows make up the wide rail. */
+.o-cut-more {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  width: 100%; min-height: 44px; padding: 0.3rem 0; border: 0; border-bottom: 1px solid var(--line);
+  background: transparent; color: var(--ink); font: 600 0.875rem var(--body); text-align: left; cursor: pointer;
+}
+.o-cut-more::after { content: '+'; }
+.o-cut-more[aria-expanded="true"]::after { content: '−'; }
+@media (max-width: 999px) {
+  .o-cut-more[aria-expanded="false"] + .o-cut-rest { display: none; }
+  .o-cut-body { padding-block: 0.25rem; }
+  .o-cut-body li.o-cut-row { padding-block: 0.15rem; }
+  .o-cut-body .cut-how { margin-bottom: 0.2rem; }
+  .o-cut-row .o-cut-action { width: clamp(5.25rem, 30vw, 7rem); overflow-wrap: anywhere; }
+}
+@media (min-width: 1000px) {
+  .o-page:has(> .o-cut-fold) {
+    display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(330px, 1fr);
+    column-gap: 1.5rem; align-items: start;
+  }
+  .o-page:has(> .o-cut-fold) > .nb-ph { grid-column: 1 / -1; }
+  .o-page > .o-work { grid-column: 1; grid-row: 2; min-width: 0; }
+  .o-page > .o-cut-fold { grid-column: 2; grid-row: 2; }
+  .o-page:has(> .o-cut-fold) .o-cols:has(> .o-ordered) { display: block; }
+  .o-cut-more { display: none; }
+}
 
 .o-requests .nb-roll { display: inline-block; white-space: nowrap; }
 
