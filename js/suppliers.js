@@ -5,6 +5,7 @@
   'use strict';
   var API = 12, A = window.LK_APP, P = window.LK_PREP, T = window.LK_TIME, esc = A.esc;
   var C, store, loadingCode = null, contextKey = '', identityKey = '', lockedIdentity = '', generation = 0;
+  var orderWide = window.matchMedia('(min-width: 900px)');
   var M = blank();
   // Optional in lazy files: an older saved shell keeps its existing text feedback.
   function inkLabel(text, icon, state) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', state || 'busy') : esc(text); }
@@ -14,7 +15,7 @@
     // readFail: what a failed catalogue read says (readText()); err stays for saves and checks
     return { root: null, route: {}, routeKey: '', openItems: Object.create(null), suppliers: null, unread: [], sid: '', mode: 'order', busy: false, readFail: '', err: '', msg: '', validation: null,
       sidebar: !collapsed, q: '', group: '', filter: '', infoOpen: null, requestsWant: false, page: 0, drafts: Object.create(null), history: Object.create(null),
-      audit: Object.create(null), historyOpen: false, historyId: '', historyQ: '', smart: false, requests: null,
+      audit: Object.create(null), historyOpen: false, historyReturnY: null, historyId: '', historyQ: '', smart: false, requests: null,
       requestsBusy: false, requestsError: '', requestsDay: '', cutQ: '', ed: null, supplierEd: null, review: null, additional: '',
       archive: '', reuse: '', importing: null, importPlan: null, importReuses: [], importMap: Object.create(null), importQ: '',
       includeArchived: false, auditOpen: false, armedLeave: '', saving: false, sales: blankSales() };
@@ -489,6 +490,7 @@
       '<b class="su-then">2. Then record it here</b><div class="btn-row">' + button('record', M.saving ? inkLabel('Recording...') : r.checking ? inkLabel('Checking cut-off...', 'orders') : r.uncertain ? 'Confirm recording again' : 'Record order placed', M.saving || r.checking ? ' disabled aria-busy="true"' : r.recorded ? ' disabled' : '', true) + (r.recorded ? button('new-draft', 'Start new draft', M.saving ? ' disabled' : '') : '') + '</div></section>';
   }
   function historyHTML() {
+    if (!M.historyOpen) return '<section id="su-order-history" hidden></section>';
     var h = hist(), rows = h.rows || [], selected = rows.filter(function (o) { return o.id === M.historyId; })[0] || rows[0];
     var body = '<p class="hint">Last order on each item shows its latest recorded quantity and date in the loaded history.' + (h.more ? ' Choose Older orders to check items marked Earlier orders not checked.' : '') + '</p>'; if (h.busy) body += loading('Reading order history...', 'orders', h.rows ? 0 : 3);
     if (h.err) body += readLine(h.err, 'data-su="history-retry"');
@@ -499,7 +501,7 @@
     if (M.msg && M.msgAt === 'history') body = '<p class="su-status su-status-here" role="status">' + esc(M.msg) + '</p>' + body;
     if (M.reuse) body += '<div class="su-confirm"><p>Replace the quantities in this supplier draft with the selected order? Other supplier drafts stay as they are.</p><div class="btn-row">' + button('reuse-confirm', 'Replace draft quantities', ' data-id="' + esc(M.reuse) + '"', true) + button('reuse-cancel', 'Cancel') + '</div></div>';
     if (h.more) body += '<div class="btn-row">' + button('history-more', 'Older orders', h.busy ? ' disabled' : '') + '</div>';
-    return '<section class="su-disclosure"><button type="button" class="su-disclosure-button" data-su="history" aria-expanded="' + M.historyOpen + '">Order history <span class="hint">' + (M.historyOpen ? 'Hide' : 'Show') + '</span></button>' + (M.historyOpen ? '<div class="su-disclosure-body">' + body + '</div>' : '') + '</section>';
+    return '<section id="su-order-history" class="su-disclosure" aria-labelledby="su-history-title"><div class="su-history-head"><h3 id="su-history-title" class="h3" tabindex="-1">Order history</h3>' + button('history-close', 'Back to draft') + '</div><div class="su-disclosure-body">' + body + '</div></section>';
   }
   // Counted below par: the same top-up maths as the Use chip, whether or not a quantity is typed yet
   function low(i, d) { if (!String(d.stock[i.id] || '').trim()) return false; try { var p = C.suggestQuantity(i, latest(), d.stock[i.id], fieldUnit('stock', i, d)); return !!(p && p.kind === 'topup'); } catch (e) { return false; } }
@@ -955,7 +957,8 @@
     var s = supplier(), d = draft(), list = filterItems(false).filter(function (i) { return shown(i, d); }), last = ''; M.page = Math.max(0, Math.min(M.page, Math.ceil(list.length / 20) - 1));
     if (activeTask() === 'review') return reviewHTML();
     var table = list.map(function (i) { var title = i.category !== last ? '<div class="su-category" data-cat="' + esc(i.category || 'Other items') + '" tabindex="-1">' + esc(i.category || 'Other items') + '</div>' : ''; last = i.category; return title + rowHTML(i); }).join('');
-    return toolbarHTML() + '<div class="su-supplier-title"><h3 class="h3">' + esc(s.name) + '</h3>' + '<span class="hint">' + items().length + ' items</span></div>' + salesPanelHTML() + infoHTML() + filterChips(d) + jumpsHTML(list) + (M.filter === 'asked' ? requestsHTML() : '') + '<div class="su-table-head"><span>Item / pack</span><span>Par</span><span>Last bought</span><span>To order</span></div>' + (table || '<p class="empty">' + (M.filter ? 'No items match this filter.' : 'No items match.') + '</p>') + '<div class="su-order-actions sv-dock"><span class="hint">' + itemCount(Object.keys(d.qty).filter(function (k) { return String(d.qty[k]).trim(); }).length) + ' in this supplier draft</span>' + button('review', 'Review order', Object.keys(d.qty).some(function (k) { return String(d.qty[k]).trim(); }) ? '' : ' disabled', true) + '</div>' + (M.filter === 'asked' ? '' : requestsHTML()) + suggestionsHTML() + '<p class="hint su-help">A number uses the order unit shown; type a unit for another, e.g. 2 kg. Par blank is Not set; 0 stays 0.</p>' + historyHTML();
+    var context = '<div class="su-order-context">' + infoHTML() + button('history', 'Order history', ' aria-controls="su-order-history" aria-expanded="' + M.historyOpen + '"') + '</div>';
+    return toolbarHTML() + '<div class="su-supplier-title"><h3 class="h3">' + esc(s.name) + '</h3>' + '<span class="hint">' + items().length + ' items</span></div>' + salesPanelHTML() + context + filterChips(d) + jumpsHTML(list) + (M.filter === 'asked' ? requestsHTML() : '') + '<div class="su-table-head"><span>Item / pack</span><span>Par</span><span>Last bought</span><span>To order</span></div>' + (table || '<p class="empty">' + (M.filter ? 'No items match this filter.' : 'No items match.') + '</p>') + '<div class="su-order-actions sv-dock"><span class="hint">' + itemCount(Object.keys(d.qty).filter(function (k) { return String(d.qty[k]).trim(); }).length) + ' in this supplier draft</span>' + button('review', 'Review order', Object.keys(d.qty).some(function (k) { return String(d.qty[k]).trim(); }) ? '' : ' disabled', true) + '</div>' + (M.filter === 'asked' ? '' : requestsHTML()) + suggestionsHTML() + '<p class="hint su-help">A number uses the order unit shown; type a unit for another, e.g. 2 kg. Par blank is Not set; 0 stays 0.</p>' + historyHTML();
   }
   function sourceHTML(i) { return '<details class="su-source"><summary>Original record</summary><dl><dt>Item name</dt><dd>' + esc(i.manual ? 'Added manually' : i.source.name) + '</dd><dt>PDF par</dt><dd>' + esc(i.manual ? 'Not applicable' : i.source.par === '' ? 'Not set' : i.source.par) + '</dd><dt>Source</dt><dd>' + esc(i.manual ? 'Manual item' : i.source.file + ', page ' + i.source.page) + '</dd></dl></details>'; }
   function unitField(k, label, value) { return '<label class="field"><span class="label">' + label + '</span><input class="search" data-sf="' + k + '" value="' + esc(value || '') + '" list="su-unit-list" maxlength="40" placeholder="Unconfirmed"></label>'; }
@@ -1014,12 +1017,24 @@
     // Until a recording is confirmed, another route offers recovery only. Workspace edits must not replace its ID.
     if (M.review && (M.saving || M.review.uncertain) && task !== 'review') return '<section class="su-wrap"><h2 id="rtitle" tabindex="-1">Confirm order recording</h2>' + statusHTML() + '</section>';
     if (M.suppliers && (task === 'editor' || task === 'supplier' || task === 'import' || task === 'review')) return '<section class="su-wrap">' + (task === 'editor' ? editorHTML() : task === 'supplier' ? supplierEditorHTML() : task === 'import' ? importHTML() : reviewHTML()) + '</section>';
-    var html = headerHTML() + statusHTML() + unreadHTML();
+    var order = M.mode === 'order' && M.suppliers && M.suppliers.length && !cutCard();
+    var tools = '<div class="su-workspace-tools">' + button('collapse', M.sidebar ? 'Hide suppliers' : 'Show suppliers', ' aria-expanded="' + M.sidebar + '"') + '</div>';
+    var header = headerHTML();
+    var html = (order ? '<div class="su-order-heading">' + header + tools + '</div>' : header) + statusHTML() + unreadHTML();
     if (M.busy && !M.suppliers) return '<section class="su-wrap">' + html + loading('Reading the supplier catalogue...', 'orders', 3) + '</section>';
     if (!M.suppliers) return '<section class="su-wrap">' + html + '</section>';
     if (cutCard()) return '<section class="su-wrap">' + html + cutCardHTML() + '</section>';
     if (!M.suppliers.length) return '<section class="su-wrap">' + html + ((M.unread || []).length ? '' : emptyHTML() + importInputHTML()) + '</section>';
-    return '<section class="su-wrap">' + html + '<div class="su-workspace-tools">' + button('collapse', M.sidebar ? 'Hide suppliers' : 'Show suppliers', ' aria-expanded="' + M.sidebar + '"') + '</div><div class="su-layout' + (M.sidebar ? '' : ' is-collapsed') + '">' + sidebarHTML() + '<div class="su-content">' + (M.mode === 'manage' ? manageHTML() : orderHTML()) + '</div></div>' + importInputHTML() + '</section>';
+    return '<section class="su-wrap' + (order ? ' su-order-workspace' : '') + '">' + html + (order ? '' : tools) + '<div class="su-layout' + (M.sidebar ? '' : ' is-collapsed') + '">' + sidebarHTML() + '<div class="su-content">' + (M.mode === 'manage' ? manageHTML() : orderHTML()) + '</div></div>' + importInputHTML() + '</section>';
+  }
+  // Move the same cut-off, Last order and History controls at the layout boundary. Keep any field or action in focus.
+  function placeOrderContext() {
+    var context = M.root && M.root.querySelector('.su-order-context'); if (!context) return;
+    var wide = orderWide.matches && M.sidebar, parent = wide ? M.root.querySelector('.su-side') : context;
+    var info = M.root.querySelector('.su-info'); if (info.parentNode === parent) return;
+    var active = document.activeElement, history = M.root.querySelector('[data-su="history"]');
+    parent.append(info); (wide ? M.root.querySelector('.su-toolbar') : context).append(history);
+    if (active && (info.contains(active) || history === active) && active.getClientRects().length) active.focus({ preventScroll: true });
   }
   /* Saved suppliers the catalogue check refused (supplier-store.js loadSuppliers, 5 Nov 2026): named, so the head chef
      knows which one, while the others work. Read with the list, no extra reads. */
@@ -1037,11 +1052,13 @@
     if (M.stamp && activeTask() !== 'catalogue') M.stamp = null;   // the stamp goes with the catalogue view
     if (!M.msg) M.msgAt = '';
     var active = document.activeElement, keep = active && M.root.contains(active) ? { field: active.getAttribute('data-sf'), id: active.getAttribute('data-i'), part: active.getAttribute('data-part'), start: active.selectionStart, end: active.selectionEnd } : null;
-    var y = window.scrollY; M.root.innerHTML = mainHTML(); if (M.saving) Array.prototype.forEach.call(M.root.querySelectorAll('input,select,textarea,button'), function (n) { n.disabled = true; }); window.scrollTo(0, y);
+    var historyFocus = active && active.id === 'su-history-title';
+    var y = window.scrollY; M.root.innerHTML = mainHTML(); placeOrderContext(); if (M.saving) Array.prototype.forEach.call(M.root.querySelectorAll('input,select,textarea,button'), function (n) { n.disabled = true; }); window.scrollTo(0, y);
     if (keep && keep.field) {
       var candidates = M.root.querySelectorAll('[data-sf]'), found = Array.prototype.filter.call(candidates, function (n) { return n.getAttribute('data-sf') === keep.field && n.getAttribute('data-i') === keep.id && n.getAttribute('data-part') === keep.part; })[0];
       if (found) { found.focus({ preventScroll: true }); if (typeof keep.start === 'number') try { found.setSelectionRange(keep.start, keep.end); } catch (e) {} }
     }
+    if (historyFocus) { var title = M.root.querySelector('#su-history-title'); if (title) title.focus({ preventScroll: true }); }
     window.dispatchEvent(new Event('lk-nav'));
   }
   function leaveForm(key) { if (!formDirty() || M.armedLeave === key) { M.ed = null; M.supplierEd = null; M.armedLeave = ''; return true; } M.armedLeave = key; message('These changes are not saved. Save them, or press Back again to discard them.'); return false; }
@@ -1058,6 +1075,12 @@
   function focusBack(selector) {
     var el = M.root && M.root.querySelector(selector);
     if (el) { el.scrollIntoView({ block: 'center' }); el.focus({ preventScroll: true }); }
+  }
+  function jumpTo(heading) {
+    if (!heading) return;
+    heading.scrollIntoView({ block: 'start', behavior: 'instant' }); heading.focus({ preventScroll: true });
+    // Product rows above the target can take their real height after the first scroll.
+    requestAnimationFrame(function () { requestAnimationFrame(function () { if (heading.isConnected) heading.scrollIntoView({ block: 'start', behavior: 'instant' }); }); });
   }
   /* After a catalogue save, archive or restore: the list on the page holding the item, its row in view (where Back lands
      too) and wearing "Saved 14:02" (or Archived, Restored) until the person leaves the catalogue view (5 Nov 2026,
@@ -1085,7 +1108,21 @@
     if (M.saving || M.review && M.review.uncertain) return;
     M.review = null; M.err = ''; draw(); focusBack('[data-su="review"]');
   }
-  function closeHistory() { M.historyOpen = false; M.reuse = ''; draw(); focusBack('[data-su="review"]'); }
+  function openHistory() {
+    // Supplier entry already starts the recent-order read. Leave retry and older pages to their own actions.
+    M.historyReturnY = window.scrollY; M.historyOpen = true; draw();
+    jumpTo(M.root.querySelector('#su-history-title'));
+  }
+  function closeHistory() {
+    var y = M.historyReturnY; M.historyOpen = false; M.historyReturnY = null; M.reuse = ''; draw();
+    var history = M.root.querySelector('[data-su="history"]');
+    if (!history) return;
+    function restore() { window.scrollTo({ top: y || 0, behavior: 'instant' }); }
+    restore(); history.focus({ preventScroll: true });
+    // The browser can correct its scroll anchor when the long list replaces its placeholder row sizes.
+    requestAnimationFrame(function () { if (document.activeElement === history) restore(); });
+  }
+  function resetHistoryView() { M.historyOpen = false; M.historyReturnY = null; M.historyId = ''; M.historyQ = ''; M.reuse = ''; }
   function backLabel() {
     if (!M.root) return '';
     var task = activeTask();
@@ -1119,7 +1156,7 @@
   }
   function pick(sid) {
     if (!leaveForm('pick:' + sid)) return;
-    M.sid = sid; M.route.cutoffId = ''; M.route.cutoffDay = ''; M.q = ''; M.group = ''; M.filter = ''; M.infoOpen = null; M.page = 0; M.review = null; M.additional = ''; M.historyOpen = false; M.auditOpen = false; M.historyId = ''; M.err = ''; M.msg = ''; M.validation = null; M.archive = ''; M.reuse = ''; draw(); loadHistory(false, false);
+    M.sid = sid; M.route.cutoffId = ''; M.route.cutoffDay = ''; M.q = ''; M.group = ''; M.filter = ''; M.infoOpen = null; M.page = 0; M.review = null; M.additional = ''; M.auditOpen = false; M.err = ''; M.msg = ''; M.validation = null; M.archive = ''; resetHistoryView(); draw(); loadHistory(false, false);
   }
   function beginReview() {
     if (!canRead() || M.saving) return;
@@ -1365,16 +1402,18 @@
   }
   function mount(root, route) {
     syncContext(); M.root = root;
-    var routeKey = [route && route.sid || '', route && route.mode || 'order', route && route.cutoffId || '', route && route.cutoffDay || ''].join('|');
+    var previous = M.sid, routeKey = [route && route.sid || '', route && route.mode || 'order', route && route.cutoffId || '', route && route.cutoffDay || ''].join('|');
     if (routeKey !== M.routeKey) { M.route = Object.assign({}, route || {}); M.routeKey = routeKey; M.mode = route && route.mode === 'manage' ? 'manage' : 'order'; if (route && route.sid) M.sid = route.sid; }
     if (editorHere() && M.ed.routeKey === routeKey || supplierEditorHere() && M.supplierEd.routeKey === routeKey) M.mode = 'manage';
     if (M.route.cutoffId && M.suppliers) { var linked = M.suppliers.filter(function (s) { return s.cutoffId === M.route.cutoffId; }); if (linked.length === 1) M.sid = linked[0].id; }
+    if (M.sid !== previous) { M.infoOpen = null; resetHistoryView(); }
     draw(); load(false);
     if (M.suppliers && M.sid && !cutCard()) { loadHistory(false, false); loadSales(false); }
   }
   // leaving the page drops a waiting try (againArm()): opening it again reads what never loaded, and a line that
   // stays keeps its Try again
   function unmount() { M.root = null; againAll(); }
+  orderWide.addEventListener('change', placeOrderContext);
   document.addEventListener('click', function (ev) {
     if (!M.root || !M.root.contains(ev.target)) return;
     var el = ev.target.closest('[data-su]'); if (!el || el.disabled) return;
@@ -1383,7 +1422,7 @@
     if (!canRead()) { reset(); draw(); return; }
     if (cmd.indexOf('sales-') === 0) { salesClick(cmd, el, id); return; }
     if (cmd === 'retry' || cmd === 'refresh') { load(true); return; }
-    if (cmd === 'collapse') { M.sidebar = !M.sidebar; try { localStorage.setItem('lk.sup.sidebar', M.sidebar ? 'show' : 'hide'); } catch (e) {} draw(); }
+    if (cmd === 'collapse') { M.sidebar = !M.sidebar; try { localStorage.setItem('lk.sup.sidebar', M.sidebar ? 'show' : 'hide'); } catch (e) {} draw(); var toggle = M.root.querySelector('[data-su="collapse"]'); if (toggle) toggle.focus({ preventScroll: true }); }
     if (cmd === 'pick') pick(el.getAttribute('data-sid'));
     if (cmd === 'group') { M.group = el.getAttribute('data-group'); M.page = 0; draw(); }
     if (cmd === 'sort') { var column = el.dataset.column, previous = M.tableSort; M.tableSort = { column: column, direction: previous && previous.column === column ? previous.direction === 1 ? -1 : previous.direction === -1 ? 0 : 1 : 1 }; M.page = 0; draw(); }
@@ -1401,10 +1440,10 @@
     if (cmd === 'smart') { M.smart = !M.smart; draw(); if (M.smart) loadRequests(); }
     if (cmd === 'requests-retry') { M.requests = null; M.requestsWant = true; loadRequests(); }
     if (cmd === 'requests') { M.requestsWant = true; loadRequests(); }
-    if (cmd === 'info') { var box = el.closest('.su-info'); M.infoOpen = !(box && box.classList.contains('open')); draw(); }
+    if (cmd === 'info') { var box = el.closest('.su-info'); M.infoOpen = !(box && box.classList.contains('open')); draw(); M.root.querySelector('[data-su="info"]').focus({ preventScroll: true }); }
     if (cmd === 'jump') {
       var cat = el.getAttribute('data-cat'), head = Array.prototype.filter.call(M.root.querySelectorAll('.su-category'), function (h) { return h.getAttribute('data-cat') === cat; })[0];
-      if (head) { head.scrollIntoView({ block: 'start' }); head.focus({ preventScroll: true }); requestAnimationFrame(function () { requestAnimationFrame(function () { if (head.isConnected) head.scrollIntoView({ block: 'start' }); }); }); }
+      jumpTo(head);
     }
     if (cmd === 'filter') { M.filter = el.getAttribute('data-f') || ''; M.page = 0; draw(); }
     // − and + change the number in the box by one order unit; a typed unit after the number stays as it is
@@ -1425,7 +1464,7 @@
     if (cmd === 'review') beginReview(); if (cmd === 'record') record(); if (cmd === 'review-close') closeReview();
     if (cmd === 'copy-review' && M.review) copyOrder(M.review.lines, M.review.supplierName);
     if (cmd === 'share-review' && M.review) shareOrder(M.review.lines, M.review.supplierName);
-    if (cmd === 'history') { M.historyOpen = !M.historyOpen; draw(); if (M.historyOpen) loadHistory(true, false); }
+    if (cmd === 'history') { if (M.historyOpen) closeHistory(); else openHistory(); }
     if (cmd === 'history-close') closeHistory();
     if (cmd === 'history-retry') historyAgain();
     if (cmd === 'history-more') loadHistory(true, true);
