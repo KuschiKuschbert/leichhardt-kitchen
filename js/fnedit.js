@@ -259,8 +259,8 @@
       }).join('') + '</ul>' + (tot.length ? '<p class="fe-dtot">Confirmed for the day: ' + tot.map(function (r) { return r.qty + ' ' + esc(M.short(r.name)); }).join(', ') + '</p>' : '') + '</section>';
     }).join('');
     return head + (drafts.indexOf(draftKey('new')) >= 0 ? '<p class="fe-note">A new function you started is not saved yet. <a href="#/functions/new">Carry on with it</a>.</p>' : '') +
-      '<div class="field"><label class="label" for="fe-q">Search</label><input id="fe-q" class="search" data-ff="q" value="' + esc(E.q) + '" placeholder="Name or place" autocomplete="off"></div>' +
-      '<div class="chips scroll" role="group" aria-label="Show">' + CHIPS.map(function (c) { return '<button type="button" class="chip" data-fe="chip" data-v="' + c[0] + '" aria-pressed="' + (E.chip === c[0]) + '">' + c[1] + ' <span class="lv-n">' + E.list.filter(function (f) { return inChip(f, c[0]); }).length + '</span></button>'; }).join('') + '</div>' +
+      '<div class="fe-list-tools"><div class="field"><label class="label" for="fe-q">Search</label><input id="fe-q" class="search" data-ff="q" value="' + esc(E.q) + '" placeholder="Name or place" autocomplete="off"></div>' +
+      '<div class="chips scroll" role="group" aria-label="Show">' + CHIPS.map(function (c) { return '<button type="button" class="chip" data-fe="chip" data-v="' + c[0] + '" aria-pressed="' + (E.chip === c[0]) + '">' + c[1] + ' <span class="lv-n">' + E.list.filter(function (f) { return inChip(f, c[0]); }).length + '</span></button>'; }).join('') + '</div></div>' +
       (body || '<p class="hint">No functions here.</p>') + (E.listAt ? '<p class="hint">Read ' + esc(stamp(E.listAt)) + '. <button type="button" class="linkish" data-fe="reload">Read again</button></p>' : '');
   }
 
