@@ -14,6 +14,8 @@
 
 - **22 November 2026, jump to delivery records.** Put one jump in the phone's Delivery received heading. It leads to the existing receipt scope and keeps the form. [Council quick check](delivery-received.md#delivery-records-jump-22-nov-2026)
 
+- **22 November 2026, more room for Delivery received.** Tighten the form spacing and place receipts beside it from 1100 px. Keep the existing fields, Save and receiving rules. [Delivery received](delivery-received.md#more-room-for-the-form-and-receipts-22-nov-2026)
+
 - **20 November 2026, the look choices of the consistency sweep: all 22 of the recommended picks.** The sweep (`docs/consistency-sweep-options/brief.md`, step 3) put the 25 choices the audit found on one page as 22 questions. The head chef answered "All my picks":
   - **The look:**
     1. The main button is the orange button with 8 px corners everywhere, in sheets too (Got it, the mail pop-up).
