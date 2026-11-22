@@ -5873,6 +5873,20 @@ html:has(.tm-focus-page) {
 @media (min-width: 1100px) {
   .tm-focus-page .tm-focus-grid { grid-template-columns: minmax(0, 1fr); }
   .tm-focus-page .tm-focus-grid > .tm-detail-workbench { position: sticky; top: 1rem; }
+  /* On a wide screen the closed date control and the roster tools share one row. */
+  .tm-notebook.tm-focus-page .tm-nbook:has(.tm-week-reveal[hidden]):not(:has(.tm-live-strip:not([hidden]), .tm-future-note)) {
+    grid-template-columns: max-content minmax(0, 1fr);
+    grid-template-areas: 'head head' 'date toolbar' 'week week' 'away away' 'notice notice' 'editor editor' 'save save' 'review review' 'tools tools' 'roster roster' 'extra extra';
+  }
+  .tm-focus-page .tm-nbook:has(.tm-week-reveal[hidden]):not(:has(.tm-live-strip:not([hidden]), .tm-future-note)) .tm-date-controls {
+    align-self: center; margin: .65rem 0 .65rem .85rem;
+  }
+  .tm-focus-page .tm-nbook:has(.tm-week-reveal[hidden]):not(:has(.tm-live-strip:not([hidden]), .tm-future-note)) .tm-date-controls > button:first-child {
+    flex-basis: auto; min-width: 12rem;
+  }
+  .tm-focus-page .tm-nbook:has(.tm-week-reveal[hidden]):not(:has(.tm-live-strip:not([hidden]), .tm-future-note)) .tm-focus-toolbar {
+    align-self: center; justify-self: end; width: min(100% - 1.7rem, 30rem); margin: .65rem .85rem;
+  }
 }
 @media (max-width: 1099px) {
   .tm-focus-page .tm-focus-grid > .tm-detail-workbench.is-empty { display: none; }
@@ -5880,6 +5894,11 @@ html:has(.tm-focus-page) {
 @media (max-width: 719px) {
   .p-admin.ad-admin.tm-focus-panel .a-nav { margin-bottom: 0; }
   .p-admin.ad-admin.tm-focus-panel .ad-heading { margin-bottom: .2rem; }
+  .tm-notebook.tm-focus-page .tm-nhead { padding-block: .375rem; }
+  /* The header already says Saved. Keep the phone dock for work, live staffing notices and save feedback. */
+  .tm-notebook.tm-focus-page:not(:has(.tm-quick-add:not([hidden]))) .tm-focus-save:has(.sv-btn:disabled[aria-busy="false"]:not([data-sv])):not(.has-short):not(:has(.sv-line:not(:empty))) {
+    display: none;
+  }
   .tm-notebook.tm-focus-page .tm-nhead .p-h { font-size: 1.7rem; }
   .tm-focus-page .tm-row-fields { gap: .35rem; }
   .tm-notebook.tm-focus-page .tm-row-fields .ux-picker-trigger { padding-inline: .5rem; }

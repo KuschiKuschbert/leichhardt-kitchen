@@ -6,6 +6,8 @@
 
 - **22 November 2026, full hours in Today's team.** The green Rostered hours box shows the original CSV start and finish on imported team plans so the chef can see the person's hours while assigning shifts and sections. See [Roster import](roster-import-options/brief.md#full-roster-times-in-the-planner-22-nov-2026).
 
+- **22 November 2026, more room for Today's team.** The head chef approved the matched app comparisons for build. Date and tools share a row when there is room. A phone gives up the idle Save dock while keeping the saved status in the heading and showing the dock for edits, warnings and save feedback. [Planner implementation](team-page-options/implementation.md#compact-planner-controls-22-november-2026)
+
 - **20 November 2026, the look choices of the consistency sweep: all 22 of the recommended picks.** The sweep (`docs/consistency-sweep-options/brief.md`, step 3) put the 25 choices the audit found on one page as 22 questions. The head chef answered "All my picks":
   - **The look:**
     1. The main button is the orange button with 8 px corners everywhere, in sheets too (Got it, the mail pop-up).
