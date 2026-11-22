@@ -108,14 +108,24 @@ const resetPin = id => '[data-p="a-reset-pin"][data-id="' + id + '"]';
   const search = mobile.locator('[data-k="lv-q:people"]');
   await search.fill('Person');
   await L.waitFor(mobile, () => document.querySelectorAll('.pp-row').length === 12);
-  const person = mobile.locator(row('person-10') + ' [data-p="a-person-open"]');
+  const personSelector = row('person-10') + ' [data-p="a-person-open"]';
+  const person = mobile.locator(personSelector);
   const openOnMobile = async () => {
-    await person.evaluate(e => {
+    await person.evaluate((e, selector) => {
       e.scrollIntoView({ block: 'center' });
-      e.addEventListener('click', () => { window.peoplePosition = { y: scrollY, top: e.getBoundingClientRect().top }; }, { once: true });
-    });
+      window.peoplePosition = null;
+      // The roster can redraw before the click. Measure the name that actually receives it.
+      document.addEventListener('click', function recordPosition(event) {
+        const name = event.target.closest(selector);
+        if (!name) return;
+        document.removeEventListener('click', recordPosition, true);
+        window.peoplePosition = { y: scrollY, top: name.getBoundingClientRect().top };
+      }, true);
+    }, personSelector);
     await person.click();
-    return mobile.evaluate(() => window.peoplePosition);
+    const position = await mobile.evaluate(() => window.peoplePosition);
+    if (!position) throw new Error('The People test did not record the clicked name position');
+    return position;
   };
   const before = await openOnMobile();
   const mobileEditor = mobile.locator(editor('person-10'));
