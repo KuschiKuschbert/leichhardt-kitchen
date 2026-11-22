@@ -397,6 +397,7 @@ Dated decisions, newest first, are in [docs/head-chef-decisions.md](docs/head-ch
 
 The detail is in [docs/prep-book.md](docs/prep-book.md) (moved 3 Nov 2026). Search it for one of these headings and read that part:
 
+- [More room on Prep Work on a phone](docs/prep-book.md#more-room-on-prep-work-on-a-phone). Shorter gaps put the working lines higher above Add while keeping the date and notices in view.
 - Roles, rollover, insights, badges and recipe links
 - Undo and second taps (October 2026)
 - No signal and failed saves (October 2026)
