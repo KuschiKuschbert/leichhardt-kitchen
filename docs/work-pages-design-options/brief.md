@@ -86,12 +86,19 @@ The updated wall-board test failed three personal-device checks out of 23 agains
 
 Synthetic screenshots: [personal account's Wall board entry](wall-accounts-entry-1280.png), [the board open on that account](wall-accounts-board-1280.png).
 
+## End-of-day review placement, 22 November 2026
+
+**Verdict: Build (quick check).** Put the existing chef review action beside today's Wastage total. After a long service the chef can see whether a note was written and open it in one tap from the first screen. The approved notebook keeps its entry list, total, reason split and primary Log waste action. The existing responsive sheet keeps its fields, draft, Save behaviour and focus return. The print layout keeps the review status and hint at the foot. The adjustment adds zero reads, writes and stored fields.
+
+Linear's status near a decision and Things 3's direct action fit this review. Headspace's clear next action is reflected in Log waste remaining primary. Opening the editor still takes one tap. With twelve synthetic entries and the app's fonts in Chromium, the action moved from y1252 to y247 at 390 × 844 px, y1034 to y262 at 768 × 900 px, and y976 to y226 at 1280 × 800 px. Each new target is 44 px high. The first entry moves down 27 px on the phone and 19 px at the other sizes in that fixture. At these viewport heights, each shows one fewer complete row before scrolling.
+
+The existing Wastage fixture and the targeted browser checks cover screen placement, print ordering and hint, chef and staff access, a failed review read, keyboard and focus return, draft retention, and the existing save payload and feedback. The comparison uses the app source and synthetic records in Chromium.
 
 ## Quick council check for the finished lists (22 November 2026)
 
 Verdict: Build. Use the Prep notebook's progress jump to reach finished work without scrolling through active requests. Orders makes the existing progress count a button once the original Ordered today fold has lines. Transfers puts a named jump beside Still out. It goes to the existing Done today section. A tap opens Orders' current fold if needed and puts focus on its summary. The Transfers jump puts focus on the Done today heading.
 
-The existing control names and placement follow Linear's familiar frame. Things 3's separation of work still to do from finished work stays. Headspace's plain labels identify the destination. The jumps use the notebook's existing surfaces and ink or action colour. They show no completion or delivery result and add no reads, writes or overlays. The kitchen can still add, tick and mark a return as before. The end-of-day Wastage review stays in its chosen footer.
+The existing control names and placement follow Linear's familiar frame. Things 3's separation of work still to do from finished work stays. Headspace's plain labels identify the destination. The jumps use the notebook's existing surfaces and ink or action colour. They show no completion or delivery result and add no reads, writes or overlays. The kitchen can still add, tick and mark a return as before.
 
 Checked in the app fixture: marking an order stays on its original line through the ten-minute Undo window. The count becomes a jump only when the existing fold has entries. A normal jump leaves the posted and saved records alone, while the focus moves to a real heading or summary. Physical devices and assistive technology are outside the browser check.
 
