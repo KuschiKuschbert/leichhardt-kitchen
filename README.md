@@ -115,6 +115,8 @@ Card 137 is a new special (Specials, as a snack), costed in AVC Live as Loaded S
 
 Carolina Gold BBQ Sauce, House BBQ Sauce, Alabama White Sauce and Cornbread have batch cards and matching pan drawings. Cornbread and Alabama White link from the ingredients and drawing pins on both smoked boards. The supplied cards have no methods. The head chef instructed us to omit the pecan and unnamed ingredient entries. The drawings reuse existing sauce pans and the library's exact cornbread piece. House BBQ is not substituted for double-smoked BBQ without confirmation. See [smoker batch cards](docs/smoker-batches.md) for the source questions, saved-book overlay limitation and controlled-clock release verification.
 
+Two-page guides (22 Nov 2026) show both page buttons side by side. Tap either one to read it in the existing Guide viewer. Closing the viewer returns you to the page button you opened. [Guides](docs/prep-book.md#guides)
+
 ## Tutorial videos in Guides (19 November 2026)
 
 Guides has a Videos group, last, with its own chip: a short video of how each page of the book works, with every step written out under it. Staff see the 14 videos of the pages they use. The head chef, the sous chefs and the admin also see Today's team, the chef panel, Supplier order, Recipes and drawings and the three admin videos, marked For chefs. A video guide has one Play button; the video opens over the page, the tall cut on a phone and the wide cut on a computer, and Back or Close shuts it. Until its link is saved it says Video to come, and the written steps carry it.
