@@ -388,7 +388,7 @@ The detail is in [docs/prep-book.md](docs/prep-book.md) (moved 3 Nov 2026). Sear
 - Insights added in October 2026
 - Big lists in the admin area (October 2026)
 - Shift pings
-- Kitchen meeting minutes
+- Kitchen meeting minutes. **Go to sign-off** in unsigned minutes takes you to the attestation and your Sign button.
 - Kitchen mail (October 2026)
 - Chef to-do (23 Oct 2026)
 - Drinks run (October 2026)

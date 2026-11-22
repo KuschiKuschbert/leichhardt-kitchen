@@ -1398,6 +1398,11 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .mn-cell span { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .mn-cell b { font-weight: 600; overflow-wrap: anywhere; }
 .mn-cell.mn-wide { grid-column: 1 / -1; border-top: 1px solid var(--ink); }
+@media screen {
+  .mn-cell.mn-wide:has(.mn-sign-jump) { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: .75rem; }
+  .mn-sign-jump { grid-column: 2; grid-row: 1 / span 2; align-self: center; margin-block: -.35rem; text-align: right; }
+}
+@media print { .p-link.mn-sign-jump { display: none; } }
 .mn-safety { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.8rem 0.9rem; border-radius: 8px; background: var(--accent-ink); color: #fff; font-weight: 500; }
 .mn-sl { font: 700 1.125rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; }
 .mn-safety .mn-ul { margin: 0; }
