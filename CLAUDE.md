@@ -87,6 +87,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | A second venue on its own address and project, its head chef as its admin, Getting started rows and Add from AVC Live (mix chosen 19 Nov 2026, not built); no Venues room for now, venues added in GitHub (agreed 19 Nov 2026) | `docs/second-venue-options/brief.md`, `docs/venues-room-options/brief.md` |
 | Venues (step 2, 19 Nov 2026): `venues/<id>.json`, each venue's GitHub environment and jobs, its own copy of the book, two admins in the rules; adding a venue and changing its head chef | `docs/venues.md` (read before touching a workflow, the rules' admin lines or `js/firebase-config.js`) |
 | Functions: cancel, Undo, delete, print | `docs/function-cancellation.md`, `docs/function-printing.md` |
+| Functions: compact private booking contact (C chosen 23 Nov 2026) | `docs/function-booking-contact-options/brief.md` |
 | Functions ahead of time: the chosen mix (Function this week card, Next function line, Orders tag, who has said Got it), when a function shows before its day | `docs/function-ahead-options/brief.md` (Chosen, build plan) |
 | Function times: typed, never guessed, a list of times on a laptop (chosen 18 Nov 2026) | `docs/fn-time-picker-options/brief.md` (Chosen) |
 | Functions service two-way check: the kitchen sends trips, Functions confirms each (chosen as a trial 14 Nov 2026: the mix) | `docs/function-handover-options/brief.md` (Chosen, verification) |

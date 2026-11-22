@@ -2967,7 +2967,8 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fe-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem; }
 .fe-head h2 { margin: 0; font: 700 2rem var(--display); overflow-wrap: anywhere; }
 /* the status tag keeps its own height beside Print function: the row stretched it to 48 px from 768 px (audit, 15 Nov 2026) */
-.fe-head .btn-row { align-items: center; }
+.fe-head .btn-row { align-items: center; min-width: 0; }
+.fe-head .btn-row .fn-tag { white-space: normal; overflow-wrap: anywhere; }
 /* The chef panel's Kitchen tools (the mix chosen 15 Nov 2026, docs/chef-kitchen-options/brief.md): one row per tool, the
    whole row the link, its name, what this role can do there and Open in words. One layout at every width, the block
    capped so the rows do not stop short of it on a laptop. */
@@ -2994,6 +2995,8 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fe-lq { display: flex; align-items: center; gap: 0.4rem; }
 .fe-num { width: 5rem; min-height: 44px; text-align: center; }
 .fe-grid .fe-num { width: 4rem; }
+/* Keep the round grid's visually hidden input labels inside its own scrolling frame. */
+.fe .fn-tw:has(> .fe-grid) { position: relative; }
 .fe-time { width: 9rem; max-width: 100%; min-width: 0; min-height: 44px; text-align: center; }
 .fe-rnote { display: block; width: 11rem; margin-top: 0.25rem; min-height: 36px; font-size: 0.85rem; }
 /* typed function times (head chef, 18 Nov 2026, docs/fn-time-picker-options/brief.md): the time said back under the box
@@ -3164,7 +3167,11 @@ a.fn-svc { display: inline-flex; align-items: center; color: var(--bar-text); te
 .fe-wrap { gap: 0.6rem; }
 .fe .set-block { gap: 0.4rem; padding-bottom: 0.75rem; }
 .fe .field { gap: 0.2rem; }
-.fe-contact > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.6rem; min-height: 44px; cursor: pointer; }
+.fe-contact { display: grid; gap: 0.4rem; margin-top: 0.2rem; border-top: 1px solid var(--line); }
+.fe-contact-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.4rem 0.75rem; }
+.fe-contact-row > span { min-width: 0; }
+.fe-contact-row .btn { min-height: 44px; }
+#fe-contact-fields:not([hidden]) { display: grid; gap: 0.4rem; }
 .fe-sum { color: var(--muted); font-size: 0.9rem; overflow-wrap: anywhere; }
 .fe-line { padding: 0.35rem 0.5rem; gap: 0.3rem 0.6rem; }
 .fe-ln small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

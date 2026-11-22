@@ -159,6 +159,11 @@
     if (d.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email.trim())) out.push({ k: 'email', t: 'Email: that does not look like an email address.' });
     return out;
   }
+  var CONTACT_FIELDS = ['cname', 'phone', 'email'];
+  function contactChanges(d, saved) {
+    saved = saved || {};
+    return CONTACT_FIELDS.filter(function (k) { return d[k] !== (saved[k] || ''); });
+  }
 
   /* ---------- the schedule: worked out again when what it is made from changes, never over a grid set by hand ---------- */
   /* A round time set by hand (h on the round, never saved) stays when the first round, Rounds or the gap changes; the line
@@ -330,27 +335,63 @@
       }
     }
     e.restored = !!kept && !copyOf;
+    e.contactOpen = contactProblems(e.d).length > 0;
     E.ed = e; keep(); draw();
     focusF('name');
   }
   function openId(id) {
-    var kept = lsGet(draftKey(id)), api = B(), owner = E.identity;
+    var kept = lsGet(draftKey(id)), api = B(), owner = E.identity, contactFromServer = false;
     var opening = E.ed = { id: id, loading: true }; draw();
     api.ready().then(function () {
       var fs = api.fs();
-      var g = function (ref) { return fs.getDocFromServer(ref).catch(function () { return fs.getDoc(ref); }); };
-      return Promise.all([g(api.docRef('functions', id)), g(api.docRef('fncontact', id)).catch(function () { return null; })]);
+      var g = function (ref, contact) {
+        return fs.getDocFromServer(ref).then(function (snap) {
+          if (contact) contactFromServer = true;
+          return snap;
+        }, function () { return fs.getDoc(ref); });
+      };
+      return Promise.all([g(api.docRef('functions', id)), g(api.docRef('fncontact', id), true).catch(function () { return null; })]);
     }).then(function (r) {
       if (E.ed !== opening || !owned(owner)) return;
       if (!r[0].exists()) { E.ed = { id: id, missing: true }; draw(); return; }
-      var f = M.derive(Object.assign({ id: id }, r[0].data())), c = r[1] && r[1].exists() ? r[1].data() : {};
-      // cMiss: the contact could not be read on this phone (no PIN session for a function manager, or no signal)
-      var e = { id: id, isNew: false, v: f.v, status: f.status, saved: f, savedC: c, cMiss: r[1] === null, d: fromDoc(f, c) };
-      if (kept && !f.removed) { try { var k = JSON.parse(kept); if (k && k.d && (!k.identity || k.identity === owner)) { e.d = k.d; if (e.d.mode === 'stag' && Array.isArray(e.d.rounds)) markHand(e.d); e.status = k.status || e.status; e.restored = true; e.keptV = k.v; } } catch (x) {} }
+      var f = M.derive(Object.assign({ id: id }, r[0].data())), snap = r[1], meta = snap && snap.metadata;
+      var c = snap && snap.exists() ? snap.data() : {};
+      // A failed server read can fall back to an empty copy. Only a current answer can verify an empty contact.
+      var verified = meta ? meta.fromCache === false && !meta.hasPendingWrites : contactFromServer;
+      var contactRead = !snap ? 'unavailable' : verified ? 'verified' : 'unverified';
+      var e = { id: id, isNew: false, v: f.v, status: f.status, saved: f, savedC: c, contactRead: contactRead, d: fromDoc(f, c) };
+      if (kept && !f.removed) {
+        try {
+          var k = JSON.parse(kept);
+          if (k && k.d && (!k.identity || k.identity === owner)) restoreDraft(e, k);
+        } catch (x) {}
+      }
+      e.contactOpen = contactRead !== 'verified' || e.legacyContactV != null || contactProblems(e.d).length > 0;
       E.ed = e; draw();
     }, function () { if (E.ed === opening && owned(owner)) { E.ed = { id: id, failed: true }; draw(); } });
   }
-  function keep() { var e = E.ed; if (!e || !e.d || workLock() || !owned(E.identity)) return; lsSet(draftKey(e.isNew ? 'new' : e.id), JSON.stringify({ identity: E.identity, id: e.id, isNew: e.isNew, v: e.v, status: e.status, d: e.d, saved: e.isNew ? null : undefined })); }
+  function restoreDraft(e, kept) {
+    if (Array.isArray(kept.contactEdits)) {
+      // Restore only contact fields this manager changed. The rest belongs to the freshly loaded contact.
+      CONTACT_FIELDS.forEach(function (k) { if (kept.contactEdits.indexOf(k) < 0) kept.d[k] = e.d[k]; });
+    } else if (kept.v != null && (kept.v !== e.v || e.contactRead !== 'verified') && contactChanges(kept.d, e.savedC).length) {
+      // An older local draft has no field intents. Keep its values and let the existing conflict check ask before replacing.
+      e.legacyContactV = kept.v;
+    }
+    e.d = kept.d;
+    if (e.d.mode === 'stag' && Array.isArray(e.d.rounds)) markHand(e.d);
+    e.status = kept.status || e.status;
+    e.restored = true;
+  }
+  function keep() {
+    var e = E.ed;
+    if (!e || !e.d || workLock() || !owned(E.identity)) return;
+    var legacy = e.legacyContactV != null;
+    lsSet(draftKey(e.isNew ? 'new' : e.id), JSON.stringify({
+      identity: E.identity, id: e.id, isNew: e.isNew, v: legacy ? e.legacyContactV : e.v,
+      status: e.status, d: e.d, saved: e.isNew ? null : undefined, contactEdits: legacy ? undefined : contactChanges(e.d, e.savedC)
+    }));
+  }
   function forget(e) { lsSet(draftKey(e.isNew ? 'new' : e.id), ''); }
   function dirty() {
     var e = E.ed; if (!e || !e.d) return false;
@@ -474,6 +515,27 @@
       FN.sheetHTML(f, false, true).replace(/<div class="btn-row(?: fn-acts)?">[\s\S]*$/, '') + msgHTML(e) +
       '<div class="btn-row"><button type="button" class="btn dark ink-busy-button" data-fe="confirm"' + (e.saving ? ' disabled aria-busy="true"' : '') + '>' + (e.saving ? inkLabel('Saving...') : e.status === 'cancelled' ? 'Put it back on' : 'Confirm function') + '</button><button type="button" class="btn" data-fe="print">Print function</button></div></section>';
   }
+  function contactSummary(e) {
+    if (e.contactRead === 'unavailable') return 'Contact unavailable';
+    if (e.contactRead === 'unverified') return 'Contact not verified';
+    if (e.legacyContactV != null) return 'Contact from older draft';
+    var d = e.d;
+    return d.cname.trim() || (d.phone || d.email ? 'Contact details entered' : 'No contact added');
+  }
+  function contactAction(e) {
+    if (e.contactOpen) return 'Hide contact';
+    return e.d.cname || e.d.phone || e.d.email || e.contactRead && e.contactRead !== 'verified' ? 'Edit contact' : 'Add contact';
+  }
+  function contactHTML(e) {
+    var d = e.d;
+    var note = e.contactRead === 'unavailable' ? 'The contact could not be read on this phone. It stays as it is unless you type a new one. Sign out and in again with your PIN to see it.' :
+      e.contactRead === 'unverified' ? 'The saved contact has not been verified. Reopen the booking when you have a signal.' :
+      e.legacyContactV != null ? 'These details are from the draft on this device. Check them before replacing the saved contact.' : '';
+    return '<div class="fe-contact"><div class="fe-contact-row"><span><span class="label">Booking contact</span> <span class="fe-sum">' + esc(contactSummary(e)) + '</span></span>' +
+      '<button type="button" class="btn" data-fe="contact" aria-expanded="' + !!e.contactOpen + '" aria-controls="fe-contact-fields">' + contactAction(e) + '</button></div>' +
+      (note ? '<p class="hint fe-cmiss">' + esc(note) + '</p>' : '') + '<div id="fe-contact-fields"' + (e.contactOpen ? '' : ' hidden') + '>' +
+      inp('cname', 'Contact name', d.cname, ' maxlength="80" autocomplete="off"') + '<div class="fe-row2">' + inp('phone', 'Phone (optional)', d.phone, ' type="tel" maxlength="30" autocomplete="off"') + inp('email', 'Email (optional)', d.email, ' type="email" maxlength="120" autocomplete="off"') + '</div></div></div>';
+  }
   function editHTML() {
     var e = E.ed;
     if (e.loading) return loading('Opening the function...', 'chef', 3);
@@ -489,11 +551,7 @@
       '<section class="set-block"><span class="label">The function</span>' + inp('name', 'Name or reference', d.name, ' maxlength="80" autocomplete="off" placeholder="Smith birthday"') +
       '<div class="fe-row2">' + inp('date', 'Date', d.date, ' type="date"') + startHTML(d) + '</div>' +
       '<div class="fe-row2">' + guestsHTML(d) + inp('loc', 'Room, area or table (optional)', d.loc, ' maxlength="60" list="fe-locs" autocomplete="off"') + '</div>' +
-      '<datalist id="fe-locs">' + locs().map(function (l) { return '<option value="' + esc(l) + '">'; }).join('') + '</datalist></section>' +
-      // the contact folds away once it is filled in (only function managers see it, never the kitchen)
-      '<details class="set-block fe-contact"' + (d.cname || d.phone || d.email ? '' : ' open') + ((e.shown || []).some(function (x) { return x.k === 'phone' || x.k === 'email'; }) ? ' open' : '') + '><summary><span class="label">Booking contact</span> <span class="fe-sum">' + esc([d.cname, d.phone].filter(Boolean).join(', ') || 'Only function managers see this') + '</span></summary>' +
-      (e.cMiss ? '<p class="hint fe-cmiss">The contact could not be read on this phone. It stays as it is unless you type a new one. Sign out and in again with your PIN to see it.</p>' : '') +
-      inp('cname', 'Contact name', d.cname, ' maxlength="80" autocomplete="off"') + '<div class="fe-row2">' + inp('phone', 'Phone (optional)', d.phone, ' type="tel" maxlength="30" autocomplete="off"') + inp('email', 'Email (optional)', d.email, ' type="email" maxlength="120" autocomplete="off"') + '</div></details>' +
+      '<datalist id="fe-locs">' + locs().map(function (l) { return '<option value="' + esc(l) + '">'; }).join('') + '</datalist>' + contactHTML(e) + '</section>' +
       '<section class="set-block"><span class="label">Platters</span><span class="hint">Whole platters, as booked. Guests never change them.</span>' + linesHTML(e) + '</section>' +
       '<section class="set-block"><span class="label">When the platters go out</span>' + serviceHTML(e) + '</section>' +
       '<section class="set-block"><span class="label">Service and dietary notes</span><label class="visually-hidden" for="fe-notes">Service and dietary notes</label><textarea id="fe-notes" class="search fe-ta" data-ff="notes" maxlength="1000" rows="3" placeholder="Two guests coeliac: keep their platter apart.">' + esc(d.notes) + '</textarea></section>' +
@@ -582,6 +640,7 @@
     var contactBad = guestProblems(e.d).concat(timeProblems(e.d), contactProblems(e.d));
     if ((next === 'confirmed' && probs.length) || contactBad.length) { e.shown = next === 'confirmed' ? probs : contactBad; e.review = false; draw(); goto(e.shown[0].k); return; }
     var api = B(), id = e.id, me = api.who(), owner = E.identity, submitted = clone(e.d), context = api.writeContext ? api.writeContext() : null;
+    var contactSubmitted = false;
     e.saving = 'Saving...'; e.shown = []; draw();
     var slow = setTimeout(function () { if (E.ed === e && e.saving) { e.saving = 'Waiting for the signal. Your changes are kept on this device.'; draw(); } }, 5000);
     api.ready().then(function () {
@@ -592,7 +651,13 @@
       var lock = workLock();
       if (!P.fnOK() && !(context && lock && lock.identity === owner)) throw { code: 'permission-denied' };
       var sv = server === 'offline' ? e.v : (server ? server.v : 0);
-      if (server !== 'offline' && sv !== e.v) {
+      if (e.legacyContactV != null && (server === 'offline' || e.contactRead !== 'verified')) {
+        clearTimeout(slow); e.saving = '';
+        e.msg = 'Not saved. Reopen the booking with a signal to check the contact from your older draft.';
+        draw(); return null;
+      }
+      var expected = e.legacyContactV != null ? e.legacyContactV : e.v;
+      if (server !== 'offline' && sv !== expected) {
         clearTimeout(slow); e.saving = '';
         e.conflict = { v: sv, who: server ? FN.nameOf(server.by) : '', when: server && server.upd, doc: server };
         draw(); return null;
@@ -627,7 +692,8 @@
       // the contact is written only when it changed (22 Oct 2026, review S9), so a phone that could not read it never
       // saves blanks over it
       var con = { cname: submitted.cname.trim().slice(0, 80), phone: submitted.phone.trim().slice(0, 30), email: submitted.email.trim().slice(0, 120) }, conWas = e.savedC || {};
-      if (con.cname !== (conWas.cname || '') || con.phone !== (conWas.phone || '') || con.email !== (conWas.email || '')) ops.push(['set', api.docRef('fncontact', id), Object.assign(con, { upd: t })]);
+      contactSubmitted = contactChanges(con, conWas).length > 0;
+      if (contactSubmitted) ops.push(['set', api.docRef('fncontact', id), Object.assign(con, { upd: t })]);
       return api.W(ops.concat(FN.prepOps(api, prev, f, id, t), FN.orderOps(api, prev, f, id, t)), context).then(function () { return f; });
     }).then(function (f) {
       clearTimeout(slow);
@@ -638,6 +704,7 @@
       var wasNew = e.isNew;
       forget(e);
       e.isNew = false; e.v = f.v; e.status = f.status; e.saved = f; e.savedC = { cname: submitted.cname.trim(), phone: submitted.phone.trim(), email: submitted.email.trim() }; if (!changed) e.d = fromDoc(f, e.savedC);
+      if (wasNew || contactSubmitted) e.contactRead = 'verified';
       e.saving = ''; e.conflict = null; e.review = false; e.restored = false; e.hist = null;
       // the page goes back to its top, as before: the stamp beside the status says the save went through (5 Nov 2026)
       e.savedAt = M.kclock(f.upd);
@@ -654,6 +721,7 @@
     });
   }
   function goto(k) {
+    if (CONTACT_FIELDS.indexOf(k) >= 0 && E.ed && !E.ed.contactOpen) { E.ed.contactOpen = true; draw(); }
     var el = E.root && (E.root.querySelector('[data-ff="' + k + '"]') || E.root.querySelector('#fe-e-' + k));
     if (!el && /^alloc\d+$/.test(k)) el = E.root.querySelector('[data-ff^="a' + k.slice(5) + '_"]');
     if (!el && /^round\d+$/.test(k)) el = E.root.querySelector('[data-ff="rt' + k.slice(5) + '"]');
@@ -713,6 +781,10 @@
     else if (k === 'st') { d.st = !!v; if (v) d.startT = ''; retime(e); }
     else if (k === 'gu') { d.gu = !!v; if (v) d.guests = ''; }
     else if (k in d) d[k] = v;
+    if (CONTACT_FIELDS.indexOf(k) >= 0 && E.root) {
+      var summary = E.root.querySelector('.fe-contact .fe-sum');
+      if (summary) summary.textContent = contactSummary(e);
+    }
     if (e.shown && e.shown.length) e.shown = check({ d: d, status: 'confirmed' }).filter(function (p) { return e.shown.some(function (s) { return s.k === p.k; }); });
     keep();
     if (!quiet) { if (structural) draw(); else { live(); saveSync(); } }
@@ -872,6 +944,12 @@
     }
     if (!e || !e.d) return;
     var d = e.d;
+    if (a === 'contact') {
+      e.contactOpen = !e.contactOpen;
+      draw();
+      E.root.querySelector('[data-fe="contact"]').focus({ preventScroll: true });
+      return;
+    }
     if (a === 'print') {
       if (e.saving) return;
       if (!FN.print) { toast('Reload the book to update function printing. Your changes are kept on this device.'); return; }
@@ -904,10 +982,10 @@
     }
     if (a === 'confirm') { save('confirm'); return; }
     if (a === 'dup') { var src = clone(d); history.pushState(null, '', '#/functions/new'); if (window.LK_APP && window.LK_APP.noteRoute) window.LK_APP.noteRoute(false); E.sub = ['new']; openNew(src); return; }
-    if (a === 'drop') { if (!arm('drop')) return; forget(e); if (e.isNew) { E.ed = null; window.LK_APP.returnTo('#/functions'); return; } e.d = fromDoc(e.saved, e.savedC); e.status = e.saved.status; e.restored = false; e.shown = []; draw(); return; }
+    if (a === 'drop') { if (!arm('drop')) return; forget(e); if (e.isNew) { E.ed = null; window.LK_APP.returnTo('#/functions'); return; } e.d = fromDoc(e.saved, e.savedC); e.status = e.saved.status; e.legacyContactV = null; e.restored = false; e.shown = []; draw(); return; }
     // their version over the changes typed here: a second tap first, like Drop my changes (29 Oct 2026)
     if (a === 'theirs') { if (dirty() && !arm('theirs')) return; forget(e); E.ed = null; openId(e.id); return; }
-    if (a === 'mine') { e.v = e.conflict.v; e.saved = e.conflict.doc; e.conflict = null; save(e.status === 'confirmed' ? 'save' : 'save'); return; }
+    if (a === 'mine') { e.v = e.conflict.v; e.saved = e.conflict.doc; e.legacyContactV = null; e.conflict = null; save('save'); return; }
     if (a === 'hist') { loadHist(); return; }
   });
   function focusF(k) { var el = E.root && E.root.querySelector('[data-ff="' + k + '"]'); if (el) el.focus({ preventScroll: true }); }
