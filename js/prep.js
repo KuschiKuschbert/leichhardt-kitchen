@@ -8404,7 +8404,7 @@ if (list.length) sg('oreg', 's');
     var removedBox = removedO.length && canBrowse() && can('del') ? '<button type="button" class="nb-link" data-p="oremoved">' + (S.oShowRemoved ? 'Hide' : 'Show') + ' removed (' + removedO.length + ')</button>' +
       (S.oShowRemoved ? '<ul class="nb-rows">' + removedO.map(ordRow).join('') + '</ul>' : '') : '';
     // Ordered today, folded (3 Nov 2026): one line with the count, open on a tap
-    var orderedBox = moved.length ? '<details class="o-done"' + (S.oDoneOpen ? ' open' : '') + '><summary data-p="o-done-toggle"><span class="nb-sh">Ordered today (' + moved.length + ')</span></summary><ul class="nb-done">' + moved.map(function (x) {
+    var orderedBox = moved.length ? '<details class="o-done" id="o-donebox"' + (S.oDoneOpen ? ' open' : '') + '><summary data-p="o-done-toggle"><span class="nb-sh">Ordered today (' + moved.length + ')</span></summary><ul class="nb-done">' + moved.map(function (x) {
       return '<li data-ln="' + esc(x.date + '/' + x.id) + '"><span class="nb-dt">' + (x.orderedAt ? clock(x.orderedAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + unsentMark(x) + '</span><span class="nb-dw">' + esc(x.orderedBy || '') + '</span>' +
         (canBrowse() ? '<button type="button" class="p-x nb-undo" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="true" aria-label="' + esc('Not ordered after all: ' + x.text) + '">Undo</button>' : '') + '</li>';
     }).join('') + '</ul></details>' : '';
@@ -8415,7 +8415,10 @@ if (list.length) sg('oreg', 's');
         offO + (shown.length ? '<ul class="nb-rows' + (br && onToday ? ' o-requests' : '') + '">' + shown.slice().sort(br && onToday ? requestOrder : byAdded).map(ordRow).join('') + '</ul>' : (offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : inkWait('Loading the order list...', 'orders', 4))));
     return whoTopHTML() + tabs +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Order list</h2><span class="nb-date">' + esc(longDate(S.ordDate)) + '</span></div>' +
-      (S.ordState !== 'offline' && (S.ordState === 'ok' || live.length) ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') +
+      (S.ordState !== 'offline' && (S.ordState === 'ok' || live.length) ?
+        (orderedBox && S.ordState === 'ok' ? '<button type="button" class="nb-prog nb-progbtn" data-p="o-done-jump" aria-controls="o-donebox" aria-label="' +
+          nOrd + ' of ' + live.length + ' ordered. Show Ordered today">' + nOrd + ' of ' + live.length + ' ordered</button>' :
+          '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>') : '') +
       (add ? dockBtn('nb-addline', 'o-write', 'Add request') : '') + '</header>' +
       (onToday ? cutOrdHTML() : '') + '<div class="o-work">' +
       (can('add') || S.ordDate !== today ? '' : '<p class="hint o-ro">You can read the order list but not write in it.</p>') +
@@ -8648,6 +8651,11 @@ if (list.length) sg('oreg', 's');
   function focusK(k) { var el = S.root && S.root.querySelector('[data-k="' + k + '"]'); if (el) el.focus(); }
   // shown on screen (a box to draw), also when it is fixed in place like Add a line on a phone (offsetParent is null then)
   function focusSel(sel) { var el = S.root && S.root.querySelector(sel); if (el && el.getClientRects().length) el.focus(); }
+  function doneAt(el) {
+    if (!el) return;
+    el.scrollIntoView({ block: 'start' });
+    el.focus({ preventScroll: true });
+  }
   /* Remove or put back a wastage entry: today's on the wastage page (head chef and sous chefs), any day in the admin log.
      Today's lines come from the live list; the admin log's 60 days are patched here (no read), so the change shows at once. */
   function removeWaste(date, id, restore) {
@@ -9284,10 +9292,13 @@ if (list.length) sg('oreg', 's');
       S.xOpenState !== 'ok' ? inkWait('Loading what is still out...', 'transfers', 2) : '';
     var todayNote = S.xState === 'error' ? readErr(pageErr(), 'xfer') : offX || (S.xState !== 'ok' ? inkWait('Loading transfers...', 'transfers', 4) : '');
     var openRows = earlier.concat(todayOpen);
-    var stillOut = '<h3 class="a-ch-h">Still out</h3>' + (openRows.length ? '<p class="hint">Mark returned when all of it is back.</p>' : '') +
+    var stillOutHead = '<h3 class="a-ch-h">Still out</h3>';
+    if (done.length && S.xState === 'ok') stillOutHead = '<div class="tr-list-head">' + stillOutHead +
+      '<button type="button" class="nb-link" data-p="tr-done-jump" aria-controls="tr-donebox">Done today</button></div>';
+    var stillOut = stillOutHead + (openRows.length ? '<p class="hint">Mark returned when all of it is back.</p>' : '') +
       earlierNote + (openRows.length ? '<div class="tr-outstanding tr-cards">' + xCardsHTML(openRows) + '</div>' : '') + todayNote +
       (!openRows.length && !earlierNote && !todayNote ? '<p class="nb-empty">Nothing is out. When another venue takes stock, or we take some from them, log it here so it comes back.</p>' : '');
-    var doneHTML = done.length ? '<h3 class="a-ch-h">Done today</h3><ul class="nb-rows tr-done">' + done.map(xRow).join('') + '</ul>' : '';
+    var doneHTML = done.length ? '<h3 class="a-ch-h" id="tr-donebox" tabindex="-1">Done today</h3><ul class="nb-rows tr-done">' + done.map(xRow).join('') + '</ul>' : '';
     var acts = add ? '' : '<p class="hint w-ro">You can read the transfer list but not write in it.</p>';
     var sheet = add && S.xLog ? '<div class="sheet-bg" data-p="tr-log-close"></div><div class="sheet tr-sheet" role="dialog" aria-modal="true" aria-labelledby="tr-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="tr-log-h">Log a transfer</h3>' +
       '<p class="w-rule">Stock shared with the other venues, both ways. Write the amount and unit, not a price.</p>' + add + '<button type="button" class="btn sheet-x" data-p="tr-log-close">Close</button></div>' : '';
@@ -9324,6 +9335,7 @@ if (list.length) sg('oreg', 's');
   function trClick(a, el) {
     var f = S.xf, id = el.getAttribute('data-id'), dt = el.getAttribute('data-d'), v = el.getAttribute('data-v') || '', i = +el.getAttribute('data-i');
     if (a === 'tr-log') { wSheetOpen('xlog'); return; }
+    if (a === 'tr-done-jump') { doneAt(S.root.querySelector('#tr-donebox')); return; }
     if (a === 'tr-bk-add') { xBasketAdd(); return; }
     if (a === 'tr-bk-del') { f.basket = (f.basket || []).filter(function (x, k) { return k !== i; }); draw(); focusK('tr-text'); return; }
     if (a === 'tr-dir') { f.dir = v === 'in' ? 'in' : 'out'; draw(); return; }
@@ -13701,6 +13713,11 @@ if (list.length) sg('oreg', 's');
     // the day control's ‹ and › on Orders (chefs only, as the date box): one day back or on, like Prep's
     if (a === 'oday') { if (canBrowse()) { S.ordDate = shift(S.ordDate || dayNow(), +el.getAttribute('data-d') || 0); watchOrders(); draw(); } return; }
     if (a === 'o-write') { wSheetOpen('olog'); return; }
+    if (a === 'o-done-jump') {
+      var ordered = S.root.querySelector('#o-donebox');
+      if (ordered) { S.oDoneOpen = ordered.open = true; doneAt(ordered.querySelector('summary')); }
+      return;
+    }
     if (a === 'o-done-toggle') { e.preventDefault(); S.oDoneOpen = !S.oDoneOpen; draw(); return; }
     if (a === 'osugg') { var st = (S.osugg || [])[i]; if (st) { sg('otype', 't'); S.otext = st; if (!S.oqty.trim()) S.oqty = (ordQtyList(st)[0] || {}).q || ''; draw(); var oe = S.root.querySelector('[data-k="o-text"]'); if (oe) { oe.focus(); try { oe.setSelectionRange(oe.value.length, oe.value.length); } catch (x) {} } } return; }
     if (a === 'who') { pickName(id); return; }
