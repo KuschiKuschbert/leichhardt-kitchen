@@ -2432,7 +2432,7 @@ window.LK_DATA = {
           'Sauté the onion, garlic and mushrooms. Add the thyme and check the seasoning with the cracked black pepper and table salt.',
           'Deglaze with the red cooking wine.',
           'Add water to the pot, leaving room for the slurry and cream, and bring it to the boil.',
-          'Start the slurry with 200 ml of cold water and whisk in the gravy powder. If needed, loosen with cold water from the pot-water allowance until pourable.',
+          'In a separate bowl, whisk the gravy powder with 1 L of cold water to make a slurry.',
           'Stir the slurry into the pot and simmer until thickened.',
           'Remove from the heat, add the cooking cream and top up with hot water as needed to reach 12 L finished.'
         ] }
@@ -2460,7 +2460,7 @@ window.LK_DATA = {
           'Cook the finely diced onion, garlic, thyme and green peppercorns until the onion is translucent.',
           'Add the red cooking wine and reduce by half.',
           'Add water to the pot, leaving room for the slurry and cream, and bring it to the boil.',
-          'Start the slurry with 200 ml of cold water and whisk in the gravy powder. If needed, loosen with cold water from the pot-water allowance until pourable.',
+          'In a separate bowl, whisk the gravy powder with 1 L of cold water to make a slurry.',
           'Stir the slurry into the boiling pot, then reduce to a simmer.',
           'Once thickened, remove from the heat, add the cooking cream and season with cracked black pepper and table salt.',
           'Top up with hot water as needed to reach 12 L finished.'
