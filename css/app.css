@@ -5698,6 +5698,10 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .cln-work-note textarea:focus-visible, .cln-form textarea:focus-visible, .cln-import summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .cln-work-actions, .cln-add-occurrence { flex-wrap: wrap; gap: .35rem .65rem; margin-top: .5rem; }
 .cln-work-actions .btn, .cln-add-occurrence .btn { max-width: 100%; white-space: normal; }
+/* Keep the existing button's space when the longer waiting words replace its label. */
+button[data-cln-ready-label] { position: relative; }
+button[data-cln-ready-label]::before { content: attr(data-cln-ready-label); visibility: hidden; }
+button[data-cln-ready-label] > span { position: absolute; inset: 0; display: grid; align-content: center; padding-inline: .25rem; line-height: 1.1; text-align: center; white-space: normal; }
 .cln-temperature { border-top: 1px solid var(--rule); }
 .cln-temperature > .p-link { display: block; text-align: left; font-size: .8125rem; }
 .cln-temperature .hint, .cln-coverage { margin: .1rem 0 .6rem; font-size: .8125rem; }
