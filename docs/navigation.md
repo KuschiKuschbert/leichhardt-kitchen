@@ -74,6 +74,18 @@ tests are the adjacent regression gates. These are isolated browser checks, not 
 
 Rollback: revert the gesture code, motion styles and their documentation. No saved data or rules need migration.
 
+## Phone tab targets, 23 November 2026
+
+Every visible tab in the phone bar has a tap target at least 48 px wide. A long label can wrap
+inside its own target when the display font is unavailable or the text is enlarged.
+
+The consistency audit reproduced a near-edge tap on Prep opening Orders at 320 and 390 px.
+The focused Chromium regression checks the six tab targets at 320, 360 and 390 px with Normal
+and Extra large text, hits both sides of each target and uses a real synthetic touch on Prep.
+An additional 320 px check uses the book's bundled Barlow Condensed font. A 44 px box still
+lost the near-edge touch in that fixture, so the fix gives the browser 48 px of width. The bar
+measured 68 px in both app captures. The baseline failed 15 of 35 checks. The fixed app passed all 35.
+
 ## Existing Back actions
 
 Accepted 24 Oct 2026. Keep the current layouts, fonts, buttons and permissions. Make it clear how to return from a
