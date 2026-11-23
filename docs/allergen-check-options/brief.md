@@ -30,6 +30,14 @@ A guest could be told a dish is free of an allergen that nobody checked. It affe
 - Older copies: the head chef's own copy of a file recipe saved before this change has no `none` on any line. `js/overlay.js` carries the file's No allergens onto such a line by the ingredient's exact name, in the same recipe only. A copy saved by the new form has `none` on every plain line, so nothing carries onto a line left not checked.
 - The fingerprint that says "Book file changed" leaves `none` out, so stamping the file does not flag the head chef's copies.
 
+### Plate pins
+
+The Pass uses the same ingredient check for the pin's details and the Contains lens. A pin can identify its ingredient by its label or the existing `ing` field. A shared pin can name multiple ingredients with `|`. The same short ingredient names used by the drawing studio can match longer ingredient names. A match must identify one ingredient before assigning its checks.
+
+- A checked pin keeps **No listed allergens** when no allergen is listed. A hand-set recipe can be checked as a whole while an untagged pin still points to the recipe's allergen list.
+- An unchecked part says **Allergens not checked yet**. A linked card still to come says **Allergens incomplete**. An ambiguous or unmapped pin with no authored tags asks for confirmation. Confirmed and possible listed tags remain visible next to the warning.
+- Contains marks the same uncertain part as possible. A definite listed tag takes priority for its own allergen. Existing links keep opening their recipes. The plate artwork, amounts and notes stay as authored. Pins use the loaded recipe and add no reads or writes.
+
 ## The choice: how do the recipes already in js/data.js count?
 
 Counted from `js/data.js` at d63d5f0: 137 recipes. 44 set their allergens by hand (checked as a whole). The other 93 work them out from the ingredient tags; 73 of those have at least one plain line with no tags: **235 lines, 148 different products**. With the fix alone, **80 of 137 cards** (63 of 81 dishes, **56 of the 74 guest menu dishes**) would say Allergens not checked yet and leave Free from.
