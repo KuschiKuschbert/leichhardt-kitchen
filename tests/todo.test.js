@@ -32,13 +32,56 @@ const T = (id, x) => ({ [fsKey(['todos', id])]: Object.assign({ text: 'Job ' + i
   await p.fill('[data-k="todo-due"]', '2026-10-30'); await L.settle(p, 200);
   await tap(p, '[data-p="todo-for"][data-v="sam"]'); await L.settle(p, 150);
   ok(await p.$eval('[data-k="todo-text"]', e => e.value) === 'Call the fridge tech about the cool room door', 'add: the words stay while picking the day and the chef');
-  await tap(p, '[data-p="todo-save"]'); await L.settle(p, 600);
+  const addRow = p.locator('.todo-row', { hasText: 'Call the fridge tech about the cool room door' });
+  const readsBeforeAdd = await todoReads(p);
+  const todoWrites = () => p.evaluate(() => window.__fake.writes.flat().filter(w => /\/todos\//.test(w.path)).length);
+  const writesBeforeAdd = await todoWrites();
+  await p.evaluate(() => { window.__fake.mode = 'hold'; });
+  await tap(p, '[data-p="todo-save"]');
+  await addRow.waitFor();
+  ok(await addRow.locator('.nb-unsent').count() === 1 && await addRow.locator('.nb-unsent').innerText() === 'Not sent', 'add waiting: the new row says Not sent');
+  ok(await addRow.locator('button:disabled').count() === 3 && !/Added:/.test(await txt(p, '.p-toast-msg') || ''), 'add waiting: tick, change and remove wait for acknowledgement');
+  ok(await p.locator('[data-p="todo-tick"][data-id="t2"]').isEnabled(), 'add waiting: existing jobs stay usable');
+  if (await addRow.locator('button:disabled').count() === 3) await addRow.evaluate(row => {
+    const id = row.querySelector('[data-id]').dataset.id;
+    for (const action of ['todo-edit', 'todo-del', 'todo-tick']) {
+      const b = document.querySelector(`[data-p="${action}"][data-id="${id}"]`);
+      if (b) b.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    }
+  });
+  ok(await todoWrites() === writesBeforeAdd + 1 && await todoReads(p) === readsBeforeAdd && !(await p.$('.todo-add.is-edit')), 'add waiting: dispatched row actions add no writes, reads or form changes');
   let s = await store(p);
   const nk = Object.keys(s).filter(k => /\/todos\/[^/]+$/.test(k) && s[k].text === 'Call the fridge tech about the cool room door')[0], n = nk && s[nk], nid = nk && nk.split('/').pop();
+  // A refresh may return a new copy of the same row before the create callback, or a list without the new id yet.
+  await p.evaluate(() => { window.__fake.ack(); });
+  await tap(p, '[data-p="todo-refresh"]');
+  await p.locator('.p-toast-msg', { hasText: /^To-do list read again at / }).waitFor();
+  ok(await addRow.locator('.nb-unsent').count() === 1 && await addRow.locator('button:disabled').count() === 3, 'add waiting: a refresh with the new job keeps it pending and non-actionable');
+  await p.evaluate(k => { window.__fake.write(k, null); }, nk);
+  await tap(p, '[data-p="todo-refresh"]'); await L.settle(p, 200);
+  ok(await todoReads(p) === readsBeforeAdd + 2 && await addRow.locator('.nb-unsent').count() === 1, 'add waiting: a refresh missing the new job keeps the row without another read');
+  await p.evaluate(({ key, job }) => { window.__fake.write(key, job); window.__fake.mode = 'ok'; window.__fake.release(); }, { key: nk, job: n });
+  await p.locator('.p-toast-msg', { hasText: /^Added: Call the fridge tech about the cool ro…$/ }).waitFor();
+  s = await store(p);
+  ok(await addRow.count() === 1 && await addRow.locator('.nb-unsent').count() === 0 && await addRow.locator('button:enabled').count() === 3, 'add acknowledged: one row, actions available and a named confirmation');
+  ok(await todoWrites() === writesBeforeAdd + 1 && await todoReads(p) === readsBeforeAdd + 2, 'add acknowledged: no extra write or read');
   ok(!!n && n.st === 'open' && n.due === '2026-10-30' && n.for === 'sam' && n.from === 'sam' && n.by === 'sam' && n.doneAt === 0 && n.doneBy === '' && n.at >= L.NOW, 'add: saved with its words, day, chef, writer and time');
   ok((await rows(p)).indexOf('Call the fridge tech about the cool room door') >= 0, 'add: shows on the list');
   ok(await p.$eval('[data-k="todo-text"]', e => e.value) === '', 'add: the box is empty again');
   ok(await p.$eval('[data-p="todo-save"]', e => e.disabled), 'add: an empty new job has nothing to save');
+
+  const retryText = 'Check the spare label rolls';
+  await p.fill('[data-k="todo-text"]', retryText);
+  await p.fill('[data-k="todo-due"]', '2026-11-02');
+  await tap(p, '[data-p="todo-for"][data-v="sam"]');
+  await p.evaluate(() => { window.__fake.deny = /\/todos\//; });
+  await tap(p, '[data-p="todo-save"]');
+  await p.locator('.p-toast-bad .p-toast-msg', { hasText: 'Not saved. Ask the head chef. Your text is still in the box.' }).waitFor();
+  ok(!(await rows(p)).includes(retryText) && await p.locator('[data-k="todo-text"]').inputValue() === retryText && await p.locator('[data-k="todo-due"]').inputValue() === '2026-11-02' && await p.locator('[data-p="todo-for"][data-v="sam"]').getAttribute('aria-pressed') === 'true', 'add refused: the pending row disappears and the whole draft returns');
+  await p.evaluate(() => { window.__fake.deny = null; });
+  await tap(p, '[data-p="todo-save"]');
+  await p.locator('.p-toast-msg', { hasText: 'Added: ' + retryText }).waitFor();
+  ok((await rows(p)).filter(text => text === retryText).length === 1, 'add retried: exactly one job is confirmed');
 
   // what is typed survives a redraw during service (another phone adds a prep line)
   await p.fill('[data-k="todo-text"]', 'Half typed');

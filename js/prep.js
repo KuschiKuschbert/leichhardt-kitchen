@@ -14660,6 +14660,7 @@ if (list.length) sg('oreg', 's');
   var TD_MAX = 300, TD_STALE = 30 * 60000, TD_FRESH = 60000, TD_RETRY = 5 * 60000, TD_DONE_DAYS = 30;
   var tdf = tdBlank(), tdOpen = null, tdDone = null, tdAt = 0, tdBusy = false, tdErr = false;
   var tdWait = null, tdEditX = null, tdDoneAt = 0, tdDoneBusy = false, tdDoneErr = false, tdDoneOpen = false, tdMsg = '', tdSnap = '';
+  var tdAdds = new Map();
   function tdBlank() { return { id: '', text: '', due: '', fr: '' }; }
   /* who may use it: a chef signed in with their own PIN (sousIds or headId, the same lists the rules check), or the head
      chef's Google device with nobody signed in. Staff, leads and a name on a locked phone get nothing. */
@@ -14680,7 +14681,7 @@ if (list.length) sg('oreg', 's');
   function tdDue(v) { return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; }
   function tdNum(v) { return typeof v === 'number' && isFinite(v) ? v : 0; }
   // the next person on the phone starts with nothing of the last chef's: no jobs, no search or filter
-  function tdReset() { tdf = tdBlank(); tdSnap = ''; tdEditX = null; tdOpen = null; tdDone = null; tdAt = 0; tdErr = false; tdDoneAt = 0; tdDoneErr = false; tdDoneOpen = false; tdMsg = ''; delete LV.todo; delete LV.tododone; }
+  function tdReset() { tdf = tdBlank(); tdSnap = ''; tdEditX = null; tdOpen = null; tdDone = null; tdAt = 0; tdErr = false; tdDoneAt = 0; tdDoneErr = false; tdDoneOpen = false; tdMsg = ''; tdAdds.clear(); delete LV.todo; delete LV.tododone; }
   // a new job with words in the box, or a job opened with Change and then changed
   function tdDirty() { return todoOK() && (tdf.id ? JSON.stringify(tdf) !== tdSnap : !!tdf.text.replace(/\s/g, '')); }
   function tdFind(id) { return (tdOpen || []).concat(tdDone || []).filter(function (x) { return x.id === id; })[0] || null; }
@@ -14693,6 +14694,20 @@ if (list.length) sg('oreg', 's');
   }
   // a read of one list is newer than the other list's copy of the same jobs (ticked or unticked on another phone)
   function tdDrop(l, from) { var ids = {}; l.forEach(function (x) { ids[x.id] = 1; }); return from ? from.filter(function (m) { return !ids[m.id]; }) : from; }
+  function tdAddWaiting(id) { var add = tdAdds.get(id); return !!(add && add.state === 'waiting'); }
+  // A refresh started before a create settled can omit the new job or still include a refused draft.
+  function tdFinishRead(list) {
+    tdAdds.forEach(function (add, id) {
+      if (list) {
+        var index = list.findIndex(function (x) { return x.id === id; });
+        if (add.state === 'refused') {
+          if (index >= 0) list.splice(index, 1);
+        } else if (index < 0 && add.row.st === 'open') list.push(add.row);
+        else if (index >= 0 && add.state === 'waiting') list[index] = add.row;
+      }
+      if (add.state !== 'waiting') tdAdds.delete(id);
+    });
+  }
   /* the open jobs. maxAge: how old the last read may be (30 minutes by default, 1 minute when the page opens, 0 for
      Refresh). A failed read tries the server again after 5 minutes. No signal is a failed read too: an answer from
      the copy in memory never gets here (the getDocs wrapper in sdk()), so an empty copy is never "nothing to do". */
@@ -14706,10 +14721,12 @@ if (list.length) sg('oreg', 's');
     tdBusy = true;
     fb.fs.getDocs(fb.fs.query(colRef('todos'), fb.fs.where('st', '==', 'open'))).then(function (sn) {
       var l = mlGrab(sn);
+      tdFinishRead(l);
       tdBusy = false; tdAt = Date.now();
       tdOpen = l; tdErr = false; tdDone = tdDrop(l, tdDone); draw();
       if (tdSay) { tdSay = false; toast('To-do list read again at ' + clock(now()) + '.'); }
     }, function (e) {
+      tdFinishRead(null);
       tdBusy = false; tdSay = false; tdErr = noSignal(e) ? 'signal' : 'other'; tdAt = Date.now() - TD_STALE + TD_RETRY; draw();
     });
   }
@@ -14747,10 +14764,19 @@ if (list.length) sg('oreg', 's');
       return;
     }
     var ref = fb.fs.doc(colRef('todos')), d = { text: t, st: 'open', due: due, for: fr, from: tdMe(), at: at, doneAt: 0, doneBy: '', upd: at };
-    var y = Object.assign({ id: ref.id }, d);
+    var y = Object.assign({ id: ref.id }, d), add = { row: y, state: 'waiting' }, author = stableIdentity();
+    tdAdds.set(y.id, add);
     tdPlace(y); lvReveal('todo'); tdf = tdBlank(); tdMsg = ''; draw();
-    var aBy = S.who;
-    W([['set', ref, d]]).then(function () { if (S.who === aBy) toast('Added: ' + slipName(t)); }, function (e) {
+    W([['set', ref, d]]).then(function () {
+      if (tdAdds.get(y.id) !== add) return;
+      add.state = 'added';
+      if (!tdBusy) tdAdds.delete(y.id);
+      if (stableIdentity() === author && todoOK() && !workLock()) toast('Added: ' + slipName(t)); else draw();
+    }, function (e) {
+      if (tdAdds.get(y.id) !== add) return;
+      add.state = 'refused';
+      if (!tdBusy) tdAdds.delete(y.id);
+      if (stableIdentity() !== author) return;
       if (tdOpen) tdOpen = tdOpen.filter(function (m) { return m.id !== y.id; }); failed(e, function () { tdf = keep; }); draw();
     });
   }
@@ -14798,17 +14824,19 @@ if (list.length) sg('oreg', 's');
   function tdSoon(x) { var d = tdDue(x.due); return x.st === 'open' && !!d && d <= dayNow(); }
   function todoRow(x) {
     var done = x.st === 'done', due = tdDue(x.due), late = tdLate(x), today = !done && due === dayNow(), id = esc(x.id), meta = [];
+    var waiting = tdAddWaiting(x.id), disabled = waiting ? ' disabled' : '';
     if (tdForOk(x.for)) meta.push('<span class="todo-tag">For ' + esc(mnName(x.for)) + '</span>');
+    if (waiting) meta.push(UNSENT);
     // Open notebook B (8 Nov 2026): keep the day under its job, so a long job has the whole line for its words.
     var dueTag = due && !done ? '<span class="todo-due' + (late ? ' is-late' : today ? ' is-today' : '') + '">' + (late ? 'Was due ' + esc(dayShort(due)) : today ? 'Due today' : 'Due ' + esc(dayShort(due))) + '</span>' : '';
     var byLine = done ? '<span class="todo-by">Done by <b>' + esc(tdName(x.doneBy)) + '</b> ' + esc(mlWhen(tdNum(x.doneAt))) + '</span>'
       : '<span class="todo-by">Added by <b>' + esc(tdName(x.from)) + '</b> ' + esc(ago(tdNum(x.at))) + '</span>';
     return '<li class="todo-row' + (done ? ' is-done' : '') + (late ? ' is-late' : '') + '">' +
-      '<button type="button" class="todo-tick" data-p="todo-tick" data-id="' + id + '" aria-pressed="' + done + '" aria-label="' + esc((done ? 'Untick: ' : 'Tick off: ') + String(x.text || '').slice(0, 40)) + '">' + TICK + '</button>' +
+      '<button type="button" class="todo-tick" data-p="todo-tick" data-id="' + id + '" aria-pressed="' + done + '" aria-label="' + esc((done ? 'Untick: ' : 'Tick off: ') + String(x.text || '').slice(0, 40)) + '"' + disabled + '>' + TICK + '</button>' +
       '<div class="todo-body"><div class="todo-top"><p class="todo-text">' + esc(x.text) + '</p></div><div class="todo-meta">' + dueTag + meta.join('') + '</div>' +
       '<div class="todo-foot">' + byLine +
-      '<div class="todo-acts">' + (done ? '' : '<button type="button" class="p-link' + armCls('todo-edit:' + x.id) + '" data-p="todo-edit" data-id="' + id + '">' + (armed('todo-edit:' + x.id) ? 'Not saved. Tap again' : 'Change') + '</button>') +
-      '<button type="button" class="p-link lk-del" data-p="todo-del" data-id="' + id + '">' + (armed('todo-del:' + x.id) ? 'Not saved. Tap again to remove' : 'Remove') + '</button></div></div></div></li>';
+      '<div class="todo-acts">' + (done ? '' : '<button type="button" class="p-link' + armCls('todo-edit:' + x.id) + '" data-p="todo-edit" data-id="' + id + '"' + disabled + '>' + (armed('todo-edit:' + x.id) ? 'Not saved. Tap again' : 'Change') + '</button>') +
+      '<button type="button" class="p-link lk-del" data-p="todo-del" data-id="' + id + '"' + disabled + '>' + (armed('todo-del:' + x.id) ? 'Not saved. Tap again to remove' : 'Remove') + '</button></div></div></div></li>';
   }
   function tdFindText(x) { return x.text + ' ' + (tdForOk(x.for) ? mnName(x.for) : '') + ' ' + tdName(x.from); }
   function tdFilters() {
@@ -14865,6 +14893,7 @@ if (list.length) sg('oreg', 's');
   }
   function todoClick(a, el) {
     var id = el.getAttribute('data-id');
+    if (tdAddWaiting(id)) return;
     if (a === 'todo-save') { todoSave(); return; }
     if (a === 'todo-cancel') { if (tdDirty() && !arm('todo-cancel')) return; tdf = tdBlank(); tdSnap = ''; tdEditX = null; tdMsg = ''; draw(); return; }
     if (a === 'todo-for') { tdf.fr = el.getAttribute('data-v') || ''; draw(); return; }
@@ -14872,12 +14901,13 @@ if (list.length) sg('oreg', 's');
     if (a === 'todo-pin') { if (S.who) pickName(S.who); return; }
     if (a === 'todo-tick') {
       // the ticked job leaves this list: keep the keyboard on the list, on the tick that took its place
-      var lv = el.closest('[data-lv]'), key = lv ? lv.getAttribute('data-lv') : '', at = lv ? Array.prototype.indexOf.call(lv.querySelectorAll('[data-p="todo-tick"]'), el) : -1;
+      var ticks = '[data-p="todo-tick"]:enabled';
+      var lv = el.closest('[data-lv]'), key = lv ? lv.getAttribute('data-lv') : '', at = lv ? Array.prototype.indexOf.call(lv.querySelectorAll(ticks), el) : -1;
       todoTick(id);
       // draw() may have followed the job into Done: bring the keyboard back to the list it left
       var ae = document.activeElement;
       if (at >= 0 && !(ae && ae.closest && ae.closest('[data-lv="' + key + '"]'))) {
-        var ts = S.root.querySelectorAll('[data-lv="' + key + '"] [data-p="todo-tick"]');
+        var ts = S.root.querySelectorAll('[data-lv="' + key + '"] ' + ticks);
         if (ts.length) ts[Math.min(at, ts.length - 1)].focus({ preventScroll: true });
       }
       return;
