@@ -98,6 +98,11 @@ function registry(extra) {
       if (readsKitchen) ok(guard > 0 && (firstUse < 0 || guard < firstUse), name + ' guards its venue\'s project before any script runs');
     });
   }
+  // config/platform (24 Nov 2026): every run of the access preparation gets the venue's own PLATFORM_ID, so publish writes
+  // the platform owner's record and the verify after publishing checks it (empty at Leichhardt: no record)
+  const accessSteps = fs.readFileSync(path.join(wfDir, 'publish-rules.yml'), 'utf8').split('\n      - name: ').filter(x => /node access-bootstrap\.mjs/.test(x));
+  ok(accessSteps.length === 2 && accessSteps.every(x => /\n          PLATFORM_ID: \$\{\{ secrets\.PLATFORM_STAFF_ID \}\}\n/.test(x)), 'publish rules: both access preparation steps pass PLATFORM_ID from PLATFORM_STAFF_ID (' + accessSteps.length + ' steps)');
+  ok(/KITCHEN_PIN="\$PIN" PLATFORM_ID="\$PID" node scripts\/access-bootstrap\.mjs/.test(fs.readFileSync(path.join(root, 'scripts', 'publish-rules.sh'), 'utf8')), 'publish-rules.sh passes the platform owner\'s profile id to the access preparation');
   ok(!/secrets\.KITCHEN_PIN/.test(fs.readFileSync(path.join(wfDir, 'nightly-backup.yml'), 'utf8').split('Last night\'s backup')[1].split('Read the book')[0]), 'backup: last night\'s file is found without the kitchen PIN');
   ok(/kitchen-book-\$VENUE-backup-\[0-9\]\+/.test(fs.readFileSync(path.join(wfDir, 'nightly-backup.yml'), 'utf8')), 'backup: only this venue\'s own artifact is looked for');
 
