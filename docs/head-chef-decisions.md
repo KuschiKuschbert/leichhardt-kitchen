@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **23 November 2026, reopen an earlier Wastage draft from today’s review.** The head chef chose B. Today opens in one tap and shows a dated Resume action inside its existing sheet when the same person has an earlier draft. Back to today keeps both sets of words separate. Log waste stays one tap away. [Council, previews and verification](wastage-overnight-options/brief.md).
+
 - **23 November 2026, Orders starts with the existing Functions fold.** Keep routine details one tap away on Orders, show every current warning and its action, and wait until the finger lifts before the band moves. [Council, decision and checks](band-options/brief.md#orders-starts-with-the-existing-functions-fold-23-november-2026).
 
 - **23 November 2026, bring the recipe results closer to Search.** The space audit's smaller layout groups the current recipe type and allergen controls. Both allergen modes stay visible on Pass, and Search opens in one tap. [Council quick check](whole-app-redesign-options/brief.md#compact-recipe-browse-filters-23-november-2026)

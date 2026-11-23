@@ -81,12 +81,13 @@
   var PIN_AGAIN = 'Your PIN is saved. Type it again to sign in.';
   var SV_SLOW = 4000, SV_DONE = 1200, SV_WAIT = 'Waiting for the signal. Keep the book open.', svRec = {}, errSeen = {};
   function svForm(k) {
-    if (k === 'rvPage' || k === 'rvAdmin') { var r = svObj(k); return r ? JSON.stringify([r.avoidable, r.change]) : ''; }
+    if (k.startsWith('rvPage:') || k === 'rvAdmin') { var r = svObj(k); return r ? JSON.stringify([r.avoidable, r.change]) : ''; }
     return k === 'ps' ? JSON.stringify(psModule() && psModule().draft() || null) : k === 't' ? tmSig(tmf) : k === 'n' ? JSON.stringify(S.nf || null) : k === 'm' ? mfSnap(S.mf) : k === 'g' ? gfSnap(S.gf) : k === 'c' ? JSON.stringify(S.cutDraft || null) : k === 'v' ? JSON.stringify(S.vf && S.vf.raw || null) : JSON.stringify(S.draft || null);
   }
   // the form open now (the Save bar has one form, whose draft is taken again after each save; c: the order cut-offs)
   function svObj(k) {
-    if (k === 'rvPage' || k === 'rvAdmin') return rvDraft(k === 'rvPage');
+    if (k.startsWith('rvPage:')) return rvDraft(true, k.slice(7));
+    if (k === 'rvAdmin') return rvDraft(false);
     return k === 'ps' ? psModule() && psModule().draft() : k === 't' ? tmf : k === 'n' ? S.nf : k === 'm' ? S.mf : k === 'g' ? S.gf : k === 'c' ? S.cutDraft : k === 'v' ? S.vf : undefined;
   }
   function svStop(k) { var r = svRec[k]; if (r) clearTimeout(r.timer); delete svRec[k]; }
@@ -734,7 +735,15 @@
       // the finished list was waiting for (finDue(), 10 Nov 2026), or the card would wait for some later draw;
       // the same for a finished section on its own tab (secDue(), 11 Nov 2026)
       // and when only the list's touch with the server changed, the finished words on a wide screen decide again
-      if (k === 'same') { patchOrDraw(function () { patchUnsent(); if (finDue() || secDue()) draw(); else if (coldTurn) { finFit(); finPaint(); } }); return; }
+      if (k === 'same') {
+        patchOrDraw(function () {
+          patchUnsent();
+          if (finDue() || secDue()) { draw(); return; }
+          if (coldTurn) { finFit(); finPaint(); }
+          prepTickSchedule();
+        });
+        return;
+      }
       S.itemsState = k === 'wait' ? 'offline' : 'ok'; draw();
     }, function (e) {
       if (unsubItems !== u) return;
@@ -1707,7 +1716,8 @@
      person never finds it (docs/private-kitchen-access.md). */
   function privacyLock(reason) {
     if (S.privacyLocked || !S.who && !S.user) return;
-    S.lockHasDraft = dirtyForUpdate(); S.lockIdentity = stableIdentity();
+    // Wastage page reviews keep their own dated drafts and can be acknowledged while this lock is on.
+    S.lockHasDraft = !!(workLock() && S.lockHasDraft) || draftsForUpdate(true); S.lockIdentity = stableIdentity();
     if (pt && pt.busy) pt.lockRetained = S.lockIdentity;
     S.lockRecorder = S.who || ''; S.privacyLocked = true; S.lockReason = reason; S.authed = false; S.level = ''; S.grantExp = 0; accessEpoch++; digestMem = null; S.tmrPlan = null;
     prepTickFaults.clear(); stopLive(); clearPrivateCache(); ptClose(true, true); ksClose(); noteClose('shut'); lmClose();
@@ -3823,12 +3833,12 @@
     S.learned.forEach(function (x) { if (x.id === id) x.hidden = hidden; }); if (S.learnFor) learnSave(); draw();
   }
   var LEARN_DAYS = 90;   // how far back the nightly learning reads
-  /* Tab and Shift+Tab stay inside an open popup: from the last control back to the first and the other way, and focus
-     that has slipped outside comes back in. Only controls that can be seen count. */
+  /* Tab and Shift+Tab stay inside an open popup: from the last control back to the first and the other way, including
+     when a sheet first puts focus on its panel. Only controls that can be seen count. */
   function trapTab(e, box, sel) {
     var f = Array.prototype.filter.call(box.querySelectorAll(sel || 'button:not([disabled]), a[href]'), function (x) { return x.offsetParent !== null; });
     if (!f.length) return;
-    var first = f[0], last = f[f.length - 1], out = !box.contains(document.activeElement);
+    var first = f[0], last = f[f.length - 1], out = document.activeElement === box || !box.contains(document.activeElement);
     if (e.shiftKey && (document.activeElement === first || out)) { e.preventDefault(); last.focus(); }
     else if (!e.shiftKey && (document.activeElement === last || out)) { e.preventDefault(); first.focus(); }
   }
@@ -5427,7 +5437,7 @@
      who logged the line, the head chef or a sous chef, ticked for Add, on today's lines not removed, and on Transfers
      still out. The rules say the same (amountChange() in firestore.rules). Remove stays where it was. */
   function wxFixOk(kind, x) {
-    if (!x || x.deleted || x.date !== dayNow() || kind === 'x' && x.returned || !canW() || !can('add')) return false;
+    if (!x || x.deleted || x.date !== dayNow() || kind === 'x' && (x.returned || xReturnPending(x.date, x.id)) || !canW() || !can('add')) return false;
     var p = me(); return !!p && (isSous() || p.id === x.addedById);
   }
   function lineOf(kind, date, id) {
@@ -5440,7 +5450,7 @@
     var n = live.length, d = live.filter(function (x) { return x.done; }).length, pct = n ? Math.round(d / n * 100) : 0;
     return '<span class="nb-hbar' + (n && d === n ? ' is-done' : '') + '" aria-hidden="true"><i style="width:' + pct + '%"></i></span>';
   }
-  function moreBtn(x, fix) { return '<button type="button" class="nb-more' + (fix ? ' nb-more-fix' : '') + '" data-lm="open" data-id="' + esc(x.id) + '" aria-haspopup="dialog" aria-label="' + esc('More for ' + x.text) + '">⋯</button>'; }
+  function moreBtn(x, fix, disabled) { return '<button type="button" class="nb-more' + (fix ? ' nb-more-fix' : '') + '" data-lm="open" data-id="' + esc(x.id) + '" aria-haspopup="dialog" aria-label="' + esc('More for ' + x.text) + '"' + (disabled ? ' disabled' : '') + '>⋯</button>'; }
   var lmOpenFrom = null;
   function lmClose(noBack) {
     var s0 = document.getElementById('lm-sheet'); if (!s0) return;
@@ -5805,7 +5815,7 @@
      lingering above the card, or removed lines a chef has asked to see).
      Under 900 px, with no signal (the browser's word, or the list's own: its last answer came from memory), or with
      an older saved stylesheet, the book is exactly as it was: the tab's plain words and the small card. The words are the page's own and never wait for the mascot's file or art. */
-  var FIN_CLS = ['nb-scene', 'nb-w40', 'nb-w28', 'nb-f192', 'nb-f96', 'nb-f64', 'nb-f48', 'nb-f0'], finWait = 0;
+  var FIN_CLS = ['nb-scene', 'nb-w40', 'nb-w28', 'nb-f192', 'nb-f96', 'nb-f64', 'nb-f48', 'nb-f0'];
   function finFit() {
     try {
       var body = S.root && document.body.contains(S.root) && S.root.querySelector('.nb-left .nb-body');
@@ -5821,13 +5831,8 @@
       // the draw he speaks and plays on, so their size is chosen once and does not change a few seconds after the
       // finish, and they never stand under a row. (A section's tab says nothing new while a line lingers.)
       // tomorrow's lines (.nb-tmr) stay under the finished words on purpose: today finishes today (17 Nov 2026)
-      if (S.root.querySelector('.nb-left .nb-rows:not(.nb-tmr) .nb-row')) {
-        // A line this person ticked on another screen lingers here too, and only the screen that made the tick set
-        // the draw that ends it: one draw when the linger is over, so the card does not wait small for some later
-        // draw. Time passing only, and only while a line really lingers.
-        if (card && !finWait && S.items.some(function (x) { return !x.fn && lingers(x); })) finWait = setTimeout(function () { finWait = 0; draw(); }, LINGER + 100);
-        return;
-      }
+      // The Prep expiry draw also updates the finished card and section words when the row leaves.
+      if (S.root.querySelector('.nb-left .nb-rows:not(.nb-tmr) .nb-row')) return;
       var base = body.scrollHeight - body.clientHeight, el = card;
       if (!el) {
         el = document.createElement('div'); el.className = 'nb-fin nb-fin-sec';
@@ -7972,6 +7977,40 @@
     prepPlaceWant = null;
     window.scrollTo(0, row ? row.getBoundingClientRect().top + window.scrollY - w.off : w.y);
   }
+  // The live list may hear a tick from another screen. End its pause at the saved tick's deadline even if this
+  // screen never tapped it. Only confirmed ticks still visible on today's Prep can schedule a redraw here.
+  var prepTickExpiry = null;
+  function prepTickSchedule() {
+    if (prepTickExpiry) clearTimeout(prepTickExpiry.timer);
+    prepTickExpiry = null;
+    if (!prepPlaceHere() || S.date !== dayNow() || itemsCold || !S.who) return;
+    var rows = S.root.querySelectorAll('.nb-left .nb-rows .nb-row.is-done, .wb-cols .nb-rows .nb-row.is-done');
+    if (!rows.length) return;
+    var visible = new Set(Array.from(rows, function (row) { return row.getAttribute('data-ln'); }));
+    var at = Infinity;
+    S.items.forEach(function (x) {
+      if (!x.done || x.deleted || x._unsent || x.doneById !== S.who || !Number.isFinite(x.doneAt) || !x.doneAt ||
+          !visible.has(S.date + '/' + x.id) || S.date === prepTickFaultDay && prepTickFaults.get(x.id) === 'retrying') return;
+      at = Math.min(at, x.doneAt + LINGER);
+    });
+    if (at === Infinity) return;
+    prepTickExpiry = { at: at, view: prepPlaceKey(), epoch: accessEpoch, timer: 0 };
+    prepTickWait(Math.max(0, at - now()));
+  }
+  function prepTickWait(ms) {
+    var expiry = prepTickExpiry;
+    expiry.timer = setTimeout(function () {
+      expiry.timer = 0;
+      if (expiry !== prepTickExpiry || !prepPlaceHere() || S.date !== dayNow() ||
+          expiry.epoch !== accessEpoch || expiry.view !== prepPlaceKey()) return;
+      if (now() < expiry.at) { prepTickWait(expiry.at - now()); return; }
+      var busy = window.LK_FN && window.LK_FN.fingerBusy ? window.LK_FN.fingerBusy() : prepFingerDown || Date.now() - prepFingerUp < 400;
+      if (busy) { prepTickWait(450); return; }
+      if (typing() && S.root.contains(document.activeElement)) return; // resume when the field loses focus
+      prepTickExpiry = null;
+      draw();
+    }, ms);
+  }
   function draw() {
     if (holdDraw) { heldDraw = true; return; }
     svTidy();
@@ -8015,6 +8054,7 @@
     tmPaint();
     finFit();
     finPaint();
+    prepTickSchedule();
     secFit();
     gvLoops();
     if (S.gVideoJump && (location.hash !== '#/admin' || S.name === 'admin' && S.atab !== 'guides')) S.gVideoJump = '';
@@ -8791,28 +8831,56 @@ if (list.length) sg('oreg', 's');
      waste/<today> when a chef opens the page, again on a new day. A failed read (no signal) says so (28 Oct 2026) instead
      of Loading... for good, and reads again after the 5-minute wait or once the phone is back online, not on every draw. */
   function rvChef() { return wAll() || isSous(); }
-  // Two independent drafts, each attached to its recorder and the date on its form.
-  var rvDrafts = { page: null, admin: null }, rvSheetVersion = 0, RV_REPLACE_DELAY = 450;
-  function rvKey(page) { return page ? 'rvPage' : 'rvAdmin'; }
-  function rvDay(page) { return page ? dayNow() : S.rvDate || dayNow(); }
-  function rvShown(page, day) { return page ? S.wReview || {} : rvOf(day); }
-  function rvDraft(page) {
-    var r = rvDrafts[page ? 'page' : 'admin'];
-    return r && r.identity === stableIdentity() && r.day === rvDay(page) ? r : null;
+  // The admin form keeps its own draft. The Wastage sheet keeps each day's work in this tab for its recorder.
+  var rvPages = {}, rvAdmin = null, rvPageDay = '', rvEarlier = false, rvSheetVersion = 0, RV_REPLACE_DELAY = 450;
+  function rvKey(page, day) { return page ? 'rvPage:' + (day || rvDay(true)) : 'rvAdmin'; }
+  function rvDay(page) { return page ? rvPageDay || dayNow() : S.rvDate || dayNow(); }
+  function rvDraft(page, day) {
+    day = day || rvDay(page);
+    var r = page ? rvPages[day] : rvAdmin;
+    return r && r.identity === stableIdentity() && r.day === day ? r : null;
   }
-  function rvClear(page) { rvDrafts[page ? 'page' : 'admin'] = null; svStop(rvKey(page)); }
+  function rvClear(page) {
+    if (page) {
+      Object.keys(rvPages).forEach(function (day) { svStop(rvKey(true, day)); });
+      rvPages = {}; rvShowDay('');
+    } else { rvAdmin = null; svStop(rvKey(false)); }
+  }
   function rvWord(text) { return String(text || '').trim().slice(0, 300); }
-  function rvTyped(page) {
-    var r = rvDraft(page), before = r && (r.conflict || r.base);
+  function rvTyped(r) {
+    var before = r && (r.conflict || r.base);
     return !!r && ((r.avoidable != null && rvWord(r.avoidable) !== rvWord(before.avoidable)) ||
       (r.change != null && rvWord(r.change) !== rvWord(before.change)));
   }
+  function rvKeep(r) { return !!r && (!!r.phase || rvTyped(r)); }
+  function rvEarlierDays(today) {
+    return Object.keys(rvPages).filter(function (day) { return day < today && rvKeep(rvDraft(true, day)); }).sort().reverse();
+  }
+  function rvPageDirty() {
+    var lock = workLock(), identity = lock ? lock.identity : stableIdentity();
+    return Object.keys(rvPages).some(function (day) { return rvPages[day].identity === identity && rvKeep(rvPages[day]); });
+  }
+  function rvShowDay(day) {
+    Object.keys(rvPages).forEach(function (old) {
+      if (old !== day && !rvKeep(rvPages[old])) { delete rvPages[old]; svStop(rvKey(true, old)); }
+    });
+    rvPageDay = day; rvEarlier = !!day && day < dayNow(); rvSheetVersion++;
+  }
+  function rvSwitch(day) {
+    var today = dayNow();
+    if (!rvAllowed(true) || !rvHere(true, rvDay(true), rvSheetVersion) ||
+        (day !== today && !(day < today && rvKeep(rvDraft(true, day))))) return;
+    rvShowDay(day); draw(); focusSel('#w-rv-h');
+  }
   function rvInput(page, day, field, value) {
-    if (day !== rvDay(page)) { draw(); return; }
+    if (!rvAllowed(page) || !rvHere(page, day, rvSheetVersion)) { draw(); return; }
     var r = rvDraft(page);
+    if (page && day !== dayNow() && !rvEarlier && !rvKeep(r)) { draw(); return; }
     if (!r) {
-      rvClear(page);
-      r = rvDrafts[page ? 'page' : 'admin'] = { day: day, identity: stableIdentity(), base: rvShown(page, day) };
+      if (page && (day !== dayNow() || S.wReviewFor !== day || !S.wReview)) { draw(); return; }
+      r = { day: day, identity: stableIdentity(), base: page ? S.wReview : rvOf(day) };
+      if (page) { svStop(rvKey(true, day)); rvPages[day] = r; }
+      else { rvClear(false); rvAdmin = r; }
     }
     if (r.phase) return;
     r[field] = value;
@@ -8839,36 +8907,47 @@ if (list.length) sg('oreg', 's');
   }
   function rvAllowed(page) { return canW() && (page ? rvChef() : wAll()); }
   function rvOff(page, draft) {
-    return !draft || !!draft.phase || draft.replaceAfter > Date.now() || !rvAllowed(page) || !rvTyped(page);
+    return !draft || !!draft.phase || draft.replaceAfter > Date.now() || !rvAllowed(page) || !rvTyped(draft);
   }
   function rvActions(page) {
     var r = rvDraft(page), k = rvKey(page), phase = r && r.phase;
     return svButton({ k: k, p: 'wreview', value: page ? 'page' : 'admin', idle: 'Save the review',
-      ask: r && r.conflict ? 'Replace review' : '', wideText: 'Replace review', busy: !!phase,
+      ask: r && r.conflict && !r.message ? 'Replace review' : '', wideText: 'Replace review', busy: !!phase,
       busyText: phase === 'checking' ? 'Checking...' : 'Saving...', off: rvOff(page, r) });
   }
   function rvStatus(page) {
-    var r = rvDraft(page), phase = r && r.phase, other = r && r.conflict;
-    var conflict = other ? (other.reviewBy || 'Another chef') + ' saved a review' +
+    var day = rvDay(page), r = rvDraft(page), phase = r && r.phase, other = r && r.conflict;
+    var date = page && day !== dayNow() ? ' for ' + longDate(day) : '';
+    var conflict = other && !phase ? (other.reviewBy || 'Another chef') + ' saved a review' +
+      date +
       (typeof other.reviewAt === 'number' && other.reviewAt > 0 ? ' at ' + clock(other.reviewAt) : '') +
       '. Replace that review to save your changes.' : '';
+    var wait = phase === 'checking' ? (date ? 'Checking the review' + date : 'Checking for a newer review') : date ? 'Saving the review' + date : '';
     return svLine(rvKey(page), !!phase, r && (r.message || conflict), 'w-rv-status',
-      phase === 'checking' ? 'Checking for a newer review. Keep the book open.' : SV_WAIT);
+      wait ? wait + '. Keep the book open.' : SV_WAIT);
   }
   function saveReview(where, d) {
     if (where !== 'page' && where !== 'admin') return;
     var page = where === 'page', r = rvDraft(page), k = rvKey(page), sheet = rvSheetVersion;
     if (d !== rvDay(page)) { draw(); return; }
     if (rvOff(page, r) || svHeld(k) || !rvHere(page, d, sheet)) return;
-    var expected = r.conflict || r.base, version = rvVersion(expected), context = writeContext(), epoch = accessEpoch, ref = wDay(d), p = me();
+    // After a failed Replace, Retry checks again and asks for fresh consent for the version the check returns.
+    var expected = r.conflict || r.base, needsApproval = !!(r.conflict && r.message), version = rvVersion(expected);
+    var context = writeContext(), epoch = accessEpoch, ref = wDay(d), p = me(), role = p && p.role;
     var v = { avoidable: rvWord(r.avoidable == null ? expected.avoidable : r.avoidable),
       change: rvWord(r.change == null ? expected.change : r.change), reviewBy: p ? p.name : 'Head chef', reviewAt: now() };
-    function sameDraft() { return rvDrafts[where] === r && stableIdentity() === context.identity; }
-    function here() { return sameDraft() && rvHere(page, d, sheet) && rvAllowed(page); }
-    function guard() {
-      if (!here() || epoch !== accessEpoch || millis(context.issuedAt) !== millis(S.sessIssuedAt)) throw { code: 'cancelled' };
+    function sameDraft() { return rvDraft(page, d) === r && stableIdentity() === context.identity; }
+    function visible() { return sameDraft() && rvHere(page, d, rvSheetVersion) && rvAllowed(page); }
+    function sameSession() {
+      var person = me();
+      return epoch === accessEpoch && role === (person && person.role) && context.admin === ownerHere() &&
+        millis(context.issuedAt) === millis(S.sessIssuedAt);
     }
-    r.conflict = null; r.replaceAfter = 0; r.message = ''; r.phase = 'checking'; svStart(k); draw();
+    function here() { return visible() && (!page || sheet === rvSheetVersion) && sameSession(); }
+    function guard() {
+      if (!here()) throw { code: 'cancelled' };
+    }
+    r.replaceAfter = 0; r.message = ''; r.phase = 'checking'; svStart(k); draw();
     // One version read on Save or Replace. The SDK reads again if another writer commits before this transaction.
     // Both reads must match the original consent before we stage anything. A timed-out or denied check stages no write.
     W([['set', ref, v, true]], context, function (tx) {
@@ -8877,40 +8956,47 @@ if (list.length) sg('oreg', 's');
       return Promise.race([tx.get(ref), limit]).finally(function () { clearTimeout(deadline); }).then(function (sn) {
         guard();
         var current = sn.exists() ? sn.data() : {};
-        if (rvVersion(current) !== version) throw { code: 'review-conflict', review: current };
+        if (needsApproval || rvVersion(current) !== version) throw { code: 'review-conflict', review: current };
         if (r.phase === 'checking') { r.phase = 'saving'; draw(); }
       });
     }).then(function () {
       if (!sameDraft()) return;
-      r.phase = ''; r.base = Object.assign({ by: context.by }, v); r.avoidable = r.change = null;
-      if (!rvAllowed(page)) { svStop(k); return; }
+      r.phase = ''; r.base = Object.assign({ by: context.by }, v); r.avoidable = r.change = r.conflict = null;
+      if (d >= shift(dayNow(), -3)) { wNoteGeneration++; S.wNoteFor = ''; lsSet('lk.w.note', ''); }
+      if (!rvAllowed(page)) {
+        svStop(k);
+        if (page && workLock()) { notifySent(); draw(); }
+        return;
+      }
       if (S.wReviewFor === d) S.wReview = r.base;
       rvSet(d, r.base);
       if (wAll()) whPatch(d, '', r.base);
-      if (d >= shift(dayNow(), -3)) { S.wNoteFor = ''; lsSet('lk.w.note', ''); }
-      if (here()) toast('Review saved for ' + (d === dayNow() ? 'today' : dayShort(d)));
-      svDone(k, here(), function () { if (page && here() && !rvTyped(page)) wSheetClose(); });
+      if (here() || page && d < dayNow() && location.hash === '#/waste' && sameSession()) {
+        toast('Review saved for ' + (d === dayNow() ? 'today' : longDate(d)));
+      }
+      svDone(k, here(), function () { if (page && here() && !rvTyped(r)) wSheetClose(); });
       draw();
     }, function (e) {
       if (!sameDraft()) return;
-      var checking = r.phase === 'checking'; r.phase = '';
+      var checking = r.phase === 'checking', date = page && d !== dayNow() ? ' for ' + longDate(d) : '';
+      r.phase = '';
       if (e && e.code === 'review-conflict') {
         r.conflict = e.review;
-        if (here()) { if (S.wReviewFor === d) S.wReview = e.review; rvSet(d, e.review); }
-        if (rvDraft(page) === r && !rvTyped(page)) {
+        if (visible()) { if (S.wReviewFor === d) S.wReview = e.review; rvSet(d, e.review); }
+        if (!rvTyped(r)) {
           r.base = e.review; r.avoidable = r.change = r.conflict = null;
-          r.message = 'The latest review already has your changes.';
+          r.message = 'The latest review' + date + ' already has your changes.';
         } else {
           // A rapid second tap on Save must not land on an immediately relabelled Replace button.
           r.replaceAfter = Date.now() + RV_REPLACE_DELAY;
-          setTimeout(function () { if (here() && r.conflict === e.review) draw(); }, RV_REPLACE_DELAY);
+          setTimeout(function () { if (visible() && r.conflict === e.review) draw(); }, RV_REPLACE_DELAY);
         }
         svStop(k);
       } else {
-        r.message = checking ? 'Could not check the latest review. Your changes are kept.' : 'Could not save the review. Your changes are kept.';
-        svFail(k, !!rvDraft(page), function () { r.message = ''; });
+        r.message = (checking ? 'Could not check the latest review' : 'Could not save the review') + date + '. Your changes are kept.';
+        svFail(k, true, function () { r.message = ''; });
       }
-      if (here()) draw();
+      if (visible()) draw();
     });
   }
   /* the head chef's Google account: the only one the rules let read past wastage (22 Oct 2026) */
@@ -8962,6 +9048,7 @@ if (list.length) sg('oreg', 's');
      They are drawn from S.wLog, S.wRv and S.xLog with the page, like the forms were, so a redraw during service keeps what
      is typed; Close keeps it too. Back, Escape and the dimmed page close them. which: 'log', 'rv' or 'xlog'. */
   function wSheetOpen(which) {
+    if (which === 'rv' || S.wRv) rvShowDay(which === 'rv' ? dayNow() : '');
     S.wLog = which === 'log'; S.wRv = which === 'rv'; S.xLog = which === 'xlog'; S.pLog = which === 'plog'; S.oLog = which === 'olog';
     S.pLogDay = S.pLog ? S.date : '';   // the day the add sheet writes to (addDayOk())
     if (S.pLog) tmrPlanLoad();   // tonight's list: what is planned for tomorrow, for the double-up check (tmrTwin())
@@ -8971,7 +9058,7 @@ if (list.length) sg('oreg', 's');
   }
   function wSheetClose(noBack) {
     if (!S.wLog && !S.wRv && !S.xLog && !S.pLog && !S.oLog) return;
-    if (S.wRv) rvSheetVersion++;
+    if (S.wRv) rvShowDay('');
     var back = S.wLog ? '.w-logbtn' : S.wRv ? '.w-rvbtn' : S.pLog || S.oLog ? '.nb-addline' : '.tr-logbtn', pg = sheetPg(); S.wLog = S.wRv = S.xLog = S.pLog = S.oLog = false;
     ovDone('wsheet', noBack); if (pg) justClosed(pg); draw(); focusSel(back);
   }
@@ -9016,18 +9103,18 @@ if (list.length) sg('oreg', 's');
       offW + (shown.length ? '<ul class="nb-rows">' + shown.map(wRow).join('') + '</ul>' : (offW ? '' : S.wState !== 'ok' ? inkWait('Loading wastage...', 'waste', 4) : '<p class="nb-empty">Nothing logged for ' + esc(dayName(S.wDate).toLowerCase()) + ' yet. Log waste when it happens: prep waste, expired stock, cooking faults, returns and excess production.</p>'));
     // The entries still follow the totals and reason bar. The one review action sits by today's totals in the book.
     var sum = tot ? '<div class="w-today"><p class="w-tot"><strong>' + esc(tot) + '</strong> logged today</p>' + wReasonBar(live) + '</div>' : '';
-    var rv = '';
+    var rv = '', earlier = rvAllowed(true) ? rvEarlierDays(today) : [];
     if (rvChef()) {
       loadPageReview();
-      var r = S.wReview;
-      rv = '<button type="button" class="btn w-rvbtn" data-p="w-rv" aria-haspopup="dialog" aria-describedby="w-review-help">End-of-day review<small>' + (!r ? (S.wReviewErr ? 'Could not load it' : 'Loading...') : r.reviewBy ? 'Saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' ' + clock(r.reviewAt) : '') : 'Not written yet') + '</small></button>';
+      var r = S.wReviewFor === today ? S.wReview : null;
+      rv = '<button type="button" class="btn w-rvbtn" data-p="w-rv" aria-haspopup="dialog" aria-describedby="w-review-help">End-of-day review<small>' + (!r ? (S.wReviewErr ? 'Could not load it' : 'Loading...') : r.reviewBy ? 'Saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' ' + clock(r.reviewAt) : '') : 'Not written yet') +
+        (earlier.length ? ' <span class="w-rv-cue">Earlier draft' + (earlier.length > 1 ? 's' : '') + ' inside</span>' : '') + '</small></button>';
     }
     // Print puts the same review status at the foot of the entries.
     var rvFoot = rv ? '<div class="w-rvfoot">' + rv + '<p class="hint" id="w-review-help">Chefs only. What you write shows on the next prep list.</p></div>' : '';
     var logSheet = add && S.wLog ? '<div class="sheet-bg" data-p="w-log-close"></div><div class="sheet w-sheet" role="dialog" aria-modal="true" aria-labelledby="w-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="w-log-h">Log waste</h3>' +
       '<p class="w-rule">Write the actual amount and unit, not a dollar value. Unsafe food must never be reused to avoid logging waste.</p>' + add + '<button type="button" class="btn sheet-x" data-p="w-log-close">Close</button></div>' : '';
-    var rvSheet = rv && S.wRv ? '<div class="sheet-bg" data-p="w-rv-close"></div><div class="sheet w-sheet" role="dialog" aria-modal="true" aria-labelledby="w-rv-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="w-rv-h">End-of-day review</h3>' +
-      pageReviewHTML() + '<button type="button" class="btn sheet-x" data-p="w-rv-close">Close</button></div>' : '';
+    var rvSheet = rv && S.wRv ? pageReviewSheet(today, earlier) : '';
     return whoTopHTML() +
       '<section class="nb-page o-page w-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + '</span></div>' +
       (S.wState === 'offline' || S.wState !== 'ok' && !live.length ? '' : wCountHTML(live)) + (add ? dockBtn('w-logbtn', 'w-log', 'Log waste') : '') + '</header>' +
@@ -9043,22 +9130,42 @@ if (list.length) sg('oreg', 's');
     var prog = '<div class="nb-prog">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div>';
     return secs.length ? '<div class="nb-pw is-day w-pw">' + prog + '<span class="w-secs">' + esc(secs.join(', ')) + '</span></div>' : prog;
   }
-  function pageReviewHTML() {
-    var day = dayNow();
-    if (!S.wReview || S.wReviewFor !== day) return S.wReviewErr ? '<p class="hint" role="status">Could not load today\'s review. Check the signal. The book tries again in a few minutes.</p>' : '<p class="hint">Loading...</p>';
-    var r = S.wReview, draft = rvDraft(true), ra = draft && draft.avoidable != null ? draft.avoidable : (r.avoidable || ''),
+  function pageReviewSheet(today, earlier) {
+    var day = rvDay(true);
+    // A sheet already holding work stays on its original day at midnight. An untouched sheet follows Today.
+    if (day < today && !rvEarlier) {
+      if (rvKeep(rvDraft(true)) || svHeld(rvKey(true))) rvEarlier = true;
+      else { rvShowDay(today); day = today; }
+    }
+    var choices = rvEarlier ? '<button class="btn" type="button" data-p="w-rv-today">Back to today’s review</button>' :
+      earlier.map(function (d) {
+        return '<button class="btn" type="button" data-p="w-rv-resume" data-d="' + esc(d) + '">Resume draft for ' + esc(longDate(d)) + '</button>';
+      }).join('');
+    return '<div class="sheet-bg" data-p="w-rv-close"></div><div class="sheet w-sheet" role="dialog" aria-modal="true" aria-labelledby="w-rv-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="w-rv-h" tabindex="-1">' +
+      (rvEarlier ? 'Resume earlier review' : 'End-of-day review') + '</h3>' +
+      (choices ? '<div class="w-rv-switch">' + choices + '</div>' : '') + pageReviewHTML(day, rvEarlier, earlier.length > 0) +
+      '<button type="button" class="btn sheet-x" data-p="w-rv-close">Close</button></div>';
+  }
+  function pageReviewHTML(day, earlier, showDate) {
+    var draft = rvDraft(true);
+    var date = earlier || showDate ? '<p class="w-rv-date">' + (earlier ? 'Draft for ' : 'Today · ') + esc(longDate(day)) + '</p>' : '';
+    var r = draft ? draft.conflict || draft.base : S.wReviewFor === day ? S.wReview : null;
+    if (!r) return date + (S.wReviewErr ? '<p class="hint" role="status">Could not load today\'s review. Check the signal. The book tries again in a few minutes.</p>' : '<p class="hint">Loading...</p>');
+    var ra = draft && draft.avoidable != null ? draft.avoidable : (r.avoidable || ''),
       rc = draft && draft.change != null ? draft.change : (r.change || ''), held = draft && draft.phase ? ' readonly' : '';
-    return '<div class="w-review" data-review-day="' + esc(day) + '">' +
-      '<div class="field"><label class="label" for="w-ra">Main avoidable waste today</label><textarea id="w-ra" class="w-ta" data-k="w-ra" maxlength="300" rows="2"' + held + '>' + esc(ra) + '</textarea></div>' +
+    return '<div class="w-review" data-review-day="' + esc(day) + '">' + date +
+      '<div class="field"><label class="label" for="w-ra">Main avoidable waste' + (earlier ? '' : ' today') + '</label><textarea id="w-ra" class="w-ta" data-k="w-ra" maxlength="300" rows="2"' + held + '>' + esc(ra) + '</textarea></div>' +
       '<div class="field"><label class="label" for="w-rc">Prep or ordering change for the next shift</label><textarea id="w-rc" class="w-ta" data-k="w-rc" maxlength="300" rows="2"' + held + '>' + esc(rc) + '</textarea><span class="hint">This shows at the top of the next prep list.</span></div>' +
       '<div class="btn-row">' + rvActions(true) + '</div>' + rvStatus(true) +
-      (r.reviewBy && !(draft && draft.conflict) ? '<span class="hint">Last saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' at ' + clock(r.reviewAt) : '') + '.</span>' : '') + '</div>';
+      (r.reviewBy && (!draft || !draft.conflict || draft.message || draft.phase) ? '<span class="hint">Last saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' at ' + clock(r.reviewAt) : '') + '.</span>' : '') + '</div>';
   }
   /* Last night's "change for the next shift" note, shown on the prep list (the latest of the last 3 days): three getDoc
      reads once a day per phone, kept in lk.w.note (out of date at the next kitchen day; a review saved on this phone
      clears it). A day that could not be read (no signal) is never kept as "no note" (28 Oct 2026): a note that came in
      shows, nothing is kept, and the three days are read again after the 5-minute wait or once the phone is back online.
-     Before, the whole day's prep lists went without the head chef's note. */
+     Before, the whole day's prep lists went without the head chef's note. A read begun before a local save must not
+     restore the old note or schedule a retry after the save clears the cache. */
+  var wNoteGeneration = 0;
   function loadWNote() {
     if (!kitchenAccess() || !S.configFull) return;
     var today = dayNow();
@@ -9066,9 +9173,9 @@ if (list.length) sg('oreg', 's');
     S.wNoteFor = today;
     var tag = S.pin + '|' + today, c = dayCache('lk.w.note', tag);
     if (c) { S.wNote = c.n; return; }
-    var ds = [1, 2, 3].map(function (k) { return shift(today, -k); }), miss = 0, epoch = accessEpoch;
+    var ds = [1, 2, 3].map(function (k) { return shift(today, -k); }), miss = 0, epoch = accessEpoch, generation = ++wNoteGeneration;
     Promise.all(ds.map(function (d) { return fb.fs.getDoc(wDay(d)).then(function (sn) { return sn.exists() ? Object.assign({ date: d }, sn.data()) : null; }, function () { miss++; return null; }); })).then(function (l) {
-      if (epoch !== accessEpoch) return;   // the person changed meanwhile (leave() lets the next one read)
+      if (epoch !== accessEpoch || generation !== wNoteGeneration || today !== dayNow()) return;
       var n = l.filter(function (x) { return x && x.change; })[0] || null;
       if (miss) {
         if (n) { S.wNote = n; draw(); }
@@ -9135,21 +9242,44 @@ if (list.length) sg('oreg', 's');
       unsubXO(); unsubXO = null; S.xOpenState = 'error'; liveRetry('xopen', watchXOpen, e); draw();
     });
   }
+  function xReturnPending(date, id) {
+    var attempt = S.xReturning && S.xReturning[date + '_' + id];
+    return attempt && attempt.identity === stableIdentity() ? attempt : null;
+  }
+  // The open index drops the loan as soon as this phone queues the batch. Keep its original row in Still out
+  // for this writer until the promise settles. This copy belongs to the display only.
+  function xWhileReturning(rows, today, earlier) {
+    var attempts = Object.values(S.xReturning || {}), identity = stableIdentity();
+    var returns = attempts.filter(function (a) { return !a.undo && a.identity === identity && (a.row.date !== today) === earlier; });
+    if (!returns.length) return rows;
+    var byKey = new Map(rows.map(function (x) { return [x.date + '_' + x.id, x]; }));
+    returns.forEach(function (a) { byKey.set(a.row.date + '_' + a.row.id, a.row); });
+    return Array.from(byKey.values());
+  }
   function returnXfer(date, id, undo, original) {
     if ((!can('tick') && !wAll()) || !fb) return;
     var it = original || xFind(date, id), key = date + '_' + id;
-    if (!it || it.deleted || (S.xReturning && S.xReturning[key])) return;
+    if (!it || it.deleted || xReturnPending(date, id)) return;
     if (!undo && it.returned) return;
-    S.xReturning = S.xReturning || {}; S.xReturning[key] = true; draw();
+    var attempt = { row: Object.assign({}, it), undo: !!undo, identity: stableIdentity() };
+    S.xReturning = S.xReturning || {}; S.xReturning[key] = attempt;
+    draw();
     var p = me(), data = { returned: !undo, returnedBy: undo ? '' : (p ? p.name : 'Head chef'),
       returnedById: undo ? '' : (p ? p.id : ''), returnedAt: undo ? 0 : now() };
+    function stillHere() {
+      if (S.xReturning[key] === attempt) delete S.xReturning[key];
+      if (attempt.identity === stableIdentity() && !workLock()) return true;
+      draw();
+      return false;
+    }
     xWrite(date, id, data, it).then(function () {
+      if (!stillHere()) return;
       var updated = Object.assign({}, it, data);
       if (S.xStats) { S.xStats.lines.forEach(function (x) { if (x.id === id && x.date === date) Object.assign(x, data); }); }
       toast(undo ? 'Return undone. Still outstanding.' : 'Returned: ' + it.text, undo ? null : {
-        label: 'Undo', fn: function () { returnXfer(date, id, true, updated); }
+        label: 'Undo', fn: function () { if (attempt.identity === stableIdentity()) returnXfer(date, id, true, updated); }
       });
-    }, function (e) { failed(e); }).then(function () { delete S.xReturning[key]; draw(); });
+    }, function (e) { if (stillHere()) { failed(e); draw(); } });
   }
   function watchXfer() {
     if (!kitchenAccess() || !S.configFull) return;
@@ -9339,7 +9469,7 @@ if (list.length) sg('oreg', 's');
   /* Remove or put back a transfer: the head chef's Google account only (the admin log, or this page on that device).
      The admin log's 30 days are patched here (no read), so the change shows at once; today's lines come back through the listener. */
   function removeXfer(date, id, restore) {
-    if (!wAll()) return;
+    if (!wAll() || xReturnPending(date, id)) return;
     var mine = (S.xStats && S.xStats.lines) || [], it = (S.xLines || []).concat(mine).filter(function (x) { return x.id === id && x.date === date; })[0];
     if (!it) return;
     var original = Object.assign({}, it);
@@ -9361,10 +9491,10 @@ if (list.length) sg('oreg', 's');
   function xBtn(x) {
     if (!wAll() || !x.id) return '';
     var what = x.deleted ? 'Put back' : 'Remove';
-    return '<button type="button" class="p-x' + (x.deleted ? '' : ' lk-del') + '" data-p="' + (x.deleted ? 'tr-restore' : 'tr-del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc(what + ' ' + x.text) + '">' + what + '</button>';
+    return '<button type="button" class="p-x' + (x.deleted ? '' : ' lk-del') + '" data-p="' + (x.deleted ? 'tr-restore' : 'tr-del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc(what + ' ' + x.text) + '"' + (xReturnPending(x.date, x.id) ? ' disabled' : '') + '>' + what + '</button>';
   }
   function xReturnBtn(x) {
-    var returning = S.xReturning && S.xReturning[x.date + '_' + x.id];
+    var returning = xReturnPending(x.date, x.id);
     var tick = !x.deleted && !x.returned && (can('tick') || wAll()) ? '<button type="button" class="nb-box tr-return-box" title="Mark returned in full" data-p="tr-return" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="Confirm ' + esc(x.text) + ' returned in full"' + (returning ? ' disabled' : '') + '>' + (returning ? '...' : BOX) + '</button>' : '';
     if (!x.deleted && x.returned && (wAll() || isSous() || (can('tick') && me() && me().id === x.returnedById && now() - x.returnedAt < 120000))) tick = '<button type="button" class="chip sq" data-p="tr-unreturn" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '"' + (returning ? ' disabled' : '') + '>Undo return</button>';
     return tick;
@@ -9412,11 +9542,13 @@ if (list.length) sg('oreg', 's');
   }
   // one item of a loan card: the words and amount, its note, and Mark returned (an outline button with its word)
   function xLoanRow(x) {
-    var returning = S.xReturning && S.xReturning[x.date + '_' + x.id];
-    var ret = !x.deleted && !x.returned && (can('tick') || wAll()) ? '<button type="button" class="btn tr-ret" data-p="tr-return" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Mark ' + x.text + ' returned, all of it') + '"' + (returning ? ' disabled' : '') + '>' + (returning ? 'Saving...' : TR_TICK + 'Mark returned') + '</button>' : '';
-    return '<li class="nb-row tr-row tr-item' + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '"><span class="nb-main"><span class="nb-t"><strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span>' + unsentMark(x) + justStamp(x.id) +
+    var returning = xReturnPending(x.date, x.id);
+    var words = returning && returning.undo ? 'Undo pending' : 'Return pending';
+    var label = returning ? words + ' for ' + x.text : 'Mark ' + x.text + ' returned, all of it';
+    var ret = !x.deleted && !x.returned && (can('tick') || wAll()) ? '<button type="button" class="btn tr-ret" data-p="tr-return" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc(label) + '"' + (returning ? ' disabled aria-busy="true"' : '') + '>' + (returning ? words : TR_TICK + 'Mark returned') + '</button>' : '';
+    return '<li class="nb-row tr-row tr-item' + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '"><span class="nb-main"><span class="nb-t"><strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span>' + (returning ? '' : unsentMark(x)) + justStamp(x.id) +
       (x.note ? '<span class="w-act">' + esc(x.note) + '</span>' : '') + '</span></span>' + ret + xBtn(x) +
-      (wxFixOk('x', x) || wAll() && x.id ? moreBtn(x, wxFixOk('x', x)) : '') + '</li>';
+      (wxFixOk('x', x) || wAll() && x.id ? moreBtn(x, wxFixOk('x', x), !!returning) : '') + '</li>';
   }
   var TR_TICK = '<svg class="tr-tick" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12.5 10 17.5 19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   // the venue and person chips, and the often taken chips that follow the venue (redrawn while the venue is typed)
@@ -9465,14 +9597,14 @@ if (list.length) sg('oreg', 's');
     if (S.xDate !== today) { S.xDate = today; watchXfer(); }
     if (S.authed && fb) { loadXSum(); loadOrdLearned(); }
     var byTime = function (a, b) { return xNum(a.addedAt) - xNum(b.addedAt); };
-    var live = xLive().sort(byTime), shown = (S.xLines || []).filter(function (x) { return wAll() || !x.deleted; }).sort(byTime);
+    var live = xLive().sort(byTime), shown = xWhileReturning(S.xLines || [], today, false).filter(function (x) { return wAll() || !x.deleted; }).sort(byTime);
     var nOut = live.filter(function (x) { return x.dir !== 'in'; }).length, nIn = live.length - nOut;
     // no signal and not loaded yet: the note, then only the lines this phone wrote since (listSnap), and no counts
     var offX = S.xState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     // the date line counts what was logged today, in the cards' own words (Lent to, Borrowed from)
     var sub = offX ? '' : [nOut ? nOut + ' lent' : '', nIn ? nIn + ' borrowed' : ''].filter(Boolean).join(', ') + (live.length ? ' today' : '');
     var add = can('add') ? xFormHTML() : '';
-    var earlier = (S.xOpen || []).filter(function (x) { return x.date !== today && !x.deleted && !x.returned; }).sort(byTime);
+    var earlier = xWhileReturning(S.xOpen || [], today, true).filter(function (x) { return x.date !== today && !x.deleted && !x.returned; }).sort(byTime);
     var todayOpen = shown.filter(function (x) { return !x.deleted && !x.returned; }), done = shown.filter(function (x) { return x.deleted || x.returned; });
     var earlierNote = S.xOpenState === 'error' ? readErr('Could not load what is still out from earlier days. This list may be incomplete.', 'xopen') :
       S.xOpenState === 'offline' ? '<p class="nb-empty" role="status">No signal. What is still out from earlier days shows when the phone is back online.</p>' :
@@ -9998,7 +10130,7 @@ if (list.length) sg('oreg', 's');
      closing sheet takes its history entry off with Back (ovDone), so the next one waits for that Back to land first. */
   var ksWant = false, ksWait = false, nextWait = false;
   // every sheet or popup over the page: these, the function sheet, the wastage reason sheet and the other bottom sheets
-  function sheetOpen() { return !!(ksPop || npop || mlPop || gz || tmPop || S.sheet || document.querySelector('.wm-wrap, .cooling-wrap, .fn-pop, .sheet-bg, dialog[open]')); }
+  function sheetOpen() { return !!(ksPop || npop || mlPop || gz || gv || tmPop || S.sheet || document.querySelector('.wm-wrap, .cooling-wrap, .fn-pop, .sheet-bg, dialog[open]')); }
   function typing() { var ae = document.activeElement; return !!(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.type !== 'button'); }
   // a first PIN's One more thing, while it is on the screen (it shows only on the prep list)
   function dkFirstUp() { return S.drinkAsk === 'first' && S.name === 'prep' && !!(S.root && document.body.contains(S.root) && S.root.querySelector('.dr-first')); }
@@ -11045,7 +11177,7 @@ if (list.length) sg('oreg', 's');
       card: function (x) { return '<li class="a-rev"><strong>' + esc(x.date) + (x.reviewBy ? ', ' + esc(x.reviewBy) : '') + ':</strong> ' + esc(x.avoidable || '') + (x.change ? ' <em>Change: ' + esc(x.change) + '</em>' : '') + '</li>'; }
     });
   }
-  function whReviewDirty() { return rvTyped(false); }
+  function whReviewDirty() { return rvTyped(rvDraft(false)); }
   /* One period for every report (5 Nov 2026, admin pages step 4, design B): 7, 14 or 30 days chosen on Insights, Team,
      Transfers or Wastage, or by a Dashboard tile, is the period of all of them; it starts at 30 days, like the Dashboard.
      Wastage's longer choices (this month, last month, three months, custom dates) stay on Wastage, and Wastage keeps its
@@ -11472,15 +11604,19 @@ if (list.length) sg('oreg', 's');
     if (gv) gvClose();
     var el = document.createElement('div');
     el.className = 'gz-wrap gv-wrap'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', g.title + ', video');
-    gv = { el: el, prev: document.activeElement };
     el.innerHTML = '<div class="gz-bar"><span class="gz-t">' + esc(g.title) + '<small>Video' + (gvLen(g) ? ', ' + esc(gvLen(g)) : '') + '</small></span><span class="gz-btns"><button type="button" class="gz-b gz-x" data-gv="close">Close</button></span></div>' +
       '<div class="gv-body"><div class="gv-frame' + (v.tall ? ' tall' : '') + '"><iframe src="https://www.youtube-nocookie.com/embed/' + v.id + '?autoplay=1&amp;rel=0&amp;playsinline=1" title="' + esc(g.title + ' video') +
-      '" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div></div>';
+      '" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div></div>' +
+      '<span class="visually-hidden" tabindex="0"></span>';
+    var close = el.querySelector('[data-gv="close"]'), end = el.lastElementChild;
+    gv = { el: el, prev: document.activeElement, close: close, end: end, reverse: false };
+    // The player owns its own keys. Native Tab out of the frame reaches this guard before it can reach the page.
+    end.addEventListener('focus', function () { if (ovOn === 'gv' && !gv.reverse) close.focus({ preventScroll: true }); });
     document.body.appendChild(el);
     Array.prototype.forEach.call(document.querySelectorAll('video.g-vloop'), gvStop);
     ovPush('gv', function () { gvClose(true); });
     document.documentElement.classList.add('gz-open');
-    var c = el.querySelector('[data-gv="close"]'); if (c) c.focus({ preventScroll: true });
+    close.focus({ preventScroll: true });
   }
   function gvClose(noBack) {
     if (!gv) return;
@@ -11492,7 +11628,18 @@ if (list.length) sg('oreg', 's');
     if (prev && prev.focus && document.body.contains(prev)) { try { prev.focus({ preventScroll: true }); } catch (e) {} }
   }
   document.addEventListener('click', function (e) { var b = gv && e.target.closest && e.target.closest('[data-gv="close"]'); if (b && gv.el.contains(b)) gvClose(); });
-  document.addEventListener('keydown', function (e) { if (gv && e.key === 'Escape') gvClose(); });
+  document.addEventListener('keydown', function (e) {
+    if (!gv || ovOn !== 'gv' || e.defaultPrevented) return;
+    if (e.key === 'Escape') { e.preventDefault(); gvClose(); }
+    if (e.key === 'Tab') {
+      if (e.shiftKey && document.activeElement === gv.close) {
+        // Start native backwards navigation just after the frame so the browser can enter its last control.
+        gv.reverse = true;
+        gv.end.focus({ preventScroll: true });
+        gv.reverse = false;
+      } else trapTab(e, gv.el, 'button:not([disabled]), iframe');
+    }
+  });
   /* Who sees a guide (23 Oct 2026, head chef): who is 'all' (or missing), 'chefs' (the head chef and sous chefs) or 'fn'
      (function managers and chefs). The head chef's Google device sees every guide. Nobody signed in is the staff view.
      Hidden on screen only: the rules cannot tell a sous chef from staff on a read (README, Head chef decisions). */
@@ -13984,6 +14131,7 @@ if (list.length) sg('oreg', 's');
     if (a === 'w-act-open') { S.wf.actOpen = true; draw(); focusSel('#w-act'); return; }
     if (a === 'w-log') { wSheetOpen('log'); return; }
     if (a === 'w-rv') { wSheetOpen('rv'); return; }
+    if (a === 'w-rv-resume' || a === 'w-rv-today') { rvSwitch(a === 'w-rv-resume' ? el.getAttribute('data-d') : dayNow()); return; }
     if (a === 'w-again') { wAgain(dt, id); return; }
     if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); if (S.wf.fill) { if (S.wf.fill.reason && S.wf.fill.reason !== S.wf.reason) sg('wfill', 'e'); S.wf.fill.reason = ''; wFillTidy(); } if (S.sheet) wasteSheetClose(); else draw(); return; }
     if (a === 'sheet') {
@@ -14252,7 +14400,7 @@ if (list.length) sg('oreg', 's');
     if (k === 'w-amt') { if (S.wf.amtAuto && S.wf.amt !== el.value) sg('wchip', 'e'); S.wf.amt = el.value.replace(/[^0-9.,]/g, ''); S.wf.amtAuto = false; if (el.value !== S.wf.amt) el.value = S.wf.amt; wFillPatch(); return; }
     if (k === 'w-sec') { S.wf.sec = el.value; if (S.wf.fill && S.wf.fill.sec && el.value !== S.wf.fill.sec) { sg('wfill', 'e'); S.wf.fill.sec = ''; wFillTidy(); wFillPatch(); } return; }
     if (k === 'w-act') { S.wf.act = el.value; return; }
-    // the admin panel's Daily reviews form and the wastage page each keep their own (rvTyped())
+    // the admin panel's Daily reviews form and the wastage page keep separate drafts
     if (k === 'w-ra' || k === 'w-rc') {
       var review = el.closest('[data-review-day]');
       if (review) rvInput(!review.classList.contains('a-rvform'), review.getAttribute('data-review-day'), k === 'w-ra' ? 'avoidable' : 'change', el.value);
@@ -14368,6 +14516,9 @@ if (list.length) sg('oreg', 's');
     app.addEventListener('pointerup', toastUp);
     app.addEventListener('pointercancel', toastUp);
     document.addEventListener('scroll', toastScrolled, { capture: true, passive: true });
+    app.addEventListener('focusout', function () {
+      if (prepTickExpiry && !prepTickExpiry.timer) prepTickWait(0);
+    });
     app.addEventListener('input', onInput);
     app.addEventListener('change', onChange);
     app.addEventListener('submit', onSubmit);
@@ -17169,7 +17320,7 @@ if (list.length) sg('oreg', 's');
      Recipes, Manage functions, Supplier order). The Add a line sheets on Prep and Orders open with nothing typed in
      them are not unsaved work (their words are in typedHere()), so it does not hold back the 04:00 refresh or a repair reload. */
   function unsavedHere() {
-    return !!(workLock() && S.lockHasDraft) || !!(window.LK_CLEANING && window.LK_CLEANING.dirty()) || !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere() || !!S.sheet || !!S.wLog || !!S.xLog || !!S.recipeOpen || !!ptPop;
+    return dirtyForUpdate() || !!S.sheet || !!S.wLog || !!S.xLog || !!S.recipeOpen || !!ptPop;
   }
   /* Words typed on the pages this file draws and not saved yet: half a prep, order, wastage or transfer line (the venue
      and person stay after Log it on purpose, so they do not count), kitchen mail, a to-do job, a review, the drinks run,
@@ -17179,12 +17330,15 @@ if (list.length) sg('oreg', 's');
      themselves. Discard and update explicitly permits losing these words, so its own reload does not ask again
      (LK_UPDATE.letGo() in js/upkeep.js). iPhone Safari never asks, and a phone that drops the tab in the background
      does not either. */
-  function typedHere() {
-    return !!(psModule() && psModule().unsaved()) || !!(proofModule() && proofModule().dirty()) || !!(window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.dirty()) || draftsDirty() || !!mlf.text.trim() || tdDirty() || tmAnyDirty() || dkDirty() || rvTyped(true) || rvTyped(false) ||
+  function typedHere(skipPageReview) {
+    return (!skipPageReview && rvPageDirty()) || !!(psModule() && psModule().unsaved()) || !!(proofModule() && proofModule().dirty()) || !!(window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.dirty()) || draftsDirty() || !!mlf.text.trim() || tdDirty() || tmAnyDirty() || dkDirty() || whReviewDirty() ||
       !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || S.xf.text.trim() || String(S.xf.amt).trim() || S.xf.note.trim() || !!(S.xf.basket || []).length);
   }
+  function draftsForUpdate(skipPageReview) {
+    return !!(window.LK_CLEANING && window.LK_CLEANING.dirty()) || !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere(skipPageReview);
+  }
   function dirtyForUpdate() {
-    return !!(workLock() && S.lockHasDraft) || !!(window.LK_CLEANING && window.LK_CLEANING.dirty()) || !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere();
+    return !!(workLock() && S.lockHasDraft) || draftsForUpdate();
   }
   function canChangeDevice() {
     return deviceReady() && canW() && !!me() && (shared() ? whoHead() : deviceOwner() === S.who);
