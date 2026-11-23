@@ -57,13 +57,13 @@ const NOT = /Allergens not checked yet/;
   const LABELS = ['chips', 'fries', 'sweet potato chips', 'chicken tenders', 'fried shallots', 'corn flour', 'dark beef stock',
     'heinz bbq sauce', 'buffalo sauce', 'red hot sauce', 'sweet chilli sauce', 'napoli sauce', 'sauce of choice', 'side sauce of choice',
     'szechuan seasoning', 'mild curry powder', 'chinese five spice', 'icing sugar mix', 'bacon', 'shortcut bacon', 'diced bacon',
-    'crispy bacon', 'leg ham', 'shaved leg ham', 'virginian ham', 'salami', 'pulled pork', 'pulled lamb', 'smoked pulled lamb'];
+    'crispy bacon', 'leg ham', 'shaved leg ham', 'virginian ham', 'salami', 'pulled pork', 'pulled lamb', 'smoked pulled lamb', 'gravy powder', 'red cooking wine', 'green peppercorns'];
   const plain = FILE.recipes.filter(r => !r.contains && !r.check).flatMap(r => r.ingredients.filter(i => !i.link && !(i.tags && i.tags.length)).map(i => ({ r: r.id, i })));
   const lab = x => LABELS.indexOf(x.i.name.trim().toLowerCase()) >= 0;
   const open = plain.filter(x => !lab(x) && x.i.none !== true).map(x => x.r + ': ' + x.i.name);
   ok(open.length === 0, 'js/data.js: every plain line outside the label list is checked (' + open.slice(0, 5).join(', ') + ')');
   const stamped = plain.filter(x => lab(x) && x.i.none !== undefined).map(x => x.r + ': ' + x.i.name);
-  ok(stamped.length === 0 && plain.filter(lab).length === 49, 'js/data.js: the 49 lines of the label-dependent products stay not checked (' + stamped.join(', ') + ')');
+  ok(stamped.length === 0 && plain.filter(lab).length === 54, 'js/data.js: the 54 lines of the label-dependent products stay not checked (' + stamped.join(', ') + ')');
   const b = await L.start();
   let p = await L.open(b, '#/recipes', { noPin: true, who: '', wait: 1500 });
   const unchecked = await p.evaluate(() => window.LK_DATA.recipes.filter(r => window.LK_APP.unchecked(r.id).length).map(r => [r.id, window.LK_APP.unchecked(r.id)]));
@@ -74,7 +74,7 @@ const NOT = /Allergens not checked yet/;
   const shows = unchecked.filter(([id]) => !DRESSING_LABELS[id]).map(([id, parts]) =>
     [id, id === 'caesar' ? parts.filter(name => name !== 'Caesar Salad Dressing') : parts]);
   const names = new Set(FILE.recipes.map(r => r.name));
-  ok(shows.length === 39 && shows.every(([, parts]) => parts.every(n => LABELS.indexOf(n.toLowerCase()) >= 0 || names.has(n))), 'the book as js/data.js has it: 39 cards say Allergens not checked yet, each for a label-dependent product or a recipe that uses one (' + shows.length + ')');
+  ok(shows.length === 45 && shows.every(([, parts]) => parts.every(n => LABELS.indexOf(n.toLowerCase()) >= 0 || names.has(n))), 'the book as js/data.js has it: 45 cards say Allergens not checked yet, each for a label-dependent product or a recipe that uses one (' + shows.length + ')');
   await go(p, '#/r/smash'); const sm = await box(p);
   ok(NOT.test(sm) && /Chips/.test(sm), 'the Smash Burger says its chips are not checked (' + sm.replace(/\s+/g, ' ') + ')');
   await p.context().close();
