@@ -98,6 +98,103 @@ const loaded = page => page.waitForSelector('.su-latest', { state: 'attached' })
   ok(!page.errors.length, 'failure and Retry have no browser errors');
   await page.context().close();
 
+  page = await open(browser, { width: 390, height: 844 });
+  await loaded(page);
+  await page.fill(qty, '7');
+  const beforeFilter = await reads(page);
+  const historySearch = target + ' [data-sf="historyQ"]';
+  const date = id => target + ' ' + action('history-order') + '[data-id="' + id + '"]';
+  const use = page.locator(target + ' ' + action('reuse'));
+  const copy = page.locator(target + ' ' + action('copy-history'));
+  const replace = page.locator(target + ' ' + action('reuse-confirm'));
+  const find = page.locator(historySearch);
+  const draftQuantity = () => page.inputValue(qty);
+  const filter = async text => { await find.fill(text); await L.settle(page, 220); };
+  const keepOld = selector => page.evaluate(selector => {
+    window.oldHistoryAction = document.querySelector(selector)?.cloneNode(true);
+  }, target + ' ' + selector);
+  const dispatchOld = () => page.evaluate(target => {
+    const node = window.oldHistoryAction;
+    if (node) { document.querySelector(target).appendChild(node); node.click(); node.remove(); }
+  }, target);
+  await page.locator(history).click();
+  await find.focus();
+  for (const letter of 'test') { await page.keyboard.press(letter); await L.settle(page, 170); }
+  ok(await find.evaluate(el => el.value === 'test' && el === document.activeElement && el.selectionStart === 4),
+    'typing a history search keeps the full query and caret after results redraw');
+  await page.keyboard.press('Home');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('Delete');
+  await L.settle(page, 220);
+  ok(await find.evaluate(el => el.value === 'tst' && el === document.activeElement && el.selectionStart === 1),
+    'editing in the middle of the history search keeps the caret in place');
+  await page.locator(target + ' .ux-search-clear').press('Enter');
+  ok(await find.evaluate(el => el.value === '' && el === document.activeElement),
+    'clearing with the keyboard returns focus to the history search');
+
+  await keepOld(action('copy-history'));
+  await page.evaluate(() => {
+    window.historyCopies = [];
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: {
+      writeText: async text => { window.historyCopies.push(text); }
+    } });
+  });
+  await filter('TEST ZERO PAR ITEM');
+  ok(await page.locator(date('older')).count() === 1 && await page.locator(date('previous')).count() === 0 &&
+    !await page.locator(target + ' .su-lines').count() && !await use.count() && !await copy.count(),
+    'one matching date excludes the former selection, detail, Use and Copy until the date is chosen');
+  await dispatchOld();
+  ok(await page.evaluate(() => !window.historyCopies.length), 'an old Copy action cannot use a filtered-out order');
+  await L.choose(page, date('older'));
+  ok(await use.getAttribute('data-id') === 'older' && await copy.getAttribute('data-id') === 'older' &&
+    /2 bags/.test(await L.txt(page, target + ' .su-lines')), 'choosing the match binds the detail, Use and Copy to one order');
+  await copy.click();
+  ok(await page.evaluate(() => window.historyCopies.length === 1 && /2 bags/.test(window.historyCopies[0])),
+    'Copy uses the quantities on the selected order');
+
+  await use.click();
+  ok(await replace.count() === 1 && await draftQuantity() === '7', 'Use asks before replacing a typed amount');
+  await keepOld(action('reuse-confirm'));
+  await page.evaluate(selector => {
+    const el = document.querySelector(selector);
+    el.value = 'TEST STOCK';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    window.oldHistoryAction && document.querySelector('[data-su="reuse-confirm"]').click();
+  }, historySearch);
+  ok(await draftQuantity() === '7', 'a confirmation during the search debounce keeps the typed amount');
+  await L.settle(page, 220);
+  ok(await page.locator(date('older')).count() === 1 && await page.locator(date('previous')).count() === 1 &&
+    await use.getAttribute('data-id') === 'older' && !await replace.count(),
+    'a search change keeps a still-matching selection but cancels its pending replacement');
+  await dispatchOld();
+  ok(await draftQuantity() === '7', 'a delayed confirmation cannot replace the draft even when its date still matches');
+  await page.fill(qty, '7');
+
+  await use.click();
+  await keepOld(action('reuse-confirm'));
+  await L.choose(page, date('previous'));
+  ok(await use.getAttribute('data-id') === 'previous' && !await replace.count(), 'changing the selected date cancels the earlier confirmation');
+  await dispatchOld();
+  ok(await draftQuantity() === '7', 'confirming a different selected order requires a fresh Use action');
+  await page.fill(qty, '7');
+
+  await use.click();
+  await filter('nothing in this history matches');
+  ok(/No loaded orders match your search/.test(await L.txt(page, target)) &&
+    !await use.count() && !await copy.count() && !await replace.count() && await draftQuantity() === '7',
+    'zero matches shows a scoped empty result without order actions or changes to the draft');
+  await page.locator(target + ' .ux-search-clear').press('Enter');
+  await L.choose(page, date('older'));
+  await use.click();
+  await replace.click();
+  const result = await draftQuantity();
+  const afterFilter = await reads(page);
+  const writes = await page.evaluate(() => __fake.writes.flat().filter(w => /\/suppliers\/[^/]+\/orders\/|\/(supplierlinks|cutdone)\//.test(w.path)).length);
+  ok(result === '1 kg' && afterFilter === beforeFilter && !writes && !page.errors.length,
+    'fresh confirmation fills the selected quantities without extra history reads or an order write (' + result + ', ' +
+    beforeFilter + ' to ' + afterFilter + ' reads, ' + writes + ' writes)');
+  await page.context().close();
+
   const hiddenRail = { init: () => localStorage.setItem('lk.sup.sidebar', 'hide') };
   page = await open(browser, { ...hiddenRail, failReads:'/suppliers/northside/orders$' });
   const railRetry = page.locator('.su-order-context ' + action('history-retry'));

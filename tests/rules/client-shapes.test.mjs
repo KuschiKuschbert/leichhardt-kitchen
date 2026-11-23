@@ -258,7 +258,6 @@ row('js/prep.js book().requests(): today\'s order lines not ordered yet (Supplie
 row('js/prep.js watchWaste(): today\'s wastage lines listener', { ok: KITCHEN, asks: KITCHEN, run: db => listen(C(db, `waste/${TODAY}/lines`)) });
 row('js/prep.js loadWSum(): summary/waste get', { ok: KITCHEN, asks: KITCHEN, run: db => getDoc(D(db, 'summary/waste')) });
 row('js/prep.js loadPageReview() and loadWNote(): today\'s waste review and the last days\' (waste/<day>)', { ok: KITCHEN, asks: KITCHEN, run: db => Promise.all([getDoc(D(db, `waste/${TODAY}`)), getDoc(D(db, `waste/${YDAY}`))]) });
-row('js/prep.js saveReview(): the review from the server before it is saved (waste/<day>)', { ok: KITCHEN, asks: CHEFS, run: db => getDocFromServer(D(db, `waste/${TODAY}`)) });
 row('js/prep.js pastRead() (admin Reports): a past day\'s wastage lines', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(C(db, `waste/${PAST}/lines`)) });
 
 // transfers
@@ -502,8 +501,12 @@ row('js/prep.js wxFixSave(): change the amount on my own wastage line', { ok: AD
 row('js/prep.js wxFixSave(): a chef changes the amount on someone else\'s wastage line', { ok: CHEFS, asks: CHEFS,
   prep: (r, w) => put({ [`waste/${TODAY}/lines/${MINE(r)}`]: Object.assign({}, seed[`waste/${TODAY}/lines/w1`], w === 'ann' ? { addedBy: 'Bo', addedById: 'bo', by: 'bo' } : {}) }),
   run: (db, w, r) => W(r, [['upd', `waste/${TODAY}/lines/${MINE(r)}`, AMT(r, 'kg')]]) });
-row('js/prep.js saveReview(): today\'s waste review (waste/<today> merge)', { ok: CHEFS, asks: CHEFS,
-  run: (db, w, r) => W(r, [['set', `waste/${TODAY}`, { avoidable: 'Over-prepped rice', change: 'Half a batch on Mondays', reviewBy: NAME[r], reviewById: w, reviewAt: Date.now() }, true]]) });
+row('js/prep.js saveReview(): read and merge today\'s review in one Full SDK transaction (waste/<today>)', { ok: CHEFS, asks: CHEFS,
+  run: (db, w, r) => runTransaction(db, async tx => {
+    const ref = D(db, `waste/${TODAY}`);
+    await tx.get(ref);
+    tx.set(ref, { avoidable: 'Over-prepped rice', change: 'Half a batch on Mondays', reviewBy: NAME[r], reviewAt: Date.now(), by: w }, { merge: true });
+  }) });
 row('js/prep.js addXfer() through xWrite(): a transfer line with its open copy', { ok: ADDS, asks: ADDS,
   run: (db, w, r) => { const rec = { dir: 'out', venue: 'Riviera', person: 'Jo', text: 'Butter', amount: 2, unit: 'kg', note: '', addedBy: NAME[r], addedById: w, addedAt: Date.now(), deleted: false };
     return W(r, [['set', `transfers/${TODAY}/lines/${MINE(r)}`, rec], ['set', `transferOpen/${TODAY}_${MINE(r)}`, { date: TODAY, lineId: MINE(r), record: Object.assign({}, rec, { by: BY[r] }), open: true }]]); } });
