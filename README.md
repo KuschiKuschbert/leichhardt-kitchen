@@ -240,6 +240,8 @@ This guide is bundled with the book, searchable and readable without extra Fires
 
 Orders' progress count opens Ordered today when the fold has entries. Transfers has a Done today jump beside Still out. The jumps take you straight to the existing finished lists. [Work pages](docs/work-pages-design-options/brief.md#quick-council-check-for-the-finished-lists-22-november-2026)
 
+The Transfers logging sheet fits narrow phones without a sideways scroll. Transfer direction still uses the existing inline pair or picker according to label width. [Sheet and picker checks](docs/adaptive-controls.md#transfers-sheet-width-23-november-2026).
+
 ## Supplier order and catalogue (24 Oct 2026)
 
 **Chef hat > Supplier order** (`#/suppliers`) is for the head chef, sous chefs and the verified admin; staff cannot open it or read its data. The catalogue, private import, order sheet and cut-offs are described in full in [docs/supplier-order.md](docs/supplier-order.md); the data contract is [docs/supplier-workspace.md](docs/supplier-workspace.md).
