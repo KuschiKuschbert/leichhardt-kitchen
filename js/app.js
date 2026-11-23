@@ -524,7 +524,7 @@
     // who is signed in shows on the hat itself (3 Nov 2026, the Writing as row went): their initial in a small disc, and on
     // a shared screen their display name next to it, with the complete name in the menu and accessible label
     var sh = n && window.LK_DEVICE && window.LK_DEVICE.mode() === 'shared' ? ' is-shared' : '';
-    return '<button type="button" class="wtop-btn wtop-who' + (n ? ' on' : '') + sh + (n && left > 0 ? ' flip' : '') + '"' + (n && left > 0 && left < 1100 ? ' style="animation-delay:-' + (1100 - left) + 'ms"' : '') + ' data-who="menu" aria-haspopup="true" aria-expanded="' + !!wmenu + '"' + here + (n ? ' title="Signed in as ' + esc(n) + mt + '" aria-label="Signed in as ' + esc(n) + ', menu and Settings' + mt + '"' : ' title="Menu and Settings' + mt + '" aria-label="Menu and Settings' + mt + '"') + '>' + ICON.chef + (n ? '<span class="wtop-av" aria-hidden="true">' + esc(initial(n)) + '</span>' : '') + '<span class="wtop-lbl wtop-who-n">' + esc(n) + '</span>' + mailBadge(ml) + '</button>';
+    return '<button type="button" class="wtop-btn wtop-who' + (n ? ' on' : '') + sh + (n && left > 0 ? ' flip' : '') + '"' + (n && left > 0 && left < 1100 ? ' style="animation-delay:-' + (1100 - left) + 'ms"' : '') + ' data-who="menu" aria-haspopup="dialog" aria-expanded="' + !!wmenu + '"' + here + (n ? ' title="Signed in as ' + esc(n) + mt + '" aria-label="Signed in as ' + esc(n) + ', menu and Settings' + mt + '"' : ' title="Menu and Settings' + mt + '" aria-label="Menu and Settings' + mt + '"') + '>' + ICON.chef + (n ? '<span class="wtop-av" aria-hidden="true">' + esc(initial(n)) + '</span>' : '') + '<span class="wtop-lbl wtop-who-n">' + esc(n) + '</span>' + mailBadge(ml) + '</button>';
   }
   // A roster rename patches current identity in place. Keep the open menu, focused control and draft warnings.
   // Reuses the existing config event and held roster: no reads, listeners or separate profile cache.
@@ -616,8 +616,9 @@
     var n = window.LK_PREP && window.LK_PREP.whoName ? window.LK_PREP.whoName() : '';
     if (wmenu) return;
     var m = n && window.LK_PREP.chefMenu ? window.LK_PREP.chefMenu() : {}, adm = adminItem(), fnOnly = window.LK_PREP && window.LK_PREP.functionOnly();
-    var r = btn.getBoundingClientRect(), el = document.createElement('div');
+    var r = btn.getBoundingClientRect(), el = document.createElement('dialog');
     el.className = 'wm-wrap';
+    el.setAttribute('aria-label', 'Chef hat menu');
     var set = '<a class="wm-a wm-set" href="#/settings" data-who="go"' + (parseRoute().name === 'settings' ? ' aria-current="page"' : '') + '>' + ICON.gear + '<span><b>Settings</b></span></a>';
     var tile = function (attrs, icon, label, small) { return '<' + (/^href/.test(attrs) ? 'a' : 'button type="button"') + ' class="wm-a wm-tile" ' + attrs + '>' + icon + '<span><b>' + label + '</b>' + (small || '') + '</span></' + (/^href/.test(attrs) ? 'a' : 'button') + '>'; };
     var grid = function (h, xs) { xs = xs.filter(Boolean).join(''); return xs ? (h ? '<p class="wm-h wm-sh">' + h + '</p>' : '') + '<div class="wm-grid">' + xs + '</div>' : ''; };
@@ -657,12 +658,15 @@
         grid('Every day', [deliveryItem(), window.LK_PREP && window.LK_PREP.teamOK && window.LK_PREP.teamOK() ? teamItem(false) : '', supplierOK() ? supplierItem() : '', fnOK() ? fnItem() : '']) +
         grid('More', [adm, guidesItem(), bookEdit() ? manageItem() : '', todoOK() ? todoItem() : '']) + set;
     }
-    el.innerHTML = '<div class="wm-bg" data-who="close"></div><nav class="wm" aria-label="' + (n ? esc(n) : 'Menu') + '" style="--wm-top:' + Math.round(r.bottom + 8) + 'px;top:var(--wm-top);right:' + Math.max(8, Math.round(window.innerWidth - r.right)) + 'px"><span class="wm-grip" aria-hidden="true"></span>' + body + '</nav>';
+    el.innerHTML = '<div class="wm-bg" data-who="close" aria-hidden="true"></div><nav class="wm" aria-label="' + (n ? esc(n) : 'Menu') + '" style="--wm-top:' + Math.round(r.bottom + 8) + 'px;top:var(--wm-top);right:' + Math.max(8, Math.round(window.innerWidth - r.right)) + 'px"><span class="wm-grip" aria-hidden="true"></span>' + body + '</nav>';
+    // Give the dialog a safe initial focus before it opens, so a stray Enter never hands the phone over.
+    var first = el.querySelector('.wm-tile') || el.querySelector('.wm-a');
+    if (first) first.setAttribute('autofocus', '');
+    el.addEventListener('cancel', function (e) { e.preventDefault(); whoMenuClose(true); });
     document.body.appendChild(el); wmenu = el;
     if (window.LK_PREP && window.LK_PREP.pickerOverlay) wmenuHistory = window.LK_PREP.pickerOverlay(function () { whoMenuClose(true, true); });
     btn.setAttribute('aria-expanded', 'true');
-    // focus starts on the first tile, not on Sign out, so a stray Enter never hands the phone over
-    var first = el.querySelector('.wm-tile') || el.querySelector('.wm-a'); if (first) first.focus({ preventScroll: true });
+    el.showModal();
   }
   document.addEventListener('click', function (e) {
     var el = e.target.closest && e.target.closest('[data-who]');

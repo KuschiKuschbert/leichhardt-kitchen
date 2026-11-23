@@ -168,6 +168,7 @@ Use `.ps-viewbar` for the local Work / Before service choice, `.ps-standard` for
 
 ## The chef hat
 
+- **The frame** is a named modal dialog with the role-specific navigation inside it. The page behind it is inert while it is open. Focus starts on the first available tile or action, with Sign out kept clear of the opening focus. Close, Escape, Back, the backdrop and swipe use the existing dismissal path and return focus to the hat.
 - **A row** is a `.wm-tile` in its group, Every day or More (a list since 8 Nov 2026, redesign step 7; tiles before): the icon, the words, its small line on the right and a chevron, Settings last. The small line says only what the book already holds, with no read of its own (`.wm-due` when it needs doing: "Not set yet", "1 to sign").
 - **No row for a page with its own main tab** (head chef, 20 Nov 2026, the consistency sweep, step 3): Cleaning is reached from its tab only; the hat does not repeat it. A row's words are the page's own name ("Recipes & drawings", the heading on `#/manage` too).
 
