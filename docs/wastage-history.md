@@ -64,7 +64,7 @@ revert restores the earlier save behaviour, and saved reviews remain readable.
 
 ## Reopen an earlier draft
 
-A chef who began a review before Brisbane midnight can resume their own dated draft inside today's review sheet. Back to today returns to today's fields in the same sheet. Each meaningful unfinished date keeps its own words and the saved review shown when it was opened. Closing keeps them in the open tab. The earlier date stays visible during the check, conflict, retry and acknowledged save. [Chosen layout and comparisons](wastage-overnight-options/brief.md)
+A chef who began a review before Queensland midnight can resume their own dated draft inside today's review sheet. Back to today returns to today's fields in the same sheet. Each meaningful unfinished date keeps its own words and the saved review shown when it was opened. Closing keeps them in the open tab. The earlier date stays visible during the check, conflict, retry and acknowledged save. [Chosen layout and comparisons](wastage-overnight-options/brief.md)
 
 The Wastage entries and totals still follow today. The resume action is scoped to this person's retained review drafts. Admin Daily reviews keeps its own draft and history controls. The same person can recover their work after the daily PIN lock while their review access is current. The book's deliberate handover and update guard apply to all retained drafts and pending writes.
 
