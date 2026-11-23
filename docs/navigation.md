@@ -165,7 +165,8 @@ restoration cannot undo the jump.
 In Admin and the chef panel, selecting a section from Find or the phone's On this page sheet focuses its
 heading and scrolls it below the sticky navigation. The next Tab continues into the section. Escape, Back
 or Cancel in Find returns focus to its opener. When `/` opened Find, focus goes back to the previous panel
-control if it is available, or to the visible Find button at the current width.
+control if it is available, or to the visible Find button at the current width. A panel redraw while Find has
+focus preserves it on the visible replacement, whether the button appears in the rail or beside the heading.
 
 Supplier drafts and catalogue forms remain private memory state. They clear on identity change and do not survive
 a reload. A retained supplier form belongs to its original supplier; visiting another supplier cannot display or

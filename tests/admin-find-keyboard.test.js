@@ -27,6 +27,14 @@ async function owner(b, width, text) {
     await closed(p);
     ok(await active(p, '.a-find'), label + 'Enter and Escape return to the Find button');
 
+    await find(p).focus();
+    const focusAfterClock = await p.evaluate(() => {
+      const before = document.activeElement;
+      window.dispatchEvent(new Event('lk-clock'));
+      return !before.isConnected && document.activeElement.matches('.a-find');
+    });
+    ok(focusAfterClock, label + 'a scheduled panel refresh keeps focus on the visible Find button');
+
     await p.evaluate(() => document.activeElement.blur());
     await openFind(p, '/');
     await p.keyboard.press('Escape');
