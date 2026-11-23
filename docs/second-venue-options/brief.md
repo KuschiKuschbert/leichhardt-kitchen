@@ -215,6 +215,18 @@ Unresolved before readiness:
 - Remeasure in the real shell at 390, 768 and 1280: the top bar with the venue name, the full draft card, the bottom bar over chips, the keyboard open.
 - The checks in both Break-it tables.
 
+## The venue name on a phone (chosen 24 November 2026)
+
+Round 1 cut 5 asked for the venue name in the top bar on a phone. Quick check, Prep at 360 px with Back, four rings and a shared screen's name ring (implemented app, the stand-in, book fonts not loaded):
+
+| Look | Strand at 360 px | Leichhardt at 360 px |
+| --- | --- | --- |
+| 1. Beside the KB mark | fits | cut off at the rings |
+| 2. Under the KB mark, small orange capitals | fits | fits |
+| 3. The name in place of the mark | fits | cut off at the rings |
+
+The head chef chose 2, at every venue. No tap, line or bar height changes: the bar stays 64 px and the Home link keeps its 44 px target, its accessible name now "Kitchen Book, Leichhardt, home". The orange on the bar is 5.77:1. On a shared screen the person's name ring shrinks to make room (6 px gap). From 720 px the eyebrow line already names the venue, so the label is hidden. A venue's copy says its own name: `scripts/venue-site.cjs` swaps the short name. Built in `js/app.js` and `css/app.css` (`.rb-venue`); `tests/venue-name.test.js` (360 and 390 px, normal and largest text, Home, Prep, the admin and a shared screen: 64 of 83 checks fail on the old code, none now) and the venue copy check in `tests/venues.test.js`.
+
 ## Build order (if chosen)
 
 1. **The allergen fix** for every recipe: an ingredient is checked or not; a recipe with an unchecked ingredient says "Allergens not checked yet" and leaves Free from. A click test that fails on today's code. Leichhardt benefits first.

@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **24 November 2026, the venue name under the KB mark on a phone.** Below 720 px the top bar showed only the KB mark. The head chef chose the short venue name under the mark in small orange capitals, at every venue (Leichhardt says LEICHHARDT, a second venue its own name). Of the three drawn at 360 px it is the only one where both names fit beside Back and every ring; the bar stays 64 px tall. [The venue name on a phone](second-venue-options/brief.md#the-venue-name-on-a-phone-chosen-24-november-2026)
+
 - **23 November 2026, reopen an earlier Wastage draft from today’s review.** The head chef chose B. Today opens in one tap and shows a dated Resume action inside its existing sheet when the same person has an earlier draft. Back to today keeps both sets of words separate. Log waste stays one tap away. [Council, previews and verification](wastage-overnight-options/brief.md).
 
 - **23 November 2026, Orders starts with the existing Functions fold.** Keep routine details one tap away on Orders, show every current warning and its action, and wait until the finger lifts before the band moves. [Council, decision and checks](band-options/brief.md#orders-starts-with-the-existing-functions-fold-23-november-2026).
