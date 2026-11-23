@@ -258,6 +258,8 @@ The supplier rail shows the current cut-off, delivery and last order beside the 
 
 In **Order history**, select a matching date to see its details, copy its text or use its quantities. Changing the search or selected date cancels a pending draft replacement. [Supplier order contract](docs/supplier-workspace.md#order-history-search-and-reuse)
 
+**Find an item** in Supplier order and Manage catalogue keeps the caret while results update. Keyboard Clear returns focus to the search. [Supplier search behaviour](docs/supplier-workspace.md#find-an-item-in-supplier-order-and-catalogue)
+
 **Sunday sales suggestions** use one reviewed POS export and confirmed product links to show weekly amounts beside **To order**. The chef chooses what to put in the draft and places the order with the supplier. Final checks and live release are pending. [Sales suggestions and the chosen design](docs/supplier-sales.md)
 
 ## Delivery temperatures (26 Oct 2026)
