@@ -1091,7 +1091,7 @@
     if (!drawLoad) {
       drawLoad = A.load('js/library.js').then(function () {
         // a category file that fails to load leaves its drawings out; the editor still opens
-        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=13')]));
+        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=14')]));
       }).then(function () {
         // without the smart creator the editor still works by hand; the recipe reader (js/compose.js) needs it first
         return A.load('js/smart.js').then(function () { return A.load('js/compose.js'); }).catch(function () {});
@@ -1127,7 +1127,7 @@
       l.onload = function () { clearTimeout(t); ok(); };
       l.onerror = function () { clearTimeout(t); l.remove(); no(new Error('styles')); };
       document.head.appendChild(l);
-    }).then(function () { return A.load('js/recipe-print.js?v=3'); }).catch(function (e) { printLoad = null; throw e; });
+    }).then(function () { return A.load('js/recipe-print.js?v=4'); }).catch(function (e) { printLoad = null; throw e; });
     return printLoad;
   }
   function mountPrint(root, sub) {

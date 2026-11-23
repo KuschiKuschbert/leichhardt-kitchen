@@ -1522,7 +1522,7 @@
     });
   }
   function loadManage() {
-    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=19').catch(function (e) { mgLoad = null; throw e; });
+    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=20').catch(function (e) { mgLoad = null; throw e; });
     return mgLoad;
   }
   function mgNote(title, text, link, waitingIcon) {
@@ -2114,6 +2114,7 @@
     // plate, then go back to drawing only what is near; each group keeps the height it was drawn at, so nothing jumps
     app.classList.add('cv-all');
     window.scrollTo(0, a.getBoundingClientRect().top + window.scrollY - homeAt.top);
+    a.focus({ preventScroll: true });
     requestAnimationFrame(function () { requestAnimationFrame(function () { app.classList.remove('cv-all'); }); });
   }
   window.addEventListener('lk-access', function () { whoMenuClose(false, true); render(); });

@@ -129,8 +129,8 @@ Prep keeps your place (19 Nov 2026, `docs/band-options/brief.md`): coming back t
 The route trail and scroll positions live only in memory. Browser history holds an opaque entry key, alongside
 the existing sheet marker. It holds no form values, catalogue items or staff details. A contextual page return
 skips a stale same-address sheet entry left by a link, so one press reaches the destination on its label. Ordinary
-phone Back and Forward keep their normal history behaviour. The existing recipe shelf return still positions the
-opened plate and keeps the recipe search and filters.
+phone Back and Forward keep their normal history behaviour. The recipe shelf return positions and focuses the
+opened card on The Pass or Tiles and keeps the recipe search and filters.
 
 ## Task return
 
