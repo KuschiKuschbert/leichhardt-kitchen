@@ -113,6 +113,13 @@ async function waitForJump(p, id, allowEnd) {
   p = await L.open(b, '#/r/jasmine-rice', { wait: 1200, settings: { view: 'tiles' } });
   const bw = await p.$$eval('.jumps [data-act="jump"]', l => l.map(e => e.textContent));
   ok(bw.slice(0, 3).join() === 'Allergens,Ingredients,Method' && bw.indexOf('Plate') < 0 && (bw.indexOf('Pan') < 0 || !!(await p.$('#r-plate'))), 'batch card: no Plate chip, and Pan only with a pan drawing (' + bw.join(', ') + ')');
+  const diane = await L.open(b, '#/r/diane-sauce', { wait: 1200 });
+  const dianeMethod = await L.txt(diane, '.steps');
+  const dianeIngredients = await L.txt(diane, '#r-ing + .ing');
+  ok(/500 ml\s*Red cooking wine.*500 ml\s*White cooking wine/i.test(dianeIngredients) && /Deglaze with the red and white cooking wines, then reduce by half/.test(dianeMethod), 'Diane Sauce: equal quantities of red and white wine, reduced by half');
+  ok(/1 L of cold water.*reduce to a simmer.*ketchup and Worcestershire sauce.*12 L finished/.test(dianeMethod), 'Diane Sauce: slurry, simmer, sauces and finished yield');
+  ok(/500 g\s*Tomato ketchup/i.test(dianeIngredients) && !!(await diane.$('#r-plate svg')), 'Diane Sauce: ketchup quantity and pan drawing');
+  await diane.context().close();
   await p.context().close();
   p = await L.open(b, '#/r/barra', { width: 1280, height: 900, wait: 1200 });
   ok(await p.evaluate(() => getComputedStyle(document.querySelector('.jumps')).display === 'none'), 'desktop card: no jump row (columns side by side)');

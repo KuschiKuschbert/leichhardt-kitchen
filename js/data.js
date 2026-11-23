@@ -2442,19 +2442,31 @@ window.LK_DATA = {
     },
     {
       id: 'diane-sauce', no: '77', kind: 'batch', forLine: "For the Grill Maiden's Board", name: 'Diane Sauce', short: 'Diane sauce', art: 'diane-sauce',
-      yield: 'Batch: 5 L. One portion of sauce is 50 ml.',
+      aka: 'dianne sauce',
+      yield: 'Batch: 12 L. One portion of sauce is 50 ml.',
       ingredients: [
         { q: '1150 g', name: 'Gravy powder' },
         { q: '125 g', name: 'Crushed garlic' },
-        { q: '1000 ml', name: 'Red cooking wine' },
+        { q: '6', name: 'Large onions', note: 'finely diced', none: true },
+        { q: '0.5 bunch', name: 'Thyme', none: true },
+        { q: '500 ml', name: 'Red cooking wine' },
+        { q: '500 ml', name: 'White cooking wine' },
         { q: '1 L', name: 'Cooking cream', tags: ['Milk'] },
         { q: '250 ml', name: 'Worcestershire sauce', tags: ['Fish?', 'Gluten?', 'Soy?'] },
-        { q: '500 g', name: 'Tomato sauce', link: 'tomato-sauce' },
-        { q: '200 ml', name: 'Water', note: 'for the slurry' },
-        { q: '8 l', name: 'Water' }
+        { q: '500 g', name: 'Tomato ketchup' },
+        { q: '1 L', name: 'Water', note: 'for the slurry' },
+        { q: 'As needed', name: 'Water', note: 'for the pot and to bring the finished batch to 12 L' }
       ],
       sections: [
-        { title: 'Method', steps: ['Cook off the ingredients individually, starting with the garlic.', 'Deglaze with the red cooking wine.', 'Add the Worcestershire sauce and the tomato sauce. [Order to confirm]', 'Top up with the cooking cream.', 'Make a slurry with the gravy powder and 200 ml of water, and add it.'] }
+        { title: 'Method', steps: [
+          'Sweat the finely diced onion with the garlic and thyme until the onion is translucent.',
+          'Deglaze with the red and white cooking wines, then reduce by half.',
+          'Add water to the pot, leaving room for the slurry, ketchup, Worcestershire sauce and cream, and bring it to the boil.',
+          'In a separate bowl, whisk the gravy powder with 1 L of cold water to make a slurry.',
+          'Stir the slurry into the boiling pot and reduce to a simmer.',
+          'Add the tomato ketchup and Worcestershire sauce.',
+          'Remove from the heat, add the cooking cream and top up with hot water as needed to reach 12 L finished.'
+        ] }
       ],
       contains: [{ allergen: 'Milk', from: 'cooking cream' }],
       check: [{ allergen: 'Fish', from: 'Worcestershire sauce' }, { allergen: 'Gluten', from: 'Worcestershire sauce' }, { allergen: 'Soy', from: 'Worcestershire sauce' }],
