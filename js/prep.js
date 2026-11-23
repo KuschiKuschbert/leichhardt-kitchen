@@ -7715,7 +7715,7 @@
   }
   document.addEventListener('click', function (e) {
     var el = e.target && e.target.closest ? e.target.closest('[data-aj]') : null; if (!el) return;
-    if (el.getAttribute('data-aj') === 'go') { var id = el.getAttribute('data-v'); ajClose(true); ovAfterBack(function () { adminJumpTo(id); }); return; }
+    if (el.getAttribute('data-aj') === 'go') { var id = el.getAttribute('data-v'); ajClose(true); ovAfterBack(function () { adminJumpTo(id, true); }); return; }
     ajClose();
   });
   document.addEventListener('keydown', function (e) {
@@ -7727,7 +7727,10 @@
   function adminJumpTo(id, focus) {
     var tg = document.getElementById(id);
     if (!tg) return;
-    if (focus) tg.focus({ preventScroll: true });
+    if (focus) {
+      if (!tg.hasAttribute('tabindex')) tg.tabIndex = -1;
+      tg.focus({ preventScroll: true });
+    }
     navJump = id; navJumpAt = Date.now();
     window.scrollTo({ top: Math.max(0, window.scrollY + tg.getBoundingClientRect().top - adminTopEdge() - 10), behavior: focus ? 'instant' : 'smooth' });
   }
@@ -7779,18 +7782,25 @@
     ovPush('fd', function () { fdClose(false, true); });
     var q = box.querySelector('#fd-q'); if (q) q.focus();
   }
+  function fdCanFocus(el) { return el && el.isConnected && !el.matches(':disabled') && el.getClientRects().length; }
+  function fdTrigger() {
+    return S.root && Array.prototype.find.call(S.root.querySelectorAll('.a-find'), fdCanFocus);
+  }
   function fdClose(keep, noBack) {
     var box = document.getElementById('fd-sheet'); if (!box) return;
     ovDone('fd', noBack);
     box.remove(); document.documentElement.classList.remove('sheet-open');
-    if (!keep && box._from && document.body.contains(box._from)) box._from.focus();
+    if (!keep) {
+      var from = fdCanFocus(box._from) ? box._from : fdTrigger();
+      if (from) from.focus();
+    }
   }
-  // a page or a person opens on its heading; a part of the open page is scrolled to, as On this page does
+  // A page, person or part of the open page opens with focus on its heading.
   function fdGo(x) {
     if (!x || !panelHere()) return;
     fdClose(true);
     ovAfterBack(function () {
-      if (x.k === 'part') { adminJumpTo(x.v); return; }
+      if (x.k === 'part') { adminJumpTo(x.v, true); return; }
       // a Kitchen tool has its own page: only an address from this file's own list
       if (x.k === 'tool') { if (S.name === 'chef' && /^#\/[a-z]+$/.test(x.v)) location.hash = x.v; return; }
       if (x.k === 'page') fdPage(x.v);
@@ -7814,8 +7824,11 @@
     }
     // / opens Find on the admin panel, unless a box has the cursor or something is already open over the page
     if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey || !panelHere() || !/^#\/(admin|chef)$/.test(location.hash) || typing() || sheetOpen() || !S.root) return;
-    var fb2 = S.root.querySelector('.a-find:not([disabled])');
-    if (fb2) { e.preventDefault(); fdOpen(fb2); }
+    var trigger = fdTrigger();
+    if (trigger) {
+      var from = document.activeElement;
+      e.preventDefault(); fdOpen(S.root.contains(from) && fdCanFocus(from) ? from : trigger);
+    }
   });
   window.addEventListener('hashchange', function () { fdClose(true, true); });
   /* A new page starts with its chapter title. Task Back restores its queue position separately. */
