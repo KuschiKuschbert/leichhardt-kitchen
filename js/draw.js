@@ -853,8 +853,17 @@
     drawing = true;
     try { drawPage(); } finally { drawing = false; }
   }
+  function focusSelector(el) {
+    if (!el) return '';
+    var field = el.getAttribute('data-dwf'), action = el.getAttribute('data-dw'), value = el.getAttribute('data-v');
+    if (field) return '[data-dwf="' + CSS.escape(field) + '"]';
+    if (el.classList.contains('dw-svg')) return '.dw-svg';
+    return action ? '[data-dw="' + CSS.escape(action) + '"]' + (value != null ? '[data-v="' + CSS.escape(value) + '"]' : '') : '';
+  }
   function drawPage() {
-    var a = document.activeElement, keep = a && W.root.contains(a) ? (a.getAttribute('data-dwf') ? '[data-dwf="' + a.getAttribute('data-dwf') + '"]' : a.classList.contains('dw-svg') ? '.dw-svg' : a.getAttribute('data-dw') ? '[data-dw="' + a.getAttribute('data-dw') + '"]' + (a.getAttribute('data-v') != null ? '[data-v="' + a.getAttribute('data-v') + '"]' : '') : '') : '';
+    var a = document.activeElement, inStudio = a && W.root.contains(a), keep = inStudio ? focusSelector(a) : '';
+    var fromDrawer = inStudio && a.closest('.dw-drawer');
+    var opener = fromDrawer && focusSelector(W.root.querySelector('.dw-ctx [aria-expanded="true"]'));
     var y = window.scrollY, ps = a && a.selectionStart;
     // Find a drawing keeps the cursor while it finds (the consistency sweep, step 3, 20 Nov 2026): the shared search bar
     // wraps the new box before the focus goes back, as js/prep.js's redraw does; before, it lost the cursor at 2 letters
@@ -863,10 +872,14 @@
     try { W.root.innerHTML = pageHTML(); } finally { if (find) delete a._uxRedrawing; }
     window.dispatchEvent(new Event('lk-nav'));
     window.scrollTo(0, y);
-    if (keep) {
-      var el = W.root.querySelector(keep);
-      if (el && find) { window.LK_UX.enhance(W.root); window.LK_UX.restoreFocus(el); } else if (el) el.focus({ preventScroll: true });
-      if (el && ps != null && el.setSelectionRange) try { el.setSelectionRange(ps, ps); } catch (e) {}
+    var el = keep && W.root.querySelector(keep);
+    if (el) {
+      if (find) { window.LK_UX.enhance(W.root); window.LK_UX.restoreFocus(el); } else el.focus({ preventScroll: true });
+      if (ps != null && el.setSelectionRange) try { el.setSelectionRange(ps, ps); } catch (e) {}
+    } else if (fromDrawer && !W.root.querySelector('.dw-drawer')) {
+      // A nested drawer or a changed selection can leave no opener in the bar.
+      var target = (opener && W.root.querySelector('.dw-ctx ' + opener)) || W.root.querySelector('.dw-svg');
+      if (target) target.focus({ preventScroll: true });
     }
   }
   function drawCanvas() {

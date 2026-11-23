@@ -1082,7 +1082,7 @@
     if (!M.msg) M.msgAt = '';
     var active = document.activeElement, keep = active && M.root.contains(active) ? { field: active.getAttribute('data-sf'), id: active.getAttribute('data-i'), part: active.getAttribute('data-part'), start: active.selectionStart, end: active.selectionEnd } : null;
     var historyFocus = active && active.id === 'su-history-title';
-    var ux = window.LK_UX, keepSearch = keep && keep.field === 'historyQ' && ux && ux.restoreFocus;
+    var ux = window.LK_UX, keepSearch = keep && (keep.field === 'q' || keep.field === 'historyQ') && ux && ux.restoreFocus;
     var y = window.scrollY;
     if (keepSearch) active._uxRedrawing = true;
     try { M.root.innerHTML = mainHTML(); } finally { if (keepSearch) delete active._uxRedrawing; }
@@ -1541,15 +1541,15 @@
     if (!M.root || !M.root.contains(ev.target) || !canRead() || M.saving) return;
     var el = ev.target, f = el.getAttribute('data-sf'), id = el.getAttribute('data-i'); if (!f) return;
     if (f.indexOf('sales-') === 0) { updateSalesField(el, f, false); return; }
-    if (f === 'q') { M.q = el.value; M.page = 0; draw(); return; }
-    if (f === 'cutQ') { M.cutQ = el.value; draw(); return; }
-    if (f === 'historyQ') {
-      if (M.historyQ !== el.value) M.reuse = '';
-      M.historyQ = el.value;
+    if (f === 'q' || f === 'historyQ') {
+      if (f === 'q') { M.q = el.value; M.page = 0; }
+      else { if (M.historyQ !== el.value) M.reuse = ''; M.historyQ = el.value; }
       var ux = window.LK_UX;
+      // Keyboard Clear still owns focus here. Hand it to the search before the old controls are removed.
       if (ux && ux.restoreFocus && document.activeElement === el.parentElement.querySelector('.ux-search-clear')) ux.restoreFocus(el);
       draw(); return;
     }
+    if (f === 'cutQ') { M.cutQ = el.value; draw(); return; }
     if (f === 'importQ') { M.importQ = el.value; draw(); return; }
     if (f === 'qty' || f === 'stock') { draft()[f][id] = el.value; var enteredItem = item(id); if (String(el.value).trim() && enteredItem) draft().units[f][id] = f === 'qty' ? enteredItem.orderUnit : enteredItem.parUnit; else delete draft().units[f][id]; if (f === 'qty') { delete draft().suggestions[id]; salesCancelReplacement(id); } M.review = null; clearEntryError(f, id, el.value); if (M.smart) draw(); else if (f === 'stock') redrawRow(id); else { var hint = el.closest('.su-qty').querySelector('.hint'); if (hint) hint.textContent = orderUnitHint(item(id), draft()); var count = M.root.querySelector('.su-order-actions > .hint'); if (count) count.textContent = itemCount(Object.keys(draft().qty).filter(function (k) { return String(draft().qty[k]).trim(); }).length) + ' in this supplier draft'; var reviewButton = M.root.querySelector('[data-su="review"]'); if (reviewButton) reviewButton.disabled = !Object.keys(draft().qty).some(function (k) { return String(draft().qty[k]).trim(); });
       // the row's Use chip steps aside once a quantity is typed; In this order keeps its count (no redraw, the caret stays)

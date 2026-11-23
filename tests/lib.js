@@ -320,6 +320,7 @@ async function open(browser, hash, o) {
   if (o.fakeServer || o.fakeMode || o.failReads || o.denyReads || o.cold || o.exhausted) await ctx.addInitScript(f => { window.__fake = { mode: f.mode || 'ok', writes: [], reads: [], server: f.server, failReads: f.fail ? new RegExp(f.fail) : null, denyReads: f.deny ? new RegExp(f.deny) : null, cold: f.cold ? new RegExp(f.cold) : null, exhausted: f.spent ? new RegExp(f.spent) : null }; }, { mode: o.fakeMode, server: o.fakeServer, fail: o.failReads, deny: o.denyReads, cold: o.cold, spent: o.exhausted });
   // Seed once per profile. A second tab must retain the real device identity and remembered personal Google login.
   await ctx.addInitScript(({ ls, ss, offset }) => {
+    if (window !== window.top) return;   // the book's fixture state belongs to the app, outside embedded players
     window.__fakeServerOffset = offset;
     if (!localStorage.getItem('fake.profile.seeded')) {
       localStorage.clear(); Object.keys(ls).forEach(k => { if (ls[k]) localStorage.setItem(k, ls[k]); });

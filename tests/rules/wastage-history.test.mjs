@@ -1,9 +1,10 @@
 // Use the real SDK and emulator to prove path bounds and owner-only collection-group history access.
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { collectionGroup, collection, doc, setDoc, getDoc, getDocs, query, where, documentId, runTransaction } from 'firebase/firestore';
+import { collectionGroup, collection, doc, setDoc, getDoc, getDocFromServer, getDocs, query, where, documentId, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { anonContext, dailySession, seedOwnerDevice } from './device-auth-fixtures.mjs';
+import { anonContext, dailySession, nextFour, seedOwnerDevice } from './device-auth-fixtures.mjs';
 const PIN = '000000', OWNER = 'headchef@test.local', K = 'kitchens/' + PIN + '/';
 const rules = readFileSync('../../firestore.rules', 'utf8').replaceAll('KITCHEN_PIN', PIN).replaceAll('OWNER_EMAIL', OWNER).replaceAll('PLATFORM_EMAIL', OWNER).replaceAll('PLATFORM_ID', '');
 const env = await initializeTestEnvironment({ projectId: 'demo-test', firestore: { rules } });
@@ -87,4 +88,43 @@ try {
   await assertSucceeds(oldSave(oldLater));
   assert.deepEqual(await saved(), { ...initial, ...oldLater });
   console.log('PASS old installed clients remain compatible and their later unconditional save remains possible');
+
+  const previousCycle = nextFour(Date.now()) - 86400000;
+  const expired = dailySession('sam', { at: previousCycle - 1000 });
+  const token = createHash('sha256').update('lk:sam:1111').digest('hex');
+  await env.withSecurityRulesDisabled(async ctx => {
+    const db = ctx.firestore();
+    await setDoc(doc(db, K + 'sessions/sam'), expired);
+    await setDoc(doc(db, K + 'staffpins/sam'), { hash: token });
+  });
+  const recovered = { ...approved, avoidable: 'Reviewed Sunday after the daily lock', reviewAt: Date.now() };
+  const reviewRef = doc(sous, reviewPath);
+  await assertFails(getDocFromServer(reviewRef));
+  await assertFails(attempt(sous, oldLater, recovered));
+  await assertFails(oldSave(recovered));
+  assert.deepEqual(await saved(), { ...initial, ...oldLater });
+  console.log('PASS expiration prevents the same device from reading or updating the dated review');
+
+  await assertSucceeds(setDoc(doc(sous, K + 'tries/sam'), { uid: 'sam', tok: token, at: serverTimestamp() }));
+  await assertSucceeds(setDoc(doc(sous, K + 'sessions/sam'), { ...dailySession('sam'), at: serverTimestamp(), issuedAt: serverTimestamp() }));
+  const fresh = (await getDocFromServer(doc(sous, K + 'sessions/sam'))).data();
+  assert.ok(fresh.issuedAt.toMillis() > expired.issuedAt.toMillis());
+  await assertSucceeds(getDocFromServer(reviewRef));
+  await assertFails(attempt(anonContext(env, 'head').firestore(), oldLater, recovered));
+  await assertSucceeds(attempt(sous, oldLater, recovered));
+  assert.deepEqual(await saved(), { ...initial, ...recovered });
+  console.log('PASS the original chef can save the dated review after a fresh PIN and another chef cannot write as them');
+
+  await env.withSecurityRulesDisabled(async ctx => {
+    const db = ctx.firestore(), config = doc(db, K + 'config/main');
+    await setDoc(config, { sousIds: ['head'] }, { merge: true });
+  });
+  await assertSucceeds(getDocFromServer(reviewRef));
+  await assertFails(attempt(sous, recovered, { ...approved, reviewAt: recovered.reviewAt + 1 }));
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), K + 'config/main'), { staffIds: ['head', 'ann'] }, { merge: true }));
+  await assertFails(getDocFromServer(reviewRef));
+  await assertFails(attempt(sous, recovered, { ...approved, reviewAt: recovered.reviewAt + 2 }));
+  await assertFails(oldSave({ ...approved, reviewAt: recovered.reviewAt + 2 }));
+  assert.deepEqual(await saved(), { ...initial, ...recovered });
+  console.log('PASS demotion removes review writes and membership removal also revokes review reads');
 } finally { await env.cleanup(); }

@@ -1203,6 +1203,7 @@
 
   /* ---------- view A: tiles ---------- */
   function tilesHTML() {
+    if (!D.recipes.length) return searchNote();
     var any = 0;
     var html = groupsNow(GROUPS.filter(function (g) { return ui.kind === 'all' || g.key === ui.kind; }).map(function (g) {
       var list = g.list.filter(function (r) { return freeOk(r.id) && matches(r.id); });
@@ -1238,6 +1239,11 @@
     if (state === 'loading' && Date.now() - recipeStatusAt < 180) {
       recipeStatusTimer = setTimeout(paintRecipeStatus, 180 - (Date.now() - recipeStatusAt)); return;
     }
+    if (state === 'ok' && !D.recipes.length) {
+      slot.hidden = false;
+      slot.innerHTML = '<div class="empty">No recipes yet.</div>';
+      return;
+    }
     var text = state === 'loading' ? 'Checking for recipe updates...' : state === 'offline' ? 'No signal. Showing the loaded book.' : state === 'error' ? 'Could not check for recipe updates. Showing the loaded book.' : '';
     slot.hidden = !text;
     slot.innerHTML = text && window.LK_MOTION ? window.LK_MOTION.label(text, 'recipes', state === 'loading' ? 'busy' : 'still') : esc(text);
@@ -1263,6 +1269,7 @@
   }
   function passOk(r) { return matches(r.id) && freeOk(r.id); }
   function shelvesHTML() {
+    if (!D.recipes.length) return searchNote();
     var s = q() || ui.free.length, n = 0;
     var html = groupsNow(passShelves().map(function (sh) {
       var shown = s ? sh.list.filter(passOk) : sh.list;
@@ -1476,7 +1483,7 @@
      The page is drawn by js/manage.js, loaded the first time it opens (staff phones never download it): fetched with
      X-LK-Fresh, so the service worker goes to the network first and keeps a copy for no signal under its plain address
      (sw.js, 28 Oct 2026), then run.
-     Without the head chef signed in, the page says so and nothing is loaded. The rules are the real lock. */
+     Without a chef or admin session, the page says so and nothing is loaded. The rules are the real lock. */
   /* Functions: #/fn (everyone: today, the next days, a function's sheet) is drawn by js/functions.js; #/functions (the
      function managers' list and form) by js/fnedit.js, loaded only when it opens, like js/manage.js.
      The page versions (FE_API, MG_API, SUP_API here, LK_DRAW.api in js/manage.js, the delivery page's api) go up with
@@ -1522,7 +1529,7 @@
     });
   }
   function loadManage() {
-    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=19').catch(function (e) { mgLoad = null; throw e; });
+    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=20').catch(function (e) { mgLoad = null; throw e; });
     return mgLoad;
   }
   function mgNote(title, text, link, waitingIcon) {
@@ -1535,20 +1542,25 @@
     var st = window.LK_PREP && window.LK_PREP.bookState ? window.LK_PREP.bookState() : 'no';
     if (st === 'offline') { root.innerHTML = mgNote('Recipes & drawings', offline()); return; }
     if (st === 'wait') { root.innerHTML = mgNote('Recipes & drawings', 'Checking who is signed in on this device...', ' ', 'chef'); return; }
-    if (st === 'nopin') { root.innerHTML = mgNote('Recipes & drawings', 'This device has no kitchen PIN yet. Open the Prep list and enter it, then sign in as the head chef.', '<div class="btn-row"><a class="btn dark" href="#/prep">Open the Prep list</a></div>'); return; }
+    if (st === 'nopin') { root.innerHTML = mgNote('Recipes & drawings', 'This device has no kitchen PIN yet. Open the Prep list, enter the kitchen PIN, then sign in with your own chef PIN.', '<div class="btn-row"><a class="btn dark" href="#/prep">Open the Prep list</a></div>'); return; }
     if (st !== 'yes') {
       if (window.LK_MG) window.LK_MG.unmount();
-      root.innerHTML = mgNote('Only the head chef can change recipes', 'Everyone can read the recipes and their drawings on the recipe cards. To change one, the head chef signs in with their own PIN, or uses their own device with the Google sign-in.' +
+      root.innerHTML = mgNote('Head chefs, sous chefs and admins can change recipes', 'Everyone can read the recipes and drawings. Head chefs and sous chefs sign in with their own PIN. Admins also need their verified Google sign-in.' +
         (window.LK_MG && window.LK_MG.hasDraft() ? ' Changes not saved yet are kept on this device.' : ''));
       return;
     }
     if (window.LK_MG) { if (window.LK_MG.api === MG_API) window.LK_MG.mount(root, route); else root.innerHTML = mgNote('Reload the book', 'The recipe editor on this device is a different version from the book. Reload the page to update it.', '<div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div>'); return; }
     root.innerHTML = mgNote('Recipes & drawings', 'Opening the recipe editor...', ' ', 'recipes');
+    var opening = root.firstElementChild;
     loadManage().then(function () {
       if (parseRoute().name === 'manage') mountManage(parseRoute());
     }, function () {
-      var el = document.getElementById('mg-root');
-      if (el) el.innerHTML = mgNote('Could not open the recipe editor', 'It needs the signal the first time it opens on a device. Check the signal and try again.', '<div class="btn-row"><button type="button" class="btn dark" data-act="mgretry">Try again</button></div>');
+      // Only the current loading card reports a failure, even if a sign-in event redrew the route while it waited.
+      if (!root.isConnected || root.firstElementChild !== opening) return;
+      var title = 'Could not open the recipe editor';
+      var message = 'It needs the signal the first time it opens on a device. Check the signal and try again.';
+      root.innerHTML = mgNote(title, message, '<div class="btn-row"><button type="button" class="btn dark" data-act="mgretry">Try again</button></div>');
+      window.LK_PREP.book().say(title + '. ' + message);
     });
   }
   function redrawManage() { if (parseRoute().name === 'manage') mountManage(parseRoute()); }
@@ -1669,7 +1681,7 @@
       return;
     }
     root.innerHTML = mgNote('Cleaning', 'Opening Cleaning...', ' ', 'prep');
-    if (!cleaningLoad) cleaningLoad = (window.LK_CLEANING_SCHEDULE ? Promise.resolve() : mgScript('js/cleaning-schedule.js?v=1')).then(function () { return mgScript('js/cleaning.js?v=8'); }).then(function () {
+    if (!cleaningLoad) cleaningLoad = (window.LK_CLEANING_SCHEDULE ? Promise.resolve() : mgScript('js/cleaning-schedule.js?v=1')).then(function () { return mgScript('js/cleaning.js?v=9'); }).then(function () {
       if (!window.LK_CLEANING) throw new Error('Cleaning did not load');
     }).catch(function (e) { cleaningLoad = null; throw e; });
     cleaningLoad.then(function () { if (parseRoute().name === 'cleaning') mountCleaning(); }, function () {
@@ -1696,7 +1708,7 @@
       return;
     }
     root.innerHTML = mgNote('Supplier order', 'Opening supplier tools...', ' ', 'orders');
-    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=32').catch(function (e) { supLoad = null; throw e; });
+    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=33').catch(function (e) { supLoad = null; throw e; });
     supLoad.then(function () { if (parseRoute().name === 'suppliers') mountSuppliers(parseRoute()); }, function () {
       if (parseRoute().name === 'suppliers') root.innerHTML = mgNote('Could not open supplier tools', 'Check the connection and try again. The other kitchen pages still work.', '<div class="btn-row"><button type="button" class="btn dark" data-sup-retry>Try again</button><a class="btn" href="#/orders">Order list</a></div>');
     });
@@ -2114,6 +2126,7 @@
     // plate, then go back to drawing only what is near; each group keeps the height it was drawn at, so nothing jumps
     app.classList.add('cv-all');
     window.scrollTo(0, a.getBoundingClientRect().top + window.scrollY - homeAt.top);
+    a.focus({ preventScroll: true });
     requestAnimationFrame(function () { requestAnimationFrame(function () { app.classList.remove('cv-all'); }); });
   }
   window.addEventListener('lk-access', function () { whoMenuClose(false, true); render(); });
