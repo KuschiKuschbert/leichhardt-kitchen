@@ -30,15 +30,22 @@ async function edit(p, day, words = draft) {
   await L.waitFor(p, () => !document.querySelector('.w-sheet'));
 }
 
+function clockActivity(p) {
+  // Deliver activity to the same document handler even when another test has the browser's focus.
+  return p.evaluate(() => {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift', bubbles: true, cancelable: true }));
+    return Date.now() - Number(localStorage.getItem('lk.prep.seen'));
+  });
+}
+
 async function advanceTo(p, time, keepActive) {
   // 04:00 is four hours after midnight. Give the shared screen activity inside each ten-minute idle window.
-  // Chromium can suppress mouse moves to the same point. Shift generates a real keydown without changing the form.
-  if (keepActive) await p.keyboard.press('Shift');
   let left = time - await p.evaluate(() => LK_TIME.now());
   const eightMinutes = 8 * 60000;
-  while (keepActive && left > eightMinutes) {
-    await p.clock.fastForward(eightMinutes);
-    await p.keyboard.press('Shift');
+  while (keepActive && left > 0) {
+    const age = await clockActivity(p);
+    assert.ok(age >= 0 && age <= 5000, `shared activity stamp is ${age} ms old before the next clock step`);
+    await p.clock.fastForward(Math.min(left, eightMinutes));
     left = time - await p.evaluate(() => LK_TIME.now());
   }
   if (left > 0) await p.clock.fastForward(left);
@@ -47,8 +54,9 @@ async function advanceTo(p, time, keepActive) {
 
 async function lock(p, by, identity, ms = 90000) {
   await p.clock.runFor(ms);
+  assert.ok(await p.evaluate(t => LK_TIME.now() >= t, cutoff), 'the kitchen clock reaches 04:00 before the expiry check');
   // Activity checks expiry between the scheduled 15-second checks as well.
-  await p.keyboard.press('Shift');
+  await clockActivity(p);
   await p.clock.runFor(100);
   await L.waitFor(p, () => !!LK_PREP.workLock() && !LK_PREP.privateAccess() && !!document.querySelector('#pf1'));
   assert.deepEqual(await p.evaluate(() => LK_PREP.workLock()), { person: by, identity, reason: 'daily' });
@@ -128,6 +136,7 @@ async function fixture(b, label, options, run) {
     ok(false, label + ': ' + error.message);
     console.log(await p.evaluate(() => ({ hash: location.hash, who: LK_PREP.state.who, private: LK_PREP.privateAccess(),
       dirty: LK_PREP.dirtyForUpdate(), lock: LK_PREP.workLock(), pinMessage: LK_PREP.state.pinMsg,
+      now: LK_TIME.now(), expires: LK_PREP.state.sessExp, idleMs: Date.now() - Number(localStorage.getItem('lk.prep.seen')),
       pending: LK_PREP.unsent(), text: document.querySelector('.w-sheet')?.innerText })));
     console.log(error.stack);
   } finally { await p.context().close(); }
