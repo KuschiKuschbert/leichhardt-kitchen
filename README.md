@@ -95,7 +95,7 @@ On 8 November 2026 the owner chose a dedicated **Head chef / Sous chef panel** l
 
 The panel uses the existing editors, drafts, save paths and permissions. Dashboard numbers use only loaded current-day lists; an unread list says **Not read yet**. History opens, date changes and Refresh read the selected day, with explicit loading and failure states. Owner reports and settings retain their existing checks. No database rule or schema changes are needed. The [chef panel brief](docs/chef-panel-options/brief.md#chosen-implementation) records the chosen implementation, source checks and release status; the earlier comparisons remain there as history.
 
-Find and the phone's **On this page** picker put keyboard focus at the selected section so Tab continues there. Closing Find returns focus to its opener, the previous keyboard control after `/`, or the visible Find button. See [navigation](docs/navigation.md#task-return).
+Find and the phone's **On this page** picker put keyboard focus at the selected section so Tab continues there. Closing Find returns focus to its opener, the previous keyboard control after `/`, or the visible Find button. If the panel refreshes while Find has focus, the visible replacement button keeps it. See [navigation](docs/navigation.md#task-return).
 
 Buttons and the chosen state, one look (the head chef's consistency sweep, step 3, 20 November 2026): the main button is the orange one with 8 px corners everywhere, the ping sheet's Got it and the mail pop-up's Open mail included; only chips that choose are round; Remove, Delete and Discard, and every armed "Tap again", are red words in a red outline (`.lk-del`), and in an Unsaved changes question Keep working is the main button, never Discard; a chosen chip or picker is ink, and orange is only a notebook's chosen section tab (the Functions tab on Prep is no longer yellow). The rules and class names are in [design patterns](docs/design-patterns.md), The look and Choosing.
 
@@ -259,6 +259,8 @@ Orders' progress count opens Ordered today when the fold has entries. Transfers 
 The supplier rail shows the current cut-off, delivery and last order beside the quantities on wide screens. **More** gives the same context on a smaller screen or with the rail hidden. **Order history** opens the existing list directly, and **Back to draft** restores the place and draft. [Chosen layout and checks](docs/supplier-order-rail-options/brief.md)
 
 In **Order history**, select a matching date to see its details, copy its text or use its quantities. Changing the search or selected date cancels a pending draft replacement. [Supplier order contract](docs/supplier-workspace.md#order-history-search-and-reuse)
+
+**Find an item** in Supplier order and Manage catalogue keeps the caret while results update. Keyboard Clear returns focus to the search. [Supplier search behaviour](docs/supplier-workspace.md#find-an-item-in-supplier-order-and-catalogue)
 
 **Sunday sales suggestions** use one reviewed POS export and confirmed product links to show weekly amounts beside **To order**. The chef chooses what to put in the draft and places the order with the supplier. Final checks and live release are pending. [Sales suggestions and the chosen design](docs/supplier-sales.md)
 
