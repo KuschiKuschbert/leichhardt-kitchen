@@ -3823,12 +3823,12 @@
     S.learned.forEach(function (x) { if (x.id === id) x.hidden = hidden; }); if (S.learnFor) learnSave(); draw();
   }
   var LEARN_DAYS = 90;   // how far back the nightly learning reads
-  /* Tab and Shift+Tab stay inside an open popup: from the last control back to the first and the other way, and focus
-     that has slipped outside comes back in. Only controls that can be seen count. */
+  /* Tab and Shift+Tab stay inside an open popup: from the last control back to the first and the other way, including
+     when a sheet first puts focus on its panel. Only controls that can be seen count. */
   function trapTab(e, box, sel) {
     var f = Array.prototype.filter.call(box.querySelectorAll(sel || 'button:not([disabled]), a[href]'), function (x) { return x.offsetParent !== null; });
     if (!f.length) return;
-    var first = f[0], last = f[f.length - 1], out = !box.contains(document.activeElement);
+    var first = f[0], last = f[f.length - 1], out = document.activeElement === box || !box.contains(document.activeElement);
     if (e.shiftKey && (document.activeElement === first || out)) { e.preventDefault(); last.focus(); }
     else if (!e.shiftKey && (document.activeElement === last || out)) { e.preventDefault(); first.focus(); }
   }
@@ -9985,7 +9985,7 @@ if (list.length) sg('oreg', 's');
      closing sheet takes its history entry off with Back (ovDone), so the next one waits for that Back to land first. */
   var ksWant = false, ksWait = false, nextWait = false;
   // every sheet or popup over the page: these, the function sheet, the wastage reason sheet and the other bottom sheets
-  function sheetOpen() { return !!(ksPop || npop || mlPop || gz || tmPop || S.sheet || document.querySelector('.wm-wrap, .cooling-wrap, .fn-pop, .sheet-bg, dialog[open]')); }
+  function sheetOpen() { return !!(ksPop || npop || mlPop || gz || gv || tmPop || S.sheet || document.querySelector('.wm-wrap, .cooling-wrap, .fn-pop, .sheet-bg, dialog[open]')); }
   function typing() { var ae = document.activeElement; return !!(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.type !== 'button'); }
   // a first PIN's One more thing, while it is on the screen (it shows only on the prep list)
   function dkFirstUp() { return S.drinkAsk === 'first' && S.name === 'prep' && !!(S.root && document.body.contains(S.root) && S.root.querySelector('.dr-first')); }
@@ -11459,15 +11459,19 @@ if (list.length) sg('oreg', 's');
     if (gv) gvClose();
     var el = document.createElement('div');
     el.className = 'gz-wrap gv-wrap'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', g.title + ', video');
-    gv = { el: el, prev: document.activeElement };
     el.innerHTML = '<div class="gz-bar"><span class="gz-t">' + esc(g.title) + '<small>Video' + (gvLen(g) ? ', ' + esc(gvLen(g)) : '') + '</small></span><span class="gz-btns"><button type="button" class="gz-b gz-x" data-gv="close">Close</button></span></div>' +
       '<div class="gv-body"><div class="gv-frame' + (v.tall ? ' tall' : '') + '"><iframe src="https://www.youtube-nocookie.com/embed/' + v.id + '?autoplay=1&amp;rel=0&amp;playsinline=1" title="' + esc(g.title + ' video') +
-      '" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div></div>';
+      '" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div></div>' +
+      '<span class="visually-hidden" tabindex="0"></span>';
+    var close = el.querySelector('[data-gv="close"]'), end = el.lastElementChild;
+    gv = { el: el, prev: document.activeElement, close: close, end: end, reverse: false };
+    // The player owns its own keys. Native Tab out of the frame reaches this guard before it can reach the page.
+    end.addEventListener('focus', function () { if (ovOn === 'gv' && !gv.reverse) close.focus({ preventScroll: true }); });
     document.body.appendChild(el);
     Array.prototype.forEach.call(document.querySelectorAll('video.g-vloop'), gvStop);
     ovPush('gv', function () { gvClose(true); });
     document.documentElement.classList.add('gz-open');
-    var c = el.querySelector('[data-gv="close"]'); if (c) c.focus({ preventScroll: true });
+    close.focus({ preventScroll: true });
   }
   function gvClose(noBack) {
     if (!gv) return;
@@ -11479,7 +11483,18 @@ if (list.length) sg('oreg', 's');
     if (prev && prev.focus && document.body.contains(prev)) { try { prev.focus({ preventScroll: true }); } catch (e) {} }
   }
   document.addEventListener('click', function (e) { var b = gv && e.target.closest && e.target.closest('[data-gv="close"]'); if (b && gv.el.contains(b)) gvClose(); });
-  document.addEventListener('keydown', function (e) { if (gv && e.key === 'Escape') gvClose(); });
+  document.addEventListener('keydown', function (e) {
+    if (!gv || ovOn !== 'gv' || e.defaultPrevented) return;
+    if (e.key === 'Escape') { e.preventDefault(); gvClose(); }
+    if (e.key === 'Tab') {
+      if (e.shiftKey && document.activeElement === gv.close) {
+        // Start native backwards navigation just after the frame so the browser can enter its last control.
+        gv.reverse = true;
+        gv.end.focus({ preventScroll: true });
+        gv.reverse = false;
+      } else trapTab(e, gv.el, 'button:not([disabled]), iframe');
+    }
+  });
   /* Who sees a guide (23 Oct 2026, head chef): who is 'all' (or missing), 'chefs' (the head chef and sous chefs) or 'fn'
      (function managers and chefs). The head chef's Google device sees every guide. Nobody signed in is the staff view.
      Hidden on screen only: the rules cannot tell a sous chef from staff on a read (README, Head chef decisions). */
