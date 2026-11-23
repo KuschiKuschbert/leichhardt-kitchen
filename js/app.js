@@ -524,7 +524,7 @@
     // who is signed in shows on the hat itself (3 Nov 2026, the Writing as row went): their initial in a small disc, and on
     // a shared screen their display name next to it, with the complete name in the menu and accessible label
     var sh = n && window.LK_DEVICE && window.LK_DEVICE.mode() === 'shared' ? ' is-shared' : '';
-    return '<button type="button" class="wtop-btn wtop-who' + (n ? ' on' : '') + sh + (n && left > 0 ? ' flip' : '') + '"' + (n && left > 0 && left < 1100 ? ' style="animation-delay:-' + (1100 - left) + 'ms"' : '') + ' data-who="menu" aria-haspopup="true" aria-expanded="' + !!wmenu + '"' + here + (n ? ' title="Signed in as ' + esc(n) + mt + '" aria-label="Signed in as ' + esc(n) + ', menu and Settings' + mt + '"' : ' title="Menu and Settings' + mt + '" aria-label="Menu and Settings' + mt + '"') + '>' + ICON.chef + (n ? '<span class="wtop-av" aria-hidden="true">' + esc(initial(n)) + '</span>' : '') + '<span class="wtop-lbl wtop-who-n">' + esc(n) + '</span>' + mailBadge(ml) + '</button>';
+    return '<button type="button" class="wtop-btn wtop-who' + (n ? ' on' : '') + sh + (n && left > 0 ? ' flip' : '') + '"' + (n && left > 0 && left < 1100 ? ' style="animation-delay:-' + (1100 - left) + 'ms"' : '') + ' data-who="menu" aria-haspopup="dialog" aria-expanded="' + !!wmenu + '"' + here + (n ? ' title="Signed in as ' + esc(n) + mt + '" aria-label="Signed in as ' + esc(n) + ', menu and Settings' + mt + '"' : ' title="Menu and Settings' + mt + '" aria-label="Menu and Settings' + mt + '"') + '>' + ICON.chef + (n ? '<span class="wtop-av" aria-hidden="true">' + esc(initial(n)) + '</span>' : '') + '<span class="wtop-lbl wtop-who-n">' + esc(n) + '</span>' + mailBadge(ml) + '</button>';
   }
   // A roster rename patches current identity in place. Keep the open menu, focused control and draft warnings.
   // Reuses the existing config event and held roster: no reads, listeners or separate profile cache.
@@ -616,8 +616,9 @@
     var n = window.LK_PREP && window.LK_PREP.whoName ? window.LK_PREP.whoName() : '';
     if (wmenu) return;
     var m = n && window.LK_PREP.chefMenu ? window.LK_PREP.chefMenu() : {}, adm = adminItem(), fnOnly = window.LK_PREP && window.LK_PREP.functionOnly();
-    var r = btn.getBoundingClientRect(), el = document.createElement('div');
+    var r = btn.getBoundingClientRect(), el = document.createElement('dialog');
     el.className = 'wm-wrap';
+    el.setAttribute('aria-label', 'Chef hat menu');
     var set = '<a class="wm-a wm-set" href="#/settings" data-who="go"' + (parseRoute().name === 'settings' ? ' aria-current="page"' : '') + '>' + ICON.gear + '<span><b>Settings</b></span></a>';
     var tile = function (attrs, icon, label, small) { return '<' + (/^href/.test(attrs) ? 'a' : 'button type="button"') + ' class="wm-a wm-tile" ' + attrs + '>' + icon + '<span><b>' + label + '</b>' + (small || '') + '</span></' + (/^href/.test(attrs) ? 'a' : 'button') + '>'; };
     var grid = function (h, xs) { xs = xs.filter(Boolean).join(''); return xs ? (h ? '<p class="wm-h wm-sh">' + h + '</p>' : '') + '<div class="wm-grid">' + xs + '</div>' : ''; };
@@ -657,12 +658,15 @@
         grid('Every day', [deliveryItem(), window.LK_PREP && window.LK_PREP.teamOK && window.LK_PREP.teamOK() ? teamItem(false) : '', supplierOK() ? supplierItem() : '', fnOK() ? fnItem() : '']) +
         grid('More', [adm, guidesItem(), bookEdit() ? manageItem() : '', todoOK() ? todoItem() : '']) + set;
     }
-    el.innerHTML = '<div class="wm-bg" data-who="close"></div><nav class="wm" aria-label="' + (n ? esc(n) : 'Menu') + '" style="--wm-top:' + Math.round(r.bottom + 8) + 'px;top:var(--wm-top);right:' + Math.max(8, Math.round(window.innerWidth - r.right)) + 'px"><span class="wm-grip" aria-hidden="true"></span>' + body + '</nav>';
+    el.innerHTML = '<div class="wm-bg" data-who="close" aria-hidden="true"></div><nav class="wm" aria-label="' + (n ? esc(n) : 'Menu') + '" style="--wm-top:' + Math.round(r.bottom + 8) + 'px;top:var(--wm-top);right:' + Math.max(8, Math.round(window.innerWidth - r.right)) + 'px"><span class="wm-grip" aria-hidden="true"></span>' + body + '</nav>';
+    // Give the dialog a safe initial focus before it opens, so a stray Enter never hands the phone over.
+    var first = el.querySelector('.wm-tile') || el.querySelector('.wm-a');
+    if (first) first.setAttribute('autofocus', '');
+    el.addEventListener('cancel', function (e) { e.preventDefault(); whoMenuClose(true); });
     document.body.appendChild(el); wmenu = el;
     if (window.LK_PREP && window.LK_PREP.pickerOverlay) wmenuHistory = window.LK_PREP.pickerOverlay(function () { whoMenuClose(true, true); });
     btn.setAttribute('aria-expanded', 'true');
-    // focus starts on the first tile, not on Sign out, so a stray Enter never hands the phone over
-    var first = el.querySelector('.wm-tile') || el.querySelector('.wm-a'); if (first) first.focus({ preventScroll: true });
+    el.showModal();
   }
   document.addEventListener('click', function (e) {
     var el = e.target.closest && e.target.closest('[data-who]');
@@ -1203,6 +1207,7 @@
 
   /* ---------- view A: tiles ---------- */
   function tilesHTML() {
+    if (!D.recipes.length) return searchNote();
     var any = 0;
     var html = groupsNow(GROUPS.filter(function (g) { return ui.kind === 'all' || g.key === ui.kind; }).map(function (g) {
       var list = g.list.filter(function (r) { return freeOk(r.id) && matches(r.id); });
@@ -1238,6 +1243,11 @@
     if (state === 'loading' && Date.now() - recipeStatusAt < 180) {
       recipeStatusTimer = setTimeout(paintRecipeStatus, 180 - (Date.now() - recipeStatusAt)); return;
     }
+    if (state === 'ok' && !D.recipes.length) {
+      slot.hidden = false;
+      slot.innerHTML = '<div class="empty">No recipes yet.</div>';
+      return;
+    }
     var text = state === 'loading' ? 'Checking for recipe updates...' : state === 'offline' ? 'No signal. Showing the loaded book.' : state === 'error' ? 'Could not check for recipe updates. Showing the loaded book.' : '';
     slot.hidden = !text;
     slot.innerHTML = text && window.LK_MOTION ? window.LK_MOTION.label(text, 'recipes', state === 'loading' ? 'busy' : 'still') : esc(text);
@@ -1263,6 +1273,7 @@
   }
   function passOk(r) { return matches(r.id) && freeOk(r.id); }
   function shelvesHTML() {
+    if (!D.recipes.length) return searchNote();
     var s = q() || ui.free.length, n = 0;
     var html = groupsNow(passShelves().map(function (sh) {
       var shown = s ? sh.list.filter(passOk) : sh.list;
@@ -1476,7 +1487,7 @@
      The page is drawn by js/manage.js, loaded the first time it opens (staff phones never download it): fetched with
      X-LK-Fresh, so the service worker goes to the network first and keeps a copy for no signal under its plain address
      (sw.js, 28 Oct 2026), then run.
-     Without the head chef signed in, the page says so and nothing is loaded. The rules are the real lock. */
+     Without a chef or admin session, the page says so and nothing is loaded. The rules are the real lock. */
   /* Functions: #/fn (everyone: today, the next days, a function's sheet) is drawn by js/functions.js; #/functions (the
      function managers' list and form) by js/fnedit.js, loaded only when it opens, like js/manage.js.
      The page versions (FE_API, MG_API, SUP_API here, LK_DRAW.api in js/manage.js, the delivery page's api) go up with
@@ -1522,7 +1533,7 @@
     });
   }
   function loadManage() {
-    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=19').catch(function (e) { mgLoad = null; throw e; });
+    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=20').catch(function (e) { mgLoad = null; throw e; });
     return mgLoad;
   }
   function mgNote(title, text, link, waitingIcon) {
@@ -1535,20 +1546,25 @@
     var st = window.LK_PREP && window.LK_PREP.bookState ? window.LK_PREP.bookState() : 'no';
     if (st === 'offline') { root.innerHTML = mgNote('Recipes & drawings', offline()); return; }
     if (st === 'wait') { root.innerHTML = mgNote('Recipes & drawings', 'Checking who is signed in on this device...', ' ', 'chef'); return; }
-    if (st === 'nopin') { root.innerHTML = mgNote('Recipes & drawings', 'This device has no kitchen PIN yet. Open the Prep list and enter it, then sign in as the head chef.', '<div class="btn-row"><a class="btn dark" href="#/prep">Open the Prep list</a></div>'); return; }
+    if (st === 'nopin') { root.innerHTML = mgNote('Recipes & drawings', 'This device has no kitchen PIN yet. Open the Prep list, enter the kitchen PIN, then sign in with your own chef PIN.', '<div class="btn-row"><a class="btn dark" href="#/prep">Open the Prep list</a></div>'); return; }
     if (st !== 'yes') {
       if (window.LK_MG) window.LK_MG.unmount();
-      root.innerHTML = mgNote('Only the head chef can change recipes', 'Everyone can read the recipes and their drawings on the recipe cards. To change one, the head chef signs in with their own PIN, or uses their own device with the Google sign-in.' +
+      root.innerHTML = mgNote('Head chefs, sous chefs and admins can change recipes', 'Everyone can read the recipes and drawings. Head chefs and sous chefs sign in with their own PIN. Admins also need their verified Google sign-in.' +
         (window.LK_MG && window.LK_MG.hasDraft() ? ' Changes not saved yet are kept on this device.' : ''));
       return;
     }
     if (window.LK_MG) { if (window.LK_MG.api === MG_API) window.LK_MG.mount(root, route); else root.innerHTML = mgNote('Reload the book', 'The recipe editor on this device is a different version from the book. Reload the page to update it.', '<div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div>'); return; }
     root.innerHTML = mgNote('Recipes & drawings', 'Opening the recipe editor...', ' ', 'recipes');
+    var opening = root.firstElementChild;
     loadManage().then(function () {
       if (parseRoute().name === 'manage') mountManage(parseRoute());
     }, function () {
-      var el = document.getElementById('mg-root');
-      if (el) el.innerHTML = mgNote('Could not open the recipe editor', 'It needs the signal the first time it opens on a device. Check the signal and try again.', '<div class="btn-row"><button type="button" class="btn dark" data-act="mgretry">Try again</button></div>');
+      // Only the current loading card reports a failure, even if a sign-in event redrew the route while it waited.
+      if (!root.isConnected || root.firstElementChild !== opening) return;
+      var title = 'Could not open the recipe editor';
+      var message = 'It needs the signal the first time it opens on a device. Check the signal and try again.';
+      root.innerHTML = mgNote(title, message, '<div class="btn-row"><button type="button" class="btn dark" data-act="mgretry">Try again</button></div>');
+      window.LK_PREP.book().say(title + '. ' + message);
     });
   }
   function redrawManage() { if (parseRoute().name === 'manage') mountManage(parseRoute()); }
@@ -2114,6 +2130,7 @@
     // plate, then go back to drawing only what is near; each group keeps the height it was drawn at, so nothing jumps
     app.classList.add('cv-all');
     window.scrollTo(0, a.getBoundingClientRect().top + window.scrollY - homeAt.top);
+    a.focus({ preventScroll: true });
     requestAnimationFrame(function () { requestAnimationFrame(function () { app.classList.remove('cv-all'); }); });
   }
   window.addEventListener('lk-access', function () { whoMenuClose(false, true); render(); });

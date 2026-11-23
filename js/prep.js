@@ -187,7 +187,7 @@
     authed: false, tok: '', pinStep: '', pinOff: false, pinData: null, pf1: '', pf2: '', pinMsg: '',
     sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: startTab(), ordDate: dayNow(), ordLines: [], ordState: 'idle', otext: '', oqty: '', oneed: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
     retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wLog: false, wRv: false, wAgain: {}, xLog: false, pLog: false, oLog: false, oDoneOpen: false, oCutOpen: false, oCutMore: false, oCutLead: '', startN: {}, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
-    mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, minOpen: false, mErr: '',
+    mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: '', minOpen: false, mErr: '',
     guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
     adminsFor: '', adminsOff: null, adminsWhy: '', level: '', stats: null, statsRange: 30, week: null, weekAt: 0, weekBusy: false,
     user: null, authState: 'idle', draft: null, saveMsg: '', busy: false, toast: '', toastAct: null
@@ -2049,9 +2049,8 @@
     if (!S.authed) { if (S.user || workLock()) forgetMine(S.lockRecorder || S.who); S.picking = true; S.pending = null; leave(); S.signFrom = 'start'; dropGoogle().then(accessChanged).catch(function () { toast('Sign-out could not finish. Close this tab before handing over the device.', { label: 'OK', fn: function () {} }, 0, 'bad'); }); return; }
     signOutPerson(true, true);
   }
-  /* Manage Recipes & Drawings (#/manage, 21 Oct 2026): the head chef only. With their own PIN as Head chef on any device,
-     or on the head chef's Google device while nobody else is signed in with a PIN. The rules check the same on the
-     server (bookBy() in firestore.rules), so this only decides what the page shows. */
+  /* Manage Recipes & Drawings (#/manage): head chef and sous chef PIN sessions, or a verified admin on this device.
+     This gate decides what the page shows. The rules also check writes (bookBy() in firestore.rules). */
   function bookEdit() { return !!S.pin && (isSous() && S.authed && canW() || S.level === 'owner' && ownerHere()); }
   // 'yes', 'no', 'wait' while the kitchen settings (who is Head chef) are still being read, or 'offline' (see fnState())
   function bookState() {
@@ -10471,18 +10470,24 @@ if (list.length) sg('oreg', 's');
   // "none" would show
   function minsFailed() { return !!S.minsErr && S.minsFor !== dayNow(); }
   var MINS_ERR = 'Could not load the minutes. Check the signal. The book tries again by itself.';
-  /* has this person signed the current version? one small read per open minutes, remembered for the day (the rules let a
-     person read only their own sign-off, by id). A read that failed or was refused is not kept: the phone waits 5 minutes
-     (retryLater) before it asks again, and the sign box says it could not check. */
-  function loadMine() {
-    if (!kitchenAccess() || !S.configFull) return;
+  /* One read of this person's sign-off per open version, remembered for the day. A failed check waits 5 minutes
+     for the next redraw, or Try again reads only that sign-off once before the wait ends. */
+  function loadMine(again) {
+    if (!featOn('minutes')) return;
     if (!fb || !S.who || !S.mins) return;
     var w = S.who, jobs = [];
     mnMineList().forEach(function (m) {
-      var k = m.id + '_' + m.v + '_' + w;
-      if (S.mmine[k] !== undefined || waiting('mine:' + k)) return;
+      var k = mnKey(m), retry = 'mine:' + k;
+      if (S.mmine[k] !== undefined || (again ? again !== k || !waiting(retry) : waiting(retry))) return;
       S.mmine[k] = 'loading';
-      jobs.push(fb.fs.getDoc(fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', m.id, 'signs', m.v + '_' + w]))).then(function (sn) { S.mmine[k] = sn.exists() ? sn.data() : null; }, function () { delete S.mmine[k]; retryLater('mine:' + k); }));
+      jobs.push(fb.fs.getDoc(fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', m.id, 'signs', m.v + '_' + w]))).then(function (sn) {
+        if (cacheOnly(sn) || sn.metadata && sn.metadata.hasPendingWrites) throw { code: 'unavailable' };
+        S.mmine[k] = sn.exists() ? sn.data() : null;
+        retryDone(retry);
+      }).catch(function (e) {
+        delete S.mmine[k];
+        if (!e || e.code !== 'cancelled') retryLater(retry);
+      }));
     });
     if (jobs.length) Promise.all(jobs).then(function () { minCard(); draw(); noteMaybePop(); });
   }
@@ -10545,11 +10550,9 @@ if (list.length) sg('oreg', 's');
   }
   function mnSignHTML(m) {
     var p = me(); if (!p) return '';
-    var s = S.mmine[mnKey(m)], my = (m.att || []).filter(function (x) { return x.id === S.who; })[0], st = my ? my.st : 'absent';
+    var k = mnKey(m), s = S.mmine[k], my = (m.att || []).filter(function (x) { return x.id === S.who; })[0], st = my ? my.st : 'absent';
     if (s && s !== 'loading') return '<section class="mn-sign is-done"><h3 class="mn-bh">Signed</h3><p>' + esc(p.name) + ' signed on ' + esc(dayShort(T.day(s.at))) + ' at ' + esc(clock(s.at)) + '. Version ' + m.v + '.</p></section>';
-    // the check failed or was refused: say so, instead of "Checking". loadMine asks again on the first redraw after its
-    // 5 minutes (no timer of its own), so opening the minutes again is what brings the Sign button back
-    if (s === undefined && waiting('mine:' + mnKey(m))) return '<section class="mn-sign mn-noprint"><p class="hint">Could not check your sign-off. Open the minutes again in a few minutes.</p></section>';
+    if (s === undefined && waiting('mine:' + k)) return '<section class="mn-sign mn-noprint">' + readErr('Could not check your sign-off.', null, 'data-p="mn-sign-retry" data-v="' + esc(k) + '"') + '</section>';
     if (s === undefined || s === 'loading') return '<section class="mn-sign mn-noprint"><p class="hint">Checking your sign-off...</p></section>';
     // one tap: the person already typed their own PIN to open this page (20 Oct 2026, no second PIN)
     var mineN = mnMineN(m);
@@ -10559,7 +10562,7 @@ if (list.length) sg('oreg', 's');
       '<p>' + (st === 'present' ? 'I attended and have read and understood these minutes.' : 'I have read and understood these minutes.') + '</p>' +
       // who is signing beside the button, with Not you? for the shared tablet (8 Nov 2026, council round 3, row 17)
       '<div class="mn-signrow"><p class="mn-as">Signing as <b>' + esc(p.name) + '</b>. ' + notYouHTML() + '</p>' +
-      '<button type="button" class="btn dark mn-signbtn" data-p="mn-sign" data-id="' + esc(m.id) + '"' + (S.mSigning ? ' disabled' : '') + '>Sign as ' + esc(p.name) + '</button></div>' +
+      svButton({ k: 'mn-sign', p: 'mn-sign', value: m.id, cls: 'btn dark mn-signbtn', idle: 'Sign as ' + p.name, busy: S.mSigning === k, busyText: 'Signing...', off: !!S.mSigning }) + '</div>' +
       '<span class="mn-err" role="status" id="mn-pinmsg">' + esc(S.mErr) + '</span><p class="hint">Your name, the version and the time are recorded. Apology and absent staff sign too.</p></section>';
   }
   /* the way to the register for a chef: the admin Minutes tab on the head chef's Google device (where minutes are
@@ -10595,14 +10598,15 @@ if (list.length) sg('oreg', 's');
   }
   function signMinutes(id) {
     var m = mnById(id), p = who();
-    if (!m || !p || !fb || !S.authed || !canW() || S.mSigning) return;
+    if (!m || m.status !== 'published' || m.removed || !p || !fb || !S.authed || !canW() || !featOn('minutes') || S.mSigning) return;
     var my = (m.att || []).filter(function (x) { return x.id === S.who; })[0], st = my ? my.st : 'absent', k = mnKey(m);
+    if (S.mmine[k] !== null) return;
     var ref = fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', m.id, 'signs', m.v + '_' + S.who])), data = { v: m.v, st: st, at: now(), name: p.name };
-    S.mSigning = true; S.mErr = ''; draw();
+    S.mSigning = k; S.mErr = ''; draw();
     sset(ref, data, false).then(function () {
-      S.mSigning = false; S.mmine[k] = data; minCard(); toast('Signed. Thank you.'); draw();
+      S.mSigning = ''; S.mmine[k] = data; minCard(); toast('Signed. Thank you.'); draw();
     }, function (e) {
-      S.mSigning = false; delete S.mmine[k];
+      S.mSigning = ''; delete S.mmine[k];
       if (e && e.code === 'permission-denied') {
         /* refused: this version is already signed (the record is there), the minutes moved on to a new version (read again),
            or this phone's PIN no longer counts (the head chef reset it), which is what failed() handles */
@@ -11710,15 +11714,20 @@ if (list.length) sg('oreg', 's');
     if (!X || !fb || rxBusy || Date.now() < rxRetry || !(force || rxDue())) return Promise.resolve(false);
     var pin = S.pin || 'public', have = X.pin() === pin ? X.versions() : {}, haveArt = {};
     rxBusy = true; rxStatus('loading');
+    function checked(sn) {
+      // The book already has a saved overlay. An empty Firestore memory copy cannot confirm it is empty.
+      if (cacheOnly(sn)) throw { code: 'offline' };
+      return sn;
+    }
     // the drawings kept on this phone are read from IndexedDB first, so only the ones that changed are read
-    return X.artReady().then(function () { haveArt = X.pin() === pin ? X.artVersions() : {}; return fb.fs.getDoc(S.pin ? docRef('book', 'index') : fb.fs.doc(fb.db, 'publicBook', 'index')); }).then(function (sn) {
+    return X.artReady().then(function () { haveArt = X.pin() === pin ? X.artVersions() : {}; return fb.fs.getDoc(S.pin ? docRef('book', 'index') : fb.fs.doc(fb.db, 'publicBook', 'index')); }).then(checked).then(function (sn) {
       var idx = sn.exists() ? sn.data() : {}, ir = idx.r && typeof idx.r === 'object' ? idx.r : {}, id2 = idx.d && typeof idx.d === 'object' ? idx.d : {};
       var need = Object.keys(ir).filter(function (id) { return have[id] !== ir[id]; });
       var needArt = Object.keys(id2).filter(function (id) { return haveArt[id] !== id2[id]; });
       return Promise.all(need.map(function (id) {
-        return fb.fs.getDoc(S.pin ? docRef('recipes', id) : fb.fs.doc(fb.db, 'publicRecipes', id)).then(function (d) { return [id, d.exists() ? d.data() : null]; });
+        return fb.fs.getDoc(S.pin ? docRef('recipes', id) : fb.fs.doc(fb.db, 'publicRecipes', id)).then(checked).then(function (d) { return [id, d.exists() ? d.data() : null]; });
       }).concat(needArt.map(function (id) {
-        return fb.fs.getDoc(S.pin ? docRef('drawings', id) : fb.fs.doc(fb.db, 'publicDrawings', id)).then(function (d) { return ['@' + id, d.exists() ? d.data() : null]; });
+        return fb.fs.getDoc(S.pin ? docRef('drawings', id) : fb.fs.doc(fb.db, 'publicDrawings', id)).then(checked).then(function (d) { return ['@' + id, d.exists() ? d.data() : null]; });
       }))).then(function (got) {
         rxBusy = false;
         if (pin !== (S.pin || 'public')) { rxStatus('idle'); return false; }
@@ -11732,7 +11741,7 @@ if (list.length) sg('oreg', 's');
     }).catch(function (e) {
       // no signal, or rules not published yet: keep the changes on this phone and try again in a minute
       rxBusy = false; rxRetry = Date.now() + 60000;
-      rxStatus(pin !== (S.pin || 'public') ? 'idle' : navigator.onLine === false ? 'offline' : 'error');
+      rxStatus(pin !== (S.pin || 'public') ? 'idle' : (navigator.onLine === false || (e && e.code === 'offline')) ? 'offline' : 'error');
       return false;
     });
   }
@@ -13996,7 +14005,8 @@ if (list.length) sg('oreg', 's');
       if (signHeading) { signHeading.focus({ preventScroll: true }); signHeading.scrollIntoView({ block: 'start' }); }
       return;
     }
-    if (a === 'mn-sign') { signMinutes(id); return; }
+    if (a === 'mn-sign-retry' && S.name === 'minutes') { loadMine(el.getAttribute('data-v')); draw(); return; }
+    if (a === 'mn-sign') { signMinutes(el.getAttribute('data-v')); return; }
     if (a === 'mn-csv') { csvMinutes(id); return; }
     if (a === 'mn-refresh') { var mr = S.mSel || (mnPub()[0] || {}).id; S.mnSay = mr || ''; loadMinutes(true); loadSigns(mr, true); draw(); return; }
     if (a === 'mn-sel') { S.mSel = id; loadSigns(id, true); draw(); return; }
@@ -14823,6 +14833,7 @@ if (list.length) sg('oreg', 's');
   var TD_MAX = 300, TD_STALE = 30 * 60000, TD_FRESH = 60000, TD_RETRY = 5 * 60000, TD_DONE_DAYS = 30;
   var tdf = tdBlank(), tdOpen = null, tdDone = null, tdAt = 0, tdBusy = false, tdErr = false;
   var tdWait = null, tdEditX = null, tdDoneAt = 0, tdDoneBusy = false, tdDoneErr = false, tdDoneOpen = false, tdMsg = '', tdSnap = '';
+  var tdAdds = new Map();
   function tdBlank() { return { id: '', text: '', due: '', fr: '' }; }
   /* who may use it: a chef signed in with their own PIN (sousIds or headId, the same lists the rules check), or the head
      chef's Google device with nobody signed in. Staff, leads and a name on a locked phone get nothing. */
@@ -14843,7 +14854,7 @@ if (list.length) sg('oreg', 's');
   function tdDue(v) { return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; }
   function tdNum(v) { return typeof v === 'number' && isFinite(v) ? v : 0; }
   // the next person on the phone starts with nothing of the last chef's: no jobs, no search or filter
-  function tdReset() { tdf = tdBlank(); tdSnap = ''; tdEditX = null; tdOpen = null; tdDone = null; tdAt = 0; tdErr = false; tdDoneAt = 0; tdDoneErr = false; tdDoneOpen = false; tdMsg = ''; delete LV.todo; delete LV.tododone; }
+  function tdReset() { tdf = tdBlank(); tdSnap = ''; tdEditX = null; tdOpen = null; tdDone = null; tdAt = 0; tdErr = false; tdDoneAt = 0; tdDoneErr = false; tdDoneOpen = false; tdMsg = ''; tdAdds.clear(); delete LV.todo; delete LV.tododone; }
   // a new job with words in the box, or a job opened with Change and then changed
   function tdDirty() { return todoOK() && (tdf.id ? JSON.stringify(tdf) !== tdSnap : !!tdf.text.replace(/\s/g, '')); }
   function tdFind(id) { return (tdOpen || []).concat(tdDone || []).filter(function (x) { return x.id === id; })[0] || null; }
@@ -14856,6 +14867,20 @@ if (list.length) sg('oreg', 's');
   }
   // a read of one list is newer than the other list's copy of the same jobs (ticked or unticked on another phone)
   function tdDrop(l, from) { var ids = {}; l.forEach(function (x) { ids[x.id] = 1; }); return from ? from.filter(function (m) { return !ids[m.id]; }) : from; }
+  function tdAddWaiting(id) { var add = tdAdds.get(id); return !!(add && add.state === 'waiting'); }
+  // A refresh started before a create settled can omit the new job or still include a refused draft.
+  function tdFinishRead(list) {
+    tdAdds.forEach(function (add, id) {
+      if (list) {
+        var index = list.findIndex(function (x) { return x.id === id; });
+        if (add.state === 'refused') {
+          if (index >= 0) list.splice(index, 1);
+        } else if (index < 0 && add.row.st === 'open') list.push(add.row);
+        else if (index >= 0 && add.state === 'waiting') list[index] = add.row;
+      }
+      if (add.state !== 'waiting') tdAdds.delete(id);
+    });
+  }
   /* the open jobs. maxAge: how old the last read may be (30 minutes by default, 1 minute when the page opens, 0 for
      Refresh). A failed read tries the server again after 5 minutes. No signal is a failed read too: an answer from
      the copy in memory never gets here (the getDocs wrapper in sdk()), so an empty copy is never "nothing to do". */
@@ -14869,10 +14894,12 @@ if (list.length) sg('oreg', 's');
     tdBusy = true;
     fb.fs.getDocs(fb.fs.query(colRef('todos'), fb.fs.where('st', '==', 'open'))).then(function (sn) {
       var l = mlGrab(sn);
+      tdFinishRead(l);
       tdBusy = false; tdAt = Date.now();
       tdOpen = l; tdErr = false; tdDone = tdDrop(l, tdDone); draw();
       if (tdSay) { tdSay = false; toast('To-do list read again at ' + clock(now()) + '.'); }
     }, function (e) {
+      tdFinishRead(null);
       tdBusy = false; tdSay = false; tdErr = noSignal(e) ? 'signal' : 'other'; tdAt = Date.now() - TD_STALE + TD_RETRY; draw();
     });
   }
@@ -14910,10 +14937,19 @@ if (list.length) sg('oreg', 's');
       return;
     }
     var ref = fb.fs.doc(colRef('todos')), d = { text: t, st: 'open', due: due, for: fr, from: tdMe(), at: at, doneAt: 0, doneBy: '', upd: at };
-    var y = Object.assign({ id: ref.id }, d);
+    var y = Object.assign({ id: ref.id }, d), add = { row: y, state: 'waiting' }, author = stableIdentity();
+    tdAdds.set(y.id, add);
     tdPlace(y); lvReveal('todo'); tdf = tdBlank(); tdMsg = ''; draw();
-    var aBy = S.who;
-    W([['set', ref, d]]).then(function () { if (S.who === aBy) toast('Added: ' + slipName(t)); }, function (e) {
+    W([['set', ref, d]]).then(function () {
+      if (tdAdds.get(y.id) !== add) return;
+      add.state = 'added';
+      if (!tdBusy) tdAdds.delete(y.id);
+      if (stableIdentity() === author && todoOK() && !workLock()) toast('Added: ' + slipName(t)); else draw();
+    }, function (e) {
+      if (tdAdds.get(y.id) !== add) return;
+      add.state = 'refused';
+      if (!tdBusy) tdAdds.delete(y.id);
+      if (stableIdentity() !== author) return;
       if (tdOpen) tdOpen = tdOpen.filter(function (m) { return m.id !== y.id; }); failed(e, function () { tdf = keep; }); draw();
     });
   }
@@ -14961,17 +14997,19 @@ if (list.length) sg('oreg', 's');
   function tdSoon(x) { var d = tdDue(x.due); return x.st === 'open' && !!d && d <= dayNow(); }
   function todoRow(x) {
     var done = x.st === 'done', due = tdDue(x.due), late = tdLate(x), today = !done && due === dayNow(), id = esc(x.id), meta = [];
+    var waiting = tdAddWaiting(x.id), disabled = waiting ? ' disabled' : '';
     if (tdForOk(x.for)) meta.push('<span class="todo-tag">For ' + esc(mnName(x.for)) + '</span>');
+    if (waiting) meta.push(UNSENT);
     // Open notebook B (8 Nov 2026): keep the day under its job, so a long job has the whole line for its words.
     var dueTag = due && !done ? '<span class="todo-due' + (late ? ' is-late' : today ? ' is-today' : '') + '">' + (late ? 'Was due ' + esc(dayShort(due)) : today ? 'Due today' : 'Due ' + esc(dayShort(due))) + '</span>' : '';
     var byLine = done ? '<span class="todo-by">Done by <b>' + esc(tdName(x.doneBy)) + '</b> ' + esc(mlWhen(tdNum(x.doneAt))) + '</span>'
       : '<span class="todo-by">Added by <b>' + esc(tdName(x.from)) + '</b> ' + esc(ago(tdNum(x.at))) + '</span>';
     return '<li class="todo-row' + (done ? ' is-done' : '') + (late ? ' is-late' : '') + '">' +
-      '<button type="button" class="todo-tick" data-p="todo-tick" data-id="' + id + '" aria-pressed="' + done + '" aria-label="' + esc((done ? 'Untick: ' : 'Tick off: ') + String(x.text || '').slice(0, 40)) + '">' + TICK + '</button>' +
+      '<button type="button" class="todo-tick" data-p="todo-tick" data-id="' + id + '" aria-pressed="' + done + '" aria-label="' + esc((done ? 'Untick: ' : 'Tick off: ') + String(x.text || '').slice(0, 40)) + '"' + disabled + '>' + TICK + '</button>' +
       '<div class="todo-body"><div class="todo-top"><p class="todo-text">' + esc(x.text) + '</p></div><div class="todo-meta">' + dueTag + meta.join('') + '</div>' +
       '<div class="todo-foot">' + byLine +
-      '<div class="todo-acts">' + (done ? '' : '<button type="button" class="p-link' + armCls('todo-edit:' + x.id) + '" data-p="todo-edit" data-id="' + id + '">' + (armed('todo-edit:' + x.id) ? 'Not saved. Tap again' : 'Change') + '</button>') +
-      '<button type="button" class="p-link lk-del" data-p="todo-del" data-id="' + id + '">' + (armed('todo-del:' + x.id) ? 'Not saved. Tap again to remove' : 'Remove') + '</button></div></div></div></li>';
+      '<div class="todo-acts">' + (done ? '' : '<button type="button" class="p-link' + armCls('todo-edit:' + x.id) + '" data-p="todo-edit" data-id="' + id + '"' + disabled + '>' + (armed('todo-edit:' + x.id) ? 'Not saved. Tap again' : 'Change') + '</button>') +
+      '<button type="button" class="p-link lk-del" data-p="todo-del" data-id="' + id + '"' + disabled + '>' + (armed('todo-del:' + x.id) ? 'Not saved. Tap again to remove' : 'Remove') + '</button></div></div></div></li>';
   }
   function tdFindText(x) { return x.text + ' ' + (tdForOk(x.for) ? mnName(x.for) : '') + ' ' + tdName(x.from); }
   function tdFilters() {
@@ -15028,6 +15066,7 @@ if (list.length) sg('oreg', 's');
   }
   function todoClick(a, el) {
     var id = el.getAttribute('data-id');
+    if (tdAddWaiting(id)) return;
     if (a === 'todo-save') { todoSave(); return; }
     if (a === 'todo-cancel') { if (tdDirty() && !arm('todo-cancel')) return; tdf = tdBlank(); tdSnap = ''; tdEditX = null; tdMsg = ''; draw(); return; }
     if (a === 'todo-for') { tdf.fr = el.getAttribute('data-v') || ''; draw(); return; }
@@ -15035,12 +15074,13 @@ if (list.length) sg('oreg', 's');
     if (a === 'todo-pin') { if (S.who) pickName(S.who); return; }
     if (a === 'todo-tick') {
       // the ticked job leaves this list: keep the keyboard on the list, on the tick that took its place
-      var lv = el.closest('[data-lv]'), key = lv ? lv.getAttribute('data-lv') : '', at = lv ? Array.prototype.indexOf.call(lv.querySelectorAll('[data-p="todo-tick"]'), el) : -1;
+      var ticks = '[data-p="todo-tick"]:enabled';
+      var lv = el.closest('[data-lv]'), key = lv ? lv.getAttribute('data-lv') : '', at = lv ? Array.prototype.indexOf.call(lv.querySelectorAll(ticks), el) : -1;
       todoTick(id);
       // draw() may have followed the job into Done: bring the keyboard back to the list it left
       var ae = document.activeElement;
       if (at >= 0 && !(ae && ae.closest && ae.closest('[data-lv="' + key + '"]'))) {
-        var ts = S.root.querySelectorAll('[data-lv="' + key + '"] [data-p="todo-tick"]');
+        var ts = S.root.querySelectorAll('[data-lv="' + key + '"] ' + ticks);
         if (ts.length) ts[Math.min(at, ts.length - 1)].focus({ preventScroll: true });
       }
       return;
