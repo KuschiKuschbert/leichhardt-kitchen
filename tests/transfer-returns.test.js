@@ -13,7 +13,25 @@ const extra = { [source]: record, [index]: { date: old, lineId: 'loan', record, 
     await L.waitFor(p, () => !!document.querySelector('.tr-outstanding [data-p="tr-return"]'));
     ok(/Butter/.test(await L.txt(p, '.tr-outstanding')), width + ': a loan older than 30 days remains outstanding');
     ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), width + ': no horizontal scroll');
-    await p.click('.tr-outstanding [data-p="tr-return"]'); await L.settle(p, 400);
+    const returnButton = p.locator('.tr-outstanding [data-p="tr-return"]');
+    await p.evaluate(() => { window.__fake.quiet = true; window.__fake.mode = 'hold'; });
+    await returnButton.click();
+    await L.waitFor(p, key => !!window.__fake.dump()[key].returned, source);
+    await p.clock.runFor(4200);
+    if (width === 768) await p.evaluate(() => window.__fake.ack());
+    await L.settle(p, 200);
+    const pending = await p.evaluate(() => {
+      const row = document.querySelector('.tr-outstanding .tr-item');
+      const button = row?.querySelector('[data-p="tr-return"]');
+      return { item: row?.textContent, disabled: button?.disabled, label: button?.getAttribute('aria-label'),
+        count: document.querySelector('.tr-page .nb-prog')?.textContent, slip: document.querySelector('.p-toast')?.textContent };
+    });
+    ok(pending.item?.includes('Butter') && pending.item.includes('Return pending') && pending.count === '1 still out',
+      width + ': pending return keeps its original loan and count even after the open index drops it: ' + JSON.stringify(pending));
+    ok(pending.disabled && pending.label === 'Return pending for Butter' && !pending.slip?.includes('Returned: Butter'),
+      width + ': pending return disables another tap and names what is waiting before the slip: ' + JSON.stringify(pending));
+    await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
+    await L.waitFor(p, () => document.querySelector('.p-toast')?.textContent.includes('Returned: Butter'));
     let s = await p.evaluate(() => window.__fake.dump());
     ok(s[source].returned === true && s[source].returnedById === 'ann' && s[source].returnedBy === 'Ann' && s[source].returnedAt > 0, width + ': return records who and when on the original line');
     ok(s[index].open === false && JSON.stringify(s[index].record) === JSON.stringify(s[source]), width + ': original and open index commit together');
@@ -35,7 +53,15 @@ const extra = { [source]: record, [index]: { date: old, lineId: 'loan', record, 
   {
     const path = root + 'transfers/' + today + '/lines/in';
     const p = await L.open(b, '#/transfers', { who: 'ann', extra: { [path]: { ...record, dir: 'in', text: 'Milk', addedAt: L.NOW } }, wait: 1200 });
-    await p.click('[data-p="tr-return"][data-id="in"]'); await L.settle(p, 400);
+    await p.evaluate(() => { window.__fake.quiet = true; window.__fake.mode = 'hold'; });
+    await p.click('[data-p="tr-return"][data-id="in"]');
+    await L.waitFor(p, key => !!window.__fake.dump()[key].returned, path);
+    await L.settle(p, 200);
+    ok((await L.txt(p, '.tr-outstanding'))?.includes('Return pending') && !(await p.$('.tr-done')) &&
+      await L.txt(p, '.tr-page .nb-prog') === '1 still out', 'today: a pending inbound return stays outstanding and out of Done today');
+    await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.answer(); });
+    await L.waitFor(p, () => document.querySelector('.tr-done')?.textContent.includes('Returned Ann'));
+    await p.evaluate(() => window.__fake.ack());
     ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'today: returned details fit the phone');
     ok(/Returned Ann/.test(await L.txt(p, '.tr-row')), 'today: a returned inbound loan stays in today\'s history');
     await p.click('[data-p="tr-unreturn"][data-id="in"]'); await L.settle(p, 400);
@@ -72,6 +98,33 @@ const extra = { [source]: record, [index]: { date: old, lineId: 'loan', record, 
     await p.evaluate(() => { location.hash = '#/transfers'; }); await L.settle(p, 600);
     await p.click('.tr-outstanding [data-p="tr-return"]'); await L.settle(p, 400);
     ok((await p.evaluate(k => window.__fake.dump()[k], source)).returnedById === 'ann', 'shared tablet: return belongs to the person who entered their PIN');
+    await p.context().close();
+  }
+  {
+    const cutoff = Date.parse(today + 'T04:00:00+10:00');
+    const p = await L.open(b, '#/transfers', { who: 'ann', extra, touch: true, width: 768, deviceMode: 'shared', clock: cutoff - 60000, wait: 1200 });
+    await L.waitFor(p, () => !!document.querySelector('.tr-outstanding [data-p="tr-return"]') && !LK_PREP.unsent());
+    await p.evaluate(() => { window.__fake.mode = 'hold'; });
+    await p.context().setOffline(true);
+    await p.click('.tr-outstanding [data-p="tr-return"]');
+    await L.waitFor(p, key => !!window.__fake.dump()[key].returned, source);
+    ok((await L.txt(p, '.tr-outstanding'))?.includes('Return pending') && (await L.txt(p, '.p-sync'))?.includes('No signal'),
+      'offline shared tablet: queues the whole return and names it on the existing row');
+    await p.clock.runFor(90000);
+    await L.waitFor(p, () => !LK_PREP.privateAccess() && !!document.querySelector('#pf1'));
+    ok(!(await p.$('.tr-outstanding')) && !(await L.txt(p, '.p-toast'))?.includes('Butter') &&
+      await p.evaluate(() => LK_PREP.blockedRecorder() === 'ann'), '04:00 shared tablet: keeps the loan and pending state private behind the original recorder PIN');
+    await p.context().setOffline(false);
+    await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
+    await L.settle(p, 200);
+    ok(!(await L.txt(p, '.p-toast'))?.includes('Returned: Butter'), '04:00 shared tablet: a late acknowledgement does not show the loan name on the PIN screen');
+    await p.locator('#pf1').fill('2222');
+    await L.waitFor(p, () => LK_PREP.privateAccess() && !LK_PREP.unsent());
+    await L.waitFor(p, () => document.querySelector('.p-toast')?.textContent.includes('Returned: Butter'));
+    const saved = await p.evaluate(key => window.__fake.dump()[key], source);
+    ok(saved.returnedById === 'ann' && saved.returned && !(await p.$('.tr-outstanding')),
+      '04:00 shared tablet: the original recorder sees the acknowledged return after unlocking');
+    ok(p.errors.length === 0, 'offline daily recovery has no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }
   await b.close(); L.report(R);

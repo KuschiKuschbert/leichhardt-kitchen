@@ -140,6 +140,11 @@ async function waitForJump(p, id, allowEnd) {
   ok(/1 L of cold water.*reduce to a simmer.*ketchup and Worcestershire sauce.*12 L finished/.test(dianeMethod), 'Diane Sauce: slurry, simmer, sauces and finished yield');
   ok(/500 g\s*Tomato ketchup/i.test(dianeIngredients) && !!(await diane.$('#r-plate svg')), 'Diane Sauce: ketchup quantity and pan drawing');
   await diane.context().close();
+  const tartare = await L.open(b, '#/r/tartare', { wait: 1200 });
+  ok(/10 L finished/.test(await L.txt(tartare, '.card-head .yield')), 'Tartare Sauce: 10 L finished batch');
+  ok(/6\.75 L\s*Mayonnaise.*1\.35 kg\s*Pickles.*700 g\s*Capers.*700 g\s*Red onions.*350 g\s*Fresh parsley.*200 ml\s*Lemon juice/i.test(await L.txt(tartare, '#r-ing + .ing')), 'Tartare Sauce: scaled ingredients');
+  ok(/6\.5 L of the mayonnaise.*Measure the sauce.*bring it to 10 L/.test(await L.txt(tartare, '.steps')), 'Tartare Sauce: add mayonnaise to the measured volume');
+  await tartare.context().close();
   await p.context().close();
   p = await L.open(b, '#/r/barra', { width: 1280, height: 900, wait: 1200 });
   ok(await p.evaluate(() => getComputedStyle(document.querySelector('.jumps')).display === 'none'), 'desktop card: no jump row (columns side by side)');

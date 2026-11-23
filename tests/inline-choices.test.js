@@ -42,6 +42,18 @@ async function safe(label, fn) {
           ok(g.map(x => x.label).join('|') === form.units.join('|'), label + ': the original units remain in order');
           ok(visible, label + ': every original unit is visible without opening a picker');
           ok(g.every(x => x.width >= 43.5 && x.height >= 43.5 && x.fits) && !(await L.overflow(p)), label + ': unit targets fit at 44px without clipped labels or sideways scrolling');
+          if (form.prefix === 'tr') {
+            const sheet = p.locator('.tr-sheet');
+            await L.waitFor(p, () => document.querySelectorAll('.tr-sheet .ux-choice-measure button').length === 2);
+            const side = await sheet.evaluate(panel => {
+              const initial = panel.scrollLeft;
+              panel.scrollLeft = 1000;
+              const result = { excess: panel.scrollWidth - panel.clientWidth, scroll: panel.scrollLeft - initial };
+              panel.scrollLeft = initial;
+              return result;
+            });
+            ok(side.excess <= 1 && side.scroll <= 1, label + ': measuring the two directions creates no sideways sheet scrolling ' + JSON.stringify(side));
+          }
           if (width === 320 && text === 'xlarge') ok(new Set(g.map(x => x.top)).size > 1, label + ': the unit row wraps at extra large text');
           if (!visible) return; // The old hidden-chip source fails above, without clicking a hidden control.
           await p.fill('#' + form.prefix + '-text', 'Unsent test item');
