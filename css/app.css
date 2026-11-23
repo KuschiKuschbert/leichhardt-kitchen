@@ -759,7 +759,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .pp-name-toggle .pp-n { font-weight: 700; text-decoration: underline; }
 .pp-can { grid-column: 2; color: var(--muted); font-size: .875rem; overflow-wrap: anywhere; }
 .pp-st { color: var(--accent-ink); font-size: .84rem; font-weight: 700; overflow-wrap: anywhere; }
-.pp-st.is-off { color: var(--muted); }
+.pp-st.is-off, .pp-st.is-lock { color: var(--muted); }
 .pp-st.is-bad { color: var(--bad-ink); }
 .pp-row.is-off .pp-n, .pp-row.is-gone .pp-n { color: var(--muted); }
 .pp-row.is-gone .pp-n { text-decoration: line-through; }

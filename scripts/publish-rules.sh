@@ -30,7 +30,7 @@ read -r -p "Platform owner's profile id at this venue (Enter: none, as at Leichh
 
 # Bootstrap the minimal login roster before stricter reads are published.
 [ -n "${FIREBASE_SA:-}" ] || { echo "Use the Publish rules workflow, or set FIREBASE_SA for the access preparation step. Nothing published."; exit 1; }
-KITCHEN_PIN="$PIN" node scripts/access-bootstrap.mjs
+KITCHEN_PIN="$PIN" PLATFORM_ID="$PID" node scripts/access-bootstrap.mjs
 
 T=$(mktemp -d)
 trap 'rm -rf "$T"' EXIT

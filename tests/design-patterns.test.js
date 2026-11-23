@@ -36,7 +36,7 @@ const CLASSES = [
   'nb-later', 'pa-cal', 'pa-for', 'pa-n', 'pa-row',
   'rcp-row', 'rcp-papers', 'rcp-paper', 'rcp-bar', 'rcp-go',
   'mg-ing-field', 'mg-with-ing-panel', 'mg-ing-panel', 'mg-ing-panel-head',
-  'pp-workspace', 'pp-head', 'pp-row', 'pp-main', 'pp-name-toggle', 'pp-can', 'pp-st', 'pp-editor', 'pp-acts', 'pp-ed', 'pp-ticks', 'pp-leave', 'a-gone', 'lv-tool',
+  'pp-workspace', 'pp-head', 'pp-row', 'pp-main', 'pp-name-toggle', 'pp-can', 'pp-st', 'pp-editor', 'pp-acts', 'pp-ed', 'pp-ticks', 'pp-leave', 'a-gone', 'lv-tool', 'is-lock',
   'tm-focus-page', 'tm-date-controls', 'tm-week-reveal', 'tm-row-fields', 'tm-row-summary', 'tm-detail-workbench', 'tm-focus-grid', 'tm-focus-save', 'tm-live-strip', 'tm-focus-panel', 'tm-admin-plan',
   'tm-grid', 'tm-grid-head', 'tm-grid-row', 'tm-grid-who', 'tm-grid-sh', 'tm-grid-count', 'tm-grid-cell', 'tm-grid-off', 'tm-grid-brk', 'tm-grid-note', 'tm-bench-shifts', 'tm-occ-add', 'tm-occ-row', 'a-sh-occ',
   'tm-short-line', 'tm-short-mark', 'tm-roster-flag', 'tm-short-band', 'tm-short-fact', 'tm-short-tf', 'tm-short-why', 'tm-short-row', 'tm-short-link', 'tm-short-accept', 'is-short-here', 'has-short',

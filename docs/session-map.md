@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## The platform owner's Admin at a second venue, 24 November 2026 (built)
+
+The client follow-up of the venue plumbing. At a venue the platform owner signs in with his own PIN and his Google and gets Admin; the venue admin's People page shows his row locked ("The owner's own profile. Only the owner can change it.") and every save from the venue admin leaves it as stored. One new read rule, `config/platform` (`{ id }`, written only by `scripts/access-bootstrap.mjs` from `PLATFORM_STAFF_ID`; none at Leichhardt): looser, so rules first. In `js/prep.js`: `loadAdmins()` reads it with each owner check, `platformLockLoad()` for the venue admin, `platformKeep()` in `saveConfig()`, `googleKeeps()` and `whoAdmin()`. At Leichhardt nothing changes but one read per owner check. Tests: `tests/venue-platform-admin.test.js`, `tests/rules/venues.test.mjs`, `tests/access-bootstrap.test.js`. [Venues, Two admins at a venue](venues.md#two-admins-at-a-venue).
+
 ## The venue name under the KB mark on a phone, 24 November 2026 (chosen and built)
 
 Below 720 px the top bar showed only the KB mark. Three looks were drawn at 360 px (beside, under, in place of the mark); only under fits both Leichhardt and Strand beside Back and every ring, and the head chef chose it for every venue. `.rb-venue` in `js/app.js` and `css/app.css`, `tests/venue-name.test.js`, the venue copy check in `tests/venues.test.js`. [Quick check and measurements](second-venue-options/brief.md#the-venue-name-on-a-phone-chosen-24-november-2026).

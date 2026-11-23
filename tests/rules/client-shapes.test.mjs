@@ -228,6 +228,10 @@ row('js/prep.js connect(): login/roster listener (the name picker, and functions
 row('js/prep.js connect(): config/main listener (the kitchen settings)', { ok: KITCHEN, asks: KITCHEN, run: db => listen(D(db, 'config/main')) });
 row('js/prep.js pinAtOf() and pickName(): pinset/<me> get', { ok: ALL, asks: ALL, run: (db, w) => getDoc(D(db, 'pinset/' + (w || 'ann'))) });
 row('js/prep.js loadAdmins(): config/admins get (the owner check)', { ok: GOOGLE, asks: GOOGLE, run: db => getDoc(D(db, 'config/admins')) });
+// the platform owner's id for the venue admin's People page (24 Nov 2026, docs/venues.md), from the server once the grant
+// is in; there is no record in this one-owner fixture, so the admin gets "not there". The Google app's own read of it
+// (platformAsk()) is a Google sign-in, which tests/rules/venues.test.mjs checks at both venues.
+row('js/prep.js platformLockLoad(): config/platform get from the server (the admin)', { ok: GOOGLE, asks: GOOGLE, run: db => getDocFromServer(D(db, 'config/platform')) });
 
 // prep list
 row('js/prep.js watchItems(): today\'s prep lines listener', { ok: KITCHEN, asks: KITCHEN, run: db => listen(C(db, `days/${TODAY}/items`)) });
