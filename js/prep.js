@@ -7880,7 +7880,9 @@
   /* The PIN screens open the keyboard by themselves: the first PIN box still short of 4 digits takes focus, and inputmode
      brings up the number pad on a phone, a tablet or a Windows touch screen (virtualKeyboard asks for it where the browser
      has that). A computer with a keyboard just starts typing. Only the kitchen PIN and own PIN screens (pin-auto) do this. */
+  function canFocusPin() { return !document.hidden && document.hasFocus(); }
   function focusPin() {
+    if (!canFocusPin()) return;
     var ins = S.root.querySelectorAll('.pin-auto'), i;
     for (i = 0; i < ins.length; i++) if (ins[i].value.length < 4) { ins[i].focus({ preventScroll: true }); kbShow(); return; }
   }
@@ -7938,6 +7940,7 @@
     if (!S.root || !document.body.contains(S.root) || rendering) return;
     rendering = true;
     var ae = document.activeElement, key = ae && ae.getAttribute && (ae.getAttribute('data-k') || (ae._uxSource && ae._uxSource.getAttribute('data-k'))), start = null, end = null;
+    if (key && ae.classList.contains('pin-auto') && !canFocusPin()) key = '';
     var btnSel = !key && ae && S.root.contains(ae) && ae.getAttribute && ae.getAttribute('data-p') ? guestSel(ae) : '', tickAt = -1;
     if (btnSel && ae.getAttribute('data-p') === 'tick') tickAt = Array.prototype.indexOf.call(S.root.querySelectorAll('.nb-box[data-p="tick"]'), ae);
     if (key && ae.selectionStart != null) { try { start = ae.selectionStart; end = ae.selectionEnd; } catch (e) {} }

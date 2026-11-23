@@ -27,6 +27,20 @@ const active = p => p.evaluate(() => { const a = document.activeElement; return 
   ok(p.errors.length === 0, 'pin keyboard phone: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  for (const background of ['hidden', 'unfocused']) {
+    p = await L.open(b, '#/prep', { noPin: true, who: '', width: 1280, height: 900, init: `(() => {
+      window.pinKeyboardRequests = 0;
+      Object.defineProperty(navigator, 'virtualKeyboard', { value: { show: () => window.pinKeyboardRequests++ } });
+      const hidden = ${JSON.stringify(background === 'hidden')};
+      Object.defineProperty(document, 'hidden', { get: () => hidden });
+      document.hasFocus = () => hidden;
+    })()` });
+    const pin = await p.$('#p-pin');
+    ok(!!pin && (await active(p)) !== 'p-pin:numeric', background + ' computer: PIN is available without taking focus');
+    ok(await p.evaluate(() => window.pinKeyboardRequests) === 0, background + ' computer: no on-screen keyboard request');
+    await p.context().close();
+  }
+
   // a computer: the heading normally takes focus on a new page, but not from the PIN box
   p = await L.open(b, '#/prep', { noPin: true, who: '', width: 1280, height: 900 });
   ok((await active(p)) === 'p-pin:numeric', 'computer: the kitchen PIN box keeps focus over the heading (' + await active(p) + ')');
