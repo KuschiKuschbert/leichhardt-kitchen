@@ -271,6 +271,8 @@ All recipes are in **`js/data.js`**. The top of that file explains every field. 
 7. If it is a dish on the guest menu, add its `id` to the right section in `menuOrder` at the top of `js/data.js`, in the spot where the menu prints it. A dish left out of `menuOrder` still shows, under "Other dishes". Batch recipes and components are not listed there.
 8. Change `updated` at the top of the file to today's date.
 
+Mushroom Sauce and Peppercorn Sauce have illustrated 14 L batch cards from the kitchen's printed recipes. The cards flag the mushroom water amounts and when to add the wine and cream, the peppercorn onion amount and finished yield, and the wine units on both.
+
 ### Batch cards still to come
 
 Dishes already link to these ids. Add a recipe with the same `id` and the links, "Used in" lists and allergens switch on by themselves. Most-used first:
