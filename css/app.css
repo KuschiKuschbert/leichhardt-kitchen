@@ -1523,7 +1523,8 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .mn-sign { display: flex; flex-direction: column; align-items: flex-start; gap: 0.7rem; padding: 1rem; border: 1.5px solid var(--ink); border-radius: 10px; background: var(--surface-paper); box-shadow: 0 6px 0 rgba(28, 29, 31, 0.12); }
 .mn-sign.is-done { border-width: 1.5px; background: var(--done-tint); border-color: var(--done); }
 .mn-sign p { margin: 0; }
-.mn-signbtn { min-height: 52px; min-width: 10rem; font-family: var(--display); font-size: 1.375rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.btn.mn-signbtn { min-height: 52px; min-width: 10rem; max-width: 100%; font-family: var(--display); font-size: 1.375rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.mn-signbtn.sv-btn::before, .mn-signbtn.sv-btn::after { white-space: normal; }
 .mn-signbtn[disabled] { opacity: 0.45; cursor: not-allowed; }
 .mn-err { min-height: 1.2em; color: var(--bad-ink); font-weight: 600; }
 .mn-eh { margin: 0.5rem 0 0; font: 700 1.25rem var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
