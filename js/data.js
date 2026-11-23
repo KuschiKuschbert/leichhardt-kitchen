@@ -21,7 +21,7 @@
                  none: true once checked and none of the ten allergens is in it }
                Every ingredient needs tags, none: true or a link. One with none of them shows
                "Allergens not checked yet" on the card and is left out of Free from (19 Nov 2026). The head
-               chef left 29 label-dependent products not checked (chips, bacon, the bought-in sauces...) until
+               chef left label-dependent products not checked (chips, bacon, the bought-in sauces...) until
                he reads their labels: tests/allergen-check.test.js lists them (LABELS).
     pins       (plated dishes, The Pass view) where each part sits on the plate drawing:
                { label, x, y (percent across and down), side ('left' or 'right' for the label,
@@ -59,7 +59,7 @@
   under "Made here, on Prep". Every other platter item is to order. Add or take out a name to change it.
 */
 window.LK_DATA = {
-  updated: '19 November 2026',
+  updated: '23 November 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
   fnStock: ['BBQ sauce', 'Sweet chilli sauce', 'Sweet soy sauce', 'Caramelised onions', 'Basil pesto'],
   menuOrder: [
@@ -2414,31 +2414,60 @@ window.LK_DATA = {
     },
     {
       id: 'mushroom-sauce', no: '76', kind: 'batch', forLine: 'For the Grill Maiden\'s Board', name: 'Mushroom Sauce', short: 'Mushroom sauce', art: 'mushroom-sauce',
-      yield: 'Batch: 5 L. One portion of sauce is 50 ml.',
+      yield: 'Batch: 12 L. One portion of sauce is 50 ml.',
       ingredients: [
-        { q: '960 g', name: 'Mushrooms' },
-        { q: '600 g', name: 'Gravy powder' },
-        { q: '80 g', name: 'Crushed garlic' },
-        { q: '1', name: 'Large onion' },
-        { q: '400 ml', name: 'Cooking cream', tags: ['Milk'] },
-        { q: '3', name: 'Thyme sprigs' },
-        { q: '80 ml', name: 'Red cooking wine' },
-        { q: '2 g', name: 'Cracked black pepper' },
-        { q: '5 g', name: 'Table salt' },
-        { q: '200 ml', name: 'Water', note: 'for the slurry' }
+        { q: '2.5 kg', name: 'Button mushrooms', none: true },
+        { q: '1.5 kg', name: 'Gravy powder', note: 'Knorr Rich Brown GF' },
+        { q: '200 g', name: 'Crushed garlic', none: true },
+        { q: '200 g', name: 'Brown onion', none: true },
+        { q: '1 L', name: 'Cooking cream', tags: ['Milk'] },
+        { q: '0.5 bunch', name: 'Thyme', none: true },
+        { q: '500 ml', name: 'Red cooking wine' },
+        { q: '5 g', name: 'Cracked black pepper', none: true },
+        { q: '15 g', name: 'Table salt', none: true },
+        { q: '1 L', name: 'Water', note: 'for the slurry', none: true },
+        { q: 'As needed', name: 'Water', note: 'for the pot and to bring the finished batch to 12 L', none: true }
       ],
       sections: [
         { title: 'Method', steps: [
-          'Cook off the ingredients individually: the mushrooms, onion, garlic and thyme.',
+          'Sauté the onion, garlic and mushrooms. Add the thyme and check the seasoning with the cracked black pepper and table salt.',
           'Deglaze with the red cooking wine.',
-          'Top up with the cooking cream.',
-          'Make a slurry with the gravy powder and 200 ml of water, and add it.',
-          'Season with the cracked black pepper and table salt. [When to add them to confirm]'
+          'Add water to the pot, leaving room for the slurry and cream, and bring it to the boil.',
+          'In a separate bowl, whisk the gravy powder with 1 L of cold water to make a slurry.',
+          'Stir the slurry into the pot and simmer until thickened.',
+          'Remove from the heat, add the cooking cream and top up with hot water as needed to reach 12 L finished.'
         ] }
       ],
-      contains: [{ allergen: 'Milk', from: 'cooking cream' }],
-      check: [],
-      labelNote: 'Check the gravy powder and cooking cream labels.'
+      labelNote: 'Check the gravy powder, red cooking wine and cooking cream labels.'
+    },
+    {
+      id: 'peppercorn-sauce', no: '139', kind: 'batch', forLine: 'For the grill', name: 'Peppercorn Sauce', short: 'Peppercorn sauce', art: 'peppercorn-sauce', aka: 'pepper sauce pepper corn sauce',
+      yield: 'Batch: 12 L.',
+      ingredients: [
+        { q: '[Qty]', name: 'Onion', note: 'finely diced [amount to confirm]', none: true },
+        { q: '150 g', name: 'Crushed garlic', none: true },
+        { q: '0.5 bunch', name: 'Thyme', none: true },
+        { q: '400 g', name: 'Green peppercorns', note: 'half an 800 g tin' },
+        { q: '1 L', name: 'Red cooking wine', note: '[Unit to confirm]' },
+        { q: 'As needed', name: 'Water', note: 'for the pot and to bring the finished batch to 12 L', none: true },
+        { q: '1.5 kg', name: 'Gravy powder', note: 'Knorr Rich Brown GF' },
+        { q: '1 L', name: 'Water', note: 'for the slurry', none: true },
+        { q: '1 L', name: 'Cooking cream', tags: ['Milk'] },
+        { q: '10 g', name: 'Cracked black pepper', none: true },
+        { q: '20 g', name: 'Table salt', none: true }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Cook the finely diced onion, garlic, thyme and green peppercorns until the onion is translucent.',
+          'Add the red cooking wine and reduce by half.',
+          'Add water to the pot, leaving room for the slurry and cream, and bring it to the boil.',
+          'In a separate bowl, whisk the gravy powder with 1 L of cold water to make a slurry.',
+          'Stir the slurry into the boiling pot, then reduce to a simmer.',
+          'Once thickened, remove from the heat, add the cooking cream and season with cracked black pepper and table salt.',
+          'Top up with hot water as needed to reach 12 L finished.'
+        ] }
+      ],
+      labelNote: 'Check the green peppercorn, gravy powder, red cooking wine and cooking cream labels.'
     },
     {
       id: 'diane-sauce', no: '77', kind: 'batch', forLine: "For the Grill Maiden's Board", name: 'Diane Sauce', short: 'Diane sauce', art: 'diane-sauce',

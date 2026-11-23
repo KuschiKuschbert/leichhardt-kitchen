@@ -44,6 +44,26 @@ async function waitForJump(p, id, allowEnd) {
   await find(p, 'parmy chicken');
   n = await names(p);
   ok(n.some(x => /Chicken Parmy/.test(x)), 'search: "parmy chicken" finds Chicken Parmy');
+  // The printed sauce cards can be found by name and opened with their pan drawings.
+  await find(p, 'pepper sauce');
+  const pepper = '#shelves a.dish:not(.faded)[href="#/r/peppercorn-sauce"]';
+  ok(await p.$(pepper + ' svg') !== null, 'search: Pepper sauce finds the illustrated Peppercorn Sauce');
+  if (await p.$(pepper)) {
+    await p.click(pepper);
+    await L.waitFor(p, () => !!document.querySelector('#r-steps'));
+    const method = await L.txt(p, '.steps');
+    const ingredients = await L.txt(p, '#r-ing + .ing');
+    ok(/400 g\s*Green peppercorns\s*half an 800 g tin/i.test(ingredients), 'peppercorn sauce: 400 g is half an 800 g tin');
+    ok(/12 L finished/.test(method) && /1 L of cold water/.test(method) && /add the cooking cream/.test(method), 'peppercorn sauce: pot water, slurry water and cream finish');
+    await p.evaluate(() => { location.hash = '#/recipes'; });
+    await L.waitFor(p, () => !!document.querySelector('#find'));
+  }
+  const mushroom = await L.open(b, '#/r/mushroom-sauce', { wait: 1200 });
+  const mushroomMethod = await L.txt(mushroom, '.steps');
+  ok(/water to the pot.*bring it to the boil.*1 L of cold water.*stir the slurry/i.test(mushroomMethod), 'mushroom sauce: water is added to the pot before the slurry');
+  const mushroomIngredients = await L.txt(mushroom, '#r-ing + .ing');
+  ok(/500 ml\s*Red cooking wine/i.test(mushroomIngredients) && /12 L finished/.test(mushroomMethod), 'mushroom sauce: 500 ml wine and 12 L finished yield');
+  await mushroom.context().close();
   // free from
   await find(p, 'gluten free');
   const gf = await p.evaluate(() => [...document.querySelectorAll('#shelves a.dish:not(.faded)')].map(a => a.getAttribute('href').slice(4)));
