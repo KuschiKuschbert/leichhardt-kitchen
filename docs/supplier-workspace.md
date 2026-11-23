@@ -213,7 +213,13 @@ Search filters the orders already loaded by date or item name. The date chooser,
 
 Changing the search or selecting another order cancels an armed **Replace draft quantities**. The confirmation names the order date and can only replace the current supplier draft after a fresh **Use quantities again**. Copying and reusing quantities do not record a supplier order. Typing, editing and clearing the history search with the keyboard keep focus in the search box. **Back to draft** keeps its existing return and draft behaviour.
 
-`tests/supplier-rail-history.test.js` checks zero, one and multiple loaded matches, the clipboard payload, the keyboard caret, and delayed confirmations during and after a search or selection change. This client repair changes no reads, outgoing writes, schema or rules. The lazy UI address is `js/suppliers.js?v=32`; the module API is unchanged.
+`tests/supplier-rail-history.test.js` checks zero, one and multiple loaded matches, the clipboard payload, the keyboard caret, and delayed confirmations during and after a search or selection change. This client repair changed no reads, outgoing writes, schema or rules. It shipped at `js/suppliers.js?v=32` with the existing module API.
+
+### Find an item in Supplier order and Catalogue
+
+Typing or editing **Find an item** in Supplier order and Manage catalogue keeps focus and the caret when results redraw. **Clear search** returns focus to the field and restores the list. The shared search keeps a query that is still waiting to apply through an unrelated redraw. The filter continues to work on loaded items and uses the same debounce and Enter behaviour as Order history.
+
+`tests/supplier-search-caret.test.js` checks full keyboard entry, edits at the caret, Clear, redraws and supplier reads and writes at 390, 768 and 1280 px. The same test checks the History caret and selected order. The compatible Supplier UI loads from `js/suppliers.js?v=33` with API 12.
 
 ### Ticked on the order list only, 5 November 2026
 
