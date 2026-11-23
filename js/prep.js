@@ -187,7 +187,7 @@
     authed: false, tok: '', pinStep: '', pinOff: false, pinData: null, pf1: '', pf2: '', pinMsg: '',
     sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: startTab(), ordDate: dayNow(), ordLines: [], ordState: 'idle', otext: '', oqty: '', oneed: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
     retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wLog: false, wRv: false, wAgain: {}, xLog: false, pLog: false, oLog: false, oDoneOpen: false, oCutOpen: false, oCutMore: false, oCutLead: '', startN: {}, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
-    mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, minOpen: false, mErr: '',
+    mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: '', minOpen: false, mErr: '',
     guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
     adminsFor: '', adminsOff: null, adminsWhy: '', level: '', stats: null, statsRange: 30, week: null, weekAt: 0, weekBusy: false,
     user: null, authState: 'idle', draft: null, saveMsg: '', busy: false, toast: '', toastAct: null
@@ -10471,18 +10471,24 @@ if (list.length) sg('oreg', 's');
   // "none" would show
   function minsFailed() { return !!S.minsErr && S.minsFor !== dayNow(); }
   var MINS_ERR = 'Could not load the minutes. Check the signal. The book tries again by itself.';
-  /* has this person signed the current version? one small read per open minutes, remembered for the day (the rules let a
-     person read only their own sign-off, by id). A read that failed or was refused is not kept: the phone waits 5 minutes
-     (retryLater) before it asks again, and the sign box says it could not check. */
-  function loadMine() {
-    if (!kitchenAccess() || !S.configFull) return;
+  /* One read of this person's sign-off per open version, remembered for the day. A failed check waits 5 minutes
+     for the next redraw, or Try again reads only that sign-off once before the wait ends. */
+  function loadMine(again) {
+    if (!featOn('minutes')) return;
     if (!fb || !S.who || !S.mins) return;
     var w = S.who, jobs = [];
     mnMineList().forEach(function (m) {
-      var k = m.id + '_' + m.v + '_' + w;
-      if (S.mmine[k] !== undefined || waiting('mine:' + k)) return;
+      var k = mnKey(m), retry = 'mine:' + k;
+      if (S.mmine[k] !== undefined || (again ? again !== k || !waiting(retry) : waiting(retry))) return;
       S.mmine[k] = 'loading';
-      jobs.push(fb.fs.getDoc(fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', m.id, 'signs', m.v + '_' + w]))).then(function (sn) { S.mmine[k] = sn.exists() ? sn.data() : null; }, function () { delete S.mmine[k]; retryLater('mine:' + k); }));
+      jobs.push(fb.fs.getDoc(fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', m.id, 'signs', m.v + '_' + w]))).then(function (sn) {
+        if (cacheOnly(sn) || sn.metadata && sn.metadata.hasPendingWrites) throw { code: 'unavailable' };
+        S.mmine[k] = sn.exists() ? sn.data() : null;
+        retryDone(retry);
+      }).catch(function (e) {
+        delete S.mmine[k];
+        if (!e || e.code !== 'cancelled') retryLater(retry);
+      }));
     });
     if (jobs.length) Promise.all(jobs).then(function () { minCard(); draw(); noteMaybePop(); });
   }
@@ -10545,11 +10551,9 @@ if (list.length) sg('oreg', 's');
   }
   function mnSignHTML(m) {
     var p = me(); if (!p) return '';
-    var s = S.mmine[mnKey(m)], my = (m.att || []).filter(function (x) { return x.id === S.who; })[0], st = my ? my.st : 'absent';
+    var k = mnKey(m), s = S.mmine[k], my = (m.att || []).filter(function (x) { return x.id === S.who; })[0], st = my ? my.st : 'absent';
     if (s && s !== 'loading') return '<section class="mn-sign is-done"><h3 class="mn-bh">Signed</h3><p>' + esc(p.name) + ' signed on ' + esc(dayShort(T.day(s.at))) + ' at ' + esc(clock(s.at)) + '. Version ' + m.v + '.</p></section>';
-    // the check failed or was refused: say so, instead of "Checking". loadMine asks again on the first redraw after its
-    // 5 minutes (no timer of its own), so opening the minutes again is what brings the Sign button back
-    if (s === undefined && waiting('mine:' + mnKey(m))) return '<section class="mn-sign mn-noprint"><p class="hint">Could not check your sign-off. Open the minutes again in a few minutes.</p></section>';
+    if (s === undefined && waiting('mine:' + k)) return '<section class="mn-sign mn-noprint">' + readErr('Could not check your sign-off.', null, 'data-p="mn-sign-retry" data-v="' + esc(k) + '"') + '</section>';
     if (s === undefined || s === 'loading') return '<section class="mn-sign mn-noprint"><p class="hint">Checking your sign-off...</p></section>';
     // one tap: the person already typed their own PIN to open this page (20 Oct 2026, no second PIN)
     var mineN = mnMineN(m);
@@ -10559,7 +10563,7 @@ if (list.length) sg('oreg', 's');
       '<p>' + (st === 'present' ? 'I attended and have read and understood these minutes.' : 'I have read and understood these minutes.') + '</p>' +
       // who is signing beside the button, with Not you? for the shared tablet (8 Nov 2026, council round 3, row 17)
       '<div class="mn-signrow"><p class="mn-as">Signing as <b>' + esc(p.name) + '</b>. ' + notYouHTML() + '</p>' +
-      '<button type="button" class="btn dark mn-signbtn" data-p="mn-sign" data-id="' + esc(m.id) + '"' + (S.mSigning ? ' disabled' : '') + '>Sign as ' + esc(p.name) + '</button></div>' +
+      svButton({ k: 'mn-sign', p: 'mn-sign', value: m.id, cls: 'btn dark mn-signbtn', idle: 'Sign as ' + p.name, busy: S.mSigning === k, busyText: 'Signing...', off: !!S.mSigning }) + '</div>' +
       '<span class="mn-err" role="status" id="mn-pinmsg">' + esc(S.mErr) + '</span><p class="hint">Your name, the version and the time are recorded. Apology and absent staff sign too.</p></section>';
   }
   /* the way to the register for a chef: the admin Minutes tab on the head chef's Google device (where minutes are
@@ -10595,14 +10599,15 @@ if (list.length) sg('oreg', 's');
   }
   function signMinutes(id) {
     var m = mnById(id), p = who();
-    if (!m || !p || !fb || !S.authed || !canW() || S.mSigning) return;
+    if (!m || m.status !== 'published' || m.removed || !p || !fb || !S.authed || !canW() || !featOn('minutes') || S.mSigning) return;
     var my = (m.att || []).filter(function (x) { return x.id === S.who; })[0], st = my ? my.st : 'absent', k = mnKey(m);
+    if (S.mmine[k] !== null) return;
     var ref = fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', m.id, 'signs', m.v + '_' + S.who])), data = { v: m.v, st: st, at: now(), name: p.name };
-    S.mSigning = true; S.mErr = ''; draw();
+    S.mSigning = k; S.mErr = ''; draw();
     sset(ref, data, false).then(function () {
-      S.mSigning = false; S.mmine[k] = data; minCard(); toast('Signed. Thank you.'); draw();
+      S.mSigning = ''; S.mmine[k] = data; minCard(); toast('Signed. Thank you.'); draw();
     }, function (e) {
-      S.mSigning = false; delete S.mmine[k];
+      S.mSigning = ''; delete S.mmine[k];
       if (e && e.code === 'permission-denied') {
         /* refused: this version is already signed (the record is there), the minutes moved on to a new version (read again),
            or this phone's PIN no longer counts (the head chef reset it), which is what failed() handles */
@@ -13996,7 +14001,8 @@ if (list.length) sg('oreg', 's');
       if (signHeading) { signHeading.focus({ preventScroll: true }); signHeading.scrollIntoView({ block: 'start' }); }
       return;
     }
-    if (a === 'mn-sign') { signMinutes(id); return; }
+    if (a === 'mn-sign-retry' && S.name === 'minutes') { loadMine(el.getAttribute('data-v')); draw(); return; }
+    if (a === 'mn-sign') { signMinutes(el.getAttribute('data-v')); return; }
     if (a === 'mn-csv') { csvMinutes(id); return; }
     if (a === 'mn-refresh') { var mr = S.mSel || (mnPub()[0] || {}).id; S.mnSay = mr || ''; loadMinutes(true); loadSigns(mr, true); draw(); return; }
     if (a === 'mn-sel') { S.mSel = id; loadSigns(id, true); draw(); return; }
