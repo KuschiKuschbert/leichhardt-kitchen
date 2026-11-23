@@ -13430,11 +13430,12 @@ if (list.length) sg('oreg', 's');
     pushKeepDone = t;
     pushToken().then(function (tok) { return pushSave(tok, who); }).catch(function () {});
   }
-  /* A push can come late (13 Nov 2026): GitHub starts the 10-minute push job only 3 to 7 times a day (docs/firestore-usage.md,
-     7.1 to 7.3), so the words promise no exact time until Google's scheduler runs it (Plan C). */
+  /* Pushes come on time (24 Nov 2026): since 20 Nov 2026 Google's Cloud Scheduler starts the push job every 10 minutes
+     (docs/firestore-usage.md, The push timer: 564 runs, all passed). From 13 to 24 Nov these words said a push can come
+     late, as GitHub's own schedule ran the job only 3 to 7 times a day. */
   function pushHTML() {
     var st = pushState(), on = st === 'on';
-    return '<div class="cut-push"><p class="cut-push-l">' + (on ? 'Pushes are on for this phone. A push can come late, so still check here.' : 'Get a push on this phone when a reminder starts and before each cut-off, even with the book closed, for suppliers nobody has ticked off yet. A push can come late, so still check here.') + '</p>' +
+    return '<div class="cut-push"><p class="cut-push-l">' + (on ? 'Pushes are on for this phone.' : 'Get a push on this phone when a reminder starts and an hour before each cut-off, even with the book closed. Only for suppliers nobody has ticked off yet.') + '</p>' +
       '<button type="button" class="btn' + (on ? '' : ' dark') + '" data-p="' + (on ? 'cut-push-off' : 'cut-push-on') + '"' + (S.pushBusy ? ' disabled' : '') + '>' + (on ? 'Turn pushes off' : 'Turn pushes on') + '</button>' +
       (S.pushMsg ? '<p class="hint cut-push-msg" role="status">' + esc(S.pushMsg) + '</p>' : (st === 'ios' || st === 'denied' ? '<p class="hint cut-push-msg">' + esc(PUSH_SAY[st]) + '</p>' : '')) + '</div>';
   }
