@@ -112,4 +112,4 @@ async function chef(b) {
     await chef(b);
   } finally { await b.close(); }
   L.report(R);
-})().catch(e => { console.error(e); process.exitCode = 1; });
+})().catch(e => { console.error(e); process.exit(1); });
