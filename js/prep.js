@@ -5427,7 +5427,7 @@
      who logged the line, the head chef or a sous chef, ticked for Add, on today's lines not removed, and on Transfers
      still out. The rules say the same (amountChange() in firestore.rules). Remove stays where it was. */
   function wxFixOk(kind, x) {
-    if (!x || x.deleted || x.date !== dayNow() || kind === 'x' && x.returned || !canW() || !can('add')) return false;
+    if (!x || x.deleted || x.date !== dayNow() || kind === 'x' && (x.returned || xReturnPending(x.date, x.id)) || !canW() || !can('add')) return false;
     var p = me(); return !!p && (isSous() || p.id === x.addedById);
   }
   function lineOf(kind, date, id) {
@@ -5440,7 +5440,7 @@
     var n = live.length, d = live.filter(function (x) { return x.done; }).length, pct = n ? Math.round(d / n * 100) : 0;
     return '<span class="nb-hbar' + (n && d === n ? ' is-done' : '') + '" aria-hidden="true"><i style="width:' + pct + '%"></i></span>';
   }
-  function moreBtn(x, fix) { return '<button type="button" class="nb-more' + (fix ? ' nb-more-fix' : '') + '" data-lm="open" data-id="' + esc(x.id) + '" aria-haspopup="dialog" aria-label="' + esc('More for ' + x.text) + '">⋯</button>'; }
+  function moreBtn(x, fix, disabled) { return '<button type="button" class="nb-more' + (fix ? ' nb-more-fix' : '') + '" data-lm="open" data-id="' + esc(x.id) + '" aria-haspopup="dialog" aria-label="' + esc('More for ' + x.text) + '"' + (disabled ? ' disabled' : '') + '>⋯</button>'; }
   var lmOpenFrom = null;
   function lmClose(noBack) {
     var s0 = document.getElementById('lm-sheet'); if (!s0) return;
@@ -9122,21 +9122,44 @@ if (list.length) sg('oreg', 's');
       unsubXO(); unsubXO = null; S.xOpenState = 'error'; liveRetry('xopen', watchXOpen, e); draw();
     });
   }
+  function xReturnPending(date, id) {
+    var attempt = S.xReturning && S.xReturning[date + '_' + id];
+    return attempt && attempt.identity === stableIdentity() ? attempt : null;
+  }
+  // The open index drops the loan as soon as this phone queues the batch. Keep its original row in Still out
+  // for this writer until the promise settles. This copy belongs to the display only.
+  function xWhileReturning(rows, today, earlier) {
+    var attempts = Object.values(S.xReturning || {}), identity = stableIdentity();
+    var returns = attempts.filter(function (a) { return !a.undo && a.identity === identity && (a.row.date !== today) === earlier; });
+    if (!returns.length) return rows;
+    var byKey = new Map(rows.map(function (x) { return [x.date + '_' + x.id, x]; }));
+    returns.forEach(function (a) { byKey.set(a.row.date + '_' + a.row.id, a.row); });
+    return Array.from(byKey.values());
+  }
   function returnXfer(date, id, undo, original) {
     if ((!can('tick') && !wAll()) || !fb) return;
     var it = original || xFind(date, id), key = date + '_' + id;
-    if (!it || it.deleted || (S.xReturning && S.xReturning[key])) return;
+    if (!it || it.deleted || xReturnPending(date, id)) return;
     if (!undo && it.returned) return;
-    S.xReturning = S.xReturning || {}; S.xReturning[key] = true; draw();
+    var attempt = { row: Object.assign({}, it), undo: !!undo, identity: stableIdentity() };
+    S.xReturning = S.xReturning || {}; S.xReturning[key] = attempt;
+    draw();
     var p = me(), data = { returned: !undo, returnedBy: undo ? '' : (p ? p.name : 'Head chef'),
       returnedById: undo ? '' : (p ? p.id : ''), returnedAt: undo ? 0 : now() };
+    function stillHere() {
+      if (S.xReturning[key] === attempt) delete S.xReturning[key];
+      if (attempt.identity === stableIdentity() && !workLock()) return true;
+      draw();
+      return false;
+    }
     xWrite(date, id, data, it).then(function () {
+      if (!stillHere()) return;
       var updated = Object.assign({}, it, data);
       if (S.xStats) { S.xStats.lines.forEach(function (x) { if (x.id === id && x.date === date) Object.assign(x, data); }); }
       toast(undo ? 'Return undone. Still outstanding.' : 'Returned: ' + it.text, undo ? null : {
-        label: 'Undo', fn: function () { returnXfer(date, id, true, updated); }
+        label: 'Undo', fn: function () { if (attempt.identity === stableIdentity()) returnXfer(date, id, true, updated); }
       });
-    }, function (e) { failed(e); }).then(function () { delete S.xReturning[key]; draw(); });
+    }, function (e) { if (stillHere()) { failed(e); draw(); } });
   }
   function watchXfer() {
     if (!kitchenAccess() || !S.configFull) return;
@@ -9326,7 +9349,7 @@ if (list.length) sg('oreg', 's');
   /* Remove or put back a transfer: the head chef's Google account only (the admin log, or this page on that device).
      The admin log's 30 days are patched here (no read), so the change shows at once; today's lines come back through the listener. */
   function removeXfer(date, id, restore) {
-    if (!wAll()) return;
+    if (!wAll() || xReturnPending(date, id)) return;
     var mine = (S.xStats && S.xStats.lines) || [], it = (S.xLines || []).concat(mine).filter(function (x) { return x.id === id && x.date === date; })[0];
     if (!it) return;
     var original = Object.assign({}, it);
@@ -9348,10 +9371,10 @@ if (list.length) sg('oreg', 's');
   function xBtn(x) {
     if (!wAll() || !x.id) return '';
     var what = x.deleted ? 'Put back' : 'Remove';
-    return '<button type="button" class="p-x' + (x.deleted ? '' : ' lk-del') + '" data-p="' + (x.deleted ? 'tr-restore' : 'tr-del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc(what + ' ' + x.text) + '">' + what + '</button>';
+    return '<button type="button" class="p-x' + (x.deleted ? '' : ' lk-del') + '" data-p="' + (x.deleted ? 'tr-restore' : 'tr-del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc(what + ' ' + x.text) + '"' + (xReturnPending(x.date, x.id) ? ' disabled' : '') + '>' + what + '</button>';
   }
   function xReturnBtn(x) {
-    var returning = S.xReturning && S.xReturning[x.date + '_' + x.id];
+    var returning = xReturnPending(x.date, x.id);
     var tick = !x.deleted && !x.returned && (can('tick') || wAll()) ? '<button type="button" class="nb-box tr-return-box" title="Mark returned in full" data-p="tr-return" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="Confirm ' + esc(x.text) + ' returned in full"' + (returning ? ' disabled' : '') + '>' + (returning ? '...' : BOX) + '</button>' : '';
     if (!x.deleted && x.returned && (wAll() || isSous() || (can('tick') && me() && me().id === x.returnedById && now() - x.returnedAt < 120000))) tick = '<button type="button" class="chip sq" data-p="tr-unreturn" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '"' + (returning ? ' disabled' : '') + '>Undo return</button>';
     return tick;
@@ -9399,11 +9422,13 @@ if (list.length) sg('oreg', 's');
   }
   // one item of a loan card: the words and amount, its note, and Mark returned (an outline button with its word)
   function xLoanRow(x) {
-    var returning = S.xReturning && S.xReturning[x.date + '_' + x.id];
-    var ret = !x.deleted && !x.returned && (can('tick') || wAll()) ? '<button type="button" class="btn tr-ret" data-p="tr-return" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Mark ' + x.text + ' returned, all of it') + '"' + (returning ? ' disabled' : '') + '>' + (returning ? 'Saving...' : TR_TICK + 'Mark returned') + '</button>' : '';
-    return '<li class="nb-row tr-row tr-item' + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '"><span class="nb-main"><span class="nb-t"><strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span>' + unsentMark(x) + justStamp(x.id) +
+    var returning = xReturnPending(x.date, x.id);
+    var words = returning && returning.undo ? 'Undo pending' : 'Return pending';
+    var label = returning ? words + ' for ' + x.text : 'Mark ' + x.text + ' returned, all of it';
+    var ret = !x.deleted && !x.returned && (can('tick') || wAll()) ? '<button type="button" class="btn tr-ret" data-p="tr-return" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc(label) + '"' + (returning ? ' disabled aria-busy="true"' : '') + '>' + (returning ? words : TR_TICK + 'Mark returned') + '</button>' : '';
+    return '<li class="nb-row tr-row tr-item' + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '"><span class="nb-main"><span class="nb-t"><strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span>' + (returning ? '' : unsentMark(x)) + justStamp(x.id) +
       (x.note ? '<span class="w-act">' + esc(x.note) + '</span>' : '') + '</span></span>' + ret + xBtn(x) +
-      (wxFixOk('x', x) || wAll() && x.id ? moreBtn(x, wxFixOk('x', x)) : '') + '</li>';
+      (wxFixOk('x', x) || wAll() && x.id ? moreBtn(x, wxFixOk('x', x), !!returning) : '') + '</li>';
   }
   var TR_TICK = '<svg class="tr-tick" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12.5 10 17.5 19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   // the venue and person chips, and the often taken chips that follow the venue (redrawn while the venue is typed)
@@ -9452,14 +9477,14 @@ if (list.length) sg('oreg', 's');
     if (S.xDate !== today) { S.xDate = today; watchXfer(); }
     if (S.authed && fb) { loadXSum(); loadOrdLearned(); }
     var byTime = function (a, b) { return xNum(a.addedAt) - xNum(b.addedAt); };
-    var live = xLive().sort(byTime), shown = (S.xLines || []).filter(function (x) { return wAll() || !x.deleted; }).sort(byTime);
+    var live = xLive().sort(byTime), shown = xWhileReturning(S.xLines || [], today, false).filter(function (x) { return wAll() || !x.deleted; }).sort(byTime);
     var nOut = live.filter(function (x) { return x.dir !== 'in'; }).length, nIn = live.length - nOut;
     // no signal and not loaded yet: the note, then only the lines this phone wrote since (listSnap), and no counts
     var offX = S.xState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     // the date line counts what was logged today, in the cards' own words (Lent to, Borrowed from)
     var sub = offX ? '' : [nOut ? nOut + ' lent' : '', nIn ? nIn + ' borrowed' : ''].filter(Boolean).join(', ') + (live.length ? ' today' : '');
     var add = can('add') ? xFormHTML() : '';
-    var earlier = (S.xOpen || []).filter(function (x) { return x.date !== today && !x.deleted && !x.returned; }).sort(byTime);
+    var earlier = xWhileReturning(S.xOpen || [], today, true).filter(function (x) { return x.date !== today && !x.deleted && !x.returned; }).sort(byTime);
     var todayOpen = shown.filter(function (x) { return !x.deleted && !x.returned; }), done = shown.filter(function (x) { return x.deleted || x.returned; });
     var earlierNote = S.xOpenState === 'error' ? readErr('Could not load what is still out from earlier days. This list may be incomplete.', 'xopen') :
       S.xOpenState === 'offline' ? '<p class="nb-empty" role="status">No signal. What is still out from earlier days shows when the phone is back online.</p>' :

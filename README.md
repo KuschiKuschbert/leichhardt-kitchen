@@ -71,6 +71,8 @@ The Leichhardt Hotel kitchen's app: the recipe book, the prep list, the order li
 
 Transfer loan cards stay inside the notebook at larger text sizes, with amounts wrapping before the return button (16 November 2026). [Layout repair and checks](docs/transfer-returns.md#phone-card-width-16-november-2026).
 
+A transfer with **Return pending** stays in Still out and counts there until the book confirms the return. Today's confirmed returns then move to Done today. [Transfer return feedback](docs/transfer-returns.md#while-a-return-is-waiting).
+
 Home puts **your section and shift → your break and return → who is on with you** before kitchen work. Scheduled coworkers stay visible on a small board: sections down, the day's shifts across, each name with its break. When your card shows only your shift, **View today's full team** opens the whole day's board; the head chef's card already holds the whole day. Desktop uses aligned columns for personal/team context and current work, with upcoming items below; quiet days get one compact prep summary across the page. Your day stays charcoal, Now and next is warm amber, On with you is soft sage and Prep by section is cool steel, all using the existing palette and fonts. Desktop celebrations use a full-width horizontal strip with the complete explanation. It reuses the saved plan and works on phones, tablets and laptops. [Behaviour and verification](docs/home-staff-first.md).
 
 If KitchenBook locks while its window or tab is in the background, select the PIN box when you return. The PIN screen only asks for the on-screen number pad while the book is active.
