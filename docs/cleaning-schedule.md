@@ -85,6 +85,16 @@ An explicit retry after an uncertain acknowledgement checks the named occurrence
 
 Keep existing session expiry, identity-bound recovery, release gating, today-only staff reads and capability checks. No private persistent cache, listener or polling is added.
 
+### Feedback while an action is waiting
+
+The button pressed in a procedure reports its own pending action. **Save checks** says **Saving checks...** and **Record done** still requires every check. **Record done** says **Recording...** and the assigned checker's **Verify Pass check** says **Saving Pass check...**. The selected occurrence says **Not sent** while the other occurrences keep their own status. The task keeps its existing guard against repeat submissions. When a shared screen asks who did the work, the picker keeps its own recording feedback.
+
+After acknowledgement, the existing confirmation names the job. A refused write keeps the checks and note, shows the error beside the occurrence and makes the existing action available for retry.
+
+Verdict: Not needed (bug fix). The approved controls and steps remain in their existing procedure. This follows [After the tap](action-feedback.md#the-rule), with the same data, permissions and reads.
+
+In the complete app with the kitchen fonts and synthetic checks at 390 and 1280 px, the action buttons kept their original positions and sizes while Save checks was held. The Save and Record targets were both 48 px high. `tests/cleaning-feedback.test.js` checks required-check gating, pending Save, Record and Pass feedback, a repeated dispatch during the wait, refusal and explicit retry, and preservation of the original cleaner.
+
 ## Temperature reminder
 
 Show: **Temperature logs must be completed first thing in the morning and before dinner service.**

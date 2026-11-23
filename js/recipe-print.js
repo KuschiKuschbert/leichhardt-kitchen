@@ -234,12 +234,18 @@
       '<button type="button" class="btn dark rcp-go" data-rcp="print"' + (n && !S.busy ? '' : ' disabled') + '>' + esc(S.busy ? 'Laying out the pages...' : printLabel()) + '</button>' +
       '<p class="rcp-status" role="status" aria-live="polite">' + esc(S.status) + '</p></div></div>';
   }
-  function draw() {
+  function draw(button) {
     if (!S.root || !S.root.isConnected) return;
     var f = document.activeElement && document.activeElement.id === 'rcp-q', pos = f ? document.activeElement.selectionStart : 0;
+    var groupRow = S.root.querySelector('[aria-labelledby="rcp-gl"]'), groupX = groupRow && groupRow.scrollLeft;
     S.root.innerHTML = html();
+    if (groupX) S.root.querySelector('[aria-labelledby="rcp-gl"]').scrollLeft = groupX;
     if (f) { var q = S.root.querySelector('#rcp-q'); if (q) { q.focus({ preventScroll: true }); try { q.setSelectionRange(pos, pos); } catch (e) {} } }
     count();
+    if (button) {
+      var next = S.root.querySelector('[data-rcp="' + button.dataset.rcp + '"][data-v="' + CSS.escape(button.dataset.v) + '"]');
+      if (next) next.focus({ preventScroll: true });
+    }
   }
   // the page count on Print comes from laying the cards out, not a guess: work out the ones not counted yet, quietly
   function count() {
@@ -275,15 +281,15 @@
     if (!S.root || !S.root.contains(ev.target)) return;
     var el = ev.target.closest('[data-rcp]'); if (!el) return;
     var a = el.getAttribute('data-rcp'), v = el.getAttribute('data-v');
-    if (a === 'tick') { if (S.ticked[v]) delete S.ticked[v]; else S.ticked[v] = true; S.status = ''; draw(); var again = S.root.querySelector('[data-rcp="tick"][data-v="' + CSS.escape(v) + '"]'); if (again) again.focus({ preventScroll: true }); return; }
+    if (a === 'tick') { if (S.ticked[v]) delete S.ticked[v]; else S.ticked[v] = true; S.status = ''; draw(el); return; }
     if (a === 'group') {
       var g = groups().filter(function (x) { return x.k === v; })[0]; if (!g) return;
       var full = g.ids.every(function (id) { return S.ticked[id]; });
       g.ids.forEach(function (id) { if (full) delete S.ticked[id]; else S.ticked[id] = true; });
-      S.status = full ? 'Unticked ' + g.t + '.' : 'Ticked ' + g.t + ': ' + g.ids.length + (g.ids.length === 1 ? ' card.' : ' cards.'); draw(); return;
+      S.status = full ? 'Unticked ' + g.t + '.' : 'Ticked ' + g.t + ': ' + g.ids.length + (g.ids.length === 1 ? ' card.' : ' cards.'); draw(el); return;
     }
     if (a === 'none') { S.ticked = {}; S.status = 'Every card unticked.'; draw(); return; }
-    if (a === 'paper') { if (paperOf(v)[0] !== v) return; S.paper = v; lsSet(KEY, v); S.status = paperOf(v)[1] + ' picked.'; draw(); return; }
+    if (a === 'paper') { if (paperOf(v)[0] !== v) return; S.paper = v; lsSet(KEY, v); S.status = paperOf(v)[1] + ' picked.'; draw(el); return; }
     if (a === 'print') print(el);
   }
   function input(ev) {
