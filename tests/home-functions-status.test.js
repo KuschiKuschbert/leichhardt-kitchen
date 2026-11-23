@@ -55,6 +55,14 @@ async function knownCopy(b) {
   const p = await open(b, { extra: functionData });
   try {
     await fnState(p, 'ok');
+    // The Welcome still can arrive before the first clip. Let Home's art load before cutting the signal.
+    await L.waitFor(p, () => {
+      const mascot = window.LK_MASCOT;
+      if (!mascot) return false;
+      const state = mascot.state();
+      return mascot.artOff() || state?.plays > 0 || (state?.rest === 'rest' &&
+        (state.hidden || document.hidden || matchMedia('(prefers-reduced-motion: reduce)').matches));
+    }, null, 8000);
     await p.context().setOffline(true);
     await L.settle(p, 250);
     let x = await read(p);
