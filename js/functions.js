@@ -415,7 +415,7 @@
   }
   function watch() {
     var prep = P(); if (!prep || !prep.state) return;
-    if (!prep.privateAccess()) { stop(); sheetClose(false, true); SEEN = { who: '', by: {} }; PK = { who: '', r: {}, note: {} }; F.pend = {}; F.sv++; if (window.LK_PRINT && document.getElementById('fn-print')) window.LK_PRINT.end(); var printed = document.getElementById('fn-print'); if (printed) printed.remove(); F.list = []; F.all = null; F.sent = {}; F.state = 'idle'; lsSet('lk.fn', null); changed(); return; }
+    if (!prep.privateAccess()) { stop(); sheetClose(false, true); SEEN = { who: '', by: {} }; PK = { who: '', r: {}, note: {} }; F.pend = {}; F.sv++; if (window.LK_PRINT && document.getElementById('fn-print')) window.LK_PRINT.end(); var printed = document.getElementById('fn-print'); if (printed) printed.remove(); F.list = []; F.all = null; F.sent = {}; F.state = 'idle'; F.at = 0; F.offline = false; lsSet('lk.fn', null); changed(); return; }
     var st = prep.state;
     if (!/^\d{4,6}$/.test(st.pin || '') || st.configState !== 'ok') return;
     var key = st.pin + '|' + T.day();
@@ -1847,9 +1847,9 @@
   /* The failed-read line, one look on every page (LK_PREP.readErr(), docs/design-patterns.md, A page): what could not
      load, never "nothing", then Try again (data-fn="retry", retryNow()). No signal only when the signal is the cause
      (js/prep.js noSignal()); with today's reads used up the line at the top says why, so no "Check the connection". */
-  function failHTML() {
-    var off = navigator.onLine === false || F.err === 'unavailable' || F.err === 'deadline-exceeded';
-    var w = off ? 'No signal. Could not load functions.' : 'Could not load functions.' + (quota() ? '' : ' Check the connection.');
+  function failedReadOffline() { return navigator.onLine === false || F.err === 'unavailable' || F.err === 'deadline-exceeded'; }
+  function failHTML(words) {
+    var w = words || (failedReadOffline() ? 'No signal. Could not load functions.' : 'Could not load functions.' + (quota() ? '' : ' Check the connection.'));
     var p = P(), at = 'data-fn="retry"';
     if (p && p.readErr) return p.readErr(w, null, at);
     return '<p class="p-err p-readerr" role="status">' + esc(w) + ' <button type="button" class="p-link" ' + at + '>Try again</button></p>';
@@ -2076,6 +2076,21 @@
     });
     return out;
   }
+  // Home keeps its other work rows during a Functions read and uses the same guarded retry as the Functions pages.
+  function homeReadHTML(hasRows) {
+    var prep = P(); if (!prep || !prep.privateAccess()) return '';
+    var t = now(), copy = F.at ? ' Showing the copy from ' + when(F.at, kday(t)) + '.' : '';
+    if (F.state === 'error' && !F.wait && !F.unsub) {
+      var words = 'Could not load functions.';
+      if (failedReadOffline()) words = 'No signal. ' + words;
+      else if (F.err === 'resource-exhausted') words += ' Today\'s read limit has been reached.';
+      return failHTML(words + copy);
+    }
+    var note = '';
+    if (F.offline || F.state === 'offline' || navigator.onLine === false) note = 'No signal.' + (copy || ' Functions show here when this device is back online.');
+    else if (F.state !== 'ok') note = copy ? 'Checking for function changes.' + copy : hasRows ? '' : 'Checking the work...';
+    return note ? '<p class="hm-none" role="status">' + esc(note) + '</p>' : '';
+  }
   var landHome = false;   // the landing card sits on Home's board page (no band there): set by landSlot(), checked by paint()
   function landHTML() {
     if (!window.LK_PREP || !window.LK_PREP.privateAccess()) return '';
@@ -2276,7 +2291,7 @@
     // a page draws the slot: an open, so the Next function line is decided here (ahOpen())
     bandSlot: function () { ordersBandPerson(); ahOpen(); var h = bandHTML(); lastBand = h; return '<div class="fn-band' + (AH.on ? ' is-ahead' : h && prepStrip() ? ' is-strip' : '') + '" id="fn-band" role="region" aria-label="' + (AH.on ? 'Next function' : 'Functions') + '"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
     landSlot: function (home) { landHome = !!home; var h = landHTML(); return '<div id="fn-land"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
-    homeRows: fnHomeRows,
+    homeRows: fnHomeRows, homeReadHTML: homeReadHTML,
     // Home's Function this week card and Next function line, under Your day (js/prep.js homeSlot()): drawn at Home's open
     // with its own spoken status beside it (kept apart from the redrawn slot, so a Got it is heard once and never carried over)
     homeAhead: function () { huOpen(); var h = huHTML(); return '<div class="fn-hm" id="fn-hm"' + (h ? '' : ' hidden') + '>' + h + '</div><span class="visually-hidden" role="status" id="fn-hm-say"></span>'; },
