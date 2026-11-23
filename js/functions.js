@@ -1137,7 +1137,7 @@
     if (lc) { var lh = landHTML(); if (lc.innerHTML !== lh) lc.innerHTML = lh; lc.hidden = !lh; }
     var ck = document.getElementById('fn-check');
     if (ck) { var ch = checkHTML(); if (ck.innerHTML !== ch) ck.innerHTML = ch; ck.hidden = !ch; }
-    if (sheetId) { var f = byId(sheetId); var body = sheetEl && sheetEl.querySelector('.fn-sheet-body'); if (body && f) body.innerHTML = sheetHTML(f, true); }
+    if (sheetId) sheetPaint();
   }
   /* The strip (22 Oct 2026): once the band has scrolled off the top, one line stays pinned to the top of the screen
      with today's next function and what goes out next; a tap opens its sheet. It is appended to document.body (a page
@@ -1762,15 +1762,33 @@
       onError: function (m) { printError(button, m); } });
   }
   // the popup from the band, appended to document.body so a page redraw does not remove it; clicks use data-fn
-  var sheetEl = null, sheetId = '', sheetBack = null;
+  var sheetEl = null, sheetId = '', sheetBack = null, sheetBackScope = '';
+  function sheetAction(root, from) {
+    return Array.prototype.find.call(root.querySelectorAll('button[data-fn]:not([disabled]), a[href]'), function (el) {
+      return el.getClientRects().length && ['data-fn', 'data-id', 'data-r', 'data-v', 'href'].every(function (attr) {
+        return el.getAttribute(attr) === from.getAttribute(attr);
+      });
+    });
+  }
+  function sheetPaint() {
+    var f = byId(sheetId); if (!f) return;
+    var title = sheetEl.querySelector('#fn-sh-h'), body = sheetEl.querySelector('.fn-sheet-body'), html = sheetHTML(f, true);
+    if (title.textContent !== f.name) title.textContent = f.name;
+    if (body.lkH === html) return;
+    var active = document.activeElement, restore = body.contains(active);
+    body.innerHTML = html; body.lkH = html;
+    if (restore) (sheetAction(body, active) || sheetEl.querySelector('.fn-sheet')).focus({ preventScroll: true });
+  }
   function sheetOpen(id, from) {
     var f = byId(id); if (!f) return;
     sheetClose(); sheetId = id; sheetBack = from || null;
+    sheetBackScope = ['#fn-band', '.fn-strip', '#fn-hm', '#fn-land', '.fn-svc-page'].find(function (scope) { return from && from.closest(scope); }) || '';
     var el = document.createElement('div');
     el.className = 'fn-pop';
     el.innerHTML = '<div class="fn-pop-bg" data-fn="close"></div><section class="fn-sheet" role="dialog" aria-modal="true" aria-labelledby="fn-sh-h" tabindex="-1">' +
-      '<div class="fn-grip" aria-hidden="true"></div><header class="fn-sheet-top"><div class="fn-sheet-t"><span class="fn-eb">Function</span><h2 id="fn-sh-h">' + esc(f.name) + '</h2></div><button type="button" class="fn-close" data-fn="close">Close</button></header><div class="fn-sheet-body">' + sheetHTML(f, true) + '</div></section>';
-    document.body.appendChild(el); sheetEl = el;
+      '<div class="fn-grip" aria-hidden="true"></div><header class="fn-sheet-top"><div class="fn-sheet-t"><span class="fn-eb">Function</span><h2 id="fn-sh-h"></h2></div><button type="button" class="fn-close" data-fn="close">Close</button></header><div class="fn-sheet-body"></div></section>';
+    sheetEl = el; sheetPaint();
+    document.body.appendChild(el);
     var api = P() && P().book && P().book();
     if (api && api.ovPush) api.ovPush('fn', function () { sheetClose(true, true); });
     el.querySelector('.fn-sheet').focus({ preventScroll: true });
@@ -1781,9 +1799,13 @@
     var api = P() && P().book && P().book();
     if (api && api.ovDone) api.ovDone('fn', noBack);
     sheetEl.parentNode.removeChild(sheetEl); sheetEl = null; sheetId = '';
-    if (back && sheetBack && document.body.contains(sheetBack)) sheetBack.focus({ preventScroll: true });
-    sheetBack = null;
     strip();
+    if (back && sheetBack) {
+      var scope = sheetBackScope && document.querySelector(sheetBackScope);
+      var target = sheetBack.isConnected && sheetBack.getClientRects().length ? sheetBack : (scope && sheetAction(scope, sheetBack)) || document.getElementById('rtitle');
+      if (target) target.focus({ preventScroll: true });
+    }
+    sheetBack = null; sheetBackScope = '';
   }
 
   /* ---------- #/fn: today, the next three days from tomorrow (or 14), and the platter totals per day ---------- */
@@ -2217,13 +2239,13 @@
     if (b && !b.disabled) b.textContent = q ? 'Send ' + q + (q === 1 ? ' platter' : ' platters') : 'Send all ' + (st ? st.leftTot : '');
   });
   document.addEventListener('keydown', function (e) {
-    if (!sheetEl) return;
+    if (!sheetEl || e.defaultPrevented) return;
+    var panel = sheetEl.querySelector('.fn-sheet'), owner = e.target.closest && e.target.closest('[aria-modal="true"], dialog[open]');
+    if (owner && owner !== panel) return;
     if (e.key === 'Escape') { e.preventDefault(); sheetClose(true); return; }
     if (e.key === 'Tab') {
-      var f = sheetEl.querySelectorAll('a[href], button'), first = f[0], last = f[f.length - 1];
-      if (!f.length) return;
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      var api = P() && P().book && P().book();
+      if (api && api.trapTab) api.trapTab(e, panel);
     }
   });
   window.addEventListener('hashchange', function () { sheetClose(false, true); if (location.hash !== '#/fn/now') PK = { who: '', r: {}, note: {} }; });
