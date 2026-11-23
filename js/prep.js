@@ -735,7 +735,15 @@
       // the finished list was waiting for (finDue(), 10 Nov 2026), or the card would wait for some later draw;
       // the same for a finished section on its own tab (secDue(), 11 Nov 2026)
       // and when only the list's touch with the server changed, the finished words on a wide screen decide again
-      if (k === 'same') { patchOrDraw(function () { patchUnsent(); if (finDue() || secDue()) draw(); else if (coldTurn) { finFit(); finPaint(); } }); return; }
+      if (k === 'same') {
+        patchOrDraw(function () {
+          patchUnsent();
+          if (finDue() || secDue()) { draw(); return; }
+          if (coldTurn) { finFit(); finPaint(); }
+          prepTickSchedule();
+        });
+        return;
+      }
       S.itemsState = k === 'wait' ? 'offline' : 'ok'; draw();
     }, function (e) {
       if (unsubItems !== u) return;
@@ -5807,7 +5815,7 @@
      lingering above the card, or removed lines a chef has asked to see).
      Under 900 px, with no signal (the browser's word, or the list's own: its last answer came from memory), or with
      an older saved stylesheet, the book is exactly as it was: the tab's plain words and the small card. The words are the page's own and never wait for the mascot's file or art. */
-  var FIN_CLS = ['nb-scene', 'nb-w40', 'nb-w28', 'nb-f192', 'nb-f96', 'nb-f64', 'nb-f48', 'nb-f0'], finWait = 0;
+  var FIN_CLS = ['nb-scene', 'nb-w40', 'nb-w28', 'nb-f192', 'nb-f96', 'nb-f64', 'nb-f48', 'nb-f0'];
   function finFit() {
     try {
       var body = S.root && document.body.contains(S.root) && S.root.querySelector('.nb-left .nb-body');
@@ -5823,13 +5831,8 @@
       // the draw he speaks and plays on, so their size is chosen once and does not change a few seconds after the
       // finish, and they never stand under a row. (A section's tab says nothing new while a line lingers.)
       // tomorrow's lines (.nb-tmr) stay under the finished words on purpose: today finishes today (17 Nov 2026)
-      if (S.root.querySelector('.nb-left .nb-rows:not(.nb-tmr) .nb-row')) {
-        // A line this person ticked on another screen lingers here too, and only the screen that made the tick set
-        // the draw that ends it: one draw when the linger is over, so the card does not wait small for some later
-        // draw. Time passing only, and only while a line really lingers.
-        if (card && !finWait && S.items.some(function (x) { return !x.fn && lingers(x); })) finWait = setTimeout(function () { finWait = 0; draw(); }, LINGER + 100);
-        return;
-      }
+      // The Prep expiry draw also updates the finished card and section words when the row leaves.
+      if (S.root.querySelector('.nb-left .nb-rows:not(.nb-tmr) .nb-row')) return;
       var base = body.scrollHeight - body.clientHeight, el = card;
       if (!el) {
         el = document.createElement('div'); el.className = 'nb-fin nb-fin-sec';
@@ -7961,6 +7964,40 @@
     prepPlaceWant = null;
     window.scrollTo(0, row ? row.getBoundingClientRect().top + window.scrollY - w.off : w.y);
   }
+  // The live list may hear a tick from another screen. End its pause at the saved tick's deadline even if this
+  // screen never tapped it. Only confirmed ticks still visible on today's Prep can schedule a redraw here.
+  var prepTickExpiry = null;
+  function prepTickSchedule() {
+    if (prepTickExpiry) clearTimeout(prepTickExpiry.timer);
+    prepTickExpiry = null;
+    if (!prepPlaceHere() || S.date !== dayNow() || itemsCold || !S.who) return;
+    var rows = S.root.querySelectorAll('.nb-left .nb-rows .nb-row.is-done, .wb-cols .nb-rows .nb-row.is-done');
+    if (!rows.length) return;
+    var visible = new Set(Array.from(rows, function (row) { return row.getAttribute('data-ln'); }));
+    var at = Infinity;
+    S.items.forEach(function (x) {
+      if (!x.done || x.deleted || x._unsent || x.doneById !== S.who || !Number.isFinite(x.doneAt) || !x.doneAt ||
+          !visible.has(S.date + '/' + x.id) || S.date === prepTickFaultDay && prepTickFaults.get(x.id) === 'retrying') return;
+      at = Math.min(at, x.doneAt + LINGER);
+    });
+    if (at === Infinity) return;
+    prepTickExpiry = { at: at, view: prepPlaceKey(), epoch: accessEpoch, timer: 0 };
+    prepTickWait(Math.max(0, at - now()));
+  }
+  function prepTickWait(ms) {
+    var expiry = prepTickExpiry;
+    expiry.timer = setTimeout(function () {
+      expiry.timer = 0;
+      if (expiry !== prepTickExpiry || !prepPlaceHere() || S.date !== dayNow() ||
+          expiry.epoch !== accessEpoch || expiry.view !== prepPlaceKey()) return;
+      if (now() < expiry.at) { prepTickWait(expiry.at - now()); return; }
+      var busy = window.LK_FN && window.LK_FN.fingerBusy ? window.LK_FN.fingerBusy() : prepFingerDown || Date.now() - prepFingerUp < 400;
+      if (busy) { prepTickWait(450); return; }
+      if (typing() && S.root.contains(document.activeElement)) return; // resume when the field loses focus
+      prepTickExpiry = null;
+      draw();
+    }, ms);
+  }
   function draw() {
     if (holdDraw) { heldDraw = true; return; }
     svTidy();
@@ -8004,6 +8041,7 @@
     tmPaint();
     finFit();
     finPaint();
+    prepTickSchedule();
     secFit();
     gvLoops();
     if (S.gVideoJump && (location.hash !== '#/admin' || S.name === 'admin' && S.atab !== 'guides')) S.gVideoJump = '';
@@ -14465,6 +14503,9 @@ if (list.length) sg('oreg', 's');
     app.addEventListener('pointerup', toastUp);
     app.addEventListener('pointercancel', toastUp);
     document.addEventListener('scroll', toastScrolled, { capture: true, passive: true });
+    app.addEventListener('focusout', function () {
+      if (prepTickExpiry && !prepTickExpiry.timer) prepTickWait(0);
+    });
     app.addEventListener('input', onInput);
     app.addEventListener('change', onChange);
     app.addEventListener('submit', onSubmit);
