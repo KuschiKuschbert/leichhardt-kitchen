@@ -8824,6 +8824,7 @@ if (list.length) sg('oreg', 's');
   function rvInput(page, day, field, value) {
     if (!rvAllowed(page) || !rvHere(page, day, rvSheetVersion)) { draw(); return; }
     var r = rvDraft(page);
+    if (page && day !== dayNow() && !rvEarlier && !rvKeep(r)) { draw(); return; }
     if (!r) {
       if (page && (day !== dayNow() || S.wReviewFor !== day || !S.wReview)) { draw(); return; }
       r = { day: day, identity: stableIdentity(), base: page ? S.wReview : rvOf(day) };
