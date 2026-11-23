@@ -2543,6 +2543,73 @@ window.LK_DATA = {
       labelNote: 'Check the supplier label for allergens.'
     },
     {
+      id: 'vegan-aioli', no: '140', kind: 'batch', forLine: 'For the green dressing', name: 'Vegan Aioli', art: 'vegan-aioli',
+      yield: 'Batch: about 2.6 L.',
+      ingredients: [
+        { q: '500 ml', name: 'Soy milk', tags: ['Soy'] },
+        { q: '1–2 tbsp', name: 'Dijon mustard', note: 'About half a kitchen spoon' },
+        { q: '1–2 tbsp', name: 'Seeded mustard', note: 'About half a kitchen spoon' },
+        { q: '10 cloves', name: 'Garlic', note: 'Minced or confit', none: true },
+        { q: '100 ml', name: 'Lemon juice', note: 'Adjust to taste', none: true },
+        { q: '2 L', name: 'Vegetable oil', none: true },
+        { q: '', name: 'Salt and pepper', note: 'To taste', none: true }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Blend the soy milk, garlic and lemon juice until well mixed.',
+          'With the blender running, add the vegetable oil in a slow, steady stream until the aioli is thick and creamy. Work in batches if needed.',
+          'Add the Dijon and seeded mustards and blend until combined.',
+          'Blend in a little salt and pepper. Taste and adjust with more lemon juice, salt or pepper as needed.'
+        ] }
+      ],
+      labelNote: 'Contains mustard. Check both mustard labels for other allergens.'
+    },
+    {
+      id: 'green-dressing', no: '141', kind: 'batch', forLine: 'Dressing', name: 'Green Dressing', art: 'green-dressing',
+      yield: 'Batch: based on 1 L vegan aioli.',
+      ingredients: [
+        { q: '1 L', name: 'Vegan aioli', link: 'vegan-aioli' },
+        { q: '1 bunch', name: 'Fresh parsley', none: true },
+        { q: '50 g', name: 'Fresh dill', none: true },
+        { q: '50 g', name: 'Fresh mint', none: true },
+        { q: '50 g', name: 'Fresh chives', none: true },
+        { q: '125 ml', name: 'Lemon juice', note: 'Adjust to taste', none: true },
+        { q: '75 ml', name: 'Olive oil', none: true },
+        { q: '5 cloves', name: 'Garlic', note: 'Minced', none: true },
+        { q: '', name: 'Salt and pepper', note: 'To taste', none: true }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Wash and dry the herbs. Remove tough stems and finely chop the herbs.',
+          'Mix the vegan aioli, minced garlic and lemon juice in a large bowl.',
+          'Slowly drizzle in the olive oil while stirring continuously to emulsify.',
+          'Stir in the chopped herbs. Adjust the balance of the herbs to taste.',
+          'Season with salt and pepper. Taste, adjust the lemon juice and seasoning, and stir well.'
+        ] }
+      ],
+      labelNote: 'Contains mustard from the vegan aioli.'
+    },
+    {
+      id: 'house-dressing', no: '142', kind: 'batch', forLine: 'House dressing', name: 'Salad Dressing (Honey Lime)', art: 'house-dressing',
+      yield: 'Batch: 14 L.',
+      ingredients: [
+        { q: '1.78 L', name: 'Maple syrup', none: true },
+        { q: '1.78 L', name: 'Lime juice', none: true },
+        { q: '9.5 L', name: 'Vegetable oil', note: 'Approximate. Adjust the final amount to yield 14 L.', none: true },
+        { q: '140 ml', name: 'Dijon mustard' },
+        { q: '710 g', name: 'Brown onions', note: 'Peeled. Estimated weight.', none: true },
+        { q: '70 g', name: 'Garlic', note: 'Peeled. Estimated weight.', none: true }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Roughly chop the onions and garlic. Blitz with the maple syrup, lime juice and Dijon mustard using a stick blender.',
+          'With the blender running, add the vegetable oil gradually until smooth. Hold back some oil for the final adjustment.',
+          'Transfer to a graduated container and let any foam settle. Blend in enough of the reserved oil to bring the finished dressing to 14 L.'
+        ] }
+      ],
+      labelNote: 'Contains mustard. Check the Dijon label for other allergens.'
+    },
+    {
       id: 'american-cheese-sauce', art: 'american-cheese-sauce', no: '117', kind: 'batch', forLine: 'For the poutine fries', name: 'American Cheese Sauce', short: 'Cheese sauce',
       yield: 'Bought in. No prep. Serve size is on the dish card.',
       ingredients: [
