@@ -410,8 +410,16 @@ const row = code => '.cln-plan-row[data-id="' + id(code) + '"]';
     p = await open(b, { who: 'ann', extra: fixture(['c03']) });
     await p.locator('[data-cln="details"][data-id="' + id('c03') + '"]').first().click();
     await p.click('[data-cln="flow-add"][data-id="' + id('c03') + '"][data-kind="service"]');
-    const checks = p.locator('[data-cln-check][data-id="' + id('c03') + '"]');
-    for (let i = 0; i < await checks.count(); i++) await checks.nth(i).check();
+    const selector = '[data-cln-check][data-id="' + id('c03') + '"]';
+    const required = task('c03').plan.checks.length;
+    await L.waitFor(p, ({ selector, required }) => {
+      const inputs = Array.from(document.querySelectorAll(selector));
+      return inputs.length === required && inputs.every(input => !input.disabled) && !LK_PREP.unsent();
+    }, { selector, required });
+    const checks = p.locator(selector);
+    for (let i = 0; i < required; i++) await checks.nth(i).check();
+    ok(await checks.evaluateAll((inputs, required) => inputs.length === required && inputs.every(input => input.checked), required),
+      'confirmation: the service clean is ready and all ' + required + ' required checks are selected');
     await p.click('[data-cln="flow-perform"][data-id="' + id('c03') + '"]');
     await L.waitFor(p, () => !!document.querySelector('.cln-occurrence .lk-stamp') && !LK_PREP.unsent());
     ok(!(await L.overflow(p)), 'confirmation: the saved long floor-cleaning task wraps without overflow at 390 px');
