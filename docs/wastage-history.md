@@ -62,6 +62,14 @@ before its own commit. Checking an older tab after a release and keeping both
 venues' deployed client files in step remain part of the app release. A client
 revert restores the earlier save behaviour, and saved reviews remain readable.
 
+## Reopen an earlier draft
+
+A chef who began a review before Brisbane midnight can resume their own dated draft inside today's review sheet. Back to today returns to today's fields in the same sheet. Each meaningful unfinished date keeps its own words and the saved review shown when it was opened. Closing keeps them in the open tab. The earlier date stays visible during the check, conflict, retry and acknowledged save. [Chosen layout and comparisons](wastage-overnight-options/brief.md)
+
+The Wastage entries and totals still follow today. The resume action is scoped to this person's retained review drafts. Admin Daily reviews keeps its own draft and history controls. The same person can recover their work after the daily PIN lock while their review access is current. The book's deliberate handover and update guard apply to all retained drafts and pending writes.
+
+An acknowledged review uses the existing next Prep note read on the saving device. Older read results cannot replace that acknowledgement's note or cache. Other devices use their next normal daily read, including when they already loaded the day's note before the correction.
+
 ## Storage and reads
 
 Keep waste/<date>/lines/<id> and waste/<date> authoritative. No migration, new

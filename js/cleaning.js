@@ -131,37 +131,59 @@
   }
   function flowLabel(item, index) { return { daily: 'Daily clean', start: 'Start of day', close: 'End of day', service: 'After service', prep: 'After prep', use: 'After use' }[item.kind] + (['service', 'prep', 'use'].indexOf(item.kind) >= 0 ? ' ' + (index + 1) : ''); }
   function workEnabled(task, day) { return day === T.day() && C.canTick() && M.state === 'ok' && due(task, day) && !M.pending[occurrence(task, day)]; }
+  var FLOW_BUTTONS = {
+    perform: { style: 'btn dark', label: 'Record done', pending: 'Recording...' },
+    save: { style: 'p-link', label: 'Save checks', pending: 'Saving checks...' },
+    block: { style: 'p-link', label: 'Unable to complete', pending: 'Saving reason...' },
+    verify: { style: 'btn dark', label: 'Verify Pass check', pending: 'Saving Pass check...' },
+    reopen: { style: 'p-link', label: 'Reopen with reason', pending: 'Reopening...' }
+  };
+  function flowWaiting(label, words) {
+    return ' aria-busy="true" data-cln-ready-label="' + esc(label) + '"><span>' + esc(words) + '</span>';
+  }
+  function flowButton(action, attrs, enabled, waiting) {
+    var button = FLOW_BUTTONS[action];
+    return '<button type="button" class="' + button.style + '" data-cln="flow-' + action + '"' + attrs + (enabled ? '' : ' disabled') +
+      (waiting === action ? flowWaiting(button.label, button.pending) : '>' + button.label) + '</button>';
+  }
   function flowPanel(task, day, item, index) {
-    var key = flowKey(task, day, item.slot), r = item.record, state = r && r.flow.status || 'pending', d = workDraft(task, day, item), editable = workEnabled(task, day) && state !== 'complete' && state !== 'awaiting', pending = M.pending[occurrence(task, day)], checked = d.checked, all = task.plan.checks.every(function (label) { return checked.indexOf(label) >= 0; });
+    var key = flowKey(task, day, item.slot), r = item.record, state = r && r.flow.status || 'pending', d = workDraft(task, day, item), enabled = workEnabled(task, day), editable = enabled && state !== 'complete' && state !== 'awaiting', pending = M.pending[occurrence(task, day)], checked = d.checked, all = task.plan.checks.every(function (label) { return checked.indexOf(label) >= 0; });
+    var waiting = pending && pending.slot === item.slot ? pending.control : '';
     var attrs = ' data-id="' + esc(task.id) + '" data-day="' + esc(day) + '" data-slot="' + esc(item.slot) + '" data-kind="' + esc(item.kind) + '"';
-    var verify = state === 'awaiting' && (C.canVerify ? C.canVerify(task) : task.plan.verifiers.indexOf(B.who()) >= 0 && C.canTick()) && workEnabled(task, day), statusText = { pending: 'Checks pending', blocked: 'Unable to complete', awaiting: 'Awaiting Pass check', complete: 'Complete' }[state];
-    var reopen = workEnabled(task, day) && (C.chef() || r && r.doneById === B.who() && r.doneAt > 0 && T.now() >= r.doneAt && T.now() - r.doneAt < 120000);
+    var verify = state === 'awaiting' && (C.canVerify ? C.canVerify(task) : task.plan.verifiers.indexOf(B.who()) >= 0 && C.canTick()) && (enabled || pending), statusText = { pending: 'Checks pending', blocked: 'Unable to complete', awaiting: 'Awaiting Pass check', complete: 'Complete' }[state];
+    var reopen = enabled && (C.chef() || r && r.doneById === B.who() && r.doneAt > 0 && T.now() >= r.doneAt && T.now() - r.doneAt < 120000);
     var checker = r && r.flow.verifiedBy ? C.workers().filter(function (person) { return person.id === r.flow.verifiedBy; })[0] : null;
-    return '<section class="cln-occurrence" data-cln-occurrence="' + esc(key) + '"><h4>' + esc(flowLabel(item, index)) + '<span>' + esc(pending ? 'Not sent' : statusText) + '</span></h4>' +
+    return '<section class="cln-occurrence" data-cln-occurrence="' + esc(key) + '"><h4>' + esc(flowLabel(item, index)) + '<span>' + esc(waiting ? 'Not sent' : statusText) + '</span></h4>' +
       '<div class="cln-checks">' + task.plan.checks.map(function (label, n) { return '<label><input type="checkbox" data-cln-check="' + n + '"' + attrs + (checked.indexOf(label) >= 0 ? ' checked' : '') + (editable ? '' : ' disabled') + '><span>' + esc(label) + '</span></label>'; }).join('') + '</div>' +
-      '<label class="field cln-work-note"><span class="label">' + (state === 'complete' || state === 'awaiting' ? 'Reason to reopen' : 'Note or reason unable to complete') + '</span><textarea data-cln-note' + attrs + ' maxlength="500" rows="2"' + (workEnabled(task, day) ? '' : ' disabled') + '>' + esc(d.note) + '</textarea></label>' +
+      '<label class="field cln-work-note"><span class="label">' + (state === 'complete' || state === 'awaiting' ? 'Reason to reopen' : 'Note or reason unable to complete') + '</span><textarea data-cln-note' + attrs + ' maxlength="500" rows="2"' + (enabled ? '' : ' disabled') + '>' + esc(d.note) + '</textarea></label>' +
       (r && r.doneAt ? '<p class="hint cln-performer">Recorded by ' + esc(completionText(r)) + (r.flow.verifiedBy ? '. Pass check: ' + esc(checker ? checker.name : 'Recorded checker') + ' at ' + esc(T.clock(r.flow.verifiedAt)) : '') + '</p>' : '') +
       (task.plan.verification && !task.plan.verifiers.length ? '<p class="hint">Pass checker not set. A chef can choose the checker in Repeat tasks.</p>' : '') +
       (day === T.day() ? '<div class="btn-row cln-work-actions">' + (state === 'complete' || state === 'awaiting' ?
-        (verify ? '<button type="button" class="btn dark" data-cln="flow-verify"' + attrs + '>Verify Pass check</button>' : '') + '<button type="button" class="p-link" data-cln="flow-reopen"' + attrs + (reopen ? '' : ' disabled') + '>Reopen with reason</button>' :
-        '<button type="button" class="btn dark" data-cln="flow-perform"' + attrs + (editable && all ? '' : ' disabled') + '>' + (pending ? 'Saving...' : 'Record done') + '</button><button type="button" class="p-link" data-cln="flow-save"' + attrs + (editable && workDirty(d) ? '' : ' disabled') + '>Save checks</button><button type="button" class="p-link" data-cln="flow-block"' + attrs + (editable ? '' : ' disabled') + '>Unable to complete</button>') +
+        (verify ? flowButton('verify', attrs, enabled, waiting) : '') + flowButton('reopen', attrs, reopen, waiting) :
+        flowButton('perform', attrs, editable && all, waiting) + flowButton('save', attrs, editable && workDirty(d), waiting) + flowButton('block', attrs, editable, waiting)) +
         (workDirty(d) && !pending ? '<button type="button" class="p-link" data-cln="flow-discard"' + attrs + '>Undo unsaved checks</button>' : '') + '</div>' : '') +
       (M.flowErrors[key] ? '<p class="p-err" role="alert">' + esc(M.flowErrors[key]) + ' <button type="button" class="p-link" data-cln="refresh">Refresh to check</button></p>' : '') +
       (M.flowSaved[key] ? '<p class="lk-stamp" role="status">' + esc(M.flowSaved[key]) + '</p>' : '') + '</section>';
   }
   function planDetails(task, day) {
     var plan = task.plan, list = flowList(task, day), key = occurrence(task, day), kinds = plan.timing === 'service' ? ['service'] : plan.timing === 'prep-service' ? ['prep', 'service'] : plan.timing === 'food' ? ['prep'] : plan.timing === 'use' ? ['use'] : [];
+    var waiting = M.pending[key], canAdd = workEnabled(task, day);
     return '<div class="cln-detail" id="cln-detail-' + esc(key) + '"><p class="cln-method"><b>Method</b> ' + esc(plan.method) + '</p><p class="hint"><b>Responsible:</b> ' + esc(plan.responsibility) + '</p>' +
       (plan.review ? '<p class="cln-review"><b>Check the procedure:</b> ' + esc(plan.review) + '</p>' : '') +
       (kinds.length ? '<p class="hint">Record every ' + (plan.timing === 'prep-service' ? 'prep and service' : plan.timing === 'food' ? 'prep, plus opening and closing checks' : kinds[0]) + '. Counts cover recorded occurrences only.</p>' : '') +
       (task.guide && P.featOn('guides') ? '<a class="p-link cln-guide-link" href="#/guides/' + encodeURIComponent(task.guide) + '">How to: ' + esc(task.text) + '</a>' : '') +
       list.map(function (item, index) { return flowPanel(task, day, item, list.slice(0, index).filter(function (prior) { return prior.kind === item.kind; }).length); }).join('') +
-      (day === T.day() && kinds.length ? '<div class="btn-row cln-add-occurrence">' + kinds.map(function (kind) { return '<button type="button" class="btn" data-cln="flow-add" data-id="' + esc(task.id) + '" data-day="' + esc(day) + '" data-kind="' + kind + '"' + (workEnabled(task, day) ? '' : ' disabled') + '>Add ' + kind + ' clean</button>'; }).join('') + '</div>' : '') + '</div>';
+      (day === T.day() && kinds.length ? '<div class="btn-row cln-add-occurrence">' + kinds.map(function (kind) {
+        var adding = waiting && waiting.control === 'add' && waiting.kind === kind;
+        return '<button type="button" class="btn" data-cln="flow-add" data-id="' + esc(task.id) + '" data-day="' + esc(day) + '" data-kind="' + kind + '"' +
+          (canAdd ? '' : ' disabled') + (adding ? flowWaiting('Add ' + kind + ' clean', 'Adding ' + kind + ' clean...') : '>Add ' + kind + ' clean') + '</button>';
+      }).join('') + '</div>' : '') + '</div>';
   }
   function planRow(task, day) {
     var key = occurrence(task, day), open = !!M.expanded[key], summary = flowSummary(task, day), completed = summary.done && flowList(task, day)[0].record, stateText = completed ? completionText(completed) : flowState(task, day), meta = task.area + (C.chef() && !task.shared ? ' · ' + owner(task, day) : '') + (task.plan.responsibility.toLowerCase() === task.area.toLowerCase() ? '' : ' · ' + task.plan.responsibility) + ' · ' + stateText, quick = !task.plan.checks.length && !task.plan.verification && !summary.events, slot = task.plan.timing === 'close' ? 'close' : 'daily', quickRecord = quick && flowRecord(task, day, slot), quickUndo = quickRecord && quickRecord.done && C.canUndo(quickRecord);
+    var quickPending = quick && M.pending[key] && M.pending[key].control === 'quick';
     return '<li class="nb-row cln-row cln-plan-row' + (summary.done ? ' is-done' : '') + (M.pending[key] ? ' is-pending' : '') + '" data-id="' + esc(task.id) + '" data-cln-row="' + esc(key) + '">' +
-      '<button type="button" class="nb-box" data-cln="' + (quick ? 'flow-quick' : 'details') + '" data-id="' + esc(task.id) + '" data-day="' + esc(day) + '"' + (quick ? ' data-slot="' + slot + '" data-kind="' + slot + '" aria-pressed="' + summary.done + '"' + (workEnabled(task, day) && (!summary.done || quickUndo) ? '' : ' disabled') : ' aria-expanded="' + open + '" aria-controls="cln-detail-' + esc(key) + '"') + ' aria-label="' + esc((quick ? summary.done ? quickUndo ? 'Undo: ' : 'Done: ' : 'Mark done: ' : open ? 'Close checks: ' : 'Open checks: ') + task.text + '. ' + flowState(task, day)) + '">' + C.box(summary.done) + '</button>' +
+      '<button type="button" class="nb-box" data-cln="' + (quick ? 'flow-quick' : 'details') + '" data-id="' + esc(task.id) + '" data-day="' + esc(day) + '"' + (quick ? ' data-slot="' + slot + '" data-kind="' + slot + '" aria-pressed="' + summary.done + '"' + (workEnabled(task, day) && (!summary.done || quickUndo) ? '' : ' disabled') : ' aria-expanded="' + open + '" aria-controls="cln-detail-' + esc(key) + '"') + (quickPending ? ' aria-busy="true"' : '') + ' aria-label="' + esc((quick ? summary.done ? quickUndo ? 'Undo: ' : 'Done: ' : 'Mark done: ' : open ? 'Close checks: ' : 'Open checks: ') + task.text + '. ' + flowState(task, day)) + '">' + C.box(summary.done) + '</button>' +
       '<button type="button" class="nb-main cln-task-detail" data-cln="details" data-id="' + esc(task.id) + '" data-day="' + esc(day) + '" aria-expanded="' + open + '" aria-controls="cln-detail-' + esc(key) + '" aria-label="' + esc((open ? 'Close checks and method: ' : 'Open checks and method: ') + task.text) + '"><span class="nb-t">' + esc(task.text) + '</span><span class="nb-meta" title="' + esc(meta) + '">' + esc(meta) + '</span><span class="cln-detail-cue" aria-hidden="true">' + (open ? '▴' : '▾') + '</span></button>' + (open ? planDetails(task, day) : '') + '</li>';
   }
   function owner(task, day) {
@@ -366,14 +388,14 @@
       if (M.view === 'week') load(true);
     }, function (error) { if (M !== model) return; M.importBusy = false; var message = error && error.message || 'Could not load the schedule. Your choices are kept. Try again.'; if (pack) M.packImportError = message; else M.importError = message; draw(); });
   }
-  function flowAction(task, day, slot, kind, action, workerId) {
+  function flowAction(task, day, slot, kind, action, workerId, control) {
     if (!hasPlan(task) || !workEnabled(task, day)) return;
     var item = flowList(task, day).filter(function (entry) { return entry.slot === slot; })[0] || { slot: slot, kind: kind, record: null }, d = workDraft(task, day, item), key = flowKey(task, day, slot), model = M;
     if (action === 'perform' && !task.plan.checks.every(function (label) { return d.checked.indexOf(label) >= 0; })) { M.flowErrors[key] = 'Finish every required check before recording this clean.'; draw(); return; }
     if ((action === 'block' || action === 'reopen') && !d.note.trim()) { M.flowErrors[key] = action === 'block' ? 'Write why this clean cannot be completed.' : 'Write a reason before reopening this clean.'; draw(); return; }
-    if (action === 'perform' && C.shared() && !workerId) { openPicker(task, day, { slot: slot, kind: kind }); return; }
+    if (action === 'perform' && C.shared() && !workerId) { openPicker(task, day, { slot: slot, kind: kind, control: control }); return; }
     var sheet = picker, options = { slot: slot, kind: kind, checked: d.checked.slice(), note: d.note.trim() };
-    M.pending[occurrence(task, day)] = { flow: true }; delete M.flowErrors[key]; delete M.flowSaved[key];
+    M.pending[occurrence(task, day)] = { slot: slot, kind: kind, control: control || action }; delete M.flowErrors[key]; delete M.flowSaved[key];
     if (sheet) { sheet.selected = workerId; sheet.busy = true; sheet.error = ''; drawPicker(); }
     draw();
     C.act(task, day, item.record, action, workerId || B.who(), options).then(function (value) {
@@ -393,7 +415,7 @@
   function addFlow(task, day, kind) {
     if (!workEnabled(task, day)) return;
     var slot = C.newSlot(kind); M.expanded[occurrence(task, day)] = true; workDraft(task, day, { slot: slot, kind: kind, record: null }).newEvent = true;
-    flowAction(task, day, slot, kind, 'save');
+    flowAction(task, day, slot, kind, 'save', null, 'add');
   }
   function patchWork(task, day, item) {
     var key = flowKey(task, day, item.slot), panel = M.root && M.root.querySelector('[data-cln-occurrence="' + key + '"]'); if (!panel) return;
@@ -542,7 +564,7 @@
     else if (action === 'import-packdown') importSchedule('packdown');
     else if (action === 'flow-add' && hasPlan(task)) addFlow(task, button.getAttribute('data-day'), button.getAttribute('data-kind'));
     else if (action === 'flow-discard' && hasPlan(task)) { var discardKey = flowKey(task, button.getAttribute('data-day'), button.getAttribute('data-slot')); delete M.workDrafts[discardKey]; delete M.flowErrors[discardKey]; draw(); }
-    else if (action === 'flow-quick' && hasPlan(task)) { var quickDay = button.getAttribute('data-day'), quickSlot = button.getAttribute('data-slot'), quickKind = button.getAttribute('data-kind'), quickCurrent = flowRecord(task, quickDay, quickSlot); if (quickCurrent && quickCurrent.done) { if (!C.canUndo(quickCurrent)) return; workDraft(task, quickDay, { slot: quickSlot, kind: quickKind, record: quickCurrent }).note = 'Undo by recorder'; flowAction(task, quickDay, quickSlot, quickKind, 'reopen'); } else flowAction(task, quickDay, quickSlot, quickKind, 'perform'); }
+    else if (action === 'flow-quick' && hasPlan(task)) { var quickDay = button.getAttribute('data-day'), quickSlot = button.getAttribute('data-slot'), quickKind = button.getAttribute('data-kind'), quickCurrent = flowRecord(task, quickDay, quickSlot); if (quickCurrent && quickCurrent.done) { if (!C.canUndo(quickCurrent)) return; workDraft(task, quickDay, { slot: quickSlot, kind: quickKind, record: quickCurrent }).note = 'Undo by recorder'; flowAction(task, quickDay, quickSlot, quickKind, 'reopen', null, 'quick'); } else flowAction(task, quickDay, quickSlot, quickKind, 'perform', null, 'quick'); }
     else if (hasPlan(task) && ['flow-save', 'flow-block', 'flow-perform', 'flow-verify', 'flow-reopen'].indexOf(action) >= 0) flowAction(task, button.getAttribute('data-day'), button.getAttribute('data-slot'), button.getAttribute('data-kind'), action.slice(5));
     else if (action === 'refresh') load(true);
     else if (action === 'today' || action === 'week') { M.view = action === 'week' && C.chef() ? 'week' : 'today'; draw(); load(); }
@@ -591,7 +613,7 @@
     if (action === 'cancel') closePicker();
     else if (action === 'others' && picker && !picker.busy) { picker.others = !picker.others; drawPicker(); var first = popup.querySelector('.cln-others button'); if (first) first.focus({ preventScroll: true }); }
     else if (action === 'refresh') { closePicker(); load(true); }
-    else if (person && pickerValid() && !picker.busy && !picker.failed) { if (picker.flow) flowAction(picker.task, picker.day, picker.flow.slot, picker.flow.kind, 'perform', person); else tick(picker.task, picker.day, person); }
+    else if (person && pickerValid() && !picker.busy && !picker.failed) { if (picker.flow) flowAction(picker.task, picker.day, picker.flow.slot, picker.flow.kind, 'perform', person, picker.flow.control); else tick(picker.task, picker.day, person); }
   });
   document.addEventListener('keydown', function (event) { if (!popup) return; if (event.key === 'Escape') { event.preventDefault(); closePicker(); } if (event.key === 'Tab') { var pane = popup.querySelector('.pt-sheet'); if (picker.busy) { event.preventDefault(); pane.focus({ preventScroll: true }); } else B.trapTab(event, pane, 'button:not([disabled]), input:not([disabled])'); } });
   ['lk-access', 'lk-who', 'lk-admin', 'lk-cfg', 'lk-feat'].forEach(function (name) { window.addEventListener(name, function () { var open = access(); draw(); if (open && shown()) { drawPicker(); load(); } }); });
