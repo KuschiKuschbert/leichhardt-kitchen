@@ -2039,9 +2039,8 @@
     if (!S.authed) { if (S.user || workLock()) forgetMine(S.lockRecorder || S.who); S.picking = true; S.pending = null; leave(); S.signFrom = 'start'; dropGoogle().then(accessChanged).catch(function () { toast('Sign-out could not finish. Close this tab before handing over the device.', { label: 'OK', fn: function () {} }, 0, 'bad'); }); return; }
     signOutPerson(true, true);
   }
-  /* Manage Recipes & Drawings (#/manage, 21 Oct 2026): the head chef only. With their own PIN as Head chef on any device,
-     or on the head chef's Google device while nobody else is signed in with a PIN. The rules check the same on the
-     server (bookBy() in firestore.rules), so this only decides what the page shows. */
+  /* Manage Recipes & Drawings (#/manage): head chef and sous chef PIN sessions, or a verified admin on this device.
+     This gate decides what the page shows. The rules also check writes (bookBy() in firestore.rules). */
   function bookEdit() { return !!S.pin && (isSous() && S.authed && canW() || S.level === 'owner' && ownerHere()); }
   // 'yes', 'no', 'wait' while the kitchen settings (who is Head chef) are still being read, or 'offline' (see fnState())
   function bookState() {
@@ -11550,15 +11549,20 @@ if (list.length) sg('oreg', 's');
     if (!X || !fb || rxBusy || Date.now() < rxRetry || !(force || rxDue())) return Promise.resolve(false);
     var pin = S.pin || 'public', have = X.pin() === pin ? X.versions() : {}, haveArt = {};
     rxBusy = true; rxStatus('loading');
+    function checked(sn) {
+      // The book already has a saved overlay. An empty Firestore memory copy cannot confirm it is empty.
+      if (cacheOnly(sn)) throw { code: 'offline' };
+      return sn;
+    }
     // the drawings kept on this phone are read from IndexedDB first, so only the ones that changed are read
-    return X.artReady().then(function () { haveArt = X.pin() === pin ? X.artVersions() : {}; return fb.fs.getDoc(S.pin ? docRef('book', 'index') : fb.fs.doc(fb.db, 'publicBook', 'index')); }).then(function (sn) {
+    return X.artReady().then(function () { haveArt = X.pin() === pin ? X.artVersions() : {}; return fb.fs.getDoc(S.pin ? docRef('book', 'index') : fb.fs.doc(fb.db, 'publicBook', 'index')); }).then(checked).then(function (sn) {
       var idx = sn.exists() ? sn.data() : {}, ir = idx.r && typeof idx.r === 'object' ? idx.r : {}, id2 = idx.d && typeof idx.d === 'object' ? idx.d : {};
       var need = Object.keys(ir).filter(function (id) { return have[id] !== ir[id]; });
       var needArt = Object.keys(id2).filter(function (id) { return haveArt[id] !== id2[id]; });
       return Promise.all(need.map(function (id) {
-        return fb.fs.getDoc(S.pin ? docRef('recipes', id) : fb.fs.doc(fb.db, 'publicRecipes', id)).then(function (d) { return [id, d.exists() ? d.data() : null]; });
+        return fb.fs.getDoc(S.pin ? docRef('recipes', id) : fb.fs.doc(fb.db, 'publicRecipes', id)).then(checked).then(function (d) { return [id, d.exists() ? d.data() : null]; });
       }).concat(needArt.map(function (id) {
-        return fb.fs.getDoc(S.pin ? docRef('drawings', id) : fb.fs.doc(fb.db, 'publicDrawings', id)).then(function (d) { return ['@' + id, d.exists() ? d.data() : null]; });
+        return fb.fs.getDoc(S.pin ? docRef('drawings', id) : fb.fs.doc(fb.db, 'publicDrawings', id)).then(checked).then(function (d) { return ['@' + id, d.exists() ? d.data() : null]; });
       }))).then(function (got) {
         rxBusy = false;
         if (pin !== (S.pin || 'public')) { rxStatus('idle'); return false; }
@@ -11572,7 +11576,7 @@ if (list.length) sg('oreg', 's');
     }).catch(function (e) {
       // no signal, or rules not published yet: keep the changes on this phone and try again in a minute
       rxBusy = false; rxRetry = Date.now() + 60000;
-      rxStatus(pin !== (S.pin || 'public') ? 'idle' : navigator.onLine === false ? 'offline' : 'error');
+      rxStatus(pin !== (S.pin || 'public') ? 'idle' : (navigator.onLine === false || (e && e.code === 'offline')) ? 'offline' : 'error');
       return false;
     });
   }

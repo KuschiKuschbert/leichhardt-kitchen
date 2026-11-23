@@ -1,17 +1,17 @@
 /*
-  Leichhardt Kitchen Book: Manage Recipes & Drawings (#/manage), for the head chef only (21 Oct 2026)
+  Leichhardt Kitchen Book: Manage Recipes & Drawings (#/manage), for head chefs, sous chefs and admins
   ===================================================================================================
-  Loaded by js/app.js the first time the page opens on the head chef's device (staff phones never download it).
-  The head chef changes any recipe in the book or adds a new one; the change is saved to Firestore (recipes/<id>,
+  Loaded by js/app.js when an authorised chef or admin first opens the page.
+  A chef or admin changes a recipe or adds a new one. The change is saved to Firestore (recipes/<id>,
   book/index) through the prep book's own write path (W in js/prep.js: the writer's id and PIN proof), and every
-  phone lays it over js/data.js (js/overlay.js). The rules let only the head chef write (bookBy() in firestore.rules).
+  phone lays it over js/data.js (js/overlay.js). The rules also check who may write (bookBy() in firestore.rules).
 
   Pages: #/manage (the recipe list), #/manage/r/<id> (change a recipe), #/manage/new and #/manage/new/<id> (a new
   recipe; with an id, a card still to come). Clicks use data-mg, typing data-f (the field it changes), classes mg-.
 
   Nothing is lost by accident: every change is kept on this device as it is typed (lk.mg.draft.<id>) until it is
   saved, and is offered back when the recipe is opened again. A save checks the version on the server first, so two
-  devices never overwrite each other without the head chef saying so. Every earlier version is kept (hist).
+  devices never overwrite each other without the editor confirming the change. Every earlier version is kept (hist).
 */
 (function () {
   'use strict';
@@ -166,7 +166,7 @@
     var nm = x.name || x.id;
     api.ready().then(function () { return api.W([['set', api.docRef(m[1] === 'tpl' ? 'drawtpl' : 'drawlib', x.id), out]]); }).then(function () {
       x.removed = out.removed; x.v = out.v; toast(out.removed ? 'Hidden: ' + nm + '. The drawing editor no longer offers it.' : 'Shown again in the drawing editor: ' + nm + '.'); draw();
-    }, function (e) { toast('Not changed: ' + nm + '. ' + (e && e.code === 'permission-denied' ? 'Only the head chef can change these.' : 'Check the signal and try again.'), false, true); });
+    }, function (e) { toast('Not changed: ' + nm + '. ' + (e && e.code === 'permission-denied' ? 'The book refused this change. Try again.' : 'Check the signal and try again.'), false, true); });
   }
   function listHTML() {
     var q = M.q.trim().toLowerCase(), words = q ? q.split(/\s+/) : [];
@@ -838,7 +838,7 @@
     e.msg = ''; e.failed = false; e.conflict = force ? null : e.conflict;
     keepNow();   // kept on this device until the save is confirmed
     if (!e.meta.off && !e.meta.removed && !check(e)) { draw(); focusId(e.errs[0].at); return; }
-    if (!P.bookEdit()) { e.msg = 'Not saved: only the head chef can change recipes. Sign in with your PIN as Head chef.'; draw(); return; }
+    if (!P.bookEdit()) { e.msg = 'Not saved. Sign in as a head chef, sous chef or admin. Your changes are kept on this device.'; draw(); return; }
     var api = B(), owner = M.identity, context = api.writeContext ? api.writeContext() : null;
     var id = e.id, clean = cleanRecipe(e), menu = menuAfter(e), submitted = snapOf(e), recorder = api.who();
     var savedMeta = { src: e.meta.src, removed: !!e.meta.removed, off: !!e.meta.off };
@@ -909,7 +909,7 @@
       if (!owns(e, owner)) return;
       e.saving = ''; e.failed = true;
       var code = err && err.code;
-      e.msg = code === 'permission-denied' ? 'Not saved: the book refused it. Only the head chef can change recipes, and the recipe may have changed on another device. Try again.' : 'Not saved. Check the signal and try again. Your changes are kept on this device.';
+      e.msg = code === 'permission-denied' ? 'Not saved. The book refused this change. Your changes are kept on this device. Try again.' : 'Not saved. Check the signal and try again. Your changes are kept on this device.';
       if (M.ed === e) draw();
     });
   }

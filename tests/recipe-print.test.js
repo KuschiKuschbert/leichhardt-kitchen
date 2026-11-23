@@ -40,7 +40,7 @@ async function pdfOf(p, paper) {
     p = await L.open(b, '#/r/burger', { who: 'bo', extra: cfg(), wait: 1400 });
     ok(!(await p.$('#r-edit a[href^="#/manage/print"]')), 'staff: no Print this card on the recipe');
     await go(p, '#/manage/print'); await L.settle(p, 500);
-    ok(/Only the head chef can change recipes/.test(await txt(p, '#rtitle') || '') && !p.urls.some(u => /recipe-print/.test(u)), 'staff: #/manage/print is closed and js/recipe-print.js is never fetched');
+    ok(await txt(p, '#rtitle') === 'Head chefs, sous chefs and admins can change recipes' && !p.urls.some(u => /recipe-print/.test(u)), 'staff: #/manage/print is closed and js/recipe-print.js is never fetched');
     await p.context().close();
 
     // the head chef on a phone: Print this card opens Print cards with only that card ticked
