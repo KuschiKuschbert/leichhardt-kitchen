@@ -345,7 +345,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 /* Settings, sorted by who a setting is for (3 Nov 2026, docs/settings-options/brief.md): your card, then groups of rows.
    A row's button says what it is set to and opens the row in place; on a computer the group's name sits in a left column. */
 .settings.st { width: 100%; max-width: 62rem; margin: 0 auto; gap: 1.6rem; }
-.st-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.st-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
 .st-you { display: grid; gap: 0.8rem; padding: 1rem 1.1rem 1.1rem; background: var(--surface-paper); border: 1.5px solid var(--surface-people-edge); border-radius: var(--radius); min-width: 0; }
 .st-you.is-out { background: var(--beige); border-color: var(--edge); }
 .st-you-top { display: flex; align-items: center; gap: 0.8rem; min-width: 0; }
@@ -2014,8 +2014,9 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .wtop-btn.wtop-who:not(.on) { border-style: dashed; }
 .wtop-btn.wtop-who[aria-current="page"] { background: var(--bar-text); color: var(--bar); }
 .wtop-btn.wtop-who[aria-expanded="true"] { background: var(--accent-ink); border-color: var(--accent-ink); border-style: solid; color: #fff; }
-.wm-wrap { position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; overflow: visible; }
-.wm-wrap::backdrop { background: transparent; }   /* the existing .wm-bg dims and dismisses */
+.wm-wrap { position: fixed; inset: 0; z-index: 85; }
+dialog.wm-wrap { width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; overflow: visible; }
+dialog.wm-wrap::backdrop { background: transparent; }   /* the existing .wm-bg dims and dismisses */
 .wm-bg { position: absolute; inset: 0; background: rgba(28, 29, 31, 0.45); }   /* dims the page like the other popups (22 Oct 2026) */
 .wm { position: absolute; width: min(18rem, calc(100vw - 16px)); background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); padding: 2px 6px; font-family: var(--body); }
 .wm-h { margin: 0 10px; line-height: 1.2; font-size: 0.8125rem; color: var(--muted); }

@@ -135,7 +135,16 @@ const caps = p => p.evaluate(() => [...document.querySelectorAll('.st-caps li')]
     }));
     ok(summaries[0].text === longSection && summaries[1].text === 'Shared kitchen screen' && summaries.every(x => x.fits && x.arrow && x.closed && x.height >= 44),
       width + ' px Extra large: both current values fit with their disclosure chevrons (' + JSON.stringify(summaries) + ')');
-    ok(!(await L.overflow(p)), width + ' px Extra large: the Settings page has no sideways scroll');
+    const headerFits = await p.locator('.st-head').evaluate(header => {
+      const { left, right } = header.getBoundingClientRect();
+      return [...header.children].every(child => {
+        const bounds = child.getBoundingClientRect();
+        return bounds.left >= left - 1 && bounds.right <= right + 1;
+      });
+    });
+    ok(headerFits, width + ' px Extra large: the heading and Done fit within the Settings column');
+    const overflow = await L.overflow(p);
+    ok(!overflow, width + ' px Extra large: the Settings page has no sideways scroll' + (overflow ? ' (' + overflow + ')' : ''));
     await p.locator('#st-h-section').focus();
     await p.keyboard.press('Enter');
     ok(await p.locator('#st-h-section').evaluate(e => e === document.activeElement && e.getAttribute('aria-expanded') === 'true') && await p.locator('#st-b-section').isVisible(),
