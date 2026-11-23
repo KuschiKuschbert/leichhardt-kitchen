@@ -1,4 +1,4 @@
-// Manage Recipes & Drawings (#/manage, js/manage.js, 21 Oct 2026): only the head chef sees it and can save. A saved
+// Manage Recipes & Drawings (#/manage, js/manage.js): head chefs, sous chefs and verified admins can edit. A saved
 // change shows on the card, in search and on a fresh phone; a new recipe fills a card to come. Checks, a change made on
 // another device, a refused save, drafts kept on the device, hiding a recipe and earlier versions.
 const L = require('./lib');
@@ -22,7 +22,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   const b = await L.start();
   let p, s, l;
 
-  // who sees it: the head chef by PIN, the head chef's Google device with nobody signed in; not a sous chef or staff
+  // who sees it: chef PIN sessions and verified admin access. Ordinary staff cannot load the editor.
   p = await L.open(b, '#/recipes', { who: 'ann', extra: cfg(), wait: 1400 });
   l = await L.chefItems(p);
   ok(l.includes('manage') && l.indexOf('manage') > l.indexOf('pings'), 'head chef by PIN: Recipes & drawings is in the chef hat, under More after the Every day rows (' + l.join(', ') + ')');
@@ -35,7 +35,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
     ok(!l.includes('manage'), who + ': no Manage Recipes & Drawings in the menu (' + l.join(', ') + ')');
     ok(await p.$('#r-edit a') === null, who + ': no Change this recipe on the card');
     await go(p, '#/manage'); await L.settle(p, 500);
-    ok(/Only the head chef can change recipes/.test(await txt(p, '#rtitle') || ''), who + ': #/manage says only the head chef can change recipes');
+    ok(await txt(p, '#rtitle') === 'Head chefs, sous chefs and admins can change recipes', who + ': #/manage names the authorised roles');
     ok(!mgFetched(p), who + ': the recipe editor is never downloaded');
     if (who === 'bo') {
       const res = await p.evaluate(k => {
@@ -46,6 +46,10 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
     }
     await p.context().close();
   }
+  p = await L.open(b, '#/manage', { who: 'sam', extra: cfg() });
+  await wait(p, () => !!document.getElementById('mg-q'));
+  ok(mgFetched(p) && !!(await p.$('#mg-q')), 'sous chef by PIN: #/manage downloads and opens the editor');
+  await p.context().close();
   p = await L.open(b, '#/recipes', { who: '', admin: true, extra: cfg(), wait: 1400 });
   l = await L.chefItems(p);
   ok(l.includes('manage'), 'head chef\'s Google device, nobody signed in: Manage Recipes & Drawings in the menu (' + l.join(', ') + ')');
@@ -177,7 +181,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'Chicken Burger Refused');
   await p.click('[data-mg="save"]');
   await wait(p, () => !!document.querySelector('.mg-bar .p-err'));
-  ok(/refused/.test(await txt(p, '.mg-bar .p-err') || ''), 'refused: the bar says the book refused it');
+  ok(await txt(p, '.mg-bar .p-err') === 'Not saved. The book refused this change. Your changes are kept on this device. Try again.', 'refused: the bar reports the refusal and keeps the draft without guessing the cause');
   ok(/Refused/.test(await p.evaluate(() => localStorage.getItem('lk.mg.draft.burger') || '')), 'refused: the change is kept on this device');
   await p.evaluate(() => { window.__fake.mode = 'ok'; });
 
