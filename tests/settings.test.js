@@ -115,6 +115,34 @@ const caps = p => p.evaluate(() => [...document.querySelectorAll('.st-caps li')]
   ok(p.errors.length === 0, 'sections: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // At Extra large text the current values fit with their disclosure chevrons on a narrow shared screen.
+  const longSection = 'Grill and the hot-larder lunch station';
+  const longExtra = { [fsKey(['config', 'main'])]: { ...cfg, kitSecs: [{ id: 'grill', name: longSection, off: false }] } };
+  const longPick = JSON.stringify(JSON.stringify({ d: today, sec: 'grill', name: longSection, self: true }));
+  for (const width of [320, 390]) {
+    p = await L.open(b, '#/settings', { who: 'ann', width, deviceMode: 'shared', settings: { text: 'xlarge' }, extra: longExtra,
+      init: { content: 'localStorage.setItem("lk.sec.ann", ' + longPick + ');' } });
+    await L.waitFor(p, () => !!document.querySelector('#st-h-section'));
+    const summaries = await p.evaluate(() => ['section', 'device'].map(id => {
+      const button = document.getElementById('st-h-' + id), summary = button.querySelector('.st-v'), text = summary.firstElementChild;
+      const range = document.createRange();
+      range.selectNodeContents(text);
+      const textBox = text.getBoundingClientRect(), row = button.getBoundingClientRect();
+      return { text: text.textContent, lines: range.getClientRects().length,
+        fits: text.scrollWidth <= text.clientWidth + 1 && range.getBoundingClientRect().right <= textBox.right + 1,
+        arrow: getComputedStyle(summary, '::after').content !== 'none' && summary.getBoundingClientRect().right > textBox.right,
+        height: row.height, closed: button.getAttribute('aria-expanded') === 'false' && document.getElementById(button.getAttribute('aria-controls')).hidden };
+    }));
+    ok(summaries[0].text === longSection && summaries[1].text === 'Shared kitchen screen' && summaries.every(x => x.fits && x.arrow && x.closed && x.height >= 44),
+      width + ' px Extra large: both current values fit with their disclosure chevrons (' + JSON.stringify(summaries) + ')');
+    ok(!(await L.overflow(p)), width + ' px Extra large: the Settings page has no sideways scroll');
+    await p.locator('#st-h-section').focus();
+    await p.keyboard.press('Enter');
+    ok(await p.locator('#st-h-section').evaluate(e => e === document.activeElement && e.getAttribute('aria-expanded') === 'true') && await p.locator('#st-b-section').isVisible(),
+      width + ' px Extra large: the section opens in place and keeps the keyboard focus');
+    await p.context().close();
+  }
+
   // A name with markup in it shows as words on the card (everything from Firestore goes through esc())
   const trap = '<img src=x onerror="window.__bad=1">&Ann';
   const cfg2 = L.seed()[fsKey(['config', 'main'])];

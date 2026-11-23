@@ -385,6 +385,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
    never put two tinted rows together. The words sit in from the tint's edge. The small grey lines are --muted, since
    --faint is 4.3:1 on the tint. Kitchen, Overview uses the same rows outside .st-grp and stays as it is. */
 .st-grp .st-btn { padding-inline: 0.75rem; }
+.st-grp .st-v > span { overflow: visible; overflow-wrap: anywhere; white-space: normal; }
 .st-grp .st-body.set-block { padding-inline: 0.75rem; }
 .st-grp .st-sub { color: var(--muted); }
 .st-grp .st-row:nth-child(even of :not([hidden], .st-qr)) { background: var(--beige); }
@@ -5416,7 +5417,7 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 /* ---------- Gap fix: Home (8 Nov 2026) ----------
    From the audit of the redesign against its drawings: a chevron on board rows that open something and have no time,
    Coming up with the next days' order cut-offs (chefs only) and a week of functions, and On today from 720 px. */
-.hm-chev { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; color: rgba(251, 248, 241, 0.7); }
+.hm-chev { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; color: var(--bar-text); }
 .hm-up:has(#hm-cuts:not([hidden])) { display: block; }
 #hm-cuts[hidden] { display: none; }
 .hm-cuts { list-style: none; margin: 0 0 0.2rem; padding: 0; }

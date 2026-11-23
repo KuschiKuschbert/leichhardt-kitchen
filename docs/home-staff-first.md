@@ -51,7 +51,7 @@ Local evidence: the new desktop contract failed 25 of 45 checks on the original 
 
 The owner requested a different colour for Now and next and a celebration that spans desktop width to take less height. This is a small visual refinement of the current Home, with no new controls, data reads or workflow. Quick council check: simplify using the existing palette and available space. Staff context remains zero taps and full-team detail one tap.
 
-Now and next uses the existing warm `--hit` surface, dark `--ink` text and orange `--small-ink` labels/urgent badges, with an orange edge. Your day retains charcoal. Secondary text, separators and focus outlines adapt to the light surface; reminders retain their words and times.
+Now and next uses the existing warm `--hit` surface, dark `--ink` text and orange `--small-ink` labels/urgent badges, with an orange edge. Your day retains charcoal. Secondary text, separators, chevrons and focus outlines adapt to the light surface. Reminders retain their words and times.
 
 From 1100 px, the existing celebration note spans the Home content width, with its icon/title/language beside the complete explanation. No text is truncated. Six language sizing copies, cycling, reduced motion and the calendar remain unchanged. Phone/tablet celebration layout and work-page explanation dialogs retain their current arrangement.
 
