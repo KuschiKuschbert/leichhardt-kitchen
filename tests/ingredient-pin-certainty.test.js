@@ -46,6 +46,24 @@ function fixture() {
       { label: 'Unwritten side', link: 'zz-pin-missing', note: 'In a small pot.', x: 50, y: 88 }
     ]),
     plate('zz-pin-dressing', 'Checked dressing', [{ q: '10 g', name: 'Yoghurt', tags: ['Milk'] }], []),
+    plate('zz-pin-stock', 'Replacement stock', [{ q: '10 g', name: 'Tofu', tags: ['Soy'] }], []),
+    // A kept Studio drawing can retain the old link after the ingredient is edited in Manage.
+    plate('zz-pin-changed', 'Test updated ingredients', [
+      { q: '20 g', name: 'Unlinked garnish', none: false },
+      { q: '10 g', name: 'Relinked sauce', link: 'zz-pin-stock' },
+      { q: '1 pot', name: 'Unchanged dressing', link: 'zz-pin-dressing' },
+      { q: '5 g', name: 'Split topping (first)', link: 'zz-pin-stock' },
+      { q: '5 g', name: 'Split topping', link: 'zz-pin-dressing' },
+      { q: '5 g', name: 'Checked herbs', none: true }
+    ], [
+      { label: 'Unlinked garnish', ing: 'Unlinked garnish', link: 'zz-pin-dressing', x: 30, y: 24 },
+      { label: 'Relinked sauce', ing: 'Relinked sauce', link: 'zz-pin-dressing', x: 70, y: 24 },
+      { label: 'Unchanged dressing', ing: 'Unchanged dressing', link: 'zz-pin-dressing', x: 30, y: 55 },
+      { label: 'Authored garnish', ing: 'Unlinked garnish', link: 'zz-pin-dressing', own: true, x: 70, y: 55 },
+      { label: 'Split topping', ing: 'Split topping', link: 'zz-pin-dressing', x: 50, y: 80 },
+      { label: 'Checked herbs', ing: 'Checked herbs', tags: ['Milk'], x: 15, y: 78 },
+      { label: 'House herbs', ing: 'Checked herbs', tags: ['Milk'], own: true, x: 85, y: 78 }
+    ]),
     plate('zz-pin-hand', 'Test hand-set plate', [{ q: '100 g', name: 'Green beans' }], [
       { label: 'Green beans', x: 50, y: 50 }
     ], { contains: [], check: [] })
@@ -84,7 +102,7 @@ function fixture() {
     p = await L.open(b, '#/recipes', { ...opts, base: process.env.PIN_FIXTURE_BASE, extra: fixture(), width: 320, settings: { view: 'pass', text: 'xlarge' } });
     await L.waitFor(p, () => !!document.querySelector('a[href="#/r/zz-pin-checks"]'), null, 10000);
     if (process.env.PIN_FIXTURE_BASE) {
-      ok(await p.evaluate(() => !window.LK_APP.byId('carbonara') && window.LK_DATA.recipes.length === 3), 'separate venue: signed out, only its own three mirrored recipes are present');
+      ok(await p.evaluate(() => !window.LK_APP.byId('carbonara') && window.LK_DATA.recipes.length === 5), 'separate venue: signed out, only its own five mirrored recipes are present');
     }
     await p.locator('a[href="#/r/zz-pin-checks"]').first().press('Enter');
     const count = () => p.evaluate(() => [window.__fake.bill.length, window.__fake.writes.length]);
@@ -112,6 +130,23 @@ function fixture() {
     await pin(p, 'Dressing').press('Enter');
     await L.waitFor(p, () => location.hash === '#/r/zz-pin-checks/zz-pin-dressing');
     ok((await p.locator('#rtitle').innerText()).includes('Checked dressing'), 'a linked pin still opens its own recipe');
+    await p.evaluate(() => { location.hash = '#/r/zz-pin-changed'; });
+    await L.waitFor(p, () => document.querySelector('#rtitle')?.textContent === 'Test updated ingredients');
+    const local = async name => (await pin(p, name).evaluate(el => el.tagName)) === 'BUTTON';
+    const href = name => pin(p, name).getAttribute('href');
+    ok(/Unlinked garnish[\s\S]*Fish\?/.test(await p.locator('.ing-row').filter({ hasText: 'Unlinked garnish' }).innerText()) && /Fish\?/.test(await pin(p, 'Unlinked garnish').innerText()), 'a retained Studio pin marks the now-unlinked unchecked ingredient as possible');
+    ok(await local('Unlinked garnish') && NOT_CHECKED.test(await openPin(p, 'Unlinked garnish')), 'a retained Studio pin opens the unlinked ingredient’s local warning');
+    ok((await href('Relinked sauce')) === '#/r/zz-pin-changed/zz-pin-stock', 'a retained Studio pin opens the ingredient’s current replacement recipe');
+    ok((await href('Unchanged dressing')) === '#/r/zz-pin-changed/zz-pin-dressing', 'an unchanged Studio pin keeps its recipe link');
+    ok((await href('Authored garnish')) === '#/r/zz-pin-changed/zz-pin-dressing', 'a hand-authored pin keeps its independent recipe link');
+    ok(await local('Split topping') && VERIFY.test(await openPin(p, 'Split topping')), 'an exact name colliding with a shorter Studio name asks for confirmation without opening the old recipe');
+    body = await openPin(p, 'Checked herbs');
+    ok(/Milk\?/.test(body) && VERIFY.test(body) && !NONE.test(body), 'conflicting stored Milk is kept as possible when the mapped ingredient has been checked as none');
+    body = await openPin(p, 'House herbs');
+    ok(/Milk/.test(body) && !/Milk\?/.test(body) && !VERIFY.test(body), 'explicitly authored Milk stays definite on its own distinct pin');
+    ok(!(await pin(p, 'Checked herbs').getAttribute('class')).includes('lit'), 'the stored Milk disagreement does not mark unrelated Fish');
+    await lens(p, 'Milk');
+    ok(/Checked herbs · Milk\?/.test(await pin(p, 'Checked herbs').innerText()), 'Contains Milk keeps the same disagreement as possible');
     await p.evaluate(() => { location.hash = '#/r/zz-pin-hand'; });
     await L.waitFor(p, () => document.querySelector('#rtitle')?.textContent === 'Test hand-set plate');
     body = await openPin(p, 'Green beans');

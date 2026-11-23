@@ -37,6 +37,8 @@ The Pass uses the same ingredient check for the pin's details and the Contains l
 - A checked pin keeps **No listed allergens** when no allergen is listed. A hand-set recipe can be checked as a whole while an untagged pin still points to the recipe's allergen list.
 - An unchecked part says **Allergens not checked yet**. A linked card still to come says **Allergens incomplete**. An ambiguous or unmapped pin with no authored tags asks for confirmation. Confirmed and possible listed tags remain visible next to the warning.
 - Contains marks the same uncertain part as possible. A definite listed tag takes priority for its own allergen. Existing links keep opening their recipes. The plate artwork, amounts and notes stay as authored. Pins use the loaded recipe and add no reads or writes.
+- A Studio pin with a saved link follows its uniquely matched ingredient's current recipe. If the ingredient has been unlinked, the pin opens its own detail. An ambiguous Studio name asks for confirmation. Hand-authored recipe links keep their chosen target.
+- If a Studio pin still lists an allergen after its matched ingredient was checked as none, the pin shows its listed allergen as possible and asks staff to check the label or a chef. A hand-authored pin keeps its own explicit tags.
 
 ## The choice: how do the recipes already in js/data.js count?
 

@@ -1300,24 +1300,37 @@
       return { ingredient: i, name: name, short: short, parts: short.split(PIN_PARTS) };
     });
   }
-  function pinIngredientMatches(ingredients, name) {
-    var exact = ingredients.filter(function (i) { return i.name === name; });
+  function pinIngredientMatches(ingredients, name, studioName) {
+    // Studio names can be stripped already, even when another ingredient has the shorter name exactly.
+    var exact = ingredients.filter(function (i) { return i.name === name || (studioName && i.short === name); });
     if (exact.length) return exact;
     var short = ingredients.filter(function (i) { return i.short === name; });
     return short.length ? short : ingredients.filter(function (i) { return i.parts.indexOf(name) >= 0; });
   }
-  function pinAllergens(r, p, ingredients) {
-    var info = { tags: (p.tags || []).slice(), unchecked: false, incomplete: false, unverified: false, cardOnly: false };
+  function pinRecipeLink(p, ingredients) {
+    if (!p.link || !p.ing || p.own) return p.link;
+    // A retained Studio drawing can have the old link from before the ingredient was edited.
+    var matches = pinIngredientMatches(ingredients, pinPartName(p.ing), true);
+    return matches.length === 1 ? matches[0].ingredient.link : null;
+  }
+  function pinAllergens(r, p, link, ingredients) {
+    var info = { tags: (p.tags || []).slice(), unchecked: false, incomplete: false, unverified: false, cardOnly: false, tagConflict: false };
     function addLink(id) {
       if (!byId[id]) { info.incomplete = true; return; }
       info.tags = info.tags.concat(tags[id]);
       if (unchecked[id].length) info.unchecked = true;
       if (missing[id].length) info.incomplete = true;
     }
-    if (p.link) addLink(p.link);
+    if (link) addLink(link);
     else {
-      var ref = pinPartName(p.ing || p.label), exact = pinIngredientMatches(ingredients, ref), parts = ref.split(PIN_PARTS);
-      var candidates = exact.length ? [exact] : parts.map(function (name) { return pinIngredientMatches(ingredients, name); });
+      var ref = pinPartName(p.ing || p.label), studioName = p.ing && !p.own;
+      var exact = pinIngredientMatches(ingredients, ref, studioName), parts = ref.split(PIN_PARTS);
+      var candidates = exact.length ? [exact] : parts.map(function (name) { return pinIngredientMatches(ingredients, name, studioName); });
+      if (studioName && exact.length === 1 && exact[0].ingredient.none === true && info.tags.length) {
+        // Old pin tags can be a Studio copy or tags a chef assigned. Keep the warning without calling it definite.
+        info.tags = info.tags.map(function (t) { return t.endsWith('?') ? t : t + '?'; });
+        info.tagConflict = true;
+      }
       candidates.forEach(function (matches) {
         if (matches.length !== 1) {
           // A legacy label can have its own authored tags. An ambiguous or declared part still needs checking.
@@ -1334,23 +1347,23 @@
     info.tags = info.tags.filter(function (t, i, all) { return all.indexOf(t) === i && !(t.endsWith('?') && all.indexOf(t.slice(0, -1)) >= 0); });
     return info;
   }
-  function pinHTML(r, p, k, stack, info) {
+  function pinHTML(r, p, link, k, stack, info) {
     var h = null;
     if (ui.lens) {
-      h = p.link ? (byId[p.link] ? hitId(p.link) : 'may') : hit(info.tags) ||
+      h = link ? (byId[link] ? hitId(link) : 'may') : hit(info.tags) ||
         (info.unchecked || info.incomplete || info.unverified || (info.cardOnly && hitId(r.id)) ? 'may' : null);
     }
     var left = p.side ? p.side === 'left' : p.x > 65;
     var cls = 'pin' + (left ? ' left' : '') + (h ? ' lit' : '') + (ui.pick === k ? ' on' : '');
     var label = esc(p.label) + (h ? ' · ' + esc(lensWord(h)) : '');
     var pos = 'left: ' + p.x + '%; top: ' + p.y + '%';
-    var inner = '<span class="ring">' + (p.link ? ICON.out : '<i></i>') + '</span><span class="plabel">' + label + '</span>';
-    if (p.link && byId[p.link]) return '<a class="' + cls + '" style="' + pos + '" href="' + href(stackTo(stack, p.link)) + '" aria-label="Open recipe: ' + esc(p.label + (h ? (h === 'may' ? ', may have ' : ', has ') + ui.lens : '')) + '">' + inner + '</a>';
+    var inner = '<span class="ring">' + (link ? ICON.out : '<i></i>') + '</span><span class="plabel">' + label + '</span>';
+    if (link && byId[link]) return '<a class="' + cls + '" style="' + pos + '" href="' + href(stackTo(stack, link)) + '" aria-label="Open recipe: ' + esc(p.label + (h ? (h === 'may' ? ', may have ' : ', has ') + ui.lens : '')) + '">' + inner + '</a>';
     return '<button type="button" class="' + cls + '" style="' + pos + '" data-act="pick" data-val="' + k + '" data-k="pick:' + k + '" aria-pressed="' + (ui.pick === k) + '">' + inner + '</button>';
   }
   function pinDetail(p, info) {
     var warning = info.unchecked ? 'Allergens not checked yet.' : info.incomplete ? 'Allergens incomplete.' :
-      info.unverified ? 'Allergens not confirmed for this label.' : '';
+      info.unverified ? 'Allergens not confirmed for this label.' : info.tagConflict ? 'Allergen details differ.' : '';
     var listed = info.tags.length ? '<div class="chips">' + info.tags.map(function (t) {
       return '<span class="tag' + (t.endsWith('?') ? ' maybe' : '') + '">' + esc(t) + '</span>';
     }).join('') + '</div>' : '';
@@ -1373,14 +1386,15 @@
     }).join('') + '</nav>');
     var left;
     if (dish) {
-      var pick = r.pins[ui.pick], pk = pick && (!pick.link || !byId[pick.link]) ? pick : null;
-      var ingredients = ui.lens || pk ? pinIngredientRows(r) : [], pickedInfo;
+      var pick = r.pins[ui.pick], needsIngredients = ui.lens || pick || r.pins.some(function (p) { return p.link && p.ing && !p.own; });
+      var ingredients = needsIngredients ? pinIngredientRows(r) : [], pickedInfo;
       left = '<div id="r-plate" class="stage' + (ui.lens ? ' lensed' : '') + (r.done ? ' done' : '') + '" data-rid="' + esc(r.id) + '">' + art(r, 'art') + r.pins.map(function (p, k) {
-        var info = p === pk || (ui.lens && !p.link) ? pinAllergens(r, p, ingredients) : null;
-        if (p === pk) pickedInfo = info;
-        return pinHTML(r, p, k, stack, info);
+        var link = pinRecipeLink(p, ingredients), selected = p === pick && (!link || !byId[link]);
+        var info = selected || (ui.lens && !link) ? pinAllergens(r, p, link, ingredients) : null;
+        if (selected) pickedInfo = info;
+        return pinHTML(r, p, link, k, stack, info);
       }).join('') + '</div>' +
-        (pk ? pinDetail(pk, pickedInfo)
+        (pickedInfo ? pinDetail(pick, pickedInfo)
           : '<div class="hint" style="text-align: center">' + (r.pins.length ? 'Tap anything on the plate. A pin with an arrow opens its own recipe.' : 'No pins on this plate yet.') + '</div>') + sideView(r) +
         // a dish used on another (Side Salad on the Grill Maiden's Board) and a dish's tip box, as on Tiles
         usedBox(r, stack, 'Goes on') + tipBox(r);
