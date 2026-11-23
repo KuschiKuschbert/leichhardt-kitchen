@@ -5133,12 +5133,12 @@
   }
   /* ---------- export (Insights, Team, Waste) ---------- */
   function rangeText(n) { var t = dayNow(); return n + ' days, ' + dayShort(shift(t, -(n - 1))) + ' to ' + dayShort(t); }
-  // o: { at } for a page that compares nothing and has its own read time (Transfers)
+  // o: { at, exportWait } for a page with its own read time and CSV readiness (Transfers)
   // a day of prep lines could not be read (loadStats): said under the filters, and no CSV until it is in
   function statsGaps() { return !!(S.stats && S.stats.miss && S.stats.miss.length); }
   function statsMiss(st) { return st && st.miss && st.miss.length ? '<p class="p-err" role="alert">' + MISS_TEXT + '</p>' : ''; }
   function toolsHTML(kind, title, o) {
-    var n = S.statsRange, at = o ? o.at : S.stats && S.stats.at, gap = !o && statsGaps();
+    var n = S.statsRange, at = o ? o.at : S.stats && S.stats.at, gap = o ? o.exportWait : statsGaps();
     return '<div class="a-tools"><div><h3 class="a-title">' + esc(title) + '</h3><span class="hint">' + esc(rangeText(n)) + (o ? '.' : ', compared with the ' + n + ' days before.') + '</span></div>' +
       // the export buttons fold into one Export menu, so the first screen is the numbers, not the buttons
       '<details class="a-tbtns a-export"><summary class="btn">Export</summary><div class="btn-row"><button type="button" class="btn" data-p="csv" data-v="' + kind + '"' + (gap ? ' disabled' : '') + '>Download CSV</button></div></details></div>' +
@@ -5171,13 +5171,14 @@
           typeof x.onBy === 'string' ? x.onBy : '', typeof x.onAt === 'number' && x.onAt ? hm(x.onAt) : '', x.done && typeof x.onAt === 'number' && x.onAt && x.doneAt > x.onAt ? Math.round((x.doneAt - x.onAt) / 60000) : '']);
       }); });
       downloadCSV('leichhardt-prep-lines-' + tag + '.csv', rows);
-    } else if (kind === 'transfers' && S.xStats && !S.xStats.loading) {
+    } else if (kind === 'transfers') {
+      if (xReportWait(n)) { toast(X_CSV_WAIT); return; }
       var xd = {}, xv = okey(a.venue); xDays(n).forEach(function (d) { xd[d] = 1; });
       var xr = [['Date', 'Weekday', 'Time', 'Way', 'Venue', 'Who came for it or gave it', 'Item', 'Amount', 'Unit', 'Note', 'Logged by', 'Returned', 'Returned by', 'Returned at']];
       S.xStats.lines.filter(function (x) { return !x.deleted && xd[x.date] && (!xv || okey(x.venue) === xv); })
         .sort(function (p, q) { return (p.date + hm(p.addedAt)) < (q.date + hm(q.addedAt)) ? -1 : 1; })
         .forEach(function (x) { xr.push([x.date, DOWN[DOW.indexOf(parseYmd(x.date).getDay())], hm(x.addedAt), x.dir === 'in' ? 'We took' : 'They took', x.venue || '', x.person || '', x.text, x.amount, x.unit, x.note || '', x.addedBy || '', x.returned ? 'Yes' : 'No', x.returnedBy || '', x.returnedAt ? new Date(x.returnedAt).toISOString() : '']); });
-      if (X_OLD.s === 'ok') xOldList(n).filter(function (x) { return !xv || okey(x.venue) === xv; }).forEach(function (x) { xr.push([x.date, DOWN[DOW.indexOf(parseYmd(x.date).getDay())], hm(x.addedAt), x.dir === 'in' ? 'We took' : 'They took', x.venue || '', x.person || '', x.text, x.amount, x.unit, x.note || '', x.addedBy || '', 'No, still out (before these days)', '', '']); });
+      xOldList(n).filter(function (x) { return !xv || okey(x.venue) === xv; }).forEach(function (x) { xr.push([x.date, DOWN[DOW.indexOf(parseYmd(x.date).getDay())], hm(x.addedAt), x.dir === 'in' ? 'We took' : 'They took', x.venue || '', x.person || '', x.text, x.amount, x.unit, x.note || '', x.addedBy || '', 'No, still out (before these days)', '', '']); });
       downloadCSV('leichhardt-transfers-' + tag + '.csv', xr);
     } else if (kind === 'team' && S.stats && !S.stats.loading) {
       var td = teamData(n), t = [['Person', 'Lines written', 'Days written', 'Lines ticked', 'Days ticked', 'Main section', 'Share in main section', 'Days in a row', 'Based on', 'Rotation', 'Last wrote']];
@@ -7423,6 +7424,25 @@
   }
   function recTemps(x) { return [typeof x.c === 'number' ? num(x.c) + ' °C chilled' : '', typeof x.f === 'number' ? num(x.f) + ' °C frozen' : ''].filter(Boolean).join(', ') || 'no temperature'; }
   function recPart(day, k) { var dd = REC.days[day]; return dd && dd[k]; }
+  function recDayParts(day, row) {
+    var parts = [['w', 'Wastage'], ['x', 'Transfers'], ['t', 'Team plan']];
+    if (REC.board && REC.board.generation && row) parts.push(['a', 'Supplier orders and functions']);
+    return parts.map(function (p) { var part = recPart(day, p[0]); return { name: p[1], state: part ? part.s : 'loading' }; });
+  }
+  function recExportWait(row, parts) {
+    if (!REC.all) return '';
+    if (REC.state === 'error') return REC.err;
+    if (REC.state === 'loading') return 'Print and CSV are available after the nightly records load.';
+    if (!row || !row.fs) return 'Print and CSV are available after the nightly count.';
+    return parts.some(function (p) { return p.state !== 'ok'; }) ? 'Print and CSV are available once all sections load.' : '';
+  }
+  function recOutputAllowed(kind) {
+    if (!intelligenceAllowed() || REC.ctx !== intelligenceContext() || !REC.board) return false;
+    if (kind === 'month') return true;
+    if (kind !== 'day' || !REC.day) return false;
+    var row = recRows()[REC.day];
+    return !recExportWait(row, REC.all ? recDayParts(REC.day, row) : []);
+  }
   function recDayLoad(day) {
     var dd = REC.days[day] = REC.days[day] || {}, ctx = REC.ctx, gen = REC.board && REC.board.generation, row = recRows()[day];
     function part(k, get, use) {
@@ -7469,18 +7489,24 @@
   function recDayHTML(day) {
     var r = recRows()[day], all = REC.all, counted = !!(r && r.fs), c = counted ? r.fs.c : null, y = shift(dayNow(), -1);
     var prev = shift(day, -1), next = shift(day, 1), first = (REC.board && REC.board.from) || day;
-    var parts = [], bad = [];
-    if (all) {
-      recDayLoad(day);
-      [['w', 'Wastage'], ['x', 'Transfers'], ['t', 'Team plan'], ['a', 'Supplier orders and functions']].forEach(function (k) {
-        var pt = recPart(day, k[0]); if (k[0] === 'a' && !(REC.board && REC.board.generation && r)) return;
-        if (pt && pt.s === 'error') bad.push(k[1]); else if (!pt || pt.s === 'loading') parts.push(k[1] + ' loading'); else parts.push(k[1]);
-      });
-    }
+    var parts = [], loading = [], bad = [];
+    if (all) recDayLoad(day);
+    var sections = all ? recDayParts(day, r) : [], wait = recExportWait(r, sections), disabled = wait ? ' disabled' : '';
+    sections.forEach(function (p) {
+      if (p.state === 'error') bad.push(p.name);
+      else if (p.state === 'loading') loading.push(p.name);
+      else parts.push(p.name);
+    });
     var status = !counted ? '<p class="rec-line"><span class="rec-wait">Count not ready.</span> The nightly run counts this day at 03:00. Delivery received and the Cleaning page show it now.</p>'
-      : '<p class="rec-line">' + (all ? 'Shown: deliveries, cleaning, cooling' + (parts.length ? ', ' + esc(parts.join(', ').toLowerCase()) : '') + '.' : 'All shown: deliveries, cleaning and cooling.' + (c ? '' : ' Cleaning: count not ready.')) + '</p>' +
+      : '<p class="rec-line">' + (all ? 'Shown: deliveries, cleaning, cooling' + (parts.length ? ', ' + esc(parts.join(', ').toLowerCase()) : '') + '.' +
+        (loading.length ? ' Loading ' + esc(loading.join(', ').toLowerCase()) + '.' : '') : 'All shown: deliveries, cleaning and cooling.' + (c ? '' : ' Cleaning: count not ready.')) + '</p>' +
         (recCool(r.fs.cool) && recCool(r.fs.cool).line ? '<p class="rec-line">' + esc(recCool(r.fs.cool).line) + '</p>' : '');
     var fails = bad.map(function (b) { return '<div class="rec-bad" role="alert"><span>' + esc(b) + ' could not load. ' + esc(b) + ' may have records that are not shown.</span><button type="button" class="chip" data-p="rec-retry">Try again</button></div>'; }).join('');
+    var outputStatus = '';
+    if (wait) {
+      outputStatus = REC.state === 'error' ? '<div class="rec-bad" role="alert"><span>' + esc(wait) +
+        '</span><button type="button" class="chip" data-p="rec-refresh">Refresh</button></div>' : '<p class="rec-line hint" role="status">' + esc(wait) + '</p>';
+    }
     var extra = '';
     if (all) {
       var t = recPart(day, 't'), a = recPart(day, 'a'), lines = [];
@@ -7492,15 +7518,19 @@
       }
       extra = lines.map(function (l) { return '<p class="rec-line">' + l + '</p>'; }).join('');
     }
-    var ev = recEvents(day, all), cl = recCleanLines(c);
+    var ev = recEvents(day, all), cl = recCleanLines(c), empty = '';
+    if (!ev.length && counted) {
+      var w = recPart(day, 'w'), x2 = recPart(day, 'x');
+      empty = 'No deliveries recorded.' + (all && w && w.s === 'ok' ? ' No wastage logged.' : '') + (all && x2 && x2.s === 'ok' ? ' No transfers logged.' : '');
+    }
     return '<div class="rec-dayv">' + '<button type="button" class="chip rec-back" data-p="rec-back">Back to ' + esc(recMonthName(day.slice(0, 7)).split(' ')[0]) + '</button>' +
       '<div class="rec-head"><h4 class="rec-dt" tabindex="-1">' + esc(recLong(day)) + '</h4><div class="rec-acts">' +
       '<button type="button" class="chip" data-p="rec-day" data-d="' + prev + '"' + (prev < first ? ' disabled' : '') + '>‹ ' + esc(recShort(prev)) + '</button>' +
       '<button type="button" class="chip" data-p="rec-day" data-d="' + next + '"' + (next > y ? ' disabled' : '') + '>' + esc(recShort(next)) + ' ›</button>' +
-      '<button type="button" class="chip" data-p="rec-print" data-v="day">Print this day</button><button type="button" class="chip" data-p="rec-csv" data-v="day">Export CSV</button></div></div>' +
+      '<button type="button" class="chip" data-p="rec-print" data-v="day"' + disabled + '>Print this day</button><button type="button" class="chip" data-p="rec-csv" data-v="day"' + disabled + '>Export CSV</button></div></div>' +
       '<div class="chiprow" role="group" aria-label="Show"><button type="button" class="chip" data-p="rec-show" data-v="fs" aria-pressed="' + !all + '">Food safety</button><button type="button" class="chip" data-p="rec-show" data-v="all" aria-pressed="' + all + '">Everything</button></div>' +
-      status + fails + extra +
-      (ev.length ? '<ol class="rec-tl">' + ev.map(function (e) { return '<li><time>' + esc(e[0]) + '</time><span class="rec-k">' + esc(e[1]) + '</span><span>' + esc(e[2]) + '</span></li>'; }).join('') + '</ol>' : counted ? '<p class="rec-line">No deliveries recorded' + (all ? ', no wastage or transfers logged' : '') + '.</p>' : '') +
+      status + fails + outputStatus + extra +
+      (ev.length ? '<ol class="rec-tl">' + ev.map(function (e) { return '<li><time>' + esc(e[0]) + '</time><span class="rec-k">' + esc(e[1]) + '</span><span>' + esc(e[2]) + '</span></li>'; }).join('') + '</ol>' : empty ? '<p class="rec-line">' + esc(empty) + '</p>' : '') +
       (counted ? '<div class="rec-clean"><p class="rec-line"><b>' + esc(cl[0]) + '</b></p>' + cl.slice(1).map(function (l) { return '<p class="rec-line' + (/^Missed/.test(l) ? ' rec-adv' : '') + '">' + esc(l) + '</p>'; }).join('') + '</div>' : '') +
       '<p class="hint">' + esc(REC_COOL) + ' Temperatures as recorded: the book sets no limits until the head chef confirms them.</p></div>';
   }
@@ -7546,7 +7576,7 @@
     return out;
   }
   function recPrint(kind) {
-    if (!REC.board || (kind === 'day' && !REC.day)) return;
+    if (!recOutputAllowed(kind)) return;
     var old = document.getElementById('rec-print'); if (old) old.remove();
     var el = document.createElement('div'); el.id = 'rec-print';
     el.innerHTML = recPrintText(kind).map(function (x) { return x[0] === 'h' ? '<h1>' + esc(x[1]) + '</h1>' : x[0] === 'd' ? '<h2>' + esc(x[1]) + '</h2>' : '<p>' + esc(x[1]) + '</p>'; }).join('');
@@ -7556,7 +7586,7 @@
     try { window.print(); } catch (e) { done(); }
   }
   function recCSV(kind) {
-    if (!REC.board) return;
+    if (!recOutputAllowed(kind)) return;
     var rows = recRows(), out = [['Date', 'Kind', 'Time', 'What', 'Detail', 'Who']], y = shift(dayNow(), -1);
     function day(d, all) {
       var r = rows[d];
@@ -11046,14 +11076,26 @@ if (list.length) sg('oreg', 's');
   function loadXStats(force) {
     if (!kitchenAccess() || !S.configFull) return;
     if (!fb || S.configState !== 'ok' || !wAll()) return;
-    if (S.xStats && (S.xStats.loading || !force)) return;
-    S.xStats = { loading: true, lines: [], miss: 0 };
-    var dates = xDays(X_DAYS);
+    var ctx = intelligenceContext();
+    if (S.xStats && S.xStats.ctx === ctx && (S.xStats.loading || !force)) return;
+    var request = S.xStats = { ctx: ctx, loading: true, lines: [] }, dates = xDays(X_DAYS);
     Promise.all(dates.map(function (d) {
-      return pastRead(xCol(d), 'x/' + d, d, false, force).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { return null; });
+      // Older cache stamps could come from an offline fallback. This key records confirmed server snapshots.
+      return pastRead(xCol(d), 'x/server/' + d, d, false, force, true).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { return null; });
     })).then(function (res) {
-      S.xStats = { loading: false, at: now(), lines: [].concat.apply([], res.filter(Boolean)), miss: res.filter(function (r) { return !r; }).length }; draw();
+      if (S.xStats !== request || intelligenceContext() !== ctx) return;
+      var days = dates.filter(function (d, i) { return res[i] !== null; });
+      S.xStats = { ctx: ctx, loading: false, at: now(), lines: [].concat.apply([], res.filter(Boolean)), days: days }; draw();
     });
+  }
+  function xMissingDays(n) {
+    var xs = S.xStats;
+    if (!xs || xs.ctx !== intelligenceContext() || xs.loading) return null;
+    return xDays(n).filter(function (d) { return xs.days.indexOf(d) < 0; }).length;
+  }
+  var X_CSV_WAIT = 'CSV is available once all transfers for this report load.';
+  function xReportWait(n) {
+    return !intelligenceAllowed() || xMissingDays(n) !== 0 || X_OLD.ctx !== intelligenceContext() || X_OLD.s !== 'ok';
   }
   // the venues in the 30 days read, one per spelling key, each in the spelling used most
   function xSpell() {
@@ -11086,7 +11128,7 @@ if (list.length) sg('oreg', 's');
   var X_OLD = { ctx: '', s: '', v: [] };
   function xOldLoad(force) {
     var ctx = intelligenceContext();
-    if (!intelligenceAllowed() || (X_OLD.ctx === ctx && X_OLD.s && X_OLD.s !== 'error' && !force) || (X_OLD.ctx === ctx && X_OLD.s === 'loading')) return;
+    if (!intelligenceAllowed() || (X_OLD.ctx === ctx && (X_OLD.s === 'loading' || (X_OLD.s && !force)))) return;
     X_OLD = { ctx: ctx, s: 'loading', v: [] };
     openLoansRead().then(function (l) { if (X_OLD.ctx !== ctx) return; X_OLD = { ctx: ctx, s: 'ok', v: l.filter(function (x) { return !x.deleted && !x.returned; }) }; if (S.name === 'admin' && S.atab === 'transfers') draw(); },
       function () { if (X_OLD.ctx !== ctx) return; X_OLD = { ctx: ctx, s: 'error', v: [] }; if (S.name === 'admin' && S.atab === 'transfers') draw(); });
@@ -11101,14 +11143,15 @@ if (list.length) sg('oreg', 's');
   }
   function xferStatsHTML() {
     loadXStats(false); xOldLoad(false);
-    var xs = S.xStats, n = S.statsRange, vk = okey(AF().venue);
-    var head = '<section class="set-block">' + toolsHTML('transfers', 'Transfers', { at: xs && !xs.loading ? xs.at : 0 }) +
+    var xs = S.xStats, n = S.statsRange, vk = okey(AF().venue), missing = xMissingDays(n), wait = xReportWait(n);
+    var head = '<section class="set-block">' + toolsHTML('transfers', 'Transfers', { at: xs && !xs.loading ? xs.at : 0, exportWait: wait }) +
+      (wait ? '<p class="hint" role="status">' + esc(X_CSV_WAIT) + '</p>' : '') +
       '<span class="hint">From the transfer list on the phones: what other venues took from us and what we took from them. Amounts are what people wrote (grams are counted as kg). Days older than 30 are in the backups. <a href="#/transfers">Open the transfer list</a></span>' + xFiltersHTML();
     if (!xs || xs.loading) return head + inkWait('Loading the last ' + X_DAYS + ' days...', 'transfers', 4) + '</section>';
     var ds = {}; xDays(n).forEach(function (d) { ds[d] = 1; });
     var all = xs.lines.filter(function (x) { return ds[x.date] && (!vk || okey(x.venue) === vk); }), lines = all.filter(function (x) { return !x.deleted; });
     var outs = lines.filter(function (x) { return x.dir !== 'in'; }), ins = lines.filter(function (x) { return x.dir === 'in'; });
-    var miss = xs.miss ? '<p class="p-err" role="alert">Could not read ' + xs.miss + (xs.miss === 1 ? ' day' : ' days') + ', so some transfers may be missing. Check the signal and tap Refresh.</p>' : '';
+    var miss = missing ? '<p class="p-err" role="alert">Could not read ' + missing + (missing === 1 ? ' day' : ' days') + '. Counts only include the days that loaded. Check the signal and tap Refresh.</p>' : '';
     var vm = Object.create(null), im = Object.create(null), sp = xSpell();
     lines.forEach(function (x) {
       var vkey = okey(x.venue) || '-', ve = vm[vkey] = vm[vkey] || { v: sp[vkey] || 'No venue', out: [], in: [], last: '', ppl: Object.create(null) };
@@ -11119,8 +11162,8 @@ if (list.length) sg('oreg', 's');
     });
     var venues = Object.keys(vm).map(function (k) { return vm[k]; }), items = Object.keys(im).map(function (k) { return im[k]; });
     var tiles = [[lines.length, lines.length === 1 ? 'transfer' : 'transfers', ''], [outs.length, 'taken from us', ''], [ins.length, 'we took', ''], [venues.length, venues.length === 1 ? 'venue' : 'venues', '']].filter(tileKeep);
-    var log = xLogHTML(all), old = xOldHTML(n);
-    if (!lines.length) return head + miss + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div><p class="hint">No transfers in this time yet.</p>' + old + log + '</section>';
+    var log = xLogHTML(all, missing), old = xOldHTML(n);
+    if (!lines.length) return head + miss + (missing ? '' : '<p class="hint">No transfers in this time yet.</p>') + old + log + '</section>';
     function amounts(l) { return l.length ? esc(l.length + ' (' + xTotText(l) + ')') : '<span class="o-who-i">none</span>'; }
     var venueList = lvHTML({
       key: 'xfer-venues', items: venues, step: 10, tools: 8, noun: ['venue', 'venues'], ph: 'Search venues', empty: 'No transfers in this time.',
@@ -11152,9 +11195,9 @@ if (list.length) sg('oreg', 's');
   }
   /* Every transfer in the time picked, removed ones too, with Remove and Put back for the head chef (past days are
      corrected here, not on the transfer list). Uses the 30 days loadXStats already read. */
-  function xLogHTML(l) {
-    return '<h3 class="a-ch-h">Every transfer</h3><span class="hint">Remove a transfer that was logged by mistake. Removed ones stay here, so you can put them back.</span>' + lvHTML({
-      key: 'xfer-log', items: l, step: 15, tools: 8, noun: ['transfer', 'transfers'], ph: 'Search transfers', empty: 'No transfers in this time.',
+  function xLogHTML(l, missing) {
+    return '<h3 class="a-ch-h">' + (missing ? 'Transfers from the days that loaded' : 'Every transfer') + '</h3><span class="hint">Remove a transfer that was logged by mistake. Removed ones stay here, so you can put them back.</span>' + lvHTML({
+      key: 'xfer-log', items: l, step: 15, tools: 8, noun: ['transfer', 'transfers'], ph: 'Search transfers', empty: missing ? 'No transfer rows loaded.' : 'No transfers in this time.',
       find: function (x) { return x.text + ' ' + (x.venue || '') + ' ' + (x.person || '') + ' ' + (x.addedBy || '') + ' ' + (x.note || ''); },
       filters: [['all', 'All'], ['out', 'They took', function (x) { return !x.deleted && x.dir !== 'in'; }], ['in', 'We took', function (x) { return !x.deleted && x.dir === 'in'; }], ['gone', 'Removed', function (x) { return !!x.deleted; }]],
       sorts: [['new', 'Newest first', function (a, b) { return xNum(b.addedAt) - xNum(a.addedAt); }], ['old', 'Oldest first', function (a, b) { return xNum(a.addedAt) - xNum(b.addedAt); }], ['az', 'A to Z', function (a, b) { return xAz(a.text, b.text); }]],

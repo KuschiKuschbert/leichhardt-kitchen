@@ -21,7 +21,7 @@
                  none: true once checked and none of the ten allergens is in it }
                Every ingredient needs tags, none: true or a link. One with none of them shows
                "Allergens not checked yet" on the card and is left out of Free from (19 Nov 2026). The head
-               chef left 29 label-dependent products not checked (chips, bacon, the bought-in sauces...) until
+               chef left label-dependent products not checked (chips, bacon, the bought-in sauces...) until
                he reads their labels: tests/allergen-check.test.js lists them (LABELS).
     pins       (plated dishes, The Pass view) where each part sits on the plate drawing:
                { label, x, y (percent across and down), side ('left' or 'right' for the label,
@@ -59,7 +59,7 @@
   under "Made here, on Prep". Every other platter item is to order. Add or take out a name to change it.
 */
 window.LK_DATA = {
-  updated: '19 November 2026',
+  updated: '23 November 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
   fnStock: ['BBQ sauce', 'Sweet chilli sauce', 'Sweet soy sauce', 'Caramelised onions', 'Basil pesto'],
   menuOrder: [
@@ -522,7 +522,7 @@ window.LK_DATA = {
         { q: '1', name: 'Milk bun', note: 'sliced', tags: ['Gluten', 'Milk', 'Egg?', 'Soy?'] },
         { q: '180 g', name: 'Blue grenadier fillet', note: 'skinless, MSC', tags: ['Fish'] },
         { q: '50 ml', name: 'Beer batter', note: 'XXXX', link: 'beer-batter', tags: ['Gluten'] },
-        { q: '70 ml', name: 'Tartare sauce', link: 'tartare', note: 'bought in', tags: ['Egg', 'Soy?'] },
+        { q: '70 ml', name: 'Tartare sauce', link: 'tartare' },
         { q: '[Qty]', name: 'Green oak lettuce', none: true },
         { q: '50 g', name: 'Tomato', none: true },
         { q: '50 g', name: 'Red onion', none: true },
@@ -1394,7 +1394,7 @@ window.LK_DATA = {
         { q: '1', name: 'Poached egg', tags: ['Egg'] },
         { q: '[Qty]', name: 'Toasted sourdough', tags: ['Gluten'] },
         { q: '[Qty]', name: 'Parmesan', tags: ['Milk'] },
-        { q: '[Qty]', name: 'Caesar dressing', tags: ['Egg', 'Fish?', 'Milk?'] }
+        { q: '[Qty]', name: 'Caesar dressing', link: 'caesar-dressing' }
       ],
       pins: [
         { label: 'Cos lettuce', x: 31.2, y: 63.2, side: 'left', tags: [], note: '' },
@@ -1402,8 +1402,32 @@ window.LK_DATA = {
         { label: 'Poached egg', x: 49.9, y: 36.7, side: 'left', tags: ['Egg'], note: '' },
         { label: 'Toasted sourdough', x: 59.2, y: 53.7, side: 'right', tags: ['Gluten'], note: '' },
         { label: 'Parmesan', x: 60.4, y: 43.3, side: 'right', tags: ['Milk'], note: 'Shaved.' },
-        { label: 'Caesar dressing', x: 42.5, y: 62.4, side: 'right', tags: ['Egg', 'Fish?', 'Milk?'], note: '' }
+        { label: 'Caesar dressing', x: 42.5, y: 62.4, side: 'right', link: 'caesar-dressing', note: '' }
       ]
+    },
+    {
+      id: 'caesar-dressing', no: '143', kind: 'batch', forLine: 'For the Pub Caesar', name: 'Caesar Salad Dressing', art: 'caesar-dressing',
+      yield: 'Batch: 5 L.',
+      ingredients: [
+        { q: '3 L', name: 'Mayonnaise', note: 'Approximate. Reserve some to finish at 5 L.', tags: ['Egg'] },
+        { q: '30 cloves', name: 'Garlic', note: 'Minced', none: true },
+        { q: '450 g', name: 'Anchovy fillets', note: 'Minced', tags: ['Fish'] },
+        { q: '450 g', name: 'Parmesan cheese', note: 'Grated', tags: ['Milk'] },
+        { q: '300 ml', name: 'Lemon juice', none: true },
+        { q: '300 ml', name: 'Worcestershire sauce', tags: ['Fish?', 'Gluten?', 'Soy?'] },
+        { q: '300 ml', name: 'Dijon mustard' },
+        { q: '150 ml', name: 'Red wine vinegar', none: true },
+        { q: '150 ml', name: 'Olive oil', none: true },
+        { q: '', name: 'Salt and pepper', note: 'To taste', none: true }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Reserve 500 ml of the mayonnaise. Blend the rest with the garlic, anchovies, Parmesan, lemon juice, Worcestershire sauce, Dijon, vinegar and oil using a stick blender.',
+          'Let any foam settle. Measure the dressing and blend in enough of the reserved mayonnaise to bring the finished batch to 5 L. Season with salt and pepper to taste.',
+          'Transfer to clean squeeze bottles and refrigerate.'
+        ] }
+      ],
+      labelNote: 'Contains mustard. Check the mayonnaise, Worcestershire sauce and Dijon labels.'
     },
     {
       id: 'green-bowl', art: 'green-bowl', no: '62', kind: 'main', forLine: 'Salad', name: 'Green Bowl',
@@ -2414,31 +2438,60 @@ window.LK_DATA = {
     },
     {
       id: 'mushroom-sauce', no: '76', kind: 'batch', forLine: 'For the Grill Maiden\'s Board', name: 'Mushroom Sauce', short: 'Mushroom sauce', art: 'mushroom-sauce',
-      yield: 'Batch: 5 L. One portion of sauce is 50 ml.',
+      yield: 'Batch: 12 L. One portion of sauce is 50 ml.',
       ingredients: [
-        { q: '960 g', name: 'Mushrooms' },
-        { q: '600 g', name: 'Gravy powder' },
-        { q: '80 g', name: 'Crushed garlic' },
-        { q: '1', name: 'Large onion' },
-        { q: '400 ml', name: 'Cooking cream', tags: ['Milk'] },
-        { q: '3', name: 'Thyme sprigs' },
-        { q: '80 ml', name: 'Red cooking wine' },
-        { q: '2 g', name: 'Cracked black pepper' },
-        { q: '5 g', name: 'Table salt' },
-        { q: '200 ml', name: 'Water', note: 'for the slurry' }
+        { q: '2.5 kg', name: 'Button mushrooms', none: true },
+        { q: '1.5 kg', name: 'Gravy powder', note: 'Knorr Rich Brown GF' },
+        { q: '200 g', name: 'Crushed garlic', none: true },
+        { q: '200 g', name: 'Brown onion', none: true },
+        { q: '1 L', name: 'Cooking cream', tags: ['Milk'] },
+        { q: '0.5 bunch', name: 'Thyme', none: true },
+        { q: '500 ml', name: 'Red cooking wine' },
+        { q: '5 g', name: 'Cracked black pepper', none: true },
+        { q: '15 g', name: 'Table salt', none: true },
+        { q: '1 L', name: 'Water', note: 'for the slurry', none: true },
+        { q: 'As needed', name: 'Water', note: 'for the pot and to bring the finished batch to 12 L', none: true }
       ],
       sections: [
         { title: 'Method', steps: [
-          'Cook off the ingredients individually: the mushrooms, onion, garlic and thyme.',
+          'Sauté the onion, garlic and mushrooms. Add the thyme and check the seasoning with the cracked black pepper and table salt.',
           'Deglaze with the red cooking wine.',
-          'Top up with the cooking cream.',
-          'Make a slurry with the gravy powder and 200 ml of water, and add it.',
-          'Season with the cracked black pepper and table salt. [When to add them to confirm]'
+          'Add water to the pot, leaving room for the slurry and cream, and bring it to the boil.',
+          'In a separate bowl, whisk the gravy powder with 1 L of cold water to make a slurry.',
+          'Stir the slurry into the pot and simmer until thickened.',
+          'Remove from the heat, add the cooking cream and top up with hot water as needed to reach 12 L finished.'
         ] }
       ],
-      contains: [{ allergen: 'Milk', from: 'cooking cream' }],
-      check: [],
-      labelNote: 'Check the gravy powder and cooking cream labels.'
+      labelNote: 'Check the gravy powder, red cooking wine and cooking cream labels.'
+    },
+    {
+      id: 'peppercorn-sauce', no: '139', kind: 'batch', forLine: 'For the grill', name: 'Peppercorn Sauce', short: 'Peppercorn sauce', art: 'peppercorn-sauce', aka: 'pepper sauce pepper corn sauce',
+      yield: 'Batch: 12 L.',
+      ingredients: [
+        { q: '[Qty]', name: 'Onion', note: 'finely diced [amount to confirm]', none: true },
+        { q: '150 g', name: 'Crushed garlic', none: true },
+        { q: '0.5 bunch', name: 'Thyme', none: true },
+        { q: '400 g', name: 'Green peppercorns', note: 'half an 800 g tin' },
+        { q: '1 L', name: 'Red cooking wine', note: '[Unit to confirm]' },
+        { q: 'As needed', name: 'Water', note: 'for the pot and to bring the finished batch to 12 L', none: true },
+        { q: '1.5 kg', name: 'Gravy powder', note: 'Knorr Rich Brown GF' },
+        { q: '1 L', name: 'Water', note: 'for the slurry', none: true },
+        { q: '1 L', name: 'Cooking cream', tags: ['Milk'] },
+        { q: '10 g', name: 'Cracked black pepper', none: true },
+        { q: '20 g', name: 'Table salt', none: true }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Cook the finely diced onion, garlic, thyme and green peppercorns until the onion is translucent.',
+          'Add the red cooking wine and reduce by half.',
+          'Add water to the pot, leaving room for the slurry and cream, and bring it to the boil.',
+          'In a separate bowl, whisk the gravy powder with 1 L of cold water to make a slurry.',
+          'Stir the slurry into the boiling pot, then reduce to a simmer.',
+          'Once thickened, remove from the heat, add the cooking cream and season with cracked black pepper and table salt.',
+          'Top up with hot water as needed to reach 12 L finished.'
+        ] }
+      ],
+      labelNote: 'Check the green peppercorn, gravy powder, red cooking wine and cooking cream labels.'
     },
     {
       id: 'diane-sauce', no: '77', kind: 'batch', forLine: "For the Grill Maiden's Board", name: 'Diane Sauce', short: 'Diane sauce', art: 'diane-sauce',
@@ -2555,6 +2608,73 @@ window.LK_DATA = {
       labelNote: 'Check the supplier label for allergens.'
     },
     {
+      id: 'vegan-aioli', no: '140', kind: 'batch', forLine: 'For the green dressing', name: 'Vegan Aioli', art: 'vegan-aioli',
+      yield: 'Batch: about 2.6 L.',
+      ingredients: [
+        { q: '500 ml', name: 'Soy milk', tags: ['Soy'] },
+        { q: '1–2 tbsp', name: 'Dijon mustard', note: 'About half a kitchen spoon' },
+        { q: '1–2 tbsp', name: 'Seeded mustard', note: 'About half a kitchen spoon' },
+        { q: '10 cloves', name: 'Garlic', note: 'Minced or confit', none: true },
+        { q: '100 ml', name: 'Lemon juice', note: 'Adjust to taste', none: true },
+        { q: '2 L', name: 'Vegetable oil', none: true },
+        { q: '', name: 'Salt and pepper', note: 'To taste', none: true }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Blend the soy milk, garlic and lemon juice until well mixed.',
+          'With the blender running, add the vegetable oil in a slow, steady stream until the aioli is thick and creamy. Work in batches if needed.',
+          'Add the Dijon and seeded mustards and blend until combined.',
+          'Blend in a little salt and pepper. Taste and adjust with more lemon juice, salt or pepper as needed.'
+        ] }
+      ],
+      labelNote: 'Contains mustard. Check both mustard labels for other allergens.'
+    },
+    {
+      id: 'green-dressing', no: '141', kind: 'batch', forLine: 'Dressing', name: 'Green Dressing', art: 'green-dressing',
+      yield: 'Batch: based on 1 L vegan aioli.',
+      ingredients: [
+        { q: '1 L', name: 'Vegan aioli', link: 'vegan-aioli' },
+        { q: '1 bunch', name: 'Fresh parsley', none: true },
+        { q: '50 g', name: 'Fresh dill', none: true },
+        { q: '50 g', name: 'Fresh mint', none: true },
+        { q: '50 g', name: 'Fresh chives', none: true },
+        { q: '125 ml', name: 'Lemon juice', note: 'Adjust to taste', none: true },
+        { q: '75 ml', name: 'Olive oil', none: true },
+        { q: '5 cloves', name: 'Garlic', note: 'Minced', none: true },
+        { q: '', name: 'Salt and pepper', note: 'To taste', none: true }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Wash and dry the herbs. Remove tough stems and finely chop the herbs.',
+          'Mix the vegan aioli, minced garlic and lemon juice in a large bowl.',
+          'Slowly drizzle in the olive oil while stirring continuously to emulsify.',
+          'Stir in the chopped herbs. Adjust the balance of the herbs to taste.',
+          'Season with salt and pepper. Taste, adjust the lemon juice and seasoning, and stir well.'
+        ] }
+      ],
+      labelNote: 'Contains mustard from the vegan aioli.'
+    },
+    {
+      id: 'house-dressing', no: '142', kind: 'batch', forLine: 'House dressing', name: 'Salad Dressing (Honey Lime)', art: 'house-dressing',
+      yield: 'Batch: 14 L.',
+      ingredients: [
+        { q: '1.78 L', name: 'Maple syrup', none: true },
+        { q: '1.78 L', name: 'Lime juice', none: true },
+        { q: '9.5 L', name: 'Vegetable oil', note: 'Approximate. Adjust the final amount to yield 14 L.', none: true },
+        { q: '140 ml', name: 'Dijon mustard' },
+        { q: '710 g', name: 'Brown onions', note: 'Peeled. Estimated weight.', none: true },
+        { q: '70 g', name: 'Garlic', note: 'Peeled. Estimated weight.', none: true }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Roughly chop the onions and garlic. Blitz with the maple syrup, lime juice and Dijon mustard using a stick blender.',
+          'With the blender running, add the vegetable oil gradually until smooth. Hold back some oil for the final adjustment.',
+          'Transfer to a graduated container and let any foam settle. Blend in enough of the reserved oil to bring the finished dressing to 14 L.'
+        ] }
+      ],
+      labelNote: 'Contains mustard. Check the Dijon label for other allergens.'
+    },
+    {
       id: 'american-cheese-sauce', art: 'american-cheese-sauce', no: '117', kind: 'batch', forLine: 'For the poutine fries', name: 'American Cheese Sauce', short: 'Cheese sauce',
       yield: 'Bought in. No prep. Serve size is on the dish card.',
       ingredients: [
@@ -2595,16 +2715,23 @@ window.LK_DATA = {
     },
     {
       id: 'tartare', done: true, no: '82', kind: 'batch', forLine: 'For the fish dishes', name: 'Tartare Sauce', short: 'Tartare sauce', art: 'tartare',
-      yield: 'Bought in. No prep. Serve size is on each dish card.',
+      yield: 'Batch: based on 1 L mayonnaise.',
       ingredients: [
-        { q: '1', name: 'Tartare sauce', note: 'Oli & Vine tartare sauce, bought in (AVC product).', tags: ['Egg?'] }
+        { q: '1 L', name: 'Mayonnaise', tags: ['Egg', 'Soy?'] },
+        { q: '200 g', name: 'Pickles', note: 'Finely chopped', none: true },
+        { q: '100 g', name: 'Capers', note: 'Finely chopped', none: true },
+        { q: '100 g', name: 'Red onions', note: 'Finely chopped', none: true },
+        { q: '50 g', name: 'Fresh parsley', note: 'Finely chopped', none: true },
+        { q: '30 ml', name: 'Lemon juice', none: true },
+        { q: '', name: 'Salt and pepper', note: 'To taste', none: true }
       ],
       sections: [
-        { title: 'Method', steps: ['Bought in. No prep.'] }
+        { title: 'Method', steps: [
+          'Use a stick blender to blitz the pickles, lemon juice, capers, red onions and parsley into a paste.',
+          'Mix the paste into the mayonnaise. Season with salt and pepper to taste.'
+        ] }
       ],
-      contains: [],
-      check: [{ allergen: 'Egg', from: 'tartare sauce' }],
-      labelNote: 'Check the supplier label for allergens.'
+      labelNote: 'Check the mayonnaise, pickle and caper labels.'
     },
     {
       id: 'pizza-sauce', done: true, no: '83', kind: 'batch', forLine: 'For the parmigiana', name: 'Pizza Sauce', short: 'Pizza sauce', art: 'pizza-sauce',

@@ -1141,6 +1141,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .a-export > summary::-webkit-details-marker { display: none; }
 .a-export[open] > summary { background: var(--ink); color: #fff; }
 .a-export .btn-row { margin-top: 0.5rem; }
+.a-export .btn[data-v="transfers"]:disabled { background: var(--surface-reference); }
 .a-upd { margin: 0.4rem 0 0; }
 /* Wastage history: use the admin controls and list cards, with a compact totals strip. */
 .wh-period { align-items: flex-end; margin: 0.8rem 0 0; }
@@ -6342,6 +6343,7 @@ html:has(.tm-focus-page) {
 .rec-wrap.has-day .rec-month { display: none; }
 .rec-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
 .rec-month-nav, .rec-acts { display: flex; flex-wrap: wrap; gap: .5rem; }
+.rec-acts .chip:disabled { color: var(--muted); background: var(--surface-reference); border-color: var(--line); cursor: not-allowed; }
 .rec-month-nav { align-items: center; }
 .rec-month-nav h4 { margin: 0; }
 .rec-days { list-style: none; margin: .3rem 0 0; padding: 0; }
