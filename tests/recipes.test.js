@@ -52,6 +52,8 @@ async function waitForJump(p, id, allowEnd) {
     await p.click(pepper);
     await L.waitFor(p, () => !!document.querySelector('#r-steps'));
     const method = await L.txt(p, '.steps');
+    const ingredients = await L.txt(p, '#r-ing + .ing');
+    ok(/400 g\s*Green peppercorns\s*half an 800 g tin/i.test(ingredients), 'peppercorn sauce: 400 g is half an 800 g tin');
     ok(/12 L finished/.test(method) && /1 L of cold water/.test(method) && /add the cooking cream/.test(method), 'peppercorn sauce: pot water, slurry water and cream finish');
     await p.evaluate(() => { location.hash = '#/recipes'; });
     await L.waitFor(p, () => !!document.querySelector('#find'));

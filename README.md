@@ -271,7 +271,7 @@ All recipes are in **`js/data.js`**. The top of that file explains every field. 
 7. If it is a dish on the guest menu, add its `id` to the right section in `menuOrder` at the top of `js/data.js`, in the spot where the menu prints it. A dish left out of `menuOrder` still shows, under "Other dishes". Batch recipes and components are not listed there.
 8. Change `updated` at the top of the file to today's date.
 
-Mushroom Sauce and Peppercorn Sauce have illustrated 12 L batch cards. Both use 1 L of water for the gravy slurry and top up to the finished yield. Mushroom Sauce uses 500 mL of red cooking wine. The peppercorn onion quantity and wine unit are marked for confirmation.
+Mushroom Sauce and Peppercorn Sauce have illustrated 12 L batch cards. Both use 1 L of water for the gravy slurry and top up to the finished yield. Mushroom Sauce uses 500 mL of red cooking wine. Peppercorn Sauce uses 400 g of green peppercorns (half an 800 g tin). The peppercorn onion quantity and wine unit are marked for confirmation.
 
 ### Batch cards still to come
 

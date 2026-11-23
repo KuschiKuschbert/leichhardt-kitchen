@@ -2446,7 +2446,7 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Onion', note: 'finely diced [amount to confirm]', none: true },
         { q: '150 g', name: 'Crushed garlic', none: true },
         { q: '0.5 bunch', name: 'Thyme', none: true },
-        { q: '600 g', name: 'Green peppercorns' },
+        { q: '400 g', name: 'Green peppercorns', note: 'half an 800 g tin' },
         { q: '1 L', name: 'Red cooking wine', note: '[Unit to confirm]' },
         { q: 'As needed', name: 'Water', note: 'for the pot and to bring the finished batch to 12 L', none: true },
         { q: '1.5 kg', name: 'Gravy powder', note: 'Knorr Rich Brown GF' },
