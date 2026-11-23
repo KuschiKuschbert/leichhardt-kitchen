@@ -1,4 +1,4 @@
-// The drawing editor (#/manage/draw, js/draw.js, 21 Oct 2026): only the head chef opens it. Pieces from the library go
+// Head chefs, sous chefs and admins can open the drawing editor (#/manage/draw, js/draw.js). Pieces from the library go
 // on the plate, move, size, turn, copy, delete, layer and recolour; undo and redo; the servingware swaps under the food.
 // A saved drawing shows on the card and the Pass with labels made from its parts, opens again part by part, reaches a
 // fresh phone, keeps its own copy of each piece when the library changes, and anything unsafe in it is taken out.
@@ -22,10 +22,10 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   const b = await L.start();
   let p, s, w;
 
-  // staff: the page says only the head chef, and neither the editor nor the library is downloaded
+  // Staff see who can edit, and neither the editor nor the library is downloaded.
   p = await L.open(b, '#/manage/draw/new/burger/plate', { who: 'bo', extra: cfg(), wait: 1400 });
   await L.settle(p, 400);
-  ok(/Only the head chef/.test(await txt(p, '#rtitle') || ''), 'staff: #/manage/draw says only the head chef can change recipes');
+  ok(await txt(p, '#rtitle') === 'Head chefs, sous chefs and admins can change recipes', 'staff: #/manage/draw names the authorised roles');
   ok(!p.urls.some(u => /js\/(draw|library|smart)\.js|js\/lib\//.test(u)), 'staff: the drawing editor, the library and the smart creator are never downloaded');
   await p.context().close();
 
