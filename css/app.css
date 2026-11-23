@@ -4610,7 +4610,7 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .tr-card .tr-item .nb-main { min-width: 0; }
 .tr-card .w-amt { white-space: normal; }
 .tr-ret { flex: 0 0 auto; min-height: 44px; padding: 0 12px; gap: 6px; font: 700 0.875rem/1 var(--body); white-space: nowrap; }
-.tr-ret[disabled] { opacity: 0.6; }
+.tr-ret[disabled] { opacity: 0.7; cursor: default; }
 .tr-tick { flex: 0 0 auto; }
 /* On a phone the handwritten words need the room: Make it again goes under the line's second line, still in its row,
    and the words, the reason, the section and who keep the full width (measured at 390 px, 8 Nov 2026) */
