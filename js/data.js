@@ -2424,7 +2424,7 @@ window.LK_DATA = {
         { q: '500 ml', name: 'Red cooking wine' },
         { q: '5 g', name: 'Cracked black pepper', none: true },
         { q: '15 g', name: 'Table salt', none: true },
-        { q: '200 ml', name: 'Water', note: 'for the slurry', none: true },
+        { q: '1 L', name: 'Water', note: 'for the slurry', none: true },
         { q: 'As needed', name: 'Water', note: 'for the pot and to bring the finished batch to 12 L', none: true }
       ],
       sections: [
@@ -2450,7 +2450,7 @@ window.LK_DATA = {
         { q: '1 L', name: 'Red cooking wine', note: '[Unit to confirm]' },
         { q: 'As needed', name: 'Water', note: 'for the pot and to bring the finished batch to 12 L', none: true },
         { q: '1.5 kg', name: 'Gravy powder', note: 'Knorr Rich Brown GF' },
-        { q: '200 ml', name: 'Water', note: 'for the slurry', none: true },
+        { q: '1 L', name: 'Water', note: 'for the slurry', none: true },
         { q: '1 L', name: 'Cooking cream', tags: ['Milk'] },
         { q: '10 g', name: 'Cracked black pepper', none: true },
         { q: '20 g', name: 'Table salt', none: true }
