@@ -8041,7 +8041,7 @@
     if (teamHere()) tmRestoreView();
     if (key) { var el = S.root.querySelector('[data-k="' + key + '"]'); if (el && el._uxTrigger) el = el._uxTrigger; if (el) { if (window.LK_UX && window.LK_UX.restoreFocus) window.LK_UX.restoreFocus(el); else el.focus({ preventScroll: true }); if (start != null && el.setSelectionRange) { try { el.setSelectionRange(start, end); } catch (e) {} } } }
     else if (btnSel) {
-      var back = S.root.querySelector(btnSel);
+      var back = ae.classList.contains('a-find') ? fdTrigger() : S.root.querySelector(btnSel);
       if (!back && tickAt >= 0) { var ticks2 = S.root.querySelectorAll('.nb-box[data-p="tick"]:not([disabled])'); back = ticks2[Math.min(tickAt, ticks2.length - 1)]; }
       if (back) back.focus({ preventScroll: true }); else focusPin();
     }
