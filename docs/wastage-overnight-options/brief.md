@@ -6,7 +6,7 @@ The head chef chose B, **Switch inside the review**. Today opens in the existing
 
 ## Need and council
 
-On the published `fb85be9` source, a synthetic sous chef opened Sunday's review across Brisbane midnight. After closing, Monday's sheet offered only Monday's review and the update guard reported clean. Saving the stale Sunday sheet wrote neither document and replaced its contents on screen with Monday's saved words. Three isolated browser cases reproduced the loss during one PIN session. Round 1 voted Build four times and Build smaller once. The Skeptic limited recovery to an existing same-person draft under the current access rules.
+On the published `fb85be9` source, a synthetic sous chef opened Sunday's review across Queensland midnight. After closing, Monday's sheet offered only Monday's review and the update guard reported clean. Saving the stale Sunday sheet wrote neither document and replaced its contents on screen with Monday's saved words. Three isolated browser cases reproduced the loss during one PIN session. Round 1 voted Build four times and Build smaller once. The Skeptic limited recovery to an existing same-person draft under the current access rules.
 
 All three previews reused the full app shell, the existing review fields and repository typefaces. The fixture had two typed Sunday fields, a different Monday draft, a long name and 12 Monday entries. It used synthetic records and simulated Save and Replace. The counts are full opening entries above the fixed controls, before scrolling.
 

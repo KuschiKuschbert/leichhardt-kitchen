@@ -1,5 +1,17 @@
 # Session map: which note to read, and every file
 
+## The venue name under the KB mark on a phone, 24 November 2026 (chosen and built)
+
+Below 720 px the top bar showed only the KB mark. Three looks were drawn at 360 px (beside, under, in place of the mark); only under fits both Leichhardt and Strand beside Back and every ring, and the head chef chose it for every venue. `.rb-venue` in `js/app.js` and `css/app.css`, `tests/venue-name.test.js`, the venue copy check in `tests/venues.test.js`. [Quick check and measurements](second-venue-options/brief.md#the-venue-name-on-a-phone-chosen-24-november-2026).
+
+## The reading map in CLAUDE.md grouped by area, 24 November 2026
+
+The owner asked for `CLAUDE.md` to be kept short. Its reading map had grown to 86 rows with dates and design detail, against its own rule (one short row, the detail here). The rows are now grouped by area, about 30 of them, and keep every note's path; the dates and the designs chosen stay in the sections below. The file went from 47 to 39 KB. A new note joins its area's row.
+
+## Reopen a Wastage draft after midnight, 23 November 2026 (B chosen and built)
+
+A synthetic sous chef lost Sunday's typed review after Queensland midnight: Monday's sheet replaced it on Save. The head chef chose B, Switch inside the review. Today opens in the review sheet, and an unfinished earlier review of the same person has a dated Resume inside the sheet. Back to today returns to the current date. The main Wastage page stays on today. Built in #835. [Council, previews and checks](wastage-overnight-options/brief.md).
+
 ## Private booking contact in the function editor, 23 November 2026
 
 Round 1 Build smaller, five of five. Round 2 ranked C first with all six. It puts the private contact name or state beside the booking facts and reveals the existing inputs there with Add contact or Edit contact. The same Save writes a changed contact with its booking. The editor carries forward contact fields this person edited and uses the newly read contact for the rest. Older local drafts use the existing conflict decision when saved contact values may have changed. See `js/fnedit.js`, `css/app.css` and `tests/function-booking-contact.test.js`. [Council and checks](function-booking-contact-options/brief.md).
@@ -16,7 +28,7 @@ The existing cut-off and Last order sit in the wide supplier rail, with More on 
 
 The head chef chose A's inline amount and Use, B's visible current amount in a Keep or Replace step and C's calculation disclosure and focus on the draft field. Round 1 was Build smaller, four of five. All six round 2 reviewers ranked A first. One weekly CSV or XLSX and confirmed links feed the chef's manual draft. A single private weekly snapshot serves authorised chefs. [Design, preview measurements, data contract and pending checks](supplier-sales.md)
 
-## Consistency sweep, 19 November 2026 (council, not chosen yet)
+## Consistency sweep, 19 November 2026 (council; the head chef chose all 22 picks on 20 November, built in grouped pull requests)
 
 The head chef asked whether to restyle every page for consistency. Nine auditors and nine verifiers checked every page against `docs/design-patterns.md` and the colour contracts (main `83f8ddd`, 390, 768 and 1280 px). They found 126 findings: 102 confirmed, 16 deliberate and 8 refuted. None needs a page redrawn, and 4 touch service. Round 1 said Build smaller, 3 of 5; the other 2 said Don't build the restyle. The recommendation is no restyle, but a sweep in four grouped pull requests: the service fixes, one failed-read and empty state, the head chef's 25 choices with a stronger `tests/design-patterns.test.js`, then names and the cosmetic tidy. `docs/consistency-sweep-options/brief.md`, register in its `findings.md`.
 
