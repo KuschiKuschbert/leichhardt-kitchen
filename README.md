@@ -127,6 +127,8 @@ Vegan Aioli (card 140) and Green Dressing (card 141) are batch recipes with pan 
 
 Carolina Gold BBQ Sauce, House BBQ Sauce, Alabama White Sauce and Cornbread have batch cards and matching pan drawings. Cornbread and Alabama White link from the ingredients and drawing pins on both smoked boards. The supplied cards have no methods. The head chef instructed us to omit the pecan and unnamed ingredient entries. The drawings reuse existing sauce pans and the library's exact cornbread piece. House BBQ is not substituted for double-smoked BBQ without confirmation. See [smoker batch cards](docs/smoker-batches.md) for the source questions, saved-book overlay limitation and controlled-clock release verification.
 
+Caesar Salad Dressing (card 143) is a 5 L batch with a pan drawing. The Pub Caesar links to it from the ingredient and drawing pin. The house Tartare Sauce replaces the bought-in recipe on card 82 and keeps its fish-dish links and pan drawing.
+
 Two-page guides (22 Nov 2026) show both page buttons side by side. Tap either one to read it in the existing Guide viewer. Closing the viewer returns you to the page button you opened. [Guides](docs/prep-book.md#guides)
 
 ## Tutorial videos in Guides (19 November 2026)

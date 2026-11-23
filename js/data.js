@@ -522,7 +522,7 @@ window.LK_DATA = {
         { q: '1', name: 'Milk bun', note: 'sliced', tags: ['Gluten', 'Milk', 'Egg?', 'Soy?'] },
         { q: '180 g', name: 'Blue grenadier fillet', note: 'skinless, MSC', tags: ['Fish'] },
         { q: '50 ml', name: 'Beer batter', note: 'XXXX', link: 'beer-batter', tags: ['Gluten'] },
-        { q: '70 ml', name: 'Tartare sauce', link: 'tartare', note: 'bought in', tags: ['Egg', 'Soy?'] },
+        { q: '70 ml', name: 'Tartare sauce', link: 'tartare' },
         { q: '[Qty]', name: 'Green oak lettuce', none: true },
         { q: '50 g', name: 'Tomato', none: true },
         { q: '50 g', name: 'Red onion', none: true },
@@ -1394,7 +1394,7 @@ window.LK_DATA = {
         { q: '1', name: 'Poached egg', tags: ['Egg'] },
         { q: '[Qty]', name: 'Toasted sourdough', tags: ['Gluten'] },
         { q: '[Qty]', name: 'Parmesan', tags: ['Milk'] },
-        { q: '[Qty]', name: 'Caesar dressing', tags: ['Egg', 'Fish?', 'Milk?'] }
+        { q: '[Qty]', name: 'Caesar dressing', link: 'caesar-dressing' }
       ],
       pins: [
         { label: 'Cos lettuce', x: 31.2, y: 63.2, side: 'left', tags: [], note: '' },
@@ -1402,8 +1402,32 @@ window.LK_DATA = {
         { label: 'Poached egg', x: 49.9, y: 36.7, side: 'left', tags: ['Egg'], note: '' },
         { label: 'Toasted sourdough', x: 59.2, y: 53.7, side: 'right', tags: ['Gluten'], note: '' },
         { label: 'Parmesan', x: 60.4, y: 43.3, side: 'right', tags: ['Milk'], note: 'Shaved.' },
-        { label: 'Caesar dressing', x: 42.5, y: 62.4, side: 'right', tags: ['Egg', 'Fish?', 'Milk?'], note: '' }
+        { label: 'Caesar dressing', x: 42.5, y: 62.4, side: 'right', link: 'caesar-dressing', note: '' }
       ]
+    },
+    {
+      id: 'caesar-dressing', no: '143', kind: 'batch', forLine: 'For the Pub Caesar', name: 'Caesar Salad Dressing', art: 'caesar-dressing',
+      yield: 'Batch: 5 L.',
+      ingredients: [
+        { q: '3 L', name: 'Mayonnaise', note: 'Approximate. Reserve some to finish at 5 L.', tags: ['Egg'] },
+        { q: '30 cloves', name: 'Garlic', note: 'Minced', none: true },
+        { q: '450 g', name: 'Anchovy fillets', note: 'Minced', tags: ['Fish'] },
+        { q: '450 g', name: 'Parmesan cheese', note: 'Grated', tags: ['Milk'] },
+        { q: '300 ml', name: 'Lemon juice', none: true },
+        { q: '300 ml', name: 'Worcestershire sauce', tags: ['Fish?', 'Gluten?', 'Soy?'] },
+        { q: '300 ml', name: 'Dijon mustard' },
+        { q: '150 ml', name: 'Red wine vinegar', none: true },
+        { q: '150 ml', name: 'Olive oil', none: true },
+        { q: '', name: 'Salt and pepper', note: 'To taste', none: true }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Reserve 500 ml of the mayonnaise. Blend the rest with the garlic, anchovies, Parmesan, lemon juice, Worcestershire sauce, Dijon, vinegar and oil using a stick blender.',
+          'Let any foam settle. Measure the dressing and blend in enough of the reserved mayonnaise to bring the finished batch to 5 L. Season with salt and pepper to taste.',
+          'Transfer to clean squeeze bottles and refrigerate.'
+        ] }
+      ],
+      labelNote: 'Contains mustard. Check the mayonnaise, Worcestershire sauce and Dijon labels.'
     },
     {
       id: 'green-bowl', art: 'green-bowl', no: '62', kind: 'main', forLine: 'Salad', name: 'Green Bowl',
@@ -2650,16 +2674,23 @@ window.LK_DATA = {
     },
     {
       id: 'tartare', done: true, no: '82', kind: 'batch', forLine: 'For the fish dishes', name: 'Tartare Sauce', short: 'Tartare sauce', art: 'tartare',
-      yield: 'Bought in. No prep. Serve size is on each dish card.',
+      yield: 'Batch: based on 1 L mayonnaise.',
       ingredients: [
-        { q: '1', name: 'Tartare sauce', note: 'Oli & Vine tartare sauce, bought in (AVC product).', tags: ['Egg?'] }
+        { q: '1 L', name: 'Mayonnaise', tags: ['Egg', 'Soy?'] },
+        { q: '200 g', name: 'Pickles', note: 'Finely chopped', none: true },
+        { q: '100 g', name: 'Capers', note: 'Finely chopped', none: true },
+        { q: '100 g', name: 'Red onions', note: 'Finely chopped', none: true },
+        { q: '50 g', name: 'Fresh parsley', note: 'Finely chopped', none: true },
+        { q: '30 ml', name: 'Lemon juice', none: true },
+        { q: '', name: 'Salt and pepper', note: 'To taste', none: true }
       ],
       sections: [
-        { title: 'Method', steps: ['Bought in. No prep.'] }
+        { title: 'Method', steps: [
+          'Use a stick blender to blitz the pickles, lemon juice, capers, red onions and parsley into a paste.',
+          'Mix the paste into the mayonnaise. Season with salt and pepper to taste.'
+        ] }
       ],
-      contains: [],
-      check: [{ allergen: 'Egg', from: 'tartare sauce' }],
-      labelNote: 'Check the supplier label for allergens.'
+      labelNote: 'Check the mayonnaise, pickle and caper labels.'
     },
     {
       id: 'pizza-sauce', done: true, no: '83', kind: 'batch', forLine: 'For the parmigiana', name: 'Pizza Sauce', short: 'Pizza sauce', art: 'pizza-sauce',

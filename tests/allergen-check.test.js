@@ -23,6 +23,7 @@ const R0 = [
 // carry over by name), one saved by the new form with a line left not checked (none: false: nothing carries)
 global.window = {}; require('../js/data.js');
 const DRESSING_LABELS = {
+  'caesar-dressing': ['Dijon mustard'],
   'vegan-aioli': ['Dijon mustard', 'Seeded mustard'],
   'green-dressing': ['Vegan Aioli'],
   'house-dressing': ['Dijon mustard']
@@ -68,7 +69,10 @@ const NOT = /Allergens not checked yet/;
   const unchecked = await p.evaluate(() => window.LK_DATA.recipes.filter(r => window.LK_APP.unchecked(r.id).length).map(r => [r.id, window.LK_APP.unchecked(r.id)]));
   const actualDressingLabels = Object.fromEntries(unchecked.filter(([id]) => DRESSING_LABELS[id]));
   ok(JSON.stringify(actualDressingLabels) === JSON.stringify(DRESSING_LABELS), 'mustard labels need checking on both base cards, including through the Green Dressing link');
-  const shows = unchecked.filter(([id]) => !DRESSING_LABELS[id]);
+  const pubCaesar = unchecked.find(([id]) => id === 'caesar');
+  ok(pubCaesar && pubCaesar[1].includes('Caesar Salad Dressing'), 'Pub Caesar inherits the dressing label check');
+  const shows = unchecked.filter(([id]) => !DRESSING_LABELS[id]).map(([id, parts]) =>
+    [id, id === 'caesar' ? parts.filter(name => name !== 'Caesar Salad Dressing') : parts]);
   const names = new Set(FILE.recipes.map(r => r.name));
   ok(shows.length === 39 && shows.every(([, parts]) => parts.every(n => LABELS.indexOf(n.toLowerCase()) >= 0 || names.has(n))), 'the book as js/data.js has it: 39 cards say Allergens not checked yet, each for a label-dependent product or a recipe that uses one (' + shows.length + ')');
   await go(p, '#/r/smash'); const sm = await box(p);
