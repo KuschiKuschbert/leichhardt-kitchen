@@ -37,6 +37,31 @@ chef's verified Google account and the existing shared-device chef gate.
 - A failed history read shows an error and retry. It never produces a successful
   empty report, a cached empty range or an apparently complete CSV.
 
+## Saving a review
+
+The Wastage sheet and Admin Daily reviews keep independent drafts for the person
+and date on each form. Save says Checking while it reads the current review from
+the server. If a different review is there, the form names who saved it and
+offers Replace review for that version. An untouched field takes its value from
+the review shown. A refused or timed-out check keeps the draft beside Try again.
+An acknowledged write says Saved. The Wastage sheet then returns to its opening
+action.
+
+The Full SDK transaction uses the existing `W()` recorder and session check.
+Each attempt reads one day document and only writes when its five review fields
+still match what the editor saw or explicitly agreed to replace. The SDK checks
+that read at commit. If another edit lands first, a retry reads again against the
+same approval. Changing the date, recorder, session or active form before that
+check ends prevents staging a write. A failed transaction requires an explicit
+retry. Drafts live in the open tab and are kept for same-person lock recovery.
+
+The existing review document and access rules accept this transaction. A
+browser running an older app can still issue its existing unconditional write
+after a new client has finished. The new client detects changes that land
+before its own commit. Checking an older tab after a release and keeping both
+venues' deployed client files in step remain part of the app release. A client
+revert restores the earlier save behaviour, and saved reviews remain readable.
+
 ## Storage and reads
 
 Keep waste/<date>/lines/<id> and waste/<date> authoritative. No migration, new
