@@ -19,14 +19,22 @@ async function swipe(p, selector, dx = 0, dy = 110, options = {}) {
   } else {
     const cdp = await p.context().newCDPSession(p);
     const point = (x, y) => [{ x, y, id: 1, radiusX: 3, radiusY: 3, force: 1 }];
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: point(x, y) });
+    // The touches carry their own times (23 Nov 2026): a move every 16 ms, then the finger rests 200 ms and lifts. The
+    // browser works out a flick's momentum from these times. Without them it used the real time each touch arrived, so
+    // how far a list or form coasted after the lift changed with how busy the runner was, and the scroll checks below
+    // needed a second try. A rested finger leaves no momentum: every scroll is the drag alone, on any machine.
+    let t = Date.now() / 1000;
+    const send = (type, touchPoints) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints, timestamp: t });
+    await send('touchStart', point(x, y));
     for (let i = 1; i <= 8; i++) {
       const points = point(x + dx * i / 8, y + dy * i / 8);
       if (options.multitouch && i >= 3) points.push({ ...points[0], id: 2, x: points[0].x + 30 });
-      await cdp.send('Input.dispatchTouchEvent', { type: options.multitouch && i === 3 ? 'touchStart' : 'touchMove', touchPoints: points });
+      t += 0.016;
+      await send(options.multitouch && i === 3 ? 'touchStart' : 'touchMove', points);
     }
     if (options.inspect) await options.inspect();
-    await cdp.send('Input.dispatchTouchEvent', { type: options.cancel ? 'touchCancel' : 'touchEnd', touchPoints: [] });
+    t += 0.2;
+    await send(options.cancel ? 'touchCancel' : 'touchEnd', []);
     await cdp.detach();
   }
   await L.settle(p, 400);
@@ -148,7 +156,10 @@ async function closePrep(p) {
   await L.wLog(p);
   await p.locator('.w-sheet').evaluate(el => { el.scrollTop = 200; });
   const scrolled = await p.locator('.w-sheet').evaluate(el => el.scrollTop);
-  await swipe(p, '.w-sheet', 0, 110, { at: [0.5, 260] });
+  // How far the form scrolls depends on the machine's fonts: 37 px with Inter, 109 px with DejaVu Sans (the GitHub
+  // runner's). A fixed 110 px pull only reached the top there with a flick's momentum. This pull goes 60 px past the
+  // top, so the drag alone gets there, and the sheet must still stay open once the form is at its top.
+  await swipe(p, '.w-sheet', 0, scrolled + 60, { at: [0.5, 260] });
   ok(scrolled > 0 && !!(await p.$('.w-sheet')) && await p.locator('.w-sheet').evaluate(el => el.scrollTop === 0), 'waste: a pull down on a scrolled form scrolls it back to the top and keeps Log waste open');
   await swipe(p, '.w-sheet .w-rule', 0, -110);
   ok(!!(await p.$('.w-sheet')) && await p.locator('.w-sheet').evaluate(el => el.scrollTop > 0), 'waste: an upward drag at the top scrolls the form and keeps it open');
