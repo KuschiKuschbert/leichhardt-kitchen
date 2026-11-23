@@ -108,8 +108,10 @@ async function gate(p, kind) {
   ok(!(await reloaded(p)) && await p.evaluate(() => LK_PREP.unsent()), 'a long pending write still keeps the requested update waiting safely');
   await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
   ok(await waitReload(p), 'the requested clean update continues automatically after acknowledgement');
-  await L.settle(p, 500);
-  ok(await p.evaluate(() => Object.values(window.__fake.dump()).some(x => x && x.text === 'Pending prep entry')), 'the pending entry survives the update in acknowledged storage');
+  // waitReload answers as soon as the old page has gone. The new page loads the Firestore stand-in (window.__fake) during
+  // its start: about 150 ms later on a quiet machine, 0.6 to 1.1 s with eight files at once, past the 500 ms pause this took.
+  const back = await L.waitFor(p, () => !!(window.__fake && window.__fake.dump), null, 10000).catch(() => false);
+  ok(back && await p.evaluate(() => Object.values(window.__fake.dump()).some(x => x && x.text === 'Pending prep entry')), 'the pending entry survives the update in acknowledged storage');
   await p.context().close();
 
   p = await L.open(b, '#/prep', { who: 'ann', wait: 1500 });
