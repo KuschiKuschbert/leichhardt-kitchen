@@ -32,11 +32,13 @@ async function edit(p, day, words = draft) {
 
 async function advanceTo(p, time, keepActive) {
   // 04:00 is four hours after midnight. Give the shared screen activity inside each ten-minute idle window.
+  // Chromium can suppress mouse moves to the same point. Shift generates a real keydown without changing the form.
+  if (keepActive) await p.keyboard.press('Shift');
   let left = time - await p.evaluate(() => LK_TIME.now());
   const eightMinutes = 8 * 60000;
   while (keepActive && left > eightMinutes) {
     await p.clock.fastForward(eightMinutes);
-    await p.mouse.move(60, 45);
+    await p.keyboard.press('Shift');
     left = time - await p.evaluate(() => LK_TIME.now());
   }
   if (left > 0) await p.clock.fastForward(left);
@@ -46,7 +48,8 @@ async function advanceTo(p, time, keepActive) {
 async function lock(p, by, identity, ms = 90000) {
   await p.clock.runFor(ms);
   // Activity checks expiry between the scheduled 15-second checks as well.
-  await p.mouse.move(61, 45);
+  await p.keyboard.press('Shift');
+  await p.clock.runFor(100);
   await L.waitFor(p, () => !!LK_PREP.workLock() && !LK_PREP.privateAccess() && !!document.querySelector('#pf1'));
   assert.deepEqual(await p.evaluate(() => LK_PREP.workLock()), { person: by, identity, reason: 'daily' });
   assert.equal(await p.evaluate(() => LK_PREP.dirtyForUpdate()), true, 'unsaved Wastage work blocks reload while locked');
@@ -56,8 +59,9 @@ async function lock(p, by, identity, ms = 90000) {
 }
 
 async function unlock(p, who, pin) {
-  const name = p.locator(`.p-name[data-id="${who}"]`);
-  if (await name.isVisible()) await name.click();
+  // A handover clears the recorder before the name chooser has finished drawing.
+  if (await p.evaluate(id => LK_PREP.state.who !== id, who)) await p.locator(`.p-name[data-id="${who}"]`).click();
+  await L.waitFor(p, id => LK_PREP.state.who === id && LK_PREP.state.pinStep === 'enter' && !!document.querySelector('#pf1'), who);
   await p.locator('#pf1').fill(pin);
   const signedIn = id => LK_PREP.state.who === id && LK_PREP.privateAccess() && !LK_PREP.workLock();
   await L.waitFor(p, id => (LK_PREP.state.who === id && LK_PREP.privateAccess()) || /goes in by itself/.test(LK_PREP.state.pinMsg), who, 12000);
@@ -207,7 +211,6 @@ async function fixture(b, label, options, run) {
         await advanceTo(p, cutoff - 60000, true);
         if (otherDraft) await edit(p, monday, mondayDraft);
         await showDraft(p, sunday);
-        await advanceTo(p, cutoff - 1000, true);
         await p.evaluate(({ path, waitingFor }) => {
           const fs = LK_PREP.book().fs(), run = fs.runTransaction;
           window.__reviewTransaction = run;
@@ -224,7 +227,11 @@ async function fixture(b, label, options, run) {
             })).then(value => scoped && waitingFor === 'acknowledgement' ? hold(value) : value);
           };
         }, { path: sundayPath, waitingFor });
+        // Stage the save just before 04:00 without spending the interval in browser calls.
+        await p.clock.pauseAt(cutoff - 1000);
+        assert.equal(await p.evaluate(() => LK_PREP.privateAccess()), true, 'the original PIN remains active before 04:00');
         await p.locator(save).click();
+        await p.clock.runFor(100);
         await L.waitFor(p, () => typeof window.__releaseReview === 'function' && LK_PREP.unsent());
         const beforeLock = await datedReviews(p);
         assert.deepEqual(beforeLock.writes, waitingFor === 'check' ? [] : [sundayPath]);
@@ -237,6 +244,7 @@ async function fixture(b, label, options, run) {
         }
         await p.evaluate(() => window.__releaseReview());
         await L.waitFor(p, () => !LK_PREP.unsent());
+        await p.clock.resume();
         assert.deepEqual(await datedReviews(p), beforeLock);
         if (waitingFor === 'check') {
           await unlock(p, 'sam', '1111');
