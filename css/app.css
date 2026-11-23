@@ -4242,6 +4242,10 @@ html:has(.w-sheet, .tr-sheet, .p-sheet, .o-sheet) .p-toasts { top: calc(12px + e
 .w-rvfoot { margin: 14px 0 4px; }
 .w-rvfoot .w-rvbtn { width: 100%; align-items: flex-start; text-align: left; }
 .w-rvfoot .hint { margin: 6px 0 0; }
+.w-rv-cue { display: block; }
+.w-rv-date { font-weight: 700; color: var(--ink); margin: .25rem 0 .85rem; }
+.w-rv-switch { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .75rem; }
+.w-rv-switch .btn { min-height: 44px; text-align: left; white-space: normal; overflow-wrap: anywhere; }
 @media screen {
   .w-page:has(> .w-rvfoot) {
     display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, auto);
@@ -4249,7 +4253,7 @@ html:has(.w-sheet, .tr-sheet, .p-sheet, .o-sheet) .p-toasts { top: calc(12px + e
   }
   .w-page:has(> .w-rvfoot) > .nb-ph { grid-area: head; }
   .w-page:has(> .w-rvfoot) > .w-today { display: contents; }
-  .w-page:has(> .w-rvfoot) .w-tot { grid-area: total; align-self: center; margin: .35rem .75rem; }
+  .w-page:has(> .w-rvfoot) .w-tot { grid-area: total; align-self: center; margin: .35rem .75rem; overflow-wrap: anywhere; }
   .w-page:has(> .w-rvfoot) .w-bar { grid-area: bar; margin-inline: .75rem; }
   .w-page:has(> .w-rvfoot) .w-legend { grid-area: legend; margin-inline: .75rem; margin-bottom: 12px; }
   .w-page:has(> .w-rvfoot) > .w-ro { grid-area: read; }
@@ -4259,7 +4263,17 @@ html:has(.w-sheet, .tr-sheet, .p-sheet, .o-sheet) .p-toasts { top: calc(12px + e
   .w-page .w-rvfoot .w-rvbtn { min-width: 44px; min-height: 44px; padding: .2rem .6rem; white-space: normal; overflow-wrap: anywhere; }
   .w-page .w-rvfoot .hint { display: none; }
 }
-@media print { .w-page > .w-rvfoot { order: 1; } }
+@media screen and (min-width: 768px) {
+  .w-rv-cue { display: inline; }
+  .w-rv-cue::before { content: '· '; }
+}
+@media screen and (max-width: 430px) {
+  html[data-text="xlarge"] .w-page:has(> .w-today) > .w-rvfoot { max-width: 40vw; }
+}
+@media print {
+  .w-page > .w-rvfoot { order: 1; }
+  .w-rv-cue { display: none; }
+}
 
 button.nb-prog { min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .nb-t[data-n]::before { content: attr(data-n); content: attr(data-n) / ''; display: inline-flex; align-items: center; justify-content: center; min-width: 1.45em; height: 1.45em; margin-right: 0.35em; border-radius: 50%; background: var(--accent-ink); color: #fff; font: 700 0.62em var(--body); vertical-align: 0.2em; }
@@ -4596,7 +4610,7 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .tr-card .tr-item .nb-main { min-width: 0; }
 .tr-card .w-amt { white-space: normal; }
 .tr-ret { flex: 0 0 auto; min-height: 44px; padding: 0 12px; gap: 6px; font: 700 0.875rem/1 var(--body); white-space: nowrap; }
-.tr-ret[disabled] { opacity: 0.6; }
+.tr-ret[disabled] { opacity: 0.7; cursor: default; }
 .tr-tick { flex: 0 0 auto; }
 /* On a phone the handwritten words need the room: Make it again goes under the line's second line, still in its row,
    and the words, the reason, the section and who keep the full width (measured at 390 px, 8 Nov 2026) */

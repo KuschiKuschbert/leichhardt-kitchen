@@ -6,6 +6,16 @@ Returned confirms the whole original quantity came back. It records the confirmi
 
 Since the redesign's step 4 (8 Nov 2026) the open loans show as cards, one a pick-up: the lines one person logged together for one venue (`xCardsHTML()` in `js/prep.js`, worked out on the phone from the lines already read, no new field). Each card says Lent to or Borrowed from, how long (red from 7 days), when, who came or gave it and who logged it, then each item with its own **Mark returned** button (`data-p="tr-return"`, the same `returnXfer()`). A return is still one item, all of it.
 
+## While a return is waiting
+
+Tap **Mark returned** once for the full item. The same card shows **Return pending** and still counts the item in **Still out**. Until the write is acknowledged, an earlier loan stays on its card and a loan logged today stays out of **Done today**. A refused write leaves the loan available to retry and shows the usual failure message. An accepted return removes it from Still out and names the item on the slip with **Undo**.
+
+The phone holds a copy of the original row in memory for the person who tapped. This keeps the list truthful when the open index drops the loan on the phone before the server answers. The existing lock keeps the loan and its status private. The original dated line, index batch, return permissions and read budget stay the same.
+
+Verdict: Not needed (bug fix). The action remains one tap in the original row. The existing feedback pattern gives the wait a name and confirms completion only on acknowledgement. See [After the tap](action-feedback.md#the-rule).
+
+In the complete app with a synthetic staff session and one older loan, the original build showed **Nothing out** during a 4.2 second hold. The repair keeps the row at its original height and position at 390, 768 and 1280 px with the app fonts. The existing button remains 44 px high and the waiting words contrast 6.21:1 against the white card in the fixture. `tests/transfer-returns.test.js` checks older and today loans, both acknowledgement orders, a refused write, Undo and the original person's 04:00 PIN recovery.
+
 ## Data and reads
 
 The dated line at `transfers/<date>/lines/<id>` stays authoritative. Return fields are optional on older lines: `returned`, `returnedBy`, `returnedById`, `returnedAt`. Missing means unconfirmed, so old loans start outstanding.
