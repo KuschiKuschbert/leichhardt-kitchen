@@ -2413,7 +2413,7 @@ window.LK_DATA = {
     },
     {
       id: 'mushroom-sauce', no: '76', kind: 'batch', forLine: 'For the Grill Maiden\'s Board', name: 'Mushroom Sauce', short: 'Mushroom sauce', art: 'mushroom-sauce',
-      yield: 'Batch: 14 L. One portion of sauce is 50 ml.',
+      yield: 'Batch: 12 L. One portion of sauce is 50 ml.',
       ingredients: [
         { q: '2.5 kg', name: 'Button mushrooms', none: true },
         { q: '1.5 kg', name: 'Gravy powder', note: 'Knorr Rich Brown GF' },
@@ -2421,33 +2421,36 @@ window.LK_DATA = {
         { q: '200 g', name: 'Brown onion', none: true },
         { q: '1 L', name: 'Cooking cream', tags: ['Milk'] },
         { q: '0.5 bunch', name: 'Thyme', none: true },
-        { q: '200 ml', name: 'Red cooking wine', note: '[Unit to confirm]' },
+        { q: '500 ml', name: 'Red cooking wine' },
         { q: '5 g', name: 'Cracked black pepper', none: true },
         { q: '15 g', name: 'Table salt', none: true },
-        { q: '[Qty]', name: 'Water', note: 'for the pot and the slurry [amounts to confirm]', none: true }
+        { q: '200 ml', name: 'Water', note: 'for the slurry', none: true },
+        { q: 'As needed', name: 'Water', note: 'for the pot and to bring the finished batch to 12 L', none: true }
       ],
       sections: [
         { title: 'Method', steps: [
           'Sauté the onion, garlic and mushrooms. Add the thyme and check the seasoning with the cracked black pepper and table salt.',
-          'Whisk the gravy powder with water in a separate bowl to make a slurry.',
-          'Add water to the pot and bring it to the boil, then stir in the gravy slurry.',
-          '[Confirm when to add the red cooking wine and cooking cream.]'
+          'Deglaze with the red cooking wine.',
+          'Add water to the pot, leaving room for the slurry and cream, and bring it to the boil.',
+          'Start the slurry with 200 ml of cold water and whisk in the gravy powder. If needed, loosen with cold water from the pot-water allowance until pourable.',
+          'Stir the slurry into the pot and simmer until thickened.',
+          'Remove from the heat, add the cooking cream and top up with hot water as needed to reach 12 L finished.'
         ] }
       ],
       labelNote: 'Check the gravy powder, red cooking wine and cooking cream labels.'
     },
     {
       id: 'peppercorn-sauce', no: '139', kind: 'batch', forLine: 'For the grill', name: 'Peppercorn Sauce', short: 'Peppercorn sauce', art: 'peppercorn-sauce', aka: 'pepper sauce pepper corn sauce',
-      yield: 'Batch: 14 L [finished yield to confirm].',
+      yield: 'Batch: 12 L.',
       ingredients: [
         { q: '[Qty]', name: 'Onion', note: 'finely diced [amount to confirm]', none: true },
         { q: '150 g', name: 'Crushed garlic', none: true },
         { q: '0.5 bunch', name: 'Thyme', none: true },
         { q: '600 g', name: 'Green peppercorns' },
         { q: '1 L', name: 'Red cooking wine', note: '[Unit to confirm]' },
-        { q: '14 L', name: 'Water', note: 'for the pot', none: true },
+        { q: 'As needed', name: 'Water', note: 'for the pot and to bring the finished batch to 12 L', none: true },
         { q: '1.5 kg', name: 'Gravy powder', note: 'Knorr Rich Brown GF' },
-        { q: '1 L', name: 'Water', note: 'for the slurry', none: true },
+        { q: '200 ml', name: 'Water', note: 'for the slurry', none: true },
         { q: '1 L', name: 'Cooking cream', tags: ['Milk'] },
         { q: '10 g', name: 'Cracked black pepper', none: true },
         { q: '20 g', name: 'Table salt', none: true }
@@ -2456,10 +2459,11 @@ window.LK_DATA = {
         { title: 'Method', steps: [
           'Cook the finely diced onion, garlic, thyme and green peppercorns until the onion is translucent.',
           'Add the red cooking wine and reduce by half.',
-          'Add 14 L of water to the pot and bring it to the boil.',
-          'In a separate bowl, whisk the gravy powder with 1 L of water to make a slurry.',
+          'Add water to the pot, leaving room for the slurry and cream, and bring it to the boil.',
+          'Start the slurry with 200 ml of cold water and whisk in the gravy powder. If needed, loosen with cold water from the pot-water allowance until pourable.',
           'Stir the slurry into the boiling pot, then reduce to a simmer.',
-          'Once thickened, remove from the heat, add the cooking cream and season with cracked black pepper and table salt.'
+          'Once thickened, remove from the heat, add the cooking cream and season with cracked black pepper and table salt.',
+          'Top up with hot water as needed to reach 12 L finished.'
         ] }
       ],
       labelNote: 'Check the green peppercorn, gravy powder, red cooking wine and cooking cream labels.'

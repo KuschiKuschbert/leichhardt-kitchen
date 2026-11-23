@@ -52,13 +52,15 @@ async function waitForJump(p, id, allowEnd) {
     await p.click(pepper);
     await L.waitFor(p, () => !!document.querySelector('#r-steps'));
     const method = await L.txt(p, '.steps');
-    ok(/14 L/.test(method) && /1 L of water/.test(method) && /add the cooking cream/.test(method), 'peppercorn sauce: pot water, slurry water and cream finish');
+    ok(/12 L finished/.test(method) && /200 ml of cold water/.test(method) && /add the cooking cream/.test(method), 'peppercorn sauce: pot water, slurry water and cream finish');
     await p.evaluate(() => { location.hash = '#/recipes'; });
     await L.waitFor(p, () => !!document.querySelector('#find'));
   }
   const mushroom = await L.open(b, '#/r/mushroom-sauce', { wait: 1200 });
   const mushroomMethod = await L.txt(mushroom, '.steps');
-  ok(/water to the pot/.test(mushroomMethod) && /bring it to the boil/.test(mushroomMethod), 'mushroom sauce: water is added to the pot before the slurry');
+  ok(/water to the pot.*bring it to the boil.*200 ml of cold water.*stir the slurry/i.test(mushroomMethod), 'mushroom sauce: water is added to the pot before the slurry');
+  const mushroomIngredients = await L.txt(mushroom, '#r-ing + .ing');
+  ok(/500 ml\s*Red cooking wine/i.test(mushroomIngredients) && /12 L finished/.test(mushroomMethod), 'mushroom sauce: 500 ml wine and 12 L finished yield');
   await mushroom.context().close();
   // free from
   await find(p, 'gluten free');
