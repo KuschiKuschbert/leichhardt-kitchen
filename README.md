@@ -27,6 +27,8 @@ The owner approved shared surface colours across books, blocks and banners: colo
 
 Dismissible sheets and modals share the picker frame: warm paper, a named 44 px close × on touch and mouse, swipe from the header/grip, bottom sheets below 768 px and centred modals above. Closing keeps existing drafts and leaves pings unread; Save and Got it remain separate. Mandatory sign-in stays in place. [Contract and comparisons](docs/adaptive-controls.md#shared-modal-frame-9-november-2026).
 
+Tab and Shift+Tab stay inside an open Functions booking sheet or Guide video. Closing returns keyboard focus to the booking or Play control. [Overlay behaviour](docs/design-patterns.md#over-the-page).
+
 Today's team puts the date beside Add staff and Find a person on a wide screen while the date picker is closed and no live break board or future plan needs the space. On a phone, the plan status remains in the heading when the idle Save dock clears the way for the roster. Edits, staffing warnings and save feedback keep the dock in view. [Planner implementation](docs/team-page-options/implementation.md#compact-planner-controls-22-november-2026)
 
 Head and sous chefs can plan staff sections ahead in **Today's team** (9 November 2026, chosen A). The notebook has a Monday to Sunday picker, previous/next week and Today, written day status, separate drafts and a Save naming the selected date. Future planning keeps staff's live day and break board on today. Past dates are read-only here. Long date labels wrap inside Save, and staff's day line fits the remaining Prep header width. The [council, three designs and verification](docs/team-week-options/brief.md) record the choice and measured phone-space cost.
