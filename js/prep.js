@@ -80,9 +80,15 @@
      this phone. No reads, no writes, nothing kept on the phone. */
   var PIN_AGAIN = 'Your PIN is saved. Type it again to sign in.';
   var SV_SLOW = 4000, SV_DONE = 1200, SV_WAIT = 'Waiting for the signal. Keep the book open.', svRec = {}, errSeen = {};
-  function svForm(k) { return k === 'ps' ? JSON.stringify(psModule() && psModule().draft() || null) : k === 't' ? tmSig(tmf) : k === 'n' ? JSON.stringify(S.nf || null) : k === 'm' ? mfSnap(S.mf) : k === 'g' ? gfSnap(S.gf) : k === 'c' ? JSON.stringify(S.cutDraft || null) : k === 'v' ? JSON.stringify(S.vf && S.vf.raw || null) : JSON.stringify(S.draft || null); }
+  function svForm(k) {
+    if (k === 'rvPage' || k === 'rvAdmin') { var r = svObj(k); return r ? JSON.stringify([r.avoidable, r.change]) : ''; }
+    return k === 'ps' ? JSON.stringify(psModule() && psModule().draft() || null) : k === 't' ? tmSig(tmf) : k === 'n' ? JSON.stringify(S.nf || null) : k === 'm' ? mfSnap(S.mf) : k === 'g' ? gfSnap(S.gf) : k === 'c' ? JSON.stringify(S.cutDraft || null) : k === 'v' ? JSON.stringify(S.vf && S.vf.raw || null) : JSON.stringify(S.draft || null);
+  }
   // the form open now (the Save bar has one form, whose draft is taken again after each save; c: the order cut-offs)
-  function svObj(k) { return k === 'ps' ? psModule() && psModule().draft() : k === 't' ? tmf : k === 'n' ? S.nf : k === 'm' ? S.mf : k === 'g' ? S.gf : k === 'c' ? S.cutDraft : k === 'v' ? S.vf : undefined; }
+  function svObj(k) {
+    if (k === 'rvPage' || k === 'rvAdmin') return rvDraft(k === 'rvPage');
+    return k === 'ps' ? psModule() && psModule().draft() : k === 't' ? tmf : k === 'n' ? S.nf : k === 'm' ? S.mf : k === 'g' ? S.gf : k === 'c' ? S.cutDraft : k === 'v' ? S.vf : undefined;
+  }
   function svStop(k) { var r = svRec[k]; if (r) clearTimeout(r.timer); delete svRec[k]; }
   function svReset() { Object.keys(svRec).forEach(svStop); }
   // act: which button started it, where a form has two (the minutes' Publish and Save draft). slow: draws the 4 s line
@@ -126,7 +132,8 @@
     var st = svOf(o.k, o.act), busyText = o.busyText || 'Saving...', doneText = o.doneText || 'Saved';
     st = o.busy ? 'busy' : st === 'busy' ? '' : st;
     var label = st === 'busy' ? inkLabel(busyText, o.icon) : st === 'done' ? (window.LK_MOTION ? window.LK_MOTION.label(doneText, 'save', 'done') : esc(doneText)) : esc(o.ask || (st === 'fail' ? 'Try again' : o.idle));
-    return '<button type="button" class="' + (o.cls || 'btn dark') + (o.ask ? ' lk-del' : '') + ' ink-busy-button sv-btn" data-p="' + esc(o.p) + '" data-idle="' + esc(o.idle) + '" data-wide="' + esc(busyText) + '"' +
+    return '<button type="button" class="' + (o.cls || 'btn dark') + (o.ask ? ' lk-del' : '') + ' ink-busy-button sv-btn" data-p="' + esc(o.p) + '"' +
+      (o.value ? ' data-v="' + esc(o.value) + '"' : '') + ' data-idle="' + esc(o.idle) + '" data-wide="' + esc(o.wideText || busyText) + '"' +
       (st === 'done' || st === 'fail' ? ' data-sv="' + st + '"' : '') + ' aria-busy="' + (st === 'busy') + '"' + (st === 'busy' || st === 'done' || o.off ? ' disabled' : '') + '><span class="sv-now">' + label + '</span></button>';
   }
   /* The line under a Save button: the waiting line once a save is still out after 4 s, else the form's message. wait:
@@ -178,7 +185,7 @@
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, recipeAll: false, tab: '',
     authed: false, tok: '', pinStep: '', pinOff: false, pinData: null, pf1: '', pf2: '', pinMsg: '',
     sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: startTab(), ordDate: dayNow(), ordLines: [], ordState: 'idle', otext: '', oqty: '', oneed: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
-    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wLog: false, wRv: false, wAgain: {}, xLog: false, pLog: false, oLog: false, oDoneOpen: false, oCutOpen: false, oCutMore: false, oCutLead: '', startN: {}, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
+    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wLog: false, wRv: false, wAgain: {}, xLog: false, pLog: false, oLog: false, oDoneOpen: false, oCutOpen: false, oCutMore: false, oCutLead: '', startN: {}, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
     mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, minOpen: false, mErr: '',
     guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
     adminsFor: '', adminsOff: null, adminsWhy: '', level: '', stats: null, statsRange: 30, week: null, weekAt: 0, weekBusy: false,
@@ -1299,23 +1306,31 @@
   /* Every write carries the writer's id (by), and the security rules check this phone's PIN session for that person (see
      PIN sessions below), so only people who know a personal PIN can write. While a session is being opened (a PIN just
      typed, a phone moving from the older proof), a write waits for it, so it reaches the server after the session. */
-  function W(ops, context) {
+  function W(ops, context, check) {
     context = context || writeContext();
-    if (sessP) return track(sessP.then(function () { return W(ops, context); }, function () { return W(ops, context); }));
+    if (sessP) return track(sessP.then(function () { return W(ops, context, check); }, function () { return W(ops, context, check); }));
     if (context.uid !== S.uid || context.person !== S.who || context.pin !== S.pin) return Promise.reject({ code: 'cancelled' });
-    var b = fb.fs.writeBatch(fb.db), by = context.by;
-    ops.forEach(function (o) {
-      if (o[0] === 'del') { b.delete(o[1]); return; }
-      // a by the caller set (a delivery's 'owner') wins
-      var data = Object.assign({ by: by }, o[2]);
-      var path = o[1].path, parts = typeof path === 'string' ? path.split('/') : path;
-      var publicCol = parts && parts.length === 4 && ({ book: 'publicBook', recipes: 'publicRecipes', drawings: 'publicDrawings' })[parts[2]];
-      if (publicCol && (parts[2] !== 'book' || parts[3] === 'index' || parts[3] === 'matches')) {
-        var mirror = fb.fs.doc(fb.db, publicCol, parts[3]);
-        if (o[0] === 'upd') b.update(mirror, data); else b.set(mirror, data, o[3] ? { merge: true } : {});
-      }
-      if (o[0] === 'upd') b.update(o[1], data); else if (o[3]) b.set(o[1], data, { merge: true }); else b.set(o[1], data);
-    });
+    function stage(b) {
+      ops.forEach(function (o) {
+        if (o[0] === 'del') { b.delete(o[1]); return; }
+        // a by the caller set (a delivery's 'owner') wins
+        var data = Object.assign({ by: context.by }, o[2]);
+        var path = o[1].path, parts = typeof path === 'string' ? path.split('/') : path;
+        var publicCol = parts && parts.length === 4 && ({ book: 'publicBook', recipes: 'publicRecipes', drawings: 'publicDrawings' })[parts[2]];
+        if (publicCol && (parts[2] !== 'book' || parts[3] === 'index' || parts[3] === 'matches')) {
+          var mirror = fb.fs.doc(fb.db, publicCol, parts[3]);
+          if (o[0] === 'upd') b.update(mirror, data); else b.set(mirror, data, o[3] ? { merge: true } : {});
+        }
+        if (o[0] === 'upd') b.update(o[1], data); else if (o[3]) b.set(o[1], data, { merge: true }); else b.set(o[1], data);
+      });
+    }
+    // A guarded write uses a server transaction and requires a fresh user retry after failure.
+    if (check) {
+      if (!context.by || typeof fb.fs.runTransaction !== 'function') return Promise.reject({ code: 'unavailable' });
+      return track(fb.fs.runTransaction(fb.db, function (tx) { return check(tx).then(function () { stage(tx); }); }));
+    }
+    var b = fb.fs.writeBatch(fb.db);
+    stage(b);
     return track(b.commit(context));
   }
   /* A long list of writes (a rollover, a big merge) goes in batches of 400, one after the other, so nothing past the
@@ -1751,7 +1766,7 @@
     if (window.LK_UX) window.LK_UX.close();
     if (S.sheet) { S.sheet = ''; ovDone('reason'); } S.section = ''; S.secTyped = false;
     if (S.wLog || S.wRv || S.xLog || S.pLog || S.oLog) { S.wLog = S.wRv = S.xLog = S.pLog = S.oLog = false; ovDone('wsheet'); }
-    sessDrop(); ksClose(); noteClose('shut'); lmClose(); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; S.gf = null; S.gfSnap = ''; S.cutDraft = null; S.cutSnap = ''; S.bulk = ''; S.wrA = S.wrC = S.wpA = S.wpC = null; S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; tdReset(); tmReset(); dkf = null; dkSnap = ''; dkEditing = false; dkMsg = ''; dkOpen = ''; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); accessChanged(); }
+    sessDrop(); ksClose(); noteClose('shut'); lmClose(); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; S.gf = null; S.gfSnap = ''; S.cutDraft = null; S.cutSnap = ''; S.bulk = ''; rvClear(true); rvClear(false); S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; tdReset(); tmReset(); dkf = null; dkSnap = ''; dkEditing = false; dkMsg = ''; dkOpen = ''; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); accessChanged(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
      head chef and sous chefs Shift pings and Manage staff (22 Oct 2026: the Minutes register is "See who has signed" at
      the top of Meeting minutes). head: no Kitchen mail, the head chef's mail is read in the admin panel. tab: the head
@@ -8730,15 +8745,32 @@ if (list.length) sg('oreg', 's');
      waste/<today> when a chef opens the page, again on a new day. A failed read (no signal) says so (28 Oct 2026) instead
      of Loading... for good, and reads again after the 5-minute wait or once the phone is back online, not on every draw. */
   function rvChef() { return wAll() || isSous(); }
-  /* A review typed and not saved yet. page: today's on the wastage page (S.wpA, S.wpC), otherwise the admin panel's
-     Daily reviews form for its day (S.wrA, S.wrC). Two drafts (28 Oct 2026): they shared one, so the admin form showed
-     the page's words under its own day, and its day arrows threw away what was typed on the wastage page. */
+  // Two independent drafts, each attached to its recorder and the date on its form.
+  var rvDrafts = { page: null, admin: null }, rvSheetVersion = 0, RV_REPLACE_DELAY = 450;
+  function rvKey(page) { return page ? 'rvPage' : 'rvAdmin'; }
+  function rvDay(page) { return page ? dayNow() : S.rvDate || dayNow(); }
+  function rvShown(page, day) { return page ? S.wReview || {} : rvOf(day); }
+  function rvDraft(page) {
+    var r = rvDrafts[page ? 'page' : 'admin'];
+    return r && r.identity === stableIdentity() && r.day === rvDay(page) ? r : null;
+  }
+  function rvClear(page) { rvDrafts[page ? 'page' : 'admin'] = null; svStop(rvKey(page)); }
+  function rvWord(text) { return String(text || '').trim().slice(0, 300); }
   function rvTyped(page) {
-    var a = page ? S.wpA : S.wrA, c = page ? S.wpC : S.wrC, r = page ? S.wReview || {} : rvOf(S.rvDate || dayNow());
-    // compared the way saveReview() saves them (29 Oct 2026): a space or a new line added is not a change. It turned Save
-    // on, and the tap saved another chef's words under this chef's name
-    function same(t, was) { return String(t).trim().slice(0, 300) === String(was || '').trim().slice(0, 300); }
-    return (a != null && !same(a, r.avoidable)) || (c != null && !same(c, r.change));
+    var r = rvDraft(page), before = r && (r.conflict || r.base);
+    return !!r && ((r.avoidable != null && rvWord(r.avoidable) !== rvWord(before.avoidable)) ||
+      (r.change != null && rvWord(r.change) !== rvWord(before.change)));
+  }
+  function rvInput(page, day, field, value) {
+    if (day !== rvDay(page)) { draw(); return; }
+    var r = rvDraft(page);
+    if (!r) {
+      rvClear(page);
+      r = rvDrafts[page ? 'page' : 'admin'] = { day: day, identity: stableIdentity(), base: rvShown(page, day) };
+    }
+    if (r.phase) return;
+    r[field] = value;
+    saveSync();
   }
   function loadPageReview() {
     if (!kitchenAccess() || !S.configFull) return;
@@ -8751,31 +8783,89 @@ if (list.length) sg('oreg', 's');
       draw();
     });
   }
-  function saveReview(where) {
-    if (where === 'page' ? !rvChef() : !wAll()) return;
-    /* nothing typed or changed: nothing to save, and the button is off (28 Oct 2026). It saved the boxes as they were,
-       put this chef's name on another chef's review and emptied every phone's copy of the note (lk.w.note). */
-    if (!rvTyped(where === 'page')) return;
-    var page = where === 'page', d = page ? dayNow() : S.rvDate || dayNow(), p = me(), name = p ? p.name : 'Head chef', r = page ? S.wReview || {} : rvOf(d);
-    // someone else may have saved a review since the log was read: one small read on Save, and a second tap to replace it
-    if (!S.wrChecked && fb.fs.getDocFromServer) {
-      S.wrChecked = true;
-      fb.fs.getDocFromServer(wDay(d)).then(function (sn) {
-        var v = sn.exists() ? sn.data() : {};
-        if ((v.reviewAt || 0) > (r.reviewAt || 0) && v.reviewBy && v.reviewBy !== name) {
-          if (page) S.wReview = v; else rvSet(d, v); arm('wreview'); draw();
-          toast(v.reviewBy + ' saved a review at ' + clock(v.reviewAt) + '. Tap Save again to replace it with yours.', null, 8000);
-          S.wrChecked = false; return;
-        }
-        saveReview(where); S.wrChecked = false;
-      }, function () { saveReview(where); S.wrChecked = false; });
-      return;
+  function rvVersion(r) {
+    return JSON.stringify([r.avoidable, r.change, r.reviewBy, r.reviewAt, r.by]);
+  }
+  function rvHere(page, day, sheet) {
+    if (rvDay(page) !== day) return false;
+    return page ? location.hash === '#/waste' && S.wRv && sheet === rvSheetVersion :
+      location.hash === '#/admin' && S.atab === 'waste' && whState().view === 'reviews';
+  }
+  function rvAllowed(page) { return canW() && (page ? rvChef() : wAll()); }
+  function rvOff(page, draft) {
+    return !draft || !!draft.phase || draft.replaceAfter > Date.now() || !rvAllowed(page) || !rvTyped(page);
+  }
+  function rvActions(page) {
+    var r = rvDraft(page), k = rvKey(page), phase = r && r.phase;
+    return svButton({ k: k, p: 'wreview', value: page ? 'page' : 'admin', idle: 'Save the review',
+      ask: r && r.conflict ? 'Replace review' : '', wideText: 'Replace review', busy: !!phase,
+      busyText: phase === 'checking' ? 'Checking...' : 'Saving...', off: rvOff(page, r) });
+  }
+  function rvStatus(page) {
+    var r = rvDraft(page), phase = r && r.phase, other = r && r.conflict;
+    var conflict = other ? (other.reviewBy || 'Another chef') + ' saved a review' +
+      (typeof other.reviewAt === 'number' && other.reviewAt > 0 ? ' at ' + clock(other.reviewAt) : '') +
+      '. Replace that review to save your changes.' : '';
+    return svLine(rvKey(page), !!phase, r && (r.message || conflict), 'w-rv-status',
+      phase === 'checking' ? 'Checking for a newer review. Keep the book open.' : SV_WAIT);
+  }
+  function saveReview(where, d) {
+    if (where !== 'page' && where !== 'admin') return;
+    var page = where === 'page', r = rvDraft(page), k = rvKey(page), sheet = rvSheetVersion;
+    if (d !== rvDay(page)) { draw(); return; }
+    if (rvOff(page, r) || svHeld(k) || !rvHere(page, d, sheet)) return;
+    var expected = r.conflict || r.base, version = rvVersion(expected), context = writeContext(), epoch = accessEpoch, ref = wDay(d), p = me();
+    var v = { avoidable: rvWord(r.avoidable == null ? expected.avoidable : r.avoidable),
+      change: rvWord(r.change == null ? expected.change : r.change), reviewBy: p ? p.name : 'Head chef', reviewAt: now() };
+    function sameDraft() { return rvDrafts[where] === r && stableIdentity() === context.identity; }
+    function here() { return sameDraft() && rvHere(page, d, sheet) && rvAllowed(page); }
+    function guard() {
+      if (!here() || epoch !== accessEpoch || millis(context.issuedAt) !== millis(S.sessIssuedAt)) throw { code: 'cancelled' };
     }
-    if (armKey === 'wreview') arm('wreview');
-    var ta = page ? S.wpA : S.wrA, tc = page ? S.wpC : S.wrC;
-    var a = (ta != null ? ta : r.avoidable || '').trim().slice(0, 300), c = (tc != null ? tc : r.change || '').trim().slice(0, 300);
-    var v = { avoidable: a, change: c, reviewBy: name, reviewAt: now() };
-    sset(wDay(d), v, true).then(function () { if (page) { S.wReview = v; S.wpA = S.wpC = null; if (S.wRv) { S.wRv = false; ovDone('wsheet'); } } else S.wrA = S.wrC = null; rvSet(d, v); if (wAll()) whPatch(d, '', v); if (d >= shift(dayNow(), -3)) { S.wNoteFor = ''; lsSet('lk.w.note', ''); } toast('Review saved'); draw(); }, failed);
+    r.conflict = null; r.replaceAfter = 0; r.message = ''; r.phase = 'checking'; svStart(k); draw();
+    // One version read on Save or Replace. The SDK reads again if another writer commits before this transaction.
+    // Both reads must match the original consent before we stage anything. A timed-out or denied check stages no write.
+    W([['set', ref, v, true]], context, function (tx) {
+      guard();
+      var deadline, limit = new Promise(function (resolve, reject) { deadline = setTimeout(function () { reject({ code: 'slow' }); }, 6000); });
+      return Promise.race([tx.get(ref), limit]).finally(function () { clearTimeout(deadline); }).then(function (sn) {
+        guard();
+        var current = sn.exists() ? sn.data() : {};
+        if (rvVersion(current) !== version) throw { code: 'review-conflict', review: current };
+        if (r.phase === 'checking') { r.phase = 'saving'; draw(); }
+      });
+    }).then(function () {
+      if (!sameDraft()) return;
+      r.phase = ''; r.base = Object.assign({ by: context.by }, v); r.avoidable = r.change = null;
+      if (!rvAllowed(page)) { svStop(k); return; }
+      if (S.wReviewFor === d) S.wReview = r.base;
+      rvSet(d, r.base);
+      if (wAll()) whPatch(d, '', r.base);
+      if (d >= shift(dayNow(), -3)) { S.wNoteFor = ''; lsSet('lk.w.note', ''); }
+      if (here()) toast('Review saved for ' + (d === dayNow() ? 'today' : dayShort(d)));
+      svDone(k, here(), function () { if (page && here() && !rvTyped(page)) wSheetClose(); });
+      draw();
+    }, function (e) {
+      if (!sameDraft()) return;
+      var checking = r.phase === 'checking'; r.phase = '';
+      if (e && e.code === 'review-conflict') {
+        r.conflict = e.review;
+        if (here()) { if (S.wReviewFor === d) S.wReview = e.review; rvSet(d, e.review); }
+        if (rvDraft(page) === r && !rvTyped(page)) {
+          r.base = e.review; r.avoidable = r.change = r.conflict = null;
+          r.message = 'The latest review already has your changes.';
+        } else {
+          // A rapid second tap on Save must not land on an immediately relabelled Replace button.
+          r.replaceAfter = Date.now() + RV_REPLACE_DELAY;
+          setTimeout(function () { if (here() && r.conflict === e.review) draw(); }, RV_REPLACE_DELAY);
+        }
+        svStop(k);
+      } else {
+        r.message = checking ? 'Could not check the latest review. Your changes are kept.' : 'Could not save the review. Your changes are kept.';
+        svFail(k, !!rvDraft(page), function () { r.message = ''; });
+      }
+      if (here()) draw();
+    });
   }
   /* the head chef's Google account: the only one the rules let read past wastage (22 Oct 2026) */
   function wAll() { return S.level === 'owner' && ownerHere(); }
@@ -8835,6 +8925,7 @@ if (list.length) sg('oreg', 's');
   }
   function wSheetClose(noBack) {
     if (!S.wLog && !S.wRv && !S.xLog && !S.pLog && !S.oLog) return;
+    if (S.wRv) rvSheetVersion++;
     var back = S.wLog ? '.w-logbtn' : S.wRv ? '.w-rvbtn' : S.pLog || S.oLog ? '.nb-addline' : '.tr-logbtn', pg = sheetPg(); S.wLog = S.wRv = S.xLog = S.pLog = S.oLog = false;
     ovDone('wsheet', noBack); if (pg) justClosed(pg); draw(); focusSel(back);
   }
@@ -8907,13 +8998,15 @@ if (list.length) sg('oreg', 's');
     return secs.length ? '<div class="nb-pw is-day w-pw">' + prog + '<span class="w-secs">' + esc(secs.join(', ')) + '</span></div>' : prog;
   }
   function pageReviewHTML() {
-    if (!S.wReview) return S.wReviewErr ? '<p class="hint" role="status">Could not load today\'s review. Check the signal. The book tries again in a few minutes.</p>' : '<p class="hint">Loading...</p>';
-    var r = S.wReview, ra = S.wpA != null ? S.wpA : (r.avoidable || ''), rc = S.wpC != null ? S.wpC : (r.change || '');
-    return '<div class="w-review">' +
-      '<div class="field"><label class="label" for="w-ra">Main avoidable waste today</label><textarea id="w-ra" class="w-ta" data-k="w-ra" maxlength="300" rows="2">' + esc(ra) + '</textarea></div>' +
-      '<div class="field"><label class="label" for="w-rc">Prep or ordering change for the next shift</label><textarea id="w-rc" class="w-ta" data-k="w-rc" maxlength="300" rows="2">' + esc(rc) + '</textarea><span class="hint">This shows at the top of the next prep list.</span></div>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="wreview" data-v="page"' + (rvTyped(true) ? '' : ' disabled') + '>Save the review</button></div>' +
-      (r.reviewBy ? '<span class="hint">Last saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' at ' + clock(r.reviewAt) : '') + '.</span>' : '') + '</div>';
+    var day = dayNow();
+    if (!S.wReview || S.wReviewFor !== day) return S.wReviewErr ? '<p class="hint" role="status">Could not load today\'s review. Check the signal. The book tries again in a few minutes.</p>' : '<p class="hint">Loading...</p>';
+    var r = S.wReview, draft = rvDraft(true), ra = draft && draft.avoidable != null ? draft.avoidable : (r.avoidable || ''),
+      rc = draft && draft.change != null ? draft.change : (r.change || ''), held = draft && draft.phase ? ' readonly' : '';
+    return '<div class="w-review" data-review-day="' + esc(day) + '">' +
+      '<div class="field"><label class="label" for="w-ra">Main avoidable waste today</label><textarea id="w-ra" class="w-ta" data-k="w-ra" maxlength="300" rows="2"' + held + '>' + esc(ra) + '</textarea></div>' +
+      '<div class="field"><label class="label" for="w-rc">Prep or ordering change for the next shift</label><textarea id="w-rc" class="w-ta" data-k="w-rc" maxlength="300" rows="2"' + held + '>' + esc(rc) + '</textarea><span class="hint">This shows at the top of the next prep list.</span></div>' +
+      '<div class="btn-row">' + rvActions(true) + '</div>' + rvStatus(true) +
+      (r.reviewBy && !(draft && draft.conflict) ? '<span class="hint">Last saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' at ' + clock(r.reviewAt) : '') + '.</span>' : '') + '</div>';
   }
   /* Last night's "change for the next shift" note, shown on the prep list (the latest of the last 3 days): three getDoc
      reads once a day per phone, kept in lk.w.note (out of date at the next kitchen day; a review saved on this phone
@@ -10914,11 +11007,12 @@ if (list.length) sg('oreg', 's');
   function setReportDays(n) {
     if ([7, 14, 30].indexOf(n) < 0) return;
     S.statsRange = n;
-    var wh = whState();
-    if (wh.period !== String(n) && (wh.view !== 'reviews' || !whReviewDirty())) { wh.period = String(n); wh.msg = ''; S.rvDate = ''; S.wrA = S.wrC = null; }
+    var wh = whState(), draft = rvDraft(false);
+    if (wh.period !== String(n) && (wh.view !== 'reviews' || !whReviewDirty() && !(draft && draft.phase))) { wh.period = String(n); wh.msg = ''; S.rvDate = ''; rvClear(false); }
   }
   function whCanChange() {
-    if (whState().view !== 'reviews' || !whReviewDirty()) return true;
+    var draft = rvDraft(false);
+    if (whState().view !== 'reviews' || !whReviewDirty() && !(draft && draft.phase)) return true;
     toast('Save the review or cancel its edits before changing dates or views.'); return false;
   }
   /* The end-of-day review for one day in the selected period: main avoidable waste and the change for the
@@ -10927,15 +11021,16 @@ if (list.length) sg('oreg', 's');
     var today = dayNow(), range = whRange(), d = S.rvDate || range.to;
     if (d < range.from || d > range.to) d = range.to;
     S.rvDate = d;
-    var r = rvOf(d), ra = S.wrA != null ? S.wrA : (r.avoidable || ''), rc = S.wrC != null ? S.wrC : (r.change || '');
-    return '<h3 class="a-ch-h">End-of-day review</h3><div class="w-review a-rvform"><div class="nb-nav o-nav"><span class="o-days">' +
+    var r = rvOf(d), draft = rvDraft(false), ra = draft && draft.avoidable != null ? draft.avoidable : (r.avoidable || ''),
+      rc = draft && draft.change != null ? draft.change : (r.change || ''), held = draft && draft.phase ? ' readonly' : '';
+    return '<h3 class="a-ch-h">End-of-day review</h3><div class="w-review a-rvform" data-review-day="' + esc(d) + '"><div class="nb-nav o-nav"><span class="o-days">' +
       '<button type="button" class="chip" data-p="rv-day" data-d="-1" aria-label="Back one day"' + (d <= range.from ? ' disabled' : '') + '>&lsaquo;</button><span class="a-rvday">' + esc(d === today ? 'Today' : dayShort(d)) + '</span>' +
       '<button type="button" class="chip" data-p="rv-day" data-d="1" aria-label="Forward one day"' + (d >= range.to ? ' disabled' : '') + '>&rsaquo;</button></span></div>' +
       '<label class="a-f"><span>Review date</span><input type="date" data-k="wh-review-date" min="' + range.from + '" max="' + range.to + '" value="' + esc(d) + '"></label>' +
-      '<div class="field"><label class="label" for="w-ra">Main avoidable waste</label><textarea id="w-ra" class="w-ta" data-k="w-ra" maxlength="300" rows="2">' + esc(ra) + '</textarea></div>' +
-      '<div class="field"><label class="label" for="w-rc">Prep or ordering change for the next shift</label><textarea id="w-rc" class="w-ta" data-k="w-rc" maxlength="300" rows="2">' + esc(rc) + '</textarea><span class="hint">This shows at the top of the next prep list.</span></div>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="wreview" data-v="admin"' + (rvTyped(false) ? '' : ' disabled') + '>Save the review</button><button type="button" class="p-x' + armCls('wh-review-cancel') + '" data-p="wh-review-cancel">' + (armed('wh-review-cancel') ? 'Tap again to discard' : 'Cancel edits') + '</button></div>' +
-      (r.reviewBy ? '<span class="hint">Last saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' at ' + clock(r.reviewAt) : '') + '.</span>' : '') + '</div>';
+      '<div class="field"><label class="label" for="w-ra">Main avoidable waste</label><textarea id="w-ra" class="w-ta" data-k="w-ra" maxlength="300" rows="2"' + held + '>' + esc(ra) + '</textarea></div>' +
+      '<div class="field"><label class="label" for="w-rc">Prep or ordering change for the next shift</label><textarea id="w-rc" class="w-ta" data-k="w-rc" maxlength="300" rows="2"' + held + '>' + esc(rc) + '</textarea><span class="hint">This shows at the top of the next prep list.</span></div>' +
+      '<div class="btn-row">' + rvActions(false) + '<button type="button" class="p-x' + armCls('wh-review-cancel') + '" data-p="wh-review-cancel"' + (held ? ' disabled' : '') + '>' + (armed('wh-review-cancel') ? 'Tap again to discard' : 'Cancel edits') + '</button></div>' + rvStatus(false) +
+      (r.reviewBy && !(draft && draft.conflict) ? '<span class="hint">Last saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' at ' + clock(r.reviewAt) : '') + '.</span>' : '') + '</div>';
   }
 
   /* ---------- transfers between venues (admin, 23 Oct 2026) ----------
@@ -13845,11 +13940,11 @@ if (list.length) sg('oreg', 's');
     if (a === 'woften') { var wo = wOften()[i]; if (wo) { sg('wchip', 't'); wUnfill(); S.wf.emptied = false; S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec && !mySec()) S.wf.sec = wo.sec; if (wo.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wo.amt; S.wf.amtAuto = true; } draw(); focusFilled('w-amt'); } return; }
     if (a === 'wdel') { removeWaste(dt, id); return; }
     if (a === 'wrestore') { removeWaste(dt, id, true); return; }
-    if (a === 'rv-day') { if (!whCanChange()) return; var rr = whRange(), rd = shift(S.rvDate || rr.to, +el.getAttribute('data-d')); if (rd <= rr.to && rd >= rr.from) { S.rvDate = rd; S.wrA = S.wrC = null; } draw(); return; }
+    if (a === 'rv-day') { if (!whCanChange()) return; var rr = whRange(), rd = shift(S.rvDate || rr.to, +el.getAttribute('data-d')); if (rd <= rr.to && rd >= rr.from) { S.rvDate = rd; rvClear(false); } draw(); return; }
     if (a === 'a-go-waste') { S.atab = 'waste'; lsSet('lk.prep.atab', 'waste'); return; }
-    if (a === 'wreview') { saveReview(el.getAttribute('data-v')); return; }
+    if (a === 'wreview') { var review = el.closest('[data-review-day]'); if (review) saveReview(el.getAttribute('data-v'), review.getAttribute('data-review-day')); return; }
     if (a === 'wh-view') { if (!whCanChange()) return; var wv = el.getAttribute('data-v'); if (['history', 'summary', 'reviews'].indexOf(wv) >= 0) whState().view = wv; draw(); return; }
-    if (a === 'wh-review-cancel') { if (whReviewDirty() && !arm('wh-review-cancel')) return; S.wrA = S.wrC = null; draw(); return; }
+    if (a === 'wh-review-cancel') { var rdraft = rvDraft(false); if (rdraft && rdraft.phase || whReviewDirty() && !arm('wh-review-cancel')) return; rvClear(false); draw(); return; }
     if (a === 'wh-clear') {
       var wq = S.root.querySelector('#wh-search'), ww = S.root.querySelector('[data-k="wh-who"]');
       if (wq) window.LK_UX.resetSearch(wq); if (ww) window.LK_UX.resetSearch(ww);
@@ -13860,7 +13955,7 @@ if (list.length) sg('oreg', 's');
       if (!whCanChange()) return;
       var wa = whState(), wf0 = wa.from, wt0 = wa.to; wa.from = wa.draftFrom || ''; wa.to = wa.draftTo || '';
       var wr0 = whRange();
-      if (wr0.error) { wa.from = wf0; wa.to = wt0; wa.msg = wr0.error; } else { wa.msg = ''; S.rvDate = ''; S.wrA = S.wrC = null; }
+      if (wr0.error) { wa.from = wf0; wa.to = wt0; wa.msg = wr0.error; } else { wa.msg = ''; S.rvDate = ''; rvClear(false); }
       draw(); return;
     }
     if (a === 'w-refresh') { loadWStats(true); if (whState().view === 'summary') loadStats(true); draw(); return; }
@@ -14007,7 +14102,8 @@ if (list.length) sg('oreg', 's');
     // Chef to-do: an empty new job or an unchanged edit has nothing to save.
     b = S.root && S.root.querySelector('[data-p="todo-save"]'); if (b) b.disabled = !tdDirty();
     // the end-of-day review (the wastage page or the admin Daily reviews form) and Change on the drinks run
-    b = S.root && S.root.querySelector('[data-p="wreview"]'); if (b) b.disabled = !rvTyped(b.getAttribute('data-v') === 'page');
+    b = S.root && S.root.querySelector('[data-p="wreview"]');
+    if (b) { var page = b.getAttribute('data-v') === 'page'; b.disabled = rvOff(page, rvDraft(page)) || svHeld(rvKey(page)); }
     b = S.root && S.root.querySelector('[data-p="dk-save"]'); if (b && dkMine()) b.disabled = dkBusy || !dkDirty();
   }
   function onInput(e) {
@@ -14034,7 +14130,7 @@ if (list.length) sg('oreg', 's');
         if (!whCanChange()) { el.value = wh.period; return; }
         var prior = whRange();
         if (['7', '14', '30', 'this', 'last', 'months3', 'custom'].indexOf(el.value) < 0) return;
-        wh.period = el.value; wh.msg = ''; S.rvDate = ''; S.wrA = S.wrC = null;
+        wh.period = el.value; wh.msg = ''; S.rvDate = ''; rvClear(false);
         if (/^(7|14|30)$/.test(wh.period)) S.statsRange = +wh.period;   // the other reports follow (setReportDays)
         if (wh.period === 'custom') { wh.from = prior.from; wh.to = prior.to; wh.draftFrom = prior.from; wh.draftTo = prior.to; }
       } else if (k === 'wh-from' || k === 'wh-to') { wh[k === 'wh-from' ? 'draftFrom' : 'draftTo'] = el.value; return; }
@@ -14045,7 +14141,7 @@ if (list.length) sg('oreg', 's');
       else if (k === 'wh-review-date') {
         var range = whRange();
         if (!whCanChange() || !whValid(el.value) || el.value < range.from || el.value > range.to) { el.value = S.rvDate; return; }
-        S.rvDate = el.value; S.wrA = S.wrC = null;
+        S.rvDate = el.value; rvClear(false);
       }
       if (LV['waste-log']) LV['waste-log'].shown = 15;
       draw(); return;
@@ -14098,7 +14194,11 @@ if (list.length) sg('oreg', 's');
     if (k === 'w-sec') { S.wf.sec = el.value; if (S.wf.fill && S.wf.fill.sec && el.value !== S.wf.fill.sec) { sg('wfill', 'e'); S.wf.fill.sec = ''; wFillTidy(); wFillPatch(); } return; }
     if (k === 'w-act') { S.wf.act = el.value; return; }
     // the admin panel's Daily reviews form and the wastage page each keep their own (rvTyped())
-    if (k === 'w-ra' || k === 'w-rc') { if (el.closest('.a-rvform')) { if (k === 'w-ra') S.wrA = el.value; else S.wrC = el.value; } else if (k === 'w-ra') S.wpA = el.value; else S.wpC = el.value; saveSync(); return; }
+    if (k === 'w-ra' || k === 'w-rc') {
+      var review = el.closest('[data-review-day]');
+      if (review) rvInput(!review.classList.contains('a-rvform'), review.getAttribute('data-review-day'), k === 'w-ra' ? 'avoidable' : 'change', el.value);
+      return;
+    }
     if (k === 'p-qty') { S.qty = el.value; var qs2 = S.root.querySelector('#p-qsugg'); if (qs2) qs2.innerHTML = qtyChipsHTML(); var pu = S.root.querySelector('#p-units'); if (pu) pu.innerHTML = unitChipsHTML('p', S.qty); return; }
     if (k === 'p-section') { S.section = el.value; S.secTyped = !!el.value.trim(); psHintPaint(); return; }
     if (k === 'p-rs') { S.recipeSearch = el.value; S.recipeOpen = true; draw(); return; }

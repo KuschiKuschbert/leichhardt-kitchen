@@ -25,7 +25,8 @@
                he reads their labels: tests/allergen-check.test.js lists them (LABELS).
     pins       (plated dishes, The Pass view) where each part sits on the plate drawing:
                { label, x, y (percent across and down), side ('left' or 'right' for the label,
-               optional), link or tags, note }
+               optional), link or tags, note, ing (ingredient name when the label differs,
+               or the ingredient names separated by | for a shared pin) }
     sections   optional: list of { title, steps: [ ... ] }. Leave it out and the card says "Not written up yet".
     contains   allergens it definitely has: { allergen, from }
     check      allergens it may have, so check the label: { allergen, from }
@@ -580,9 +581,9 @@ window.LK_DATA = {
         { title: 'Plating, bottom to top', steps: ['Turkish roll base.', 'Tomato relish.', 'Oak lettuce.', '3 slices of tomato.', 'Topside steak.', 'Cheese.', 'Bacon.', 'Egg.', 'Aioli on the top half of the Turkish roll, then close.', 'Chips and a side sauce of choice on the side.'] }
       ],
       pins: [
-        { label: 'Steak sandwich', x: 53.8, y: 34.9, side: 'right', tags: [], note: 'Turkish roll, topside, cheese, bacon, egg, tomato relish, aioli on the top half, oak lettuce, tomato.' },
+        { label: 'Steak sandwich', x: 53.8, y: 34.9, side: 'right', tags: [], note: 'Turkish roll, topside, cheese, bacon, egg, tomato relish, aioli on the top half, oak lettuce, tomato.', ing: 'Turkish roll|Topside steak|Cheese|Shortcut bacon|Egg|Tomato relish|Aioli|Oak leaf lettuce|Tomato' },
         { label: 'Chips', x: 34.0, y: 69.8, side: 'right', tags: [], note: '1 portion, 200 g raw.' },
-        { label: 'Side sauce', x: 72.0, y: 70.0, side: 'left', tags: [], note: 'Sauce of choice.' }
+        { label: 'Side sauce', x: 72.0, y: 70.0, side: 'left', tags: [], note: 'Sauce of choice.', ing: 'Side sauce of choice' }
       ],
       labelNote: 'Check the roll, aioli, relish, bacon and cheese labels.'
     },
@@ -656,7 +657,7 @@ window.LK_DATA = {
         { label: 'Mash', x: 44.3, y: 54.0, side: 'left', link: 'mash', note: '150 g, slightly off centre, on top of the spinach squiggle.' },
         { label: 'Spinach purée', x: 13.2, y: 50.0, side: 'left', link: 'spinach-puree', note: '50 ml, a wavy squiggle across the whole plate.' },
         { label: 'Peas', x: 63.2, y: 61.3, side: 'right', tags: [], note: 'About 80 g, with jus. Beside the mash and on top of the belly.' },
-        { label: 'Bacon', x: 63.2, y: 45.3, side: 'right', tags: [], note: 'About 80 g, with jus. Beside the mash and on top of the belly.' },
+        { label: 'Bacon', x: 63.2, y: 45.3, side: 'right', tags: [], note: 'About 80 g, with jus. Beside the mash and on top of the belly.', ing: 'Diced bacon' },
         { label: 'Red wine jus', x: 58.5, y: 52.8, side: 'right', link: 'red-wine-jus', note: 'On the peas and bacon, and on top of the belly.' },
         { label: 'Fried shallots', x: 49.0, y: 43.4, side: 'right', link: 'fried-onions', note: '40 g, fried onions on top.' },
         { label: 'Green garnish', x: 51.9, y: 46.2, side: 'left', tags: [], note: 'Snow pea tendrils, sliced spring onion, parsley or finely sliced chives.' }
@@ -920,7 +921,7 @@ window.LK_DATA = {
       pins: [
         { label: 'Wedges', x: 39.6, y: 49.1, side: 'right', tags: ['Gluten?', 'Soy?'], note: '400 g, seasoned.' },
         { label: 'Sour cream', x: 73.6, y: 35.8, side: 'left', tags: ['Milk'], note: '80 ml.' },
-        { label: 'Sweet chilli', x: 73.6, y: 63.2, side: 'left', tags: [], note: '80 ml.' }
+        { label: 'Sweet chilli', x: 73.6, y: 63.2, side: 'left', tags: [], note: '80 ml.', ing: 'Sweet chilli sauce' }
       ],
       labelNote: 'Check the wedge and sweet chilli labels.'
     },
