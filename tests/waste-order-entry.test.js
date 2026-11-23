@@ -72,7 +72,8 @@ async function log(p, text, amt, unit, before) {
   await p.evaluate(a => window.__fake.write(a.k, { avoidable: 'Over-portioned chips', change: '', reviewBy: 'Bo', reviewAt: a.t }), { k: fsKey(['waste', today]), t: Date.now() + 60000 });
   await p.click('[data-p="wreview"]'); await L.settle(p, 500);
   const rv = () => p.evaluate(k => window.__fake.dump()[k] || {}, fsKey(['waste', today]));
-  ok((await rv()).reviewBy === 'Bo' && /Bo saved a review/.test(await txt(p, '.p-toast') || ''), 'review: a newer review by Bo is not replaced on the first tap');
+  ok((await rv()).reviewBy === 'Bo' && /Bo saved a review/.test(await txt(p, '.w-rv-status') || '') &&
+    await txt(p, '[data-p="wreview"]') === 'Replace review', 'review: a newer review by Bo is named beside the explicit Replace action');
   await p.click('[data-p="wreview"]'); await L.settle(p, 600);
   ok((await rv()).reviewBy === 'Head chef', 'review: a second tap saves the head chef\'s review (' + (await rv()).reviewBy + ')');
   ok(p.errors.length === 0, 'review: no page errors ' + p.errors.join(' | '));

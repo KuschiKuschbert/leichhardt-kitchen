@@ -73,7 +73,8 @@ const prepLines = async (p, text) => Object.entries(await store(p)).filter(([k, 
   await L.wReview(p);
   ok(await p.evaluate(() => document.activeElement && document.activeElement.id === 'w-ra') && !!(await p.$('.w-sheet [data-p="wreview"][disabled]')), 'review: a sheet, the cursor in the first box, Save off until something is typed');
   await p.fill('#w-ra', 'Hollandaise split'); await p.fill('#w-rc', 'Make it closer to service');
-  await p.click('.w-sheet [data-p="wreview"]'); await L.settle(p, 800);
+  await p.click('.w-sheet [data-p="wreview"]');
+  await L.waitFor(p, () => !document.querySelector('.w-sheet'));
   const rv = (await store(p))[fsKey(['waste', today])] || {};
   ok(rv.avoidable === 'Hollandaise split' && rv.reviewBy === 'Sam' && !(await p.$('.w-sheet')) && /Saved by Sam/.test(await txt(p, '.w-rvbtn') || ''), 'review: Save writes it, closes the sheet, and the button says who saved it');
   ok(!(await L.overflow(p)) && p.errors.length === 0, 'sous chef phone: no sideways scroll, no page errors ' + p.errors.join(' | '));

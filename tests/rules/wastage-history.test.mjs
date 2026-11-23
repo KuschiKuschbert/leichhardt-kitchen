@@ -1,6 +1,6 @@
 // Use the real SDK and emulator to prove path bounds and owner-only collection-group history access.
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { collectionGroup, collection, doc, setDoc, getDoc, getDocs, query, where, documentId } from 'firebase/firestore';
+import { collectionGroup, collection, doc, setDoc, getDoc, getDocs, query, where, documentId, runTransaction } from 'firebase/firestore';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { anonContext, dailySession, seedOwnerDevice } from './device-auth-fixtures.mjs';
@@ -44,4 +44,47 @@ try {
   const sous = anonContext(env, 'sam').firestore();
   await assertSucceeds(setDoc(doc(sous, K + 'config/main'), { pastEdit: { p: 10, w: 1 }, by: 'sam' }, { merge: true }));
   console.log('PASS a sous chef prep stamp can preserve the new wastage stamp');
+
+  const reviewPath = K + 'waste/2026-10-02';
+  const initial = { avoidable: 'Already reviewed', change: 'Use smaller trays', reviewBy: 'Other chef', reviewAt: 101, oldNote: true };
+  const approved = { avoidable: 'Measured the leftovers', change: 'Use smaller trays', reviewBy: 'Sam', reviewAt: 102, by: 'sam' };
+  const intervening = { avoidable: 'Counted the next tray', change: 'Keep the section plan', reviewBy: 'Sam', reviewAt: 103, by: 'sam' };
+  const candidate = { avoidable: 'Started with smaller batches', change: intervening.change, reviewBy: 'Head chef', reviewAt: 104, by: 'head' };
+  const version = r => JSON.stringify([r.avoidable, r.change, r.reviewBy, r.reviewAt, r.by]);
+  let reads = 0;
+  const attempt = (db, expected, data, afterRead) => runTransaction(db, async tx => {
+    const ref = doc(db, reviewPath);
+    const ss = await tx.get(ref);
+    const current = ss.exists() ? ss.data() : {};
+    reads++;
+    if (version(current) !== version(expected)) throw { code: 'review-conflict', review: current };
+    if (afterRead) await afterRead();
+    tx.set(ref, data, { merge: true });
+  });
+  const saved = async () => (await getDoc(doc(owner, reviewPath))).data();
+  const oldSave = data => setDoc(doc(sous, reviewPath), data, { merge: true });
+
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), reviewPath), initial));
+  await assertSucceeds(attempt(sous, initial, approved));
+  assert.deepEqual(await saved(), { ...initial, ...approved });
+  console.log('PASS the full SDK and current rules support a scoped transaction on an existing legacy review');
+
+  reads = 0;
+  await assert.rejects(attempt(owner, approved, candidate, () => oldSave(intervening)),
+    error => error.code === 'review-conflict' && error.review.avoidable === intervening.avoidable);
+  assert.equal(reads, 2);
+  assert.deepEqual(await saved(), { ...initial, ...intervening });
+  console.log('PASS a legacy third writer between read and commit invalidates the exact approved version');
+
+  await assertSucceeds(attempt(owner, intervening, candidate));
+  assert.deepEqual(await saved(), { ...initial, ...candidate });
+  await assertFails(attempt(anonContext(env, 'ann').firestore(), candidate, { ...approved, by: 'ann' }));
+  await assertFails(attempt(env.unauthenticatedContext().firestore(), candidate, candidate));
+  assert.deepEqual(await saved(), { ...initial, ...candidate });
+  console.log('PASS fresh approval writes once and the actual rules refuse staff writes and signed-out reads');
+
+  const oldLater = { ...intervening, reviewAt: 105 };
+  await assertSucceeds(oldSave(oldLater));
+  assert.deepEqual(await saved(), { ...initial, ...oldLater });
+  console.log('PASS old installed clients remain compatible and their later unconditional save remains possible');
 } finally { await env.cleanup(); }

@@ -100,11 +100,13 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
       ok(await off(p, sel) === true && !(await asks(p)), w + ' review: back as it was, Save is off again and a reload does not ask');
       if (w === 390) {
         await p.fill('#w-rc', 'Drop chips to order after 21:00');
-        await p.click(sel); await L.settle(p, 700);
+        await p.click(sel);
+        await L.waitFor(p, s => document.querySelector(s)?.innerText.trim() === 'Saved', sel, 8000);
         const rv = (await store(p))[fsKey(['waste', today])] || {};
         ok(rv.change === 'Drop chips to order after 21:00' && rv.reviewBy === 'Sam' && /Review saved/.test(await txt(p, '.p-toast') || ''), w + ' review: a changed review saves (' + JSON.stringify(rv) + ')');
         // 3 Nov 2026: Save closes the review sheet; opened again, Save is off
-        ok(!(await p.$('.w-sheet')) && /Saved by Sam/.test(await txt(p, '.w-rvbtn') || ''), w + ' review: once saved, the sheet closes and the button says who saved it');
+        await L.waitFor(p, () => !document.querySelector('.w-sheet'), null, 8000);
+        ok(/Saved by Sam/.test(await txt(p, '.w-rvbtn') || ''), w + ' review: once saved, the sheet closes and the button says who saved it');
         await L.wReview(p);
         ok(await off(p, sel) === true, w + ' review: once saved, Save is off again');
       }
