@@ -115,6 +115,7 @@ async function waitForJump(p, id, allowEnd) {
   ok(bw.slice(0, 3).join() === 'Allergens,Ingredients,Method' && bw.indexOf('Plate') < 0 && (bw.indexOf('Pan') < 0 || !!(await p.$('#r-plate'))), 'batch card: no Plate chip, and Pan only with a pan drawing (' + bw.join(', ') + ')');
   const diane = await L.open(b, '#/r/diane-sauce', { wait: 1200 });
   const dianeMethod = await L.txt(diane, '.steps');
+  ok(/Deglaze with 50 ml each of the red and white cooking wine.*remaining 1 L of red cooking wine/.test(dianeMethod), 'Diane Sauce: red and white wine deglaze');
   ok(/1 L of cold water.*reduce to a simmer.*ketchup and Worcestershire sauce.*12 L finished/.test(dianeMethod), 'Diane Sauce: slurry, simmer, sauces and finished yield');
   ok(/500 g\s*Tomato ketchup/i.test(await L.txt(diane, '#r-ing + .ing')) && !!(await diane.$('#r-plate svg')), 'Diane Sauce: ketchup quantity and pan drawing');
   await diane.context().close();

@@ -2449,8 +2449,8 @@ window.LK_DATA = {
         { q: '125 g', name: 'Crushed garlic' },
         { q: '6', name: 'Large onions', note: 'finely diced', none: true },
         { q: '0.5 bunch', name: 'Thyme', none: true },
-        { q: '100 ml', name: 'Brandy' },
-        { q: '1000 ml', name: 'Red cooking wine' },
+        { q: '1050 ml', name: 'Red cooking wine', note: '50 ml to deglaze, 1 L for the reduction' },
+        { q: '50 ml', name: 'White cooking wine', note: 'to deglaze' },
         { q: '1 L', name: 'Cooking cream', tags: ['Milk'] },
         { q: '250 ml', name: 'Worcestershire sauce', tags: ['Fish?', 'Gluten?', 'Soy?'] },
         { q: '500 g', name: 'Tomato ketchup' },
@@ -2460,7 +2460,7 @@ window.LK_DATA = {
       sections: [
         { title: 'Method', steps: [
           'Sweat the finely diced onion with the garlic and thyme until the onion is translucent.',
-          'Deglaze with the brandy, then add the red cooking wine and reduce by half.',
+          'Deglaze with 50 ml each of the red and white cooking wine. Add the remaining 1 L of red cooking wine and reduce by half.',
           'Add water to the pot, leaving room for the slurry, ketchup, Worcestershire sauce and cream, and bring it to the boil.',
           'In a separate bowl, whisk the gravy powder with 1 L of cold water to make a slurry.',
           'Stir the slurry into the boiling pot and reduce to a simmer.',
