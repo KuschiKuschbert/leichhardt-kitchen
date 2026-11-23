@@ -345,7 +345,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 /* Settings, sorted by who a setting is for (3 Nov 2026, docs/settings-options/brief.md): your card, then groups of rows.
    A row's button says what it is set to and opens the row in place; on a computer the group's name sits in a left column. */
 .settings.st { width: 100%; max-width: 62rem; margin: 0 auto; gap: 1.6rem; }
-.st-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.st-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
 .st-you { display: grid; gap: 0.8rem; padding: 1rem 1.1rem 1.1rem; background: var(--surface-paper); border: 1.5px solid var(--surface-people-edge); border-radius: var(--radius); min-width: 0; }
 .st-you.is-out { background: var(--beige); border-color: var(--edge); }
 .st-you-top { display: flex; align-items: center; gap: 0.8rem; min-width: 0; }
@@ -385,6 +385,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
    never put two tinted rows together. The words sit in from the tint's edge. The small grey lines are --muted, since
    --faint is 4.3:1 on the tint. Kitchen, Overview uses the same rows outside .st-grp and stays as it is. */
 .st-grp .st-btn { padding-inline: 0.75rem; }
+.st-grp .st-v > span { overflow: visible; overflow-wrap: anywhere; white-space: normal; }
 .st-grp .st-body.set-block { padding-inline: 0.75rem; }
 .st-grp .st-sub { color: var(--muted); }
 .st-grp .st-row:nth-child(even of :not([hidden], .st-qr)) { background: var(--beige); }
@@ -2016,6 +2017,8 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .wtop-btn.wtop-who[aria-current="page"] { background: var(--bar-text); color: var(--bar); }
 .wtop-btn.wtop-who[aria-expanded="true"] { background: var(--accent-ink); border-color: var(--accent-ink); border-style: solid; color: #fff; }
 .wm-wrap { position: fixed; inset: 0; z-index: 85; }
+dialog.wm-wrap { width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; overflow: visible; }
+dialog.wm-wrap::backdrop { background: transparent; }   /* the existing .wm-bg dims and dismisses */
 .wm-bg { position: absolute; inset: 0; background: rgba(28, 29, 31, 0.45); }   /* dims the page like the other popups (22 Oct 2026) */
 .wm { position: absolute; width: min(18rem, calc(100vw - 16px)); background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); padding: 2px 6px; font-family: var(--body); }
 .wm-h { margin: 0 10px; line-height: 1.2; font-size: 0.8125rem; color: var(--muted); }
@@ -5434,7 +5437,7 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 /* ---------- Gap fix: Home (8 Nov 2026) ----------
    From the audit of the redesign against its drawings: a chevron on board rows that open something and have no time,
    Coming up with the next days' order cut-offs (chefs only) and a week of functions, and On today from 720 px. */
-.hm-chev { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; color: rgba(251, 248, 241, 0.7); }
+.hm-chev { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; color: var(--bar-text); }
 .hm-up:has(#hm-cuts:not([hidden])) { display: block; }
 #hm-cuts[hidden] { display: none; }
 .hm-cuts { list-style: none; margin: 0 0 0.2rem; padding: 0; }
