@@ -239,6 +239,8 @@ Orders' progress count opens Ordered today when the fold has entries. Transfers 
 
 The supplier rail shows the current cut-off, delivery and last order beside the quantities on wide screens. **More** gives the same context on a smaller screen or with the rail hidden. **Order history** opens the existing list directly, and **Back to draft** restores the place and draft. [Chosen layout and checks](docs/supplier-order-rail-options/brief.md)
 
+In **Order history**, select a matching date to see its details, copy its text or use its quantities. Changing the search or selected date cancels a pending draft replacement. [Supplier order contract](docs/supplier-workspace.md#order-history-search-and-reuse)
+
 **Sunday sales suggestions** use one reviewed POS export and confirmed product links to show weekly amounts beside **To order**. The chef chooses what to put in the draft and places the order with the supplier. Final checks and live release are pending. [Sales suggestions and the chosen design](docs/supplier-sales.md)
 
 ## Delivery temperatures (26 Oct 2026)
