@@ -1318,10 +1318,11 @@
   var I_CLOCK = '<svg class="fn-i" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
   var I_BANG = '<svg class="fn-i" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 7v6M12 16.5v.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
   var I_BOX = '<svg class="fn-i" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>';
-  // a waiting trip's state, in words beside its icon: Not sent yet (this phone's write), Waiting, Waiting N min (10 or
+  // the local write names the trip's current step. A confirmation in flight belongs to an already sent trip.
+  // Sent trips say Waiting, Waiting N min (10 or
   // more: named attention), Not confirmed (the function's window is over)
   function waitPill(f, x, t) {
-    if (F.pend[x.id]) return '<span class="fn-ws is-pend">' + I_CLOCK + ' Not sent yet</span>';
+    if (F.pend[x.id]) return '<span class="fn-ws is-pend">' + I_CLOCK + (x.outAt ? ' Confirming out...' : ' Not sent yet') + '</span>';
     if (f.until && t >= f.until) return '<span class="fn-ws is-never">' + I_BANG + ' Not confirmed</span>';
     var m = Math.floor((t - x.sentAt) / MIN);
     return m >= 10 ? '<span class="fn-ws is-long">' + I_WAIT + ' Waiting ' + m + ' min</span>' : '<span class="fn-ws">' + I_WAIT + ' Waiting</span>';
@@ -1856,10 +1857,14 @@
         '<button type="button" class="fn-svc-kmore" data-fn="pick-more"' + d + (v < left ? '' : ' disabled') + ' aria-label="' + (v < left ? 'One more ' + nm + ' in this trip' : 'All ' + left + ' ' + nm + ' are in this trip') + '">+</button></li>';
     }).join('') + '</ul>';
   }
-  function shelfHTML(t, me, coord) {
-    var wt = waitingTrips(), outs = outTrips(t), chef = isChef();
+  function shelfHTML(t, me, coord, wt, sending) {
+    var outs = outTrips(t), chef = isChef();
     if (!wt.length && !outs.length) return '';
-    var out = '<section class="fn-svc-shelf" id="fn-shelf" aria-label="Waiting for Functions"><h4 class="fn-svc-sh">Waiting for Functions <small>' + (coord ? 'confirm each trip when it is out' : 'sent, not confirmed yet') + '</small></h4>';
+    var onlySending = sending > 0 && sending === wt.length;
+    var heading = onlySending ? 'Sending to Functions' : 'Waiting for Functions';
+    var detail = onlySending ? 'waiting for the send to finish' : coord ? 'confirm each trip when it is out' : 'sent, not confirmed yet';
+    if (sending && !onlySending) detail += ' · sending shown below';
+    var out = '<section class="fn-svc-shelf" id="fn-shelf" aria-label="' + heading + '"><h4 class="fn-svc-sh">' + heading + ' <small>' + detail + '</small></h4>';
     if (wt.length) out += '<ul class="fn-svc-trips">' + wt.map(function (w) {
       var f = w.f, x = w.t, pend = !!F.pend[x.id], age = t - x.sentAt, mine = x.sentBy === me, acts = '';
       if (!pend) {
@@ -1882,7 +1887,9 @@
   }
   function serviceHTML(t) {
     var sv = service(F.list, t, isSentK, leftK, keepK), q = sum(sv.plate.map(function (p) { return p.qty; }));
-    var me = ahWho(), cook = canSend(), coord = !cook, wt = waitingTrips(), long = wt.filter(function (w) { return !F.pend[w.t.id] && t - w.t.sentAt >= 10 * MIN; }).length;
+    var me = ahWho(), cook = canSend(), coord = !cook, wt = waitingTrips();
+    var sending = wt.filter(function (w) { return F.pend[w.t.id] && !w.t.outAt; }).length, waiting = wt.length - sending;
+    var long = wt.filter(function (w) { return !F.pend[w.t.id] && t - w.t.sentAt >= 10 * MIN; }).length;
     /* Redesign step 5 (8 Nov 2026, Flighty's live board, every-page.html e-service): the rounds still to go out on the
        dark board, each with how long until it goes (or how late it is), the platters, the function's service and
        dietary notes on every round, and its Send, as before. Both prints moved to the end. The page is drawn again
@@ -1908,10 +1915,12 @@
         (cook ? '<div class="fn-next-sent"><button type="button" class="btn fn-sent-b" data-fn="send" data-id="' + esc(r.f.id) + '" data-r="' + r.k + '"' + (busy ? ' disabled aria-disabled="true"' : '') + '>' + esc(lab) + '</button>' +
           (pq && !busy ? '<button type="button" class="linkish fn-svc-link" data-fn="pick-clear" data-id="' + esc(r.f.id) + '" data-r="' + r.k + '">Clear</button>' : '') + '</div>' : '') + '</li>';
     }).join('') + '</ul>' : '';
-    var shelf = shelfHTML(t, me, coord);
+    var shelf = shelfHTML(t, me, coord, wt, sending);
+    var shortcut = waiting + (waiting === 1 ? ' trip' : ' trips') + ' waiting for Functions' + (long ? ', ' + long + ' over 10 min' : '');
+    if (sending) shortcut = waiting ? shortcut + ' · ' + sending + ' sending' : sending + (sending === 1 ? ' trip' : ' trips') + ' sending to Functions';
     if (sv.all.length || shelf) {
       out += '<div class="fn-svc-board"><div class="fn-svc-bh"><h3 class="fn-svc-bt">' + (coord ? 'Functions service' : 'Still to go out') + '</h3><b class="fn-svc-clock">' + esc(kclock(t)) + '</b></div>' +
-        (cook && wt.length && sv.all.length ? '<button type="button" class="linkish fn-svc-wl" data-fn="shelf">' + I_WAIT + ' ' + wt.length + (wt.length === 1 ? ' trip' : ' trips') + ' waiting for Functions' + (long ? ', ' + long + ' over 10 min' : '') + '</button>' : '') +
+        (cook && wt.length && sv.all.length ? '<button type="button" class="linkish fn-svc-wl" data-fn="shelf">' + (waiting ? I_WAIT : I_CLOCK) + ' ' + shortcut + '</button>' : '') +
         (coord ? shelf + (rows ? '<div class="fn-svc-sec"><h4 class="fn-svc-sh">Still to go out <small>the kitchen sends these</small></h4>' + rows + '</div>' : '') : rows + shelf) + '</div>';
     }
     if (sv.plate.length) out += '<section class="fn-next" aria-label="To plate now"><p class="fn-next-h"><span class="fn-next-l">To plate now</span> <b>' + q + ' ' + (q === 1 ? 'platter' : 'platters') + '</b></p>' +
