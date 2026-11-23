@@ -44,7 +44,8 @@ const EXPECT = {
   'wing-flour': { form: 'coat' },
   'corn': { form: 'piece', lines: { 'Corn': { cook: 'charred' } } },
   'seed-granola': { form: 'mixture', lines: { 'Linseeds': { part: 'solid' }, 'Honey': { part: 'liquid' } } },
-  'tartare': { bought: true }
+  'tartare': { bought: false },
+  'green-goddess': { bought: true }
 };
 function line(mo, ing) { return mo.lines.find(L => L.ing === ing || L.ing.indexOf(ing) === 0); }
 function check() {
