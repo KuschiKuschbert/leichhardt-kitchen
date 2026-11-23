@@ -1709,7 +1709,7 @@
   function privacyLock(reason) {
     if (S.privacyLocked || !S.who && !S.user) return;
     // Wastage page reviews keep their own dated drafts and can be acknowledged while this lock is on.
-    S.lockHasDraft = !!(workLock() && S.lockHasDraft) || draftDirty(true); S.lockIdentity = stableIdentity();
+    S.lockHasDraft = !!(workLock() && S.lockHasDraft) || draftsForUpdate(true); S.lockIdentity = stableIdentity();
     if (pt && pt.busy) pt.lockRetained = S.lockIdentity;
     S.lockRecorder = S.who || ''; S.privacyLocked = true; S.lockReason = reason; S.authed = false; S.level = ''; S.grantExp = 0; accessEpoch++; digestMem = null; S.tmrPlan = null;
     prepTickFaults.clear(); stopLive(); clearPrivateCache(); ptClose(true, true); ksClose(); noteClose('shut'); lmClose();
@@ -8866,7 +8866,7 @@ if (list.length) sg('oreg', 's');
   function rvStatus(page) {
     var day = rvDay(page), r = rvDraft(page), phase = r && r.phase, other = r && r.conflict;
     var date = page && day !== dayNow() ? ' for ' + longDate(day) : '';
-    var conflict = other ? (other.reviewBy || 'Another chef') + ' saved a review' +
+    var conflict = other && !phase ? (other.reviewBy || 'Another chef') + ' saved a review' +
       date +
       (typeof other.reviewAt === 'number' && other.reviewAt > 0 ? ' at ' + clock(other.reviewAt) : '') +
       '. Replace that review to save your changes.' : '';
@@ -17239,11 +17239,11 @@ if (list.length) sg('oreg', 's');
     return (!skipPageReview && rvPageDirty()) || !!(psModule() && psModule().unsaved()) || !!(proofModule() && proofModule().dirty()) || !!(window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.dirty()) || draftsDirty() || !!mlf.text.trim() || tdDirty() || tmAnyDirty() || dkDirty() || whReviewDirty() ||
       !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || S.xf.text.trim() || String(S.xf.amt).trim() || S.xf.note.trim() || !!(S.xf.basket || []).length);
   }
-  function draftDirty(skipPageReview) {
+  function draftsForUpdate(skipPageReview) {
     return !!(window.LK_CLEANING && window.LK_CLEANING.dirty()) || !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere(skipPageReview);
   }
   function dirtyForUpdate() {
-    return !!(workLock() && S.lockHasDraft) || draftDirty();
+    return !!(workLock() && S.lockHasDraft) || draftsForUpdate();
   }
   function canChangeDevice() {
     return deviceReady() && canW() && !!me() && (shared() ? whoHead() : deviceOwner() === S.who);

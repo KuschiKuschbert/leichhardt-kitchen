@@ -4268,7 +4268,7 @@ html:has(.w-sheet, .tr-sheet, .p-sheet, .o-sheet) .p-toasts { top: calc(12px + e
   .w-rv-cue::before { content: '· '; }
 }
 @media screen and (max-width: 430px) {
-  html[data-text="xlarge"] .w-page:has(> .w-today) > .w-rvfoot { max-width: 44vw; }
+  html[data-text="xlarge"] .w-page:has(> .w-today) > .w-rvfoot { max-width: 40vw; }
 }
 @media print {
   .w-page > .w-rvfoot { order: 1; }
