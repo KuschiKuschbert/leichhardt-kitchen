@@ -273,7 +273,7 @@
       return store.loadSuppliers().then(function (list) { var out = list.map(function (s) { return C.cleanSupplier(s); }); out.bad = Array.isArray(list.bad) ? list.bad : []; return out; });
     }).then(function (list) {
       if (g !== generation || key !== ctx()) return;
-      M.unread = list.bad; M.suppliers = list.sort(function (a, b) { return a.name.localeCompare(b.name); }); M.busy = false; var draftConflict = moveSplitDrafts(list); if (draftConflict) M.err = draftConflict; if (force) { M.history = Object.create(null); M.audit = Object.create(null); M.requests = null; if (M.review && !M.review.uncertain && !M.review.recorded) M.review = null; }
+      M.unread = list.bad; M.suppliers = list.sort(function (a, b) { return a.name.localeCompare(b.name); }); M.busy = false; var draftConflict = moveSplitDrafts(list); if (draftConflict) M.err = draftConflict; if (force) { M.reuse = ''; M.history = Object.create(null); M.audit = Object.create(null); M.requests = null; if (M.review && !M.review.uncertain && !M.review.recorded) M.review = null; }
       if (M.route.cutoffId) { var linked = list.filter(function (s) { return s.cutoffId === M.route.cutoffId; }); if (linked.length === 1) M.sid = linked[0].id; }
       if (!supplier()) M.sid = M.suppliers.length ? M.suppliers[0].id : '';
       // the card reads no supplier's history: none of them is this cut-off's
@@ -304,7 +304,7 @@
   // per tap: a tap while the read is out reads nothing more (20 Nov 2026).
   function historyAgain() {
     var h = hist(); if (h.busy) return;
-    againStop('hist'); h.rows = null; h.byItem = Object.create(null); h.full = false; h.more = false; h.cursor = null; loadHistory(M.historyOpen, false);
+    againStop('hist'); M.reuse = ''; h.rows = null; h.byItem = Object.create(null); h.full = false; h.more = false; h.cursor = null; loadHistory(M.historyOpen, false);
   }
   function loadRequests() {
     if ((M.requests !== null && M.requestsDay === day()) || M.requestsBusy) return;
@@ -489,17 +489,46 @@
     return '<section class="su-review"><h2 id="rtitle" tabindex="-1">Review order</h2>' + statusHTML() + '<p>' + esc(r.supplierName) + ' · ' + r.lines.length + ' items</p>' + linesHTML(r.lines) + '<p>Record this only after you have placed the supplier order. This page sends nothing to the supplier.</p>' + (r.occurrence ? '<p class="hint">' + (r.additional ? 'Additional order for ' : r.occurrence.done ? 'Records the quantities of the order ticked for ' : 'Completes only ') + esc(r.occurrence.label || r.occurrence.day) + '.</p>' : '<p class="hint">No reminder linked. This records the supplier history only.</p>') + '<div class="su-send"><b>1. Send it your usual way</b><div class="btn-row">' + (navigator.share ? button('share-review', 'Share order text', M.saving ? ' disabled' : '') : '') + button('copy-review', 'Copy order text', M.saving ? ' disabled' : '') + '</div><span class="hint">' + (navigator.share ? 'Share opens your phone\'s text, email or chat apps. ' : '') + 'The book sends nothing itself.</span></div>' +
       '<b class="su-then">2. Then record it here</b><div class="btn-row">' + button('record', M.saving ? inkLabel('Recording...') : r.checking ? inkLabel('Checking cut-off...', 'orders') : r.uncertain ? 'Confirm recording again' : 'Record order placed', M.saving || r.checking ? ' disabled aria-busy="true"' : r.recorded ? ' disabled' : '', true) + (r.recorded ? button('new-draft', 'Start new draft', M.saving ? ' disabled' : '') : '') + '</div></section>';
   }
+  function historyView(rows) {
+    var query = M.historyQ.trim().toLowerCase();
+    var chosen = rows.find(function (o) { return o.id === M.historyId; }) || rows[0];
+    var matches = query ? rows.filter(function (o) {
+      var text = dateText(o.at) + ' ' + o.lines.map(function (l) { return l.name; }).join(' ');
+      return text.toLowerCase().indexOf(query) >= 0;
+    }) : rows;
+    return { matches: matches, selected: matches.indexOf(chosen) >= 0 ? chosen : null };
+  }
+  function historyActionOrder(id) {
+    var input = M.root.querySelector('[data-sf="historyQ"]');
+    // The shared search may still be waiting to apply the words already typed in the box.
+    if (!M.historyOpen || !input || input.value.trim() !== M.historyQ.trim()) return null;
+    var selected = historyView(hist().rows || []).selected;
+    return selected && selected.id === id ? selected : null;
+  }
   function historyHTML() {
     if (!M.historyOpen) return '<section id="su-order-history" hidden></section>';
-    var h = hist(), rows = h.rows || [], selected = rows.filter(function (o) { return o.id === M.historyId; })[0] || rows[0];
+    var h = hist(), rows = h.rows || [], view = historyView(rows), selected = view.selected;
     var body = '<p class="hint">Last order on each item shows its latest recorded quantity and date in the loaded history.' + (h.more ? ' Choose Older orders to check items marked Earlier orders not checked.' : '') + '</p>'; if (h.busy) body += loading('Reading order history...', 'orders', h.rows ? 0 : 3);
     if (h.err) body += readLine(h.err, 'data-su="history-retry"');
-    if (selected) {
-      body += field('historyQ', 'Find an order', M.historyQ, { type: 'search', placeholder: 'Date or item name' }) + '<div class="su-history-dates">' + rows.filter(function (o) { return (dateText(o.at) + ' ' + o.lines.map(function (l) { return l.name; }).join(' ')).toLowerCase().indexOf(M.historyQ.toLowerCase()) >= 0; }).map(function (o) { return '<button type="button" class="chip" data-su="history-order" data-id="' + esc(o.id) + '" aria-pressed="' + (o.id === selected.id) + '">' + esc(dateText(o.at)) + '</button>'; }).join('') + '</div><h4>' + esc(dateText(selected.at)) + '</h4><p class="hint">' + selected.lines.length + ' items · Recorded by ' + esc(B().name(selected.by) || 'Chef') + '</p>' + (selected.inheritedFrom ? '<p class="hint">From the original ' + esc(selected.supplierName) + ' order, before these suppliers were separated. Only this supplier\'s items are shown.</p>' : '') + (selected.lines.length ? linesHTML(selected.lines) : '<p class="hint">No items for this supplier in that order.</p>') + '<div class="btn-row">' + button('reuse', 'Use quantities again', ' data-id="' + esc(selected.id) + '"' + (selected.lines.length ? '' : ' disabled')) + button('copy-history', 'Copy this order', ' data-id="' + esc(selected.id) + '"' + (selected.lines.length ? '' : ' disabled')) + '</div>';
+    if (rows.length) {
+      body += field('historyQ', 'Find an order', M.historyQ, { type: 'search', placeholder: 'Date or item name' });
+      if (view.matches.length) {
+        body += '<div class="su-history-dates">' + view.matches.map(function (o) {
+          return '<button type="button" class="chip" data-su="history-order" data-id="' + esc(o.id) + '" aria-pressed="' + (o === selected) + '">' + esc(dateText(o.at)) + '</button>';
+        }).join('') + '</div>';
+        if (!selected) body += '<p class="hint" role="status">Choose an order to see its quantities.</p>';
+      } else if (!h.busy) body += '<p class="empty" role="status">No loaded orders match your search.</p>';
     } else if (!h.busy && !h.err) body += '<p class="hint">No orders recorded for this supplier.</p>';
+    if (selected) {
+      var actionAttrs = ' data-id="' + esc(selected.id) + '"' + (selected.lines.length ? '' : ' disabled');
+      body += '<h4>' + esc(dateText(selected.at)) + '</h4><p class="hint">' + selected.lines.length + ' items · Recorded by ' + esc(B().name(selected.by) || 'Chef') + '</p>' +
+        (selected.inheritedFrom ? '<p class="hint">From the original ' + esc(selected.supplierName) + ' order, before these suppliers were separated. Only this supplier\'s items are shown.</p>' : '') +
+        (selected.lines.length ? linesHTML(selected.lines) : '<p class="hint">No items for this supplier in that order.</p>') +
+        '<div class="btn-row">' + button('reuse', 'Use quantities again', actionAttrs) + button('copy-history', 'Copy this order', actionAttrs) + '</div>';
+      if (M.reuse === selected.id) body += '<div class="su-confirm"><p>Replace the quantities in this supplier draft with the order from ' + esc(dateText(selected.at)) + '? Other supplier drafts stay as they are.</p><div class="btn-row">' + button('reuse-confirm', 'Replace draft quantities', actionAttrs, true) + button('reuse-cancel', 'Cancel') + '</div></div>';
+    }
     // what Copy order text or Use quantities again did, said here beside them, not at the top of a long page
     if (M.msg && M.msgAt === 'history') body = '<p class="su-status su-status-here" role="status">' + esc(M.msg) + '</p>' + body;
-    if (M.reuse) body += '<div class="su-confirm"><p>Replace the quantities in this supplier draft with the selected order? Other supplier drafts stay as they are.</p><div class="btn-row">' + button('reuse-confirm', 'Replace draft quantities', ' data-id="' + esc(M.reuse) + '"', true) + button('reuse-cancel', 'Cancel') + '</div></div>';
     if (h.more) body += '<div class="btn-row">' + button('history-more', 'Older orders', h.busy ? ' disabled' : '') + '</div>';
     return '<section id="su-order-history" class="su-disclosure" aria-labelledby="su-history-title"><div class="su-history-head"><h3 id="su-history-title" class="h3" tabindex="-1">Order history</h3>' + button('history-close', 'Back to draft') + '</div><div class="su-disclosure-body">' + body + '</div></section>';
   }
@@ -1053,10 +1082,18 @@
     if (!M.msg) M.msgAt = '';
     var active = document.activeElement, keep = active && M.root.contains(active) ? { field: active.getAttribute('data-sf'), id: active.getAttribute('data-i'), part: active.getAttribute('data-part'), start: active.selectionStart, end: active.selectionEnd } : null;
     var historyFocus = active && active.id === 'su-history-title';
-    var y = window.scrollY; M.root.innerHTML = mainHTML(); placeOrderContext(); if (M.saving) Array.prototype.forEach.call(M.root.querySelectorAll('input,select,textarea,button'), function (n) { n.disabled = true; }); window.scrollTo(0, y);
+    var ux = window.LK_UX, keepSearch = keep && keep.field === 'historyQ' && ux && ux.restoreFocus;
+    var y = window.scrollY;
+    if (keepSearch) active._uxRedrawing = true;
+    try { M.root.innerHTML = mainHTML(); } finally { if (keepSearch) delete active._uxRedrawing; }
+    placeOrderContext(); if (M.saving) Array.prototype.forEach.call(M.root.querySelectorAll('input,select,textarea,button'), function (n) { n.disabled = true; }); window.scrollTo(0, y);
     if (keep && keep.field) {
       var candidates = M.root.querySelectorAll('[data-sf]'), found = Array.prototype.filter.call(candidates, function (n) { return n.getAttribute('data-sf') === keep.field && n.getAttribute('data-i') === keep.id && n.getAttribute('data-part') === keep.part; })[0];
-      if (found) { found.focus({ preventScroll: true }); if (typeof keep.start === 'number') try { found.setSelectionRange(keep.start, keep.end); } catch (e) {} }
+      if (found) {
+        // The shared search wraps the replacement before the caret goes back, as in Find a drawing.
+        if (keepSearch) { ux.enhance(M.root); ux.restoreFocus(found); } else found.focus({ preventScroll: true });
+        if (typeof keep.start === 'number') try { found.setSelectionRange(keep.start, keep.end); } catch (e) {}
+      }
     }
     if (historyFocus) { var title = M.root.querySelector('#su-history-title'); if (title) title.focus({ preventScroll: true }); }
     window.dispatchEvent(new Event('lk-nav'));
@@ -1181,7 +1218,7 @@
     store.record(r.sid, r.catalogueV, r.id, r.lines, r.occurrence ? { day: r.occurrence.day, cutoffId: r.occurrence.cutoffId } : null, r.linkV, r.additional, r.occurrence && r.occurrence.deliveryDay || '').then(function (result) {
       if (g !== generation) return;
       var h = hist(r.sid); h.rows = [result.order].concat((h.rows || []).filter(function (o) { return o.id !== result.order.id; })); indexHistory(h);
-      delete M.drafts[r.sid]; M.review = null; M.saving = false; M.additional = ''; M.historyId = result.order.id; M.msg = result.replayed ? 'This order was already recorded. No duplicate was made.' : 'Order recorded' + (forWords(r.occurrence) ? ' ' + forWords(r.occurrence) : '') + '. Nothing was sent to the supplier.'; draw();
+      delete M.drafts[r.sid]; M.review = null; M.saving = false; M.additional = ''; M.reuse = ''; M.historyId = result.order.id; M.msg = result.replayed ? 'This order was already recorded. No duplicate was made.' : 'Order recorded' + (forWords(r.occurrence) ? ' ' + forWords(r.occurrence) : '') + '. Nothing was sent to the supplier.'; draw();
       // a new view: start at its top, where the message says it was recorded (5 Nov 2026, docs/action-feedback.md)
       focusTask();
     }, function (e) { if (g === generation) { M.saving = false; if (e.code === 'uncertain') r.uncertain = true; if (e.code === 'stale' || e.code === 'concurrent') r.uncertain = false; if (e.code === 'recorded') { r.recorded = true; r.uncertain = false; if (e.prior) { var h = hist(r.sid); h.rows = [e.prior].concat((h.rows || []).filter(function (o) { return o.id !== e.prior.id; })); indexHistory(h); } } M.err = errorText(e); draw(); } });
@@ -1219,9 +1256,9 @@
     }, function (e) { if (g === generation) { M.saving = false; M.err = errorText(e); draw(); } });
   }
   function reuseOrder(id, confirmed) {
-    var order = (hist().rows || []).filter(function (o) { return o.id === id; })[0]; if (!order) return;
+    var order = historyActionOrder(id); if (!order || confirmed && M.reuse !== id) return;
     if (!order.lines.length) { M.msgAt = 'history'; message('No quantities for this supplier in that order. Your draft is unchanged.'); return; }
-    if (hasDraft(M.sid) && !confirmed) { M.reuse = id; draw(); return; }
+    if (hasDraft(M.sid) && !confirmed) { M.historyId = id; M.reuse = id; draw(); return; }
     var d = draft(); d.qty = Object.create(null); d.stock = Object.create(null); d.units = { qty: Object.create(null), stock: Object.create(null) }; d.suggestions = Object.create(null);
     order.lines.forEach(function (l) { var i = item(l.itemId); if (i && !i.archived) { d.qty[i.id] = l.qty; d.units.qty[i.id] = l.unit; } }); M.reuse = ''; M.msg = 'Previous quantities copied into this draft. Review them before ordering.'; M.msgAt = 'history'; draw();
   }
@@ -1364,7 +1401,7 @@
   function invalidateContext() {
     generation++; if (store) store.reset(); store = null;
     // Only the person's form survives. New reads and transaction attempts must use the new PIN context.
-    M.suppliers = null; M.history = Object.create(null); M.audit = Object.create(null); M.requests = null;
+    M.suppliers = null; M.reuse = ''; M.history = Object.create(null); M.audit = Object.create(null); M.requests = null;
     M.busy = false; M.requestsBusy = false; M.requestsError = ''; M.requestsDay = ''; M.validation = null;
     if (M.review) { M.review.checking = false; if (M.saving) M.review.uncertain = true; }
     if (M.saving) M.msg = 'Your supplier draft is kept. Check the latest records, then retry the save. Nothing will retry automatically.';
@@ -1468,9 +1505,15 @@
     if (cmd === 'history-close') closeHistory();
     if (cmd === 'history-retry') historyAgain();
     if (cmd === 'history-more') loadHistory(true, true);
-    if (cmd === 'history-order') { M.historyId = el.getAttribute('data-id'); draw(); }
+    if (cmd === 'history-order' && M.historyOpen) {
+      var orderId = el.getAttribute('data-id');
+      if (historyView(hist().rows || []).matches.some(function (o) { return o.id === orderId; })) {
+        if (M.historyId !== orderId) M.reuse = '';
+        M.historyId = orderId; draw();
+      }
+    }
     if (cmd === 'reuse') reuseOrder(el.getAttribute('data-id'), false); if (cmd === 'reuse-confirm') reuseOrder(el.getAttribute('data-id'), true); if (cmd === 'reuse-cancel') { M.reuse = ''; draw(); }
-    if (cmd === 'copy-history') { var o = (hist().rows || []).filter(function (x) { return x.id === el.getAttribute('data-id'); })[0]; if (o && o.lines.length) copyOrder(o.lines, o.supplierName); }
+    if (cmd === 'copy-history') { var o = historyActionOrder(el.getAttribute('data-id')); if (o && o.lines.length) copyOrder(o.lines, o.supplierName); }
     if (cmd === 'edit') openEditor(id); if (cmd === 'add') openEditor(''); if (cmd === 'save-item') saveItem();
     if (cmd === 'editor-close') closeEditor('editor-close');
     if (cmd === 'archive' && canEdit()) { M.archive = id; draw(); } if (cmd === 'archive-cancel') { M.archive = ''; draw(); } if (cmd === 'archive-confirm') archiveItem(id, false); if (cmd === 'restore') archiveItem(id, true);
@@ -1500,7 +1543,14 @@
     if (f.indexOf('sales-') === 0) { updateSalesField(el, f, false); return; }
     if (f === 'q') { M.q = el.value; M.page = 0; draw(); return; }
     if (f === 'cutQ') { M.cutQ = el.value; draw(); return; }
-    if (f === 'historyQ') { M.historyQ = el.value; draw(); return; } if (f === 'importQ') { M.importQ = el.value; draw(); return; }
+    if (f === 'historyQ') {
+      if (M.historyQ !== el.value) M.reuse = '';
+      M.historyQ = el.value;
+      var ux = window.LK_UX;
+      if (ux && ux.restoreFocus && document.activeElement === el.parentElement.querySelector('.ux-search-clear')) ux.restoreFocus(el);
+      draw(); return;
+    }
+    if (f === 'importQ') { M.importQ = el.value; draw(); return; }
     if (f === 'qty' || f === 'stock') { draft()[f][id] = el.value; var enteredItem = item(id); if (String(el.value).trim() && enteredItem) draft().units[f][id] = f === 'qty' ? enteredItem.orderUnit : enteredItem.parUnit; else delete draft().units[f][id]; if (f === 'qty') { delete draft().suggestions[id]; salesCancelReplacement(id); } M.review = null; clearEntryError(f, id, el.value); if (M.smart) draw(); else if (f === 'stock') redrawRow(id); else { var hint = el.closest('.su-qty').querySelector('.hint'); if (hint) hint.textContent = orderUnitHint(item(id), draft()); var count = M.root.querySelector('.su-order-actions > .hint'); if (count) count.textContent = itemCount(Object.keys(draft().qty).filter(function (k) { return String(draft().qty[k]).trim(); }).length) + ' in this supplier draft'; var reviewButton = M.root.querySelector('[data-su="review"]'); if (reviewButton) reviewButton.disabled = !Object.keys(draft().qty).some(function (k) { return String(draft().qty[k]).trim(); });
       // the row's Use chip steps aside once a quantity is typed; In this order keeps its count (no redraw, the caret stays)
       var use = Array.prototype.filter.call(M.root.querySelectorAll('.su-use'), function (b) { return b.getAttribute('data-i') === id; })[0]; if (use) use.hidden = !!String(el.value).trim();
