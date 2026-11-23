@@ -39,7 +39,7 @@ const minIds = p => p.evaluate(() => (window.LK_PREP.state.mins || []).map(m => 
   // a function manager reads the contact through their PIN session
   let p = await L.open(b, '#/functions/smith', { who: 'finn', extra: fnExtra, wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('[data-ff="cname"]'));
-  ok(await p.inputValue('[data-ff="cname"]') === 'Jo Smith' && await p.$('.fe-cmiss') === null, 'contact: Finn sees the booking contact');
+  ok(await txt(p, '.fe-sum') === 'Jo Smith' && await p.$('.fe-cmiss') === null, 'contact: Finn sees the booking contact');
   // a save that leaves the contact alone does not write it
   await p.fill('[data-ff="kc"]', 'Cake at 20:30.');
   await tap(p, '[data-fe="save"]');
@@ -47,7 +47,7 @@ const minIds = p => p.evaluate(() => (window.LK_PREP.state.mins || []).map(m => 
   let w = await p.evaluate(() => window.__fake.writes.filter(b => b.some(o => /\/functions\/smith$/.test(o.path))).pop() || []);
   ok(w.length && !w.some(o => /\/fncontact\//.test(o.path)), 'contact: a save that leaves it alone does not write it (' + w.map(o => o.path.split('/')[2]).join(',') + ')');
   // a changed phone number is written
-  await p.click('.fe-contact summary'); await L.settle(p, 100);   // the contact folds away once it is filled in
+  await p.getByRole('button', { name: 'Edit contact', exact: true }).click();
   await p.fill('[data-ff="phone"]', '0400 333 444');
   await tap(p, '[data-fe="save"]');
   await L.waitFor(p, () => /Version 3/.test((document.getElementById('fe-root') || {}).textContent || ''));

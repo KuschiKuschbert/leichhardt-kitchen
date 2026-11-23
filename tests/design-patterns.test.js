@@ -19,19 +19,24 @@ const CLASSES = [
   'hm-welcome', 'hm-welcome-long', 'hm-welcome-compact', 'hm-say', 'nb-tmr-n', 'nb-pw-row', 'mascot', 'mascot-host', 'mascot-still', 'nb-fin', 'nb-fin-art', 'nb-fin-w', 'nb-fin-say', 'nb-fin-sec', 'tm-glance', 'nb-scene', 'nb-w40', 'nb-w28', 'nb-f192', 'nb-f96', 'nb-f64', 'nb-f48', 'nb-f0', 'nb-noart', 'p-toast-two', 'p-toast-say',
   'su-last-kind', 'su-last-wide', 'su-last-dow',
   'ko-row', 'ko-chip', 'ko-say',
+  'fe-list-tools', 'fe-contact-row', 'fe-tcell', 'fe-time', 'fe-tsay', 'fe-tq', 'fe-tamb', 'fe-tl', 'fe-tl-o',
   'cooling-clock', 'cooling-clock-status', 'cooling-chip', 'cooling-menu', 'cooling-row', 'cooling-start', 'cooling-status', 'cooling-error',
   'ux-swipe', 'ux-swipe-handle', 'ux-swipe-dragging',
   'ux-modal', 'ux-modal-close', 'ux-modal-head', 'ux-modal-title', 'ux-modal-grip', 'ux-modal-shade',
   'nb-prog', 'p-card', 'p-h', 'hint', 'btn-row', 'btn', 'dark', 'p-link', 'p-err', 'chip', 'ux-picker', 'hm-team-staff', 'hm-staff-first', 'hm-rota', 'hm-tp-move', 'hm-starts', 'hm-st', 'hm-st-t', 'hm-st-n', 'hm-st-sec', 'hm-st-back', 'hm-st-again', 'hm-st-now', 'hm-st-none', 'is-gone',
   'nt-wrap', 'nt-bg', 'nt', 'nt-grip', 'nt-in', 'nt-head', 'nt-eb', 'nt-h', 'nt-date', 'nt-body', 'nt-foot', 'nt-got',
-  'tm-chip', 'wtop-icons', 'is-due', 'nb-pw', 'nb-tmset', 'nb-tmday', 'tm-fold', 'nb-ai', 'nb-aw', 'nb-onslot', 'nb-hbar', 'wb-list', 'nb-sgr', 'nb-sgadd', 'o-cut-fold', 'o-cut-cue', 'o-cut-action', 'dl-at', 'dl-dot', 'dl-rb', 'hm-board', 'hm-a', 'hm-paper', 'hm-sec', 'w-secs', 'tr-card', 'tr-cv', 'tr-ret', 'fn-c0', 'fn-cnext', 'fn-end', 'fn-quiet', 'fn-svc-board', 'fn-svc-cd', 'fn-svc-diet', 'fn-svc-k', 'fn-svc-kin', 'fn-svc-kslot', 'fn-svc-kmore', 'fn-svc-shelf', 'fn-svc-trip', 'fn-ws', 'fn-svc-wl', 'jumps', 'ch-grid', 'ch-line', 'find-i',
+  'tm-chip', 'wtop-icons', 'is-due', 'nb-pw', 'nb-tmset', 'nb-tmday', 'tm-fold', 'nb-ai', 'nb-aw', 'nb-onslot', 'nb-hbar', 'wb-list', 'nb-sgr', 'nb-sgadd', 'o-cut-fold', 'o-cut-cue', 'o-cut-action', 'o-cut-more', 'dl-at', 'dl-dot', 'dl-rb', 'hm-board', 'hm-a', 'hm-paper', 'hm-sec', 'w-secs', 'tr-card', 'tr-cv', 'tr-ret', 'fn-c0', 'fn-cnext', 'fn-end', 'fn-quiet', 'fn-svc-board', 'fn-svc-cd', 'fn-svc-diet', 'fn-svc-k', 'fn-svc-kin', 'fn-svc-kslot', 'fn-svc-kmore', 'fn-svc-shelf', 'fn-svc-trip', 'fn-ws', 'fn-svc-wl', 'jumps', 'ch-grid', 'ch-line', 'find-i',
   'set-block', 'label', 'a-ch-h', 'c-tools', 'c-tool', 'c-tool-go', 'a-tablewrap', 'a-table', 'a-plain', 'sk-c', 'a-legend', 'dsh-inbox', 'dsh-dtile', 'dsh-cmp', 'dsh-charts-btn', 'tm-learn', 'a-find', 'fd-sheet', 'a-quick', 'wm-tile', 'wm-due',
   'ps-viewbar', 'ps-minimum', 'ps-grid', 'ps-section', 'ps-fields', 'ps-form-grid', 'ps-catalogue-row', 'ps-standard',
   'ad-admin', 'ad-layout', 'a-nav', 'ad-main', 'ad-heading', 'a-tabs', 'a-pane',
-  'nt-dot', 'nt-meta', 'nt-at', 'g-mode', 'g-bar', 'tm-tl', 'tm-tlbar', 'dr-run', 'dr-oh', 'st-av', 'st-can', 'todo-more',
+  'nt-dot', 'nt-meta', 'nt-at', 'g-mode', 'g-bar', 'g-vplay', 'gv-frame', 'g-vnone', 'tv-row', 'g-vmove', 'g-vloop', 'g-vposter', 'g-vring', 'g-vsoon', 'tm-tl', 'tm-tlbar', 'dr-run', 'dr-oh', 'st-av', 'st-can', 'todo-more',
   'todo-notebook', 'todo-book', 'todo-bookhead', 'todo-spine', 'todo-work', 'todo-formtitle', 'todo-status', 'todo-privacy',
   'tm-notebook', 'tm-nbook', 'tm-nhead', 'tm-nspine', 'tm-work', 'tm-viewbar', 'tm-shift-scroll', 'tm-dayperson', 'tm-away-slot',
   'tm-weeknav', 'tm-daypick',
+  'nb-later', 'pa-cal', 'pa-for', 'pa-n', 'pa-row',
+  'rcp-row', 'rcp-papers', 'rcp-paper', 'rcp-bar', 'rcp-go',
+  'mg-ing-field', 'mg-with-ing-panel', 'mg-ing-panel', 'mg-ing-panel-head',
+  'pp-workspace', 'pp-head', 'pp-row', 'pp-main', 'pp-name-toggle', 'pp-can', 'pp-st', 'pp-editor', 'pp-acts', 'pp-ed', 'pp-ticks', 'pp-leave', 'a-gone', 'lv-tool',
   'tm-focus-page', 'tm-date-controls', 'tm-week-reveal', 'tm-row-fields', 'tm-row-summary', 'tm-detail-workbench', 'tm-focus-grid', 'tm-focus-save', 'tm-live-strip', 'tm-focus-panel', 'tm-admin-plan',
   'tm-grid', 'tm-grid-head', 'tm-grid-row', 'tm-grid-who', 'tm-grid-sh', 'tm-grid-count', 'tm-grid-cell', 'tm-grid-off', 'tm-grid-brk', 'tm-grid-note', 'tm-bench-shifts', 'tm-occ-add', 'tm-occ-row', 'a-sh-occ',
   'tm-short-line', 'tm-short-mark', 'tm-roster-flag', 'tm-short-band', 'tm-short-fact', 'tm-short-tf', 'tm-short-why', 'tm-short-row', 'tm-short-link', 'tm-short-accept', 'is-short-here', 'has-short',
@@ -42,22 +47,30 @@ const CLASSES = [
   'cln-page', 'cln-book', 'cln-row', 'cln-matrix', 'cln-day-pick', 'cln-form', 'cln-detail', 'cln-task-detail', 'cln-occurrence', 'cln-checks', 'cln-import', 'cln-packdown', 'cln-packdown-title', 'cln-temperature',
   'cln-chef-page', 'cln-fold', 'cln-fold-toggle', 'cln-repeat-browser', 'cln-repeat-layout', 'cln-template-summary', 'cln-editor',
   'dr-notebook', 'dr-book', 'dr-bookhead', 'dr-usual', 'dr-work', 'dr-spine', 'dr-people',
-  'is-leaving', 'nb-offw', 'nb-fnoff', 'fn-next-off', 'nb-forfn',
+  'is-leaving', 'nb-offw', 'nb-fnoff', 'fn-next-off', 'nb-forfn', 'nb-tick-status', 'p-toast-chip',
   'fn-ahead', 'fn-ahead-b', 'fn-ahead-l', 'fn-ahead-t', 'fn-ahead-n', 'fn-ahead-p', 'fn-ahead-more', 'fn-ahead-hide', 'is-ahead',
   'fn-hm', 'fn-hm-line', 'fn-hu', 'fn-hu-got', 'fn-hu-undo', 'fn-ahead-ack', 'fn-wk', 'fn-seen', 'fn-seen-l', 'fn-seen-r', 'fn-seen-t',
-  'o-fn-tag', 'o-fn-when', 'o-fn-for', 'o-fn-held',
-  'lk-fb', 'lk-ftag', 'lk-fillnote', 'lk-weigh', 'lk-why'
+  'o-fn-tag', 'o-fn-when', 'o-fn-for', 'o-fn-held', 'fno-row', 'fno-sum', 'fno-box', 'fno-rule', 'fno-note', 'fno-ask',
+  'lk-fb', 'lk-ftag', 'lk-fillnote', 'lk-weigh', 'lk-why',
+  'dl-heading-line', 'dl-records-jump',
+  // the consistency sweep, step 3 (20 Nov 2026): the main button, corners, the destructive look and the chosen state
+  // the consistency sweep, step 3 (20 Nov 2026): every search the pill, one Save bar frame, the function form's bar, empty lists
+  'tr-list-head',
+  'lk-del', 'nt-later', 'mlp-go', 'mlp-later', 'sheet-o', 'ps-pick', 'view-opt', 'nb-tab', 'nb-onbtn', 'mg-sw', 'fn-more', 'gz-b', 'su-use', 'p-toast-btn', 'upd-bar',
+  // the day control and its step chips, the supplier mark (the consistency sweep, step 3, 20 Nov 2026)
+  'find-wrap', 'sv-dock', 'a-savebar', 'mg-bar', 'fe-bar', 'fe-live', 'fe-btns', 'su-order-actions', 'empty', 'ux-table-empty', 'lv-none', 'nt-none', 'nb-empty', 'fn-strip-l', 'fn-strip-stale', 'fn-strip-in', 'is-strip', 'p-readerr', 'nb-nav', 'nav-step', 'o-dayctl', 'cut-mark'
 ];
 const TOKENS = ['--ink', '--wall-ink', '--paper', '--bg', '--muted', '--faint', '--line', '--accent', '--accent-ink', '--tag', '--done', '--done-ink',
   '--bar', '--bar-text', '--display', '--body', '--r-act', '--r-pick', '--small-ink', '--hit',
   '--bad-ink', '--bad-tint', '--bad-on-dark', '--done-on-dark',
-  '--surface-work', '--surface-work-edge', '--surface-people', '--surface-people-edge', '--surface-paper', '--surface-reference'];
-const HELPERS = ['tmShortPaint', 'tmShortOf', 'tmBusy', 'tmShortView', 'tmShortBandHTML', 'tmOkCovers', 'tmOkKeep', 'homeHeading', 'homeWords', 'signInBlock', 'lastNext', 'homeWelcomeWords', 'homeWelcomePaint', 'whoNamePaint', 'tmIcon', 'retrySoon', 'waiting', 'cacheOnly', 'inkLabel', 'inkWait', 'mnName', 'AdaptivePicker', 'SwipeDismiss', 'ModalFrame', 'enhance',
+  '--surface-work', '--surface-work-edge', '--surface-people', '--surface-people-edge', '--surface-paper', '--surface-reference', '--del-ink'];
+const HELPERS = ['stripItems', 'stripInner', 'staleWords', 'prepStrip', 'prepPlaceSave', 'prepPlaceBack', 'tmShortPaint', 'tmShortOf', 'tmBusy', 'tmShortView', 'tmShortBandHTML', 'tmOkCovers', 'tmOkKeep', 'homeHeading', 'homeWords', 'signInBlock', 'lastNext', 'homeWelcomeWords', 'homeWelcomePaint', 'whoNamePaint', 'tmIcon', 'retrySoon', 'waiting', 'cacheOnly', 'inkLabel', 'inkWait', 'mnName', 'AdaptivePicker', 'SwipeDismiss', 'ModalFrame', 'enhance', 'readErr', 'readRetry',
   'svButton', 'svStart', 'svDone', 'svFail', 'svLine', 'errMsg', 'failed', 'toast', 'slipName', 'arm', 'armed', 'W', 'canW',
   'ovPush', 'ovDone', 'trapTab', 'sheetOpen', 'sheetBusy', 'sheetNext', 'lvHTML', 'homeSlot', 'homePaint', 'homeRotaHTML', 'tmAwayHTML', 'tmNextHTML', 'tmGridShifts', 'tmPlanRowHTML', 'tmPlanHeadHTML', 'tmBarHTML', 'tmGridCellHTML', 'tmAwayPaint', 'tmAwayHidden', 'dkRunHTML', 'dkTeamHTML', 'dkFormHTML', 'panelShellHTML', 'psPanelHTML', 'psHintHTML', 'psReferenceHTML', 'psRolloutHTML',
-  'fnOrdTag', 'orderTag', 'fbHTML', 'ftagHTML', 'fillAfterTap'];
+  'fnOrdTag', 'orderTag', 'fnoHTML', 'platterNeeds', 'fbHTML', 'ftagHTML', 'fillAfterTap'];
 const GLOBALS = ['ICON', 'LK_UX', 'LK_PREP_STANDARDS'];
-HELPERS.push('pageSwipeFrom', 'navList');
+HELPERS.push('pageSwipeFrom', 'navList', 'armCls', 'findWrap');
+HELPERS.push('dayNavHTML');
 
 const missing = [];
 CLASSES.forEach(c => { if (!new RegExp('\\.' + c.replace(/[-]/g, '\\-') + '(?![A-Za-z0-9_-])').test(css)) missing.push('.' + c); });

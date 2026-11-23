@@ -113,6 +113,7 @@ async function openCutoffs(p) {
 
   // the People tab's full save keeps the lines (the new js/cutoffs.js cleans them, it does not drop them)
   await L.adminTab(p, 'people');
+  await L.openPerson(p, 2);
   await p.fill('[data-a="name"][data-i="2"]', 'Bo P'); await p.keyboard.press('Tab');
   await p.click('[data-p="a-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k]?.people?.[2]?.name === 'Bo P', CFG, 10000);
@@ -131,6 +132,7 @@ async function openCutoffs(p) {
   const r0 = await bad(p);
   ok(!r0.i && !r0.img && !r0.attr && !r0.run, 'a supplier name with markup shows as words on the heads-up (' + JSON.stringify(r0) + ')');
   ok(!(await L.overflow(p)) && !p.errors.length, 'heads-up fits the phone, no page errors ' + p.errors.join(' | '));
+  await p.click('.o-cut-more');
   await p.click('.cut-hl [data-p="cut-tick"]');
   await L.waitFor(p, k => window.__fake.dump()[k]?.on === true, fsKey(['cutdone', '2026-11-06_coast']), 10000);
   await L.waitFor(p, () => !!document.querySelector('.cut-hl .cut-box[aria-pressed="true"]'), null, 10000);

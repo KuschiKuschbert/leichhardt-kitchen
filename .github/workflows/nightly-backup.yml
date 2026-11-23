@@ -1,8 +1,11 @@
 # Nightly backup: every night at 03:30 kitchen time (17:30 UTC) the book is read the way the admin panel's Backup
 # button reads it (scripts/nightly-backup.mjs), encrypted with the BACKUP_KEY secret and kept as a GitHub artifact for
 # 90 days. The repository is public and anyone signed in to GitHub can download an artifact, so the file is never kept
-# in the clear. Needs three repository secrets: FIREBASE_SA (service account key, JSON), KITCHEN_PIN and BACKUP_KEY
-# (a long random passphrase; keep a copy in your password manager, a lost key means unreadable backups).
+# in the clear. Runs once per venue (venues/*.json, docs/venues.md), each in its own GitHub environment with its own
+# FIREBASE_SA (service account key, JSON), KITCHEN_PIN and BACKUP_KEY (a long random passphrase; keep a copy in your
+# password manager, a lost key means unreadable backups). Each venue's file is its own artifact,
+# kitchen-book-<venue>-backup-<run>, and carries its project: last night's file is only ever reused for the same venue
+# and project (docs/backup-recovery.md).
 # Recovery commands and the explicit trusted legacy format are documented in docs/backup-recovery.md.
 # Run it by hand from the Actions tab with "Run workflow".
 name: Nightly backup
@@ -21,7 +24,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  venues:
+    name: Venues
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      list: ${{ steps.v.outputs.list }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: echo "list=$(node scripts/venues.cjs matrix)" >> "$GITHUB_OUTPUT"
   backup:
+    needs: venues
+    name: Backup (${{ matrix.venue.id }})
+    strategy:
+      fail-fast: false
+      matrix:
+        venue: ${{ fromJSON(needs.venues.outputs.list) }}
+    environment:
+      name: ${{ matrix.venue.env }}
+      deployment: false
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -29,29 +51,38 @@ jobs:
         env:
           BACKUP_KEY: ${{ secrets.BACKUP_KEY }}
         run: |
-          [ "${#BACKUP_KEY}" -ge 16 ] || { echo "The BACKUP_KEY secret is missing or shorter than 16 characters. Add a long random passphrase as the BACKUP_KEY repository secret. Nothing was read."; exit 1; }
+          [ "${#BACKUP_KEY}" -ge 16 ] || { echo "The BACKUP_KEY secret is missing or shorter than 16 characters. Add a long random passphrase as the venue's BACKUP_KEY secret. Nothing was read."; exit 1; }
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: scripts/package-lock.json
+      - name: This venue's own project
+        env:
+          VENUE: ${{ matrix.venue.id }}
+          VENUE_PROJECT: ${{ vars.VENUE_PROJECT }}
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: node scripts/venues.cjs guard "$VENUE"
       - name: Install
         working-directory: scripts
         run: npm ci --no-audit --no-fund
-      # Plan B 4.2 (7 Nov 2026, docs/backup-recovery.md): last night's file, decrypted into the runner's temporary folder
-      # only, so the days older than 14 that no fix names come from it. Anything wrong here and every day is read.
+      # Plan B 4.2 (7 Nov 2026, docs/backup-recovery.md): last night's file for this venue, decrypted into the runner's
+      # temporary folder only, so the days older than 14 that no fix names come from it. Only this venue's own artifact
+      # is looked for, and nightly-backup.mjs reuses it only when it names this venue's project. Anything wrong here and
+      # every day is read.
       - name: Last night's backup, for the days that have not changed
         id: prev
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
           BACKUP_KEY: ${{ secrets.BACKUP_KEY }}
+          VENUE: ${{ matrix.venue.id }}
         run: |
           set -euo pipefail
-          id=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/nightly-backup.yml/runs?status=success&per_page=1" --jq '.workflow_runs[0].id // empty')
-          [ -n "$id" ] || { echo "No earlier backup. Every day is read."; exit 0; }
-          gh run download "$id" -R "$GITHUB_REPOSITORY" -D "$RUNNER_TEMP/prev"
+          found=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?per_page=100" --jq "[.artifacts[] | select(.expired | not) | select(.name | test(\"^kitchen-book-$VENUE-backup-[0-9]+\$\"))] | sort_by(.created_at) | last | if . then \"\(.workflow_run.id) \(.name)\" else empty end")
+          [ -n "$found" ] || { echo "No earlier backup for this venue. Every day is read."; exit 0; }
+          gh run download "${found%% *}" -R "$GITHUB_REPOSITORY" -n "${found#* }" -D "$RUNNER_TEMP/prev"
           file=$(find "$RUNNER_TEMP/prev" -name '*.json.enc' | head -1)
           [ -n "$file" ] || { echo "The earlier backup has no file. Every day is read."; exit 0; }
           node scripts/backup-crypto.mjs decrypt "$file" "$RUNNER_TEMP/prev.json"
@@ -66,10 +97,11 @@ jobs:
       - name: Encrypt and verify
         env:
           BACKUP_KEY: ${{ secrets.BACKUP_KEY }}
+          VENUE: ${{ matrix.venue.id }}
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/out"
-          backup_archive="$RUNNER_TEMP/out/kitchen-book-$(date -u +%Y-%m-%d).json.enc"
+          backup_archive="$RUNNER_TEMP/out/kitchen-book-$VENUE-$(date -u +%Y-%m-%d).json.enc"
           node scripts/backup-crypto.mjs encrypt "$RUNNER_TEMP/backup.json" "$backup_archive"
           node scripts/backup-crypto.mjs decrypt "$backup_archive" "$RUNNER_TEMP/backup-verified.json"
           cmp -s -- "$RUNNER_TEMP/backup.json" "$RUNNER_TEMP/backup-verified.json" || { echo "Protected backup verification failed. Nothing will be uploaded."; exit 1; }
@@ -80,7 +112,7 @@ jobs:
       - name: Keep it for 90 days
         uses: actions/upload-artifact@v4
         with:
-          name: kitchen-book-backup-${{ github.run_id }}
+          name: kitchen-book-${{ matrix.venue.id }}-backup-${{ github.run_id }}
           path: ${{ runner.temp }}/out/*.json.enc
           retention-days: 90
           if-no-files-found: error

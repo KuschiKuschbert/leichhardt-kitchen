@@ -17,16 +17,27 @@ import { runProbe, restClient } from './probe-checks.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const pin = process.env.KITCHEN_PIN || '';
 if (!/^\d{4,8}$/.test(pin)) { console.log('KITCHEN_PIN is missing or not 4 to 8 digits.'); process.exit(1); }
-const src = readFileSync(path.join(here, '..', '..', 'js', 'firebase-config.js'), 'utf8'), cfg = {};
-for (const m of src.matchAll(/(\w+):\s*'([^']*)'/g)) cfg[m[1]] = m[2];
-if (!cfg.projectId || !cfg.apiKey) { console.log('Could not read js/firebase-config.js.'); process.exit(1); }
+// VENUE (19 Nov 2026, docs/venues.md): the venue whose book this probes, from venues/<id>.json: its own project, web
+// settings and address. Without it, js/firebase-config.js and Leichhardt's address, as before.
+let cfg = {}, SITE = 'https://kuschikuschbert.github.io/leichhardt-kitchen/';
+if (process.env.VENUE) {
+  const { createRequire } = await import('module');
+  const venues = createRequire(import.meta.url)('../../scripts/venues.cjs');
+  let v;
+  try { v = venues.venueById(process.env.VENUE); } catch (e) { console.log(e.message); process.exit(1); }
+  cfg = Object.assign({}, v.firebase); SITE = v.address;
+} else {
+  const src = readFileSync(path.join(here, '..', '..', 'js', 'firebase-config.js'), 'utf8');
+  for (const m of src.matchAll(/(\w+):\s*'([^']*)'/g)) cfg[m[1]] = m[2];
+}
+if (!cfg.projectId || !cfg.apiKey) { console.log('Could not read the venue\'s web settings.'); process.exit(1); }
 
 const emu = process.env.FIRESTORE_EMULATOR_HOST, project = emu ? (process.env.GCLOUD_PROJECT || 'demo-test') : cfg.projectId;
 const base = (emu ? 'http://' + emu : 'https://firestore.googleapis.com') + '/v1/projects/' + project + '/databases/(default)/documents';
 const headers = {};
 // the Browser key only works from the book's own address (Google Cloud, Credentials, Websites, 22 Oct 2026), so the
-// probe sends that address like the book does in a browser; without it every call is refused before the rules run
-const SITE = 'https://kuschikuschbert.github.io/leichhardt-kitchen/';
+// probe sends that address (SITE, above) like the book does in a browser; without it every call is refused before the
+// rules run
 if (!emu) {
   headers['x-goog-api-key'] = cfg.apiKey;
   headers['Referer'] = SITE;

@@ -11,6 +11,10 @@ tests/shots-baseline/
 tests/rules/node_modules/
 tests/shots-baseline-u/
 
+# tutorial videos, frames, voices and music: made by scripts/tutorials/make.mjs, kept on Drive, never in the repo
+scripts/tutorials/out/
+scripts/tutorials/__pycache__/
+
 # other sessions' worktrees
 .claude/worktrees/
 

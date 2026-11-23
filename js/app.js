@@ -44,12 +44,13 @@
 
   /* ---------- index: worked out when the page loads, and again when the head chef's recipe changes come in ----------
      (js/overlay.js lays them over js/data.js; js/prep.js says when new ones arrived: lk-rx) */
-  var byId, usedIn, rolled, rows, tags, hay, missing;
+  var byId, usedIn, rolled, rows, tags, hay, missing, unchecked;
   var MENU, PREP, placed, memb, GROUPS, SHELVES;
   var SPECIALS = 'Specials';   // the menu section the recipe form's Special switch uses (27 Oct 2026)
-  // A recipe with no contains or check list gets them worked out from its ingredient tags.
+  // A recipe with no contains or check list gets them worked out from its ingredient tags (byTags: then every own
+  // ingredient must be checked, docs/allergen-check-options/brief.md). One that sets them by hand is checked as a whole.
   function fromTags(r) {
-    r.contains = []; r.check = [];
+    r.contains = []; r.check = []; r.byTags = true;
     r.ingredients.forEach(function (i) {
       (i.tags || []).forEach(function (t) {
         var maybe = t.slice(-1) === '?', a = maybe ? t.slice(0, -1) : t, list = maybe ? r.check : r.contains, from = i.name.toLowerCase();
@@ -61,7 +62,7 @@
   }
   function index() {
     // byId has no prototype, so a link or address such as constructor or toString is not a recipe
-    byId = Object.create(null); usedIn = {}; rolled = {}; rows = {}; tags = {}; hay = {}; missing = {};
+    byId = Object.create(null); usedIn = {}; rolled = {}; rows = {}; tags = {}; hay = {}; missing = {}; unchecked = {};
     D.recipes.forEach(function (r) {
       r.ingredients = r.ingredients || []; r.sections = r.sections || []; r.pins = r.pins || [];
       if (!r.contains && !r.check) fromTags(r);
@@ -105,6 +106,7 @@
       rows[r.id] = list;
       tags[r.id] = t;
       missing[r.id] = ro.missing;
+      unchecked[r.id] = ro.unchecked;
       hay[r.id] = [r.name, r.avc || '', r.menu || '', r.yield, KIND[r.kind], r.sec || '', r.forLine, r.aka || ''].concat(r.ingredients.map(function (i) { return i.name; }), t).join(' ').toLowerCase();
     });
   }
@@ -136,22 +138,29 @@
   }
 
   function addTo(bucket, a, src) { if (!bucket[a]) bucket[a] = []; if (bucket[a].indexOf(src) < 0) bucket[a].push(src); }
+  /* An ingredient nobody has checked for allergens (19 Nov 2026): no allergen tags, no "No allergens" (none: true), no
+     recipe link, in a recipe that works its allergens out from the ingredients. Its card says "Allergens not checked
+     yet" and Free from leaves it out, so an untagged line never reads as allergen free. */
+  function notChecked(r, i) { return !!(r.byTags && !i.link && !i.none && !(i.tags && i.tags.length)); }
   function roll(id, seen) {
     if (rolled[id]) return rolled[id];
-    var r = byId[id], out = { contains: {}, check: {}, missing: [] };
+    var r = byId[id], out = { contains: {}, check: {}, missing: [], unchecked: [] };
     if (!r || seen[id]) return out;
     seen[id] = true;
     function miss(name) { if (out.missing.indexOf(name) < 0) out.missing.push(name); }
+    function unk(name) { if (out.unchecked.indexOf(name) < 0) out.unchecked.push(name); }
     r.contains.forEach(function (c) { addTo(out.contains, c.allergen, c.from); });
     r.check.forEach(function (c) { addTo(out.check, c.allergen, c.from); });
     r.ingredients.forEach(function (i) {
-      if (!i.link) return;
+      if (!i.link) { if (notChecked(r, i)) unk(i.name); return; }
       // Linked to a recipe that is not in the book yet: its allergens are unknown.
       if (!byId[i.link]) { miss(i.name); return; }
       var sub = roll(i.link, seen);
       Object.keys(sub.contains).forEach(function (a) { addTo(out.contains, a, byId[i.link].name); });
       Object.keys(sub.check).forEach(function (a) { addTo(out.check, a, byId[i.link].name); });
       sub.missing.forEach(miss);
+      // a recipe it uses with a part not checked: named by that recipe, where the check is done
+      if (sub.unchecked.length) unk(byId[i.link].name);
     });
     rolled[id] = out;
     return out;
@@ -199,8 +208,10 @@
     if (!out.length) return { list: null, rest: s };
     return { list: out, rest: rest.replace(/\b(and|or)\b|[,+&]/g, ' ').replace(/\s+/g, ' ').trim() };
   }
+  // not sure yet: a part with no card, or a part nobody checked for allergens. Never "free from" anything.
+  function unsure(id) { return !!(missing[id].length || unchecked[id].length); }
   function freeFrom(id, list) {
-    if (missing[id].length) return false;
+    if (unsure(id)) return false;
     var ro = rolled[id];
     return list.every(function (a) { return !ro.contains[a] && !ro.check[a]; });
   }
@@ -242,7 +253,7 @@
     var s = search();
     var out = '';
     if (s.fixed) out += '<p class="s-note" role="status">Nothing for "' + esc(q()) + '". Showing <b>' + esc(s.fixed) + '</b> instead.</p>';
-    if (s.free) out += '<p class="s-note" role="status"><b>Free from ' + esc(s.free.join(', ').toLowerCase()) + ':</b> recipes with none of it and no "may have". Recipes with a card still to come are left out. Always check the supplier labels before answering a guest.</p>';
+    if (s.free) out += '<p class="s-note" role="status"><b>Free from ' + esc(s.free.join(', ').toLowerCase()) + ':</b> recipes with none of it and no "may have". Recipes with a card still to come, or with allergens not checked yet, are left out. Always check the supplier labels before answering a guest.</p>';
     var gl = guideHits();
     if (gl.length) out += '<p class="s-note g-hits"><b>' + (gl.length === 1 ? 'Guide' : 'Guides') + ':</b> ' + gl.map(function (g) { return '<a href="#/guides/' + encodeURIComponent(g.id) + '">' + esc(g.title) + '</a>'; }).join(', ') + '</p>';
     return out;
@@ -251,7 +262,7 @@
   function guideHits() { return q().length >= 3 && window.LK_PREP && window.LK_PREP.guideSearch ? window.LK_PREP.guideSearch(q()) : []; }
   function freeOk(id) {
     if (!ui.free.length) return true;
-    if (missing[id].length) return false; // can't promise free-from until every part has a card
+    if (unsure(id)) return false; // can't promise free-from until every part has a card and is checked
     var ro = rolled[id];
     for (var k = 0; k < ui.free.length; k++) { if (ro.contains[ui.free[k]] || ro.check[ui.free[k]]) return false; }
     return true;
@@ -262,14 +273,16 @@
     if (t.indexOf(ui.lens + '?') >= 0) return 'may';
     return null;
   }
-  // A recipe with parts still to come counts as "may have" for every allergen.
-  function hitId(id) { return hit(tags[id]) || (ui.lens && missing[id].length ? 'may' : null); }
+  // A recipe with parts still to come, or not checked yet, counts as "may have" for every allergen.
+  function hitId(id) { return hit(tags[id]) || (ui.lens && unsure(id) ? 'may' : null); }
   function lensWord(h) { return h === 'may' ? ui.lens + '?' : ui.lens; }
   function href(stack) { return stack.length ? '#/r/' + stack.join('/') : '#/recipes'; }
   function stackTo(stack, id) { var i = stack.indexOf(id); return i >= 0 ? stack.slice(0, i + 1) : stack.concat([id]); }
   function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
 
   var ICON = {
+    // the search pill's magnifier (.find-i), drawn inside every search box since the consistency sweep, step 3 (20 Nov 2026)
+    find: '<svg class="find-i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.5 15.5 L21 21" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
     todo: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5H7a1.5 1.5 0 0 0-1.5 1.5v13A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V6A1.5 1.5 0 0 0 17 4.5h-2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><rect x="9" y="3" width="6" height="3" rx="1" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M9 13l2 2 4-4.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     chef: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 14.2A3.6 3.6 0 1 1 8.6 7.4a4.6 4.6 0 0 1 6.8 0A3.6 3.6 0 1 1 17 14.2V20H7Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M7 16.8h10" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>',
     cup: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h11v5.5A4.5 4.5 0 0 1 11.5 19h-2A4.5 4.5 0 0 1 5 14.5Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8.5 3.5c-.8 1 .8 2 0 3M12 3.5c-.8 1 .8 2 0 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
@@ -293,6 +306,7 @@
     pen: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="14" r="6.5" fill="none" stroke="currentColor" stroke-width="1.9"/><circle cx="9" cy="14" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M14.5 9.5 L20 4 L21.5 5.5 L16 11" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"/></svg>'
   };
 
+  var PRINT_ICON = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3.5h10V9M7 17.5H4.5v-7A1.5 1.5 0 0 1 6 9h12a1.5 1.5 0 0 1 1.5 1.5v7H17M7 14h10v6.5H7Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg>';
   // A card flagged done: true in data.js is 100% finished: green frame on the card and its drawings, plus a Finished chip.
   var DONE_TAG = '<span class="tag done-tag">Finished</span>';
 
@@ -510,7 +524,7 @@
     // who is signed in shows on the hat itself (3 Nov 2026, the Writing as row went): their initial in a small disc, and on
     // a shared screen their display name next to it, with the complete name in the menu and accessible label
     var sh = n && window.LK_DEVICE && window.LK_DEVICE.mode() === 'shared' ? ' is-shared' : '';
-    return '<button type="button" class="wtop-btn wtop-who' + (n ? ' on' : '') + sh + (n && left > 0 ? ' flip' : '') + '"' + (n && left > 0 && left < 1100 ? ' style="animation-delay:-' + (1100 - left) + 'ms"' : '') + ' data-who="menu" aria-haspopup="true" aria-expanded="' + !!wmenu + '"' + here + (n ? ' title="Signed in as ' + esc(n) + mt + '" aria-label="Signed in as ' + esc(n) + ', menu and Settings' + mt + '"' : ' title="Menu and Settings' + mt + '" aria-label="Menu and Settings' + mt + '"') + '>' + ICON.chef + (n ? '<span class="wtop-av" aria-hidden="true">' + esc(initial(n)) + '</span>' : '') + '<span class="wtop-lbl wtop-who-n">' + esc(n) + '</span>' + mailBadge(ml) + '</button>';
+    return '<button type="button" class="wtop-btn wtop-who' + (n ? ' on' : '') + sh + (n && left > 0 ? ' flip' : '') + '"' + (n && left > 0 && left < 1100 ? ' style="animation-delay:-' + (1100 - left) + 'ms"' : '') + ' data-who="menu" aria-haspopup="dialog" aria-expanded="' + !!wmenu + '"' + here + (n ? ' title="Signed in as ' + esc(n) + mt + '" aria-label="Signed in as ' + esc(n) + ', menu and Settings' + mt + '"' : ' title="Menu and Settings' + mt + '" aria-label="Menu and Settings' + mt + '"') + '>' + ICON.chef + (n ? '<span class="wtop-av" aria-hidden="true">' + esc(initial(n)) + '</span>' : '') + '<span class="wtop-lbl wtop-who-n">' + esc(n) + '</span>' + mailBadge(ml) + '</button>';
   }
   // A roster rename patches current identity in place. Keep the open menu, focused control and draft warnings.
   // Reuses the existing config event and held roster: no reads, listeners or separate profile cache.
@@ -569,9 +583,6 @@
     if (!window.LK_PREP || !window.LK_PREP.privateAccess()) return '';
     return '<a class="wm-a wm-tile wm-delivery" href="#/deliveries" data-who="go"' + (parseRoute().name === 'deliveries' ? ' aria-current="page"' : '') + '>' + ICON.temp + '<span><b>Delivery received</b></span></a>';
   }
-  function cleaningItem() {
-    return cleaningOK() ? '<a class="wm-a wm-tile" href="#/cleaning" data-who="go"' + (parseRoute().name === 'cleaning' ? ' aria-current="page"' : '') + '>' + NAV_ICON.cleaning + '<span><b>Kitchen cleaning</b></span></a>' : '';
-  }
   function guidesItem() {
     return guidesOK() ? '<a class="wm-a wm-tile" href="#/guides" data-who="go"' + (parseRoute().name === 'guides' ? ' aria-current="page"' : '') + '>' + NAV_ICON.guides + '<span><b>Guides</b></span></a>' : '';
   }
@@ -605,8 +616,9 @@
     var n = window.LK_PREP && window.LK_PREP.whoName ? window.LK_PREP.whoName() : '';
     if (wmenu) return;
     var m = n && window.LK_PREP.chefMenu ? window.LK_PREP.chefMenu() : {}, adm = adminItem(), fnOnly = window.LK_PREP && window.LK_PREP.functionOnly();
-    var r = btn.getBoundingClientRect(), el = document.createElement('div');
+    var r = btn.getBoundingClientRect(), el = document.createElement('dialog');
     el.className = 'wm-wrap';
+    el.setAttribute('aria-label', 'Chef hat menu');
     var set = '<a class="wm-a wm-set" href="#/settings" data-who="go"' + (parseRoute().name === 'settings' ? ' aria-current="page"' : '') + '>' + ICON.gear + '<span><b>Settings</b></span></a>';
     var tile = function (attrs, icon, label, small) { return '<' + (/^href/.test(attrs) ? 'a' : 'button type="button"') + ' class="wm-a wm-tile" ' + attrs + '>' + icon + '<span><b>' + label + '</b>' + (small || '') + '</span></' + (/^href/.test(attrs) ? 'a' : 'button') + '>'; };
     var grid = function (h, xs) { xs = xs.filter(Boolean).join(''); return xs ? (h ? '<p class="wm-h wm-sh">' + h + '</p>' : '') + '<div class="wm-grid">' + xs + '</div>' : ''; };
@@ -620,9 +632,11 @@
         '<button type="button" class="wm-a wm-out" data-who="out">' + ICON.exit + '<span><b>Not ' + esc(n) + '? Sign out</b><small aria-live="polite"></small></span></button>' +
         // a list since 8 Nov 2026 (redesign step 7): the jobs of every day first, then the rest. The same items for the same
         // people as the tiles had; only the order and the look changed.
+        // no Cleaning row: its main tab is the way in, and the hat does not repeat a tab (head chef, 20 Nov 2026, the
+        // consistency sweep, step 3)
         grid('Every day', [
           m.sec ? tile('data-who="sec" data-v="section"', ICON.spot, 'My section', '<small>' + esc(m.sec) + '</small>') : '',
-          m.fn ? fnItem() : fnViewItem(), deliveryItem(), cleaningItem(), supplierOK() ? supplierItem() : '',
+          m.fn ? fnItem() : fnViewItem(), deliveryItem(), supplierOK() ? supplierItem() : '',
           m.team ? teamItem(m.teamUnset) : '',
           m.head || fnOnly ? '' : tile('href="#/mail" data-who="go"', ICON.mail, 'Kitchen mail'),
           m.chef ? tile('data-who="open" data-v="pings"', ICON.bell, 'Shift pings') : ''
@@ -641,15 +655,18 @@
       // Sign in, which would forget them (28 Oct 2026)
       body = (offline() ? '<p class="wm-h">' + esc(offline()) + '</p>' : '<p class="wm-h">Nobody signed in on this phone</p>' +
         '<a class="wm-a wm-in" href="#/prep" data-who="signin">' + ICON.chef + '<span><b>Sign in</b></span></a>') +
-        grid('Every day', [deliveryItem(), cleaningItem(), window.LK_PREP && window.LK_PREP.teamOK && window.LK_PREP.teamOK() ? teamItem(false) : '', supplierOK() ? supplierItem() : '', fnOK() ? fnItem() : '']) +
+        grid('Every day', [deliveryItem(), window.LK_PREP && window.LK_PREP.teamOK && window.LK_PREP.teamOK() ? teamItem(false) : '', supplierOK() ? supplierItem() : '', fnOK() ? fnItem() : '']) +
         grid('More', [adm, guidesItem(), bookEdit() ? manageItem() : '', todoOK() ? todoItem() : '']) + set;
     }
-    el.innerHTML = '<div class="wm-bg" data-who="close"></div><nav class="wm" aria-label="' + (n ? esc(n) : 'Menu') + '" style="--wm-top:' + Math.round(r.bottom + 8) + 'px;top:var(--wm-top);right:' + Math.max(8, Math.round(window.innerWidth - r.right)) + 'px"><span class="wm-grip" aria-hidden="true"></span>' + body + '</nav>';
+    el.innerHTML = '<div class="wm-bg" data-who="close" aria-hidden="true"></div><nav class="wm" aria-label="' + (n ? esc(n) : 'Menu') + '" style="--wm-top:' + Math.round(r.bottom + 8) + 'px;top:var(--wm-top);right:' + Math.max(8, Math.round(window.innerWidth - r.right)) + 'px"><span class="wm-grip" aria-hidden="true"></span>' + body + '</nav>';
+    // Give the dialog a safe initial focus before it opens, so a stray Enter never hands the phone over.
+    var first = el.querySelector('.wm-tile') || el.querySelector('.wm-a');
+    if (first) first.setAttribute('autofocus', '');
+    el.addEventListener('cancel', function (e) { e.preventDefault(); whoMenuClose(true); });
     document.body.appendChild(el); wmenu = el;
     if (window.LK_PREP && window.LK_PREP.pickerOverlay) wmenuHistory = window.LK_PREP.pickerOverlay(function () { whoMenuClose(true, true); });
     btn.setAttribute('aria-expanded', 'true');
-    // focus starts on the first tile, not on Sign out, so a stray Enter never hands the phone over
-    var first = el.querySelector('.wm-tile') || el.querySelector('.wm-a'); if (first) first.focus({ preventScroll: true });
+    el.showModal();
   }
   document.addEventListener('click', function (e) {
     var el = e.target.closest && e.target.closest('[data-who]');
@@ -670,7 +687,7 @@
       // below) and the next tap signs out as usual
       var wait = !!(window.LK_PREP.sendFirst && window.LK_PREP.sendFirst());
       if (!window.LK_PREP.signOut(!wait && el.classList.contains('is-armed'))) {
-        el.classList.toggle('is-wait', wait); el.classList.toggle('is-armed', !wait);
+        el.classList.toggle('is-wait', wait); el.classList.toggle('is-armed', !wait); el.classList.toggle('lk-del', !wait);
         el.querySelector('small').textContent = wait ? 'Not sent yet.' : (window.LK_PREP.unsavedHere && !window.LK_PREP.unsavedHere() ? 'Not sent yet.' : 'Not saved yet.') + ' Tap again to sign out'; return;
       }
       // "Signed out" is the prep toast, which shows by itself off the prep pages too (toast() in js/prep.js)
@@ -722,7 +739,7 @@
     return '<div class="wall-mn">' + (window.LK_PREP && window.LK_PREP.minNudge ? window.LK_PREP.minNudge() : '') + '</div>';
   }
   /* Under the top bar, the recipe pages get their own tools row: how many recipes, and the Pass / Tiles switch. */
-  var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders'], ['04', 'Wastage', '#/waste', 'waste'], ['05', 'Transfers', '#/transfers', 'transfers', 'What other venues took from us, and what we took from them'], ['06', 'Cleaning', '#/cleaning', 'cleaning', 'The kitchen cleaning jobs for today and the week']];
+  var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders'], ['04', 'Wastage', '#/waste', 'waste'], ['05', 'Transfers', '#/transfers', 'transfers', 'What other venues took from us, and what we took from them'], ['06', 'Cleaning', '#/cleaning', 'cleaning', 'The cleaning jobs for today and the week']];
   // Chosen welcome A (10 Nov 2026): the complete authenticated staff name, with the kitchen date below.
   // Only presentation of the held identity; public and locked visitors retain their neutral heading.
   var HOME_WELCOMES = ['Welcome', 'Hello', 'Hi there', 'G’day'];
@@ -866,7 +883,7 @@
   /* Search, with the recipe count above it and the Pass / Tiles switch right next to it. Since the redesign's step 6
      (8 Nov 2026) it is one search pill with its magnifier inside, and the word Search is for screen readers only: on a
      phone the count line shows only while a search or filter is on, so the list starts one line higher. */
-  var FIND_ICON = '<svg class="find-i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.5 15.5 L21 21" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
+  var FIND_ICON = ICON.find;
   function searchField(placeholder, count) {
     var on = count != null && / of /.test(count);
     return '<div class="field find-bar"><div class="field-head' + (on ? ' is-on' : '') + '"><label class="visually-hidden" for="find">Search</label>' + (count != null ? '<span class="count' + (on ? ' is-on' : '') + '" id="count">' + esc(count) + '</span>' : '') + '</div>' +
@@ -874,6 +891,10 @@
       '<div class="search-row"><span class="find-wrap' + (ui.query ? ' has-q' : '') + '">' + FIND_ICON + '<input id="find" class="search" type="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" data-k="find" placeholder="' + esc(placeholder) + '" value="' + esc(ui.query) + '">' +
       '<button type="button" class="find-x" data-act="clearfind" aria-label="Clear the search">&times;</button></span>' + viewSwitch() + '</div></div>';
   }
+  /* Every search is the Recipes pill (the consistency sweep, step 3, head chef 20 Nov 2026): a search box drawn anywhere
+     goes inside .find-wrap with the magnifier at its left end; its label stays, for screen readers only. Lazy pages and
+     js/prep.js reach it through LK_APP.findWrap. */
+  function findWrap(input) { return '<span class="find-wrap">' + ICON.find + input + '</span>'; }
   function freeChips(scroll) {
     return '<div class="field"><span class="label" id="free-label">Free from</span><div class="chips' + (scroll ? ' scroll' : '') + '" role="group" aria-labelledby="free-label">' +
       D.allergens.map(function (a) {
@@ -918,19 +939,24 @@
       (r.menu ? '<span class="menu-line"><b>On the menu:</b> ' + esc(r.menu) + '</span>' : '') + '</div></div>';
   }
   function allergenBox(r) {
-    var list = rows[r.id], miss = missing[r.id];
+    var list = rows[r.id], miss = missing[r.id], unk = unchecked[r.id];
     var h = '<section class="box outline" id="r-allergens" aria-label="Allergens"><div class="row-label" style="justify-content: space-between"><span class="label">Allergens</span>' +
       (list.some(function (a) { return a.maybe; }) ? '<span class="hint">? = may be in it, check the supplier label</span>' : '') + '</div>';
     if (list.length) {
       h += '<div class="allergen-grid">' + list.map(function (a) {
         return '<div class="allergen-row"><span class="tag' + (a.maybe ? ' maybe' : '') + '">' + esc(a.label) + '</span><span class="from">' + esc(a.from) + '</span></div>';
       }).join('') + '</div>';
-    } else {
+    } else if (!unk.length) {
+      // never "None" while a part is not checked: that is the line a guest would be told
       h += '<div>' + (miss.length ? 'None in the listed ingredients so far.' : 'None in the ingredients.') + '</div>';
     }
     if (miss.length) {
       h += '<div class="warn" role="note"><span class="label">Not complete yet</span><span>These parts have no recipe card in the book yet, so their allergens are not listed. Treat the dish as possibly containing any allergen and check with the head chef or sous chef before answering a guest.</span>' +
         '<span class="chips">' + miss.map(function (m) { return '<span class="tag">' + esc(m) + '</span>'; }).join('') + '</span></div>';
+    }
+    if (unk.length) {
+      h += '<div class="warn" role="note"><span class="label">Allergens not checked yet</span><span>Nobody has checked these parts for allergens yet. Do not tell a guest the dish is free from anything. Ask the head chef or sous chef.</span>' +
+        '<span class="chips">' + unk.map(function (m) { return '<span class="tag">' + esc(m) + '</span>'; }).join('') + '</span></div>';
     }
     if (r.labelNote) h += '<div style="font-size: 0.875rem">' + esc(r.labelNote) + '</div>';
     if (list.length > r.contains.length + r.check.length) h += '<div class="hint">Includes allergens from the recipes it uses.</div>';
@@ -939,7 +965,7 @@
   function ingTable(r, stack, useLens) {
     return '<div class="ing">' + r.ingredients.map(function (i) {
       var linked = i.link && byId[i.link], soon = i.link && !linked;
-      var h = useLens ? (linked ? hitId(i.link) : (hit(i.tags || []) || (soon && ui.lens ? 'may' : null))) : null;
+      var h = useLens ? (linked ? hitId(i.link) : (hit(i.tags || []) || ((soon || notChecked(r, i)) && ui.lens ? 'may' : null))) : null;
       var name = linked
         ? '<a class="ilink" href="' + href(stackTo(stack, i.link)) + '"><span>' + esc(i.name) + '</span><span class="rtag">Recipe ' + esc(linked.no) + '</span></a>'
         : '<span>' + esc(i.name) + '</span>' + (soon ? '<span class="rtag soon">Card to come</span>' : '');
@@ -1115,7 +1141,10 @@
   }
   /* "Change this recipe" for the head chef, in its own slot so a sign-in or sign-out can redraw it (lk-who, lk-admin, lk-cfg) */
   function editSlot(r) {
-    return '<div class="mg-slot" id="r-edit">' + (bookEdit() ? '<a class="p-x mg-slot-a" href="#/manage/r/' + encodeURIComponent(r.id) + '">' + ICON.pen + '<span>Change this recipe</span></a>' : '') + '</div>';
+    // Print this card (head chef 19 Nov 2026, docs/print-cards-options/brief.md): the same chefs only, beside Change
+    // this recipe, so cooks see no change; it opens Print cards with only this card ticked
+    return '<div class="mg-slot" id="r-edit">' + (bookEdit() ? '<a class="p-x mg-slot-a" href="#/manage/r/' + encodeURIComponent(r.id) + '">' + ICON.pen + '<span>Change this recipe</span></a>' +
+      '<a class="p-x mg-slot-a" href="#/manage/print/' + encodeURIComponent(r.id) + '">' + PRINT_ICON + '<span>Print this card</span></a>' : '') + '</div>';
   }
   function editSlotRedraw() {
     var el = document.getElementById('r-edit'), route = parseRoute();
@@ -1178,6 +1207,7 @@
 
   /* ---------- view A: tiles ---------- */
   function tilesHTML() {
+    if (!D.recipes.length) return searchNote();
     var any = 0;
     var html = groupsNow(GROUPS.filter(function (g) { return ui.kind === 'all' || g.key === ui.kind; }).map(function (g) {
       var list = g.list.filter(function (r) { return freeOk(r.id) && matches(r.id); });
@@ -1187,7 +1217,8 @@
         return '<a class="tile' + (r.done ? ' done' : '') + '" href="#/r/' + esc(r.id) + '"><span class="t-top"><span class="t-kind">' + esc((r.sec || KIND[r.kind]) + (r.forLine === 'Template' ? ' · Template' : '')) + '</span>' +
           '<span class="t-no">' + esc(r.no) + '</span></span><span class="t-mid"><span class="t-txt"><span class="t-name">' + esc(r.name) + '</span><span class="t-yield">' + esc(r.yield) + '</span></span>' + art(r, 't-art') + '</span>' +
           '<span class="chips">' + (r.done ? DONE_TAG : '') + rows[r.id].map(function (a) { return '<span class="tag' + (a.maybe ? ' maybe' : '') + '">' + esc(a.label) + '</span>'; }).join('') +
-          (missing[r.id].length ? '<span class="tag maybe">Allergens incomplete</span>' : '') + '</span></a>';
+          (missing[r.id].length ? '<span class="tag maybe">Allergens incomplete</span>' : '') +
+          (unchecked[r.id].length ? '<span class="tag maybe">Allergens not checked</span>' : '') + '</span></a>';
       }).join('') + '</div></section>';
     }).filter(Boolean));
     return searchNote() + (any ? '<div class="tile-groups">' + html + '</div>' : '<div class="empty">No recipes match. <button type="button" class="btn" data-act="clearall">Clear search and filters</button></div>');
@@ -1212,6 +1243,11 @@
     if (state === 'loading' && Date.now() - recipeStatusAt < 180) {
       recipeStatusTimer = setTimeout(paintRecipeStatus, 180 - (Date.now() - recipeStatusAt)); return;
     }
+    if (state === 'ok' && !D.recipes.length) {
+      slot.hidden = false;
+      slot.innerHTML = '<div class="empty">No recipes yet.</div>';
+      return;
+    }
     var text = state === 'loading' ? 'Checking for recipe updates...' : state === 'offline' ? 'No signal. Showing the loaded book.' : state === 'error' ? 'Could not check for recipe updates. Showing the loaded book.' : '';
     slot.hidden = !text;
     slot.innerHTML = text && window.LK_MOTION ? window.LK_MOTION.label(text, 'recipes', state === 'loading' ? 'busy' : 'still') : esc(text);
@@ -1222,9 +1258,9 @@
       var r = byId[route.stack[route.stack.length - 1]];
       return '<div class="page">' + '<main id="main">' + recipeCard(r, route.stack, true) + '</main>' + footer() + '</div>';
     }
-    return '<div class="page">' + '<main id="main" style="display: flex; flex-direction: column; gap: 1.1rem">' +
+    return '<div class="page"><main id="main" class="rx-browse rx-browse--tiles">' +
       searchField('Dish, ingredient or allergen', countText()) +
-      kindChips() + freeChips(true) + recipeStatusHTML() +
+      '<div class="rx-filters">' + kindChips() + freeChips(true) + '</div>' + recipeStatusHTML() +
       '<div id="results">' + tilesHTML() + '</div><div class="hint">Allergen tags with a ? may be in it: check the supplier label.</div></main>' + footer() + '</div>';
   }
 
@@ -1237,6 +1273,7 @@
   }
   function passOk(r) { return matches(r.id) && freeOk(r.id); }
   function shelvesHTML() {
+    if (!D.recipes.length) return searchNote();
     var s = q() || ui.free.length, n = 0;
     var html = groupsNow(passShelves().map(function (sh) {
       var shown = s ? sh.list.filter(passOk) : sh.list;
@@ -1265,21 +1302,93 @@
     if (!q() && !ui.free.length) return plural(all.length, 'recipe', 'recipes') + ' on the pass';
     return all.filter(passOk).length + ' of ' + all.length + ' match';
   }
-  function pinHTML(p, k, stack) {
-    var h = p.link ? (byId[p.link] ? hitId(p.link) : (ui.lens ? 'may' : null)) : hit(p.tags || []);
+  var PIN_PARTS = /\s*\|\s*|\s+(?:and|&|with|\+)\s+/;
+  function pinPartName(text) { return text.trim().replace(/\s+/g, ' ').toLowerCase(); }
+  function pinIngredientRows(r) {
+    return r.ingredients.map(function (i) {
+      // The drawing studio strips parenthetical notes and sometimes labels each half of a joined ingredient.
+      var name = pinPartName(i.name), short = pinPartName(i.name.replace(/\s*\([^)]*\)/g, ''));
+      return { ingredient: i, name: name, short: short, parts: short.split(PIN_PARTS) };
+    });
+  }
+  function pinIngredientMatches(ingredients, name, studioName) {
+    // Studio names can be stripped already, even when another ingredient has the shorter name exactly.
+    var exact = ingredients.filter(function (i) { return i.name === name || (studioName && i.short === name); });
+    if (exact.length) return exact;
+    var short = ingredients.filter(function (i) { return i.short === name; });
+    return short.length ? short : ingredients.filter(function (i) { return i.parts.indexOf(name) >= 0; });
+  }
+  function pinRecipeLink(p, ingredients) {
+    if (!p.link || !p.ing || p.own) return p.link;
+    // A retained Studio drawing can have the old link from before the ingredient was edited.
+    var matches = pinIngredientMatches(ingredients, pinPartName(p.ing), true);
+    return matches.length === 1 ? matches[0].ingredient.link : null;
+  }
+  function pinAllergens(r, p, link, ingredients) {
+    var info = { tags: (p.tags || []).slice(), unchecked: false, incomplete: false, unverified: false, cardOnly: false, tagConflict: false };
+    function addLink(id) {
+      if (!byId[id]) { info.incomplete = true; return; }
+      info.tags = info.tags.concat(tags[id]);
+      if (unchecked[id].length) info.unchecked = true;
+      if (missing[id].length) info.incomplete = true;
+    }
+    if (link) addLink(link);
+    else {
+      var ref = pinPartName(p.ing || p.label), studioName = p.ing && !p.own;
+      var exact = pinIngredientMatches(ingredients, ref, studioName), parts = ref.split(PIN_PARTS);
+      var candidates = exact.length ? [exact] : parts.map(function (name) { return pinIngredientMatches(ingredients, name, studioName); });
+      if (studioName && exact.length === 1 && exact[0].ingredient.none === true && info.tags.length) {
+        // Old pin tags can be a Studio copy or tags a chef assigned. Keep the warning without calling it definite.
+        info.tags = info.tags.map(function (t) { return t.endsWith('?') ? t : t + '?'; });
+        info.tagConflict = true;
+      }
+      candidates.forEach(function (matches) {
+        if (matches.length !== 1) {
+          // A legacy label can have its own authored tags. An ambiguous or declared part still needs checking.
+          if (matches.length || p.ing || parts.length > 1 || !p.tags || !p.tags.length) info.unverified = true;
+          return;
+        }
+        var i = matches[0].ingredient;
+        info.tags = info.tags.concat(i.tags || []);
+        if (i.link) addLink(i.link);
+        else if (notChecked(r, i)) info.unchecked = true;
+        else if (!i.none && !(i.tags && i.tags.length)) info.cardOnly = true;
+      });
+    }
+    info.tags = info.tags.filter(function (t, i, all) { return all.indexOf(t) === i && !(t.endsWith('?') && all.indexOf(t.slice(0, -1)) >= 0); });
+    return info;
+  }
+  function pinHTML(r, p, link, k, stack, info) {
+    var h = null;
+    if (ui.lens) {
+      h = link ? (byId[link] ? hitId(link) : 'may') : hit(info.tags) ||
+        (info.unchecked || info.incomplete || info.unverified || (info.cardOnly && hitId(r.id)) ? 'may' : null);
+    }
     var left = p.side ? p.side === 'left' : p.x > 65;
     var cls = 'pin' + (left ? ' left' : '') + (h ? ' lit' : '') + (ui.pick === k ? ' on' : '');
     var label = esc(p.label) + (h ? ' · ' + esc(lensWord(h)) : '');
     var pos = 'left: ' + p.x + '%; top: ' + p.y + '%';
-    var inner = '<span class="ring">' + (p.link ? ICON.out : '<i></i>') + '</span><span class="plabel">' + label + '</span>';
-    if (p.link && byId[p.link]) return '<a class="' + cls + '" style="' + pos + '" href="' + href(stackTo(stack, p.link)) + '" aria-label="Open recipe: ' + esc(p.label) + '">' + inner + '</a>';
+    var inner = '<span class="ring">' + (link ? ICON.out : '<i></i>') + '</span><span class="plabel">' + label + '</span>';
+    if (link && byId[link]) return '<a class="' + cls + '" style="' + pos + '" href="' + href(stackTo(stack, link)) + '" aria-label="Open recipe: ' + esc(p.label + (h ? (h === 'may' ? ', may have ' : ', has ') + ui.lens : '')) + '">' + inner + '</a>';
     return '<button type="button" class="' + cls + '" style="' + pos + '" data-act="pick" data-val="' + k + '" data-k="pick:' + k + '" aria-pressed="' + (ui.pick === k) + '">' + inner + '</button>';
+  }
+  function pinDetail(p, info) {
+    var warning = info.unchecked ? 'Allergens not checked yet.' : info.incomplete ? 'Allergens incomplete.' :
+      info.unverified ? 'Allergens not confirmed for this label.' : info.tagConflict ? 'Allergen details differ.' : '';
+    var listed = info.tags.length ? '<div class="chips">' + info.tags.map(function (t) {
+      return '<span class="tag' + (t.endsWith('?') ? ' maybe' : '') + '">' + esc(t) + '</span>';
+    }).join('') + '</div>' : '';
+    var note = warning ? '<div class="hint"><strong>' + esc(warning) + '</strong> Check the supplier label or ask the head chef or sous chef.</div>' :
+      info.cardOnly ? '<div class="hint">See the recipe’s allergen list.</div>' : listed ? '' : '<div class="chips"><span class="hint">No listed allergens</span></div>';
+    return '<div class="box outline" style="background: #fff"><span class="h3">' + esc(p.label) + '</span>' + (p.note ? '<div>' + esc(p.note) + '</div>' : '') + listed + note + '</div>';
   }
   function viewPass(route) {
     var stack = route.stack;
     if (!stack.length) {
-      return '<div class="page">' + '<main id="main" style="display: flex; flex-direction: column; gap: 1.1rem">' +
-        searchField('Dish, ingredient or allergen', passCount()) + kindChips() + allergenRow() + recipeStatusHTML() + '<div id="shelves" class="shelves">' + shelvesHTML() + '</div></main>' + footer() + '</div>';
+      return '<div class="page"><main id="main" class="rx-browse rx-browse--pass">' +
+        searchField('Dish, ingredient or allergen', passCount()) +
+        '<div class="rx-filters">' + kindChips() + allergenRow() + '</div>' + recipeStatusHTML() +
+        '<div id="shelves" class="shelves">' + shelvesHTML() + '</div></main>' + footer() + '</div>';
     }
     var r = byId[stack[stack.length - 1]], dish = isDish(r);
     var trail = koRow('<nav class="trail crumbs" aria-label="Breadcrumb"><a href="#/recipes">The pass</a>' + stack.map(function (id, i) {
@@ -1288,10 +1397,15 @@
     }).join('') + '</nav>');
     var left;
     if (dish) {
-      var pk = ui.pick !== null && r.pins[ui.pick] && !r.pins[ui.pick].link ? r.pins[ui.pick] : null;
-      left = '<div id="r-plate" class="stage' + (ui.lens ? ' lensed' : '') + (r.done ? ' done' : '') + '" data-rid="' + esc(r.id) + '">' + art(r, 'art') + r.pins.map(function (p, k) { return pinHTML(p, k, stack); }).join('') + '</div>' +
-        (pk ? '<div class="box outline" style="background: #fff"><span class="h3">' + esc(pk.label) + '</span>' + (pk.note ? '<div>' + esc(pk.note) + '</div>' : '') + '<div class="chips">' +
-          ((pk.tags && pk.tags.length) ? pk.tags.map(function (t) { return '<span class="tag' + (t.slice(-1) === '?' ? ' maybe' : '') + '">' + esc(t) + '</span>'; }).join('') : '<span class="hint">No listed allergens</span>') + '</div></div>'
+      var pick = r.pins[ui.pick], needsIngredients = ui.lens || pick || r.pins.some(function (p) { return p.link && p.ing && !p.own; });
+      var ingredients = needsIngredients ? pinIngredientRows(r) : [], pickedInfo;
+      left = '<div id="r-plate" class="stage' + (ui.lens ? ' lensed' : '') + (r.done ? ' done' : '') + '" data-rid="' + esc(r.id) + '">' + art(r, 'art') + r.pins.map(function (p, k) {
+        var link = pinRecipeLink(p, ingredients), selected = p === pick && (!link || !byId[link]);
+        var info = selected || (ui.lens && !link) ? pinAllergens(r, p, link, ingredients) : null;
+        if (selected) pickedInfo = info;
+        return pinHTML(r, p, link, k, stack, info);
+      }).join('') + '</div>' +
+        (pickedInfo ? pinDetail(pick, pickedInfo)
           : '<div class="hint" style="text-align: center">' + (r.pins.length ? 'Tap anything on the plate. A pin with an arrow opens its own recipe.' : 'No pins on this plate yet.') + '</div>') + sideView(r) +
         // a dish used on another (Side Salad on the Grill Maiden's Board) and a dish's tip box, as on Tiles
         usedBox(r, stack, 'Goes on') + tipBox(r);
@@ -1373,7 +1487,7 @@
      The page is drawn by js/manage.js, loaded the first time it opens (staff phones never download it): fetched with
      X-LK-Fresh, so the service worker goes to the network first and keeps a copy for no signal under its plain address
      (sw.js, 28 Oct 2026), then run.
-     Without the head chef signed in, the page says so and nothing is loaded. The rules are the real lock. */
+     Without a chef or admin session, the page says so and nothing is loaded. The rules are the real lock. */
   /* Functions: #/fn (everyone: today, the next days, a function's sheet) is drawn by js/functions.js; #/functions (the
      function managers' list and form) by js/fnedit.js, loaded only when it opens, like js/manage.js.
      The page versions (FE_API, MG_API, SUP_API here, LK_DRAW.api in js/manage.js, the delivery page's api) go up with
@@ -1405,7 +1519,7 @@
     }
     if (window.LK_FE) { if (window.LK_FE.api === FE_API && window.LK_FN && typeof window.LK_FN.M.effects === 'function') window.LK_FE.mount(root, route); else root.innerHTML = mgNote('Reload the book', 'The functions page on this device is a different version from the book. Reload the page to update it. Changes not saved yet are kept on this device.', '<div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div>'); return; }
     root.innerHTML = mgNote('Functions', 'Opening functions...', ' ', 'chef');
-    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=9').catch(function (e) { feLoad = null; throw e; });
+    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=13').catch(function (e) { feLoad = null; throw e; });
     feLoad.then(function () { if (parseRoute().name === 'functions') mountFunctions(parseRoute()); }, function () {
       var el = document.getElementById('fe-root');
       if (el) el.innerHTML = mgNote('Could not open functions', 'It needs the signal the first time it opens on a device. Check the signal and try again.', '<div class="btn-row"><button type="button" class="btn dark" data-act="feretry">Try again</button></div>');
@@ -1419,7 +1533,7 @@
     });
   }
   function loadManage() {
-    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=11').catch(function (e) { mgLoad = null; throw e; });
+    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=20').catch(function (e) { mgLoad = null; throw e; });
     return mgLoad;
   }
   function mgNote(title, text, link, waitingIcon) {
@@ -1430,22 +1544,27 @@
     var root = document.getElementById('mg-root');
     if (!root) return;
     var st = window.LK_PREP && window.LK_PREP.bookState ? window.LK_PREP.bookState() : 'no';
-    if (st === 'offline') { root.innerHTML = mgNote('Manage Recipes & Drawings', offline()); return; }
-    if (st === 'wait') { root.innerHTML = mgNote('Manage Recipes & Drawings', 'Checking who is signed in on this device...', ' ', 'chef'); return; }
-    if (st === 'nopin') { root.innerHTML = mgNote('Manage Recipes & Drawings', 'This device has no kitchen PIN yet. Open the Prep list and enter it, then sign in as the head chef.', '<div class="btn-row"><a class="btn dark" href="#/prep">Open the Prep list</a></div>'); return; }
+    if (st === 'offline') { root.innerHTML = mgNote('Recipes & drawings', offline()); return; }
+    if (st === 'wait') { root.innerHTML = mgNote('Recipes & drawings', 'Checking who is signed in on this device...', ' ', 'chef'); return; }
+    if (st === 'nopin') { root.innerHTML = mgNote('Recipes & drawings', 'This device has no kitchen PIN yet. Open the Prep list, enter the kitchen PIN, then sign in with your own chef PIN.', '<div class="btn-row"><a class="btn dark" href="#/prep">Open the Prep list</a></div>'); return; }
     if (st !== 'yes') {
       if (window.LK_MG) window.LK_MG.unmount();
-      root.innerHTML = mgNote('Only the head chef can change recipes', 'Everyone can read the recipes and their drawings on the recipe cards. To change one, the head chef signs in with their own PIN, or uses their own device with the Google sign-in.' +
+      root.innerHTML = mgNote('Head chefs, sous chefs and admins can change recipes', 'Everyone can read the recipes and drawings. Head chefs and sous chefs sign in with their own PIN. Admins also need their verified Google sign-in.' +
         (window.LK_MG && window.LK_MG.hasDraft() ? ' Changes not saved yet are kept on this device.' : ''));
       return;
     }
     if (window.LK_MG) { if (window.LK_MG.api === MG_API) window.LK_MG.mount(root, route); else root.innerHTML = mgNote('Reload the book', 'The recipe editor on this device is a different version from the book. Reload the page to update it.', '<div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div>'); return; }
-    root.innerHTML = mgNote('Manage Recipes & Drawings', 'Opening the recipe editor...', ' ', 'recipes');
+    root.innerHTML = mgNote('Recipes & drawings', 'Opening the recipe editor...', ' ', 'recipes');
+    var opening = root.firstElementChild;
     loadManage().then(function () {
       if (parseRoute().name === 'manage') mountManage(parseRoute());
     }, function () {
-      var el = document.getElementById('mg-root');
-      if (el) el.innerHTML = mgNote('Could not open the recipe editor', 'It needs the signal the first time it opens on a device. Check the signal and try again.', '<div class="btn-row"><button type="button" class="btn dark" data-act="mgretry">Try again</button></div>');
+      // Only the current loading card reports a failure, even if a sign-in event redrew the route while it waited.
+      if (!root.isConnected || root.firstElementChild !== opening) return;
+      var title = 'Could not open the recipe editor';
+      var message = 'It needs the signal the first time it opens on a device. Check the signal and try again.';
+      root.innerHTML = mgNote(title, message, '<div class="btn-row"><button type="button" class="btn dark" data-act="mgretry">Try again</button></div>');
+      window.LK_PREP.book().say(title + '. ' + message);
     });
   }
   function redrawManage() { if (parseRoute().name === 'manage') mountManage(parseRoute()); }
@@ -1489,7 +1608,8 @@
      only: it grants nothing and is never sent. When it cannot be kept (storage refused), nothing plays, so a reload can
      never scare them twice. */
   var foolsLoad = null, foolsAsk = null, foolsAsking = '';
-  function foolsDay() { var T = window.LK_TIME; return !!(T && T.ready() && T.day().slice(5) === '04-01'); }
+  // 1 April from 04:00 (the PIN day turns then), so a closer still signed in after midnight packs down in peace
+  function foolsDay() { var T = window.LK_TIME; return !!(T && T.ready() && T.day().slice(5) === '04-01' && T.hour() >= 4); }
   function foolsRec(id) { try { var r = JSON.parse(localStorage.getItem('lk.fools.' + id) || 'null'); return r && r.d === window.LK_TIME.day() ? r : null; } catch (e) { return null; } }
   function foolsKeep(id, st) {
     try { localStorage.setItem('lk.fools.' + id, JSON.stringify({ d: window.LK_TIME.day(), st: st })); return true; } catch (e) { return false; }
@@ -1515,7 +1635,7 @@
     if (!F) { if (!foolsLoad) foolsLoad = mgScript('js/fools.js?v=1').then(function () { foolsSync(); }, function () { foolsLoad = null; }); return; }
     if (F.api !== 1 || F.busy() || foolsAsking) return;
     var name = P.whoName(), day = window.LK_TIME.day();
-    var done = function (st) { foolsKeep(id, st); homeWelcomePaint(); if (st === 'play' && P.foolsMark) P.foolsMark(id, day); };
+    var done = function (st, joke) { foolsKeep(id, st); homeWelcomePaint(); if (st === 'play' && P.foolsMark) P.foolsMark(id, day, joke); };
     if (ask) { foolsAsk = null; F.start({ name: ask.name || name, preview: ask }); return; }
     if (!foolsCan()) return;
     if (rec && rec.st === 'play') { F.start({ name: name, recover: true, done: done }); return; }
@@ -1542,7 +1662,7 @@
       return;
     }
     root.innerHTML = mgNote('Delivery received', 'Opening delivery records...', ' ', 'orders');
-    if (!deliveryLoad) deliveryLoad = mgScript('js/deliveries.js?v=9').catch(function (e) { deliveryLoad = null; throw e; });
+    if (!deliveryLoad) deliveryLoad = mgScript('js/deliveries.js?v=16').catch(function (e) { deliveryLoad = null; throw e; });
     deliveryLoad.then(function () { if (parseRoute().name === 'deliveries') mountDeliveries(); }, function () {
       if (parseRoute().name === 'deliveries' && root.isConnected) root.innerHTML = mgNote('Could not open delivery records', 'Check the connection and try again.', '<button type="button" class="btn dark" data-delivery-retry>Try again</button>');
     });
@@ -1553,23 +1673,23 @@
   function mountCleaning() {
     var root = document.getElementById('cleaning-root'); if (!root) return;
     if (!window.LK_PREP || !window.LK_PREP.cleaningOK) {
-      root.innerHTML = mgNote('Reload the book', 'Kitchen cleaning needs the current book.', '<button type="button" class="btn dark" data-act="reload">Reload</button>'); return;
+      root.innerHTML = mgNote('Reload the book', 'Cleaning needs the current book.', '<button type="button" class="btn dark" data-act="reload">Reload</button>'); return;
     }
     if (!cleaningOK()) {
       if (window.LK_CLEANING) window.LK_CLEANING.unmount();
-      root.innerHTML = mgNote('Kitchen cleaning', 'Cleaning is not open to the team yet. The head chef will turn it on when setup is ready.', '<a class="btn dark" href="#/">Back to the start</a>'); return;
+      root.innerHTML = mgNote('Cleaning', 'Cleaning is not open to the team yet. The head chef will turn it on when setup is ready.', '<a class="btn dark" href="#/">Back to the start</a>'); return;
     }
     if (window.LK_CLEANING) {
       if (window.LK_CLEANING.api === 2) window.LK_CLEANING.mount(root);
-      else root.innerHTML = mgNote('Reload the book', 'Kitchen cleaning needs the current book.', '<button type="button" class="btn dark" data-act="reload">Reload</button>');
+      else root.innerHTML = mgNote('Reload the book', 'Cleaning needs the current book.', '<button type="button" class="btn dark" data-act="reload">Reload</button>');
       return;
     }
-    root.innerHTML = mgNote('Kitchen cleaning', 'Opening kitchen cleaning...', ' ', 'prep');
-    if (!cleaningLoad) cleaningLoad = (window.LK_CLEANING_SCHEDULE ? Promise.resolve() : mgScript('js/cleaning-schedule.js?v=1')).then(function () { return mgScript('js/cleaning.js?v=2'); }).then(function () {
-      if (!window.LK_CLEANING) throw new Error('Kitchen cleaning did not load');
+    root.innerHTML = mgNote('Cleaning', 'Opening Cleaning...', ' ', 'prep');
+    if (!cleaningLoad) cleaningLoad = (window.LK_CLEANING_SCHEDULE ? Promise.resolve() : mgScript('js/cleaning-schedule.js?v=1')).then(function () { return mgScript('js/cleaning.js?v=9'); }).then(function () {
+      if (!window.LK_CLEANING) throw new Error('Cleaning did not load');
     }).catch(function (e) { cleaningLoad = null; throw e; });
     cleaningLoad.then(function () { if (parseRoute().name === 'cleaning') mountCleaning(); }, function () {
-      if (parseRoute().name === 'cleaning' && root.isConnected) root.innerHTML = mgNote('Could not open kitchen cleaning', 'Check the connection and try again.', '<button type="button" class="btn dark" data-cleaning-retry>Try again</button>');
+      if (parseRoute().name === 'cleaning' && root.isConnected) root.innerHTML = mgNote('Could not open Cleaning', 'Check the connection and try again.', '<button type="button" class="btn dark" data-cleaning-retry>Try again</button>');
     });
   }
   document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-cleaning-retry]')) mountCleaning(); });
@@ -1592,7 +1712,7 @@
       return;
     }
     root.innerHTML = mgNote('Supplier order', 'Opening supplier tools...', ' ', 'orders');
-    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=26').catch(function (e) { supLoad = null; throw e; });
+    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=33').catch(function (e) { supLoad = null; throw e; });
     supLoad.then(function () { if (parseRoute().name === 'suppliers') mountSuppliers(parseRoute()); }, function () {
       if (parseRoute().name === 'suppliers') root.innerHTML = mgNote('Could not open supplier tools', 'Check the connection and try again. The other kitchen pages still work.', '<div class="btn-row"><button type="button" class="btn dark" data-sup-retry>Try again</button><a class="btn" href="#/orders">Order list</a></div>');
     });
@@ -1609,7 +1729,7 @@
     var keepR = rolled, had = byId[r.id], ro;
     rolled = {}; byId[r.id] = r;
     try { ro = roll(r.id, {}); } finally { if (had) byId[r.id] = had; else delete byId[r.id]; rolled = keepR; }
-    return { contains: Object.keys(ro.contains), check: Object.keys(ro.check).filter(function (a) { return !ro.contains[a]; }), missing: ro.missing };
+    return { contains: Object.keys(ro.contains), check: Object.keys(ro.check).filter(function (a) { return !ro.contains[a]; }), missing: ro.missing, unchecked: ro.unchecked };
   }
   window.LK_APP = {
     mgApi: MG_API, KIND: KIND, isDish: isDish, esc: esc, art: art, rollFor: rollFor, load: mgScript,
@@ -1621,10 +1741,12 @@
       else navVisit();
     },
     icon: function (k) { return ICON[k] || ''; },   // the book's icons, for the pings sheet's rows and Change this guide
+    findWrap: findWrap,   // a search box as the Recipes pill (the consistency sweep, step 3, 20 Nov 2026)
     byId: function (id) { return byId[id] || null; },
     recipes: function () { return D.recipes; },
     tags: function (id) { return tags[id] || []; },
     missing: function (id) { return (missing[id] || []).slice(); },   // allergens incomplete: the ingredients with no allergen info yet
+    unchecked: function (id) { return (unchecked[id] || []).slice(); },   // allergens not checked yet: the parts nobody checked
     usedIn: function (id) { return (usedIn[id] || []).slice(); },
     // Specials is always offered first, even before any dish is in it
     menuTitles: function () { return [SPECIALS].concat((D.menuOrder || []).map(function (s) { return s.title; }).filter(function (t) { return t !== SPECIALS; })); },
@@ -1796,7 +1918,7 @@
     // This phone: saved on this phone or tablet only (lk.settings.v1, lk.device.v2, lk.seasonal.v1)
     var deviceBody = '<p class="hint">' + (mode === 'personal' || mode === 'shared' ? DEVICE_SAY[mode][1] : 'Choose once for this browser or installed app.') + '</p>' +
       (!mode || changeDevice ? '<div class="btn-row"><button type="button" class="btn" data-act="device-choice">' + (mode ? 'Change device type' : 'Choose device type') + '</button>' +
-      (mode ? '<button type="button" class="btn" data-act="device-forget">Forget this device</button>' : '') + '</div>' : '<p class="hint">' + (mode === 'shared' ? 'The head chef can change this after signing in.' : 'Sign in with your PIN to change this.') + '</p>');
+      (mode ? '<button type="button" class="btn lk-del" data-act="device-forget">Forget this device</button>' : '') + '</div>' : '<p class="hint">' + (mode === 'shared' ? 'The head chef can change this after signing in.' : 'Sign in with your PIN to change this.') + '</p>');
     var phone = stRow('text', 'Text size', (TEXT.filter(function (t) { return t[0] === settings.text; })[0] || TEXT[0])[1], '<div class="chips" role="group" aria-label="Text size">' + TEXT.map(function (t) {
         return '<button type="button" class="chip" data-act="settext" data-val="' + t[0] + '" data-k="settext:' + t[0] + '" aria-pressed="' + (settings.text === t[0]) + '">' + esc(t[1]) + '</button>';
       }).join('') + '</div>') +
@@ -1835,7 +1957,7 @@
       stRow('where', 'Where settings are saved', '', '<dl class="st-kv"><div><dt>This phone</dt><dd>Saved here only</dd></div><div><dt>You</dt><dd>Any phone you sign in on</dd></div><div><dt>The kitchen</dt><dd>Every phone, set by the head chef</dd></div></dl>');
     return '<div class="page">' + '<main id="main" class="settings st"><div class="st-head">' +
       '<h2 tabindex="-1" id="rtitle">Settings</h2><a class="btn dark" href="#/" data-act="done">Done</a></div>' + stCard() +
-      (m.tab ? '<div class="st-find"><label class="label" for="st-find">Find a setting</label><input id="st-find" type="search" class="search" autocomplete="off" placeholder="Sound, PIN, sections..." value="' + esc(stFind) + '"><p class="hint st-none" role="status" hidden></p></div>' : '') +
+      (m.tab ? '<div class="st-find"><label class="visually-hidden" for="st-find">Find a setting</label>' + findWrap('<input id="st-find" type="search" class="search" autocomplete="off" placeholder="Sound, PIN, sections..." value="' + esc(stFind) + '">') + '<p class="hint st-none" role="status" hidden></p></div>' : '') +
       stGroup('you', 'You', 'Follows you to any phone you sign in on.', you) +
       stGroup('phone', 'This phone', 'Saved on this phone or tablet only.', phone) +
       stGroup('alerts', 'Notifications', 'What this phone does when something needs you.', alerts) +
@@ -1912,7 +2034,7 @@
     return '#/';
   }
   function backTitle(hash) {
-    var r = parseRoute(hash), names = { landing: 'Kitchen Book', home: 'recipes', prep: 'prep list', orders: 'order list', waste: 'wastage', transfers: 'transfers', minutes: 'meeting minutes', mail: 'kitchen mail', drinks: 'drinks run', todo: 'Chef to-do', admin: 'admin panel', chef: 'chef panel', settings: 'Settings', guides: 'guides', fn: 'functions', functions: 'Manage functions', manage: 'Manage recipes', suppliers: 'Supplier order', deliveries: 'Delivery received', cleaning: 'kitchen cleaning' };
+    var r = parseRoute(hash), names = { landing: 'Kitchen Book', home: 'recipes', prep: 'prep list', orders: 'order list', waste: 'wastage', transfers: 'transfers', minutes: 'meeting minutes', mail: 'kitchen mail', drinks: 'drinks run', todo: 'Chef to-do', admin: 'admin panel', chef: 'chef panel', settings: 'Settings', guides: 'guides', fn: 'functions', functions: 'Manage functions', manage: 'Recipes & drawings', suppliers: 'Supplier order', deliveries: 'Delivery received', cleaning: 'cleaning' };
     if (r.name === 'recipe') return 'recipe';
     return names[r.name] || 'Kitchen Book';
   }
@@ -2001,10 +2123,14 @@
   function backHome() {
     var a = homeAt && app.querySelectorAll('a[href="' + homeAt.href + '"]')[homeAt.n];
     if (!a) { window.scrollTo(0, homeY); return; }
+    // The compact filters take their final height once the shared controls replace the source chips.
+    var browse = app.querySelector('.rx-browse');
+    if (browse && window.LK_UX) window.LK_UX.enhance(browse);
     // a plate in a group not drawn yet has no true position: draw every group once (as before this change), place the
     // plate, then go back to drawing only what is near; each group keeps the height it was drawn at, so nothing jumps
     app.classList.add('cv-all');
     window.scrollTo(0, a.getBoundingClientRect().top + window.scrollY - homeAt.top);
+    a.focus({ preventScroll: true });
     requestAnimationFrame(function () { requestAnimationFrame(function () { app.classList.remove('cv-all'); }); });
   }
   window.addEventListener('lk-access', function () { whoMenuClose(false, true); render(); });
@@ -2071,7 +2197,7 @@
     foolsSync();
     koSync();   // Keep screen on: holds on a recipe page when chosen, lets go everywhere else and while this device is locked
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
-    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'transfers' ? 'Transfers · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'todo' ? 'Chef to-do · ' : route.name === 'team' ? 'Today\'s team · ' : route.name === 'suppliers' ? 'Supplier order · ' : route.name === 'manage' ? 'Manage Recipes & Drawings · ' : route.name === 'fn' ? 'Functions · ' : route.name === 'functions' ? 'Manage functions · ' : route.name === 'cleaning' ? 'Kitchen cleaning · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : route.name === 'chef' ? 'Chef panel · ' : '')) + 'Leichhardt Kitchen Book';
+    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'transfers' ? 'Transfers · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'todo' ? 'Chef to-do · ' : route.name === 'team' ? 'Today\'s team · ' : route.name === 'suppliers' ? 'Supplier order · ' : route.name === 'manage' ? 'Recipes & drawings · ' : route.name === 'fn' ? 'Functions · ' : route.name === 'functions' ? 'Manage functions · ' : route.name === 'cleaning' ? 'Cleaning · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : route.name === 'chef' ? 'Chef panel · ' : '')) + 'Leichhardt Kitchen Book';
     var prevRoute = lastRoute; lastRoute = route.name;
     if (changed && route.name === 'recipe') noteView(route.stack[route.stack.length - 1]);
     // opening the recipes checks for the head chef's recipe changes when the last check is 30 minutes old (one read)
@@ -2316,8 +2442,8 @@
     // the kitchen PIN on this device: a second tap within 4 seconds, like the admin Tools button it replaces
     if (act === 'stkpin') {
       if (el.classList.contains('is-armed')) { if (window.LK_PREP && window.LK_PREP.forgetPin) window.LK_PREP.forgetPin(); return; }
-      el.classList.add('is-armed'); el.textContent = 'Tap again: this device forgets the kitchen PIN';
-      setTimeout(function () { if (el.isConnected) { el.classList.remove('is-armed'); el.textContent = 'Use a different kitchen PIN on this device'; } }, 4000);
+      el.classList.add('is-armed', 'lk-del'); el.textContent = 'Tap again: this device forgets the kitchen PIN';
+      setTimeout(function () { if (el.isConnected) { el.classList.remove('is-armed', 'lk-del'); el.textContent = 'Use a different kitchen PIN on this device'; } }, 4000);
       return;
     }
     if (act === 'stpush') { if (window.LK_PREP && window.LK_PREP.pushSet) window.LK_PREP.pushSet(val === '1'); return; }

@@ -1,5 +1,6 @@
 // Moving to a new kitchen PIN, the backup file, sending missed recipe searches, and no learning writes from the phone.
 const L = require('./lib');
+const { isDeepStrictEqual } = require('node:util');
 const { R, ok } = L.results();
 const today = L.ymd(new Date());
 const NEW = '4321';
@@ -40,7 +41,17 @@ const store = page => page.evaluate(() => window.__fake.dump());
   // a plating template and a piece the head chef made (reuse)
   extra[fsKey(['drawtpl', 'pub-split-1'])] = { name: 'Pub split', slot: 'plate', surf: { fam: 'plate', size: 30 }, els: [], defs: '{}', vb: '-110 -110 220 220', svgS: '', svgF: '', v: 1, upd: 1, removed: false };
   extra[fsKey(['drawlib', 'house-slaw-1'])] = { type: 'item', name: 'House slaw', cat: 'veg', kw: '', role: 'salad', form: 'piece', n: 1, w: 40, h: 30, body: '<circle cx="0" cy="0" r="15" fill="#F1EEDC"/>', side: { s: 'mound', h: 9, c: '#F1EEDC' }, v: 1, upd: 1, removed: false };
-  p = await L.open(b, '#/admin', { admin: true, wait: 1800, extra });
+  const salesPath = ['suppliersales', 'weekly'];
+  const weeklySales = {
+    v: 3, report: { start: L.ymd(new Date(L.NOW - 7 * 86400000)), end: L.ymd(new Date(L.NOW - 86400000)), rows: [{ name: 'Synthetic steak meal', qty: 20 }] },
+    links: [
+      { name: 'Synthetic steak meal', parts: [{ sid: 'meat', iid: 'steak', amount: 0.25, unit: 'kg', perOrder: 1, orderUnit: 'kg', catalogueKey: 'synthetic-key' }] },
+      { name: 'Synthetic side', parts: [] }
+    ],
+    at: L.NOW - 86400000, by: 'sam'
+  };
+  const withSales = { ...extra, [fsKey(salesPath)]: weeklySales };
+  p = await L.open(b, '#/admin', { admin: true, wait: 1800, extra: withSales });
   await L.adminTab(p, 'tools');
   await L.settle(p, 200);
   await p.fill('#a-newpin', NEW);
@@ -55,6 +66,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   s = await store(p);
   ['sam', 'ann', 'bo'].forEach(id => ok(!!s[newKey(['staffpins', id])] && !!s[newKey(['pinset', id])], 'move PIN: PIN of ' + id + ' copied'));
   ok((s[newKey(['deliveries', 'receipt-1'])] || {}).frozen === -18.5, 'move PIN: delivery temperatures and original attribution copied');
+  ok(isDeepStrictEqual(s[newKey(salesPath)], weeklySales), 'move PIN: original weekly report, portion mappings and attribution copied');
   ok(s[newKey(['references', 'ai-test'])].v === 2 && s[newKey(['references', 'ai-test', 'hist', '1'])].v === 1 && s[newKey(['training', 'ai-test', 'hist', '1'])].status === 'in-training' && !!s[newKey(['analysisDaily', 'g1_' + today])], 'move PIN: analysis, references, training and histories copied');
   ok(!!s[newKey(['notes', 'n1'])], 'move PIN: notes copied');
   ok(!!s[newKey(['notes', 'n1', 'seen', today + '_ann'])], 'move PIN: seen records copied');
@@ -74,7 +86,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   // Backup: one JSON file with notes and who has seen them, minutes with earlier versions and sign-offs, and order learning
   const coolingCurrent = { v: 1, run: 'backup-cooling-run-01', rev: 1, windowAt: L.NOW - 4 * 3600000, firstAt: { __fakeTimestamp: L.NOW - 3 * 3600000 }, firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann' };
   const coolingRecorded = { v: 1, run: coolingCurrent.run, firstAt: { __fakeTimestamp: L.NOW - 1000.125 }, firstBy: 'bo', secondAt: 0, secondBy: '', by: 'bo' };
-  const coolingBackup = { ...extra, [fsKey(['cooling', 'current'])]: coolingCurrent, [fsKey(['cooling', 'recorded'])]: coolingRecorded };
+  const coolingBackup = { ...withSales, [fsKey(['cooling', 'current'])]: coolingCurrent, [fsKey(['cooling', 'recorded'])]: coolingRecorded };
   p = await L.open(b, '#/admin', { admin: true, wait: 1800, extra: coolingBackup });
   await L.adminTab(p, 'tools');
   await L.settle(p, 200);
@@ -85,6 +97,8 @@ const store = page => page.evaluate(() => window.__fake.dump());
   const bk = JSON.parse(Buffer.concat(chunks).toString('utf8'));
   ok(JSON.stringify(bk.coolingCurrent) === JSON.stringify(coolingCurrent), 'backup: the canonical cooling run retains its identity, daily-window stamp and server start times exactly');
   ok(JSON.stringify(bk.coolingRecorded) === JSON.stringify(coolingRecorded), 'backup: recording confirmation retains its run, different recorder, exact timestamp and unconfirmed second stage');
+  ok(isDeepStrictEqual(bk.supplierSales, weeklySales), 'backup: the weekly report and portion mappings retain their revision and writer');
+  ok((await p.evaluate(() => window.__fake.reads)).filter(path => path === fsKey(salesPath)).length === 1, 'backup: the weekly report is read once by its document path');
   ok((await p.evaluate(() => window.__fake.reads)).includes(fsKey(['cooling', 'current'])), 'backup: the current shared timer is read by its fixed document path');
   ok((await p.evaluate(() => window.__fake.reads)).includes(fsKey(['cooling', 'recorded'])), 'backup: recording confirmations are read by their fixed document path');
   ok(/^leichhardt-prep-backup-\d{4}-\d{2}-\d{2}\.json$/.test(file.suggestedFilename()), 'backup: a dated JSON file (' + file.suggestedFilename() + ')');
@@ -134,6 +148,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   const emptyChunks = []; for await (const c of await file3.createReadStream()) emptyChunks.push(c);
   const emptyCooling = JSON.parse(Buffer.concat(emptyChunks).toString('utf8'));
   ok(emptyCooling.coolingCurrent === null && emptyCooling.coolingRecorded === null, 'backup: absent timer and confirmation documents are explicit nulls');
+  ok(emptyCooling.supplierSales === null, 'backup: an absent weekly report is an explicit null');
   await L.waitFor(p, () => /Backup saved/.test(window.LK_PREP.state.toast || ''), null, 5000).catch(() => {});
   const msg3 = await p.evaluate(() => window.LK_PREP.state.toast || '');
   ok(!!file3 && /Left out, the rules do not allow it yet: transfers\./.test(msg3), 'backup with transfers refused: the file downloads and the message names them (' + msg3.slice(-60) + ')');

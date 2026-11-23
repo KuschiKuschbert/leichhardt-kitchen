@@ -37,7 +37,7 @@ const ARRAY_COLLECTIONS = ['activity', 'sections', 'prepStandards', 'learned', '
   'deliveries', 'cleaningTasks', 'cleaningDone', 'cleaningActions', 'notes', 'directnotes', 'minutes', 'book', 'recipes', 'drawings', 'drawtpl', 'drawlib', 'suppliers', 'supplierlinks', 'functions', 'fncontact', 'fnsent', 'fnseen'];
 const HISTORIES = { referencesHist: ['references', 'hist'], trainingHist: ['training', 'hist'], notesSeen: ['notes', 'seen'], directnotesSeen: ['directnotes', 'seen'], minutesHist: ['minutes', 'hist'], minutesSigns: ['minutes', 'signs'], recipesHist: ['recipes', 'hist'], drawingsHist: ['drawings', 'hist'], supplierOrders: ['suppliers', 'orders'], supplierAudit: ['suppliers', 'audit'], functionsHist: ['functions', 'hist'] };
 const DATED = { days: ['days', 'items'], orders: ['orders', 'lines'], waste: ['waste', 'lines'], transfers: ['transfers', 'lines'] };
-const EXPECTED_FIELDS = ['exportedAt', 'by', 'config', 'pins', 'wasteReviews', 'coolingCurrent', 'coolingRecorded', ...ARRAY_COLLECTIONS, ...Object.keys(HISTORIES), ...Object.keys(DATED)].sort();
+const EXPECTED_FIELDS = ['exportedAt', 'by', 'project', 'config', 'pins', 'wasteReviews', 'coolingCurrent', 'coolingRecorded', 'supplierSales', ...ARRAY_COLLECTIONS, ...Object.keys(HISTORIES), ...Object.keys(DATED)].sort();
 const identities = Object.fromEntries(ARRAY_COLLECTIONS.map(name => [name, name + '-sample']));
 Object.assign(identities, { activity: 'cook-a', drinks: 'cook-a', book: 'index', references: 'ref-a', training: 'training-a', notes: 'note-a', directnotes: 'direct-a', minutes: 'meeting-a', recipes: 'recipe-a', drawings: 'drawing-a', suppliers: 'supplier-a', functions: 'function-a' });
 identities.cleaningDone = day(2) + '_' + identities.cleaningTasks + '__daily';
@@ -50,6 +50,14 @@ const prepStandards = [
   { id: 'standard-archived', ...standard, name: 'Synthetic archived standard', archived: true, v: 3 }
 ].sort((a, b) => a.id.localeCompare(b.id));
 const capabilityIds = { addIds: ['cook-a'], tickIds: ['cook-a', 'worker-a'], delIds: ['cook-a'] };
+const supplierSales = {
+  v: 3, report: { start: day(10), end: day(4), rows: [{ name: 'Synthetic schnitzel meal', qty: 340 }] },
+  links: [
+    { name: 'Synthetic schnitzel meal', parts: [{ sid: identities.suppliers, iid: 'synthetic-schnitzel', amount: 1, unit: 'each', perOrder: 30, orderUnit: 'packs', catalogueKey: 'synthetic-key' }] },
+    { name: 'Synthetic side', parts: [] }
+  ],
+  at: dayAt(4), by: 'cook-a'
+};
 const orderEffect = text => ({ text, qty: '2 platters', recipes: ['recipe-a'], fn: 'function-a', dupOk: true });
 const effects = { prep: { 'fn-function-a-recipe-a': { text: 'Synthetic platter: Synthetic function', qty: '2 platters', station: 'Functions', recipe: 'recipe-a', fn: 'function-a', dupOk: true } },
   order: orderEffect('Function stock: Synthetic function'), cancel: orderEffect('Function cancelled, check the order: Synthetic function'), restore: orderEffect('Function restored, check the order: Synthetic function') };
@@ -79,6 +87,7 @@ function flatten(archive) {
     }
   }
   for (const name of ARRAY_COLLECTIONS) list(archive[name], [name]);
+  if (archive.supplierSales !== null) record(['suppliersales', 'weekly'], archive.supplierSales, rows);
   // Restore exact accepted starts as Timestamps, never numeric milliseconds or a new serverTimestamp().
   // A restored elapsed timer can show its ping on the next signed-in open app; it does not start another stage.
   if (archive.coolingCurrent !== null) {
@@ -110,6 +119,8 @@ try {
   await restored.create({ rehearsal: true }); ownRestored = true;
   const people = [{ id: 'cook-a', name: 'Synthetic recorder', role: 'head', active: true }, { id: 'worker-a', name: 'Synthetic preparer', role: 'staff', active: true }];
   await put(source, 'config/main', { people, staffIds: people.map(x => x.id), headId: 'cook-a', sousIds: ['cook-a'], ...capabilityIds, proofWords: ['burrata'], proofV: 2 });
+  await put(source, 'suppliersales/weekly', supplierSales);
+  await put(source, 'suppliersales/unrelated', { excluded: 'synthetic-excluded-sales-document' });
   for (const name of ARRAY_COLLECTIONS) {
     if (name === 'prepStandards') continue;
     let data = { text: 'Synthetic ' + name, v: 2, by: 'cook-a', at: Timestamp.fromMillis(at), nested: { zero: 0, missing: null, labels: ['°C', 'quotes " and commas,'] } };
@@ -176,6 +187,8 @@ try {
     secondAt: { seconds: oldRecorded.secondAt.seconds, nanoseconds: oldRecorded.secondAt.nanoseconds } };
   assert.deepEqual(original.coolingRecorded, archivedRecorded, 'Recording confirmations retain their exact run, actors and Timestamp components outside the date window.');
   assert(!JSON.stringify(original).includes('synthetic-excluded-cooling'), 'The exporter reads only the two named cooling documents.');
+  assert.deepEqual(original.supplierSales, supplierSales, 'The latest sales report and mapping are included outside the dated window.');
+  assert(!JSON.stringify(original).includes('synthetic-excluded-sales'), 'The exporter reads only the named supplier sales record.');
   assert.equal(original.cleaningTasks.length, 3, 'Every cleaning revision survives, including archived schedules older than the selected window.');
   assert.equal(original.cleaningDone.length, 2, 'Only cleaning completion records inside the selected window are included.');
   assert(original.cleaningDone.every(x => x.day >= day(2) && x.day <= day(0)));
@@ -213,6 +226,8 @@ try {
   for (const name of ['staffpins', 'sessions', 'adminDevices', 'push', 'pushsent', 'login']) assert.equal((await restored.collection(name).get()).size, 0);
   assert.equal((await restored.collection('config').doc('admins').get()).exists, false);
   assert.equal((await restored.collection('cooling').doc('unrelated').get()).exists, false);
+  assert.equal((await restored.collection('suppliersales').doc('unrelated').get()).exists, false);
+  assert.deepEqual((await restored.collection('suppliersales').doc('weekly').get()).data(), supplierSales);
   assert.deepEqual((await restored.collection('cooling').doc('current').get()).data(), oldCooling);
   assert.deepEqual((await restored.collection('cooling').doc('recorded').get()).data(), oldRecorded);
   const restoredCooling = Cooling.parse((await restored.collection('cooling').doc('current').get()).data());
@@ -234,12 +249,14 @@ try {
   const previousRecorded = { ...archivedRecorded, run: 'cooling-previous-run' };
   assert.equal(flatten({ ...recovered, coolingRecorded: previousRecorded }).find(([path]) => path.join('/') === 'cooling/recorded')[1].run, previousRecorded.run,
     'A previous batch confirmation is preserved independently and cannot be mistaken for the current batch.');
-  // A kitchen with no cooling data still has an explicit null current, without invented state.
+  // Missing single-document features have explicit null fields in the backup.
   await document(restored, 'cooling/current').delete();
   await document(restored, 'cooling/recorded').delete();
-  const absentCooling = exportFile(restoredPin, join(folder, 'without-cooling.json'));
-  assert.equal(absentCooling.coolingCurrent, null);
-  assert.equal(absentCooling.coolingRecorded, null);
+  await document(restored, 'suppliersales/weekly').delete();
+  const absent = exportFile(restoredPin, join(folder, 'without-single-documents.json'));
+  assert.equal(absent.coolingCurrent, null);
+  assert.equal(absent.coolingRecorded, null);
+  assert.equal(absent.supplierSales, null);
   assert.equal((await restored.collection('guides').doc(identities.guides).collection('pages').get()).size, 0);
   assert.equal((await restored.collection('pinset').doc('cook-a').get()).data().at, undefined);
   console.log('Backup recovery: local demo guards, authenticated export and ' + recordCount + ' included documents round-tripped with identities, prep standards, temperatures, history and versions. Intentional omissions remain explicit.');

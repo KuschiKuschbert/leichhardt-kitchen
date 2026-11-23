@@ -1,10 +1,11 @@
 /* Leichhardt Kitchen Recipe Book. Locked Leichhardt card look. */
 /* Delivery records use the book's existing type, buttons and paper colours. No extra bottom navigation tab. */
-.dl-page { max-width: 860px; margin: 0 auto; padding: 1.2rem 0 2rem; }
-.dl-heading h1 { font: 700 2.3rem/1.05 var(--display); margin: .25rem 0 .6rem; }
-.dl-heading { margin-bottom: 1.4rem; }
+.dl-page { max-width: 860px; margin: 0 auto; padding: .5rem 0 2rem; }
+.dl-heading h1 { font: 700 2.3rem/1.05 var(--display); margin: .25rem 0 .3rem; }
+.dl-heading { margin-bottom: .7rem; }
+.dl-heading .hint { margin: 0; }
 .dl-form legend { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.dl-form fieldset { margin: 0; padding: 0; border: 0; min-width: 0; display: grid; gap: 1rem; }
+.dl-form fieldset { margin: 0; padding: 0; border: 0; min-width: 0; display: grid; gap: .65rem; }
 .dl-field { display: grid; gap: .35rem; min-width: 0; }
 .dl-field input, .dl-field textarea { width: 100%; min-width: 0; min-height: 44px; border: 1.5px solid var(--edge); border-radius: var(--r-act); padding: .6rem .7rem; background: var(--paper); color: var(--ink); font: inherit; }
 .dl-field input:focus-visible, .dl-field textarea:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
@@ -15,6 +16,10 @@
 .dl-message, .dl-error { min-height: 1.4em; margin: .6rem 0; }
 .dl-message { color: var(--ink); }
 .dl-error { color: var(--bad-ink); font-weight: 600; }
+/* No signal is not a failure: a neutral note (the consistency sweep, step 2, 20 Nov 2026); a failed read is the
+   shared .p-readerr line, spaced like the other lines here */
+.dl-offline { margin: .6rem 0; color: var(--ink); }
+.dl-history .p-readerr { margin: .6rem 0; }
 .dl-history { margin-top: 2rem; border-top: 2px solid var(--ink); padding-top: 1rem; }
 .dl-history h2 { margin: 0; font: 700 1.6rem/1.1 var(--display); }
 .dl-history-head, .dl-receipt-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
@@ -35,7 +40,7 @@
 .dl-when-line > span { min-width: 0; overflow-wrap: anywhere; }
 .dl-due-pick { align-items: center; margin-top: -.4rem; }
 .dl-due-pick .hint { margin: 0 .2rem 0 0; }
-.dl-what { display: grid; gap: .45rem; }
+.dl-what { display: grid; gap: .25rem; }
 .dl-what .hint { margin: 0; }
 .dl-temps.one { grid-template-columns: minmax(0, 1fr); }
 .dl-temp { display: flex; align-items: stretch; min-height: 56px; border: 1.5px solid var(--edge); border-radius: var(--r-act); background: var(--paper); overflow: hidden; }
@@ -50,10 +55,34 @@
 .dl-sign-note:empty { display: none; }
 .dl-sign-note, .dl-hidden-note { margin: -.4rem 0 0; color: var(--small-ink); font-weight: 600; }
 .dl-form .dl-add-note { padding-left: 0; }
+.dl-dock .dl-actions { margin-top: .35rem; }
 .dl-actions .btn[type="submit"] { flex: 1 1 12rem; }
+/* On a phone Save delivery and the line that says what happened dock above the tab bar while the form is on screen,
+   like Review order on the supplier sheet, and scroll away with the form. With the function band and the cut-off bar
+   showing, Save sat under the tab bar until you scrolled (consistency sweep, 19 Nov 2026, ORDE-1). */
+@media (max-width: 719px) {
+  .dl-dock { position: sticky; bottom: var(--tabbar-h); z-index: 6; margin-top: .4rem; padding: 6px 0 8px; background: var(--bg); border-top: 1px solid var(--line); }
+  .dl-dock .dl-message:empty { display: none; }
+  .dl-dock .dl-message, .dl-dock .dl-error { margin: 0 0 .4rem; }
+  .dl-dock .dl-actions { margin: 0; }
+  html:has(.dl-dock) { scroll-padding-bottom: calc(var(--tabbar-h) + 84px); }
+}
 .dl-waiting { margin: 1rem 0 0; padding-top: .9rem; border-top: 1px solid var(--line); color: var(--small-ink); }
 .dl-waiting b { color: var(--ink); }
 @media (max-width: 380px) { .dl-pair { grid-template-columns: 1fr; } }
+@media (min-width: 1100px) {
+  .dl-page { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); align-items: start; gap: 16px 28px; max-width: 1136px; }
+  .dl-heading { grid-column: 1 / -1; margin-bottom: 0; }
+  .dl-form, .dl-history { min-width: 0; }
+  .dl-history { margin-top: 0; padding: 14px 18px; border: 1px solid var(--line); border-top: 2px solid var(--ink); border-radius: var(--r-act); background: var(--surface-paper); }
+  /* Larger text keeps the full form width for the two temperature readings. */
+  html[data-text="normal"] .dl-form fieldset { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); column-gap: 14px; }
+  html[data-text="normal"] .dl-form fieldset > * { grid-column: 1 / -1; }
+  html[data-text="normal"] .dl-form .dl-what { grid-column: 1; align-self: start; }
+  html[data-text="normal"] .dl-form .dl-temps { grid-column: 2; align-self: start; }
+  .dl-temps:not(.one) .dl-unit { padding-inline: 7px; }
+  .dl-dock .dl-message:empty { min-height: 0; margin: 0; }
+}
 :root {
   --bg: #FBFAF7;
   --paper: #FFFFFF;
@@ -75,6 +104,7 @@
   --bad-ink: #9B2716;
   --bad-tint: #FBE9E5;
   --bad-on-dark: #FF9C8A;
+  --del-ink: var(--bad-ink);   /* the destructive look's red (.lk-del, the consistency sweep, step 3, 20 Nov 2026); a charcoal bar sets --bad-on-dark */
   --done-on-dark: #9FE0B7;
   --steel: #CFD3D8;
   --steel-dark: #A9AFB6;
@@ -93,8 +123,8 @@
   --bar-accent: #F08A4B;
   --stone: #A39A88;
   /* One look (22 Oct 2026, Option B approved): rectangles do something, pills choose something. */
-  --r-act: 8px;      /* buttons that do something: Save, Add, Log it, Open */
-  --r-pick: 999px;   /* chips, filters and switches that choose */
+  --r-act: 8px;      /* buttons that do something: Save, Add, Log it, Open, in sheets too (the consistency sweep, step 3, 20 Nov 2026) */
+  --r-pick: 999px;   /* chips, filters and switches that choose: only these are round */
   --small-ink: #B83F15;   /* orange for small text on the page and beige colours (4.5:1 or more; --accent-ink is 4.4 on beige) */
 }
 html { font-size: 100%; -webkit-text-size-adjust: 100%; }
@@ -143,9 +173,14 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .chip[aria-pressed="true"] { background: var(--ink); color: #fff; }
 /* the Specials chip (27 Oct 2026): orange, so the specials are easy to find first */
 .chip.sp { border-color: var(--small-ink); color: var(--small-ink); }
-.chip.sp[aria-pressed="true"] { background: var(--small-ink); color: #fff; }
+.chip.sp[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }   /* chosen is ink (the consistency sweep, step 3, 20 Nov 2026) */
 .row-label { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.15rem 0.75rem; }
-.empty { padding: 1.25rem; border: 1.5px dashed var(--stone); border-radius: var(--radius); color: var(--muted); }
+.empty { margin: 0.75rem 0; color: var(--muted); }
+/* Empty lists outside the notebooks are a plain grey sentence, no dashed box (the consistency sweep, step 3, head chef
+   20 Nov 2026): Recipes, Suppliers, Functions (.fn-quiet) and the admin tables (.ux-table-empty). Inside the notebooks the
+   grey handwritten line (.nb-empty) stays. A heading in one (No supplier catalogue yet) reads as its first sentence. */
+.empty > .h3 { font: 600 1rem/1.45 var(--body); letter-spacing: 0; text-transform: none; }
+.empty > p { margin: 0.3rem 0 0; }
 .tag { display: inline-block; font-size: 0.8125rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 6px; border: 1.5px solid var(--ink); }
 .tag.maybe { border-style: dashed; }
 .tag.dark { background: var(--ink); color: #fff; }
@@ -293,7 +328,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .views { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; }
 .view-opt { display: flex; flex-direction: column; gap: 0.6rem; padding: 1rem; text-align: left; background: var(--paper); border: 2px solid var(--edge); border-radius: 14px; cursor: pointer; }
 @media (hover: hover) and (pointer: fine) { .view-opt:hover { border-color: var(--ink); } }
-.view-opt[aria-checked="true"] { border-color: var(--ink); box-shadow: 0 0 0 3px var(--accent); }
+.view-opt[aria-checked="true"] { border-color: var(--ink); box-shadow: 0 0 0 3px var(--ink); }   /* chosen is ink (the consistency sweep, step 3, 20 Nov 2026) */
 .view-opt .vo-name { font-family: var(--display); font-weight: 700; font-size: 1.5rem; line-height: 1; }
 .view-opt .vo-desc { font-size: 0.9375rem; color: var(--muted); }
 .view-opt .vo-shots { display: flex; align-items: flex-end; gap: 0.75rem; }
@@ -310,7 +345,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 /* Settings, sorted by who a setting is for (3 Nov 2026, docs/settings-options/brief.md): your card, then groups of rows.
    A row's button says what it is set to and opens the row in place; on a computer the group's name sits in a left column. */
 .settings.st { width: 100%; max-width: 62rem; margin: 0 auto; gap: 1.6rem; }
-.st-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.st-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
 .st-you { display: grid; gap: 0.8rem; padding: 1rem 1.1rem 1.1rem; background: var(--surface-paper); border: 1.5px solid var(--surface-people-edge); border-radius: var(--radius); min-width: 0; }
 .st-you.is-out { background: var(--beige); border-color: var(--edge); }
 .st-you-top { display: flex; align-items: center; gap: 0.8rem; min-width: 0; }
@@ -350,6 +385,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
    never put two tinted rows together. The words sit in from the tint's edge. The small grey lines are --muted, since
    --faint is 4.3:1 on the tint. Kitchen, Overview uses the same rows outside .st-grp and stays as it is. */
 .st-grp .st-btn { padding-inline: 0.75rem; }
+.st-grp .st-v > span { overflow: visible; overflow-wrap: anywhere; white-space: normal; }
 .st-grp .st-body.set-block { padding-inline: 0.75rem; }
 .st-grp .st-sub { color: var(--muted); }
 .st-grp .st-row:nth-child(even of :not([hidden], .st-qr)) { background: var(--beige); }
@@ -383,7 +419,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .btn.dark, .nb-addbtn { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; }
 .nb-addbtn:focus-visible { outline-color: var(--ink); }
 @media (hover: hover) and (pointer: fine) {
-  .btn.dark:not(:disabled):hover, .nb-addbtn:not(:disabled):hover { background: var(--ink); border-color: var(--ink); }
+  .btn.dark:not(:disabled):not(.lk-del):hover, .nb-addbtn:not(:disabled):not(.lk-del):hover, .nt-got:hover, .mlp-go:hover { background: var(--ink); border-color: var(--ink); }
 }
 .btn.dark[disabled], .nb-addbtn[disabled] { background: #b9b3a8; border-color: #b9b3a8; }
 .btn-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
@@ -459,7 +495,9 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 /* ---------- prep book (notebook) ---------- */
 .nb-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.4rem 1rem; font-size: 0.9375rem; }
 .nb-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
-.nb-nav .chip:first-child, .nb-nav .chip:last-child { min-width: 48px; font-size: 1.4rem; padding: 0; }
+/* The day control's ‹ and › (head chef, 20 Nov 2026, the consistency sweep, step 3): one step chip wherever a day or a
+   week is stepped (Prep, Orders, Cleaning's week, Today's team's week). dayNavHTML() in js/prep.js draws the day control. */
+.chip.nav-step { min-width: 48px; font-size: 1.4rem; padding: 0; }
 .nb-wrap { position: relative; display: flex; flex-direction: column; gap: 0.6rem; }
 .nb { display: flex; flex-direction: column; gap: 1rem; }
 .nb-page { --rule: #DDD5C5; display: flex; flex-direction: column; min-width: 0; background: var(--surface-paper); border: 1.5px solid var(--surface-work-edge); border-radius: 10px; padding: 0 1rem; position: relative; box-shadow: 0 6px 0 rgba(28,29,31,0.12); }
@@ -478,7 +516,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .nb-row { display: flex; align-items: center; gap: 0.6rem; min-height: 44px; padding: 3px 0; border-bottom: 1px solid var(--rule); font-family: 'Caveat', cursive; font-weight: 700; font-size: 1.65rem; line-height: 1.1; }
 .nb-box { flex: 0 0 34px; width: 34px; height: 34px; display: grid; place-items: center; padding: 0; border: 0; background: none; color: var(--ink); cursor: pointer; }
 .nb-box svg { width: 33px; height: 33px; }
-.nb-tt, .nb-main[data-p="tick"] { cursor: pointer; }
+.nb-tt, .nb-main[data-p="tick"], .nb-main[data-p="otick"] { cursor: pointer; }
 /* Not sent (27 Oct 2026): in a slot inside the words (.nb-mk), so on a phone it wraps with them like Urgent and never
    narrows them. Shown only while the No signal or Not sent yet strip is up. */
 .nb-unsent, .nb-held { display: inline-block; margin-left: 0.3rem; vertical-align: 0.25em; padding: 0 0.4rem; border-radius: 999px; background: var(--accent-ink); color: #fff; font: 700 0.75rem/1.5 var(--body); white-space: nowrap; }
@@ -495,6 +533,8 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .nb-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .nb-meta { display: block; min-height: 1.35em; font: 400 0.75rem/1.35 var(--body); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nb-row.is-done .nb-meta { text-decoration: none; }
+.nb-tick-status { display: block; margin-top: 2px; color: var(--bad-ink); font: 700 0.8125rem/1.23 var(--body); overflow-wrap: anywhere; }
+.nb-tick-status.is-waiting { color: var(--ink); }
 .nb-q { font-size: 1.25rem; color: var(--muted); margin-left: 0.3rem; }
 .nb-go { flex: 0 0 auto; font-family: var(--display); font-weight: 700; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); text-decoration: none; border-bottom: 1.5px dotted var(--accent-ink); }
 .nb-x { flex: 0 0 auto; min-height: 44px; padding: 0 0.5rem; border: 0; background: none; font-family: var(--body); font-weight: 600; font-size: 0.8125rem; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
@@ -504,6 +544,16 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
    full ink, its box fades and the reason sits under it in the body font; the Functions tab's sentence likewise. No motion. */
 .nb-row.is-leaving .nb-box { opacity: 0.4; }
 .nb-row.is-leaving .nb-meta, .nb-row.is-leaving .nb-wrote { white-space: normal; overflow: visible; text-overflow: clip; }
+/* A later day on Prep (head chef, 17 Nov 2026: the mix, docs/prep-ahead-options/brief.md): one page, no Handy; a planned
+   line has a quiet calendar where today's lines have the tick box (nothing is ticked before its day; a dashed edge
+   already means not saved); its count is graphite, planned is not attention; the byline wraps, never cut */
+.nb-later .nb-right, .nb-later .nb-spine { display: none; }
+.nb-box.pa-cal { cursor: default; color: var(--muted); }
+.nb-box.pa-cal svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.nb-prog.pa-n { color: var(--ink); }
+.pa-for { margin: 0 0 0.6rem; font-family: var(--body); font-size: 0.95rem; line-height: 1.4; color: var(--ink); }
+.pa-for b { font-weight: 700; }
+.pa-row .nb-meta, .pa-row .nb-wrote { white-space: normal; overflow: visible; text-overflow: clip; }
 .nb-offw { font-family: var(--body); font-weight: 700; color: var(--ink); }
 .nb-fnoff { margin: 0.6rem 0 0.25rem; font-family: var(--body); font-size: 1rem; line-height: 1.4; color: var(--ink); }
 .fn-next-off { margin-top: 0.5rem; }
@@ -553,6 +603,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
   .nb-page { flex: 1 1 0; height: min(780px, calc(100vh - 15rem)); height: min(780px, calc(100dvh - 15rem)); min-height: 30rem; border-radius: 0; box-shadow: none; padding: 0 2rem 0 2.2rem; border-width: 1.5px; }
   .nb-left { border-radius: 10px 0 0 10px; border-right: 0; box-shadow: inset -14px 0 14px -14px rgba(60,40,10,0.25); }
   .nb-right { border-radius: 0 10px 10px 0; border-left: 0; box-shadow: inset 14px 0 14px -14px rgba(60,40,10,0.25); }
+  .nb-later .nb-left { flex: 1 1 100%; border-radius: 10px; border-right-width: 1.5px; border-right-style: solid; box-shadow: none; }
   .nb-left:before { content: ''; position: absolute; left: 1.2rem; top: 0; bottom: 0; width: 2px; background: #E7B7A6; }
   .nb-spine { display: block; flex: 0 0 26px; background: repeating-linear-gradient(to bottom, var(--bar) 0 10px, transparent 10px 54px); background-size: 46px 100%; background-position: center; background-repeat: repeat-y; background-color: var(--surface-work); border-top: 1.5px solid var(--surface-work-edge); border-bottom: 1.5px solid var(--surface-work-edge); }
   .nb-tabs { order: 0; flex: 0 0 8.5rem; flex-direction: column; overflow: visible; gap: 6px; margin-left: -2px; padding: 3rem 0 0; -webkit-mask-image: none; mask-image: none; }
@@ -662,7 +713,10 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 }
 @media (max-width: 599px) { .a-pane .set-block { padding: 1.2rem 0 1.4rem; } }
 .a-pane .set-block.a-savebar:not(:has(.a-unsaved, .sv-line:not(:empty), .sv-btn[data-sv])) { display: none; }
-.a-pane .set-block.a-savebar { position: sticky; bottom: 0; z-index: 11; padding: 0.8rem 1rem; border: 1.5px solid var(--edge); border-radius: var(--radius); background: var(--paper); box-shadow: 0 -6px 12px rgba(0, 0, 0, 0.08); }
+.a-pane .set-block.a-savebar { position: sticky; bottom: 0; z-index: 11; padding: 0.8rem 1rem; }
+/* the frame is the one Save bar frame (.sv-dock); what is not saved comes first, the buttons after it (20 Nov 2026) */
+.a-savebar.sv-dock .btn-row > :is(.a-unsaved, .a-gone) { order: -1; }
+@media (min-width: 600px) { .a-savebar.sv-dock .btn-row > :is(.a-unsaved, .a-gone):last-child { margin-right: auto; } }
 @media (max-width: 719px) { .nb-badges { order: 5; } }
 
 /* people table */
@@ -678,6 +732,96 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .a-table .p-select { min-height: 40px; }
 .a-table .a-act { white-space: nowrap; text-align: right; }
 .a-table .a-act .p-x { margin-left: 0.3rem; }
+/* People: one roster in words, paper and a sage edge for the open editor, and the draft state beside each name. */
+.lv-tool { flex: 0 0 auto; align-self: flex-end; }
+.lv-tool .btn { min-height: 44px; }
+.pp-workspace { display: grid; grid-template-columns: minmax(0, 1fr); }
+.pp-room .lv-tools { flex-wrap: wrap; align-items: stretch; gap: .5rem; }
+.pp-room .lv-qw { flex: 1 1 12rem; }
+.pp-room .lv-qw .ux-search > .lv-q:placeholder-shown { padding-right: .65rem !important; }
+.pp-room .lv-tools > :is(.lv-chips, .lv-sort, .lv-tool) { flex: 0 1 auto; min-width: 0; }
+.pp-room .lv-chips.scroll { flex-wrap: wrap; overflow: visible; padding: 0; -webkit-mask-image: none; mask-image: none; }
+.pp-room .lv-chips.scroll::after { display: none; }
+.pp-room .lv-sort > span:not(.ux-choice-source) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.pp-room .lv-sort select { min-width: 0; }
+.pp-room .lv-sort .ux-picker-trigger { flex: 1; font: 600 1rem/1.3 var(--body); letter-spacing: normal; text-transform: none; }
+.pp-room .lv-tool { display: flex; align-self: stretch; }
+.pp-room .lv-cards { gap: 0; border-top: 2px solid var(--ink); }
+.pp-head { display: none; }
+.pp-row { border-bottom: 1px solid var(--line); list-style: none; }
+.pp-row.is-open { background: var(--paper); box-shadow: inset 4px 0 0 var(--surface-people-edge); }
+.pp-main { display: grid; grid-template-columns: 36px minmax(0, 1fr); align-items: center; column-gap: .7rem; min-height: 56px; padding: 0 .4rem .2rem; }
+.pp-main .st-av { margin-top: 0; }
+.pp-w { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: center; min-width: 0; }
+.pp-identity { display: grid; justify-items: start; min-width: 0; }
+.pp-n { font-size: 1.05rem; overflow-wrap: anywhere; }
+.pp-name-toggle.p-link { display: flex; align-items: center; gap: .25rem; min-width: 44px; max-width: 100%; min-height: 44px; padding: 0; text-align: left; text-decoration: none; font-weight: 400; }
+.pp-name-toggle .pp-n { font-weight: 700; text-decoration: underline; }
+.pp-can { grid-column: 2; color: var(--muted); font-size: .875rem; overflow-wrap: anywhere; }
+.pp-st { color: var(--accent-ink); font-size: .84rem; font-weight: 700; overflow-wrap: anywhere; }
+.pp-st.is-off { color: var(--muted); }
+.pp-st.is-bad { color: var(--bad-ink); }
+.pp-row.is-off .pp-n, .pp-row.is-gone .pp-n { color: var(--muted); }
+.pp-row.is-gone .pp-n { text-decoration: line-through; }
+.pp-editor { min-width: 0; padding: 1rem; border-top: 3px solid var(--surface-people-edge); background: var(--paper); overflow-wrap: anywhere; }
+.pp-editor-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: .25rem .6rem; margin-bottom: .7rem; }
+.pp-editor-head h3 { margin: 0; font: 700 1.75rem/1.15 var(--display); }
+.pp-editor-head h3:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.pp-editor-head .pp-back { display: none; }
+.pp-editor .pp-acts { display: grid; justify-items: start; gap: .15rem; }
+.pp-pin { display: inline-flex; align-items: center; min-height: 44px; max-width: 100%; }
+.pp-ed { display: grid; gap: .65rem; }
+.pp-two { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; }
+.pp-f { display: grid; gap: 0.25rem; flex: 1 1 14rem; max-width: 22rem; min-width: 0; }
+.pp-f :is(.a-name, .p-select, .ux-picker-trigger) { width: 100%; min-height: 44px; }
+.pp-ticks { display: flex; flex-wrap: wrap; gap: 0.1rem 1.4rem; min-width: 0; margin: 0; padding: 0; border: 0; }
+.pp-ticks legend { margin-bottom: 0.2rem; padding: 0; }
+.pp-tk { display: inline-flex; align-items: center; gap: 0.45rem; min-height: 44px; font-weight: 600; }
+.pp-tk input { width: 28px; height: 28px; }
+.pp-note { margin: 0; }
+.pp-leave { display: grid; gap: 0.1rem; padding-top: 0.5rem; border-top: 1px solid var(--line); }
+.pp-h { margin: 0; color: var(--muted); font: 700 0.78rem/1.2 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+.pp-lv { display: flex; flex-wrap: wrap; gap: 0.2rem 1.2rem; }
+.pp-lv .p-x, .pp-end .p-link { display: inline-flex; align-items: center; min-height: 44px; }
+.pp-end { margin: 0; }
+@media (min-width: 1000px) {
+  .pp-room { --pp-columns: minmax(0, 1.1fr) minmax(0, .72fr) minmax(0, 1.25fr); }
+  .pp-workspace.has-editor { grid-template-columns: minmax(0, 1fr) minmax(17.5rem, .62fr); align-items: start; gap: clamp(1rem, 2vw, 1.8rem); }
+  .pp-workspace.has-editor .lv-qw { flex-basis: 9rem; }
+  .pp-head, .pp-main { display: grid; grid-template-columns: var(--pp-columns); column-gap: .7rem; }
+  .pp-head { padding: .45rem .4rem; border-bottom: 1px solid var(--line); color: var(--muted); font: 700 .78rem/1.2 var(--display); letter-spacing: .05em; text-transform: uppercase; }
+  .pp-head > :first-child { padding-left: calc(36px + .7rem); }
+  .pp-main { min-height: 0; padding-block: .18rem; }
+  .pp-w { grid-column: 1; grid-template-columns: 36px minmax(0, 1fr); column-gap: .7rem; }
+  .pp-can { display: grid; grid-column: 2 / -1; grid-template-columns: subgrid; align-items: center; }
+  .pp-sep { display: none; }
+  .pp-editor { position: sticky; top: calc(var(--fn-stick, 0px) + var(--upd-h, 0px) + 1rem); max-height: calc(100dvh - var(--fn-stick, 0px) - var(--upd-h, 0px) - 6.5rem); overflow-y: auto; }
+  .pp-editor-head .pp-back { display: inline-flex; align-items: center; min-height: 44px; }
+}
+@media (max-width: 999px) {
+  /* People restores its own place. The admin jump row briefly changes height during a roster redraw. */
+  #prep-root:has(.pp-room) { overflow-anchor: none; }
+  .pp-room:has(.pp-editor) > :is(.label, .a-nohead, .pp-folds),
+  .pp-workspace.has-editor > .lv,
+  .p-admin.ad-admin:has(.pp-room .pp-editor) :is(.a-nav, .ad-heading, .ad-main > .a-tabs, .ad-main > .a-onpage, .a-pane > :not(.pp-room, .a-savebar)),
+  .p-admin.ad-admin:has(.pp-room .pp-editor) > .p-bar { display: none; }
+  .p-admin.ad-admin .a-pane .pp-room:has(.pp-editor) { padding-top: .65rem; border-top: 0; }
+  .pp-editor { padding: .8rem 0 .2rem; background: transparent; }
+}
+.a-gone { align-self: center; font-weight: 700; color: var(--bad-ink); }
+@media (max-width: 599px) {
+  .lv-tools:has(.lv-tool) { flex-wrap: wrap; }
+  .lv-tools:has(.lv-tool) .lv-tool { flex: 1 1 100%; }
+  .pp-room .lv-qw { flex-basis: 10rem; }
+  .pp-room .lv-tools > :is(.lv-chips, .lv-sort) { flex: 1 1 40%; }
+  .pp-room .lv-tools > .lv-tool { flex: 0 1 auto; }
+  .pp-room .lv-tools :is(.lv-chips .ux-picker-trigger, .lv-sort select) { width: 100%; }
+  .p-admin.ad-admin .pp-room .lv-tool .btn { padding-inline: .6rem; font-size: .875rem; }
+  /* the shared admin Save bar keeps its two buttons on one line, so less of the page is covered */
+  .a-pane .set-block.a-savebar .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .a-pane .set-block.a-savebar .btn-row .btn { width: 100%; min-width: 0; white-space: normal; padding-left: 0.6rem; padding-right: 0.6rem; }
+  .a-pane .set-block.a-savebar .btn-row .a-unsaved, .a-pane .set-block.a-savebar .btn-row .a-gone { grid-column: 1 / -1; }
+}
 .a-table tr.is-off .a-name { opacity: 0.55; }
 .a-table tbody th { position: sticky; left: 0; background: inherit; z-index: 1; }
 .a-table tbody tr:nth-child(odd) th { background: var(--paper); }
@@ -713,8 +857,9 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .pnav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 1.15rem; border: 2px solid var(--ink); border-radius: 999px; background: #fff; color: var(--ink); font-weight: 600; text-decoration: none; }
 .pnav a[aria-current="page"] { background: var(--ink); color: #fff; }
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: flex; height: var(--tabbar-h); background: #fff; border-top: 2px solid var(--ink); }
-.tabbar a { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--ink); text-decoration: none; font: 700 0.8125rem var(--display); letter-spacing: 0.08em; text-transform: uppercase; }
+.tabbar a { flex: 1 1 0; min-width: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--ink); text-decoration: none; font: 700 0.8125rem var(--display); letter-spacing: 0.08em; text-transform: uppercase; }
 .tabbar a svg { width: 24px; height: 24px; }
+.tabbar a span { max-width: 100%; text-align: center; overflow-wrap: anywhere; text-wrap: balance; }
 .tabbar a[aria-current="page"] { color: var(--accent-ink); box-shadow: inset 0 3px 0 var(--accent); }
 @media (max-width: 719px) { #app { padding-bottom: 76px; } }
 /* The admin Save bar sits above the phone tab bar (68px). */
@@ -998,6 +1143,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .a-export > summary::-webkit-details-marker { display: none; }
 .a-export[open] > summary { background: var(--ink); color: #fff; }
 .a-export .btn-row { margin-top: 0.5rem; }
+.a-export .btn[data-v="transfers"]:disabled { background: var(--surface-reference); }
 .a-upd { margin: 0.4rem 0 0; }
 /* Wastage history: use the admin controls and list cards, with a compact totals strip. */
 .wh-period { align-items: flex-end; margin: 0.8rem 0 0; }
@@ -1030,11 +1176,23 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .wh-report [data-lv="waste-log"] .lv-tools { align-items: center; justify-content: space-between; margin-top: 0.7rem; }
 .wh-report [data-lv="waste-log"] .lv-tools h3 { flex: 1; margin: 0; }
 .wh-report [data-lv="waste-log"] .lv-count { margin: 0.4rem 0; }
+.wh-history .wh-period { margin-top: 0.35rem; }
+.wh-history :is(.wh-range, .wh-tabs) { margin-bottom: 0.4rem; }
+.wh-history [data-lv="waste-log"] .lv-tools { margin-top: 0.1rem; }
+.wh-history [data-lv="waste-log"] .ux-column-filters { margin-block: 0.35rem; }
+.wh-history [data-lv="waste-log"] > :is(.ux-column-filters, .ux-active-filters):empty { display: none; }
+.wh-history-totals { margin-top: 0.8rem; }
+.wh-history-totals > h4 { margin: 0; font-size: 1rem; }
 @media (max-width: 599px) {
   .wh-period { flex-wrap: nowrap; }
   .wh-period > .a-f { flex: 1; }
   .wh-report > .a-title { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .wh-report .lv-sort { width: auto; }
+  .wh-history [data-lv="waste-log"] .lv-tools { flex-wrap: wrap; row-gap: 0.35rem; }
+  .wh-history [data-lv="waste-log"] .lv-tools h3 { flex-basis: 100%; }
+  .wh-history [data-lv="waste-log"] .lv-qw { flex: 1 1 16rem; }
+  .wh-history [data-lv="waste-log"] .ux-search > .lv-q:placeholder-shown { padding-right: 0.65rem !important; }
+  .wh-history [data-lv="waste-log"] .ux-column-filters .a-f { flex: 1 1 min(9rem, 100%); }
 }
 .a-step { margin: 0.4rem 0 0.6rem; }
 .a-sn { margin-right: 0.4rem; font: 700 0.85em var(--display); color: var(--small-ink); letter-spacing: 0.04em; }
@@ -1103,13 +1261,16 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .sheet-o { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 58px; padding: 10px 6px; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
 .sheet-o strong { font: 700 1.05rem var(--body); }
 .sheet-o span { font-size: 0.875rem; color: var(--muted); }
-.sheet-o[aria-checked="true"] { background: var(--hit); }
-.sheet-o[aria-checked="true"] strong::after { content: '  \2713'; color: var(--accent-ink); }
+/* chosen is ink, like a picker's option (the consistency sweep, step 3, 20 Nov 2026) */
+.sheet-o:is([aria-checked="true"], [aria-current="true"]) { background: var(--ink); color: var(--paper); }
+.sheet-o:is([aria-checked="true"], [aria-current="true"]) span { color: var(--bar-text); }
+.sheet-o[aria-checked="true"] strong::after { content: '  \2713'; color: inherit; }
 /* the line menu (22 Oct 2026, Option B): on a phone Remove sits behind the ⋯; who wrote the line is on its second
    line since 4 Nov 2026 (S4), on every width */
 .nb-more { display: none; flex: 0 0 auto; width: 44px; min-height: 44px; padding: 0; border: 0; background: none; font: 700 1.25rem var(--body); letter-spacing: 0.05em; color: var(--muted); cursor: pointer; }
 .lm-who { margin: 0 0 6px; font-size: 0.9375rem; color: var(--muted); }
 .lm-act strong { color: var(--small-ink); }
+.lm-act.lk-del strong { color: inherit; }   /* Remove line: the red of .lk-del (the consistency sweep, step 3, 20 Nov 2026) */
 @media (max-width: 719px) {
   .nb-more { display: inline-flex; align-items: center; justify-content: center; }
   .nb-row:has(.nb-more) .nb-x, .nb-row:has(.nb-more) > .p-x { display: none; }
@@ -1167,8 +1328,8 @@ html.note-open, html.note-open body { overflow: hidden; }
 .nt-sum p { margin: 6px 0 0; }
 .nt-sl { font-weight: 700; color: var(--ink); }
 .nt-foot { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 14px 18px calc(14px + env(safe-area-inset-bottom)); }
-.nt-got { flex: 2 1 9rem; min-height: 52px; border: 2px solid var(--ink); border-radius: 26px; background: var(--ink); color: #fff; font-weight: 700; font-size: 1.125rem; cursor: pointer; }
-.nt-later { flex: 1 1 6rem; min-height: 52px; padding: 0 18px; border: 2px solid var(--ink); border-radius: 26px; background: transparent; color: var(--ink); font-weight: 700; font-size: 1.0625rem; cursor: pointer; }
+.nt-got { flex: 2 1 9rem; min-height: 52px; border: 2px solid var(--accent-ink); border-radius: var(--r-act); background: var(--accent-ink); color: #fff; font-weight: 700; font-size: 1.125rem; cursor: pointer; }   /* the main button, orange with 8 px corners, in sheets too (the consistency sweep, step 3, 20 Nov 2026) */
+.nt-later { flex: 1 1 6rem; min-height: 52px; padding: 0 18px; border: 2px solid var(--ink); border-radius: var(--r-act); background: transparent; color: var(--ink); font-weight: 700; font-size: 1.0625rem; cursor: pointer; }
 .nt-edit { font-weight: 600; display: inline-flex; align-items: center; min-height: 44px; }
 .mn-tbl tr.is-mine td { font-weight: 700; background: var(--hit); }
 .mn-yours { background: var(--accent); color: var(--ink); border-color: var(--accent); }
@@ -1220,6 +1381,27 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 
 /* Notes workspace (admin Notes tab and the sous chef's Daily notes): list first, editor beside it on a big screen */
 .n-ws { display: flex; flex-direction: column; gap: 1rem; }
+/* A short scheduled ping opens with the recipient, date and actions in reach. */
+.n-edit { gap: .45rem; padding: .8rem .75rem .9rem; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-paper); }
+.n-edit .field { margin: 0 0 .35rem; min-width: 0; }
+.n-edit .n-picks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem .65rem; margin-top: .2rem; }
+.n-edit .n-picks + .hint { margin: 0; }
+.n-picks .field { margin: 0; }
+.n-picks .ux-picker-trigger { width: 100%; min-height: 44px; }
+.n-edit #n-text { min-height: 70px; }
+.n-quickdays { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin: .35rem 0; }
+.n-quickdays .label { margin: 0 auto 0 0; }
+.n-quickdays .chip { min-width: 44px; min-height: 44px; }
+.n-schedule { border: 1px solid var(--line); border-radius: var(--r-act); background: var(--surface-reference); }
+.n-schedule > .btn { display: block; width: 100%; min-height: 44px; border: 0; background: transparent; text-align: left; }
+.n-schedule-fields { padding: 0 .55rem .55rem; }
+.n-schedule .n-grid { grid-template-columns: repeat(7, minmax(44px, 1fr)); gap: 3px; overflow-x: auto; margin-inline: -.4rem; }
+.n-edit .nt-whenline { margin: .3rem 0 .25rem; font-size: .875rem; }
+@media (max-width: 599px) { html[data-text="xlarge"] .n-edit .nt-whenline { margin-block: 0; } }
+.n-edit .n-actions { margin: 0; }
+.n-actions .sv-btn { flex: 1 1 auto; }
+.n-actions .btn { min-height: 44px; }
+
 .n-lh { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0.6rem 1rem; }
 .n-lh .label, .n-lh .hint { display: block; }
 .n-gh3 { margin: 0.9rem 0 0.4rem; font: 700 1.1rem var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
@@ -1234,8 +1416,9 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .ps-pick { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 58px; padding: 10px 6px; border: 0; background: none; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
 .ps-pick strong { font: 700 1.05rem var(--body); }
 .ps-pick span { font-size: 0.875rem; color: var(--muted); }
-.ps-pick[aria-checked="true"] { background: var(--hit); }
-.ps-pick[aria-checked="true"] strong::after { content: '  \2713'; color: var(--accent-ink); }
+.ps-pick[aria-checked="true"] { background: var(--ink); color: var(--paper); }   /* chosen is ink (the consistency sweep, step 3, 20 Nov 2026) */
+.ps-pick[aria-checked="true"] span { color: var(--bar-text); }
+.ps-pick[aria-checked="true"] strong::after { content: '  \2713'; color: inherit; }
 .ps-pick[disabled] { cursor: progress; }
 .ps-play { flex: 0 0 auto; min-height: 44px; padding: 0 1rem; }
 .n-prev { padding: 0.6rem; border: 1.5px dashed var(--ink); border-radius: 10px; background: #fff; }
@@ -1310,6 +1493,11 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .mn-cell span { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .mn-cell b { font-weight: 600; overflow-wrap: anywhere; }
 .mn-cell.mn-wide { grid-column: 1 / -1; border-top: 1px solid var(--ink); }
+@media screen {
+  .mn-cell.mn-wide:has(.mn-sign-jump) { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: .75rem; }
+  .mn-sign-jump { grid-column: 2; grid-row: 1 / span 2; align-self: center; margin-block: -.35rem; text-align: right; }
+}
+@media print { .p-link.mn-sign-jump { display: none; } }
 .mn-safety { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.8rem 0.9rem; border-radius: 8px; background: var(--accent-ink); color: #fff; font-weight: 500; }
 .mn-sl { font: 700 1.125rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; }
 .mn-safety .mn-ul { margin: 0; }
@@ -1337,7 +1525,8 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .mn-sign { display: flex; flex-direction: column; align-items: flex-start; gap: 0.7rem; padding: 1rem; border: 1.5px solid var(--ink); border-radius: 10px; background: var(--surface-paper); box-shadow: 0 6px 0 rgba(28, 29, 31, 0.12); }
 .mn-sign.is-done { border-width: 1.5px; background: var(--done-tint); border-color: var(--done); }
 .mn-sign p { margin: 0; }
-.mn-signbtn { min-height: 52px; min-width: 10rem; font-family: var(--display); font-size: 1.375rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.btn.mn-signbtn { min-height: 52px; min-width: 10rem; max-width: 100%; font-family: var(--display); font-size: 1.375rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.mn-signbtn.sv-btn::before, .mn-signbtn.sv-btn::after { white-space: normal; }
 .mn-signbtn[disabled] { opacity: 0.45; cursor: not-allowed; }
 .mn-err { min-height: 1.2em; color: var(--bad-ink); font-weight: 600; }
 .mn-eh { margin: 0.5rem 0 0; font: 700 1.25rem var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
@@ -1358,6 +1547,7 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 /* An action's Remove keeps its width when it asks again (29 Oct 2026): "Tap again to remove" holds its room from the
    start, unseen, so the row never moves under the second tap (it did at 390 px with Normal text). Only this button. */
 .mn-arem { display: inline-grid; justify-items: start; align-items: center; }
+.p-x.mn-arem.lk-del { display: inline-grid; }   /* the red outline keeps the room for Tap again to remove (the consistency sweep, step 3, 20 Nov 2026) */
 .mn-arem > span, .mn-arem::after { grid-area: 1 / 1; }
 .mn-arem::after { content: 'Tap again to remove'; visibility: hidden; }
 .mn-at small { color: var(--muted); }
@@ -1539,7 +1729,7 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 /* Safety nets (October 2026): the toast sits above the phone tab bar instead of on it, its Undo is a full-size
    target, and "Use a different kitchen PIN" (admin Tools tab) is kept apart from the move to a new PIN. */
 .p-toast { display: flex; align-items: center; gap: 0.6rem; width: max-content; }
-.p-toast-btn { min-height: 44px; min-width: 64px; padding: 0 1rem; border-radius: 22px; flex: none; }
+.p-toast-btn { min-height: 44px; min-width: 64px; padding: 0 1rem; border-radius: var(--r-act); flex: none; }
 .a-forget { margin-top: 1.6rem; padding-top: 1rem; border-top: 1px solid var(--line); }
 
 /* Not sent yet: no signal, or changes still waiting for the server (prep pages): since 4 Nov 2026 the floating band,
@@ -1598,6 +1788,23 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 /* Recipe book, finding and reading (October 2026) */
 /* the search bar stays at the top while the list scrolls */
 .find-bar { position: sticky; top: var(--fn-stick, 0px); z-index: 6; margin: 0 -1.25rem; padding: 0.6rem 1.25rem 0.7rem; background: var(--bg); }
+#main.rx-browse { display: flex; flex-direction: column; gap: .65rem; }
+.rx-browse .rx-filters { display: flex; flex-wrap: wrap; align-items: start; gap: .45rem .75rem; }
+.rx-filters > [aria-label="Recipe type"] { flex: 0 1 auto; max-width: 100%; }
+.rx-filters > .field { min-width: 0; max-width: 100%; }
+.rx-filters .row-label { align-items: center; }
+.rx-filters .amode { margin-left: 0; }
+/* The adaptive picker is one button. The source chip strip's scroll fade and spacer can go. */
+.rx-filters .chips.scroll:has(> .ux-picker-trigger) { overflow: visible; padding-bottom: 0; -webkit-mask-image: none; mask-image: none; }
+.rx-filters .chips.scroll:has(> .ux-picker-trigger)::after { content: none; }
+.rx-browse--pass .rx-filters > .field { flex: 1 0 24rem; }
+.rx-browse--tiles .rx-filters > .field { display: flex; flex-flow: row wrap; align-items: center; gap: .35rem .65rem; }
+.rx-browse--tiles .rx-filters .chips { min-width: 0; }
+@media (min-width: 720px) {
+  /* Keep the two mode buttons alongside their label even when a long Free from selection wraps. */
+  .rx-browse--pass .rx-filters > .field { display: grid; grid-template-columns: minmax(min(100%, 17rem), max-content) minmax(0, auto); align-items: start; justify-content: start; column-gap: .75rem; }
+  .rx-browse--pass .rx-filters .amode { flex: 0 0 var(--ux-pair-width, auto); }
+}
 @media (max-width: 719px) { .count.is-on { display: inline; } }
 .vsw button { min-width: 44px; justify-content: center; }
 /* a search read as something else ("gluten free", or a near miss) says so above the results */
@@ -1636,7 +1843,7 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 @media (max-width: 399px) { .tabbar a { font-size: 0.75rem; letter-spacing: 0.04em; } }
 /* six tabs (Transfers, 23 Oct 2026): smaller labels, and each tab as wide as its name plus an even share of the rest, so
    Wastage and Transfers keep a gap between them, also in the fallback font while the kitchen font loads */
-@media (max-width: 479px) { .tabbar:has(a:nth-child(6)) a { flex: 1 1 auto; min-width: 0; padding: 0 2px; font-size: 0.6875rem; letter-spacing: 0.02em; } }
+@media (max-width: 479px) { .tabbar:has(a:nth-child(6)) a { flex: 1 1 auto; padding: 0 2px; font-size: 0.6875rem; letter-spacing: 0.02em; } }
 /* a tablet with the notes bell showing: the KB mark stands for the name, so the five pills still fit */
 @media (min-width: 720px) and (max-width: 979px) { .wtop:has(.nbell:not([hidden])) .rb-text { display: none; } }
 /* the same when the chef mark (a person signed in) shows: the three rings fit where three pills did not */
@@ -1696,6 +1903,15 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .g-pgb img { width: 100%; height: auto; }
 .g-ph { display: flex; align-items: center; justify-content: center; width: 100%; padding: 1rem; border: 1.5px dashed var(--edge); border-radius: 6px; background: #fff; color: var(--muted); text-align: center; }
 .g-pg figcaption { font-size: 0.8125rem; color: var(--muted); text-align: center; }
+/* Both page buttons are in reach when a guide has just two sheets. Keep print's original sequence. */
+@media screen {
+  .g-pages-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; align-items: start; }
+  .g-pages-pair > :not(.g-pg) { grid-column: 1 / -1; }
+  .g-pages-pair .g-pg { min-width: 0; }
+  .g-pages-pair .g-pgb { min-height: 44px; }
+  .g-pages-pair .g-pgb img { display: block; max-height: min(60vw, 310px); object-fit: contain; }
+}
+
 .g-rchips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .g-rchip { display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.9rem; border: 1.5px solid var(--ink); border-radius: 22px; background: var(--paper); color: var(--ink); font-weight: 600; text-decoration: none; }
 .g-rchip:hover { border-color: var(--accent-ink); }
@@ -1717,7 +1933,7 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .gz-t { display: flex; flex-direction: column; min-width: 0; font: 700 1.2rem/1.1 var(--display); text-transform: uppercase; overflow-wrap: anywhere; }
 .gz-t small { font: 600 0.8125rem var(--body); text-transform: none; color: #E7E1D3; }
 .gz-btns { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-.gz-b { min-height: 44px; padding: 0 0.9rem; border: 2px solid var(--bar-text); border-radius: 22px; background: transparent; color: var(--bar-text); font-weight: 700; cursor: pointer; }
+.gz-b { min-height: 44px; padding: 0 0.9rem; border: 2px solid var(--bar-text); border-radius: var(--r-act); background: transparent; color: var(--bar-text); font-weight: 700; cursor: pointer; }
 .gz-b:disabled { opacity: 0.35; cursor: default; }
 .gz-x { background: var(--bar-text); color: var(--ink); }
 .gz-body { flex: 1 1 auto; min-height: 0; overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding: 0.6rem 0.6rem calc(0.6rem + env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch; }
@@ -1741,6 +1957,53 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .g-rb { display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem; min-width: 0; }
 .g-rb b { font-size: 1.0625rem; overflow-wrap: anywhere; }
 .g-open { display: inline-flex; align-items: center; color: var(--ink); text-decoration: none; }
+/* a video guide (head chef, 19 Nov 2026, docs/tutorial-videos.md): Play above the written steps; the player over the
+   page like a guide page opened big (gvOpen in js/prep.js), the wide video on a computer, the tall one on a phone */
+.g-vid { margin: 0.75rem 0 1rem; }
+.g-vplay { display: grid; grid-template-columns: auto 1fr; column-gap: 0.8rem; align-items: center; width: 100%; max-width: 32rem; min-height: 64px; padding: 0.7rem 1rem; border: 0; border-radius: 12px; background: var(--bar); color: var(--bar-text); text-align: left; cursor: pointer; }
+.g-vplay svg { grid-row: span 2; color: var(--accent); }
+.g-vt { font: 700 1.125rem/1.2 var(--display); text-transform: uppercase; }
+.g-vs { font-size: 0.875rem; color: #E7E1D3; }
+.g-vplay:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.g-vnone { margin: 0; padding: 0.7rem 0.9rem; border: 1.5px dashed var(--edge); border-radius: 10px; color: var(--muted); font-weight: 600; }
+.g-vthumb { color: var(--accent-ink); background: var(--paper); }
+.g-vhint { margin: 0 0 0.5rem; }
+.gv-body { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 0.6rem 0.6rem calc(0.6rem + env(safe-area-inset-bottom)); background: #000; container-type: size; }
+.gv-frame { position: relative; width: 100%; max-height: 100%; aspect-ratio: 16 / 9; }
+.gv-frame.tall { aspect-ratio: 9 / 16; }
+/* the biggest the video fits in the space under the title, whole, on any screen */
+@supports (width: 1cqw) {
+  .gv-frame { width: min(100cqw, 100cqh * 16 / 9); }
+  .gv-frame.tall { width: min(100cqw, 100cqh * 9 / 16); }
+}
+.gv-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
+/* the moving previews (19 Nov 2026): the card's loop fills its picture with a small Play mark; the page's loop is a
+   16:9 poster behind a round Play, its words on a dark fade at the foot (white on the fade, the top bar's dark) */
+.g-vmove { padding: 0; overflow: hidden; background: var(--bar); }
+.g-vmove .g-vloop { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.g-vbadge { position: absolute; right: 4px; bottom: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(43, 42, 39, 0.85); }
+.g-vbadge::after { content: ""; position: absolute; left: 8px; top: 6px; border-left: 8px solid var(--accent); border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
+.g-vposter { position: relative; display: block; aspect-ratio: 16 / 9; padding: 0; overflow: hidden; }
+.g-vposter .g-vloop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.g-vposter::before { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(to top, rgba(20, 19, 17, 0.9), rgba(20, 19, 17, 0) 60%); }
+.g-vring { position: absolute; left: 50%; top: 42%; z-index: 2; width: 64px; height: 64px; transform: translate(-50%, -50%); border-radius: 50%; background: var(--accent); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35); }
+.g-vring::after { content: ""; position: absolute; left: 25px; top: 20px; border-left: 20px solid #fff; border-top: 12px solid transparent; border-bottom: 12px solid transparent; }
+.g-vcap { position: absolute; left: 14px; right: 14px; bottom: 10px; z-index: 2; display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.g-vposter .g-vt { color: #fff; }
+.g-vsoon { max-width: 32rem; border-radius: 12px; background: var(--bar); color: var(--bar-text); }
+/* the head chef's video links (admin, Kitchen, Guides): one row per video, a wide and a tall link */
+.tv-nav { margin: 0; }
+.tv-save-jump { align-self: flex-start; padding-inline-start: 0; }
+.tv-list { list-style: none; margin: 0; padding: 0; }
+.tv-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 0.75rem; padding: 0.6rem 0; border-top: 1px solid var(--line); }
+.tv-name { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.6rem; min-width: 0; }
+.tv-name b { overflow-wrap: anywhere; }
+.tv-name .g-who, .tv-all { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+.tv-all { color: var(--muted); letter-spacing: 0.06em; }
+.tv-in { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; font-size: 0.8125rem; font-weight: 600; }
+.tv-in input { width: 100%; min-width: 0; min-height: 44px; box-sizing: border-box; }
+.tv-in input[aria-invalid="true"] { border-color: var(--bad-ink); box-shadow: 0 0 0 1px var(--bad-ink); }
+@media (max-width: 560px) { .tv-row { grid-template-columns: 1fr; } }
 /* on a recipe card: the box only takes room when there is a guide */
 .r-guides { display: contents; }
 .g-hits a { font-weight: 700; color: var(--accent-ink); }
@@ -1754,6 +2017,8 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .wtop-btn.wtop-who[aria-current="page"] { background: var(--bar-text); color: var(--bar); }
 .wtop-btn.wtop-who[aria-expanded="true"] { background: var(--accent-ink); border-color: var(--accent-ink); border-style: solid; color: #fff; }
 .wm-wrap { position: fixed; inset: 0; z-index: 85; }
+dialog.wm-wrap { width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; overflow: visible; }
+dialog.wm-wrap::backdrop { background: transparent; }   /* the existing .wm-bg dims and dismisses */
 .wm-bg { position: absolute; inset: 0; background: rgba(28, 29, 31, 0.45); }   /* dims the page like the other popups (22 Oct 2026) */
 .wm { position: absolute; width: min(18rem, calc(100vw - 16px)); background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); padding: 2px 6px; font-family: var(--body); }
 .wm-h { margin: 0 10px; line-height: 1.2; font-size: 0.8125rem; color: var(--muted); }
@@ -1772,7 +2037,8 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 .wm-sh { margin: 2px 10px; padding-top: 2px; border-top: 1.5px solid var(--line); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.75rem; }
 .wm-out { margin-top: 0; border-top: 1.5px solid var(--line); border-radius: 0 0 8px 8px; }
 /* is-wait: "Not sent yet." on the head chef's own Google device, where Sign out waits until it is sent (29 Oct 2026) */
-.wm-out.is-armed small, .wm-out.is-wait small { color: var(--accent-ink); font-weight: 700; }
+.wm-out.is-wait small { color: var(--accent-ink); font-weight: 700; }
+.wm-out.lk-del small { color: inherit; font-weight: 700; }   /* armed: the red of .lk-del (the consistency sweep, step 3, 20 Nov 2026) */
 /* Admin panel in the chef hat's menu; the open mail count sits on the hat and on the menu item */
 .wm-a > svg { flex: 0 0 22px; width: 22px; height: 22px; }
 .wm-adm[aria-current="page"] { background: var(--hit); }
@@ -1889,8 +2155,8 @@ button.wm-a.wm-tile { text-align: left; }
 .mlp-h { margin: 4px 0 6px; font-family: var(--display); font-size: 1.75rem; }
 .mlp-p { margin: 0 0 16px; }
 .mlp-foot { display: flex; flex-wrap: wrap; gap: 10px; }
-.mlp-go, .mlp-later { flex: 1 1 8rem; min-height: 52px; border: 2px solid var(--ink); border-radius: 26px; font: inherit; font-weight: 700; font-size: 1.0625rem; cursor: pointer; }
-.mlp-go { background: var(--ink); color: #fff; }
+.mlp-go, .mlp-later { flex: 1 1 8rem; min-height: 52px; border: 2px solid var(--ink); border-radius: var(--r-act); font: inherit; font-weight: 700; font-size: 1.0625rem; cursor: pointer; }
+.mlp-go { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; }   /* the main button (the consistency sweep, step 3, 20 Nov 2026) */
 .mlp-later { background: var(--paper); color: var(--ink); }
 
 /* ---------- the drinks run (#/drinks, and "One more thing" after a first PIN) ---------- */
@@ -1984,17 +2250,23 @@ button.wm-a.wm-tile { text-align: left; }
 .p-toasts .p-toast-bad .p-toast-btn { background: var(--bad-ink); }
 .p-toasts .p-toast.p-toast-old { align-self: flex-start; min-height: 0; margin: 0 0 0 12px; padding: 0; border: 0; background: transparent; box-shadow: none; }
 .p-toasts .p-toast-chip { display: block; max-width: min(22rem, calc(100vw - 24px)); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; border-radius: 8px 8px 0 0; font-weight: 600; }
+@media (max-width: 719px) {
+  .p-toasts .p-toast-chip { white-space: normal; overflow-wrap: anywhere; text-overflow: clip; text-align: left; line-height: 1.12; }
+}
 @keyframes slip-in { from { translate: 0 10px; opacity: 0.4; } to { translate: 0 0; opacity: 1; } }
 @keyframes slip-time { from { transform: scaleX(1); } to { transform: scaleX(0); } }
 /* on a phone: no tab bar, no lift; a sticky Save bar lifts the slip above it; the page makes room for the slip */
 @media (max-width: 719px) {
   body:not(:has(.tabbar)) { --toast-lift: 0px; }
   body:has(.mg-bar, .fe-bar, .ai-task-actions) { --toast-lift: calc(var(--tabbar-h) + 72px); }
+  /* the function form's bar holds its summary and Save buttons since 20 Nov 2026 (two rows, three with a long summary) */
+  body:has(.fe-bar) { --toast-lift: calc(var(--tabbar-h) + var(--fe-bar-h, 128px)); }
   body:has(.p-toasts .p-toast) #app:not(:has(.wall)) { padding-bottom: calc(76px + 64px); }
 }
 @media (min-width: 720px) {
   .p-toasts { left: 50%; right: auto; bottom: var(--toast-lift, 1.2rem); width: min(34rem, calc(100vw - 2rem)); transform: translateX(-50%); }
   body:has(.mg-bar, .fe-bar) { --toast-lift: 84px; }
+  body:has(.fe-bar) { --toast-lift: calc(var(--fe-bar-h, 72px) + 12px); }
   .p-toasts .p-toast { border: 1.5px solid var(--ink); border-top-width: 2.5px; border-radius: 10px; box-shadow: 0 8px 22px rgba(28, 29, 31, 0.18); }
   .p-toasts .p-toast.p-toast-bad { border-color: var(--bad-ink); }
   .p-toasts .p-toast[style*="--toast-life"]::before { left: 10px; right: 10px; }
@@ -2025,7 +2297,7 @@ html.has-sync .upd-bar.is-on { transform: translateY(-110%); visibility: hidden;
 .p-sync[data-st="ok"] { border-left-color: var(--done); }
 .p-sync[data-st="ok"] strong { color: var(--done-tint); }
 @media (min-width: 720px) { .p-sync { justify-content: center; } }
-.upd-bar button { flex: none; min-height: 44px; padding: 0 1rem; border: 0; border-radius: 22px; background: var(--accent-ink); color: #fff; font: 700 0.95rem var(--body); cursor: pointer; }
+.upd-bar button { flex: none; min-height: 44px; padding: 0 1rem; border: 0; border-radius: var(--r-act); background: var(--accent-ink); color: #fff; font: 700 0.95rem var(--body); cursor: pointer; }
 .upd-bar button:focus-visible { outline-color: var(--paper); }
 /* a narrow phone with Extra large text (28 Oct 2026): "It updates once sent." stays whole, so the band is a little
    tighter there, or the page scrolled sideways at 360 px */
@@ -2173,6 +2445,7 @@ html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd .dw-stage { top: calc(
 .mg-ing .search, .mg-pinrow .search { height: 2.75rem; font-size: 1rem; }
 .mg-mini { gap: 0.4rem; }
 .mg-tags .chip { min-height: 40px; padding: 0 0.7rem; }
+.mg-tags .mg-none { min-height: 44px; }   /* No allergens (19 Nov 2026): a full-size target, the usual answer */
 /* Ingredient rows (3 Nov 2026, recipe editor): a ruled list. Amount and name in the row, one short line under it, the
    note, link, allergens and moving behind the arrow. */
 .mg-sec-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; }
@@ -2190,7 +2463,13 @@ html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd .dw-stage { top: calc(
 .mg-ing-note { overflow-wrap: anywhere; }
 .mg-ing-open { display: flex; flex-direction: column; gap: 0.7rem; padding: 0.4rem 0 0 2.1rem; }
 .mg-ing-open .hint { margin: 0; }
-.mg-del { color: var(--bad-ink); }
+/* The same ingredient fields fit in fewer lines while the details stay inline. */
+@media (min-width: 350px) and (max-width: 999px) {
+  .mg-ed .mg-ing-open { padding-left: 0; gap: .5rem; }
+  .mg-ed .mg-ing-field { display: grid; grid-template-columns: 5.25rem minmax(0, 1fr); align-items: center; gap: .35rem .55rem; }
+  .mg-ed .mg-ing-field > .hint { grid-column: 1 / -1; }
+}
+
 /* the recipe link: its box and the shared picker read as one control */
 .mg-linkbox { display: flex; min-width: 0; }
 .mg-linkbox .mg-link { flex: 1 1 auto; min-width: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; }
@@ -2226,6 +2505,26 @@ html.has-upd .mg-chs { top: calc(var(--fn-stick, 0px) + var(--upd-h)); }
   .mg-chb[aria-current="true"] .mg-chx { color: var(--bad-ink); }
   .mg-ed .mg-bar { grid-column: 2; }
 }
+/* The open ingredient uses the same details in a non-modal panel beside the wide chapter. */
+@media (min-width: 1150px) {
+  .mg-wrap.mg-ed.mg-with-ing-panel { max-width: 75rem; }
+  .mg-with-ing-panel .mg-body { grid-template-columns: 10rem minmax(0, 1fr) minmax(22rem, 26rem); gap: 1.05rem; }
+  .mg-ing-panel {
+    position: sticky; top: calc(var(--fn-stick, 0px) + var(--upd-h, 0px) + 1rem);
+    align-self: start; display: flex; min-width: 0; flex-direction: column; overflow: hidden;
+    max-height: var(--mg-ing-panel-room, calc(100dvh - var(--fn-stick, 0px) - var(--upd-h, 0px) - 15rem));
+    border: 1.5px solid var(--ink); border-radius: var(--r-act); background: var(--surface-paper);
+  }
+  .mg-ing-panel-head { display: flex; align-items: center; gap: .65rem; justify-content: space-between; padding: .55rem .75rem .55rem .9rem; border-bottom: 1px solid var(--line); }
+  .mg-ing-panel-head > div { min-width: 0; }
+  .mg-ing-panel-head h3 { margin: .15rem 0 0; overflow-wrap: anywhere; }
+  .mg-ing-panel-head button { flex: none; min-width: 44px; min-height: 44px; }
+  .mg-ing-panel .mg-ing-open { min-height: 0; padding: .75rem .9rem .9rem; overflow-y: auto; overscroll-behavior: contain; }
+  .mg-ing-panel .mg-ing-open:focus-within { scroll-padding-block: .4rem; }
+  .mg-ing-panel .mg-ing-open button { min-height: 44px; }
+  .mg-ing-panel .mg-mini { padding-top: .4rem; border-top: 1px solid var(--line); }
+}
+
 .mg-more { display: flex; flex-direction: column; gap: 1rem; }
 .mg-more-b { align-self: flex-start; }
 .mg-more-box { display: flex; flex-direction: column; gap: 1rem; }
@@ -2240,7 +2539,8 @@ html.has-upd .mg-chs { top: calc(var(--fn-stick, 0px) + var(--upd-h)); }
 .mg-hand-row .search { height: 2.75rem; font-size: 1rem; }
 .mg-hand-a { font-weight: 700; }
 .mg-alg-now { display: flex; flex-direction: column; gap: 0.35rem; }
-.mg-change { margin: 0; padding: 0.6rem 0.8rem; border-left: 4px solid var(--accent); background: var(--hit); }
+/* .mg-unk: an ingredient or recipe whose allergens nobody checked yet (19 Nov 2026), in the After saving line's look */
+.mg-change, .mg-unk { margin: 0; padding: 0.6rem 0.8rem; border-left: 4px solid var(--accent); background: var(--hit); }
 /* Drawings (3 Nov 2026): the plate with its labels, then one card per other drawing with its picture */
 .mg-dh { margin: 0; font: 700 1.25rem/1.1 var(--display); }
 .mg-dplate { display: flex; flex-direction: column; gap: 0.6rem; }
@@ -2262,12 +2562,20 @@ html.has-upd .mg-chs { top: calc(var(--fn-stick, 0px) + var(--upd-h)); }
 .mg-errs { margin: 0; padding-left: 1.2rem; }
 .mg-errs a { color: #fff; font-weight: 700; }
 .mg-kept .btn-row { margin-top: 0.3rem; }
-.mg-bar { position: sticky; bottom: 0; z-index: 11; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin: 0 -0.25rem; padding: 0.7rem 0.75rem; background: var(--bg); border-top: 3px solid var(--ink); box-shadow: 0 -6px 12px rgba(0, 0, 0, 0.08); }
+.mg-bar { position: sticky; bottom: 0; z-index: 11; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin: 0 -0.25rem; padding: 0.7rem 0.75rem; }
 .mg-state { font-weight: 600; font-size: 0.9375rem; }
 .mg-slot:empty { display: none; }
+.mg-slot { display: flex; flex-wrap: wrap; gap: 0 0.75rem; }   /* Change this recipe and Print this card (19 Nov 2026) */
 .mg-slot-a { display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; color: var(--ink); }
 .mg-slot-a svg { width: 18px; height: 18px; }
 @media (max-width: 719px) { .mg-bar { bottom: var(--tabbar-h); } }
+/* ---------- One Save bar frame (the consistency sweep, step 3, head chef 20 Nov 2026) ----------
+   Every Save bar that stays at the bottom wears .sv-dock: the page's own colour (--sv-dock-bg; on Today's team the
+   notebook's paper is its page), an ink line on top, and no box, corners or shadow. What is not saved yet sits first, on
+   the left; the main button last, on the right. Each bar keeps its own place: sticky or fixed, above the tab bar on a
+   phone, its padding and the slip's lift (--toast-lift). The admin panel's and the notebook's own block rules are named
+   too, so the frame wins over them. The work pages' Add dock (.wk-dock) is an add button, not a Save bar: its own look. */
+.sv-dock, .tm-notebook .tm-save.sv-dock, .a-pane .set-block.sv-dock, .p-admin.ad-admin .a-pane .set-block.sv-dock { background: var(--sv-dock-bg, var(--bg)); border: 0; border-top: 2px solid var(--ink); border-radius: 0; box-shadow: none; }
 @media (max-width: 599px) {
   .mg-wrap h2, .mg-note h2 { font-size: 1.8rem; }
   .mg-two { grid-template-columns: minmax(0, 1fr); }
@@ -2446,6 +2754,14 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fn-band-top:has(.fn-fold) { align-items: center; }
 .fn-fold { flex: 0 0 auto; margin-left: auto; width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1.5px solid var(--ink); border-radius: 50%; background: var(--paper); color: var(--ink); font-size: 1.35rem; font-weight: 600; line-height: 1; cursor: pointer; }
 .fn-band-n + .fn-fold { margin-left: 0; }
+/* the small round minus (head chef, 22 Oct 2026) takes a tap 44 px across, like the same minus on the Next function
+   line, without growing: the tap area reaches 4 px past the circle, into the band's own space (consistency sweep,
+   19 Nov 2026, SHEL-1) */
+.fn-band-top .fn-fold { position: relative; }
+.fn-band-top .fn-fold::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; z-index: 1; }
+/* "+N more", "Show fewer" and "Service view" the same way: drawn 36 px high, a tap 44 px high (SHEL-1) */
+.fn-band .fn-more { position: relative; }
+.fn-band .fn-more::after { content: ''; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px; z-index: 1; }
 .fn-band-top.is-fold { padding-bottom: 0.4rem; }
 .fn-band-top.is-fold .fn-band-h { flex: 0 0 auto; }
 .fn-band-sum { flex: 1 1 auto; min-width: 0; display: flex; gap: 1.1rem; white-space: nowrap; overflow: hidden; font-size: 0.95rem; }
@@ -2491,9 +2807,13 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .cut-box { width: 44px; height: 44px; padding: 0; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: #fff; font-size: 1.4rem; font-weight: 700; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
 .cut-box[aria-pressed="true"] { background: var(--done); border-color: var(--done); }
 .cut-box:disabled { opacity: 0.5; cursor: default; }
-/* Chef to-do shows the supplier orders without a tick (ticked on the order list only, 5 Nov 2026): the same box, not a button */
-.cut-mark { width: 30px; height: 30px; margin: 7px; border-width: 1.5px; font-size: 1rem; cursor: default; }
-.cut-o.is-done .cut-mark { background: var(--done); border-color: var(--done); }
+/* Chef to-do shows the supplier orders without a tick (ticked on the order list only, 5 Nov 2026). Since 20 Nov 2026 (the
+   consistency sweep, step 3) a supplier mark where the box was, not an empty box: quiet ink like Prep's calendar for a
+   planned line (.pa-cal), green once the order is in. */
+.cut-o .cut-mark { grid-area: box; width: 44px; height: 44px; display: grid; place-items: center; color: var(--muted); cursor: default; }
+.cut-mark svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.cut-mark svg circle { fill: var(--paper); }
+.cut-o.is-done .cut-mark { color: var(--done-ink); }
 .cut-tl li.is-done .cut-n, .cut-tl li.is-done .cut-t { color: var(--muted); }
 .cut-tl li.is-done .cut-st { color: var(--done-ink); }
 .cut-how { margin: 0 0 0.4rem; }
@@ -2551,7 +2871,7 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fn-t-off { background: var(--bad-tint); border-color: var(--bad-ink); color: var(--bad-ink); }
 .fn-t-moved { background: #E6EDFB; border-color: #9DB1DA; }
 .fn-t-ok { background: var(--done-tint); border-color: var(--done-ink); color: var(--done-ink); }
-.fn-more { display: block; margin: 0 auto 0.35rem; min-height: 36px; padding: 0 0.9rem; border: 1.5px solid var(--ink); border-radius: var(--r-pick); background: var(--paper); color: var(--ink); font-weight: 600; cursor: pointer; }
+.fn-more { display: block; margin: 0 auto 0.35rem; min-height: 36px; padding: 0 0.9rem; border: 1.5px solid var(--ink); border-radius: var(--r-act); background: var(--paper); color: var(--ink); font-weight: 600; cursor: pointer; }
 .fn-stale { margin: 0 auto; padding: 0.25rem 0.9rem 0.4rem; max-width: 1240px; font-size: 0.85rem; color: var(--small-ink); }
 .fn-pop { position: fixed; inset: 0; z-index: 86; display: flex; align-items: flex-end; justify-content: center; }
 .fn-pop-bg { position: absolute; inset: 0; background: rgba(28, 29, 31, 0.5); }
@@ -2562,7 +2882,7 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fn-sheet-t { flex: 1 1 0; min-width: 0; }
 .fn-eb { display: block; font: 700 0.75rem var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--small-ink); }
 .fn-sheet-top h2 { margin: 2px 0 0; font: 700 1.75rem/1.1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; overflow-wrap: anywhere; }
-.fn-close { flex: 0 0 auto; min-height: 44px; padding: 0 18px; border: 2px solid var(--ink); border-radius: 24px; background: transparent; color: var(--ink); font: 700 1rem var(--body); cursor: pointer; }
+.fn-close { flex: 0 0 auto; min-height: 44px; padding: 0 18px; border: 2px solid var(--ink); border-radius: var(--r-act); background: transparent; color: var(--ink); font: 700 1rem var(--body); cursor: pointer; }
 .fn-close:hover { background: var(--ink); color: var(--paper); }
 .fn-sub { margin: 0.4rem 0 0; color: var(--muted); font-weight: 600; overflow-wrap: anywhere; }
 /* what goes out next: the one box on the sheet, because it is what the kitchen acts on */
@@ -2643,10 +2963,18 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .linkish { padding: 0; border: 0; background: none; color: var(--accent-ink); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; min-height: 24px; }
 .fe-page .fe { display: flex; flex-direction: column; gap: 1rem; }
 .fe-wrap { display: flex; flex-direction: column; gap: 1rem; }
+.fe-list-tools { display: grid; gap: 1rem; min-width: 0; }
+@media (min-width: 1100px) {
+  .fe-list-tools { display: flex; flex-wrap: wrap; align-items: end; }
+  .fe-list-tools > .field { flex: 1 1 15rem; min-width: 0; }
+  .fe-list-tools > .chips.scroll { max-width: 100%; flex-wrap: wrap; overflow: visible; padding-bottom: 0; -webkit-mask-image: none; mask-image: none; }
+  .fe-list-tools > .chips.scroll::after { content: none; }
+}
 .fe-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem; }
 .fe-head h2 { margin: 0; font: 700 2rem var(--display); overflow-wrap: anywhere; }
 /* the status tag keeps its own height beside Print function: the row stretched it to 48 px from 768 px (audit, 15 Nov 2026) */
-.fe-head .btn-row { align-items: center; }
+.fe-head .btn-row { align-items: center; min-width: 0; }
+.fe-head .btn-row .fn-tag { white-space: normal; overflow-wrap: anywhere; }
 /* The chef panel's Kitchen tools (the mix chosen 15 Nov 2026, docs/chef-kitchen-options/brief.md): one row per tool, the
    whole row the link, its name, what this role can do there and Open in words. One layout at every width, the block
    capped so the rows do not stop short of it on a laptop. */
@@ -2673,8 +3001,38 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fe-lq { display: flex; align-items: center; gap: 0.4rem; }
 .fe-num { width: 5rem; min-height: 44px; text-align: center; }
 .fe-grid .fe-num { width: 4rem; }
+/* Keep the round grid's visually hidden input labels inside its own scrolling frame. */
+.fe .fn-tw:has(> .fe-grid) { position: relative; }
 .fe-time { width: 9rem; max-width: 100%; min-width: 0; min-height: 44px; text-align: center; }
 .fe-rnote { display: block; width: 11rem; margin-top: 0.25rem; min-height: 36px; font-size: 0.85rem; }
+/* typed function times (head chef, 18 Nov 2026, docs/fn-time-picker-options/brief.md): the time said back under the box
+   while it is typed, Morning or evening? with two chips, or a red Cannot read, once it is left; on a laptop a list of
+   times under Event start and First round at (.fe-tl, 44 px rows, ink for the row the arrow keys are on) */
+.fe-tcell { position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 0.2rem; width: 100%; min-width: 0; }
+.fe-time { font-variant-numeric: tabular-nums; }
+.fe-tsay { min-height: 1.25rem; font-size: 0.875rem; color: var(--muted); }
+.fe-tsay b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.fe-tcell:has(.fe-tq) .fe-tsay, .fe-tcell:has(.fe-err) .fe-tsay { display: none; }
+.fe-time.is-ask { border-color: var(--tag); box-shadow: 0 0 0 1px var(--tag); background: var(--hit); }
+.fe-time.is-bad { border-color: var(--bad-ink); box-shadow: 0 0 0 1px var(--bad-ink); background: var(--bad-tint); }
+.fe-time.is-ask:focus-visible, .fe-time.is-bad:focus-visible { outline-color: var(--ink); }
+.fe-tq { display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem; }
+.fe-tamb { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.fe-tl { position: absolute; z-index: 20; left: 0; width: max(100%, 13rem); max-height: 264px; overflow-y: auto; padding: 4px; background: var(--paper); border: 1.5px solid var(--ink); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18); }
+.fe-tl-o { display: flex; align-items: baseline; gap: 0.6rem; min-height: 44px; padding: 0.55rem 0.75rem; border-radius: var(--r-act); cursor: pointer; }
+.fe-tl-o b { font-size: 1.0625rem; font-variant-numeric: tabular-nums; }
+.fe-tl-o span { font-size: 0.875rem; color: var(--muted); }
+.fe-tl-o:hover { background: var(--hit); }
+.fe-tl-o.is-near { border-left: 4px solid var(--accent); border-radius: 0 var(--r-act) var(--r-act) 0; }
+.fe-tl-o.is-cur { background: var(--ink); color: #fff; }
+.fe-tl-o.is-cur span { color: #fff; }
+.fe-rrow { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.25rem 0.6rem; }
+.fe-grid .fe-tcell { width: 9rem; }
+.fe-grid .fe-rrow .fe-rnote { flex: 1 1 100%; margin-top: 0; }
+@media (min-width: 768px) {   /* a round's time and note on one line on a laptop */
+  .fe-grid .fe-rrow { flex-wrap: nowrap; }
+  .fe-grid .fe-rrow .fe-rnote { flex: 1 1 12rem; max-width: 22rem; }
+}
 .fe-rn { display: inline-block; min-width: 1.4rem; font-weight: 700; }
 .fe-nd { display: block; color: #6A4A00; font-weight: 600; }
 .fe-grid tr.is-empty { background: var(--bad-tint); }
@@ -2685,8 +3043,14 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fe-picks { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .fe-mode { margin-bottom: 0.5rem; }
 .fe-allline { margin: 0.4rem 0 0; font-weight: 600; }
-.fe-bar { position: sticky; bottom: calc(var(--tabbar-h) + 6px); z-index: 5; padding: 0.55rem 0.8rem; border: 2px solid var(--ink); border-radius: 10px; background: var(--paper); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12); }
-@media (min-width: 720px) { .fe-bar { bottom: 8px; } }   /* no tab bar from 720 px */
+/* The function form's bar (the consistency sweep, step 3, head chef 20 Nov 2026): the one Save bar frame (.sv-dock), like
+   the recipe editor's. The summary on the left (#fe-live, drawn again while typing), then Saving... or a red reason, then
+   Save changes, or Check and confirm and Save draft, on the right. Flush above the tab bar now it is a bar, not a card. */
+.fe-bar { position: sticky; bottom: var(--tabbar-h); z-index: 5; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin: 0 -0.25rem; padding: 0.7rem 0.75rem; }
+@media (min-width: 720px) { .fe-bar { bottom: 0; } }   /* no tab bar from 720 px */
+.fe-live { flex: 1 1 14rem; min-width: 0; }
+.fe-bar > .fe-btns { margin-left: auto; }
+.fe-bar > :is(.fe-conflict, .fe-saving, .p-err) { flex: 1 1 100%; margin: 0; }
 .fe-bad { color: var(--bad-ink); font-weight: 700; }
 .fe-good { color: var(--done-ink); font-weight: 700; }
 .fe-probs { padding: 0.6rem 0.8rem; border: 2px solid var(--bad-ink); border-radius: 10px; background: var(--bad-tint); }
@@ -2695,7 +3059,6 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fe-conflict { padding: 0.6rem 0.8rem; border: 2px solid var(--bad-ink); border-radius: 10px; background: var(--bad-tint); }
 .fe-conflict p { margin: 0 0 0.4rem; }
 .fe-saving { margin: 0; font-weight: 600; }
-.fe-cancel { border-color: var(--bad-ink); color: var(--bad-ink); }
 .fe-review { padding: 0.8rem; border: 2px solid var(--ink); border-radius: 12px; background: var(--surface-paper); }
 .fe-review h3 { margin: 0; font: 700 1.5rem var(--display); }
 .fe-day h3 { margin: 0.6rem 0 0.35rem; font: 700 1.25rem var(--display); }
@@ -2715,7 +3078,6 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fn-page-head h2 { margin: 0; }
 .fn-card-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.4rem 1rem; padding: 0 0.7rem 0.6rem; }
 .fn-card-actions .linkish { min-height: 44px; font-size: 0.875rem; }
-.fn-cancel { color: var(--bad-ink); border-color: var(--bad-ink); }
 .fn-card-actions .fn-cancel { min-height: 44px; padding: 0 0.7rem; font-size: 0.875rem; }
 .fn-print-error { flex-basis: 100%; }
 #fn-print { display: none; }
@@ -2769,7 +3131,7 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fe-gu { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 1rem; }
 .fn-late { color: var(--bad-ink); font-weight: 700; }
 .fn-sent { white-space: nowrap; }
-.fn-sent-b { min-height: 40px; padding: 0 0.8rem; }
+.fn-sent-b { min-height: 44px; padding: 0 0.8rem; }
 .fn-sent-ok { display: inline-flex; flex-direction: column; align-items: center; font-weight: 700; color: var(--done-ink); line-height: 1.2; margin-right: 0.4rem; }
 .fn-sent-ok small { font-weight: 400; color: var(--muted); }
 /* the order reminder and tomorrow's functions in the band, and the strip pinned to the top once the band scrolls away */
@@ -2781,6 +3143,13 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fn-strip-b { display: flex; align-items: center; gap: 0.5rem; width: 100%; max-width: 1240px; margin: 0 auto; min-height: 44px; padding: 0.45rem 0.9rem; border: 0; background: none; color: inherit; text-decoration: none; text-align: left; font-size: 0.95rem; line-height: 1.3; cursor: pointer; }
 .fn-strip-t { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fn-strip-n { flex: 0 0 auto; }
+/* The strip mended (19 Nov 2026, docs/band-options/brief.md, Round 3): the word Functions first, a chevron that says a
+   tap opens something, the stale line under it; on Prep the band itself starts as the strip (.fn-band.is-strip) */
+.fn-strip-l { flex: 0 0 auto; font: 700 0.75rem/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--bar-accent); }
+.fn-strip-b::after { content: ''; flex: 0 0 auto; width: 7px; height: 7px; margin: 0 2px 0 0.15rem; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); opacity: 0.8; }
+.fn-strip-stale { max-width: 1240px; margin: 0 auto; padding: 0 0.9rem 0.45rem; }
+.fn-strip .fn-stale, .fn-band.is-strip .fn-stale { color: var(--bar-text); }
+.fn-band.is-strip .fn-strip-in { max-width: 1240px; margin: 0 auto; }
 /* the band's two lines (22 Oct 2026): the time of the next round not sent leads */
 .fn-due { font-weight: 700; font-variant-numeric: tabular-nums; }
 .fn-due.is-late { color: var(--bad-ink); }
@@ -2804,16 +3173,19 @@ a.fn-svc { display: inline-flex; align-items: center; color: var(--bar-text); te
 .fe-wrap { gap: 0.6rem; }
 .fe .set-block { gap: 0.4rem; padding-bottom: 0.75rem; }
 .fe .field { gap: 0.2rem; }
-.fe-contact > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.6rem; min-height: 44px; cursor: pointer; }
+.fe-contact { display: grid; gap: 0.4rem; margin-top: 0.2rem; border-top: 1px solid var(--line); }
+.fe-contact-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.4rem 0.75rem; }
+.fe-contact-row > span { min-width: 0; }
+.fe-contact-row .btn { min-height: 44px; }
+#fe-contact-fields:not([hidden]) { display: grid; gap: 0.4rem; }
 .fe-sum { color: var(--muted); font-size: 0.9rem; overflow-wrap: anywhere; }
 .fe-line { padding: 0.35rem 0.5rem; gap: 0.3rem 0.6rem; }
 .fe-ln small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fe .fe-num, .fe .fe-time { min-height: 40px; }
 .fe-row { padding: 0.4rem 0.6rem; }
 @media (min-width: 900px) { .fe .set-block .fe-row2 { grid-template-columns: repeat(2, minmax(0, 18rem)); } }
-/* the prep list's Functions tab: a function's platters, kept apart from the day's own prep (22 Oct 2026) */
-.nb-tab.nb-tab-fn { background: #FFF6D9; border-color: #E8C35A; color: #6A4A00; }
-.nb-tab.nb-tab-fn[aria-pressed="true"] { background: #E8C35A; border-color: #B8922A; color: var(--ink); }
+/* the prep list's Functions tab (22 Oct 2026): a function's platters, kept apart from the day's own prep by its name and
+   place; since the consistency sweep, step 3, 20 Nov 2026, it looks like the other section tabs, orange when chosen (no yellow) */
 .nb-tab-n { display: inline-block; min-width: 1.3em; margin-left: 0.3em; padding: 0 0.3em; border-radius: 999px; background: var(--accent); color: var(--ink); font-size: 0.8em; text-align: center; }
 /* every round as a list in the function sheet: time, what goes out, Sent (22 Oct 2026) */
 .fn-rounds { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
@@ -2835,6 +3207,18 @@ a.fn-svc { display: inline-flex; align-items: center; color: var(--bar-text); te
 .fnn-w { flex-basis: 100%; font-size: 0.8125rem; color: var(--muted); }
 .fnn-on { font-size: 0.875rem; font-weight: 600; color: var(--done-ink); }
 .fnn-add { min-height: 44px; }
+/* What it needs on a function's order line (18 Nov 2026, docs/fn-order-ingredients-options/brief.md): the body font
+   inside the handwritten row, and the tick and the row's buttons stay on the first line while it is open */
+.nb-row.fno-row { align-items: flex-start; }
+.nb-row.fno-row > .nb-box, .nb-row.fno-row > .nb-more, .nb-row.fno-row > .p-x { align-self: flex-start; }
+.nb-main > .fno-sum { display: flex; align-items: center; gap: 0.3rem; font-size: 0.9375rem; }
+.fno-box { margin: 0.1rem 0 0.4rem; font-family: var(--body); font-size: 0.9375rem; font-weight: 400; line-height: 1.3; color: var(--ink); }
+.fno-box .fnn li { min-height: 44px; }
+.fno-box .fnn strong { font-size: 1rem; }
+.fno-rule { margin: 0.1rem 0 0.3rem; font-size: 0.875rem; font-weight: 700; }
+.fno-note { margin: 0.5rem 0 0; font-size: 0.875rem; }
+.fno-ask { font-weight: 700; color: var(--ink); }
+.fno-sum.fno-held { visibility: hidden; }
 
 /* Option B (22 Oct 2026): the admin jump list is one button on a phone, the People how-to folds, the wastage action folds */
 .a-jumpbtn { display: none; flex: 0 0 auto; align-self: flex-start; min-height: 40px; padding: 0 0.9rem; border: 1px solid var(--line); border-radius: var(--r-pick); background: var(--paper); font: 600 0.875rem var(--body); color: var(--ink); cursor: pointer; }
@@ -2844,7 +3228,6 @@ a.fn-svc { display: inline-flex; align-items: center; color: var(--bar-text); te
   .a-onpage .a-jumpbtn { display: inline-flex; align-items: center; gap: 0.3rem; }
   .a-onpage { -webkit-mask-image: none; mask-image: none; }
 }
-.sheet-o[aria-current="true"] { background: var(--hit); }
 details.a-how { margin: 0.2rem 0 0.6rem; }
 details.a-how > summary { display: flex; align-items: center; min-height: 44px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 details.a-how > p { margin: 0.2rem 0 0; max-width: 72ch; }
@@ -2966,7 +3349,7 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-onhand { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.8125rem; color: var(--muted); }
 .su-onhand .search { width: 5.5rem; min-height: 40px; height: auto; padding: 0.4rem 0.5rem; font-size: 0.9375rem; }
 .su-count .su-entry-error { flex-basis: 100%; margin-top: 0; }
-.su-use { min-height: 36px; padding: 0 0.8rem; border: 1.5px dashed var(--small-ink); border-radius: var(--r-pick); background: var(--hit); color: var(--small-ink); font: 700 0.8125rem var(--body); cursor: pointer; }
+.su-use { min-height: 36px; padding: 0 0.8rem; border: 1.5px dashed var(--small-ink); border-radius: var(--r-act); background: var(--hit); color: var(--small-ink); font: 700 0.8125rem var(--body); cursor: pointer; }
 .su-use[hidden] { display: none; }
 .su-step { display: flex; align-items: stretch; }
 .su-step .search { min-width: 0; border-radius: 0; text-align: center; }
@@ -2982,9 +3365,44 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-jumps { margin: 0.2rem 0 0.6rem; -webkit-mask-image: linear-gradient(to right, #000 86%, transparent); mask-image: linear-gradient(to right, #000 86%, transparent); }
 .su-jumps .chip { min-height: 38px; }
 .su-jumps .su-n { font-weight: 400; opacity: 0.8; }
+.su-order-workspace { gap: 0.6rem; }
+.su-order-heading { display: flex; flex-direction: column; gap: 0.6rem; }
+.su-order-heading .su-head { align-items: center; gap: 0.5rem 0.85rem; padding-block: 0.35rem 0.5rem; }
+.su-order-heading .su-head h2 { margin-block: 0.15rem; font-size: 2rem; }
+.su-order-heading .su-head :is(.eyebrow, .hint) { display: none; }
+.su-order-heading .su-tools { margin: 0; }
+.su-order-workspace .su-toolbar { margin-bottom: 0; gap: 0.5rem; }
+.su-order-workspace .su-supplier-title { margin-block: 0.3rem 0; }
+.su-order-workspace .su-supplier-title .h3 { font-size: 1.4rem; }
+.su-order-workspace .su-filters { margin-block: 0.5rem; }
+.su-order-context { display: grid; grid-template-columns: minmax(0, 1fr) max-content; align-items: start; gap: 0.45rem; margin-top: 0.45rem; }
+.su-order-context:empty { display: none; }
+.su-order-workspace [data-su="history"], .su-history-head .btn { min-height: 44px; }
+.su-history-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.45rem 0.8rem; padding: 0.65rem 0; }
+.su-history-head h3 { margin: 0; font-size: 1.6rem; scroll-margin-top: 4rem; }
+@media (min-width: 900px) {
+  .su-order-heading { flex-flow: row wrap; align-items: center; gap: 0.4rem 0.65rem; padding-block: 0.35rem 0.5rem; border-bottom: 3px solid var(--ink); }
+  .su-order-heading .su-head { display: contents; }
+  .su-order-heading .su-head > :first-child { margin-inline-end: auto; }
+  .su-order-heading :is(.btn, .chip) { min-height: 44px; }
+  .su-order-workspace .su-toolbar > .field { flex-basis: 12rem; }
+  .su-order-workspace .su-side > .su-info { margin-top: 0.8rem; }
+  .su-order-workspace .su-side .su-cutoff { margin-bottom: 0.45rem; padding: 0.55rem; }
+}
+@media (max-width: 479px) {
+  .su-order-context > .btn { padding-inline: 0.55rem; }
+  html[data-text="xlarge"] .su-order-context > [data-su="history"] { inline-size: min-content; white-space: normal; }
+}
 /* List first on a phone or tablet (4 Nov 2026, the Prep list's rule from work pages design A): the cut-off and the
-   last order fold into one line, the heading is one line, the picker and search lose their visible labels. */
-.su-info-line { display: none; }
+   last order fold into one line, the heading is one line, the picker and search lose their visible labels.
+   A hidden supplier rail shows the same disclosure in the order column at every width. */
+.su-info-line { display: none; align-items: center; justify-content: space-between; gap: 0.75rem; width: 100%; min-height: 44px; padding: 0.4rem 0.75rem; border: 0; border-left: 3px solid var(--surface-work-edge); border-radius: 0; background: var(--surface-reference); color: var(--ink); font: 600 0.8125rem var(--body); text-align: left; cursor: pointer; }
+.su-info-line.attn { border-left-color: var(--small-ink); background: var(--hit); }
+.su-info-line > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.su-info-more { flex: none; color: var(--small-ink); text-decoration: underline; }
+.su-order-context .su-info-line { display: flex; }
+.su-order-context .su-info-body { display: none; }
+.su-order-context .su-info.open .su-info-body { display: block; margin-top: 0.5rem; }
 @media (max-width: 899px) {
   /* one line at normal text; at Extra large text Refresh drops under the title rather than off the screen */
   .su-head { flex-wrap: wrap; align-items: center; gap: 0.5rem; padding-bottom: 0.5rem; border-bottom-width: 2px; }
@@ -3004,10 +3422,7 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
   #supplier-root .su-order-actions { flex-wrap: nowrap; }
   #supplier-root .su-order-actions > .hint { flex: 1 1 auto; min-width: 0; }
   #supplier-root .su-order-actions > .btn { flex: none; }
-  .su-info-line { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; width: 100%; min-height: 44px; padding: 0.4rem 0.75rem; border: 0; border-left: 3px solid var(--surface-work-edge); border-radius: 0; background: var(--surface-reference); color: var(--ink); font: 600 0.8125rem var(--body); text-align: left; cursor: pointer; }
-  .su-info-line.attn { border-left-color: var(--small-ink); background: var(--hit); }
-  .su-info-line > span:first-child { min-width: 0; overflow-wrap: anywhere; }
-  .su-info-more { flex: none; color: var(--small-ink); text-decoration: underline; }
+  .su-info-line { display: flex; }
   .su-info-body { display: none; }
   .su-info.open .su-info-body { display: block; margin-top: 0.5rem; }
   .su-filters { margin-top: 0.5rem; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-mask-image: linear-gradient(to right, #000 86%, transparent); mask-image: linear-gradient(to right, #000 86%, transparent); }
@@ -3040,7 +3455,7 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-asked-ask .p-x { padding-left: 0; }
 .su-request { display: inline-block; color: var(--small-ink); font-size: 0.8125rem; margin-top: 0.35rem; }
 .su-order-actions, .su-pager { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem 1rem; margin: 1rem 0; }
-.su-order-actions { position: sticky; bottom: 0; z-index: 6; padding: 0.7rem 0; border-top: 1.5px solid var(--ink); background: var(--bg); }
+.su-order-actions { position: sticky; bottom: 0; z-index: 6; padding: 0.7rem 0; }   /* the frame: .sv-dock */
 .su-history-dates { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .su-history-dates .chip { height: auto; padding: 0.55rem 0.75rem; white-space: normal; text-align: left; }
 .su-disclosure-body h4 { margin: 0.4rem 0 0; font: 700 1.2rem var(--display); }
@@ -3052,10 +3467,12 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-lines strong { text-align: right; }
 .su-review .h3 { margin-bottom: 0.65rem; }
 .su-review > p { margin: 0.8rem 0; }
-.su-error, .su-status { margin: 0; padding: 0.75rem 0.9rem; border-left: 4px solid var(--bad-ink); background: var(--bad-tint); font-size: 0.9375rem; overflow-wrap: anywhere; }
+.su-error, .su-status, .su-offline { margin: 0; padding: 0.75rem 0.9rem; border-left: 4px solid var(--bad-ink); background: var(--bad-tint); font-size: 0.9375rem; overflow-wrap: anywhere; }
 .su-error { color: var(--bad-ink); }
 .su-error .btn-row { margin-top: 0.7rem; }
-.su-status { border-left-color: var(--ink); background: var(--surface-reference); }
+/* No signal is not a failure (the consistency sweep, step 2, 20 Nov 2026): .su-offline wears the neutral note's look */
+.su-status, .su-offline { border-left-color: var(--ink); background: var(--surface-reference); }
+.su-offline { color: var(--ink); }
 .su-confirm { padding: 1rem; margin: 1rem 0; background: var(--hit); border: 1px solid var(--edge); border-radius: var(--radius); }
 .su-confirm h4 { margin: 0 0 0.7rem; overflow-wrap: anywhere; }
 .su-confirm p { margin: 0.6rem 0 1rem; }
@@ -3125,6 +3542,37 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 @media (max-width: 599px) {
   .su-form-grid { grid-template-columns: minmax(0, 1fr); }
   .su-lines > div { grid-template-columns: minmax(0, 1fr) 5.5rem; gap: 0.7rem; }
+}
+
+/* Weekly sales on Supplier order. Use the existing sheet and ruled rows. */
+.su-sales { margin: 0 0 1rem; padding-bottom: 0.45rem; border-bottom: 1px solid var(--line); }
+.su-sales-link-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.2rem 0.7rem; }
+.su-head [data-su="sales-import"], .su-toolbar-sales [data-su="sales-links"], .su-sales-row .btn { min-height: 44px; }
+.su-sales-form, .su-sales-links { padding: 0.7rem 0 0.9rem; overflow-wrap: anywhere; }
+.su-sales-form h3 { margin: 0 0 0.45rem; font: 700 1.35rem var(--display); }
+.su-sales-form p { margin: 0.4rem 0; }
+.su-sales-check { display: flex; align-items: center; gap: 0.65rem; min-height: 44px; cursor: pointer; }
+.su-sales-check input { flex-shrink: 0; width: 1.35rem; height: 1.35rem; }
+.su-sales-part { min-width: 0; margin: 0.7rem 0; padding: 0.55rem 0.7rem; border: 1px solid var(--edge); border-radius: var(--radius); }
+.su-sales-part .su-form-grid { margin-block: 0.55rem; }
+.su-sales-part .search, .su-sales-links .search { max-width: 100%; min-height: 44px; }
+.su-sales-link-row { padding: 0.55rem 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.su-sales-link-row > div { min-width: 0; flex: 1 1 12rem; }
+.su-sales-link-row p { margin: 0.2rem 0 0; }
+.su-sales-row { grid-column: 2 / -1; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0 0.65rem; min-width: 0; }
+.su-sales-row [data-su="sales-calc"] { min-height: 44px; font-weight: 700; text-align: left; overflow-wrap: anywhere; }
+.su-sales-week { display: block; font-size: 0.8125rem; font-weight: 400; color: var(--muted); }
+.su-sales-explain, .su-sales-replace { flex: 1 0 100%; min-width: 0; overflow-wrap: anywhere; margin: 0.2rem 0 0; }
+.su-sales-compact { display: none; }
+.su-sales-replace .btn { height: auto; white-space: normal; text-align: left; }
+@media (max-width: 719px) {
+  /* Keep links on the Find an item row so opening a report does not add a header line. */
+  .su-toolbar-sales { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) auto; align-items: center; }
+  .su-toolbar-sales > [data-su="sales-links"] { grid-column: auto; align-self: center; max-width: 42vw; min-width: 0; padding-inline: 0.65rem; white-space: normal; }
+  .su-sales-row { grid-column: 1 / -1; }
+  .su-head .su-sales-compact { display: inline; }
+  .su-head .su-sales-wide { display: none; }
+  .su-head [data-su], .su-sales-link-row .btn, .su-sales-row .btn { padding-inline: 0.65rem; }
 }
 
 /* Physical stock return: the familiar tick box keeps room for the item on a phone. */
@@ -3253,7 +3701,7 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
 .a-pp-assess small { display: block; color: var(--muted); }
 @media (max-width: 599px) { .p-admin.ad-admin .a-pane .a-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; } .p-admin.ad-admin .a-pane .a-tile > strong { font-size: 1.9rem; } }
 .p-admin.ad-admin .a-pane .p-bulk { width: 100%; min-width: 0; }
-.p-admin.ad-admin .a-pane .set-block.a-savebar { z-index: 11; padding: .8rem 1rem; border: 1px solid var(--edge); border-top: 2px solid var(--ink); border-radius: var(--r-act); background: var(--paper); }
+.p-admin.ad-admin .a-pane .set-block.a-savebar { z-index: 11; padding: .8rem 1rem; }
 .p-admin.ad-admin .a-tablewrap { max-width: 100%; border-width: 1px; border-radius: 0; }
 .p-admin.ad-admin .a-table td, .p-admin.ad-admin .a-table th { padding-top: .7rem; padding-bottom: .7rem; }
 .p-admin.ad-admin .a-table input[type="checkbox"] { flex-shrink: 0; }
@@ -3419,7 +3867,8 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
 .ux-two-way > .ux-choice-source > button, .ux-two-way > .ux-choice-measure > button { flex: none; min-width: 44px; min-height: 44px; margin: 0; padding: .65rem .8rem; border: 0; border-radius: 0; background: transparent; color: var(--ink); font: 600 1rem/1.3 var(--body); white-space: nowrap; }
 .ux-two-way > .ux-choice-source > button + button { box-shadow: inset 1.5px 0 var(--ink); }
 .ux-two-way > .ux-choice-source > button[aria-checked="true"], .ux-two-way > .ux-choice-source > button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
-.ux-choice-measure { position: fixed; left: 0; top: 0; display: flex; width: max-content; max-width: none; visibility: hidden; pointer-events: none; }
+/* Keep the full measurement box outside the sheet's scrollable inline direction. */
+.ux-choice-measure { position: fixed; inset-inline-end: 100%; top: 0; display: flex; width: max-content; max-width: none; visibility: hidden; pointer-events: none; }
 .ux-unit-choices { display: flex; flex-wrap: wrap; gap: .4rem; min-width: 0; border: 0; border-radius: 0; overflow: visible; background: transparent; }
 .ux-unit-choices > button { flex: 0 0 auto; min-width: 44px; min-height: 44px; max-width: 100%; margin: 0; padding: .6rem .85rem; border: 1.5px solid var(--ink); border-radius: 22px; background: var(--paper); color: var(--ink); font: 600 1rem/1.3 var(--body); white-space: normal; overflow-wrap: anywhere; }
 .ux-unit-choices > button:first-child { border-left: 1.5px solid var(--ink); }
@@ -3480,7 +3929,7 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
 .ux-table-tools .ux-active-filters { flex-basis: 100%; }
 .ux-table-status { flex-basis: 100%; margin: 0; color: var(--muted); font-size: .875rem; }
 .ux-table-empty { margin-block: .8rem; }
-.ux-table-empty p { margin: 0 0 .5rem; }
+.ux-table-empty p { margin: 0 0 .5rem; color: var(--muted); }
 .ux-record-advanced { margin-block: .4rem; }
 .ux-record-advanced > summary { min-height: 44px; padding-block: .65rem; cursor: pointer; }
 
@@ -3684,7 +4133,7 @@ i.dsh-c-w { background: var(--dsh-w); } i.dsh-c-t { background: var(--dsh-t); }
 /* Needs you (Dashboard, step 3): a row per thing waiting, its state in a word and a mark, its page one tap away. */
 .dsh-needs { background: var(--surface-reference); border-color: transparent; }
 .dsh-need-list { list-style: none; margin: 0; padding: 0; display: grid; }
-/* To do (4 Nov 2026): the open kitchen mail sits under its line, ticked off in place with the Kitchen mail page's rows */
+/* The open kitchen mail uses the Kitchen mail page's rows and is ticked off in place. */
 .dsh-todo-mail { padding: 0 0 .5rem 1.4rem; }
 .dsh-ml { list-style: none; margin: 0; padding: 0; }
 .dsh-ml .ml-row:first-child { border-top: 0; }
@@ -3799,6 +4248,39 @@ html:has(.w-sheet, .tr-sheet, .p-sheet, .o-sheet) .p-toasts { top: calc(12px + e
 .w-rvfoot { margin: 14px 0 4px; }
 .w-rvfoot .w-rvbtn { width: 100%; align-items: flex-start; text-align: left; }
 .w-rvfoot .hint { margin: 6px 0 0; }
+.w-rv-cue { display: block; }
+.w-rv-date { font-weight: 700; color: var(--ink); margin: .25rem 0 .85rem; }
+.w-rv-switch { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .75rem; }
+.w-rv-switch .btn { min-height: 44px; text-align: left; white-space: normal; overflow-wrap: anywhere; }
+@media screen {
+  .w-page:has(> .w-rvfoot) {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+    grid-template-areas: 'head head' 'total review' 'bar bar' 'legend legend' 'read read' 'list list';
+  }
+  .w-page:has(> .w-rvfoot) > .nb-ph { grid-area: head; }
+  .w-page:has(> .w-rvfoot) > .w-today { display: contents; }
+  .w-page:has(> .w-rvfoot) .w-tot { grid-area: total; align-self: center; margin: .35rem .75rem; overflow-wrap: anywhere; }
+  .w-page:has(> .w-rvfoot) .w-bar { grid-area: bar; margin-inline: .75rem; }
+  .w-page:has(> .w-rvfoot) .w-legend { grid-area: legend; margin-inline: .75rem; margin-bottom: 12px; }
+  .w-page:has(> .w-rvfoot) > .w-ro { grid-area: read; }
+  .w-page:has(> .w-rvfoot) > .nb-body { grid-area: list; }
+  .w-page > .w-rvfoot { grid-area: review; align-self: center; max-width: min(52vw, 16rem); margin: .35rem .75rem .35rem 0; }
+  .w-page:not(:has(> .w-today)) > .w-rvfoot { grid-column: 1 / -1; justify-self: start; margin-left: .75rem; }
+  .w-page .w-rvfoot .w-rvbtn { min-width: 44px; min-height: 44px; padding: .2rem .6rem; white-space: normal; overflow-wrap: anywhere; }
+  .w-page .w-rvfoot .hint { display: none; }
+}
+@media screen and (min-width: 768px) {
+  .w-rv-cue { display: inline; }
+  .w-rv-cue::before { content: '· '; }
+}
+@media screen and (max-width: 430px) {
+  html[data-text="xlarge"] .w-page:has(> .w-today) > .w-rvfoot { max-width: 40vw; }
+}
+@media print {
+  .w-page > .w-rvfoot { order: 1; }
+  .w-rv-cue { display: none; }
+}
+
 button.nb-prog { min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .nb-t[data-n]::before { content: attr(data-n); content: attr(data-n) / ''; display: inline-flex; align-items: center; justify-content: center; min-width: 1.45em; height: 1.45em; margin-right: 0.35em; border-radius: 50%; background: var(--accent-ink); color: #fff; font: 700 0.62em var(--body); vertical-align: 0.2em; }
 .nb-why { display: inline-block; padding: 0 6px; border: 1.5px solid var(--muted); border-radius: 999px; font: 600 0.75rem var(--body); color: var(--muted); white-space: nowrap; }
@@ -3811,8 +4293,17 @@ button.nb-prog { min-height: 44px; padding: 0; border: 0; background: none; curs
 .o-nav { align-items: center; flex-wrap: wrap; }
 /* the day arrows' big type (.nb-nav .chip:first-child/:last-child) is not for these chips */
 .nb-nav.o-nav .chip { min-width: 0; padding: 0 0.85rem; font-size: 0.875rem; }
+/* Orders' day control is Prep's (the consistency sweep, step 3, 20 Nov 2026): its chips keep Prep's look, not the
+   Orders chips' bolder type above. On a phone the control fills its row and Delivery received goes under it. */
+.o-nav .o-dayctl { display: flex; align-items: center; gap: 0.5rem; flex: 0 1 auto; min-width: 0; }
+.nb-nav.o-nav .o-dayctl .chip { font: inherit; font-weight: 600; font-size: 0.875rem; padding: 0 0.85rem; }
+.nb-nav.o-nav .o-dayctl .chip.nav-step { min-width: 48px; font-size: 1.4rem; padding: 0; }
+@media (max-width: 599px) { .o-nav .o-dayctl { flex: 1 1 100%; } }
 .o-nav .o-deliv { display: inline-flex; align-items: center; color: var(--ink); text-decoration: none; }
 .o-ro { padding: 0 12px; }
+.o-page [data-p="o-done-jump"] { min-width: 44px; min-height: 44px; padding: 0; border: 0; background: none; color: var(--accent-ink); text-decoration: underline; cursor: pointer; }
+.tr-list-head { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
+.tr-list-head .nb-link { min-width: 44px; min-height: 44px; text-align: end; }
 .o-done summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; list-style: none; }
 .o-done summary::-webkit-details-marker { display: none; }
 .o-done summary::after { content: ''; width: 8px; height: 8px; margin-left: 10px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); }
@@ -4058,6 +4549,10 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .cut-band .cut-h { color: var(--bar-accent); }
 .cut-band .cut-go, .cut-band .cut-n { color: var(--bar-text); }
 .cut-band .cut-go:focus-visible, .cut-band .cut-n:focus-visible { outline: 3px solid var(--bar-accent); outline-offset: 2px; }
+/* the supplier's name takes a tap 44 px high, as it does in Orders' cut-off fold, without making the bar taller: the tap
+   area reaches into the row's own space above and below the name (consistency sweep, 19 Nov 2026, SHEL-2) */
+.cut-band .cut-n { position: relative; }
+.cut-band .cut-n::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 44px; transform: translateY(-50%); z-index: 1; }
 .cut-band .cut-t { color: rgba(251, 248, 241, 0.78); }
 .cut-band .cut-t b { color: var(--bar-text); }
 .cut-band .cut-row + .cut-row { border-top-color: rgba(251, 248, 241, 0.16); }
@@ -4081,6 +4576,15 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .dl-rb .dl-readings dt { font: 700 0.75rem/1.2 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: inherit; }
 .dl-rb .dl-readings dd { font-size: 1rem; color: inherit; }
 .dl-rb .hint { margin: 0.2rem 0 0; }
+.dl-records-jump { display: none; }
+@media (max-width: 719px) {
+  .dl-heading-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 0.5rem; }
+  .dl-records-jump { display: inline-block; position: relative; min-width: 44px; min-height: 0; font-size: 0.875rem; color: var(--ink); }
+  .dl-records-jump:focus-visible { outline-color: var(--ink); }
+  /* The whole 44 px target fits across the existing heading, whose neighbouring text is static. */
+  .dl-records-jump::after { content: ''; position: absolute; inset-inline: 0; top: 50%; height: 44px; transform: translateY(-50%); }
+  #dl-records { scroll-margin-block-start: 4.5rem; }
+}
 /* Supplier reference stays quiet until the existing attn flag asks for a look. Keep the same line and height
    so the first To order box stays clear of the Review bar. */
 @media (max-width: 899px) {
@@ -4112,7 +4616,7 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .tr-card .tr-item .nb-main { min-width: 0; }
 .tr-card .w-amt { white-space: normal; }
 .tr-ret { flex: 0 0 auto; min-height: 44px; padding: 0 12px; gap: 6px; font: 700 0.875rem/1 var(--body); white-space: nowrap; }
-.tr-ret[disabled] { opacity: 0.6; }
+.tr-ret[disabled] { opacity: 0.7; cursor: default; }
 .tr-tick { flex: 0 0 auto; }
 /* On a phone the handwritten words need the room: Make it again goes under the line's second line, still in its row,
    and the words, the reason, the section and who keep the full width (measured at 390 px, 8 Nov 2026) */
@@ -4134,6 +4638,7 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .fn-band .fn-band-h { color: var(--bar-accent); }
 .fn-band .fn-band-n { color: rgba(251, 248, 241, 0.75); }
 .fn-band .fn-fold { border-color: rgba(251, 248, 241, 0.7); background: transparent; color: var(--bar-text); }
+.fn-band .fn-fold[aria-disabled="true"] { opacity: .6; cursor: default; }
 .fn-band .fn-list { gap: 0; padding-bottom: 0.45rem; }
 .fn-band .fn-row { padding: 0.5rem 0; border: 0; border-top: 1px solid rgba(251, 248, 241, 0.16); border-radius: 0; background: none; color: var(--bar-text); }
 .fn-band .fn-li:first-child .fn-row { border-top: 0; }
@@ -4292,7 +4797,7 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .fn-page .fn-card-actions { padding: 0 0.9rem 0.6rem; border-top: 1px solid var(--line); padding-top: 0.4rem; }
 .fn-day-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.4rem 0.8rem; margin: 0.9rem 0 0.4rem; }
 .fn-day-h h4 { margin: 0; font: 700 1.05rem var(--display); }
-.fn-quiet { margin: 0.9rem 0 0.4rem; padding: 0.6rem 0.8rem; border: 1px dashed var(--edge); border-radius: 8px; color: var(--muted); }
+.fn-quiet { margin: 0.9rem 0 0.4rem; color: var(--muted); }   /* a plain grey sentence, no dashed box (20 Nov 2026) */
 /* the function card: the sheet on its paper, Next out on the dark board, Cancel alone at the end */
 .fn-one .fn-eb { margin-bottom: 2px; }
 .fn-cardbox { padding: 0.4rem 1rem 1rem; border: 1.5px solid var(--ink); border-radius: 14px; background: var(--surface-paper); box-shadow: 0 4px 0 rgba(28, 29, 31, 0.12); }
@@ -4386,6 +4891,20 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .fn-svc-board .fn-for-b { min-height: 48px; padding: 0 0.9rem; border-color: var(--bar-text); background: transparent; color: var(--bar-text); }
 .fn-svc-outs { margin: 0.3rem 0 0.6rem; color: rgba(251, 248, 241, 0.86); }
 .fn-svc-outs .fn-i, .fn-next .fn-trip-out { color: var(--done-on-dark); }
+
+@media (max-width: 719px) {
+  .fn-svc-page { gap: 0.4rem; }
+  .fn-svc-page > .hint { margin-block: 0.2rem; }
+  .fn-svc-page > .fn-svc-board { margin-block-start: 0.15rem; }
+}
+/* Keep the kitchen's rounds the same width as trips enter or leave the shelf. The coordinator's rounds are inside .fn-svc-sec. */
+@media (min-width: 1100px) {
+  .fn-svc-board:has(> .fn-svc-rows) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(270px, 0.52fr); grid-template-rows: auto auto 1fr; column-gap: 1.25rem; align-items: start; }
+  .fn-svc-board > .fn-svc-bh { grid-column: 1 / -1; }
+  .fn-svc-board > .fn-svc-wl { grid-area: 2 / 1; }
+  .fn-svc-board > .fn-svc-rows { grid-area: 3 / 1; }
+  .fn-svc-board > .fn-svc-rows + .fn-svc-shelf { grid-area: 2 / 2 / span 2; min-width: 0; margin: 0; padding: 0.65rem 0 0.35rem 1rem; border-top: 0; border-inline-start: 1px solid rgba(251, 248, 241, 0.32); scroll-margin-block-start: 5rem; }
+}
 .fn-band .fn-li-out { display: flex; align-items: center; gap: 0.5rem; border-top: 1px solid rgba(251, 248, 241, 0.16); }
 .fn-band .fn-li-out:first-child { border-top: 0; }
 .fn-band .fn-li-out > .fn-row { flex: 1 1 auto; min-width: 0; border-top: 0; }
@@ -4402,9 +4921,16 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 
 /* ---------- Redesign step 6 (8 Nov 2026, head chef): Recipes and the recipe card. docs/whole-app-redesign-options/brief.md
    (Build step 6), every-page.html e-recipes and e-recipe. ---------- */
-/* the search is one pill with its magnifier inside; on a phone the count line shows only while a search or filter is on */
-.find-wrap .find-i { position: absolute; z-index: 1; left: 0.95rem; top: 50%; width: 20px; height: 20px; margin-top: -10px; color: var(--muted); pointer-events: none; }
-.find-wrap .search { padding-left: 2.75rem; border-radius: var(--r-pick); }
+/* the search is one pill with its magnifier inside; on a phone the count line shows only while a search or filter is on.
+   Every search box since the consistency sweep, step 3 (head chef, 20 Nov 2026): Manage, Print cards, Settings, Guides,
+   the shared lists (lvHTML) and Find a drawing too. The magnifier is centred on the box (--find-h, its height), not on the
+   wrapper, so the "Filtering by" line under a box no longer pulls it down. */
+.find-wrap { --find-h: 3.1rem; }
+.find-wrap .find-i { position: absolute; z-index: 1; left: 0.95rem; top: calc(var(--find-h) / 2 - 10px); width: 20px; height: 20px; color: var(--muted); pointer-events: none; }
+.find-wrap .search, .p-admin.ad-admin .a-pane .find-wrap .search { padding-left: 2.75rem; border-radius: var(--r-pick); }
+.lv-qw .find-wrap { --find-h: 2.75rem; }
+/* once the shared search bar wraps the box (LK_UX), the magnifier sits in the box's own cell, centred whatever its height */
+.find-wrap .ux-search > .find-i { position: relative; top: auto; left: auto; grid-area: 1 / 1; align-self: center; justify-self: start; margin-left: 0.95rem; }
 @media (max-width: 719px) { .find-bar .field-head:not(.is-on) { display: none; } }
 /* the card's head: the name with its card number beside it, then the plating line across the whole card */
 .card-head.ch-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; column-gap: 1rem; row-gap: 0.55rem; }
@@ -4499,6 +5025,7 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .todo-notebook .todo-by { color: var(--muted); font-size: .8125rem; overflow-wrap: anywhere; }
 .todo-notebook .todo-acts { gap: 0; margin: 0 0 0 auto; }
 .todo-notebook .todo-acts .p-link { min-width: 44px; min-height: 44px; padding: .3rem .4rem; font-size: .8125rem; }
+.todo-row button:disabled { cursor: default; opacity: .45; }
 .todo-notebook .todo-donebox { border-top: 1px solid var(--ink); margin-top: 1rem; }
 .todo-notebook .todo-donebox > summary { min-height: 52px; font-size: .875rem; }
 @media (min-width: 1100px) {
@@ -4559,9 +5086,9 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .dr-notebook .dr-form { min-width: 0; }
 .dr-notebook .dr-form .search, .dr-notebook .dr-fold, .dr-notebook .chip,
 .dr-notebook .ux-picker-trigger { border-color: var(--faint); }
+/* chosen is ink, as everywhere but a notebook's section tabs (the consistency sweep, step 3, 20 Nov 2026) */
 .dr-notebook .chip[aria-pressed="true"], .dr-notebook .ml-sb[aria-pressed="true"],
-.dr-notebook .ux-choice-source > button[aria-pressed="true"] { background: var(--small-ink); border-color: var(--small-ink); color: var(--bar-text); }
-body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { background: var(--small-ink); border-color: var(--small-ink); color: var(--bar-text); }
+.dr-notebook .ux-choice-source > button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 .dr-notebook .dr-prev { border-color: var(--line); background: none; }
 .dr-notebook .dr-prev .label { color: var(--small-ink); }
 @media (min-width: 1100px) {
@@ -4775,8 +5302,8 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .todo-notebook .chip, .tm-notebook .chip,
 .todo-notebook .todo-ta, .todo-notebook .lv-q, .todo-notebook .ux-picker-trigger,
 .tm-notebook .tm-find, .tm-notebook .tm-pick select, .tm-notebook .ux-picker-trigger { border-color: var(--faint); }
-.todo-notebook .chip[aria-pressed="true"], .tm-notebook .chip[aria-pressed="true"] {
-  background: var(--small-ink); border-color: var(--small-ink); color: var(--bar-text);
+.todo-notebook .chip[aria-pressed="true"], .tm-notebook .chip[aria-pressed="true"] {   /* chosen is ink (the consistency sweep, step 3, 20 Nov 2026) */
+  background: var(--ink); border-color: var(--ink); color: var(--paper);
 }
 .todo-notebook .chip[aria-pressed="true"] .lv-n { opacity: 1; }
 .todo-notebook .todo-due.is-today, .todo-notebook .todo-due.is-late,
@@ -4832,6 +5359,14 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .dsh-dtile-sub.dsh-up { color: var(--accent-ink); }
 .dsh-dtile-sub.dsh-down { color: var(--done-ink); }
 .dsh-inbox .dsh-needs { margin-top: 1rem; }
+.dsh-inbox .dsh-needs > .dsh-panel-head { margin-bottom: .15rem; }
+.dsh-inbox .dsh-need { grid-template-columns: 4px minmax(0, 1fr) auto; gap: .5rem; padding: .36rem 0; }
+.dsh-inbox .dsh-need > .btn { grid-column: 3; justify-self: end; text-align: center; min-width: 44px; line-height: 1.2; white-space: normal; }
+.dsh-inbox .dsh-todo-mail { margin-top: .45rem; padding: 0 0 .5rem; border-top: 1px solid var(--line); }
+.dsh-inbox .dsh-ml .ml-row { padding-block: .4rem; }
+@media (max-width: 560px) {
+  .dsh-inbox .dsh-need > .btn { max-width: 7.1rem; padding: .3rem .5rem; }
+}
 @media (min-width: 1000px) {
   .p-admin.ad-admin .a-find-head { display: none; }
   .p-admin.ad-admin .a-nav { padding: 1rem .75rem 1.25rem; border: 0; border-radius: 12px; background: var(--bar); color: var(--bar-text); }
@@ -4902,7 +5437,7 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 /* ---------- Gap fix: Home (8 Nov 2026) ----------
    From the audit of the redesign against its drawings: a chevron on board rows that open something and have no time,
    Coming up with the next days' order cut-offs (chefs only) and a week of functions, and On today from 720 px. */
-.hm-chev { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; color: rgba(251, 248, 241, 0.7); }
+.hm-chev { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; color: var(--bar-text); }
 .hm-up:has(#hm-cuts:not([hidden])) { display: block; }
 #hm-cuts[hidden] { display: none; }
 .hm-cuts { list-style: none; margin: 0 0 0.2rem; padding: 0; }
@@ -5023,6 +5558,12 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
    area but takes less of the row, the Start here number sits in the margin as drawn, and the section headings are shorter.
    The list header keeps its height (Set today's team, a person's day). Large text and under 360 px keep their layout. */
 @media (min-width: 360px) and (max-width: 479px) {
+  /* Leave more room between the live bands and Add for today's Prep lines. */
+  #prep-root.is-book:has(> .nb-wrap:not(.nb-later) .nb-left .wk-dock) { row-gap: .5rem; }
+  #prep-root.is-book:has(> .nb-wrap:not(.nb-later) .nb-left .wk-dock) > .ps-viewbar { margin-bottom: 0; }
+  #prep-root.is-book:has(> .nb-wrap:not(.nb-later) .nb-left .wk-dock) > .nb-wrap { row-gap: .375rem; }
+  #prep-root.is-book > .nb-wrap:not(.nb-later) .nb-left .nb-ph:has(.wk-dock) { padding-block: .375rem; }
+
   html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-row { grid-template-columns: 34px minmax(0, 1fr) auto; column-gap: 4px; padding-top: 3px; padding-bottom: 3px; min-height: 44px; }
   html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-box { margin-left: -8px; }
   html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-t { font-size: 1.3rem; line-height: 1.02; }
@@ -5040,7 +5581,6 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 
 /* Head-chef section standards (8 Nov 2026): the existing notebook, Add sheet and role panel, no new palette. */
 .ps-viewbar { margin: 0 0 .75rem; }
-.ps-viewbar .chip[aria-pressed="true"] { background: var(--small-ink); border-color: var(--small-ink); color: var(--bar-text); }
 .ps-hint { flex: 1 1 100%; min-width: 0; }
 .ps-hint:empty { display: none; }
 .ps-minimum { margin: .4rem 0 .6rem; padding: .4rem 0 .4rem .75rem; border-left: 3px solid var(--accent); }
@@ -5050,6 +5590,15 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .ps-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 2rem; align-items: start; margin-top: 1rem; }
 .ps-grid > *, .ps-fields, .ps-form-grid > * { min-width: 0; }
 .ps-section { max-width: 24rem; margin: .85rem 0; }
+.ps-reference .lv-tools { flex-wrap: wrap; align-items: flex-end; gap: .25rem .5rem; }
+.ps-reference .lv-tools > .ps-section { flex: 0 1 8rem; min-width: 0; margin: 0; }
+.ps-reference .lv-tools > .ps-section select { min-width: 0; width: 100%; }
+.ps-reference .lv-qw { flex-basis: 10rem; }
+.ps-reference .lv-q { min-height: 44px; }
+.ps-reference .lv-tool { max-width: 100%; }
+.ps-reference .ps-read { display: flex; flex-wrap: wrap; align-items: center; gap: 0 .5rem; margin: 0; }
+.ps-reference .p-err .p-link { display: inline-flex; min-width: 44px; min-height: 44px; align-items: center; }
+.ps-reference .ux-column-filters:empty, .ps-reference .ux-active-filters:empty { display: none; }
 .ps-fields { display: grid; gap: 1rem; }
 .ps-fields .search, .ps-fields .p-select { width: 100%; max-width: 100%; }
 .ps-fields textarea { min-height: 92px; resize: vertical; }
@@ -5088,7 +5637,7 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .cln-body { min-height: 8rem; max-height: none; overflow: visible; padding-bottom: 1rem; }
 .cln-body .nb-hd { gap: .6rem; margin: .3rem 0 0; overflow-wrap: anywhere; }
 .cln-group-count { flex: none; font: 400 .8125rem var(--body); letter-spacing: 0; color: var(--muted); }
-.cln-packdown-title { margin: 1.1rem 0 .2rem; font: 700 2rem/1.2 'Caveat', cursive; }
+.cln-packdown-title { margin: 1.1rem 0 .2rem; font: 700 2rem/1.2 'Caveat', cursive; scroll-margin-top: .5rem; }
 .cln-packdown > .hint { margin: .2rem 0 .65rem; line-height: 1.4; }
 .cln-row { flex-wrap: nowrap; }
 .cln-row .nb-box { align-self: center; margin-top: 0; }
@@ -5103,7 +5652,6 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .cln-empty .nb-empty { color: var(--muted); }
 .cln-empty .hint { margin: -.5rem 0 .75rem; }
 .cln-week-nav { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .6rem; }
-.cln-week-nav > .chip { width: 44px; padding: 0; font-size: 1.5rem; }
 .cln-week-nav > span { font-weight: 600; font-size: .9375rem; }
 .cln-week-nav > .p-link { margin-left: auto; font-size: .8125rem; }
 .cln-legend { margin: .5rem 0 .7rem; line-height: 1.5; }
@@ -5156,6 +5704,10 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .cln-work-note textarea:focus-visible, .cln-form textarea:focus-visible, .cln-import summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .cln-work-actions, .cln-add-occurrence { flex-wrap: wrap; gap: .35rem .65rem; margin-top: .5rem; }
 .cln-work-actions .btn, .cln-add-occurrence .btn { max-width: 100%; white-space: normal; }
+/* Keep the existing button's space when the longer waiting words replace its label. */
+button[data-cln-ready-label] { position: relative; }
+button[data-cln-ready-label]::before { content: attr(data-cln-ready-label); visibility: hidden; }
+button[data-cln-ready-label] > span { position: absolute; inset: 0; display: grid; align-content: center; padding-inline: .25rem; line-height: 1.1; text-align: center; white-space: normal; }
 .cln-temperature { border-top: 1px solid var(--rule); }
 .cln-temperature > .p-link { display: block; text-align: left; font-size: .8125rem; }
 .cln-temperature .hint, .cln-coverage { margin: .1rem 0 .6rem; font-size: .8125rem; }
@@ -5265,6 +5817,8 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .tm-weekbar { display: flex; align-items: center; gap: .3rem; margin-bottom: .35rem; }
 .tm-weekbar > span { flex: 1 1 auto; min-width: 0; text-align: center; font-size: .875rem; font-weight: 600; overflow-wrap: anywhere; }
 .tm-weekbar .chip { flex: 0 0 auto; min-width: 44px; min-height: 44px; padding: .4rem .65rem; }
+/* the week arrows are the shared step chips (the consistency sweep, step 3, 20 Nov 2026) */
+.tm-weekbar .chip.nav-step { min-width: 48px; padding: 0; }
 .tm-weekscroll { min-width: 0; overflow-x: auto; scrollbar-width: thin; }
 .tm-weekscroll.has-more { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1rem), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 1rem), transparent); }
 .tm-weekdays { display: grid; grid-template-columns: repeat(7, minmax(44px, 1fr)); min-width: 320px; gap: 2px; }
@@ -5272,7 +5826,7 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .tm-daypick > span, .tm-daypick > small { max-width: 100%; font: 400 .75rem/1.2 var(--body); overflow-wrap: anywhere; }
 .tm-daypick > b { font: 700 1.25rem/1 var(--display); }
 .tm-daypick.is-today { border-color: var(--small-ink); }
-.tm-daypick[aria-pressed="true"] { border-color: var(--small-ink); background: var(--small-ink); color: var(--bar-text); }
+.tm-daypick[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--paper); }   /* chosen is ink; today keeps its orange edge (the consistency sweep, step 3, 20 Nov 2026) */
 .tm-daypick:focus-visible, .tm-weekbar button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 .tm-daypick:disabled, .tm-weekbar button:disabled { cursor: default; opacity: .65; }
 .tm-notebook .tm-nbook { grid-template-areas: 'head' 'week' 'away' 'work' 'extra'; }
@@ -5482,7 +6036,6 @@ html:has(.tm-focus-page) {
 .tm-focus-page .tm-detail-workbench .tm-picks .chip { align-self: end; justify-self: start; }
 .tm-notebook.tm-focus-page .tm-detail-workbench .ux-picker-trigger { display: block; max-width: 100%; white-space: normal; word-break: normal; overflow-wrap: break-word; }
 .tm-focus-page .tm-overlap-warning { margin: .6rem 0; padding: .5rem .6rem; border-left: 3px solid var(--bad-ink); background: var(--bad-tint); color: var(--bad-ink); font-size: .875rem; line-height: 1.4; overflow-wrap: break-word; }
-.tm-focus-page .tm-remove-service { color: var(--bad-ink); }
 .tm-focus-page .tm-person-row > .tm-detail-workbench { margin-top: .6rem; }
 /* The day grid (head chef, 15 Nov 2026, docs/team-sections-options/brief.md, the chosen mix): people down, services
    across. The rows share one set of columns (subgrid), so a long name widens the name column for every row. The
@@ -5551,8 +6104,7 @@ html:has(.tm-focus-page) {
   position: sticky; bottom: var(--tm-focus-nav-height, 0px); z-index: 5;
   display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .75rem;
   min-width: 0; margin: .65rem 0 0; padding: .65rem .85rem;
-  border-top: 2px solid var(--ink); background: var(--surface-paper);
-  box-shadow: 0 -1px 0 var(--line);
+  --sv-dock-bg: var(--surface-paper);   /* the one Save bar frame (.sv-dock) on the notebook's paper, 20 Nov 2026 */
 }
 .tm-notebook.tm-focus-page .tm-focus-save .btn { flex: 0 1 auto; width: auto; max-width: 100%; min-height: 44px; margin-left: auto; }
 .tm-notebook.tm-focus-page .tm-save-state { flex: 1 1 10rem; min-width: 0; margin: 0; font-size: .8125rem; line-height: 1.4; overflow-wrap: break-word; }
@@ -5617,6 +6169,20 @@ html:has(.tm-focus-page) {
 @media (min-width: 1100px) {
   .tm-focus-page .tm-focus-grid { grid-template-columns: minmax(0, 1fr); }
   .tm-focus-page .tm-focus-grid > .tm-detail-workbench { position: sticky; top: 1rem; }
+  /* On a wide screen the closed date control and the roster tools share one row. */
+  .tm-notebook.tm-focus-page .tm-nbook:has(.tm-week-reveal[hidden]):not(:has(.tm-live-strip:not([hidden]), .tm-future-note)) {
+    grid-template-columns: max-content minmax(0, 1fr);
+    grid-template-areas: 'head head' 'date toolbar' 'week week' 'away away' 'notice notice' 'editor editor' 'save save' 'review review' 'tools tools' 'roster roster' 'extra extra';
+  }
+  .tm-focus-page .tm-nbook:has(.tm-week-reveal[hidden]):not(:has(.tm-live-strip:not([hidden]), .tm-future-note)) .tm-date-controls {
+    align-self: center; margin: .65rem 0 .65rem .85rem;
+  }
+  .tm-focus-page .tm-nbook:has(.tm-week-reveal[hidden]):not(:has(.tm-live-strip:not([hidden]), .tm-future-note)) .tm-date-controls > button:first-child {
+    flex-basis: auto; min-width: 12rem;
+  }
+  .tm-focus-page .tm-nbook:has(.tm-week-reveal[hidden]):not(:has(.tm-live-strip:not([hidden]), .tm-future-note)) .tm-focus-toolbar {
+    align-self: center; justify-self: end; width: min(100% - 1.7rem, 30rem); margin: .65rem .85rem;
+  }
 }
 @media (max-width: 1099px) {
   .tm-focus-page .tm-focus-grid > .tm-detail-workbench.is-empty { display: none; }
@@ -5624,6 +6190,11 @@ html:has(.tm-focus-page) {
 @media (max-width: 719px) {
   .p-admin.ad-admin.tm-focus-panel .a-nav { margin-bottom: 0; }
   .p-admin.ad-admin.tm-focus-panel .ad-heading { margin-bottom: .2rem; }
+  .tm-notebook.tm-focus-page .tm-nhead { padding-block: .375rem; }
+  /* The header already says Saved. Keep the phone dock for work, live staffing notices and save feedback. */
+  .tm-notebook.tm-focus-page:not(:has(.tm-quick-add:not([hidden]))) .tm-focus-save:has(.sv-btn:disabled[aria-busy="false"]:not([data-sv])):not(.has-short):not(:has(.sv-line:not(:empty))) {
+    display: none;
+  }
   .tm-notebook.tm-focus-page .tm-nhead .p-h { font-size: 1.7rem; }
   .tm-focus-page .tm-row-fields { gap: .35rem; }
   .tm-notebook.tm-focus-page .tm-row-fields .ux-picker-trigger { padding-inline: .5rem; }
@@ -5667,6 +6238,33 @@ html:has(.tm-focus-page) {
 .o-cut-detail.has-deadline { display: flex; min-width: 0; }
 .o-cut-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .o-cut-at { flex-shrink: 0; white-space: pre; }
+
+/* Orders keeps one named deadline in reach on a narrow screen; the same rows make up the wide rail. */
+.o-cut-more {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  width: 100%; min-height: 44px; padding: 0.3rem 0; border: 0; border-bottom: 1px solid var(--line);
+  background: transparent; color: var(--ink); font: 600 0.875rem var(--body); text-align: left; cursor: pointer;
+}
+.o-cut-more::after { content: '+'; }
+.o-cut-more[aria-expanded="true"]::after { content: '−'; }
+@media (max-width: 999px) {
+  .o-cut-more[aria-expanded="false"] + .o-cut-rest { display: none; }
+  .o-cut-body { padding-block: 0.25rem; }
+  .o-cut-body li.o-cut-row { padding-block: 0.15rem; }
+  .o-cut-body .cut-how { margin-bottom: 0.2rem; }
+  .o-cut-row .o-cut-action { width: clamp(5.25rem, 30vw, 7rem); overflow-wrap: anywhere; }
+}
+@media (min-width: 1000px) {
+  .o-page:has(> .o-cut-fold) {
+    display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(330px, 1fr);
+    column-gap: 1.5rem; align-items: start;
+  }
+  .o-page:has(> .o-cut-fold) > .nb-ph { grid-column: 1 / -1; }
+  .o-page > .o-work { grid-column: 1; grid-row: 2; min-width: 0; }
+  .o-page > .o-cut-fold { grid-column: 2; grid-row: 2; }
+  .o-page:has(> .o-cut-fold) .o-cols:has(> .o-ordered) { display: block; }
+  .o-cut-more { display: none; }
+}
 
 .o-requests .nb-roll { display: inline-block; white-space: nowrap; }
 
@@ -5769,7 +6367,10 @@ html:has(.tm-focus-page) {
 .rec-wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
 .rec-wrap.has-day .rec-month { display: none; }
 .rec-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
-.rec-acts { display: flex; flex-wrap: wrap; gap: .5rem; }
+.rec-month-nav, .rec-acts { display: flex; flex-wrap: wrap; gap: .5rem; }
+.rec-acts .chip:disabled { color: var(--muted); background: var(--surface-reference); border-color: var(--line); cursor: not-allowed; }
+.rec-month-nav { align-items: center; }
+.rec-month-nav h4 { margin: 0; }
 .rec-days { list-style: none; margin: .3rem 0 0; padding: 0; }
 .rec-dayrow { display: grid; grid-template-columns: 4.2rem minmax(0, 1fr) 1rem; gap: .5rem; align-items: center; width: 100%; min-height: 56px; padding: .45rem .5rem; border: 0; border-bottom: 1px solid var(--line); background: none; text-align: left; font: 500 .875rem/1.35 var(--body); color: var(--ink); cursor: pointer; }
 .rec-dayrow .rec-d b { font: 700 1rem var(--display); }
@@ -5860,7 +6461,7 @@ html:has(.tm-focus-page) {
 .tm-tlsvc-head { display: flex; flex-wrap: wrap; align-items: center; column-gap: .6rem; }
 .tm-tlsvc-head b { font: 700 1rem/1.2 var(--display); overflow-wrap: break-word; }
 .tm-notebook.tm-focus-page .tm-tloff { display: inline-flex; align-items: center; min-height: 44px; padding: 0; font-size: .8125rem; color: var(--ink); text-align: left; white-space: normal; text-decoration: underline; }
-.tm-notebook.tm-focus-page .tm-tloff.is-armed { color: var(--bad-ink); font-weight: 700; }
+.tm-notebook.tm-focus-page .tm-tloff.lk-del { padding: 0 .4rem; color: var(--del-ink); text-decoration: none; }   /* armed: the shared destructive look (the consistency sweep, step 3, 20 Nov 2026) */
 .tm-tlhint { display: block; color: var(--muted); font-size: .8125rem; line-height: 1.3; }
 .tm-notebook .tm-tlsvc .tm-tlsvc-more .tm-pick { display: inline-flex; flex: none; width: auto; max-width: 100%; margin: 0; }
 .tm-notebook.tm-focus-page .tm-tlsvc .tm-tlsvc-more :is(select, .ux-picker-trigger) { width: auto; max-width: 100%; min-height: 44px; }
@@ -5890,3 +6491,21 @@ html:has(.tm-focus-page) {
   .tm-tlsvc > .tm-tlsvc-sec { flex: 0 0 12rem; }
   .tm-tlsvc > .tm-tlsvc-more { margin-left: auto; }
 }
+[data-lv="people"] .ux-column-filters:empty, [data-lv="people"] .ux-active-filters:empty { display: none; }
+.pp-folds { display: flex; flex-wrap: wrap; gap: 0 1.4rem; margin-top: 0.6rem; }
+.pp-folds > * { flex: 1 1 18rem; min-width: 0; }
+
+/* ---------- one destructive look (head chef, 20 Nov 2026, the consistency sweep, step 3) ----------
+   .lk-del: red words and a red outline on every button that removes, deletes or discards (Remove, Delete, Discard,
+   Throw away, Drop, Forget), and on every armed "Tap again" (armed() in js/prep.js and the pages that share it add it
+   while the button waits for its second tap). Discard is never the orange main button: Keep working is. On paper the
+   red is --bad-ink; a charcoal bar sets --del-ink to --bad-on-dark. The words always say what goes, never colour alone.
+   A choosing chip keeps its round corners; every other button has 8 px. Placed last so a page's quiet-link look gives way. */
+:is(.btn, .nb-addbtn, .p-x, .p-link, .linkish, .nb-x, .wm-a, .sheet-o, .chip, .dw-dk).lk-del { color: var(--del-ink); border: 1.5px solid var(--del-ink); text-decoration: none; }
+:is(.btn, .nb-addbtn, .p-x, .p-link, .linkish, .nb-x, .sheet-o).lk-del { border-radius: var(--r-act); }
+:is(.btn, .nb-addbtn).lk-del, .chip.lk-del[aria-pressed="true"] { background: var(--paper); }
+:is(.p-x, .p-link, .linkish, .nb-x).lk-del { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; }
+:is(.p-link, .linkish).lk-del { padding: 0 .6rem; }   /* the quiet links had no room inside; .p-x and .nb-x keep theirs, so a row does not grow */
+.sheet-o.lk-del { justify-content: center; margin-top: 6px; padding-left: 12px; padding-right: 12px; }
+.fe-rows .fn-card-actions button.lk-del { border: 1.5px solid var(--del-ink); text-decoration: none; }
+.dw-ctx { --del-ink: var(--bad-on-dark); }

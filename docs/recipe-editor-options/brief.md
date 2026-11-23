@@ -119,6 +119,16 @@ The [Drawings chapter](../images/recipe-editor-drawings-desktop.png) ([phone](..
 | --- | --- |
 | ![The studio on a phone](../images/recipe-editor-studio-phone.png) | ![The studio on a laptop](../images/recipe-editor-studio-desktop.png) |
 
+## Ingredient details beside the list (22 November 2026)
+
+The head chef approved building the improvements from the matched Kitchen Book captures. The recipe keeps its existing chapter, amount and name boxes, ingredient details and Save. At 1150 px and wider the arrow opens the details beside the ingredient list. The original Note, Recipe link, allergen chips and move or remove actions use the same draft. Close goes back to the arrow. When the window gets narrower, the same open details return to the row and keep the typed value and selected text.
+
+At phone and tablet widths the original fields stay inline. Putting the Note and Recipe link labels next to their fields brings both fields above Save in the 390 px sample. The full allergen list remains reachable by scrolling.
+
+The before and after browser sample used the actual Chicken Burger editor and sample session. The expanded desktop row went from 556 to 86 px with the same ten allergen names. Inline spacing saved 61 px on the phone and 80 px on the tablet. These are measurements of the approved captures. The implementation keeps this layout in the app renderer. It uses one shared detail form, one draft and the existing save path. It adds no data reads or writes.
+
+The desktop panel ends above the actual Save dock. Scrolling only the panel reaches Move down and Remove while Save stays available. The browser check reproduces the earlier overlap at 1280 × 800 and verifies both actions at that size and at 1280 × 650.
+
 ## Every capability stays
 
 | Capability | A | B |

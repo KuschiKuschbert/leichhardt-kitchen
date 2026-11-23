@@ -1,5 +1,8 @@
 // Private kitchen access, 25 October 2026. See docs/private-kitchen-access.md.
 // Template only: publish with KITCHEN_PIN and OWNER_EMAIL filled from existing deployment secrets.
+// Two admins at a venue (19 Nov 2026, docs/venues.md): PLATFORM_EMAIL and PLATFORM_ID are the platform owner's Google
+// email and his own profile at this venue, filled from the venue's environment. At Leichhardt the owner and the platform
+// owner are one person: PLATFORM_EMAIL is OWNER_EMAIL and PLATFORM_ID is empty, so every platform line below is off.
 // Current recipe assets are public; operational data requires a personal session or verified admin.
 // login/roster contains only the metadata needed to select a name and enter its PIN.
 rules_version = '2';
@@ -15,6 +18,16 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous';
     }
     function isAdmin() { return deviceAdmin(); }
+    // The platform owner (19 Nov 2026, docs/venues.md): admin at every venue through his own profile there, PLATFORM_ID,
+    // which the venue's admin can neither change, lock out nor reset. Empty at Leichhardt, where he is the owner.
+    function platformIdentity() {
+      return request.auth != null && request.auth.token.get('email', '') == 'PLATFORM_EMAIL'
+        && request.auth.token.get('email_verified', false) == true;
+    }
+    function platformPerson() { return 'PLATFORM_ID'; }
+    function platformAdmin() { return platformPerson() != '' && deviceAdmin() && get(sessDoc()).data.by == platformPerson(); }
+    // A write that leaves the platform owner's profile as it was, or the platform owner writing himself.
+    function platformSafe() { return platformPerson() == '' || platformAdmin(); }
     // Kitchen data needs a live personal session. Anonymous Firebase auth alone is not a staff login.
     function functionOnly(id) { return id in cfg().get('fnOnlyIds', []); }
     function kitchenRead() { return isAdmin() || (sessOk(reader()) && !functionOnly(reader())); }
@@ -32,7 +45,9 @@ service cloud.firestore {
       // Minimal names and permission ids for the PIN screen, never kitchen settings or operational data.
       allow get: if request.auth != null;
       allow list: if false;
-      allow write: if isAdmin() || ownerRosterBootstrap() || (staff() && sousBy()
+      allow write: if (isAdmin() && (platformSafe() || (platformPerson() in request.resource.data.get('staffIds', []))
+          == (platformPerson() in getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data.get('staffIds', []))))
+        || ownerRosterBootstrap() || (staff() && sousBy()
         && request.resource.data.keys().hasOnly(['people', 'staffIds', 'sousIds', 'headId', 'fnIds', 'fnOnlyIds', 'by'])
         && request.resource.data.people == getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data.people
         && request.resource.data.staffIds == getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data.staffIds
@@ -95,7 +110,7 @@ service cloud.firestore {
       let c = cfg();
       // Shape and exact 04:00 cap were verified at issuance. Check the mutable authority and session binding here;
       // repeating the entire writer validator in every nested operational rule exceeds the expression budget.
-      return s.v == 2 && s.by != '' && s.by == c.get('headId', '')
+      return s.v == 2 && s.by != '' && (s.by == c.get('headId', '') || s.by == platformPerson())
         && s.exp > request.time.toMillis() && s.by in c.get('staffIds', []) && !(s.by in c.get('fnOnlyIds', []))
         && s.pinAt == get(setDoc(s.by)).data.at
         && matchingAdminGrant(get(adminDeviceDoc(request.auth.uid)).data, s);
@@ -148,6 +163,21 @@ service cloud.firestore {
         && d.word is string && d.word.matches('[a-z]{2,40}');
     }
     match /kitchens/KITCHEN_PIN/config/main {
+      // Nobody but the platform owner changes what his profile may do: on every list, head chef or not, and his PIN set-up
+      // window (opening it is how a PIN is reset). Off at Leichhardt (platformPerson() is empty). A write that changes none
+      // of those fields passes at once, so a long admin write stays inside the rules' expression budget.
+      function platformKept() {
+        let p = platformPerson();
+        let d = request.resource.data;
+        let o = resource.data;
+        return p == '' || !d.diff(o).affectedKeys().hasAny(['staffIds', 'sousIds', 'pingIds', 'fnIds', 'fnOnlyIds', 'addIds', 'tickIds', 'delIds', 'headId', 'pinOpen'])
+          || platformAdmin() || ((p in d.get('staffIds', [])) == (p in o.get('staffIds', []))
+          && (p in d.get('sousIds', [])) == (p in o.get('sousIds', [])) && (p in d.get('pingIds', [])) == (p in o.get('pingIds', []))
+          && (p in d.get('fnIds', [])) == (p in o.get('fnIds', [])) && (p in d.get('fnOnlyIds', [])) == (p in o.get('fnOnlyIds', []))
+          && (p in d.get('addIds', [])) == (p in o.get('addIds', [])) && (p in d.get('tickIds', [])) == (p in o.get('tickIds', []))
+          && (p in d.get('delIds', [])) == (p in o.get('delIds', [])) && (d.get('headId', '') == p) == (o.get('headId', '') == p)
+          && d.get('pinOpen', {}).get(p, 0) == o.get('pinOpen', {}).get(p, 0));
+      }
       function ownerBootstrap() {
         let d = request.resource.data;
         return ownerIdentity() && resource.data.get('headId', '') == ''
@@ -180,7 +210,7 @@ service cloud.firestore {
       function ownerHeadRecovery() {
         let head = resource.data.get('headId', '');
         let d = request.resource.data;
-        return ownerFresh() && head != ''
+        return ownerFresh() && head != '' && head != platformPerson()
           && d.diff(resource.data).affectedKeys().hasOnly(['pinOpen', 'updated', 'updatedBy', 'by'])
           && d.get('pinOpen', {}) is map && d.pinOpen.size() <= 80
           && d.pinOpen.diff(resource.data.get('pinOpen', {})).affectedKeys().hasOnly([head])
@@ -221,13 +251,15 @@ service cloud.firestore {
       // A sous chef (own PIN, no Google sign-in) may only change the people list and staffIds (who may set a PIN),
       // and only if listed in sousIds. sousIds and pingIds can only be changed by the head chef: the admin panel
       // shows the head chef any role or Pings tick a sous chef changed in the people list before it takes effect.
-      allow update: if ownerBootstrap() || ownerHeadRecovery() || (isAdmin() && proofConfigKept() && capabilitiesKept()) || (staff()
+      allow update: if (ownerBootstrap() && platformKept()) || ownerHeadRecovery()
+        || (isAdmin() && proofConfigKept() && capabilitiesKept() && platformKept()) || (staff()
         && request.resource.data.by in resource.data.get('sousIds', [])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['people', 'staffIds', 'pinOpen', 'updated', 'updatedBy', 'by'])
         && request.resource.data.people is list && request.resource.data.people.size() <= 80
         && request.resource.data.get('staffIds', []) is list && request.resource.data.get('staffIds', []).size() <= 80
         && keepsChefs()
         && request.resource.data.get('pinOpen', {}) is map && request.resource.data.get('pinOpen', {}).size() <= 80
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['people', 'staffIds', 'pinOpen', 'updated', 'updatedBy', 'by']))
+        && platformKept())
         // the head chef or a sous chef changed a line on a past day: they stamp pastEdit (p prep, o orders) with the time,
         // so the other phones read their saved past days again (22 Oct 2026). Or they saved a shift ping for today (n), so
         // the other phones read the pings again. x is the head chef's Google account removing or putting back a past
@@ -261,10 +293,10 @@ service cloud.firestore {
           && request.resource.data.pastEdit.x is number
           && request.resource.data.pastEdit.x >= request.time.toMillis() - 300000
           && request.resource.data.pastEdit.x <= request.time.toMillis() + 60000);
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() && platformSafe();
     }
     match /kitchens/KITCHEN_PIN/config/admins {
-      allow get: if isAdmin() || ownerIdentity();
+      allow get: if isAdmin() || ownerIdentity() || platformIdentity();
       allow list, write: if isAdmin();
     }
     // Roster name links (head chef, 14 Nov 2026; docs/roster-import-options/brief.md): which person in the book a name
@@ -280,22 +312,27 @@ service cloud.firestore {
     match /kitchens/KITCHEN_PIN/adminDevices/{uid} {
       // The primary device can inspect or discard only its own grant. A remembered Google identity may issue a
       // grant only for a live daily head-chef PIN session, with exact session identity and expiry.
-      allow get: if ownerIdentity() || (request.auth != null && request.auth.uid == uid);
+      // The grant's person: the venue owner's Google grants the head chef's session, the platform owner's Google his own
+      // profile's session (19 Nov 2026). Each needs that person's live daily PIN session on this device.
+      function grantFor(uid, id) {
+        let s = get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/sessions/$(uid)).data;
+        return id != '' && s.by == id && onList(id) && exists(setDoc(id))
+          && s.pinAt == get(setDoc(id)).data.at && s.exp > request.time.toMillis()
+          && matchingAdminGrant(request.resource.data, s);
+      }
+      allow get: if ownerIdentity() || platformIdentity() || (request.auth != null && request.auth.uid == uid);
       allow list: if false;
-      allow create, update: if ownerIdentity()
+      allow create, update: if (ownerIdentity() || platformIdentity())
         && request.resource.data.keys().hasOnly(['by', 'pinAt', 'issuedAt', 'exp', 'googleUid', 'at', 'v'])
         && request.resource.data.keys().hasAll(['by', 'pinAt', 'issuedAt', 'exp', 'googleUid', 'at', 'v'])
         && request.resource.data.googleUid == request.auth.uid && request.resource.data.at == request.time
         && request.resource.data.issuedAt <= request.time
         && exists(/databases/$(database)/documents/kitchens/KITCHEN_PIN/sessions/$(uid))
         && dailySession(get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/sessions/$(uid)).data)
-        && get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/sessions/$(uid)).data.by == cfg().get('headId', '')
-        && cfg().get('headId', '') != '' && onList(cfg().headId)
-        && exists(setDoc(cfg().headId))
-        && get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/sessions/$(uid)).data.pinAt == get(setDoc(cfg().headId)).data.at
-        && get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/sessions/$(uid)).data.exp > request.time.toMillis()
-        && matchingAdminGrant(request.resource.data, get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/sessions/$(uid)).data);
-      allow delete: if ownerIdentity() || (request.auth != null && request.auth.uid == uid);
+        && ((ownerIdentity() && grantFor(uid, cfg().get('headId', ''))) || (platformIdentity() && grantFor(uid, platformPerson())));
+      // The venue owner cannot take away the platform owner's grant; at Leichhardt they are one person.
+      allow delete: if platformIdentity() || (request.auth != null && request.auth.uid == uid)
+        || (ownerIdentity() && (platformPerson() == '' || resource == null || resource.data.get('by', '') != platformPerson()));
     }
     function lineOk(max) {
       return request.resource.data.text is string && request.resource.data.text.size() <= max
@@ -488,12 +525,24 @@ service cloud.firestore {
             && (!changed.hasAny(removals) || capability(d.by, 'del') || ownAddUndo())
             && (changed.hasOnly(ticks.concat(removals).concat(['by'])) || capability(d.by, 'add'));
       }
+      // Lines planned for a later day (head chef, 17 Nov 2026: admin only; docs/prep-ahead-options/brief.md). Before
+      // nearDay()'s window opens (the day after tomorrow and later), a line marked plan, before or after the write, is
+      // written only by the admin. Checked on ordinary writes only (the admin and a function booking's own verified
+      // lines take their own paths, so the largest function batches stay inside the expression budget). Unmarked lines
+      // are as before; on the eve, the line's own day and past days the usual capabilities hold.
+      function laterDay(day) {
+        return day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+          && request.time < timestamp.date(int(day.split('-')[0]), int(day.split('-')[1]), int(day.split('-')[2])) - duration.value(2055, 'm');
+      }
+      function planKept(day) {
+        return (request.resource.data.get('plan', '') == '' && (resource == null || resource.data.get('plan', '') == '')) || !laterDay(day);
+      }
       // Evaluate capability eligibility before the session chain, so a function exception does not spend that chain twice.
       // Function batches retain their own narrow booking revision authority; ordinary permitted lines add no booking lookup.
       function prepLineWrite(day, id, creating) {
         let admin = isAdmin();
         let priority = statusEffectFirst(creating);
-        return (admin || (priority && functionLine(day, id, true)) || (prepCapabilities(creating) && staff()) || (!priority && request.resource.data.get('fn', '') != '' && functionLine(day, id, true))) && lineOk(160) && lineWho(day, admin) && prepAttribution(admin)
+        return (admin || (priority && functionLine(day, id, true)) || (prepCapabilities(creating) && staff() && planKept(day)) || (!priority && request.resource.data.get('fn', '') != '' && functionLine(day, id, true))) && lineOk(160) && lineWho(day, admin) && prepAttribution(admin)
           && (creating ? proofLineCreate(admin) : tickKept(admin) && proofLineKept('prep', day, id, admin) && onStampOk());
       }
       allow read: if kitchenRead();
@@ -956,6 +1005,20 @@ service cloud.firestore {
         allow delete: if isAdmin();
       }
     }
+    // The tutorial videos' YouTube links (#/guides, head chef 19 Nov 2026, docs/tutorial-videos.md). Two records only:
+    // staff (the videos of the pages everyone uses), read by every kitchen login, and chefs (the chef panel, Today's team,
+    // the supplier order, the recipe editor and the admin panel), read only by the head chef's Google account or a phone
+    // whose PIN session is a chef's. Only the head chef's Google account writes them, as links: { <video>: { w, t } }.
+    match /kitchens/KITCHEN_PIN/tutorials/{doc} {
+      function tutOk() {
+        return request.resource.data.keys().hasOnly(['links', 'at', 'by'])
+          && request.resource.data.links is map && request.resource.data.links.size() <= 30
+          && request.resource.data.get('at', 0) is int;
+      }
+      allow read: if (doc == 'staff' && kitchenRead()) || (doc == 'chefs' && (isAdmin() || (kitchenRead() && chefId(reader()))));
+      allow create, update: if doc in ['staff', 'chefs'] && isAdmin() && tutOk();
+      allow delete: if false;
+    }
     // The head chef's book (#/manage, 21 Oct 2026): recipes changed or added in the book itself, laid over js/data.js.
     // Everyone with the kitchen PIN reads them. Only the head chef writes them: with their Google account while nobody
     // else is signed in with a PIN on that device, or with their own PIN as the person in config/main headId (which only
@@ -1293,12 +1356,14 @@ service cloud.firestore {
     }
     match /kitchens/KITCHEN_PIN/fools/{sid} {
       // April Fools (17 Nov 2026, docs/april-fools.md): a person's joke has played this year, so it plays once a year per
-      // person on any device (their phone and the shared display). fools/<YYYY-04-01>_<staff id>, { day, at, by }.
+      // person on any device (their phone and the shared display). fools/<YYYY-04-01>_<staff id>, { day, at, by, joke }.
+      // joke: which of the 24 they got, 'A1' to 'L2' (18 Nov 2026, so a later year can avoid it); optional.
       // Written by that person on their own PIN session when their joke starts; never changed or deleted. Read by that
       // person only (one read, their first Home view of 1 April on a device) and the verified admin.
       function foolsOk(sid) {
         let d = request.resource.data;
-        return d.keys().hasOnly(['day', 'at', 'by'])
+        return d.keys().hasOnly(['day', 'at', 'by', 'joke'])
+          && (!('joke' in d) || (d.joke is string && d.joke.matches('[A-L][12]')))
           && d.day is string && d.day.matches('[0-9]{4}-04-01')
           && d.at is int && d.at > 0 && d.at <= request.time.toMillis() + 300000
           && sid == d.day + '_' + d.by;
@@ -1877,6 +1942,28 @@ service cloud.firestore {
           && request.resource.data.day == resource.data.day && request.resource.data.cutoffId == resource.data.cutoffId && supLinkPair()));
       allow delete: if false;
     }
+    // The weekly sales report and confirmed mappings share one private revision. The supplier client validates
+    // every row and component before saving and on read. Rules enforce access, the bounded envelope and version.
+    match /kitchens/KITCHEN_PIN/suppliersales/{id} {
+      function salesShape() {
+        let d = request.resource.data;
+        let report = d.report;
+        return d.keys().hasOnly(['v', 'report', 'links', 'at', 'by'])
+          && d.v is int && d.v > 0 && d.v <= 9007199254740991
+          && d.at is int && d.at >= 0 && d.at <= 9007199254740991
+          && d.by is string && d.by.size() > 0 && d.by.size() <= 80
+          && report is map && report.keys().hasOnly(['start', 'end', 'rows'])
+          && supDay(report.start) && supDay(report.end)
+          && report.rows is list && report.rows.size() > 0 && report.rows.size() <= 1000
+          && d.links is list && d.links.size() <= 1000;
+      }
+      allow get: if id == 'weekly' && supRead();
+      // The admin may also restore the exact saved revision and original writer to a new PIN.
+      allow create: if id == 'weekly' && (isAdmin() || (headWrite() && request.resource.data.v == 1)) && salesShape();
+      allow update: if id == 'weekly' && (isAdmin() || headWrite()) && salesShape()
+        && ((isAdmin() && request.resource.data == resource.data)
+          || (nextVersion() && request.resource.data.at > resource.data.at));
+    }
     match /kitchens/KITCHEN_PIN/drinks/{id} {
       // pushsent (what the server has sent) has no rule: only the server reads and writes it.
       // The drinks run: each person's usual coffee or drink, one record per person (the record id is their id).
@@ -1947,7 +2034,7 @@ service cloud.firestore {
       allow read: if isAdmin();
       // a first PIN only while that person's set-up window is open (config/main pinOpen, 22 Oct 2026): opened when they
       // are added (7 days) or by Reset PIN (30 minutes), so nobody holding the kitchen PIN can take a name by setting it first
-      allow create: if isAdmin() || (ownerFresh() && id == setupHead()
+      allow create: if (isAdmin() && (platformSafe() || id != platformPerson())) || (ownerFresh() && id == setupHead() && id != platformPerson()
         && request.resource.data.keys().hasOnly(['hash', 'setAt', 'name'])
         && request.resource.data.hash is string && request.resource.data.hash.size() == 64
         && request.resource.data.get('name', '') is string && request.resource.data.get('name', '').size() <= 40
@@ -1957,13 +2044,13 @@ service cloud.firestore {
         && id in cfg().get('staffIds', [])
         && request.time.toMillis() < cfg().get('pinOpen', {}).get(id, 0)
         && getAfter(setDoc(id)).data.at is number);
-      allow update: if isAdmin();
-      allow delete: if isAdmin() || (ownerFresh() && id == cfg().get('headId', ''));
+      allow update: if isAdmin() && (platformSafe() || id != platformPerson());
+      allow delete: if (isAdmin() && (platformSafe() || id != platformPerson())) || (ownerFresh() && id == cfg().get('headId', '') && id != platformPerson());
     }
     match /kitchens/KITCHEN_PIN/pinset/{id} {
       allow get: if isAdmin() || (request.auth != null && onList(id));
       allow list: if isAdmin();
-      allow create: if isAdmin() || (ownerFresh() && id == setupHead()
+      allow create: if (isAdmin() && (platformSafe() || id != platformPerson())) || (ownerFresh() && id == setupHead() && id != platformPerson()
         && request.resource.data.keys().hasOnly(['at', 'name']) && request.resource.data.at is number
         && request.resource.data.get('name', '') is string && request.resource.data.get('name', '').size() <= 40
         && !exists(pinDoc(id)) && getAfter(pinDoc(id)).data.hash is string)
@@ -1972,8 +2059,8 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['at', 'name']) && request.resource.data.at is number
         && request.resource.data.get('name', '') is string && request.resource.data.get('name', '').size() <= 40
         && !exists(pinDoc(id)) && getAfter(pinDoc(id)).data.hash is string);
-      allow update: if isAdmin();
-      allow delete: if isAdmin() || (ownerFresh() && id == cfg().get('headId', ''));
+      allow update: if isAdmin() && (platformSafe() || id != platformPerson());
+      allow delete: if (isAdmin() && (platformSafe() || id != platformPerson())) || (ownerFresh() && id == cfg().get('headId', '') && id != platformPerson());
     }
     // A PIN try (22 Oct 2026): the phone writes the try first, on its own, so a wrong one still counts. One try per person
     // every 20 seconds. Nobody reads it: only the session rule below compares it with the stored hash.
@@ -2012,7 +2099,8 @@ service cloud.firestore {
       }
       allow read: if request.auth != null && request.auth.uid == uid;
       allow create, update: if deviceSessionWrite(uid);
-      allow delete: if (request.auth != null && request.auth.uid == uid) || isAdmin();
+      allow delete: if (request.auth != null && request.auth.uid == uid)
+        || (isAdmin() && (platformSafe() || resource == null || resource.data.get('by', '') != platformPerson()));
     }
     // The older PIN proof, switched off in phase 2 (22 Oct 2026): nothing writes it any more, and the head chef's Google
     // account may clear the old records.

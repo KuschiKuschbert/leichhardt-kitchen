@@ -29,7 +29,7 @@ extra[fsKey(['summary', 'transfers'])] = { day: today, from: yest, to: yest, at:
     const body = await txt(p, '.o-page') || '';
     ok(/Transfers/.test(await txt(p, '#rtitle') || '') && /Brioche buns/.test(body) && !/Milk/.test(body), who + ': the page shows today\'s Brioche buns and not yesterday\'s Milk');
     // a loan card says where it went and who came for it (redesign step 4, 8 Nov 2026)
-    ok(/Lent to Riviera/.test(body) && /Jess came for it/.test(body) && /1 out/.test(await txt(p, '.nb-date') || ''), who + ': a loan card says where it went and who came for it, the header counts it');
+    ok(/Lent to Riviera/.test(body) && /Jess came for it/.test(body) && /1 lent today/.test(await txt(p, '.nb-date') || ''), who + ': a loan card says where it went and who came for it, the header counts it');
     ok(!(await p.$('[data-p="tr-del"]')) && !(await p.$('.w-past')), who + ': no Remove and no admin link');
     // 3 Nov 2026 (work pages redesign A): Log a transfer sits above the lists and opens the form as a sheet
     ok(await L.docked(p, '.tr-logbtn') && await p.evaluate(() => !!document.querySelector('.tr-sheet #tr-venue')), who + ': Log a transfer is docked above the tab bar and opens the form');
@@ -93,7 +93,7 @@ extra[fsKey(['summary', 'transfers'])] = { day: today, from: yest, to: yest, at:
     const lm = await saved(p, 'Lemons');
     ok(lm.length === 1 && lm[0].dir === 'in' && lm[0].venue === 'Grand Hotel' && lm[0].person === '' && lm[0].amount === 12 && lm[0].unit === 'pieces', who + ': we took 12 pieces of Lemons from Grand Hotel (' + JSON.stringify(lm[0]) + ')');
     await L.waitFor(p, () => /Borrowed from Grand Hotel/.test(document.querySelector('.o-page').textContent));
-    ok(/1 in/.test(await txt(p, '.nb-date') || ''), who + ': the header counts what came in');
+    ok(/1 borrowed today/.test(await txt(p, '.nb-date') || ''), who + ': the header counts what came in');
 
     // a typed note goes with the line
     await p.click('[data-p="tr-note-open"]'); await L.settle(p, 150);

@@ -37,6 +37,39 @@ chef's verified Google account and the existing shared-device chef gate.
 - A failed history read shows an error and retry. It never produces a successful
   empty report, a cached empty range or an apparently complete CSV.
 
+## Saving a review
+
+The Wastage sheet and Admin Daily reviews keep independent drafts for the person
+and date on each form. Save says Checking while it reads the current review from
+the server. If a different review is there, the form names who saved it and
+offers Replace review for that version. An untouched field takes its value from
+the review shown. A refused or timed-out check keeps the draft beside Try again.
+An acknowledged write says Saved. The Wastage sheet then returns to its opening
+action.
+
+The Full SDK transaction uses the existing `W()` recorder and session check.
+Each attempt reads one day document and only writes when its five review fields
+still match what the editor saw or explicitly agreed to replace. The SDK checks
+that read at commit. If another edit lands first, a retry reads again against the
+same approval. Changing the date, recorder, session or active form before that
+check ends prevents staging a write. A failed transaction requires an explicit
+retry. Drafts live in the open tab and are kept for same-person lock recovery.
+
+The existing review document and access rules accept this transaction. A
+browser running an older app can still issue its existing unconditional write
+after a new client has finished. The new client detects changes that land
+before its own commit. Checking an older tab after a release and keeping both
+venues' deployed client files in step remain part of the app release. A client
+revert restores the earlier save behaviour, and saved reviews remain readable.
+
+## Reopen an earlier draft
+
+A chef who began a review before Queensland midnight can resume their own dated draft inside today's review sheet. Back to today returns to today's fields in the same sheet. Each meaningful unfinished date keeps its own words and the saved review shown when it was opened. Closing keeps them in the open tab. The earlier date stays visible during the check, conflict, retry and acknowledged save. [Chosen layout and comparisons](wastage-overnight-options/brief.md)
+
+The Wastage entries and totals still follow today. The resume action is scoped to this person's retained review drafts. Admin Daily reviews keeps its own draft and history controls. The same person can recover their work after the daily PIN lock while their review access is current. The book's deliberate handover and update guard apply to all retained drafts and pending writes.
+
+An acknowledged review uses the existing next Prep note read on the saving device. Older read results cannot replace that acknowledgement's note or cache. Other devices use their next normal daily read, including when they already loaded the day's note before the correction.
+
 ## Storage and reads
 
 Keep waste/<date>/lines/<id> and waste/<date> authoritative. No migration, new
@@ -85,3 +118,91 @@ wastage and reviews need no rollback; older clients ignore the added stamp.
 
 Official query guidance checked 25 October 2026:
 https://firebase.google.com/docs/firestore/security/rules-query
+
+## History entries first (22 November 2026)
+
+In Admin › Reports › Wastage, the full-width History list comes before the range
+totals. The period, exact dates, Refresh, Export CSV, view choices and existing
+report-wide filters are above the results. **Search report** affects History,
+Summary, totals and CSV. **Filter list** and the list's column filters narrow the displayed results.
+The list search has the accessible name **Filter displayed entries**. The existing sort choices, row actions and
+Show more controls stay with the list. Summary keeps the totals with its dates.
+Daily reviews covers the whole selected range and keeps its independent draft,
+Save and Cancel edits.
+
+### Council and choice
+
+**Verdict: Build smaller (5 of 5).** The 45-entry synthetic audit fixture put
+the first History row at y1209 on a 390×844 phone, y1321 at 768×900 and y1230 on a
+1280×800 desktop. The opening viewport showed zero complete entries at each
+size. The council asked for a shorter path to History entries with the dated
+export and report scope intact. The existing Transfers report jumps were
+verified separately. This was a role-based review using synthetic records.
+
+| Design | Structure | Trade-off |
+| --- | --- | --- |
+| A | Keep one History report and put its totals below the entries. Tighten the gaps around the existing toolbar. | One flow and no extra tap. Totals require scrolling under the currently displayed rows. |
+| B | Separate the main list from a date, filter, totals and export rail on desktop. Put totals under a disclosure on smaller screens. | The rail exposes desktop entries sooner but narrows the table. Smaller screens gain less and require a tap to see totals. |
+| C | Add a focused entry view with separate report and list filter disclosures. | Compact when selected, but adds a tap and can conceal active report-wide filters behind the disclosure. |
+
+| Reviewer | Round 2 rank |
+| --- | --- |
+| Cook | A, C, B |
+| Head chef reviewer | A, B, C |
+| Skeptic | A, B, C |
+| New starter | A, C, B |
+| Keeper | A, B, C |
+| Screen designer | A, C, B |
+
+The owner delegated the choice for this cycle, and all six reviewers ranked A
+first. A puts everyday entries first with the existing search, table and
+navigation. This applies the useful Things 3 and Linear principles of a
+full-width working list and direct access. For the all-three combination, keep
+A's placement and C's precise scope wording in the existing inputs. B's
+context rail and C's extra mode would make controls harder to locate across
+devices. Keep both out of the build. The implemented layout uses the existing paper
+surface, control colours, unit tiles and action targets.
+
+### Implementation and checks
+
+The DOM order puts the list ahead of the named range-total section. Empty list
+filter containers take no space. The list and totals use the original
+`lvHTML()` and `whTotals()` paths. This change adds no reads, writes, storage,
+permissions or release dependency.
+
+Matched captures of the full app on the Firebase stand-in used the same 45
+records, note text and saved review from the audit, plus a synthetic amount
+correction. The positions below give the first record's top relative to the
+opening viewport, before scrolling.
+
+| Viewport | Normal first row, before → after | Extra large first row, before → after |
+| --- | ---: | ---: |
+| 390×844 | 1,209 → 946 px | 1,535 → 1,263 px |
+| 768×900 | 1,321 → 1,131 px | 1,553 → 1,316 px |
+| 1280×800 | 1,230 → 1,041 px | 1,447 → 1,210 px |
+
+The opening view still has zero complete records at those sizes. From the same
+scroll position at the report's start, normal type shows two complete entries
+on the tablet and one on the desktop, up from zero on both.
+
+**Break-it findings in the local synthetic fixture**
+
+- **Reproduced and checked.** The longer placeholder clipped at 320 px in
+  Extra large fallback text, where it needed 212.5 px and had 163 px.
+  **Filter list** retains the longer accessible name. The blank phone search
+  uses the space beside the placeholder, and typed text reserves space for
+  the full Clear target. The History list controls wrap on a phone, and the
+  Reason and Section filters share a row when they fit.
+- **Checked in the click tests.** List search and column facets preserve the
+  report totals and identical CSV bytes. Report search changes the CSV, and
+  custom dates agree with the export name and contents. The expanded action
+  note, changed-from quantity, unit totals, Remove and Put back, saved review
+  and its draft and cancel guard keep their original scope.
+- **Checked in the click tests.** A failed range read shows its error, keeps
+  export disabled and stores no successful empty range. Refresh recovers it.
+  Staff and a shared device without the chef PIN do not query private history.
+- **Trade-off.** History totals require scrolling below the displayed entries.
+  Summary keeps them near the date.
+
+[History click checks](../tests/wastage-history.test.js) ·
+[Admin tile and control checks](../tests/admin-kit.test.js)

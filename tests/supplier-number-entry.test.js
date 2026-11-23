@@ -72,7 +72,7 @@ async function captureCopy(p) {
   await p.reload(); await ready(p);
   await L.waitFor(p, () => /1\.5 \(unit not set\)/.test((document.querySelector('[data-item="t-zero"] .su-last') || {}).textContent || ''), null, 10000);
   await history(p);
-  ok(/0\.5 \(unit not set\)/.test(await p.textContent('.su-disclosure:has([data-su="history"])')), 'history reload accepts number-only records and identifies their unset units');
+  ok(/0\.5 \(unit not set\)/.test(await p.textContent('#su-order-history')), 'history reload accepts number-only records and identifies their unset units');
   await captureCopy(p); await action(p, 'copy-history');
   copied = await p.evaluate(() => window.__copiedOrder);
   ok(copied.includes('1.5 (unit not set) | TEST ZERO PAR ITEM') && !copied.includes('unspecified'), 'copying saved history uses the same clear quantity display as review');

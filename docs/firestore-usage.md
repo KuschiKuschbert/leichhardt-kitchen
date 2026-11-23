@@ -1,8 +1,16 @@
 # Firestore reads and writes: audit, 5 November 2026
 
+## Supplier sales suggestions, 22 November 2026
+
+[Sales suggestions](supplier-sales.md#private-data-and-read-budget) use one direct server read of `suppliersales/weekly` when requested in the authorised Supplier order workspace. The same document holds the latest normalised report and its links. Publishing or editing reads the current revision in a transaction and writes one document when the content changed. An identical retry writes nothing. Review and calculations reuse memory, with zero startup reads, listeners, polling or per-item queries. The existing private backup and PIN copy include the one record. These are expected source costs. Confirm them in the final read-budget check before release.
+
+## Tutorial videos in Guides, 19 November 2026
+
+The Videos group in Guides reads nothing: the videos' titles and steps travel in `js/tutorials.js`. Opening a video guide reads its links once a day per phone and person: `tutorials/staff` (1 read), and `tutorials/chefs` too for a chef or the admin (1 more). About 1 to 2 reads per person on a day they open one, no listener. The admin's links box reads both records from the server when it opens (2 reads); Save writes both in one batch (2 writes). Both records are small (a few kB at most). The moving previews (19 November 2026) are files on the site, not Firestore: no reads.
+
 ## April Fools, 17 November 2026
 
-On 1 April only: one read per person per device (their own `fools/<1 April>_<staff id>`, from the server, on their first Home view that day) and one write per person (when their joke starts). About 20 to 40 reads and 20 writes that day; none on any other day, no listener. The admin panel's April Fools row and its Preview read nothing. `docs/april-fools.md`.
+On 1 April only: one read per person per device (their own `fools/<1 April>_<staff id>`, from the server, on their first Home view that day) and one write per person (when their joke starts, with which joke it was). About 20 to 40 reads and 20 writes that day; none on any other day, no listener. The admin panel's April Fools row and its Preview read nothing. `docs/april-fools.md`.
 
 ## Function sent, lines off, 14 November 2026
 
@@ -39,6 +47,10 @@ Opening or refreshing Cleaning keeps the existing two bounded queries: applicabl
 On 5 November 2026 the database refused every read from 13:00: the free plan's 50,000 reads for the day were used up (they reset at midnight in California, 18:00 kitchen time). The head chef asked what reads and writes what, and how to get the most out of the free plan. This note is the answer: every read and write in `js/`, `sw.js`, `scripts/` and the workflows, with measured costs where they could be measured.
 
 How it was checked. Source review of every Firestore call. The server jobs' own GitHub logs for 4 and 5 November. Page costs measured with the test stand-in, which bills reads the way Firestore does (`tests/fake`), on a month of made-up data the size of this kitchen's (50 prep lines, 20 order lines and 8 wastage lines a day). Nothing was read from the real database, and the Firebase console's usage graph was not seen: the hour-by-hour split below is an estimate. The real rules also read about 4 records (session, PIN, device grant, settings) for each query or live list they let through; the stand-in does not bill those, so real costs are a little higher than measured.
+
+## Prep lines for a later day, 18 November 2026
+
+[Planned lines](prep-ahead-options/brief.md) add no startup read, listener or polling on today's page. Opening a later day keeps the existing listener on that day while it is on screen (1 read when it is empty, 1 per line). A day nobody opened that held planned lines makes the next rollover read every day back to the last written one (at most 7 day reads, only after such a day). The nightly backup reads the next 28 days of prep lines (about 28 reads a night while they are empty). Since 19 Nov 2026, from the evening (`nightNow()`), opening the add sheet on today's list reads tomorrow's planned lines once (1 read a line, 1 when none), kept 10 minutes in memory, for the night list's double-up check.
 
 ## Prep standards addition, 8 November 2026
 
@@ -98,7 +110,18 @@ What the head chef does (a session cannot: it needs the billing account):
 2. Google Cloud console, Billing, Budgets and alerts, Create budget for this project only: US$5 a month (or the same in the account's currency), alerts at 50%, 90% and 100% to the head chef's email. A budget alert warns; it does not stop spending, so a runaway read loop shows as an email, not an outage.
 3. Tell the next session it is on. Nothing in the book changes for the switch itself: the free amounts still apply each day, and the read budget test (`tests/read-budget.test.js`) keeps the reads small.
 
-What follows, each its own pull request once the plan is on: Google's scheduler runs the cut-off push job (7.3), so pushes come on time; Firestore's own scheduled backups replace the read-heavy nightly backup, keeping a weekly encrypted copy (4.3); later, the twice-daily check of the real read count (6.1). Until 7.3 is built the cut-off push offer says a push can come late (`pushHTML()` in `js/prep.js`, 13 Nov 2026).
+Turned on early on 14 November 2026 (kitchen time). On 20 November 2026 the head chef set up both follow-ups in Cloud Shell: Google's scheduler starts the cut-off push job every 10 minutes (7.3), and Firestore's own backups keep Leichhardt's whole database every day for 7 days and every Sunday for 14 weeks (4.3, `docs/backup-recovery.md`). The same day the head chef chose to keep the encrypted GitHub backup nightly for every venue: a venue on the free plan cannot have Google's backups ([venues](venues.md)), and with Plan C on its reads cost cents at most. Later: the twice-daily check of the real read count (6.1). The timer ran every 10 minutes from the start (564 runs by 24 Nov 2026, all passed), so since 24 Nov 2026 the push offer promises a push an hour before each cut-off again (`pushHTML()` in `js/prep.js`).
+
+**The push timer (7.3, 20 Nov 2026).** A Cloud Scheduler job, `cutoff-push`, in the Leichhardt project (region `australia-southeast1`, every 10 minutes, time zone Australia/Brisbane) asks GitHub to run `.github/workflows/cutoff-push.yml` on `main`, which sends for every venue. It signs the request with a fine-grained GitHub token, "Cut-off push timer": this repository only, Actions read and write, made 20 Nov 2026 for one year. GitHub's own 10-minute schedule stays as a fallback; one run at a time (`concurrency`) and `pushsent` keep a push from going twice. The first test run, 20 Nov 2026 08:46, passed. Cloud Scheduler's free allowance covers one job.
+- **Renew the token before 19 Nov 2027**, or the timer stops quietly and pushes come late again. On GitHub: Settings, Developer settings, Fine-grained tokens, Cut-off push timer, Regenerate token. Then in Cloud Shell, the token alone first, then the update:
+  ```
+  read -s -p "Paste the NEW GitHub token, then Enter: " TOKEN; echo
+  gcloud scheduler jobs update http cutoff-push --location=australia-southeast1 --update-headers="Authorization=Bearer $TOKEN" --format=none
+  gcloud scheduler jobs run cutoff-push --location=australia-southeast1
+  unset TOKEN; clear
+  ```
+- **Check it.** `gcloud scheduler jobs describe cutoff-push --location=australia-southeast1 --format="yaml(state,lastAttemptTime,status)"` and `gcloud logging read 'resource.type="cloud_scheduler_job" AND resource.labels.job_id="cutoff-push"' --limit=4 --format="table(timestamp,httpRequest.status,jsonPayload.status)"`. GitHub answers 204 when it worked, 403 when the token lacks Actions write or this repository (the first try on 20 Nov 2026), 401 for a wrong token.
+- **Never print the job without `--format`.** `create`, `update` and a plain `describe` print its headers, the token included. The first setup did, and the token was replaced the same day.
 
 ## The decision: Plan B now, Plan C later (head chef, 5 November 2026)
 
@@ -133,7 +156,7 @@ Saves: reads a day on a normal day. Head chef: changes how the book works for th
 | 3.2 | PIN sign-in as a claim on the account (a server function), so rules read no session records | 5,000 to 10,000 | medium to high, needs pay as you go | Plan C or later |
 | 4.1 | Trim the nightly jobs: delete old analysis without reading it, skip days before the book started, recent learning claims only, one range query for the summaries | about 1,200 now | low | built 7 Nov: the first three (`scripts/analysis.mjs`, `scripts/nightly-learn.mjs`, `scripts/analysis-check.mjs`); the summaries' one range query left out (it needs a collection-group query on `lines` and its index in production, for about 40 reads a night) |
 | 4.2 | Analysis and backup read only changed days, full run on Sundays | 1,700 now, 8,000 by January | medium | built 7 Nov: the analysis reads the last 14 days and the days a fix names, the rest taken as published (`REUSE_DAYS`, `scripts/analysis-check.mjs`); the backup takes the same older days from last night's encrypted file (`PREV_BACKUP`, `scripts/backup-reuse-check.mjs`); every day on Sundays; past wastage fixes name their days too (`wDays`, 7 Nov 2026) |
-| 4.3 | Firestore's own scheduled backups (storage, no reads) replace the read-heavy nightly backup; keep a weekly encrypted copy | 2,500 to 4,000 | medium, head chef, needs pay as you go | Plan C, chosen 13 Nov 2026: next once the plan is on |
+| 4.3 | Firestore's own scheduled backups (storage, no reads) replace the read-heavy nightly backup; keep a weekly encrypted copy | 2,500 to 4,000 | medium, head chef, needs pay as you go | Google's backups on for Leichhardt since 20 Nov 2026 (daily 7 days, Sundays 14 weeks); the encrypted backup stays nightly for every venue (head chef, 20 Nov 2026) |
 | 5.1 | Visits counted once a day; adds and ticks counted nightly | about 300 writes | low | not chosen |
 | 5.2 | Stop indexing free-text fields | stored size down 50 to 70% | medium | later |
 | 5.3 | Keep 13 months of lines, older ones as monthly digests | keeps storage flat | medium, head chef | later |
@@ -143,7 +166,7 @@ Saves: reads a day on a normal day. Head chef: changes how the book works for th
 | 6.3 | The pages say when the reads are used up and when they come back | | | done 5 Nov |
 | 7.1 | Cut-off push schedule off the busy minutes | some missed pushes | low | until Plan C |
 | 7.2 | A free outside timer starts the push job every 10 minutes | most missed pushes | medium (a token outside GitHub) | not chosen |
-| 7.3 | Google's own scheduler runs the push job | all missed pushes | low, needs pay as you go | Plan C, chosen 13 Nov 2026: next once the plan is on |
+| 7.3 | Google's own scheduler runs the push job | all missed pushes | low, needs pay as you go | Running since 20 Nov 2026 (The push timer, above) |
 
 Build order for Plan B: 1.1 and 2.6 (done 5 Nov), then 2.1 with 2.4 (one rules change: the digests and day-named stamps), then 2.2 and 2.3, then 2.7, 5.4 and 6.2, then 4.1 and 4.2. 2.2 and 2.3 measured on the stand-in (`tests/read-budget.test.js`, a week of history with the nightly summaries): a staff phone's first open of the day (prep, orders, wastage, transfers) from 284 reads to 79, and the admin panel's past prep and order lines from 257 reads to 60 (the index and 59 digests). With this kitchen's real numbers (50 prep and 20 order lines a day) that is about 1,200 down to about 90 per phone per first open, and 3,600 down to about 100 per admin open. 2.7 measured on the stand-in with a 40-line day and 12 sections (`tests/live-lists.test.js`): the admin unlock read today's prep list twice (92 reads) and the sections twice (24), because the owner grant on top of the head chef's PIN started every live list again; now once each (46 and 12). A line added under a section on another phone cost every open phone a read; now none, and a reload the same day reads no sections. With this kitchen's numbers (50 lines a day, about 15 sections, the admin device reloaded 10 to 30 times a day and 3 or 4 phones open) that is about 1,500 to 3,000 reads a day. The functions list: asked for again while the Firebase files loaded (an access change and its event, a sign-in), `watch()` started a listener each time and could stop only the last, so on every open two or three listeners read every booking ahead and kept reading every change to one, on every device with the book open. Now one (`tests/live-lists.test.js`: 3 starts and 36 reads for 12 bookings before, 1 and 12 now; a booking changed on another phone 3 reads before, 1 now). Its 15-day bound is left out: the listener starts only on a reload or a new kitchen day, and the function sheet, its print copy, `#/fn/<id>` and Manage functions find a booking in it by id, so a bound needs a second read for those. It saves about 1 read per booking more than 15 days ahead per reload. Look again if the Firebase console shows `functions` among the top readers.
 

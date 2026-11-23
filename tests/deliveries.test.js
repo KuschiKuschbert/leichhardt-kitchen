@@ -181,7 +181,21 @@ const save = async p => { await p.click('#dl-form button[type="submit"]'); await
   // Layout and screenshots use synthetic people and delivery data only.
   fs.mkdirSync('shots', { recursive: true });
   for (const width of [390, 768, 1280]) {
-    p = await open(b, { who: 'ann', width, extra: { ...extra, [key('deliveries', 'sample')]: receipt(today, 'Test supplier') } });
+    p = await open(b, { who: 'ann', width, height: width === 1280 ? 800 : 844, extra: { ...dueExtra, [key('deliveries', 'sample')]: receipt(today, 'Test supplier') } });
+    await mode(p, 'both');
+    await L.waitFor(p, () => !!document.querySelector('.dl-receipt'));
+    const layout = await p.evaluate(() => {
+      scrollTo(0, 0);
+      const box = selector => document.querySelector(selector).getBoundingClientRect();
+      return {
+        beside: box('.dl-history').left >= box('.dl-form').right,
+        notesReachable: box('.dl-add-note').bottom <= box('.dl-dock').top && box('.dl-add-note').height >= 44,
+        saveVisible: box('[data-dl="save"]').bottom <= innerHeight
+      };
+    });
+    ok(layout.beside === (width === 1280), width + ' px: the receipt list sits beside the form only on wide screens');
+    if (width === 390) ok(layout.notesReachable, '390 px: the existing notes target fits above the sticky dock with Both selected');
+    if (width === 1280) ok(layout.saveVisible, '1280 px: the whole Save delivery button fits in the opening viewport');
     await fill(p); await L.settle(p, 200);
     ok(!await L.overflow(p), width + ' px: no horizontal overflow');
     ok((await p.locator('#dl-chilled').boundingBox()).height >= 44 && (await p.locator('#dl-frozen').boundingBox()).height >= 44, width + ' px: readable temperature fields with 44 px tap height');
@@ -189,5 +203,17 @@ const save = async p => { await p.click('#dl-form button[type="submit"]'); await
     if (width !== 768) await p.screenshot({ path: 'shots/delivery-' + width + '.png', fullPage: true });
     await p.context().close();
   }
+
+  p = await open(b, { who: 'ann', width: 1100, height: 800, settings: { text: 'xlarge' }, extra: dueExtra });
+  await mode(p, 'both');
+  await p.fill('#dl-frozen', '-18.5');
+  ok(!await L.overflow(p) && await p.$eval('#dl-frozen', input => {
+    const style = getComputedStyle(input);
+    const available = input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    const text = document.createElement('canvas').getContext('2d');
+    text.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    return available >= text.measureText(input.value).width;
+  }), '1100 px, Extra large: the signed frozen reading fits in the field and the two columns stay in the viewport');
+  await p.context().close();
   await b.close(); console.log(R.join('\n')); process.exit(R.some(r => r.startsWith('FAIL')) ? 1 : 0);
 })().catch(e => { console.error(e); console.log(R.join('\n')); process.exit(1); });

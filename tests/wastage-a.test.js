@@ -17,9 +17,13 @@ const prepLines = async (p, text) => Object.entries(await store(p)).filter(([k, 
 
   // the page: today first, the form behind Log waste
   let p = await L.open(b, '#/waste', { who: 'sam', extra, wait: 1600 });
-  // as drawn in the agreed design: Log waste docked above the tab bar, the review one button at the foot of the entries
-  const order = await p.evaluate(() => ['.w-today', '.nb-rows', '.w-rvbtn'].map(s => { const e = document.querySelector(s); return e ? Math.round(e.getBoundingClientRect().top) : -1; }));
-  ok(order.every((y, i) => y >= 0 && (!i || y >= order[i - 1])) && await L.docked(p, '.w-logbtn'), 'page: the total, the entries, then the review at the foot, with Log waste docked above the tab bar (' + order.join(', ') + ')');
+  // Log waste is still docked above the tab bar, with the one review button beside today's totals.
+  const order = await p.evaluate(() => {
+    const sum = document.querySelector('.w-tot').getBoundingClientRect(), rv = document.querySelector('.w-rvbtn').getBoundingClientRect();
+    return rv.left >= sum.right && rv.top < sum.bottom && rv.bottom > sum.top &&
+      rv.bottom <= document.querySelector('.nb-rows').getBoundingClientRect().top;
+  });
+  ok(order && await L.docked(p, '.w-logbtn'), 'page: the review beside the total, ahead of entries, with Log waste still docked above the tab bar');
   ok(/3\.5 kg, 1 L/.test(await txt(p, '.w-tot') || '') && /logged today/.test(await txt(p, '.w-tot') || ''), 'page: today\'s total (' + await txt(p, '.w-tot') + ')');
   const legend = await p.$$eval('.w-legend li', l => l.map(e => e.textContent.trim()));
   ok(legend.join(' | ') === 'Expired stock 1 | Cooking fault 1 | Excess production 1' && (await p.$$('.w-bar .w-seg')).length === 3, 'page: one bar part and one key line per reason (' + legend.join(' | ') + ')');
@@ -69,7 +73,8 @@ const prepLines = async (p, text) => Object.entries(await store(p)).filter(([k, 
   await L.wReview(p);
   ok(await p.evaluate(() => document.activeElement && document.activeElement.id === 'w-ra') && !!(await p.$('.w-sheet [data-p="wreview"][disabled]')), 'review: a sheet, the cursor in the first box, Save off until something is typed');
   await p.fill('#w-ra', 'Hollandaise split'); await p.fill('#w-rc', 'Make it closer to service');
-  await p.click('.w-sheet [data-p="wreview"]'); await L.settle(p, 800);
+  await p.click('.w-sheet [data-p="wreview"]');
+  await L.waitFor(p, () => !document.querySelector('.w-sheet'));
   const rv = (await store(p))[fsKey(['waste', today])] || {};
   ok(rv.avoidable === 'Hollandaise split' && rv.reviewBy === 'Sam' && !(await p.$('.w-sheet')) && /Saved by Sam/.test(await txt(p, '.w-rvbtn') || ''), 'review: Save writes it, closes the sheet, and the button says who saved it');
   ok(!(await L.overflow(p)) && p.errors.length === 0, 'sous chef phone: no sideways scroll, no page errors ' + p.errors.join(' | '));

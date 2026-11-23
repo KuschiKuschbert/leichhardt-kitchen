@@ -90,6 +90,7 @@ async function openCutoffs(p) {
   await L.waitFor(p, () => document.querySelector('[data-k="cut-p0"]')?.value === '7', null, 10000);
   ok(/^Next: Sun 27 Dec 15:00 for Sun 3 Jan\./.test(await txt(p, '.cut-say')), 'one-week choice saves and reopens with correct summary');
   await L.adminTab(p, 'people');
+  await L.openPerson(p, 2);
   await p.fill('[data-a="name"][data-i="2"]', 'Bo Test'); await p.keyboard.press('Tab');
   await p.click('[data-p="a-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k]?.people?.[2]?.name === 'Bo Test', CFG, 10000);
@@ -129,6 +130,7 @@ async function openCutoffs(p) {
   ok(/could not load/.test(await txt(p, '.a-cut')) && !(await p.$('[data-p="cut-save"]')), 'old helper fails safely with reload guidance and no cutoff Save');
   ok(!(await p.$('#cut-band:not([hidden])')) && !(await domainWrites(p)).length, 'old helper shows no misleading reminders and makes no cutoff write');
   await L.adminTab(p, 'people');
+  await L.openPerson(p, 2);
   await p.fill('[data-a="name"][data-i="2"]', 'Bo Recheck'); await p.keyboard.press('Tab');
   await p.click('[data-p="a-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k]?.people?.[2]?.name === 'Bo Recheck', CFG, 10000);

@@ -27,6 +27,8 @@
 
   var API = 5;
   var D = window.LK_DATA, X = window.LK_RX, A = window.LK_APP, P = window.LK_PREP, LIB = window.LK_LIB;
+  // a search box as the Recipes pill (the consistency sweep, step 3, 20 Nov 2026); an older js/app.js draws the plain box
+  function findPill(input) { return A && A.findWrap ? A.findWrap(input) : input; }
   var esc = A.esc;
   // Optional in lazy files: an older saved shell keeps its existing text feedback.
   function inkLabel(text, icon, state) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', state || 'busy') : esc(text); }
@@ -666,7 +668,7 @@
         '<nav class="dw-ctx dw-selbar" aria-label="' + esc(nm) + '">' +
         (isPiece(one) ? dk('panel', 'Colour', 'colour', { v: 'colour', exp: W.panel === 'colour' }) : one && one.t !== 'item' ? dk('panel', 'Change', 'edit', { v: 'edit', exp: W.panel === 'edit' }) : '') +
         (lab ? dk('panel', 'Label', 'label', { v: 'label', exp: W.panel === 'label', aria: one.ing ? 'Label: ' + one.ing : 'Label: which ingredient?' }) : '') +
-        dk('panel', 'More', 'more', { v: 'pmore', exp: W.panel === 'pmore' }) + dk('del', 'Delete', 'del', { cls: 'dw-dk dw-del' }) + dk('none', 'Done', 'check', { cls: 'dw-dk dw-done' }) + '</nav>';
+        dk('panel', 'More', 'more', { v: 'pmore', exp: W.panel === 'pmore' }) + dk('del', 'Delete', 'del', { cls: 'dw-dk dw-del lk-del' }) + dk('none', 'Done', 'check', { cls: 'dw-dk dw-done' }) + '</nav>';
     }
     var n = issues();
     return '<nav class="dw-ctx" aria-label="Studio">' + dk('panel', 'Add food', 'add', { v: 'lib', exp: W.panel === 'lib' }) + (side ? '' : dk('panel', 'Plate', 'plate', { v: 'ware', exp: W.panel === 'ware' })) +
@@ -729,7 +731,7 @@
     // other ways to start at the bottom
     return '<section class="dw-panel" aria-labelledby="dw-h-lib"><h3 class="h3" id="dw-h-lib">' + (W.swap ? 'Swap the drawing' : 'Add food') + '</h3>' +
       (W.swap ? '<p class="hint">Pick the drawing to swap in for <b>' + esc(W.pendingIng) + '</b>. It takes the part\'s place and stays when the book draws the plate again.</p>' : W.pendingIng ? '<p class="hint">Pick the drawing for <b>' + esc(W.pendingIng) + '</b>. It is labelled with that ingredient.</p>' : missingHTML()) +
-      '<div class="field"><label class="label" for="dw-q">Find a drawing</label><input id="dw-q" class="search" type="search" data-dwf="q" autocomplete="off" spellcheck="false" placeholder="For example: chips, pepper sauce, lemon wedge" value="' + esc(W.q) + '"></div>' +
+      '<div class="field"><label class="visually-hidden" for="dw-q">Find a drawing</label>' + findPill('<input id="dw-q" class="search" type="search" data-dwf="q" autocomplete="off" spellcheck="false" placeholder="For example: chips, pepper sauce, lemon wedge" value="' + esc(W.q) + '">') + '</div>' +
       '<div class="chips scroll" role="group" aria-label="Category">' + btn('cat', 'All', { v: '', on: !W.cat, cls: 'chip' }) + cats.map(function (c) { return btn('cat', c.name, { v: c.id, on: W.cat === c.id, cls: 'chip' }); }).join('') + '</div>' +
       (W.cat ? '<div class="chips scroll" role="group" aria-label="Kind">' + btn('sub', 'All ' + (cats.filter(function (c) { return c.id === W.cat; })[0] || {}).name.toLowerCase(), { v: '', on: !W.sub, cls: 'chip' }) + LIB.subs(W.cat).map(function (s) { return btn('sub', s, { v: s, on: W.sub === s, cls: 'chip' }); }).join('') + '</div>' : '') +
       '<p class="hint" role="status">' + list.length + (list.length === 1 ? ' drawing' : ' drawings') + '. Tap one to put it on the ' + (W.d.slot === 'pan' ? 'pan' : W.d.slot === 'plate' ? 'plate' : 'drawing') + ', or drag it there.</p>' +
@@ -827,8 +829,8 @@
   }
   function pageHTML() {
     var d = W.d, r = rec();
-    var kept = d.kept ? '<div class="box beige mg-kept" role="note"><span class="label">Changes not saved yet</span><div>This device kept changes to this drawing from ' + esc(B().dayShort(d.kept.at) + ' ' + B().clock(d.kept.at)) + '.</div><div class="btn-row">' + btn('kept-use', 'Keep editing them', { cls: 'btn dark' }) + btn('kept-drop', armed('kept-drop') ? 'Tap again to throw them away' : 'Throw them away', { cls: 'btn' }) + '</div></div>' : '';
-    var conflict = W.conflict ? '<div class="warn" role="alert"><span class="label">Changed on another device</span><span>Version ' + esc(W.conflict.v) + ' of this drawing was saved after you opened it.</span><div class="btn-row">' + btn('theirs', armed('theirs') ? 'Tap again: your changes go' : 'Open theirs', { cls: 'btn' }) + btn('mine', 'Save mine over it', { cls: 'btn dark' }) + '</div></div>' : '';
+    var kept = d.kept ? '<div class="box beige mg-kept" role="note"><span class="label">Changes not saved yet</span><div>This device kept changes to this drawing from ' + esc(B().dayShort(d.kept.at) + ' ' + B().clock(d.kept.at)) + '.</div><div class="btn-row">' + btn('kept-use', 'Keep editing them', { cls: 'btn dark' }) + btn('kept-drop', armed('kept-drop') ? 'Tap again to throw them away' : 'Throw them away', { cls: 'btn lk-del' }) + '</div></div>' : '';
+    var conflict = W.conflict ? '<div class="warn" role="alert"><span class="label">Changed on another device</span><span>Version ' + esc(W.conflict.v) + ' of this drawing was saved after you opened it.</span><div class="btn-row">' + btn('theirs', armed('theirs') ? 'Tap again: your changes go' : 'Open theirs', { cls: 'btn' + (armed('theirs') ? ' lk-del' : '') }) + btn('mine', 'Save mine over it', { cls: 'btn dark' }) + '</div></div>' : '';
     var newer = d.els.some(function (el) { var it = el.t === 'item' && itemOf(el.a); return it && it.id + '@' + it.v !== el.a; }) ? '<div class="box beige" role="note"><span class="label">Newer library drawings</span><div>Some pieces have a newer drawing in the library. This drawing keeps its own copy until you ask.</div><div class="btn-row">' + btn('newer', 'Use the newer drawings', { cls: 'btn' }) + '</div></div>' : '';
     var empty = nothingDrawn(d);
     var state = W.saving || stateWords(d);
@@ -851,13 +853,34 @@
     drawing = true;
     try { drawPage(); } finally { drawing = false; }
   }
+  function focusSelector(el) {
+    if (!el) return '';
+    var field = el.getAttribute('data-dwf'), action = el.getAttribute('data-dw'), value = el.getAttribute('data-v');
+    if (field) return '[data-dwf="' + CSS.escape(field) + '"]';
+    if (el.classList.contains('dw-svg')) return '.dw-svg';
+    return action ? '[data-dw="' + CSS.escape(action) + '"]' + (value != null ? '[data-v="' + CSS.escape(value) + '"]' : '') : '';
+  }
   function drawPage() {
-    var a = document.activeElement, keep = a && W.root.contains(a) ? (a.getAttribute('data-dwf') ? '[data-dwf="' + a.getAttribute('data-dwf') + '"]' : a.classList.contains('dw-svg') ? '.dw-svg' : a.getAttribute('data-dw') ? '[data-dw="' + a.getAttribute('data-dw') + '"]' + (a.getAttribute('data-v') != null ? '[data-v="' + a.getAttribute('data-v') + '"]' : '') : '') : '';
+    var a = document.activeElement, inStudio = a && W.root.contains(a), keep = inStudio ? focusSelector(a) : '';
+    var fromDrawer = inStudio && a.closest('.dw-drawer');
+    var opener = fromDrawer && focusSelector(W.root.querySelector('.dw-ctx [aria-expanded="true"]'));
     var y = window.scrollY, ps = a && a.selectionStart;
-    W.root.innerHTML = pageHTML();
+    // Find a drawing keeps the cursor while it finds (the consistency sweep, step 3, 20 Nov 2026): the shared search bar
+    // wraps the new box before the focus goes back, as js/prep.js's redraw does; before, it lost the cursor at 2 letters
+    var find = !!keep && a.type === 'search' && !!(window.LK_UX && window.LK_UX.restoreFocus);
+    if (find) a._uxRedrawing = true;
+    try { W.root.innerHTML = pageHTML(); } finally { if (find) delete a._uxRedrawing; }
     window.dispatchEvent(new Event('lk-nav'));
     window.scrollTo(0, y);
-    if (keep) { var el = W.root.querySelector(keep); if (el) { el.focus({ preventScroll: true }); if (ps != null && el.setSelectionRange) try { el.setSelectionRange(ps, ps); } catch (e) {} } }
+    var el = keep && W.root.querySelector(keep);
+    if (el) {
+      if (find) { window.LK_UX.enhance(W.root); window.LK_UX.restoreFocus(el); } else el.focus({ preventScroll: true });
+      if (ps != null && el.setSelectionRange) try { el.setSelectionRange(ps, ps); } catch (e) {}
+    } else if (fromDrawer && !W.root.querySelector('.dw-drawer')) {
+      // A nested drawer or a changed selection can leave no opener in the bar.
+      var target = (opener && W.root.querySelector('.dw-ctx ' + opener)) || W.root.querySelector('.dw-svg');
+      if (target) target.focus({ preventScroll: true });
+    }
   }
   function drawCanvas() {
     if (drawing) return;

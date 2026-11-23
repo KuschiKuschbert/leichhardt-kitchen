@@ -5,13 +5,15 @@ const cfgKey = ['kitchens', L.PIN, 'config/main'].join('/');
 const day = L.ymd(new Date(L.NOW));
 function fixture() {
   const base = M.derive({ v: 1, status: 'draft', name: 'Example draft', date: day, start: 0, loc: 'Garden', guests: 0, mode: 'all', lines: [], rounds: [], notes: 'Keep these notes', kc: '', kcBy: '', kcAt: 0, was: {}, chg: [], cBy: 'fay', cAt: 1, by: 'fay', upd: 1, od: '' });
+  const active = M.derive(Object.assign({}, base, { status: 'confirmed', name: 'Example active', start: M.kat(day, 1080), guests: 20, confAt: 1, rounds: [{ at: M.kat(day, 1110), note: '' }], lines: [{ rid: 'pizza-platter', name: 'Pizza platter', qty: 1, unit: 'platter', u: [0], spec: '', fp: '' }] }));
   return {
     [cfgKey]: { people: [{ id: 'fay', name: 'Fay', role: 'fnc', active: true }, { id: 'ann', name: 'Ann', role: 'staff', active: true }], staffIds: ['fay', 'ann'], fnIds: ['fay'], fnOnlyIds: ['fay'] },
     [key('draft')]: base,
     [['kitchens', L.PIN, 'pinset/fay'].join('/')]: { at: 1 },
     [['kitchens', L.PIN, 'staffpins/fay'].join('/')]: { hash: L.sha('lk:fay:5151') },
     [key('cancelled')]: Object.assign({}, base, { status: 'cancelled', name: 'Example cancelled' }),
-    [key('active')]: M.derive(Object.assign({}, base, { status: 'confirmed', name: 'Example active', start: M.kat(day, 1080), guests: 20, confAt: 1, rounds: [{ at: M.kat(day, 1110), note: '' }], lines: [{ rid: 'pizza-platter', name: 'Pizza platter', qty: 1, unit: 'platter', u: [0], spec: '', fp: '' }] })),
+    [key('active')]: active,
+    [key('overlap')]: Object.assign({}, active, { name: 'Other booking' }),
     [['kitchens', L.PIN, 'fncontact/draft'].join('/')]: { cname: 'Customer', phone: '0400 000 000', email: 'example@example.com', upd: 1 }
   };
 }
@@ -27,6 +29,11 @@ async function list(b, width = 390) {
   try {
     for (const width of [390, 768, 1280]) {
       p = await list(b, width);
+      ok(await p.evaluate(w => {
+        const search = document.querySelector('#fe-q').getBoundingClientRect();
+        const chips = document.querySelector('.fe-wrap [role="group"][aria-label="Show"]').getBoundingClientRect();
+        return w === 1280 ? search.right <= chips.left && Math.abs(search.bottom - chips.bottom) <= 1 : search.bottom < chips.top;
+      }, width), width + ': Search and status filters share the row only where they fit');
       ok(!!await p.$(button('draft')) && !await p.$(button('active')) && !!await p.$('[data-fe="status"][data-id="active"]'), width + ': draft has Delete and active booking has Cancel');
       ok(!await L.overflow(p), width + ': actions fit without sideways scrolling');
       ok(await p.locator(button('draft')).evaluate(button => {
@@ -39,6 +46,19 @@ async function list(b, width = 390) {
         return action.top >= bar.top && action.bottom <= bar.bottom && action.left > bar.left + bar.width / 2;
       }), width + ': Cancel is inline at the right end of the function bar');
       if (process.env.LK_ACTION_SHOTS) await p.screenshot({ path: '/tmp/function-actions-' + width + '.png', fullPage: true });
+      if (width === 1280) {
+        await L.choose(p, '[data-fe="chip"][data-v="all"]');
+        await p.fill('#fe-q', 'Example active');
+        const activeLink = 'a.fe-row[href="#/functions/active"]';
+        ok((await p.$$('.fe-row')).length === 1 && /Other booking/.test(await p.locator(activeLink + ' .fe-ov').innerText()), 'Search narrows the list and keeps the named overlap on the matching row');
+        await p.click(activeLink);
+        await L.waitFor(p, () => !!document.querySelector('#fe-date'));
+        ok(await p.inputValue('#fe-date') === day, 'the selected booking opens on its saved day');
+        await p.getByRole('button', { name: 'Back to all functions' }).click();
+        await L.waitFor(p, () => !!document.querySelector('a.fe-row[href="#/functions/active"]'));
+        ok(await p.inputValue('#fe-q') === 'Example active' && await p.getAttribute('[data-fe="chip"][data-v="all"]', 'aria-pressed') === 'true' && (await p.$$('.fe-row')).length === 1, 'Back from the editor restores the existing search, status filter and matching row');
+        await p.fill('#fe-q', '');
+      }
       await L.choose(p, '[data-fe="chip"][data-v="cancelled"]');
       ok(!!await p.$(button('cancelled')), width + ': cancelled card has Delete');
       await p.context().close(); p = null;

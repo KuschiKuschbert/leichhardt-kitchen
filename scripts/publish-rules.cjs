@@ -1,10 +1,12 @@
 // Keep the pinned CLI's compilation/upload pipeline, replace its unconditional release fallback.
 const path = require('node:path');
-const PROJECT = 'leichhardt-kitchen', RELEASE = 'cloud.firestore', VERSION = '13.29.1';
+// The one project this run may publish to (19 Nov 2026, docs/venues.md): the VENUE's own, from venues/<id>.json
+// (Leichhardt's without VENUE, as before). A project no venue names is refused before the CLI starts.
+const PROJECT = require('./venues.cjs').scriptProject(process.env), RELEASE = 'cloud.firestore', VERSION = '13.29.1';
 const RELEASE_NAME = `projects/${PROJECT}/releases/${RELEASE}`;
 const DEFAULT_ALIAS = RELEASE + '/(default)';
 const object = v => v !== null && typeof v === 'object' && !Array.isArray(v);
-const intendedName = name => typeof name === 'string' && /^projects\/leichhardt-kitchen\/rulesets\/[A-Za-z0-9_-]{1,160}$/.exec(name)?.[0] === name;
+const intendedName = name => typeof name === 'string' && new RegExp('^projects/' + PROJECT + '/rulesets/[A-Za-z0-9_-]{1,160}$').exec(name)?.[0] === name;
 // firebase-tools adds status=500 even to transport errors. Only its actual HTTP response proves a 404.
 function responseStatus(error) {
   const n = error?.context?.response?.statusCode;
@@ -135,8 +137,15 @@ function install(cliRoot, evidence, environment = process.env, uploadEvidence = 
     } };
 }
 module.exports = { safeRelease, safeUpload, install, responseStatus, validateInvocation };
+// The service account the CLI signs in with must be the same venue's (GOOGLE_APPLICATION_CREDENTIALS).
+function credentialsProject(env) {
+  try { return JSON.parse(require('node:fs').readFileSync(env.GOOGLE_APPLICATION_CREDENTIALS || '', 'utf8')).project_id || ''; } catch (e) { return ''; }
+}
+module.exports.credentialsProject = credentialsProject;
+module.exports.PROJECT = PROJECT;
 if (require.main === module) {
   validateInvocation(process.argv.slice(2), process.env);
+  if (credentialsProject(process.env) !== PROJECT) throw Error('The service account is not this venue\'s; nothing published.');
   const cliRoot = path.dirname(require.resolve('../tests/rules/node_modules/firebase-tools/package.json'));
   install(cliRoot, report => console.log('Rules activation evidence: ' + JSON.stringify(report)), process.env,
     report => console.log('Ruleset upload evidence: ' + JSON.stringify(report)));

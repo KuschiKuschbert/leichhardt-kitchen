@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Second venue · Design C, bring it in from files</title>
+<link rel="stylesheet" href="../../css/app.css"><link rel="stylesheet" href="preview.css"></head>
+<body class="sv">
+
+<!-- C1: Kitchen, Bring in -->
+<section class="sv-frame" id="setup">
+  <div class="sv-note">Design C · Preview, made-up venue · Admin, Kitchen, Bring in</div>
+  <header class="sv-top"><div><span class="k">Riverside Hotel kitchen</span><b>Kitchen Book</b></div><span class="sv-venue">Riverside Hotel</span></header>
+  <div class="sv-shell">
+    <nav class="sv-rail" aria-label="Admin rooms"><span class="sv-rl">Admin panel</span><a href="#">Today</a><a href="#">Reports</a><a href="#">Team</a><a href="#" aria-current="page">Kitchen</a><a href="#">Prep</a></nav>
+    <main class="sv-pane">
+      <p class="sv-kick">Kitchen administration</p>
+      <h1>Kitchen</h1>
+      <nav class="sv-tabs"><span>Overview</span><span aria-current="page">Bring in</span><span>Order cut-offs</span><span>Suppliers &amp; pars</span><span>Backup and PIN</span></nav>
+      <p class="hint">Start from files instead of typing. Each file is read on this device and checked by you before anything is saved.</p>
+      <section class="sv-block"><h3>Kitchen setup file</h3>
+        <p class="hint">Made in another kitchen's admin panel by the owner: sections, shifts, cleaning repeat tasks and prep standards. Never people, PINs, recipes or records.</p>
+        <a class="sv-row" href="#" style="grid-template-columns:1fr auto"><span class="t"><span class="sv-word w-set">✓ Saved 14:02</span>5 sections, 2 shifts, 31 cleaning tasks</span><span class="go">Review ›</span></a>
+      </section>
+      <section class="sv-block"><h3>Roster file</h3>
+        <p class="hint">The Humanforce weekly roster: puts each name on the staff list as Staff. Each person sets their own PIN.</p>
+        <a class="sv-row" href="#" style="grid-template-columns:1fr auto"><span class="t"><span class="sv-word w-set">✓ Saved 14:05</span>11 people added, 1 name already there</span><span class="go">Team ›</span></a>
+      </section>
+      <section class="sv-block"><h3>AVC Live cards</h3>
+        <p class="hint">Recipe prints from AVC Live. Names, amounts and yields only; prices are never read. Recipes stay hidden from staff until every ingredient is checked.</p>
+        <a class="sv-row" href="#" style="grid-template-columns:1fr auto"><span class="t"><span class="sv-word w-not">To check</span>20 recipes read. 12 of 37 ingredients checked. 4 recipes ready</span><span class="go">Continue ›</span></a>
+        <div class="sv-btns"><button class="sv-btn dark">Choose AVC Live cards</button></div>
+      </section>
+      <section class="sv-block"><h3>Still to set by hand</h3>
+        <a class="sv-row" href="#" style="grid-template-columns:1fr auto"><span class="t">Suppliers and order cut-offs <span class="sv-word w-not">Not set yet</span></span><span class="go">Open ›</span></a>
+        <a class="sv-row" href="#" style="grid-template-columns:1fr auto"><span class="t">Pages staff see <span class="sv-word w-opt">Optional</span></span><span class="go">Open ›</span></a>
+      </section>
+    </main>
+  </div>
+</section>
+
+<!-- C2: the ingredients from all cards, each checked once -->
+<section class="sv-frame" id="review">
+  <div class="sv-note">Design C · Preview · AVC Live cards: each ingredient checked once for all recipes</div>
+  <header class="sv-top"><div><span class="k">Riverside Hotel kitchen</span><b>Kitchen Book</b></div><span class="sv-venue">Riverside Hotel</span></header>
+  <main class="sv-pane">
+    <h1>AVC Live cards</h1>
+    <div class="sv-sum" role="status"><b>20 recipes, 37 different ingredients.</b> Check each ingredient once: its name in the book and its allergens. Every recipe that uses it is updated.</div>
+    <div class="sv-chips"><button class="sv-chip" aria-pressed="true">Ingredients · 25 to check</button><button class="sv-chip">Recipes · 4 ready</button></div>
+    <table class="sv-tbl">
+      <thead><tr><th>Ingredient</th><th>Used in</th><th>Allergens</th></tr></thead>
+      <tbody>
+        <tr><td><span class="sv-field">Brioche bun <span class="sv-ftag">AVC</span></span><span class="sv-raw">AVC: 80GX24 BRIOCHE BUN STONEBAKE</span></td><td>6 recipes</td><td><div class="sv-chips"><button class="sv-chip" aria-pressed="true">✓ Gluten</button><button class="sv-chip" aria-pressed="true">✓ Milk</button><button class="sv-chip" aria-pressed="true">✓ Egg</button><button class="sv-chip">Sesame</button><button class="sv-chip">More</button><button class="sv-chip">No allergens</button></div><span class="sv-word w-set">✓ Checked</span></td></tr>
+        <tr><td><span class="sv-field">Panko crumbs <span class="sv-ftag">AVC</span></span><span class="sv-raw">AVC: BREADCRUMBS PANKO COARSE 10KG</span></td><td>4 recipes</td><td><div class="sv-chips"><button class="sv-chip">Gluten</button><button class="sv-chip">Milk</button><button class="sv-chip">Egg</button><button class="sv-chip">Sesame</button><button class="sv-chip">More</button><button class="sv-chip">No allergens</button></div><span class="sv-word w-not">Not checked</span></td></tr>
+        <tr><td><span class="sv-field">Gravy mix <span class="sv-ftag">AVC</span></span><span class="sv-raw">AVC: GRAVY MIX RICH BROWN 7.5KG</span></td><td>3 recipes</td><td><div class="sv-chips"><button class="sv-chip">Gluten</button><button class="sv-chip">Milk</button><button class="sv-chip">Soy</button><button class="sv-chip">More</button><button class="sv-chip">No allergens</button></div><span class="sv-word w-not">Not checked</span></td></tr>
+        <tr><td><span class="sv-field">Lemon <span class="sv-ftag">AVC</span></span><span class="sv-raw">AVC: LEMONS CTN (15KG)</span></td><td>5 recipes</td><td><div class="sv-chips"><button class="sv-chip">Gluten</button><button class="sv-chip">More</button><button class="sv-chip" aria-pressed="true">✓ No allergens</button></div><span class="sv-word w-set">✓ Checked</span></td></tr>
+      </tbody>
+    </table>
+  </main>
+</section>
+
+<!-- C3: the recipes, ready or waiting -->
+<section class="sv-frame" id="recipes">
+  <div class="sv-note">Design C · Preview · AVC Live cards: the recipes, ready or waiting</div>
+  <header class="sv-top"><div><span class="k">Riverside Hotel kitchen</span><b>Kitchen Book</b></div><span class="sv-venue">Riverside Hotel</span></header>
+  <main class="sv-pane">
+    <h1>AVC Live cards</h1>
+    <div class="sv-chips"><button class="sv-chip">Ingredients · 25 to check</button><button class="sv-chip" aria-pressed="true">Recipes · 4 ready</button></div>
+    <div class="sv-btns"><button class="sv-btn dark">Show the 4 ready recipes to staff</button></div>
+    <ul class="sv-list">
+      <li class="sv-drow"><b>Chips, meal portion</b><span class="go"><span class="sv-word w-set">✓ Ready</span></span><span class="s">Side · Makes 1 serve · every ingredient checked</span></li>
+      <li class="sv-drow"><b>Gravy</b><span class="go"><button class="sv-chip">None missing</button></span><span class="s">Batch · Makes 1 L · Free items? AVC leaves out water</span></li>
+      <li class="sv-drow"><b>Garden salad portion</b><span class="go"><button class="sv-chip">Choose kind</button></span><span class="s">The card said PLEASE SELECT · 1 ingredient not checked</span></li>
+      <li class="sv-drow"><b>Beef burger</b><span class="go">Waiting</span><span class="s">Main · 3 ingredients not checked</span></li>
+      <li class="sv-drow"><b>Pasta salad, 20 portions</b><span class="go"><button class="sv-chip">Check line</button></span><span class="s">Batch · Odd line: Shallots 1 g</span></li>
+      <li class="sv-drow"><b>Calamari portion</b><span class="go">Waiting</span><span class="s">Add-on · links to 2 cards to come</span></li>
+    </ul>
+  </main>
+</section>
+<script src="frames.js"></script>
+</body></html>

@@ -62,9 +62,29 @@
       M.cache[key] = data; useData(data); M.tickErrors = Object.create(null); draw();
     }, function (error) {
       if (gen !== generation || !C.allowed() || C.identity() !== who) return;
-      M.state = 'error'; M.error = error && error.code === 'too-many' ? 'Cleaning list is too large to show safely. Ask a chef to review the schedule.' : error && error.message || 'Could not load cleaning. Check the connection and tap Refresh.'; draw();
+      M.state = 'error'; M.error = clnErrWords(error); draw();
+      // a failed read tries once more by itself after 5 minutes or when the signal is back, whichever is first
+      // (the consistency sweep, step 2, 20 Nov 2026); a refusal for size waits for a chef instead
+      if (!error || error.code !== 'too-many') clnRetryArm(gen);
     });
   }
+  /* The words for a failed cleaning read (the consistency sweep, step 2, 20 Nov 2026): never the database's own
+     English, and No signal only when the signal is the cause, as the rest of the book (docs/design-patterns.md). */
+  function clnErrWords(error) {
+    var code = error && error.code;
+    if (code === 'too-many') return 'Cleaning list is too large to show safely. Ask a chef to review the schedule.';
+    if (navigator.onLine === false || code === 'unavailable' || code === 'deadline-exceeded') return 'No signal. Could not check the cleaning list.';
+    return 'Could not load the cleaning list. Check the connection.';
+  }
+  var clnRetryT = 0, clnRetryOn = null;
+  function clnRetryArm(gen) {
+    clearTimeout(clnRetryT); if (clnRetryOn) window.removeEventListener('online', clnRetryOn);
+    var go = function () { clearTimeout(clnRetryT); window.removeEventListener('online', clnRetryOn); clnRetryOn = null; if (gen === generation && M.state === 'error' && M.root && document.body.contains(M.root)) load(true); };
+    clnRetryOn = function () { setTimeout(go, 1500); };
+    clnRetryT = setTimeout(go, 5 * 60000); window.addEventListener('online', clnRetryOn);
+  }
+  // the failed-read line, the same on every page (js/prep.js readErr): Try again is the page's own Refresh
+  function clnFailLine() { return window.LK_PREP && window.LK_PREP.readErr ? window.LK_PREP.readErr(M.error, null, 'data-cln="refresh"') : '<p class="p-err p-readerr" role="status">' + esc(M.error) + ' <button type="button" class="p-link" data-cln="refresh">Try again</button></p>'; }
   function due(task, day) { return C.due(task, day); }
   function tasksOn(day) { return M.tasks.filter(function (task) { return due(task, day); }); }
   function record(task, day) { return M.done.filter(function (r) { return r.task === task.id && r.day === day; })[0] || null; }
@@ -111,37 +131,59 @@
   }
   function flowLabel(item, index) { return { daily: 'Daily clean', start: 'Start of day', close: 'End of day', service: 'After service', prep: 'After prep', use: 'After use' }[item.kind] + (['service', 'prep', 'use'].indexOf(item.kind) >= 0 ? ' ' + (index + 1) : ''); }
   function workEnabled(task, day) { return day === T.day() && C.canTick() && M.state === 'ok' && due(task, day) && !M.pending[occurrence(task, day)]; }
+  var FLOW_BUTTONS = {
+    perform: { style: 'btn dark', label: 'Record done', pending: 'Recording...' },
+    save: { style: 'p-link', label: 'Save checks', pending: 'Saving checks...' },
+    block: { style: 'p-link', label: 'Unable to complete', pending: 'Saving reason...' },
+    verify: { style: 'btn dark', label: 'Verify Pass check', pending: 'Saving Pass check...' },
+    reopen: { style: 'p-link', label: 'Reopen with reason', pending: 'Reopening...' }
+  };
+  function flowWaiting(label, words) {
+    return ' aria-busy="true" data-cln-ready-label="' + esc(label) + '"><span>' + esc(words) + '</span>';
+  }
+  function flowButton(action, attrs, enabled, waiting) {
+    var button = FLOW_BUTTONS[action];
+    return '<button type="button" class="' + button.style + '" data-cln="flow-' + action + '"' + attrs + (enabled ? '' : ' disabled') +
+      (waiting === action ? flowWaiting(button.label, button.pending) : '>' + button.label) + '</button>';
+  }
   function flowPanel(task, day, item, index) {
-    var key = flowKey(task, day, item.slot), r = item.record, state = r && r.flow.status || 'pending', d = workDraft(task, day, item), editable = workEnabled(task, day) && state !== 'complete' && state !== 'awaiting', pending = M.pending[occurrence(task, day)], checked = d.checked, all = task.plan.checks.every(function (label) { return checked.indexOf(label) >= 0; });
+    var key = flowKey(task, day, item.slot), r = item.record, state = r && r.flow.status || 'pending', d = workDraft(task, day, item), enabled = workEnabled(task, day), editable = enabled && state !== 'complete' && state !== 'awaiting', pending = M.pending[occurrence(task, day)], checked = d.checked, all = task.plan.checks.every(function (label) { return checked.indexOf(label) >= 0; });
+    var waiting = pending && pending.slot === item.slot ? pending.control : '';
     var attrs = ' data-id="' + esc(task.id) + '" data-day="' + esc(day) + '" data-slot="' + esc(item.slot) + '" data-kind="' + esc(item.kind) + '"';
-    var verify = state === 'awaiting' && (C.canVerify ? C.canVerify(task) : task.plan.verifiers.indexOf(B.who()) >= 0 && C.canTick()) && workEnabled(task, day), statusText = { pending: 'Checks pending', blocked: 'Unable to complete', awaiting: 'Awaiting Pass check', complete: 'Complete' }[state];
-    var reopen = workEnabled(task, day) && (C.chef() || r && r.doneById === B.who() && r.doneAt > 0 && T.now() >= r.doneAt && T.now() - r.doneAt < 120000);
+    var verify = state === 'awaiting' && (C.canVerify ? C.canVerify(task) : task.plan.verifiers.indexOf(B.who()) >= 0 && C.canTick()) && (enabled || pending), statusText = { pending: 'Checks pending', blocked: 'Unable to complete', awaiting: 'Awaiting Pass check', complete: 'Complete' }[state];
+    var reopen = enabled && (C.chef() || r && r.doneById === B.who() && r.doneAt > 0 && T.now() >= r.doneAt && T.now() - r.doneAt < 120000);
     var checker = r && r.flow.verifiedBy ? C.workers().filter(function (person) { return person.id === r.flow.verifiedBy; })[0] : null;
-    return '<section class="cln-occurrence" data-cln-occurrence="' + esc(key) + '"><h4>' + esc(flowLabel(item, index)) + '<span>' + esc(pending ? 'Not sent' : statusText) + '</span></h4>' +
+    return '<section class="cln-occurrence" data-cln-occurrence="' + esc(key) + '"><h4>' + esc(flowLabel(item, index)) + '<span>' + esc(waiting ? 'Not sent' : statusText) + '</span></h4>' +
       '<div class="cln-checks">' + task.plan.checks.map(function (label, n) { return '<label><input type="checkbox" data-cln-check="' + n + '"' + attrs + (checked.indexOf(label) >= 0 ? ' checked' : '') + (editable ? '' : ' disabled') + '><span>' + esc(label) + '</span></label>'; }).join('') + '</div>' +
-      '<label class="field cln-work-note"><span class="label">' + (state === 'complete' || state === 'awaiting' ? 'Reason to reopen' : 'Note or reason unable to complete') + '</span><textarea data-cln-note' + attrs + ' maxlength="500" rows="2"' + (workEnabled(task, day) ? '' : ' disabled') + '>' + esc(d.note) + '</textarea></label>' +
+      '<label class="field cln-work-note"><span class="label">' + (state === 'complete' || state === 'awaiting' ? 'Reason to reopen' : 'Note or reason unable to complete') + '</span><textarea data-cln-note' + attrs + ' maxlength="500" rows="2"' + (enabled ? '' : ' disabled') + '>' + esc(d.note) + '</textarea></label>' +
       (r && r.doneAt ? '<p class="hint cln-performer">Recorded by ' + esc(completionText(r)) + (r.flow.verifiedBy ? '. Pass check: ' + esc(checker ? checker.name : 'Recorded checker') + ' at ' + esc(T.clock(r.flow.verifiedAt)) : '') + '</p>' : '') +
       (task.plan.verification && !task.plan.verifiers.length ? '<p class="hint">Pass checker not set. A chef can choose the checker in Repeat tasks.</p>' : '') +
       (day === T.day() ? '<div class="btn-row cln-work-actions">' + (state === 'complete' || state === 'awaiting' ?
-        (verify ? '<button type="button" class="btn dark" data-cln="flow-verify"' + attrs + '>Verify Pass check</button>' : '') + '<button type="button" class="p-link" data-cln="flow-reopen"' + attrs + (reopen ? '' : ' disabled') + '>Reopen with reason</button>' :
-        '<button type="button" class="btn dark" data-cln="flow-perform"' + attrs + (editable && all ? '' : ' disabled') + '>' + (pending ? 'Saving...' : 'Record done') + '</button><button type="button" class="p-link" data-cln="flow-save"' + attrs + (editable && workDirty(d) ? '' : ' disabled') + '>Save checks</button><button type="button" class="p-link" data-cln="flow-block"' + attrs + (editable ? '' : ' disabled') + '>Unable to complete</button>') +
+        (verify ? flowButton('verify', attrs, enabled, waiting) : '') + flowButton('reopen', attrs, reopen, waiting) :
+        flowButton('perform', attrs, editable && all, waiting) + flowButton('save', attrs, editable && workDirty(d), waiting) + flowButton('block', attrs, editable, waiting)) +
         (workDirty(d) && !pending ? '<button type="button" class="p-link" data-cln="flow-discard"' + attrs + '>Undo unsaved checks</button>' : '') + '</div>' : '') +
       (M.flowErrors[key] ? '<p class="p-err" role="alert">' + esc(M.flowErrors[key]) + ' <button type="button" class="p-link" data-cln="refresh">Refresh to check</button></p>' : '') +
       (M.flowSaved[key] ? '<p class="lk-stamp" role="status">' + esc(M.flowSaved[key]) + '</p>' : '') + '</section>';
   }
   function planDetails(task, day) {
     var plan = task.plan, list = flowList(task, day), key = occurrence(task, day), kinds = plan.timing === 'service' ? ['service'] : plan.timing === 'prep-service' ? ['prep', 'service'] : plan.timing === 'food' ? ['prep'] : plan.timing === 'use' ? ['use'] : [];
+    var waiting = M.pending[key], canAdd = workEnabled(task, day);
     return '<div class="cln-detail" id="cln-detail-' + esc(key) + '"><p class="cln-method"><b>Method</b> ' + esc(plan.method) + '</p><p class="hint"><b>Responsible:</b> ' + esc(plan.responsibility) + '</p>' +
       (plan.review ? '<p class="cln-review"><b>Check the procedure:</b> ' + esc(plan.review) + '</p>' : '') +
       (kinds.length ? '<p class="hint">Record every ' + (plan.timing === 'prep-service' ? 'prep and service' : plan.timing === 'food' ? 'prep, plus opening and closing checks' : kinds[0]) + '. Counts cover recorded occurrences only.</p>' : '') +
       (task.guide && P.featOn('guides') ? '<a class="p-link cln-guide-link" href="#/guides/' + encodeURIComponent(task.guide) + '">How to: ' + esc(task.text) + '</a>' : '') +
       list.map(function (item, index) { return flowPanel(task, day, item, list.slice(0, index).filter(function (prior) { return prior.kind === item.kind; }).length); }).join('') +
-      (day === T.day() && kinds.length ? '<div class="btn-row cln-add-occurrence">' + kinds.map(function (kind) { return '<button type="button" class="btn" data-cln="flow-add" data-id="' + esc(task.id) + '" data-day="' + esc(day) + '" data-kind="' + kind + '"' + (workEnabled(task, day) ? '' : ' disabled') + '>Add ' + kind + ' clean</button>'; }).join('') + '</div>' : '') + '</div>';
+      (day === T.day() && kinds.length ? '<div class="btn-row cln-add-occurrence">' + kinds.map(function (kind) {
+        var adding = waiting && waiting.control === 'add' && waiting.kind === kind;
+        return '<button type="button" class="btn" data-cln="flow-add" data-id="' + esc(task.id) + '" data-day="' + esc(day) + '" data-kind="' + kind + '"' +
+          (canAdd ? '' : ' disabled') + (adding ? flowWaiting('Add ' + kind + ' clean', 'Adding ' + kind + ' clean...') : '>Add ' + kind + ' clean') + '</button>';
+      }).join('') + '</div>' : '') + '</div>';
   }
   function planRow(task, day) {
     var key = occurrence(task, day), open = !!M.expanded[key], summary = flowSummary(task, day), completed = summary.done && flowList(task, day)[0].record, stateText = completed ? completionText(completed) : flowState(task, day), meta = task.area + (C.chef() && !task.shared ? ' · ' + owner(task, day) : '') + (task.plan.responsibility.toLowerCase() === task.area.toLowerCase() ? '' : ' · ' + task.plan.responsibility) + ' · ' + stateText, quick = !task.plan.checks.length && !task.plan.verification && !summary.events, slot = task.plan.timing === 'close' ? 'close' : 'daily', quickRecord = quick && flowRecord(task, day, slot), quickUndo = quickRecord && quickRecord.done && C.canUndo(quickRecord);
+    var quickPending = quick && M.pending[key] && M.pending[key].control === 'quick';
     return '<li class="nb-row cln-row cln-plan-row' + (summary.done ? ' is-done' : '') + (M.pending[key] ? ' is-pending' : '') + '" data-id="' + esc(task.id) + '" data-cln-row="' + esc(key) + '">' +
-      '<button type="button" class="nb-box" data-cln="' + (quick ? 'flow-quick' : 'details') + '" data-id="' + esc(task.id) + '" data-day="' + esc(day) + '"' + (quick ? ' data-slot="' + slot + '" data-kind="' + slot + '" aria-pressed="' + summary.done + '"' + (workEnabled(task, day) && (!summary.done || quickUndo) ? '' : ' disabled') : ' aria-expanded="' + open + '" aria-controls="cln-detail-' + esc(key) + '"') + ' aria-label="' + esc((quick ? summary.done ? quickUndo ? 'Undo: ' : 'Done: ' : 'Mark done: ' : open ? 'Close checks: ' : 'Open checks: ') + task.text + '. ' + flowState(task, day)) + '">' + C.box(summary.done) + '</button>' +
+      '<button type="button" class="nb-box" data-cln="' + (quick ? 'flow-quick' : 'details') + '" data-id="' + esc(task.id) + '" data-day="' + esc(day) + '"' + (quick ? ' data-slot="' + slot + '" data-kind="' + slot + '" aria-pressed="' + summary.done + '"' + (workEnabled(task, day) && (!summary.done || quickUndo) ? '' : ' disabled') : ' aria-expanded="' + open + '" aria-controls="cln-detail-' + esc(key) + '"') + (quickPending ? ' aria-busy="true"' : '') + ' aria-label="' + esc((quick ? summary.done ? quickUndo ? 'Undo: ' : 'Done: ' : 'Mark done: ' : open ? 'Close checks: ' : 'Open checks: ') + task.text + '. ' + flowState(task, day)) + '">' + C.box(summary.done) + '</button>' +
       '<button type="button" class="nb-main cln-task-detail" data-cln="details" data-id="' + esc(task.id) + '" data-day="' + esc(day) + '" aria-expanded="' + open + '" aria-controls="cln-detail-' + esc(key) + '" aria-label="' + esc((open ? 'Close checks and method: ' : 'Open checks and method: ') + task.text) + '"><span class="nb-t">' + esc(task.text) + '</span><span class="nb-meta" title="' + esc(meta) + '">' + esc(meta) + '</span><span class="cln-detail-cue" aria-hidden="true">' + (open ? '▴' : '▾') + '</span></button>' + (open ? planDetails(task, day) : '') + '</li>';
   }
   function owner(task, day) {
@@ -184,7 +226,7 @@
     function groupHTML(group, i) { var count = workTotals(group.tasks, day), heading = group.pack ? 'h4' : 'h3'; return '<section' + (group.pack ? ' class="cln-packdown-group" data-cln-packdown-group="' + esc(group.name) + '"' : '') + ' aria-labelledby="cln-group-' + i + '-' + day + '"><' + heading + ' class="nb-hd" id="cln-group-' + i + '-' + day + '"><span>' + esc(group.name) + '</span><span class="cln-group-count">' + count.complete + '/' + count.total + (count.events ? ' + repeats' : '') + '</span></' + heading + '><ul class="nb-rows">' + group.tasks.map(function (task) { return row(task, day); }).join('') + '</ul></section>'; }
     var regular = '', pack = '', floors = '';
     grouped.forEach(function (group, i) { var html = groupHTML(group, i); if (group.pack) pack += html; else if (group.floors) floors += html; else regular += html; });
-    return regular + (pack ? '<section class="cln-packdown" aria-labelledby="cln-packdown-' + day + '"><h3 class="cln-packdown-title" id="cln-packdown-' + day + '">Pack down</h3><p class="hint">Finish overhead shelves and frames before the final floor clean. Keep each after-service floor check separate.' + (floors ? ' Floor checks follow this list.' : '') + '</p>' + pack + '</section>' : '') + floors;
+    return regular + (pack ? '<section class="cln-packdown" aria-labelledby="cln-packdown-' + day + '"><h3 class="cln-packdown-title" id="cln-packdown-' + day + '" tabindex="-1">Pack down</h3><p class="hint">Finish overhead shelves and frames before the final floor clean. Keep each after-service floor check separate.' + (floors ? ' Floor checks follow this list.' : '') + '</p>' + pack + '</section>' : '') + floors;
   }
   var CHEF_GROUPS = [
     ['general', 'General cleaning', 'Shared and section jobs'],
@@ -229,7 +271,8 @@
   }
   function weekly() {
     var days = dates();
-    return '<div class="cln-week-nav"><button type="button" class="chip" data-cln="previous" aria-label="Previous week">‹</button><span>' + esc('Week commencing ' + shortDay(M.week)) + '</span><button type="button" class="chip" data-cln="next" aria-label="Next week">›</button><button type="button" class="p-link" data-cln="this-week">This week</button></div>' +
+    // the ‹ and › are the book's step chips, as on Prep's day control (the consistency sweep, step 3, 20 Nov 2026)
+    return '<div class="cln-week-nav"><button type="button" class="chip nav-step" data-cln="previous" aria-label="Previous week">‹</button><span>' + esc('Week commencing ' + shortDay(M.week)) + '</span><button type="button" class="chip nav-step" data-cln="next" aria-label="Next week">›</button><button type="button" class="p-link" data-cln="this-week">This week</button></div>' +
       '<p class="hint cln-legend">Review one day at a time. Only today can be recorded. Repeated service, prep and use coverage is not configured.</p>' +
       (Object.keys(M.tickErrors).length ? '<p class="p-err" role="alert">' + esc(Object.keys(M.tickErrors).map(function (key) { return M.tickErrors[key]; }).join(' ')) + ' Refresh to check the list.</p>' : '') +
       '<div class="cln-day-pick chips" role="group" aria-label="Day to view">' + days.map(function (day, i) { return '<button type="button" class="chip" data-cln="day" data-day="' + day + '" aria-pressed="' + (M.selected === day) + '">' + DAYS[i][1] + '<small>' + shortDay(day) + '</small></button>'; }).join('') + '</div><div class="cln-week-day"><h3 class="cln-selected-day">' + esc(longDay(M.selected)) + '</h3>' + chefDaily(M.selected) + '</div>';
@@ -270,7 +313,7 @@
   function earlierDrafts() { return Object.keys(M.workDrafts).filter(function (key) { return M.workDrafts[key].day < T.day() && workDirty(M.workDrafts[key]); }); }
   function earlierNotice() {
     if (!earlierDrafts().length) return M.earlierCleared ? '<p class="lk-stamp cln-earlier-status" role="status" tabindex="-1">' + esc(M.earlierCleared) + '</p>' : '';
-    return '<div class="cln-earlier" role="status"><p class="hint">Unsaved cleaning checks from an earlier date are still kept on this screen. They have not been recorded or backdated.</p><button type="button" class="p-link" data-cln="discard-earlier">' + (B.armed && B.armed('cln-discard-earlier') ? 'Tap again to undo earlier checks' : 'Undo earlier unsaved checks') + '</button></div>';
+    return '<div class="cln-earlier" role="status"><p class="hint">Unsaved cleaning checks from an earlier date are still kept on this screen. They have not been recorded or backdated.</p><button type="button" class="p-link' + (B.armed && B.armed('cln-discard-earlier') ? ' lk-del' : '') + '" data-cln="discard-earlier">' + (B.armed && B.armed('cln-discard-earlier') ? 'Tap again to undo earlier checks' : 'Undo earlier unsaved checks') + '</button></div>';
   }
   function saveButton() { var changed = dirtyDraft(), state = M.saveBusy ? 'busy' : M.saveState, text = state === 'busy' ? 'Saving...' : state === 'done' ? 'Saved' : state === 'error' ? 'Try again' : 'Save cleaning task'; return '<button type="submit" class="btn dark sv-btn" data-cln="save" data-idle="Save cleaning task" data-wide="Saving..."' + (state ? ' data-sv="' + state + '"' : '') + (M.saveBusy || !changed || M.state !== 'ok' || M.editId && !taskById(M.editId) ? ' disabled' : '') + (M.saveBusy ? ' aria-busy="true"' : '') + '><span class="sv-now">' + (state === 'busy' || state === 'done' ? ink(text, state === 'done' ? 'done' : 'busy') : text) + '</span></button>'; }
   function editorForm() {
@@ -281,7 +324,7 @@
       '<label class="field" for="cln-section"><span class="label">Responsible section</span><select id="cln-section" data-cln-field="section" required><option value="">Choose a section</option><option value="_shared"' + (d.shared ? ' selected' : '') + '>Shared kitchen</option>' + C.sections().map(function (s) { return '<option value="' + esc(s.id) + '"' + (!d.shared && d.section === s.id ? ' selected' : '') + '>' + esc(s.name) + '</option>'; }).join('') + '</select></label></div>' +
       '<div><span class="label" id="cln-repeat-label">Repeat on</span><div class="chips cln-repeat" role="group" aria-labelledby="cln-repeat-label">' + DAYS.map(function (day) { return '<button type="button" class="chip" data-cln="repeat" data-dow="' + day[0] + '" aria-pressed="' + (d.dows.indexOf(day[0]) >= 0) + '">' + day[1] + '</button>'; }).join('') + '</div></div>' +
       planEditor(d) + (P.featOn('guides') && (guides.length || d.guide) ? '<label class="field" for="cln-guide"><span class="label">How-to guide (optional)</span><select id="cln-guide" data-cln-field="guide"><option value="">No guide</option>' + (d.guide && !guides.some(function (g) { return g.id === d.guide; }) ? '<option value="' + esc(d.guide) + '" selected>Current linked guide</option>' : '') + guides.map(function (g) { return '<option value="' + esc(g.id) + '"' + (d.guide === g.id ? ' selected' : '') + '>' + esc(g.title) + '</option>'; }).join('') + '</select></label>' : '') + '</fieldset>' +
-      '<p class="cln-save-note' + (M.saveError ? ' p-err' : ' hint') + '" role="' + (M.saveError ? 'alert' : 'status') + '">' + esc(M.saveError || (M.saveBusy ? 'Saving cleaning task. Not saved yet.' : M.savedText)) + '</p><div class="btn-row">' + saveButton() + '<button type="button" class="btn" data-cln="revert"' + (M.saveBusy || !dirtyDraft() ? ' disabled' : '') + '>Undo unsaved changes</button><button type="button" class="p-link" data-cln="cancel-edit"' + (M.saveBusy ? ' disabled' : '') + '>' + (B.armed && B.armed('cln-cancel') ? 'Tap again to discard' : 'Cancel') + '</button></div></form>';
+      '<p class="cln-save-note' + (M.saveError ? ' p-err' : ' hint') + '" role="' + (M.saveError ? 'alert' : 'status') + '">' + esc(M.saveError || (M.saveBusy ? 'Saving cleaning task. Not saved yet.' : M.savedText)) + '</p><div class="btn-row">' + saveButton() + '<button type="button" class="btn" data-cln="revert"' + (M.saveBusy || !dirtyDraft() ? ' disabled' : '') + '>Undo unsaved changes</button><button type="button" class="p-link' + (B.armed && B.armed('cln-cancel') ? ' lk-del' : '') + '" data-cln="cancel-edit"' + (M.saveBusy ? ' disabled' : '') + '>' + (B.armed && B.armed('cln-cancel') ? 'Tap again to discard' : 'Cancel') + '</button></div></form>';
   }
   function repeatTasks() { return chefGroups(M.tasks.filter(function (task) { return task.until === OPEN; })).reduce(function (list, group) { return list.concat(group.tasks); }, []); }
   function repeatMatches() { return repeatTasks().filter(function (task) { return (M.repeatQuery.trim() || M.repeatGroup === 'all' || chefGroupId(task) === M.repeatGroup) && matchesWords(task, M.repeatQuery, T.day()); }); }
@@ -295,12 +338,16 @@
     if (!d) items += '<li class="cln-template-item cln-new-editor" role="listitem"><div class="cln-editor"><p class="hint">Choose Edit beside a task, or Add cleaning task. One editor opens here.</p></div></li>';
     return '<section class="nb-page cln-plan" aria-labelledby="rtitle"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Cleaning</h2><p class="nb-date" id="cln-plan-title" tabindex="-1">Repeat tasks' + (M.state === 'ok' ? ' · ' + current.length + ' current tasks' : '') + '</p></div><button type="button" class="p-link" data-cln="hide-setup">Back to Today</button></header><div class="cln-plan-body">' + readLine() + earlierNotice() +
       '<p class="hint">New tasks start today. Changes and archiving start tomorrow. Earlier cleaning records stay as recorded.</p>' + workNotices(tasksOn(T.day()), T.day()) +
-      (M.state === 'error' ? '<p class="p-err" role="alert">' + esc(M.error) + '</p>' : M.state !== 'ok' ? loading() : '') +
+      (M.state === 'error' ? clnFailLine() : M.state !== 'ok' ? loading() : '') +
       (M.saveError && !d ? '<p class="p-err" role="alert">' + esc(M.saveError) + '</p>' : '') +
       '<div class="cln-repeat-browser"><div class="cln-searchbar"><label class="visually-hidden" for="cln-repeat-search">Find a repeat task in all groups</label><input type="search" class="search" id="cln-repeat-search" data-cln-control="repeat-query" placeholder="Find a repeat task or area" value="' + esc(M.repeatQuery) + '"><button type="button" class="btn dark" data-cln="add"' + (M.state !== 'ok' || M.saveBusy || M.archiveBusy ? ' disabled' : '') + '>Add cleaning task</button></div><label class="field" for="cln-repeat-group"><span class="label">Work group</span><select id="cln-repeat-group" data-cln-control="repeat-group"><option value="all">All groups</option>' + CHEF_GROUPS.map(function (group) { return '<option value="' + group[0] + '"' + (M.repeatGroup === group[0] ? ' selected' : '') + '>' + esc(group[1]) + '</option>'; }).join('') + '</select></label>' + (M.repeatQuery.trim() ? '<p class="hint cln-repeat-scope" role="status">Searching all groups. Clear search to use the selected work group.</p>' : '') + pager(matching.length, M.repeatPage, 'repeat-page', M.repeatGroup) +
       (!matching.length ? '<p class="hint" role="status">' + (current.length ? 'No tasks match this search or group.' : M.state === 'ok' ? 'No repeat tasks set yet. Add a task or load a schedule below.' : 'The task list is not available yet. Your draft is kept.') + '</p>' : '') + '<ul class="cln-templates cln-repeat-layout" role="list">' + items + '</ul></div><div class="cln-setup-imports">' + importPanel() + '</div></div></section>';
   }
-  function readLine() { return '<div class="cln-readline"><span class="hint">' + (M.state === 'ok' ? 'Checked ' + esc(T.clock(M.readAt)) : 'Cleaning, with who and when') + '</span><button type="button" class="p-link" data-cln="refresh"' + (M.state === 'loading' || busy() ? ' disabled' : '') + '>Refresh</button></div>'; }
+  function readLine(packDown) {
+    return '<div class="cln-readline"><span class="hint">' + (M.state === 'ok' ? 'Checked ' + esc(T.clock(M.readAt)) : 'Cleaning, with who and when') + '</span>' +
+      (packDown ? '<button type="button" class="p-link" data-cln="pack-down-jump" aria-controls="cln-packdown-' + T.day() + '">Go to Pack down</button>' : '') +
+      '<button type="button" class="p-link" data-cln="refresh"' + (M.state === 'loading' || busy() ? ' disabled' : '') + '>Refresh</button></div>';
+  }
   function draw() {
     if (!shown()) return;
     if (!C.allowed()) { M.root.innerHTML = ''; return; }
@@ -311,10 +358,10 @@
     var today = tasksOn(T.day()), totals = workTotals(today, T.day()), chef = C.chef(), week = chef && M.view === 'week', setup = chef && M.view === 'setup';
     var toolbar = chef ? '<div class="cln-toolbar"><div class="chips" role="group" aria-label="Cleaning view"><button type="button" class="chip" data-cln="today" aria-pressed="' + (!week && !setup) + '">Today</button><button type="button" class="chip" data-cln="week" aria-pressed="' + week + '">Week</button><button type="button" class="chip" data-cln="setup" aria-pressed="' + setup + '" aria-expanded="' + setup + '" aria-controls="cln-plan-title">Repeat tasks</button></div>' + (!setup && M.draft ? '<button type="button" class="p-link cln-draft-return" data-cln="setup">' + (dirtyDraft() ? 'Unsaved repeat task' : 'Return to repeat task') + '</button>' : '') + '</div>' : '';
     M.root.innerHTML = '<div class="nb-wrap cln-page' + (chef ? ' cln-chef-page' : '') + '" data-cln-view="' + (setup ? 'setup' : week ? 'week' : 'today') + '">' + toolbar + (setup ? editor() :
-      '<section class="nb-page cln-book" aria-labelledby="rtitle"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Cleaning</h2><span class="nb-date">' + esc(week ? 'Week commencing ' + longDay(M.week) : longDay(T.day())) + '</span></div>' + (!week && M.state === 'ok' && today.length ? '<div class="nb-prog cln-progress">' + totals.complete + '/' + totals.total + '<small>' + (totals.events ? 'recorded; repeats apply' : 'done today') + '</small></div>' : '') + '</header>' + readLine() +
+      '<section class="nb-page cln-book" aria-labelledby="rtitle"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Cleaning</h2><span class="nb-date">' + esc(week ? 'Week commencing ' + longDay(M.week) : longDay(T.day())) + '</span></div>' + (!week && M.state === 'ok' && today.length ? '<div class="nb-prog cln-progress">' + totals.complete + '/' + totals.total + '<small>' + (totals.events ? 'recorded; repeats apply' : 'done today') + '</small></div>' : '') + '</header>' + readLine(!chef && M.state === 'ok' && today.some(packSection)) +
       '<div class="cln-temperature"><button type="button" class="p-link" data-cln="temperature" aria-expanded="' + M.temperatureOpen + '">Temperature logs: morning and before dinner service</button>' + (M.temperatureOpen ? '<p class="hint">Temperature logs must be completed first thing in the morning and before dinner service. The temperature log is not connected here. Record readings in the venue\'s temperature log. Cleaning checks do not record or validate temperatures.</p>' : '') + '</div>' + earlierNotice() +
       (!week && M.state === 'ok' && (totals.events || totals.awaiting || totals.blocked) ? '<p class="hint cln-coverage">' + (totals.events ? 'Record every required service, prep or use. The count covers known occurrences; repeat coverage is not configured. ' : '') + (totals.awaiting ? totals.awaiting + ' awaiting Pass check. ' : '') + (totals.blocked ? totals.blocked + ' unable to complete.' : '') + '</p>' : '') +
-      '<div class="nb-body cln-body">' + (M.state === 'error' ? '<p class="p-err" role="alert">' + esc(M.error) + '</p>' : M.state !== 'ok' ? loading() : week ? weekly() : chef ? chefDaily(T.day()) : daily(T.day())) + '</div></section>') + '</div>';
+      '<div class="nb-body cln-body">' + (M.state === 'error' ? clnFailLine() : M.state !== 'ok' ? loading() : week ? weekly() : chef ? chefDaily(T.day()) : daily(T.day())) + '</div></section>') + '</div>';
     if (busy()) Array.prototype.forEach.call(M.root.querySelectorAll('[data-cln="refresh"], [data-cln="today"], [data-cln="week"], [data-cln="setup"], [data-cln="previous"], [data-cln="next"], [data-cln="this-week"]'), function (button) { button.disabled = true; });
     if (window.LK_UX) window.LK_UX.enhance(M.root);
     if (focusAttribute) { var el = Array.prototype.filter.call(M.root.querySelectorAll('input, textarea, select'), function (element) { return element.getAttribute(focusAttribute) === field; })[0]; if (el && !el.disabled) { el.focus({ preventScroll: true }); if (pos && el.setSelectionRange) el.setSelectionRange(pos[0], pos[1]); } }
@@ -341,14 +388,14 @@
       if (M.view === 'week') load(true);
     }, function (error) { if (M !== model) return; M.importBusy = false; var message = error && error.message || 'Could not load the schedule. Your choices are kept. Try again.'; if (pack) M.packImportError = message; else M.importError = message; draw(); });
   }
-  function flowAction(task, day, slot, kind, action, workerId) {
+  function flowAction(task, day, slot, kind, action, workerId, control) {
     if (!hasPlan(task) || !workEnabled(task, day)) return;
     var item = flowList(task, day).filter(function (entry) { return entry.slot === slot; })[0] || { slot: slot, kind: kind, record: null }, d = workDraft(task, day, item), key = flowKey(task, day, slot), model = M;
     if (action === 'perform' && !task.plan.checks.every(function (label) { return d.checked.indexOf(label) >= 0; })) { M.flowErrors[key] = 'Finish every required check before recording this clean.'; draw(); return; }
     if ((action === 'block' || action === 'reopen') && !d.note.trim()) { M.flowErrors[key] = action === 'block' ? 'Write why this clean cannot be completed.' : 'Write a reason before reopening this clean.'; draw(); return; }
-    if (action === 'perform' && C.shared() && !workerId) { openPicker(task, day, { slot: slot, kind: kind }); return; }
+    if (action === 'perform' && C.shared() && !workerId) { openPicker(task, day, { slot: slot, kind: kind, control: control }); return; }
     var sheet = picker, options = { slot: slot, kind: kind, checked: d.checked.slice(), note: d.note.trim() };
-    M.pending[occurrence(task, day)] = { flow: true }; delete M.flowErrors[key]; delete M.flowSaved[key];
+    M.pending[occurrence(task, day)] = { slot: slot, kind: kind, control: control || action }; delete M.flowErrors[key]; delete M.flowSaved[key];
     if (sheet) { sheet.selected = workerId; sheet.busy = true; sheet.error = ''; drawPicker(); }
     draw();
     C.act(task, day, item.record, action, workerId || B.who(), options).then(function (value) {
@@ -368,7 +415,7 @@
   function addFlow(task, day, kind) {
     if (!workEnabled(task, day)) return;
     var slot = C.newSlot(kind); M.expanded[occurrence(task, day)] = true; workDraft(task, day, { slot: slot, kind: kind, record: null }).newEvent = true;
-    flowAction(task, day, slot, kind, 'save');
+    flowAction(task, day, slot, kind, 'save', null, 'add');
   }
   function patchWork(task, day, item) {
     var key = flowKey(task, day, item.slot), panel = M.root && M.root.querySelector('[data-cln-occurrence="' + key + '"]'); if (!panel) return;
@@ -508,12 +555,16 @@
     else if (action === 'clear-work' && C.chef()) { M.workQuery = ''; M.workFilter = 'all'; M.workPage = 0; draw(); }
     else if (action === 'exception' && C.chef() && task) { var exceptionDay = button.getAttribute('data-day'); if (M.view === 'setup') { M.view = exceptionDay === T.day() ? 'today' : 'week'; M.selected = exceptionDay; M.week = monday(exceptionDay); } M.workQuery = ''; M.workFilter = 'all'; M.workGroup = chefGroupId(task); var exceptionGroup = chefGroups(tasksOn(exceptionDay)).filter(function (group) { return group.id === M.workGroup; })[0]; M.workPage = exceptionGroup ? Math.max(0, Math.floor(exceptionGroup.tasks.map(function (item) { return item.id; }).indexOf(task.id) / 6)) : 0; M.expanded[occurrence(task, exceptionDay)] = true; if (M.range !== range().join('|') || M.state === 'idle' || M.state === 'error') load(); draw(); var target = M.root.querySelector('#cln-detail-' + occurrence(task, exceptionDay)) || Array.prototype.filter.call(M.root.querySelectorAll('[data-cln-row]'), function (element) { return element.getAttribute('data-cln-row') === occurrence(task, exceptionDay); })[0]; if (target) { target.setAttribute('tabindex', '-1'); target.focus({ preventScroll: true }); target.scrollIntoView({ block: 'nearest' }); } }
     else if (action === 'temperature') { M.temperatureOpen = !M.temperatureOpen; draw(); }
+    else if (action === 'pack-down-jump') {
+      var packHeading = M.root.querySelector('.cln-packdown-title');
+      if (packHeading) { packHeading.focus({ preventScroll: true }); packHeading.scrollIntoView({ block: 'start' }); }
+    }
     else if (action === 'discard-earlier') { if (!earlierDrafts().length || B.arm && !B.arm('cln-discard-earlier', draw)) return; earlierDrafts().forEach(function (key) { delete M.workDrafts[key]; delete M.flowErrors[key]; delete M.flowSaved[key]; }); M.earlierCleared = 'Undone: earlier unsaved cleaning checks. Saved records were kept.'; draw(); var confirmation = M.root.querySelector('.cln-earlier-status'); if (confirmation) confirmation.focus({ preventScroll: true }); P.toast('Undone: earlier unsaved cleaning checks'); }
     else if (action === 'import-schedule') importSchedule();
     else if (action === 'import-packdown') importSchedule('packdown');
     else if (action === 'flow-add' && hasPlan(task)) addFlow(task, button.getAttribute('data-day'), button.getAttribute('data-kind'));
     else if (action === 'flow-discard' && hasPlan(task)) { var discardKey = flowKey(task, button.getAttribute('data-day'), button.getAttribute('data-slot')); delete M.workDrafts[discardKey]; delete M.flowErrors[discardKey]; draw(); }
-    else if (action === 'flow-quick' && hasPlan(task)) { var quickDay = button.getAttribute('data-day'), quickSlot = button.getAttribute('data-slot'), quickKind = button.getAttribute('data-kind'), quickCurrent = flowRecord(task, quickDay, quickSlot); if (quickCurrent && quickCurrent.done) { if (!C.canUndo(quickCurrent)) return; workDraft(task, quickDay, { slot: quickSlot, kind: quickKind, record: quickCurrent }).note = 'Undo by recorder'; flowAction(task, quickDay, quickSlot, quickKind, 'reopen'); } else flowAction(task, quickDay, quickSlot, quickKind, 'perform'); }
+    else if (action === 'flow-quick' && hasPlan(task)) { var quickDay = button.getAttribute('data-day'), quickSlot = button.getAttribute('data-slot'), quickKind = button.getAttribute('data-kind'), quickCurrent = flowRecord(task, quickDay, quickSlot); if (quickCurrent && quickCurrent.done) { if (!C.canUndo(quickCurrent)) return; workDraft(task, quickDay, { slot: quickSlot, kind: quickKind, record: quickCurrent }).note = 'Undo by recorder'; flowAction(task, quickDay, quickSlot, quickKind, 'reopen', null, 'quick'); } else flowAction(task, quickDay, quickSlot, quickKind, 'perform', null, 'quick'); }
     else if (hasPlan(task) && ['flow-save', 'flow-block', 'flow-perform', 'flow-verify', 'flow-reopen'].indexOf(action) >= 0) flowAction(task, button.getAttribute('data-day'), button.getAttribute('data-slot'), button.getAttribute('data-kind'), action.slice(5));
     else if (action === 'refresh') load(true);
     else if (action === 'today' || action === 'week') { M.view = action === 'week' && C.chef() ? 'week' : 'today'; draw(); load(); }
@@ -562,7 +613,7 @@
     if (action === 'cancel') closePicker();
     else if (action === 'others' && picker && !picker.busy) { picker.others = !picker.others; drawPicker(); var first = popup.querySelector('.cln-others button'); if (first) first.focus({ preventScroll: true }); }
     else if (action === 'refresh') { closePicker(); load(true); }
-    else if (person && pickerValid() && !picker.busy && !picker.failed) { if (picker.flow) flowAction(picker.task, picker.day, picker.flow.slot, picker.flow.kind, 'perform', person); else tick(picker.task, picker.day, person); }
+    else if (person && pickerValid() && !picker.busy && !picker.failed) { if (picker.flow) flowAction(picker.task, picker.day, picker.flow.slot, picker.flow.kind, 'perform', person, picker.flow.control); else tick(picker.task, picker.day, person); }
   });
   document.addEventListener('keydown', function (event) { if (!popup) return; if (event.key === 'Escape') { event.preventDefault(); closePicker(); } if (event.key === 'Tab') { var pane = popup.querySelector('.pt-sheet'); if (picker.busy) { event.preventDefault(); pane.focus({ preventScroll: true }); } else B.trapTab(event, pane, 'button:not([disabled]), input:not([disabled])'); } });
   ['lk-access', 'lk-who', 'lk-admin', 'lk-cfg', 'lk-feat'].forEach(function (name) { window.addEventListener(name, function () { var open = access(); draw(); if (open && shown()) { drawPicker(); load(); } }); });

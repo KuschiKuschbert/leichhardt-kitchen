@@ -8,7 +8,7 @@ setLogLevel('silent');
 const PIN = '000000', OWNER = 'headchef@test.local', K = `kitchens/${PIN}/`, NOW = Date.now();
 if (!process.env.RULES) throw new Error('Set RULES to the compatible foundation rules file. This rollout check is separate from the strict-policy suite.');
 const source = process.env.RULES;
-const rules = readFileSync(source, 'utf8').replaceAll('KITCHEN_PIN', PIN).replaceAll('OWNER_EMAIL', OWNER);
+const rules = readFileSync(source, 'utf8').replaceAll('KITCHEN_PIN', PIN).replaceAll('OWNER_EMAIL', OWNER).replaceAll('PLATFORM_EMAIL', OWNER).replaceAll('PLATFORM_ID', '');
 const env = await initializeTestEnvironment({ projectId: 'demo-device-foundation', firestore: { rules } });
 await env.clearFirestore();
 const google = env.authenticatedContext('google-owner', { email: OWNER, email_verified: true, auth_time: Math.floor(NOW / 1000), firebase: { sign_in_provider: 'google.com' } }).firestore();

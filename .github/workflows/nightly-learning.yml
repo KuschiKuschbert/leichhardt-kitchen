@@ -1,5 +1,8 @@
 # Nightly learning: every night at 03:00 kitchen time (17:00 UTC) the book learns from the finished kitchen days.
-# See scripts/nightly-learn.mjs. Needs two repository secrets: FIREBASE_SA (service account key, JSON) and KITCHEN_PIN.
+# See scripts/nightly-learn.mjs. Runs once per venue (venues/*.json, docs/venues.md), each in its own GitHub
+# environment named like the venue, with its own FIREBASE_SA (service account key, JSON) and KITCHEN_PIN. Leichhardt's
+# may still be repository secrets until they move into its environment. A job stops before reading anything when the
+# service account or the environment's VENUE_PROJECT is not that venue's own (scripts/venues.cjs guard).
 # Run it by hand from the Actions tab with "Run workflow".
 name: Nightly learning
 
@@ -16,7 +19,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  venues:
+    name: Venues
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      list: ${{ steps.v.outputs.list }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: echo "list=$(node scripts/venues.cjs matrix)" >> "$GITHUB_OUTPUT"
   learn:
+    needs: venues
+    name: Learn (${{ matrix.venue.id }})
+    strategy:
+      fail-fast: false
+      matrix:
+        venue: ${{ fromJSON(needs.venues.outputs.list) }}
+    environment:
+      name: ${{ matrix.venue.env }}
+      deployment: false
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -26,6 +48,12 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: scripts/package-lock.json
+      - name: This venue's own project
+        env:
+          VENUE: ${{ matrix.venue.id }}
+          VENUE_PROJECT: ${{ vars.VENUE_PROJECT }}
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: node scripts/venues.cjs guard "$VENUE"
       - name: Install
         working-directory: scripts
         run: npm ci --no-audit --no-fund

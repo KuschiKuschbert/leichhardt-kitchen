@@ -2,6 +2,7 @@
 import { constants, createCipheriv, createDecipheriv, createPrivateKey, createPublicKey, privateDecrypt, publicEncrypt, randomBytes } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
+import venues from './venues.cjs';
 
 const CONTEXT = Buffer.from('leichhardt-prep-standards-import-v1');
 const LIMIT = 1024 * 1024;
@@ -51,7 +52,7 @@ async function main(args) {
   }
   let account;
   try { account = JSON.parse(process.env.FIREBASE_SA || '{}'); } catch { fail(); }
-  if (account.project_id !== 'leichhardt-kitchen' || typeof account.private_key !== 'string') fail();
+  if (account.project_id !== venues.scriptProject() || typeof account.private_key !== 'string') fail();
   if (mode === 'public-key') { process.stdout.write(publicImportKey(account.private_key)); return; }
   await writeFile(args[2], openImport(await readFile(args[1], 'utf8'), account.private_key), { flag: 'wx', mode: 0o600 });
 }

@@ -17,7 +17,16 @@ const errs = p => { let n = p.heads || 0; return p.errors.filter(e => !(n > 0 &&
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const today = L.ymd(new Date(L.NOW));
 const item = (p, id) => p.evaluate(k => window.__fake.dump()[k] || {}, fsKey(['days', today, 'items', id]));
-const box = (p, sel) => p.evaluate(s => { const e = document.querySelector(s); if (!e) return null; const r = e.getBoundingClientRect(), cs = getComputedStyle(e); return { top: r.top, bottom: r.bottom, h: r.height, w: r.width, bg: cs.backgroundColor }; }, sel);
+const box = (p, sel) => p.evaluate(async s => {
+  let e = document.querySelector(s);
+  if (!e) return null;
+  // The slip's countdown stays animated. Its position is measured after only the entrance finishes.
+  await Promise.allSettled(e.getAnimations().filter(a => a.animationName === 'slip-in').map(a => a.finished));
+  e = document.querySelector(s);
+  if (!e) return null;
+  const r = e.getBoundingClientRect(), cs = getComputedStyle(e);
+  return { top: r.top, bottom: r.bottom, h: r.height, w: r.width, bg: cs.backgroundColor };
+}, sel);
 const seeThrough = bg => { const m = /rgba\([^)]*,\s*([\d.]+)\)/.exec(bg || ''); return !!m && +m[1] < 1; };
 (async () => {
   const b = await L.start();
@@ -74,10 +83,10 @@ const seeThrough = bg => { const m = /rgba\([^)]*,\s*([\d.]+)\)/.exec(bg || '');
   ok(p.errors.length === 0, 'waste: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // an error has a red edge, no time line, and stays until OK (it went after 12 seconds before 4 Nov 2026)
-  p = await L.open(b, '#/prep', { wait: 1500 });
+  // Errors that use the slip still have a red edge, no time line, and stay until OK.
+  p = await L.open(b, '#/orders', { wait: 1500 });
   await p.evaluate(() => { window.__fake.mode = 'fail'; });
-  await L.tap(p, '[data-p="tick"][data-id="i3"]'); await L.settle(p, 800);
+  await L.tap(p, '[data-p="otick"][data-id="o1"]'); await L.settle(p, 800);
   ok(await p.$('.p-toast.p-toast-bad') !== null && /Not saved/.test(await txt(p, '.p-toast-bad') || ''), 'error: the slip has the error look');
   ok(await p.evaluate(() => getComputedStyle(document.querySelector('.p-toast-bad'), '::before').content === 'none'), 'error: no time line');
   await p.clock.runFor(20000); await L.settle(p, 300);

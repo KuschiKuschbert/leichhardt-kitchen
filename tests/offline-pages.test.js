@@ -72,7 +72,7 @@ async function fits(p, what, back) {
   ok(mg && !/Checking who is signed in/.test(t), 'Manage Recipes & Drawings for staff, settings started again with no signal: says there is no signal (' + t.slice(0, 120) + ')');
   await fits(p, 'Manage Recipes & Drawings with no signal', 390);
   await warm(p);
-  ok(await shows(p, '#mg-root', /Only the head chef can change recipes/), 'Manage Recipes & Drawings for staff, signal back: says only the head chef changes recipes');
+  ok(await shows(p, '#mg-root', /Head chefs, sous chefs and admins can change recipes/), 'Manage Recipes & Drawings for staff, signal back: names the authorised roles');
   ok(p.errors.length === 0, 'Manage Recipes & Drawings with no signal: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -210,4 +210,4 @@ async function fits(p, what, back) {
 
   await b.close();
   L.report(R);
-})();
+})().catch(error => { console.log(R.join('\n')); console.error(error); process.exit(1); });

@@ -1,0 +1,428 @@
+{
+  "source": "Preview: static snapshots of the implemented app (main 70ce8f4) edited per design, synthetic data. Not the implemented change.",
+  "notes": [
+    {
+      "design": "before",
+      "screen": "chef-today",
+      "width": 390,
+      "rowsInView": 5,
+      "rowsTotal": 6,
+      "visibleBottom": 707,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39",
+        "Set today's team 103x32"
+      ]
+    },
+    {
+      "design": "before",
+      "screen": "chef-ahead-3",
+      "width": 390,
+      "rowsInView": 0,
+      "rowsTotal": 0,
+      "visibleBottom": 776,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "before",
+      "screen": "chef-ahead-3",
+      "width": 768,
+      "rowsInView": 0,
+      "rowsTotal": 0,
+      "visibleBottom": 1024,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "before",
+      "screen": "chef-ahead-3",
+      "width": 1280,
+      "rowsInView": 0,
+      "rowsTotal": 0,
+      "visibleBottom": 800,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "before",
+      "screen": "staff-day-arrives",
+      "width": 390,
+      "rowsInView": 6,
+      "rowsTotal": 7,
+      "visibleBottom": 707,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "before",
+      "screen": "staff-today",
+      "width": 390,
+      "rowsInView": 6,
+      "rowsTotal": 6,
+      "visibleBottom": 707,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "shared",
+      "screen": "day-arrives",
+      "width": 390,
+      "rowsInView": 6,
+      "rowsTotal": 7,
+      "visibleBottom": 707,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "shared",
+      "screen": "day-arrives",
+      "width": 768,
+      "rowsInView": 7,
+      "rowsTotal": 7,
+      "visibleBottom": 1024,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "shared",
+      "screen": "day-arrives",
+      "width": 1280,
+      "rowsInView": 7,
+      "rowsTotal": 7,
+      "visibleBottom": 800,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "a",
+      "screen": "later-day",
+      "width": 390,
+      "rowsInView": 2,
+      "rowsTotal": 2,
+      "visibleBottom": 707,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "a",
+      "screen": "later-day",
+      "width": 768,
+      "rowsInView": 2,
+      "rowsTotal": 2,
+      "visibleBottom": 1024,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "a",
+      "screen": "later-day",
+      "width": 1280,
+      "rowsInView": 2,
+      "rowsTotal": 2,
+      "visibleBottom": 800,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "a",
+      "screen": "sheet",
+      "width": 390,
+      "rowsInView": 3,
+      "rowsTotal": 3,
+      "visibleBottom": 776,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "b",
+      "screen": "plan-page",
+      "width": 390,
+      "rowsInView": 0,
+      "rowsTotal": 2,
+      "visibleBottom": 776,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39",
+        "‹ 34x44",
+        "› 34x44"
+      ]
+    },
+    {
+      "design": "b",
+      "screen": "plan-page-scrolled",
+      "width": 390,
+      "rowsInView": 2,
+      "rowsTotal": 2,
+      "visibleBottom": 776,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39",
+        "‹ 34x44",
+        "› 34x44"
+      ]
+    },
+    {
+      "design": "b",
+      "screen": "plan-page",
+      "width": 768,
+      "rowsInView": 0,
+      "rowsTotal": 2,
+      "visibleBottom": 1024,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39",
+        "‹ 34x44",
+        "› 34x44"
+      ]
+    },
+    {
+      "design": "b",
+      "screen": "plan-page",
+      "width": 1280,
+      "rowsInView": 0,
+      "rowsTotal": 2,
+      "visibleBottom": 800,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39",
+        "‹ 34x44",
+        "› 34x44"
+      ]
+    },
+    {
+      "design": "b",
+      "screen": "plan-slip",
+      "width": 390,
+      "rowsInView": 0,
+      "rowsTotal": 3,
+      "visibleBottom": 776,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39",
+        "‹ 34x44",
+        "› 34x44"
+      ]
+    },
+    {
+      "design": "b",
+      "screen": "plan-slip-scrolled",
+      "width": 390,
+      "rowsInView": 3,
+      "rowsTotal": 3,
+      "visibleBottom": 776,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39",
+        "‹ 34x44",
+        "› 34x44"
+      ]
+    },
+    {
+      "design": "b",
+      "screen": "prep-later-day",
+      "width": 390,
+      "rowsInView": 2,
+      "rowsTotal": 2,
+      "visibleBottom": 776,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39",
+        "Change them in the chef panel, 320x35"
+      ]
+    },
+    {
+      "design": "c",
+      "screen": "today",
+      "width": 390,
+      "rowsInView": 5,
+      "rowsTotal": 6,
+      "visibleBottom": 707,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39",
+        "Set today's team 103x32"
+      ]
+    },
+    {
+      "design": "c",
+      "screen": "later-day",
+      "width": 390,
+      "rowsInView": 2,
+      "rowsTotal": 2,
+      "visibleBottom": 776,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "c",
+      "screen": "later-day",
+      "width": 768,
+      "rowsInView": 2,
+      "rowsTotal": 2,
+      "visibleBottom": 1024,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "c",
+      "screen": "later-day",
+      "width": 1280,
+      "rowsInView": 2,
+      "rowsTotal": 2,
+      "visibleBottom": 800,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "c",
+      "screen": "later-slip",
+      "width": 390,
+      "rowsInView": 3,
+      "rowsTotal": 3,
+      "visibleBottom": 776,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "mix",
+      "screen": "later-day",
+      "width": 390,
+      "rowsInView": 2,
+      "rowsTotal": 2,
+      "visibleBottom": 707,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "mix",
+      "screen": "later-day",
+      "width": 768,
+      "rowsInView": 2,
+      "rowsTotal": 2,
+      "visibleBottom": 1024,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "mix",
+      "screen": "later-day",
+      "width": 1280,
+      "rowsInView": 2,
+      "rowsTotal": 2,
+      "visibleBottom": 800,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "mix",
+      "screen": "sheet",
+      "width": 390,
+      "rowsInView": 3,
+      "rowsTotal": 3,
+      "visibleBottom": 776,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "mix",
+      "screen": "sheet",
+      "width": 768,
+      "rowsInView": 3,
+      "rowsTotal": 3,
+      "visibleBottom": 1024,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "mix",
+      "screen": "sheet",
+      "width": 1280,
+      "rowsInView": 3,
+      "rowsTotal": 3,
+      "visibleBottom": 800,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "mix",
+      "screen": "tomorrow",
+      "width": 390,
+      "rowsInView": 0,
+      "rowsTotal": 0,
+      "visibleBottom": 776,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "mix",
+      "screen": "sous-later-day",
+      "width": 390,
+      "rowsInView": 2,
+      "rowsTotal": 2,
+      "visibleBottom": 776,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    },
+    {
+      "design": "mix",
+      "screen": "day-arrives",
+      "width": 390,
+      "rowsInView": 6,
+      "rowsTotal": 7,
+      "visibleBottom": 707,
+      "overflow": 0,
+      "under44": [
+        "Skip to content 129x39"
+      ]
+    }
+  ]
+}

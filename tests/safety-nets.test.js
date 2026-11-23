@@ -92,6 +92,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await L.settle(p, 100);
   ok(/Tap again: stopped working here/.test(await txt(p, '[data-p="a-remove-person"][data-i="2"]')), 'staff: first Stopped working here tap arms');
   ok(/Stopped working here/.test(await txt(p, '[data-p="a-remove-person"][data-i="1"]')), 'staff: Remove is now Stopped working here');
+  ok(await p.$('[data-p="a-delete-person"]') === null, 'staff: a sous chef has no Delete for good (the head chef\'s admin panel only)');
   await p.click('[data-p="a-remove-person"][data-i="2"]');
   await L.settle(p, 100);
   ok(/Put back/.test(await txt(p, '[data-p="a-remove-person"][data-i="2"]')), 'staff: second tap takes them off the list, with Put back');
@@ -123,7 +124,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   // admin: reset PIN and remove person need a second tap; minutes cancel and publish need a second tap; note Close asks when unsaved
   p = await L.open(b, '#/admin', { admin: true, wait: 1800 });
   await L.adminTab(p, 'people');
-  await L.settle(p, 200);
+  await L.openPerson(p, 'ann');
   await p.click('[data-p="a-reset-pin"][data-id="ann"]');
   await L.settle(p, 100);
   ok(/Tap again to reset/.test(await txt(p, '[data-p="a-reset-pin"][data-id="ann"]')), 'admin: Reset PIN asks again');

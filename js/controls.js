@@ -201,6 +201,9 @@
     if (searchMemory.size > 150) searchMemory.delete(searchMemory.keys().next().value);
     var placeholder = input.placeholder || 'Search', wrap = node('span', 'ux-search'), clear = node('button', 'ux-search-clear', '×'), status = node('span', 'ux-search-status');
     input.parentNode.insertBefore(wrap, input); wrap.appendChild(input); wrap.appendChild(clear); wrap.appendChild(status);
+    // the search pill's magnifier (.find-i) goes in with the box, so it stays centred on the box at any height while the
+    // status line shows under it (the consistency sweep, step 3, 20 Nov 2026)
+    var icon = wrap.previousElementSibling; if (icon && icon.classList && icon.classList.contains('find-i')) wrap.insertBefore(icon, input);
     clear.type = 'button'; clear.setAttribute('aria-label', 'Clear search'); input.dataset.smartSearch = 'true';
     status.id = 'ux-search-status-' + (++serial); status.setAttribute('role', 'status'); status.setAttribute('aria-atomic', 'true');
     input.setAttribute('aria-describedby', [input.getAttribute('aria-describedby'), status.id].filter(Boolean).join(' '));
@@ -449,7 +452,7 @@
   // Explicit choice actions exclude command buttons such as tick, delete, add and page navigation.
   var choiceActions = {
     'data-act': 'view free lens amode kind setview settext setshared setpractice',
-    'data-p': 'tr-vpick tr-ppick range heat calm hrm lv-f wunit punit ounit wreason tr-dir tr-unit n-tag n-dow n-quick n-mode mn-ast g-cat g-fcat g-fwho dk-pick cut-day ml-cat ml-pri todo-for',
+    'data-p': 'tr-vpick tr-ppick range heat calm hrm lv-f wunit punit ounit wreason tr-dir tr-unit n-tag n-dow n-mode mn-ast g-cat g-fcat g-fwho dk-pick cut-day ml-cat ml-pri todo-for',
     'data-mg': 'chip hand', 'data-fe': 'chip mode', 'data-dw': 'sm-st cat sub wfam ware tintc setIng', 'data-ai': 'range', 'data-su': 'group history-order'
   };
   function choiceAction(b) { var found; Object.keys(choiceActions).some(function (attr) { var v = b.getAttribute(attr); if (v && choiceActions[attr].split(' ').indexOf(v) >= 0) { found = attr + ':' + v; return true; } return false; }); return found; }
@@ -719,6 +722,50 @@
   window.addEventListener('resize', scheduleChoices);
   if (document.fonts) { document.fonts.ready.then(scheduleChoices); document.fonts.addEventListener('loadingdone', scheduleChoices); }
   window.addEventListener('hashchange', function () { if (activePicker) activePicker.close(); lastTrigger = null; searchMemory.forEach(function (s) { clearTimeout(s.timer); }); searchMemory.clear(); });
+  /* One print job at a time, shared by the function run sheets (js/functions.js) and the recipe cards
+     (js/recipe-print.js; head chef 19 Nov 2026, docs/print-cards-options/brief.md). A job is a print-only snapshot:
+     root goes on document.body, body takes the job's class (its CSS hides everything else), and the browser's own
+     dialog opens. It ends on afterprint, or when the person comes back to the book (some phones never send
+     afterprint). A second job never runs over a first that is still open; one whose dialog already came back is
+     replaced, so a missing browser event never locks a Print button. pageCss is an @page rule kept only while the
+     job lasts, so one paper size never leaks into another print. */
+  var printJob = null;
+  function printEnd() {
+    if (!printJob) return;
+    var job = printJob; printJob = null;
+    if (job.root.parentNode) job.root.parentNode.removeChild(job.root);
+    if (job.style && job.style.parentNode) job.style.parentNode.removeChild(job.style);
+    document.body.classList.remove(job.cls); document.title = job.title;
+    if (job.button && document.body.contains(job.button)) { job.button.disabled = false; job.button.focus({ preventScroll: true }); }
+    if (job.done) { try { job.done(); } catch (e) {} }
+  }
+  function printRun(root, o) {
+    o = o || {};
+    if (printJob) { if (!printJob.returned) return false; printEnd(); }
+    var fail = function (m) { if (o.onError) o.onError(m); };
+    if (typeof window.print !== 'function') { fail('Printing is not available here. Open the book in your browser to print.'); return false; }
+    var style = null;
+    if (o.pageCss) { style = document.createElement('style'); style.textContent = o.pageCss; document.head.appendChild(style); }
+    printJob = { root: root, title: document.title, button: o.button || null, cls: o.cls || 'lk-printing', style: style, done: o.done || null };
+    if (o.button) o.button.disabled = true;
+    if (root.parentNode !== document.body) document.body.appendChild(root);
+    document.body.classList.add(printJob.cls); if (o.title) document.title = o.title;
+    // Wait for fonts, but a failed font load still prints with the fallback.
+    var ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+    Promise.race([ready.catch(function () {}), new Promise(function (resolve) { setTimeout(resolve, 1000); })]).then(function () {
+      if (!printJob || printJob.root !== root) return;
+      printJob.started = true;
+      try {
+        window.print();
+        if (printJob && printJob.root === root) { printJob.returned = true; if (o.button) o.button.disabled = false; }
+      } catch (e) { printEnd(); fail('Could not open printing. Open the book in your browser and try again.'); }
+    });
+    return true;
+  }
+  window.addEventListener('afterprint', printEnd);
+  window.addEventListener('focus', function () { if (printJob && printJob.started) printEnd(); });
+  window.LK_PRINT = { run: printRun, end: printEnd, root: function () { return printJob ? printJob.root : null; } };
+
   window.LK_UX = { close: function () { if (activePicker) activePicker.close(); }, enhance: enhance, compare: compare, cellValue: cellValue, AdaptivePicker: AdaptivePicker, SmartSearchBar: SmartSearchBar, restoreFocus: restoreFocus, resetSearch: function (input) { var s = searches.get(input); if (s) s.reset(); } };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule); else schedule();
 })();

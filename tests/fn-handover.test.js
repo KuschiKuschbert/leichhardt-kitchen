@@ -1,6 +1,6 @@
 // The two-way check on the service view (head chef, 14 Nov 2026, docs/function-handover-options/brief.md, Chosen): the
-// kitchen taps what goes and sends it as a trip; every trip waiting for Functions sits on the shelf at the end of the
-// board; Functions people confirm each trip; a head or sous chef may confirm for Functions after 10 minutes. Picks are
+// kitchen taps what goes and sends it as a trip; every trip waiting for Functions sits on the shelf in the board;
+// Functions people confirm each trip; a head or sous chef may confirm for Functions after 10 minutes. Picks are
 // never saved until Send, survive a redraw and shrink when another phone sends; a double tap sends one trip; a refusal
 // keeps the picks; no signal says Not sent yet. No reads of its own. All records and people here are made up.
 const L = require('./lib'), M = require('../js/functions.js');
@@ -40,6 +40,11 @@ const moreOff = (p, rid) => p.$eval(wedRow + ' [data-fn="pick-more"][data-r="0|'
   // 1. a cook at 18:35: the wedding goes out in trips
   let p = await L.open(b, '#/fn/now', { who: 'ann', extra: base(), clock: at(today, '18:35'), width: 390, wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('.fn-svc-row [data-fn="pick"]'));
+  ok(await p.evaluate(() => {
+    const fresh = document.querySelector('.fn-svc-page .fn-fresh').getBoundingClientRect();
+    const board = document.querySelector('.fn-svc-board').getBoundingClientRect();
+    return board.top - fresh.bottom <= 16;
+  }), '390 px Service: the live board starts just below the freshness line');
   const bill = await reads(p), asked = await p.evaluate(() => window.__fake.reads.length);
   ok(await p.$$eval(wedRow + ' [data-fn="pick"]', l => l.length) === 5 && await sendText(p) === 'Send all 14', 'cook: every kind left is a button, and Send all 14 (' + await sendText(p) + ')');
   // a tap puts one platter in (head chef, 14 Nov 2026, after trying it), + one more; a tap on a picked kind takes it out
@@ -60,8 +65,18 @@ const moreOff = (p, rid) => p.$eval(wedRow + ' [data-fn="pick-more"][data-r="0|'
   await p.evaluate(() => window.dispatchEvent(new Event('lk-fn'))); await L.settle(p, 200);
   ok(await sendText(p) === 'Send 7 platters', 'pick: the picks stay through a redraw');
   ok(await p.evaluate(k => !Object.keys(window.__fake.dump()).some(x => x.startsWith(k)), key(['fnsent'])), 'pick: nothing is saved before Send');
+  // The first send is visible while it waits. The coordinator queue counts it only after acknowledgement.
+  await p.clock.pauseAt(await p.evaluate(() => Date.now() + 1000));
+  await p.evaluate(() => { window.__fake.mode = 'hold'; });
   // a double tap sends one trip
   await p.evaluate(() => { const b = document.querySelector('.fn-svc-row [data-fn="send"][data-id="wed"]'); b.click(); b.click(); });
+  await L.waitFor(p, () => /Not sent yet/.test(document.querySelector('.fn-svc-trip')?.textContent || ''));
+  ok(flat(await txt(p, '.fn-svc-wl')) === '1 trip sending to Functions' && flat(await txt(p, '.fn-svc-sh')).startsWith('Sending to Functions'),
+    'held first send: the board and shelf say Sending before there is any acknowledged trip');
+  ok(await p.evaluate(() => LK_PREP.unsent()) && !(await p.$('.fn-svc-trip [data-fn="trip-out"], .fn-svc-trip [data-fn="trip-undo"]')),
+    'held first send: the write is unsent and offers neither Confirm nor Undo before acknowledgement');
+  await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
+  await p.clock.runFor(400);
   await L.waitFor(p, k => !!window.__fake.dump()[k], TRIP(1));
   await L.settle(p, 400);
   let s = await store(p);
@@ -78,6 +93,7 @@ const moreOff = (p, rid) => p.$eval(wedRow + ' [data-fn="pick-more"][data-r="0|'
   const plate = flat(await txt(p, '.fn-svc-page .fn-next'));
   ok(/To plate now 11 platters/.test(plate) && /4 ?× ?Antipasto/.test(plate) && !/Pizza/.test(plate), 'To plate now leaves out what was sent (' + plate.slice(0, 160) + ')');
   ok(/^Sent trip 1$/.test(await sendText(p)) && await p.$eval(wedRow + ' [data-fn="send"]', b => b.disabled), 'after the answer: the button says Sent trip 1 and rests, so a quick second tap sends nothing');
+  await p.clock.resume();
   // another phone sends the Sliders while Ann has the Sliders and the Fruit picked: her picks shrink, in words
   await pick(p, 'sliders-platter'); await pick(p, 'fruit-platter'); await L.settle(p, 100);
   const samAt = await p.evaluate(() => window.LK_TIME.now());
@@ -113,6 +129,8 @@ const moreOff = (p, rid) => p.$eval(wedRow + ' [data-fn="pick-more"][data-r="0|'
   await p.evaluate(() => { window.__fake.mode = 'hold'; });
   await p.click(wedRow + ' [data-fn="send"]'); await L.settle(p, 300);
   ok(/Trip 4 · 18:30 Wedding reception · Marquee ?1 × Fruit ?Not sent yet/.test(flat(await txt(p, '.fn-svc-shelf'))) && await p.$eval(wedRow + ' [data-fn="send"]', b => b.disabled && /Sending trip 4/.test(b.textContent)), 'no signal: the trip says Not sent yet and the Send rests ("Sending trip 4...")');
+  ok(flat(await txt(p, '.fn-svc-wl')) === '2 trips waiting for Functions · 1 sending' && /sending shown below/.test(flat(await txt(p, '.fn-svc-sh'))),
+    'held next send: two acknowledged trips are counted separately from the one still sending');
   await L.settle(p, 1700);
   ok(await p.$eval(wedRow + ' [data-fn="send"]', b => !b.disabled && b.textContent.trim() === 'Send all 3'), 'no signal: after 1.5 seconds the button is back for what is left');
   await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
@@ -138,7 +156,12 @@ const moreOff = (p, rid) => p.$eval(wedRow + ' [data-fn="pick-more"][data-r="0|'
   const fayPage = await p.evaluate(() => ({ send: document.querySelectorAll('[data-fn="send"], [data-fn="pick"]').length, first: (document.querySelector('.fn-svc-board > :nth-child(2)') || {}).className, out: document.querySelectorAll('.fn-svc-shelf [data-fn="trip-out"]').length }));
   ok(fayPage.send === 0 && fayPage.first === 'fn-svc-shelf' && fayPage.out === 2, 'Fay\'s service view: the shelf first, Confirm out on each trip, no send or pick buttons (' + JSON.stringify(fayPage) + ')');
   ok(/Out today: 1 trip\. Last: Wedding reception trip 1, 18:40 Fay\./.test(flat(await txt(p, '.fn-svc-outs'))), 'Fay\'s service view: Out today names the last trip confirmed');
+  await p.evaluate(() => { window.__fake.mode = 'hold'; });
   await p.click('.fn-svc-trip:has-text("Trip 2") [data-fn="trip-out"]');
+  const confirming = flat(await p.locator('.fn-svc-trip:has-text("Trip 2")').textContent());
+  ok(/Confirming out/.test(confirming) && !/Not sent yet/.test(confirming) && (await p.$$('.fn-svc-trip')).length === 2,
+    'held coordinator confirmation: the already-sent trip stays with the queue and says Confirming out');
+  await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
   await L.waitFor(p, k => !!(window.__fake.dump()[k] || {}).outAt, TRIP(2)); await L.settle(p, 300);
   ok((await p.$$('.fn-svc-trip')).length === 1, 'Fay confirms trip 2 on the shelf: one trip left waiting');
   ok(p.errors.length === 0 && !(await L.overflow(p)), '390 px Fay: no page errors, no sideways scroll ' + p.errors.join(' | '));
@@ -176,8 +199,20 @@ const moreOff = (p, rid) => p.$eval(wedRow + ' [data-fn="pick-more"][data-r="0|'
   // 5. every size: no sideways scroll, no errors, picks and the shelf on screen
   for (const w of [768, 1280]) {
     for (const who of ['ann', 'fay']) {
-      p = await L.open(b, '#/fn/now', { who, extra: Object.assign({}, s), clock: at(today, '18:40'), width: w, height: 900, wait: 1500 });
+      p = await L.open(b, '#/fn/now', { who, extra: Object.assign({}, s), clock: at(today, '18:40'), width: w, height: 800, wait: 1500 });
       await L.waitFor(p, () => !!document.querySelector('.fn-svc-board'));
+      const layout = await p.evaluate(() => {
+        const rounds = document.querySelector('.fn-svc-rows').getBoundingClientRect();
+        const shelf = document.querySelector('#fn-shelf').getBoundingClientRect();
+        return { beside: shelf.left >= rounds.right && shelf.top < rounds.bottom, above: shelf.bottom <= rounds.top };
+      });
+      const beside = who === 'ann' && w === 1280;
+      ok(layout.beside === beside && layout.above === (who === 'fay'), w + ' px ' + who + ': only the wide kitchen view puts the shelf beside the rounds');
+      if (beside) {
+        const scroll = await p.evaluate(() => scrollY);
+        await p.click('.fn-svc-wl');
+        ok(await p.evaluate(y => scrollY === y && document.activeElement.id === 'fn-shelf', scroll), 'the waiting count focuses the visible shelf without moving the rounds');
+      }
       if (who === 'ann') { await pick(p, 'cheese-platter').catch(() => {}); await L.settle(p, 200); }
       ok(p.errors.length === 0 && !(await L.overflow(p)), w + ' px ' + who + ': no page errors, no sideways scroll ' + p.errors.join(' | '));
       await p.context().close();

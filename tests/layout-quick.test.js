@@ -56,8 +56,11 @@ const onTop = (p, sel) => p.evaluate(s => {
       }
     }
     await L.adminTab(p, 'people'); await L.settle(p, 300);
-    const h = await p.evaluate(() => Math.max(...[...document.querySelectorAll('[data-p="a-reset-pin"]')].map(e => e.getBoundingClientRect().height)));
+    await L.openPerson(p, 'ann');
+    const pin = await p.locator('#pp-editor [data-p="a-reset-pin"]').boundingBox();
+    const h = pin ? pin.height : 0;
     ok(h > 0 && h <= 52, w + ' admin: Reset PIN fits on one line (' + Math.round(h) + ' px high)');
+    ok(await p.locator('.lv[data-lv="people"]').isVisible() === (w >= 1000), w + ' admin: the editor shares the screen with the roster only on desktop');
     ok(p.errors.length === 0, w + ' admin: no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }
@@ -67,6 +70,7 @@ const onTop = (p, sel) => p.evaluate(s => {
   await L.adminTab(p, 'people'); await L.settle(p, 300);
   // nothing changed yet: no Save bar over the list (22 Oct 2026, Option B)
   ok(await p.evaluate(() => { const e = document.querySelector('[data-p="a-save"]'); return !e || !e.getClientRects().length; }), 'phone admin: no Save bar while nothing has changed');
+  await L.tap(p, '[data-p="a-person-open"][data-id="sam"]'); await L.settle(p, 200);   // one person opens at a time (19 Nov 2026)
   await p.fill('#a-n0', 'Sam B'); await p.$eval('#a-n0', e => e.dispatchEvent(new Event('input', { bubbles: true }))); await L.settle(p, 300);
   await p.evaluate(() => window.scrollTo(0, 0)); await L.settle(p, 150);
   v = await onTop(p, '[data-p="a-save"]');

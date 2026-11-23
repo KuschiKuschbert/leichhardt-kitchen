@@ -45,7 +45,7 @@
 */
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import { doc, getDoc, getDocs, getDocFromServer, getDocsFromServer, onSnapshot, collection, query, where, orderBy, limit, documentId, startAfter,
-  setDoc, deleteDoc, writeBatch, increment, serverTimestamp, Timestamp, setLogLevel } from 'firebase/firestore';
+  setDoc, deleteDoc, writeBatch, runTransaction, increment, serverTimestamp, Timestamp, setLogLevel } from 'firebase/firestore';
 import { anonContext, dailySession, adminGrant, seedOwnerDevice, nextFour } from './device-auth-fixtures.mjs';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -53,7 +53,7 @@ const functionModel = createRequire(import.meta.url)('../../js/functions.js');
 
 setLogLevel('silent');   // a refusal is an answer here, not something to log
 const PIN = '000000', OWNER = 'headchef@test.local', K = 'kitchens/' + PIN + '/';
-const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8').replaceAll('KITCHEN_PIN', PIN).replaceAll('OWNER_EMAIL', OWNER);
+const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8').replaceAll('KITCHEN_PIN', PIN).replaceAll('OWNER_EMAIL', OWNER).replaceAll('PLATFORM_EMAIL', OWNER).replaceAll('PLATFORM_ID', '');
 let env = await initializeTestEnvironment({ projectId: 'demo-client-shapes', firestore: { rules } });
 await env.clearFirestore();
 
@@ -61,6 +61,7 @@ await env.clearFirestore();
 const NOW = Date.now(), MIN = 60000, DAY = 86400000;
 const kday = ms => new Date(ms + 10 * 3600000).toISOString().slice(0, 10);
 const TODAY = kday(NOW), YDAY = kday(NOW - DAY), TMW = kday(NOW + DAY), PAST = kday(NOW - 5 * DAY);
+const LATER = kday(NOW + 5 * DAY);   // a day the admin plans prep lines for (docs/prep-ahead-options/brief.md)
 const TEAM_WEEK_START = kday(NOW - ((new Date(TODAY + 'T12:00:00+10:00').getUTCDay() + 6) % 7) * DAY);
 const TEAM_WEEK_END = kday(Date.parse(TEAM_WEEK_START + 'T12:00:00+10:00') + 6 * DAY);
 const MIDNIGHT = Date.parse(TODAY + 'T00:00:00Z') - 10 * 3600000, T0 = Date.parse(TODAY + 'T08:00:00Z');
@@ -88,6 +89,7 @@ const DB = Object.fromEntries(ALL.map(r => [r, anonContext(env, UID[r]).firestor
 const not = (...x) => ALL.filter(r => !x.includes(r));
 const KITCHEN = not('fay'), PINS = ALL, KPINS = not('fay'), GOOGLE = ['owner', 'ownkit'];
 const CHEFS = ['owner', 'ownkit', 'kit', 'sam'], CREW = ['ann', 'lou', 'vic', 'tab'];
+const HEAD_CHEFS = ['owner', 'ownkit', 'kit'];
 const ADDS = not('vic', 'fay'), TICKS = ADDS, DELS = ['owner', 'ownkit', 'kit', 'sam', 'lou'];   // can('add'), can('tick'), can('del')
 const MAIL = ['sam', 'ann', 'lou', 'vic', 'tab'];   // Kitchen mail in the chef hat: everyone signed in but the head chef
 const FNMGR = ['owner', 'fay'], FNCANCEL = ['owner', 'ownkit', 'kit', 'sam', 'fay'];   // fnOK(), fnCancelOK()
@@ -146,6 +148,7 @@ const seed = {
   'directnotes/d1': ping({ text: 'Ann, see me at 15:00', tag: 'none', to: 'ann' }), [`directnotes/d1/seen/${TODAY}_ann`]: { day: TODAY, at: NOW, by: 'ann' },
   'minutes/m1': mins(), 'minutes/m1/signs/1_ann': { v: 1, st: 'present', at: NOW, name: 'Ann', by: 'ann' }, 'minutes/m2': mins({ no: 2, status: 'draft', pubAt: null, date: TODAY }),
   'guides/g1': { title: 'Dishwasher', cat: 'equipment', pages: 1, v: 1, removed: false }, 'guides/g1/pages/0': { img: 'data:image/png;base64,AA', v: 1, n: 0 },
+  'tutorials/staff': { links: { prep: { w: 'AAAAAAAAAAA', t: 'BBBBBBBBBBB' } }, at: 1, by: 'kit' }, 'tutorials/chefs': { links: { 'chef-panel': { w: 'CCCCCCCCCCC', t: '' } }, at: 1, by: 'kit' },
   'functions/f1': fnRec('f1'), 'functions/f1/hist/0': { was: {}, at: 1, by: 'fay' }, 'fncontact/f1': { cname: 'Jo Example', phone: '0400 000 000', email: '', upd: 1, by: 'fay' },
   [`fnsent/f1_${T0}`]: { fid: 'f1', at: T0, day: TODAY, sent: false, sentAt: 1, sentBy: 'ann', by: 'sam' },
   'fnseen/f1_ann_week_1abc2': { fid: 'f1', g: '1abc2', s: 'week', day: TODAY, at: NOW, by: 'ann' },
@@ -236,6 +239,8 @@ row('js/prep.js loadLearned(): learned, the 500 most used (summary missing or ol
 row('js/prep.js loadSections(): the sections, once a day (a listener until 7 Nov 2026)', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(C(db, 'sections')) });
 row('js/prep.js watchActivity(): activity listener (the Google device)', { ok: KITCHEN, asks: GOOGLE, run: db => listen(C(db, 'activity')) });
 row('js/prep.js maybeRoll(): the last written day\'s prep lines', { ok: KITCHEN, asks: not('owner', 'vic', 'fay'), run: db => getDocs(C(db, `days/${YDAY}/items`)) });
+row('js/prep.js tmrPlanLoad(): tomorrow\'s planned lines, for the night list\'s double-up check (19 Nov 2026)', { ok: KITCHEN, asks: ADDS,
+  run: db => getDocs(query(C(db, `days/${TMW}/items`), where('plan', '==', TMW))) });
 row('js/prep.js loadPast(): a past day\'s prep lines (14 days, dayCache)', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(C(db, `days/${YDAY}/items`)) });
 row('js/prep.js mergeDups(): today\'s lines by id from the server', { ok: KITCHEN, asks: DELS.filter(r => r !== 'owner'), run: db => getDocsFromServer(query(C(db, `days/${TODAY}/items`), where(documentId(), 'in', ['l1', 'l9']))) });
 row('js/prep.js loadUsage(): summary/usage get (admin)', { ok: KITCHEN, asks: GOOGLE, run: db => getDoc(D(db, 'summary/usage')) });
@@ -253,7 +258,6 @@ row('js/prep.js book().requests(): today\'s order lines not ordered yet (Supplie
 row('js/prep.js watchWaste(): today\'s wastage lines listener', { ok: KITCHEN, asks: KITCHEN, run: db => listen(C(db, `waste/${TODAY}/lines`)) });
 row('js/prep.js loadWSum(): summary/waste get', { ok: KITCHEN, asks: KITCHEN, run: db => getDoc(D(db, 'summary/waste')) });
 row('js/prep.js loadPageReview() and loadWNote(): today\'s waste review and the last days\' (waste/<day>)', { ok: KITCHEN, asks: KITCHEN, run: db => Promise.all([getDoc(D(db, `waste/${TODAY}`)), getDoc(D(db, `waste/${YDAY}`))]) });
-row('js/prep.js saveReview(): the review from the server before it is saved (waste/<day>)', { ok: KITCHEN, asks: CHEFS, run: db => getDocFromServer(D(db, `waste/${TODAY}`)) });
 row('js/prep.js pastRead() (admin Reports): a past day\'s wastage lines', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(C(db, `waste/${PAST}/lines`)) });
 
 // transfers
@@ -291,6 +295,10 @@ row('js/prep.js loadSigns(): the register (minutes/<id>/signs)', { ok: CHEFS, as
 // guides, recipes, drinks, sections, mail, to-do, cut-offs
 row('js/prep.js loadGuides(): the guides list', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(C(db, 'guides')) });
 row('js/prep.js gPagesFor(): a guide\'s pages (guides/<id>/pages)', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(C(db, 'guides/g1/pages')) });
+row('js/prep.js gvLinksLoad(): the video links for everyone (tutorials/staff)', { ok: KITCHEN, asks: KITCHEN, run: db => getDoc(D(db, 'tutorials/staff')) });
+row('js/prep.js gvLinksLoad(): the chefs\' video links (tutorials/chefs)', { ok: CHEFS, asks: CHEFS, run: db => getDoc(D(db, 'tutorials/chefs')) });
+row('js/prep.js vfLoad() (admin Guides): both video link records, from the server', { ok: CHEFS, asks: GOOGLE,
+  run: db => Promise.all([getDocFromServer(D(db, 'tutorials/staff')), getDocFromServer(D(db, 'tutorials/chefs'))]) });
 row('js/prep.js rxSync(): book/index, a changed recipe and drawing (with the kitchen PIN)', { ok: ALL, asks: ALL,
   run: db => Promise.all([getDoc(D(db, 'book/index')), getDoc(D(db, 'recipes/burger')), getDoc(D(db, 'drawings/burger-plate'))]) });
 row('js/prep.js dkCheck(): my usual drink (drinks/<me>)', { ok: KITCHEN, asks: KPINS, run: (db, w, r) => getDoc(D(db, 'drinks/' + ownId(r, w))) });
@@ -330,6 +338,21 @@ row('js/supplier-store.js: a supplier\'s own orders, including before lineage at
 row('js/supplier-store.js: inherited split history before its fixed cutoff (parent orders, bounded 21)', { ok: CHEFS, asks: CHEFS,
   run: db => getDocs(query(C(db, 'suppliers/s1/orders'), where('at', '<=', NOW), orderBy('at', 'desc'), limit(21))) });
 row('js/supplier-store.js: a cut-off\'s link (supplierlinks/<day>_<cut-off>)', { ok: CHEFS, asks: CHEFS, run: db => getDoc(D(db, `supplierlinks/${TODAY}_northside`)) });
+const SALES_PATH = 'suppliersales/weekly';
+const weeklySales = { v: 1, report: { start: kday(NOW - 7 * DAY), end: YDAY, rows: [{ name: 'Synthetic meal', qty: 20 }] }, links: [], at: NOW - MIN, by: 'kit' };
+row('js/supplier-store.js loadSales() and exportAll(): one private weekly sales document', { ok: CHEFS, asks: CHEFS,
+  prep: () => put({ [SALES_PATH]: weeklySales }), run: db => getDoc(D(db, SALES_PATH)) });
+function saveWeeklySales(db, who) {
+  const ref = D(db, SALES_PATH);
+  return runTransaction(db, async tx => {
+    const old = (await tx.get(ref)).data();
+    tx.set(ref, { ...weeklySales, v: old ? old.v + 1 : 1, at: NOW, by: who });
+  });
+}
+row('js/supplier-store.js saveSales(): first weekly sales report transaction', { ok: HEAD_CHEFS, asks: HEAD_CHEFS,
+  prep: () => put({ [SALES_PATH]: null }), run: saveWeeklySales });
+row('js/supplier-store.js saveSales(): next revision of the weekly sales report', { ok: HEAD_CHEFS, asks: HEAD_CHEFS,
+  prep: () => put({ [SALES_PATH]: { ...weeklySales, report: { ...weeklySales.report, rows: [{ name: 'Synthetic meal', qty: 19 }] } } }), run: saveWeeklySales });
 // the admin Backup (exportAll(), the Google device only): one row per list that has a rule of its own, so a rule
 // loosened for one of them shows on its own row. The lists every kitchen phone reads are rows above.
 const EXP_ALL = 'js/prep.js exportAll() (admin Backup): ';
@@ -382,6 +405,8 @@ row('js/prep.js flushViews() and flushMisses(): views/<id> and misses/<q> merges
   run: (db, w, r) => W(r, [['set', 'views/burger', { name: 'Burger', n: increment(1), last: Date.now() }, true], ['set', 'misses/tofu', { q: 'tofu', n: increment(1), last: Date.now(), lastBy: NAME[r] }, true]]) });
 row('js/prep.js newItem(): a prep line on today\'s list', { ok: ADDS, asks: ADDS,
   run: (db, w, r) => W(r, [['set', `days/${TODAY}/items/${MINE(r)}`, newLine({ text: 'Dice carrot', addedBy: NAME[r], addedById: w, addedAt: Date.now() })]]) });
+row('js/prep.js newItem(): a prep line the admin plans for a later day (plan, 18 Nov 2026)', { ok: ['owner', 'ownkit'], asks: ['owner', 'ownkit'],
+  run: (db, w, r) => W(r, [['set', `days/${LATER}/items/${MINE(r)}`, newLine({ text: 'Thaw brisket', addedBy: NAME[r], addedById: w, addedAt: Date.now(), plan: LATER })]]) });
 row('js/prep.js maybeRoll(): a line rolled onto today (addedById empty)', { ok: ADDS, asks: not('owner', 'vic', 'fay'),
   run: (db, w, r) => W(r, [['set', `days/${TODAY}/items/r-${r}`, newLine({ addedBy: 'Rolled over', addedById: '', addedAt: Date.now(), rolled: 1, root: 'l0', from: 'l0', rolledFrom: YDAY, origBy: 'Ann', origAt: NOW - DAY, urgent: false, ahead: false })]]) });
 row('js/prep.js tickNow(): tick a prep line', { ok: TICKS, asks: TICKS,
@@ -476,8 +501,12 @@ row('js/prep.js wxFixSave(): change the amount on my own wastage line', { ok: AD
 row('js/prep.js wxFixSave(): a chef changes the amount on someone else\'s wastage line', { ok: CHEFS, asks: CHEFS,
   prep: (r, w) => put({ [`waste/${TODAY}/lines/${MINE(r)}`]: Object.assign({}, seed[`waste/${TODAY}/lines/w1`], w === 'ann' ? { addedBy: 'Bo', addedById: 'bo', by: 'bo' } : {}) }),
   run: (db, w, r) => W(r, [['upd', `waste/${TODAY}/lines/${MINE(r)}`, AMT(r, 'kg')]]) });
-row('js/prep.js saveReview(): today\'s waste review (waste/<today> merge)', { ok: CHEFS, asks: CHEFS,
-  run: (db, w, r) => W(r, [['set', `waste/${TODAY}`, { avoidable: 'Over-prepped rice', change: 'Half a batch on Mondays', reviewBy: NAME[r], reviewById: w, reviewAt: Date.now() }, true]]) });
+row('js/prep.js saveReview(): read and merge today\'s review in one Full SDK transaction (waste/<today>)', { ok: CHEFS, asks: CHEFS,
+  run: (db, w, r) => runTransaction(db, async tx => {
+    const ref = D(db, `waste/${TODAY}`);
+    await tx.get(ref);
+    tx.set(ref, { avoidable: 'Over-prepped rice', change: 'Half a batch on Mondays', reviewBy: NAME[r], reviewAt: Date.now(), by: w }, { merge: true });
+  }) });
 row('js/prep.js addXfer() through xWrite(): a transfer line with its open copy', { ok: ADDS, asks: ADDS,
   run: (db, w, r) => { const rec = { dir: 'out', venue: 'Riviera', person: 'Jo', text: 'Butter', amount: 2, unit: 'kg', note: '', addedBy: NAME[r], addedById: w, addedAt: Date.now(), deleted: false };
     return W(r, [['set', `transfers/${TODAY}/lines/${MINE(r)}`, rec], ['set', `transferOpen/${TODAY}_${MINE(r)}`, { date: TODAY, lineId: MINE(r), record: Object.assign({}, rec, { by: BY[r] }), open: true }]]); } });
@@ -548,6 +577,8 @@ row('js/prep.js saveMinutes() (admin): publish minutes', { ok: GOOGLE, asks: GOO
   run: (db, w, r) => W(r, [['set', 'minutes/p-' + r, mins({ pubAt: Date.now() })]]) });
 row('js/prep.js saveGuide() (admin): a guide and its page picture', { ok: GOOGLE, asks: GOOGLE,
   run: (db, w, r) => W(r, [['set', `guides/${MINE(r)}/pages/0`, { img: 'data:image/png;base64,AA', w: 4, h: 6, v: 1, n: 0 }], ['set', 'guides/' + MINE(r), { title: 'Slicer', cat: 'equipment', sum: '', steps: 'Unplug it first.', kw: '', text: '', thumb: '', pages: 1, dims: [], v: 1, file: '', removed: false, at: Date.now(), upd: Date.now() }]]) });
+row('js/prep.js saveVidLinks() (admin Guides): the video links, both records', { ok: GOOGLE, asks: GOOGLE,
+  run: (db, w, r) => W(r, [['set', 'tutorials/staff', { links: { prep: { w: 'AAAAAAAAAAA', t: 'BBBBBBBBBBB' } }, at: Date.now() }], ['set', 'tutorials/chefs', { links: { 'chef-panel': { w: 'CCCCCCCCCCC', t: '' } }, at: Date.now() }]]) });
 row('js/prep.js dkSave(): my usual drink (drinks/<me>)', { ok: KITCHEN, asks: KPINS,
   run: (db, w, r) => W(r, [['set', 'drinks/' + ownId(r, w), { kind: 'flat', size: 'reg', milk: 'oat', shot: '', sugar: '1', note: '', cold: '', other: '', at: Date.now() }]]) });
 row('js/prep.js ksPick() and ksCheck(): my section today (shifts/<today>_<me>)', { ok: KITCHEN, asks: ['ownkit', 'kit', 'sam', 'ann', 'lou', 'tab'],
@@ -643,6 +674,10 @@ row('js/prep.js saveConfig(), a sous chef: people and staffIds merged into confi
       ['set', 'login/roster', { people, staffIds: IDS, sousIds: CFG.sousIds, headId: 'kit', fnIds: CFG.fnIds, fnOnlyIds: CFG.fnOnlyIds }]]); } });
 row('js/prep.js saveConfig(), the Google device: config/main and login/roster (batch, no by)', { ok: GOOGLE, asks: GOOGLE,
   run: db => { const b = writeBatch(db); b.set(D(db, 'config/main'), Object.assign({}, CFG, { updated: Date.now(), updatedBy: 'Head chef' })); b.set(D(db, 'login/roster'), ROSTER); return b.commit(); } });
+// Delete for good (19 Nov 2026): the person leaves the list and their PIN goes in the same batch; only the Google device
+row('js/prep.js saveConfig(cfg, null, gone), the Google device: Delete for good (config/main, login/roster, staffpins and pinset deleted; batch, no by)', { ok: GOOGLE, asks: GOOGLE,
+  prep: () => put({ 'staffpins/finn': { hash: 'f'.repeat(64) }, 'pinset/finn': { at: 1 } }),
+  run: db => { const b = writeBatch(db); b.set(D(db, 'config/main'), Object.assign({}, CFG, { updated: Date.now(), updatedBy: 'Head chef' })); b.set(D(db, 'login/roster'), ROSTER); b.delete(D(db, 'staffpins/finn')); b.delete(D(db, 'pinset/finn')); return b.commit(); } });
 row('js/prep.js resetPin(): Reset PIN (staffpins and pinset deleted, pinOpen merged; batch, no by)', { ok: GOOGLE, asks: GOOGLE,
   prep: () => put({ 'staffpins/finn': { hash: 'f'.repeat(64) }, 'pinset/finn': { at: 1 } }),
   run: db => { const b = writeBatch(db); b.delete(D(db, 'staffpins/finn')); b.delete(D(db, 'pinset/finn')); b.set(D(db, 'config/main'), { pinOpen: { finn: Date.now() + 30 * MIN } }, { merge: true }); return b.commit(); } });
@@ -802,6 +837,10 @@ row('js/prep.js foolsSeen(): the same question before it has played (no record y
   prep: (r, w) => put({ [FOOL(w)]: null }), run: (db, w) => getDocFromServer(D(db, FOOL(w))) });
 row('js/prep.js foolsMark(): my joke started (fools/<1 April>_<me>, once)', { ok: KPINS, asks: KPINS,
   prep: (r, w) => put({ [FOOL(w)]: null }), run: (db, w, r) => W(r, [['set', FOOL(w), foolRec()]]) });
+row('js/prep.js foolsMark(): my joke started, with which joke it was (joke: A1 to L2, 18 Nov 2026)', { ok: KPINS, asks: KPINS,
+  prep: (r, w) => put({ [FOOL(w)]: null }), run: (db, w, r) => W(r, [['set', FOOL(w), Object.assign(foolRec(), { joke: 'L2' })]]) });
+row('js/prep.js foolsMark(): a joke that is not one of the 24 is refused', { ok: [], asks: [],
+  prep: (r, w) => put({ [FOOL(w)]: null }), run: (db, w, r) => W(r, [['set', FOOL(w), Object.assign(foolRec(), { joke: 'M1' })]]) });
 row('js/prep.js foolsMark(): written again from another device after the first (never changed; the joke is already kept)', { ok: [], asks: [],
   prep: (r, w) => put({ [FOOL(w)]: { day: '2027-04-01', at: NOW, by: w } }), run: (db, w, r) => W(r, [['set', FOOL(w), foolRec()]]) });
 row('js/prep.js: another person\'s April Fools record, read or written (never sent)', { ok: GOOGLE, asks: [],

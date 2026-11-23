@@ -1,10 +1,40 @@
 # Protected backup and recovery checks
 
+**One backup per venue (19 Nov 2026, [venues.md](venues.md)).** The job runs once per venue, in its GitHub environment, with its own service account, kitchen PIN and `BACKUP_KEY`. Its artifact is `kitchen-book-<venue>-backup-<run>` and its file `kitchen-book-<venue>-<UTC date>.json.enc`; the export names its project (`project`). Last night's file is looked for among that venue's own artifacts only, and reused only when it names the same project; a file of another project, or one from before files named their project, means every day is read (so Leichhardt's first night after this change reads every day once, as on a Sunday). `scripts/backup-reuse-check.mjs` covers both.
+
 The nightly job reads the existing included-data export, encrypts it, decrypts it again into a private temporary file and compares the bytes before upload. It keeps only the encrypted artifact for 90 days. New archives use format version 1 with authenticated encryption. The artifact name, `kitchen-book-<UTC date>.json.enc` filename and schedule stay the same. The backup key stays in the existing `BACKUP_KEY` repository secret and the owner's password manager. No new service or package is needed.
 
 **Older days from last night's file** (Plan B 4.2, 7 Nov 2026, `docs/firestore-usage.md`). Before it reads, the workflow downloads the last successful run's encrypted file and decrypts it into the runner's temporary folder only (`PREV_BACKUP`, removed with tonight's plaintext). The prep, order, wastage, review and transfer days older than 14 that no past-day fix names (`config/main.pastEdit`: `pDays`, `oDays`, and `wDays` for a wastage line or review since 7 Nov 2026) are taken from it, not read again. Every file is still the whole window, so any one file is enough for a repair. Every day is read on Sundays (kitchen time), without a usable earlier file (missing, unreadable or more than 36 hours old), after a past transfer fix (its stamp names no day) or a stamp that cannot tell. The log says how many days were taken. `scripts/backup-reuse-check.mjs` proves it on the emulator.
 
 This is an included-data backup, not a complete disaster-recovery image. The source export uses several reads, not one transactional database snapshot. Authentication and the runner's round trip confirm the exact included JSON bytes and format parameters, not freshness or cross-document consistency. Check the run, source revision and decrypted `exportedAt`, and reconcile relevant records before a real repair.
+
+## Google's own backups (Leichhardt, Plan C 4.3)
+
+Set by the head chef in Cloud Shell on 20 November 2026, with billing on (Plan C, `docs/firestore-usage.md`). They are a second, complete copy next to the nightly encrypted file above, which every venue keeps (head chef, 20 Nov 2026: a venue on the free plan cannot have these).
+
+```
+gcloud config set project leichhardt-kitchen
+gcloud firestore backups schedules create --database='(default)' --recurrence=daily --retention=7d
+gcloud firestore backups schedules create --database='(default)' --recurrence=weekly --day-of-week=SUN --retention=14w
+gcloud firestore backups schedules list --database='(default)'
+```
+
+- **What they hold.** The whole database at one moment, including what the encrypted file leaves out on purpose (PIN fingerprints, sessions and device grants, guide page pictures, push addresses). Not in them: the security rules, sign-in accounts (Firebase Authentication) and anything outside Firestore.
+- **Limits.** One daily and one weekly schedule per database, kept at most 14 weeks. Google picks the time of day. A deleted backup cannot be brought back. Backups stay in the database's location and outlive the database.
+- **Cost.** Billed for storage and for a restore, by size; no reads. At this book's size, a fraction of a cent a day.
+- **Another venue** on the pay as you go plan can have the same with its own project id in the first line.
+- **See them.** `gcloud firestore backups list --format="table(name, database, state)"`.
+- **Restore.** A restore always makes a new database; it never writes over `(default)`. Pick a backup from the list, then:
+
+```
+gcloud firestore databases restore \
+  --source-backup=projects/leichhardt-kitchen/locations/LOCATION/backups/BACKUP_ID \
+  --destination-database=restore-YYYYMMDD
+gcloud firestore operations list --database=restore-YYYYMMDD
+```
+
+  The new database starts with no security rules, so no phone can read it, which is right for a recovery copy. Compare it with the live book, then bring back only what was lost with a reviewed script, with the same care as the encrypted file (Isolated recovery assurance, below). Never point the book at it, and delete it when done (`gcloud firestore databases delete --database=restore-YYYYMMDD`), as it is billed while it exists.
+- **Checked from Google's docs, not yet rehearsed.** The commands are from Google's Firestore backup page (read 14 Nov 2026). Try one restore on a quiet day and note the result here.
 
 ## Read a new archive
 
@@ -64,13 +94,14 @@ Supplier splits (9 November 2026) add an optional immutable `historyFrom`/`histo
 | Included section | Scope |
 | --- | --- |
 | `config` | `config/main`, including people, canonical permission ids and settings. |
-| `days`, `orders`, `waste`, `wasteReviews`, `transfers`, `deliveries` | The selected window, normally 45 Queensland calendar days, with original document ids, values and attribution. |
+| `days`, `orders`, `waste`, `wasteReviews`, `transfers`, `deliveries` | The selected window, normally 45 Queensland calendar days, with original document ids, values and attribution. `days` also holds the next 28 days' prep lines, the ones the admin planned ahead (18 Nov 2026). |
 | `cleaningTasks`, `cleaningDone`, `cleaningActions` | Every immutable cleaning schedule revision, including closed and archived revisions; occurrence states and immutable action snapshots within the selected day window. Original task ids, methods, required checks, revision links, versions, worker, recorder, verification and server action time are preserved. The manual Backup button includes all three whole collections. |
 | `activity`, `sections`, `learned`, `ordlearned`, `learnlog`, `summary`, `analysis`, `analysisDaily`, `references`, `training`, `proofHistory`, `dashwatch`, `misses`, `views` | Included activity, analysis, source links, assessment and correction records, and the admin Dashboard's watch list. |
 | `prepStandards` | Every active and archived prep standard, with section identity, aliases, minimum, unit, instructions, recipe link, author and version. Always read fresh, regardless of the dated window or reuse. |
 | `guides`, `mail`, `mailstat`, `drinks`, `shifts`, `daily`, `todos`, `team`, `cutdone`, `transferOpen` | Included team records, guide words/small pictures and outstanding-transfer index. |
 | `notes`, `directnotes`, `minutes`, `book`, `recipes`, `drawings`, `drawtpl`, `drawlib`, `suppliers`, `supplierlinks`, `functions`, `fncontact`, `fnsent`, `fnseen` | Current included documents. Booking contacts remain private inside the encrypted archive. |
 | `referencesHist`, `trainingHist`, `notesSeen`, `directnotesSeen`, `minutesHist`, `minutesSigns`, `recipesHist`, `drawingsHist`, `supplierOrders`, `supplierAudit`, `functionsHist` | Included history, acknowledgements, sign-offs, catalogue audit and order subcollections, retaining parent and record ids. |
+| `supplierSales` | The latest approved sales quantities and period, with the saved product mappings, revision and original attribution. One named read per export, with `null` when absent. Manual Backup and a kitchen PIN move preserve the same record. Older archives may omit it. |
 | `coolingCurrent`, `coolingRecorded` | The named timer and shared recording-confirmation documents, each `null` when absent. Both are included outside the dated window and retain their run IDs, actors and exact `{seconds, nanoseconds}` Timestamp components. An unstarted timer or unconfirmed recording pair remains `0` with its empty actor. Two document reads per export. |
 | `pins` | Inventory only: exported id, name and set time when present. It is not a usable PIN proof. |
 | `exportedAt`, `by` | Export metadata. |

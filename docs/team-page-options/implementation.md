@@ -74,3 +74,12 @@ All twelve affected combined integration files also have passing evidence: Order
 The first hosted application run (`42653475161`) passed four browser groups and the rules/nightly group, but blocked release on one legacy `kitchen-pages.test.js` assertion. It used the old attendance button as a proxy for whether the editor was present. C deliberately keeps membership changes inside named details while its service/section controls are directly visible. The assertion now checks both selected people's visible, enabled, dated picker pairs and performs an inline section change, requiring an enabled Save and no acknowledged record change or write before Save. The saved-timeline checks remain. All **45 cross-page assertions** pass locally; application assets are unchanged, so the 550 team/date and 215 full-app results retain their source hashes. Required hosted checks are rerun on the correction before automatic release.
 
 Local implementation and verification are complete. Required hosted checks and the existing normal release queue remain the delivery gate, tracked in PR #652. Rollback is a focused revert of the new UI/view-state code, scoped CSS and matching tests/docs; preserve stored records and unrelated changes. No data migration or rule publication is proposed.
+
+
+## Compact planner controls (22 November 2026)
+
+The head chef approved the matched app comparisons. From 1100 px, the existing closed date control shares a row with Add staff and Find a person. An open week, a current break board or a future plan keeps the tools on their own row. The roster, filters and dated Save keep using the same controls.
+
+On a phone the shorter notebook heading leaves more room for the roster. The Save dock only clears space when it is idle and disabled, and the header still gives the plan status. The dock remains for unsaved edits, acknowledged or failed saves, staffing warnings and any open Add staff form. The away board and its break details continue to report today's saved plan.
+
+The matched preview used actual planner markup and synthetic shifts. On desktop, the first person started at y317 instead of y371 in the sample. The phone preview also used the existing Hide functions control to fold a routine expanded Functions band. The layout implementation makes no new decision about that band.

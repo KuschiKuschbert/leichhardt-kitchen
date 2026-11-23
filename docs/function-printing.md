@@ -21,6 +21,8 @@ Approved by the head chef on 25 Oct 2026: Layout 2, the timed run sheet. This su
 
 The shared print code is already in the shell through `js/functions.js`. No new runtime dependency, service, Firestore read, listener, write, collection, field or persistent cache is added. `FE_API` and the editor's `API` are both 6 after the cancellation-access change. Print CSS uses a named A4 page so it does not change other browser print views.
 
+Since 19 Nov 2026 the print job itself is the shared `LK_PRINT` in `js/controls.js` (one job at a time, also used by Print cards, `docs/print-cards-options/brief.md`). `#fn-print`, `body.fn-printing` and the named A4 pages are unchanged.
+
 ## Verification
 
 `tests/function-print.test.js` exercises staff printing, the full service day, overnight dates, offline warnings, current unsaved input, contact exclusion, escaped text, incomplete drafts, retry, empty schedules and large bookings. It renders real Chromium PDFs to check A4 dimensions, page count and complete long notes. The existing Functions journeys, screen widths, permissions and read-budget checks must also pass.

@@ -54,20 +54,20 @@ function hasPrivateContact(value) {
   await p.keyboard.press('Escape');
   await p.goto(L.BASE + '#/functions/new'); await L.settle(p, 900);
   ok(/New function/.test(await txt(p, '#fe-root') || ''), 'form: New function opens');
-  ok(await p.$eval('[data-ff="startT"]', e => e.type === 'time' && e.step === '60'), 'event start uses the minute picker');
+  // typed times since 18 Nov 2026 (the device clock box before): tests/function-time-boxes.test.js has the rest
+  ok(await p.$eval('[data-ff="startT"]', e => e.type === 'text' && e.inputMode === 'numeric'), 'event start is a typed box with a number keypad');
   await p.evaluate(() => {
     window.pickerCalls = 0;
     HTMLInputElement.prototype.showPicker = function () { window.pickerCalls++; };
   });
   await p.click('[data-ff="startT"]');
-  ok(await p.evaluate(() => window.pickerCalls === 1), 'tapping the time field opens its native picker');
-  await p.evaluate(() => { HTMLInputElement.prototype.showPicker = function () { throw new DOMException('Unavailable', 'NotAllowedError'); }; });
-
-  ok(await p.$eval('[data-ff="startT"]', e => { e.value = '25:99'; return e.value === ''; }), 'the native time control refuses an impossible time');
+  ok(await p.evaluate(() => window.pickerCalls === 0), 'tapping the time box opens no device clock');
+  await setV(p, '[data-ff="startT"]', '25:99');
+  ok(/Cannot read "25:99"/.test(await txt(p, '#fe-root') || ''), 'an impossible time is named, not taken');
   await p.fill('[data-ff="name"]', 'Smith 50th');
   await setV(p, '[data-ff="date"]', today);
   await setV(p, '[data-ff="startT"]', '18:00');
-  ok(await p.inputValue('[data-ff="startT"]') === '18:00', 'keyboard entry works when showPicker is unavailable');
+  ok(await p.inputValue('[data-ff="startT"]') === '18:00' && !/Cannot read/.test(await txt(p, '#fe-root') || ''), 'a typed 18:00 is taken and the warning goes');
   await p.$eval('[data-ff="date"]', e => { e.max = '2000-01-01'; });
   await p.click('[data-fe="save"]');
   ok(!Object.keys(await store(p)).some(k => k.startsWith(fsKey(['functions']) + '/')) && await p.$eval('[data-ff="date"]', e => !e.validity.valid && document.activeElement === e), 'save is blocked and focuses an out-of-range date');
@@ -78,6 +78,7 @@ function hasPrivateContact(value) {
   await p.click('[data-ff="gu"]'); await L.settle(p, 150);
   await p.fill('[data-ff="guests"]', '60');
   await p.fill('[data-ff="loc"]', 'Beer garden');
+  await p.getByRole('button', { name: 'Add contact', exact: true }).click();
   await p.fill('[data-ff="cname"]', 'Jo Smith');
   await p.fill('[data-ff="phone"]', '0400 111 222');
   await p.fill('[data-ff="email"]', 'jo@example.com');
@@ -92,7 +93,7 @@ function hasPrivateContact(value) {
   ok(/12 platters/.test(await txt(p, '#fe-live') || ''), 'platters: the bar adds up 12 platters (no guest multiplying)');
   await tap(p, '[data-fe="mode"][data-v="stag"]'); await L.settle(p, 100);
   await setV(p, '[data-ff="foodT"]', '18:30');
-  ok(await p.$eval('[data-ff="foodT"]', e => e.value) === '18:30', 'times: the picker keeps 18:30 in 24-hour storage');
+  ok(await p.$eval('[data-ff="foodT"]', e => e.value) === '18:30', 'times: the box keeps 18:30 in 24-hour storage');
   ok(await p.$eval('[data-ff="a2_0"]', e => e.value) === '2' && await p.$eval('[data-ff="a2_1"]', e => e.value) === '2' && await p.$eval('[data-ff="a2_2"]', e => e.value) === '1', 'staggered: 5 pizza platters over 3 rounds start as 2, 2, 1');
   ok(await p.$eval('[data-ff="rt1"]', e => e.value) === '19:00' && await p.$eval('[data-ff="rt2"]', e => e.value) === '19:30', 'staggered: rounds every 30 minutes from 18:30');
   // the brief's example: antipasto first, aussie in the first two rounds, pizza later
@@ -198,7 +199,7 @@ function hasPrivateContact(value) {
   const gone = fn({ name: 'Jones wake', status: 'cancelled', start: '15:00', rounds: ['15:00'] });
   const moved = fn({ name: 'Brown 21st', date: day2, was: { date: today, start: at(today, '17:00'), first: at(today, '17:00'), from: at(today, '00:00'), until: at(today, '19:00') } });
   const draft = fn({ name: 'Draft do', status: 'draft' });
-  p = await L.open(b, '#/prep', { who: 'ann', extra: extra({ smith, gone, moved, draft }), wait: 1200 });
+  p = await L.open(b, '#/waste', { who: 'ann', extra: extra({ smith, gone, moved, draft }), wait: 1200 });   // the full band (Prep starts with the strip)
   await L.waitFor(p, () => document.querySelectorAll('#fn-band .fn-row').length >= 2);
   let bt = await txt(p, '#fn-band') || '';
   ok(/\+1 more/.test(bt) && (await p.$$('#fn-band .fn-row')).length === 2, 'several: two show, then "+1 more"');
@@ -339,13 +340,14 @@ function hasPrivateContact(value) {
   const bj = (await txt(p, '#fn-band') || '').replace(/\s+/g, ' ');
   ok(bj.indexOf('Jones 40th') >= 0 && bj.indexOf('Jones 40th') < bj.indexOf('Smith 50th'), 'band: sorted by what is still to go out, so Jones comes before Smith once Smith round 1 is sent');
   await p.evaluate(() => { document.body.style.minHeight = '4000px'; window.scrollTo(0, 1500); }); await L.settle(p, 300);
-  ok(await p.$eval('.fn-strip', e => !e.hidden && /^18:40/.test(e.textContent.trim()) && /\+1/.test(e.textContent)) && !!(await p.$('.fn-strip a.fn-strip-b[href="#/fn/now"]')), 'strip: the most urgent leads, +1 apart, and a tap opens the service view');
+  ok(await p.$eval('.fn-strip', e => !e.hidden && /^Functions\s*18:40/.test(e.textContent.trim()) && /\+1/.test(e.textContent)) && !!(await p.$('.fn-strip a.fn-strip-b[href="#/fn/now"]')), 'strip: the word Functions, the most urgent leads, +1 apart, and a tap opens the service view');
   ok(p.errors.length === 0, 'service: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // the band the day before: an order reminder on the order day, and tomorrow's function; and the strip while scrolling
   const tm = fn({ name: 'Tomorrow do', date: tomorrow, rounds: ['12:00'] }); tm.od = today;
-  p = await L.open(b, '#/prep', { who: 'ann', extra: extra({ smith, tm }), wait: 1500 });
+  // (Prep starts with the slim strip since 19 Nov 2026, tests/prep-strip-place.test.js: the full band is checked on Wastage)
+  p = await L.open(b, '#/waste', { who: 'ann', extra: extra({ smith, tm }), wait: 1500 });
   await L.waitFor(p, () => /Tomorrow do/.test((document.getElementById('fn-band') || {}).textContent || ''));
   const bn = (await txt(p, '#fn-band') || '').replace(/\s+/g, ' ');
   ok(/Order today\s*Short notice Stock for Tomorrow do/.test(bn) && /on the order list/.test(bn), 'order: the band reminds the kitchen to order on the order day (' + bn.slice(0, 260) + ')');
@@ -507,14 +509,17 @@ function hasPrivateContact(value) {
   // 8. the admin People tab: only the head chef's save gives Functions; the role ticks it, the tick is what counts
   p = await L.open(b, '#/admin', { admin: true, who: '', extra: base, wait: 1800 });
   await L.adminTab(p, 'people'); await L.settle(p, 300);
+  await L.openPerson(p, 1);
   ok(await p.evaluate(() => [...document.querySelectorAll('#a-r1 option')].some(o => o.value === 'fnc' && /Functions coordinator/.test(o.textContent))), 'admin: Functions coordinator is a role');
   await L.pick(p, '#a-r1', 'fnc'); await L.settle(p, 200);
+  await L.openPerson(p, 2);
   await p.click('input[data-perm="fn"][data-i="2"]'); await L.settle(p, 100);
   await p.click('[data-p="a-save"]'); await L.settle(p, 600);
   s = await store(p);
   let c = s[fsKey(['config', 'main'])];
   ok(['ann', 'bo', 'fay', 'finn'].every(x => c.fnIds.indexOf(x) >= 0) && c.fnIds.indexOf('sam') < 0, 'admin: picking the role and ticking Bo give both Functions (' + c.fnIds.join(',') + ')');
   ok(c.people.filter(x => x.id === 'ann')[0].add === false && c.sousIds.indexOf('ann') < 0, 'admin: the coordinator role gives no other rights');
+  await L.openPerson(p, 3);
   await p.click('input[data-perm="fn"][data-i="3"]'); await L.settle(p, 100);
   await p.click('[data-p="a-save"]'); await L.settle(p, 600);
   c = (await store(p))[fsKey(['config', 'main'])];

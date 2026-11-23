@@ -17,10 +17,16 @@
     yield      the portion or batch line under the name
     art        which drawing to use in The Pass view (see js/art.js), or leave it out
     ingredients: list of { q: quantity, name, link: id of another recipe (makes it tappable),
-                 note, tags: allergens in this ingredient, add "?" for "may contain" }
+                 note, tags: allergens in this ingredient, add "?" for "may contain",
+                 none: true once checked and none of the ten allergens is in it }
+               Every ingredient needs tags, none: true or a link. One with none of them shows
+               "Allergens not checked yet" on the card and is left out of Free from (19 Nov 2026). The head
+               chef left label-dependent products not checked (chips, bacon, the bought-in sauces...) until
+               he reads their labels: tests/allergen-check.test.js lists them (LABELS).
     pins       (plated dishes, The Pass view) where each part sits on the plate drawing:
                { label, x, y (percent across and down), side ('left' or 'right' for the label,
-               optional), link or tags, note }
+               optional), link or tags, note, ing (ingredient name when the label differs,
+               or the ingredient names separated by | for a shared pin) }
     sections   optional: list of { title, steps: [ ... ] }. Leave it out and the card says "Not written up yet".
     contains   allergens it definitely has: { allergen, from }
     check      allergens it may have, so check the label: { allergen, from }
@@ -46,12 +52,18 @@
   still shows, under "Other dishes", so nothing goes missing. Batch recipes and components are not
   on the guest menu, so they sit after the menu sections.
   Specials always shows first. The head chef's Special switch in Manage Recipes puts a dish in it.
+
+  fnStock (just below) names the function platter items the kitchen keeps in stock instead of ordering them for each
+  function: the sauces and dips (head chef, 18 Nov 2026). On a function's line on the order list, What it needs lists
+  them under "Check you have", not "to order". A platter item with a link to a house recipe is made here: it shows
+  under "Made here, on Prep". Every other platter item is to order. Add or take out a name to change it.
 */
 window.LK_DATA = {
-  updated: '17 November 2026',
+  updated: '23 November 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
+  fnStock: ['BBQ sauce', 'Sweet chilli sauce', 'Sweet soy sauce', 'Caramelised onions', 'Basil pesto'],
   menuOrder: [
-    { title: 'Specials', ids: ['chicken-adobo', 'lamb-nachos', 'buffalo-corn-cob-with-cashew-crumb', 'philly-potato'] },
+    { title: 'Specials', ids: ['chicken-adobo', 'lamb-nachos', 'buffalo-corn-cob-with-cashew-crumb', 'philly-potato', 'loaded-fries'] },
     { title: "Snackin' Plates", ids: ['poutine', 'beetroot-bites', 'brisket-cob', 'wings', 'haloumi-tacos', 'pork-belly-bites', 'calamari', 'riblets', 'garlic-bread', 'bacon-cheese-bread', 'chips-snack'] },
     { title: 'Salads', ids: ['caesar', 'green-bowl', 'pumpkin-salad'] },
     { title: 'Big Country Feeds', ids: ['beef-cheek', 'ribs', 'barra', 'carbonara', 'fish-chips', 'lamb-rissoles', 'vegan-rissoles', 'pork-belly', 'pie'] },
@@ -300,8 +312,8 @@ window.LK_DATA = {
       menu: '180 g eye fillet, pasture-fed NSW. Choice of sauce.',
       yield: 'Per plate. Sauce of choice, chips and salad.',
       ingredients: [
-        { q: '180 g', name: 'Eye fillet', note: 'pasture-fed, NSW' },
-        { q: '1 g', name: 'Sea salt flakes', note: 'Maldon' },
+        { q: '180 g', name: 'Eye fillet', note: 'pasture-fed, NSW', none: true },
+        { q: '1 g', name: 'Sea salt flakes', note: 'Maldon', none: true },
         { q: '70 ml', name: 'Mushroom sauce', note: 'costed sauce; guests choose gravy, mushroom, pepper, garlic, jus, Diane or béarnaise', link: 'mushroom-sauce' },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
       ],
@@ -317,8 +329,8 @@ window.LK_DATA = {
       menu: '250 g rump, 120 days grain-fed QLD. Choice of sauce.',
       yield: 'Per plate. Sauce of choice, chips and salad.',
       ingredients: [
-        { q: '250 g', name: 'Rump', note: '120 days grain-fed, QLD' },
-        { q: '1 g', name: 'Sea salt flakes', note: 'Maldon' },
+        { q: '250 g', name: 'Rump', note: '120 days grain-fed, QLD', none: true },
+        { q: '1 g', name: 'Sea salt flakes', note: 'Maldon', none: true },
         { q: '80 ml', name: 'Mushroom sauce', note: 'costed sauce; guests choose gravy, mushroom, pepper, garlic, jus, Diane or béarnaise', link: 'mushroom-sauce' },
         { q: '1.1 portions', name: 'Chips and salad', link: 'chips-salad' }
       ],
@@ -334,8 +346,8 @@ window.LK_DATA = {
       menu: '300 g rib fillet, 120 days grain-fed QLD. Choice of sauce.',
       yield: 'Per plate. Sauce of choice, chips and salad.',
       ingredients: [
-        { q: '300 g', name: 'Rib fillet', note: '120 days grain-fed, QLD' },
-        { q: '1 g', name: 'Sea salt flakes', note: 'Maldon' },
+        { q: '300 g', name: 'Rib fillet', note: '120 days grain-fed, QLD', none: true },
+        { q: '1 g', name: 'Sea salt flakes', note: 'Maldon', none: true },
         { q: '70 ml', name: 'Mushroom sauce', note: 'costed sauce; guests choose gravy, mushroom, pepper, garlic, jus, Diane or béarnaise', link: 'mushroom-sauce' },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
       ],
@@ -351,8 +363,8 @@ window.LK_DATA = {
       menu: '500 g rump, 120 days grain-fed QLD. Choice of sauce.',
       yield: 'Per plate. Sauce of choice, chips and salad.',
       ingredients: [
-        { q: '500 g', name: 'Rump', note: '120 days grain-fed, QLD' },
-        { q: '1 g', name: 'Sea salt flakes', note: 'Maldon' },
+        { q: '500 g', name: 'Rump', note: '120 days grain-fed, QLD', none: true },
+        { q: '1 g', name: 'Sea salt flakes', note: 'Maldon', none: true },
         { q: '70 ml', name: 'Mushroom sauce', note: 'costed sauce; guests choose gravy, mushroom, pepper, garlic, jus, Diane or béarnaise', link: 'mushroom-sauce' },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
       ],
@@ -368,7 +380,7 @@ window.LK_DATA = {
       menu: '350 g flank steak, cowboy butter, chips and salad.',
       yield: 'Per plate. Cowboy butter, chips and salad.',
       ingredients: [
-        { q: '350 g', name: 'Flank steak' },
+        { q: '350 g', name: 'Flank steak', none: true },
         { q: '80 g', name: 'Cowboy butter', link: 'cowboy-butter', tags: ['Milk'] },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
       ],
@@ -438,7 +450,7 @@ window.LK_DATA = {
       yield: 'Per plate. Sauce of choice, lemon, chips and salad.',
       ingredients: [
         { q: '300 g', name: 'Beef schnitzel', note: '290 to 310 g, bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
-        { q: '20 g', name: 'Lemon' },
+        { q: '20 g', name: 'Lemon', none: true },
         { q: '60 ml', name: 'Gravy', note: 'costed sauce; guests choose gravy, mushroom, pepper, garlic, jus, Diane or béarnaise', link: 'gravy' },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
       ],
@@ -461,10 +473,10 @@ window.LK_DATA = {
         { q: '1', name: 'Milk bun', note: 'sliced', tags: ['Gluten', 'Milk', 'Egg?', 'Soy?'] },
         { q: '180 g', name: 'Smash patty', note: '2 patties', link: 'smash-patty' },
         { q: '2 slices', name: 'Burger cheese', note: 'one on each patty', tags: ['Milk'] },
-        { q: '20 g', name: 'Bread and butter pickles', note: 'bought in, top half only' },
-        { q: '20 ml', name: 'American mustard', note: 'top and bottom' },
+        { q: '20 g', name: 'Bread and butter pickles', note: 'bought in, top half only', none: true },
+        { q: '20 ml', name: 'American mustard', note: 'top and bottom', none: true },
         { q: '40 ml', name: 'Tomato sauce', link: 'tomato-sauce', note: 'ketchup, top and bottom' },
-        { q: '[Qty]', name: 'Oak leaf lettuce' },
+        { q: '[Qty]', name: 'Oak leaf lettuce', none: true },
         { q: '1 portion', name: 'Chips', note: '200 g raw' }
       ],
       sections: [
@@ -485,12 +497,12 @@ window.LK_DATA = {
         { q: '180 g', name: 'Smash patty', link: 'smash-patty' },
         { q: '1 slice', name: 'Burger cheese', tags: ['Milk'] },
         { q: '90 g', name: 'Shortcut bacon' },
-        { q: '50 g', name: 'Sliced beetroot' },
-        { q: '50 g', name: 'Tomato' },
-        { q: '10 g', name: 'Red onion' },
-        { q: '10 g', name: 'Bread and butter pickles', note: 'bought in' },
-        { q: '40 ml', name: 'Tomato ketchup' },
-        { q: '[Qty]', name: 'Oak leaf lettuce' },
+        { q: '50 g', name: 'Sliced beetroot', none: true },
+        { q: '50 g', name: 'Tomato', none: true },
+        { q: '10 g', name: 'Red onion', none: true },
+        { q: '10 g', name: 'Bread and butter pickles', note: 'bought in', none: true },
+        { q: '40 ml', name: 'Tomato ketchup', none: true },
+        { q: '[Qty]', name: 'Oak leaf lettuce', none: true },
         { q: '½ portion', name: 'Chips', note: 'of the 200 g raw portion' }
       ],
       sections: [
@@ -510,10 +522,10 @@ window.LK_DATA = {
         { q: '1', name: 'Milk bun', note: 'sliced', tags: ['Gluten', 'Milk', 'Egg?', 'Soy?'] },
         { q: '180 g', name: 'Blue grenadier fillet', note: 'skinless, MSC', tags: ['Fish'] },
         { q: '50 ml', name: 'Beer batter', note: 'XXXX', link: 'beer-batter', tags: ['Gluten'] },
-        { q: '70 ml', name: 'Tartare sauce', link: 'tartare', note: 'bought in', tags: ['Egg', 'Soy?'] },
-        { q: '[Qty]', name: 'Green oak lettuce' },
-        { q: '50 g', name: 'Tomato' },
-        { q: '50 g', name: 'Red onion' },
+        { q: '70 ml', name: 'Tartare sauce', link: 'tartare' },
+        { q: '[Qty]', name: 'Green oak lettuce', none: true },
+        { q: '50 g', name: 'Tomato', none: true },
+        { q: '50 g', name: 'Red onion', none: true },
         { q: '1 portion', name: 'Chips', note: '200 g raw' }
       ],
       sections: [
@@ -533,9 +545,9 @@ window.LK_DATA = {
         { q: '1', name: 'Milk bun', note: 'sliced', tags: ['Gluten', 'Milk', 'Egg?', 'Soy?'] },
         { q: '3', name: 'Beetroot falafel', note: '40 g each, plant based, bought in', tags: ['Sesame?', 'Soy?'] },
         { q: '40 g', name: 'Vegan aioli', note: 'bought in', tags: ['Soy?'] },
-        { q: '60 g', name: 'Chunky avocado' },
-        { q: '50 g', name: 'Tomato' },
-        { q: '[Qty]', name: 'Green oak lettuce' },
+        { q: '60 g', name: 'Chunky avocado', none: true },
+        { q: '50 g', name: 'Tomato', none: true },
+        { q: '[Qty]', name: 'Green oak lettuce', none: true },
         { q: '1 portion', name: 'Chips', note: '200 g raw' }
       ],
       sections: [
@@ -553,14 +565,14 @@ window.LK_DATA = {
       yield: 'Per plate. 150 g topside, cheese, bacon, egg, tomato relish, aioli, chips, side sauce.',
       ingredients: [
         { q: '1', name: 'Turkish roll', note: 'oval, 130 g', tags: ['Gluten', 'Sesame?', 'Soy?'] },
-        { q: '150 g', name: 'Topside steak' },
+        { q: '150 g', name: 'Topside steak', none: true },
         { q: '1 slice', name: 'Cheese', tags: ['Milk'] },
         { q: '90 g', name: 'Shortcut bacon' },
         { q: '1', name: 'Egg', tags: ['Egg'] },
         { q: '[Qty]', name: 'Tomato relish', link: 'tomato-relish' },
         { q: '[Qty]', name: 'Aioli', link: 'aioli', note: 'on the top half of the roll', tags: ['Egg'] },
-        { q: '1 leaf', name: 'Oak leaf lettuce' },
-        { q: '3 slices', name: 'Tomato' },
+        { q: '1 leaf', name: 'Oak leaf lettuce', none: true },
+        { q: '3 slices', name: 'Tomato', none: true },
         { q: '1 portion', name: 'Chips', note: '200 g raw' },
         { q: '[Qty]', name: 'Side sauce of choice', note: 'guest chooses' }
       ],
@@ -569,9 +581,9 @@ window.LK_DATA = {
         { title: 'Plating, bottom to top', steps: ['Turkish roll base.', 'Tomato relish.', 'Oak lettuce.', '3 slices of tomato.', 'Topside steak.', 'Cheese.', 'Bacon.', 'Egg.', 'Aioli on the top half of the Turkish roll, then close.', 'Chips and a side sauce of choice on the side.'] }
       ],
       pins: [
-        { label: 'Steak sandwich', x: 53.8, y: 34.9, side: 'right', tags: [], note: 'Turkish roll, topside, cheese, bacon, egg, tomato relish, aioli on the top half, oak lettuce, tomato.' },
+        { label: 'Steak sandwich', x: 53.8, y: 34.9, side: 'right', tags: [], note: 'Turkish roll, topside, cheese, bacon, egg, tomato relish, aioli on the top half, oak lettuce, tomato.', ing: 'Turkish roll|Topside steak|Cheese|Shortcut bacon|Egg|Tomato relish|Aioli|Oak leaf lettuce|Tomato' },
         { label: 'Chips', x: 34.0, y: 69.8, side: 'right', tags: [], note: '1 portion, 200 g raw.' },
-        { label: 'Side sauce', x: 72.0, y: 70.0, side: 'left', tags: [], note: 'Sauce of choice.' }
+        { label: 'Side sauce', x: 72.0, y: 70.0, side: 'left', tags: [], note: 'Sauce of choice.', ing: 'Side sauce of choice' }
       ],
       labelNote: 'Check the roll, aioli, relish, bacon and cheese labels.'
     },
@@ -607,10 +619,10 @@ window.LK_DATA = {
       yield: 'Per bowl. 3 beetroot bites, mash, seasonal vegetables, gravy.',
       ingredients: [
         { q: '3', name: 'Beetroot bites', note: '40 g each, plant based, bought in', tags: ['Sesame?', 'Soy?'] },
-        { q: '150 g', name: 'Dairy free mash', note: 'same amount as the lamb rissoles' },
+        { q: '150 g', name: 'Dairy free mash', note: 'same amount as the lamb rissoles', none: true },
         { q: '1 portion', name: 'Seasonal vegetables', note: 'about 120 g', link: 'side-veg' },
         { q: '50 ml', name: 'Gravy', note: 'gluten free, dairy free and vegan', link: 'gravy' },
-        { q: '1 g', name: 'Table salt' }
+        { q: '1 g', name: 'Table salt', none: true }
       ],
       sections: [
         { title: 'Cooking', steps: ['Deep fry the beetroot bites in the fryer at 175 °C until golden.', 'Steam off the dairy free mash in a flat tray for 20 min.', 'Heat the seasonal vegetables in the poaching pot, then finish them in a pan with a bit of oil, salt and pepper.'] },
@@ -630,22 +642,22 @@ window.LK_DATA = {
       yield: 'Per plate. 240 g belly, mash, spinach purée, peas, bacon, red wine jus.',
       ingredients: [
         { q: '240 g', name: 'Roasted pork belly', note: 'portioned to 240 g', link: 'pork-belly-batch' },
-        { q: '25 ml', name: 'Oil', note: 'for frying the belly' },
-        { q: '5 g', name: 'Table salt', note: 'on the crackling' },
+        { q: '25 ml', name: 'Oil', note: 'for frying the belly', none: true },
+        { q: '5 g', name: 'Table salt', note: 'on the crackling', none: true },
         { q: '150 g', name: 'Mash', link: 'mash' },
         { q: '50 ml', name: 'Spinach purée', note: 'a wavy squiggle across the whole plate', link: 'spinach-puree' },
-        { q: '80 g', name: 'Peas' },
+        { q: '80 g', name: 'Peas', none: true },
         { q: '80 g', name: 'Diced bacon', note: 'bacon rasher, diced' },
         { q: '50 ml', name: 'Red wine jus', link: 'red-wine-jus' },
         { q: '40 g', name: 'Fried shallots', note: 'fried onions, made in house', link: 'fried-onions' },
-        { q: '50 g', name: 'Green garnish', note: 'snow pea tendrils, sliced spring onion, parsley or finely sliced chives' }
+        { q: '50 g', name: 'Green garnish', note: 'snow pea tendrils, sliced spring onion, parsley or finely sliced chives', none: true }
       ],
       pins: [
         { label: 'Pork belly', x: 36.8, y: 39.6, side: 'left', tags: [], note: '240 g, roasted. Jus on top.', link: 'pork-belly-batch' },
         { label: 'Mash', x: 44.3, y: 54.0, side: 'left', link: 'mash', note: '150 g, slightly off centre, on top of the spinach squiggle.' },
         { label: 'Spinach purée', x: 13.2, y: 50.0, side: 'left', link: 'spinach-puree', note: '50 ml, a wavy squiggle across the whole plate.' },
         { label: 'Peas', x: 63.2, y: 61.3, side: 'right', tags: [], note: 'About 80 g, with jus. Beside the mash and on top of the belly.' },
-        { label: 'Bacon', x: 63.2, y: 45.3, side: 'right', tags: [], note: 'About 80 g, with jus. Beside the mash and on top of the belly.' },
+        { label: 'Bacon', x: 63.2, y: 45.3, side: 'right', tags: [], note: 'About 80 g, with jus. Beside the mash and on top of the belly.', ing: 'Diced bacon' },
         { label: 'Red wine jus', x: 58.5, y: 52.8, side: 'right', link: 'red-wine-jus', note: 'On the peas and bacon, and on top of the belly.' },
         { label: 'Fried shallots', x: 49.0, y: 43.4, side: 'right', link: 'fried-onions', note: '40 g, fried onions on top.' },
         { label: 'Green garnish', x: 51.9, y: 46.2, side: 'left', tags: [], note: 'Snow pea tendrils, sliced spring onion, parsley or finely sliced chives.' }
@@ -676,10 +688,10 @@ window.LK_DATA = {
         { q: '250 g', name: 'Fettuccine', note: 'cooked, one wrapped portion', link: 'fettuccine', tags: ['Gluten'] },
         { q: '400 ml', name: 'Creamy garlic sauce', note: 'the carbonara sauce', link: 'carbonara-sauce' },
         { q: '120 g', name: 'Bacon' },
-        { q: '10 ml', name: 'White cooking wine', note: 'AVC costing [where it goes to confirm]' },
+        { q: '10 ml', name: 'White cooking wine', note: 'AVC costing [where it goes to confirm]', none: true },
         { q: '[Qty]', name: 'Parmesan', note: 'a little in the pan with the sauce', tags: ['Milk'] },
         { q: '20 g', name: 'Shaved parmesan', note: 'to garnish', tags: ['Milk'] },
-        { q: '0.05 bunch', name: 'Chives', note: 'the greens, to garnish' },
+        { q: '0.05 bunch', name: 'Chives', note: 'the greens, to garnish', none: true },
         { q: '1/2', name: 'Garlic bread', note: '7 inch, bought in, cut in half', tags: ['Gluten', 'Milk', 'Soy?'] }
       ],
       pins: [
@@ -711,10 +723,10 @@ window.LK_DATA = {
       menu: 'Grill Maiden\'s Shareboard: 300 g slow-roast brisket, 250 g rump, Cumberland pork sausage, chicken wings, chips and salad, choice of two sauces.',
       yield: 'Per board. 250 g rump, 500 g smoked brisket or oven brisket, 380 to 420 g szechuan wings, Cumberland sausage, chips, salad, two sauces of choice.',
       ingredients: [
-        { q: '250 g', name: 'Rump steak', note: 'grain fed MB1' },
+        { q: '250 g', name: 'Rump steak', note: 'grain fed MB1', none: true },
         { q: '500 g', name: 'Smoked brisket', note: 'or oven brisket, 500 g of either. Smoked brisket is finished in the kick oven', link: 'brisket' },
         { q: '500 g', name: 'Oven brisket', note: 'or smoked brisket, 500 g of either', link: 'oven-brisket' },
-        { q: '380 to 420 g', name: 'Chicken middle wings', note: 'presteamed, floured, portioned in a sandwich bag' },
+        { q: '380 to 420 g', name: 'Chicken middle wings', note: 'presteamed, floured, portioned in a sandwich bag', none: true },
         { q: '50 g', name: 'Wing flour', note: 'cornflour and szechuan spice seasoning', link: 'wing-flour' },
         { q: '90 g', name: 'Pork Cumberland sausage', note: 'thick, bought in', tags: ['Gluten?', 'Soy?'] },
         { q: '1 portion', name: 'Diane sauce', note: '50 ml, first sauce of choice', link: 'diane-sauce' },
@@ -764,7 +776,7 @@ window.LK_DATA = {
         { q: '200 g', name: 'Slaw', link: 'slaw' },
         { q: '100 g', name: 'Pico de gallo', link: 'pico' },
         { q: '[Qty]', name: 'Charred corn kernels', link: 'charred-corn' },
-        { q: '60 g', name: 'Chunky avocado' },
+        { q: '60 g', name: 'Chunky avocado', none: true },
         { q: '60 ml', name: 'Light sour cream', tags: ['Milk'] }
       ],
       pins: [
@@ -790,7 +802,7 @@ window.LK_DATA = {
       yield: 'Senior plate. Half a schnitzel, gravy, chips and salad.',
       ingredients: [
         { q: '½', name: 'Chicken schnitzel', note: 'half a 350 g double butterfly, bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
-        { q: '30 g', name: 'Lemon' },
+        { q: '30 g', name: 'Lemon', none: true },
         { q: '50 ml', name: 'Gravy', link: 'gravy' },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
       ],
@@ -881,11 +893,11 @@ window.LK_DATA = {
       menu: 'Seasonal Garden Salad.',
       yield: 'Per side.',
       ingredients: [
-        { q: '40 g', name: 'Mesclun mix' },
-        { q: '100 g', name: 'Continental cucumber' },
-        { q: '25 g', name: 'Cherry tomatoes', note: 'a tenth of a 250 g punnet' },
-        { q: '20 g', name: 'Red onion' },
-        { q: '10 g', name: 'Julienne carrot' },
+        { q: '40 g', name: 'Mesclun mix', none: true },
+        { q: '100 g', name: 'Continental cucumber', none: true },
+        { q: '25 g', name: 'Cherry tomatoes', note: 'a tenth of a 250 g punnet', none: true },
+        { q: '20 g', name: 'Red onion', none: true },
+        { q: '10 g', name: 'Julienne carrot', none: true },
         { q: '10 ml', name: 'French dressing', note: 'gluten free, Masterfoods', tags: ['Egg?', 'Soy?'] }
       ],
       pins: [
@@ -909,7 +921,7 @@ window.LK_DATA = {
       pins: [
         { label: 'Wedges', x: 39.6, y: 49.1, side: 'right', tags: ['Gluten?', 'Soy?'], note: '400 g, seasoned.' },
         { label: 'Sour cream', x: 73.6, y: 35.8, side: 'left', tags: ['Milk'], note: '80 ml.' },
-        { label: 'Sweet chilli', x: 73.6, y: 63.2, side: 'left', tags: [], note: '80 ml.' }
+        { label: 'Sweet chilli', x: 73.6, y: 63.2, side: 'left', tags: [], note: '80 ml.', ing: 'Sweet chilli sauce' }
       ],
       labelNote: 'Check the wedge and sweet chilli labels.'
     },
@@ -932,7 +944,7 @@ window.LK_DATA = {
       yield: 'Per side. 200 g slaw.',
       ingredients: [
         { q: '200 g', name: 'Slaw', link: 'slaw' },
-        { q: '0.05 bunch', name: 'Chives' }
+        { q: '0.05 bunch', name: 'Chives', none: true }
       ],
       pins: [
         { label: 'Slaw', x: 42.5, y: 54.7, side: 'right', link: 'slaw' },
@@ -946,7 +958,7 @@ window.LK_DATA = {
       ingredients: [
         { q: '250 g', name: 'Mash', link: 'mash' },
         { q: '60 ml', name: 'Gravy', link: 'gravy' },
-        { q: '0.05 bunch', name: 'Chives' }
+        { q: '0.05 bunch', name: 'Chives', none: true }
       ],
       pins: [
         { label: 'Mash', x: 36.8, y: 58.5, side: 'left', link: 'mash', note: '250 g.' },
@@ -994,9 +1006,9 @@ window.LK_DATA = {
       yield: 'Per serve. 110 g donut fries.',
       ingredients: [
         { q: '110 g', name: 'Donut fries', note: 'funnel fries, bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
-        { q: '50 ml', name: 'Maple syrup' },
+        { q: '50 ml', name: 'Maple syrup', none: true },
         { q: '20 g', name: 'Whipped cream', note: 'aerosol', tags: ['Milk'] },
-        { q: '3 g', name: 'Ground cinnamon' },
+        { q: '3 g', name: 'Ground cinnamon', none: true },
         { q: '5 g', name: 'Icing sugar mix' }
       ],
       pins: [
@@ -1012,13 +1024,13 @@ window.LK_DATA = {
       id: 'rissole-mix', done: true, no: '45', kind: 'batch', forLine: 'For the lamb rissoles', name: 'Lamb Rissole Mix', short: 'Rissoles', art: 'rissole-mix', avc: 'Rissoles Batch 5000g A25',
       yield: 'Batch: 5 kg lamb mince. A 240 g serve is 3 rissoles.',
       ingredients: [
-        { q: '5 kg', name: 'Lamb mince' },
-        { q: '500 g', name: 'Carrots' },
-        { q: '500 g', name: 'Brown onions', note: 'large' },
-        { q: '100 g', name: 'Crushed garlic' },
-        { q: '100 g', name: 'Pork fat' },
-        { q: '20 g', name: 'Table salt' },
-        { q: '10 g', name: 'Ground white pepper' }
+        { q: '5 kg', name: 'Lamb mince', none: true },
+        { q: '500 g', name: 'Carrots', none: true },
+        { q: '500 g', name: 'Brown onions', note: 'large', none: true },
+        { q: '100 g', name: 'Crushed garlic', none: true },
+        { q: '100 g', name: 'Pork fat', none: true },
+        { q: '20 g', name: 'Table salt', none: true },
+        { q: '10 g', name: 'Ground white pepper', none: true }
       ],
       sections: [
         { title: 'Method', steps: ['Mix everything together in a big bowl.', 'Portion into balls of 90 g each.', 'Tray up in a GN pan with baking paper on the bottom.', 'Cook on steam bake, 50% steam, 140 °C, until the core reaches 75 °C.'] }
@@ -1056,12 +1068,12 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Corn chips', note: 'on a baking tray', tags: ['Gluten?'] },
         { q: '[Qty]', name: 'Grated mozzarella', link: 'grated-mozzarella', note: 'on the chips, through the impinger halfway' },
         { q: '[Qty]', name: 'Smoked pulled lamb', note: 'from the smoker, on its own tray, through the impinger all the way' },
-        { q: '[Qty]', name: 'Smashed avocado puree', note: 'on one side' },
+        { q: '[Qty]', name: 'Smashed avocado puree', note: 'on one side', none: true },
         { q: '[Qty]', name: 'Sour cream', note: 'on the other side', tags: ['Milk'] },
         { q: '[Qty]', name: 'Feta', note: 'crumbled all over', tags: ['Milk'] },
         { q: '[Qty]', name: 'Ranch dressing', link: 'ranch', note: 'drizzled over' },
         { q: '[Qty]', name: 'Pico de gallo', link: 'pico', note: 'house made' },
-        { q: '[Qty]', name: 'Snow pea tendrils', note: 'to finish' }
+        { q: '[Qty]', name: 'Snow pea tendrils', note: 'to finish', none: true }
       ],
       pins: [
         { label: 'Corn chips', x: 25.5, y: 72.6, side: 'left', tags: ['Gluten?'], note: 'Through the impinger halfway with the mozzarella on top.' },
@@ -1085,11 +1097,11 @@ window.LK_DATA = {
       menu: 'Buffalo BBQ Corn on the Cob: sweet, juicy corn with a tangy buffalo BBQ kick, coated in creamy, spicy mayo and finished with a crunchy toasted cashew crumb.',
       yield: 'Per serve, on the big round grey plate. A whole corn cob brushed with chilli jalapeño butter, through the impinger, coated in buffalo mayo, crumbed with toasted cashews, snow pea tendrils on top.',
       ingredients: [
-        { q: '1', name: 'Corn cob', note: 'whole' },
+        { q: '1', name: 'Corn cob', note: 'whole', none: true },
         { q: '[Qty]', name: 'Chilli jalapeño butter', note: 'brushed over the whole cob', tags: ['Milk'] },
         { q: '[Qty]', name: 'Buffalo mayo', note: 'coats the cob', tags: ['Egg'] },
         { q: '[Qty]', name: 'Toasted cashews', note: 'the crumb', tags: ['Tree nut'] },
-        { q: '[Qty]', name: 'Snow pea tendrils', note: 'on top' }
+        { q: '[Qty]', name: 'Snow pea tendrils', note: 'on top', none: true }
       ],
       pins: [
         { label: 'Corn cob', x: 17.9, y: 55.7, side: 'left', tags: [], note: 'Whole cob, through the impinger.' },
@@ -1128,7 +1140,7 @@ window.LK_DATA = {
         { q: '1', name: 'Cob loaf', tags: ['Gluten'] },
         { q: '280 ml', name: 'Cob loaf mix', link: 'cob-mix', note: 'cream cheese, corn and caramelised onion are in the mix' },
         { q: 'about 50 g', name: 'Grated mozzarella', link: 'grated-mozzarella', note: 'bought in, on top' },
-        { q: '[Qty]', name: 'Spring onions', note: 'garnish' }
+        { q: '[Qty]', name: 'Spring onions', note: 'garnish', none: true }
       ],
       pins: [
         { label: 'Cob loaf', x: 49.1, y: 28.3, side: 'right', tags: ['Gluten'] },
@@ -1145,7 +1157,7 @@ window.LK_DATA = {
       id: 'wings', art: 'wings', no: '49', kind: 'snack', forLine: 'Snack', name: 'Fried Chicken Wings', menu: 'Fried Chicken Wings: double-smoked BBQ sauce.',
       yield: 'Per serve. 380 to 420 g fried wings in double-smoked BBQ sauce, with cowboy candy (jalapeño candy) on top.',
       ingredients: [
-        { q: '380 to 420 g', name: 'Chicken wings', note: 'portioned in a sandwich bag' },
+        { q: '380 to 420 g', name: 'Chicken wings', note: 'portioned in a sandwich bag', none: true },
         { q: '20 g', name: 'Wing flour', link: 'wing-flour' },
         { q: '100 ml', name: 'Double-smoked BBQ sauce', tags: ['Gluten?', 'Soy?'] },
         { q: '25 g', name: 'Cowboy candy', link: 'cowboy-candy', note: 'also called jalapeño candy, candied jalapeños, on top' }
@@ -1169,7 +1181,7 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Haloumi', tags: ['Milk'] },
         { q: '[Qty]', name: 'Slaw', link: 'slaw' },
         { q: '[Qty]', name: 'Charred corn', link: 'charred-corn' },
-        { q: '[Qty]', name: 'Avocado' },
+        { q: '[Qty]', name: 'Avocado', none: true },
         { q: '[Qty]', name: 'Lime aioli', tags: ['Egg'] },
         { q: '[Qty]', name: 'Sour cream', tags: ['Milk'] }
       ],
@@ -1211,7 +1223,7 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Corn flour', note: 'to dust' },
         { q: '[Qty]', name: 'Szechuan seasoning', note: 'bought in, tossed through after frying' },
         { q: '[Qty]', name: 'Lime aioli', note: 'bought in', link: 'lime-aioli', tags: ['Egg?'] },
-        { q: '1', name: 'Lemon wedge' }
+        { q: '1', name: 'Lemon wedge', none: true }
       ],
       pins: [
         { label: 'Calamari strips', x: 41.5, y: 45.3, side: 'right', tags: ['Mollusc'], note: '12 strips, not rings.' },
@@ -1230,7 +1242,7 @@ window.LK_DATA = {
       menu: 'Smoked BBQ Pork Riblets: bourbon BBQ sauce, cowboy candy.',
       yield: 'Per serve. Smoked riblets tossed in bourbon BBQ sauce, topped with cowboy candy.',
       ingredients: [
-        { q: '390 to 410 g', name: 'Pork riblets', note: 'smoked, cut from the pork ribs into individual riblets, portioned in a sandwich bag' },
+        { q: '390 to 410 g', name: 'Pork riblets', note: 'smoked, cut from the pork ribs into individual riblets, portioned in a sandwich bag', none: true },
         { q: '[Qty]', name: 'Bourbon BBQ sauce', link: 'bourbon-bbq-sauce' },
         { q: '[Qty]', name: 'Cowboy candy', note: 'also called jalapeño candy, candied jalapeños', link: 'cowboy-candy' }
       ],
@@ -1300,9 +1312,9 @@ window.LK_DATA = {
       menu: 'Beef Cheek: red wine-braised beef cheek, roasted honey pumpkin purée, fried onion, herb oil.',
       yield: 'Per plate. Pumpkin purée swooped and smeared, braised beef cheek a bit off centre, herb oil drizzled round, fried shallots on top.',
       ingredients: [
-        { q: '[Qty]', name: 'Roasted honey pumpkin purée', note: 'big kitchen spoon swoop and smear' },
+        { q: '[Qty]', name: 'Roasted honey pumpkin purée', note: 'big kitchen spoon swoop and smear', none: true },
         { q: '[Qty]', name: 'Beef cheek', note: 'braised in red wine', link: 'beef-cheek-batch' },
-        { q: '[Qty]', name: 'Herb oil', note: 'lightly drizzled round' },
+        { q: '[Qty]', name: 'Herb oil', note: 'lightly drizzled round', none: true },
         { q: '[Qty]', name: 'Fried shallots', note: 'on top', tags: ['Gluten?'] }
       ],
       pins: [
@@ -1323,7 +1335,7 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Fish fillet', tags: ['Fish'] },
         { q: '[Qty]', name: 'Beer batter', note: 'XXXX', link: 'beer-batter', tags: ['Gluten'] },
         { q: '[Qty]', name: 'Tartare sauce', link: 'tartare', tags: ['Egg', 'Soy?'] },
-        { q: '[Qty]', name: 'Lemon' },
+        { q: '[Qty]', name: 'Lemon', none: true },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
       ],
       pins: [
@@ -1377,12 +1389,12 @@ window.LK_DATA = {
       menu: 'Pub Caesar: cos lettuce, crispy bacon, poached egg, toasted sourdough, parmesan, dressing.',
       yield: 'Per bowl. Cos, crispy bacon, poached egg, sourdough, parmesan, Caesar dressing.',
       ingredients: [
-        { q: '[Qty]', name: 'Cos lettuce' },
+        { q: '[Qty]', name: 'Cos lettuce', none: true },
         { q: '[Qty]', name: 'Crispy bacon' },
         { q: '1', name: 'Poached egg', tags: ['Egg'] },
         { q: '[Qty]', name: 'Toasted sourdough', tags: ['Gluten'] },
         { q: '[Qty]', name: 'Parmesan', tags: ['Milk'] },
-        { q: '[Qty]', name: 'Caesar dressing', tags: ['Egg', 'Fish?', 'Milk?'] }
+        { q: '[Qty]', name: 'Caesar dressing', link: 'caesar-dressing' }
       ],
       pins: [
         { label: 'Cos lettuce', x: 31.2, y: 63.2, side: 'left', tags: [], note: '' },
@@ -1390,8 +1402,32 @@ window.LK_DATA = {
         { label: 'Poached egg', x: 49.9, y: 36.7, side: 'left', tags: ['Egg'], note: '' },
         { label: 'Toasted sourdough', x: 59.2, y: 53.7, side: 'right', tags: ['Gluten'], note: '' },
         { label: 'Parmesan', x: 60.4, y: 43.3, side: 'right', tags: ['Milk'], note: 'Shaved.' },
-        { label: 'Caesar dressing', x: 42.5, y: 62.4, side: 'right', tags: ['Egg', 'Fish?', 'Milk?'], note: '' }
+        { label: 'Caesar dressing', x: 42.5, y: 62.4, side: 'right', link: 'caesar-dressing', note: '' }
       ]
+    },
+    {
+      id: 'caesar-dressing', no: '143', kind: 'batch', forLine: 'For the Pub Caesar', name: 'Caesar Salad Dressing', art: 'caesar-dressing',
+      yield: 'Batch: 5 L.',
+      ingredients: [
+        { q: '3 L', name: 'Mayonnaise', note: 'Approximate. Reserve some to finish at 5 L.', tags: ['Egg'] },
+        { q: '30 cloves', name: 'Garlic', note: 'Minced', none: true },
+        { q: '450 g', name: 'Anchovy fillets', note: 'Minced', tags: ['Fish'] },
+        { q: '450 g', name: 'Parmesan cheese', note: 'Grated', tags: ['Milk'] },
+        { q: '300 ml', name: 'Lemon juice', none: true },
+        { q: '300 ml', name: 'Worcestershire sauce', tags: ['Fish?', 'Gluten?', 'Soy?'] },
+        { q: '300 ml', name: 'Dijon mustard' },
+        { q: '150 ml', name: 'Red wine vinegar', none: true },
+        { q: '150 ml', name: 'Olive oil', none: true },
+        { q: '', name: 'Salt and pepper', note: 'To taste', none: true }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Reserve 500 ml of the mayonnaise. Blend the rest with the garlic, anchovies, Parmesan, lemon juice, Worcestershire sauce, Dijon, vinegar and oil using a stick blender.',
+          'Let any foam settle. Measure the dressing and blend in enough of the reserved mayonnaise to bring the finished batch to 5 L. Season with salt and pepper to taste.',
+          'Transfer to clean squeeze bottles and refrigerate.'
+        ] }
+      ],
+      labelNote: 'Contains mustard. Check the mayonnaise, Worcestershire sauce and Dijon labels.'
     },
     {
       id: 'green-bowl', art: 'green-bowl', no: '62', kind: 'main', forLine: 'Salad', name: 'Green Bowl',
@@ -1399,7 +1435,7 @@ window.LK_DATA = {
       yield: 'Per bowl. The premixed green bowl mix, crowded in the centre of the bowl, broccolini across the sides, cashews crumbled on top.',
       ingredients: [
         { q: '[Qty]', name: 'Green bowl mix', note: 'premixed', link: 'green-bowl-mix' },
-        { q: '[Qty]', name: 'Broccolini', note: 'charred' },
+        { q: '[Qty]', name: 'Broccolini', note: 'charred', none: true },
         { q: '[Qty]', name: 'Toasted cashews', note: 'crumbled on top', tags: ['Tree nut'] }
       ],
       pins: [
@@ -1415,11 +1451,11 @@ window.LK_DATA = {
       id: 'green-bowl-mix', art: 'green-bowl-mix', no: '120', kind: 'batch', forLine: 'For the green bowl', name: 'Green Bowl Mix', short: 'Green bowl mix',
       yield: 'Premixed. Everything in the green bowl except the broccolini and the cashews.',
       ingredients: [
-        { q: '[Qty]', name: 'Baby spinach' },
-        { q: '[Qty]', name: 'Gem lettuce' },
-        { q: '[Qty]', name: 'Brown rice' },
-        { q: '[Qty]', name: 'Heirloom cherry tomatoes' },
-        { q: '[Qty]', name: 'Red onion' }
+        { q: '[Qty]', name: 'Baby spinach', none: true },
+        { q: '[Qty]', name: 'Gem lettuce', none: true },
+        { q: '[Qty]', name: 'Brown rice', none: true },
+        { q: '[Qty]', name: 'Heirloom cherry tomatoes', none: true },
+        { q: '[Qty]', name: 'Red onion', none: true }
       ],
       sections: [
         { title: 'Method', steps: ['Mix the baby spinach, gem lettuce, brown rice, heirloom cherry tomatoes and red onion together.', '[Batch size, mixing and storage to confirm]'] }
@@ -1430,12 +1466,12 @@ window.LK_DATA = {
       menu: 'Honey and Maple Roasted Pumpkin: five-spice roasted pumpkin, maple, seed granola, basil pesto, feta, fried kale.',
       yield: 'Per plate.',
       ingredients: [
-        { q: '[Qty]', name: 'Pumpkin', note: 'five-spice roasted' },
-        { q: '[Qty]', name: 'Maple' },
+        { q: '[Qty]', name: 'Pumpkin', note: 'five-spice roasted', none: true },
+        { q: '[Qty]', name: 'Maple', none: true },
         { q: '[Qty]', name: 'Seed granola', link: 'seed-granola' },
         { q: '[Qty]', name: 'Basil pesto', tags: ['Tree nut?', 'Milk?'] },
         { q: '[Qty]', name: 'Feta', tags: ['Milk'] },
-        { q: '[Qty]', name: 'Fried kale' }
+        { q: '[Qty]', name: 'Fried kale', none: true }
       ],
       pins: [
         { label: 'Pumpkin', x: 36.8, y: 37.7, side: 'left', tags: [], note: 'Five-spice roasted.' },
@@ -1495,7 +1531,7 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Alabama white sauce', link: 'alabama-white-sauce' },
         { q: '[Qty]', name: 'Double-smoked BBQ sauce', tags: ['Gluten?', 'Soy?'] },
         { q: '[Qty]', name: 'Bourbon BBQ sauce', link: 'bourbon-bbq-sauce' },
-        { q: '[Qty]', name: 'Bread and butter pickles', note: 'bought in' }
+        { q: '[Qty]', name: 'Bread and butter pickles', note: 'bought in', none: true }
       ],
       pins: [
         { label: 'New slaw', x: 16, y: 45.8, side: 'left', link: 'slaw', note: 'The coleslaw.' },
@@ -1525,14 +1561,14 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Pulled lamb', note: 'from the smoker' },
         { q: '[Qty]', name: 'Sliders', note: '[filling to confirm]', tags: ['Gluten?'] },
         { q: '[Qty]', name: 'Texas sausages', tags: ['Gluten?', 'Soy?'] },
-        { q: '380 to 420 g', name: 'Chicken wings', note: '[seasoning to confirm]' },
+        { q: '380 to 420 g', name: 'Chicken wings', note: '[seasoning to confirm]', none: true },
         { q: '[Qty]', name: 'New slaw', note: 'the coleslaw', link: 'slaw' },
         { q: '[Qty]', name: 'Cornbread', link: 'cornbread' },
         { q: '[Qty]', name: 'Maple butter', note: 'glaze on the cornbread', tags: ['Milk'] },
         { q: '[Qty]', name: 'Alabama white sauce', link: 'alabama-white-sauce' },
         { q: '[Qty]', name: 'Double-smoked BBQ sauce', tags: ['Gluten?', 'Soy?'] },
         { q: '[Qty]', name: 'Bourbon BBQ sauce', link: 'bourbon-bbq-sauce' },
-        { q: '[Qty]', name: 'Bread and butter pickles', note: 'bought in' }
+        { q: '[Qty]', name: 'Bread and butter pickles', note: 'bought in', none: true }
       ],
       pins: [
         { label: 'New slaw', x: 11.3, y: 45.8, side: 'left', link: 'slaw', note: 'The coleslaw.' },
@@ -1726,8 +1762,8 @@ window.LK_DATA = {
         { q: '140 g', name: 'Plain flour', note: 'never self-raising', tags: ['Gluten'] },
         { q: '200 ml', name: 'Milk', tags: ['Milk'] },
         { q: '4', name: 'Eggs', note: 'at room temperature', tags: ['Egg'] },
-        { q: '½ tsp', name: 'Salt' },
-        { q: '100 ml', name: 'Canola oil', note: 'fresh, for the tin. Never oil out of the fryer, never the Tuscan oil: it burns' }
+        { q: '½ tsp', name: 'Salt', none: true },
+        { q: '100 ml', name: 'Canola oil', note: 'fresh, for the tin. Never oil out of the fryer, never the Tuscan oil: it burns', none: true }
       ],
       sections: [
         { title: 'Batter', steps: [
@@ -1786,9 +1822,9 @@ window.LK_DATA = {
       id: 'mushy-peas', art: 'mushy-peas', no: '136', kind: 'batch', forLine: 'For the Feast of the Feather', name: 'Mushy Peas', short: 'Mushy peas',
       yield: 'Bought in, any brand. Heated in a pan with a dash of water, salt and pepper. [Amount per board to come]',
       ingredients: [
-        { q: '[Qty]', name: 'Mushy peas', note: 'bought in, any brand' },
-        { q: 'A dash', name: 'Water' },
-        { q: 'To taste', name: 'Salt and pepper' }
+        { q: '[Qty]', name: 'Mushy peas', note: 'bought in, any brand', none: true },
+        { q: 'A dash', name: 'Water', none: true },
+        { q: 'To taste', name: 'Salt and pepper', none: true }
       ],
       sections: [
         { title: 'Method', steps: ['Mushy peas in a pan with a dash of water.', 'Heat until hot, stirring.', 'Season with salt and pepper.'] }
@@ -1803,8 +1839,8 @@ window.LK_DATA = {
       ingredients: [
         { q: '1', name: 'Sourdough cob loaf', note: 'the bun, cut across into a base and a top', tags: ['Gluten'] },
         { q: '30 ml', name: 'House BBQ sauce', note: 'on the base', link: 'house-bbq-sauce' },
-        { q: '20 g', name: 'Oak leaf lettuce' },
-        { q: '50 g', name: 'Pickles', note: 'bread and butter, bought in' },
+        { q: '20 g', name: 'Oak leaf lettuce', none: true },
+        { q: '50 g', name: 'Pickles', note: 'bread and butter, bought in', none: true },
         { q: '160 g', name: 'Smash patty', note: 'smashed patties', link: 'smash-patty' },
         { q: '2 slices', name: 'Burger cheese', note: 'on the patties', tags: ['Milk'] },
         { q: '2', name: 'Southern-style chicken tenders', note: 'bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
@@ -1850,14 +1886,14 @@ window.LK_DATA = {
       id: 'philly-potato', art: 'philly-potato', no: '137', kind: 'snack', forLine: 'Special', name: 'Philly Cheesesteak Loaded Potato', short: 'Philly potato', avc: 'Loaded Spuds side and entree',
       yield: 'Per serve. 2 potatoes, gently squashed, loaded with pulled BBQ brisket, roast capsicum, caramelised onion and cheese sauce, run through the impinger, then topped with ranch, crispy fried onions and spring onion.',
       ingredients: [
-        { q: '250 g', name: 'Washed potatoes', note: '2 potatoes, rustically squashed [how they are cooked before squashing to come]' },
+        { q: '250 g', name: 'Washed potatoes', note: '2 potatoes, rustically squashed [how they are cooked before squashing to come]', none: true },
         { q: '100 g', name: 'Pulled BBQ brisket', link: 'brisket', note: '[smoked brisket (card 79) or oven brisket (card 121), and any BBQ sauce, to confirm]' },
-        { q: '60 g', name: 'Roast capsicum strips', note: 'bought in (Sandhurst roast red capsicum)' },
-        { q: '80 g', name: 'Caramelised onion', note: 'bought in (Beerenberg)' },
+        { q: '60 g', name: 'Roast capsicum strips', note: 'bought in (Sandhurst roast red capsicum)', none: true },
+        { q: '80 g', name: 'Caramelised onion', note: 'bought in (Beerenberg)', none: true },
         { q: '50 g', name: 'American cheese sauce', link: 'american-cheese-sauce', note: 'the liquid cheese' },
         { q: '50 ml', name: 'Ranch dressing', link: 'ranch', note: 'on top, after the impinger' },
         { q: '15 g', name: 'Crispy fried onions', note: 'bought in (Dragon Phoenix), not the house fried onions (card 73). On top, after the impinger', tags: ['Gluten?'] },
-        { q: '0.05 bunch', name: 'Spring onion', note: 'on top, after the impinger' }
+        { q: '0.05 bunch', name: 'Spring onion', note: 'on top, after the impinger', none: true }
       ],
       pins: [
         { label: 'Squashed potatoes', x: 19.8, y: 58.5, side: 'left', tags: [], note: '2 potatoes, 250 g in all, rustically squashed. [Cooking before squashing to come]' },
@@ -1881,17 +1917,51 @@ window.LK_DATA = {
       ],
       labelNote: 'Check the crispy fried onion, caramelised onion, roast capsicum and brisket labels.'
     },
+    /* Card 138 (19 Nov 2026): the special from the guest menu wording only. No amounts confirmed yet, so every
+       amount is [Qty] (shows "To come"). The drawing follows the menu, not a photo of the real dish. */
+    {
+      id: 'loaded-fries', art: 'loaded-fries', no: '138', kind: 'snack', forLine: 'Special', name: 'BBQ Pulled Beef Loaded Fries', short: 'Loaded fries',
+      menu: 'BBQ Pulled Beef Loaded Fries: crispy fries with fork tender slow cooked BBQ pulled beef brisket, gooey cheddar sauce, smokey Alabama white sauce, crunchy fried shallots and cowboy candy.',
+      yield: 'Per serve. Crispy chips loaded with pulled BBQ brisket and cheese sauce, with Alabama white sauce, fried shallots and cowboy candy on top. [Amounts, build order and bowl or board to come]',
+      ingredients: [
+        { q: '[Qty]', name: 'Chips', note: 'crispy, from the fryer' },
+        { q: '[Qty]', name: 'Pulled BBQ brisket', link: 'brisket', note: '[smoked brisket (card 79) or oven brisket (card 121), and which BBQ sauce, to confirm]' },
+        { q: '[Qty]', name: 'Cheese sauce', link: 'american-cheese-sauce', note: 'the gooey cheddar sauce on the menu [American cheese sauce (card 117) to confirm]' },
+        { q: '[Qty]', name: 'Alabama white sauce', link: 'alabama-white-sauce' },
+        { q: '[Qty]', name: 'Fried shallots', note: 'on top [house fried onions (card 73) or bought in, to confirm]', tags: ['Gluten?'] },
+        { q: '[Qty]', name: 'Cowboy candy', link: 'cowboy-candy', note: 'on top' }
+      ],
+      pins: [
+        { label: 'Chips', x: 24.5, y: 66, side: 'left', tags: [], note: 'Crispy, under everything. [Amount to come]' },
+        { label: 'Pulled BBQ brisket', x: 53.8, y: 59.4, side: 'right', link: 'brisket', note: 'Loaded over the chips. [Amount to come]' },
+        { label: 'Cheese sauce', x: 27.4, y: 45.3, side: 'left', link: 'american-cheese-sauce', note: 'Over the brisket. [Amount to come]' },
+        { label: 'Alabama white sauce', x: 49.1, y: 39.6, side: 'left', link: 'alabama-white-sauce', note: 'Over the top. [Amount to come]' },
+        { label: 'Fried shallots', x: 62.8, y: 63.8, side: 'right', tags: ['Gluten?'], note: 'On top. [House or bought in, and amount, to come]' },
+        { label: 'Cowboy candy', x: 66, y: 45.3, side: 'right', link: 'cowboy-candy', note: 'On top. [Amount to come]' }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          '[These steps follow the guest menu. Build order, amounts and bowl or board to confirm]',
+          'Fry the chips until crispy.',
+          'Load with the pulled BBQ brisket. [How it is warmed to come]',
+          'Cheese sauce over the brisket.',
+          'Alabama white sauce over the top.',
+          'Finish with the fried shallots and cowboy candy.'
+        ] }
+      ],
+      labelNote: 'Check the fried shallot, BBQ sauce and brisket labels.'
+    },
     {
       id: 'pork-knuckle', art: 'pork-knuckle', no: '92', kind: 'main', forLine: 'Special', name: 'Pork Knuckle',
       yield: 'Per plate. Pork knuckle on potato mash with pork sauce, hot honey glaze, 5 onion rings, fried shallots and sauerkraut.',
       ingredients: [
         { q: '[Qty]', name: 'Potato mash', link: 'mash' },
         { q: '[Qty]', name: 'Pork sauce', tags: ['Gluten?', 'Soy?'] },
-        { q: '[Qty]', name: 'Pork knuckle' },
-        { q: '[Qty]', name: 'Hot honey glaze', note: 'on the knuckle' },
+        { q: '[Qty]', name: 'Pork knuckle', none: true },
+        { q: '[Qty]', name: 'Hot honey glaze', note: 'on the knuckle', none: true },
         { q: '5', name: 'Onion rings', tags: ['Gluten?', 'Egg?'] },
         { q: '[Qty]', name: 'Fried shallots', tags: ['Gluten?'] },
-        { q: '[Qty]', name: 'Sauerkraut' }
+        { q: '[Qty]', name: 'Sauerkraut', none: true }
       ],
       pins: [
         { label: 'Onion rings', x: 49.1, y: 30.2, side: 'left', tags: ['Gluten?', 'Egg?'], note: '5 rings on top of the knuckle.' },
@@ -1919,19 +1989,19 @@ window.LK_DATA = {
       id: 'chicken-adobo', art: 'chicken-adobo', no: '124', kind: 'main', forLine: 'Special', name: 'Chicken Adobo', short: 'Adobo',
       yield: 'Per plate on 180 g steamed jasmine rice, garnished with spring onion curls and sliced red chilli. Batch: 2.5 kg bone-in chicken thigh braised in soy and vinegar. [Serves per batch to come]',
       ingredients: [
-        { q: '2.5 kg', name: 'Chicken thigh', note: 'bone-in, skin-on' },
+        { q: '2.5 kg', name: 'Chicken thigh', note: 'bone-in, skin-on', none: true },
         { q: '250 ml', name: 'Soy sauce', tags: ['Soy', 'Gluten?'] },
-        { q: '200 ml', name: 'White cane vinegar' },
+        { q: '200 ml', name: 'White cane vinegar', none: true },
         { q: '500 ml', name: 'Unsalted chicken stock', tags: ['Gluten?'] },
-        { q: '100 g', name: 'Garlic', note: 'crushed, half for the marinade' },
-        { q: '200 g', name: 'Brown onion', note: 'sliced' },
-        { q: '5 pcs', name: 'Bay leaves' },
-        { q: '10 g', name: 'Whole black peppercorns' },
-        { q: '25 g', name: 'Brown sugar' },
-        { q: '40 ml', name: 'Neutral cooking oil' },
+        { q: '100 g', name: 'Garlic', note: 'crushed, half for the marinade', none: true },
+        { q: '200 g', name: 'Brown onion', note: 'sliced', none: true },
+        { q: '5 pcs', name: 'Bay leaves', none: true },
+        { q: '10 g', name: 'Whole black peppercorns', none: true },
+        { q: '25 g', name: 'Brown sugar', none: true },
+        { q: '40 ml', name: 'Neutral cooking oil', none: true },
         { q: '180 g', name: 'Jasmine rice', note: 'steamed, per plate', link: 'jasmine-rice' },
-        { q: '[Qty]', name: 'Spring onion', note: 'curls, garnish per plate' },
-        { q: '[Qty]', name: 'Red chilli', note: 'sliced, garnish per plate' }
+        { q: '[Qty]', name: 'Spring onion', note: 'curls, garnish per plate', none: true },
+        { q: '[Qty]', name: 'Red chilli', note: 'sliced, garnish per plate', none: true }
       ],
       pins: [
         { label: 'Jasmine rice', x: 22, y: 59, side: 'left', link: 'jasmine-rice', note: '180 g, steamed. Under the chicken.' },
@@ -1954,10 +2024,10 @@ window.LK_DATA = {
       id: 'jasmine-rice', no: '125', kind: 'batch', forLine: 'For the chicken adobo', name: 'Jasmine Rice', short: 'Jasmine rice', art: 'rice',
       yield: 'Batch: 5 kg raw jasmine rice, exactly as the Steamed Rice (card 05). 180 g per plate.',
       ingredients: [
-        { q: '5 kg', name: 'Jasmine rice' },
-        { q: '9.5 L', name: 'Water' },
+        { q: '5 kg', name: 'Jasmine rice', none: true },
+        { q: '9.5 L', name: 'Water', none: true },
         { q: '2.5 tbsp', name: 'Chicken stock', tags: ['Gluten?', 'Soy?'] },
-        { q: '13', name: 'Bay leaves' }
+        { q: '13', name: 'Bay leaves', none: true }
       ],
       sections: [
         { title: 'Method', steps: ['Wash the rice 3 times until the water runs clear.', 'Spread the rice in 1/1 GN pans, 60 mm deep, divided evenly. Add the water, chicken stock and bay leaves, divided evenly across the pans.', 'Steam 25 min.', 'Check the rice. It must not be too soft. If it needs more, steam on in 2 min steps, checking each time.'] },
@@ -2091,15 +2161,15 @@ window.LK_DATA = {
       id: 'antipasto-platter', art: 'antipasto-platter', no: '98', kind: 'main', forLine: 'Functions', name: 'Antipasto Platter',
       yield: 'Per platter. Prosciutto, leg ham, salami, cheese, crackers, grilled sourdough, dried fruit salad, 3 dips, 2 of each: tomato relish, caramelised onions and basil pesto.',
       ingredients: [
-        { q: '80 g', name: 'Prosciutto' },
+        { q: '80 g', name: 'Prosciutto', none: true },
         { q: '100 g', name: 'Leg ham' },
         { q: '100 g', name: 'Salami' },
         { q: '300 g total', name: 'Cheese selection', note: 'Cracker Barrel, blue cheese and brie', tags: ['Milk'] },
         { q: '1/2 pkt', name: 'Crackers', tags: ['Gluten', 'Sesame?', 'Soy?'] },
         { q: '1 cob', name: 'Sourdough', note: 'cut and grilled', tags: ['Gluten'] },
-        { q: '120gm', name: 'Dried fruit salad', note: 'the dried fruit selection' },
+        { q: '120gm', name: 'Dried fruit salad', note: 'the dried fruit selection', none: true },
         { q: '2ea', name: 'Tomato relish', link: 'tomato-relish', note: 'dip' },
-        { q: '2ea', name: 'Caramelised onions', note: 'dip' },
+        { q: '2ea', name: 'Caramelised onions', note: 'dip', none: true },
         { q: '2ea', name: 'Basil pesto', note: 'dip', tags: ['Tree nut?', 'Milk?'] }
       ],
       pins: [
@@ -2131,7 +2201,7 @@ window.LK_DATA = {
         { q: '6-8ea', name: 'King prawns', tags: ['Crustacean'] },
         { q: '10ea', name: 'Oysters', tags: ['Mollusc'] },
         { q: 'Large handful', name: 'Sweet potato chips' },
-        { q: '8', name: 'Lemon wedges' },
+        { q: '8', name: 'Lemon wedges', none: true },
         { q: '2ea', name: 'Tartare sauce', link: 'tartare' },
         { q: '2ea', name: 'Sweet chilli sauce' }
       ],
@@ -2182,7 +2252,7 @@ window.LK_DATA = {
       yield: 'Per topper. Chicken tenders cooked in Italian herbs. [Number of tenders to confirm]',
       ingredients: [
         { q: '[Qty]', name: 'Chicken tenders' },
-        { q: '[Qty]', name: 'Italian herbs' }
+        { q: '[Qty]', name: 'Italian herbs', none: true }
       ],
       pins: [
         { label: 'Chicken tenders', x: 40, y: 45, side: 'left', tags: [], note: 'Cooked in Italian herbs, steamed to 75 °C core. [Number of tenders to confirm] [Unverified] drawing shows 3.' }
@@ -2200,8 +2270,8 @@ window.LK_DATA = {
       menu: 'Mushroom topper: mushrooms roasted in Italian herbs.',
       yield: 'Per topper. Mushrooms cooked with Italian herbs in the oven. [Quantity and cut to confirm]',
       ingredients: [
-        { q: '[Qty]', name: 'Mushrooms' },
-        { q: '[Qty]', name: 'Italian herbs' }
+        { q: '[Qty]', name: 'Mushrooms', none: true },
+        { q: '[Qty]', name: 'Italian herbs', none: true }
       ],
       pins: [
         { label: 'Mushrooms', x: 40, y: 45, side: 'left', tags: [], note: 'Cooked with Italian herbs in the oven. [Quantity and cut to confirm] [Unverified] drawing is a guide only.' }
@@ -2368,47 +2438,88 @@ window.LK_DATA = {
     },
     {
       id: 'mushroom-sauce', no: '76', kind: 'batch', forLine: 'For the Grill Maiden\'s Board', name: 'Mushroom Sauce', short: 'Mushroom sauce', art: 'mushroom-sauce',
-      yield: 'Batch: 5 L. One portion of sauce is 50 ml.',
+      yield: 'Batch: 12 L. One portion of sauce is 50 ml.',
       ingredients: [
-        { q: '960 g', name: 'Mushrooms' },
-        { q: '600 g', name: 'Gravy powder' },
-        { q: '80 g', name: 'Crushed garlic' },
-        { q: '1', name: 'Large onion' },
-        { q: '400 ml', name: 'Cooking cream', tags: ['Milk'] },
-        { q: '3', name: 'Thyme sprigs' },
-        { q: '80 ml', name: 'Red cooking wine' },
-        { q: '2 g', name: 'Cracked black pepper' },
-        { q: '5 g', name: 'Table salt' },
-        { q: '200 ml', name: 'Water', note: 'for the slurry' }
+        { q: '2.5 kg', name: 'Button mushrooms', none: true },
+        { q: '1.5 kg', name: 'Gravy powder', note: 'Knorr Rich Brown GF' },
+        { q: '200 g', name: 'Crushed garlic', none: true },
+        { q: '200 g', name: 'Brown onion', none: true },
+        { q: '1 L', name: 'Cooking cream', tags: ['Milk'] },
+        { q: '0.5 bunch', name: 'Thyme', none: true },
+        { q: '500 ml', name: 'Red cooking wine' },
+        { q: '5 g', name: 'Cracked black pepper', none: true },
+        { q: '15 g', name: 'Table salt', none: true },
+        { q: '1 L', name: 'Water', note: 'for the slurry', none: true },
+        { q: 'As needed', name: 'Water', note: 'for the pot and to bring the finished batch to 12 L', none: true }
       ],
       sections: [
         { title: 'Method', steps: [
-          'Cook off the ingredients individually: the mushrooms, onion, garlic and thyme.',
+          'Sauté the onion, garlic and mushrooms. Add the thyme and check the seasoning with the cracked black pepper and table salt.',
           'Deglaze with the red cooking wine.',
-          'Top up with the cooking cream.',
-          'Make a slurry with the gravy powder and 200 ml of water, and add it.',
-          'Season with the cracked black pepper and table salt. [When to add them to confirm]'
+          'Add water to the pot, leaving room for the slurry and cream, and bring it to the boil.',
+          'In a separate bowl, whisk the gravy powder with 1 L of cold water to make a slurry.',
+          'Stir the slurry into the pot and simmer until thickened.',
+          'Remove from the heat, add the cooking cream and top up with hot water as needed to reach 12 L finished.'
         ] }
       ],
-      contains: [{ allergen: 'Milk', from: 'cooking cream' }],
-      check: [],
-      labelNote: 'Check the gravy powder and cooking cream labels.'
+      labelNote: 'Check the gravy powder, red cooking wine and cooking cream labels.'
+    },
+    {
+      id: 'peppercorn-sauce', no: '139', kind: 'batch', forLine: 'For the grill', name: 'Peppercorn Sauce', short: 'Peppercorn sauce', art: 'peppercorn-sauce', aka: 'pepper sauce pepper corn sauce',
+      yield: 'Batch: 12 L.',
+      ingredients: [
+        { q: '[Qty]', name: 'Onion', note: 'finely diced [amount to confirm]', none: true },
+        { q: '150 g', name: 'Crushed garlic', none: true },
+        { q: '0.5 bunch', name: 'Thyme', none: true },
+        { q: '400 g', name: 'Green peppercorns', note: 'half an 800 g tin' },
+        { q: '1 L', name: 'Red cooking wine', note: '[Unit to confirm]' },
+        { q: 'As needed', name: 'Water', note: 'for the pot and to bring the finished batch to 12 L', none: true },
+        { q: '1.5 kg', name: 'Gravy powder', note: 'Knorr Rich Brown GF' },
+        { q: '1 L', name: 'Water', note: 'for the slurry', none: true },
+        { q: '1 L', name: 'Cooking cream', tags: ['Milk'] },
+        { q: '10 g', name: 'Cracked black pepper', none: true },
+        { q: '20 g', name: 'Table salt', none: true }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Cook the finely diced onion, garlic, thyme and green peppercorns until the onion is translucent.',
+          'Add the red cooking wine and reduce by half.',
+          'Add water to the pot, leaving room for the slurry and cream, and bring it to the boil.',
+          'In a separate bowl, whisk the gravy powder with 1 L of cold water to make a slurry.',
+          'Stir the slurry into the boiling pot, then reduce to a simmer.',
+          'Once thickened, remove from the heat, add the cooking cream and season with cracked black pepper and table salt.',
+          'Top up with hot water as needed to reach 12 L finished.'
+        ] }
+      ],
+      labelNote: 'Check the green peppercorn, gravy powder, red cooking wine and cooking cream labels.'
     },
     {
       id: 'diane-sauce', no: '77', kind: 'batch', forLine: "For the Grill Maiden's Board", name: 'Diane Sauce', short: 'Diane sauce', art: 'diane-sauce',
-      yield: 'Batch: 5 L. One portion of sauce is 50 ml.',
+      aka: 'dianne sauce',
+      yield: 'Batch: 12 L. One portion of sauce is 50 ml.',
       ingredients: [
         { q: '1150 g', name: 'Gravy powder' },
         { q: '125 g', name: 'Crushed garlic' },
-        { q: '1000 ml', name: 'Red cooking wine' },
+        { q: '6', name: 'Large onions', note: 'finely diced', none: true },
+        { q: '0.5 bunch', name: 'Thyme', none: true },
+        { q: '500 ml', name: 'Red cooking wine' },
+        { q: '500 ml', name: 'White cooking wine' },
         { q: '1 L', name: 'Cooking cream', tags: ['Milk'] },
         { q: '250 ml', name: 'Worcestershire sauce', tags: ['Fish?', 'Gluten?', 'Soy?'] },
-        { q: '500 g', name: 'Tomato sauce', link: 'tomato-sauce' },
-        { q: '200 ml', name: 'Water', note: 'for the slurry' },
-        { q: '8 l', name: 'Water' }
+        { q: '500 g', name: 'Tomato ketchup' },
+        { q: '1 L', name: 'Water', note: 'for the slurry' },
+        { q: 'As needed', name: 'Water', note: 'for the pot and to bring the finished batch to 12 L' }
       ],
       sections: [
-        { title: 'Method', steps: ['Cook off the ingredients individually, starting with the garlic.', 'Deglaze with the red cooking wine.', 'Add the Worcestershire sauce and the tomato sauce. [Order to confirm]', 'Top up with the cooking cream.', 'Make a slurry with the gravy powder and 200 ml of water, and add it.'] }
+        { title: 'Method', steps: [
+          'Sweat the finely diced onion with the garlic and thyme until the onion is translucent.',
+          'Deglaze with the red and white cooking wines, then reduce by half.',
+          'Add water to the pot, leaving room for the slurry, ketchup, Worcestershire sauce and cream, and bring it to the boil.',
+          'In a separate bowl, whisk the gravy powder with 1 L of cold water to make a slurry.',
+          'Stir the slurry into the boiling pot and reduce to a simmer.',
+          'Add the tomato ketchup and Worcestershire sauce.',
+          'Remove from the heat, add the cooking cream and top up with hot water as needed to reach 12 L finished.'
+        ] }
       ],
       contains: [{ allergen: 'Milk', from: 'cooking cream' }],
       check: [{ allergen: 'Fish', from: 'Worcestershire sauce' }, { allergen: 'Gluten', from: 'Worcestershire sauce' }, { allergen: 'Soy', from: 'Worcestershire sauce' }],
@@ -2497,6 +2608,73 @@ window.LK_DATA = {
       labelNote: 'Check the supplier label for allergens.'
     },
     {
+      id: 'vegan-aioli', no: '140', kind: 'batch', forLine: 'For the green dressing', name: 'Vegan Aioli', art: 'vegan-aioli',
+      yield: 'Batch: about 2.6 L.',
+      ingredients: [
+        { q: '500 ml', name: 'Soy milk', tags: ['Soy'] },
+        { q: '1–2 tbsp', name: 'Dijon mustard', note: 'About half a kitchen spoon' },
+        { q: '1–2 tbsp', name: 'Seeded mustard', note: 'About half a kitchen spoon' },
+        { q: '10 cloves', name: 'Garlic', note: 'Minced or confit', none: true },
+        { q: '100 ml', name: 'Lemon juice', note: 'Adjust to taste', none: true },
+        { q: '2 L', name: 'Vegetable oil', none: true },
+        { q: '', name: 'Salt and pepper', note: 'To taste', none: true }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Blend the soy milk, garlic and lemon juice until well mixed.',
+          'With the blender running, add the vegetable oil in a slow, steady stream until the aioli is thick and creamy. Work in batches if needed.',
+          'Add the Dijon and seeded mustards and blend until combined.',
+          'Blend in a little salt and pepper. Taste and adjust with more lemon juice, salt or pepper as needed.'
+        ] }
+      ],
+      labelNote: 'Contains mustard. Check both mustard labels for other allergens.'
+    },
+    {
+      id: 'green-dressing', no: '141', kind: 'batch', forLine: 'Dressing', name: 'Green Dressing', art: 'green-dressing',
+      yield: 'Batch: based on 1 L vegan aioli.',
+      ingredients: [
+        { q: '1 L', name: 'Vegan aioli', link: 'vegan-aioli' },
+        { q: '1 bunch', name: 'Fresh parsley', none: true },
+        { q: '50 g', name: 'Fresh dill', none: true },
+        { q: '50 g', name: 'Fresh mint', none: true },
+        { q: '50 g', name: 'Fresh chives', none: true },
+        { q: '125 ml', name: 'Lemon juice', note: 'Adjust to taste', none: true },
+        { q: '75 ml', name: 'Olive oil', none: true },
+        { q: '5 cloves', name: 'Garlic', note: 'Minced', none: true },
+        { q: '', name: 'Salt and pepper', note: 'To taste', none: true }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Wash and dry the herbs. Remove tough stems and finely chop the herbs.',
+          'Mix the vegan aioli, minced garlic and lemon juice in a large bowl.',
+          'Slowly drizzle in the olive oil while stirring continuously to emulsify.',
+          'Stir in the chopped herbs. Adjust the balance of the herbs to taste.',
+          'Season with salt and pepper. Taste, adjust the lemon juice and seasoning, and stir well.'
+        ] }
+      ],
+      labelNote: 'Contains mustard from the vegan aioli.'
+    },
+    {
+      id: 'house-dressing', no: '142', kind: 'batch', forLine: 'House dressing', name: 'Salad Dressing (Honey Lime)', art: 'house-dressing',
+      yield: 'Batch: 14 L.',
+      ingredients: [
+        { q: '1.78 L', name: 'Maple syrup', none: true },
+        { q: '1.78 L', name: 'Lime juice', none: true },
+        { q: '9.5 L', name: 'Vegetable oil', note: 'Approximate. Adjust the final amount to yield 14 L.', none: true },
+        { q: '140 ml', name: 'Dijon mustard' },
+        { q: '710 g', name: 'Brown onions', note: 'Peeled. Estimated weight.', none: true },
+        { q: '70 g', name: 'Garlic', note: 'Peeled. Estimated weight.', none: true }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Roughly chop the onions and garlic. Blitz with the maple syrup, lime juice and Dijon mustard using a stick blender.',
+          'With the blender running, add the vegetable oil gradually until smooth. Hold back some oil for the final adjustment.',
+          'Transfer to a graduated container and let any foam settle. Blend in enough of the reserved oil to bring the finished dressing to 14 L.'
+        ] }
+      ],
+      labelNote: 'Contains mustard. Check the Dijon label for other allergens.'
+    },
+    {
       id: 'american-cheese-sauce', art: 'american-cheese-sauce', no: '117', kind: 'batch', forLine: 'For the poutine fries', name: 'American Cheese Sauce', short: 'Cheese sauce',
       yield: 'Bought in. No prep. Serve size is on the dish card.',
       ingredients: [
@@ -2537,16 +2715,25 @@ window.LK_DATA = {
     },
     {
       id: 'tartare', done: true, no: '82', kind: 'batch', forLine: 'For the fish dishes', name: 'Tartare Sauce', short: 'Tartare sauce', art: 'tartare',
-      yield: 'Bought in. No prep. Serve size is on each dish card.',
+      yield: 'Batch: 10 L finished.',
       ingredients: [
-        { q: '1', name: 'Tartare sauce', note: 'Oli & Vine tartare sauce, bought in (AVC product).', tags: ['Egg?'] }
+        { q: '6.75 L', name: 'Mayonnaise', note: 'Have extra on hand if needed to reach 10 L', tags: ['Egg', 'Soy?'] },
+        { q: '1.35 kg', name: 'Pickles', note: 'Finely chopped', none: true },
+        { q: '700 g', name: 'Capers', note: 'Finely chopped', none: true },
+        { q: '700 g', name: 'Red onions', note: 'Finely chopped', none: true },
+        { q: '350 g', name: 'Fresh parsley', note: 'Finely chopped', none: true },
+        { q: '200 ml', name: 'Lemon juice', none: true },
+        { q: '', name: 'Salt and pepper', note: 'To taste', none: true }
       ],
       sections: [
-        { title: 'Method', steps: ['Bought in. No prep.'] }
+        { title: 'Method', steps: [
+          'Use a stick blender to blitz the pickles, lemon juice, capers, red onions and parsley into a paste.',
+          'Mix the paste into 6.5 L of the mayonnaise.',
+          'Measure the sauce and add mayonnaise as needed to bring it to 10 L. Season with salt and pepper to taste.',
+          'Record the total mayonnaise used for the next batch.'
+        ] }
       ],
-      contains: [],
-      check: [{ allergen: 'Egg', from: 'tartare sauce' }],
-      labelNote: 'Check the supplier label for allergens.'
+      labelNote: 'Check the mayonnaise, pickle and caper labels.'
     },
     {
       id: 'pizza-sauce', done: true, no: '83', kind: 'batch', forLine: 'For the parmigiana', name: 'Pizza Sauce', short: 'Pizza sauce', art: 'pizza-sauce',
@@ -2679,13 +2866,13 @@ window.LK_DATA = {
       yield: 'Batch: 2000 g.',
       ingredients: [
         { q: '500 g', name: 'Gochujang', tags: ['Gluten?', 'Soy?'] },
-        { q: '1 kg', name: 'Red capsicum' },
-        { q: '250 g', name: 'Red chilli' },
-        { q: '100 g', name: 'Crushed garlic' },
-        { q: '100 g', name: 'Crushed ginger' },
-        { q: '150 g', name: 'Caster sugar' },
-        { q: '150 ml', name: 'Rice wine vinegar' },
-        { q: '20 g', name: 'Salt' }
+        { q: '1 kg', name: 'Red capsicum', none: true },
+        { q: '250 g', name: 'Red chilli', none: true },
+        { q: '100 g', name: 'Crushed garlic', none: true },
+        { q: '100 g', name: 'Crushed ginger', none: true },
+        { q: '150 g', name: 'Caster sugar', none: true },
+        { q: '150 ml', name: 'Rice wine vinegar', none: true },
+        { q: '20 g', name: 'Salt', none: true }
       ],
       sections: [
         { title: 'Method', steps: ['Roast and blitz the capsicum and chilli.', 'Add all the ingredients to a pot.', '[Add water to the right consistency: rest of the step to confirm]'] }
@@ -2697,13 +2884,13 @@ window.LK_DATA = {
       yield: 'Batch: 1500 ml.',
       ingredients: [
         { q: '300 g', name: 'Gochujang hot pepper paste', tags: ['Gluten?', 'Soy?'] },
-        { q: '300 g', name: 'Caster sugar' },
+        { q: '300 g', name: 'Caster sugar', none: true },
         { q: '150 ml', name: 'Soy sauce', tags: ['Soy', 'Gluten?'] },
-        { q: '200 g', name: 'Crushed ginger' },
+        { q: '200 g', name: 'Crushed ginger', none: true },
         { q: '100 g', name: 'White sesame seeds', tags: ['Sesame'] },
         { q: '300 ml', name: 'Sesame oil', tags: ['Sesame'] },
-        { q: '300 ml', name: 'Rice wine vinegar' },
-        { q: '0.5 bunch', name: 'Spring onion' }
+        { q: '300 ml', name: 'Rice wine vinegar', none: true },
+        { q: '0.5 bunch', name: 'Spring onion', none: true }
       ],
       sections: [
         { title: 'Method', steps: ['[Method to confirm]'] }
@@ -2714,13 +2901,13 @@ window.LK_DATA = {
       id: 'seed-granola', art: 'seed-granola', no: '108', kind: 'batch', forLine: 'For the honey and maple roasted pumpkin', name: 'Seed Granola', short: 'Seed granola',
       yield: 'Batch: 2000 g.',
       ingredients: [
-        { q: '500 g', name: 'Linseeds' },
-        { q: '500 g', name: 'Pumpkin seeds (pepitas)' },
+        { q: '500 g', name: 'Linseeds', none: true },
+        { q: '500 g', name: 'Pumpkin seeds (pepitas)', none: true },
         { q: '500 g', name: 'Pine nuts', tags: ['Tree nut?'] },
         { q: '250 g', name: 'Black sesame seeds', tags: ['Sesame'] },
         { q: '250 g', name: 'White sesame seeds', tags: ['Sesame'] },
-        { q: '500 g', name: 'Honey' },
-        { q: '500 ml', name: 'Canola oil' }
+        { q: '500 g', name: 'Honey', none: true },
+        { q: '500 ml', name: 'Canola oil', none: true }
       ],
       sections: [
         { title: 'Method', steps: ['Boil the honey and canola oil until combined.', 'Mix with the seeds in trays.', 'Bake at 120 °C, stirring every 10 minutes.', '[Bake time to confirm]'] }
@@ -2731,12 +2918,12 @@ window.LK_DATA = {
       id: 'cowboy-candy', art: 'cowboy-candy', no: '109', kind: 'batch', forLine: 'For the riblets and the wings', name: 'Cowboy Candy', short: 'Cowboy candy', aka: 'jalapeno candy jalapeño candy candied jalapeno',
       yield: 'Batch: 1000 g. Also called jalapeño candy.',
       ingredients: [
-        { q: '500 ml', name: 'Cider vinegar' },
-        { q: '1 kg', name: 'Caster sugar' },
-        { q: '20 g', name: 'Salt' },
-        { q: '5 g', name: 'Turmeric' },
-        { q: '10 g', name: 'Mustard seed' },
-        { q: '1 kg', name: 'Jalapeños', note: 'sliced' }
+        { q: '500 ml', name: 'Cider vinegar', none: true },
+        { q: '1 kg', name: 'Caster sugar', none: true },
+        { q: '20 g', name: 'Salt', none: true },
+        { q: '5 g', name: 'Turmeric', none: true },
+        { q: '10 g', name: 'Mustard seed', none: true },
+        { q: '1 kg', name: 'Jalapeños', note: 'sliced', none: true }
       ],
       sections: [
         { title: 'Method', steps: ['Add all the ingredients except the jalapeños to a pot.', 'Simmer to a syrup consistency.', 'Add the sliced jalapeños.', 'Transfer to containers to cool. Pour over the remaining syrup.'] }
@@ -2747,19 +2934,19 @@ window.LK_DATA = {
       id: 'beef-cheek-batch', art: 'beef-cheek-batch', no: '110', kind: 'batch', forLine: 'For the beef cheek', name: 'Braised Beef Cheek', short: 'Beef cheek',
       yield: 'Batch: 10 kg raw beef cheeks, red wine braise.',
       ingredients: [
-        { q: '10 kg', name: 'Beef cheeks', note: 'raw, untrimmed' },
-        { q: '150 ml', name: 'Cooking oil', note: 'high smoke point' },
-        { q: '1 kg', name: 'Brown onions', note: 'medium dice' },
-        { q: '600 g', name: 'Carrots', note: 'medium dice' },
-        { q: '400 g', name: 'Celery sticks', note: 'medium dice' },
-        { q: '300 g', name: 'Garlic' },
-        { q: '200 g', name: 'Tomato paste' },
-        { q: '3 L', name: 'Dry red wine', note: 'shiraz or cabernet, 4 standard bottles' },
+        { q: '10 kg', name: 'Beef cheeks', note: 'raw, untrimmed', none: true },
+        { q: '150 ml', name: 'Cooking oil', note: 'high smoke point', none: true },
+        { q: '1 kg', name: 'Brown onions', note: 'medium dice', none: true },
+        { q: '600 g', name: 'Carrots', note: 'medium dice', none: true },
+        { q: '400 g', name: 'Celery sticks', note: 'medium dice', none: true },
+        { q: '300 g', name: 'Garlic', none: true },
+        { q: '200 g', name: 'Tomato paste', none: true },
+        { q: '3 L', name: 'Dry red wine', note: 'shiraz or cabernet, 4 standard bottles', none: true },
         { q: '5 to 6 L', name: 'Dark beef stock', note: 'good quality or glace base, enough to submerge the meat' },
-        { q: '1 large bunch', name: 'Fresh thyme' },
-        { q: '5 sprigs', name: 'Fresh rosemary' },
-        { q: '10 pieces', name: 'Bay leaves', note: 'dried' },
-        { q: '1 tablespoon', name: 'Black peppercorns', note: 'whole' }
+        { q: '1 large bunch', name: 'Fresh thyme', none: true },
+        { q: '5 sprigs', name: 'Fresh rosemary', none: true },
+        { q: '10 pieces', name: 'Bay leaves', note: 'dried', none: true },
+        { q: '1 tablespoon', name: 'Black peppercorns', note: 'whole', none: true }
       ],
       sections: [
         { title: 'Method', steps: ['[Method to confirm]'] }
@@ -2771,16 +2958,16 @@ window.LK_DATA = {
       yield: 'Batch: roughly 6.65 kg, portioned into 140 g balls. 15 balls per tub.',
       ingredients: [
         { q: '1.6 kg', name: 'Flour', note: 'sifted', tags: ['Gluten'] },
-        { q: '32 g', name: 'Flaky sea salt' },
-        { q: '32 g', name: 'Bi-carb soda' },
+        { q: '32 g', name: 'Flaky sea salt', none: true },
+        { q: '32 g', name: 'Bi-carb soda', none: true },
         { q: '904 g', name: 'Unsalted butter', note: 'for the beurre noisette', tags: ['Milk'] },
         { q: '448 g', name: 'Unsalted butter', note: 'cubed', tags: ['Milk'] },
-        { q: '1.6 kg', name: 'Brown sugar' },
-        { q: '400 g', name: 'Caster sugar' },
+        { q: '1.6 kg', name: 'Brown sugar', none: true },
+        { q: '400 g', name: 'Caster sugar', none: true },
         { q: '8', name: 'Eggs', tags: ['Egg'] },
         { q: '16', name: 'Egg yolks', tags: ['Egg'] },
         { q: '1.36 kg', name: 'Dark chocolate nibs', tags: ['Milk?', 'Soy?'] },
-        { q: '80 g', name: 'Vanilla extract' }
+        { q: '80 g', name: 'Vanilla extract', none: true }
       ],
       sections: [
         { title: 'Method', steps: [
@@ -2808,7 +2995,7 @@ window.LK_DATA = {
       id: 'korean-cucumber', art: 'korean-cucumber', no: '112', kind: 'batch', forLine: 'For the beetroot bites and the pork belly bites', name: 'Korean-Style Cucumber', short: 'Korean cucumber',
       yield: 'Batch: 4 kg sliced cucumbers.',
       ingredients: [
-        { q: '4 kg', name: 'Sliced cucumbers' },
+        { q: '4 kg', name: 'Sliced cucumbers', none: true },
         { q: '1500 ml', name: 'Korean dressing', note: 'the whole batch', link: 'korean-dressing' }
       ],
       sections: [
@@ -2866,23 +3053,28 @@ window.LK_DATA = {
       "ingredients": [
         {
           "q": "2.5 kg",
-          "name": "American mustard"
+          "name": "American mustard",
+          "none": true
         },
         {
           "q": "1.6 kg",
-          "name": "Honey"
+          "name": "Honey",
+          "none": true
         },
         {
           "q": "910 g",
-          "name": "Brown sugar"
+          "name": "Brown sugar",
+          "none": true
         },
         {
           "q": "1 L",
-          "name": "Cider vinegar"
+          "name": "Cider vinegar",
+          "none": true
         },
         {
           "q": "100 ml",
-          "name": "Tomato ketchup"
+          "name": "Tomato ketchup",
+          "none": true
         },
         {
           "q": "100 ml",
@@ -2895,7 +3087,8 @@ window.LK_DATA = {
         },
         {
           "q": "300 g",
-          "name": "Garlic powder"
+          "name": "Garlic powder",
+          "none": true
         },
         {
           "q": "75 ml",
@@ -2903,7 +3096,8 @@ window.LK_DATA = {
         },
         {
           "q": "40 g",
-          "name": "Sea salt flakes"
+          "name": "Sea salt flakes",
+          "none": true
         }
       ],
       "labelNote": "Check the current mustard, Worcestershire and buffalo sauce labels. Method not supplied. The source yield is 4.2 L; confirm the finished yield.",
@@ -2919,11 +3113,13 @@ window.LK_DATA = {
       "ingredients": [
         {
           "q": "765 ml",
-          "name": "Cider vinegar"
+          "name": "Cider vinegar",
+          "none": true
         },
         {
           "q": "660 g",
-          "name": "Brown sugar"
+          "name": "Brown sugar",
+          "none": true
         },
         {
           "q": "129 ml",
@@ -2945,35 +3141,43 @@ window.LK_DATA = {
         },
         {
           "q": "30 g",
-          "name": "Sea salt flakes"
+          "name": "Sea salt flakes",
+          "none": true
         },
         {
           "q": "30 g",
-          "name": "Ground black pepper"
+          "name": "Ground black pepper",
+          "none": true
         },
         {
           "q": "24 g",
-          "name": "White pepper"
+          "name": "White pepper",
+          "none": true
         },
         {
           "q": "15 g",
-          "name": "Chilli powder"
+          "name": "Chilli powder",
+          "none": true
         },
         {
           "q": "15 g",
-          "name": "Garlic powder"
+          "name": "Garlic powder",
+          "none": true
         },
         {
           "q": "15 g",
-          "name": "Onion powder"
+          "name": "Onion powder",
+          "none": true
         },
         {
           "q": "15 g",
-          "name": "Chilli flakes"
+          "name": "Chilli flakes",
+          "none": true
         },
         {
           "q": "6 g",
-          "name": "Ground cumin"
+          "name": "Ground cumin",
+          "none": true
         },
         {
           "q": "6 g",
@@ -2981,7 +3185,8 @@ window.LK_DATA = {
         },
         {
           "q": "4 L",
-          "name": "Tomato ketchup"
+          "name": "Tomato ketchup",
+          "none": true
         },
         {
           "q": "6 g",
@@ -2989,15 +3194,18 @@ window.LK_DATA = {
         },
         {
           "q": "1.125 kg",
-          "name": "Golden syrup"
+          "name": "Golden syrup",
+          "none": true
         },
         {
           "q": "600 g",
-          "name": "Honey"
+          "name": "Honey",
+          "none": true
         },
         {
           "q": "6 kg",
-          "name": "Whole plums in juice"
+          "name": "Whole plums in juice",
+          "none": true
         }
       ],
       "labelNote": "Check current Worcestershire, soy sauce and spice blend labels. Method not supplied. Confirm whether this is the double-smoked BBQ sauce used on the boards and wings.",
@@ -3022,15 +3230,18 @@ window.LK_DATA = {
         },
         {
           "q": "1 L",
-          "name": "Cider vinegar"
+          "name": "Cider vinegar",
+          "none": true
         },
         {
           "q": "200 g",
-          "name": "American mustard"
+          "name": "American mustard",
+          "none": true
         },
         {
           "q": "675 g",
-          "name": "Caster sugar"
+          "name": "Caster sugar",
+          "none": true
         },
         {
           "q": "675 ml",
@@ -3048,19 +3259,23 @@ window.LK_DATA = {
         },
         {
           "q": "100 g",
-          "name": "Garlic powder"
+          "name": "Garlic powder",
+          "none": true
         },
         {
           "q": "85 g",
-          "name": "Onion powder"
+          "name": "Onion powder",
+          "none": true
         },
         {
           "q": "85 g",
-          "name": "Sea salt flakes"
+          "name": "Sea salt flakes",
+          "none": true
         },
         {
           "q": "85 g",
-          "name": "Ground black pepper"
+          "name": "Ground black pepper",
+          "none": true
         }
       ],
       "labelNote": "Check current mayonnaise, mustard, Worcestershire and hot sauce labels. Method not supplied. The source yield is 16 L; confirm the finished yield.",
@@ -3076,7 +3291,8 @@ window.LK_DATA = {
       "ingredients": [
         {
           "q": "375 g",
-          "name": "Corn kernels"
+          "name": "Corn kernels",
+          "none": true
         },
         {
           "q": "187 g",
@@ -3095,11 +3311,13 @@ window.LK_DATA = {
         },
         {
           "q": "100 g",
-          "name": "Caster sugar"
+          "name": "Caster sugar",
+          "none": true
         },
         {
           "q": "2 g",
-          "name": "Table salt"
+          "name": "Table salt",
+          "none": true
         },
         {
           "q": "125 g",
@@ -3124,7 +3342,8 @@ window.LK_DATA = {
         },
         {
           "q": "100 g",
-          "name": "Polenta"
+          "name": "Polenta",
+          "none": true
         }
       ],
       "labelNote": "Check the baking powder label. Baking method, oven setting and time were not supplied. Maple butter is the board service glaze, separate from this batch.",

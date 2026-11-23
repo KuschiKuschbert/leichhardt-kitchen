@@ -72,7 +72,8 @@ async function log(p, text, amt, unit, before) {
   await p.evaluate(a => window.__fake.write(a.k, { avoidable: 'Over-portioned chips', change: '', reviewBy: 'Bo', reviewAt: a.t }), { k: fsKey(['waste', today]), t: Date.now() + 60000 });
   await p.click('[data-p="wreview"]'); await L.settle(p, 500);
   const rv = () => p.evaluate(k => window.__fake.dump()[k] || {}, fsKey(['waste', today]));
-  ok((await rv()).reviewBy === 'Bo' && /Bo saved a review/.test(await txt(p, '.p-toast') || ''), 'review: a newer review by Bo is not replaced on the first tap');
+  ok((await rv()).reviewBy === 'Bo' && /Bo saved a review/.test(await txt(p, '.w-rv-status') || '') &&
+    await txt(p, '[data-p="wreview"]') === 'Replace review', 'review: a newer review by Bo is named beside the explicit Replace action');
   await p.click('[data-p="wreview"]'); await L.settle(p, 600);
   ok((await rv()).reviewBy === 'Head chef', 'review: a second tap saves the head chef\'s review (' + (await rv()).reviewBy + ')');
   ok(p.errors.length === 0, 'review: no page errors ' + p.errors.join(' | '));
@@ -87,9 +88,10 @@ async function log(p, text, amt, unit, before) {
   ok(!!os && /2 tubs/.test(await os.textContent()), 'orders: typing Duck suggests Duck fat with its usual 2 tubs');
   if (os) { await os.click(); await L.settle(p, 250); }
   ok(await p.inputValue('#o-qty') === '2 tubs', 'orders: the suggestion fills the usual 2 tubs (' + await p.inputValue('#o-qty') + ')');
-  // the date chip and Delivery arrived (3 Nov 2026, the day chips went): one row at 390
-  const mids = await p.evaluate(() => [...document.querySelectorAll('.o-nav #o-day, .o-nav .o-deliv')].map(e => { const r = e.getBoundingClientRect(); return Math.round(r.top + r.height / 2); }));
-  ok(mids.length === 2 && Math.abs(mids[0] - mids[1]) <= 4, 'orders: the date chip and Delivery arrived sit on one row at 390 (' + mids + ')');
+  // Prep's day control (‹ Today date ›, back on Orders 20 Nov 2026, the consistency sweep, step 3): one row at 390, with
+  // Delivery received on the row under it (3 Nov 2026 to 20 Nov 2026: the date box alone, beside Delivery received)
+  const mids = await p.evaluate(() => [...document.querySelectorAll('.o-nav [data-p="oday"], .o-nav [data-p="otoday"], .o-nav #o-day, .o-nav .o-deliv')].map(e => { const r = e.getBoundingClientRect(); return Math.round(r.top + r.height / 2); }));
+  ok(mids.length === 5 && mids.slice(0, 4).every(m => Math.abs(m - mids[0]) <= 4) && mids[4] > mids[0] + 30, 'orders: the day control sits on one row at 390, Delivery received under it (' + mids + ')');
   await L.tap(p, '[data-p="otick"][data-id="o1"]'); await L.settle(p, 400);
   const lab = await p.evaluate(() => { const e = document.querySelector('[data-p="otick"][data-id="o1"]'); return e ? [e.getAttribute('aria-label'), e.getAttribute('aria-pressed')] : null; });
   ok(!lab || (lab[0] === 'Ordered: Milk' && lab[1] === 'true'), 'orders: a ticked line still reads "Ordered: Milk", pressed (' + lab + ')');

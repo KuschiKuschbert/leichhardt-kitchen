@@ -7,7 +7,7 @@ import { anonContext, dailySession, seedOwnerDevice } from './device-auth-fixtur
 setLogLevel('silent');
 const model = createRequire(import.meta.url)('../../js/functions.js');
 const source = process.env.RULES || new URL('../../firestore.rules', import.meta.url);
-const rules = readFileSync(source, 'utf8').replaceAll('KITCHEN_PIN', '000000').replaceAll('OWNER_EMAIL', 'headchef@test.local');
+const rules = readFileSync(source, 'utf8').replaceAll('KITCHEN_PIN', '000000').replaceAll('OWNER_EMAIL', 'headchef@test.local').replaceAll('PLATFORM_EMAIL', 'headchef@test.local').replaceAll('PLATFORM_ID', '');
 const env = await initializeTestEnvironment({ projectId: 'demo-staff-capabilities', firestore: { rules } });
 const K = 'kitchens/000000/', NOW = Date.now(), day = new Date(NOW + 36000000).toISOString().slice(0, 10);
 const people = ['view', 'add', 'tick', 'del', 'staff', 'lead', 'sous', 'head', 'fn'].map(id => ({ id, name: id, role: id === 'view' ? 'view' : id === 'fn' ? 'fnc' : id === 'sous' || id === 'head' || id === 'lead' ? id : 'staff', active: true, add: id !== 'view' && id !== 'fn', tick: id !== 'view' && id !== 'fn', del: true }));

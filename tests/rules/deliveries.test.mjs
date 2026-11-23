@@ -3,7 +3,7 @@ import { doc, getDoc, getDocs, collection, setDoc, updateDoc, deleteDoc, query, 
 import { readFileSync } from 'node:fs';
 import { anonContext, dailySession, seedOwnerDevice } from './device-auth-fixtures.mjs';
 const K = 'kitchens/000000/', ownerEmail = 'owner@test.local';
-const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8').replaceAll('KITCHEN_PIN', '000000').replaceAll('OWNER_EMAIL', ownerEmail);
+const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8').replaceAll('KITCHEN_PIN', '000000').replaceAll('OWNER_EMAIL', ownerEmail).replaceAll('PLATFORM_EMAIL', ownerEmail).replaceAll('PLATFORM_ID', '');
 const env = await initializeTestEnvironment({ projectId: 'demo-deliveries', firestore: { rules } });
 await env.clearFirestore();
 const at = Date.now(), today = new Date(at + 36000000).toISOString().slice(0, 10), past = '2025-01-01';

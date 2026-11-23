@@ -5,18 +5,20 @@
   'use strict';
   var API = 12, A = window.LK_APP, P = window.LK_PREP, T = window.LK_TIME, esc = A.esc;
   var C, store, loadingCode = null, contextKey = '', identityKey = '', lockedIdentity = '', generation = 0;
+  var orderWide = window.matchMedia('(min-width: 900px)');
   var M = blank();
   // Optional in lazy files: an older saved shell keeps its existing text feedback.
   function inkLabel(text, icon, state) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', state || 'busy') : esc(text); }
   function loading(text, icon, rows) { return window.LK_MOTION ? window.LK_MOTION.status(text, { icon: icon, state: 'busy', rows: rows || 0 }) : '<p class="hint" role="status">' + esc(text) + '</p>'; }
   function blank() {
     var collapsed = false; try { collapsed = localStorage.getItem('lk.sup.sidebar') === 'hide'; } catch (e) {}
-    return { root: null, route: {}, routeKey: '', openItems: Object.create(null), suppliers: null, unread: [], sid: '', mode: 'order', busy: false, err: '', msg: '', validation: null,
+    // readFail: what a failed catalogue read says (readText()); err stays for saves and checks
+    return { root: null, route: {}, routeKey: '', openItems: Object.create(null), suppliers: null, unread: [], sid: '', mode: 'order', busy: false, readFail: '', err: '', msg: '', validation: null,
       sidebar: !collapsed, q: '', group: '', filter: '', infoOpen: null, requestsWant: false, page: 0, drafts: Object.create(null), history: Object.create(null),
-      audit: Object.create(null), historyOpen: false, historyId: '', historyQ: '', smart: false, requests: null,
+      audit: Object.create(null), historyOpen: false, historyReturnY: null, historyId: '', historyQ: '', smart: false, requests: null,
       requestsBusy: false, requestsError: '', requestsDay: '', cutQ: '', ed: null, supplierEd: null, review: null, additional: '',
       archive: '', reuse: '', importing: null, importPlan: null, importReuses: [], importMap: Object.create(null), importQ: '',
-      includeArchived: false, auditOpen: false, armedLeave: '', saving: false };
+      includeArchived: false, auditOpen: false, armedLeave: '', saving: false, sales: blankSales() };
   }
   function B() { return P.supplier(); }
   function canRead() { try { return !!B().read(); } catch (e) { return false; } }
@@ -59,7 +61,7 @@
     if (M.review && M.review.sid === M.sid) return 'review';
     return M.historyOpen ? M.reuse ? 'reuse' : 'history' : '';
   }
-  function dirty() { return formDirty() || hasDraft() || !!M.importing || M.saving; }
+  function dirty() { return formDirty() || hasDraft() || !!M.importing || !!M.sales.preview || !!M.sales.link || M.saving; }
   function items(all) { var s = supplier(); return s ? s.items.filter(function (i) { return all || !i.archived; }) : []; }
   function item(id) { return items(true).filter(function (i) { return i.id === id; })[0] || null; }
   function hist(sid) { sid = sid || M.sid; return M.history[sid] || (M.history[sid] = { rows: null, byItem: Object.create(null), busy: false, err: '', more: false, cursor: null, full: false }); }
@@ -135,6 +137,46 @@
     var why = code ? String(code) : e && (e.name || e.message) ? String((e.name || 'Error') + (e.message ? ': ' + e.message : '')) : '';
     return 'Could not finish. Check the connection and try again. Your draft is kept.' + (why ? ' (' + why.slice(0, 120) + ')' : '');
   }
+  /* A failed read, one look on every page (the consistency sweep, step 2, 20 Nov 2026, docs/design-patterns.md, A
+     page): one red line with role status that says what could not load, never "nothing", and Try again as a link in
+     the line, which runs that read's own action (data-su="retry" for the catalogue, history-retry, audit-retry,
+     requests-retry). LK_PREP.readErr() draws it; an older js/prep.js without it gets the same markup here. With no
+     signal the neutral note at the top says so, so the line does not say it twice. */
+  function readLine(words, at) {
+    if (navigator.onLine === false) words = String(words).replace(/^No signal\. /, '');
+    return P.readErr ? P.readErr(words, null, at) : '<p class="p-err p-readerr" role="status">' + esc(words) + ' <button type="button" class="p-link" ' + at + '>Try again</button></p>';
+  }
+  // No signal only when the signal is the cause: the phone says it is offline, or the server did not answer
+  function noSignal(e) { var code = e && e.code || ''; return navigator.onLine === false || code === 'unavailable' || code === 'deadline-exceeded' || code === 'offline'; }
+  // what: what could not load. The reads used up, an old copy of the supplier tools or a record the catalogue check
+  // refused keep their own words (errorText()), which say what to do.
+  function readText(e, what) {
+    var code = e && e.code || '';
+    if (code === 'resource-exhausted' || code === 'version' || code === 'invalid' || e && typeof e.field === 'string') return errorText(e);
+    return (noSignal(e) ? 'No signal. ' : '') + 'Could not load ' + what + '.' + (code === 'permission' || code === 'permission-denied' ? ' The read was refused.' : '');
+  }
+  /* A failed read also tries once more by itself (the consistency sweep, step 2, 20 Nov 2026): after 5 minutes or a
+     moment after the phone is back online, whichever comes first, like retrySoon() in js/prep.js. One timer per read
+     (k: 'cat' the catalogue, 'hist' a supplier's order history), armed only by a failure, so nothing is read when
+     nothing failed. Each try costs what its Try again costs and arms again only if it fails too. A new read of the
+     same kind, leaving the page or another sign-in clears it. Never while a save or a form is open (a catalogue read
+     there could change what the form was checked against): Try again stays in the line. Time passing on the phone. */
+  var AGAIN_MS = 5 * 60000, readAgain = Object.create(null);
+  // e: the failure. A saved record the check refused, or supplier tools that need the book reloaded, fail the same way
+  // again, so they wait for Try again and arm nothing (a history try costs up to 21 reads).
+  function againArm(k, fn, e) {
+    againStop(k); var code = e && e.code || '';
+    if (code === 'invalid' || code === 'version' || e && typeof e.field === 'string') return;
+    var t = setTimeout(function () { againRun(k); }, AGAIN_MS); readAgain[k] = { g: generation, fn: fn, t: t };
+  }
+  function againStop(k) { var a = readAgain[k]; if (a) clearTimeout(a.t); delete readAgain[k]; }
+  function againAll() { Object.keys(readAgain).forEach(againStop); }
+  function againRun(k) {
+    var a = readAgain[k], task = activeTask(); againStop(k);
+    if (!a || a.g !== generation || !M.root || !document.body.contains(M.root) || M.saving || !canRead()) return;
+    if (task === 'editor' || task === 'supplier' || task === 'import' || task === 'review') return;
+    a.fn();
+  }
   function fieldUnit(field, i, d) {
     return Object.prototype.hasOwnProperty.call(d.units[field], i.id) ? d.units[field][i.id] : field === 'qty' ? i.orderUnit : i.parUnit;
   }
@@ -145,7 +187,7 @@
   function rememberSupplier(s) {
     var at = (M.suppliers || []).findIndex(function (x) { return x.id === s.id; });
     if (at < 0) M.suppliers.push(s); else M.suppliers[at] = s;
-    M.suppliers.sort(function (a, b) { return a.name.localeCompare(b.name); });
+    M.suppliers.sort(function (a, b) { return a.name.localeCompare(b.name); }); M.sales.calc = null;
     if (M.drafts[s.id]) M.drafts[s.id].suggestions = Object.create(null);
   }
   function splitDraftConflict(suppliers) {
@@ -210,32 +252,36 @@
   }
   function deps() {
     function coreReady() { return window.LK_SUP_CORE && window.LK_SUP_CORE.API === 7 && typeof window.LK_SUP_CORE.planTemplateOrder === 'function' && typeof window.LK_SUP_CORE.resolveCatalogueDestinations === 'function'; }
-    function storeReady() { return window.LK_SUP_STORE && window.LK_SUP_STORE.API === 5 && window.LK_SUP_STORE.templateOrder === 1 && window.LK_SUP_STORE.catalogueOrder === 1 && window.LK_SUP_STORE.splitCatalogue === 1; }
+    function storeReady() { return window.LK_SUP_STORE && window.LK_SUP_STORE.API === 5 && window.LK_SUP_STORE.sales === 1 && window.LK_SUP_STORE.templateOrder === 1 && window.LK_SUP_STORE.catalogueOrder === 1 && window.LK_SUP_STORE.splitCatalogue === 1; }
     if (coreReady() && storeReady()) return Promise.resolve();
     if (!loadingCode) loadingCode = Promise.all([
       coreReady() ? null : A.load('js/supplier-core.js?v=8'),
-      storeReady() ? null : A.load('js/supplier-store.js?v=8')
+      storeReady() ? null : A.load('js/supplier-store.js?v=9')
     ]).then(function () {
       if (!coreReady() || !storeReady()) throw { code: 'version' };
     }).catch(function (e) { loadingCode = null; throw e; });
     return loadingCode;
   }
-  function load(force) {
+  // auto: the try by itself after a failed read (againRun()); it leaves a save's message where it is
+  function load(force, auto) {
     if (M.busy || (!force && M.suppliers)) return Promise.resolve();
     if (!canRead()) { draw(); return Promise.resolve(); }
-    var g = generation, key = ctx(); M.busy = true; M.err = ''; M.validation = null; draw();
+    var g = generation, key = ctx(); againStop('cat'); M.busy = true; M.readFail = ''; if (!auto) { M.err = ''; M.validation = null; } draw();
     return deps().then(function () { return B().ready(); }).then(function () {
       if (g !== generation || key !== ctx() || !canRead()) throw { code: 'context' };
       C = window.LK_SUP_CORE; if (!store) store = window.LK_SUP_STORE.create(B());
       return store.loadSuppliers().then(function (list) { var out = list.map(function (s) { return C.cleanSupplier(s); }); out.bad = Array.isArray(list.bad) ? list.bad : []; return out; });
     }).then(function (list) {
       if (g !== generation || key !== ctx()) return;
-      M.unread = list.bad; M.suppliers = list.sort(function (a, b) { return a.name.localeCompare(b.name); }); M.busy = false; var draftConflict = moveSplitDrafts(list); if (draftConflict) M.err = draftConflict; if (force) { M.history = Object.create(null); M.audit = Object.create(null); M.requests = null; if (M.review && !M.review.uncertain && !M.review.recorded) M.review = null; }
+      M.unread = list.bad; M.suppliers = list.sort(function (a, b) { return a.name.localeCompare(b.name); }); M.busy = false; var draftConflict = moveSplitDrafts(list); if (draftConflict) M.err = draftConflict; if (force) { M.reuse = ''; M.history = Object.create(null); M.audit = Object.create(null); M.requests = null; if (M.review && !M.review.uncertain && !M.review.recorded) M.review = null; }
       if (M.route.cutoffId) { var linked = list.filter(function (s) { return s.cutoffId === M.route.cutoffId; }); if (linked.length === 1) M.sid = linked[0].id; }
       if (!supplier()) M.sid = M.suppliers.length ? M.suppliers[0].id : '';
       // the card reads no supplier's history: none of them is this cut-off's
-      draw(); if (M.sid && !cutCard()) loadHistory(M.historyOpen, false); if (M.smart) loadRequests();
-    }, function (e) { if (g === generation && key === ctx()) { M.busy = false; M.err = errorText(e); draw(); } });
+      draw(); if (M.sid && !cutCard()) loadHistory(M.historyOpen, false); if (M.smart) loadRequests(); loadSales(force && !auto);
+    }, function (e) {
+      // a failed read (20 Nov 2026): its own line with Try again, never the save box, and one try by itself later
+      if (g === generation && key === ctx()) { M.busy = false; M.readFail = readText(e, 'the supplier catalogue'); againArm('cat', function () { if (M.readFail) load(true, true); }, e); draw(); }
+    });
   }
   function loadHistory(full, more) {
     if (!M.sid || !store || !canRead()) return Promise.resolve();
@@ -249,7 +295,16 @@
       // A record acknowledged while this query was in flight must survive its older response.
       h.rows = more || h.rows !== before ? (h.rows || []).concat(r.rows).filter(function (o, i, a) { return a.findIndex(function (v) { return v.id === o.id; }) === i; }) : r.rows;
       h.cursor = r.cursor; h.more = r.more; h.full = true; h.busy = false; indexHistory(h); draw();
-    }, function (e) { if (g === generation) { h.busy = false; h.err = errorText(e); draw(); } });
+    }, function (e) {
+      // the failed-read line with Try again (history-retry), and one try by itself later while this supplier is open
+      if (g === generation) { h.busy = false; h.err = readText(e, 'the order history for this supplier'); againArm('hist', function () { if (M.sid === sid && hist(sid).err) historyAgain(); }, e); draw(); }
+    });
+  }
+  // Try again on a failed history read: page one again, so a completeness claim from the lost page goes too. One read
+  // per tap: a tap while the read is out reads nothing more (20 Nov 2026).
+  function historyAgain() {
+    var h = hist(); if (h.busy) return;
+    againStop('hist'); M.reuse = ''; h.rows = null; h.byItem = Object.create(null); h.full = false; h.more = false; h.cursor = null; loadHistory(M.historyOpen, false);
   }
   function loadRequests() {
     if ((M.requests !== null && M.requestsDay === day()) || M.requestsBusy) return;
@@ -259,12 +314,12 @@
       // asked for from the chip: show what staff asked for at once, or say there is nothing for this supplier
       if (M.requestsWant) { M.requestsWant = false; if (matchInfo().matches.length) { M.filter = 'asked'; M.page = 0; } else M.msg = 'No staff requests on today\'s Order list match this supplier\'s items. Others stay on the Order list.'; }
       draw();
-    }, function (e) { if (g === generation) { M.requestsBusy = false; M.requestsWant = false; M.requestsError = errorText(e); draw(); } });
+    }, function (e) { if (g === generation) { M.requestsBusy = false; M.requestsWant = false; M.requestsError = readText(e, 'today\'s staff requests'); draw(); } });
   }
   function loadAudit() {
     var sid = M.sid, a = M.audit[sid]; if (a && (a.busy || a.rows)) return;
     a = M.audit[sid] = { rows: null, busy: true, err: '' }; var g = generation; draw();
-    store.audit(sid, 20).then(function (r) { if (g === generation) { a.rows = r.rows; a.busy = false; draw(); } }, function (e) { if (g === generation) { a.busy = false; a.err = errorText(e); draw(); } });
+    store.audit(sid, 20).then(function (r) { if (g === generation) { a.rows = r.rows; a.busy = false; draw(); } }, function (e) { if (g === generation) { a.busy = false; a.err = readText(e, 'the catalogue changes'); draw(); } });
   }
   function button(cmd, text, extra, primary) { return '<button type="button" class="btn' + (primary ? ' dark ink-busy-button' : '') + '" data-su="' + cmd + '"' + (extra || '') + '>' + text + '</button>'; }
   function smallButton(cmd, text, extra) { return '<button type="button" class="p-x" data-su="' + cmd + '"' + (extra || '') + '>' + text + '</button>'; }
@@ -294,10 +349,14 @@
   function statusHTML() {
     var task = activeTask(), note = M.armedLeave && (task === 'editor' || task === 'supplier' || task === 'import'), msg = M.armedLeave && !note ? '' : (M.msgAt === 'history' && M.historyOpen || M.msgAt === 'import' && task === 'catalogue') ? '' : M.msg;
     var pending = M.review && task !== 'review' && (M.saving || M.review.uncertain) ? '<p id="su-recording-status" class="su-status" role="status">Recording for ' + esc(M.review.supplierName) + (M.saving ? ' is still in progress. ' : ' needs confirmation. ') + '<a href="#/suppliers/' + encodeURIComponent(M.review.sid) + '" data-su-recovery>Return to review</a>' + (M.saving ? ' to check its outcome.' : ' to retry safely.') + '</p>' : '';
-    return (M.err ? '<div id="su-order-error" class="su-error" role="alert" tabindex="-1">' + esc(M.err) + (M.validation || pending ? '' : '<div class="btn-row">' + (M.err === LINKED_ERR ? button('additional', 'Additional order') : button('retry', 'Try again')) + '</div>') + '</div>' : '') + pending + (msg ? '<p class="su-status' + (note ? ' su-leave-note' : '') + '"' + (note ? ' id="su-leave-note"' : '') + ' role="status">' + esc(msg) + '</p>' : '') + (navigator.onLine === false ? '<p class="su-error" role="status">No signal. Supplier reads and saves need a connection. Do not close a draft you still need.</p>' : '');
+    // No signal is not a failure (the consistency sweep, step 2, 20 Nov 2026, docs/colour-coding.md: waiting stays
+    // neutral): a neutral note that says what still works. A failed catalogue read is its own line with Try again;
+    // the red box below is for a save or a check that failed.
+    var off = navigator.onLine === false ? '<p class="su-offline" role="status">No signal. Reading and saving supplier orders wait for the connection. Drafts on this page are kept while it stays open.</p>' : '';
+    return off + (M.readFail ? readLine(M.readFail, 'data-su="retry"') : '') + (M.err ? '<div id="su-order-error" class="su-error" role="alert" tabindex="-1">' + esc(M.err) + (M.validation || pending ? '' : '<div class="btn-row">' + (M.err === LINKED_ERR ? button('additional', 'Additional order') : button('retry', 'Try again')) + '</div>') + '</div>' : '') + pending + (msg ? '<p class="su-status' + (note ? ' su-leave-note' : '') + '"' + (note ? ' id="su-leave-note"' : '') + ' role="status">' + esc(msg) + '</p>' : '');
   }
   function headerHTML() {
-    return '<div class="su-head"><div><span class="eyebrow">Chef tools</span><h2 id="rtitle" tabindex="-1">' + (M.mode === 'manage' ? 'Suppliers &amp; pars' : 'Supplier order') + '</h2><p class="hint">' + (M.mode === 'manage' ? 'Current pars and manual items. Original PDF records and past orders stay unchanged.' : 'Choose a supplier, check its last order and build the next one.') + '</p></div><div class="btn-row">' + button('refresh', M.busy ? inkLabel('Refreshing...', 'orders') : 'Refresh', M.busy ? ' disabled' : '') + '</div></div>' +
+    return '<div class="su-head"><div><span class="eyebrow">Chef tools</span><h2 id="rtitle" tabindex="-1">' + (M.mode === 'manage' ? 'Suppliers &amp; pars' : 'Supplier order') + '</h2><p class="hint">' + (M.mode === 'manage' ? 'Current pars and manual items. Original PDF records and past orders stay unchanged.' : 'Choose a supplier, check its last order and build the next one.') + '</p></div><div class="btn-row">' + button('refresh', M.busy ? inkLabel('Refreshing...', 'orders') : 'Refresh', M.busy ? ' disabled' : '') + salesImportHTML() + '</div></div>' +
       (canEdit() ? '<nav class="chips su-tools" aria-label="Supplier tools"><button type="button" class="chip" data-su="order-mode" aria-pressed="' + (M.mode === 'order') + '">Supplier order</button><button type="button" class="chip" data-su="manage" aria-pressed="' + (M.mode === 'manage') + '">Manage catalogue</button></nav>' : '');
   }
   function sidebarHTML() {
@@ -315,7 +374,7 @@
   function latestHTML() {
     var h = hist(), o = latest();
     if (h.busy && !h.rows) return loading('Reading the latest supplier order...', 'orders');
-    if (h.err) return '<p class="su-error">' + esc(h.err) + ' ' + smallButton('history-retry', 'Try again') + '</p>';
+    if (h.err) return readLine(h.err, 'data-su="history-retry"');
     return '<div class="su-latest"><b>' + (o ? 'Last order: ' + esc(dateText(o.at)) : 'No order recorded for this supplier yet') + '</b><span class="hint">' + (o ? o.lines.length + ' items. Each row shows when that item was last ordered in the loaded history.' : 'Last order quantities appear after an order is recorded here.') + '</span></div>';
   }
   function matchInfo() { try { return C.matchRequests(items(), M.requests || []); } catch (e) { return { matches: [], unmatched: [] }; } }
@@ -392,13 +451,13 @@
       '<div class="su-par"><span class="su-mobile-label">Par</span><b>' + esc(currentPar(i)) + '</b><small>' + esc(i.parUnit || 'To confirm') + '</small></div>' + lastOrderHTML(found, h) +
       '<label class="su-qty"><span class="su-mobile-label">To order</span>' + stepper(i, d, qtyInput) + '<small class="hint">' + esc(orderUnitHint(i, d)) + '</small>' + entryError('qty', i) + '</label>' +
       '<div class="su-count"><label class="su-onhand"><span>On hand' + (stockUnit ? ' (' + esc(stockUnit) + ')' : String(d.stock[i.id] || '').trim() ? ' (unit not set)' : '') + '</span><input class="search" data-sf="stock" data-i="' + esc(i.id) + '" aria-label="Stock count: ' + esc(i.name) + '" placeholder="e.g. 4" value="' + esc(d.stock[i.id] || '') + '" maxlength="40"' + validationAttrs('stock', i.id) + '></label>' +
-      (top ? '<button type="button" class="su-use" data-su="apply" data-i="' + esc(i.id) + '" title="' + esc(top.reason) + '" aria-label="Use top-up ' + esc(quantityText(top)) + ' for ' + esc(i.name) + '">Top up ' + esc(quantityText(top)) + ' · Use</button>' : '') + entryError('stock', i) + '</div></div>';
+      (top ? '<button type="button" class="su-use" data-su="apply" data-i="' + esc(i.id) + '" title="' + esc(top.reason) + '" aria-label="Use top-up ' + esc(quantityText(top)) + ' for ' + esc(i.name) + '">Top up ' + esc(quantityText(top)) + ' · Use</button>' : '') + entryError('stock', i) + '</div>' + salesRowHTML(i, d) + '</div>';
   }
   function suggestionsHTML() {
     var d = draft(), suggestions = items().map(function (i) { var p = C.suggestQuantity(i, latest(), d.stock[i.id] || '', fieldUnit('stock', i, d)); return p ? { item: i, pick: p } : null; }).filter(function (s) { return s && !d.dismissed[s.item.id] && !String(d.qty[s.item.id] || '').trim(); });
     var body = '<p class="hint">Suggestions need Apply. Previous quantities are a reference, not a demand forecast.</p>';
     if (M.requestsBusy) body += loading('Reading staff requests...', 'orders');
-    if (M.requestsError) body += '<p class="hint">' + esc(M.requestsError) + ' ' + smallButton('requests-retry', 'Try again') + '</p>';
+    if (M.requestsError) body += readLine(M.requestsError, 'data-su="requests-retry"');
     if (!suggestions.length) body += '<p class="hint">' + (latest() ? 'No further suggestions. Review the quantities you need.' : 'Learning, no recommendation yet. Record an order or enter a stock count with compatible confirmed units.') + '</p>';
     body += suggestions.slice(0, 12).map(function (s) { return '<div class="su-suggestion"><div><b>' + esc(quantityText(s.pick)) + ' · ' + esc(s.item.name) + '</b><p class="hint">' + esc(s.pick.reason) + '</p></div><div class="btn-row">' + button('apply', 'Apply', ' data-i="' + esc(s.item.id) + '"') + smallButton('dismiss', 'Dismiss', ' data-i="' + esc(s.item.id) + '"') + '</div></div>'; }).join('');
     var matched = matchInfo();
@@ -421,7 +480,8 @@
   }
   function toolbarHTML() {
     var groups = []; items(M.mode === 'manage').forEach(function (i) { if (i.group && groups.indexOf(i.group) < 0) groups.push(i.group); });
-    return '<div class="su-toolbar">' + supplierSelect() + field('q', 'Find an item', M.q, { type: 'search', placeholder: 'Item name or alias', max: 180 }) + (M.mode === 'manage' ? button('add', 'Add item', '', true) : '') + '</div>' + (groups.length > 1 ? '<div class="chips su-groups"><button type="button" class="chip" data-su="group" data-group="" aria-pressed="' + !M.group + '">All items</button>' + groups.map(function (g) { return '<button type="button" class="chip" data-su="group" data-group="' + esc(g) + '" aria-pressed="' + (M.group === g) + '">' + esc(g) + '</button>'; }).join('') + '</div>' : '');
+    var links = salesLinksButtonHTML();
+    return '<div class="su-toolbar' + (links ? ' su-toolbar-sales' : '') + '">' + supplierSelect() + field('q', 'Find an item', M.q, { type: 'search', placeholder: 'Item name or alias', max: 180 }) + (M.mode === 'manage' ? button('add', 'Add item', '', true) : links) + '</div>' + (groups.length > 1 ? '<div class="chips su-groups"><button type="button" class="chip" data-su="group" data-group="" aria-pressed="' + !M.group + '">All items</button>' + groups.map(function (g) { return '<button type="button" class="chip" data-su="group" data-group="' + esc(g) + '" aria-pressed="' + (M.group === g) + '">' + esc(g) + '</button>'; }).join('') + '</div>' : '');
   }
   function linesHTML(lines) { return '<div class="su-lines">' + lines.map(function (l) { return '<div><span><b>' + esc(l.name) + '</b><small class="hint">Pack: ' + esc(l.pack || 'Not set') + '</small></span><strong>' + esc(quantityText(l)) + '</strong></div>'; }).join('') + '</div>'; }
   function reviewHTML() {
@@ -429,18 +489,48 @@
     return '<section class="su-review"><h2 id="rtitle" tabindex="-1">Review order</h2>' + statusHTML() + '<p>' + esc(r.supplierName) + ' · ' + r.lines.length + ' items</p>' + linesHTML(r.lines) + '<p>Record this only after you have placed the supplier order. This page sends nothing to the supplier.</p>' + (r.occurrence ? '<p class="hint">' + (r.additional ? 'Additional order for ' : r.occurrence.done ? 'Records the quantities of the order ticked for ' : 'Completes only ') + esc(r.occurrence.label || r.occurrence.day) + '.</p>' : '<p class="hint">No reminder linked. This records the supplier history only.</p>') + '<div class="su-send"><b>1. Send it your usual way</b><div class="btn-row">' + (navigator.share ? button('share-review', 'Share order text', M.saving ? ' disabled' : '') : '') + button('copy-review', 'Copy order text', M.saving ? ' disabled' : '') + '</div><span class="hint">' + (navigator.share ? 'Share opens your phone\'s text, email or chat apps. ' : '') + 'The book sends nothing itself.</span></div>' +
       '<b class="su-then">2. Then record it here</b><div class="btn-row">' + button('record', M.saving ? inkLabel('Recording...') : r.checking ? inkLabel('Checking cut-off...', 'orders') : r.uncertain ? 'Confirm recording again' : 'Record order placed', M.saving || r.checking ? ' disabled aria-busy="true"' : r.recorded ? ' disabled' : '', true) + (r.recorded ? button('new-draft', 'Start new draft', M.saving ? ' disabled' : '') : '') + '</div></section>';
   }
+  function historyView(rows) {
+    var query = M.historyQ.trim().toLowerCase();
+    var chosen = rows.find(function (o) { return o.id === M.historyId; }) || rows[0];
+    var matches = query ? rows.filter(function (o) {
+      var text = dateText(o.at) + ' ' + o.lines.map(function (l) { return l.name; }).join(' ');
+      return text.toLowerCase().indexOf(query) >= 0;
+    }) : rows;
+    return { matches: matches, selected: matches.indexOf(chosen) >= 0 ? chosen : null };
+  }
+  function historyActionOrder(id) {
+    var input = M.root.querySelector('[data-sf="historyQ"]');
+    // The shared search may still be waiting to apply the words already typed in the box.
+    if (!M.historyOpen || !input || input.value.trim() !== M.historyQ.trim()) return null;
+    var selected = historyView(hist().rows || []).selected;
+    return selected && selected.id === id ? selected : null;
+  }
   function historyHTML() {
-    var h = hist(), rows = h.rows || [], selected = rows.filter(function (o) { return o.id === M.historyId; })[0] || rows[0];
+    if (!M.historyOpen) return '<section id="su-order-history" hidden></section>';
+    var h = hist(), rows = h.rows || [], view = historyView(rows), selected = view.selected;
     var body = '<p class="hint">Last order on each item shows its latest recorded quantity and date in the loaded history.' + (h.more ? ' Choose Older orders to check items marked Earlier orders not checked.' : '') + '</p>'; if (h.busy) body += loading('Reading order history...', 'orders', h.rows ? 0 : 3);
-    if (h.err) body += '<p class="su-error">' + esc(h.err) + ' ' + smallButton('history-retry', 'Try again') + '</p>';
-    if (selected) {
-      body += field('historyQ', 'Find an order', M.historyQ, { type: 'search', placeholder: 'Date or item name' }) + '<div class="su-history-dates">' + rows.filter(function (o) { return (dateText(o.at) + ' ' + o.lines.map(function (l) { return l.name; }).join(' ')).toLowerCase().indexOf(M.historyQ.toLowerCase()) >= 0; }).map(function (o) { return '<button type="button" class="chip" data-su="history-order" data-id="' + esc(o.id) + '" aria-pressed="' + (o.id === selected.id) + '">' + esc(dateText(o.at)) + '</button>'; }).join('') + '</div><h4>' + esc(dateText(selected.at)) + '</h4><p class="hint">' + selected.lines.length + ' items · Recorded by ' + esc(B().name(selected.by) || 'Chef') + '</p>' + (selected.inheritedFrom ? '<p class="hint">From the original ' + esc(selected.supplierName) + ' order, before these suppliers were separated. Only this supplier\'s items are shown.</p>' : '') + (selected.lines.length ? linesHTML(selected.lines) : '<p class="hint">No items for this supplier in that order.</p>') + '<div class="btn-row">' + button('reuse', 'Use quantities again', ' data-id="' + esc(selected.id) + '"' + (selected.lines.length ? '' : ' disabled')) + button('copy-history', 'Copy this order', ' data-id="' + esc(selected.id) + '"' + (selected.lines.length ? '' : ' disabled')) + '</div>';
+    if (h.err) body += readLine(h.err, 'data-su="history-retry"');
+    if (rows.length) {
+      body += field('historyQ', 'Find an order', M.historyQ, { type: 'search', placeholder: 'Date or item name' });
+      if (view.matches.length) {
+        body += '<div class="su-history-dates">' + view.matches.map(function (o) {
+          return '<button type="button" class="chip" data-su="history-order" data-id="' + esc(o.id) + '" aria-pressed="' + (o === selected) + '">' + esc(dateText(o.at)) + '</button>';
+        }).join('') + '</div>';
+        if (!selected) body += '<p class="hint" role="status">Choose an order to see its quantities.</p>';
+      } else if (!h.busy) body += '<p class="empty" role="status">No loaded orders match your search.</p>';
     } else if (!h.busy && !h.err) body += '<p class="hint">No orders recorded for this supplier.</p>';
+    if (selected) {
+      var actionAttrs = ' data-id="' + esc(selected.id) + '"' + (selected.lines.length ? '' : ' disabled');
+      body += '<h4>' + esc(dateText(selected.at)) + '</h4><p class="hint">' + selected.lines.length + ' items · Recorded by ' + esc(B().name(selected.by) || 'Chef') + '</p>' +
+        (selected.inheritedFrom ? '<p class="hint">From the original ' + esc(selected.supplierName) + ' order, before these suppliers were separated. Only this supplier\'s items are shown.</p>' : '') +
+        (selected.lines.length ? linesHTML(selected.lines) : '<p class="hint">No items for this supplier in that order.</p>') +
+        '<div class="btn-row">' + button('reuse', 'Use quantities again', actionAttrs) + button('copy-history', 'Copy this order', actionAttrs) + '</div>';
+      if (M.reuse === selected.id) body += '<div class="su-confirm"><p>Replace the quantities in this supplier draft with the order from ' + esc(dateText(selected.at)) + '? Other supplier drafts stay as they are.</p><div class="btn-row">' + button('reuse-confirm', 'Replace draft quantities', actionAttrs, true) + button('reuse-cancel', 'Cancel') + '</div></div>';
+    }
     // what Copy order text or Use quantities again did, said here beside them, not at the top of a long page
     if (M.msg && M.msgAt === 'history') body = '<p class="su-status su-status-here" role="status">' + esc(M.msg) + '</p>' + body;
-    if (M.reuse) body += '<div class="su-confirm"><p>Replace the quantities in this supplier draft with the selected order? Other supplier drafts stay as they are.</p><div class="btn-row">' + button('reuse-confirm', 'Replace draft quantities', ' data-id="' + esc(M.reuse) + '"', true) + button('reuse-cancel', 'Cancel') + '</div></div>';
     if (h.more) body += '<div class="btn-row">' + button('history-more', 'Older orders', h.busy ? ' disabled' : '') + '</div>';
-    return '<section class="su-disclosure"><button type="button" class="su-disclosure-button" data-su="history" aria-expanded="' + M.historyOpen + '">Order history <span class="hint">' + (M.historyOpen ? 'Hide' : 'Show') + '</span></button>' + (M.historyOpen ? '<div class="su-disclosure-body">' + body + '</div>' : '') + '</section>';
+    return '<section id="su-order-history" class="su-disclosure" aria-labelledby="su-history-title"><div class="su-history-head"><h3 id="su-history-title" class="h3" tabindex="-1">Order history</h3>' + button('history-close', 'Back to draft') + '</div><div class="su-disclosure-body">' + body + '</div></section>';
   }
   // Counted below par: the same top-up maths as the Use chip, whether or not a quantity is typed yet
   function low(i, d) { if (!String(d.stock[i.id] || '').trim()) return false; try { var p = C.suggestQuantity(i, latest(), d.stock[i.id], fieldUnit('stock', i, d)); return !!(p && p.kind === 'topup'); } catch (e) { return false; } }
@@ -525,11 +615,379 @@
     return '<div class="su-info' + (open ? ' open' : '') + '"><button type="button" class="su-info-line' + (attn ? ' attn' : '') + (green ? ' done' : '') + '" data-su="info" aria-expanded="' + open + '" aria-controls="su-info-body"><span>' + esc(line.charAt(0).toUpperCase() + line.slice(1)) + '</span><span class="su-info-more" aria-hidden="true">' + (open ? 'Less' : 'More') + '</span></button>' +
       '<div id="su-info-body" class="su-info-body">' + cutoffHTML() + latestHTML() + '</div></div>';
   }
+  var SALES_VENUE = 'Leichhardt Hotel', SALES_PAGE = 20;
+  var salesCoreLoad = null, salesReportLoad = null;
+  function blankSales() {
+    return { ready: false, reading: false, readingFile: false, data: null, calc: null, problem: '', note: '',
+      preview: null, link: null, opened: false, all: false, q: '', page: 0, details: '', replace: null, stale: false };
+  }
+  function salesEnabled() { return window.LK_SUPPLIER_SALES_ENABLED === true; }
+  function salesCore() { return window.LK_SUP_SALES_CORE; }
+  function salesWithAssets() {
+    if (!salesCoreLoad) salesCoreLoad = (salesCore() && salesCore().API === 1 ? Promise.resolve() : A.load('js/supplier-sales-core.js?v=1')).then(function () {
+      if (!salesCore() || salesCore().API !== 1) throw { code: 'version' };
+    }).catch(function (e) { salesCoreLoad = null; throw e; });
+    return salesCoreLoad;
+  }
+  function loadSales(force) {
+    var sale = M.sales;
+    if (!salesEnabled() || !store || !canRead() || M.mode !== 'order' || !supplier() || cutCard() || sale.reading || (!force && (sale.ready || sale.problem))) return;
+    var g = generation, key = ctx();
+    var prior = sale.data, hadProblem = !!sale.problem;
+    sale.reading = true; sale.problem = '';
+    syncSalesImport();
+    // One private document on entering Supplier order or on Refresh. All supplier rows and links reuse this read.
+    return salesWithAssets().then(function () {
+      if (g !== generation || key !== ctx() || !store) throw { code: 'context' };
+      return store.loadSales();
+    }).then(function (saved) {
+      if (g !== generation || key !== ctx()) return;
+      sale.data = saved; sale.calc = null; sale.ready = true; sale.reading = false; sale.replace = null;
+      if (sale.stale) {
+        sale.stale = false;
+        if (sale.preview) sale.preview.baseV = saved ? saved.v : 0;
+        if (sale.link) sale.link.baseV = saved ? saved.v : 0;
+        sale.note = 'Latest sales links loaded. Check your changes, then save again.';
+      }
+      // An empty snapshot only enables the import button. Keep an existing order field or history control in place.
+      if (!saved && !prior && !hadProblem) syncSalesImport();
+      else draw();
+    }, function (e) {
+      if (g !== generation || key !== ctx()) return;
+      sale.reading = false; sale.ready = false;
+      sale.problem = readText(e, 'the sales report and links'); draw();
+    });
+  }
+  function salesResults() {
+    var sale = M.sales;
+    if (!sale.ready || sale.reading || !sale.data || !sale.data.report || !salesCore()) return null;
+    if (!sale.calc || sale.calc.catalogue !== M.suppliers) {
+      var data = sale.data, core = salesCore();
+      sale.calc = {
+        catalogue: M.suppliers,
+        result: core.suggest(data.report, data.links, M.suppliers || []),
+        links: new Map(data.links.map(function (l) { return [core.nameKey(l.name), l]; }))
+      };
+    }
+    return sale.calc;
+  }
+  function salesSuggestion(sid, iid) {
+    var current = salesResults();
+    return current ? current.result.suggestions.get(salesCore().itemKey(sid, iid)) || null : null;
+  }
+  function salesDate(date) { return window.LK_CUT ? window.LK_CUT.dateText(date) : date; }
+  function salesPeriod(report) {
+    return salesDate(report.start) + ' to ' + salesDate(report.end) + ' ' + report.end.slice(0, 4);
+  }
+  function salesVenueKey(name) { return C.normaliseName(name).replace(/ hotel$/, ''); }
+  function salesError(e, fallback) {
+    return e && (e.field || /^sales[-_]/.test(e.code || '') || e.code === 'invalid') && e.message ? e.message : fallback;
+  }
+  function showSalesFile(file) {
+    if (!file || !canEdit() || !M.sales.ready || M.sales.reading || M.sales.readingFile || M.saving) return;
+    var sale = M.sales, g = generation, key = ctx();
+    sale.readingFile = true; sale.problem = ''; sale.note = ''; sale.preview = null; sale.link = null; draw();
+    if (!salesReportLoad) salesReportLoad = (window.LK_SUP_SALES_REPORT ? Promise.resolve() : A.load('js/supplier-sales-report.js?v=1')).then(function () {
+      if (!window.LK_SUP_SALES_REPORT || window.LK_SUP_SALES_REPORT.api !== 1) throw { code: 'version' };
+      return window.LK_SUP_SALES_REPORT;
+    }).catch(function (e) { salesReportLoad = null; throw e; });
+    salesReportLoad.then(function (reader) { return reader.parse(file); }).then(function (parsed) {
+      if (g !== generation || key !== ctx() || !canEdit()) return;
+      sale.readingFile = false;
+      if (parsed.venue && salesVenueKey(parsed.venue) !== salesVenueKey(SALES_VENUE)) {
+        sale.problem = 'This sales report is for ' + parsed.venue + '. Choose the report for ' + SALES_VENUE + '.';
+      } else {
+        sale.preview = { name: file.name, rows: parsed.rows, adjustments: parsed.adjustments || [], exclude: false,
+          venue: parsed.venue, venueOK: !!parsed.venue, start: parsed.start, end: parsed.end,
+          startKnown: !!parsed.start, endKnown: !!parsed.end,
+          baseV: sale.data ? sale.data.v : 0 };
+      }
+      draw(); focusBack(sale.preview ? '#su-sales-preview' : '#su-sales-status');
+    }, function (e) {
+      if (g !== generation || key !== ctx()) return;
+      sale.readingFile = false;
+      sale.problem = e && typeof e.message === 'string' ? e.message : 'Could not read this sales report. Choose a CSV or XLSX file and try again.';
+      draw(); focusBack('#su-sales-status');
+    });
+  }
+  function salesPreviewHTML(p) {
+    var report = M.sales.data && M.sales.data.report;
+    var periodWarning = report ? '<p class="hint">The current report covers ' + esc(salesPeriod(report)) + '. Saving a new or corrected report keeps your current order quantities.</p>' : '';
+    return '<section class="su-sales-form" aria-labelledby="su-sales-preview"><h3 id="su-sales-preview" tabindex="-1">Review sales report</h3>' +
+      '<p>' + esc(p.name) + ' · ' + itemCount(p.rows.length) + '</p><p class="hint">Check the dates cover seven completed trading days.</p>' +
+      (p.venue ? '<p>Venue · <b>' + esc(SALES_VENUE) + '</b></p>' : '<label class="su-sales-check"><input type="checkbox" data-sf="sales-venue"' + (p.venueOK ? ' checked' : '') + '><span>This report is for ' + esc(SALES_VENUE) + '</span></label>') +
+      '<div class="su-form-grid">' + field('sales-start', 'First trading day', p.start, { type: 'date', readonly: p.startKnown }) +
+      field('sales-end', 'Last trading day', p.end, { type: 'date', readonly: p.endKnown }) + '</div>' +
+      (p.adjustments.length ? '<div class="su-confirm"><p><b>Check negative quantities</b></p><ul>' + p.adjustments.map(function (a) {
+        return '<li>' + esc(a.name) + ' · ' + esc(a.qty) + ' (row ' + esc(a.row) + ')</li>';
+      }).join('') + '</ul><label class="su-sales-check"><input type="checkbox" data-sf="sales-adjustments"' + (p.exclude ? ' checked' : '') +
+      '><span>Exclude these rows. They are adjustments outside this supplier order.</span></label></div>' : '') +
+      periodWarning + '<div class="btn-row">' + button('sales-save', M.saving ? inkLabel('Saving...') : 'Save sales report', M.saving || M.sales.stale ? ' disabled' : '', true) +
+      button('sales-close-preview', 'Cancel') + '</div></section>';
+  }
+  function salesLinksHTML(summary) {
+    var sale = M.sales, core = salesCore(), report = sale.data.report, query = C.normaliseName(sale.q);
+    var review = new Map(summary.result.review.map(function (row) { return [core.nameKey(row.name), row]; }));
+    var visible = report.rows.filter(function (row) {
+      var key = core.nameKey(row.name);
+      return (sale.all || review.has(key)) && (!query || C.normaliseName(row.name).includes(query));
+    });
+    sale.page = Math.max(0, Math.min(sale.page, Math.ceil(visible.length / SALES_PAGE) - 1));
+    return '<div id="su-sales-links" tabindex="-1" class="su-disclosure-body su-sales-links"><p><b>Sales report</b> · ' + esc(salesPeriod(report)) +
+      '</p><p class="hint">' + (canEdit() ? 'Link each sales item to the supplier items and amounts used in one sale. Mark anything outside this order as ignored.' :
+        'The head chef manages the sales links. Linked items show sales suggestions beside To order.') + '</p>' +
+      '<div class="chips" aria-label="Sales link status">' + button('sales-needs', 'Needs review', ' aria-pressed="' + !sale.all + '"') +
+      button('sales-all', 'All sales items', ' aria-pressed="' + sale.all + '"') + '</div>' +
+      field('sales-q', 'Find a sales item', sale.q, { type: 'search', max: 180 }) +
+      (sale.link ? salesLinkHTML(sale.link) : '') +
+      '<div class="su-sales-link-list">' + (visible.length ? visible.slice(sale.page * SALES_PAGE, (sale.page + 1) * SALES_PAGE).map(function (row) {
+        var key = core.nameKey(row.name), issue = review.get(key), link = summary.links.get(key);
+        var reason = issue ? issue.reason : link && !link.parts.length ? 'Ignored' : link ? 'Linked' : 'No usage in this report';
+        return '<div class="su-sales-link-row"><div><b>' + esc(row.name) + '</b><p class="hint">' + esc(row.qty) + ' sold · ' + esc(reason) +
+          '</p></div>' + (canEdit() ? button('sales-link', link ? 'Edit link' : 'Link item', ' data-name="' + esc(row.name) + '" aria-label="' + esc((link ? 'Edit link for ' : 'Link item ') + row.name) + '"') : '') + '</div>';
+      }).join('') : '<p class="hint">' + (query ? 'No sales items match this search.' : 'No sales items need review.') + '</p>') + '</div>' +
+      (visible.length > SALES_PAGE ? '<div class="su-pager"><span class="hint">' + (sale.page * SALES_PAGE + 1) + ' to ' + Math.min((sale.page + 1) * SALES_PAGE, visible.length) + ' of ' + visible.length + '</span><div class="btn-row">' +
+        button('sales-prev', 'Previous', sale.page ? '' : ' disabled') +
+        button('sales-next', 'Next', (sale.page + 1) * SALES_PAGE < visible.length ? '' : ' disabled') + '</div></div>' : '') + '</div>';
+  }
+  function salesCatalogueItem(sid, iid) {
+    var s = (M.suppliers || []).find(function (candidate) { return candidate.id === sid; });
+    return s && s.items.find(function (i) { return i.id === iid && !i.archived; }) || null;
+  }
+  function blankSalesPart() { return { sid: M.sid, iid: '', amount: '', unit: '', perOrder: '', orderUnit: '', q: '' }; }
+  function salesPartField(f, label, value, index, opts) {
+    opts = opts || {};
+    return '<label class="field"><span class="label">' + label + '</span><input class="search" data-sf="' + f + '" data-part="' + index +
+      '" value="' + esc(value || '') + '"' + (opts.decimal ? ' inputmode="decimal"' : '') +
+      (opts.readonly ? ' readonly' : '') + (opts.list ? ' list="su-sales-units"' : '') +
+      (opts.search ? ' type="search"' : '') + ' maxlength="' + (opts.search ? 180 : 40) + '"></label>';
+  }
+  function salesPartOptions(p) {
+    var s = (M.suppliers || []).find(function (candidate) { return candidate.id === p.sid; });
+    var q = C.normaliseName(p.q || '');
+    return '<option value="">Choose an item</option>' + (s ? s.items.filter(function (i) {
+      return !i.archived && (i.id === p.iid || !q || C.normaliseName(i.name + ' ' + i.pack + ' ' + (i.aliases || []).join(' ')).includes(q));
+    }).map(function (i) {
+      return '<option value="' + esc(i.id) + '"' + (i.id === p.iid ? ' selected' : '') + '>' + esc(i.name + (i.pack ? ' · ' + i.pack : '')) + '</option>';
+    }).join('') : '');
+  }
+  function salesPartHTML(p, n, multiple) {
+    var i = salesCatalogueItem(p.sid, p.iid);
+    return '<fieldset class="su-sales-part"><legend>Supplier item' + (multiple ? ' ' + (n + 1) : '') + '</legend>' +
+      '<div class="su-form-grid"><label class="field"><span class="label">Supplier</span><select class="search" data-sf="sales-supplier" data-part="' + n + '">' +
+      (M.suppliers || []).map(function (s) { return '<option value="' + esc(s.id) + '"' + (s.id === p.sid ? ' selected' : '') + '>' + esc(s.name) + '</option>'; }).join('') +
+      '</select></label>' + salesPartField('sales-item-q', 'Find a supplier item', p.q, n, { search: true }) +
+      '<label class="field"><span class="label">Catalogue item</span><select class="search" data-sf="sales-item" data-part="' + n + '">' +
+      salesPartOptions(p) + '</select></label>' + (i ? '<p class="hint">Pack · ' + esc(i.pack || 'Check the supplier pack') + '</p>' : '') +
+      salesPartField('sales-amount', 'Amount used in one sale', p.amount, n, { decimal: true }) +
+      salesPartField('sales-unit', 'Portion unit', p.unit, n, { list: true }) +
+      salesPartField('sales-order-unit', 'Supplier order unit', i && i.orderUnit || p.orderUnit, n, { list: true, readonly: !!(i && i.orderUnit) }) +
+      salesPartField('sales-per-order', 'Portion units in one order unit', p.perOrder, n, { decimal: true }) + '</div>' +
+      (multiple ? button('sales-drop-part', 'Remove item', ' data-part="' + n + '"') : '') + '</fieldset>';
+  }
+  function salesLinkHTML(form) {
+    return '<section class="su-sales-form" aria-labelledby="su-sales-link-title"><h3 id="su-sales-link-title" tabindex="-1">Link ' + esc(form.name) + '</h3>' +
+      '<p class="hint">Enter the amount as bought, allowing for cooking or trim loss. For one piece from a pack of 30, enter 1 piece per sale and 30 pieces per pack. Leave the conversion blank when both units match.</p>' +
+      form.parts.map(function (p, n) { return salesPartHTML(p, n, form.parts.length > 1); }).join('') +
+      '<datalist id="su-sales-units">' + ['kg', 'g', 'L', 'ml', 'pieces', 'packs', 'cases', 'cartons', 'bags', 'trays'].map(function (u) { return '<option value="' + u + '"></option>'; }).join('') + '</datalist>' +
+      (form.ignore ? '<div class="su-confirm"><p>Exclude ' + esc(form.name) + ' from sales suggestions?</p>' +
+      '<div class="btn-row">' + button('sales-confirm-ignore', 'Confirm ignore', '', true) + button('sales-cancel-ignore', 'Keep linking') + '</div></div>' :
+      '<div class="btn-row">' + button('sales-save-link', M.saving ? inkLabel('Saving...') : 'Save link', M.saving || M.sales.stale ? ' disabled' : '', true) +
+      button('sales-add-part', 'Add another supplier item', form.parts.length >= 8 ? ' disabled' : '') +
+      button('sales-ignore', 'Ignore sales item') + button('sales-close-link', 'Cancel') + '</div>') + '</section>';
+  }
+  function salesImportBlocked() {
+    return !M.sales.ready || M.sales.reading || M.sales.readingFile || !!M.sales.link;
+  }
+  function syncSalesImport() {
+    var control = M.root && M.root.querySelector('[data-su="sales-import"]');
+    if (control) control.disabled = salesImportBlocked() || M.saving;
+  }
+  function salesImportHTML() {
+    if (!salesEnabled() || !canEdit() || M.mode !== 'order' || !supplier() || cutCard()) return '';
+    var sale = M.sales;
+    return button('sales-import', sale.readingFile ? 'Reading report...' : '<span class="su-sales-wide">Import sales report</span><span class="su-sales-compact" aria-hidden="true">Import sales</span>',
+      (salesImportBlocked() ? ' disabled' : '') + ' aria-label="' + (sale.readingFile ? 'Reading report...' : 'Import sales report') + '"') +
+      '<input class="visually-hidden" type="file" tabindex="-1" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" data-sf="sales-file" aria-label="Sales report file">';
+  }
+  function salesLinksButtonHTML() {
+    if (!salesEnabled() || M.mode !== 'order' || cutCard()) return '';
+    var summary = salesResults(), sale = M.sales;
+    if (!summary) return '';
+    var count = summary.result.review.length;
+    var label = 'Sales links' + (count ? ' (' + count + ')' : '');
+    return button('sales-links', esc(label), ' aria-label="' + esc(label + (count ? ' · ' + count + ' to review' : '')) + '" aria-expanded="' + sale.opened +
+      '" aria-controls="su-sales-links" title="' + esc(salesPeriod(sale.data.report)) + '"');
+  }
+  function salesPanelHTML() {
+    var sale = M.sales, summary = salesResults();
+    var status = sale.problem ? '<p class="su-error" id="su-sales-status" tabindex="-1" role="alert">' + esc(sale.problem) +
+      (!sale.ready || sale.stale ? ' ' + smallButton('sales-refresh', 'Try again') : '') + '</p>' :
+      sale.note ? '<p class="su-status" id="su-sales-status" tabindex="-1" role="status">' + esc(sale.note) + '</p>' : '';
+    var editor = sale.preview && canEdit() ? salesPreviewHTML(sale.preview) : '';
+    var links = sale.opened && summary ? salesLinksHTML(summary) : summary ? '<div id="su-sales-links" hidden></div>' : '';
+    return status || editor || sale.opened && summary ? '<section class="su-sales" aria-label="Weekly sales report">' + status + editor + links + '</section>' : links;
+  }
+  function salesRowHTML(i, d) {
+    var suggestion = salesSuggestion(M.sid, i.id);
+    if (!suggestion) return '';
+    var sale = M.sales, id = salesCore().itemKey(M.sid, i.id), attrs = ' data-i="' + esc(i.id) + '"';
+    var open = sale.details === id, saved = String(d.qty[i.id] || '').trim(), swap = sale.replace;
+    var confirm = swap && swap.id === id && swap.saved === saved && swap.qty === suggestion.qty;
+    var current = saved && C.parseQuantity(saved, fieldUnit('qty', i, d));
+    var currentText = current ? current.amount + (current.unit ? ' ' + current.unit : '') : saved;
+    return '<div class="su-sales-row">' +
+      smallButton('sales-calc', 'Sales suggests ' + esc(suggestion.qty) + ' <small class="su-sales-week">Week to ' +
+        esc(salesDate(sale.data.report.end)) + '</small>', attrs + ' aria-expanded="' + open + '"') +
+      button('sales-use', 'Use in draft', attrs + ' aria-label="Use in draft for ' + esc(i.name) + '"') +
+      (open ? '<p class="hint su-sales-explain">' + esc(suggestion.reason) + ' Sales for ' +
+        esc(salesPeriod(sale.data.report)) + '. Check what you have before ordering.</p>' : '') +
+      (confirm ? '<div class="su-confirm su-sales-replace"><p>Replace your draft amount for ' + esc(i.name) + '?</p><div class="btn-row">' +
+        button('sales-keep', 'Keep ' + esc(currentText), attrs) +
+        button('sales-replace', 'Replace with ' + esc(suggestion.qty), attrs, true) + '</div></div>' : '') + '</div>';
+  }
+  function saveSalesChange(baseV, report, links, note, kind) {
+    var sale = M.sales, g = generation, key = ctx(), prior = sale.data;
+    M.saving = true; sale.problem = ''; sale.note = ''; draw();
+    store.saveSales(baseV, report, links).then(function (saved) {
+      if (g !== generation || key !== ctx()) return;
+      M.saving = false; sale.data = saved; sale.calc = null; sale.replace = null;
+      sale.note = kind === 'report' && prior && saved.v === prior.v ? 'This report is already loaded. Your draft quantities are kept.' : note;
+      if (kind === 'report') { sale.preview = null; sale.opened = false; sale.q = ''; sale.page = 0; }
+      else sale.link = null;
+      draw(); focusBack('#su-sales-status');
+    }, function (e) {
+      if (g !== generation || key !== ctx()) return;
+      M.saving = false; sale.stale = e.code === 'stale';
+      sale.problem = sale.stale ? 'The sales report or links changed on another device. Load the latest version before retrying. Your edits are kept.' :
+        salesError(e, 'Could not confirm the sales save. Check the connection and retry. Your edits are kept.');
+      draw(); focusBack('#su-sales-status');
+    });
+  }
+  function saveSalesReport() {
+    var sale = M.sales, p = sale.preview, data = sale.data, report;
+    if (!p || !canEdit() || !sale.ready || sale.reading || sale.stale) return;
+    try {
+      if (!p.venueOK) throw { code: 'invalid', message: 'Confirm the report is for ' + SALES_VENUE + '.' };
+      if (p.adjustments.length && !p.exclude) throw { code: 'invalid', message: 'Check the negative rows and confirm they are outside this order, or choose a corrected sales report.' };
+      report = salesCore().validateReport({ start: p.start, end: p.end, rows: p.rows }, day());
+      if (data && data.report && report.end < data.report.end) throw { code: 'invalid', message: 'Choose a report for the current or a later trading week.' };
+    } catch (e) { sale.problem = salesError(e, 'Check the seven report dates and try again.'); draw(); focusBack('#su-sales-status'); return; }
+    saveSalesChange(p.baseV, report, data ? data.links : [], 'Sales report saved. Review the sales items and use the suggestions you want.', 'report');
+  }
+  function showSalesLink(name) {
+    var sale = M.sales, summary = salesResults();
+    if (!summary || !canEdit() || sale.preview || sale.link) return;
+    var core = salesCore(), key = core.nameKey(name);
+    if (!sale.data.report.rows.some(function (r) { return core.nameKey(r.name) === key; })) return;
+    var current = summary.links.get(key);
+    sale.link = { name: name, baseV: sale.data.v, ignore: false,
+      parts: current && current.parts.length ? clone(current.parts) : [blankSalesPart()] };
+    sale.problem = ''; sale.note = ''; draw(); focusBack('#su-sales-link-title');
+  }
+  function saveSalesLink(ignored) {
+    var sale = M.sales, form = sale.link, data = sale.data, core = salesCore();
+    if (!form || !data || !canEdit() || !sale.ready || sale.reading || sale.stale || (ignored && !form.ignore)) return;
+    var link, links, key = core.nameKey(form.name);
+    try {
+      link = core.validateLink({ name: form.name, parts: ignored ? [] : form.parts.map(function (p) {
+        var i = salesCatalogueItem(p.sid, p.iid);
+        if (!i) throw { code: 'invalid', message: 'Choose an active catalogue item for each supplier link.' };
+        if (p.unit === '' || String(p.amount).trim() === '') throw { code: 'invalid', message: 'Enter the portion amount and its unit for each supplier item.' };
+        return { sid: p.sid, iid: p.iid, amount: Number(p.amount), unit: p.unit,
+          perOrder: String(p.perOrder || '').trim() ? Number(p.perOrder) : undefined,
+          orderUnit: i.orderUnit || p.orderUnit, catalogueKey: core.catalogKey(i) };
+      }) });
+      links = data.links.filter(function (l) { return core.nameKey(l.name) !== key; }).concat([link]);
+      var issue = core.suggest(data.report, links, M.suppliers).review.find(function (row) { return core.nameKey(row.name) === key; });
+      if (issue) throw { code: 'invalid', message: issue.reason };
+    } catch (e) { sale.problem = salesError(e, 'Check the item, portion and supplier order unit.'); draw(); focusBack('#su-sales-status'); return; }
+    saveSalesChange(form.baseV, data.report, links, form.name + (ignored ? ' is ignored in sales suggestions.' : ' linked to the supplier catalogue.'), 'link');
+  }
+  function updateSalesField(el, fieldName, changed) {
+    var sale = M.sales, p = sale.preview, form = sale.link;
+    if (p && !p.startKnown && fieldName === 'sales-start') p.start = el.value;
+    if (p && !p.endKnown && fieldName === 'sales-end') p.end = el.value;
+    if (p && fieldName === 'sales-venue') p.venueOK = el.checked;
+    if (p && fieldName === 'sales-adjustments') p.exclude = el.checked;
+    if (fieldName === 'sales-q' && !changed) { sale.q = el.value; sale.page = 0; draw(); return; }
+    if (!form) return;
+    var n = Number(el.getAttribute('data-part')), part = form.parts[n], i;
+    if (!part || !el.hasAttribute('data-part')) return;
+    if (changed && fieldName === 'sales-supplier') {
+      form.parts[n] = Object.assign(blankSalesPart(), { sid: el.value });
+      draw(); return;
+    }
+    if (changed && fieldName === 'sales-item') {
+      i = salesCatalogueItem(part.sid, el.value);
+      form.parts[n] = Object.assign(blankSalesPart(), { sid: part.sid, iid: i ? i.id : '', q: part.q,
+        unit: i ? i.parUnit : '', orderUnit: i ? i.orderUnit : '', perOrder: i && i.factor > 0 ? i.factor : '' });
+      draw(); return;
+    }
+    if (fieldName === 'sales-item-q' && !changed) {
+      part.q = el.value;
+      var select = el.closest('fieldset').querySelector('[data-sf="sales-item"]');
+      if (select) select.innerHTML = salesPartOptions(part);
+    }
+    if (fieldName === 'sales-amount') part.amount = el.value;
+    if (fieldName === 'sales-unit') part.unit = el.value;
+    if (fieldName === 'sales-order-unit') part.orderUnit = el.value;
+    if (fieldName === 'sales-per-order') part.perOrder = el.value;
+  }
+  function salesCancelReplacement(id) {
+    var sale = M.sales;
+    if (!sale.replace || sale.replace.id !== salesCore().itemKey(M.sid, id)) return;
+    sale.replace = null;
+    var row = rowEl(id), panel = row && row.querySelector('.su-sales-replace');
+    if (panel) panel.remove();
+  }
+  function useSalesSuggestion(id, confirmed) {
+    var sale = M.sales, i = item(id), suggestion = i && salesSuggestion(M.sid, id);
+    if (!suggestion || !C.parseQuantity(suggestion.qty, suggestion.unit)) return;
+    var key = salesCore().itemKey(M.sid, id), d = draft(), before = String(d.qty[id] || '').trim();
+    var current = before && C.parseQuantity(before, fieldUnit('qty', i, d));
+    if (confirmed) {
+      if (!sale.replace || sale.replace.id !== key || sale.replace.saved !== before || sale.replace.qty !== suggestion.qty) return;
+    } else if (before && !(current && current.amount === suggestion.amount && current.unit === suggestion.unit)) {
+      sale.replace = { id: key, saved: before, qty: suggestion.qty }; draw(); focusBack('[data-su="sales-keep"][data-i="' + id + '"]'); return;
+    }
+    sale.replace = null; d.qty[id] = suggestion.qty; d.units.qty[id] = suggestion.unit; delete d.suggestions[id]; M.review = null;
+    clearEntryError('qty', id, suggestion.qty); redrawRow(id);
+    focusBack('[data-sf="qty"][data-i="' + id + '"]');
+    P.book().say(i.name + ' added to the supplier draft. ' + suggestion.qty + '.');
+  }
+  function salesClick(cmd, el, id) {
+    var sale = M.sales;
+    if (cmd === 'sales-use') { useSalesSuggestion(id, false); return; }
+    if (cmd === 'sales-replace') { useSalesSuggestion(id, true); return; }
+    if (cmd === 'sales-refresh') { loadSales(true); return; }
+    if (cmd === 'sales-calc') {
+      var key = salesCore().itemKey(M.sid, id);
+      sale.details = sale.details === key ? '' : key; draw(); focusBack('[data-su="sales-calc"][data-i="' + id + '"]'); return;
+    }
+    if (cmd === 'sales-keep') { sale.replace = null; draw(); focusBack('[data-su="sales-use"][data-i="' + id + '"]'); return; }
+    if (cmd === 'sales-links') { sale.opened = !sale.opened; sale.note = ''; draw(); focusBack(sale.opened ? '#su-sales-links' : '[data-su="sales-links"]'); return; }
+    if (cmd === 'sales-all' || cmd === 'sales-needs') { sale.all = cmd === 'sales-all'; sale.page = 0; draw(); focusBack('[data-su="' + cmd + '"]'); return; }
+    if (cmd === 'sales-prev' || cmd === 'sales-next') { sale.page += cmd === 'sales-prev' ? -1 : 1; draw(); focusBack('[data-sf="sales-q"]'); return; }
+    if (!canEdit()) return;
+    if (cmd === 'sales-import') { var file = M.root.querySelector('[data-sf="sales-file"]'); if (file) file.click(); return; }
+    if (cmd === 'sales-close-preview') { sale.preview = null; sale.problem = ''; draw(); focusBack('[data-su="sales-import"]'); return; }
+    if (cmd === 'sales-save') { saveSalesReport(); return; }
+    if (cmd === 'sales-link') { showSalesLink(el.getAttribute('data-name')); return; }
+    if (!sale.link) return;
+    if (cmd === 'sales-save-link' || cmd === 'sales-confirm-ignore') { saveSalesLink(cmd === 'sales-confirm-ignore'); return; }
+    if (cmd === 'sales-close-link') { sale.link = null; sale.problem = ''; draw(); focusBack('[data-su="sales-links"]'); return; }
+    if (cmd === 'sales-add-part' && sale.link.parts.length < 8) sale.link.parts.push(blankSalesPart());
+    if (cmd === 'sales-drop-part' && sale.link.parts.length > 1) sale.link.parts.splice(Number(el.getAttribute('data-part')), 1);
+    if (cmd === 'sales-ignore' || cmd === 'sales-cancel-ignore') sale.link.ignore = cmd === 'sales-ignore';
+    draw(); focusBack(cmd === 'sales-ignore' ? '[data-su="sales-cancel-ignore"]' : '#su-sales-link-title');
+  }
   function orderHTML() {
     var s = supplier(), d = draft(), list = filterItems(false).filter(function (i) { return shown(i, d); }), last = ''; M.page = Math.max(0, Math.min(M.page, Math.ceil(list.length / 20) - 1));
     if (activeTask() === 'review') return reviewHTML();
     var table = list.map(function (i) { var title = i.category !== last ? '<div class="su-category" data-cat="' + esc(i.category || 'Other items') + '" tabindex="-1">' + esc(i.category || 'Other items') + '</div>' : ''; last = i.category; return title + rowHTML(i); }).join('');
-    return toolbarHTML() + '<div class="su-supplier-title"><h3 class="h3">' + esc(s.name) + '</h3><span class="hint">' + items().length + ' items</span></div>' + infoHTML() + filterChips(d) + jumpsHTML(list) + (M.filter === 'asked' ? requestsHTML() : '') + '<div class="su-table-head"><span>Item / pack</span><span>Par</span><span>Last bought</span><span>To order</span></div>' + (table || '<p class="empty">' + (M.filter ? 'No items match this filter.' : 'No items match.') + '</p>') + '<div class="su-order-actions"><span class="hint">' + itemCount(Object.keys(d.qty).filter(function (k) { return String(d.qty[k]).trim(); }).length) + ' in this supplier draft</span>' + button('review', 'Review order', Object.keys(d.qty).some(function (k) { return String(d.qty[k]).trim(); }) ? '' : ' disabled', true) + '</div>' + (M.filter === 'asked' ? '' : requestsHTML()) + suggestionsHTML() + '<p class="hint su-help">A number uses the order unit shown; type a unit for another, e.g. 2 kg. Par blank is Not set; 0 stays 0.</p>' + historyHTML();
+    var context = '<div class="su-order-context">' + infoHTML() + button('history', 'Order history', ' aria-controls="su-order-history" aria-expanded="' + M.historyOpen + '"') + '</div>';
+    return toolbarHTML() + '<div class="su-supplier-title"><h3 class="h3">' + esc(s.name) + '</h3>' + '<span class="hint">' + items().length + ' items</span></div>' + salesPanelHTML() + context + filterChips(d) + jumpsHTML(list) + (M.filter === 'asked' ? requestsHTML() : '') + '<div class="su-table-head"><span>Item / pack</span><span>Par</span><span>Last bought</span><span>To order</span></div>' + (table || '<p class="empty">' + (M.filter ? 'No items match this filter.' : 'No items match.') + '</p>') + '<div class="su-order-actions sv-dock"><span class="hint">' + itemCount(Object.keys(d.qty).filter(function (k) { return String(d.qty[k]).trim(); }).length) + ' in this supplier draft</span>' + button('review', 'Review order', Object.keys(d.qty).some(function (k) { return String(d.qty[k]).trim(); }) ? '' : ' disabled', true) + '</div>' + (M.filter === 'asked' ? '' : requestsHTML()) + suggestionsHTML() + '<p class="hint su-help">A number uses the order unit shown; type a unit for another, e.g. 2 kg. Par blank is Not set; 0 stays 0.</p>' + historyHTML();
   }
   function sourceHTML(i) { return '<details class="su-source"><summary>Original record</summary><dl><dt>Item name</dt><dd>' + esc(i.manual ? 'Added manually' : i.source.name) + '</dd><dt>PDF par</dt><dd>' + esc(i.manual ? 'Not applicable' : i.source.par === '' ? 'Not set' : i.source.par) + '</dd><dt>Source</dt><dd>' + esc(i.manual ? 'Manual item' : i.source.file + ', page ' + i.source.page) + '</dd></dl></details>'; }
   function unitField(k, label, value) { return '<label class="field"><span class="label">' + label + '</span><input class="search" data-sf="' + k + '" value="' + esc(value || '') + '" list="su-unit-list" maxlength="40" placeholder="Unconfirmed"></label>'; }
@@ -539,7 +997,7 @@
   }
   function archiveHTML() { var i = item(M.archive); return i ? '<div class="su-confirm"><h4>Archive ' + esc(i.name) + '?</h4><p>It leaves new order sheets. Its original record and past orders stay.' + (String(draft().qty[i.id] || '').trim() ? ' This also removes its quantity from the current draft.' : '') + '</p><div class="btn-row">' + button('archive-confirm', 'Archive item', ' data-i="' + esc(i.id) + '"', true) + button('archive-cancel', 'Cancel') + '</div></div>' : ''; }
   function auditHTML() {
-    var a = M.audit[M.sid] || {}, body = a.busy ? loading('Reading changes...', 'orders', 2) : a.err ? '<p class="su-error">' + esc(a.err) + '</p>' : (a.rows || []).length ? a.rows.map(function (r) { return '<article class="su-audit-row"><b>' + esc(r.action) + '</b><span class="hint">' + esc(dateText(r.at)) + ' · ' + esc(B().name(r.by) || 'Chef') + '</span><p class="hint">Before: ' + esc(JSON.stringify(r.before)) + '</p><p class="hint">After: ' + esc(JSON.stringify(r.after)) + '</p></article>'; }).join('') : '<p class="hint">No changes recorded yet.</p>';
+    var a = M.audit[M.sid] || {}, body = a.busy ? loading('Reading changes...', 'orders', 2) : a.err ? readLine(a.err, 'data-su="audit-retry"') : (a.rows || []).length ? a.rows.map(function (r) { return '<article class="su-audit-row"><b>' + esc(r.action) + '</b><span class="hint">' + esc(dateText(r.at)) + ' · ' + esc(B().name(r.by) || 'Chef') + '</span><p class="hint">Before: ' + esc(JSON.stringify(r.before)) + '</p><p class="hint">After: ' + esc(JSON.stringify(r.after)) + '</p></article>'; }).join('') : '<p class="hint">No changes recorded yet.</p>';
     return '<section class="su-disclosure"><button type="button" class="su-disclosure-button" data-su="audit" aria-expanded="' + M.auditOpen + '">Changes <span class="hint">' + (M.auditOpen ? 'Hide' : 'Show') + '</span></button>' + (M.auditOpen ? '<div class="su-disclosure-body">' + body + '</div>' : '') + '</section>';
   }
   function manageHTML() {
@@ -588,12 +1046,24 @@
     // Until a recording is confirmed, another route offers recovery only. Workspace edits must not replace its ID.
     if (M.review && (M.saving || M.review.uncertain) && task !== 'review') return '<section class="su-wrap"><h2 id="rtitle" tabindex="-1">Confirm order recording</h2>' + statusHTML() + '</section>';
     if (M.suppliers && (task === 'editor' || task === 'supplier' || task === 'import' || task === 'review')) return '<section class="su-wrap">' + (task === 'editor' ? editorHTML() : task === 'supplier' ? supplierEditorHTML() : task === 'import' ? importHTML() : reviewHTML()) + '</section>';
-    var html = headerHTML() + statusHTML() + unreadHTML();
+    var order = M.mode === 'order' && M.suppliers && M.suppliers.length && !cutCard();
+    var tools = '<div class="su-workspace-tools">' + button('collapse', M.sidebar ? 'Hide suppliers' : 'Show suppliers', ' aria-expanded="' + M.sidebar + '"') + '</div>';
+    var header = headerHTML();
+    var html = (order ? '<div class="su-order-heading">' + header + tools + '</div>' : header) + statusHTML() + unreadHTML();
     if (M.busy && !M.suppliers) return '<section class="su-wrap">' + html + loading('Reading the supplier catalogue...', 'orders', 3) + '</section>';
     if (!M.suppliers) return '<section class="su-wrap">' + html + '</section>';
     if (cutCard()) return '<section class="su-wrap">' + html + cutCardHTML() + '</section>';
     if (!M.suppliers.length) return '<section class="su-wrap">' + html + ((M.unread || []).length ? '' : emptyHTML() + importInputHTML()) + '</section>';
-    return '<section class="su-wrap">' + html + '<div class="su-workspace-tools">' + button('collapse', M.sidebar ? 'Hide suppliers' : 'Show suppliers', ' aria-expanded="' + M.sidebar + '"') + '</div><div class="su-layout' + (M.sidebar ? '' : ' is-collapsed') + '">' + sidebarHTML() + '<div class="su-content">' + (M.mode === 'manage' ? manageHTML() : orderHTML()) + '</div></div>' + importInputHTML() + '</section>';
+    return '<section class="su-wrap' + (order ? ' su-order-workspace' : '') + '">' + html + (order ? '' : tools) + '<div class="su-layout' + (M.sidebar ? '' : ' is-collapsed') + '">' + sidebarHTML() + '<div class="su-content">' + (M.mode === 'manage' ? manageHTML() : orderHTML()) + '</div></div>' + importInputHTML() + '</section>';
+  }
+  // Move the same cut-off, Last order and History controls at the layout boundary. Keep any field or action in focus.
+  function placeOrderContext() {
+    var context = M.root && M.root.querySelector('.su-order-context'); if (!context) return;
+    var wide = orderWide.matches && M.sidebar, parent = wide ? M.root.querySelector('.su-side') : context;
+    var info = M.root.querySelector('.su-info'); if (info.parentNode === parent) return;
+    var active = document.activeElement, history = M.root.querySelector('[data-su="history"]');
+    parent.append(info); (wide ? M.root.querySelector('.su-toolbar') : context).append(history);
+    if (active && (info.contains(active) || history === active) && active.getClientRects().length) active.focus({ preventScroll: true });
   }
   /* Saved suppliers the catalogue check refused (supplier-store.js loadSuppliers, 5 Nov 2026): named, so the head chef
      knows which one, while the others work. Read with the list, no extra reads. */
@@ -610,12 +1080,22 @@
     if (M.stampNext) { landOnItem(M.stampNext.id, M.stampNext.word); return; }
     if (M.stamp && activeTask() !== 'catalogue') M.stamp = null;   // the stamp goes with the catalogue view
     if (!M.msg) M.msgAt = '';
-    var active = document.activeElement, keep = active && M.root.contains(active) ? { field: active.getAttribute('data-sf'), id: active.getAttribute('data-i'), start: active.selectionStart, end: active.selectionEnd } : null;
-    var y = window.scrollY; M.root.innerHTML = mainHTML(); if (M.saving) Array.prototype.forEach.call(M.root.querySelectorAll('input,select,textarea,button'), function (n) { n.disabled = true; }); window.scrollTo(0, y);
+    var active = document.activeElement, keep = active && M.root.contains(active) ? { field: active.getAttribute('data-sf'), id: active.getAttribute('data-i'), part: active.getAttribute('data-part'), start: active.selectionStart, end: active.selectionEnd } : null;
+    var historyFocus = active && active.id === 'su-history-title';
+    var ux = window.LK_UX, keepSearch = keep && (keep.field === 'q' || keep.field === 'historyQ') && ux && ux.restoreFocus;
+    var y = window.scrollY;
+    if (keepSearch) active._uxRedrawing = true;
+    try { M.root.innerHTML = mainHTML(); } finally { if (keepSearch) delete active._uxRedrawing; }
+    placeOrderContext(); if (M.saving) Array.prototype.forEach.call(M.root.querySelectorAll('input,select,textarea,button'), function (n) { n.disabled = true; }); window.scrollTo(0, y);
     if (keep && keep.field) {
-      var candidates = M.root.querySelectorAll('[data-sf]'), found = Array.prototype.filter.call(candidates, function (n) { return n.getAttribute('data-sf') === keep.field && n.getAttribute('data-i') === keep.id; })[0];
-      if (found) { found.focus({ preventScroll: true }); if (typeof keep.start === 'number') try { found.setSelectionRange(keep.start, keep.end); } catch (e) {} }
+      var candidates = M.root.querySelectorAll('[data-sf]'), found = Array.prototype.filter.call(candidates, function (n) { return n.getAttribute('data-sf') === keep.field && n.getAttribute('data-i') === keep.id && n.getAttribute('data-part') === keep.part; })[0];
+      if (found) {
+        // The shared search wraps the replacement before the caret goes back, as in Find a drawing.
+        if (keepSearch) { ux.enhance(M.root); ux.restoreFocus(found); } else found.focus({ preventScroll: true });
+        if (typeof keep.start === 'number') try { found.setSelectionRange(keep.start, keep.end); } catch (e) {}
+      }
     }
+    if (historyFocus) { var title = M.root.querySelector('#su-history-title'); if (title) title.focus({ preventScroll: true }); }
     window.dispatchEvent(new Event('lk-nav'));
   }
   function leaveForm(key) { if (!formDirty() || M.armedLeave === key) { M.ed = null; M.supplierEd = null; M.armedLeave = ''; return true; } M.armedLeave = key; message('These changes are not saved. Save them, or press Back again to discard them.'); return false; }
@@ -632,6 +1112,12 @@
   function focusBack(selector) {
     var el = M.root && M.root.querySelector(selector);
     if (el) { el.scrollIntoView({ block: 'center' }); el.focus({ preventScroll: true }); }
+  }
+  function jumpTo(heading) {
+    if (!heading) return;
+    heading.scrollIntoView({ block: 'start', behavior: 'instant' }); heading.focus({ preventScroll: true });
+    // Product rows above the target can take their real height after the first scroll.
+    requestAnimationFrame(function () { requestAnimationFrame(function () { if (heading.isConnected) heading.scrollIntoView({ block: 'start', behavior: 'instant' }); }); });
   }
   /* After a catalogue save, archive or restore: the list on the page holding the item, its row in view (where Back lands
      too) and wearing "Saved 14:02" (or Archived, Restored) until the person leaves the catalogue view (5 Nov 2026,
@@ -659,7 +1145,21 @@
     if (M.saving || M.review && M.review.uncertain) return;
     M.review = null; M.err = ''; draw(); focusBack('[data-su="review"]');
   }
-  function closeHistory() { M.historyOpen = false; M.reuse = ''; draw(); focusBack('[data-su="review"]'); }
+  function openHistory() {
+    // Supplier entry already starts the recent-order read. Leave retry and older pages to their own actions.
+    M.historyReturnY = window.scrollY; M.historyOpen = true; draw();
+    jumpTo(M.root.querySelector('#su-history-title'));
+  }
+  function closeHistory() {
+    var y = M.historyReturnY; M.historyOpen = false; M.historyReturnY = null; M.reuse = ''; draw();
+    var history = M.root.querySelector('[data-su="history"]');
+    if (!history) return;
+    function restore() { window.scrollTo({ top: y || 0, behavior: 'instant' }); }
+    restore(); history.focus({ preventScroll: true });
+    // The browser can correct its scroll anchor when the long list replaces its placeholder row sizes.
+    requestAnimationFrame(function () { if (document.activeElement === history) restore(); });
+  }
+  function resetHistoryView() { M.historyOpen = false; M.historyReturnY = null; M.historyId = ''; M.historyQ = ''; M.reuse = ''; }
   function backLabel() {
     if (!M.root) return '';
     var task = activeTask();
@@ -689,11 +1189,11 @@
   function orderMode() {
     M.mode = 'order'; M.q = ''; M.group = ''; M.page = 0;
     if (M.route.mode === 'manage') A.returnTo('#/suppliers' + (M.route.sid && M.sid ? '/' + encodeURIComponent(M.sid) : ''));
-    else draw();
+    else { draw(); loadSales(false); }
   }
   function pick(sid) {
     if (!leaveForm('pick:' + sid)) return;
-    M.sid = sid; M.route.cutoffId = ''; M.route.cutoffDay = ''; M.q = ''; M.group = ''; M.filter = ''; M.infoOpen = null; M.page = 0; M.review = null; M.additional = ''; M.historyOpen = false; M.auditOpen = false; M.historyId = ''; M.err = ''; M.msg = ''; M.validation = null; M.archive = ''; M.reuse = ''; draw(); loadHistory(false, false);
+    M.sid = sid; M.route.cutoffId = ''; M.route.cutoffDay = ''; M.q = ''; M.group = ''; M.filter = ''; M.infoOpen = null; M.page = 0; M.review = null; M.additional = ''; M.auditOpen = false; M.err = ''; M.msg = ''; M.validation = null; M.archive = ''; resetHistoryView(); draw(); loadHistory(false, false);
   }
   function beginReview() {
     if (!canRead() || M.saving) return;
@@ -718,7 +1218,7 @@
     store.record(r.sid, r.catalogueV, r.id, r.lines, r.occurrence ? { day: r.occurrence.day, cutoffId: r.occurrence.cutoffId } : null, r.linkV, r.additional, r.occurrence && r.occurrence.deliveryDay || '').then(function (result) {
       if (g !== generation) return;
       var h = hist(r.sid); h.rows = [result.order].concat((h.rows || []).filter(function (o) { return o.id !== result.order.id; })); indexHistory(h);
-      delete M.drafts[r.sid]; M.review = null; M.saving = false; M.additional = ''; M.historyId = result.order.id; M.msg = result.replayed ? 'This order was already recorded. No duplicate was made.' : 'Order recorded' + (forWords(r.occurrence) ? ' ' + forWords(r.occurrence) : '') + '. Nothing was sent to the supplier.'; draw();
+      delete M.drafts[r.sid]; M.review = null; M.saving = false; M.additional = ''; M.reuse = ''; M.historyId = result.order.id; M.msg = result.replayed ? 'This order was already recorded. No duplicate was made.' : 'Order recorded' + (forWords(r.occurrence) ? ' ' + forWords(r.occurrence) : '') + '. Nothing was sent to the supplier.'; draw();
       // a new view: start at its top, where the message says it was recorded (5 Nov 2026, docs/action-feedback.md)
       focusTask();
     }, function (e) { if (g === generation) { M.saving = false; if (e.code === 'uncertain') r.uncertain = true; if (e.code === 'stale' || e.code === 'concurrent') r.uncertain = false; if (e.code === 'recorded') { r.recorded = true; r.uncertain = false; if (e.prior) { var h = hist(r.sid); h.rows = [e.prior].concat((h.rows || []).filter(function (o) { return o.id !== e.prior.id; })); indexHistory(h); } } M.err = errorText(e); draw(); } });
@@ -756,9 +1256,9 @@
     }, function (e) { if (g === generation) { M.saving = false; M.err = errorText(e); draw(); } });
   }
   function reuseOrder(id, confirmed) {
-    var order = (hist().rows || []).filter(function (o) { return o.id === id; })[0]; if (!order) return;
+    var order = historyActionOrder(id); if (!order || confirmed && M.reuse !== id) return;
     if (!order.lines.length) { M.msgAt = 'history'; message('No quantities for this supplier in that order. Your draft is unchanged.'); return; }
-    if (hasDraft(M.sid) && !confirmed) { M.reuse = id; draw(); return; }
+    if (hasDraft(M.sid) && !confirmed) { M.historyId = id; M.reuse = id; draw(); return; }
     var d = draft(); d.qty = Object.create(null); d.stock = Object.create(null); d.units = { qty: Object.create(null), stock: Object.create(null) }; d.suggestions = Object.create(null);
     order.lines.forEach(function (l) { var i = item(l.itemId); if (i && !i.archived) { d.qty[i.id] = l.qty; d.units.qty[i.id] = l.unit; } }); M.reuse = ''; M.msg = 'Previous quantities copied into this draft. Review them before ordering.'; M.msgAt = 'history'; draw();
   }
@@ -901,11 +1401,13 @@
   function invalidateContext() {
     generation++; if (store) store.reset(); store = null;
     // Only the person's form survives. New reads and transaction attempts must use the new PIN context.
-    M.suppliers = null; M.history = Object.create(null); M.audit = Object.create(null); M.requests = null;
+    M.suppliers = null; M.reuse = ''; M.history = Object.create(null); M.audit = Object.create(null); M.requests = null;
     M.busy = false; M.requestsBusy = false; M.requestsError = ''; M.requestsDay = ''; M.validation = null;
     if (M.review) { M.review.checking = false; if (M.saving) M.review.uncertain = true; }
     if (M.saving) M.msg = 'Your supplier draft is kept. Check the latest records, then retry the save. Nothing will retry automatically.';
-    M.saving = false; M.err = ''; M.armedLeave = '';
+    M.saving = false; M.err = ''; M.readFail = ''; M.armedLeave = ''; againAll();
+    M.sales.ready = false; M.sales.reading = false; M.sales.readingFile = false; M.sales.data = null; M.sales.calc = null;
+    M.sales.replace = null; M.sales.problem = ''; M.sales.note = '';
   }
   function retainLock() {
     var lock = P.workLock && P.workLock();
@@ -918,7 +1420,7 @@
     // App access checks may run between the daily PIN and its refreshed catalogue permissions. A deliberate
     // handover calls reset(true), so another person never inherits the retained form.
     if (!force && (retainLock() || lockedIdentity && identity() === lockedIdentity)) return;
-    var root = M.root; generation++; if (store) store.reset(); store = null; contextKey = ''; identityKey = ''; lockedIdentity = ''; M = blank(); M.root = root;
+    var root = M.root; generation++; againAll(); if (store) store.reset(); store = null; contextKey = ''; identityKey = ''; lockedIdentity = ''; M = blank(); M.root = root;
   }
   function syncContext() {
     if (retainLock()) return false;
@@ -937,22 +1439,27 @@
   }
   function mount(root, route) {
     syncContext(); M.root = root;
-    var routeKey = [route && route.sid || '', route && route.mode || 'order', route && route.cutoffId || '', route && route.cutoffDay || ''].join('|');
+    var previous = M.sid, routeKey = [route && route.sid || '', route && route.mode || 'order', route && route.cutoffId || '', route && route.cutoffDay || ''].join('|');
     if (routeKey !== M.routeKey) { M.route = Object.assign({}, route || {}); M.routeKey = routeKey; M.mode = route && route.mode === 'manage' ? 'manage' : 'order'; if (route && route.sid) M.sid = route.sid; }
     if (editorHere() && M.ed.routeKey === routeKey || supplierEditorHere() && M.supplierEd.routeKey === routeKey) M.mode = 'manage';
     if (M.route.cutoffId && M.suppliers) { var linked = M.suppliers.filter(function (s) { return s.cutoffId === M.route.cutoffId; }); if (linked.length === 1) M.sid = linked[0].id; }
+    if (M.sid !== previous) { M.infoOpen = null; resetHistoryView(); }
     draw(); load(false);
-    if (M.suppliers && M.sid && !cutCard()) loadHistory(false, false);
+    if (M.suppliers && M.sid && !cutCard()) { loadHistory(false, false); loadSales(false); }
   }
-  function unmount() { M.root = null; }
+  // leaving the page drops a waiting try (againArm()): opening it again reads what never loaded, and a line that
+  // stays keeps its Try again
+  function unmount() { M.root = null; againAll(); }
+  orderWide.addEventListener('change', placeOrderContext);
   document.addEventListener('click', function (ev) {
     if (!M.root || !M.root.contains(ev.target)) return;
     var el = ev.target.closest('[data-su]'); if (!el || el.disabled) return;
     var cmd = el.getAttribute('data-su'), id = el.getAttribute('data-i');
     if (M.saving) return;
     if (!canRead()) { reset(); draw(); return; }
+    if (cmd.indexOf('sales-') === 0) { salesClick(cmd, el, id); return; }
     if (cmd === 'retry' || cmd === 'refresh') { load(true); return; }
-    if (cmd === 'collapse') { M.sidebar = !M.sidebar; try { localStorage.setItem('lk.sup.sidebar', M.sidebar ? 'show' : 'hide'); } catch (e) {} draw(); }
+    if (cmd === 'collapse') { M.sidebar = !M.sidebar; try { localStorage.setItem('lk.sup.sidebar', M.sidebar ? 'show' : 'hide'); } catch (e) {} draw(); var toggle = M.root.querySelector('[data-su="collapse"]'); if (toggle) toggle.focus({ preventScroll: true }); }
     if (cmd === 'pick') pick(el.getAttribute('data-sid'));
     if (cmd === 'group') { M.group = el.getAttribute('data-group'); M.page = 0; draw(); }
     if (cmd === 'sort') { var column = el.dataset.column, previous = M.tableSort; M.tableSort = { column: column, direction: previous && previous.column === column ? previous.direction === 1 ? -1 : previous.direction === -1 ? 0 : 1 : 1 }; M.page = 0; draw(); }
@@ -970,10 +1477,10 @@
     if (cmd === 'smart') { M.smart = !M.smart; draw(); if (M.smart) loadRequests(); }
     if (cmd === 'requests-retry') { M.requests = null; M.requestsWant = true; loadRequests(); }
     if (cmd === 'requests') { M.requestsWant = true; loadRequests(); }
-    if (cmd === 'info') { var box = el.closest('.su-info'); M.infoOpen = !(box && box.classList.contains('open')); draw(); }
+    if (cmd === 'info') { var box = el.closest('.su-info'); M.infoOpen = !(box && box.classList.contains('open')); draw(); M.root.querySelector('[data-su="info"]').focus({ preventScroll: true }); }
     if (cmd === 'jump') {
       var cat = el.getAttribute('data-cat'), head = Array.prototype.filter.call(M.root.querySelectorAll('.su-category'), function (h) { return h.getAttribute('data-cat') === cat; })[0];
-      if (head) { head.scrollIntoView({ block: 'start' }); head.focus({ preventScroll: true }); requestAnimationFrame(function () { requestAnimationFrame(function () { if (head.isConnected) head.scrollIntoView({ block: 'start' }); }); }); }
+      jumpTo(head);
     }
     if (cmd === 'filter') { M.filter = el.getAttribute('data-f') || ''; M.page = 0; draw(); }
     // − and + change the number in the box by one order unit; a typed unit after the number stays as it is
@@ -983,7 +1490,7 @@
         var n = Math.max(0, Math.round(((mm ? Number(mm[1].replace(',', '.')) : 0) + Number(el.getAttribute('data-d'))) * 1000) / 1000);
         var next = n > 0 ? String(n) + (mm && mm[2] ? mm[2] : '') : '';
         sd.qty[id] = next; if (next) sd.units.qty[id] = si.orderUnit; else delete sd.units.qty[id];
-        delete sd.suggestions[id]; M.review = null; clearEntryError('qty', id, next); redrawRow(id);
+        delete sd.suggestions[id]; salesCancelReplacement(id); M.review = null; clearEntryError('qty', id, next); redrawRow(id);
       }
     }
     if (cmd === 'apply') { var d = draft(), i = item(id), suggestion = i && C.suggestQuantity(i, latest(), d.stock[id] || '', fieldUnit('stock', i, d)); if (suggestion && !String(d.qty[id] || '').trim()) { d.qty[id] = suggestion.qty; d.units.qty[id] = suggestion.unit; d.suggestions[id] = suggestion; M.review = null; if (M.smart) message('Suggestion added. Check its quantity and unit before ordering.'); else { M.msg = ''; redrawRow(id); try { P.book().say('Suggestion added. Check its quantity and unit before ordering.'); } catch (e) {} } } }
@@ -994,29 +1501,57 @@
     if (cmd === 'review') beginReview(); if (cmd === 'record') record(); if (cmd === 'review-close') closeReview();
     if (cmd === 'copy-review' && M.review) copyOrder(M.review.lines, M.review.supplierName);
     if (cmd === 'share-review' && M.review) shareOrder(M.review.lines, M.review.supplierName);
-    if (cmd === 'history') { M.historyOpen = !M.historyOpen; draw(); if (M.historyOpen) loadHistory(true, false); }
+    if (cmd === 'history') { if (M.historyOpen) closeHistory(); else openHistory(); }
     if (cmd === 'history-close') closeHistory();
-    if (cmd === 'history-retry') { var retryHistory = hist(); retryHistory.rows = null; retryHistory.byItem = Object.create(null); retryHistory.full = false; retryHistory.more = false; retryHistory.cursor = null; loadHistory(M.historyOpen, false); }
+    if (cmd === 'history-retry') historyAgain();
     if (cmd === 'history-more') loadHistory(true, true);
-    if (cmd === 'history-order') { M.historyId = el.getAttribute('data-id'); draw(); }
+    if (cmd === 'history-order' && M.historyOpen) {
+      var orderId = el.getAttribute('data-id');
+      if (historyView(hist().rows || []).matches.some(function (o) { return o.id === orderId; })) {
+        if (M.historyId !== orderId) M.reuse = '';
+        M.historyId = orderId; draw();
+      }
+    }
     if (cmd === 'reuse') reuseOrder(el.getAttribute('data-id'), false); if (cmd === 'reuse-confirm') reuseOrder(el.getAttribute('data-id'), true); if (cmd === 'reuse-cancel') { M.reuse = ''; draw(); }
-    if (cmd === 'copy-history') { var o = (hist().rows || []).filter(function (x) { return x.id === el.getAttribute('data-id'); })[0]; if (o && o.lines.length) copyOrder(o.lines, o.supplierName); }
+    if (cmd === 'copy-history') { var o = historyActionOrder(el.getAttribute('data-id')); if (o && o.lines.length) copyOrder(o.lines, o.supplierName); }
     if (cmd === 'edit') openEditor(id); if (cmd === 'add') openEditor(''); if (cmd === 'save-item') saveItem();
     if (cmd === 'editor-close') closeEditor('editor-close');
     if (cmd === 'archive' && canEdit()) { M.archive = id; draw(); } if (cmd === 'archive-cancel') { M.archive = ''; draw(); } if (cmd === 'archive-confirm') archiveItem(id, false); if (cmd === 'restore') archiveItem(id, true);
     if (cmd === 'reload-form' && M.ed) { var ed = M.ed, g = generation; store.load(M.sid).then(function (s) { if (g !== generation || M.ed !== ed) return; rememberSupplier(s); var current = s.items.filter(function (i) { return i.id === ed.value.id; })[0] || null, before = JSON.parse(ed.start), merged = current ? clone(current) : clone(ed.value); Object.keys(ed.value).forEach(function (f) { if (JSON.stringify(ed.value[f]) !== JSON.stringify(before[f])) merged[f] = clone(ed.value[f]); }); ed.baseV = s.v; ed.original = current ? clone(current) : null; ed.value = merged; ed.start = JSON.stringify(current || before); ed.stale = false; M.err = ''; message('Latest catalogue loaded. Your edits are still here. Check them before saving.'); }, function (e) { M.err = errorText(e); draw(); }); }
     if (cmd === 'audit') { M.auditOpen = !M.auditOpen; draw(); if (M.auditOpen) loadAudit(); }
+    // Try again on a failed read of the changes: one read, none while one is out (loadAudit())
+    if (cmd === 'audit-retry' && M.auditOpen) loadAudit();
     if (cmd === 'supplier-settings') openSupplierEditor(true); if (cmd === 'add-supplier') openSupplierEditor(false); if (cmd === 'save-supplier') saveSupplier(); if (cmd === 'supplier-close') closeEditor('supplier-close');
     if (cmd === 'import' && canEdit() && leaveForm('import')) { var file = M.root.querySelector('[data-sf="import"]'); if (file) file.click(); }
     if (cmd === 'import-cancel') closeImport(); if (cmd === 'import-apply') applyImport();
   });
+  // Tab can focus an order field that is still in the viewport but covered by the sticky Review bar.
+  document.addEventListener('focusin', function (ev) {
+    var target = ev.target;
+    if (!M.root || !M.root.contains(target) || !target.closest('.su-row')) return;
+    requestAnimationFrame(function () {
+      if (document.activeElement !== target || !M.root || !M.root.contains(target)) return;
+      var dock = M.root.querySelector('.su-order-actions');
+      if (!dock) return;
+      var limit = Math.min(window.innerHeight, dock.getBoundingClientRect().top);
+      if (target.getBoundingClientRect().bottom > limit) target.scrollIntoView({ block: 'center' });
+    });
+  });
   document.addEventListener('input', function (ev) {
     if (!M.root || !M.root.contains(ev.target) || !canRead() || M.saving) return;
     var el = ev.target, f = el.getAttribute('data-sf'), id = el.getAttribute('data-i'); if (!f) return;
-    if (f === 'q') { M.q = el.value; M.page = 0; draw(); return; }
+    if (f.indexOf('sales-') === 0) { updateSalesField(el, f, false); return; }
+    if (f === 'q' || f === 'historyQ') {
+      if (f === 'q') { M.q = el.value; M.page = 0; }
+      else { if (M.historyQ !== el.value) M.reuse = ''; M.historyQ = el.value; }
+      var ux = window.LK_UX;
+      // Keyboard Clear still owns focus here. Hand it to the search before the old controls are removed.
+      if (ux && ux.restoreFocus && document.activeElement === el.parentElement.querySelector('.ux-search-clear')) ux.restoreFocus(el);
+      draw(); return;
+    }
     if (f === 'cutQ') { M.cutQ = el.value; draw(); return; }
-    if (f === 'historyQ') { M.historyQ = el.value; draw(); return; } if (f === 'importQ') { M.importQ = el.value; draw(); return; }
-    if (f === 'qty' || f === 'stock') { draft()[f][id] = el.value; var enteredItem = item(id); if (String(el.value).trim() && enteredItem) draft().units[f][id] = f === 'qty' ? enteredItem.orderUnit : enteredItem.parUnit; else delete draft().units[f][id]; if (f === 'qty') delete draft().suggestions[id]; M.review = null; clearEntryError(f, id, el.value); if (M.smart) draw(); else if (f === 'stock') redrawRow(id); else { var hint = el.closest('.su-qty').querySelector('.hint'); if (hint) hint.textContent = orderUnitHint(item(id), draft()); var count = M.root.querySelector('.su-order-actions > .hint'); if (count) count.textContent = itemCount(Object.keys(draft().qty).filter(function (k) { return String(draft().qty[k]).trim(); }).length) + ' in this supplier draft'; var reviewButton = M.root.querySelector('[data-su="review"]'); if (reviewButton) reviewButton.disabled = !Object.keys(draft().qty).some(function (k) { return String(draft().qty[k]).trim(); });
+    if (f === 'importQ') { M.importQ = el.value; draw(); return; }
+    if (f === 'qty' || f === 'stock') { draft()[f][id] = el.value; var enteredItem = item(id); if (String(el.value).trim() && enteredItem) draft().units[f][id] = f === 'qty' ? enteredItem.orderUnit : enteredItem.parUnit; else delete draft().units[f][id]; if (f === 'qty') { delete draft().suggestions[id]; salesCancelReplacement(id); } M.review = null; clearEntryError(f, id, el.value); if (M.smart) draw(); else if (f === 'stock') redrawRow(id); else { var hint = el.closest('.su-qty').querySelector('.hint'); if (hint) hint.textContent = orderUnitHint(item(id), draft()); var count = M.root.querySelector('.su-order-actions > .hint'); if (count) count.textContent = itemCount(Object.keys(draft().qty).filter(function (k) { return String(draft().qty[k]).trim(); }).length) + ' in this supplier draft'; var reviewButton = M.root.querySelector('[data-su="review"]'); if (reviewButton) reviewButton.disabled = !Object.keys(draft().qty).some(function (k) { return String(draft().qty[k]).trim(); });
       // the row's Use chip steps aside once a quantity is typed; In this order keeps its count (no redraw, the caret stays)
       var use = Array.prototype.filter.call(M.root.querySelectorAll('.su-use'), function (b) { return b.getAttribute('data-i') === id; })[0]; if (use) use.hidden = !!String(el.value).trim();
       var inOrder = M.root.querySelector('[data-su="filter"][data-f="inorder"] .su-n'); if (inOrder) inOrder.textContent = Object.keys(draft().qty).filter(function (k) { return String(draft().qty[k]).trim(); }).length; } return; }
@@ -1027,6 +1562,8 @@
   document.addEventListener('change', function (ev) {
     if (!M.root || !M.root.contains(ev.target) || !canRead() || M.saving) return;
     var el = ev.target, f = el.getAttribute('data-sf');
+    if (f === 'sales-file') { showSalesFile(el.files && el.files[0]); return; }
+    if (f && f.indexOf('sales-') === 0) { updateSalesField(el, f, true); return; }
     if (f === 'supplier') pick(el.value); if (f === 'includeArchived') { M.includeArchived = el.checked; M.page = 0; draw(); }
     if (f === 'import') importFile(el.files && el.files[0]);
     if (f === 'import-cutoff') { disarmLeave(); M.importMap[el.getAttribute('data-sid')] = el.value; }
@@ -1037,9 +1574,11 @@
   ['lk-who', 'lk-admin', 'lk-cfg'].forEach(function (event) { window.addEventListener(event, function () {
     if (!syncContext()) { draw(); return; }
     if (!canEdit() && !M.saving && (M.ed || M.supplierEd || M.importing)) { M.ed = null; M.supplierEd = null; M.importing = null; M.archive = ''; M.armedLeave = ''; }
-    if (M.root) { draw(); load(false); }
+    if (!canEdit() && !M.saving) { M.sales.preview = null; M.sales.link = null; }
+    if (M.root) { draw(); load(false); loadSales(false); }
   }); });
-  window.addEventListener('online', function () { if (M.root) draw(); }); window.addEventListener('offline', function () { if (M.root) draw(); });
+  // back online: the note goes, and a failed read tries once more a moment later, so Firestore has its connection back
+  window.addEventListener('online', function () { if (M.root) draw(); Object.keys(readAgain).forEach(function (k) { setTimeout(function () { againRun(k); }, 1500); }); }); window.addEventListener('offline', function () { if (M.root) draw(); });
   // Drafts live in this tab's memory only (docs/supplier-workspace.md): a reload or closing the tab asks first, like
   // the other editors. iPhone Safari never asks, and nothing is kept past the page.
   // Update now's second tap already said the draft may go (LK_UPDATE.letGo() in js/upkeep.js): no second question

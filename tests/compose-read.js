@@ -29,7 +29,7 @@ const EXPECT = {
   'cowboy-butter': { form: 'pat', lines: { 'Butter': { part: 'solid' }, 'Bourbon BBQ dry rub': { part: 'tint' } } },
   'rissole-mix': { form: 'balls', cook: 'baked', raw: true, lines: { 'Lamb mince': { part: 'solid' }, 'Carrots': { part: 'solid' } } },
   'slaw': { form: 'mixture', lines: { 'Carrots': { cut: 'julienne' }, 'Red cabbages': { cut: 'shreds' }, 'White cabbage': { cut: 'shreds' }, 'Corn cobs': { cut: 'kernels', cook: 'charred' } } },
-  'mushroom-sauce': { form: 'liquid', lines: { 'Mushrooms': { part: 'solid' }, 'Cooking cream': { part: 'liquid' }, 'Gravy powder': { part: 'liquid' }, 'Cracked black pepper': { part: 'bits' } } },
+  'mushroom-sauce': { form: 'liquid', lines: { 'Button mushrooms': { part: 'solid' }, 'Cooking cream': { part: 'liquid' }, 'Gravy powder': { part: 'liquid' }, 'Cracked black pepper': { part: 'bits' } } },
   'gravy': { form: 'liquid' },
   'green-bowl-mix': { form: 'mixture', lines: { 'Baby spinach': { part: 'solid' }, 'Heirloom cherry tomatoes': { part: 'solid' } } },
   'side-veg': { form: 'mixture', lines: { 'Carrots': { cook: 'steamed' }, 'Cauliflower': { cut: 'florets' }, 'Broccoli': { cut: 'florets' } } },
@@ -44,7 +44,8 @@ const EXPECT = {
   'wing-flour': { form: 'coat' },
   'corn': { form: 'piece', lines: { 'Corn': { cook: 'charred' } } },
   'seed-granola': { form: 'mixture', lines: { 'Linseeds': { part: 'solid' }, 'Honey': { part: 'liquid' } } },
-  'tartare': { bought: true }
+  'tartare': { bought: false },
+  'green-goddess': { bought: true }
 };
 function line(mo, ing) { return mo.lines.find(L => L.ing === ing || L.ing.indexOf(ing) === 0); }
 function check() {

@@ -1,7 +1,12 @@
 # Phone pushes for order cut-offs: every 10 minutes the book checks whether a supplier's cut-off reminder is due and
-# sends a push to the chefs' phones that are turned on. See scripts/cutoff-push.mjs. Needs the repository secrets
-# FIREBASE_SA (service account key, JSON) and KITCHEN_PIN, the same as the nightly learning.
-# GitHub can start a scheduled run a few minutes late; a late run still sends while the cut-off is ahead.
+# sends a push to the chefs' phones that are turned on. See scripts/cutoff-push.mjs. Runs once per venue
+# (venues/*.json, docs/venues.md), each in its own GitHub environment with its own FIREBASE_SA and KITCHEN_PIN, the same
+# as the nightly learning. A job stops before reading anything when the service account or the environment's
+# VENUE_PROJECT is not that venue's own (scripts/venues.cjs guard).
+# Since 20 Nov 2026 (kitchen time) Google's Cloud Scheduler starts it every 10 minutes (job cutoff-push in the Leichhardt
+# project; docs/firestore-usage.md, The push timer). The schedule below stays as a fallback: GitHub ran it only 3 to 7
+# times a day. One run at a time and pushsent keep a push from going twice; a late run still sends while the cut-off is
+# ahead.
 name: Cut-off pushes
 
 on:
@@ -17,7 +22,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  venues:
+    name: Venues
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      list: ${{ steps.v.outputs.list }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: echo "list=$(node scripts/venues.cjs matrix)" >> "$GITHUB_OUTPUT"
   push:
+    needs: venues
+    name: Send (${{ matrix.venue.id }})
+    strategy:
+      fail-fast: false
+      matrix:
+        venue: ${{ fromJSON(needs.venues.outputs.list) }}
+    environment:
+      name: ${{ matrix.venue.env }}
+      deployment: false
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -27,6 +51,12 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: scripts/package-lock.json
+      - name: This venue's own project
+        env:
+          VENUE: ${{ matrix.venue.id }}
+          VENUE_PROJECT: ${{ vars.VENUE_PROJECT }}
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: node scripts/venues.cjs guard "$VENUE"
       - name: Install
         working-directory: scripts
         run: npm ci --no-audit --no-fund

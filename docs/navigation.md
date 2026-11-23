@@ -74,6 +74,18 @@ tests are the adjacent regression gates. These are isolated browser checks, not 
 
 Rollback: revert the gesture code, motion styles and their documentation. No saved data or rules need migration.
 
+## Phone tab targets, 23 November 2026
+
+Every visible tab in the phone bar has a tap target at least 48 px wide. A long label can wrap
+inside its own target when the display font is unavailable or the text is enlarged.
+
+The consistency audit reproduced a near-edge tap on Prep opening Orders at 320 and 390 px.
+The focused Chromium regression checks the six tab targets at 320, 360 and 390 px with Normal
+and Extra large text, hits both sides of each target and uses a real synthetic touch on Prep.
+An additional 320 px check uses the book's bundled Barlow Condensed font. A 44 px box still
+lost the near-edge touch in that fixture, so the fix gives the browser 48 px of width. The bar
+measured 68 px in both app captures. The baseline failed 15 of 35 checks. The fixed app passed all 35.
+
 ## Existing Back actions
 
 Accepted 24 Oct 2026. Keep the current layouts, fonts, buttons and permissions. Make it clear how to return from a
@@ -124,11 +136,13 @@ Supplier review, item/par editing, supplier settings and import replace the work
 current-task heading. Returning restores the workspace, its supplier and its quantities. Supplier history keeps
 its disclosure layout. The supplier sidebar remains collapsible in the workspace.
 
+Prep keeps your place (19 Nov 2026, `docs/band-options/brief.md`): coming back to Prep from another page the same day puts the list back by its top line, not by pixels. The place is kept per person, day, section and board. It is put back after Prep draws and never while a finger is down. Tapping Prep while on Prep goes to the top. It is held in `js/prep.js` beside the route trail, in memory only.
+
 The route trail and scroll positions live only in memory. Browser history holds an opaque entry key, alongside
 the existing sheet marker. It holds no form values, catalogue items or staff details. A contextual page return
 skips a stale same-address sheet entry left by a link, so one press reaches the destination on its label. Ordinary
-phone Back and Forward keep their normal history behaviour. The existing recipe shelf return still positions the
-opened plate and keeps the recipe search and filters.
+phone Back and Forward keep their normal history behaviour. The recipe shelf return positions and focuses the
+opened card on The Pass or Tiles and keeps the recipe search and filters.
 
 ## Task return
 
@@ -147,6 +161,12 @@ Native close-first sheet handling covers guide zoom, shift pings, section select
 jumps, function details, wastage reasons and kitchen mail nudges. Close, Cancel, Escape and backdrops remove the
 sheet's temporary history step. Admin jumps wait for that step to settle before scrolling, so native scroll
 restoration cannot undo the jump.
+
+In Admin and the chef panel, selecting a section from Find or the phone's On this page sheet focuses its
+heading and scrolls it below the sticky navigation. The next Tab continues into the section. Escape, Back
+or Cancel in Find returns focus to its opener. When `/` opened Find, focus goes back to the previous panel
+control if it is available, or to the visible Find button at the current width. A panel redraw while Find has
+focus preserves it on the visible replacement, whether the button appears in the rail or beside the heading.
 
 Supplier drafts and catalogue forms remain private memory state. They clear on identity change and do not survive
 a reload. A retained supplier form belongs to its original supplier; visiting another supplier cannot display or

@@ -156,6 +156,7 @@ const button = (kind = 'fn', action = 'cancel') => '[data-' + kind + '="status"]
     // The existing access tick is explicit, searchable and independent of the kitchen role.
     p = await L.open(b, '#/admin', { who: '', admin: true, extra: fixture(), width: 1280 });
     await L.adminTab(p, 'people');
+    await L.waitFor(p, () => !!document.querySelector('[data-p="a-person-open"][data-id="sam"]')); await L.openPerson(p, 'sam');
     await L.waitFor(p, () => !!document.querySelector('[aria-label="Create and edit functions for Sam"]'));
     ok(!!(await p.$('[aria-label="Create and edit functions for Sam"]')), 'access: the checkbox clearly names create and edit access for that person');
     await p.evaluate(() => [...document.querySelectorAll('[aria-label="Create and edit functions for Sam"]')].find(e => e.getClientRects().length).click());

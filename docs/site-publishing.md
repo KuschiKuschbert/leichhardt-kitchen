@@ -18,9 +18,15 @@ Measured on the live site, 13 November 2026: `index.html` last changed on 9 Nove
 2. **Deploy** publishes the whole repository only when that script prints a file. Comparing with what is live, not with the previous commit, means a note merged after a failed publish still carries the earlier app change out.
 3. **Published** runs when the site is up to date with the commit: after a publish, or when nothing needed one.
 
+The Pages artifact is named for its workflow attempt. Before Deploy reads it, the workflow waits briefly for the exact upload ID to appear in that run. A retry also has its own name, so Deploy can find the new upload alongside earlier attempts.
+
 `scripts/site-changed.sh` leaves out only what people and GitHub read: `docs/`, every `*.md`, `scripts/`, `.github/`, `.claude/`, `firestore.rules`, `.gitignore`, and the tests run by node (`*.test.js`, `*.test.mjs`, `tests/lib.js`, `tests/run.js`, `tests/package*.json`, `tests/rules/`, `tests/fake/`). Anything else counts as needed, so a new folder the book loads is never missed. `tests/contact.html` and the files it loads count as needed because the live click tests open them from the site.
 
 When nothing needs publishing, the live site keeps the earlier copy of the notes too. They go out with the next app change, or straight away with **Run workflow** on Publish site, which always publishes.
+
+## A venue on its own address (19 Nov 2026)
+
+A venue served by its own Firebase project (`venues/<id>.json` with `host: firebase`, [venues.md](venues.md)) gets its own copy of the same publish straight after the Pages Deploy: the Venue site job makes it with `scripts/venue-site.cjs` (its settings, security header, name, an empty book, its QR) and publishes it with `scripts/venue-deploy.sh`, in the venue's GitHub environment, then reads it back (`scripts/venue-live-check.cjs`). Published waits for every venue, so no venue's rules are published ahead of its code. `venues/` itself is left out of a publish: it is read by the workflows only.
 
 ## What follows it
 
@@ -44,4 +50,4 @@ The book's update check, the service worker, the 10-minute and 1-hour reload lim
 
 ## Tests
 
-`tests/site-publish.test.js` (no browser): the file list, then the Check, Live click tests and Publish rules steps run as bash against a made-up repository with a stand-in `gh`. It covers #684 (README alone: no publish), a note after a failed publish, a live commit the copy does not know, GitHub not answering, the branch publish still on, and rules alone.
+`tests/site-publish.test.js` (no browser): the file list, then the Check, artifact wait, Live click tests and Publish rules steps run as bash against a made-up repository with a stand-in `gh`. It covers #684 (README alone: no publish), a note after a failed publish, delayed artifact visibility, wrong or expired artifacts, a live commit the copy does not know, GitHub not answering, the branch publish still on, and rules alone.

@@ -57,6 +57,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   // an admin People save (a name changed) keeps every shift's busy time
   p = await L.open(b, '#/admin', { admin: true, width: 1280, adminPage: 'people', wait: 2500, extra: fixture() });
   await L.adminTab(p, 'people');
+  await L.openPerson(p, 2);
   await p.fill('[data-a="name"][data-i="2"]', 'Ari B'); await p.keyboard.press('Tab');
   await p.click('[data-p="a-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k]?.people?.[2]?.name === 'Ari B', CFG, 10000);
@@ -260,19 +261,22 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   await p.context().close();
 
   // 10. The On break now board ends above the Save dock on the head chef's phone (Board above the dock, 16 Nov 2026).
-  //     Admin, Team, Today's team at 390 x 844 and scroll 0, four on a break at 18:30: every name, the board's words, the
-  //     dock's words and Save show on the first screen, with the too few line and without it, and all six when six are
-  //     away. Measured in the book's own fonts (Barlow, Barlow Condensed, Caveat), as the phones show them: the stand-in
+  //     Admin, Team, Today's team at 390 x 844 and scroll 0: all four or six names show on the first screen with the
+  //     warning and Save. A saved plan without a warning shows every name and Saved in the heading with the dock hidden
+  //     (22 Nov 2026). Measured in the book's own fonts (Barlow, Barlow Condensed, Caveat): the stand-in
   //     fonts are wider on GitHub's runner and wrap the board (16 Nov 2026). If they cannot load here, the check says so
   //     and measures nothing. On the old code the dock covered Sam K while the line showed (3 of 4 names; 3 of 6 with six
   //     away). From 720 px the admin heading is as before (compared in the same fonts, so any font will do).
   const board = p => p.evaluate(() => {
     const dock = document.querySelector('.tm-focus-save').getBoundingClientRect(), save = document.querySelector('.tm-focus-save [data-p="tm-save"]').getBoundingClientRect();
+    const nav = document.querySelector('.tabbar'), navBox = nav?.getBoundingClientRect();
+    const viewBottom = navBox?.height && getComputedStyle(nav).position === 'fixed' ? navBox.top : innerHeight;
+    const dockTop = dock.height ? Math.round(dock.top) : null, boardBottom = dock.height ? dock.top : viewBottom;
     const names = [...document.querySelectorAll('.tm-away-row')], words = s => { const e = document.querySelector(s); return e && !e.hidden && e.getClientRects().length ? e.innerText.replace(/\s+/g, ' ').trim() : ''; };
-    return { scroll: Math.round(scrollY), dockTop: Math.round(dock.top), saveIn: save.top >= 0 && save.bottom <= dock.bottom + .5 && dock.bottom <= innerHeight + .5,
-      above: names.filter(e => { const r = e.getBoundingClientRect(); return r.top >= 0 && r.bottom <= dock.top + .5; }).map(e => e.querySelector('.tm-away-name').innerText.trim()),
+    return { scroll: Math.round(scrollY), dockTop, boardBottom: Math.round(boardBottom), saveIn: save.height > 0 && save.top >= 0 && save.bottom <= dock.bottom + .5 && dock.bottom <= innerHeight + .5,
+      above: names.filter(e => { const r = e.getBoundingClientRect(); return r.top >= 0 && r.bottom <= boardBottom + .5; }).map(e => e.querySelector('.tm-away-name').innerText.trim()),
       lastBottom: names.length ? Math.round(names[names.length - 1].getBoundingClientRect().bottom) : 0, head: words('.tm-away .tm-away-head'),
-      state: words('.tm-focus-save .tm-save-state'), line: words('.tm-focus-save .tm-short-line') };
+      state: words('.tm-focus-save .tm-save-state'), line: words('.tm-focus-save .tm-short-line'), headingStatus: words('.tm-draftstate') };
   });
   // the order of the board, the notebook head, the date and the rows, top to bottom
   const sequence = p => p.evaluate(() => [['board', '.tm-away'], ['head', '.tm-nhead'], ['date', '.tm-date-controls'], ['editor', '.tm-editor']].map(([n, s]) => [n, document.querySelector(s).getBoundingClientRect().top]).sort((a, b) => a[1] - b[1]).map(x => x[0]).join(','));
@@ -285,13 +289,17 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   };
   // six away at 18:30: Eli and Gia take their Dinner break then too
   const six = BR.filter(x => !['eli', 'gia'].includes(x.id) || x.sh !== 'dinner').concat(['eli', 'gia'].map(id => ({ id, sh: 'dinner', at: 1110, len: 30 })));
-  for (const [label, shifts, br, names] of [['with the too few line', BUSY, BR, ['Dev', 'Fen', 'Hal', 'Sam K']], ['without it', PLAIN, BR, ['Dev', 'Fen', 'Hal', 'Sam K']], ['six away, with the too few line', BUSY, six, ['Dev', 'Eli', 'Fen', 'Gia', 'Hal', 'Sam K']]]) {
+  for (const [label, shifts, br, names] of [['with the too few line', BUSY, BR, ['Dev', 'Fen', 'Hal', 'Sam K']], ['saved without a staffing warning', PLAIN, BR, ['Dev', 'Fen', 'Hal', 'Sam K']], ['six away, with the too few line', BUSY, six, ['Dev', 'Eli', 'Fen', 'Gia', 'Hal', 'Sam K']]]) {
     p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', width: 390, height: 844, extra: fixture({ kitShifts: shifts }, { [TEAM]: plan(today, ON, br) }), clock: AT(1110), wait: 1800 });
     await ready(p); await L.waitFor(p, n => document.querySelectorAll('.tm-away-row').length >= n, names.length, 9000); await L.settle(p, 300);
     if (!await bookFonts(p)) { ok(true, 'board above the dock, admin 390, ' + label + ': the book\'s fonts could not load here, the board was not measured'); await p.context().close(); continue; }
     const m = await board(p);
-    ok(m.scroll === 0 && JSON.stringify([...m.above].sort()) === JSON.stringify(names), 'board above the dock, admin 390, ' + label + ', in Barlow: all ' + names.length + ' names end above the Save dock (' + m.above.join(', ') + '; last name ends at ' + m.lastBottom + ' px, the dock starts at ' + m.dockTop + ' px)');
-    ok(/On break now/i.test(m.head) && m.saveIn && (shifts === BUSY ? /^Too few now until 19:00/.test(m.line) && !m.state : /^Saved 13:00/.test(m.state) && !m.line), 'board above the dock, admin 390, ' + label + ': the board\'s words, the dock\'s words and Save all show (' + (m.line || m.state) + ')');
+    ok(m.scroll === 0 && JSON.stringify([...m.above].sort()) === JSON.stringify(names), 'break board, admin 390, ' + label + ', in Barlow: all ' + names.length + ' names show on the first screen (' + m.above.join(', ') + '; last name ends at ' + m.lastBottom + ' px, clear to ' + m.boardBottom + ' px)');
+    if (shifts === BUSY) {
+      ok(/On break now/i.test(m.head) && m.saveIn && /^Too few now until 19:00/.test(m.line) && !m.state, 'break board, admin 390, ' + label + ': the board, the warning and Save show (' + m.line + ')');
+    } else {
+      ok(/On break now/i.test(m.head) && m.dockTop === null && !m.saveIn && !m.line && /^Saved 13:00/.test(m.headingStatus), 'break board, admin 390, ' + label + ': the board and Saved heading show with the dock hidden (' + m.headingStatus + ')');
+    }
     ok(!await L.overflow(p) && p.errors.length === 0, 'board above the dock, admin 390, ' + label + ': no sideways scroll, no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }
