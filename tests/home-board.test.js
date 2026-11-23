@@ -77,8 +77,22 @@ const shut = async p => { if (await p.$('.nt-wrap')) { await p.keyboard.press('E
   ok(/Quiz night/.test(await txt(p, '.hm-up #fn-land') || ''), 'Coming up: a function 6 days out (Quiz night)');
   const cuts = await p.$$eval('#hm-cuts li a', l => l.map(a => ({ t: a.textContent, href: a.getAttribute('href') })));
   ok(cuts.length === 3 && cuts.some(c => /^.+ PFD Zz<i.* order closes 15:00$/.test(c.t) && /^#\/suppliers\/cutoff\/pfd\//.test(c.href)) && cuts.some(c => /B&E Chicken order closes 19:00$/.test(c.t)) && !(await p.$('#hm-cuts i#pwn')), 'Coming up: each supplier\'s next cut-off after today, as words, to its supplier order (' + JSON.stringify(cuts.map(c => c.t)) + ')');
-  const chev = await p.evaluate(() => [...document.querySelectorAll('#hm-board .hm-a')].map(a => ({ t: a.querySelector('.hm-t').textContent, chev: !!a.querySelector('.hm-chev'), tm: !!a.querySelector('.hm-tm') })));
+  const chev = await p.evaluate(() => {
+    const board = document.querySelector('#hm-board');
+    const channels = colour => colour.match(/[\d.]+/g).map(Number);
+    const mix = (front, back) => back.map((x, i) => front[i] * (front[3] ?? 1) + x * (1 - (front[3] ?? 1)));
+    const linear = x => x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+    const luminance = rgb => rgb.reduce((sum, x, i) => sum + [0.2126, 0.7152, 0.0722][i] * linear(x / 255), 0);
+    const surface = channels(getComputedStyle(board).backgroundColor).slice(0, 3);
+    return [...board.querySelectorAll('.hm-a')].map(a => {
+      const arrow = a.querySelector('.hm-chev');
+      const bg = mix(channels(getComputedStyle(a).backgroundColor), surface);
+      const ratio = arrow ? [luminance(bg), luminance(mix(channels(getComputedStyle(arrow).stroke), bg))].sort((x, y) => y - x) : [];
+      return { t: a.querySelector('.hm-t').textContent, chev: !!arrow, tm: !!a.querySelector('.hm-tm'), contrast: arrow ? (ratio[0] + 0.05) / (ratio[1] + 0.05) : null };
+    });
+  });
   ok(chev.length && chev.every(r => r.chev === !r.tm) && chev.some(r => r.chev), 'board rows with no time show a chevron, the timed ones none (' + JSON.stringify(chev.map(r => r.t.slice(0, 10) + ':' + r.chev)) + ')');
+  ok(chev.filter(r => r.chev).every(r => r.contrast >= 3), 'untimed chevrons are at least 3:1 against their row (' + chev.filter(r => r.chev).map(r => r.contrast.toFixed(2)).join(', ') + ')');
   const vb = await bad(p);
   ok(!vb.i && !vb.img && !vb.attr && !vb.run, 'the board shows the names as words, no markup (' + JSON.stringify(vb) + ')');
 

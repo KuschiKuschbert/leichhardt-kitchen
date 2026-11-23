@@ -150,6 +150,20 @@ function registry(extra) {
       ok(!(await L.overflow(p)), width + ' px: no sideways scroll ' + (await L.overflow(p) || ''));
       await p.evaluate(() => { location.hash = '#/recipes'; }); await L.settle(p, 800);
       ok(!(await L.overflow(p)), width + ' px: the empty Recipes page has no sideways scroll');
+      await L.waitFor(p, () => window.LK_PREP.rxState() === 'ok');
+      for (const mode of ['pass', 'tiles']) {
+        await p.locator('.find-bar .vsw [data-val="' + mode + '"]').press('Enter');
+        ok(await L.txt(p, '#recipe-sync-status .empty') === 'No recipes yet.' && !(await p.$('[data-act="clearall"]')), width + ' px: ' + mode + ' says the confirmed empty book has no recipes');
+      }
+      if (width === 390) {
+        await p.evaluate(async () => {
+          const sdk = window.LK_PREP.book().fs(), get = sdk.getDoc;
+          sdk.getDoc = ref => ref.path.join('/') === 'publicBook/index' ? Promise.resolve({ metadata: { fromCache: true }, exists: () => false }) : get(ref);
+          try { await window.LK_PREP.rxSync(true); } finally { sdk.getDoc = get; }
+        });
+        const status = await L.txt(p, '#recipe-sync-status');
+        ok(/No signal/.test(status || '') && !/No recipes yet/.test(status || '') && !(await p.$('[data-act="clearall"]')), 'an empty memory snapshot reports no signal without claiming there are no recipes');
+      }
       const errs = p.errors.filter(e => !/net::ERR|Failed to load resource/i.test(e));
       ok(errs.length === 0, width + ' px: no JS errors (' + errs.slice(0, 3).join(' | ') + ')');
       await p.context().close();

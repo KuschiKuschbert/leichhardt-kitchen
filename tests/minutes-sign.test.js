@@ -40,9 +40,19 @@ const mins = (no, date, decisions, x) => Object.assign({ no, v: 1, status: 'publ
   await p.emulateMedia({ media: 'print' });
   ok(await jump.isHidden() && await p.locator('.mn-doc').isVisible(), 'print keeps the minutes and omits the jump');
   await p.emulateMedia({ media: 'screen' });
-  await p.click('.mn-signbtn');
-  await L.settle(p, 800);
-  ok(!!(await p.evaluate(k => window.__fake.dump()[k], fsKey(['minutes', 'mold', 'signs', '1_ann']))), 'one tap signs them');
+  const sign = p.locator('.mn-signbtn'), readyBox = await sign.boundingBox();
+  const signPath = fsKey(['minutes', 'mold', 'signs', '1_ann']);
+  await p.evaluate(() => { window.__fake.mode = 'hold'; });
+  await sign.click();
+  ok(/Signing/.test(await sign.textContent()) && await sign.getAttribute('aria-busy') === 'true', 'held sign-off says Signing on the pressed button');
+  const pendingBox = await sign.boundingBox();
+  ok(Math.abs(readyBox.width - pendingBox.width) < 1 && readyBox.height === pendingBox.height, 'the Sign button keeps its size while pending');
+  ok(await sign.isDisabled() && await p.locator('.mn-sign.is-done').count() === 0, 'held sign-off cannot be repeated or look signed');
+  await sign.evaluate(el => el.click());
+  ok(await p.evaluate(path => window.__fake.writes.flat().filter(w => w.path === path).length, signPath) === 1, 'a repeat tap does not submit another sign-off');
+  await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
+  await L.waitFor(p, () => !!document.querySelector('.mn-sign.is-done'));
+  ok(!!(await p.evaluate(k => window.__fake.dump()[k], signPath)), 'one tap signs them after acknowledgement');
   ok(await jump.count() === 0, 'the jump is gone after sign-off is acknowledged');
   await p.context().close();
 
@@ -78,18 +88,50 @@ const mins = (no, date, decisions, x) => Object.assign({ no, v: 1, status: 'publ
   // Ann's own sign-off cannot be read (27 Oct 2026: from 26 Oct the rules refused it, so nobody could sign; no signal does
   // the same, and the phone handles both alike). The sign box says it could not check, not "Checking your sign-off..."
   // for ever, and the phone does not ask again on every redraw (it waits 5 minutes). A read lost to the signal stands in.
-  const one = {}; one[fsKey(['minutes', 'mone'])] = mins(5, ago(1), 'Gloves at the pass');
+  const one = {};
+  one[fsKey(['minutes', 'mone'])] = mins(5, ago(1), 'Gloves at the pass', { v: 2 });
+  one[fsKey(['minutes', 'mone', 'signs', '1_ann'])] = { v: 1, st: 'present', at: L.NOW - 3600000, name: 'Ann', by: 'ann' };
+  one[fsKey(['minutes', 'mearlier'])] = mins(4, ago(2), 'Fryer checklist');
   p = await L.open(b, '#/minutes', { who: 'ann', extra: one, wait: 1800, failReads: '/minutes/[^/]+/signs/' });
   await L.waitFor(p, () => /Could not check/.test((document.querySelector('.mn-sign') || {}).textContent || ''), null, 5000).catch(() => {});
-  ok(/Could not check your sign-off\. Open the minutes again in a few minutes\./.test(await txt(p, '.mn-sign') || ''), 'own sign-off not read: the sign box says it could not check and what to do (' + await txt(p, '.mn-sign') + ')');
+  const retry = p.locator('.mn-sign').getByRole('button', { name: 'Try again' });
+  ok(/Could not check your sign-off/.test(await txt(p, '.mn-sign') || '') && await retry.count() === 1, 'own sign-off not read: the sign box says it could not check and gives Try again');
+  ok(await p.locator('.mn-signbtn, .mn-sign.is-done').count() === 0, 'own sign-off not read: no Sign or Signed before a confirmed check');
   ok(await p.locator('[data-p="mn-sign-jump"]').count() === 0, 'own sign-off not read: the document has no jump to an unavailable action');
   for (const h of ['#/prep', '#/minutes', '#/prep', '#/minutes']) { await p.evaluate(x => { location.hash = x; }, h); await L.settle(p, 400); }
   const asked = await p.evaluate(() => window.__fake.reads.filter(k => /\/minutes\/mone\/signs\//.test(k)).length);
   ok(asked === 1, 'own sign-off not read: asked once, not again on every redraw (' + asked + ')');
-  // the signal is back: once the 5 minutes are up, opening the minutes again asks again and the Sign button comes
+  if (await retry.count()) {
+    const place = await p.evaluate(() => [location.hash, history.length]);
+    const ownRead = fsKey(['minutes', 'mone', 'signs', '2_ann']);
+    const otherRead = fsKey(['minutes', 'mearlier', 'signs', '1_ann']);
+    await retry.evaluate(el => { el.click(); el.click(); });
+    await L.waitFor(p, () => !!document.querySelector('.mn-sign .p-readerr'));
+    const calls = async () => p.evaluate(() => window.__fake.reads.filter(k => /\/minutes\/[^/]+\/signs\//.test(k)));
+    let reads = await calls();
+    ok(reads.filter(k => k === ownRead).length === 2 && reads.filter(k => k === otherRead).length === 1 && reads.length === 3, 'Try again checks just this version and signer once, even if the retry fails');
+    await p.evaluate(() => { window.__fake.failReads = /\/minutes\/mearlier\/signs\//; });
+    await retry.click();
+    await L.waitFor(p, () => !!document.querySelector('.mn-signbtn:not([disabled])'));
+    reads = await calls();
+    ok(reads.filter(k => k === ownRead).length === 3 && reads.length === 4, 'an in-place recovery reads only the current sign-off');
+    ok(/Gloves at the pass/.test(await txt(p, '.mn-doc')) && JSON.stringify(await p.evaluate(() => [location.hash, history.length])) === JSON.stringify(place), 'Try again keeps the same minutes and browser history');
+    ok(/version 2/.test(await txt(p, '.mn-sign')) && await p.evaluate(() => !window.__fake.writes.flat().some(w => /\/minutes\/[^/]+\/signs\//.test(w.path))), 'the successful read offers Sign for version 2 without signing it');
+    const signed = { v: 2, st: 'present', at: L.NOW - 60000, name: 'Ann', by: 'ann' };
+    await p.evaluate(([path, prior]) => {
+      window.__fake.write(path, prior);
+      window.__fake.deny = /\/minutes\/mone\/signs\/2_ann$/;
+    }, [ownRead, signed]);
+    await p.click('.mn-signbtn');
+    await L.waitFor(p, () => !!document.querySelector('.mn-sign.is-done'));
+    const kept = await p.evaluate(path => window.__fake.dump()[path], ownRead);
+    ok(kept.at === signed.at && /Version 2/.test(await txt(p, '.mn-sign')), 'a refused duplicate sign-off shows the existing version 2 signature without replacing it');
+  }
+  // the earlier minutes still recover through the existing timed refresh after the signal comes back
   await p.evaluate(() => { window.__fake.failReads = null; });
   await p.clock.fastForward('06:00');
   for (const h of ['#/prep', '#/minutes']) { await p.evaluate(x => { location.hash = x; }, h); await L.settle(p, 400); }
+  await p.click('[data-p="mn-pickdoc"][data-id="mearlier"]');
   await L.waitFor(p, () => !!document.querySelector('.mn-signbtn'), null, 5000).catch(() => {});
   ok(await p.$('.mn-signbtn:not([disabled])') !== null, 'own sign-off not read: opened again after the wait, the Sign button is there (' + await txt(p, '.mn-sign') + ')');
   ok(p.errors.length === 0, 'own sign-off not read: no page errors ' + p.errors.join(' | '));
@@ -138,4 +180,4 @@ const mins = (no, date, decisions, x) => Object.assign({ no, v: 1, status: 'publ
 
   await b.close();
   L.report(R);
-})();
+})().catch(e => { console.error(e); process.exit(1); });

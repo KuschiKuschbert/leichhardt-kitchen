@@ -120,6 +120,12 @@ The fixed two-way groups are transfer direction, Insights Lines written/Rolled o
 
 This is an explicit list of fixed choices. A changing list does not become a two-way control merely because it happens to contain two entries. Settings view previews, device privacy choices, guarded allergen edits, independent permission switches, multiselects and command buttons retain their existing interactions. The change adds no Firestore reads, writes, saved fields, permissions or dependencies. Reverting it restores the pickers without changing saved data.
 
+### Transfers sheet width, 23 November 2026
+
+The invisible two-way measurement sits beyond the sheet's inline scroll edge. It keeps its full label widths so the existing font and resize checks can still choose the right control.
+
+In the 320 px Extra large Chromium fixture with the book's fonts, the earlier sheet could scroll sideways by 71 px and move the Venue field off screen. The repaired sheet has zero sideways travel and measures the same 389 px of labels. The browser regression checks the inside of the sheet at 320 and 390 px as well as the page, and exercises both rendered choices, their keyboard behavior and the saved transfer.
+
 ### Quick space audit
 
 The main avoidable step was hiding short, fixed choices behind a picker. The direct units and fitting two-way groups above address that without reducing type or touch targets. The implementation was measured at 320, 390, 568, 768 and 1280 px with Normal, Large and Extra large text, using both the book's fonts and fallback fonts. All six transfer units need two or three rows at 320 px, two rows at 390 px and one row from 568 px. Wastage needs two rows at 320 px, one or two at 390 px and one row from 568 px. All 60 form contexts retained 44 px targets without document overflow. These checks use synthetic kitchen fixtures, not production device observations.
