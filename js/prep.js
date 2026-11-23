@@ -12925,10 +12925,9 @@ if (list.length) sg('oreg', 's');
     var head = '<div class="hm-bh"><h3 class="hm-bt" id="hm-board-h">Now and next</h3><b class="hm-clock">' + esc(T.clock(now())) + '</b></div>';
     // before the kitchen's settings are in, nothing is known yet: never "Nothing due"
     if (S.configState !== 'ok') return head + '<p class="hm-none">' + (offWait() ? esc(OFF_KITCHEN) : 'Checking the day...') + '</p>';
-    var rows = homeRows(), fs = window.LK_FN && window.LK_FN.state ? window.LK_FN.state() : null;
-    var warn = fs && fs.state === 'error' && !fs.at ? '<p class="hm-warn" role="status">Could not check the functions. Check the signal.</p>' : '';
-    if (!rows.length && !warn && (!fs || fs.state === 'ok')) return '';
-    return head + (rows.length ? '<ul class="hm-rows">' + rows.map(homeRowHTML).join('') + '</ul>' : '<p class="hm-none">Checking the work...</p>') + warn;
+    var rows = homeRows(), status = window.LK_FN && window.LK_FN.homeReadHTML ? window.LK_FN.homeReadHTML(!!rows.length) : '';
+    if (!rows.length && !status) return '';
+    return head + (rows.length ? '<ul class="hm-rows">' + rows.map(homeRowHTML).join('') + '</ul>' : '') + status;
   }
   // today's prep by section: a bar each, as on the list's section headings; only once today's lines are in from the server
   function homePrepHTML() {
