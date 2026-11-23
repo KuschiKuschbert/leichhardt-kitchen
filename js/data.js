@@ -2715,20 +2715,22 @@ window.LK_DATA = {
     },
     {
       id: 'tartare', done: true, no: '82', kind: 'batch', forLine: 'For the fish dishes', name: 'Tartare Sauce', short: 'Tartare sauce', art: 'tartare',
-      yield: 'Batch: based on 1 L mayonnaise.',
+      yield: 'Batch: 10 L finished.',
       ingredients: [
-        { q: '1 L', name: 'Mayonnaise', tags: ['Egg', 'Soy?'] },
-        { q: '200 g', name: 'Pickles', note: 'Finely chopped', none: true },
-        { q: '100 g', name: 'Capers', note: 'Finely chopped', none: true },
-        { q: '100 g', name: 'Red onions', note: 'Finely chopped', none: true },
-        { q: '50 g', name: 'Fresh parsley', note: 'Finely chopped', none: true },
-        { q: '30 ml', name: 'Lemon juice', none: true },
+        { q: '6.75 L', name: 'Mayonnaise', note: 'Have extra on hand if needed to reach 10 L', tags: ['Egg', 'Soy?'] },
+        { q: '1.35 kg', name: 'Pickles', note: 'Finely chopped', none: true },
+        { q: '700 g', name: 'Capers', note: 'Finely chopped', none: true },
+        { q: '700 g', name: 'Red onions', note: 'Finely chopped', none: true },
+        { q: '350 g', name: 'Fresh parsley', note: 'Finely chopped', none: true },
+        { q: '200 ml', name: 'Lemon juice', none: true },
         { q: '', name: 'Salt and pepper', note: 'To taste', none: true }
       ],
       sections: [
         { title: 'Method', steps: [
           'Use a stick blender to blitz the pickles, lemon juice, capers, red onions and parsley into a paste.',
-          'Mix the paste into the mayonnaise. Season with salt and pepper to taste.'
+          'Mix the paste into 6.5 L of the mayonnaise.',
+          'Measure the sauce and add mayonnaise as needed to bring it to 10 L. Season with salt and pepper to taste.',
+          'Record the total mayonnaise used for the next batch.'
         ] }
       ],
       labelNote: 'Check the mayonnaise, pickle and caper labels.'
