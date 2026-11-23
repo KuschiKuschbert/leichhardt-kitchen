@@ -7487,6 +7487,11 @@
         (loading.length ? ' Loading ' + esc(loading.join(', ').toLowerCase()) + '.' : '') : 'All shown: deliveries, cleaning and cooling.' + (c ? '' : ' Cleaning: count not ready.')) + '</p>' +
         (recCool(r.fs.cool) && recCool(r.fs.cool).line ? '<p class="rec-line">' + esc(recCool(r.fs.cool).line) + '</p>' : '');
     var fails = bad.map(function (b) { return '<div class="rec-bad" role="alert"><span>' + esc(b) + ' could not load. ' + esc(b) + ' may have records that are not shown.</span><button type="button" class="chip" data-p="rec-retry">Try again</button></div>'; }).join('');
+    var outputStatus = '';
+    if (wait) {
+      outputStatus = REC.state === 'error' ? '<div class="rec-bad" role="alert"><span>' + esc(wait) +
+        '</span><button type="button" class="chip" data-p="rec-refresh">Refresh</button></div>' : '<p class="rec-line hint" role="status">' + esc(wait) + '</p>';
+    }
     var extra = '';
     if (all) {
       var t = recPart(day, 't'), a = recPart(day, 'a'), lines = [];
@@ -7509,7 +7514,7 @@
       '<button type="button" class="chip" data-p="rec-day" data-d="' + next + '"' + (next > y ? ' disabled' : '') + '>' + esc(recShort(next)) + ' ›</button>' +
       '<button type="button" class="chip" data-p="rec-print" data-v="day"' + disabled + '>Print this day</button><button type="button" class="chip" data-p="rec-csv" data-v="day"' + disabled + '>Export CSV</button></div></div>' +
       '<div class="chiprow" role="group" aria-label="Show"><button type="button" class="chip" data-p="rec-show" data-v="fs" aria-pressed="' + !all + '">Food safety</button><button type="button" class="chip" data-p="rec-show" data-v="all" aria-pressed="' + all + '">Everything</button></div>' +
-      status + fails + (wait ? '<p class="rec-line hint" role="status">' + esc(wait) + '</p>' : '') + extra +
+      status + fails + outputStatus + extra +
       (ev.length ? '<ol class="rec-tl">' + ev.map(function (e) { return '<li><time>' + esc(e[0]) + '</time><span class="rec-k">' + esc(e[1]) + '</span><span>' + esc(e[2]) + '</span></li>'; }).join('') + '</ol>' : empty ? '<p class="rec-line">' + esc(empty) + '</p>' : '') +
       (counted ? '<div class="rec-clean"><p class="rec-line"><b>' + esc(cl[0]) + '</b></p>' + cl.slice(1).map(function (l) { return '<p class="rec-line' + (/^Missed/.test(l) ? ' rec-adv' : '') + '">' + esc(l) + '</p>'; }).join('') + '</div>' : '') +
       '<p class="hint">' + esc(REC_COOL) + ' Temperatures as recorded: the book sets no limits until the head chef confirms them.</p></div>';

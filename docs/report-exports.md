@@ -4,7 +4,7 @@ All Download CSV actions use the shared `csvCell()` and `downloadCSV()` boundary
 
 ## Incomplete reports
 
-- Records shows confirmed empty sections only. For a day in Everything, Print this day and Export CSV become available after the nightly count and all sections load. Try again rereads the failed sections for the selected day. Food safety day and month outputs still use the nightly record.
+- Records shows confirmed empty sections only. For a day in Everything, Print this day and Export CSV become available after the nightly count and all sections load. Try again rereads failed sections. Refresh in the day view rereads a nightly record that failed to load. Both keep the selected day. Food safety day and month outputs still use the nightly record.
 - Transfers labels counts based on days that loaded. Download CSV becomes available after the selected dates and earlier outstanding transfers load. A saved date copy is reused after a confirmed read on the same kitchen day. Refresh retries the report and keeps the selected period and venue.
 
 ## Cell contract

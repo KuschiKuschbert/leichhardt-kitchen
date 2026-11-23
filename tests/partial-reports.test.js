@@ -72,6 +72,27 @@ async function waitForTransfers(p) {
     return s.atab === 'transfers' && s.xStats && !s.xStats.loading;
   });
 }
+async function retryNightlyFromDay(p) {
+  const heading = await p.locator('.rec-dt').innerText();
+  await p.locator('.rec-back').click();
+  await p.evaluate(date => {
+    __fake.failReads = /\/analysis\/dashboard$/;
+    // Open the day while a month refresh is pending, before its failure can land.
+    document.querySelector('.rec-month [data-p="rec-refresh"]').click();
+    document.querySelector('.rec-dayrow[data-d="' + date + '"]').click();
+  }, selected);
+  await L.settle(p, 300);
+  const refresh = p.locator('.rec-dayv [data-p="rec-refresh"]');
+  ok(await refresh.isVisible() && await p.locator(recCSV).isDisabled() && await p.locator(recPrint).isDisabled(),
+    '390 Records offers Refresh in the open day when the nightly read fails');
+  if (!await refresh.isVisible()) return;
+  await p.evaluate(() => { __fake.failReads = null; });
+  await refresh.click();
+  await L.waitFor(p, () => !!document.querySelector('.rec-dayv [data-p="rec-csv"]:not([disabled])'));
+  ok(await p.locator('.rec-dt').innerText() === heading &&
+    await p.locator('[data-p="rec-show"][data-v="all"]').getAttribute('aria-pressed') === 'true' &&
+    /Lemon sample/.test(await p.locator('.rec-dayv').innerText()), '390 nightly Refresh recovers Everything on the same day');
+}
 async function records(b, width) {
   const p = await L.open(b, '#/admin', { admin: true, extra, width, denyReads: path(selected) });
   try {
@@ -105,6 +126,7 @@ async function records(b, width) {
     await p.locator(recPrint).click();
     const printed = await p.evaluate(() => { window.dispatchEvent(new Event('afterprint')); return window.__printed; });
     ok(/Kitchen records/.test(printed) && /Lemon sample/.test(printed), width + ' recovered print includes the same transfer');
+    if (width === 390) await retryNightlyFromDay(p);
     ok(JSON.stringify(saved) === JSON.stringify(await p.evaluate(() => __fake.dump())) && await L.overflow(p) <= 0 && !p.errors.length,
       width + ' Records fits without sideways scrolling or changing saved data');
   } finally { await p.context().close(); }
