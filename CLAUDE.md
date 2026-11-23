@@ -79,6 +79,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Sunday sales suggestions in Supplier order | `docs/supplier-sales.md` (chosen mix, private report and links, release checks) |
 | Supplier order desktop rail and direct Order history | `docs/supplier-order-rail-options/brief.md` (A chosen, responsive fallback and verification) |
 | Wastage history, entries first (A, built 22 November 2026) and CSV reports | `docs/wastage-history.md`, `docs/report-exports.md` |
+| Reopen a Wastage draft after Brisbane midnight (B, chosen 23 November 2026) | `docs/wastage-overnight-options/brief.md` |
 | Transfer storage and returns | `docs/transfer-returns.md` (publish rules from the feature branch first: it indexes loans) |
 | Function sent, lines off: once the last round is ticked Sent, the function's open prep and order lines (and lines added for it) leave the lists; the 03:00 job removes them | `docs/fn-sent-tidy-options/brief.md` (the mix chosen and built), `docs/code-contracts.md` (Functions) |
 | What a function's platters need, on its Orders line (the mix chosen and built 18 Nov 2026; one sum shared with Prep, `M.platterNeeds()`) | `docs/fn-order-ingredients-options/brief.md`, `docs/code-contracts.md` (Functions) |
