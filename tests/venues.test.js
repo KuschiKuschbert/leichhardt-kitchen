@@ -143,9 +143,10 @@ function registry(extra) {
   try {
     for (const width of [390, 768, 1280]) {
       const p = await L.open(b, '#/', { base, width, noPin: true, who: '', wait: 1500 });
-      const seen = await p.evaluate(() => ({ project: (window.LK_FIREBASE || {}).projectId, eyebrow: (document.querySelector('.rb-eb') || {}).textContent || '', title: document.title, recipes: (window.LK_DATA || {}).recipes.length, body: document.body.innerText }));
+      const seen = await p.evaluate(() => ({ project: (window.LK_FIREBASE || {}).projectId, eyebrow: (document.querySelector('.rb-eb') || {}).textContent || '', venue: (document.querySelector('.rb-venue') || {}).textContent || '', venueShown: !!document.querySelector('.rb-venue') && document.querySelector('.rb-venue').getBoundingClientRect().width > 0, home: (document.querySelector('.wtop-brand') || { getAttribute: () => '' }).getAttribute('aria-label'), title: document.title, recipes: (window.LK_DATA || {}).recipes.length, body: document.body.innerText }));
       ok(seen.project === 'demo-venue-kb', width + ' px: the copy talks to its own project only');
       ok(seen.eyebrow === 'Seaside Hotel Kitchen' && /Seaside/.test(seen.title) && !/Leichhardt/i.test(seen.body), width + ' px: the top bar says Seaside Hotel Kitchen, nothing says Leichhardt (' + seen.eyebrow + ' | ' + seen.title + ')');
+      ok(seen.venue === 'Seaside' && seen.venueShown === (width < 720) && seen.home === 'Kitchen Book, Seaside, home', width + ' px: the phone shows Seaside under the KB mark, and the home link says it (' + seen.venue + ')');
       ok(seen.recipes === 0, width + ' px: no recipes in the book');
       ok(!(await L.overflow(p)), width + ' px: no sideways scroll ' + (await L.overflow(p) || ''));
       await p.evaluate(() => { location.hash = '#/recipes'; }); await L.settle(p, 800);

@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## The venue name under the KB mark on a phone, 24 November 2026 (chosen and built)
+
+Below 720 px the top bar showed only the KB mark. Three looks were drawn at 360 px (beside, under, in place of the mark); only under fits both Leichhardt and Strand beside Back and every ring, and the head chef chose it for every venue. `.rb-venue` in `js/app.js` and `css/app.css`, `tests/venue-name.test.js`, the venue copy check in `tests/venues.test.js`. [Quick check and measurements](second-venue-options/brief.md#the-venue-name-on-a-phone-chosen-24-november-2026).
+
 ## The reading map in CLAUDE.md grouped by area, 24 November 2026
 
 The owner asked for `CLAUDE.md` to be kept short. Its reading map had grown to 86 rows with dates and design detail, against its own rule (one short row, the detail here). The rows are now grouped by area, about 30 of them, and keep every note's path; the dates and the designs chosen stay in the sections below. The file went from 47 to 39 KB. A new note joins its area's row.
