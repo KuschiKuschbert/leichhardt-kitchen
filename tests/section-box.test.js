@@ -44,8 +44,14 @@ const box = p => p.inputValue('#p-section');
   ok(await box(p) === '' && !(await chips()).some(c => c.endsWith('*')), 'chips: a tap on the lit chip clears it');
   await add(p, 'Wash leeks');
   ok(await stationOf(p, 'Wash leeks') !== 'Grill', 'chips: cleared, the next line no longer goes under Grill (' + await stationOf(p, 'Wash leeks') + ')');
+  // The mouse still rests where Grill was tapped, and a chip under it sits 1 px up (its hover). After a resize the chip
+  // is no longer under it and eases back down over 0.18 s. Read halfway, inside the sheet centred on a wide screen, it
+  // measured 43.99997 px on a busy machine (23 Nov 2026). So the mouse moves to the dimmed corner (no control there at
+  // any width), and each size is read once no chip is moving.
+  const chipsStill = () => L.waitFor(p, () => !document.getAnimations().some(a => a.playState === 'running' && a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('#prep-root .sec-chips')), null, 3000);
+  await p.mouse.move(1, 1); await chipsStill();
   for (const w of [390, 768, 1280]) {
-    await p.setViewportSize({ width: w, height: w > 400 ? 900 : 844 }); await L.settle(p, 200);
+    await p.setViewportSize({ width: w, height: w > 400 ? 900 : 844 }); await L.settle(p, 200); await chipsStill();
     ok(!(await L.overflow(p)) && await p.evaluate(() => [...document.querySelectorAll('#prep-root .sec-chips .chip')].every(c => c.getBoundingClientRect().height >= 44)), w + ' px: the chips are 44 px tall and nothing scrolls sideways');
   }
   ok(p.errors.length === 0, 'no page errors ' + p.errors.join(' | '));
