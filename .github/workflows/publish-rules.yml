@@ -55,7 +55,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
-          fetch-depth: 2
+          fetch-depth: 0
+          filter: blob:none
       - id: access
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -63,6 +64,7 @@ jobs:
           REPO: ${{ github.repository }}
           FROM: ${{ github.event.workflow_run.name }}
           RUN_ID: ${{ github.event.workflow_run.id }}
+          TRIGGER: ${{ github.event.workflow_run.event }}
         run: |
           # After Publish site (13 Nov 2026, docs/site-publishing.md): only once its Published job ran, so the site is up to
           # date with this commit. It runs also when nothing needed publishing (a change to the rules alone), and not while
@@ -70,6 +72,28 @@ jobs:
           if [ "$EVENT_NAME" = workflow_run ] && [ "$FROM" = "Publish site" ]; then
             ran=$(gh api "repos/$REPO/actions/runs/$RUN_ID/jobs" --jq '[.jobs[] | select(.name == "Published" and .conclusion == "success")] | length' 2>/dev/null || echo 1)
             if [ "$ran" = 0 ]; then echo "publish=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+            # Publish times (24 Nov 2026): a change to the site can wait for a publish window, and its rules wait with it
+            # (Published does not run while it is held). When the site goes out, every rules change since the version
+            # that was live before it goes out too, not only the last commit's.
+            deployed=$(gh api "repos/$REPO/actions/runs/$RUN_ID/jobs" --jq '[.jobs[] | select(.name == "Deploy" and .conclusion == "success")] | length' 2>/dev/null || echo 0)
+            if [ "$deployed" != 0 ]; then
+              head=$(git rev-parse HEAD); before=""
+              for pair in $(gh api "repos/$REPO/deployments?environment=github-pages&per_page=30" --jq '.[] | "\(.id):\(.sha)"' 2>/dev/null || true); do
+                [ "${pair#*:}" = "$head" ] && continue
+                if [ "$(gh api "repos/$REPO/deployments/${pair%%:*}/statuses?per_page=30" --jq '[.[].state] | index("success") != null' 2>/dev/null || true)" = true ]; then before=${pair#*:}; break; fi
+              done
+              if [ -z "$before" ] || ! git cat-file -e "$before^{commit}" 2>/dev/null; then
+                echo "The version live before this one is not known: publishing the rules rather than miss a change."; echo "publish=true" >> "$GITHUB_OUTPUT"; exit 0
+              fi
+              if git diff --no-renames --name-only "$before" HEAD | grep -Eq '^(firestore.rules|scripts/access-bootstrap.mjs|scripts/ping-index.mjs|.github/workflows/publish-rules.yml)$'; then
+                echo "The rules changed since ${before:0:7}, the version live before: publishing them after their code."; echo "publish=true" >> "$GITHUB_OUTPUT"
+              else
+                echo "publish=false" >> "$GITHUB_OUTPUT"
+              fi
+              exit 0
+            fi
+            # a timed publish run with nothing to publish brings no rules (it would publish the last commit's again)
+            if [ "$TRIGGER" = schedule ]; then echo "publish=false" >> "$GITHUB_OUTPUT"; exit 0; fi
           fi
           if [ "$EVENT_NAME" = workflow_dispatch ] || git diff-tree --no-commit-id --name-only -r HEAD | grep -Eq '^(firestore.rules|scripts/access-bootstrap.mjs|scripts/ping-index.mjs|.github/workflows/publish-rules.yml)$'; then
             echo "publish=true" >> "$GITHUB_OUTPUT"
