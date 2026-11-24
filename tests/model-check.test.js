@@ -31,7 +31,7 @@ const R = [], ok = (c, m) => R.push((c ? 'PASS ' : 'FAIL ') + m);
   // wired up, and in the house style
   const hooks = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '.claude', 'settings.json'), 'utf8')).hooks.SessionStart;
   ok(JSON.stringify(hooks).includes('scripts/model-check.mjs'), 'the SessionStart hook runs the check');
-  ok(!/—/.test(fs.readFileSync(script, 'utf8')), 'no em dashes in the script');
+  ok(!/\u2014/.test(fs.readFileSync(script, 'utf8')), 'no em dashes in the script');
 
   R.forEach(x => console.log(x));
   const n = R.filter(x => x.startsWith('FAIL')).length;
