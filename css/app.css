@@ -759,7 +759,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .pp-name-toggle .pp-n { font-weight: 700; text-decoration: underline; }
 .pp-can { grid-column: 2; color: var(--muted); font-size: .875rem; overflow-wrap: anywhere; }
 .pp-st { color: var(--accent-ink); font-size: .84rem; font-weight: 700; overflow-wrap: anywhere; }
-.pp-st.is-off { color: var(--muted); }
+.pp-st.is-off, .pp-st.is-lock { color: var(--muted); }
 .pp-st.is-bad { color: var(--bad-ink); }
 .pp-row.is-off .pp-n, .pp-row.is-gone .pp-n { color: var(--muted); }
 .pp-row.is-gone .pp-n { text-decoration: line-through; }
@@ -871,6 +871,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .wtop { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 92px; padding: 0.75rem 1rem; background: var(--bar); box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25); }
 .wtop-brand { display: flex; align-items: center; gap: 0.7rem; line-height: 1; color: var(--bar-text); text-decoration: none; }
 .rb-text { display: flex; flex-direction: column; }
+.rb-venue { display: none; }
 .rb-mark { flex: 0 0 auto; width: 56px; height: 49px; }
 .wtop-brand .rb-eb { font: 700 0.75rem var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--bar-accent); }
 .wtop-brand b { margin-top: 4px; font: 700 2.1rem var(--display); }
@@ -3263,6 +3264,11 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
   .wtop-start .wtop-brand { flex: 0 0 44px; min-height: 44px; }
   .wtop-brand .rb-text { display: none; }
   .wtop-brand .rb-mark { width: 44px; height: 39px; }
+  /* The venue's name under the KB mark (head chef, 24 Nov 2026, docs/second-venue-options/brief.md): a cook can see
+     which kitchen's book this is. The venue's copy of the book says its own name (scripts/venue-site.cjs). */
+  .wtop-start .wtop-brand:has(.rb-venue) { flex: 0 0 auto; flex-direction: column; justify-content: center; gap: 2px; margin-right: 6px; }
+  .wtop-brand:has(.rb-venue) .rb-mark { width: 40px; height: 30px; }
+  .wtop-brand .rb-venue { display: block; font: 700 0.6875rem/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; color: var(--bar-accent); }
   /* A shared screen's compact name yields to the logo, Back and 44 px controls, including enlarged text. */
   .wtop:has(.wtop-who.is-shared) .wtop-start { flex: none; }
   .wtop:has(.wtop-who.is-shared) .wtop-icons { flex: 0 1 auto; min-width: 0; }

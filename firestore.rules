@@ -299,6 +299,13 @@ service cloud.firestore {
       allow get: if isAdmin() || ownerIdentity() || platformIdentity();
       allow list, write: if isAdmin();
     }
+    // The platform owner's own profile id at this venue (24 Nov 2026, docs/venues.md): { id }, written only by the server
+    // (scripts/access-bootstrap.mjs) and missing where the owner is the platform owner. His Google reads it to know it is
+    // his; a live admin (either) reads it to lock his profile on the People page. The venue owner's Google alone cannot.
+    match /kitchens/KITCHEN_PIN/config/platform {
+      allow get: if platformIdentity() || isAdmin();
+      allow list, write: if false;
+    }
     // Roster name links (head chef, 14 Nov 2026; docs/roster-import-options/brief.md): which person in the book a name
     // on the Humanforce roster is, for nicknames. Only the head chef's admin device reads or writes it; no kitchen device
     // reads it. One small list of at most 80 links, each checked by the admin panel before it is sent.

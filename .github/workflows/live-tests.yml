@@ -18,9 +18,9 @@ permissions:
   contents: read
   actions: read
 
-concurrency:
-  group: live-tests
-  cancel-in-progress: true
+# A newer run that tests replaces an older one, job by job (24 Nov 2026). The cancelling sits on the test jobs, not
+# the whole workflow: a merge that publishes nothing still starts a run here, and at workflow level that run cancelled
+# the live tests of the merge before it, then skipped its own (#851's tests, cancelled by #850's and #849's runs).
 
 jobs:
   gate:
@@ -47,6 +47,9 @@ jobs:
   test:
     needs: gate
     if: needs.gate.outputs.run == 'true'
+    concurrency:
+      group: live-tests-${{ matrix.shard }}
+      cancel-in-progress: true
     # Five shares on five runners at once, like the pull request check (3 Nov 2026, five since 4 Nov): one runner took 24 minutes of
     # its 30. A failed file runs once more on its own (a warning if it then passes); failures are in the summary.
     name: Live ${{ matrix.shard }} of 5
@@ -87,6 +90,9 @@ jobs:
   venues:
     needs: gate
     if: needs.gate.outputs.run == 'true'
+    concurrency:
+      group: live-tests-venues
+      cancel-in-progress: true
     name: Venue copies
     runs-on: ubuntu-latest
     timeout-minutes: 5

@@ -189,6 +189,14 @@ jobs([['Check', 'success'], ['Deploy', 'skipped'], ['Published', 'success']]);
 eq(run(look, { EVENT: 'workflow_run', FROM: 'Publish site', RUN_ID: '7' }).run, 'false', 'live tests: not when nothing was published');
 clearAnswers();
 eq(run(look, { EVENT: 'workflow_run', FROM: 'Publish site', RUN_ID: '7' }).run, 'true', 'live tests: GitHub not answering runs them anyway');
+// A run that skips never cancels one that tests (24 Nov 2026): the cancelling sits on the test jobs, which a skipping
+// run never starts. At workflow level, #850's and #849's runs (nothing published) cancelled #851's live tests.
+const liveWf = wf('live-tests.yml');
+const jobBlock = name => { const m = new RegExp('^  ' + name + ':\\n([\\s\\S]*?)(?=^  [\\w-]+:\\n|(?![\\s\\S]))', 'm').exec(liveWf); return m ? m[1] : ''; };
+ok(!/^concurrency:/m.test(liveWf), 'live tests: no cancelling for the whole workflow, where a run that skips would cancel one that tests');
+ok(!/^    concurrency:/m.test(jobBlock('gate')), 'live tests: the publish look itself cancels nothing');
+ok(/^    concurrency:\n      group: live-tests-\$\{\{ matrix\.shard \}\}\n      cancel-in-progress: true$/m.test(jobBlock('test')), 'live tests: a newer run that tests replaces the older one share by share');
+ok(/^    concurrency:\n      group: live-tests-venues\n      cancel-in-progress: true$/m.test(jobBlock('venues')), 'live tests: and the venue copies check the same way');
 
 // 5. Publish rules waits for Published, which also runs when nothing needed publishing
 const access = stepScript(wf('publish-rules.yml'), 'access');

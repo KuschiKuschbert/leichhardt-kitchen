@@ -357,7 +357,7 @@
             if (S.grantTask) S.grantTask.then(function () { return rawFs.deleteDoc(grantRef); }, function () {}).catch(function () {});
           }
           S.user = u && !u.isAnonymous ? u : null;
-          S.level = ''; S.grantExp = 0; S.ownerVerified = false; S.adminsFor = ''; S.adminsOff = null; admMark(false);
+          S.level = ''; S.grantExp = 0; S.ownerVerified = false; S.adminsFor = ''; S.adminsOff = null; S.platformSt = ''; admMark(false);
           if (S.user && shared() && (S.privacyLocked || idleExpired())) { if (!S.privacyLocked) privacyLock('idle'); else dropGoogle().catch(function () {}); draw(); return; }
           if (S.user && deviceReady()) startIdle();
           ownerPersistence(); featSync(); loadAdmins(); draw();
@@ -440,6 +440,9 @@
         if (S.configState === 'badpin') { S.pinError = 'That PIN is not right.'; S.pin = ''; lsSet('lk.prep.pin', ''); cfgKey = ''; unsubCfg = null; gForget(); }
         draw();
       });
+      // today's list (and the page's own list) asks with the settings, not after them (listsMay(), 24 Nov 2026); the
+      // settings' answer calls these again and they keep the listener they already have
+      if (full && kitchenAccess()) { watchItems(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); if (S.name === 'transfers') watchXfer(); }
     }, function () { S.configState = 'error'; draw(); });
   }
   /* An answer from the copy in memory (no signal), not from the server. Since 26 Oct 2026 (#387) that copy holds only
@@ -708,9 +711,17 @@
   // The prep list's last answer came from memory, not the server: the browser can say it is online while the list is
   // out of touch (the wifi up, the internet down). The finished words on a wide screen give way then (finFit()).
   var itemsCold = false;
+  /* May the live lists (prep, orders, wastage, transfers) start? Once the kitchen's settings are in, as before, or
+     (24 Nov 2026) as soon as they are being read for a person the roster lets into the kitchen pages: the list's answer
+     then comes with the settings, not one server answer after them (0.93 s to 0.64 s from the Loading card on a slowed
+     test phone with 300 ms answers, docs/loading-motion.md). The rules check the same session for both reads, and the page still shows Loading until the settings are
+     in (bodyHTML()), so nothing is seen sooner than before. */
+  function listsMay() {
+    if (!kitchenAccess() || !fb) return false;
+    return S.configFull && S.configState === 'ok' || S.configState === 'loading' && cfgKey === S.pin + '|kitchen' && !!unsubCfg;
+  }
   function watchItems() {
-    if (!kitchenAccess() || !S.configFull) return;
-    if (S.configState !== 'ok' || !fb) return;
+    if (!listsMay()) return;
     var key = S.pin + '|' + S.date;
     if (key === itemsKey && unsubItems) return;
     if (unsubItems) unsubItems();
@@ -908,6 +919,7 @@
   function dropGoogle() {
     if (!S.user || !fb) return Promise.resolve();
     S.level = ''; S.adminsFor = ''; S.adminsOff = null; admMark(false); S.user = null;
+    S.platformFor = ''; S.platformMe = ''; S.platformSt = ''; lsSet('lk.platform', '');
     lsSet('lk.auth.lock', String(Date.now()) + ':' + Math.random().toString(36).slice(2));
     // Local Google sign-out cannot wait for a network acknowledgement. The stable primary identity owns this
     // revocation, so its queued delete can still finish after the secondary account is gone.
@@ -951,7 +963,28 @@
      whoever picked it up (20 Oct 2026). The head chef's tools (Admin link and panel, reports, editing guides, minutes and
      pings, kitchen mail) now show only while a chef (head chef or sous chef) is the person signed in on this device, or,
      on a personal device (not ticked "Shared kitchen device"), while nobody is. Staff signed in get their own view. */
-  function ownerHere() { return deviceReady() && !S.privacyLocked && !!S.user && S.authed && whoHead() && canW() && S.grantExp > now(); }
+  function ownerHere() { return deviceReady() && !S.privacyLocked && !!S.user && S.authed && whoAdmin() && canW() && S.grantExp > now(); }
+  /* Two admins at a second venue (24 Nov 2026, docs/venues.md). The admin person on this device is the head chef
+     (headId) or the platform owner's own profile there. This Google account is the platform owner here only once it
+     has read config/platform from the server itself (loadAdmins(), platformSet()). A kitchen whose owner is also the
+     platform owner has no such record, so everything below goes by headId as before. */
+  function platformMine() { return S.user && S.platformFor === S.pin + '|' + S.user.uid ? S.platformMe || '' : ''; }
+  /* The same before this page has asked: the last server answer kept on this device (lk.platform, "<Google uid>|<id>"),
+     so a reload keeps the platform owner's Google like the head chef's (resume(), pickName()). It only keeps Google
+     signed in; access still needs the server's answer and a new grant. Out of date when the Google account is another,
+     or when loadAdmins() reads another answer (it rewrites or clears it); dropGoogle() clears it. */
+  function platformKnown() {
+    if (!S.user) return '';
+    if (S.platformFor === S.pin + '|' + S.user.uid) return S.platformMe || '';
+    var v = String(lsGet('lk.platform') || '').split('|');
+    return v.length === 2 && v[0] === S.user.uid && /^[A-Za-z0-9_-]{1,80}$/.test(v[1]) ? v[1] : '';
+  }
+  // a name picked on this device keeps its Google account only when it is that account's own admin person
+  function googleKeeps(id) { var plat = platformKnown(); return !!id && id === (plat || (S.config || {}).headId); }
+  // the admin person signed in with their own PIN: the platform owner on his own Google account, else the head chef
+  function whoAdmin() { var plat = platformMine(); return plat ? !!(S.authed && who() && S.who === plat) : whoHead(); }
+  // the admin person, for where a later PIN lands (lastNext(), homeNext()): the head chef or this Google's own profile
+  function adminSelf(id) { return !!id && (id === (S.config || {}).headId || id === platformKnown()); }
   function featCalc(k) {
     var p = who();
     if (k === 'cleaning') return (S.config.staffSee || {}).cleaning === true || chefAllowed();
@@ -1113,7 +1146,7 @@
   var pending = 0, pendFor = {}, pendSince = 0, offline = navigator.onLine === false, lastSync = '', writeTickets = [];
   function writerKey() { return [S.uid || '', S.who || '', millis(S.sessIssuedAt)].join('|'); }
   function stableIdentity() { return [S.pin, S.uid || '', S.who || ''].join('|'); }
-  function writeContext() { return { uid: S.uid, person: S.who, pin: S.pin, by: wBy(), admin: ownerHere(), identity: stableIdentity(), exp: S.sessExp || 0, issuedAt: S.sessIssuedAt, canonicalSerial: S.canonicalSerial || 0 }; }
+  function writeContext() { return { uid: S.uid, person: S.who, pin: S.pin, by: wBy(), admin: ownerHere(), platform: platformMine(), identity: stableIdentity(), exp: S.sessExp || 0, issuedAt: S.sessIssuedAt, canonicalSerial: S.canonicalSerial || 0 }; }
   function workLock() { return S.privacyLocked || S.unlocking ? { identity: S.lockIdentity, person: S.lockRecorder, reason: S.lockReason } : null; }
   function blockedRecorder() { return writeTickets.length ? writeTickets[0].person : coolingOwner() ? coolingOwner() : workLock() && (S.lockHasDraft || dirtyForUpdate()) ? S.lockRecorder || '' : ''; }
   function copyWrite(value) {
@@ -1121,10 +1154,11 @@
     if (value && Object.getPrototypeOf(value) === Object.prototype) { var out = {}; Object.keys(value).forEach(function (k) { out[k] = copyWrite(value[k]); }); return out; }
     return value;
   }
+  // an admin write is lost when its person is no longer the head chef, unless it was the platform owner's own (venues.md)
   function lostCanonicalAccess(ticket) {
     var c = S.canonicalAccess;
     return !!(c && c.pin === ticket.pin && c.uid === ticket.uid && c.serial > ticket.canonicalSerial &&
-      (c.staffIds.indexOf(ticket.person) < 0 || ticket.admin && typeof c.headId === 'string' && c.headId !== ticket.person));
+      (c.staffIds.indexOf(ticket.person) < 0 || ticket.admin && typeof c.headId === 'string' && c.headId !== ticket.person && ticket.platform !== ticket.person));
   }
   function settleRevokedTicket(ticket) {
     if (ticket.retired || !lostCanonicalAccess(ticket) || stableIdentity() !== [ticket.pin, ticket.uid, ticket.person].join('|')) return false;
@@ -1143,7 +1177,7 @@
   function recoverCommit(run, context) {
     context = context || writeContext();
     if (!context.uid || !context.pin || !context.by || context.by !== context.person) return Promise.reject({ code: 'permission-denied' });
-    var ticket = { uid: context.uid, person: context.person, pin: context.pin, exp: context.exp || 0, issued: millis(context.issuedAt), admin: !!context.admin, canonicalSerial: context.canonicalSerial || 0, attempted: false, phase: 'waiting', run: run }, resolve, reject;
+    var ticket = { uid: context.uid, person: context.person, pin: context.pin, exp: context.exp || 0, issued: millis(context.issuedAt), admin: !!context.admin, platform: context.platform || '', canonicalSerial: context.canonicalSerial || 0, attempted: false, phase: 'waiting', run: run }, resolve, reject;
     var promise = new Promise(function (ok, no) { resolve = ok; reject = no; }); ticket.resolve = resolve; ticket.reject = reject; writeTickets.push(ticket);
     function release() {
       if (ticket.retired || settleRevokedTicket(ticket)) return;
@@ -1453,7 +1487,7 @@
     if (!deviceReady()) { window.LK_DEVICE.request(); return; }
     if (blockedRecorder() && blockedRecorder() !== id) { toast(S.workNotice && !sendingNow() ? 'Your original work is kept. Use Change person to discard it first.' : 'Sign in as the person whose work is waiting first.'); return; }
     if (deviceMode() === 'personal' && deviceOwner() && deviceOwner() !== id) { toast('This personal device belongs to another person. Change or forget it in Settings first.'); return; }
-    if (S.user && id !== (S.config || {}).headId) { S.authed = false; S.who = ''; dropGoogle().then(function () { pickName(id); }).catch(function () { S.pinMsg = 'Could not sign out the previous account. Try again.'; draw(); }); return; }
+    if (S.user && !googleKeeps(id)) { S.authed = false; S.who = ''; dropGoogle().then(function () { pickName(id); }).catch(function () { S.pinMsg = 'Could not sign out the previous account. Try again.'; draw(); }); return; }
     clearPrivateCache(); noteClose('shut'); ksClose(); if (!S.privacyLocked) sessDrop();
     S.who = id; lsSet('lk.prep.who', id); lsSet('lk.prep.tok', ''); S.authed = false; S.tok = ''; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = 'checking'; S.pinOff = false; featSync(); draw(); whoSync();
     // one read: does this person have a PIN yet. An answer for a name picked before (another name since, or a handover)
@@ -1525,7 +1559,7 @@
   function lastNext(id) {
     var c = S.config || {}, p = S.pending;
     if (!id || homeNext(id) || S.signFrom !== 'start' && !(p && p.back === '#/')) return '';
-    if (p && p.back !== '#/' || dirtyForUpdate() || sendingNow() || S.name === 'admin' && id === c.headId) return '';
+    if (p && p.back !== '#/' || dirtyForUpdate() || sendingNow() || S.name === 'admin' && adminSelf(id)) return '';
     var h = lastFor(id); return h && h !== location.hash ? h : '';
   }
   // The PIN button's words for that page (docs/action-feedback.md: the button names where the tap goes)
@@ -1544,7 +1578,7 @@
   // unlocking on Admin, which keeps Admin (owner, 10 Nov 2026).
   function homeNext(id) {
     var c = S.config || {};
-    return !!id && !homeLoginSeen(id) && (c.fnOnlyIds || []).indexOf(id) < 0 && !(S.name === 'admin' && id === c.headId) &&
+    return !!id && !homeLoginSeen(id) && (c.fnOnlyIds || []).indexOf(id) < 0 && !(S.name === 'admin' && adminSelf(id)) &&
       !dirtyForUpdate() && !sendingNow() && (!S.pending || !!S.pending.back);
   }
   /* ---------- a shared kitchen device with nobody signed in (20 Oct 2026) ----------
@@ -1681,7 +1715,7 @@
       var bound = deviceOwner(); S.authed = false; S.sessFor = ''; S.sessUid = ''; S.sessExp = 0; lsSet('lk.prep.sess', '');
       dropGoogle().then(function () { pickName(bound); accessChanged(); }); return;
     }
-    if (S.user && S.who !== (S.config || {}).headId) { var previous = S.who; dropGoogle().then(function () { pickName(previous); accessChanged(); }); return; }
+    if (S.user && !googleKeeps(S.who)) { var previous = S.who; dropGoogle().then(function () { pickName(previous); accessChanged(); }); return; }
     var sv = savedSession(), hasSess = sv && sv.by === S.who && sv.exp > now() && sv.exp === nextUnlock(sv.issuedAt) && sv.issuedAt < now() + 60000 && sv.uid === S.uid && sv.mode === deviceMode() && (deviceMode() !== 'personal' || deviceOwner() === S.who);
     if (hasSess) homeLoginKeep(S.who, sv.exp);
     // a shared device handing over when it opens (a new kitchen day, or its idle time passed with the tab closed) takes
@@ -1782,8 +1816,9 @@
      the top of Meeting minutes). head: no Kitchen mail, the head chef's mail is read in the admin panel. tab: the head
      chef on their own Google device, where Shift pings opens the admin tab and Manage staff is People in the admin
      panel, so the menu leaves Manage staff out. A key that is missing shows the row. */
-  // the head chef on their own Google device: the chef hat's chef items open the matching admin tab
-  function adminTabs() { return admDev() && whoHead(); }
+  // the admin on their own Google device (the head chef, or the platform owner at a second venue): the chef hat's chef
+  // items open the matching admin tab
+  function adminTabs() { return admDev() && whoAdmin(); }
   // Meeting minutes shows for staff only once there is something published to read (chefs always, for the register)
   /* Settings, You (3 Nov 2026, docs/settings-options/brief.md): the role's name, and what the person signed in may do in
      plain words for the read-only What you can do row. The same checks the pages and the rules go by (can(), canPing(),
@@ -3994,23 +4029,43 @@
   var PIN_OPEN_DAYS = 7, PIN_RESET_MIN = 30;
   function pinOpenFor(ids) {
     var old = (S.config && S.config.pinOpen) || {}, out = {};
-    ids.forEach(function (id) { out[id] = typeof old[id] === 'number' ? old[id] : now() + PIN_OPEN_DAYS * 86400000; });
+    // never a new window for the platform owner's profile from the venue admin: only he may open it (venues.md)
+    ids.forEach(function (id) { if (typeof old[id] === 'number') out[id] = old[id]; else if (id !== platformLocked()) out[id] = now() + PIN_OPEN_DAYS * 86400000; });
     return out;
   }
   // a chef opening the admin panel or Manage staff writes the windows of anyone on the list without one (one small write)
   function seedPinOpen() {
     var c = S.config, ids = (c && c.staffIds) || [];
-    if (!S.configFull || !c || !ids.length || !(S.user || isSous()) || ids.every(function (id) { return typeof (c.pinOpen || {})[id] === 'number'; })) return;
+    if (!S.configFull || !c || !ids.length || !(S.user || isSous()) || platformWait() || ids.every(function (id) { return typeof (c.pinOpen || {})[id] === 'number' || id === platformLocked(); })) return;
     var po = pinOpenFor(ids);
     (S.user ? track(fb.fs.setDoc(cfgDoc(), { pinOpen: po }, { merge: true })) : sset(cfgDoc(), { pinOpen: po }, true)).catch(function () {});
+  }
+  function cleanPerson(p) { return { id: p.id, name: String(p.name).trim().slice(0, 40), role: p.role || 'staff', add: !!p.add, tick: !!p.tick, del: !!p.del, ping: !!p.ping, fn: !!p.fn, active: p.active !== false }; }
+  /* The venue admin's save leaves the platform owner's profile as it is stored (24 Nov 2026, docs/venues.md): his row,
+     his place on every list, the head chef mark and his PIN set-up window, which the rules keep for him alone
+     (platformKept() in firestore.rules). Nothing changes for the platform owner himself or a kitchen with one owner. */
+  function platformKeep(clean) {
+    var id = platformLocked(), c = S.config || {};
+    if (!id) return clean;
+    var was = (c.people || []).filter(function (p) { return p.id === id; })[0], at = -1;
+    clean.people = clean.people.filter(function (p, k) { if (p.id !== id) return true; at = k; return false; });
+    if (was) clean.people.splice(at >= 0 ? at : Math.min((c.people || []).indexOf(was), clean.people.length), 0, JSON.parse(JSON.stringify(was)));
+    ['staffIds', 'sousIds', 'pingIds', 'fnIds', 'fnOnlyIds', 'addIds', 'tickIds', 'delIds'].forEach(function (k) {
+      var list = (clean[k] || []).filter(function (x) { return x !== id; });
+      if (Array.isArray(c[k]) && c[k].indexOf(id) >= 0) list.push(id);
+      clean[k] = list;
+    });
+    if (clean.headId === id && c.headId !== id) clean.headId = c.headId || '';
+    var po = Object.assign({}, clean.pinOpen); delete po[id];
+    if (typeof (c.pinOpen || {})[id] === 'number') po[id] = c.pinOpen[id];
+    clean.pinOpen = po;
+    return clean;
   }
   // gone: ids deleted for good in this save (adminSave); the head chef's batch wipes their PIN with the list
   function saveConfig(cfg, hold, gone) {
     cfg = Object.assign({}, cfg, { people: (cfg.people || []).filter(function (p) { return !p.gone; }) });   // Delete for good, marked in the draft
     var clean = {
-      people: cfg.people.filter(function (p) { return String(p.name).trim(); }).map(function (p) {
-        return { id: p.id, name: String(p.name).trim().slice(0, 40), role: p.role || 'staff', add: !!p.add, tick: !!p.tick, del: !!p.del, ping: !!p.ping, fn: !!p.fn, active: p.active !== false };
-      }),
+      people: cfg.people.filter(function (p) { return String(p.name).trim(); }).map(cleanPerson),
       kitSecs: ksClean(cfg.kitSecs !== undefined ? cfg.kitSecs : ((S.config && S.config.kitSecs) || []), (S.config && S.config.kitSecs) || []),
       kitShifts: shClean(cfg.kitShifts !== undefined ? cfg.kitShifts : ((S.config && S.config.kitShifts) || [])), showBadges: cfg.showBadges !== false, staffSee: staffSee(cfg),
       sousMail: !!(S.config && S.config.sousMail === true),   // set only from the Kitchen mail tab (mlSousSet)
@@ -4028,10 +4083,11 @@
     };
     /* a sous chef may only change the people list and who may set a PIN, so only those are sent (merged): the rules refuse any other field */
     return sdk().then(function () { if (S.user && S.level === 'owner') {
+      platformKeep(clean);
       var b = fb.fs.writeBatch(fb.db); b.set(cfgDoc(), clean);
       b.set(docRef('login', 'roster'), { people: clean.people, staffIds: clean.staffIds, sousIds: clean.sousIds, headId: clean.headId, fnIds: clean.fnIds, fnOnlyIds: clean.fnOnlyIds });
       // a person deleted for good loses their PIN in the same batch, so the list and the PIN never disagree
-      (gone || []).forEach(function (id) { if (id && id !== clean.headId && !clean.people.some(function (p) { return p.id === id; })) { b.delete(docRef('staffpins', id)); b.delete(docRef('pinset', id)); } });
+      (gone || []).forEach(function (id) { if (id && id !== clean.headId && id !== platformLocked() && !clean.people.some(function (p) { return p.id === id; })) { b.delete(docRef('staffpins', id)); b.delete(docRef('pinset', id)); } });
       return track(b.commit());
     } return Wall([['set', cfgDoc(), { people: clean.people, staffIds: clean.staffIds, pinOpen: clean.pinOpen, updated: clean.updated, updatedBy: clean.updatedBy }, true], ['set', docRef('login', 'roster'), { people: clean.people, staffIds: clean.staffIds, sousIds: S.config.sousIds || [], headId: S.config.headId || '', fnIds: S.config.fnIds || [], fnOnlyIds: S.config.fnOnlyIds || [] }]]); }).then(function () { return clean; });
   }
@@ -4049,7 +4105,7 @@
       function (e) { S.busy = false; S.saveMsg = errMsg(e && e.code === 'permission-denied' ? 'Not allowed to change these settings.' : 'Could not save. Check the connection.'); svFail('a', !!S.draft, function () { S.saveMsg = ''; }); draw(); });
   }
   function resetPin(id) {
-    if (!arm('pin:' + id)) return;
+    if (!id || id === platformLocked() || !arm('pin:' + id)) return;
     var rb = fb.fs.writeBatch(fb.db); rb.delete(docRef('staffpins', id)); rb.delete(docRef('pinset', id));
     var po = {}; po[id] = now() + PIN_RESET_MIN * 60000; rb.set(cfgDoc(), { pinOpen: po }, { merge: true });   // they may set a new one for 30 minutes
     var who2 = (people().filter(function (x) { return x.id === id; })[0] || {}).name || 'Their';
@@ -4176,30 +4232,38 @@
      (28 Oct 2026, r2-2-4): with no signal or a lost read the device keeps its head chef mark (lk.admin) and the admin
      panel says there is no signal. The same one read goes again after 5 minutes, at the next draw, or once the phone is
      back online (retrySoon), never in a loop: before, any failure counted as "not the head chef's account" until a reload.
-     A read cut short because the person on the phone changed (cancelled) is simply asked again for the next one. */
+     A read cut short because the person on the phone changed (cancelled) is simply asked again for the next one.
+     Since 24 Nov 2026 a second read goes with it, config/platform (platformAsk()), and the two pass or fail together. */
   function loadAdmins() {
     if (!deviceReady() || S.privacyLocked || !S.user || !fb || S.configState !== 'ok') return;
     var em = S.user.email || '', epoch = accessEpoch, uid = S.uid, google = S.user.uid, key = [em, uid, S.sessFor, millis(S.sessIssuedAt)].join('|');
     if (S.adminsFor === key || (S.adminsOff === em && waiting('admins'))) return;
-    S.adminsFor = key; S.level = '';
+    S.adminsFor = key; S.level = ''; S.platformSt = '';
+    var person = '';
     fb.ownerFs.getDoc(ownerRef('config', 'admins')).then(function (sn) {
       if (epoch !== accessEpoch || !S.user || S.user.uid !== google || S.uid !== uid) throw { code: 'cancelled' };
       S.ownerVerified = true; S.adminsOff = null; retryDone('admins');
       var opened = sn && sn.exists() ? +(sn.data().mailOpened || 0) : 0;
       if (opened > mlOpened) { mlOpened = opened; lsSet('lk.mail.opened', String(opened)); }
+      return platformAsk();
+    }).then(function (plat) {
+      if (epoch !== accessEpoch || !S.user || S.user.uid !== google || S.uid !== uid) throw { code: 'cancelled' };
+      platformSet(google, plat);
       if (!(S.config || {}).headId) return fb.ownerFs.getDoc(ownerRef('config', 'main')).then(function (cfg) { if (epoch === accessEpoch) { S.bootstrapConfig = cfg.exists() ? cfg.data() : { people: [] }; S.level = 'setup'; draw(); } });
-      if (!S.authed || !canW() || S.who !== S.config.headId) {
-        S.level = 'pin'; if (!S.who) pickName(S.config.headId); draw(); return;
+      // the admin person: this Google account's own profile at a second venue, else the head chef (venues.md)
+      person = platformMine() || S.config.headId;
+      if (!S.authed || !canW() || S.who !== person) {
+        S.level = 'pin'; if (!S.who) pickName(person); draw(); return;
       }
       var sessionValue = typeof S.sessIssuedAt === 'number' ? fb.fs.getDocFromServer(sessRef()).then(function (session) { return session.exists() ? session.data() : null; }) : Promise.resolve({ by: S.who, pinAt: S.sessPinAt, issuedAt: S.sessIssuedAt, exp: S.sessExp, mode: S.sessMode, v: 2 });
       return sessionValue.then(function (value) {
         if (epoch !== accessEpoch || !canW() || !value || !S.user || S.user.uid !== google) throw { code: 'cancelled' };
-        if (value.by !== S.config.headId || value.v !== 2 || value.exp !== S.sessExp || millis(value.issuedAt) !== millis(S.sessIssuedAt)) throw { code: 'permission-denied' };
+        if (value.by !== person || value.v !== 2 || value.exp !== S.sessExp || millis(value.issuedAt) !== millis(S.sessIssuedAt)) throw { code: 'permission-denied' };
         S.grantTask = track(fb.ownerFs.setDoc(ownerRef('adminDevices', uid), { by: value.by, pinAt: value.pinAt, issuedAt: value.issuedAt, exp: value.exp, googleUid: google, at: fb.ownerFs.serverTimestamp(), v: 2 }));
         return S.grantTask;
       }).then(function () {
         if (epoch !== accessEpoch || !canW() || !S.user || S.user.uid !== google) return;
-        S.level = 'owner'; S.grantExp = S.sessExp; admMark(true); recoverWrites(S.who); featSync(); accessChanged(); seedIds(); loadMail(); draw(); cutPaint();
+        S.level = 'owner'; S.grantExp = S.sessExp; admMark(true); recoverWrites(S.who); featSync(); accessChanged(); seedIds(); platformLockLoad(); loadMail(); draw(); cutPaint();
       });
     }).catch(function (e) {
       var wasW = !!S.adminsOff;
@@ -4211,18 +4275,67 @@
       featSync(); draw(); cutPaint();
     });
   }
+  /* Is this Google account the platform owner here (24 Nov 2026, docs/venues.md)? One read of config/platform from the
+     server with each owner check (loadAdmins(): about once a day per admin device, and again for a new PIN session).
+     The rules let only the platform owner's Google and a live admin read it. The answer: his profile id; '' when there is
+     no record (the owner is the platform owner, as in the first kitchen); null when this account may not read it (the
+     venue owner's Google: not the platform owner). Any other failure (no signal, the reads used up) fails the owner
+     check, which tries again (retrySoon()): an answer from the cache or a lost read never decides who is admin. */
+  function platformIdOf(d) { var id = d && d.id; return typeof id === 'string' && /^[A-Za-z0-9_-]{1,80}$/.test(id) ? id : ''; }
+  function platformAsk() {
+    return fb.ownerFs.getDocFromServer(ownerRef('config', 'platform')).then(function (sn) { return sn && sn.exists() ? platformIdOf(sn.data()) : ''; },
+      function (e) { if (e && e.code === 'permission-denied') return null; throw e; });
+  }
+  function platformSet(google, plat) {
+    S.platformFor = S.pin + '|' + google; S.platformMe = plat || '';
+    // the platform owner's id for the venue admin's People page: known now, or read once the admin grant is in (null)
+    S.platformId = plat || ''; S.platformSt = plat === null ? '' : 'ok';
+    lsSet('lk.platform', plat ? google + '|' + plat : '');
+  }
+  /* The venue admin's People page needs the platform owner's id (24 Nov 2026, docs/venues.md) when this Google account
+     could not read config/platform itself (the venue owner's). One read from the server through this device's own
+     sign-in, once its admin grant is in: once per owner check, about once a day per admin device. A failure tries again
+     after 5 minutes, at the next draw of the admin panel, or once back online. Until the answer is in, no row is locked
+     by guess and the panel's own list seeding waits (platformWait()). */
+  function platformLockLoad() {
+    if (S.level !== 'owner' || !ownerHere() || S.platformSt === 'ok' || S.platformSt === 'wait' || waiting('platform')) return;
+    var epoch = accessEpoch, key = S.adminsFor;
+    S.platformSt = 'wait';
+    fb.fs.getDocFromServer(docRef('config', 'platform')).then(function (sn) { return sn && sn.exists() ? platformIdOf(sn.data()) : ''; },
+      function (e) { if (e && e.code === 'permission-denied') return ''; throw e; }).then(function (id) {
+      if (epoch !== accessEpoch || key !== S.adminsFor || S.platformSt !== 'wait') return;
+      S.platformId = id; S.platformSt = 'ok'; retryDone('platform'); platformDraftKeep(); seedIds(); draw();
+    }, function (e) {
+      if (epoch !== accessEpoch || key !== S.adminsFor || S.platformSt !== 'wait' || (e && e.code === 'cancelled')) return;
+      S.platformSt = 'err'; retrySoon('platform', platformLockLoad, e); draw();
+    });
+  }
+  // the owner check has passed but the platform owner's id is not in yet: the admin's own seeding of the lists waits
+  function platformWait() { return !!S.user && S.level === 'owner' && S.platformSt !== 'ok'; }
+  /* The venue admin's own session: the platform owner's profile, which his saves never touch (platformKeep()). '' for the
+     platform owner himself, for a kitchen with one owner, and while the id is not known. */
+  function platformLocked() { var mine = platformMine(); return S.level === 'owner' && S.platformSt === 'ok' && S.platformId && S.platformId !== mine ? S.platformId : ''; }
+  // an open draft goes back to the stored row for the platform owner once the lock is known
+  function platformDraftKeep() {
+    var id = platformLocked(), base = draftBase();
+    if (!id || !S.draft || !base) return;
+    var was = (base.people || []).filter(function (p) { return p.id === id; })[0];
+    if (was) S.draft.people = S.draft.people.map(function (p) { return p.id === id ? JSON.parse(JSON.stringify(was)) : p; });
+    if (S.pOpen === id) S.pOpen = '';
+  }
   /* The rules read three lists next to the people list: sousIds (who may edit the staff list), pingIds (who may write
      shift pings) and staffIds (who may set a PIN). Only the head chef can write sousIds and pingIds, so the owner keeps
      them in step with the roles when the admin panel opens. A sous chef can change a role in the people
      list (the rules cannot tell one field of a person from another), so when the roles and the lists disagree the
      panel shows what changed and asks (idChanges, the card at the top of the admin panel) instead of saving it quietly.
      staffIds follows the people list by itself: a sous chef's staff page sends it too. */
-  function sameIds(c, have, fn) { return (have || []).slice().sort().join(',') === idsFor(c.people, fn).sort().join(','); }
+  // the venue admin leaves the platform owner's place on the lists as it is (platformLocked()), so it is not compared
+  function sameIds(c, have, fn) { var lock = platformLocked(), out = function (x) { return x !== lock; }; return (have || []).filter(out).sort().join(',') === idsFor(c.people, fn).filter(out).sort().join(','); }
   function idChanges(c) {
     var out = [];
     if (!c || !c.people) return out;
     c.people.forEach(function (p) {
-      if (p.active === false || !String(p.name).trim()) return;
+      if (p.active === false || !String(p.name).trim() || p.id === platformLocked()) return;
       if (c.sousIds && c.pingIds) {   // a list never seeded yet: nothing to ask about
         var sous = c.sousIds.indexOf(p.id) >= 0;
         if (isSousP(p) !== sous) out.push({ p: p, sous: isSousP(p), what: isSousP(p) ? 'is now marked Sous chef' : 'is no longer marked Sous chef' });
@@ -4238,7 +4351,7 @@
     return out;
   }
   function seedIds() {
-    if (!S.configFull) return;
+    if (!S.configFull || platformWait()) return;
     var c = S.config; if (!c || !c.people) return;
     seedPinOpen();
     if (sameIds(c, c.sousIds, isSousP) && sameIds(c, c.pingIds, canPingP) && sameIds(c, c.staffIds, anyP) && sameIds(c, c.fnIds, fnP) && ['add', 'tick', 'del'].every(function (cap) { return sameIds(c, c[cap + 'Ids'], function (p) { return p.role !== 'fnc' && (p.id === c.headId || !!p[cap]); }); })) return;
@@ -6511,6 +6624,8 @@
     return out;
   }
   function personStateHTML(p) {
+    // the platform owner's own profile at a second venue: the venue admin sees it and cannot change it (venues.md)
+    if (p.id && p.id === platformLocked()) return '<small class="pp-st is-lock">The owner\'s own profile. Only the owner can change it.</small>';
     if (p.gone) return '<small class="pp-st is-bad">Deleted when you save</small>';
     if (p.isNew) return '<small class="pp-st">New: not saved yet</small>';
     var ch = personChanges(p);
@@ -6532,10 +6647,10 @@
       (p.id && !p.isNew ? '<p class="pp-end"><button type="button" class="p-link" data-p="a-person" data-id="' + esc(p.id) + '">Open ' + esc(first) + '\'s page ›</button></p>' : '') + '</div></aside>';
   }
   function personRowHTML(o) {
-    var p = o.p, i = o.i, open = !p.gone && S.pOpen === p.id, r = ROLES[p.role] || ROLES.staff, ini = String(p.name || '').trim().charAt(0).toUpperCase();
+    var p = o.p, i = o.i, locked = !!p.id && p.id === platformLocked(), open = !p.gone && !locked && S.pOpen === p.id, r = ROLES[p.role] || ROLES.staff, ini = String(p.name || '').trim().charAt(0).toUpperCase();
     var name = esc(p.name || 'No name yet'), canId = 'pp-can-' + i;
     var can = '<small class="pp-can" id="' + canId + '"><span class="pp-role">' + esc(r.name) + '</span><span class="pp-sep"> · </span><span class="pp-perms">' + esc(canWords(p)) + '</span></small>';
-    var label = p.gone ? '<b class="pp-n">' + name + '</b>'
+    var label = p.gone || locked ? '<b class="pp-n">' + name + '</b>'
       : '<button type="button" class="p-link pp-name-toggle" data-p="a-person-open" data-id="' + esc(p.id) + '" aria-expanded="' + open + '"' + (open ? ' aria-controls="pp-editor"' : '') + ' aria-describedby="' + canId + '"><span class="pp-n">' + name + '</span> <span aria-hidden="true">' + (open ? '‹' : '›') + '</span></button>';
     var undo = p.gone ? '<button type="button" class="btn pp-undo" data-p="a-undelete-person" data-i="' + i + '" aria-label="' + esc('Undo delete: ' + (p.name || 'this person')) + '">Undo delete</button>' : '';
     return '<li class="pp-row' + (open ? ' is-open' : '') + (p.active === false ? ' is-off' : '') + (p.gone ? ' is-gone' : '') + '" data-pid="' + esc(p.id) + '"><div class="pp-main"><div class="pp-w"><span class="st-av' + (isSousP(p) ? ' is-chef' : '') + '" aria-hidden="true">' + esc(ini || '?') + '</span>' +
@@ -6543,7 +6658,7 @@
   }
   function peopleListHTML(d) {
     var items = d.people.map(function (p, i) { return { p: p, i: i }; });
-    var editing = S.pOpen && items.find(function (o) { return o.p.id === S.pOpen && !o.p.gone; });
+    var editing = S.pOpen && items.find(function (o) { return o.p.id === S.pOpen && !o.p.gone && o.p.id !== platformLocked(); });
     if (!editing) S.pOpen = '';
     function nm(o) { return String(o.p.name || '').toLowerCase(); }
     var list = lvHTML({
@@ -7066,10 +7181,12 @@
         (S.saveMsg ? msgHTML(S.saveMsg) : '') +
         '<div class="btn-row"><button type="button" class="btn dark" data-p="signin">' + (armed('signin:sent') ? 'Not sent yet.' : 'Sign in with Google') + '</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
     }
-    if (S.privacyLocked && who() && S.user && S.ownerVerified) return '<p class="hint">Your Google account stays signed in. Enter your head chef PIN for the new kitchen day.</p>' + ownPinHTML();
-    loadAdmins();
+    // the platform owner at a second venue unlocks with his own PIN; the head chef PIN reset is not his (venues.md)
+    var platPin = !!platformMine(), pinWord = platPin ? 'your PIN' : 'your head chef PIN';
+    if (S.privacyLocked && who() && S.user && S.ownerVerified) return '<p class="hint">Your Google account stays signed in. Enter ' + pinWord + ' for the new kitchen day.</p>' + ownPinHTML();
+    loadAdmins(); platformLockLoad();
     if (S.level === 'setup') return bootstrapHTML();
-    if (S.level === 'pin' && S.ownerVerified) return '<p class="hint">Your Google account is recognised. Enter your head chef PIN to unlock this device until 04:00.</p>' + ownPinHTML() + '<p><button type="button" class="p-link' + armCls('owner-reset') + '" data-p="owner-reset">' + (armed('owner-reset') ? 'Confirm reset of the head chef PIN' : 'Forgot the head chef PIN?') + '</button></p>' + (S.saveMsg ? msgHTML(S.saveMsg) : '');
+    if (S.level === 'pin' && S.ownerVerified) return '<p class="hint">Your Google account is recognised. Enter ' + pinWord + ' to unlock this device until 04:00.</p>' + ownPinHTML() + (platPin ? '' : '<p><button type="button" class="p-link' + armCls('owner-reset') + '" data-p="owner-reset">' + (armed('owner-reset') ? 'Confirm reset of the head chef PIN' : 'Forgot the head chef PIN?') + '</button></p>') + (S.saveMsg ? msgHTML(S.saveMsg) : '');
     if (!S.level) return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + (S.adminsOff === (S.user.email || '') ? '<p class="p-err" role="status">' + (S.adminsWhy === 'signal' ? 'No signal. The admin panel opens when the phone is back online.' : 'Could not check your access yet. The admin panel opens once it is checked.') + '</p><div class="btn-row"><button type="button" class="btn dark" data-p="admins-retry">Try again</button><a class="btn" href="#/prep">Back to the prep book</a></div>' : inkWait('Checking your access...', 'chef')) + '</section>';
     if (S.level === 'none') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="p-err">' + esc(S.user.email) + ' is not the head chef\'s Google account, so it cannot open the admin panel. Sign out and sign in with the head chef\'s account.</p><div class="btn-row"><button type="button" class="btn dark' + armCls('signout') + '" data-p="signout">' + (armed('signout') ? notSaved() + '. Tap again' : 'Sign out') + '</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
     if (!ownerHere()) {
@@ -7113,6 +7230,7 @@
     if (at === 'guides') loadGuides();
     var pane = at === 'prep-standards' ? psPanelHTML() : at === 'plan' ? (teamOK() ? teamPageHTML() : teamNoHTML()) : at === 'dashboard' || at === 'inbox' ? dashHTML(at) : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'kitchen-home' ? kitchenHomeHTML(d, saveBlock) : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'records' ? recordsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' && owner && S.personId ? personPageHTML(d, S.personId, saveBlock) : at === 'people' ? (
       '<section class="set-block pp-room"><span class="label">People</span>' +
+      (S.level === 'owner' && S.platformSt === 'err' ? '<p class="p-err a-plat-err" role="status">Could not check which profile is the owner\'s own. A change to it may not save. The book tries again by itself.</p>' : '') +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       peopleListHTML(d) + '<div class="pp-folds"><div class="pp-bulk">' + bulk + '</div><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then tap their name and adjust their ticks if you need to: Add writes lines, Tick ticks them off, Remove takes lines off, Functions enters and changes function bookings. Shift pings are written by you and the sous chefs. Functions coordinator ticks Functions for you; only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Stopped working here keeps their name on old lines, and their PIN stops working for anything. Delete for good takes them off the list and wipes their PIN when you save. Head chef is for your own name: it gets the kitchen and sous chef pages, and a sous chef cannot change or remove it.</p></details></div></section>' + saveBlock
     ) : (
@@ -8090,8 +8208,7 @@
     return ingIdx;
   }
   function watchOrders() {
-    if (!kitchenAccess() || !S.configFull) return;
-    if (S.configState !== 'ok' || !fb) return;
+    if (!listsMay()) return;
     var key = S.pin + '|' + S.ordDate;
     if (key === ordKey && unsubOrd) return;
     if (unsubOrd) unsubOrd();
@@ -8590,8 +8707,7 @@ if (list.length) sg('oreg', 's');
   function wRef(date, id) { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['waste', date, 'lines', id])); }
   function wDay(date) { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['waste', date])); }
   function watchWaste() {
-    if (!kitchenAccess() || !S.configFull) return;
-    if (S.configState !== 'ok' || !fb) return;
+    if (!listsMay()) return;
     var key = S.pin + '|' + S.wDate;
     if (key === wKey && unsubW) return;
     if (unsubW) unsubW();
@@ -8638,7 +8754,7 @@ if (list.length) sg('oreg', 's');
      kept in lk.w.sum until the kitchen day changes. A summary made for an earlier day (the night job has not run yet)
      is used but not kept, so the next page load reads again. A failed read keeps nothing and tries again after 5 minutes. */
   function loadWSum() {
-    if (!kitchenAccess() || !S.configFull) return;
+    if (!listsMay()) return;   // also from its list's watcher, which may run before the settings are in (24 Nov 2026)
     var today = dayNow(), tag = S.pin + '|' + today;
     if (!fb || S.wSumBusy || waiting('wSum') || (S.wSum && S.wSumFor === today)) return;
     var c = dayCache('lk.w.sum', tag);
@@ -9225,7 +9341,7 @@ if (list.length) sg('oreg', 's');
     return W(ops);
   }
   function watchXOpen() {
-    if (!kitchenAccess() || !S.configFull) return;
+    if (!listsMay()) return;   // also from its list's watcher, which may run before the settings are in (24 Nov 2026)
     if (unsubXO || !fb) return;
     S.xOpenState = 'loading'; xoSnap = {};
     var col = fb.fs.collection.apply(null, [fb.db].concat(base(), ['transferOpen']));
@@ -9281,8 +9397,7 @@ if (list.length) sg('oreg', 's');
     }, function (e) { if (stillHere()) { failed(e); draw(); } });
   }
   function watchXfer() {
-    if (!kitchenAccess() || !S.configFull) return;
-    if (S.configState !== 'ok' || !fb) return;
+    if (!listsMay()) return;
     var key = S.pin + '|' + S.xDate;
     if (key === xKey && unsubX) return;
     if (unsubX) unsubX();
@@ -9305,7 +9420,7 @@ if (list.length) sg('oreg', 's');
      lk.x.sum until the kitchen day changes. A summary made for an earlier day (the night job has not run yet) is used but
      not kept, so the next page load reads again. A failed read keeps nothing and tries again after 5 minutes. */
   function loadXSum() {
-    if (!kitchenAccess() || !S.configFull) return;
+    if (!listsMay()) return;   // also from its list's watcher, which may run before the settings are in (24 Nov 2026)
     var today = dayNow(), tag = S.pin + '|' + today;
     if (!fb || S.xSumBusy || waiting('xSum') || (S.xSum && S.xSumFor === today)) return;
     var c = dayCache('lk.x.sum', tag);
@@ -14270,6 +14385,7 @@ if (list.length) sg('oreg', 's');
     }
     if (a === 'a-remove-person') {
       var rp = d.people[i];
+      if (rp && rp.id === platformLocked()) return;   // the platform owner's own profile (venues.md)
       if (isHeadP(rp) && S.level !== 'owner') return;   // only the head chef's Google account takes the head chef off the list
       if (!rp) return;
       if (rp.active === false && !rp.isNew) { rp.active = true; draw(); return; }   // Put back
@@ -14289,13 +14405,14 @@ if (list.length) sg('oreg', 's');
         delete dp.gone; toast('Undone: ' + (dp.name || 'this person') + ' stays on the team list.');
       };
       if (a === 'a-undelete-person') { undo(); return; }
-      if (!canDelPerson(dp) || dp.gone || !arm('pdel:' + dp.id)) return;
+      if (!canDelPerson(dp) || dp.gone || dp.id === platformLocked() || !arm('pdel:' + dp.id)) return;
       dp.gone = true; if (S.pOpen === dp.id) S.pOpen = '';
       toast((dp.name || 'This person') + ' is deleted when you save', { label: 'Undo', fn: undo });
       draw(); return;
     }
     // The editor and roster share the draft. Closing the editor keeps the changes for the room's Save.
     if (a === 'a-person-open') {
+      if (id && id === platformLocked()) return;
       if (!S.pOpen) peopleRosterPlace = { id: id, top: el.getBoundingClientRect().top, y: window.scrollY };
       S.pOpen = S.pOpen === id ? '' : id;
       draw(); return;
@@ -14422,7 +14539,7 @@ if (list.length) sg('oreg', 's');
     var a = el.getAttribute && el.getAttribute('data-a');
     if (!a || !S.draft) return;
     var i = +el.getAttribute('data-i'), d = S.draft;
-    if (a === 'name') d.people[i].name = el.value;
+    if (a === 'name' && d.people[i] && d.people[i].id !== platformLocked()) d.people[i].name = el.value;
     if (a === 'ksec' && d.kitSecs && d.kitSecs[i]) d.kitSecs[i].name = el.value;
     if (a === 'shname' || a === 'shfrom' || a === 'shto' || a === 'shbfrom' || a === 'shbto') shAdminInput(a, el, d);
   }
@@ -14467,6 +14584,7 @@ if (list.length) sg('oreg', 's');
     if (a === 'shname' || a === 'shfrom' || a === 'shto' || a === 'shbfrom' || a === 'shbto' || a === 'shneed') { shAdminInput(a, el, S.draft); draw(); return; }
     if (a === 'shocc') { var occSh = S.draft.kitShifts && S.draft.kitShifts[+el.getAttribute('data-i')]; if (occSh && !occSh.off) occSh.occ = el.checked; draw(); return; }
     var i = +el.getAttribute('data-i'), p = S.draft.people[i];
+    if (p && p.id === platformLocked() && (a === 'role' || a === 'perm' || a === 'active')) return;   // the platform owner's own (venues.md)
     if (a === 'role') {
       if (el.value === 'head' && S.level !== 'owner') { el.value = p.role; return; }
       if (el.value === 'head') S.draft.people.forEach(function (q) { if (q !== p && q.role === 'head') q.role = 'sous'; });   // one head chef

@@ -31,6 +31,7 @@ A venue served by its own Firebase project (`venues/<id>.json` with `host: fireb
 ## What follows it
 
 - **Live click tests** run after the Deploy job publishes, and not after a merge that published nothing.
+- **A run that skips cancels nothing** (24 Nov 2026). A merge that publishes nothing still starts a Live click tests run, which then skips. The cancelling used to cover the whole workflow, so that run cancelled the live tests of the merge before it: #850's and #849's runs cancelled #851's twice. Now it sits on the test jobs (`live-tests-<share>` and `live-tests-venues`), which a skipping run never starts, so only a newer run that tests replaces an older one. `tests/site-publish.test.js` checks it: 3 failed of 40 on the old workflow, 0 of 40 now.
 - **Publish rules** runs after the Published job, so a change to `firestore.rules` alone still publishes the rules. It does not run when publishing the site failed, so stricter rules never go ahead of the code.
 - Both still follow GitHub's own `pages-build-deployment` while Pages publishes from the branch. Publish site then only warns and publishes nothing, so nothing runs twice.
 

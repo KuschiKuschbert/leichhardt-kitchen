@@ -1,5 +1,25 @@
 # Session map: which note to read, and every file
 
+## Live click tests: a run that skips no longer cancels one that tests, 24 November 2026 (fix)
+
+A merge that published nothing (#850, #849) started a Live click tests run that cancelled #851's live tests, then skipped. The cancelling moved from the whole workflow to the test jobs in `.github/workflows/live-tests.yml`. A CI fix, no council. `tests/site-publish.test.js`. [Note](site-publishing.md).
+
+## The lists open one server answer sooner after a cold start, 24 November 2026 (fix)
+
+The head chef: the Prep list sat on Loading for a long time when the app first opened. The roster, the kitchen's settings and the page's own list were three server answers in a row; the list now asks with the settings (`listsMay()` in `js/prep.js`, prep, orders, wastage and transfers). About 0.3 to 0.6 s sooner on the test stand-in with a slowed phone. A fix, no council. `tests/cold-start.test.js`. [Note and measurements](loading-motion.md#the-first-list-after-a-cold-start-24-november-2026).
+
+## Fixing a flaky click test, 24 November 2026
+
+The four most retried files of the weekly report (#523) were fixed: swipe-dismiss (#844), mascot (#845), section-box (#846) and update-confirmation (#848). Each failed only on a busy runner and each cause was a race in the test. The method that made them fail here (the runner's fallback font, several copies at once, full Chrome) and its scripts are kept: [the note](flaky-tests.md), `scripts/flaky/annotations.sh` (which check failed in CI), `scripts/flaky/side-by-side.cjs` (old and new copies under the same load), `scripts/flaky/fonts-ci.conf` (DejaVu Sans as on the runner).
+
+## The platform owner's Admin at a second venue, 24 November 2026 (built)
+
+The client follow-up of the venue plumbing. At a venue the platform owner signs in with his own PIN and his Google and gets Admin; the venue admin's People page shows his row locked ("The owner's own profile. Only the owner can change it.") and every save from the venue admin leaves it as stored. One new read rule, `config/platform` (`{ id }`, written only by `scripts/access-bootstrap.mjs` from `PLATFORM_STAFF_ID`; none at Leichhardt): looser, so rules first. In `js/prep.js`: `loadAdmins()` reads it with each owner check, `platformLockLoad()` for the venue admin, `platformKeep()` in `saveConfig()`, `googleKeeps()` and `whoAdmin()`. At Leichhardt nothing changes but one read per owner check. Tests: `tests/venue-platform-admin.test.js`, `tests/rules/venues.test.mjs`, `tests/access-bootstrap.test.js`. [Venues, Two admins at a venue](venues.md#two-admins-at-a-venue).
+
+## The venue name under the KB mark on a phone, 24 November 2026 (chosen and built)
+
+Below 720 px the top bar showed only the KB mark. Three looks were drawn at 360 px (beside, under, in place of the mark); only under fits both Leichhardt and Strand beside Back and every ring, and the head chef chose it for every venue. `.rb-venue` in `js/app.js` and `css/app.css`, `tests/venue-name.test.js`, the venue copy check in `tests/venues.test.js`. [Quick check and measurements](second-venue-options/brief.md#the-venue-name-on-a-phone-chosen-24-november-2026).
+
 ## The reading map in CLAUDE.md grouped by area, 24 November 2026
 
 The owner asked for `CLAUDE.md` to be kept short. Its reading map had grown to 86 rows with dates and design detail, against its own rule (one short row, the detail here). The rows are now grouped by area, about 30 of them, and keep every note's path; the dates and the designs chosen stay in the sections below. The file went from 47 to 39 KB. A new note joins its area's row.
