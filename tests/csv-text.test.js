@@ -61,6 +61,13 @@ function column(data, name) { const i = data[0].indexOf(name); if (i < 0) throw 
   ok(column(data, 'Written by').includes("'=CSV array recorder"), 'legacy non-string metadata is converted to literal text before export');
 
   await L.adminTab(p, 'team');
+  // A read or another phone's change redraws the page. The Export menu the head chef opened stays open through it
+  // (24 Nov 2026). On a busy runner a late read closed it between Export and Download CSV (docs/flaky-tests.md).
+  await p.locator('.a-export > summary').click();
+  await p.evaluate(() => { window.__lkMenu = document.querySelector('.a-export'); });
+  await p.evaluate(({ k, at }) => __fake.write(k, { ...__fake.dump()[k], done: true, doneBy: 'Sam', doneById: 'sam', doneAt: at }), { k: key('days', today, 'items', 'csv-9'), at: L.NOW - 30000 });
+  await L.waitFor(p, () => !!document.querySelector('.a-export') && document.querySelector('.a-export') !== window.__lkMenu);
+  ok(await p.locator('[data-p="csv"][data-v="team"]').isVisible(), 'Export stays open when the page redraws under it');
   data = await download(p, '[data-p="csv"][data-v="team"]');
   ok(column(data, 'Person').includes("'@CSV person"), 'team names use the common text boundary');
   ok(column(data, 'Lines written').some(value => /^\d+$/.test(value)), 'numeric report cells remain numbers without text prefixes');

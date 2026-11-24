@@ -5263,7 +5263,8 @@
     var n = S.statsRange, at = o ? o.at : S.stats && S.stats.at, gap = o ? o.exportWait : statsGaps();
     return '<div class="a-tools"><div><h3 class="a-title">' + esc(title) + '</h3><span class="hint">' + esc(rangeText(n)) + (o ? '.' : ', compared with the ' + n + ' days before.') + '</span></div>' +
       // the export buttons fold into one Export menu, so the first screen is the numbers, not the buttons
-      '<details class="a-tbtns a-export"><summary class="btn">Export</summary><div class="btn-row"><button type="button" class="btn" data-p="csv" data-v="' + kind + '"' + (gap ? ' disabled' : '') + '>Download CSV</button></div></details></div>' +
+      // it stays open through a redraw (a late read, another phone's change) until the person closes it (S.aExport)
+      '<details class="a-tbtns a-export"' + (S.aExport === kind ? ' open' : '') + '><summary class="btn" data-p="a-export" data-v="' + kind + '">Export</summary><div class="btn-row"><button type="button" class="btn" data-p="csv" data-v="' + kind + '"' + (gap ? ' disabled' : '') + '>Download CSV</button></div></details></div>' +
       (at ? '<p class="hint a-upd">Updated ' + esc(clock(at)) + '. Refresh reads the newest.</p>' : '');
   }
   // Report text stays literal in spreadsheets. Keep actual numbers numeric and leave the saved words unchanged.
@@ -14083,6 +14084,7 @@ if (list.length) sg('oreg', 's');
     if (a === 'ml-send') { mlSend(); return; }
     if (a === 'ml-tick') { mlTick(id); return; }
     if (a === 'ml-donebox') { S.mlDoneOpen = !el.parentNode.open; return; }
+    if (a === 'a-export') { S.aExport = el.parentNode.open ? '' : el.getAttribute('data-v'); return; }
     if (a === 'ml-goadmin') { S.atab = 'mail'; lsSet('lk.prep.atab', 'mail'); return; }
     if (a === 'recipe-toggle') {
       S.recipeOpen = true;
