@@ -30,3 +30,7 @@ Each waited a fixed time for something that took longer on a busy runner. The le
 - A fixed pause after a reload read the new page before it had loaded (update-confirmation).
 
 The fix is to wait for the thing itself (`L.waitFor`), or to run the test clock past its end. Never loosen, skip or remove a check.
+
+## A check that read an old element
+
+`tests/team-quiet.test.js` (24 Nov 2026) failed on the first try and the retry on one runner. A locator's `evaluateAll` or `evaluate` finds the element in one call and reads it in a second. Entering Today's team from the admin panel, the week's plans and then the team summary come in just after the Save appears, and each one redraws the page. A redraw between the two calls handed the check the old roster, out of the page. Out of the page, `innerText` is the whole `textContent`, hidden picker options included ("Same as Lunch: Grill" holds Sam), and nothing has a style or a size. It failed here with `Emulation.setCPUThrottlingRate` at 6 on that entry, under load. Read text, style or size in one `p.evaluate` that queries the page itself. A locator's `count()`, `innerText()` and `getAttribute()` are one call already.
