@@ -7,6 +7,10 @@ All Download CSV actions use the shared `csvCell()` and `downloadCSV()` boundary
 - Records shows confirmed empty sections only. For a day in Everything, Print this day and Export CSV become available after the nightly count and all sections load. Try again rereads failed sections. Refresh in the day view rereads a nightly record that failed to load. Both keep the selected day. Food safety day and month outputs still use the nightly record.
 - Transfers labels counts based on days that loaded. Download CSV becomes available after the selected dates and earlier outstanding transfers load. A saved date copy is reused after a confirmed read on the same kitchen day. Refresh retries the report and keeps the selected period and venue.
 
+## The Export menu
+
+Insights, Team and Transfers fold Download CSV into one Export menu. Once opened, it stays open until the person closes it, even when a late read or another phone's change redraws the page (`S.aExport`, 24 Nov 2026). Before that, a read landing between Export and Download CSV closed the menu under the person's finger.
+
 ## Cell contract
 
 - Text beginning with `=`, `+`, `-` or `@`, including after whitespace or control characters, gets one leading apostrophe so spreadsheet readers treat it as text. A leading tab, carriage return or line feed also receives that literal-text marker.
@@ -20,7 +24,7 @@ Spreadsheet programs differ in CSV import behaviour. The apostrophe is an export
 
 ## Verification
 
-`tests/csv-text.test.js` downloads all five reports through their actual controls with synthetic text. It parses the files independently to check cell boundaries, literal markers, multiline values, numeric zero and a signed legacy number, and confirms zero new reads or writes from export. Existing Wastage history checks retain filter/date/totals parity.
+`tests/csv-text.test.js` downloads all five reports through their actual controls with synthetic text. It parses the files independently to check cell boundaries, literal markers, multiline values, numeric zero and a signed legacy number, and confirms zero new reads or writes from export. It also checks that the Export menu stays open when the page redraws under it. Existing Wastage history checks retain filter/date/totals parity.
 
 `tests/partial-reports.test.js` exercises incomplete Records and Transfers on a phone and desktop, including refused reads, direct action attempts, recovery, and the resulting CSV and print content.
 
