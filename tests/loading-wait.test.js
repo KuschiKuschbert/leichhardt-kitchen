@@ -24,32 +24,46 @@ const { R, ok } = L.results();
         phase: sk ? parseFloat(sk.style.getPropertyValue('--ink-phase')) : NaN, anim: box ? getComputedStyle(box).animationName : '',
         icon: (c.querySelector('.ink-status .ink-icon') || { dataset: {} }).dataset.state || '', statuses: c.querySelectorAll('[role="status"]').length, at: Date.now() } : null;
     });
+    /* The page clock stands still from before the card first shows and moves only by runFor (24 Nov 2026). Running in
+       real time, Playwright 1.48's clock (tests/package.json) put itself back after runFor(1600): the card was drawn at
+       1.52 s, then again at 0.54 s, so it stopped breathing ("phase NaN", 2 of 36 runs at 10 at a time; the same fault as
+       in tests/cooling-motion.test.js). still() stops it; until() moves it on 25 ms at a time until the page shows fn. */
+    // pauseAt refuses a time already gone, and a busy runner can pass a few milliseconds between reading the clock and
+    // pausing it: so 0.2 s ahead, and once more if that has gone too
+    const still = async p => {
+      for (let tries = 0; ; tries++) {
+        try { await p.clock.pauseAt(await p.evaluate(() => Date.now()) + 200); break; } catch (e) { if (tries === 4) throw e; }
+      }
+      await L.settle(p, 100);
+    };
+    const until = async (p, fn, arg, ms) => { for (let t = 0; t <= ms; t += 25) { if (await p.evaluate(fn, arg)) return true; await p.clock.runFor(25); } return false; };
 
     // Opened on Recipes, then the Prep list: the card's own clock starts here, not during the opening helper's waits,
     // so a busy runner cannot reach the 8 s line before the checks below
     let p = await L.open(b, '#/recipes', { who: 'sam', wait: 100, fakeSDK: { 'firebase-firestore.js': held }, init });
+    await still(p);
     await p.evaluate(() => { location.hash = '#/prep'; });
-    await L.waitFor(p, () => !!document.querySelector('[data-wait]'), null, 5000).catch(() => {});
+    await until(p, () => !!document.querySelector('[data-wait]'), null, 5000);
     let c = await p.evaluate(() => window.__first);
     ok(!!c && /Connecting to the kitchen book/.test(c.words) && !c.breathing, 'first: the card says it is connecting, the rows still ' + JSON.stringify(c));
     await p.clock.runFor(1600);
-    await L.waitFor(p, () => !!document.querySelector('[data-wait] .ink-skeleton.is-breathing'), null, 3000).catch(() => {});
+    await until(p, () => !!document.querySelector('[data-wait] .ink-skeleton.is-breathing'), null, 3000);
     const c1 = await card(p);
     ok(!!c1 && c1.breathing && c1.anim === 'ink-breathe-box' && c1.phase < -1.3 && c1.phase > -1.8, 'past 1.5 s: the rows breathe together, from where the wait began ' + JSON.stringify(c1));
     await p.clock.runFor(450);
     await p.evaluate(() => window.__let('login/roster$'));   // the roster answers: the sign-in carries on and the card is drawn again
-    await L.waitFor(p, () => /Getting today/.test((document.querySelector('[data-wait] .ink-status') || {}).textContent || ''), null, 5000).catch(() => {});
+    await until(p, () => /Getting today/.test((document.querySelector('[data-wait] .ink-status') || {}).textContent || ''), null, 5000);
     const c2 = await card(p);
     ok(!!c2 && /Getting today's prep list/.test(c2.words), 'then: it names the page\'s own list while the settings come ' + JSON.stringify(c2 && c2.words));
     // started again, the rows would rest for another 1.5 s and the 8 s line below would come about 2 s late
     ok(!!c2 && c2.breathing && c2.phase <= 0 && c2.phase > -1.8, 'a redraw carries the breath on instead of starting it again (phase ' + (c2 && c2.phase) + ')');
     await p.clock.runFor(6200);
-    await L.waitFor(p, () => /Still waiting/.test((document.querySelector('[data-wait] .ink-status') || {}).textContent || ''), null, 3000).catch(() => {});
+    await until(p, () => /Still waiting/.test((document.querySelector('[data-wait] .ink-status') || {}).textContent || ''), null, 3000);
     const c3 = await card(p);
     ok(!!c3 && /Still waiting for an answer from the kitchen book\./.test(c3.words) && /You can use the recipes while you wait\./.test(c3.words), 'past 8 s: it says it is still waiting, and that the recipes work meanwhile ' + JSON.stringify(c3 && c3.words));
     ok(!!c3 && !c3.breathing && c3.icon === 'still' && c3.statuses === 1, 'past 8 s: the rows and the icon rest, one status line ' + JSON.stringify(c3));
     await p.evaluate(() => window.__let('config/main$'));
-    await L.waitFor(p, () => [...document.querySelectorAll('.nb-row')].some(r => /Slice onions/.test(r.textContent)), null, 5000).catch(() => {});
+    await until(p, () => [...document.querySelectorAll('.nb-row')].some(r => /Slice onions/.test(r.textContent)), null, 5000);
     ok(await p.evaluate(() => !document.querySelector('[data-wait]') && [...document.querySelectorAll('.nb-row')].some(r => /Slice onions/.test(r.textContent))), 'the list replaces the card once the settings are in');
     // Sam may add lines: between the roster and the settings no page is drawn from the roster alone (24 Nov 2026)
     ok(await p.evaluate(() => !window.__readOnly), 'between the roster and the settings the read-only notice never shows, not even for a frame');
@@ -59,11 +73,12 @@ const { R, ok } = L.results();
     // reduce motion: the words still change, nothing breathes
     p = await L.open(b, '#/recipes', { who: 'sam', wait: 100, fakeSDK: { 'firebase-firestore.js': held }, init });
     await p.emulateMedia({ reducedMotion: 'reduce' });
+    await still(p);
     await p.evaluate(() => { location.hash = '#/orders'; });
-    await L.waitFor(p, () => !!document.querySelector('[data-wait]'), null, 5000).catch(() => {});
+    await until(p, () => !!document.querySelector('[data-wait]'), null, 5000);
     await p.clock.runFor(1600);
     await p.evaluate(() => window.__let('login/roster$'));
-    await L.waitFor(p, () => /Getting today/.test((document.querySelector('[data-wait] .ink-status') || {}).textContent || ''), null, 5000).catch(() => {});
+    await until(p, () => /Getting today/.test((document.querySelector('[data-wait] .ink-status') || {}).textContent || ''), null, 5000);
     c = await card(p);
     ok(!!c && /Getting today's order list/.test(c.words) && c.anim === 'none', 'reduce motion: the words name the order list and the rows do not move ' + JSON.stringify(c));
     ok(p.errors.length === 0, 'reduce motion: no page errors ' + p.errors.join(' | '));
