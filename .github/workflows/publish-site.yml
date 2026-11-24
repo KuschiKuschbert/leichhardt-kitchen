@@ -12,15 +12,28 @@
 # published ahead of its code.
 # Publish times (head chef, 24 Nov 2026, docs/loading-wait-options/brief.md): merges land at any time, but the phones get
 # a new version only in the publish windows below (15:05 and 22:35, Queensland time), or at once for a pull request
-# labelled urgent. Outside them a change waits (held) and Published does not run, so no rules go out ahead of their code;
-# the timed runs in each window publish what waited (several, as GitHub can skip one). 16 to 36 versions a day had
-# reloaded the phones coming back to the book (Mon 23 and Tue 24 Nov 2026).
+# labelled urgent. Outside them a change waits (held) and Published does not run, so no rules go out ahead of their code.
+# 16 to 36 versions a day had reloaded the phones coming back to the book (Mon 23 and Tue 24 Nov 2026).
+# The waiting run (24 Nov 2026, as in auto-merge.yml): GitHub ran none of the timed runs below on their first evening
+# (and 2 of the 144 ten-minute cut-off runs that day), so the 22:35 window passed with four changes held. Now a held
+# change starts a run that sleeps until a minute after the next window opens, then starts a window run, which publishes
+# what waited. The timed runs stay as a fallback.
 name: Publish site
+run-name: "${{ github.event_name == 'workflow_dispatch' && (inputs.wait && 'Waiting for the publish window' || inputs.timed && 'Publish window' || '') || '' }}"
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      wait:
+        description: 'Wait for the next publish window, then publish what waited (a held merge starts this)'
+        type: boolean
+        default: false
+      timed:
+        description: 'A window run: publish only what the phones need, only inside a window (the waiting run starts this)'
+        type: boolean
+        default: false
   schedule:
     # UTC: 15:05 to 16:25 and 22:35 to 23:55 Queensland time, every 20 minutes
     - cron: '5,25,45 5 * * *'
@@ -35,10 +48,11 @@ permissions:
   deployments: read
 
 # One publish at a time, never cut short. A run waiting behind it is replaced by a newer one, which compares
-# with what is live, so it carries the replaced run's changes too.
+# with what is live, so it carries the replaced run's changes too. The waiting run sleeps in a group of its own, so it
+# never holds up a publish (an urgent one, say); a newer waiting run replaces it.
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: ${{ github.event_name == 'workflow_dispatch' && inputs.wait && 'publish-wait' || 'pages' }}
+  cancel-in-progress: ${{ github.event_name == 'workflow_dispatch' && inputs.wait || false }}
 
 env:
   # HHMM-HHMM, Queensland time, end not included (as RELEASE_WINDOWS in auto-merge.yml). Empty publishes at once.
@@ -47,6 +61,8 @@ env:
 jobs:
   check:
     name: Check
+    # not in the waiting run, which only sleeps (the wait job below)
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.wait) }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -69,6 +85,7 @@ jobs:
           REPO: ${{ github.repository }}
           EVENT: ${{ github.event_name }}
           SHA: ${{ github.sha }}
+          TIMED: ${{ github.event_name == 'workflow_dispatch' && inputs.timed }}
         run: |
           source=$(gh api "repos/$REPO/pages" --jq .build_type 2>/dev/null || echo unknown)
           echo "source=$source" >> "$GITHUB_OUTPUT"
@@ -76,7 +93,8 @@ jobs:
             echo "::warning::Pages still publishes from the branch on every push. Set Settings, Pages, Source to GitHub Actions. Until then this workflow publishes nothing."
             echo "deploy=false" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          if [ "$EVENT" = workflow_dispatch ]; then
+          # by hand: at once; a window run (started by the waiting run) decides like a timed run
+          if [ "$EVENT" = workflow_dispatch ] && [ "${TIMED:-false}" != true ]; then
             echo "Run by hand: publishing."; echo "deploy=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
           # the commit that is live now: the newest github-pages deployment whose latest status is success
@@ -115,6 +133,29 @@ jobs:
             echo "Live is ${live:0:7}. Nothing the phones load changed since: not publishing, so no phone is asked to update."
             echo "deploy=false" >> "$GITHUB_OUTPUT"
           fi
+
+  # A held change makes sure one run waits to publish it (the wait job below). A newer waiting run replaces an older one.
+  hold:
+    name: Wait for the next window
+    needs: check
+    if: needs.check.outputs.held == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Start the waiting run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          for i in 1 2 3; do
+            if gh workflow run publish-site.yml --repo "$REPO" --ref main -f wait=true; then
+              echo "A run now waits for the next publish window ($PUBLISH_WINDOWS, Queensland time) and publishes then."; exit 0
+            fi
+            [ "$i" = 3 ] || sleep $((i * 10))
+          done
+          echo "::error::Could not start the waiting run. Run Publish site by hand in the next window."; exit 1
 
   deploy:
     name: Deploy
@@ -218,3 +259,42 @@ jobs:
     timeout-minutes: 2
     steps:
       - run: echo "The site is up to date with this commit."
+
+  # The waiting run: sleeps until a minute after the next window opens (at most 5 hours 45 minutes, inside GitHub's
+  # 6-hour job limit), then starts a window run, which publishes what waited. Woken early by the cap, the window run
+  # finds the window still shut, holds, and starts the next wait.
+  wait:
+    name: Wait for the publish window
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.wait }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    permissions:
+      actions: write
+    steps:
+      - name: Sleep until the next publish window
+        run: |
+          # NOW_HHMM stands in for the clock in tests/site-publish.test.js
+          now=${NOW_HHMM:-$(TZ=Australia/Brisbane date +%H%M)}
+          m=$((10#${now:0:2} * 60 + 10#${now:2:2})); best=""
+          for w in $PUBLISH_WINDOWS; do
+            s=${w%-*}; d=$(( (10#${s:0:2} * 60 + 10#${s:2:2} - m + 1440) % 1440 ))
+            if [ -z "$best" ] || [ "$d" -lt "$best" ]; then best=$d; fi
+          done
+          if [ -z "$best" ]; then echo "No publish windows: nothing to wait for."; exit 0; fi
+          secs=$(( (best + 1) * 60 )); cap=$((345 * 60))
+          if [ "$secs" -gt "$cap" ]; then
+            echo "The next window opens in $best minutes: waiting 5 hours 45 minutes, then the window run starts the next wait."; secs=$cap
+          else
+            echo "The next window opens in $best minutes: waiting until a minute after it opens."
+          fi
+          sleep "$secs"
+      - name: Start the window run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          for i in 1 2 3; do
+            gh workflow run publish-site.yml --repo "$REPO" --ref main -f timed=true && exit 0
+            [ "$i" = 3 ] || sleep $((i * 10))
+          done
+          echo "::error::Could not start the window run. Run Publish site by hand."; exit 1
