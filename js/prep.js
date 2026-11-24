@@ -440,6 +440,9 @@
         if (S.configState === 'badpin') { S.pinError = 'That PIN is not right.'; S.pin = ''; lsSet('lk.prep.pin', ''); cfgKey = ''; unsubCfg = null; gForget(); }
         draw();
       });
+      // today's list (and the page's own list) asks with the settings, not after them (listsMay(), 24 Nov 2026); the
+      // settings' answer calls these again and they keep the listener they already have
+      if (full && kitchenAccess()) { watchItems(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); if (S.name === 'transfers') watchXfer(); }
     }, function () { S.configState = 'error'; draw(); });
   }
   /* An answer from the copy in memory (no signal), not from the server. Since 26 Oct 2026 (#387) that copy holds only
@@ -708,9 +711,17 @@
   // The prep list's last answer came from memory, not the server: the browser can say it is online while the list is
   // out of touch (the wifi up, the internet down). The finished words on a wide screen give way then (finFit()).
   var itemsCold = false;
+  /* May the live lists (prep, orders, wastage, transfers) start? Once the kitchen's settings are in, as before, or
+     (24 Nov 2026) as soon as they are being read for a person the roster lets into the kitchen pages: the list's answer
+     then comes with the settings, not one server answer after them (0.93 s to 0.64 s from the Loading card on a slowed
+     test phone with 300 ms answers, docs/loading-motion.md). The rules check the same session for both reads, and the page still shows Loading until the settings are
+     in (bodyHTML()), so nothing is seen sooner than before. */
+  function listsMay() {
+    if (!kitchenAccess() || !fb) return false;
+    return S.configFull && S.configState === 'ok' || S.configState === 'loading' && cfgKey === S.pin + '|kitchen' && !!unsubCfg;
+  }
   function watchItems() {
-    if (!kitchenAccess() || !S.configFull) return;
-    if (S.configState !== 'ok' || !fb) return;
+    if (!listsMay()) return;
     var key = S.pin + '|' + S.date;
     if (key === itemsKey && unsubItems) return;
     if (unsubItems) unsubItems();
@@ -8197,8 +8208,7 @@
     return ingIdx;
   }
   function watchOrders() {
-    if (!kitchenAccess() || !S.configFull) return;
-    if (S.configState !== 'ok' || !fb) return;
+    if (!listsMay()) return;
     var key = S.pin + '|' + S.ordDate;
     if (key === ordKey && unsubOrd) return;
     if (unsubOrd) unsubOrd();
@@ -8697,8 +8707,7 @@ if (list.length) sg('oreg', 's');
   function wRef(date, id) { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['waste', date, 'lines', id])); }
   function wDay(date) { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['waste', date])); }
   function watchWaste() {
-    if (!kitchenAccess() || !S.configFull) return;
-    if (S.configState !== 'ok' || !fb) return;
+    if (!listsMay()) return;
     var key = S.pin + '|' + S.wDate;
     if (key === wKey && unsubW) return;
     if (unsubW) unsubW();
@@ -8745,7 +8754,7 @@ if (list.length) sg('oreg', 's');
      kept in lk.w.sum until the kitchen day changes. A summary made for an earlier day (the night job has not run yet)
      is used but not kept, so the next page load reads again. A failed read keeps nothing and tries again after 5 minutes. */
   function loadWSum() {
-    if (!kitchenAccess() || !S.configFull) return;
+    if (!listsMay()) return;   // also from its list's watcher, which may run before the settings are in (24 Nov 2026)
     var today = dayNow(), tag = S.pin + '|' + today;
     if (!fb || S.wSumBusy || waiting('wSum') || (S.wSum && S.wSumFor === today)) return;
     var c = dayCache('lk.w.sum', tag);
@@ -9332,7 +9341,7 @@ if (list.length) sg('oreg', 's');
     return W(ops);
   }
   function watchXOpen() {
-    if (!kitchenAccess() || !S.configFull) return;
+    if (!listsMay()) return;   // also from its list's watcher, which may run before the settings are in (24 Nov 2026)
     if (unsubXO || !fb) return;
     S.xOpenState = 'loading'; xoSnap = {};
     var col = fb.fs.collection.apply(null, [fb.db].concat(base(), ['transferOpen']));
@@ -9388,8 +9397,7 @@ if (list.length) sg('oreg', 's');
     }, function (e) { if (stillHere()) { failed(e); draw(); } });
   }
   function watchXfer() {
-    if (!kitchenAccess() || !S.configFull) return;
-    if (S.configState !== 'ok' || !fb) return;
+    if (!listsMay()) return;
     var key = S.pin + '|' + S.xDate;
     if (key === xKey && unsubX) return;
     if (unsubX) unsubX();
@@ -9412,7 +9420,7 @@ if (list.length) sg('oreg', 's');
      lk.x.sum until the kitchen day changes. A summary made for an earlier day (the night job has not run yet) is used but
      not kept, so the next page load reads again. A failed read keeps nothing and tries again after 5 minutes. */
   function loadXSum() {
-    if (!kitchenAccess() || !S.configFull) return;
+    if (!listsMay()) return;   // also from its list's watcher, which may run before the settings are in (24 Nov 2026)
     var today = dayNow(), tag = S.pin + '|' + today;
     if (!fb || S.xSumBusy || waiting('xSum') || (S.xSum && S.xSumFor === today)) return;
     var c = dayCache('lk.x.sum', tag);

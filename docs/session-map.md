@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## The lists open one server answer sooner after a cold start, 24 November 2026 (fix)
+
+The head chef: the Prep list sat on Loading for a long time when the app first opened. The roster, the kitchen's settings and the page's own list were three server answers in a row; the list now asks with the settings (`listsMay()` in `js/prep.js`, prep, orders, wastage and transfers). About 0.3 to 0.6 s sooner on the test stand-in with a slowed phone. A fix, no council. `tests/cold-start.test.js`. [Note and measurements](loading-motion.md#the-first-list-after-a-cold-start-24-november-2026).
+
 ## The platform owner's Admin at a second venue, 24 November 2026 (built)
 
 The client follow-up of the venue plumbing. At a venue the platform owner signs in with his own PIN and his Google and gets Admin; the venue admin's People page shows his row locked ("The owner's own profile. Only the owner can change it.") and every save from the venue admin leaves it as stored. One new read rule, `config/platform` (`{ id }`, written only by `scripts/access-bootstrap.mjs` from `PLATFORM_STAFF_ID`; none at Leichhardt): looser, so rules first. In `js/prep.js`: `loadAdmins()` reads it with each owner check, `platformLockLoad()` for the venue admin, `platformKeep()` in `saveConfig()`, `googleKeeps()` and `whoAdmin()`. At Leichhardt nothing changes but one read per owner check. Tests: `tests/venue-platform-admin.test.js`, `tests/rules/venues.test.mjs`, `tests/access-bootstrap.test.js`. [Venues, Two admins at a venue](venues.md#two-admins-at-a-venue).
