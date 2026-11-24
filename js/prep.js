@@ -7989,12 +7989,39 @@
   // the pages other scripts draw are named too: before the kitchen's settings are in, they show this card (27 Oct 2026)
   var PAGE_NAME = { prep: 'Prep list', orders: 'Order list', waste: 'Wastage', transfers: 'Transfers', admin: 'Admin panel', chef: 'Chef panel', minutes: 'Meeting minutes', guides: 'Guides', cleaning: 'Cleaning', mail: 'Kitchen mail', drinks: 'Drinks run', todo: 'Chef to-do',
     fn: 'Functions', functions: 'Manage functions', deliveries: 'Delivery received', suppliers: 'Supplier order', manage: 'Recipes & drawings' };
+  /* The loading card says what the book is doing (head chef, 24 Nov 2026, docs/loading-wait-options/brief.md):
+     connecting (the clock, the Firebase files, the sign-in and the roster), then the page's own list while the
+     kitchen's settings and that list are read together (listsMay()). Past 1.5 s the placeholder rows breathe together,
+     never darker than at rest, in step with the icon's 1.8 s trace; the phase comes from when the card first showed,
+     so a redraw (the clock, the sign-in, each answer) carries the breath on instead of starting it again. Past 8 s it
+     says it is still waiting and the rows rest. Counted on this phone (Date.now()); the two timers only redraw the card
+     if it is still there, and go when it goes (waitDone()). Offline and failure cards are unchanged. */
+  var waitSince = 0, waitTimers = [], waitGone = 0;
+  var WAIT_LIST = { prep: 'prep list', orders: 'order list', waste: 'wastage', transfers: 'transfers' };
+  function waitDone() { waitSince = 0; waitTimers.forEach(clearTimeout); waitTimers = []; }
+  function waitWords() {
+    if (T.ready() && cfgKey === S.pin + '|kitchen' && S.configState === 'loading') return WAIT_LIST[S.name] ? 'Getting today\'s ' + WAIT_LIST[S.name] : 'Opening ' + (PAGE_NAME[S.name] || 'the prep book');
+    return 'Connecting to the kitchen book';
+  }
+  function waitHTML(icon, rows) {
+    if (!waitSince) {
+      waitSince = Date.now();
+      waitTimers = [1500, 8000].map(function (ms) { return setTimeout(function () { if (S.root && S.root.querySelector('[data-wait]')) draw(); }, ms + 20); });
+    }
+    var waited = Date.now() - waitSince;
+    if (waited >= 8000) return window.LK_MOTION ? window.LK_MOTION.status('Still waiting for an answer from the kitchen book.', { icon: icon, state: 'still', detail: 'You can use the recipes while you wait.', rows: rows }) :
+      '<p class="hint" role="status">Still waiting for an answer from the kitchen book. You can use the recipes while you wait.</p>';
+    var html = inkWait(waitWords(), icon, rows);
+    if (waited < 1500) return html;
+    var phase = -((waited % 1800) / 1000);   // a number: where the 1.8 s breath has got to since the card first showed
+    return html.replace('<div class="ink-skeleton" aria-hidden="true">', '<div class="ink-skeleton is-breathing" style="--ink-phase: ' + phase.toFixed(2) + 's" aria-hidden="true">');
+  }
   function loadingHTML() {
     var t = esc(PAGE_NAME[S.name] || 'Prep book');
     var icon = ['prep', 'orders', 'waste', 'transfers', 'guides'].indexOf(S.name) >= 0 ? S.name : 'chef';
-    if (S.name === 'admin' || S.name === 'chef') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + t + '</h2>' + inkWait('Loading...', icon, 3) + '</section>';
-    return '<section class="nb-page o-page is-loading"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + t + '</h2><span class="nb-date">' + esc(longDate(dayNow())) + '</span></div></header>' +
-      '<div class="nb-body">' + inkWait('Loading...', icon, 4) + '</div></section>';
+    if (S.name === 'admin' || S.name === 'chef') return '<section class="p-card" data-wait="1"><h2 class="p-h" id="rtitle" tabindex="-1">' + t + '</h2>' + waitHTML(icon, 3) + '</section>';
+    return '<section class="nb-page o-page is-loading" data-wait="1"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + t + '</h2><span class="nb-date">' + esc(longDate(dayNow())) + '</span></div></header>' +
+      '<div class="nb-body">' + waitHTML(icon, 4) + '</div></section>';
   }
   /* the kitchen's settings are not loaded yet and there is no signal (27 Oct 2026): in place of Who are you? or a page
      that would look empty. The settings listener carries on and the page opens by itself when the signal is back. */
@@ -8150,6 +8177,13 @@
     if (teamHere()) tmKeepView();
     try { S.root.innerHTML = practiceHTML() + quotaHTML() + bodyHTML() + toastHTML(); }
     finally { if (key) delete ae._uxRedrawing; }
+    // the wait ends once nothing on the page has waited for its first load for 0.4 s: a draw or two of something else
+    // between the roster and the settings (the list's own placeholder rows, or for a moment the read-only notice) are
+    // the same wait, so the breath and the 8 s carry on through them
+    if (waitSince) {
+      if (S.root.querySelector('[data-wait], .ink-skeleton')) { clearTimeout(waitGone); waitGone = 0; }
+      else if (!waitGone) waitGone = setTimeout(function () { waitGone = 0; if (S.root && !S.root.querySelector('[data-wait], .ink-skeleton')) waitDone(); }, 400);
+    }
     if (S.toast) plainAway();
     S.root.classList.toggle('is-book', S.name === 'prep' && !!S.root.querySelector('.nb'));
     document.documentElement.classList.toggle('sheet-open', !!S.root.querySelector('.sheet') || !!ptPop);
