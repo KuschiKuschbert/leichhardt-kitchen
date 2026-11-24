@@ -28,6 +28,17 @@ When nothing needs publishing, the live site keeps the earlier copy of the notes
 
 A venue served by its own Firebase project (`venues/<id>.json` with `host: firebase`, [venues.md](venues.md)) gets its own copy of the same publish straight after the Pages Deploy: the Venue site job makes it with `scripts/venue-site.cjs` (its settings, security header, name, an empty book, its QR) and publishes it with `scripts/venue-deploy.sh`, in the venue's GitHub environment, then reads it back (`scripts/venue-live-check.cjs`). Published waits for every venue, so no venue's rules are published ahead of its code. `venues/` itself is left out of a publish: it is read by the workflows only.
 
+## Publish times (24 November 2026)
+
+The head chef chose it after the council ([brief](loading-wait-options/brief.md)). Merges land at any time (the release window is open all day), but the phones get a new version only in the publish windows, `PUBLISH_WINDOWS: '1505-1630 2235-2400'` (Queensland time), or at once for a pull request labelled `urgent`. 16 to 36 new versions a day had reloaded the phones coming back to the book (Mon 23 and Tue 24 Nov 2026); now it is at most two a day plus urgent.
+
+- **Check** compares with what is live, as before. A change the phones load outside a window is held (`deploy=false`, `held=true`). Inside a window, by hand (Run workflow) or for `urgent` it publishes. If GitHub does not say which labels the merge had, it publishes rather than hold a fix unseen.
+- **Timed runs** every 20 minutes inside both windows (UTC cron: 05:05 to 06:25 and 12:35 to 13:55) publish what waited; several, as GitHub can skip a timed run. One that GitHub runs late, outside a window, still holds.
+- **Published** does not run while a change is held, so Publish rules waits too and no rules go out ahead of their code. When the site goes out, Publish rules compares with the version that was live before it (from the Pages deployments), so rules that waited are published once, after their code. A timed run that published nothing brings no rules. A rules change alone, with nothing held, still publishes at once.
+- **Trade-off:** a fix not labelled `urgent` reaches the phones up to 16.5 hours later (22:35 to 15:05), and so does its live check. Label a fix the kitchen needs now `urgent`.
+
+`tests/site-publish.test.js` runs the decision and the rules step at the window edges, with and without `urgent`, for timed runs and for held rules: 15 failed of 66 on the old workflows, 0 now.
+
 ## What follows it
 
 - **Live click tests** run after the Deploy job publishes, and not after a merge that published nothing.

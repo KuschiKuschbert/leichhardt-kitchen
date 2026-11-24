@@ -146,6 +146,43 @@ clearAnswers(); deployments([{ sha: 'f'.repeat(40), state: 'success' }]);
 r = run(decide, { EVENT: 'push' });
 eq([r.status, r.deploy], [0, 'true'], 'a live commit this copy does not know: publishes');
 
+// 2b. Publish times (head chef, 24 Nov 2026, docs/loading-wait-options/brief.md): outside the windows a change the phones
+// load waits (held) unless its pull request is labelled urgent; a timed run in a window publishes what waited.
+const W = { PUBLISH_WINDOWS: '1505-1630 2235-2400' };
+const c4 = commit(['js/prep.js'], 'an app change outside the windows');
+const pulls = 'repos/k/book/commits/' + c4 + '/pulls';
+clearAnswers(); deployments([{ sha: c3, state: 'success' }]); answer(pulls, [{ labels: [{ name: 'feature' }] }]);
+r = run(decide, Object.assign({ EVENT: 'push', SHA: c4, NOW_HHMM: '1200' }, W));
+eq([r.status, r.deploy, r.held], [0, 'false', 'true'], 'publish times: at 12:00 a change the phones load is held');
+ok(/held\. The phones get it at the next window/.test(r.log), 'publish times: the log says it waits for the next window');
+for (const [t, want] of [['1504', 'false'], ['1505', 'true'], ['1629', 'true'], ['1630', 'false'], ['2234', 'false'], ['2235', 'true'], ['2359', 'true'], ['0000', 'false'], ['0300', 'false']]) {
+  r = run(decide, Object.assign({ EVENT: 'push', SHA: c4, NOW_HHMM: t }, W));
+  eq(r.deploy, want, 'publish times: a merge at ' + t.slice(0, 2) + ':' + t.slice(2) + (want === 'true' ? ' publishes' : ' waits'));
+}
+answer(pulls, [{ labels: [{ name: 'urgent' }] }]);
+r = run(decide, Object.assign({ EVENT: 'push', SHA: c4, NOW_HHMM: '1200' }, W));
+eq([r.deploy, r.held], ['true', undefined], 'publish times: a merge labelled urgent publishes at once');
+ok(/Labelled urgent/.test(r.log), 'publish times: and says why');
+clearAnswers(); deployments([{ sha: c3, state: 'success' }]);
+r = run(decide, Object.assign({ EVENT: 'push', SHA: c4, NOW_HHMM: '1200' }, W));
+eq(r.deploy, 'true', 'publish times: GitHub not saying which labels: publishes rather than hold a fix unseen');
+r = run(decide, Object.assign({ EVENT: 'schedule', SHA: c4, NOW_HHMM: '2255' }, W));
+eq(r.deploy, 'true', 'publish times: the timed run in the night window publishes what waited');
+r = run(decide, Object.assign({ EVENT: 'schedule', SHA: c4, NOW_HHMM: '1150' }, W));
+eq([r.deploy, r.held], ['false', 'true'], 'publish times: a timed run GitHub ran late, outside the windows, still holds');
+r = run(decide, Object.assign({ EVENT: 'workflow_dispatch', SHA: c4, NOW_HHMM: '1200' }, W));
+eq(r.deploy, 'true', 'publish times: Run workflow by hand publishes at any time');
+clearAnswers(); deployments([{ sha: c4, state: 'success' }]);
+commit(['docs/e.md'], 'a note outside the windows');
+r = run(decide, Object.assign({ EVENT: 'push', SHA: c4, NOW_HHMM: '1200' }, W));
+eq([r.deploy, r.held], ['false', undefined], 'publish times: nothing the phones load changed: nothing held, so Published runs and rules alone still go out');
+{
+  const yml = wf('publish-site.yml');
+  ok(/^\s+PUBLISH_WINDOWS: '1505-1630 2235-2400'$/m.test(yml), 'publish times: the windows are 15:05 to 16:30 and 22:35 to midnight, Queensland time');
+  ok(["'5,25,45 5 * * *'", "'5,25 6 * * *'", "'35,55 12 * * *'", "'15,35,55 13 * * *'"].every(c => yml.includes('cron: ' + c)), 'publish times: timed runs every 20 minutes inside both windows (UTC)');
+  ok(yml.includes("needs.check.outputs.held != 'true'"), 'publish times: Published does not run while a change is held, so no rules go out ahead of their code');
+}
+
 // 3. Deploy waits for the artifact produced by this attempt.
 const publish = wf('publish-site.yml');
 const waitArtifact = stepScript(publish, "Wait for this attempt's Pages artifact");
@@ -211,6 +248,33 @@ eq(run(access, { EVENT_NAME: 'workflow_run', FROM: 'pages-build-deployment', RUN
 commit(['docs/c.md'], 'note');
 jobs([['Check', 'success'], ['Deploy', 'skipped'], ['Published', 'success']]);
 eq(run(access, { EVENT_NAME: 'workflow_run', FROM: 'Publish site', RUN_ID: '7' }).publish, 'false', 'rules: a note alone publishes no rules');
+
+// Publish times (24 Nov 2026): rules that waited with their held code go out when the site does, not only the last commit's
+const before0 = commit(['js/app.js'], 'live before the held change');
+commit(['firestore.rules', 'js/prep.js'], 'rules and code, held');
+const after0 = commit(['docs/f.md'], 'a note after');
+function pagesLive(list) {
+  answer('repos/k/book/deployments?environment=github-pages&per_page=30', list.map((d, i) => ({ id: 300 - i, sha: d.sha })));
+  list.forEach((d, i) => answer('repos/k/book/deployments/' + (300 - i) + '/statuses?per_page=30', d.states.map(state => ({ state }))));
+}
+clearAnswers(); jobs([['Check', 'success'], ['Deploy', 'success'], ['Published', 'success']]);
+pagesLive([{ sha: after0, states: ['success'] }, { sha: before0, states: ['inactive', 'success', 'in_progress'] }]);
+r = run(access, { EVENT_NAME: 'workflow_run', FROM: 'Publish site', RUN_ID: '7', TRIGGER: 'schedule' });
+eq(r.publish, 'true', 'rules: held with their code, they publish when the timed run publishes the site (the last commit was a note)');
+const after1 = commit(['js/app.js'], 'code only');
+clearAnswers(); jobs([['Check', 'success'], ['Deploy', 'success'], ['Published', 'success']]);
+pagesLive([{ sha: after1, states: ['success'] }, { sha: after0, states: ['inactive', 'success'] }]);
+r = run(access, { EVENT_NAME: 'workflow_run', FROM: 'Publish site', RUN_ID: '7', TRIGGER: 'push' });
+eq(r.publish, 'false', 'rules: a site publish with no rules change since the version before publishes no rules');
+clearAnswers(); jobs([['Check', 'success'], ['Deploy', 'success'], ['Published', 'success']]);
+r = run(access, { EVENT_NAME: 'workflow_run', FROM: 'Publish site', RUN_ID: '7', TRIGGER: 'push' });
+eq(r.publish, 'true', 'rules: the version live before not known: publishes the rules rather than miss a change');
+commit(['firestore.rules'], 'rules only, published at once');
+clearAnswers(); jobs([['Check', 'success'], ['Deploy', 'skipped'], ['Published', 'success']]);
+r = run(access, { EVENT_NAME: 'workflow_run', FROM: 'Publish site', RUN_ID: '7', TRIGGER: 'schedule' });
+eq(r.publish, 'false', 'rules: a timed run that published nothing brings no rules (the last commit\'s went out with its own push)');
+r = run(access, { EVENT_NAME: 'workflow_run', FROM: 'Publish site', RUN_ID: '7', TRIGGER: 'push' });
+eq(r.publish, 'true', 'rules: a push of the rules alone still publishes them at once');
 
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log((n - fails) + ' of ' + n + ' passed');

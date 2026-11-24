@@ -10,12 +10,23 @@
 # same publish (scripts/venue-site.cjs: its settings, security header, name and an empty book) on its own address, in its
 # own GitHub environment, straight after the Pages publish. Published waits for those too, so no venue's rules are ever
 # published ahead of its code.
+# Publish times (head chef, 24 Nov 2026, docs/loading-wait-options/brief.md): merges land at any time, but the phones get
+# a new version only in the publish windows below (15:05 and 22:35, Queensland time), or at once for a pull request
+# labelled urgent. Outside them a change waits (held) and Published does not run, so no rules go out ahead of their code;
+# the timed runs in each window publish what waited (several, as GitHub can skip one). 16 to 36 versions a day had
+# reloaded the phones coming back to the book (Mon 23 and Tue 24 Nov 2026).
 name: Publish site
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    # UTC: 15:05 to 16:25 and 22:35 to 23:55 Queensland time, every 20 minutes
+    - cron: '5,25,45 5 * * *'
+    - cron: '5,25 6 * * *'
+    - cron: '35,55 12 * * *'
+    - cron: '15,35,55 13 * * *'
 
 permissions:
   contents: read
@@ -29,6 +40,10 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+env:
+  # HHMM-HHMM, Queensland time, end not included (as RELEASE_WINDOWS in auto-merge.yml). Empty publishes at once.
+  PUBLISH_WINDOWS: '1505-1630 2235-2400'
+
 jobs:
   check:
     name: Check
@@ -36,6 +51,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       deploy: ${{ steps.decide.outputs.deploy }}
+      held: ${{ steps.decide.outputs.held }}
       source: ${{ steps.decide.outputs.source }}
       hosted: ${{ steps.hosted.outputs.list }}
     steps:
@@ -52,6 +68,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           EVENT: ${{ github.event_name }}
+          SHA: ${{ github.sha }}
         run: |
           source=$(gh api "repos/$REPO/pages" --jq .build_type 2>/dev/null || echo unknown)
           echo "source=$source" >> "$GITHUB_OUTPUT"
@@ -74,7 +91,26 @@ jobs:
           need=$(git diff --no-renames --name-only "$live" HEAD | bash scripts/site-changed.sh)
           if [ -n "$need" ]; then
             echo "Live is ${live:0:7}. Files the site needs changed since:"; echo "$need" | head -20
-            echo "deploy=true" >> "$GITHUB_OUTPUT"
+            # in a publish window? NOW_HHMM stands in for the clock in tests/site-publish.test.js
+            open=true
+            if [ -n "${PUBLISH_WINDOWS:-}" ]; then
+              now=${NOW_HHMM:-$(TZ=Australia/Brisbane date +%H%M)}; open=false
+              for w in $PUBLISH_WINDOWS; do [ $((10#$now)) -ge $((10#${w%-*})) ] && [ $((10#$now)) -lt $((10#${w#*-})) ] && open=true; done
+            fi
+            # a merge labelled urgent goes out at once; if GitHub does not say, it goes out rather than wait unseen
+            if [ "$open" != true ] && [ "$EVENT" = push ]; then
+              if labels=$(gh api "repos/$REPO/commits/$SHA/pulls" --jq '[.[].labels[].name] | join(" ")' 2>/dev/null); then
+                case " $labels " in *" urgent "*) open=true; echo "Labelled urgent: publishing now." ;; esac
+              else
+                open=true; echo "Could not read this merge's labels: publishing rather than hold a fix unseen."
+              fi
+            fi
+            if [ "$open" = true ]; then
+              echo "deploy=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "Outside the publish windows ($PUBLISH_WINDOWS, Queensland time): held. The phones get it at the next window."
+              echo "deploy=false" >> "$GITHUB_OUTPUT"; echo "held=true" >> "$GITHUB_OUTPUT"
+            fi
           else
             echo "Live is ${live:0:7}. Nothing the phones load changed since: not publishing, so no phone is asked to update."
             echo "deploy=false" >> "$GITHUB_OUTPUT"
@@ -176,7 +212,8 @@ jobs:
   published:
     name: Published
     needs: [check, deploy, venue-sites]
-    if: ${{ always() && needs.check.result == 'success' && needs.check.outputs.source != 'legacy' && (needs.deploy.result == 'success' || needs.deploy.result == 'skipped') && (needs.venue-sites.result == 'success' || needs.venue-sites.result == 'skipped') }}
+    # not while a change is held for the next publish window: the rules wait with their code
+    if: ${{ always() && needs.check.result == 'success' && needs.check.outputs.source != 'legacy' && needs.check.outputs.held != 'true' && (needs.deploy.result == 'success' || needs.deploy.result == 'skipped') && (needs.venue-sites.result == 'success' || needs.venue-sites.result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
