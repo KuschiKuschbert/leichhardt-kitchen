@@ -8754,7 +8754,7 @@ if (list.length) sg('oreg', 's');
      kept in lk.w.sum until the kitchen day changes. A summary made for an earlier day (the night job has not run yet)
      is used but not kept, so the next page load reads again. A failed read keeps nothing and tries again after 5 minutes. */
   function loadWSum() {
-    if (!kitchenAccess() || !S.configFull) return;
+    if (!listsMay()) return;   // also from its list's watcher, which may run before the settings are in (24 Nov 2026)
     var today = dayNow(), tag = S.pin + '|' + today;
     if (!fb || S.wSumBusy || waiting('wSum') || (S.wSum && S.wSumFor === today)) return;
     var c = dayCache('lk.w.sum', tag);
@@ -9341,7 +9341,7 @@ if (list.length) sg('oreg', 's');
     return W(ops);
   }
   function watchXOpen() {
-    if (!kitchenAccess() || !S.configFull) return;
+    if (!listsMay()) return;   // also from its list's watcher, which may run before the settings are in (24 Nov 2026)
     if (unsubXO || !fb) return;
     S.xOpenState = 'loading'; xoSnap = {};
     var col = fb.fs.collection.apply(null, [fb.db].concat(base(), ['transferOpen']));
@@ -9420,7 +9420,7 @@ if (list.length) sg('oreg', 's');
      lk.x.sum until the kitchen day changes. A summary made for an earlier day (the night job has not run yet) is used but
      not kept, so the next page load reads again. A failed read keeps nothing and tries again after 5 minutes. */
   function loadXSum() {
-    if (!kitchenAccess() || !S.configFull) return;
+    if (!listsMay()) return;   // also from its list's watcher, which may run before the settings are in (24 Nov 2026)
     var today = dayNow(), tag = S.pin + '|' + today;
     if (!fb || S.xSumBusy || waiting('xSum') || (S.xSum && S.xSumFor === today)) return;
     var c = dayCache('lk.x.sum', tag);
