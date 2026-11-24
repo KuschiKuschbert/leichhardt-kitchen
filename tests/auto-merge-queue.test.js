@@ -59,7 +59,10 @@ fs.writeFileSync(switchScript, stepScript(yml, 'Switch auto-merge on or off for 
 // The release windows (5 Nov 2026): the step that opens and closes them, and the windows themselves.
 const windowBody = stepScript(yml, 'Open or close the release window'), windowScript = path.join(tmp, 'window.sh');
 fs.writeFileSync(windowScript, windowBody);
-const WINDOWS = (yml.match(/^\s*RELEASE_WINDOWS: '([^']+)'/m) || [])[1] || '';
+// The windows set in the workflow. Open all day since 24 Nov 2026 (head chef). The checks of how windows open and close
+// run on the windows from 15 Nov 2026 (WINDOWS), so the mechanism stays proved for a day the windows come back.
+const SET_WINDOWS = (yml.match(/^\s*RELEASE_WINDOWS: '([^']+)'/m) || [])[1] || '';
+const WINDOWS = '1500-1630 2230-2400 0000-0930';
 const RELEASE_UNTIL = (yml.match(/^\s*RELEASE_UNTIL: '([^']+)'/m) || [])[1] || '';
 // The waiting run (6 Nov 2026): the step that sleeps until the next window opens.
 // An older copy of the workflow (QUEUE_YML) has no such step: it then never sleeps, and those checks fail.
@@ -335,7 +338,7 @@ eq(r.merged, [611], 'switching auto-merge off is tried once and never fails the 
 
 // 9. Release windows (head chef, Plan B, 5 Nov 2026): every merge reloads the screens left open, which read their lists
 // again, so ready pull requests merge only between services. Outside a window auto-merge goes off, except "urgent".
-ok(WINDOWS === '1500-1630 2230-2400 0000-0930', 'the windows are 15:00 to 16:30 and 22:30 to 09:30, Queensland time (head chef, 15 Nov 2026: ' + WINDOWS + ')');
+ok(SET_WINDOWS === '0000-2400', 'the window is open all day, Queensland time (head chef, 24 Nov 2026: ' + SET_WINDOWS + ')');
 ok(spawnSync('bash', ['-n', windowScript]).status === 0 && windowBody.indexOf('${{') < 0, 'the window step is valid bash with no GitHub expressions');
 const lbl = (...names) => names.map(name => ({ name }));
 const off = { autoMergeRequest: null };
@@ -422,6 +425,12 @@ eq(sleepAt('1510'), 0, 'in a window it does not sleep');
 eq(sleepAt('0001'), 0, 'just after midnight the night window is still open (8 Nov 2026)');
 eq(sleepAt('0230'), 0, 'at 02:30 the night window is still open (15 Nov 2026)');
 eq(sleepAt('0929'), 0, 'and at 09:29');
+// open all day (24 Nov 2026): the times that used to be closed are open, and the waiting run never sleeps
+for (const t of ['0000', '0930', '1230', '1630', '2229', '2359']) {
+  r = pass('set window at ' + t, { list: [pr(740, 'BEHIND', null, off)] }, { script: windowScript, env: { RELEASE_WINDOWS: SET_WINDOWS, NOW_HHMM: t, RELEASE_NOW: 'false' } });
+  eq([r.on, r.off], [[740], []], 'open all day: a ready one gets auto-merge at ' + t.slice(0, 2) + ':' + t.slice(2));
+  eq(pass('set wait at ' + t, {}, { script: waitScript, env: { RELEASE_WINDOWS: SET_WINDOWS, NOW_HHMM: t } }).slept, 0, 'open all day: the waiting run does not sleep at ' + t.slice(0, 2) + ':' + t.slice(2));
+}
 const job = name => { const m = yml.match(new RegExp('\\n  ' + name + ':\\n([\\s\\S]*?)(?=\\n  [a-z]+:\\n|$)')); return m ? m[1] : ''; };
 ok(/if: github\.event_name == 'workflow_dispatch' && inputs\.wait/.test(job('wait')) && /timeout-minutes: 350/.test(job('wait')), 'the wait job runs only for the waiting run, under GitHub\'s 6 hour limit');
 ok(/needs: \[switch, backfill, wait\]/.test(job('queue')) && /actions: write/.test(job('queue')), 'the queue runs after the wait, and may start the waiting run');

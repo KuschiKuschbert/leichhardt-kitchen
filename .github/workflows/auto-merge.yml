@@ -53,8 +53,10 @@ permissions:
 # merges when green at any time, and a run by hand with "Release now" opens the window for that run.
 # The night window runs 22:30 to 09:30 (head chef, 15 Nov 2026; to 02:30 from 8 Nov), written as two that meet at
 # midnight, as HHMM does not wrap: 2230-2400 and 0000-0930.
+# Open all day (head chef, 24 Nov 2026: "Keep the window open at all times"): one window from 00:00 to 24:00, so a
+# ready pull request merges once it is green, whatever the time. The windows above can come back by setting them here.
 env:
-  RELEASE_WINDOWS: '1500-1630 2230-2400 0000-0930'
+  RELEASE_WINDOWS: '0000-2400'
   # One-off owner request, 14 Nov 2026 (at 02:50): keep releasing until 09:30 Queensland that morning. Full UTC date,
   # end excluded. Expired; the daily night window reaches 09:30 since 15 Nov. Set a new date here for a one-off.
   RELEASE_UNTIL: '2026-11-13T23:30:00Z'
