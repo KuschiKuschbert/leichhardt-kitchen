@@ -23,6 +23,14 @@ Today's team and the active Operandio clock use the existing icon tilt on mouse 
 
 Synthetic browser captures: [team hover](images/topbar-feedback/team-hover.png), [timer hover](images/topbar-feedback/timer-hover.png). The regression checks mouse and touch input, fixed targets, reduced motion, pending writes and the read-only countdown. It fails 14 of 36 checks on the original source and passes all 36 with the fix.
 
+## The first list after a cold start, 24 November 2026
+
+The head chef found the Prep list stuck on Loading for a long time when the app first opens. On a phone that opens with a saved daily session the book waited for three server answers one after another: the sign-in roster, then the kitchen's settings, then the page's own list. The list was only asked for once the settings had come in.
+
+Now the page's own list (prep, orders, wastage or transfers) is asked for at the same moment as the kitchen's settings (`listsMay()` in `js/prep.js`). The roster has already said this person may open the kitchen pages, and the rules check the same session for both reads. The page still shows Loading until the settings are in, so nothing shows sooner than before. Each list keeps one listener: the settings' answer finds it running and leaves it. What a list's watcher starts after it starts with it too, under the same gate: the wastage summary, and on Transfers the loans still out and the transfer summary.
+
+Measured on the test stand-in with a slowed phone (4x CPU), from the Loading card to today's lines, median of 5: 0.93 s to 0.64 s with 300 ms server answers, 1.81 s to 1.18 s with 600 ms (a weak kitchen signal). Synthetic timings, not live usage. The Firebase sign-in, App Check and the connection set-up before the first answer are unchanged and come on top on a real phone. No new reads, rules, fields or saved copies. `tests/cold-start.test.js` holds the settings' answer back on Prep, Orders, Wastage and Transfers and checks the list came in meanwhile, nothing showed, one listener ran, and the summaries and loans still out were read: 4 failed of 22 on the old order, 0 of 22 now.
+
 ## Implementation boundaries
 
 `js/motion.js` exposes escaped `icon`, `label`, `status`, `skeleton` and `progress` markup. It owns no requests, timers, observers, storage or save state. `js/boot.js` maintains a presentation-only offline class. Existing code decides when each wait starts and ends.

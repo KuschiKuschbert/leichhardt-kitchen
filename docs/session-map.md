@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## The lists open one server answer sooner after a cold start, 24 November 2026 (fix)
+
+The head chef: the Prep list sat on Loading for a long time when the app first opened. The roster, the kitchen's settings and the page's own list were three server answers in a row; the list now asks with the settings (`listsMay()` in `js/prep.js`, prep, orders, wastage and transfers). About 0.3 to 0.6 s sooner on the test stand-in with a slowed phone. A fix, no council. `tests/cold-start.test.js`. [Note and measurements](loading-motion.md#the-first-list-after-a-cold-start-24-november-2026).
+
 ## Fixing a flaky click test, 24 November 2026
 
 The four most retried files of the weekly report (#523) were fixed: swipe-dismiss (#844), mascot (#845), section-box (#846) and update-confirmation (#848). Each failed only on a busy runner and each cause was a race in the test. The method that made them fail here (the runner's fallback font, several copies at once, full Chrome) and its scripts are kept: [the note](flaky-tests.md), `scripts/flaky/annotations.sh` (which check failed in CI), `scripts/flaky/side-by-side.cjs` (old and new copies under the same load), `scripts/flaky/fonts-ci.conf` (DejaVu Sans as on the runner).
