@@ -102,6 +102,23 @@ const shut = async p => { if (await p.$('.nt-wrap')) { await p.keyboard.press('E
   await L.waitFor(p, () => /1 of 6 done/.test((document.querySelector('#hm-prep .hm-pc') || {}).textContent || ''), null, 5000).catch(() => {});
   ok(/1 of 6 done/.test(await txt(p, '#hm-prep .hm-pc') || ''), 'a line ticked on another phone: 1 of 6 done, no reload');
 
+  // Home opened again, then the 20 second function tick (24 Nov 2026): its first paint keeps each box drawn with the
+  // same words. It used to draw them all again, the whole board laid out anew and focus inside it lost, and on a slowed
+  // phone that put seasonal.test.js over its Home at rest budget (docs/flaky-tests.md).
+  await p.evaluate(() => { location.hash = '#/recipes'; });
+  await L.waitFor(p, () => location.hash === '#/recipes' && !document.getElementById('hm-day'));
+  const again = await p.evaluate(() => new Promise(done => {
+    // added after the book's own: the router has drawn Home when this runs, and nothing has painted it yet
+    window.addEventListener('hashchange', () => {
+      const ids = ['hm-day', 'hm-with-body', 'hm-board', 'hm-prep', 'hm-team', 'hm-cuts', 'fn-hm'], boxes = ids.map(id => document.getElementById(id));
+      const fresh = boxes.every(x => x && x.lkH === undefined), kids = boxes.map(x => [...x.childNodes]), words = boxes.map(x => x.innerHTML);
+      window.LK_FN.paint();
+      done({ fresh, full: kids.filter(k => k.length).length, kept: ids.filter((id, i) => boxes[i].childNodes.length === kids[i].length && kids[i].every((n, k) => boxes[i].childNodes[k] === n)), words: boxes.every((x, i) => x.innerHTML === words[i]) });
+    }, { once: true });
+    location.hash = '#/';
+  }));
+  ok(again.fresh && again.full === 7 && again.kept.length === 7 && again.words, 'Home opened again: the first paint draws no box again when its words are the same (' + JSON.stringify(again) + ')');
+
   // a tap on a section opens the prep list on its tab
   await shut(p);
   await p.click('#hm-prep .hm-sec[data-hm-sec="Grill"]'); await L.settle(p, 900);

@@ -857,6 +857,7 @@
      cancellation, a removal or a change shows in place, as words). Got it and Undo are the person's own taps, so they
      redraw at once. No reads: it uses the functions listener. */
   var HU = { plan: null, pending: false, ack: null, shown: 0, snap: {} };
+  var huDrawn = null;   // the words homeAhead() drew the card with, until paint() first meets it (24 Nov 2026, js/prep.js homeBoxH())
   function huOK() { var p = window.LK_PREP; return !!p && p.privateAccess() && !(p.functionOnly && p.functionOnly()); }
   function huKey() { return 'lk.fn.hu.' + (ahWho() || 'device'); }
   // lk.fn.hu.<staff id>: { <function id>: { s: 'week' | 'tom' | 'off', g: what the card showed (huSig()), d: its date,
@@ -1130,7 +1131,7 @@
     }
     strip();
     // Home's Function this week slot: drawn again only when its words change (el.lkH)
-    var hu = document.getElementById('fn-hm'); if (hu) { var uh = huHTML(); if (hu.lkH !== uh) { hu.innerHTML = uh; hu.lkH = uh; } hu.hidden = !uh; }
+    var hu = document.getElementById('fn-hm'); if (hu) { var uh = huHTML(); if (hu.lkH === undefined && huDrawn !== null) { hu.lkH = huDrawn; huDrawn = null; } if (hu.lkH !== uh) { hu.innerHTML = uh; hu.lkH = uh; } hu.hidden = !uh; }
     var lc = document.getElementById('fn-land');
     landHome = !!document.getElementById('hm-board');
     if (window.LK_PREP && window.LK_PREP.homePaint) window.LK_PREP.homePaint();
@@ -2303,7 +2304,7 @@
     homeRows: fnHomeRows, homeReadHTML: homeReadHTML,
     // Home's Function this week card and Next function line, under Your day (js/prep.js homeSlot()): drawn at Home's open
     // with its own spoken status beside it (kept apart from the redrawn slot, so a Got it is heard once and never carried over)
-    homeAhead: function () { huOpen(); var h = huHTML(); return '<div class="fn-hm" id="fn-hm"' + (h ? '' : ' hidden') + '>' + h + '</div><span class="visually-hidden" role="status" id="fn-hm-say"></span>'; },
+    homeAhead: function () { huOpen(); var h = huHTML(); huDrawn = h; return '<div class="fn-hm" id="fn-hm"' + (h ? '' : ' hidden') + '>' + h + '</div><span class="visually-hidden" role="status" id="fn-hm-say"></span>'; },
     checkSlot: function () { var h = checkHTML(); return '<div id="fn-check"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
     hatLine: hatLine, page: pageHTML, watch: watch, paint: paint, catalogue: catalogue, recipeOf: recipeOf, nameOf: nameOf, sheetHTML: sheetHTML, print: printFunctions, esc: esc,
     // the Orders tag for an order line, from the functions this phone already holds (M.orderTag()): no read

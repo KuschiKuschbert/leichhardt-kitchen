@@ -74,8 +74,12 @@ async function movingPieces(p) {
   });
 }
 async function cpuPerSecond(p, ms = 2000) {
-  // Main-thread work per second with the CPU slowed 4 times, the way the audit measured it.
+  // Main-thread work per second with the CPU slowed 4 times, the way the audit measured it. Home at rest only: the
+  // garbage the page before left (Recipes, opened just before Christmas is measured) is collected first, as it would
+  // be on a phone left on Home. Inside the 2 seconds that one collection was 10 to 17 ms of it on a quiet machine
+  // (24 Nov 2026, docs/flaky-tests.md).
   const cdp = await p.context().newCDPSession(p);
+  await cdp.send('HeapProfiler.collectGarbage');
   await cdp.send('Performance.enable'); await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
   const read = async () => (await cdp.send('Performance.getMetrics')).metrics.find(m => m.name === 'TaskDuration').value;
   const a = await read(); await L.sleep(ms); const z = await read();
