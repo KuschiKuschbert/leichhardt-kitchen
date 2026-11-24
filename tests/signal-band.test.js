@@ -73,8 +73,9 @@ const hold = p => p.evaluate(() => { window.__fake.mode = 'hold'; });
 const release = p => p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
 // the Not sent mark on a row: 'shown' or 'none'
 // A tick lingers in its place for 3.5 s of the page's clock, which runs in real time, so on a busy runner the line has
-// moved on to Done today by the time it is looked at (the row id is then gone): its Not sent mark goes with it.
-const unsentOn = async (p, id) => { await rest(p); return p.evaluate(i => { const m = document.querySelector('#nbr-' + i + ' .nb-unsent') || (document.getElementById('nbr-' + i) ? null : document.querySelector('.nb-unsent')); return m && m.getBoundingClientRect().width > 0 ? 'shown' : 'none'; }, id); };
+// moved on to Done today by the time it is looked at: its Not sent mark goes with it. Every row that can say Not sent
+// carries data-ln="<date>/<id>" wherever it is drawn, so the mark is read on this line, never on another one.
+const unsentOn = async (p, id) => { await rest(p); return p.evaluate(i => { const m = [...document.querySelectorAll('[data-ln$="/' + CSS.escape(i) + '"] .nb-unsent')].find(e => e.getBoundingClientRect().width > 0); return m ? 'shown' : 'none'; }, id); };
 
 (async () => {
   const b = await L.start();
