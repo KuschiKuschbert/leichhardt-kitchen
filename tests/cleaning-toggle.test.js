@@ -32,8 +32,15 @@ async function open(b, route = '#/', options = {}) {
   }, ...options });
 }
 async function route(p, hash) { await p.evaluate(h => { location.hash = h; }, hash); await L.settle(p, 400); }
+// The list as the person sees it: the page is up and no longer says "Loading cleaning...". The book has no
+// .cln-loading class, and .cln-body holds the loading line, so the old wait passed while the list was still being
+// read. A chef's General group was not there to open yet, and the wait for its two rows timed out (admin release and
+// rollback, on the setup link after rollback, 24 Nov 2026, docs/flaky-tests.md).
 async function loaded(p) {
-  await L.waitFor(p, () => !document.querySelector('.cln-loading') && !!document.querySelector('.cln-body'));
+  await L.waitFor(p, () => {
+    const page = document.querySelector('.cln-page');
+    return !!page && !!page.querySelector('.cln-body') && !/Loading cleaning/.test(page.textContent);
+  });
   if (await p.locator('[data-cln="group"][data-group="general"][aria-expanded="false"]').count()) await p.click('[data-cln="group"][data-group="general"]');
   await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 2);
 }
