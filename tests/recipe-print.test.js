@@ -72,7 +72,11 @@ async function pdfOf(p, paper) {
     // print: the snapshot, what was sent by name, and back again after the dialog
     await p.evaluate(() => { window.print = () => { window.__printed = (window.__printed || 0) + 1; }; });
     await wait(p, () => !document.querySelector('[data-rcp="print"]').disabled);
-    await p.click('[data-rcp="print"]');
+    // The tap answers before the cards are laid out, which waits for the next frame (24 Nov 2026: five big cards held
+    // the tap on Print for 3 s here, and a busy runner's tap timed out). The tap is sent in the page, so the check reads
+    // the page the moment the tap's own work is done.
+    const tap = await p.evaluate(() => { const b = document.querySelector('[data-rcp="print"]'); b.click(); return { label: b.textContent, sheets: document.querySelectorAll('#rc-print .rcp-sheet').length }; });
+    ok(tap.label === 'Laying out the pages...' && tap.sheets === 0, 'Print answers in its own frame and lays the cards out after it (' + tap.label + ', ' + tap.sheets + ' sheets in the tap)');
     ok(await wait(p, () => window.__printed === 1 && document.body.classList.contains('rc-printing')), 'Print opens the print dialog with the print copy');
     ok(/Print dialog open: 1 card, \d+ pages?, A5 sideways\. Set the printer's paper to A5/.test(await txt(p, '.rcp-status')), 'it says what was sent, and to set the paper to A5');
     await p.evaluate(() => window.dispatchEvent(new Event('afterprint')));
