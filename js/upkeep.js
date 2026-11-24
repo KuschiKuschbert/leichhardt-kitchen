@@ -484,10 +484,11 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
   }, 20000);
   window.addEventListener('load', function () { check(false); });
   // The service worker opens the book from the copy saved on the phone and fetches the newest files behind it
-  // (sw.js, 21 Oct 2026). When it has saved a new version it says 'lk-new': in the first seconds after opening, before
-  // anyone has touched the screen, the book reloads straight into it (the files are already on the phone); otherwise
-  // it is the same as a new version found by the check above.
-  var opened = Date.now();
+  // (sw.js, 21 Oct 2026). When it has saved a new version it says 'lk-new', and it is the same as a new version found
+  // by the check above: taken up at the next open, a 2-minute rest, or coming back after 5 minutes away.
+  // A start is never interrupted (head chef, 24 Nov 2026, docs/loading-wait-options/brief.md): it used to reload
+  // straight into the new version within 8 s of opening if nobody had touched the screen, so a cook waiting on the
+  // Loading card after a publish saw it twice, with two sign-ins and the first start's reads thrown away.
   if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', function (e) {
     if (e.data === 'lk-shell-unavailable') {
       // A missing binding/member cannot be repaired by mixing files or an automatic reload over private work.
@@ -497,10 +498,6 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
     if (shellUnavailable) { shellUnavailable = false; if (barText) reset(); }
     found = true;
     try { window.dispatchEvent(new Event('lk-upd')); } catch (err) {}
-    if (Date.now() - opened < 8000 && lkTouch <= opened && !lkTyping() && navigator.onLine !== false) {
-      try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < 600000) return; localStorage.setItem('lk.upd.last', String(Date.now())); } catch (err) {}
-      location.reload();
-    }
   });
 })();
 // Installable: the service worker keeps the last copy of the book, so it opens at once and with no signal.

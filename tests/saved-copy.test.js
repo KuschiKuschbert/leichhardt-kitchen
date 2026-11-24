@@ -86,13 +86,28 @@ async function swOpen(b, hash, o) {
   await L.updateNow(p);
   ok(await until(p, () => window.__v === 1, 10000), 'Update now: the new version is on the screen');
 
-  // a new version found just after opening, before anyone touched the screen: the book reloads into it by itself
+  // a new version found just after opening, before anyone touched the screen (24 Nov 2026, head chef): the start is
+  // never interrupted. It used to reload into the new version within 8 s, so the Loading card showed twice with two
+  // sign-ins (docs/loading-wait-options/brief.md). The new copy is taken up at the next open.
   newData(2);
   await p.evaluate(() => localStorage.removeItem('lk.upd.last'));
+  over.delay = 1500;   // the worker's background round is still out when the book opens, as on kitchen wifi
   await p.reload({ waitUntil: 'load' });
-  ok(await until(p, () => window.__v === 2, 10000), 'just opened: the book takes up the new version by itself');
+  over.delay = 0;
+  // a page load after this one is a second start (a hash change is not)
+  let starts = 1;
+  const countStart = () => { starts++; };
+  p.on('load', countStart);
+  ok(await p.evaluate(() => window.__v === 1), 'just opened: the book opens from the saved copy first');
+  await L.waitFor(p, () => !!(window.LK_UPDATE && LK_UPDATE.state() === 'ready'), null, 10000).catch(() => {});
+  await L.sleep(9000);   // past the 8 s in which it used to reload by itself
+  p.off('load', countStart);
+  ok(starts === 1 && await p.evaluate(() => window.__v === 1 && LK_UPDATE.state() === 'ready'), 'just opened: one start, no reload part way, and the book knows of the new version (' + starts + ' starts)');
+  ok(await p.evaluate(() => !document.querySelector('.upd-bar.is-on')), 'just opened: no band for a version nobody asked for');
+  await p.reload({ waitUntil: 'load' });
+  ok(await until(p, () => window.__v === 2, 10000), 'the next open is on the new version');
   await L.sleep(1500);   // time for a reload loop to show, if there were one
-  ok(await p.evaluate(() => window.__v === 2 && !document.querySelector('.upd-bar')), 'just opened: no loop and no bar once it is on the new version');
+  ok(await p.evaluate(() => window.__v === 2 && !document.querySelector('.upd-bar')), 'the next open: no loop and no bar once it is on the new version');
   // no signal: the book still opens
   await ctx.setOffline(true);
   await p.reload({ waitUntil: 'load' }).catch(() => {});
@@ -372,8 +387,12 @@ async function swOpen(b, hash, o) {
     await q.evaluate(() => localStorage.removeItem('lk.upd.last'));
     await q.reload({ waitUntil: 'load' });
     release();
+    // the worker saves the version that came in between and says so; the book takes it up at the next open, as a
+    // start is never interrupted (24 Nov 2026)
+    await L.waitFor(q, () => !!(window.LK_UPDATE && LK_UPDATE.state() === 'ready'), null, 10000).catch(() => {});
+    await q.reload({ waitUntil: 'load' });
     const took = await until(q, () => window.__v === 7, 10000);
-    ok(first === '1/1' && took, 'a second opening while the first one\'s round is still out: the book takes up the version that came in between (first round ' + first + ' served/held, new version on screen ' + took + ')');
+    ok(first === '1/1' && took, 'a second opening while the first one\'s round is still out: the book takes up the version that came in between at the next open (first round ' + first + ' served/held, new version on screen ' + took + ')');
     await qc.close();
     delete over['/js/data.js'];
   }

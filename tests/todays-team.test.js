@@ -168,6 +168,18 @@ const withoutViewChoice = async p => {
   ok(!!c && !c.due && /could not check/.test(c.label), 'no signal: the chip is plain and says it could not check');
   await p.context().close();
 
+  // Today's plan already read for the top bar's chip, then the planner's week read fails: the page keeps today's plan.
+  // Before (24 Nov 2026) it said it could not load when the chip's answer came first, and showed the plan when it came second.
+  const chipPlan = { day: today, on: [{ id: 'ann', sh: 'lunch', sec: 'grill' }], br: [], v: 1, at: L.NOW - 3600000, upd: L.NOW - 3600000, by: 'sam' };
+  p = await L.open(b, '#/prep', { who: 'sam', extra: Object.assign(cfg(), { [TEAM]: chipPlan }), failReads: '/team$', wait: 1800 });
+  await L.waitFor(p, () => window.__fake.reads.some(r => /\/team\/\d{4}-\d{2}-\d{2}$/.test(r)), null, 8000).catch(() => {});
+  await L.settle(p, 600);
+  await p.evaluate(() => { location.hash = '#/team'; }); await L.settle(p, 800);
+  const weekFail = await txt(p, '.tm-page') || '';
+  ok(await p.locator('.tm-tlrow[data-id="ann"]').count() === 1 && !/Could not load the team/.test(weekFail), 'week read fails after today\'s own read: the page keeps today\'s plan (' + weekFail.slice(0, 120).replace(/\s+/g, ' ') + ')');
+  ok(p.errors.length === 0, 'week read fails: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // staff, nothing set yet: no chip, no line, and the page by its address says who sets it
   p = await L.open(b, '#/prep', { who: 'ann', extra: cfg(), wait: 1800 });
   ok(!(await p.$('.wtop .tm-slot .tm-chip')) && !(await p.$('.nb-tmset')) && !(await p.$('.nb-tmday')), 'staff: no chip, no Set today\'s team and no day line while it is not set');

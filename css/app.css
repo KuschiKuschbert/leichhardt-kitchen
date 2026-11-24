@@ -3964,6 +3964,11 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
 .ink-skeleton-line { display: block; height: 18px; max-width: calc(100% - 42px); color: #C7BDA9; opacity: .65; }
 .ink-skeleton-line path { fill: none; stroke: currentColor; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
 .ink-line-0 { width: 66%; } .ink-line-1 { width: 45%; } .ink-line-2 { width: 77%; } .ink-line-3 { width: 57%; } .ink-line-4 { width: 69%; }
+/* A long wait on the loading card (head chef, 24 Nov 2026, docs/loading-wait-options/brief.md): past 1.5 s the rows
+   breathe together, in step with the icon's 1.8 s trace, from their resting shade down and back, never darker.
+   --ink-phase (from js/prep.js) carries the breath on when the card is drawn again. */
+.ink-skeleton.is-breathing .ink-skeleton-box { animation: ink-breathe-box 1.8s ease-in-out var(--ink-phase, 0s) infinite; }
+.ink-skeleton.is-breathing .ink-skeleton-line { animation: ink-breathe-line 1.8s ease-in-out var(--ink-phase, 0s) infinite; }
 .ink-progress { max-width: 100%; min-width: 0; margin-block: .5rem; }
 .ink-progress > .ink-status { padding-bottom: .45rem; }
 .ink-progress > progress { display: block; width: 100%; height: 6px; appearance: none; border: 0; border-radius: 0; background: var(--line); color: var(--accent); }
@@ -4021,11 +4026,15 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
 @keyframes ink-confirm { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
 @keyframes ink-docket-in { from { opacity: .5; translate: 0 5px; rotate: -.6deg; } to { opacity: 1; translate: 0 0; rotate: 0deg; } }
 @keyframes ink-reveal { from { opacity: .55; } to { opacity: 1; } }
+@keyframes ink-breathe-box { 0%, 100% { opacity: .55; } 50% { opacity: .28; } }
+@keyframes ink-breathe-line { 0%, 100% { opacity: .65; } 50% { opacity: .32; } }
 .ink-offline .ink-icon[data-state="busy"] .ink-stroke { display: none; }
 .ink-offline .ink-icon[data-state="busy"] .ink-stroke > * { animation: none; }
+.ink-offline .ink-skeleton.is-breathing .ink-skeleton-box, .ink-offline .ink-skeleton.is-breathing .ink-skeleton-line { animation: none; }
 @media (prefers-reduced-motion: reduce) {
   .ink-icon .ink-stroke { display: none; }
   .ink-icon .ink-stroke > *, .ink-icon .ink-check, .ink-docket-arrive > .docket { animation: none; }
+  .ink-skeleton.is-breathing .ink-skeleton-box, .ink-skeleton.is-breathing .ink-skeleton-line { animation: none; }
   .ink-docket-arrive > .docket { translate: none; rotate: none; }
   .ink-progress > progress::-webkit-progress-value { transition: none; }
   .ink-skeleton-box { rotate: none; }

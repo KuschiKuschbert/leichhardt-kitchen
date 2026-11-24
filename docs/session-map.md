@@ -1,5 +1,13 @@
 # Session map: which note to read, and every file
 
+## One reading of a cleaning day, 24 November 2026 (code in line)
+
+Records' nightly cleaning count kept its own copy of how the Cleaning page reads a day, as did `cleaningDue()` in `js/prep.js`. All three now use `js/cleaning-core.js` (lazy, shared with node, like `js/analysis-core.js`). `cleaningDue()` asks the core, which loads with the Cleaning page, and refuses a write without it. A tidy-up, no council: the results are the same, proved on a synthetic programme of 124 jobs and 14,089 records against the copies as they were, so `CLEAN_V` stays 1. `tests/cleaning-core.test.js`, [Cleaning](cleaning-schedule.md#one-reading-of-a-day).
+
+## Fewer reloads and a clearer long wait, 24 November 2026 (chosen)
+
+The head chef found the book slow to load. 16 to 36 new versions a day reloaded phones coming back after 5 minutes, and a fresh open after a publish started twice. Round 1 Build smaller (5 of 5); round 2 three designs scored by six reviewers. Chosen: the card names the step with rows breathing on a long wait (against the council's advice), a fresh open starts once, and phones get new versions at 15:05 and 22:35. [Brief](loading-wait-options/brief.md).
+
 ## The release window open at all times, 24 November 2026 (head chef)
 
 The owner asked to keep the window open at all times. `RELEASE_WINDOWS` in `.github/workflows/auto-merge.yml` is `0000-2400`; the window logic is unchanged and `tests/auto-merge-queue.test.js` still checks it on the old windows, plus the all-day setting at the times that used to be closed. [Auto-merge](auto-merge.md), [decision](head-chef-decisions.md).
@@ -31,6 +39,10 @@ The owner asked for `CLAUDE.md` to be kept short. Its reading map had grown to 8
 ## Reopen a Wastage draft after midnight, 23 November 2026 (B chosen and built)
 
 A synthetic sous chef lost Sunday's typed review after Queensland midnight: Monday's sheet replaced it on Save. The head chef chose B, Switch inside the review. Today opens in the review sheet, and an unfinished earlier review of the same person has a dated Resume inside the sheet. Back to today returns to the current date. The main Wastage page stays on today. Built in #835. [Council, previews and checks](wastage-overnight-options/brief.md).
+
+## Order day reminder, 24 November 2026 (chosen and built)
+
+The head chef asked for a favourite order day with a nudge to the chef on, the head chef first. Round 1 Build smaller, five of five: count from the existing supplier ticks, nothing on the Order list, the setting in `config/main`. Round 2 ranked A (a line in Your day) first with all six. Recommended: A's line for the head chef, with a quiet second chance in the sous chef's Your day (13:00 with nothing ticked, or after the head chef's shift), no push, no rules change. The head chef chose the recommendation: one or more order days, unrelated to the cut-offs, set by the head chef on the admin Order cut-offs page; no push. Built in `js/prep.js` (`odRow()`, `odAdminHTML()`, `odSave()`; the People save keeps `orderDay`), `tests/order-day.test.js`. [Brief](order-day-options/brief.md).
 
 ## Private booking contact in the function editor, 23 November 2026
 
@@ -425,6 +437,7 @@ Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records
 | `js/suppliers.js`, `js/supplier-core.js`, `js/supplier-store.js` | Supplier workspace (`#/suppliers`). Lazy, for an authorised chef. `docs/supplier-workspace.md` |
 | `js/deliveries.js` | Delivery received (`#/deliveries`). Lazy. `docs/delivery-received.md` |
 | `js/cleaning.js`, `js/cleaning-schedule.js` | Cleaning (`#/cleaning`), lazy API 2 workspace plus version 1 schedule drafts. Unbranded explicit imports, ordered section pack down, inline methods/checks, anchored intervals, independent recorded events and mapped Pass verification. `docs/cleaning-schedule.md`, focused Cleaning browser and rules checks |
+| `js/cleaning-core.js` | How a cleaning day reads (`LK_CLEANING_CORE`, 24 Nov 2026): due, each job's checks that day, their counts and how a finished day reads. Pure and shared with node: the Cleaning page, `cleaningDue()` in `js/prep.js` and Records' nightly count (`scripts/records-core.mjs`). Lazy, loaded with Cleaning before `js/cleaning.js`. `tests/cleaning-core.test.js` |
 | `js/avc-reader.js` | The AVC Live card reader (`LK_AVC`): an AVC "Print Recipe" PDF to a recipe draft, names and amounts only, never money or codes; fails closed. Shared with node. Lazy; nothing loads it yet (second venue step 4). `tests/avc-reader.test.js`, `tests/avc-fixture.js`, `docs/second-venue-options/brief.md` |
 | `js/fnedit.js` | Manage functions (`#/functions`). Lazy, for someone ticked for Functions |
 | `js/admin-dashboard.js` | The admin Dashboard (`LK_DASH`): headlines, tiles and charts from the nightly `analysis/dashboard` record. Inbox priority rows precede the detailed kitchen mail. Lazy, from `js/prep.js` when the page opens. `docs/admin-dashboard-restyle-options/brief.md` |
