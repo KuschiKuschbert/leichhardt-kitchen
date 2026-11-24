@@ -49,6 +49,12 @@ Record each relevant prep, service or use event separately. Do not infer service
 
 Fixed checkpoints are derived from task revisions in memory. Explicit event records have stable slot identifiers. A completion applies only to that revision, operational date and slot. New weeks do not copy previous ticks. Non-scheduled week cells are labelled and excluded from work totals.
 
+## One reading of a day
+
+One file decides how a cleaning day reads: `js/cleaning-core.js` (24 November 2026). It holds whether a job is due (its weekdays, its revision's dates, and its repeat from a real anchor date), each planned job's checks that day (the fixed ones its timing gives, then each one recorded, then any a phone has not saved), their counts, and how a finished day reads: Unable to complete first, then Awaiting Pass check, then Done, then an event job (never Missed), else Missed. A plain job is Done or Missed by its record.
+
+The Cleaning page, the book's cleaning write check (`cleaningDue()` in `js/prep.js`) and the nightly Records count (`scripts/records-core.mjs`) all use it. The page keeps its own words, such as Not sent, Due and To do (`flowState()`). The core is pure: the kitchen clock comes in as an argument, `LK_TIME` on a phone and Queensland time in node. It is lazy and loads with Cleaning, before `js/cleaning.js`; without it the book refuses a cleaning write rather than guess. `firestore.rules` keeps its own check of a due day: change the two together. A change to how a finished day reads bumps `CLEAN_V` in `scripts/records-core.mjs` and the results in `tests/cleaning-core.test.js`.
+
 ## Ordered pack down
 
 Use the existing daily view and expand checks inline. Preserve section and numeric step order: Hot larder, then Grill, then Pans. Existing general work stays available. When the pack-down list is present, show the existing after-service floor task once after the pack-down section, with a reminder to finish overhead shelves and frames before the final floor clean. Earlier after-service floor checks remain separate. Do not create a duplicate floor task or change its recurrence.

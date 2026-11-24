@@ -4,6 +4,8 @@
 (function () {
   'use strict';
   var P = window.LK_PREP, T = window.LK_TIME, B = P.book(), C = P.cleaning(), esc = window.LK_APP.esc;
+  // how a cleaning day reads (js/cleaning-core.js): loaded just before this page; shared with the nightly Records count
+  var K = window.LK_CLEANING_CORE;
   var OPEN = 253402178400000, DAYS = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [0, 'Sun']];
   var AREAS = ['Coldroom', 'Freezer', 'Dry store', 'Oven', 'Fryers', 'Behind equipment', 'Pass', 'Shelves'];
   var M = blank(), generation = 0, recorder = '', context = '', picker = null, popup = null, savedTimer = null, boundaryTimer = null;
@@ -87,41 +89,29 @@
   function clnFailLine() { return window.LK_PREP && window.LK_PREP.readErr ? window.LK_PREP.readErr(M.error, null, 'data-cln="refresh"') : '<p class="p-err p-readerr" role="status">' + esc(M.error) + ' <button type="button" class="p-link" data-cln="refresh">Try again</button></p>'; }
   function due(task, day) { return C.due(task, day); }
   function tasksOn(day) { return M.tasks.filter(function (task) { return due(task, day); }); }
-  function record(task, day) { return M.done.filter(function (r) { return r.task === task.id && r.day === day; })[0] || null; }
+  function record(task, day) { return K.record(task, day, M.done); }
   function taskById(id) { return M.tasks.filter(function (task) { return task.id === id; })[0]; }
   function occurrence(task, day) { return day + '_' + task.id; }
   function hasPlan(task) { return !!(task && task.plan); }
   function flowKey(task, day, slot) { return occurrence(task, day) + '_' + slot; }
-  function flowRecord(task, day, slot) { return M.done.filter(function (r) { return r.task === task.id && r.day === day && r.flow && r.flow.slot === slot; })[0] || null; }
-  function flowList(task, day) {
-    var timing = task.plan.timing, out = [], slots = [];
-    function add(slot, kind) { if (slots.indexOf(slot) < 0) { slots.push(slot); out.push({ slot: slot, kind: kind, record: flowRecord(task, day, slot) }); } }
-    if (timing === 'daily') add('daily', 'daily');
-    if (timing === 'close') add('close', 'close');
-    if (timing === 'food') { add('start', 'start'); add('close', 'close'); }
-    M.done.forEach(function (r) { if (r.task === task.id && r.day === day && r.flow) add(r.flow.slot, r.flow.kind); });
-    Object.keys(M.workDrafts).forEach(function (key) { var d = M.workDrafts[key]; if (d.task === task.id && d.day === day) add(d.slot, d.kind); });
-    return out;
-  }
-  function flowSummary(task, day) {
-    var list = flowList(task, day), complete = 0, awaiting = 0, blocked = 0, pending = 0;
-    list.forEach(function (item) { var r = item.record, state = r && r.flow.status || 'pending'; if (state === 'complete') complete++; else if (state === 'awaiting') awaiting++; else if (state === 'blocked') blocked++; else pending++; });
-    var events = ['service', 'prep-service', 'food', 'use'].indexOf(task.plan.timing) >= 0;
-    return { total: list.length, complete: complete, awaiting: awaiting, blocked: blocked, pending: pending, events: events, done: !events && list.length > 0 && complete === list.length };
-  }
+  // a planned job's checks that day (fixed, recorded, then unsaved drafts) and their counts: the shared core
+  function flowList(task, day) { return K.slots(task, day, M.done, Object.keys(M.workDrafts).map(function (key) { return M.workDrafts[key]; })); }
+  function flowRecord(task, day, slot) { var item = flowList(task, day).filter(function (entry) { return entry.slot === slot; })[0]; return item ? item.record : null; }
+  function flowSummary(task, day) { return K.summary(task, flowList(task, day)); }
   function workTotals(tasks, day) {
     var total = 0, complete = 0, events = 0, awaiting = 0, blocked = 0;
     tasks.forEach(function (task) { if (hasPlan(task)) { var s = flowSummary(task, day); total += s.total; complete += s.complete; events += s.events ? 1 : 0; awaiting += s.awaiting; blocked += s.blocked; } else { total++; var r = record(task, day); if (r && r.done) complete++; } });
     return { total: total, complete: complete, events: events, awaiting: awaiting, blocked: blocked };
   }
+  // the words for a planned job: the core's outcome, then Not sent, Due and To do from this phone and the day
   function flowState(task, day) {
-    var s = flowSummary(task, day);
+    var s = flowSummary(task, day), outcome = K.outcome(s);
     if (M.pending[occurrence(task, day)]) return 'Not sent';
-    if (s.blocked) return 'Unable to complete';
-    if (s.awaiting) return 'Awaiting Pass check';
-    if (s.done) return 'Done';
+    if (outcome === 'blocked') return 'Unable to complete';
+    if (outcome === 'awaiting') return 'Awaiting Pass check';
+    if (outcome === 'done') return 'Done';
     if (day > T.day()) return 'Due';
-    if (s.events) return s.complete + '/' + s.total + ' recorded; record each ' + (task.plan.timing === 'use' ? 'use' : task.plan.timing === 'service' ? 'service' : task.plan.timing === 'food' ? 'prep' : 'prep and service');
+    if (outcome === 'event') return s.complete + '/' + s.total + ' recorded; record each ' + (task.plan.timing === 'use' ? 'use' : task.plan.timing === 'service' ? 'service' : task.plan.timing === 'food' ? 'prep' : 'prep and service');
     return day < T.day() ? 'Missed' : 'To do';
   }
   function workDraft(task, day, item) {
@@ -591,7 +581,7 @@
     if (M.today === T.day()) { armBoundary(); return false; }
     M.today = T.day(); M.selected = T.day(); M.week = monday(T.day()); closePicker(true, true); clearReads(); draw(); load(); return true;
   }
-  function mount(root) { if (!C.act || !C.importTasks || !C.due || !window.LK_CLEANING_SCHEDULE) { root.innerHTML = '<p class="hint" role="status">Reload the book to use the current cleaning schedule.</p><button type="button" class="btn dark" data-act="reload">Reload</button>'; return; } access(); M.root = root; checkDay(); draw(); load(); }
+  function mount(root) { if (!C.act || !C.importTasks || !C.due || !window.LK_CLEANING_SCHEDULE || !K || K.api !== 1) { root.innerHTML = '<p class="hint" role="status">Reload the book to use the current cleaning schedule.</p><button type="button" class="btn dark" data-act="reload">Reload</button>'; return; } access(); M.root = root; checkDay(); draw(); load(); }
   function unmount() { closePicker(true, true); clearTimeout(boundaryTimer); M.root = null; generation++; if (M.state === 'loading') M.state = 'idle'; }
   document.addEventListener('click', click);
   document.addEventListener('input', function (event) { if (M.root && M.root.contains(event.target) && event.target.hasAttribute('data-cln-field')) changeField(event.target); });
