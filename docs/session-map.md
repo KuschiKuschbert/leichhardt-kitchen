@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## The release window open at all times, 24 November 2026 (head chef)
+
+The owner asked to keep the window open at all times. `RELEASE_WINDOWS` in `.github/workflows/auto-merge.yml` is `0000-2400`; the window logic is unchanged and `tests/auto-merge-queue.test.js` still checks it on the old windows, plus the all-day setting at the times that used to be closed. [Auto-merge](auto-merge.md), [decision](head-chef-decisions.md).
+
 ## Live click tests: a run that skips no longer cancels one that tests, 24 November 2026 (fix)
 
 A merge that published nothing (#850, #849) started a Live click tests run that cancelled #851's live tests, then skipped. The cancelling moved from the whole workflow to the test jobs in `.github/workflows/live-tests.yml`. A CI fix, no council. `tests/site-publish.test.js`. [Note](site-publishing.md).

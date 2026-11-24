@@ -35,7 +35,7 @@ if command -v gh >/dev/null; then
   else
     echo "!! Could not read the open pull requests from GitHub. Check them on GitHub before marking this one ready."
   fi
-  echo "   Ready pull requests merge one at a time in the release windows, oldest first (docs/auto-merge.md). Do not merge yourself."
+  echo "   Ready pull requests merge one at a time once green (the release window is open all day), oldest first (docs/auto-merge.md). Do not merge yourself."
 else
   echo "   gh is not installed, check GitHub by hand."
 fi
