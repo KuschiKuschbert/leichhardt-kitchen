@@ -24,7 +24,7 @@ Remove each item here once it is done.
 
 The coding rules in `CLAUDE.md` came from a check of the whole book on 21 Oct 2026. This is the older code that does not meet them yet, in the order to fix it. Each item is its own branch and pull request, with its tests. Remove an item once it is merged.
 
-After the tap (5 Nov 2026, `docs/action-feedback.md`): the chosen mix is built (`docs/action-feedback-options/brief.md`). Everything the audit found is built, the recipe and drawing editors' slips last (6 Nov 2026). Still to do: the slip helper is three copies, in `js/manage.js`, `js/draw.js` and `js/fnedit.js`, to be made one (WA-10, `docs/ux-council-audit.md`).
+After the tap (5 Nov 2026, `docs/action-feedback.md`): the chosen mix is built (`docs/action-feedback-options/brief.md`). Everything the audit found is built, the recipe and drawing editors' slips last (6 Nov 2026). The slip helper stays as three copies, in `js/manage.js`, `js/draw.js` and `js/fnedit.js`: the owner chose to keep them on 12 Nov 2026 (Checked and kept as it is, below; WA-10, `docs/ux-council-audit.md`).
 
 Done, all on 22 Oct 2026:
 - the wastage log
@@ -37,11 +37,11 @@ Done, all on 22 Oct 2026:
 Done on 2 November 2026:
 - admin report read-cache fidelity: the stand-in now loses its read cache on reload, matching `memoryLocalCache`. The truthful baseline is 219 reads after an admin reload and zero on same-page report returns in the current fixture. No production cache change is needed for that existing cost. Private reports stay in memory under the current access contract. The earlier proposal to persist private report records is superseded. The lifetime regression failed 3 of 12 checks against the old stand-in and passes all 12 with the corrected model.
 
+Done on 24 Nov 2026: Records' nightly cleaning count and the Cleaning page read a day through one shared core, `js/cleaning-core.js` (`due()`, the slots, the counts and how a finished day reads), as `js/analysis-core.js` does for the analysis. The page, `cleaningDue()` in `js/prep.js` and `scripts/records-core.mjs` each had their own copy. `tests/cleaning-core.test.js` holds the results the copies gave on a synthetic programme of 124 jobs and 14,089 records over 77 days: the core gives the same, so `CLEAN_V` stays 1.
+
 Done on 24 Nov 2026: the cut-off bar no longer keeps its no-signal words after its listener is refused once the signal is back (`cutWatch()`'s error callback sets `cutState` to `'error'`, since 14 Nov 2026); `tests/offline-reads.test.js` checks it with the stand-in's new `__fake.denyListen` (2 failed of 66 with the old behaviour put back, 0 now).
 
-Still to do:
-
-- Records' nightly cleaning count (`scripts/records-core.mjs`, 13 Nov 2026) follows `js/cleaning.js` for a past day (`cleaningDue()`, `flowSummary()`, `flowState()`) in a copy of its own, because `js/cleaning.js` is a browser page that node cannot load. One shared core used by both (like `js/analysis-core.js`) would make them one; until then a change to how Cleaning reads a past day changes `scripts/records-core.mjs` and its `CLEAN_V` with it.
+Still to do: nothing listed.
 
 Code that breaks a coding rule from now on is fixed in the same branch, or added here.
 

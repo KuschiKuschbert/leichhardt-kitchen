@@ -2134,10 +2134,13 @@
   }
   function cleaningError(code) { return { code: code }; }
   function cleaningDate(day) { return typeof day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day) && T.day(T.at(day)) === day; }
+  /* Due on a day: the shared core's answer (js/cleaning-core.js, 24 Nov 2026), the one the Cleaning page and the
+     nightly Records count read. The core is lazy: js/app.js loads it with the Cleaning page, before js/cleaning.js,
+     and only js/cleaning.js calls this (its due(), act and tick). Without the core nothing is due, so a write is
+     refused, never guessed. firestore.rules checks the same day on its own. */
   function cleaningDue(task, day) {
-    var at = T.at(day), repeat = task && task.plan && task.plan.repeat;
-    return task && task.from <= at && task.until > at && Array.isArray(task.dows) && task.dows.indexOf(T.dow(at)) >= 0 &&
-      (!repeat || !!repeat.anchor && cleaningDate(repeat.anchor) && at >= T.at(repeat.anchor) && (at - T.at(repeat.anchor)) / 86400000 % repeat.days === 0);
+    var core = window.LK_CLEANING_CORE;
+    return !!(core && core.api === 1) && core.due(task, day, T);
   }
   function cleaningContext() { return supplierContext() + '|' + cleaningChef() + '|' + can('tick'); }
   function cleaningLoad(from, to) {

@@ -360,6 +360,7 @@ Drawings for The Pass are in `js/art.js`. A recipe with no drawing still shows, 
 | `js/fools.js`, `css/fools.css` | April Fools on Home: 24 jokes, loaded only on 1 April or for the admin panel's preview. See [April Fools](docs/april-fools.md) |
 | `js/prep.js` | Prep list, orders, wastage, shift pings, minutes, admin panel, staff lock, learning |
 | `js/cleaning.js`, `js/cleaning-schedule.js` | Cleaning notebook, optional unbranded 26-task schedule and ordered 25-step pack down. Lazy, API 2 workspace; explicit chef import, required checks, anchored intervals, event records and Pass verification. [Contract](docs/cleaning-schedule.md) |
+| `js/cleaning-core.js` | How a cleaning day reads: due, each job's checks, their counts and a finished day. One copy for the Cleaning page, the book's cleaning write check and the nightly Records count (node). Lazy, loaded with Cleaning. [Contract](docs/cleaning-schedule.md#one-reading-of-a-day) |
 | `js/proofreader-admin.js` | Admin Proofreader: review saved spelling corrections, restore or edit wording, manage shared protected words and view private history. Loaded only on the admin page |
 | `js/firebase-config.js` | Public Firebase web config |
 | `firestore.rules` | Security rules template (`KITCHEN_PIN`, `OWNER_EMAIL`, `PLATFORM_EMAIL` and `PLATFORM_ID` are placeholders; the last two are the platform owner at a second venue, off at Leichhardt, `docs/venues.md`). A helper one collection uses lives inside its match block, so Google compiles the rules in time (14 Nov 2026, `docs/rules-publication.md`) |

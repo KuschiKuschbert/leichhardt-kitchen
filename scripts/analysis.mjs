@@ -31,7 +31,7 @@ const hash = x => createHash('sha256').update(typeof x === 'string' ? x : JSON.s
    every day: on Sundays (kitchen time), with options.full, after a past transfer fix (its stamp names no day) or a
    stamp that cannot tell. Past prep, order and (since 7 Nov 2026, wDays) wastage fixes name their days. */
 export const REUSE_DAYS = 14;
-const CODE = hash(['../js/analysis-core.js', './dashboard.mjs', './analysis.mjs', './records-core.mjs'].map(f => readFileSync(new URL(f, import.meta.url), 'utf8')).join('\n'));
+const CODE = hash(['../js/analysis-core.js', '../js/cleaning-core.js', './dashboard.mjs', './analysis.mjs', './records-core.mjs'].map(f => readFileSync(new URL(f, import.meta.url), 'utf8')).join('\n'));
 // the past days a stamp names as changed since `since`, like pastChanged() in js/prep.js: [] none, null cannot tell
 function namedSince(pe, kind, since) {
   const p = +pe[kind] || 0, days = pe[kind + 'Days'];
