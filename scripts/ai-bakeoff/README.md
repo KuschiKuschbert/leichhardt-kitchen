@@ -8,12 +8,27 @@ The recipes as they are in `js/data.js` (already public), the library pieces' na
 
 ## Running it
 
-Needs a Claude API key in `LK_BAKEOFF_API_KEY`. The key is read from its own variable, so nothing else on the machine picks it up by itself. Use a key made for this, in a Claude Console workspace with a spend limit, and delete the key afterwards.
+Needs a Claude API key. Make one for this in the Claude Console, in a workspace with a spend limit, and delete it once the run is done.
+
+- **Saved nowhere (your own computer):** leave `LK_BAKEOFF_API_KEY` unset and run `node run.js` in a terminal. It asks for the key, hides what is typed, keeps it in memory for that run only and writes it nowhere. A run that stops asks again next time.
+- **Cloud session:** a Claude API key can only be an environment variable there (`LK_BAKEOFF_API_KEY`), readable by every session and command in that environment. Add it, start a new session to run the bake-off, then remove the variable and delete the key.
+
+The key is read only from its own variable or the prompt, so nothing else on the machine picks it up by itself.
+
+On the Mac, from the repo folder:
 
 ```bash
-cd scripts/ai-bakeoff && npm install
+git fetch origin ccr-bb2aad6f-5fe1m9
+git worktree add .claude/worktrees/ai-bakeoff FETCH_HEAD
+cd .claude/worktrees/ai-bakeoff/scripts/ai-bakeoff
+```
+
+Then, in `scripts/ai-bakeoff`:
+
+```bash
+npm install
 node run.js --selftest        # no API call: the conversion and the scoring are faithful
-node run.js --only chicken-adobo,wedges,caesar   # a 3-dish pilot: real cost and wait
+node run.js --only chicken-adobo,wedges,caesar   # a 3-dish pilot: real cost and wait (asks for the key)
 node run.js                   # the rest, stopping before US$15 (--cap to change it)
 node report.js                # docs/ai-drawing-options/bakeoff/: summary.md, results.json, blind.html
 ```

@@ -60,6 +60,14 @@ const SCHEMA = {
 const cost = u => ((u.input_tokens || 0) * PRICE.in + (u.output_tokens || 0) * PRICE.out + (u.cache_creation_input_tokens || 0) * PRICE.cw + (u.cache_read_input_tokens || 0) * PRICE.cr) / 1e6;
 function spent() { return fs.readdirSync(OUT).filter(f => f.endsWith('.json')).reduce((t, f) => t + (JSON.parse(fs.readFileSync(path.join(OUT, f), 'utf8')).cost || 0), 0); }
 
+// asks for a line without showing what is typed (a password prompt)
+function askHidden(q) {
+  return new Promise(res => {
+    const rl = require('readline').createInterface({ input: process.stdin, output: process.stdout, terminal: true });
+    process.stdout.write(q); rl._writeToOutput = () => {};
+    rl.question('', a => { rl.close(); process.stdout.write('\n'); res(String(a || '').trim()); });
+  });
+}
 async function main() {
   // --selftest: each named dish's own Draw it for me plate turned into an answer and back must score the same, so the
   // conversion and the scoring are faithful before any money is spent (writes stand-in answers to results-selftest/)
@@ -79,8 +87,12 @@ async function main() {
   }
   if (process.argv.includes('--dry')) { console.log('system chars', SYSTEM.length, 'about', Math.round(SYSTEM.length / 3.3), 'tokens'); console.log(SYSTEM.slice(0, 3000)); return; }
   // the key is read from its own variable, so nothing else on the machine picks it up by itself
-  if (!process.env.LK_BAKEOFF_API_KEY) { console.log('Set LK_BAKEOFF_API_KEY to the Claude API key first.'); process.exit(2); }
-  const client = new Anthropic({ apiKey: process.env.LK_BAKEOFF_API_KEY });
+  // the key: LK_BAKEOFF_API_KEY if it is set, else typed when the run starts (hidden, kept in memory for this run only,
+  // never written anywhere)
+  let key = process.env.LK_BAKEOFF_API_KEY || '';
+  if (!key && process.stdin.isTTY) key = await askHidden('Claude API key (typing is hidden, nothing is saved): ');
+  if (!key) { console.log('No key: set LK_BAKEOFF_API_KEY, or run this in a terminal and type the key when asked.'); process.exit(2); }
+  const client = new Anthropic({ apiKey: key }); key = '';
   let todo = H.DISHES.filter(r => !ONLY.length || ONLY.indexOf(r.id) >= 0).filter(r => !fs.existsSync(path.join(OUT, r.id + '.json')));
   if (LIMIT) todo = todo.slice(0, LIMIT);
   console.log('to do', todo.length, 'spent so far US$' + spent().toFixed(2), 'cap US$' + CAP);
