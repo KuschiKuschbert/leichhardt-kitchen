@@ -16,6 +16,8 @@ Done on 22 Oct 2026 by the head chef: the Browser key works only from `kuschikus
 
 4. **Flaky click tests** (24 Nov 2026). The weekly issue "Click tests that needed a second try" (#523) marked 23 files "Yes" in the week to 23 Nov; `swipe-dismiss.test.js` needed a second try 34 times. Each retry slows every pull request. Fix one file per pull request, the most retried first, without loosening a check, and remove this item when the list has no "Yes". Done 24 Nov 2026: swipe-dismiss, mascot, section-box, update-confirmation (73 of the week's retries); the method is in [flaky tests](flaky-tests.md). Next: chef-panel, cleaning-schedule, csv-text (8 each).
 
+5. **A moment of the read-only notice on opening a work page** (found 24 Nov 2026). When the roster answers, the sign-in resumes and the page is drawn once before the kitchen settings are asked for (`resume()` then `accessChanged()` on the next turn), so Prep can show "You can read the book but not write..." for a frame between two Loading cards. Seen in the click-test stand-in (`tests/loading-wait.test.js` works around it); not yet seen on a phone. Fix: keep the loading card until `accessChanged()` has run.
+
 Remove each item here once it is done.
 
 ### Bringing the code in line (22 Oct 2026)
