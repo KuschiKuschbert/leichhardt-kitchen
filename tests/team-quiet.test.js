@@ -50,8 +50,14 @@ async function takeOff(p, id, sh) {
 }
 async function chefPlan(p) { await click(p, '[data-p="c-group"][data-g="team"]'); const tab = p.locator('[data-p="c-tab"][data-t="plan"]'); if (await tab.getAttribute('aria-pressed') !== 'true') await tab.click(); await ready(p); }
 async function day(p, d) { await L.teamDay(p, d); await ready(p); }
+// What the page shows (text, style, size) is read in one go, from the page as it is: p.evaluate with querySelectorAll.
+// A locator's evaluateAll or evaluate finds the element first and reads it in a second step. When the planner's first
+// reads come in between (the week's plans, then the team summary: each one a whole redraw, just after the Save appears),
+// it reads the old element, out of the page. Out of the page, innerText is the whole textContent, every hidden picker's
+// options included ("Same as Lunch: Grill" holds Sam), and nothing has a style or a size (24 Nov 2026: the admin entry
+// failed on the first try and the retry on one runner, #858).
 async function assertQuiet(p, label) {
-  const roster = await p.locator('.tm-people').evaluateAll(lists => lists.map(e => ({ names: [...e.querySelectorAll('.tm-person-name')].map(n => n.textContent), open: e.querySelectorAll('details[open]').length, text: e.innerText })));
+  const roster = await p.evaluate(() => [...document.querySelectorAll('.tm-people')].map(e => ({ names: [...e.querySelectorAll('.tm-person-name')].map(n => n.textContent), open: e.querySelectorAll('details[open]').length, text: e.innerText })));
   ok(roster.length === 1 && roster[0].names.slice().sort().join() === 'Ann,Bo,Sam' && roster[0].open === 0, label + ': one collapsed roster contains each person once');
   ok(roster.length === 1 && people.every(x => (roster[0].text.match(new RegExp(x.name, 'g')) || []).length === 1) && !/Choose a section/.test(roster[0].text), label + ': collapsed rows avoid repeated names and repeated assignment instructions');
   ok(await p.locator('.tm-worksheet').count() === 1 && !await p.locator('[data-p="tm-section"], [data-p="tm-assign"]').count(), label + ': one person worksheet replaces global section-selection mode');
@@ -77,10 +83,11 @@ async function layouts(p, label) {
   for (const width of [390, 768, 1280]) for (const size of ['normal', 'xlarge']) {
     await p.setViewportSize({ width, height: 900 }); await p.evaluate(s => document.documentElement.dataset.text = s, size); await L.settle(p, 150);
     // the row's own buttons (Take off, + Break) and its pickers replaced the Breaks link: every one a 44 px target
-    const small = await p.locator('.tm-tlsvc .ux-picker-trigger, .tm-brline .ux-picker-trigger, [data-p="tm-off"], [data-p="tm-addbr"], .tm-weeknav button, [data-p="tm-date-toggle"], [data-p="tm-save"], .tm-batch > summary').evaluateAll(es => es.filter(e => e.getClientRects().length).map(e => ({ label: e.textContent.trim(), w: e.getBoundingClientRect().width, h: e.getBoundingClientRect().height })).filter(e => e.w < 43.5 || e.h < 43.5));
+    // read in one go (see assertQuiet): an old control out of the page has no size, so it would pass unmeasured
+    const small = await p.evaluate(() => [...document.querySelectorAll('.tm-tlsvc .ux-picker-trigger, .tm-brline .ux-picker-trigger, [data-p="tm-off"], [data-p="tm-addbr"], .tm-weeknav button, [data-p="tm-date-toggle"], [data-p="tm-save"], .tm-batch > summary')].filter(e => e.getClientRects().length).map(e => ({ label: e.textContent.trim(), w: e.getBoundingClientRect().width, h: e.getBoundingClientRect().height })).filter(e => e.w < 43.5 || e.h < 43.5));
     ok(!await L.overflow(p) && !small.length, label + ' ' + width + ' ' + size + ': no sideways page scroll and visible planner controls remain 44 px ' + JSON.stringify(small));
     // was: one roster and one contextual workbench. The workbench is gone: the one roster spans the notebook
-    if (width === 1280 && size === 'normal') ok(await p.locator('.tm-nbook').evaluate(e => { const work = e.querySelector('.tm-focus-grid'), spine = e.querySelector('.tm-nspine'); return !!work && e.querySelectorAll('.tm-worksheet').length === 1 && e.querySelectorAll('.tm-people').length === 1 && !e.querySelector('.tm-detail-workbench') && work.getBoundingClientRect().width >= e.getBoundingClientRect().width - 60 && (!spine || getComputedStyle(spine).display === 'none'); }), label + ': desktop writing region spans the notebook with one roster and no separate workbench');
+    if (width === 1280 && size === 'normal') ok(await p.evaluate(() => { const e = document.querySelector('.tm-nbook'); if (!e) return false; const work = e.querySelector('.tm-focus-grid'), spine = e.querySelector('.tm-nspine'); return !!work && e.querySelectorAll('.tm-worksheet').length === 1 && e.querySelectorAll('.tm-people').length === 1 && !e.querySelector('.tm-detail-workbench') && work.getBoundingClientRect().width >= e.getBoundingClientRect().width - 60 && (!spine || getComputedStyle(spine).display === 'none'); }), label + ': desktop writing region spans the notebook with one roster and no separate workbench');
   }
 }
 

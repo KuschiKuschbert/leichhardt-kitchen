@@ -90,6 +90,12 @@ async function visit(b, label, options, fn) {
     await tab(p, 'notes'); await p.click('[data-p="n-new"]'); await p.fill('[data-k="n-text"]', 'Chef panel synthetic shift ping'); await p.click('[data-p="n-save"]');
     await L.waitFor(p, () => Object.entries(__fake.dump()).some(([k, v]) => /\/notes\/[^/]+$/.test(k) && v.text === 'Chef panel synthetic shift ping' && v.by === 'sam'));
     ok(true, 'embedded Shift pings saves with the chef PIN identity');
+    // The stand-in stores the ping before the save is answered, and the panel takes no page tap while Saving... shows
+    // (localBackBusy(), as for Manage staff below). Wait for the answer the chef sees: Saved on the button for 1.2 s, then
+    // the ping named under the list. Before, a busy runner tapped Team while the ping was still saving and waited 8 s for
+    // nothing (24 Nov 2026, docs/flaky-tests.md).
+    await L.waitFor(p, () => !!document.querySelector('[data-p="n-save"][data-sv="done"][aria-busy="false"]') ||
+      !document.querySelector('[data-p="n-save"]') && /^Saved: Chef panel synthetic shift ping\./.test((document.querySelector('.n-lst .sv-line.saved') || {}).textContent || ''));
     await tab(p, 'people');
     ok(!(await p.$('[data-p="a-reset-pin"], [data-a="perm"], [data-a="role"], [data-p="a-person-assess"]')), 'Manage staff does not expose owner PIN, capability or assessment controls');
     await p.fill('[data-k="a-bulk"]', 'Synthetic Cy'); await p.click('[data-p="a-bulk-add"]');
