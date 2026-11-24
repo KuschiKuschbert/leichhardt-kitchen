@@ -66,6 +66,25 @@ const reads = (p, re) => p.evaluate(s => window.__fake.reads.filter(k => new Reg
   ok(p.errors.length === 0, 'cut-offs: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // 1b. The same listener started with no signal, then refused once the signal is back (review of 28 Oct 2026): the bar
+  // and the order list must not keep saying "No signal", and the order list says it could not check (cutState 'error')
+  p = await L.open(b, '#/recipes', { who: 'sam', extra: cutX, clock: at(today, '23:50'), wait: 1800 });
+  await until(p, () => { const e = document.getElementById('cut-band'); return !!e && !e.hidden && /Veg Co/.test(e.textContent); });
+  await p.evaluate(() => { window.__fake.cold = /cutdone/; });
+  await minutes(p, 12);
+  await L.settle(p, 500);
+  ok(/No signal/.test(await band()), 'cut-offs refused after no signal: first the bar says there is no signal');
+  await p.evaluate(() => { window.__fake.denyListen = /cutdone/; });
+  await warm(p);
+  await L.settle(p, 500);
+  t = await band();
+  ok(!/No signal/.test(t) && /Veg Co/.test(t), 'cut-offs refused after no signal: the bar no longer says there is no signal (' + t.slice(0, 160) + ')');
+  await go(p, '#/orders');
+  t = await p.evaluate(() => document.getElementById('app').textContent);
+  ok(!/No signal\. Orders ticked on other phones/.test(t) && /Could not check supplier confirmations/.test(t), 'cut-offs refused after no signal: the order list says it could not check, not that there is no signal');
+  ok(p.errors.length === 0, 'cut-offs refused after no signal: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // 2. Rounds sent after midnight with no signal (watchSent() in js/functions.js): the rounds already ticked as sent stay
   // sent, so nobody plates round 1 again
   const fn = M.derive({ v: 1, status: 'confirmed', name: 'Late 40th', date: today, start: at(today, '22:30'), loc: 'Beer garden', guests: 40, mode: 'stag', notes: '', kc: '', kcBy: '', kcAt: 0,
