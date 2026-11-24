@@ -169,9 +169,11 @@ function bookPlate(r) {
    the nachos' sour cream "on the other side" is spread on the nachos (15 Nov 2026). */
 const WANT_SIDE = /on the side|side sauce|\bramekin|sauce of choice|\bchoice\b|\bchoose\b|\bguests?\b/i;
 // Draw it for me, as the button does it on a fresh drawing (seed 0 is the button's own, js/smart.js ui.cmd)
-function auto(r, seed) {
-  const d = DR.blank(r.id, 'plate'); let res = null;
-  DR.withDrawing(d, () => { res = S.drawIt(seed || 0); });
+/* dPre: a drawing made elsewhere (the AI bake-off, scripts/ai-bakeoff/) measured the same way; stylePre is the plating
+   style Draw it for me picked for the dish, so the on-a-bed check applies to both */
+function auto(r, seed, dPre, stylePre) {
+  const d = dPre || DR.blank(r.id, 'plate'); let res = dPre ? { style: stylePre, unsure: [] } : null;
+  if (!dPre) DR.withDrawing(d, () => { res = S.drawIt(seed || 0); });
   const a = LIB.surface(d.surf).area, G = grid(a), by = {};
   // z: where the part is first drawn; a sauce drawn over a part (a dollop on a salad) is not under it
   DR.withDrawing(d, () => d.els.forEach((e, z) => { if (e.t !== 'item' && e.t !== 'raw') return; const it = e.t === 'item' ? LIB.get(e.a.split('@')[0]) : null, role = it ? it.role : e.role || 'main', key = e.ing || e.a;
@@ -281,5 +283,5 @@ function draw(id, seed, d0) {
   DR.withDrawing(d, () => { res = S.drawIt(seed || 0); });
   return { d, res, area: LIB.surface(d.surf).area, R: Rn, LIB, DR, S: e.S, r: e.D.recipes.find(x => x.id === id) };
 }
-module.exports = { check, print, draw, RULES, OBSERVED };
+module.exports = { check, print, draw, RULES, OBSERVED, auto, score, book, bind, env, LINE_OK, fam };
 if (require.main === module) print(check(), process.argv[2] === 'all');

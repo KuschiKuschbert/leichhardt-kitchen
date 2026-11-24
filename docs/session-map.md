@@ -166,7 +166,7 @@ The owner asked to dress the mascot for the celebrations, then for a Christmas c
 
 ## AI drawing in the studio, 18 November 2026 (round 1 only; waiting for the owner)
 
-The owner has US$100 of Claude API credit and asked whether Claude could draw in the app, limited per day and before the credit runs out. Round 1: Build smaller, 3 of 5 (the head chef and the skeptic: Don't build, not now). All five: only Claude picking and placing the book's own library pieces, never a whole new SVG (no parts means no Pass labels for the allergen lens). Three of five: prove it offline first, against Draw it for me (98% matched, plating median 0.01 since 15 Nov). The lead recommends that bake-off (about US$10 to 15) before round 2. `docs/ai-drawing-options/brief.md`, `proposal.md`, `shots/`.
+The owner has US$100 of Claude API credit and asked whether Claude could draw in the app, limited per day and before the credit runs out. Round 1: Build smaller, 3 of 5 (the head chef and the skeptic: Don't build, not now). All five: only Claude picking and placing the book's own library pieces, never a whole new SVG (no parts means no Pass labels for the allergen lens). Three of five: prove it offline first, against Draw it for me (98% matched, plating median 0.01 since 15 Nov). The lead recommends that bake-off (about US$10 to 15) before round 2. `docs/ai-drawing-options/brief.md`, `proposal.md`, `shots/`. 24 Nov 2026: the owner chose the bake-off; `scripts/ai-bakeoff/` runs it (Claude places the book's parts on all 81 dishes, scored by `tests/plating-check.js`, US$15 cap, a blind page of 15), waiting for a Claude API key in `LK_BAKEOFF_API_KEY`.
 
 ## A smarter mascot, 17 November 2026 (round 1 only; Orders and Functions held a month)
 

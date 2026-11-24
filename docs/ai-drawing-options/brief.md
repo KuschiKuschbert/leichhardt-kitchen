@@ -75,4 +75,15 @@ The bake-off:
 
 If AI clearly wins, round 2 designs the studio piece with break-it 2 to 5 built in. If not, the credit goes to the head chef reviewer's other idea: Claude drawing missing library pieces, checked by `library-check` in normal pull requests, with no server.
 
-**Head chef's choice:** waiting.
+**Head chef's choice (24 Nov 2026):** the bake-off first.
+
+## The bake-off
+
+Built and ready to run: `scripts/ai-bakeoff/` (how to run it, what Claude is sent and its limits: its `README.md`).
+
+- **What it does.** Claude lays out each of the 81 plated dishes from the book's own parts and library pieces (option 1). The prompt gives it each dish, its method, what Draw it for me draws today, the servingware names, the library and the house style measured from the 76 hand-made plates.
+- **How it is scored.** Each plate is scored with the same measures as Draw it for me's own gate (`tests/plating-check.js`, which now also measures a drawing made elsewhere). A self-test turns six of the book's own plates (among them the four worst) into answers and back, and each scores exactly the same.
+- **Cost and limits.** A hard cap stops it before US$15. About 21,000 tokens of the prompt are cached and each dish adds about 1,000. Real cost and wait per plate are recorded.
+- **The blind pick.** 15 dishes (the 10 Draw it for me draws worst, and 5 more) side by side, left and right shuffled (`docs/ai-drawing-options/bakeoff/blind.html` once run). The head chef sends back a code.
+- **Blocked on the key.** A Claude API key cannot be a network secret in the cloud environment. It can only be an environment variable there (readable by every session and command in it), or stay on the owner's computer. The run waits for the owner to add `LK_BAKEOFF_API_KEY` one way or the other.
+- **Left out on purpose.** Pans, side views and builds: a batch card's pan is drawn from the card as one part, so there is nothing to place.
