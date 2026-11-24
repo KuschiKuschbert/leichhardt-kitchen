@@ -20,3 +20,29 @@ Measured on 2 and 3 November 2026: about 45 pull requests in two days, 100 Click
 - `main` is protected: the **Click tests** check must pass and the branch must be up to date with `main`; force pushes and deleting `main` are refused.
 - Not enforced by GitHub: reviews (none required, Claude merges by the head chef's decision of 21 Oct 2026), and the protection does not apply to admins. The main-branch guard hook (`scripts/guard-main.mjs`) stops Claude Code sessions from working on `main`; a person with admin rights can still push to it.
 - The **Click tests** job checks `js/*.js`, `js/lib/*.js` and `sw.js` parse, runs the click tests, then the rules checks on the Firestore emulator (`tests/rules`) and the nightly learning check (`scripts/emulator-check.mjs`), since 22 Oct 2026. A pull request that changes only `*.md` files or files under `docs/` passes after the parse check in about a minute (3 Nov 2026); do not put anything the book loads or a test reads under `docs/`. Since 4 Nov 2026 the browser files run in five shares of equal work on five runners at once (by `tests/timings.json`, longest files first; refresh it with `UPDATE_TIMINGS=1` when one share is clearly slower), with the rules beside them, about 5 to 6 minutes instead of 25. A file that takes longer than any share runs in parts beside itself (`offline-writes.test.js` and its `-2`, `-3` files, 4 Nov 2026); the job named **Click tests** collects them. A file still running after 10 minutes is stopped and counted as failed (`FILE_TIMEOUT`, 4 Nov 2026), so a hang no longer holds a runner to its 30 minute limit. A failed file runs once more on its own: a pass then shows as a "passed on retry" warning, and the same file passing on retry twice is a bug for its own pull request: the weekly issue "Click tests that needed a second try" (`scripts/flaky-report.mjs`) lists them, marked Yes. When a run fails, read its annotations or summary first (`gh api repos/<owner>/<repo>/check-runs/<id>/annotations`), not the whole log.
+
+## The right model for the job (24 Nov 2026)
+
+The head chef shared a video on getting Opus-level thinking without paying Opus prices for every step, and asked to use each model where it is best. Fable is in the head chef's plan (the head chef checked, 24 Nov 2026). `CLAUDE.md` cannot choose a model: it only gives instructions. The model is a setting, so the session default lives in `.claude/settings.json` and each helper agent's model is named on its Agent call.
+
+| Model | Used for | How it is set |
+| --- | --- | --- |
+| Sonnet | The main session: code, tests, notes, recipe edits | `"model": "sonnet"` in `.claude/settings.json` |
+| Fable | The advisor in every session. It sees the whole conversation and is asked before an approach is chosen, when an error keeps coming back and before the work is called done | `"advisorModel": "fable"` in `.claude/settings.json` |
+| Fable | The council's skeptic and keeper of the book (Try to break it, failure and recovery) | `model: "fable"` on their Agent calls (`.claude/skills/service-council/SKILL.md`) |
+| Fable | A whole session, by the head chef's choice: `firestore.rules`, access and device sessions, the saved shell (`sw.js`), a bug that keeps coming back, a whole-app audit | `/model fable` in that session |
+| Opus | The other council reviewers, the screen designer and wide-audit reviewers: judgement that counts, many at once | `model: "opus"` on their Agent calls |
+| Sonnet | A helper agent with a known job: write or check code a set way | `model: "sonnet"` on its Agent call |
+| Haiku | A helper agent that finds, searches, reads a log or fetches a page | `model: "haiku"` on its Agent call |
+
+**What it saves and what it costs.** The main session moves from Opus to Sonnet and lookups move to Haiku: that is most of the saving. Two council reviewers move from Opus to Fable, so a council round costs more than before: the reviews that look for failures get the strongest model. Fable is the biggest model, so expect it to use the plan's allowance faster than Opus; the docs give no figure. Not measured yet: compare the plan's usage page in Claude settings after a week of sessions.
+
+**Which setting wins.** Highest first: `/model` in the session, then `--model` at launch, then the `ANTHROPIC_MODEL` environment variable, then `"model"` in the settings files. Per the Claude Code docs, the project's `"model"` applies at every new session and wins over a model saved with `/model` or picked in the app. To switch for one session, type `/model opus` or `/model fable`. To change it on one computer only, put `{"model": "opus"}` in `.claude/settings.local.json` (not committed). `/advisor off` turns the advisor off for a session.
+
+**Checked here.** The `advisor` tool appeared in a running cloud session as soon as `"advisorModel"` was added, so the project setting is read there. The `"model"` key applies when a session starts: confirm it in the next new session (the session details show the model it runs on).
+
+**Good to know.**
+- The advisor is marked experimental in the Claude Code docs. If it is not available, the session runs without it; nothing breaks.
+- A Fable request that a safety check refuses can re-run on Opus by itself (`switchModelsOnFlag`).
+- An Agent call's `model` takes only the short names: `haiku`, `sonnet`, `opus`, `fable`.
+- `opusplan` (Opus in plan mode, Sonnet otherwise) was weighed and not chosen: sessions here rarely use plan mode, and there is no Fable version. The advisor works without plan mode.
