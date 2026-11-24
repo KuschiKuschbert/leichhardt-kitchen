@@ -354,6 +354,9 @@ function rulesDenied(ref) {
   return /^kitchens\/[^/]+\/book$/.test(k);
 }
 function denied(ref) { const d = window.__fake.denyReads; return !!(d && d.test(key(ref.path))); }
+// __fake.denyListen = /regex/ (24 Nov 2026): listeners on the paths that match are refused (permission-denied) like the
+// rules refusing them, also one started with no signal once the signal is back (__fake.warm()), as the SDK does
+function listenDenied(ref) { const d = window.__fake.denyListen; return !!(d && d.test(key(ref.path))); }
 // __fake.exhausted = /regex/: reads of the paths that match are refused with resource-exhausted, like the free plan's
 // 50,000 reads a day used up (5 Nov 2026). Refused reads are not billed.
 function spent(ref) { const x = window.__fake.exhausted; return !!(x && x.test(key(ref.path))); }
@@ -409,7 +412,7 @@ export function onSnapshot(ref, next, err) {
   if (spent(ref)) { let live = true; setTimeout(() => { if (live && err) err({ code: 'resource-exhausted' }); }, 5); return () => { live = false; }; }
   // a listener the rules refuse gets the refusal instead of its first answer, and nothing after (like the SDK). One
   // started with no signal (cold) answers from the copy in memory, as the SDK does, and is not refused here later
-  if (!cold(ref) && (ref.type === 'doc' ? readRefused(ref) : rulesDenied(ref))) {
+  if (!cold(ref) && (listenDenied(ref) || (ref.type === 'doc' ? readRefused(ref) : rulesDenied(ref)))) {
     let live = true;
     refuse('listen', ref).catch(e => setTimeout(() => { if (live && err) err(e); }, 5));
     return () => { live = false; };
@@ -422,7 +425,7 @@ export function onSnapshot(ref, next, err) {
 // a listener pays for what it first sends, then only for documents that changed since its last snapshot; an answer
 // from the empty copy in memory (cold) costs nothing
 function deliver(s) {
-  if (!s.cold && (s.ref.type === 'doc' ? readRefused(s.ref) : rulesDenied(s.ref))) {
+  if (!s.cold && (listenDenied(s.ref) || (s.ref.type === 'doc' ? readRefused(s.ref) : rulesDenied(s.ref)))) {
     subs.delete(s); window.__fake.refused.push({ kind: 'listen', path: key(s.ref.path) });
     if (s.error) setTimeout(() => s.error({ code: 'permission-denied' }), 0);
     return;
