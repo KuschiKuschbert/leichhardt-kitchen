@@ -13382,10 +13382,19 @@ if (list.length) sg('oreg', 's');
     var r = odRow(d);
     return r ? homeRowHTML(r).replace('<li>', '<li data-hm-priority="order">').replace('class="hm-a', 'class="hm-a hm-od') : '';
   }
-  function homeCutSlot() { var h = homeCutsHTML(); return '<div id="hm-cuts"' + (h ? '' : ' hidden') + '>' + h + '</div>'; }
+  /* The words each Home box was drawn with, by its id, until homePaint() first meets that box (24 Nov 2026). Without
+     them the first paint after Home opened (the 20 second function tick, the 30 second cut-off tick or any draw())
+     drew every box again with the same words: the whole board was laid out again and focus inside it lost. */
+  var homeDrawn = {};
+  function homeBoxH(el) {
+    if (el.lkH === undefined && Object.prototype.hasOwnProperty.call(homeDrawn, el.id)) { el.lkH = homeDrawn[el.id]; delete homeDrawn[el.id]; }
+    return el.lkH;
+  }
+  function homeCutSlot() { var h = homeCutsHTML(); homeDrawn['hm-cuts'] = h; return '<div id="hm-cuts"' + (h ? '' : ' hidden') + '>' + h + '</div>'; }
   function homeSlot() {
     if (!cutTick) cutTick = setInterval(cutPaint, 30000);   // the clock, the minutes left and rows that come and go (no reads)
     var day = homeDayHTML(), crew = homeWithHTML(), b = homeBoardHTML(), pp = homePrepHTML(), tt = homeTeamHTML(), staff = !teamOK();
+    homeDrawn['hm-day'] = day; homeDrawn['hm-with-body'] = crew; homeDrawn['hm-board'] = b; homeDrawn['hm-prep'] = pp; homeDrawn['hm-team'] = tt;
     var prep = '<section class="hm-paper hm-prep" id="hm-prep" aria-label="Prep by section"' + (pp ? '' : ' hidden') + '>' + pp + '</section>';
     var team = '<section class="hm-paper hm-team' + (staff ? ' hm-team-staff' : '') + '" id="hm-team" aria-label="On today"' + (tt ? '' : ' hidden') + '>' + tt + '</section>';
     // functions ahead of time (10 Nov 2026): the Function this week card or the Next function line, under Your day
@@ -13401,7 +13410,7 @@ if (list.length) sg('oreg', 's');
     var t = document.getElementById('hm-time'); if (t) { var c = T.clock(now()); if (t.textContent !== c) t.textContent = c; }
     var dy = document.getElementById('hm-day'); if (dy) {
       var dh = homeDayHTML();
-      if (dy.lkH !== dh) {
+      if (homeBoxH(dy) !== dh) {
         var active = document.activeElement, priority = dy.contains(active) && active.closest('[data-hm-priority]');
         var focusRow = priority && priority.getAttribute('data-hm-priority');
         dy.innerHTML = dh; dy.lkH = dh;
@@ -13409,12 +13418,12 @@ if (list.length) sg('oreg', 's');
       }
       dy.hidden = !dh;
     }
-    var cw = document.getElementById('hm-with-body'); if (cw) { var wh = homeWithHTML(); if (cw.lkH !== wh) { cw.innerHTML = wh; cw.lkH = wh; } }
+    var cw = document.getElementById('hm-with-body'); if (cw) { var wh = homeWithHTML(); if (homeBoxH(cw) !== wh) { cw.innerHTML = wh; cw.lkH = wh; } }
     var fd = document.getElementById('hm-full-team'); if (fd && fd.hidden !== !homeFold) fd.hidden = !homeFold;
-    var b = document.getElementById('hm-board'); if (b) { var h = homeBoardHTML(); if (b.lkH !== h) { b.innerHTML = h; b.lkH = h; } b.hidden = !h; }
-    var pp = document.getElementById('hm-prep'); if (pp) { var ph = homePrepHTML(); if (pp.lkH !== ph) { pp.innerHTML = ph; pp.lkH = ph; } pp.hidden = !ph; }
-    var te = document.getElementById('hm-team'); if (te) { var th = homeTeamHTML(); if (te.lkH !== th) { te.innerHTML = th; te.lkH = th; } te.hidden = !th; }
-    var cu = document.getElementById('hm-cuts'); if (cu) { var ch = homeCutsHTML(); if (cu.lkH !== ch) { cu.innerHTML = ch; cu.lkH = ch; } cu.hidden = !ch; }
+    var b = document.getElementById('hm-board'); if (b) { var h = homeBoardHTML(); if (homeBoxH(b) !== h) { b.innerHTML = h; b.lkH = h; } b.hidden = !h; }
+    var pp = document.getElementById('hm-prep'); if (pp) { var ph = homePrepHTML(); if (homeBoxH(pp) !== ph) { pp.innerHTML = ph; pp.lkH = ph; } pp.hidden = !ph; }
+    var te = document.getElementById('hm-team'); if (te) { var th = homeTeamHTML(); if (homeBoxH(te) !== th) { te.innerHTML = th; te.lkH = th; } te.hidden = !th; }
+    var cu = document.getElementById('hm-cuts'); if (cu) { var ch = homeCutsHTML(); if (homeBoxH(cu) !== ch) { cu.innerHTML = ch; cu.lkH = ch; } cu.hidden = !ch; }
   }
   // a section on the board opens the prep list on that section's tab
   document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('[data-hm-sec]'); if (a) { S.tab = a.getAttribute('data-hm-sec') || ''; } }, true);
