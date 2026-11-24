@@ -68,6 +68,13 @@ function askHidden(q) {
     rl.question('', a => { rl.close(); process.stdout.write('\n'); res(String(a || '').trim()); });
   });
 }
+// the same on a Mac when no terminal is attached: a dialog on its screen, typing hidden; Cancel gives no key
+function askMacDialog() {
+  try {
+    const out = require('child_process').execFileSync('osascript', ['-e', 'text returned of (display dialog "Claude API key for the AI drawing bake-off. It is used for this run only and saved nowhere." default answer "" with hidden answer with title "AI drawing bake-off" buttons {"Cancel", "Run"} default button "Run")'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 600000 });
+    return String(out || '').trim();
+  } catch (e) { console.log('The key box was cancelled or could not open on this Mac.'); return ''; }
+}
 async function main() {
   // --selftest: each named dish's own Draw it for me plate turned into an answer and back must score the same, so the
   // conversion and the scoring are faithful before any money is spent (writes stand-in answers to results-selftest/)
@@ -91,7 +98,10 @@ async function main() {
   // never written anywhere)
   let key = process.env.LK_BAKEOFF_API_KEY || '';
   if (!key && process.stdin.isTTY) key = await askHidden('Claude API key (typing is hidden, nothing is saved): ');
-  if (!key) { console.log('No key: set LK_BAKEOFF_API_KEY, or run this in a terminal and type the key when asked.'); process.exit(2); }
+  // on a Mac with no terminal (a Claude session running it): a box on the Mac's screen with hidden typing; the key goes
+  // straight into this run and is never printed
+  if (!key && process.platform === 'darwin') key = askMacDialog();
+  if (!key) { console.log('No key: set LK_BAKEOFF_API_KEY, or run this in a terminal (or on a Mac) and type the key when asked.'); process.exit(2); }
   const client = new Anthropic({ apiKey: key }); key = '';
   let todo = H.DISHES.filter(r => !ONLY.length || ONLY.indexOf(r.id) >= 0).filter(r => !fs.existsSync(path.join(OUT, r.id + '.json')));
   if (LIMIT) todo = todo.slice(0, LIMIT);
