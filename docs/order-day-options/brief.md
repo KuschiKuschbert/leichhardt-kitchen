@@ -2,7 +2,7 @@
 
 Requested 24 November 2026 by the head chef: "Can we have a setting for Headchef sous chef and admin to set a favourite order day where they get a reminder to order all the supplier orders? Like a little nudge "hey it's order day today", maybe check in the uploaded roster if Headchef or sous chef are rostered that day and give a little nudge to not forget to order that day? And if head and sous chef are rostered always nudge the headchef first?"
 
-**Status: round 1 (Build smaller, 5 of 5) and round 2 (A first, 6 of 6; the mix endorsed by the skeptic and the keeper) done, waiting for the head chef's choice. Nothing in the book has changed.** [Proposal](proposal.md), [evidence packet](evidence-packet.md). Source commit `8f0e83c`. Role-based analysis, not research with staff. Every person and time in the previews is made up, and every supplier except the two names the book already offers (PFD, Simon George).
+**Status: the recommendation chosen 24 November 2026 and built (see Chosen and Build).** Round 1 Build smaller, 5 of 5; round 2 A first, 6 of 6; the mix endorsed by the skeptic and the keeper. [Proposal](proposal.md), [evidence packet](evidence-packet.md). Source commit `8f0e83c`. Role-based analysis, not research with staff. Every person and time in the previews is made up, and every supplier except the two names the book already offers (PFD, Simon George).
 
 ## Today
 
@@ -216,7 +216,7 @@ Why it beats the alternatives: all six scorers ranked A first; it adds no push o
 
 Main downside: **a chef who does not open the book that day gets nothing**, and on the head chef's phone the live countdown in Now and next drops below the first screen on the order day (the line names the same next cut-off). The skeptic's point stands: this helps batch the orders; the cut-off pushes still guard each deadline.
 
-### For the head chef to choose
+### What the head chef was asked
 
 1. **The design:** the recommendation, or A, B or C as drawn.
 2. **A phone push as well?** The council says not now (5 of 6). The head chef reviewer suggested one morning push to the picked chef as a later, separate step if the line alone is not enough. It would also change "every chef gets every push" (24 Oct 2026).
@@ -229,3 +229,41 @@ Main downside: **a chef who does not open the book that day gets nothing**, and 
 - Save order day, then a People save: the order day is kept. An unsaved cut-off draft on the same page survives Save order day. Save button states as `svButton()`.
 - `tests/read-budget.test.js` unchanged; `tests/roles.test.js` for staff (never sees it).
 - Remeasure the implemented app at 390, 768 and 1280 px on one fixture with long supplier names, light and dark, keyboard focus.
+
+## Chosen
+
+**24 November 2026: the recommendation.** The head chef's words: "go with your recommendation, i will set the order day in the apps manually, there can be different order days when i actually do the orders unrelated to the order cut-offs". Recorded at the top of `docs/head-chef-decisions.md`.
+
+What the answer settled:
+
+- **One or more order days.** "There can be different order days" and "unrelated to the order cut-offs": the setting ticks weekdays (any number, or none), and no day is worked out from a supplier's cut-off. The preview's single choice became chips that each turn on and off.
+- **Set by the head chef**, in the app, on the admin Order cut-offs page. Sous chefs do not set it, so no rules change.
+- **No push.** The council's advice; the head chef did not ask for one.
+- **The times** stay as drawn: the reminder from 10:00 (changeable on the setting), the sous chef's second chance from 13:00.
+
+## Build
+
+One pull request, 24 November 2026 (this folder's, after the council's docs).
+
+- **`js/prep.js`.** `config/main.orderDay { days, from, upd, by }`: `odClean()`, `odSet()`. The line: `odRow()` picks who sees it from today's saved team (`homePlanData()`, already held) and counts the day's orders (`odOrders()`, each supplier's first cut-off after the reminder time, in the 8 days the shared ticks cover) from `cutTickFor()`; `odRowHTML()` puts it first in Your day (`homeDayHTML()`), redrawn on the existing 30 second cut-off tick and when a tick changes. The setting: `odAdminHTML()` above the cut-offs on the admin Order cut-offs page, its own draft and `svButton()` Save (`od`), `odSave()` one merged write of `orderDay`. `saveConfig()` keeps `orderDay` as stored, so a People save never drops it.
+- **Words.** "Order day: 1 of 4 ordered"; "Next: PFD Dry Goods by 14:00. Then Coast Seafood by Thu 15:00, Fresh Meats by Fri 14:00."; for the sous chef first "Max is not on today.", "Max's shift ended at 15:00." (and "Last ticked: PFD Dry Goods, Max, 11:30."), or "Nothing ticked since 10:00. Max is on until 15:00."; "Today's team is not saved, so every chef sees this." or "Could not check today's team, so every chef sees this."; "Closed, not ordered: ..."; "Order day: checking the orders..."; "No signal: ticks from other phones are not in yet."; "Order day: 4 of 4 ordered ✓ ... Last: Fresh Meats, Sam, 11:00." for 30 minutes after the last tick.
+- **While today's team is still being checked** nothing shows, so the line never goes to the wrong chef for a moment.
+- **No push, no read, no listener, no write on the phones, no rules change.** The admin's merged write of one `config/main` field is allowed by the existing admin rule (checked in source by the keeper). `tests/read-budget.test.js` unchanged and passing.
+
+### Implemented app measurements
+
+Stand-in, Tuesday 10:05, Max (head chef, admin session), the same four suppliers and team as the previews, with the order day set.
+
+| Width | The line in Your day | Now and next heading |
+| --- | --- | --- |
+| 390 × 844 | top 210 px, 98 px tall (three-line subline) | 791 px (692 px without the line), just under the tab bar at about 776 px |
+| 768 × 1024 | 117 px tall (the narrower column wraps to four lines) | 671 px |
+| 1280 × 900 | 79 px tall | 602 px |
+
+No sideways scroll at any width. As the screen designer warned, on the head chef's phone the live cut-off countdown in Now and next moves below the first screen on an order day; the line names the same next cut-off. Taps: 1 from the line to Supplier order; the Order list's tick and add stay 1 tap; no Order list line. The setting block is 573 px tall at 390 px. Screenshots: [head chef 390](previews/built-home-head-390.png), [768](previews/built-home-head-768.png), [1280](previews/built-home-head-1280.png), [setting](previews/built-setting-390.png).
+
+Not evidenced yet: dark mode and keyboard focus were not checked on the new line (it uses the existing Your day row classes); the live site.
+
+### Checks
+
+`tests/order-day.test.js`, 33 checks: the head chef's line, its words and its tap; nothing before the reminder time, on another day or with no days set; the sous chef nothing while the head chef is on, the line at 13:05 with nothing ticked since 10:00, nothing after a tick at 11:30, the line after the head chef's shift with the last tick; lunch and dinner with no hours use the shifts' own end; the head chef not on; no team saved (both chefs, and staff never); 4 of 4 and the line going 30 minutes later; Home left open across 13:00; no signal for the ticks; the setting (no days, Save off, a typed 930, the next date, the saved record, an unsaved cut-off change kept, who saved it); a People save keeping the order days. Proved first: without the `saveConfig()` line the People save check fails (1 of 33). Also passing: 32 related files (Home, cut-offs, roles, read budget, design patterns, safe text, after the tap, admin nav, mascot and others).

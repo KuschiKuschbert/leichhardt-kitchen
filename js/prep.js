@@ -82,13 +82,13 @@
   var SV_SLOW = 4000, SV_DONE = 1200, SV_WAIT = 'Waiting for the signal. Keep the book open.', svRec = {}, errSeen = {};
   function svForm(k) {
     if (k.startsWith('rvPage:') || k === 'rvAdmin') { var r = svObj(k); return r ? JSON.stringify([r.avoidable, r.change]) : ''; }
-    return k === 'ps' ? JSON.stringify(psModule() && psModule().draft() || null) : k === 't' ? tmSig(tmf) : k === 'n' ? JSON.stringify(S.nf || null) : k === 'm' ? mfSnap(S.mf) : k === 'g' ? gfSnap(S.gf) : k === 'c' ? JSON.stringify(S.cutDraft || null) : k === 'v' ? JSON.stringify(S.vf && S.vf.raw || null) : JSON.stringify(S.draft || null);
+    return k === 'ps' ? JSON.stringify(psModule() && psModule().draft() || null) : k === 't' ? tmSig(tmf) : k === 'n' ? JSON.stringify(S.nf || null) : k === 'm' ? mfSnap(S.mf) : k === 'g' ? gfSnap(S.gf) : k === 'c' ? JSON.stringify(S.cutDraft || null) : k === 'od' ? JSON.stringify(S.odDraft || null) : k === 'v' ? JSON.stringify(S.vf && S.vf.raw || null) : JSON.stringify(S.draft || null);
   }
   // the form open now (the Save bar has one form, whose draft is taken again after each save; c: the order cut-offs)
   function svObj(k) {
     if (k.startsWith('rvPage:')) return rvDraft(true, k.slice(7));
     if (k === 'rvAdmin') return rvDraft(false);
-    return k === 'ps' ? psModule() && psModule().draft() : k === 't' ? tmf : k === 'n' ? S.nf : k === 'm' ? S.mf : k === 'g' ? S.gf : k === 'c' ? S.cutDraft : k === 'v' ? S.vf : undefined;
+    return k === 'ps' ? psModule() && psModule().draft() : k === 't' ? tmf : k === 'n' ? S.nf : k === 'm' ? S.mf : k === 'g' ? S.gf : k === 'c' ? S.cutDraft : k === 'od' ? S.odDraft : k === 'v' ? S.vf : undefined;
   }
   function svStop(k) { var r = svRec[k]; if (r) clearTimeout(r.timer); delete svRec[k]; }
   function svReset() { Object.keys(svRec).forEach(svStop); }
@@ -4084,6 +4084,8 @@
       staffIds: idsFor(cfg.people, anyP), headId: headIdOf(cfg.people), pinOpen: pinOpenFor(idsFor(cfg.people, anyP)),
       updated: now(), updatedBy: S.user ? 'Head chef' : (who() ? who().name : '')   // never the Google email: anyone with the kitchen PIN can read this record
     };
+    // the order days: set only on the Order cut-offs page (odSave), kept here as stored so a People save never drops them
+    if (S.config && S.config.orderDay !== undefined) clean.orderDay = S.config.orderDay;
     /* a sous chef may only change the people list and who may set a PIN, so only those are sent (merged): the rules refuse any other field */
     return sdk().then(function () { if (S.user && S.level === 'owner') {
       platformKeep(clean);
@@ -7232,7 +7234,7 @@
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
-    var pane = at === 'prep-standards' ? psPanelHTML() : at === 'plan' ? (teamOK() ? teamPageHTML() : teamNoHTML()) : at === 'dashboard' || at === 'inbox' ? dashHTML(at) : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'kitchen-home' ? kitchenHomeHTML(d, saveBlock) : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'records' ? recordsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' && owner && S.personId ? personPageHTML(d, S.personId, saveBlock) : at === 'people' ? (
+    var pane = at === 'prep-standards' ? psPanelHTML() : at === 'plan' ? (teamOK() ? teamPageHTML() : teamNoHTML()) : at === 'dashboard' || at === 'inbox' ? dashHTML(at) : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? (CUT_OK ? odAdminHTML() : '') + cutAdminHTML() : at === 'kitchen-home' ? kitchenHomeHTML(d, saveBlock) : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'records' ? recordsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' && owner && S.personId ? personPageHTML(d, S.personId, saveBlock) : at === 'people' ? (
       '<section class="set-block pp-room"><span class="label">People</span>' +
       (S.level === 'owner' && S.platformSt === 'err' ? '<p class="p-err a-plat-err" role="status">Could not check which profile is the owner\'s own. A change to it may not save. The book tries again by itself.</p>' : '') +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
@@ -13125,7 +13127,7 @@ if (list.length) sg('oreg', 's');
       row = { icon: 'cup', title: 'Your break', time: 'Unavailable', sub: 'Check your saved shift and break times with the chef.', href: teamOK() ? '#/team' : '#/prep' };
     }
     var br = homeRowHTML(row).replace('<li>', '<li data-hm-priority="break">').replace('class="hm-a', 'class="hm-a hm-day-break');
-    return head + '<ul class="hm-rows">' + section + br + '</ul>';
+    return head + '<ul class="hm-rows">' + odRowHTML(d) + section + br + '</ul>';
   }
   /* the full-day fold under On with you shows only when it adds people: a card that already holds the whole saved day
      (the head chef, or anyone not on today's plan) hides it, so nobody reads the same team twice (head chef, 10 Nov 2026) */
@@ -13298,6 +13300,88 @@ if (list.length) sg('oreg', 's');
       return '<li><a href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '"><b>' + esc(c.day === tom ? 'Tomorrow' : dayShort(c.day).replace(',', '')) + '</b> ' + esc(c.s.name) + ' order closes ' + esc(hhmm(c.at % 1440)) + '</a></li>';
     }).join('') + '</ul>';
   }
+  /* The order day (head chef, 24 Nov 2026; docs/order-day-options/brief.md): config/main.orderDay { days, from, upd, by },
+     the weekdays the head chef does the supplier orders, whatever the cut-offs, and when the reminder starts (minutes
+     after midnight). Set only on the admin Order cut-offs page (odSave); the People save keeps it as stored. On an order
+     day, from that time, one line in Your day: "Order day: 1 of 4 ordered", naming what is left, 1 tap to Supplier
+     order. The head chef sees it while on today's saved team. The sous chef on sees it too when the head chef is not on
+     today, once the head chef's shift has ended (saved roster hours, else the shift's own), or from OD_SECOND with nothing
+     ticked since the reminder time. Today's team not saved, or not checkable: every chef. No push, no write, and no
+     read or listener of its own: the settings, today's team and the shared ticks (8 days) are already held. */
+  var OD_FROM = 600, OD_SECOND = 780, OD_DONE = 30, OD_DY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  function odClean(v) {
+    if (!v || typeof v !== 'object' || !Array.isArray(v.days)) return null;
+    var days = [];
+    v.days.forEach(function (d) { if (typeof d === 'number' && d === Math.floor(d) && d >= 0 && d <= 6 && days.indexOf(d) < 0) days.push(d); });
+    var out = { days: days.sort(function (a, b) { return a - b; }), from: tmMin(v.from) !== null ? tmMin(v.from) : OD_FROM };
+    if (typeof v.upd === 'number' && isFinite(v.upd)) out.upd = v.upd;
+    if (typeof v.by === 'string' && v.by.length <= 80) out.by = v.by;
+    return out;
+  }
+  function odSet() { return odClean(S.config && S.config.orderDay); }
+  // the day's orders, fixed at the reminder time: each supplier's first cut-off after it, in the days the shared ticks
+  // cover, soonest first. A tick moving on later never changes the list, so the count can finish.
+  function odOrders(from) {
+    var seen = {}, out = [];
+    for (var plus = 0; plus < CUT_DAYS; plus++) cutOn(plus).forEach(function (c) { if (c.at > from && !seen[c.s.id]) { seen[c.s.id] = 1; out.push(c); } });
+    return out.sort(function (a, b) { return a.at - b.at || String(a.s.name).localeCompare(String(b.s.name)); });
+  }
+  // a person's latest end today, from saved roster hours or the shift's own; null when any of their shifts has none
+  function odEnd(rec, id) {
+    var end = -1, known = true;
+    rec.on.forEach(function (o) {
+      var s = o.id === id && tmShift(o.sh); if (!s) return;
+      var to = tmMin(o.from) !== null && tmMin(o.to) !== null && o.from < o.to ? o.to : tmMin(s.to);
+      if (to === null) known = false; else end = Math.max(end, to);
+    });
+    return known && end >= 0 ? end : null;
+  }
+  function odWhen(c) { return c.day === dayNow() ? hhmm(c.t) : OD_DY[parseYmd(c.day).getDay()] + ' ' + hhmm(c.t); }
+  function odTickWords(t) { return cutByName(t) + ', ' + (t.at >= T.at(dayNow(), 0) ? '' : OD_DY[T.dow(t.at)] + ' ') + clock(t.at); }
+  // the line for this phone's chef, or null: who it is for, then the count from the ticks already held
+  function odRow(d) {
+    var od = odSet(), p = me(), m = T.mins();
+    if (!od || od.days.indexOf(T.dow()) < 0 || m < od.from || !p || !chefP(p) || !d) return null;
+    var head = (S.config && S.config.headId) || '', why = '', ended = false;
+    if (d.state === 'unset') why = 'Today\'s team is not saved, so every chef sees this. ';
+    else if (d.state === 'error' || d.state === 'stale') why = 'Could not check today\'s team, so every chef sees this. ';
+    else if (d.state !== 'ready') return null;   // today's team is still being checked: nothing yet, never a wrong pick
+    var list = odOrders(od.from), from = T.at(dayNow(), od.from);
+    var ticks = list.map(function (c) { return cutTickFor(c).d; }), got = ticks.filter(Boolean).length;
+    if (d.state === 'ready') {
+      var on = function (id) { return d.rec.on.some(function (o) { return o.id === id && tmShift(o.sh); }); };
+      var headOn = !!head && on(head), sousOn = ((S.config && S.config.sousIds) || []).some(function (id) { return id !== head && on(id); });
+      if (p.id === head) { if (!headOn && sousOn) return null; }
+      else if (!on(p.id)) return null;
+      else if (!headOn) why = head ? mnName(head) + ' is not on today. ' : '';
+      else {
+        var end = odEnd(d.rec, head), name = mnName(head);
+        if (end !== null && m >= end) { why = name + '\'s shift ended at ' + hhmm(end) + '. '; ended = true; }
+        else if (m >= OD_SECOND && !ticks.some(function (t) { return t && t.at >= from; })) why = 'Nothing ticked since ' + hhmm(od.from) + '. ' + name + (end !== null ? ' is on until ' + hhmm(end) : ' is on today') + '. ';
+        else return null;
+      }
+    }
+    var row = { icon: 'truck', href: '#/suppliers' };
+    if (!list.length) return Object.assign(row, { title: 'Order day', sub: why + 'No supplier cut-offs in the next 7 days to count. Open Supplier order to do the orders.' });
+    if (cutState === 'loading') return Object.assign(row, { title: 'Order day: checking the orders...', sub: why + 'The supplier ticks are not in yet.' });
+    var note = cutState === 'offline' ? ' No signal: ticks from other phones are not in yet.' : cutState === 'error' ? ' Could not check the latest ticks.' : '';
+    if (got === list.length) {
+      var last = ticks.slice().sort(function (a, b) { return b.at - a.at; })[0], lastC = list[ticks.indexOf(last)];
+      if (now() >= Math.max(last.at, from) + OD_DONE * 60000 && !note) return null;   // all in: said for 30 minutes, then the line goes
+      return Object.assign(row, { title: 'Order day: ' + got + ' of ' + list.length + ' ordered ✓', sub: why + 'Every supplier\'s next order is in. Last: ' + lastC.s.name + ', ' + odTickWords(last) + '.' + note });
+    }
+    var left = list.filter(function (c, i) { return !ticks[i]; }), shut = left.filter(function (c) { return c.at <= m; }), open = left.filter(function (c) { return c.at > m; });
+    var words = (shut.length ? 'Closed, not ordered: ' + shut.map(function (c) { return c.s.name; }).join(', ') + '. ' : '') +
+      (open.length ? 'Next: ' + open[0].s.name + ' by ' + odWhen(open[0]) + '.' + (open.length > 1 ? ' Then ' + open.slice(1, 3).map(function (c) { return c.s.name + ' by ' + odWhen(c); }).join(', ') + (open.length > 3 ? ' and ' + (open.length - 3) + ' more' : '') + '.' : '') : '');
+    // after the head chef's shift: the last tick, by whom and when, so the sous chef does not order the same again
+    var lastT = ended ? ticks.filter(Boolean).sort(function (a, b) { return b.at - a.at; })[0] : null;
+    if (lastT) words += ' Last ticked: ' + list[ticks.indexOf(lastT)].s.name + ', ' + odTickWords(lastT) + '.';
+    return Object.assign(row, { title: 'Order day: ' + got + ' of ' + list.length + ' ordered', sub: (why + words).trim() + note });
+  }
+  function odRowHTML(d) {
+    var r = odRow(d);
+    return r ? homeRowHTML(r).replace('<li>', '<li data-hm-priority="order">').replace('class="hm-a', 'class="hm-a hm-od') : '';
+  }
   function homeCutSlot() { var h = homeCutsHTML(); return '<div id="hm-cuts"' + (h ? '' : ' hidden') + '>' + h + '</div>'; }
   function homeSlot() {
     if (!cutTick) cutTick = setInterval(cutPaint, 30000);   // the clock, the minutes left and rows that come and go (no reads)
@@ -13321,7 +13405,7 @@ if (list.length) sg('oreg', 's');
         var active = document.activeElement, priority = dy.contains(active) && active.closest('[data-hm-priority]');
         var focusRow = priority && priority.getAttribute('data-hm-priority');
         dy.innerHTML = dh; dy.lkH = dh;
-        if (focusRow === 'section' || focusRow === 'break') { var target = dy.querySelector('[data-hm-priority="' + focusRow + '"] .hm-a'); if (target) target.focus({ preventScroll: true }); }
+        if (focusRow === 'section' || focusRow === 'break' || focusRow === 'order') { var target = dy.querySelector('[data-hm-priority="' + focusRow + '"] .hm-a'); if (target) target.focus({ preventScroll: true }); }
       }
       dy.hidden = !dh;
     }
@@ -13669,6 +13753,73 @@ if (list.length) sg('oreg', 's');
       '<div class="btn-row"><button type="button" class="btn" data-p="cut-add">Add a supplier</button>' + (d.length ? '' : '<button type="button" class="btn" data-p="cut-usual">Add ' + esc(CUT_USUAL.map(function (x) { return x.name; }).join(', ')) + '</button>') + '</div>' +
       '<div class="btn-row">' + cutSaveBtn() + '<button type="button" class="btn' + armCls('cut-undo') + '" data-p="cut-undo"' + (cutDirty() ? '' : ' disabled') + '>' + (armed('cut-undo') ? 'Tap again to undo' : 'Undo unsaved changes') + '</button></div>' +
       '<div class="cut-msg">' + cutMsgHTML() + '</div>' + (pushWhoId() ? '<h3 class="a-ch-h">Pushes on this device</h3>' + pushHTML() : '') + '</section>';
+  }
+  /* Order days on the admin Order cut-offs page (head chef, 24 Nov 2026): weekday chips, any number or none, and the
+     reminder time. Its own draft and Save, apart from the cut-offs: saving one never sends or drops the other's unsaved
+     changes. One merged write of orderDay only, by the head chef's Google account (the same as Save cut-offs). */
+  function odStart() { var v = odSet() || { days: [], from: OD_FROM }; S.odDraft = { days: v.days.slice(), from: v.from }; S.odSnap = JSON.stringify(S.odDraft); S.odBase = JSON.stringify(odSet()); }
+  function odDirty() { return !!S.odDraft && JSON.stringify(S.odDraft) !== S.odSnap; }
+  function odHere() { return S.name === 'admin' && S.atab === 'cutoffs'; }
+  // the next order day in words: "Today from 10:00.", "Next: Thu 26 Nov from 10:00.", or none
+  function odNextWords(v) {
+    if (!v.days.length) return 'No order days, so no reminder.';
+    for (var k = 0; k < 7; k++) if (v.days.indexOf((T.dow() + k) % 7) >= 0) return (k ? 'Next: ' + dayShort(shift(dayNow(), k)).replace(',', '') : 'Today') + ' from ' + hhmm(v.from) + '.';
+    return '';
+  }
+  function odSaveBtn() { return svButton({ k: 'od', p: 'od-save', idle: 'Save order days', busy: S.odBusy, off: !(S.level === 'owner' && odDirty()) }); }
+  function odMsgHTML() {
+    if (S.odBusy || S.odMsg || !S.odStamp || odDirty()) return svLine('od', S.odBusy, S.odMsg || '');
+    return '<p class="sv-line od-done" role="status"><span class="lk-stamp">Saved ' + esc(S.odStamp) + '</span> The chefs see it in Your day on the order days.</p>';
+  }
+  function odAdminHTML() {
+    if (!S.odDraft || (!odDirty() && S.odBase !== JSON.stringify(odSet()))) odStart();
+    var v = S.odDraft, saved = odSet();
+    return '<section class="set-block a-od"><span class="label">Order days</span><span class="hint">The days you do the supplier orders, whatever the cut-offs. From the reminder time, Your day on Home says how many of each supplier\'s next orders are in. You see it while you are on today\'s team. The sous chef on sees it too when you are not on, once your shift has ended, or from ' + hhmm(OD_SECOND) + ' with nothing ticked. No push.</span>' +
+      '<fieldset class="cut-dd"><legend class="label">Days</legend><div class="chips">' + CUT_DOW.map(function (w) {
+        return '<button type="button" class="chip" data-p="od-day" data-v="' + w[0] + '" aria-pressed="' + (v.days.indexOf(w[0]) >= 0) + '">' + w[1] + '</button>';
+      }).join('') + '</div></fieldset>' +
+      '<div class="field cut-tf"><label class="label" for="od-from">Reminder from</label><input id="od-from" class="search" type="text" inputmode="numeric" maxlength="5" autocomplete="off" placeholder="10:00" data-k="od-from" value="' + hhmm(v.from) + '"></div>' +
+      '<p class="hint od-next">' + esc(odNextWords(v)) + '</p>' +
+      '<div class="btn-row">' + odSaveBtn() + '</div><div class="od-msg">' + odMsgHTML() + '</div>' +
+      (saved && saved.upd ? '<p class="hint od-by">Last saved by ' + esc(cutByName({ by: saved.by || '' }) || 'the head chef') + ', ' + esc(dayShort(T.day(saved.upd)).replace(',', '')) + ' ' + esc(clock(saved.upd)) + '.</p>' : '') + '</section>';
+  }
+  // typing the time changes the words and the button in place (no redraw: the cursor stays); done: the box was left
+  function odField(el, done) {
+    if (!S.odDraft) return;
+    var t = cutTime(el.value);
+    if (t !== null && t >= 0) S.odDraft.from = t;
+    if (done && el.value !== hhmm(S.odDraft.from)) el.value = hhmm(S.odDraft.from);   // not a time: back to the one kept
+    odLive();
+  }
+  function odLive() {
+    var a = S.root && S.root.querySelector('.a-od'); if (!a) return;
+    var r = svRec.od; if (r && r.st !== 'busy' && r.form !== svForm('od')) { svStop('od'); if (r.st === 'fail') S.odMsg = ''; }
+    var sv = a.querySelector('[data-p="od-save"]'), nx = a.querySelector('.od-next'), ln = a.querySelector('.od-msg');
+    if (sv) btnPatch(sv, odSaveBtn());
+    if (nx) nx.textContent = odNextWords(S.odDraft);
+    if (ln) ln.innerHTML = odMsgHTML();
+  }
+  function odClick(a, el) {
+    if (!S.odDraft) return;
+    if (a === 'od-day') {
+      var d = +el.getAttribute('data-v'), i = S.odDraft.days.indexOf(d);
+      if (i >= 0) S.odDraft.days.splice(i, 1); else S.odDraft.days.push(d);
+      S.odDraft.days.sort(function (x, y) { return x - y; }); S.odMsg = ''; draw(); return;
+    }
+    if (a === 'od-save') odSave();
+  }
+  function odSave() {
+    if (S.level !== 'owner' || !odDirty() || S.odBusy || svHeld('od')) return;
+    var v = { days: S.odDraft.days.slice(), from: S.odDraft.from, upd: now(), by: who() ? who().id : 'owner' };
+    S.odBusy = true; S.odMsg = ''; svStart('od', '', odLive); draw();
+    track(fb.fs.setDoc(cfgDoc(), { orderDay: v }, { merge: true })).then(function () {
+      S.odBusy = false; S.odSnap = JSON.stringify(S.odDraft); S.odBase = JSON.stringify(odClean(v)); S.odStamp = clock(now());
+      liveSay('Saved. ' + odNextWords(v));
+      svDone('od', odHere(), function () {}); draw(); cutPaint();
+    }, function (e) {
+      S.odBusy = false; S.odMsg = errMsg(e && e.code === 'permission-denied' ? 'Only the head chef\'s Google account can change the order days.' : 'Could not save. Check the connection.');
+      svFail('od', odHere(), function () { S.odMsg = ''; }); draw();
+    });
   }
   function cutSave() {
     if (!CUT_OK || S.level !== 'owner' || !cutDirty() || S.cutBusy) return;
@@ -14082,6 +14233,7 @@ if (list.length) sg('oreg', 's');
     if (a === 'cut-tick') { var ck = el.getAttribute('data-id') || ''; if (el.getAttribute('aria-pressed') !== 'true') cutConfirm(ck); else cutOrdered(ck, false).catch(function (er) { failed(er); }); return; }
     if (a === 'cut-push-on') { pushOn(); return; }
     if (a === 'cut-push-off') { pushOff(); return; }
+    if (a.indexOf('od-') === 0) { odClick(a, el); return; }
     if (a.indexOf('cut-') === 0) { cutClick(a, el); return; }
     if (a.indexOf('todo-') === 0) { todoClick(a, el); return; }
     if (a.indexOf('tm-') === 0) { teamClick(a, el); return; }
@@ -14528,6 +14680,7 @@ if (list.length) sg('oreg', 's');
     if (k === 'p-pin') { var pp = S.pinInput.length; S.pinInput = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pinInput; pinCells(el); if (pp < 4 && S.pinInput.length === 4) submitKitchenPin(); return; }
     if (k === 'a-bulk') { S.bulk = el.value; return; }
     if (k && /^cut-([ntpr]\d|[oa]\d+-\d$)/.test(k)) { cutField(k, el); return; }
+    if (k === 'od-from') { odField(el); return; }
     if (k === 'dk-note' || k === 'dk-other') { if (dkf) dkf[k.slice(3)] = el.value.slice(0, k === 'dk-note' ? DK_NOTE : DK_OTHER); saveSync(); return; }
     if (k === 'todo-text') { tdf.text = el.value.slice(0, TD_MAX); tdMsg = ''; saveSync(); return; }
     if (k === 'ml-text') { mlf.text = el.value.slice(0, ML_MAX); mlMsg = ''; var mll = S.root.querySelector('#ml-left'), mln = ML_MAX - mlf.text.length; if (mll) mll.textContent = mln < 100 ? mln + ' characters left' : ''; return; }
@@ -14603,6 +14756,7 @@ if (list.length) sg('oreg', 's');
     if (k && k.indexOf('tm-roster-pick:') === 0) { if (tmRs) { tmRs.pick = tmRs.pick || {}; tmRs.pick[k.slice(15)] = el.value; } return; }
     if (k === 'ps-rollout') { psRolloutSet(el.checked); return; }
     if (k && /^cut-([tpr]\d|[oa]\d+-\d$)/.test(k)) { cutField(k, el, true); return; }
+    if (k === 'od-from') { odField(el, true); return; }
     if (k && k.indexOf('tm-') === 0) { teamField(k, el); return; }
     // no redraw: typing a date on a keyboard changes it digit by digit, and a redraw would put the box back each time
     if (k === 'todo-due') { tdf.due = tdDue(el.value); var nd = S.root.querySelector('[data-p="todo-nodue"]'); if (nd) nd.hidden = !tdf.due; saveSync(); return; }

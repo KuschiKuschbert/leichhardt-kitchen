@@ -40,9 +40,9 @@ The owner asked for `CLAUDE.md` to be kept short. Its reading map had grown to 8
 
 A synthetic sous chef lost Sunday's typed review after Queensland midnight: Monday's sheet replaced it on Save. The head chef chose B, Switch inside the review. Today opens in the review sheet, and an unfinished earlier review of the same person has a dated Resume inside the sheet. Back to today returns to the current date. The main Wastage page stays on today. Built in #835. [Council, previews and checks](wastage-overnight-options/brief.md).
 
-## Order day reminder, 24 November 2026 (waiting for the head chef)
+## Order day reminder, 24 November 2026 (chosen and built)
 
-The head chef asked for a favourite order day with a nudge to the chef on, the head chef first. Round 1 Build smaller, five of five: count from the existing supplier ticks, nothing on the Order list, the setting in `config/main`. Round 2 ranked A (a line in Your day) first with all six. Recommended: A's line for the head chef, with a quiet second chance in the sous chef's Your day (13:00 with nothing ticked, or after the head chef's shift), no push, no rules change. Open for the head chef: a push, sous chefs setting the day, the times. [Brief](order-day-options/brief.md).
+The head chef asked for a favourite order day with a nudge to the chef on, the head chef first. Round 1 Build smaller, five of five: count from the existing supplier ticks, nothing on the Order list, the setting in `config/main`. Round 2 ranked A (a line in Your day) first with all six. Recommended: A's line for the head chef, with a quiet second chance in the sous chef's Your day (13:00 with nothing ticked, or after the head chef's shift), no push, no rules change. The head chef chose the recommendation: one or more order days, unrelated to the cut-offs, set by the head chef on the admin Order cut-offs page; no push. Built in `js/prep.js` (`odRow()`, `odAdminHTML()`, `odSave()`; the People save keeps `orderDay`), `tests/order-day.test.js`. [Brief](order-day-options/brief.md).
 
 ## Private booking contact in the function editor, 23 November 2026
 
