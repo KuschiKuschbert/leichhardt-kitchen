@@ -24,7 +24,7 @@ async function returned(p, h) {
     const box = await back(p).boundingBox(), icon = await back(p).locator('svg').boundingBox();
     const header = await p.locator('.wtop').boundingBox();
     ok(await p.locator('.wtop-brand .rb-mark').isVisible() === (width < 720) && (width < 720 ? !(await p.locator('.wtop-brand .rb-text').isVisible()) : width < 1100 || await p.locator('.wtop-brand .rb-text').isVisible()), screen + ': mobile uses the KB logo and larger screens keep adaptive branding');
-    ok(await p.locator('.wtop-brand').getAttribute('aria-label') === 'Kitchen Book, home', screen + ': the home link keeps its accessible name');
+    ok(await p.locator('.wtop-brand').getAttribute('aria-label') === 'Kitchen Book, Leichhardt, home', screen + ': the home link keeps its accessible name');
     ok(box && Math.abs(box.height - 44) <= 1 && Math.abs(box.width - 44) <= 1 && icon && icon.width >= 18 && icon.width <= 20.5 && icon.height <= 20.5, screen + ': compact arrow keeps a 44 px tap target with an 18 to 20 px icon');
     ok(await back(p).count() === 1 && await p.locator('.page-return').count() === 0 && (await back(p).innerText()).trim() === '', screen + ': one icon-only return control uses the existing header');
     ok(await p.evaluate(() => {

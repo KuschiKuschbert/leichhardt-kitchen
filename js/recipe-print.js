@@ -11,6 +11,8 @@
 (function () {
   'use strict';
   var A = window.LK_APP, X = window.LK_RX, ART = window.LK_ART, D = window.LK_DATA, T = window.LK_TIME;
+  // a search box as the Recipes pill (the consistency sweep, step 3, 20 Nov 2026); an older js/app.js draws the plain box
+  function findPill(input) { return A && A.findWrap ? A.findWrap(input) : input; }
   var esc = A.esc;
   var PAPERS = [['a4p', 'A4 upright', 210, 297], ['a4l', 'A4 sideways', 297, 210], ['a5l', 'A5 sideways', 210, 148]];
   var KEY = 'lk.rcp.paper';
@@ -224,20 +226,26 @@
         return '<button type="button" class="chip" data-rcp="group" data-v="' + esc(g.k) + '" aria-pressed="' + full + '">' + esc(g.t) + ' ' + g.ids.length + '</button>';
       }).join('') + '</div></div>' +
       '<p class="rcp-ticked" role="status">' + (n ? n + (n === 1 ? ' card' : ' cards') + ' ticked. <button type="button" class="p-x" data-rcp="none">Untick all</button>' : 'No cards ticked yet. Add a group, or find a card and tick it.') + '</p>' +
-      '<div class="field"><label class="label" for="rcp-q">Find a card</label><input id="rcp-q" class="search" type="search" data-rcp-q autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Name or card number" value="' + esc(S.q) + '"></div>' +
+      '<div class="field"><label class="visually-hidden" for="rcp-q">Find a card</label>' + findPill('<input id="rcp-q" class="search" type="search" data-rcp-q autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Name or card number" value="' + esc(S.q) + '">') + '</div>' +
       '<div id="rcp-rows">' + rowsHTML() + '</div>' +
-      '<div class="rcp-bar"><div class="rcp-papers" role="group" aria-label="Paper">' + PAPERS.map(function (p) {
+      '<div class="rcp-bar sv-dock"><div class="rcp-papers" role="group" aria-label="Paper">' + PAPERS.map(function (p) {
         return '<button type="button" class="rcp-paper rcp-pp-' + p[0] + '" data-rcp="paper" data-v="' + p[0] + '" aria-pressed="' + (S.paper === p[0]) + '"><i aria-hidden="true"></i>' + esc(p[1]) + '</button>';
       }).join('') + '</div>' +
       '<button type="button" class="btn dark rcp-go" data-rcp="print"' + (n && !S.busy ? '' : ' disabled') + '>' + esc(S.busy ? 'Laying out the pages...' : printLabel()) + '</button>' +
       '<p class="rcp-status" role="status" aria-live="polite">' + esc(S.status) + '</p></div></div>';
   }
-  function draw() {
+  function draw(button) {
     if (!S.root || !S.root.isConnected) return;
     var f = document.activeElement && document.activeElement.id === 'rcp-q', pos = f ? document.activeElement.selectionStart : 0;
+    var groupRow = S.root.querySelector('[aria-labelledby="rcp-gl"]'), groupX = groupRow && groupRow.scrollLeft;
     S.root.innerHTML = html();
+    if (groupX) S.root.querySelector('[aria-labelledby="rcp-gl"]').scrollLeft = groupX;
     if (f) { var q = S.root.querySelector('#rcp-q'); if (q) { q.focus({ preventScroll: true }); try { q.setSelectionRange(pos, pos); } catch (e) {} } }
     count();
+    if (button) {
+      var next = S.root.querySelector('[data-rcp="' + button.dataset.rcp + '"][data-v="' + CSS.escape(button.dataset.v) + '"]');
+      if (next) next.focus({ preventScroll: true });
+    }
   }
   // the page count on Print comes from laying the cards out, not a guess: work out the ones not counted yet, quietly
   function count() {
@@ -273,15 +281,15 @@
     if (!S.root || !S.root.contains(ev.target)) return;
     var el = ev.target.closest('[data-rcp]'); if (!el) return;
     var a = el.getAttribute('data-rcp'), v = el.getAttribute('data-v');
-    if (a === 'tick') { if (S.ticked[v]) delete S.ticked[v]; else S.ticked[v] = true; S.status = ''; draw(); var again = S.root.querySelector('[data-rcp="tick"][data-v="' + CSS.escape(v) + '"]'); if (again) again.focus({ preventScroll: true }); return; }
+    if (a === 'tick') { if (S.ticked[v]) delete S.ticked[v]; else S.ticked[v] = true; S.status = ''; draw(el); return; }
     if (a === 'group') {
       var g = groups().filter(function (x) { return x.k === v; })[0]; if (!g) return;
       var full = g.ids.every(function (id) { return S.ticked[id]; });
       g.ids.forEach(function (id) { if (full) delete S.ticked[id]; else S.ticked[id] = true; });
-      S.status = full ? 'Unticked ' + g.t + '.' : 'Ticked ' + g.t + ': ' + g.ids.length + (g.ids.length === 1 ? ' card.' : ' cards.'); draw(); return;
+      S.status = full ? 'Unticked ' + g.t + '.' : 'Ticked ' + g.t + ': ' + g.ids.length + (g.ids.length === 1 ? ' card.' : ' cards.'); draw(el); return;
     }
     if (a === 'none') { S.ticked = {}; S.status = 'Every card unticked.'; draw(); return; }
-    if (a === 'paper') { if (paperOf(v)[0] !== v) return; S.paper = v; lsSet(KEY, v); S.status = paperOf(v)[1] + ' picked.'; draw(); return; }
+    if (a === 'paper') { if (paperOf(v)[0] !== v) return; S.paper = v; lsSet(KEY, v); S.status = paperOf(v)[1] + ' picked.'; draw(el); return; }
     if (a === 'print') print(el);
   }
   function input(ev) {

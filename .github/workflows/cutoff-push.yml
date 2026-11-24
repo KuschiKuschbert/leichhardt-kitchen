@@ -3,7 +3,10 @@
 # (venues/*.json, docs/venues.md), each in its own GitHub environment with its own FIREBASE_SA and KITCHEN_PIN, the same
 # as the nightly learning. A job stops before reading anything when the service account or the environment's
 # VENUE_PROJECT is not that venue's own (scripts/venues.cjs guard).
-# GitHub can start a scheduled run a few minutes late; a late run still sends while the cut-off is ahead.
+# Since 20 Nov 2026 (kitchen time) Google's Cloud Scheduler starts it every 10 minutes (job cutoff-push in the Leichhardt
+# project; docs/firestore-usage.md, The push timer). The schedule below stays as a fallback: GitHub ran it only 3 to 7
+# times a day. One run at a time and pushsent keep a push from going twice; a late run still sends while the cut-off is
+# ahead.
 name: Cut-off pushes
 
 on:

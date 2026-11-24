@@ -22,7 +22,14 @@ const R0 = [
 // the head chef's own copies of two file recipes: one saved before 19 Nov 2026 (no none anywhere: the file's checks
 // carry over by name), one saved by the new form with a line left not checked (none: false: nothing carries)
 global.window = {}; require('../js/data.js');
-const FILE = global.window.LK_DATA, file = id => JSON.parse(JSON.stringify(FILE.recipes.find(r => r.id === id)));
+const DRESSING_LABELS = {
+  'caesar-dressing': ['Dijon mustard'],
+  'vegan-aioli': ['Dijon mustard', 'Seeded mustard'],
+  'green-dressing': ['Vegan Aioli'],
+  'house-dressing': ['Dijon mustard']
+};
+const FILE = { recipes: global.window.LK_DATA.recipes.filter(r => !DRESSING_LABELS[r.id]) };
+const file = id => JSON.parse(JSON.stringify(FILE.recipes.find(r => r.id === id)));
 const old = Object.assign(file('mushy-peas'), { yield: 'Old copy' });
 old.ingredients.forEach(i => { delete i.none; });
 const kept = Object.assign(file('cowboy-candy'), { yield: 'New copy' });
@@ -50,18 +57,24 @@ const NOT = /Allergens not checked yet/;
   const LABELS = ['chips', 'fries', 'sweet potato chips', 'chicken tenders', 'fried shallots', 'corn flour', 'dark beef stock',
     'heinz bbq sauce', 'buffalo sauce', 'red hot sauce', 'sweet chilli sauce', 'napoli sauce', 'sauce of choice', 'side sauce of choice',
     'szechuan seasoning', 'mild curry powder', 'chinese five spice', 'icing sugar mix', 'bacon', 'shortcut bacon', 'diced bacon',
-    'crispy bacon', 'leg ham', 'shaved leg ham', 'virginian ham', 'salami', 'pulled pork', 'pulled lamb', 'smoked pulled lamb'];
+    'crispy bacon', 'leg ham', 'shaved leg ham', 'virginian ham', 'salami', 'pulled pork', 'pulled lamb', 'smoked pulled lamb', 'gravy powder', 'red cooking wine', 'green peppercorns'];
   const plain = FILE.recipes.filter(r => !r.contains && !r.check).flatMap(r => r.ingredients.filter(i => !i.link && !(i.tags && i.tags.length)).map(i => ({ r: r.id, i })));
   const lab = x => LABELS.indexOf(x.i.name.trim().toLowerCase()) >= 0;
   const open = plain.filter(x => !lab(x) && x.i.none !== true).map(x => x.r + ': ' + x.i.name);
   ok(open.length === 0, 'js/data.js: every plain line outside the label list is checked (' + open.slice(0, 5).join(', ') + ')');
   const stamped = plain.filter(x => lab(x) && x.i.none !== undefined).map(x => x.r + ': ' + x.i.name);
-  ok(stamped.length === 0 && plain.filter(lab).length === 49, 'js/data.js: the 49 lines of the label-dependent products stay not checked (' + stamped.join(', ') + ')');
+  ok(stamped.length === 0 && plain.filter(lab).length === 54, 'js/data.js: the 54 lines of the label-dependent products stay not checked (' + stamped.join(', ') + ')');
   const b = await L.start();
   let p = await L.open(b, '#/recipes', { noPin: true, who: '', wait: 1500 });
-  const shows = await p.evaluate(() => window.LK_DATA.recipes.filter(r => window.LK_APP.unchecked(r.id).length).map(r => [r.id, window.LK_APP.unchecked(r.id)]));
+  const unchecked = await p.evaluate(() => window.LK_DATA.recipes.filter(r => window.LK_APP.unchecked(r.id).length).map(r => [r.id, window.LK_APP.unchecked(r.id)]));
+  const actualDressingLabels = Object.fromEntries(unchecked.filter(([id]) => DRESSING_LABELS[id]));
+  ok(JSON.stringify(actualDressingLabels) === JSON.stringify(DRESSING_LABELS), 'mustard labels need checking on both base cards, including through the Green Dressing link');
+  const pubCaesar = unchecked.find(([id]) => id === 'caesar');
+  ok(pubCaesar && pubCaesar[1].includes('Caesar Salad Dressing'), 'Pub Caesar inherits the dressing label check');
+  const shows = unchecked.filter(([id]) => !DRESSING_LABELS[id]).map(([id, parts]) =>
+    [id, id === 'caesar' ? parts.filter(name => name !== 'Caesar Salad Dressing') : parts]);
   const names = new Set(FILE.recipes.map(r => r.name));
-  ok(shows.length === 39 && shows.every(([, parts]) => parts.every(n => LABELS.indexOf(n.toLowerCase()) >= 0 || names.has(n))), 'the book as js/data.js has it: 39 cards say Allergens not checked yet, each for a label-dependent product or a recipe that uses one (' + shows.length + ')');
+  ok(shows.length === 45 && shows.every(([, parts]) => parts.every(n => LABELS.indexOf(n.toLowerCase()) >= 0 || names.has(n))), 'the book as js/data.js has it: 45 cards say Allergens not checked yet, each for a label-dependent product or a recipe that uses one (' + shows.length + ')');
   await go(p, '#/r/smash'); const sm = await box(p);
   ok(NOT.test(sm) && /Chips/.test(sm), 'the Smash Burger says its chips are not checked (' + sm.replace(/\s+/g, ' ') + ')');
   await p.context().close();

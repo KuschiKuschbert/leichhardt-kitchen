@@ -387,8 +387,9 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
     var body = document.createElement('div'); body.className = 'ux-picker-options';
     var note = document.createElement('p'); note.id = 'lk-update-confirm-note'; note.textContent = 'You have changes that are not saved. Discard them to update the book.'; body.appendChild(note);
     var footer = document.createElement('footer'); footer.className = 'ux-picker-footer';
-    var keep = document.createElement('button'); keep.type = 'button'; keep.className = 'btn'; keep.setAttribute('data-update', 'keep'); keep.textContent = 'Keep working';
-    var discard = document.createElement('button'); discard.type = 'button'; discard.className = 'btn dark'; discard.setAttribute('data-update', 'discard'); discard.textContent = 'Discard and update';
+    // Keep working is the main button and Discard the red one, never the orange (head chef, 20 Nov 2026, the consistency sweep, step 3)
+    var keep = document.createElement('button'); keep.type = 'button'; keep.className = 'btn dark'; keep.setAttribute('data-update', 'keep'); keep.textContent = 'Keep working';
+    var discard = document.createElement('button'); discard.type = 'button'; discard.className = 'btn lk-del'; discard.setAttribute('data-update', 'discard'); discard.textContent = 'Discard and update';
     footer.appendChild(keep); footer.appendChild(discard); dialog.appendChild(header); dialog.appendChild(body); dialog.appendChild(footer);
     var closeHistory = null, fromHistory = false;
     function finish(update) {

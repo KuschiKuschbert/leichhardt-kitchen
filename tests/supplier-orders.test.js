@@ -23,7 +23,7 @@ const CD = sid => fsKey(['cutdone', today + '_' + sid]);
 const CD7 = sid => fsKey(['cutdone', L.ymd(new Date(L.NOW + 7 * 86400000)) + '_' + sid]);
 const tickOf = (sid, by, at) => ({ [CD(sid)]: { day: today, sid, on: true, at, by } });
 const extra = x => Object.assign({ [CFG]: { people, sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], showBadges: true, cutoffs: CUTS } }, x || {});
-async function openCuts(p) { await L.waitFor(p, () => !!document.querySelector('.o-cut-fold'), null, 10000); if (!(await p.$eval('.o-cut-fold', e => e.open))) { await p.click('.o-cut-fold > summary'); await L.settle(p, 200); } }
+async function openCuts(p) { await L.waitFor(p, () => !!document.querySelector('.o-cut-fold'), null, 10000); if (!(await p.$eval('.o-cut-fold', e => e.open))) { await p.click('.o-cut-fold > summary'); await L.settle(p, 200); } if (await p.locator('.o-cut-more[aria-expanded="false"]').isVisible()) await p.click('.o-cut-more'); }
 const pending = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li:not(.is-done):not(.is-past) .cut-n')].map(e => e.textContent));
 const band = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cut-n')].map(e => e.textContent));
 const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].map(e => ({ n: e.querySelector('.cut-n').textContent, on: e.querySelector('.cut-box').getAttribute('aria-pressed') === 'true', st: e.querySelector('.cut-st').textContent })));
@@ -42,8 +42,8 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   ok((await pending(p)).join() === 'PFD,Veg' && !(await p.$('#cut-band:not([hidden])')), 'Orders: PFD and Veg are due, with no duplicate reminder bar');
   ok(await p.$eval('.cut-box', e => e.getBoundingClientRect().width >= 44 && e.getBoundingClientRect().height >= 44), 'the tick boxes are big enough to tap');
   await openCuts(p);
-  await p.click('.cut-tl li:nth-child(2) .cut-box');
-  await L.waitFor(p, () => { const e = document.querySelector('.cut-tl li:nth-child(2) .cut-box'); return e && e.getAttribute('aria-pressed') === 'true'; }, null, 10000);
+  await p.click('.o-cut-fold .cut-box[data-id^="pfd|"]');
+  await L.waitFor(p, () => { const e = document.querySelector('.o-cut-fold .cut-box[data-id^="pfd|"]'); return e && e.getAttribute('aria-pressed') === 'true'; }, null, 10000);
   s = await store(p);
   ok(s[CD('pfd')] && s[CD('pfd')].on === true && s[CD('pfd')].by === 'sam' && s[CD('pfd')].sid === 'pfd' && s[CD('pfd')].day === today && typeof s[CD('pfd')].at === 'number', 'tick: saved for every chef, as Sam (' + JSON.stringify(s[CD('pfd')]) + ')');
   r = await rows(p);
@@ -51,27 +51,27 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   await L.waitFor(p, () => [...document.querySelectorAll('.cut-tl li:not(.is-done):not(.is-past) .cut-n')].map(e => e.textContent).join() === 'Veg', null, 10000);
   ok(true, 'tick: PFD leaves the pending cut-offs');
   // ticking the closed one records it for its next cut-off, a week on (the tick is when the order was placed, 17 Nov 2026)
-  await p.click('.cut-tl li:nth-child(1) .cut-box');
-  await L.waitFor(p, () => { const e = document.querySelector('.cut-tl li:nth-child(1) .cut-box'); return e && e.getAttribute('aria-pressed') === 'true'; }, null, 10000);
+  await p.click('.o-cut-fold .cut-box[data-id^="chk|"]');
+  await L.waitFor(p, () => { const e = document.querySelector('.o-cut-fold .cut-box[data-id^="chk|"]'); return e && e.getAttribute('aria-pressed') === 'true'; }, null, 10000);
   ok(true, 'tick: a closed cut-off can still be ticked off');
   s = await store(p);
   ok(!s[CD('chk')] && s[CD7('chk')]?.on === true, 'tick: after its cut-off the order counts for the next cut-off, a week on');
   // a mis-tap: untick PFD
   await openCuts(p);
-  await p.click('.cut-tl li:nth-child(2) .cut-box');
-  await L.waitFor(p, () => { const e = document.querySelector('.cut-tl li:nth-child(2) .cut-box'); return e && e.getAttribute('aria-pressed') === 'false'; }, null, 10000);
+  await p.click('.o-cut-fold .cut-box[data-id^="pfd|"]');
+  await L.waitFor(p, () => { const e = document.querySelector('.o-cut-fold .cut-box[data-id^="pfd|"]'); return e && e.getAttribute('aria-pressed') === 'false'; }, null, 10000);
   s = await store(p);
   ok(s[CD('pfd')].on === false && s[CD7('chk')].on === true, 'untick: PFD\'s tick is taken off, Chicken stays');
   await L.waitFor(p, () => [...document.querySelectorAll('.cut-tl li:not(.is-done):not(.is-past) .cut-n')].map(e => e.textContent).join() === 'PFD,Veg', null, 10000);
   ok(true, 'untick: PFD is pending again');
   // a mis-tap: tick and untick Veg straight after each other; the untick wins, in the order tapped (review, 24 Oct 2026)
-  await p.evaluate(() => { const b = document.querySelector('.cut-tl li:nth-child(3) .cut-box'); b.click(); document.querySelector('.cut-tl li:nth-child(3) .cut-box').click(); });
+  await p.evaluate(() => { const b = document.querySelector('.o-cut-fold .cut-box[data-id^="veg|"]'); b.click(); document.querySelector('.o-cut-fold .cut-box[data-id^="veg|"]').click(); });
   await L.settle(p, 800);
   s = await store(p);
-  ok(s[CD('veg')] && s[CD('veg')].on === false && await p.$eval('.cut-tl li:nth-child(3) .cut-box', e => e.getAttribute('aria-pressed') === 'false'), 'quick tick and untick: Veg ends up not ticked (' + JSON.stringify(s[CD('veg')]) + ')');
+  ok(s[CD('veg')] && s[CD('veg')].on === false && await p.$eval('.o-cut-fold .cut-box[data-id^="veg|"]', e => e.getAttribute('aria-pressed') === 'false'), 'quick tick and untick: Veg ends up not ticked (' + JSON.stringify(s[CD('veg')]) + ')');
   // another chef's phone ticks Veg: this phone follows straight away (the live listener)
   await p.evaluate(([k, day]) => { window.__fake.write(k, { day, sid: 'veg', on: true, at: Date.now(), by: 'sam' }); }, [CD('veg'), today]);
-  await L.waitFor(p, () => { const e = document.querySelector('.cut-tl li:nth-child(3) .cut-box'); return e && e.getAttribute('aria-pressed') === 'true'; }, null, 10000);
+  await L.waitFor(p, () => { const e = document.querySelector('.o-cut-fold .cut-box[data-id^="veg|"]'); return e && e.getAttribute('aria-pressed') === 'true'; }, null, 10000);
   await L.waitFor(p, () => [...document.querySelectorAll('.cut-tl li:not(.is-done):not(.is-past) .cut-n')].map(e => e.textContent).join() === 'PFD', null, 10000);
   ok(true, 'another phone ticks Veg: the list follows at once');
   const tickReads = await p.evaluate(() => window.__fake.bill.filter(x => /\/cutdone$/.test(x.path)));
@@ -90,7 +90,8 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   p = await L.open(b, '#/todo', { who: 'sam', extra: extra(tickOf('veg', 'sam', L.NOW - 600000)), wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('.todo-cut .cut-mark'), null, 10000);
   ok(/Supplier orders today/.test(await txt(p, '.todo-cut')), 'Chef to-do: Supplier orders today at the top');
-  ok(!(await p.$('.todo-cut button, .todo-cut [data-p="cut-tick"]')) && /Ordered by Sam/.test(await txt(p, '.todo-cut li:nth-child(3)')) && /✓/.test(await txt(p, '.todo-cut li:nth-child(3) .cut-mark')), 'Chef to-do: Veg shows ticked by Sam, with no tick box to tap');
+  // a supplier mark, not a box (the consistency sweep, step 3, 20 Nov 2026): nothing to tap, Ordered by Sam in its words
+  ok(!(await p.$('.todo-cut button, .todo-cut [data-p="cut-tick"], .todo-cut .cut-box')) && /Ordered by Sam/.test(await txt(p, '.todo-cut li:nth-child(3)')) && await p.$eval('.todo-cut li:nth-child(3) .cut-mark', e => e.getAttribute('aria-hidden') === 'true' && !!e.querySelector('svg') && e.closest('li').classList.contains('is-done')), 'Chef to-do: Veg shows ordered by Sam, with a supplier mark and no tick box to tap');
   ok(!!(await p.$('.todo-cut a[href="#/orders"]')) && /Tick them on the order list/.test(await txt(p, '.todo-cut')), 'Chef to-do: says where to tick them, with a link');
   ok(!(await L.overflow(p)), 'Chef to-do: fits a phone');
   ok(p.errors.length === 0, 'Chef to-do: no page errors ' + p.errors.join(' | '));
@@ -114,10 +115,10 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   p = await L.open(b, '#/orders', { admin: true, who: '', extra: extra(), wait: 2000 });
   await L.waitFor(p, () => !!document.querySelector('.cut-tl .cut-box:not([disabled])'), null, 10000);
   await openCuts(p);
-  await p.click('.cut-tl li:nth-child(2) .cut-box');
-  await L.waitFor(p, () => { const e = document.querySelector('.cut-tl li:nth-child(2) .cut-box'); return e && e.getAttribute('aria-pressed') === 'true'; }, null, 10000);
+  await p.click('.o-cut-fold .cut-box[data-id^="pfd|"]');
+  await L.waitFor(p, () => { const e = document.querySelector('.o-cut-fold .cut-box[data-id^="pfd|"]'); return e && e.getAttribute('aria-pressed') === 'true'; }, null, 10000);
   s = await store(p);
-  ok(s[CD('pfd')] && s[CD('pfd')].by === s[CFG].headId && /Ordered by Head chef/.test(await txt(p, '.cut-tl li:nth-child(2) .cut-st')), 'Google account: ticks as the head chef on their daily PIN');
+  ok(s[CD('pfd')] && s[CD('pfd')].by === s[CFG].headId && /Ordered by Head chef/.test(await txt(p, '.o-cut-fold .cut-o:has(.cut-box[data-id^="pfd|"]) .cut-st')), 'Google account: ticks as the head chef on their daily PIN');
   await p.context().close();
 
   // the head chef's device (a page with the bar: Home has the board since 8 Nov 2026), nobody else signed in: the ticks are read as soon as the account is checked, so a

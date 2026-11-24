@@ -26,12 +26,12 @@ const cfg = (people, lists) => { const e = {}; e[CFG] = Object.assign({ people, 
   await p.fill('#pf1', '2222');
   await L.waitFor(p, () => LK_PREP.state.level === 'owner' && !!document.querySelector('.a-groups'), null, 8000);
   await L.adminTab(p, 'people'); await L.settle(p, 250);
-  // one person opens at a time on People (the mix, 19 Nov 2026): Change opens Ann, then Bo
-  await L.tap(p, '[data-p="a-person-open"][data-id="ann"]'); await L.settle(p, 200);
+  // One person opens at a time on People. Select Ann, then Bo.
+  await L.openPerson(p, 'ann');
   ok(await p.evaluate(() => [...document.querySelectorAll('#a-r1 option')].some(o => o.value === 'head')), 'admin: Head chef is available after the verified daily unlock');
   ok(await p.$('.a-nohead') === null, 'admin: the hint goes once a head chef is set');
   // only one head chef: picking Bo makes Ann a sous chef
-  await L.tap(p, '[data-p="a-person-open"][data-id="bo"]'); await L.settle(p, 200);
+  await L.openPerson(p, 'bo');
   await L.pick(p, '#a-r2', 'head');
   await L.settle(p, 200);
   ok(await p.evaluate(() => LK_PREP.state.draft.people[1].role) === 'sous' && /Sous chef/.test(await L.txt(p, '.pp-row[data-pid="ann"] .pp-can') || ''), 'admin: a second Head chef turns the first into Sous chef');
@@ -41,7 +41,7 @@ const cfg = (people, lists) => { const e = {}; e[CFG] = Object.assign({ people, 
   // a sous chef's save once demoted the head chef to Staff in the people list: every phone still reads Ann as Head chef
   const demoted = cfg([P('sam', 'Sam', 'sous'), P('ann', 'Ann', 'staff', { del: false, ping: false }), P('bo', 'Bo', 'staff')], { headId: 'ann', sousIds: ['sam', 'ann'], pingIds: ['sam', 'ann'] });
   p = await L.open(b, '#/prep', { who: 'ann', extra: demoted, wait: 1500 });
-  { const m = await L.chefItems(p); ok(m.includes('chef') && m.filter(x => x !== 'chef').join(',') === 'fn,deliveries,cleaning,suppliers,team,pings,admin,guides,minutes,drinks,todo,manage,staff,settings,out', 'head chef PIN: the chef panel is added alongside the existing chef and admin menu links (' + m + ')'); }
+  { const m = await L.chefItems(p); ok(m.includes('chef') && m.filter(x => x !== 'chef').join(',') === 'fn,deliveries,suppliers,team,pings,admin,guides,minutes,drinks,todo,manage,staff,settings,out', 'head chef PIN: the chef panel is added alongside the existing chef and admin menu links (' + m + ')'); }
   ok(p.errors.length === 0, 'head chef PIN: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

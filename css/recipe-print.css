@@ -12,7 +12,7 @@
 .rcp-cn { flex: 0 0 auto; min-width: 2.6rem; text-align: center; font: 700 0.9375rem/1.2 var(--display); border: 1.5px solid var(--ink); border-radius: 6px; padding: 1px 6px; }
 .rcp-rn { flex: 1 1 auto; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
 .rcp-row:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: -3px; }
-.rcp-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: var(--paper); border-top: 1.5px solid var(--edge); padding: 0.6rem max(1rem, calc((100vw - 46rem) / 2)) 0.5rem; }
+.rcp-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; padding: 0.6rem max(1rem, calc((100vw - 46rem) / 2)) 0.5rem; }   /* the frame: .sv-dock in css/app.css (20 Nov 2026) */
 .rcp-papers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.5rem; }
 .rcp-paper { min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; padding: 6px 4px; border: 1.5px solid var(--ink); border-radius: var(--r-act); background: var(--paper); color: var(--ink); font: 600 0.8125rem/1.1 var(--body); cursor: pointer; }
 .rcp-paper i { display: block; border: 1.5px solid currentColor; }

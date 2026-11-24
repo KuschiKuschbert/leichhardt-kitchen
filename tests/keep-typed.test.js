@@ -348,7 +348,8 @@ const cutReady = (p, selector) => L.waitFor(p, s => {
     await L.waitFor(p, () => !!document.querySelector('.a-rvform #w-ra'), null, 8000);
     ok(await p.inputValue('.a-rvform #w-ra') === '', 'Daily reviews: today\'s form shows the saved review, not the words typed on the wastage page');
     await p.click('[data-p="rv-day"][data-d="-1"]'); await L.settle(p, 200);
-    ok(await S(p, () => window.LK_PREP.state.wpA) === 'Too much rice cooked', 'Daily reviews: a day arrow keeps the review typed on the wastage page');
+    ok(await p.inputValue('[data-k="wh-review-date"]') === L.ymd(new Date(L.NOW - 86400000)) && await asks(p),
+      'Daily reviews: the previous date opens and the Wastage draft still warns before reloading');
     await p.fill('.a-rvform #w-ra', 'Mash made too early');
     await p.click('[data-p="wh-review-cancel"]'); await L.settle(p, 200);
     ok(await p.inputValue('.a-rvform #w-ra') === 'Mash made too early' && await txt(p, '[data-p="wh-review-cancel"]') === 'Tap again to discard', 'Daily reviews: one tap on Cancel edits keeps the words and asks again');

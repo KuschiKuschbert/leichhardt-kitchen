@@ -242,7 +242,7 @@
       (detail ? '<p class="dsh-need-detail">' + esc(detail) + '</p>' : '') + '</div>' + (open ? '<button type="button" class="btn' + (kind === 'att' ? ' dark' : '') + '" data-dsh="open" data-t="' + open + '">' + esc(label) + '</button>' : '') + '</li>';
   }
   function needsHTML(inbox) {
-    var nd = api.needs ? api.needs() : {}, rows = [], clear = [], today = api.today();
+    var nd = api.needs ? api.needs() : {}, rows = [], mailDetails = '', clear = [], today = api.today();
     // Today's team (7 Nov 2026): not set yet for today, from what js/prep.js already read (no read of its own); an older
     // book sends nothing here and the row stays away
     if (nd.team === 'unset') rows.push(needRow('att', 'Not set', 'Today\'s team', 'Who is on which shift, their sections and breaks.', 'team', 'Set today\'s team'));
@@ -254,8 +254,11 @@
     else if (nd.mail.n) {
       // the rows come from js/prep.js (mlRow, every field through esc()); an older book without mailRows keeps the one line
       var mr = api.mailRows ? api.mailRows(MAIL_MAX) : null;
-      rows.push(needRow('due', nd.mail.fresh ? 'New' : 'Open', nd.mail.n + ' kitchen mail' + (nd.mail.n === 1 ? '' : 's') + ' open', nd.mail.fresh ? nd.mail.fresh + ' not read yet.' : 'All read, not done yet.', 'mail', mr ? 'All kitchen mail' : 'Open mail') +
-        (mr && mr.html ? '<li class="dsh-todo-mail"><ul class="dsh-ml" aria-label="Open kitchen mail, most urgent first">' + mr.html + '</ul>' + (mr.more ? '<p class="hint">' + n(mr.more) + ' more in Kitchen mail.</p>' : '') + '</li>' : ''));
+      var mailRow = needRow('due', nd.mail.fresh ? 'New' : 'Open', nd.mail.n + ' kitchen mail' + (nd.mail.n === 1 ? '' : 's') + ' open', nd.mail.fresh ? nd.mail.fresh + ' not read yet.' : 'All read, not done yet.', 'mail', mr ? 'All kitchen mail' : 'Open mail');
+      var details = mr && mr.html ? '<li class="dsh-todo-mail"><ul class="dsh-ml" aria-label="Open kitchen mail, most urgent first">' + mr.html + '</ul>' + (mr.more ? '<p class="hint">' + n(mr.more) + ' more in Kitchen mail.</p>' : '') + '</li>' : '';
+      // In the Inbox, the priority queue comes first in the document, including for keyboard and screen-reader users.
+      if (inbox) mailDetails = details;
+      rows.push(mailRow + (inbox ? '' : details));
     }
     else clear.push('kitchen mail');
     // Meeting minutes: who still has to sign the latest, and actions past their date.
@@ -292,7 +295,7 @@
     // the Inbox count beside Inbox in the laptop rail: the rows that need a look, not the ones still loading
     state.count = rows.filter(function (r) { return r.indexOf('>Checking<') < 0; }).length;
     var title = inbox ? 'Inbox' : 'To do';
-    var out = rows.length ? '<ul class="dsh-need-list">' + rows.join('') + '</ul>' : '';
+    var out = rows.length ? '<ul class="dsh-need-list">' + rows.join('') + mailDetails + '</ul>' : '';
     return '<section class="dsh-panel dsh-needs" aria-label="' + title + '"><div class="dsh-panel-head"><h3 class="a-ch-h">' + title + '</h3><span class="hint">' + (rows.length ? rows.length + ' to look at' : 'All clear') + '</span></div>' +
       out + ok + '</section>';
   }
@@ -390,7 +393,7 @@
       var kind = (WATCH_KINDS.filter(function (x) { return x[0] === watchParts(k).t; })[0] || ['', ''])[1];
       return '<li class="dsh-wl"><div><p class="dsh-tag dsh-tag-flat">' + esc(kind) + '</p><p class="dsh-need-title">' + esc(watchLabel(k)) + '</p><p class="dsh-need-detail">' + esc(watchLine(k, cur, prev, len)) + '</p></div>' +
         spark(len === 90 ? weeks(cur).map(function (g) { return sum(watchSeries(k, g), function (x) { return x; }); }) : watchSeries(k, cur)) +
-        '<button type="button" class="btn" data-dsh="unwatch" data-v="' + i + '"' + (state.saving ? ' disabled' : '') + ' aria-label="' + esc('Stop watching ' + watchLabel(k)) + '">Remove</button></li>';
+        '<button type="button" class="btn lk-del" data-dsh="unwatch" data-v="' + i + '"' + (state.saving ? ' disabled' : '') + ' aria-label="' + esc('Stop watching ' + watchLabel(k)) + '">Remove</button></li>';
     }).join('');
     var add = '';
     if (state.add) {

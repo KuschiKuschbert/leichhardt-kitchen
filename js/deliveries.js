@@ -157,11 +157,13 @@
     // the button's own choice too (a supplier chip, a What came in? choice, a − key), so focus returns to the same one
     var btnKey = btn && (old.getAttribute('data-name') || old.getAttribute('data-mode') || old.getAttribute('data-for') || '');
     var pos = focus && typeof old.selectionStart === 'number' ? [old.selectionStart, old.selectionEnd] : null;
+    var recordsFocused = old && old.id === 'dl-records' && M.root.contains(old);
     var off = M.busy || M.attempt, dueNow = due(d.day), today = single() && M.day === T.day();
     var dueTodayNames = today ? due(T.day()) : [];
     var waiting = today && M.state === 'ok' ? dueTodayNames.filter(function (n) { return !M.rows.some(function (r) { return same(r.supplier, n); }); }) : [];
     var timeOpen = M.showTime || M.invalid.indexOf('day') >= 0 || M.invalid.indexOf('time') >= 0, noteOpen = M.showNote || !!d.note.trim() || M.invalid.indexOf('note') >= 0;
-    M.root.innerHTML = '<div class="dl-page"><header class="dl-heading"><span class="eyebrow">Kitchen records</span><h1>Delivery received</h1><p class="hint">Record the measured food temperature on arrival. All times are Queensland time (AEST).</p></header>' +
+    M.root.innerHTML = '<div class="dl-page"><header class="dl-heading"><div class="dl-heading-line"><span class="eyebrow">Kitchen records</span>' +
+      '<button type="button" class="linkish dl-records-jump" data-dl="records">Go to delivery records</button></div><h1>Delivery received</h1><p class="hint">Record the measured food temperature on arrival. All times are Queensland time (AEST).</p></header>' +
       '<form id="dl-form" class="dl-form" novalidate><fieldset' + (off ? ' disabled' : '') + '><legend class="sr-only">Delivery details</legend>' +
       '<div class="dl-when-line"><span><span class="visually-hidden">Receiving as </span><b>' + esc(P.whoName() || 'Admin') + '</b> · ' + esc(whenText(d)) + '</span>' +
       '<button type="button" class="p-x" data-dl="time" aria-expanded="' + timeOpen + '" aria-controls="dl-when">' + (timeOpen ? 'Hide time' : 'Change time') + '</button></div>' +
@@ -180,9 +182,9 @@
       '</fieldset>' +
       '<div class="dl-dock"><p id="dl-save-note" class="' + (M.error ? 'dl-error' : 'dl-message') + '" role="' + (M.error ? 'alert' : 'status') + '">' + (M.error ? esc(M.error) : M.busy ? 'Saving...' : M.message ? inkLabel(M.message, 'save', 'done') : '') + '</p>' +
       '<div class="btn-row dl-actions"><button class="btn dark ink-busy-button" type="submit" data-dl="save"' + (M.busy ? ' disabled aria-busy="true"' : '') + '>' + (M.busy ? inkLabel('Saving...') : M.attempt ? 'Check and retry save' : 'Save delivery') + '</button>' +
-      (!M.attempt ? '<button class="btn" type="button" data-dl="clear"' + (M.busy ? ' disabled' : '') + '>' + (armed('dl-clear') ? 'Tap again to clear' : 'Clear form') + '</button>' : '') + '</div></div>' +
+      (!M.attempt ? '<button class="btn' + (armed('dl-clear') ? ' lk-del' : '') + '" type="button" data-dl="clear"' + (M.busy ? ' disabled' : '') + '>' + (armed('dl-clear') ? 'Tap again to clear' : 'Clear form') + '</button>' : '') + '</div></div>' +
       '<p class="hint">Saved readings are kept as recorded.</p></form>' +
-      '<section class="dl-history" aria-labelledby="dl-records"><div class="dl-history-head"><h2 id="dl-records">' + (today ? 'Today\'s deliveries' : 'Delivery records') + '</h2><button class="btn" type="button" data-dl="refresh">Refresh</button></div>' +
+      '<section class="dl-history" aria-labelledby="dl-records"><div class="dl-history-head"><h2 id="dl-records" tabindex="-1">' + (today ? 'Today\'s deliveries' : 'Delivery records') + '</h2><button class="btn" type="button" data-dl="refresh">Refresh</button></div>' +
       (admin() ? '<div class="dl-range"><label class="dl-field dl-filter" for="dl-view-day"><span class="label">From</span><input type="date" id="dl-view-day" value="' + esc(M.day) + '" max="' + T.day() + '"></label>' +
         '<label class="dl-field dl-filter" for="dl-view-to"><span class="label">To</span><input type="date" id="dl-view-to" value="' + esc(M.to) + '" min="' + esc(M.day) + '" max="' + T.day() + '"></label></div>' +
         (M.state === 'ok' && suppliersIn(M.rows).length > 1 ? '<label class="dl-field dl-filter" for="dl-sup-filter"><span class="label">Supplier</span><select id="dl-sup-filter"><option value="">All suppliers</option>' + suppliersIn(M.rows).map(function (n) { return '<option value="' + esc(n) + '"' + (same(n, M.sup) ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select></label>' : '') : '') +
@@ -196,7 +198,8 @@
         (shownRows().length ? '<ol class="dl-receipts">' + (today ? shownRows().slice().reverse() : shownRows()).map(row).join('') + '</ol>' : '<p class="hint">' + (M.sup ? 'No deliveries from this supplier in these dates.' : single() ? 'No deliveries recorded for this date.' : 'No deliveries recorded in these dates.') + '</p>') +
         // only once the server answered for today: a supplier due by the cut-offs with no receipt of that exact name yet
         (waiting.length ? '<p class="dl-waiting"><b>Not received yet today:</b> ' + waiting.map(esc).join(', ') + '</p>' : '')) + '</section></div>';
-    if (focus) { var el = M.root.querySelector('[data-dl-field="' + focus + '"]'); if (el) { el.focus({ preventScroll: true }); if (pos) el.setSelectionRange(pos[0], pos[1]); } }
+    if (recordsFocused) M.root.querySelector('#dl-records').focus({ preventScroll: true });
+    else if (focus) { var el = M.root.querySelector('[data-dl-field="' + focus + '"]'); if (el) { el.focus({ preventScroll: true }); if (pos) el.setSelectionRange(pos[0], pos[1]); } }
     else if (btn) {
       var bt = Array.prototype.filter.call(M.root.querySelectorAll('[data-dl="' + btn + '"]'), function (x) { return !btnKey || (x.getAttribute('data-name') || x.getAttribute('data-mode') || x.getAttribute('data-for') || '') === btnKey; })[0];
       if (bt && bt.getClientRects().length) bt.focus({ preventScroll: true });
@@ -329,14 +332,20 @@
   document.addEventListener('click', function (e) {
     if (!M.root || !M.root.contains(e.target) || !allowed()) return;
     var el = e.target.closest('[data-dl]'); if (!el) return;
+    var act = el.getAttribute('data-dl');
+    if (act === 'records') {
+      var records = M.root.querySelector('#dl-records');
+      records.focus({ preventScroll: true }); records.scrollIntoView({ block: 'start' });
+      return;
+    }
     // Refresh, and Try again on a failed read (the same action); load() ignores a tap while the read is out
-    if (el.getAttribute('data-dl') === 'refresh') load(true);
+    if (act === 'refresh') load(true);
     // the book's shared CSV boundary (docs/report-exports.md): numbers stay numbers, text is marked safe; no read
-    if (el.getAttribute('data-dl') === 'csv' && admin() && B.csv && M.state === 'ok') { B.csv('leichhardt-deliveries-' + M.day + (single() ? '' : '-to-' + M.to) + (M.sup ? '-' + M.sup.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : '') + '.csv', csvRows()); return; }
+    if (act === 'csv' && admin() && B.csv && M.state === 'ok') { B.csv('leichhardt-deliveries-' + M.day + (single() ? '' : '-to-' + M.to) + (M.sup ? '-' + M.sup.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : '') + '.csv', csvRows()); return; }
     // a typed supplier, reading or note asks first (the book's two-tap helper); an untouched form clears in one tap
-    if (el.getAttribute('data-dl') === 'clear' && !M.busy && !M.attempt) { if (dirty() && !arm('dl-clear')) return; M.form = form(); M.showTime = M.showNote = false; M.error = ''; M.invalid = []; M.message = ''; draw(); }
+    if (act === 'clear' && !M.busy && !M.attempt) { if (dirty() && !arm('dl-clear')) return; M.form = form(); M.showTime = M.showNote = false; M.error = ''; M.invalid = []; M.message = ''; draw(); }
     if (M.busy || M.attempt) return;
-    var act = el.getAttribute('data-dl'), d = M.form;
+    var d = M.form;
     // What came in? Values stay in memory when a box hides; hiddenNote() says they will not be saved
     if (act === 'mode' && d.mode !== el.getAttribute('data-mode')) {
       d.mode = el.getAttribute('data-mode'); M.message = '';

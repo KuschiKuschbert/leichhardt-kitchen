@@ -16,6 +16,11 @@
 //   release(); __fake.answer() is the other order: the promises are answered, the listeners still say pending;
 //   __fake.quiet = true tells a listener only what changed for it, like the SDK (see sigOf below).
 //   __fake.notOwner = true: the Google account is not the head chef's (the owner check, config/admins, is refused)
+//   __fake.failApp = '[DEFAULT]' or 'kitchen-owner': __fake.failReads fails only that app's reads (the device's or Google's)
+// window.__fakePlatform = { email, id } (24 Nov 2026, docs/venues.md): a second venue, whose platform owner signs in
+//   with that Google email and his own profile id, like PLATFORM_EMAIL and PLATFORM_ID in the rules. Without it the
+//   head chef's Google is the platform owner and there is no platform profile, as at Leichhardt. The record
+//   config/platform ({ id }) is the test's to seed, as scripts/access-bootstrap.mjs writes it.
 // __fake.reads lists the paths asked for (getDoc, getDocs, getDocFromServer) and __fake.readLog every document read from the "server";
 // getDocsFromCache only returns documents this page has read before.
 // Reads the real rules refuse are refused here too, for the sign-in on this page (colRefused(), readRefused(),
@@ -179,6 +184,13 @@ function delay(v) { return new Promise(r => setTimeout(() => r(v), 5)); }
 function rootOfRef(ref) { return ref.path[0] === 'kitchens' ? ref.path.slice(0, 2).join('/') : (Object.keys(store).find(k => /^kitchens\/[^/]+\/config\/main$/.test(k)) || 'kitchens/000000/config/main').split('/').slice(0, 2).join('/'); }
 function cfgOf(ref) { return store[rootOfRef(ref) + '/config/main'] || {}; }
 function rawOwner(ref) { const user = authUser(ref); return !!(user && !user.isAnonymous && user.emailVerified === true && user.email === 'headchef@test.local' && !window.__fake.notOwner); }
+// platformIdentity() and platformPerson() in the rules: the head chef's Google and nobody at a kitchen with one owner
+const platformSet = () => !!(window.__fakePlatform && window.__fakePlatform.email);
+function platformPerson() { return platformSet() && typeof window.__fakePlatform.id === 'string' ? window.__fakePlatform.id : ''; }
+function rawPlatform(ref) {
+  if (!platformSet()) return rawOwner(ref);
+  const user = authUser(ref); return !!(user && !user.isAnonymous && user.emailVerified === true && user.email === window.__fakePlatform.email);
+}
 function validSession(ss, c, root) {
   const ps = ss && store[root + '/pinset/' + ss.by], issued = ss && stampMillis(ss.issuedAt), at = ss && stampMillis(ss.at), t = requestNow();
   return !!(ss && ss.v === 2 && ['personal', 'shared'].includes(ss.mode) && ps && ps.at === ss.pinAt && (c.staffIds || []).includes(ss.by) &&
@@ -186,7 +198,7 @@ function validSession(ss, c, root) {
 }
 function isAdmin(ref) {
   const user = authUser(ref), root = rootOfRef(ref), c = cfgOf(ref), uid = authUid(ref), ss = store[root + '/sessions/' + uid], grant = store[root + '/adminDevices/' + uid];
-  return !!(user && user.isAnonymous && validSession(ss, c, root) && c.headId && ss.by === c.headId && !(c.fnOnlyIds || []).includes(ss.by) && grant && grant.v === 2 && grant.by === ss.by &&
+  return !!(user && user.isAnonymous && validSession(ss, c, root) && (c.headId && ss.by === c.headId || platformPerson() && ss.by === platformPerson()) && !(c.fnOnlyIds || []).includes(ss.by) && grant && grant.v === 2 && grant.by === ss.by &&
     grant.pinAt === ss.pinAt && grant.exp === ss.exp && stampMillis(grant.issuedAt) === stampMillis(ss.issuedAt) && stampMillis(grant.at) >= stampMillis(ss.issuedAt) && stampMillis(grant.at) <= requestNow() &&
     typeof grant.googleUid === 'string' && grant.googleUid.length > 0 && grant.googleUid.length <= 160);
 }
@@ -232,7 +244,8 @@ function colRefused(ref, list) {
   if (ref.path[0] !== 'kitchens' || ref.group) return false;
   // A live kitchen session reads the shared timer and declarations, including View only. No list exception.
   if (coolingCollection(ref)) return list || rel.length !== 2 || !['current', 'recorded'].includes(rel[1]) || !kitchenReader(ref);
-  if (c === 'adminDevices') return list || !(rawOwner(ref) || authUid(ref) && rel[1] === authUid(ref));
+  if (c === 'suppliersales') return list || rel.length !== 2 || rel[1] !== 'weekly' || !chefReader(ref);
+  if (c === 'adminDevices') return list || !(rawOwner(ref) || rawPlatform(ref) || authUid(ref) && rel[1] === authUid(ref));
   if (c === 'sessions') return list || !authUid(ref) || rel[1] !== authUid(ref);
   if (c === 'push' || c === 'tries' || c === 'proofs') return true;
   if (rawOwner(ref) && !list && c === 'config' && ['main', 'admins'].includes(rel[1])) return false;
@@ -272,8 +285,11 @@ function readRefused(ref) {
   // 2026: only that refusal means "not the head chef's account", no signal does not)
   if (window.__fake.notOwner && /\/config\/admins$/.test(key(ref.path))) return true;
   if (rawOwner(ref) && /\/config\/(main|admins)$/.test(key(ref.path))) return false;
+  if (rawPlatform(ref) && /\/config\/admins$/.test(key(ref.path))) return false;
   if (isAdmin(ref)) return false;
   const k = key(ref.path), root = ref.path.slice(0, 2).join('/');
+  // the platform owner's id (config/platform): his own Google or a live admin, nobody else (24 Nov 2026)
+  if (/^kitchens\/[^/]+\/config\/platform$/.test(k)) return !rawPlatform(ref);
   if (/\/config\/admins$/.test(k)) return true;   // the owner check: only the head chef's Google account reads it
   // a function contact (22 Oct 2026, review S9) and a function's history (fnIds or a chef)
   if (/\/fncontact\/[^/]+$/.test(k)) return !fnReader(ref);
@@ -343,7 +359,7 @@ function denied(ref) { const d = window.__fake.denyReads; return !!(d && d.test(
 function spent(ref) { const x = window.__fake.exhausted; return !!(x && x.test(key(ref.path))); }
 const SPENT = () => Promise.reject({ code: 'resource-exhausted' });
 export function getDocs(ref) { window.__fake.reads.push(key(ref.path)); if (cold(ref)) return delay(cacheSnap(ref)); if (spent(ref)) return SPENT(); if (readFails(ref)) return Promise.reject({ code: 'unavailable' }); if (rulesDenied(ref)) return refuse('query', ref); if (denied(ref)) return Promise.reject({ code: 'permission-denied' }); const r = result(ref); bill('query', key(ref.path), r.docs.length); ruleBill('query', ref); return delay(r); }
-function readFails(ref) { const f = window.__fake.failReads; return !!(f && f.test(key(ref.path))); }
+function readFails(ref) { const f = window.__fake.failReads, app = window.__fake.failApp; return !!(f && f.test(key(ref.path)) && (!app || app === appOf(ref))); }
 // a read that must come from the server: refused when there is no signal ('hold', 'fail'). __fake.server can hold a
 // newer copy of a document than this phone has (say a line ticked on another phone), keyed by path.
 export function getDocFromServer(ref) {
@@ -508,12 +524,15 @@ function controlWrite(ops) {
   const first = ops[0] && ops[0].ref;
   if (!first) return null;
   const raw = rawOwner(first), root = rootOfRef(first), config = cfgOf(first), head = config.headId, uid = authUid(first);
+  // a second venue (24 Nov 2026): the platform owner's Google grants his own profile's session; the venue owner's
+  // Google grants the head chef's, and cannot take back the platform owner's grant
+  const plat = platformSet() && rawPlatform(first), pp = platformPerson();
   if (ops.every(o => /^kitchens\/[^/]+\/adminDevices\/[^/]+$/.test(key(o.ref.path)))) return ops.every(o => {
-    const target = o.ref.path.at(-1);
-    if (o.kind === 'delete') return raw || !!uid && uid === target;
-    const d = o.data, ss = store[root + '/sessions/' + target];
-    return raw && exactKeys(d, ['by', 'pinAt', 'issuedAt', 'exp', 'googleUid', 'at', 'v']) && validSession(ss, config, root) && ss.by === head &&
-      d.by === head && d.pinAt === ss.pinAt && stampMillis(d.issuedAt) === stampMillis(ss.issuedAt) && d.exp === ss.exp && d.googleUid === uid && d.v === 2 && freshStamp(d.at);
+    const target = o.ref.path.at(-1), old = store[key(o.ref.path)];
+    if (o.kind === 'delete') return plat || raw && !(pp && old && old.by === pp) || !!uid && uid === target;
+    const d = o.data, ss = store[root + '/sessions/' + target], person = plat ? pp : raw ? head : '';
+    return !!person && exactKeys(d, ['by', 'pinAt', 'issuedAt', 'exp', 'googleUid', 'at', 'v']) && validSession(ss, config, root) && ss.by === person &&
+      d.by === person && d.pinAt === ss.pinAt && stampMillis(d.issuedAt) === stampMillis(ss.issuedAt) && d.exp === ss.exp && d.googleUid === uid && d.v === 2 && freshStamp(d.at);
   });
   if (ops.some(o => /\/adminDevices\//.test(key(o.ref.path)))) return false;
   if (!raw) return null;
@@ -575,6 +594,34 @@ function controlWrite(ops) {
   }
   return false;
 }
+/* platformKept() and platformSafe() in the rules (24 Nov 2026, docs/venues.md): at a second venue nobody but the
+   platform owner himself changes his place on the lists, the head chef mark, his PIN set-up window or his PIN, ends his
+   device session or writes a sign-in roster without him. Off with one owner (no platform profile). */
+function platformRefused(ops) {
+  const p = platformPerson(), first = ops[0] && ops[0].ref;
+  if (!p || !first || first.path[0] !== 'kitchens') return false;
+  const root = rootOfRef(first), uid = authUid(first), mine = store[root + '/sessions/' + uid];
+  if (isAdmin(first) && mine && mine.by === p) return false;
+  const LISTS = ['staffIds', 'sousIds', 'pingIds', 'fnIds', 'fnOnlyIds', 'addIds', 'tickIds', 'delIds'];
+  const afterOf = o => o.kind === 'delete' ? null : Object.assign({}, o.kind === 'set' && !o.merge ? {} : (store[key(o.ref.path)] || {}), o.data || {});
+  const cfgOp = ops.find(o => key(o.ref.path) === root + '/config/main'), cfgAfter = cfgOp ? afterOf(cfgOp) : store[root + '/config/main'] || {};
+  return ops.some(o => {
+    const k = key(o.ref.path), old = store[k] || {};
+    if (k === root + '/config/main') {
+      const d = afterOf(o);
+      if (!d) return true;
+      if (LISTS.some(n => (Array.isArray(d[n]) && d[n].includes(p)) !== (Array.isArray(old[n]) && old[n].includes(p)))) return true;
+      if ((d.headId === p) !== (old.headId === p)) return true;
+      // a merge of pinOpen keeps the leaves it does not send, as Firestore does
+      const po = o.merge && o.data && o.data.pinOpen ? Object.assign({}, old.pinOpen || {}, o.data.pinOpen) : d.pinOpen || {};
+      return (po[p] || 0) !== ((old.pinOpen || {})[p] || 0);
+    }
+    if (k === root + '/staffpins/' + p || k === root + '/pinset/' + p) return true;
+    if (o.kind === 'delete' && new RegExp('^' + root + '/sessions/[^/]+$').test(k)) return old.by === p && o.ref.path.at(-1) !== uid;
+    if (k === root + '/login/roster') { const d = afterOf(o) || {}; return (d.staffIds || []).includes(p) !== (cfgAfter.staffIds || []).includes(p); }
+    return false;
+  });
+}
 function commitOps(ops) {
   window.__fake.writes.push(ops.map(o => ({ kind: o.kind, path: key(o.ref.path), data: o.data, app: appOf(o.ref) })));
   if (ops.some(o => appOf(o.ref) !== appOf(ops[0].ref))) return Promise.reject({ code: 'invalid-argument' });
@@ -582,6 +629,7 @@ function commitOps(ops) {
   if (ops.some(o => coolingWriteRefused(o, stamp))) return Promise.reject({ code: 'permission-denied' });
   const admin = !!(ops.length && isAdmin(ops[0].ref)), control = controlWrite(ops);
   if (control !== null) return control ? finishOps(ops) : Promise.reject({ code: 'permission-denied' });
+  if (platformRefused(ops)) return Promise.reject({ code: 'permission-denied' });
   // the older PIN proof was switched off in phase 2 of PIN sessions (22 Oct 2026): the rules refuse any proofs write
   if (ops.some(o => /\/proofs\//.test(key(o.ref.path)))) return Promise.reject({ code: 'permission-denied' });
   // two of the real rules that order of writes depends on: a staff PIN hash is only created once its pinset record
@@ -717,6 +765,24 @@ function commitOps(ops) {
       !!old && next.sectionId !== old.sectionId || !Number.isFinite(next.at) || next.at < 0 || next.at > requestNow() + 300000;
   });
   if (badPrepStandard) return Promise.reject({ code: 'permission-denied' });
+
+  // Weekly sales use one private document with a bounded payload and a protected revision.
+  const badSupplierSales = ops.some(o => {
+    const path = key(o.ref.path);
+    if (!at3(path, 'suppliersales(/|$)')) return false;
+    if (!at3(path, 'suppliersales/weekly$') || o.kind === 'delete') return true;
+    const old = store[path], next = after(o), by = kitchenReader(o.ref), owner = isAdmin(o.ref);
+    if (!owner && (!by || by !== cfgOf(o.ref).headId || next.by !== by)) return true;
+    const day = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+    const report = next.report;
+    if (!exactKeys(next, ['v', 'report', 'links', 'at', 'by']) || !Number.isSafeInteger(next.v) || next.v < 1 ||
+      !Number.isSafeInteger(next.at) || next.at < 0 || typeof next.by !== 'string' || !next.by || next.by.length > 80 ||
+      !exactKeys(report, ['start', 'end', 'rows']) || !day(report.start) || !day(report.end) ||
+      !Array.isArray(report.rows) || !report.rows.length || report.rows.length > 1000 || !Array.isArray(next.links) || next.links.length > 1000) return true;
+    if (owner && old && equalField(next, old)) return false;
+    return old ? next.v !== old.v + 1 || next.at <= old.at : !owner && next.v !== 1;
+  });
+  if (badSupplierSales) return Promise.reject({ code: 'permission-denied' });
 
   // Shared prep attributes reported work separately from the PIN-session recorder. Match the prep-only rules;
   // preparedAt ties the report to this tick so an old client's retained fields never credit its later re-tick.

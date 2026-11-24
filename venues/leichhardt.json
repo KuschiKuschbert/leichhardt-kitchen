@@ -6,6 +6,7 @@
   "host": "pages",
   "book": "full",
   "secrets": "environment",
+  "supplierSales": true,
   "firebase": {
     "apiKey": "AIzaSyDKnqjVhe4U_mCaOCeqbiQqcazEiezRJT4",
     "authDomain": "leichhardt-kitchen.firebaseapp.com",

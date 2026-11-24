@@ -1,6 +1,50 @@
 # Session map: which note to read, and every file
 
-## Consistency sweep, 19 November 2026 (council, not chosen yet)
+## Live click tests: a run that skips no longer cancels one that tests, 24 November 2026 (fix)
+
+A merge that published nothing (#850, #849) started a Live click tests run that cancelled #851's live tests, then skipped. The cancelling moved from the whole workflow to the test jobs in `.github/workflows/live-tests.yml`. A CI fix, no council. `tests/site-publish.test.js`. [Note](site-publishing.md).
+
+## The lists open one server answer sooner after a cold start, 24 November 2026 (fix)
+
+The head chef: the Prep list sat on Loading for a long time when the app first opened. The roster, the kitchen's settings and the page's own list were three server answers in a row; the list now asks with the settings (`listsMay()` in `js/prep.js`, prep, orders, wastage and transfers). About 0.3 to 0.6 s sooner on the test stand-in with a slowed phone. A fix, no council. `tests/cold-start.test.js`. [Note and measurements](loading-motion.md#the-first-list-after-a-cold-start-24-november-2026).
+
+## Fixing a flaky click test, 24 November 2026
+
+The four most retried files of the weekly report (#523) were fixed: swipe-dismiss (#844), mascot (#845), section-box (#846) and update-confirmation (#848). Each failed only on a busy runner and each cause was a race in the test. The method that made them fail here (the runner's fallback font, several copies at once, full Chrome) and its scripts are kept: [the note](flaky-tests.md), `scripts/flaky/annotations.sh` (which check failed in CI), `scripts/flaky/side-by-side.cjs` (old and new copies under the same load), `scripts/flaky/fonts-ci.conf` (DejaVu Sans as on the runner).
+
+## The platform owner's Admin at a second venue, 24 November 2026 (built)
+
+The client follow-up of the venue plumbing. At a venue the platform owner signs in with his own PIN and his Google and gets Admin; the venue admin's People page shows his row locked ("The owner's own profile. Only the owner can change it.") and every save from the venue admin leaves it as stored. One new read rule, `config/platform` (`{ id }`, written only by `scripts/access-bootstrap.mjs` from `PLATFORM_STAFF_ID`; none at Leichhardt): looser, so rules first. In `js/prep.js`: `loadAdmins()` reads it with each owner check, `platformLockLoad()` for the venue admin, `platformKeep()` in `saveConfig()`, `googleKeeps()` and `whoAdmin()`. At Leichhardt nothing changes but one read per owner check. Tests: `tests/venue-platform-admin.test.js`, `tests/rules/venues.test.mjs`, `tests/access-bootstrap.test.js`. [Venues, Two admins at a venue](venues.md#two-admins-at-a-venue).
+
+## The venue name under the KB mark on a phone, 24 November 2026 (chosen and built)
+
+Below 720 px the top bar showed only the KB mark. Three looks were drawn at 360 px (beside, under, in place of the mark); only under fits both Leichhardt and Strand beside Back and every ring, and the head chef chose it for every venue. `.rb-venue` in `js/app.js` and `css/app.css`, `tests/venue-name.test.js`, the venue copy check in `tests/venues.test.js`. [Quick check and measurements](second-venue-options/brief.md#the-venue-name-on-a-phone-chosen-24-november-2026).
+
+## The reading map in CLAUDE.md grouped by area, 24 November 2026
+
+The owner asked for `CLAUDE.md` to be kept short. Its reading map had grown to 86 rows with dates and design detail, against its own rule (one short row, the detail here). The rows are now grouped by area, about 30 of them, and keep every note's path; the dates and the designs chosen stay in the sections below. The file went from 47 to 39 KB. A new note joins its area's row.
+
+## Reopen a Wastage draft after midnight, 23 November 2026 (B chosen and built)
+
+A synthetic sous chef lost Sunday's typed review after Queensland midnight: Monday's sheet replaced it on Save. The head chef chose B, Switch inside the review. Today opens in the review sheet, and an unfinished earlier review of the same person has a dated Resume inside the sheet. Back to today returns to the current date. The main Wastage page stays on today. Built in #835. [Council, previews and checks](wastage-overnight-options/brief.md).
+
+## Private booking contact in the function editor, 23 November 2026
+
+Round 1 Build smaller, five of five. Round 2 ranked C first with all six. It puts the private contact name or state beside the booking facts and reveals the existing inputs there with Add contact or Edit contact. The same Save writes a changed contact with its booking. The editor carries forward contact fields this person edited and uses the newly read contact for the rest. Older local drafts use the existing conflict decision when saved contact values may have changed. See `js/fnedit.js`, `css/app.css` and `tests/function-booking-contact.test.js`. [Council and checks](function-booking-contact-options/brief.md).
+
+## Orders cut-offs beside the requests, 22 November 2026 (chosen)
+
+The head chef chose the combined view. View opens one supplier on phone and tablet, with other cut-offs and reminder settings one tap away. It opens the same details in a laptop rail. Original request ticks and Add request stay in reach. [Decision and checks](order-list-options/brief.md#orders-cut-offs-beside-the-list-22-november-2026).
+
+## Supplier order context and History, 22 November 2026 (A chosen and built)
+
+The existing cut-off and Last order sit in the wide supplier rail, with More on narrower screens and when the rail is hidden. One opening Order history action jumps to the existing list. Back keeps the draft and return position. [Two council rounds and measurements](supplier-order-rail-options/brief.md).
+
+## Sunday sales suggestions in Supplier order, 22 November 2026 (chosen)
+
+The head chef chose A's inline amount and Use, B's visible current amount in a Keep or Replace step and C's calculation disclosure and focus on the draft field. Round 1 was Build smaller, four of five. All six round 2 reviewers ranked A first. One weekly CSV or XLSX and confirmed links feed the chef's manual draft. A single private weekly snapshot serves authorised chefs. [Design, preview measurements, data contract and pending checks](supplier-sales.md)
+
+## Consistency sweep, 19 November 2026 (council; the head chef chose all 22 picks on 20 November, built in grouped pull requests)
 
 The head chef asked whether to restyle every page for consistency. Nine auditors and nine verifiers checked every page against `docs/design-patterns.md` and the colour contracts (main `83f8ddd`, 390, 768 and 1280 px). They found 126 findings: 102 confirmed, 16 deliberate and 8 refuted. None needs a page redrawn, and 4 touch service. Round 1 said Build smaller, 3 of 5; the other 2 said Don't build the restyle. The recommendation is no restyle, but a sweep in four grouped pull requests: the service fixes, one failed-read and empty state, the head chef's 25 choices with a stronger `tests/design-patterns.test.js`, then names and the cosmetic tidy. `docs/consistency-sweep-options/brief.md`, register in its `findings.md`.
 
@@ -16,6 +60,8 @@ The head chef chose all three steps, built on `ux/prep-strip-place`:
 - Prep starting with the strip (`prepStrip()`).
 
 F (the cut-off in the strip) is held. Tests: `tests/prep-strip-place.test.js`. `docs/band-options/brief.md`, `variants.js`, `shoot.js`, `shoot-strip.js`, `previews/`.
+
+23 November 2026. Orders starts with the existing fold for routine functions. Live warnings keep their detail and actions, and the band and function-derived list updates wait through a held touch. [Council, decision and checks](band-options/brief.md#orders-starts-with-the-existing-functions-fold-23-november-2026). `tests/orders-functions-fold.test.js`.
 
 
 ## Venues: each kitchen its own project, address and book, 19 November 2026 (build step 2, merged)
@@ -113,6 +159,10 @@ The owner asked for fancy New Year animations, then for Home's own pieces to bur
 ## Festive hats on the mascot and a Christmas countdown, 17 November 2026 (built)
 
 The owner asked to dress the mascot for the celebrations, then for a Christmas countdown. Round 1 Build smaller 5 of 5 (hats only, never animated on, no bandana colours, no dress-up play); round 2 B first for 5 of 6, the blend (A's hat on every frame, on Home only) named by 5 of 6; the countdown K2 (Coming up) for all six. The owner: "go with your recommendations, both in one pull request". Built: `HATS`, `HEAD`, `hatDraw()` and `wear()` in `js/mascot.js` (now `?v=4` from `js/app.js` and `js/prep.js`), `mascotHat()` in `js/app.js`, `countdown()` in `js/seasonal/seasonal.js`, `scripts/mascot-head-points.py` (run only when the art changes), `tests/mascot-hats.test.js`, `tests/christmas-countdown.test.js`. Notes: `docs/mascot-festive-options/brief.md` (both rounds, the mix, the evidence), `docs/kitchen-mascot.md` (Festive hats on Home), `docs/seasonal-celebrations.md` (Coming up).
+
+## AI drawing in the studio, 18 November 2026 (round 1 only; waiting for the owner)
+
+The owner has US$100 of Claude API credit and asked whether Claude could draw in the app, limited per day and before the credit runs out. Round 1: Build smaller, 3 of 5 (the head chef and the skeptic: Don't build, not now). All five: only Claude picking and placing the book's own library pieces, never a whole new SVG (no parts means no Pass labels for the allergen lens). Three of five: prove it offline first, against Draw it for me (98% matched, plating median 0.01 since 15 Nov). The lead recommends that bake-off (about US$10 to 15) before round 2. `docs/ai-drawing-options/brief.md`, `proposal.md`, `shots/`.
 
 ## A smarter mascot, 17 November 2026 (round 1 only; Orders and Functions held a month)
 
@@ -307,7 +357,7 @@ Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records
 | Suppliers, order history, cut-off sheets | `docs/supplier-workspace.md` |
 | Order cut-off patterns (a day and time per delivery day) and the heads-up the day before, selected the recommended mix (5 Nov 2026) | `docs/cutoff-options/brief.md` |
 | Supplier order and Delivery received redesign, selected A: The Order Sheet (3 Nov 2026) | `docs/receiving-design-options/brief.md` |
-| Wastage history, ranges, CSV | `docs/wastage-history.md` |
+| Wastage history, ranges and CSV, including entries first (22 November 2026, chosen A and built) | `docs/wastage-history.md` |
 | CSV text, quoting and numeric values across reports | `docs/report-exports.md` |
 | Transfer storage and returns | `docs/transfer-returns.md`: 16 November 2026, phone card width repair in `css/app.css`, verified by `tests/transfer-overflow.test.js`. The original index migration needs rules published first; this CSS repair needs no rule or data change. |
 | Function cancel, Undo, delete | `docs/function-cancellation.md` |
@@ -339,6 +389,7 @@ Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records
 | The whole book redesigned from seven apps (Linear, Things 3, Airbnb, Todoist, Flighty, Duolingo, Headspace): chosen 8 Nov 2026 (B's now and next home with the celebrations, admin B Inbox with a dashboard, handwritten line words, Urgent in one tap), all eight steps delivered in #589 to #596 on 8 Nov, followed by #598; later feature refinements supersede the original previews where recorded | `docs/whole-app-redesign-options/brief.md` (Chosen, Build), `every-page.html` there: read them before changing Home, list rows, the chef hat, the function page or the admin panel |
 | A second venue, its setup and Add from AVC Live (19 Nov 2026): council Build smaller (no wizard; each venue its own address, Firebase project and empty book; AVC drafts private and hidden until every ingredient's allergens are checked), round 2 A 41, B 30, C 29; recommended mix: A's Getting started rows + B's Inbox row and one-card review + C's Checked words and remembered products (follow-up 7 to 8). Found: untagged ingredients show "None in the ingredients" today; every recipe write is copied to the public mirror. The owner chose the mix; each venue's head chef is its admin, the owner admin everywhere (rules change); no new roles (later ones global); the owner's Venues room: council Build smaller 4 of 5 (a read-only health list later; adding venues and changing head chefs stay in GitHub, no keys on a page), the owner agreed: no room now, a checklist and a hand-run workflow, round 2 at the third venue (`docs/venues-room-options/brief.md`); nothing built | `docs/second-venue-options/brief.md` |
 | The admin panel's People page restyle (the mix chosen and built 19 Nov 2026, `peopleListHTML()`, `personRowHTML()`): round 1 Build smaller (4 of 5; the new starter Build); round 2 B first for 5 of 6 (the skeptic A); recommended mix: B's rows that open in place + A's deleted-row cue + C's words, with a Save bar that names deletions and keeps Undo unsaved changes; the skeptic, the screen designer and the keeper said the mix beats their earlier choice. Previews drawn over the real admin panel on the stand-in (`preview/designs.js`) | `docs/people-room-options/brief.md` |
+| Admin, Team, People (22 Nov 2026): Name, Role and Permissions columns on desktop, stacked rows on smaller screens, and one editor that sits beside the roster or takes the page. The header Back restores the list's place and filter. The editor holds Reset PIN and the existing draft fields. | `docs/people-room-options/brief.md` (Compact roster and focused editor), `js/prep.js`, `css/app.css`, `tests/people-safety.test.js` |
 
 ## Every file
 
@@ -372,7 +423,7 @@ Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records
 | `js/cleaning.js`, `js/cleaning-schedule.js` | Cleaning (`#/cleaning`), lazy API 2 workspace plus version 1 schedule drafts. Unbranded explicit imports, ordered section pack down, inline methods/checks, anchored intervals, independent recorded events and mapped Pass verification. `docs/cleaning-schedule.md`, focused Cleaning browser and rules checks |
 | `js/avc-reader.js` | The AVC Live card reader (`LK_AVC`): an AVC "Print Recipe" PDF to a recipe draft, names and amounts only, never money or codes; fails closed. Shared with node. Lazy; nothing loads it yet (second venue step 4). `tests/avc-reader.test.js`, `tests/avc-fixture.js`, `docs/second-venue-options/brief.md` |
 | `js/fnedit.js` | Manage functions (`#/functions`). Lazy, for someone ticked for Functions |
-| `js/admin-dashboard.js` | The admin Dashboard (`LK_DASH`): headlines, tiles and charts from the nightly `analysis/dashboard` record. Lazy, from `js/prep.js` when the page opens. `docs/admin-dashboard-options/brief.md` |
+| `js/admin-dashboard.js` | The admin Dashboard (`LK_DASH`): headlines, tiles and charts from the nightly `analysis/dashboard` record. Inbox priority rows precede the detailed kitchen mail. Lazy, from `js/prep.js` when the page opens. `docs/admin-dashboard-restyle-options/brief.md` |
 | `js/analysis-core.js`, `js/admin-intelligence.js`, `js/proofreader-admin.js` | Admin Review desk: analysis maths (shared with node), the analysis workspace, the proofreader. Lazy, from `js/prep.js`, admin only. `docs/admin-intelligence.md`, `docs/proofreader-admin.md` |
 | `firestore.rules` | Rules template (see Never in this repo). A helper one collection uses lives inside its match block (14 Nov 2026). `PLATFORM_EMAIL` and `PLATFORM_ID` (19 Nov 2026): the platform owner at a venue, off at Leichhardt (`docs/venues.md`) |
 | `venues/<id>.json`, `venues/<id>/`, `scripts/venues.cjs`, `scripts/venue-site.cjs`, `scripts/venue-deploy.sh`, `scripts/venue-live-check.cjs`, `scripts/rules-compile-check.mjs`, `.github/workflows/venue-setup.yml` | The venues (19 Nov 2026): each its own project, address, environment and copy of the book; check, matrix and guard; a venue's copy, its publish to its own project and its live check; Set up a venue. Never loaded by the phones. `tests/venues.test.js`, `tests/rules/venues.test.mjs`, `docs/venues.md` |

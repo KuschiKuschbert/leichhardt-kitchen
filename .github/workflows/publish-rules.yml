@@ -130,11 +130,14 @@ jobs:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
         run: node transfer-index.mjs
+      # PLATFORM_ID (24 Nov 2026, docs/venues.md): the platform owner's profile at this venue, written to config/platform
+      # (empty at Leichhardt, where that record must not exist). Checked before any read; never printed.
       - name: Preview, verify or prepare canonical access
         working-directory: scripts
         env:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
+          PLATFORM_ID: ${{ secrets.PLATFORM_STAFF_ID }}
           ACCESS_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'publish' }}
         run: |
           case "$ACCESS_MODE" in
@@ -198,6 +201,7 @@ jobs:
         env:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
+          PLATFORM_ID: ${{ secrets.PLATFORM_STAFF_ID }}
         run: sleep 60 && node access-bootstrap.mjs --verify
       # Proves the lock on the live book straight after publishing: the reads and writes the rules must refuse, from a
       # client that holds only the kitchen PIN, plus the one read they must allow. Fails the run if any is wrong.

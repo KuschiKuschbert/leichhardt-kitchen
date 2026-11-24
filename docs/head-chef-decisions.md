@@ -1,5 +1,43 @@
 # Head chef decisions
 
+- **24 November 2026, the venue name under the KB mark on a phone.** Below 720 px the top bar showed only the KB mark. The head chef chose the short venue name under the mark in small orange capitals, at every venue (Leichhardt says LEICHHARDT, a second venue its own name). Of the three drawn at 360 px it is the only one where both names fit beside Back and every ring; the bar stays 64 px tall. [The venue name on a phone](second-venue-options/brief.md#the-venue-name-on-a-phone-chosen-24-november-2026)
+
+- **23 November 2026, reopen an earlier Wastage draft from today’s review.** The head chef chose B. Today opens in one tap and shows a dated Resume action inside its existing sheet when the same person has an earlier draft. Back to today keeps both sets of words separate. Log waste stays one tap away. [Council, previews and verification](wastage-overnight-options/brief.md).
+
+- **23 November 2026, Orders starts with the existing Functions fold.** Keep routine details one tap away on Orders, show every current warning and its action, and wait until the finger lifts before the band moves. [Council, decision and checks](band-options/brief.md#orders-starts-with-the-existing-functions-fold-23-november-2026).
+
+- **23 November 2026, bring the recipe results closer to Search.** The space audit's smaller layout groups the current recipe type and allergen controls. Both allergen modes stay visible on Pass, and Search opens in one tap. [Council quick check](whole-app-redesign-options/brief.md#compact-recipe-browse-filters-23-november-2026)
+
+- **22 November 2026, keep a failed Prep tick on its line and make the older Undo readable.** On a personal device the failed tick names the line and the same box retries it once. A success on another line gets its own slip. On a phone the older Undo can wrap its label. [Feedback contract](action-feedback.md#the-rule)
+
+- **22 November 2026, reach Before service items sooner.** Keep one title and group the section chooser, search and read time with the existing Prep reference controls. [Section prep standards](prep-standards.md#what-it-does)
+
+- **22 November 2026, compact People roster and focused editor.** Put Name, Role and Permissions in columns on a wide screen. A name opens the editor alongside the list, or takes the page on a phone with Back to the same list. Reset PIN sits in the selected person's editor. [Decision and checks](people-room-options/brief.md#compact-roster-and-focused-editor-22-november-2026).
+
+- **22 November 2026, Sunday sales suggestions stay in Supplier order.** The head chef chose A's inline suggestion, B's visible current amount in a **Keep** or **Replace** step and C's calculation and return of focus to **To order**. One weekly POS export and confirmed links support the chef's draft. The head chef or verified admin publishes the report and manages links. The chef places the order with the supplier. [Decision, council and pending release checks](supplier-sales.md)
+- **22 November 2026, Supplier order context and History.** The delegated audit choice puts the current cut-off and Last order beside quantities when the supplier rail fits. Keep the compact More line and bring the existing History within a tap, with Back to the same place. [Council and chosen layout](supplier-order-rail-options/brief.md)
+- **22 November 2026, two guide pages fit beside each other.** A guide with two pages shows both page buttons on screen. Either one opens its page at full reading size. The printed pages keep their usual order. [Guides](prep-book.md#guides)
+
+- **22 November 2026, Functions Service spacing and waiting trips.** Bring the live board higher on a phone and place the waiting shelf beside active rounds on wide kitchen screens. Keep the coordinator’s confirmation queue first. [Service board](design-patterns.md#inside-a-list)
+
+- **22 November 2026, ingredient detail fits beside the recipe list.** The head chef approved the matched app comparisons for build. Use the existing details in an inline layout with tighter fields on smaller devices and a named panel on wide screens. [Recipe editor](recipe-editor-options/brief.md#ingredient-details-beside-the-list-22-november-2026)
+
+- **22 November 2026, names open the People editor.** In Admin, Team, People, tap the person's name to open or close their editor in the row. [People page](people-room-options/brief.md#tap-the-name-to-edit-22-november-2026)
+- **22 November 2026, a shorter Shift pings form.** Today and Tomorrow are direct choices. Dates, repeats and custom times sit under Custom schedule. The preview names the person chosen in Send to, and Save shares with that person. [Individual pings](ping-recipients.md#compact-composer-22-november-2026)
+
+- **22 November 2026, bring Wastage History entries higher.** The delegated council choice places report totals after the full-width entry list. Search report and Filter list name the two existing scopes. [Council and verification](wastage-history.md#history-entries-first-22-november-2026)
+
+- **22 November 2026, End-of-day review within reach.** The head chef approved bringing Wastage's existing review action into the first screen. The action sits by the daily total and opens the existing review sheet. [Quick check and measurement](work-pages-design-options/brief.md#end-of-day-review-placement-22-november-2026)
+
+- **22 November 2026, Manage Functions search and status.** Set the existing controls together where there is width. The booking list, permissions and editor returns use the same flow. [Choosing](design-patterns.md#choosing)
+
+- **22 November 2026, full hours in Today's team.** The green Rostered hours box shows the original CSV start and finish on imported team plans so the chef can see the person's hours while assigning shifts and sections. See [Roster import](roster-import-options/brief.md#full-roster-times-in-the-planner-22-nov-2026).
+- **22 November 2026, more room for Today's team.** The head chef approved the matched app comparisons for build. Date and tools share a row when there is room. A phone gives up the idle Save dock while keeping the saved status in the heading and showing the dock for edits, warnings and save feedback. [Planner implementation](team-page-options/implementation.md#compact-planner-controls-22-november-2026)
+
+- **22 November 2026, jump to delivery records.** Put one jump in the phone's Delivery received heading. It leads to the existing receipt scope and keeps the form. [Council quick check](delivery-received.md#delivery-records-jump-22-nov-2026)
+
+- **22 November 2026, more room for Delivery received.** Tighten the form spacing and place receipts beside it from 1100 px. Keep the existing fields, Save and receiving rules. [Delivery received](delivery-received.md#more-room-for-the-form-and-receipts-22-nov-2026)
+
 - **20 November 2026, the look choices of the consistency sweep: all 22 of the recommended picks.** The sweep (`docs/consistency-sweep-options/brief.md`, step 3) put the 25 choices the audit found on one page as 22 questions. The head chef answered "All my picks":
   - **The look:**
     1. The main button is the orange button with 8 px corners everywhere, in sheets too (Got it, the mail pop-up).

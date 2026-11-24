@@ -78,6 +78,7 @@ function hasPrivateContact(value) {
   await p.click('[data-ff="gu"]'); await L.settle(p, 150);
   await p.fill('[data-ff="guests"]', '60');
   await p.fill('[data-ff="loc"]', 'Beer garden');
+  await p.getByRole('button', { name: 'Add contact', exact: true }).click();
   await p.fill('[data-ff="cname"]', 'Jo Smith');
   await p.fill('[data-ff="phone"]', '0400 111 222');
   await p.fill('[data-ff="email"]', 'jo@example.com');

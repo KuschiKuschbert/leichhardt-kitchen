@@ -204,8 +204,11 @@ const realErrors = p => p.errors.filter(e => !/Failed to load resource/.test(e))
     ok(m.y < card.y && m.y + m.height > card.y && m.y >= bar.y + bar.height, 'it peeks over the card top, under the top bar');
     ok(m.x >= card.x + card.width / 2 + 23, 'it stays clear of the card pin');
     ok((await st(p)).plays === 1, 'today’s action plays there');
+    // The page clock also runs in real time. Tapped while that first play was still going, the tap did nothing, and
+    // on a busy runner the play then ended inside the next 300 ms. So the play ends first, and the tap must start a new one.
+    await run(p, 5000); ok(!(await st(p)).playing, 'then it rests on the card');
     await p.locator('.mascot').click(); await run(p, 300);
-    ok((await st(p)).playing, 'a tap on the card replays it');
+    const s = await st(p); ok(s.playing && s.plays === 2, 'a tap on the card replays it: ' + JSON.stringify(s));
     ok(await p.evaluate(n => document.querySelector('#rtitle').textContent === 'Welcome, ' + n, WIDE), 'the full name shows');
   });
   for (const [label, clock] of [['08:30', 'T08:30:00+10:00'], ['Wednesday 30 September', '2026-09-30T14:00:00+10:00']]) await step('a wider date line: still on the card (' + label + ')', async () => {

@@ -39,6 +39,26 @@
     });
   }
   function onlineRead(promise) { return bounded(promise, READ_MS, false); }
+  var SALES_PATH = ['suppliersales', 'weekly'], SALES_MAX_BYTES = 650 * 1024;
+  function salesContent(report, links) {
+    var sales = window.LK_SUP_SALES_CORE;
+    if (!sales || !sales.validateSales) throw error('invalid', 'The sales report tools could not load. Reopen Supplier order.');
+    if (!report) throw error('invalid', 'Choose a weekly sales report.');
+    var value = sales.validateSales(report, links);
+    if (new TextEncoder().encode(JSON.stringify(value)).length > SALES_MAX_BYTES) {
+      throw error('invalid', 'This sales report and its item links are too large to save together.');
+    }
+    return value;
+  }
+  function salesRecord(sn) {
+    if (!sn.exists()) return null;
+    var value = sn.data();
+    if (Object.keys(value).length !== 5 || !Number.isSafeInteger(value.v) || value.v < 1
+        || !Number.isSafeInteger(value.at) || value.at < 0 || typeof value.by !== 'string' || !value.by || value.by.length > 80) {
+      throw error('invalid', 'The saved sales report has invalid details.');
+    }
+    return Object.assign({ v: value.v }, salesContent(value.report, value.links), { at: value.at, by: value.by });
+  }
   function withoutId(d) { var out = copy(d); delete out.id; return out; }
   function normalise(value) { return String(value == null ? '' : value).trim().toLowerCase().replace(/\s+/g, ' '); }
   function originalKey(item) { return item && item.source && normalise(item.source.name) ? JSON.stringify([normalise(item.source.name), normalise(item.pack)]) : ''; }
@@ -130,7 +150,7 @@
     }
     function ref(c, parts) { return c.fs.doc.apply(null, [c.db].concat(B.base(), parts)); }
     function col(c, parts) { return c.fs.collection.apply(null, [c.db].concat(B.base(), parts)); }
-    async function transaction(c, fn, edit, owner) {
+    async function transaction(c, fn, edit, owner, notify) {
       if (!B.transact) throw error('invalid', 'The supplier save connection could not load. Reload the book.');
       var active = true;
       function alive() { if (!active) throw error('uncertain', 'This save timed out. Check the latest records before retrying.'); check(c.ctx, edit, owner); }
@@ -141,7 +161,7 @@
         var value = await fn(guarded, by); alive(); return value;
       }, { preserveWriter: !!owner });
       var result = await bounded(pending, SAVE_MS, true, function () { active = false; });
-      check(c.ctx, edit, owner); if (B.changed) B.changed({ catalogue: !!edit }); return result;
+      check(c.ctx, edit, owner); if (notify !== false && B.changed) B.changed({ catalogue: !!edit }); return result;
     }
     // One query when Supplier order opens or Refresh is tapped. One read per supplier, at least one if empty.
     /* A saved supplier that fails the catalogue check is left out, not the whole list (5 Nov 2026: one such record hid
@@ -494,15 +514,37 @@
         return { order: Object.assign({ id: orderId }, copy(order)), link: nextLink, replayed: false };
       });
     }
+    // One document when Supplier order asks for the published weekly suggestions. No listener or private disk cache.
+    async function loadSales() {
+      var c = await access(), sn = await onlineRead(c.fs.getDoc(ref(c, SALES_PATH)));
+      check(c.ctx); return salesRecord(sn);
+    }
+    // One document read per publish attempt. The transaction checks its version even after a timeout or another save.
+    async function saveSales(expectedVersion, report, links) {
+      if (!Number.isSafeInteger(expectedVersion) || expectedVersion < 0) throw error('invalid', 'The sales report revision is invalid.');
+      var next = salesContent(report, links), c = await access(true);
+      var content = JSON.stringify(next);
+      return transaction(c, async function (tx, by) {
+        var r = ref(c, SALES_PATH), previous = salesRecord(await tx.get(r));
+        if (previous && JSON.stringify({ report: previous.report, links: previous.links }) === content) return previous;
+        var currentVersion = previous ? previous.v : 0;
+        if (currentVersion !== expectedVersion) throw error('stale', 'The saved sales report changed. Reload it and review your changes before publishing.');
+        var at = previous ? Math.max(B.now(), previous.at + 1) : B.now();
+        var record = Object.assign({ v: currentVersion + 1 }, next, { at: at, by: by });
+        tx.set(r, record); return record;
+      }, true, false, false);
+    }
     // Explicit owner backup only. Catalogue partitions need one query each for audit and orders; none are read per item.
     async function exportAll() {
       var c = await access(false, true), sn = await onlineRead(c.fs.getDocs(col(c, ['suppliers']))), suppliers = sn.docs.map(data);
-      var out = { suppliers: suppliers, supplierAudit: {}, supplierOrders: {}, supplierlinks: [] };
+      var out = { suppliers: suppliers, supplierAudit: {}, supplierOrders: {}, supplierlinks: [], supplierSales: null };
       var tasks = suppliers.map(async function (s) {
         var reads = await Promise.all([onlineRead(c.fs.getDocs(col(c, ['suppliers', s.id, 'audit']))), onlineRead(c.fs.getDocs(col(c, ['suppliers', s.id, 'orders'])))]);
         check(c.ctx, false, true); out.supplierAudit[s.id] = reads[0].docs.map(data); out.supplierOrders[s.id] = reads[1].docs.map(data);
       });
       tasks.push(onlineRead(c.fs.getDocs(col(c, ['supplierlinks']))).then(function (links) { out.supplierlinks = links.docs.map(data); }));
+      // One read of the weekly record in the owner backup or PIN move. An absent record leaves old backups compatible.
+      if (B.salesEnabled) tasks.push(onlineRead(c.fs.getDoc(ref(c, SALES_PATH))).then(function (sales) { if (sales.exists()) out.supplierSales = copy(sales.data()); }));
       await Promise.all(tasks); check(c.ctx, false, true); return out;
     }
     // Explicit owner PIN migration only. Same online-only client; copied records retain their original author and time.
@@ -511,7 +553,7 @@
     async function copyTo(newPin, given) {
       if (!/^\d{4,6}$/.test(newPin) || newPin === B.base()[1]) throw error('invalid', 'Choose a different kitchen PIN.');
       var initial = { key: B.context(), generation: generation }, out = given && Array.isArray(given.suppliers) ? given : await exportAll(); check(initial, false, true);
-      var c = await access(false, true), ops = [], counts = { suppliers: 0, orders: 0, audits: 0, links: 0 }; check(initial, false, true);
+      var c = await access(false, true), ops = [], counts = { suppliers: 0, orders: 0, audits: 0, links: 0, sales: 0 }; check(initial, false, true);
       function add(parts, value, kind) { ops.push({ parts: parts, value: withoutId(value) }); counts[kind]++; }
       out.suppliers.forEach(function (s) {
         add(['suppliers', s.id], s, 'suppliers');
@@ -519,6 +561,7 @@
         (out.supplierOrders[s.id] || []).forEach(function (o) { add(['suppliers', s.id, 'orders', o.id], o, 'orders'); });
       });
       out.supplierlinks.forEach(function (l) { add(['supplierlinks', l.id], l, 'links'); });
+      if (out.supplierSales) add(SALES_PATH, out.supplierSales, 'sales');
       for (var start = 0; start < ops.length;) {
         var chunk = [], bytes = 0;
         while (start < ops.length && chunk.length < 350) {
@@ -533,7 +576,8 @@
     }
     return { loadSuppliers: loadSuppliers, load: load, history: history,
       audit: function (sid, n, cursor) { return page(sid, 'audit', n, cursor); }, saveCatalogue: saveCatalogue, importCatalogue: importCatalogue, previewSplit: previewSplit, applyTemplateOrder: applyTemplateOrder,
-      record: record, link: link, exportAll: exportAll, copyTo: copyTo, reset: function () { generation++; catalogues.clear(); } };
+      record: record, link: link, loadSales: loadSales, saveSales: saveSales,
+      exportAll: exportAll, copyTo: copyTo, reset: function () { generation++; catalogues.clear(); } };
   }
-  window.LK_SUP_STORE = { API: API, templateOrder: 1, catalogueOrder: 1, splitCatalogue: 1, splitHistoryItems: splitHistoryItems, create: create };
+  window.LK_SUP_STORE = { API: API, sales: 1, templateOrder: 1, catalogueOrder: 1, splitCatalogue: 1, splitHistoryItems: splitHistoryItems, create: create };
 })();

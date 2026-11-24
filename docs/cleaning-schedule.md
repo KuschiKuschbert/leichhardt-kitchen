@@ -53,6 +53,10 @@ Fixed checkpoints are derived from task revisions in memory. Explicit event reco
 
 Use the existing daily view and expand checks inline. Preserve section and numeric step order: Hot larder, then Grill, then Pans. Existing general work stays available. When the pack-down list is present, show the existing after-service floor task once after the pack-down section, with a reminder to finish overhead shelves and frames before the final floor clean. Earlier after-service floor checks remain separate. Do not create a duplicate floor task or change its recurrence.
 
+When today's staff checklist has loaded and includes a pack-down section, **Go to Pack down** beside the check time moves keyboard focus and scrolls to that day's heading. The jump stays within the checklist and leaves its checks, read status and schedule order in place.
+
+Quick check, 22 November 2026. Build the same-page jump. It follows the book’s existing heading links and keeps the one-tap check. In the synthetic staff checklist, built from `2e18f326` with the book’s fonts, 390, 768 and 1280 px retained 5, 8 and 7 complete opening task rows respectively. The 390 px Extra large sample retained 2. One activation brought the 390 px heading from y1,985 to y8. The 44 px control uses ink on paper at 15.9:1. Browser checks cover focus, route and pack-down order. Physical-device behaviour has not been checked.
+
 - Hot larder covers fresh containers, bottles/fridge/shelves/benches, parmie ingredients and tabletop-fridge shutdown, impingers/extensions, fryer shutdown/cleaning, back wall and cryovac.
 - Grill covers nightly grill scrubbing, Sunday OZ tank/deep cleaning, two-day drip-tray changes without foil, nightly under-grill cleaning, hot-line shelf/frame before floors, service stickers, screen sanitising, sauce bain-marie pack down, heat-lamp shutdown and the pans double-check, and flat-top cleaning/drying/oiling with its separate nightly drip tray.
 - Pans covers fresh containers and labelled mash/rissoles/cob mix, poaching pots, overhead shelves/rack, removing and cooling stove tops, cleaning the stove area while they cool, nightly drip-tray emptying without foil, cleaning cooled stove tops, service stickers, kick-oven shutdown, heat lamps, the area beside the oven and the back of the stove tops.
@@ -80,6 +84,16 @@ Legacy jobs retain their existing one-tap tick and recorder-only two-minute Undo
 An explicit retry after an uncertain acknowledgement checks the named occurrence before replaying anything. If a later version already exists, it also checks the exact attempted audit snapshot. Failed reconciliation keeps the attempt and unsaved checks. Normal successful actions add no client read.
 
 Keep existing session expiry, identity-bound recovery, release gating, today-only staff reads and capability checks. No private persistent cache, listener or polling is added.
+
+### Feedback while an action is waiting
+
+The button pressed in a procedure reports its own pending action. **Save checks** says **Saving checks...** and **Record done** still requires every check. **Record done** says **Recording...** and the assigned checker's **Verify Pass check** says **Saving Pass check...**. The selected occurrence says **Not sent** while the other occurrences keep their own status. The task keeps its existing guard against repeat submissions. When a shared screen asks who did the work, the picker keeps its own recording feedback.
+
+After acknowledgement, the existing confirmation names the job. A refused write keeps the checks and note, shows the error beside the occurrence and makes the existing action available for retry.
+
+Verdict: Not needed (bug fix). The approved controls and steps remain in their existing procedure. This follows [After the tap](action-feedback.md#the-rule), with the same data, permissions and reads.
+
+In the complete app with the kitchen fonts and synthetic checks at 390 and 1280 px, the action buttons kept their original positions and sizes while Save checks was held. The Save and Record targets were both 48 px high. `tests/cleaning-feedback.test.js` checks required-check gating, pending Save, Record and Pass feedback, a repeated dispatch during the wait, refusal and explicit retry, and preservation of the original cleaner.
 
 ## Temperature reminder
 

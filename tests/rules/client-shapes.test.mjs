@@ -45,7 +45,7 @@
 */
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import { doc, getDoc, getDocs, getDocFromServer, getDocsFromServer, onSnapshot, collection, query, where, orderBy, limit, documentId, startAfter,
-  setDoc, deleteDoc, writeBatch, increment, serverTimestamp, Timestamp, setLogLevel } from 'firebase/firestore';
+  setDoc, deleteDoc, writeBatch, runTransaction, increment, serverTimestamp, Timestamp, setLogLevel } from 'firebase/firestore';
 import { anonContext, dailySession, adminGrant, seedOwnerDevice, nextFour } from './device-auth-fixtures.mjs';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -89,6 +89,7 @@ const DB = Object.fromEntries(ALL.map(r => [r, anonContext(env, UID[r]).firestor
 const not = (...x) => ALL.filter(r => !x.includes(r));
 const KITCHEN = not('fay'), PINS = ALL, KPINS = not('fay'), GOOGLE = ['owner', 'ownkit'];
 const CHEFS = ['owner', 'ownkit', 'kit', 'sam'], CREW = ['ann', 'lou', 'vic', 'tab'];
+const HEAD_CHEFS = ['owner', 'ownkit', 'kit'];
 const ADDS = not('vic', 'fay'), TICKS = ADDS, DELS = ['owner', 'ownkit', 'kit', 'sam', 'lou'];   // can('add'), can('tick'), can('del')
 const MAIL = ['sam', 'ann', 'lou', 'vic', 'tab'];   // Kitchen mail in the chef hat: everyone signed in but the head chef
 const FNMGR = ['owner', 'fay'], FNCANCEL = ['owner', 'ownkit', 'kit', 'sam', 'fay'];   // fnOK(), fnCancelOK()
@@ -227,6 +228,10 @@ row('js/prep.js connect(): login/roster listener (the name picker, and functions
 row('js/prep.js connect(): config/main listener (the kitchen settings)', { ok: KITCHEN, asks: KITCHEN, run: db => listen(D(db, 'config/main')) });
 row('js/prep.js pinAtOf() and pickName(): pinset/<me> get', { ok: ALL, asks: ALL, run: (db, w) => getDoc(D(db, 'pinset/' + (w || 'ann'))) });
 row('js/prep.js loadAdmins(): config/admins get (the owner check)', { ok: GOOGLE, asks: GOOGLE, run: db => getDoc(D(db, 'config/admins')) });
+// the platform owner's id for the venue admin's People page (24 Nov 2026, docs/venues.md), from the server once the grant
+// is in; there is no record in this one-owner fixture, so the admin gets "not there". The Google app's own read of it
+// (platformAsk()) is a Google sign-in, which tests/rules/venues.test.mjs checks at both venues.
+row('js/prep.js platformLockLoad(): config/platform get from the server (the admin)', { ok: GOOGLE, asks: GOOGLE, run: db => getDocFromServer(D(db, 'config/platform')) });
 
 // prep list
 row('js/prep.js watchItems(): today\'s prep lines listener', { ok: KITCHEN, asks: KITCHEN, run: db => listen(C(db, `days/${TODAY}/items`)) });
@@ -257,7 +262,6 @@ row('js/prep.js book().requests(): today\'s order lines not ordered yet (Supplie
 row('js/prep.js watchWaste(): today\'s wastage lines listener', { ok: KITCHEN, asks: KITCHEN, run: db => listen(C(db, `waste/${TODAY}/lines`)) });
 row('js/prep.js loadWSum(): summary/waste get', { ok: KITCHEN, asks: KITCHEN, run: db => getDoc(D(db, 'summary/waste')) });
 row('js/prep.js loadPageReview() and loadWNote(): today\'s waste review and the last days\' (waste/<day>)', { ok: KITCHEN, asks: KITCHEN, run: db => Promise.all([getDoc(D(db, `waste/${TODAY}`)), getDoc(D(db, `waste/${YDAY}`))]) });
-row('js/prep.js saveReview(): the review from the server before it is saved (waste/<day>)', { ok: KITCHEN, asks: CHEFS, run: db => getDocFromServer(D(db, `waste/${TODAY}`)) });
 row('js/prep.js pastRead() (admin Reports): a past day\'s wastage lines', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(C(db, `waste/${PAST}/lines`)) });
 
 // transfers
@@ -338,6 +342,21 @@ row('js/supplier-store.js: a supplier\'s own orders, including before lineage at
 row('js/supplier-store.js: inherited split history before its fixed cutoff (parent orders, bounded 21)', { ok: CHEFS, asks: CHEFS,
   run: db => getDocs(query(C(db, 'suppliers/s1/orders'), where('at', '<=', NOW), orderBy('at', 'desc'), limit(21))) });
 row('js/supplier-store.js: a cut-off\'s link (supplierlinks/<day>_<cut-off>)', { ok: CHEFS, asks: CHEFS, run: db => getDoc(D(db, `supplierlinks/${TODAY}_northside`)) });
+const SALES_PATH = 'suppliersales/weekly';
+const weeklySales = { v: 1, report: { start: kday(NOW - 7 * DAY), end: YDAY, rows: [{ name: 'Synthetic meal', qty: 20 }] }, links: [], at: NOW - MIN, by: 'kit' };
+row('js/supplier-store.js loadSales() and exportAll(): one private weekly sales document', { ok: CHEFS, asks: CHEFS,
+  prep: () => put({ [SALES_PATH]: weeklySales }), run: db => getDoc(D(db, SALES_PATH)) });
+function saveWeeklySales(db, who) {
+  const ref = D(db, SALES_PATH);
+  return runTransaction(db, async tx => {
+    const old = (await tx.get(ref)).data();
+    tx.set(ref, { ...weeklySales, v: old ? old.v + 1 : 1, at: NOW, by: who });
+  });
+}
+row('js/supplier-store.js saveSales(): first weekly sales report transaction', { ok: HEAD_CHEFS, asks: HEAD_CHEFS,
+  prep: () => put({ [SALES_PATH]: null }), run: saveWeeklySales });
+row('js/supplier-store.js saveSales(): next revision of the weekly sales report', { ok: HEAD_CHEFS, asks: HEAD_CHEFS,
+  prep: () => put({ [SALES_PATH]: { ...weeklySales, report: { ...weeklySales.report, rows: [{ name: 'Synthetic meal', qty: 19 }] } } }), run: saveWeeklySales });
 // the admin Backup (exportAll(), the Google device only): one row per list that has a rule of its own, so a rule
 // loosened for one of them shows on its own row. The lists every kitchen phone reads are rows above.
 const EXP_ALL = 'js/prep.js exportAll() (admin Backup): ';
@@ -486,8 +505,12 @@ row('js/prep.js wxFixSave(): change the amount on my own wastage line', { ok: AD
 row('js/prep.js wxFixSave(): a chef changes the amount on someone else\'s wastage line', { ok: CHEFS, asks: CHEFS,
   prep: (r, w) => put({ [`waste/${TODAY}/lines/${MINE(r)}`]: Object.assign({}, seed[`waste/${TODAY}/lines/w1`], w === 'ann' ? { addedBy: 'Bo', addedById: 'bo', by: 'bo' } : {}) }),
   run: (db, w, r) => W(r, [['upd', `waste/${TODAY}/lines/${MINE(r)}`, AMT(r, 'kg')]]) });
-row('js/prep.js saveReview(): today\'s waste review (waste/<today> merge)', { ok: CHEFS, asks: CHEFS,
-  run: (db, w, r) => W(r, [['set', `waste/${TODAY}`, { avoidable: 'Over-prepped rice', change: 'Half a batch on Mondays', reviewBy: NAME[r], reviewById: w, reviewAt: Date.now() }, true]]) });
+row('js/prep.js saveReview(): read and merge today\'s review in one Full SDK transaction (waste/<today>)', { ok: CHEFS, asks: CHEFS,
+  run: (db, w, r) => runTransaction(db, async tx => {
+    const ref = D(db, `waste/${TODAY}`);
+    await tx.get(ref);
+    tx.set(ref, { avoidable: 'Over-prepped rice', change: 'Half a batch on Mondays', reviewBy: NAME[r], reviewAt: Date.now(), by: w }, { merge: true });
+  }) });
 row('js/prep.js addXfer() through xWrite(): a transfer line with its open copy', { ok: ADDS, asks: ADDS,
   run: (db, w, r) => { const rec = { dir: 'out', venue: 'Riviera', person: 'Jo', text: 'Butter', amount: 2, unit: 'kg', note: '', addedBy: NAME[r], addedById: w, addedAt: Date.now(), deleted: false };
     return W(r, [['set', `transfers/${TODAY}/lines/${MINE(r)}`, rec], ['set', `transferOpen/${TODAY}_${MINE(r)}`, { date: TODAY, lineId: MINE(r), record: Object.assign({}, rec, { by: BY[r] }), open: true }]]); } });

@@ -415,7 +415,7 @@
   }
   function watch() {
     var prep = P(); if (!prep || !prep.state) return;
-    if (!prep.privateAccess()) { stop(); sheetClose(false, true); SEEN = { who: '', by: {} }; PK = { who: '', r: {}, note: {} }; F.pend = {}; F.sv++; if (window.LK_PRINT && document.getElementById('fn-print')) window.LK_PRINT.end(); var printed = document.getElementById('fn-print'); if (printed) printed.remove(); F.list = []; F.all = null; F.sent = {}; F.state = 'idle'; lsSet('lk.fn', null); changed(); return; }
+    if (!prep.privateAccess()) { stop(); sheetClose(false, true); SEEN = { who: '', by: {} }; PK = { who: '', r: {}, note: {} }; F.pend = {}; F.sv++; if (window.LK_PRINT && document.getElementById('fn-print')) window.LK_PRINT.end(); var printed = document.getElementById('fn-print'); if (printed) printed.remove(); F.list = []; F.all = null; F.sent = {}; F.state = 'idle'; F.at = 0; F.offline = false; lsSet('lk.fn', null); changed(); return; }
     var st = prep.state;
     if (!/^\d{4,6}$/.test(st.pin || '') || st.configState !== 'ok') return;
     var key = st.pin + '|' + T.day();
@@ -585,7 +585,14 @@
   function canSend() { var p = P(); return !(p && p.functionOnly && p.functionOnly()); }
   function isChef() { var p = P(); return !!(p && p.chefMenu && p.chefMenu().chef); }
   // tell the pages: the band and the landing card redraw themselves, #/fn redraws through js/app.js
-  function changed() { ahFirst(); huFirst(); paint(); try { window.dispatchEvent(new Event('lk-fn')); } catch (e) {} }
+  var ordersFnPending = false;
+  function changed() {
+    ahFirst(); huFirst(); paint();
+    // The Orders stock tags and platter needs also follow lk-fn. Keep their tick targets in the same place until lift.
+    if (ordersBandBusy()) { ordersFnPending = true; return; }
+    ordersFnPending = false;
+    try { window.dispatchEvent(new Event('lk-fn')); } catch (e) {}
+  }
 
   /* ---------- the band under the top bar ---------- */
   // amounts read "2 × Pizza" in every function view (22 Oct 2026); the prep and order lines keep their own words
@@ -657,8 +664,28 @@
      full band replaces the line, once no finger is down (ahWait()). */
   // Prep starts with the slim strip instead of the full band (head chef, 19 Nov 2026, docs/band-options/brief.md,
   // Round 3): the list gets the first screen; a tap on the strip opens the service view or the function's sheet, and the
-  // other pages keep the full band. The Next function line is unchanged.
+  // other workbooks keep their regular band. The Next function line is unchanged.
   function prepStrip() { return location.hash.split('?')[0] === '#/prep'; }
+  function ordersBand() { return location.hash.split('?')[0] === '#/orders'; }
+  var ordersBandWho = '', ordersBandShown = '';
+  function ordersBandPerson() {
+    var who = ahWho();
+    if (who !== ordersBandWho) {
+      ordersBandWho = who; ordersBandShown = ''; ordersFnPending = false; stripWords = '';
+    }
+  }
+  function ordersBandBusy() {
+    return ordersBand() && !!ordersBandWho && ordersBandWho === ahWho() && P().privateAccess() && ahWait();
+  }
+  function ordersBandAlert(x, t, me) {
+    if (x.kind !== 'on') return true;
+    var f = x.f, w = nowOf(f, t);
+    return !!recent(f) || !!f.kc || (!w.done && (!f.first || f.rounds[w.k].at <= t + HOUR)) ||
+      (fnPerson(me) && waitingTrips(f.id).some(function (y) { return y.t.sentBy !== me; }));
+  }
+  function alertsFirst(ordinary, alerts) {
+    return alerts.concat(ordinary.filter(function (x) { return alerts.indexOf(x) < 0; }));
+  }
   function bandHTML() {
     var base = bandBase();
     if (!AH.on && !AH.gone) return base && prepStrip() ? '<div class="fn-strip-in">' + stripInner(now()) + '</div>' : base;
@@ -682,16 +709,28 @@
     var t = now(), R = bandRows(t), xs = R.xs, stale = staleWords(t, xs);
     var ys = R.ys;
     if (!xs.length && !ys.length && !stale) return '';
-    var a = R.a, b = R.b, left = xs.length + ys.length - a.length - b.length;
+    var a = R.a, b = R.b, orders = ordersBand(), warn = false;
+    if (orders) {
+      var me = ahWho();
+      var todayAlerts = xs.filter(function (x) { return ordersBandAlert(x, t, me); });
+      var soonAlerts = ys.filter(function (x) { return x.kind === 'order' && x.short; });
+      warn = !!(stale || todayAlerts.length || soonAlerts.length);
+      a = alertsFirst(a, todayAlerts);
+      b = alertsFirst(b, soonAlerts);
+    }
+    var left = xs.length + ys.length - a.length - b.length;
     var more = left > 0 ? '<button type="button" class="fn-more" data-fn="more" aria-expanded="false">+' + left + ' more</button>' : F.more && (xs.length > 2 || ys.length > 2) ? '<button type="button" class="fn-more" data-fn="more" aria-expanded="true">Show fewer</button>' : '';
     // two or more functions on at once: one view of everything that goes out now
     var svc = xs.filter(function (x) { return x.kind === 'on'; }).length >= 2 ? '<a class="fn-more fn-svc" href="#/fn/now">Service view</a>' : '';
     // a label says what the band holds: today's functions, the coming ones (order and tomorrow lines), or both
     var on = xs.filter(function (x) { return x.kind === 'on'; }).length;
     var lab = xs.length && ys.length ? 'Functions today and soon' : xs.length ? 'Functions today' : ys.length ? 'Functions coming up' : 'Functions';
-    // the round minus (Hide) folds the band to its label and one line; plus (Show) opens it, for the rest of the kitchen day on this phone (lk.fn.fold: the
-    // kitchen day it was folded; out of date the next day, so the band opens again by itself)
-    var fold = (a.length + b.length) && lsGet('lk.fn.fold') === kday(t), btn = a.length + b.length ? '<button type="button" class="fn-fold" data-fn="fold" aria-expanded="' + !fold + '" aria-label="' + (fold ? 'Show functions' : 'Hide functions') + '" title="' + (fold ? 'Show' : 'Hide') + '">' + (fold ? '+' : '\u2212') + '</button>' : '';
+    // Orders opens folded for routine information. Show lasts for this person and kitchen day in this tab.
+    // Other pages keep their usual per-day minus (lk.fn.fold). A warning on Orders cannot be folded away.
+    var fold = (a.length + b.length) && (orders ? !warn && ordersBandShown !== kday(t) : lsGet('lk.fn.fold') === kday(t));
+    var foldLabel = warn ? 'Function alerts are shown' : fold ? 'Show functions' : 'Hide functions';
+    var btn = a.length + b.length ? '<button type="button" class="fn-fold" data-fn="fold" aria-expanded="' + !fold + '" aria-label="' + foldLabel +
+      '" title="' + (warn ? foldLabel : fold ? 'Show' : 'Hide') + '"' + (warn ? ' aria-disabled="true"' : '') + '>' + (fold ? '+' : '\u2212') + '</button>' : '';
     if (fold) {
       // every function in a row, as many as fit across the screen (fitFold() hides the rest and counts them in "+N")
       var sum = xs.concat(ys).map(function (x) {
@@ -747,7 +786,9 @@
     if (Date.now() - touchUp < 400) { AH.wait = true; ahLater(); return true; }
     AH.wait = false; return false;
   }
-  function ahLater() { clearTimeout(ahTimer); ahTimer = setTimeout(function () { if (AH.wait && !touchDown) paint(); }, 450); }
+  function ahLater() { clearTimeout(ahTimer); ahTimer = setTimeout(function () {
+    if (AH.wait && !touchDown) { if (ordersFnPending) changed(); else paint(); }
+  }, 450); }
   function lift() { touchDown = false; touchUp = Date.now(); if (AH.wait) ahLater(); }
   document.addEventListener('pointerdown', function () { touchDown = true; touchAt = Date.now(); }, true);
   document.addEventListener('pointerup', lift, true);
@@ -1060,12 +1101,31 @@
   }
   // js/app.js draws the empty slot under the top bar; this fills it, and refills it when anything changes
   var lastBand = null;
-  function paint() {
+  function ordersBandFocus(el, from) {
+    var fn = from.getAttribute('data-fn'), id = from.getAttribute('data-id'), href = from.getAttribute('href');
+    var next = Array.prototype.find.call(el.querySelectorAll('button[data-fn],a[href]'), function (x) {
+      return fn ? x.getAttribute('data-fn') === fn && x.getAttribute('data-id') === id : href && x.getAttribute('href') === href;
+    });
+    next = next || el.querySelector('.fn-fold') || document.getElementById('rtitle');
+    if (next) next.focus({ preventScroll: true });
+  }
+  function paint(userDisclosure) {
     var el = document.getElementById('fn-band');
-    if (el) {
+    if (el && (userDisclosure === true || !ordersBandBusy())) {
+      ordersBandPerson();
       // compared with what this element was given (el.lkH), not its innerHTML: the browser writes text back differently
       // (a no-break space as &nbsp;), so that never matched and the slot was rebuilt every 20 seconds, losing focus
-      var h = bandHTML(); if (h !== lastBand || el.lkH !== h) { el.innerHTML = h; lastBand = h; el.lkH = h; } el.hidden = !h; fitFold();
+      var h = bandHTML(), from = document.activeElement;
+      if (h !== lastBand || el.lkH !== h) {
+        var restore = ordersBand() && el.contains(from);
+        el.innerHTML = h; lastBand = h; el.lkH = h;
+        el.hidden = !h;
+        if (restore) ordersBandFocus(el, from);
+        if (ordersBand() && document.fonts && document.fonts.status === 'loading' && el.querySelector('.fn-band-sum')) {
+          document.fonts.ready.then(function () { if (el.isConnected && ordersBand() && !ordersBandBusy()) fitFold(); });
+        }
+      }
+      el.hidden = !h; fitFold();
       el.classList.toggle('is-ahead', AH.on); el.classList.toggle('is-strip', !AH.on && !!h && prepStrip()); el.setAttribute('aria-label', AH.on ? 'Next function' : 'Functions');
     }
     strip();
@@ -1077,13 +1137,13 @@
     if (lc) { var lh = landHTML(); if (lc.innerHTML !== lh) lc.innerHTML = lh; lc.hidden = !lh; }
     var ck = document.getElementById('fn-check');
     if (ck) { var ch = checkHTML(); if (ck.innerHTML !== ch) ck.innerHTML = ch; ck.hidden = !ch; }
-    if (sheetId) { var f = byId(sheetId); var body = sheetEl && sheetEl.querySelector('.fn-sheet-body'); if (body && f) body.innerHTML = sheetHTML(f, true); }
+    if (sheetId) sheetPaint();
   }
   /* The strip (22 Oct 2026): once the band has scrolled off the top, one line stays pinned to the top of the screen
      with today's next function and what goes out next; a tap opens its sheet. It is appended to document.body (a page
      redraw does not remove it). Bars that already stick to the top (search, signal, update, admin nav) move down by its
      height through --fn-stick. */
-  var stripEl = null, stripH = 0, padH = -1;
+  var stripEl = null, stripH = 0, padH = -1, stripWords = '';
   /* What the strip leads with (mended 19 Nov 2026, docs/band-options/brief.md, Round 3): a cancelled function, then a
      rescheduled one, then one changed in the last 3 hours, then a trip waiting for this Functions person, then what goes
      out next, then the order and tomorrow lines. Every other function and line is counted in "+N", never dropped (it
@@ -1130,13 +1190,19 @@
      top (search, signal, update, admin nav) move down by its height through --fn-stick. On Prep the band itself starts
      as the same strip (prepStrip()), so it pins the moment it scrolls away. */
   function strip() {
-    var band = document.getElementById('fn-band'), t = now(), h = band && !band.hidden && !AH.on ? stripInner(t) : '';
+    var band = document.getElementById('fn-band'), held = ordersBandBusy();
+    var h = band && !band.hidden && !AH.on ? held ? stripWords : stripInner(now()) : '';
+    if (!held) stripWords = h;
     // --fn-pad: room at the top for the strip while it could show, so a jump (a recipe's Ingredients chip) lands below it
     setPad(h ? stripH || 46 : 0);
     var off = !!h && band.getBoundingClientRect().bottom < 0 && !sheetEl;
     if (!off) { if (stripEl) { stripEl.hidden = true; } setStick(0); return; }
     if (!stripEl) { stripEl = document.createElement('div'); stripEl.className = 'fn-strip'; stripEl.setAttribute('role', 'region'); stripEl.setAttribute('aria-label', 'Functions'); document.body.appendChild(stripEl); }
-    if (stripEl.innerHTML !== h) stripEl.innerHTML = h;
+    if (ordersBand() ? stripEl.lkH !== h : stripEl.innerHTML !== h) {
+      var from = document.activeElement, restore = ordersBand() && stripEl.contains(from);
+      stripEl.innerHTML = h; stripEl.lkH = h;
+      if (restore) ordersBandFocus(stripEl, from);
+    }
     stripEl.hidden = false;
     setStick(stripEl.offsetHeight);
   }
@@ -1149,6 +1215,9 @@
   function fitFold() {
     var box = document.querySelector('#fn-band .fn-band-sum'), more = document.querySelector('#fn-band .fn-sum-more');
     if (!box || !more) return;
+    // Measure the items at full width before the first can shorten. Otherwise a partly clipped second name can
+    // disappear beyond the edge without being counted, after the font arrives or a one-name summary is refitted.
+    if (ordersBand()) box.classList.remove('is-one');
     var it = box.querySelectorAll('.fn-sum-i'), n = it.length, i;
     for (i = 0; i < n; i++) it[i].hidden = false;
     more.hidden = true;
@@ -1249,10 +1318,11 @@
   var I_CLOCK = '<svg class="fn-i" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
   var I_BANG = '<svg class="fn-i" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 7v6M12 16.5v.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
   var I_BOX = '<svg class="fn-i" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>';
-  // a waiting trip's state, in words beside its icon: Not sent yet (this phone's write), Waiting, Waiting N min (10 or
+  // the local write names the trip's current step. A confirmation in flight belongs to an already sent trip.
+  // Sent trips say Waiting, Waiting N min (10 or
   // more: named attention), Not confirmed (the function's window is over)
   function waitPill(f, x, t) {
-    if (F.pend[x.id]) return '<span class="fn-ws is-pend">' + I_CLOCK + ' Not sent yet</span>';
+    if (F.pend[x.id]) return '<span class="fn-ws is-pend">' + I_CLOCK + (x.outAt ? ' Confirming out...' : ' Not sent yet') + '</span>';
     if (f.until && t >= f.until) return '<span class="fn-ws is-never">' + I_BANG + ' Not confirmed</span>';
     var m = Math.floor((t - x.sentAt) / MIN);
     return m >= 10 ? '<span class="fn-ws is-long">' + I_WAIT + ' Waiting ' + m + ' min</span>' : '<span class="fn-ws">' + I_WAIT + ' Waiting</span>';
@@ -1518,7 +1588,7 @@
   function statusHTML(f, scope, compact) {
     if (!f || !f.id || f.removed || !statusOK() || (f.status !== 'confirmed' && !undoOK(f))) return '';
     var undo = f.status === 'cancelled', busy = F.jobs[f.id], kind = scope === 'fe' ? 'fe' : 'fn';
-    return '<button type="button" class="btn fn-cancel" data-' + kind + '="status" data-v="' + (undo ? 'undo' : 'cancel') + '" data-id="' + esc(f.id) + '"' +
+    return '<button type="button" class="btn fn-cancel' + (undo ? '' : ' lk-del') + '" data-' + kind + '="status" data-v="' + (undo ? 'undo' : 'cancel') + '" data-id="' + esc(f.id) + '"' +
       (busy ? ' disabled' : '') + ' aria-label="' + esc((undo ? 'Undo cancellation of ' : 'Cancel ') + f.name) + '">' +
       (busy ? (busy.undo ? 'Restoring...' : 'Cancelling...') : undo ? (compact ? 'Undo' : 'Undo cancel') : compact ? 'Cancel' : 'Cancel function') + '</button>';
   }
@@ -1693,15 +1763,33 @@
       onError: function (m) { printError(button, m); } });
   }
   // the popup from the band, appended to document.body so a page redraw does not remove it; clicks use data-fn
-  var sheetEl = null, sheetId = '', sheetBack = null;
+  var sheetEl = null, sheetId = '', sheetBack = null, sheetBackScope = '';
+  function sheetAction(root, from) {
+    return Array.prototype.find.call(root.querySelectorAll('button[data-fn]:not([disabled]), a[href]'), function (el) {
+      return el.getClientRects().length && ['data-fn', 'data-id', 'data-r', 'data-v', 'href'].every(function (attr) {
+        return el.getAttribute(attr) === from.getAttribute(attr);
+      });
+    });
+  }
+  function sheetPaint() {
+    var f = byId(sheetId); if (!f) return;
+    var title = sheetEl.querySelector('#fn-sh-h'), body = sheetEl.querySelector('.fn-sheet-body'), html = sheetHTML(f, true);
+    if (title.textContent !== f.name) title.textContent = f.name;
+    if (body.lkH === html) return;
+    var active = document.activeElement, restore = body.contains(active);
+    body.innerHTML = html; body.lkH = html;
+    if (restore) (sheetAction(body, active) || sheetEl.querySelector('.fn-sheet')).focus({ preventScroll: true });
+  }
   function sheetOpen(id, from) {
     var f = byId(id); if (!f) return;
     sheetClose(); sheetId = id; sheetBack = from || null;
+    sheetBackScope = ['#fn-band', '.fn-strip', '#fn-hm', '#fn-land', '.fn-svc-page'].find(function (scope) { return from && from.closest(scope); }) || '';
     var el = document.createElement('div');
     el.className = 'fn-pop';
     el.innerHTML = '<div class="fn-pop-bg" data-fn="close"></div><section class="fn-sheet" role="dialog" aria-modal="true" aria-labelledby="fn-sh-h" tabindex="-1">' +
-      '<div class="fn-grip" aria-hidden="true"></div><header class="fn-sheet-top"><div class="fn-sheet-t"><span class="fn-eb">Function</span><h2 id="fn-sh-h">' + esc(f.name) + '</h2></div><button type="button" class="fn-close" data-fn="close">Close</button></header><div class="fn-sheet-body">' + sheetHTML(f, true) + '</div></section>';
-    document.body.appendChild(el); sheetEl = el;
+      '<div class="fn-grip" aria-hidden="true"></div><header class="fn-sheet-top"><div class="fn-sheet-t"><span class="fn-eb">Function</span><h2 id="fn-sh-h"></h2></div><button type="button" class="fn-close" data-fn="close">Close</button></header><div class="fn-sheet-body"></div></section>';
+    sheetEl = el; sheetPaint();
+    document.body.appendChild(el);
     var api = P() && P().book && P().book();
     if (api && api.ovPush) api.ovPush('fn', function () { sheetClose(true, true); });
     el.querySelector('.fn-sheet').focus({ preventScroll: true });
@@ -1712,9 +1800,13 @@
     var api = P() && P().book && P().book();
     if (api && api.ovDone) api.ovDone('fn', noBack);
     sheetEl.parentNode.removeChild(sheetEl); sheetEl = null; sheetId = '';
-    if (back && sheetBack && document.body.contains(sheetBack)) sheetBack.focus({ preventScroll: true });
-    sheetBack = null;
     strip();
+    if (back && sheetBack) {
+      var scope = sheetBackScope && document.querySelector(sheetBackScope);
+      var target = sheetBack.isConnected && sheetBack.getClientRects().length ? sheetBack : (scope && sheetAction(scope, sheetBack)) || document.getElementById('rtitle');
+      if (target) target.focus({ preventScroll: true });
+    }
+    sheetBack = null; sheetBackScope = '';
   }
 
   /* ---------- #/fn: today, the next three days from tomorrow (or 14), and the platter totals per day ---------- */
@@ -1756,9 +1848,9 @@
   /* The failed-read line, one look on every page (LK_PREP.readErr(), docs/design-patterns.md, A page): what could not
      load, never "nothing", then Try again (data-fn="retry", retryNow()). No signal only when the signal is the cause
      (js/prep.js noSignal()); with today's reads used up the line at the top says why, so no "Check the connection". */
-  function failHTML() {
-    var off = navigator.onLine === false || F.err === 'unavailable' || F.err === 'deadline-exceeded';
-    var w = off ? 'No signal. Could not load functions.' : 'Could not load functions.' + (quota() ? '' : ' Check the connection.');
+  function failedReadOffline() { return navigator.onLine === false || F.err === 'unavailable' || F.err === 'deadline-exceeded'; }
+  function failHTML(words) {
+    var w = words || (failedReadOffline() ? 'No signal. Could not load functions.' : 'Could not load functions.' + (quota() ? '' : ' Check the connection.'));
     var p = P(), at = 'data-fn="retry"';
     if (p && p.readErr) return p.readErr(w, null, at);
     return '<p class="p-err p-readerr" role="status">' + esc(w) + ' <button type="button" class="p-link" ' + at + '>Try again</button></p>';
@@ -1787,10 +1879,14 @@
         '<button type="button" class="fn-svc-kmore" data-fn="pick-more"' + d + (v < left ? '' : ' disabled') + ' aria-label="' + (v < left ? 'One more ' + nm + ' in this trip' : 'All ' + left + ' ' + nm + ' are in this trip') + '">+</button></li>';
     }).join('') + '</ul>';
   }
-  function shelfHTML(t, me, coord) {
-    var wt = waitingTrips(), outs = outTrips(t), chef = isChef();
+  function shelfHTML(t, me, coord, wt, sending) {
+    var outs = outTrips(t), chef = isChef();
     if (!wt.length && !outs.length) return '';
-    var out = '<section class="fn-svc-shelf" id="fn-shelf" aria-label="Waiting for Functions"><h4 class="fn-svc-sh">Waiting for Functions <small>' + (coord ? 'confirm each trip when it is out' : 'sent, not confirmed yet') + '</small></h4>';
+    var onlySending = sending > 0 && sending === wt.length;
+    var heading = onlySending ? 'Sending to Functions' : 'Waiting for Functions';
+    var detail = onlySending ? 'waiting for the send to finish' : coord ? 'confirm each trip when it is out' : 'sent, not confirmed yet';
+    if (sending && !onlySending) detail += ' · sending shown below';
+    var out = '<section class="fn-svc-shelf" id="fn-shelf" aria-label="' + heading + '"><h4 class="fn-svc-sh">' + heading + ' <small>' + detail + '</small></h4>';
     if (wt.length) out += '<ul class="fn-svc-trips">' + wt.map(function (w) {
       var f = w.f, x = w.t, pend = !!F.pend[x.id], age = t - x.sentAt, mine = x.sentBy === me, acts = '';
       if (!pend) {
@@ -1813,7 +1909,9 @@
   }
   function serviceHTML(t) {
     var sv = service(F.list, t, isSentK, leftK, keepK), q = sum(sv.plate.map(function (p) { return p.qty; }));
-    var me = ahWho(), cook = canSend(), coord = !cook, wt = waitingTrips(), long = wt.filter(function (w) { return !F.pend[w.t.id] && t - w.t.sentAt >= 10 * MIN; }).length;
+    var me = ahWho(), cook = canSend(), coord = !cook, wt = waitingTrips();
+    var sending = wt.filter(function (w) { return F.pend[w.t.id] && !w.t.outAt; }).length, waiting = wt.length - sending;
+    var long = wt.filter(function (w) { return !F.pend[w.t.id] && t - w.t.sentAt >= 10 * MIN; }).length;
     /* Redesign step 5 (8 Nov 2026, Flighty's live board, every-page.html e-service): the rounds still to go out on the
        dark board, each with how long until it goes (or how late it is), the platters, the function's service and
        dietary notes on every round, and its Send, as before. Both prints moved to the end. The page is drawn again
@@ -1839,10 +1937,12 @@
         (cook ? '<div class="fn-next-sent"><button type="button" class="btn fn-sent-b" data-fn="send" data-id="' + esc(r.f.id) + '" data-r="' + r.k + '"' + (busy ? ' disabled aria-disabled="true"' : '') + '>' + esc(lab) + '</button>' +
           (pq && !busy ? '<button type="button" class="linkish fn-svc-link" data-fn="pick-clear" data-id="' + esc(r.f.id) + '" data-r="' + r.k + '">Clear</button>' : '') + '</div>' : '') + '</li>';
     }).join('') + '</ul>' : '';
-    var shelf = shelfHTML(t, me, coord);
+    var shelf = shelfHTML(t, me, coord, wt, sending);
+    var shortcut = waiting + (waiting === 1 ? ' trip' : ' trips') + ' waiting for Functions' + (long ? ', ' + long + ' over 10 min' : '');
+    if (sending) shortcut = waiting ? shortcut + ' · ' + sending + ' sending' : sending + (sending === 1 ? ' trip' : ' trips') + ' sending to Functions';
     if (sv.all.length || shelf) {
       out += '<div class="fn-svc-board"><div class="fn-svc-bh"><h3 class="fn-svc-bt">' + (coord ? 'Functions service' : 'Still to go out') + '</h3><b class="fn-svc-clock">' + esc(kclock(t)) + '</b></div>' +
-        (cook && wt.length && sv.all.length ? '<button type="button" class="linkish fn-svc-wl" data-fn="shelf">' + I_WAIT + ' ' + wt.length + (wt.length === 1 ? ' trip' : ' trips') + ' waiting for Functions' + (long ? ', ' + long + ' over 10 min' : '') + '</button>' : '') +
+        (cook && wt.length && sv.all.length ? '<button type="button" class="linkish fn-svc-wl" data-fn="shelf">' + (waiting ? I_WAIT : I_CLOCK) + ' ' + shortcut + '</button>' : '') +
         (coord ? shelf + (rows ? '<div class="fn-svc-sec"><h4 class="fn-svc-sh">Still to go out <small>the kitchen sends these</small></h4>' + rows + '</div>' : '') : rows + shelf) + '</div>';
     }
     if (sv.plate.length) out += '<section class="fn-next" aria-label="To plate now"><p class="fn-next-h"><span class="fn-next-l">To plate now</span> <b>' + q + ' ' + (q === 1 ? 'platter' : 'platters') + '</b></p>' +
@@ -1985,6 +2085,21 @@
     });
     return out;
   }
+  // Home keeps its other work rows during a Functions read and uses the same guarded retry as the Functions pages.
+  function homeReadHTML(hasRows) {
+    var prep = P(); if (!prep || !prep.privateAccess()) return '';
+    var t = now(), copy = F.at ? ' Showing the copy from ' + when(F.at, kday(t)) + '.' : '';
+    if (F.state === 'error' && !F.wait && !F.unsub) {
+      var words = 'Could not load functions.';
+      if (failedReadOffline()) words = 'No signal. ' + words;
+      else if (F.err === 'resource-exhausted') words += ' Today\'s read limit has been reached.';
+      return failHTML(words + copy);
+    }
+    var note = '';
+    if (F.offline || F.state === 'offline' || navigator.onLine === false) note = 'No signal.' + (copy || ' Functions show here when this device is back online.');
+    else if (F.state !== 'ok') note = copy ? 'Checking for function changes.' + copy : hasRows ? '' : 'Checking the work...';
+    return note ? '<p class="hm-none" role="status">' + esc(note) + '</p>' : '';
+  }
   var landHome = false;   // the landing card sits on Home's board page (no band there): set by landSlot(), checked by paint()
   function landHTML() {
     if (!window.LK_PREP || !window.LK_PREP.privateAccess()) return '';
@@ -2074,10 +2189,25 @@
     if (a === 'pick-clear') { var cf = byId(el.getAttribute('data-id')), cr = cf && (cf.rounds || [])[+el.getAttribute('data-r')]; if (cr) { delete PK.r[cf.id + '_' + cr.at]; delete PK.note[cf.id + '_' + cr.at]; } changed(); return; }
     if (a === 'trip-out' || a === 'trip-for') { tripOut(el.getAttribute('data-id'), a === 'trip-for'); return; }
     if (a === 'trip-undo') { tripUndo(el.getAttribute('data-id')); return; }
-    if (a === 'shelf') { var sh = document.getElementById('fn-shelf'); if (sh) { sh.scrollIntoView({ block: 'start' }); sh.setAttribute('tabindex', '-1'); sh.focus({ preventScroll: true }); } return; }
+    if (a === 'shelf') {
+      var sh = document.getElementById('fn-shelf');
+      if (sh) {
+        var shelfBounds = sh.getBoundingClientRect();
+        if (window.innerWidth < 1100 || shelfBounds.top < 0 || shelfBounds.bottom > window.innerHeight) sh.scrollIntoView({ block: 'start' });
+        sh.setAttribute('tabindex', '-1'); sh.focus({ preventScroll: true });
+      }
+      return;
+    }
     if (a === 'go') { sheetClose(false, true); return; }
     if (a === 'ckhide') { try { localStorage.setItem('lk.fn.ckhide', kday(now())); } catch (x) {} if (window.LK_PREP && window.LK_PREP.sg) window.LK_PREP.sg('checks', 'd'); paint(); return; }
-    if (a === 'fold') { lsSet('lk.fn.fold', lsGet('lk.fn.fold') === kday(now()) ? null : kday(now())); lastBand = null; paint(); var fb = document.querySelector('#fn-band [data-fn="fold"]'); if (fb) fb.focus({ preventScroll: true }); return; }
+    if (a === 'fold') {
+      if (el.getAttribute('aria-disabled') === 'true') return;
+      if (ordersBand()) ordersBandShown = el.getAttribute('aria-expanded') === 'false' ? kday(now()) : '';
+      else lsSet('lk.fn.fold', lsGet('lk.fn.fold') === kday(now()) ? null : kday(now()));
+      lastBand = null; paint(true);
+      var fb = document.querySelector('#fn-band [data-fn="fold"]'); if (fb) fb.focus({ preventScroll: true });
+      return;
+    }
     // the Next function line's minus: this person, this phone, until tomorrow (lk.fn.ahead.fold), with Undo in the slip
     if (a === 'hu-got') { huGot(el); return; }
     if (a === 'seen') { if (el.getAttribute('aria-disabled') !== 'true') seenLoad(el.getAttribute('data-id')); return; }
@@ -2096,7 +2226,7 @@
       }
       return;
     }
-    if (a === 'more') { F.more = !F.more; lastBand = null; paint(); var mb = document.querySelector('#fn-band [data-fn="more"]'); if (mb) mb.focus({ preventScroll: true }); return; }
+    if (a === 'more') { F.more = !F.more; lastBand = null; paint(true); var mb = document.querySelector('#fn-band [data-fn="more"]'); if (mb) mb.focus({ preventScroll: true }); return; }
     if (a === 'days') { pageDays = +el.getAttribute('data-v') || 7; try { window.dispatchEvent(new Event('lk-fn')); } catch (x) {} }
     // Try again on a failed read (20 Nov 2026, the consistency sweep, step 2): the page is drawn again at once with the
     // loading words, so the focus goes to the page heading rather than nowhere
@@ -2118,13 +2248,13 @@
     if (b && !b.disabled) b.textContent = q ? 'Send ' + q + (q === 1 ? ' platter' : ' platters') : 'Send all ' + (st ? st.leftTot : '');
   });
   document.addEventListener('keydown', function (e) {
-    if (!sheetEl) return;
+    if (!sheetEl || e.defaultPrevented) return;
+    var panel = sheetEl.querySelector('.fn-sheet'), owner = e.target.closest && e.target.closest('[aria-modal="true"], dialog[open]');
+    if (owner && owner !== panel) return;
     if (e.key === 'Escape') { e.preventDefault(); sheetClose(true); return; }
     if (e.key === 'Tab') {
-      var f = sheetEl.querySelectorAll('a[href], button'), first = f[0], last = f[f.length - 1];
-      if (!f.length) return;
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      var api = P() && P().book && P().book();
+      if (api && api.trapTab) api.trapTab(e, panel);
     }
   });
   window.addEventListener('hashchange', function () { sheetClose(false, true); if (location.hash !== '#/fn/now') PK = { who: '', r: {}, note: {} }; });
@@ -2168,9 +2298,9 @@
     // every booking from today on as the live list has them, removed ones included; null until the server answered
     live: function () { return F.state === 'ok' && F.all ? F.all.slice() : null; },
     // a page draws the slot: an open, so the Next function line is decided here (ahOpen())
-    bandSlot: function () { ahOpen(); var h = bandHTML(); lastBand = h; return '<div class="fn-band' + (AH.on ? ' is-ahead' : h && prepStrip() ? ' is-strip' : '') + '" id="fn-band" role="region" aria-label="' + (AH.on ? 'Next function' : 'Functions') + '"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
+    bandSlot: function () { ordersBandPerson(); ahOpen(); var h = bandHTML(); lastBand = h; return '<div class="fn-band' + (AH.on ? ' is-ahead' : h && prepStrip() ? ' is-strip' : '') + '" id="fn-band" role="region" aria-label="' + (AH.on ? 'Next function' : 'Functions') + '"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
     landSlot: function (home) { landHome = !!home; var h = landHTML(); return '<div id="fn-land"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
-    homeRows: fnHomeRows,
+    homeRows: fnHomeRows, homeReadHTML: homeReadHTML,
     // Home's Function this week card and Next function line, under Your day (js/prep.js homeSlot()): drawn at Home's open
     // with its own spoken status beside it (kept apart from the redrawn slot, so a Got it is heard once and never carried over)
     homeAhead: function () { huOpen(); var h = huHTML(); return '<div class="fn-hm" id="fn-hm"' + (h ? '' : ' hidden') + '>' + h + '</div><span class="visually-hidden" role="status" id="fn-hm-say"></span>'; },

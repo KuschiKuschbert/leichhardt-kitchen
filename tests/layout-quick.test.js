@@ -56,8 +56,11 @@ const onTop = (p, sel) => p.evaluate(s => {
       }
     }
     await L.adminTab(p, 'people'); await L.settle(p, 300);
-    const h = await p.evaluate(() => Math.max(...[...document.querySelectorAll('[data-p="a-reset-pin"]')].map(e => e.getBoundingClientRect().height)));
+    await L.openPerson(p, 'ann');
+    const pin = await p.locator('#pp-editor [data-p="a-reset-pin"]').boundingBox();
+    const h = pin ? pin.height : 0;
     ok(h > 0 && h <= 52, w + ' admin: Reset PIN fits on one line (' + Math.round(h) + ' px high)');
+    ok(await p.locator('.lv[data-lv="people"]').isVisible() === (w >= 1000), w + ' admin: the editor shares the screen with the roster only on desktop');
     ok(p.errors.length === 0, w + ' admin: no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }

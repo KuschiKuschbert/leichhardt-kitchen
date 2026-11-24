@@ -11,3 +11,6 @@ window.LK_FIREBASE = {
   // says the request came from the real site; once Enforce is on in the Firebase console, nothing else gets through.
   appCheckEnterpriseKey: '6LfIyfYtAAAAAGhFk-Cbb2biycRCkCD3uhAQcbvT'
 };
+
+// The weekly sales pilot is enabled for this book. Other venues get their own generated settings.
+window.LK_SUPPLIER_SALES_ENABLED = true;

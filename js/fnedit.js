@@ -159,6 +159,11 @@
     if (d.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email.trim())) out.push({ k: 'email', t: 'Email: that does not look like an email address.' });
     return out;
   }
+  var CONTACT_FIELDS = ['cname', 'phone', 'email'];
+  function contactChanges(d, saved) {
+    saved = saved || {};
+    return CONTACT_FIELDS.filter(function (k) { return d[k] !== (saved[k] || ''); });
+  }
 
   /* ---------- the schedule: worked out again when what it is made from changes, never over a grid set by hand ---------- */
   /* A round time set by hand (h on the round, never saved) stays when the first round, Rounds or the gap changes; the line
@@ -259,8 +264,8 @@
       }).join('') + '</ul>' + (tot.length ? '<p class="fe-dtot">Confirmed for the day: ' + tot.map(function (r) { return r.qty + ' ' + esc(M.short(r.name)); }).join(', ') + '</p>' : '') + '</section>';
     }).join('');
     return head + (drafts.indexOf(draftKey('new')) >= 0 ? '<p class="fe-note">A new function you started is not saved yet. <a href="#/functions/new">Carry on with it</a>.</p>' : '') +
-      '<div class="field"><label class="label" for="fe-q">Search</label><input id="fe-q" class="search" data-ff="q" value="' + esc(E.q) + '" placeholder="Name or place" autocomplete="off"></div>' +
-      '<div class="chips scroll" role="group" aria-label="Show">' + CHIPS.map(function (c) { return '<button type="button" class="chip" data-fe="chip" data-v="' + c[0] + '" aria-pressed="' + (E.chip === c[0]) + '">' + c[1] + ' <span class="lv-n">' + E.list.filter(function (f) { return inChip(f, c[0]); }).length + '</span></button>'; }).join('') + '</div>' +
+      '<div class="fe-list-tools"><div class="field"><label class="label" for="fe-q">Search</label><input id="fe-q" class="search" data-ff="q" value="' + esc(E.q) + '" placeholder="Name or place" autocomplete="off"></div>' +
+      '<div class="chips scroll" role="group" aria-label="Show">' + CHIPS.map(function (c) { return '<button type="button" class="chip" data-fe="chip" data-v="' + c[0] + '" aria-pressed="' + (E.chip === c[0]) + '">' + c[1] + ' <span class="lv-n">' + E.list.filter(function (f) { return inChip(f, c[0]); }).length + '</span></button>'; }).join('') + '</div></div>' +
       (body || '<p class="hint">No functions here.</p>') + (E.listAt ? '<p class="hint">Read ' + esc(stamp(E.listAt)) + '. <button type="button" class="linkish" data-fe="reload">Read again</button></p>' : '');
   }
 
@@ -268,7 +273,7 @@
   function removeHTML(f, form) {
     if (!P.fnOK() || !f || !f.id || (!f.removed && f.status === 'confirmed')) return '';
     var busy = E.removing[f.id] || FN.statusBusy(f.id), restore = !!f.removed, confirm = armed('remove:' + f.id);
-    return '<button type="button" class="linkish" data-fe="' + (restore ? 'restore-row' : form ? 'remove' : 'remove-row') + '" data-id="' + esc(f.id) + '"' +
+    return '<button type="button" class="linkish' + (restore ? '' : ' lk-del') + '" data-fe="' + (restore ? 'restore-row' : form ? 'remove' : 'remove-row') + '" data-id="' + esc(f.id) + '"' +
       (busy ? ' disabled' : '') + ' aria-label="' + esc((restore ? 'Restore ' : confirm ? 'Tap again to delete ' : 'Delete ') + f.name) + '">' +
       (busy ? inkLabel('Saving...') : restore ? (form ? 'Restore function' : 'Restore') : confirm ? 'Tap again to delete function' : form ? 'Delete function' : 'Delete') + '</button>';
   }
@@ -330,27 +335,63 @@
       }
     }
     e.restored = !!kept && !copyOf;
+    e.contactOpen = contactProblems(e.d).length > 0;
     E.ed = e; keep(); draw();
     focusF('name');
   }
   function openId(id) {
-    var kept = lsGet(draftKey(id)), api = B(), owner = E.identity;
+    var kept = lsGet(draftKey(id)), api = B(), owner = E.identity, contactFromServer = false;
     var opening = E.ed = { id: id, loading: true }; draw();
     api.ready().then(function () {
       var fs = api.fs();
-      var g = function (ref) { return fs.getDocFromServer(ref).catch(function () { return fs.getDoc(ref); }); };
-      return Promise.all([g(api.docRef('functions', id)), g(api.docRef('fncontact', id)).catch(function () { return null; })]);
+      var g = function (ref, contact) {
+        return fs.getDocFromServer(ref).then(function (snap) {
+          if (contact) contactFromServer = true;
+          return snap;
+        }, function () { return fs.getDoc(ref); });
+      };
+      return Promise.all([g(api.docRef('functions', id)), g(api.docRef('fncontact', id), true).catch(function () { return null; })]);
     }).then(function (r) {
       if (E.ed !== opening || !owned(owner)) return;
       if (!r[0].exists()) { E.ed = { id: id, missing: true }; draw(); return; }
-      var f = M.derive(Object.assign({ id: id }, r[0].data())), c = r[1] && r[1].exists() ? r[1].data() : {};
-      // cMiss: the contact could not be read on this phone (no PIN session for a function manager, or no signal)
-      var e = { id: id, isNew: false, v: f.v, status: f.status, saved: f, savedC: c, cMiss: r[1] === null, d: fromDoc(f, c) };
-      if (kept && !f.removed) { try { var k = JSON.parse(kept); if (k && k.d && (!k.identity || k.identity === owner)) { e.d = k.d; if (e.d.mode === 'stag' && Array.isArray(e.d.rounds)) markHand(e.d); e.status = k.status || e.status; e.restored = true; e.keptV = k.v; } } catch (x) {} }
+      var f = M.derive(Object.assign({ id: id }, r[0].data())), snap = r[1], meta = snap && snap.metadata;
+      var c = snap && snap.exists() ? snap.data() : {};
+      // A failed server read can fall back to an empty copy. Only a current answer can verify an empty contact.
+      var verified = meta ? meta.fromCache === false && !meta.hasPendingWrites : contactFromServer;
+      var contactRead = !snap ? 'unavailable' : verified ? 'verified' : 'unverified';
+      var e = { id: id, isNew: false, v: f.v, status: f.status, saved: f, savedC: c, contactRead: contactRead, d: fromDoc(f, c) };
+      if (kept && !f.removed) {
+        try {
+          var k = JSON.parse(kept);
+          if (k && k.d && (!k.identity || k.identity === owner)) restoreDraft(e, k);
+        } catch (x) {}
+      }
+      e.contactOpen = contactRead !== 'verified' || e.legacyContactV != null || contactProblems(e.d).length > 0;
       E.ed = e; draw();
     }, function () { if (E.ed === opening && owned(owner)) { E.ed = { id: id, failed: true }; draw(); } });
   }
-  function keep() { var e = E.ed; if (!e || !e.d || workLock() || !owned(E.identity)) return; lsSet(draftKey(e.isNew ? 'new' : e.id), JSON.stringify({ identity: E.identity, id: e.id, isNew: e.isNew, v: e.v, status: e.status, d: e.d, saved: e.isNew ? null : undefined })); }
+  function restoreDraft(e, kept) {
+    if (Array.isArray(kept.contactEdits)) {
+      // Restore only contact fields this manager changed. The rest belongs to the freshly loaded contact.
+      CONTACT_FIELDS.forEach(function (k) { if (kept.contactEdits.indexOf(k) < 0) kept.d[k] = e.d[k]; });
+    } else if (kept.v != null && (kept.v !== e.v || e.contactRead !== 'verified') && contactChanges(kept.d, e.savedC).length) {
+      // An older local draft has no field intents. Keep its values and let the existing conflict check ask before replacing.
+      e.legacyContactV = kept.v;
+    }
+    e.d = kept.d;
+    if (e.d.mode === 'stag' && Array.isArray(e.d.rounds)) markHand(e.d);
+    e.status = kept.status || e.status;
+    e.restored = true;
+  }
+  function keep() {
+    var e = E.ed;
+    if (!e || !e.d || workLock() || !owned(E.identity)) return;
+    var legacy = e.legacyContactV != null;
+    lsSet(draftKey(e.isNew ? 'new' : e.id), JSON.stringify({
+      identity: E.identity, id: e.id, isNew: e.isNew, v: legacy ? e.legacyContactV : e.v,
+      status: e.status, d: e.d, saved: e.isNew ? null : undefined, contactEdits: legacy ? undefined : contactChanges(e.d, e.savedC)
+    }));
+  }
   function forget(e) { lsSet(draftKey(e.isNew ? 'new' : e.id), ''); }
   function dirty() {
     var e = E.ed; if (!e || !e.d) return false;
@@ -407,7 +448,7 @@
       var flag = !r ? '<span class="fe-flag">No longer in the book. Check with the head chef.</span>' : now_ && l.fp && now_.fp !== l.fp ? '<span class="fe-flag">Changed in the book since it was booked: ' + esc(now_.name) + '. Check it still suits.</span>' : '';
       return '<li class="fe-line"><div class="fe-ln"><b>' + esc(l.name) + '</b><small>' + esc(l.spec) + '</small>' + flag + '</div>' +
         '<div class="fe-lq"><label class="visually-hidden" for="fe-qty' + i + '">How many ' + esc(l.name) + '</label><input id="fe-qty' + i + '" class="search fe-num" type="number" inputmode="numeric" min="1" max="' + M.MAX_QTY + '" step="1" data-ff="qty' + i + '" value="' + esc(l.qty) + '"' + ((e.shown || []).some(function (x) { return x.k === 'qty' + i; }) ? ' aria-invalid="true"' : '') + '><span>' + esc(M.unitOf(l, +l.qty)) + '</span></div>' +
-        '<button type="button" class="p-x" data-fe="rmline" data-i="' + i + '" aria-label="Take ' + esc(l.name) + ' off">' + (armed('rm' + i) ? 'Tap again' : 'Take off') + '</button>' + fieldErr('qty' + i) + '</li>';
+        '<button type="button" class="p-x' + (armed('rm' + i) ? ' lk-del' : '') + '" data-fe="rmline" data-i="' + i + '" aria-label="Take ' + esc(l.name) + ' off">' + (armed('rm' + i) ? 'Tap again' : 'Take off') + '</button>' + fieldErr('qty' + i) + '</li>';
     }).join('') + '</ul>';
     var left = cat.filter(function (c) { return !have[c.rid] && (!q || c.name.toLowerCase().indexOf(q) >= 0); });
     if (d.lines.length < M.MAX_LINES) {
@@ -425,7 +466,7 @@
         '<label class="visually-hidden" for="fe-rt' + ri + '">Round ' + (ri + 1) + ' time</label>' + tboxHTML('rt' + ri, r.t) +
         (nextDay ? '<small class="fe-nd">' + esc(M.dayName(r.d)) + (r.d === M.addDays(d.date, 1) ? ' (next day)' : '') + '</small>' : '') +
         '<label class="visually-hidden" for="fe-rn' + ri + '">Round ' + (ri + 1) + ' note</label><input id="fe-rn' + ri + '" class="search fe-rnote" data-ff="rn' + ri + '" value="' + esc(r.note) + '" placeholder="Note (optional)" maxlength="80">' +
-        (t ? '' : '<button type="button" class="p-x" data-fe="rmround" data-i="' + ri + '">Remove round</button>') + '</div></th>' +
+        (t ? '' : '<button type="button" class="p-x lk-del" data-fe="rmround" data-i="' + ri + '">Remove round</button>') + '</div></th>' +
         d.lines.map(function (l, li) { return '<td><label class="visually-hidden" for="fe-a' + li + '_' + ri + '">' + esc(M.short(l.name)) + ', round ' + (ri + 1) + '</label><input id="fe-a' + li + '_' + ri + '" class="search fe-num" type="number" inputmode="numeric" min="0" step="1" data-ff="a' + li + '_' + ri + '" value="' + esc(l.a[ri] == null ? 0 : l.a[ri]) + '"></td>'; }).join('') +
         '<td><b>' + t + '</b></td></tr>';
     }).join('');
@@ -442,7 +483,7 @@
     out += '<div class="fe-row2">' + inp('foodDate', d.mode === 'all' ? 'Food goes out on' : 'First round on', d.foodDate, ' type="date"') + '<div class="field fe-f"><label class="label" for="fe-foodT">' + (d.mode === 'all' ? 'Food goes out at' : 'First round at') + '</label>' + tboxHTML('foodT', d.foodT) + (d.foodSet ? '' : '<span class="hint">Same as the event start until you change it.</span>') + '</div></div>';
     if (d.mode === 'stag') {
       out += '<div class="fe-row2">' + inp('n', 'Rounds', d.n, ' type="number" inputmode="numeric" min="2" max="' + M.MAX_ROUNDS + '" step="1"') + inp('gap', 'Minutes between rounds', d.gap, ' type="number" inputmode="numeric" min="1" max="600" step="5"') + '</div>' + handHTML(d) +
-        '<p class="hint">' + (d.custom ? 'Split by hand. Changing the rounds keeps your numbers; ' : 'Split evenly, earlier rounds first (5 over 3 is 2, 2, 1). Type in the grid to split by hand. ') + '<button type="button" class="linkish" data-fe="even">' + (armed('even') ? 'Tap again to split evenly' : 'Split evenly again') + '</button></p>' + gridHTML(e);
+        '<p class="hint">' + (d.custom ? 'Split by hand. Changing the rounds keeps your numbers; ' : 'Split evenly, earlier rounds first (5 over 3 is 2, 2, 1). Type in the grid to split by hand. ') + '<button type="button" class="linkish' + (armed('even') ? ' lk-del' : '') + '" data-fe="even">' + (armed('even') ? 'Tap again to split evenly' : 'Split evenly again') + '</button></p>' + gridHTML(e);
     } else if (d.lines.length) {
       out += '<p class="fe-allline">All at ' + esc(cleanT(d.foodT) ? d.foodT : 'a time to come') + ': ' + esc(d.lines.map(function (l) { return (int(l.qty) || 0) + ' ' + M.short(l.name); }).join(', ')) + '</p>';
     }
@@ -457,7 +498,7 @@
     var names = and(hs.map(function (i) { return String(i + 1); })), times = and(hs.map(function (i) { return d.rounds[i].t || 'no time'; }));
     var go = one ? 'Tap again: round ' + names + (g ? ' goes to ' + M.kclock(g) : ' follows the gap') : 'Tap again: rounds ' + names + ' follow the gap';
     return '<p class="hint fe-hand">' + esc((one ? 'Round ' : 'Rounds ') + names + ' set by hand (' + times + '). Changing the first round, Rounds or the gap keeps ' + (one ? 'it' : 'them') + '; ') +
-      '<button type="button" class="linkish" data-fe="regrid">' + esc(armed('regrid') ? go : 'Work the times out again') + '</button></p>';
+      '<button type="button" class="linkish' + (armed('regrid') ? ' lk-del' : '') + '" data-fe="regrid">' + esc(armed('regrid') ? go : 'Work the times out again') + '</button></p>';
   }
   function and(xs) { return xs.length < 2 ? xs.join('') : xs.slice(0, -1).join(', ') + ' and ' + xs[xs.length - 1]; }
   function liveHTML(e) {
@@ -474,6 +515,27 @@
       FN.sheetHTML(f, false, true).replace(/<div class="btn-row(?: fn-acts)?">[\s\S]*$/, '') + msgHTML(e) +
       '<div class="btn-row"><button type="button" class="btn dark ink-busy-button" data-fe="confirm"' + (e.saving ? ' disabled aria-busy="true"' : '') + '>' + (e.saving ? inkLabel('Saving...') : e.status === 'cancelled' ? 'Put it back on' : 'Confirm function') + '</button><button type="button" class="btn" data-fe="print">Print function</button></div></section>';
   }
+  function contactSummary(e) {
+    if (e.contactRead === 'unavailable') return 'Contact unavailable';
+    if (e.contactRead === 'unverified') return 'Contact not verified';
+    if (e.legacyContactV != null) return 'Contact from older draft';
+    var d = e.d;
+    return d.cname.trim() || (d.phone || d.email ? 'Contact details entered' : 'No contact added');
+  }
+  function contactAction(e) {
+    if (e.contactOpen) return 'Hide contact';
+    return e.d.cname || e.d.phone || e.d.email || e.contactRead && e.contactRead !== 'verified' ? 'Edit contact' : 'Add contact';
+  }
+  function contactHTML(e) {
+    var d = e.d;
+    var note = e.contactRead === 'unavailable' ? 'The contact could not be read on this phone. It stays as it is unless you type a new one. Sign out and in again with your PIN to see it.' :
+      e.contactRead === 'unverified' ? 'The saved contact has not been verified. Reopen the booking when you have a signal.' :
+      e.legacyContactV != null ? 'These details are from the draft on this device. Check them before replacing the saved contact.' : '';
+    return '<div class="fe-contact"><div class="fe-contact-row"><span><span class="label">Booking contact</span> <span class="fe-sum">' + esc(contactSummary(e)) + '</span></span>' +
+      '<button type="button" class="btn" data-fe="contact" aria-expanded="' + !!e.contactOpen + '" aria-controls="fe-contact-fields">' + contactAction(e) + '</button></div>' +
+      (note ? '<p class="hint fe-cmiss">' + esc(note) + '</p>' : '') + '<div id="fe-contact-fields"' + (e.contactOpen ? '' : ' hidden') + '>' +
+      inp('cname', 'Contact name', d.cname, ' maxlength="80" autocomplete="off"') + '<div class="fe-row2">' + inp('phone', 'Phone (optional)', d.phone, ' type="tel" maxlength="30" autocomplete="off"') + inp('email', 'Email (optional)', d.email, ' type="email" maxlength="120" autocomplete="off"') + '</div></div></div>';
+  }
   function editHTML() {
     var e = E.ed;
     if (e.loading) return loading('Opening the function...', 'chef', 3);
@@ -484,32 +546,39 @@
     if (e.review) return '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(d.name || 'New function') + '</h2></div>' + reviewHTML(e);
     var stTag = st === 'draft' ? '<span class="fn-tag">Draft: the kitchen does not see it</span>' : st === 'cancelled' ? '<span class="fn-tag fn-t-off">Cancelled</span>' : '<span class="fn-tag fn-t-ok">Confirmed: in the kitchen\'s band on the day</span>';
     var out = '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(e.isNew ? 'New function' : (s.name || 'Function')) + '</h2><div class="btn-row">' + stTag + (e.savedAt && !dirty() ? '<span class="lk-stamp">Saved ' + esc(e.savedAt) + '</span>' : '') + '<button type="button" class="btn" data-fe="print"' + (e.saving ? ' disabled' : '') + '>Print function</button></div></div>' +
-      (e.restored ? '<p class="fe-note">Changes not saved yet were kept on this device and are back in the form. <button type="button" class="linkish" data-fe="drop">' + (armed('drop') ? 'Tap again to drop them' : 'Drop them') + '</button></p>' : '') +
+      (e.restored ? '<p class="fe-note">Changes not saved yet were kept on this device and are back in the form. <button type="button" class="linkish lk-del" data-fe="drop">' + (armed('drop') ? 'Tap again to drop them' : 'Drop them') + '</button></p>' : '') +
       (!e.isNew ? '<p class="hint">Last changed by ' + esc(FN.nameOf(s.by)) + ', ' + esc(stamp(s.upd)) + '. Version ' + s.v + '.</p>' : '') +
       '<section class="set-block"><span class="label">The function</span>' + inp('name', 'Name or reference', d.name, ' maxlength="80" autocomplete="off" placeholder="Smith birthday"') +
       '<div class="fe-row2">' + inp('date', 'Date', d.date, ' type="date"') + startHTML(d) + '</div>' +
       '<div class="fe-row2">' + guestsHTML(d) + inp('loc', 'Room, area or table (optional)', d.loc, ' maxlength="60" list="fe-locs" autocomplete="off"') + '</div>' +
-      '<datalist id="fe-locs">' + locs().map(function (l) { return '<option value="' + esc(l) + '">'; }).join('') + '</datalist></section>' +
-      // the contact folds away once it is filled in (only function managers see it, never the kitchen)
-      '<details class="set-block fe-contact"' + (d.cname || d.phone || d.email ? '' : ' open') + ((e.shown || []).some(function (x) { return x.k === 'phone' || x.k === 'email'; }) ? ' open' : '') + '><summary><span class="label">Booking contact</span> <span class="fe-sum">' + esc([d.cname, d.phone].filter(Boolean).join(', ') || 'Only function managers see this') + '</span></summary>' +
-      (e.cMiss ? '<p class="hint fe-cmiss">The contact could not be read on this phone. It stays as it is unless you type a new one. Sign out and in again with your PIN to see it.</p>' : '') +
-      inp('cname', 'Contact name', d.cname, ' maxlength="80" autocomplete="off"') + '<div class="fe-row2">' + inp('phone', 'Phone (optional)', d.phone, ' type="tel" maxlength="30" autocomplete="off"') + inp('email', 'Email (optional)', d.email, ' type="email" maxlength="120" autocomplete="off"') + '</div></details>' +
+      '<datalist id="fe-locs">' + locs().map(function (l) { return '<option value="' + esc(l) + '">'; }).join('') + '</datalist>' + contactHTML(e) + '</section>' +
       '<section class="set-block"><span class="label">Platters</span><span class="hint">Whole platters, as booked. Guests never change them.</span>' + linesHTML(e) + '</section>' +
       '<section class="set-block"><span class="label">When the platters go out</span>' + serviceHTML(e) + '</section>' +
       '<section class="set-block"><span class="label">Service and dietary notes</span><label class="visually-hidden" for="fe-notes">Service and dietary notes</label><textarea id="fe-notes" class="search fe-ta" data-ff="notes" maxlength="1000" rows="3" placeholder="Two guests coeliac: keep their platter apart.">' + esc(d.notes) + '</textarea></section>' +
       '<section class="set-block fe-kcb"><span class="label">Kitchen comment</span><span class="hint">The kitchen reads this with your name and the time. No phone numbers or emails.</span>' +
       '<label class="visually-hidden" for="fe-kc">Kitchen comment</label><textarea id="fe-kc" class="search fe-ta" data-ff="kc" maxlength="2000" rows="4">' + esc(d.kc) + '</textarea>' +
       (s && s.kc ? '<span class="hint">Saved comment by ' + esc(FN.nameOf(s.kcBy)) + ', ' + esc(stamp(s.kcAt)) + '.</span>' : '') + '</section>' +
-      '<div class="fe-bar" id="fe-live">' + liveHTML(e) + '</div>' + problemsHTML(e) + msgHTML(e) + buttonsHTML(e) + (e.isNew ? '' : histHTML(e));
+      // the bar holds the Save buttons, like the recipe editor's (the consistency sweep, step 3, head chef 20 Nov 2026): the
+      // summary (#fe-live, drawn again while typing, so the buttons are never replaced under a finger), Saving... or the red
+      // reason, a conflict, each right above the Save that was tapped, then Save. Duplicate, Cancel function and History
+      // stay at the foot.
+      '<div class="fe-bar sv-dock"><div class="fe-live" id="fe-live">' + liveHTML(e) + '</div>' + stateHTML(e) + conflictHTML(e) + saveRowHTML(e) + '</div>' +
+      problemsHTML(e) + moreRowHTML(e) + (e.isNew ? '' : histHTML(e));
     return out;
   }
-  function msgHTML(e) {
+  function msgHTML(e) { return conflictHTML(e) + stateHTML(e); }
+  function conflictHTML(e) {
     var out = '';
     if (e.conflict) {
       var c = e.conflict;
       out += '<div class="fe-conflict" role="alert"><p><b>Someone else saved this function</b> (' + esc(c.who || 'another device') + ', ' + esc(stamp(c.when)) + ', version ' + c.v + ') after you opened it. Saving now would put your copy over theirs.</p>' +
-        '<div class="btn-row"><button type="button" class="btn" data-fe="theirs">' + (armed('theirs') ? 'Tap again: your changes go' : 'Load theirs (yours here go)') + '</button><button type="button" class="btn dark" data-fe="mine">Keep mine and save over theirs</button></div></div>';
+        '<div class="btn-row"><button type="button" class="btn' + (armed('theirs') ? ' lk-del' : '') + '" data-fe="theirs">' + (armed('theirs') ? 'Tap again: your changes go' : 'Load theirs (yours here go)') + '</button><button type="button" class="btn dark" data-fe="mine">Keep mine and save over theirs</button></div></div>';
     }
+    return out;
+  }
+  // Saving..., the waiting line, or the red reason a save failed
+  function stateHTML(e) {
+    var out = '';
     if (e.saving) out += '<p class="fe-saving" role="status">' + esc(e.saving) + '</p>';
     if (e.msg) out += '<p class="p-err" role="alert">' + esc(e.msg) + '</p>';
     return out;
@@ -518,7 +587,8 @@
     if (!e.shown || !e.shown.length) return '';
     return '<div class="fe-probs" role="alert"><b>Before it can be confirmed:</b><ul>' + e.shown.map(function (p) { return '<li><button type="button" class="linkish" data-fe="goto" data-v="' + esc(p.k) + '">' + esc(p.t) + '</button></li>'; }).join('') + '</ul></div>';
   }
-  function buttonsHTML(e) {
+  // the Save buttons, in the bar
+  function saveRowHTML(e) {
     var st = e.status, dis = e.saving || E.removing[e.id] || FN.statusBusy(e.id) ? ' disabled' : '', b = [];
     // Save draft and Save changes are off with nothing to save (saveSync() keeps them in step while typing)
     var sdis = e.saving ? ' disabled aria-busy="true"' : dis || (!canSave() ? ' disabled' : '');
@@ -526,11 +596,15 @@
     if (st === 'draft') { b.push('<button type="button" class="btn dark" data-fe="review"' + dis + '>Check and confirm</button>'); b.push('<button type="button" class="btn ink-busy-button" data-fe="save"' + sdis + '>' + (e.saving ? inkLabel('Saving...') : again || 'Save draft') + '</button>'); }
     else if (st === 'confirmed') b.push('<button type="button" class="btn dark ink-busy-button" data-fe="save"' + sdis + '>' + (e.saving ? inkLabel('Saving...') : again || 'Save changes') + '</button>');
     else b.push('<button type="button" class="btn dark" data-fe="review"' + dis + '>Put it back on</button>');
+    return '<div class="btn-row fe-btns">' + b.join('') + '</div>';
+  }
+  // the rest, at the foot of the form: Duplicate, Cancel function or Delete, Drop my changes
+  function moreRowHTML(e) {
     var more = [];
     if (!e.isNew) more.push('<button type="button" class="btn" data-fe="dup">Duplicate</button>');
     if (!e.isNew && e.saved) { more.push(FN.statusHTML(e.saved, 'fe')); more.push(removeHTML(e.saved, true)); }
-    if (dirty()) more.push('<button type="button" class="btn" data-fe="drop">' + (armed('drop') ? 'Tap again to drop your changes' : 'Drop my changes') + '</button>');
-    return '<div class="btn-row fe-btns">' + b.join('') + '</div>' + (more.length ? '<div class="btn-row">' + more.join('') + '</div>' : '');
+    if (dirty()) more.push('<button type="button" class="btn lk-del" data-fe="drop">' + (armed('drop') ? 'Tap again to drop your changes' : 'Drop my changes') + '</button>');
+    return more.length ? '<div class="btn-row">' + more.join('') + '</div>' : '';
   }
   function histHTML(e) {
     var h = e.hist;
@@ -566,6 +640,7 @@
     var contactBad = guestProblems(e.d).concat(timeProblems(e.d), contactProblems(e.d));
     if ((next === 'confirmed' && probs.length) || contactBad.length) { e.shown = next === 'confirmed' ? probs : contactBad; e.review = false; draw(); goto(e.shown[0].k); return; }
     var api = B(), id = e.id, me = api.who(), owner = E.identity, submitted = clone(e.d), context = api.writeContext ? api.writeContext() : null;
+    var contactSubmitted = false;
     e.saving = 'Saving...'; e.shown = []; draw();
     var slow = setTimeout(function () { if (E.ed === e && e.saving) { e.saving = 'Waiting for the signal. Your changes are kept on this device.'; draw(); } }, 5000);
     api.ready().then(function () {
@@ -576,7 +651,13 @@
       var lock = workLock();
       if (!P.fnOK() && !(context && lock && lock.identity === owner)) throw { code: 'permission-denied' };
       var sv = server === 'offline' ? e.v : (server ? server.v : 0);
-      if (server !== 'offline' && sv !== e.v) {
+      if (e.legacyContactV != null && (server === 'offline' || e.contactRead !== 'verified')) {
+        clearTimeout(slow); e.saving = '';
+        e.msg = 'Not saved. Reopen the booking with a signal to check the contact from your older draft.';
+        draw(); return null;
+      }
+      var expected = e.legacyContactV != null ? e.legacyContactV : e.v;
+      if (server !== 'offline' && sv !== expected) {
         clearTimeout(slow); e.saving = '';
         e.conflict = { v: sv, who: server ? FN.nameOf(server.by) : '', when: server && server.upd, doc: server };
         draw(); return null;
@@ -611,7 +692,8 @@
       // the contact is written only when it changed (22 Oct 2026, review S9), so a phone that could not read it never
       // saves blanks over it
       var con = { cname: submitted.cname.trim().slice(0, 80), phone: submitted.phone.trim().slice(0, 30), email: submitted.email.trim().slice(0, 120) }, conWas = e.savedC || {};
-      if (con.cname !== (conWas.cname || '') || con.phone !== (conWas.phone || '') || con.email !== (conWas.email || '')) ops.push(['set', api.docRef('fncontact', id), Object.assign(con, { upd: t })]);
+      contactSubmitted = contactChanges(con, conWas).length > 0;
+      if (contactSubmitted) ops.push(['set', api.docRef('fncontact', id), Object.assign(con, { upd: t })]);
       return api.W(ops.concat(FN.prepOps(api, prev, f, id, t), FN.orderOps(api, prev, f, id, t)), context).then(function () { return f; });
     }).then(function (f) {
       clearTimeout(slow);
@@ -622,6 +704,7 @@
       var wasNew = e.isNew;
       forget(e);
       e.isNew = false; e.v = f.v; e.status = f.status; e.saved = f; e.savedC = { cname: submitted.cname.trim(), phone: submitted.phone.trim(), email: submitted.email.trim() }; if (!changed) e.d = fromDoc(f, e.savedC);
+      if (wasNew || contactSubmitted) e.contactRead = 'verified';
       e.saving = ''; e.conflict = null; e.review = false; e.restored = false; e.hist = null;
       // the page goes back to its top, as before: the stamp beside the status says the save went through (5 Nov 2026)
       e.savedAt = M.kclock(f.upd);
@@ -638,6 +721,7 @@
     });
   }
   function goto(k) {
+    if (CONTACT_FIELDS.indexOf(k) >= 0 && E.ed && !E.ed.contactOpen) { E.ed.contactOpen = true; draw(); }
     var el = E.root && (E.root.querySelector('[data-ff="' + k + '"]') || E.root.querySelector('#fe-e-' + k));
     if (!el && /^alloc\d+$/.test(k)) el = E.root.querySelector('[data-ff^="a' + k.slice(5) + '_"]');
     if (!el && /^round\d+$/.test(k)) el = E.root.querySelector('[data-ff="rt' + k.slice(5) + '"]');
@@ -651,6 +735,20 @@
     if (!active() || E.drawing) return;
     E.drawing = true;
     try { drawNow(); } finally { E.drawing = false; }
+    feBarWatch();
+  }
+  /* The slip after a save sits above the bar (the consistency sweep, step 3, 20 Nov 2026): the bar now holds Save and
+     its height follows its words and the fonts, so the slip's lift (--toast-lift in css/app.css) reads the bar's own
+     height from --fe-bar-h, kept right by a ResizeObserver, instead of a fixed guess. */
+  var feBarObs = null, feBarEl = null;
+  function feBarSize() { var h = feBarEl && feBarEl.isConnected ? feBarEl.offsetHeight : 0; if (h) document.documentElement.style.setProperty('--fe-bar-h', h + 'px'); else document.documentElement.style.removeProperty('--fe-bar-h'); }
+  function feBarWatch() {
+    var bar = E.root && E.root.querySelector('.fe-bar');
+    if (bar === feBarEl) { feBarSize(); return; }
+    if (feBarObs) feBarObs.disconnect();
+    feBarEl = bar;
+    if (bar && window.ResizeObserver) { feBarObs = new ResizeObserver(feBarSize); feBarObs.observe(bar); }
+    feBarSize();
   }
   function drawNow() {
     var a = document.activeElement, k = a && E.root.contains(a) && a.getAttribute('data-ff'), ss = k && a.selectionStart, se = k && a.selectionEnd;
@@ -683,6 +781,10 @@
     else if (k === 'st') { d.st = !!v; if (v) d.startT = ''; retime(e); }
     else if (k === 'gu') { d.gu = !!v; if (v) d.guests = ''; }
     else if (k in d) d[k] = v;
+    if (CONTACT_FIELDS.indexOf(k) >= 0 && E.root) {
+      var summary = E.root.querySelector('.fe-contact .fe-sum');
+      if (summary) summary.textContent = contactSummary(e);
+    }
     if (e.shown && e.shown.length) e.shown = check({ d: d, status: 'confirmed' }).filter(function (p) { return e.shown.some(function (s) { return s.k === p.k; }); });
     keep();
     if (!quiet) { if (structural) draw(); else { live(); saveSync(); } }
@@ -842,6 +944,12 @@
     }
     if (!e || !e.d) return;
     var d = e.d;
+    if (a === 'contact') {
+      e.contactOpen = !e.contactOpen;
+      draw();
+      E.root.querySelector('[data-fe="contact"]').focus({ preventScroll: true });
+      return;
+    }
     if (a === 'print') {
       if (e.saving) return;
       if (!FN.print) { toast('Reload the book to update function printing. Your changes are kept on this device.'); return; }
@@ -874,10 +982,10 @@
     }
     if (a === 'confirm') { save('confirm'); return; }
     if (a === 'dup') { var src = clone(d); history.pushState(null, '', '#/functions/new'); if (window.LK_APP && window.LK_APP.noteRoute) window.LK_APP.noteRoute(false); E.sub = ['new']; openNew(src); return; }
-    if (a === 'drop') { if (!arm('drop')) return; forget(e); if (e.isNew) { E.ed = null; window.LK_APP.returnTo('#/functions'); return; } e.d = fromDoc(e.saved, e.savedC); e.status = e.saved.status; e.restored = false; e.shown = []; draw(); return; }
+    if (a === 'drop') { if (!arm('drop')) return; forget(e); if (e.isNew) { E.ed = null; window.LK_APP.returnTo('#/functions'); return; } e.d = fromDoc(e.saved, e.savedC); e.status = e.saved.status; e.legacyContactV = null; e.restored = false; e.shown = []; draw(); return; }
     // their version over the changes typed here: a second tap first, like Drop my changes (29 Oct 2026)
     if (a === 'theirs') { if (dirty() && !arm('theirs')) return; forget(e); E.ed = null; openId(e.id); return; }
-    if (a === 'mine') { e.v = e.conflict.v; e.saved = e.conflict.doc; e.conflict = null; save(e.status === 'confirmed' ? 'save' : 'save'); return; }
+    if (a === 'mine') { e.v = e.conflict.v; e.saved = e.conflict.doc; e.legacyContactV = null; e.conflict = null; save('save'); return; }
     if (a === 'hist') { loadHist(); return; }
   });
   function focusF(k) { var el = E.root && E.root.querySelector('[data-ff="' + k + '"]'); if (el) el.focus({ preventScroll: true }); }
@@ -909,7 +1017,7 @@
   function drop() { unarm(); E.pending = {}; E.ed = null; E.list = null; E.listAsk = 0; E.removing = {}; E.sub = []; E.identity = ''; E.suspended = false; E.root = null; }
   function unmount() {
     var hadRoot = !!E.root, lock = workLock();
-    flushPending(); E.root = null;
+    flushPending(); E.root = null; feBarWatch();
     if (lock && lock.identity === E.identity || E.suspended && E.identity === identity()) E.suspended = true;
     else { E.sub = []; E.ed = null; E.suspended = false; }
     if (toastEl) toastEl.innerHTML = '';

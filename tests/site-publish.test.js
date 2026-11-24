@@ -146,7 +146,38 @@ clearAnswers(); deployments([{ sha: 'f'.repeat(40), state: 'success' }]);
 r = run(decide, { EVENT: 'push' });
 eq([r.status, r.deploy], [0, 'true'], 'a live commit this copy does not know: publishes');
 
-// 3. Live click tests follow a real publish only
+// 3. Deploy waits for the artifact produced by this attempt.
+const publish = wf('publish-site.yml');
+const waitArtifact = stepScript(publish, "Wait for this attempt's Pages artifact");
+ok(publish.includes('PAGES_ARTIFACT_NAME: github-pages-${{ github.run_attempt }}') &&
+  publish.includes('name: ${{ env.PAGES_ARTIFACT_NAME }}') &&
+  publish.includes('artifact_name: ${{ env.PAGES_ARTIFACT_NAME }}'), 'upload and Deploy use the same attempt-specific artifact name');
+
+const artifactApi = 'repos/k/book/actions/runs/7/artifacts?name=github-pages-2&per_page=100';
+const artifactEnv = { GITHUB_REPOSITORY: 'k/book', GITHUB_RUN_ID: '7', PAGES_ARTIFACT_NAME: 'github-pages-2', PAGES_ARTIFACT_ID: '42' };
+const artifact = { id: 42, name: 'github-pages-2', expired: false };
+const older = { id: 41, name: 'github-pages-1', expired: false };
+const artifactPath = path.join(answers, artifactApi.replace(/[^A-Za-z0-9]/g, '_') + '.json');
+const delayedPath = path.join(tmp, 'delayed-artifacts.json');
+fs.writeFileSync(delayedPath, JSON.stringify({ artifacts: [older, artifact] }));
+fs.writeFileSync(path.join(bin, 'sleep'), [
+  '#!/usr/bin/env bash',
+  'if [ "${ADD_ARTIFACT_AFTER_WAIT:-}" = yes ]; then cp "$DELAYED_ARTIFACTS" "$ARTIFACT_ANSWER"; fi',
+  ''
+].join('\n'), { mode: 0o755 });
+
+clearAnswers(); answer(artifactApi, { artifacts: [older] });
+eq(run(waitArtifact, { ...artifactEnv, ADD_ARTIFACT_AFTER_WAIT: 'yes', DELAYED_ARTIFACTS: delayedPath, ARTIFACT_ANSWER: artifactPath }).status, 0,
+  'Deploy waits through the older artifact until this attempt’s upload appears');
+answer(artifactApi, { artifacts: [older, { ...artifact, expired: true }, { ...artifact, id: 43 }] });
+r = run(waitArtifact, artifactEnv);
+eq(r.status, 1, 'Deploy rejects an expired artifact and a matching name with the wrong ID');
+ok(/did not become visible/.test(r.log), 'an artifact that stays unavailable gives a precise failure');
+answer(artifactApi, { artifacts: [artifact, { ...artifact, id: 43 }] });
+eq(run(waitArtifact, artifactEnv).status, 1, 'two live artifacts under the same name cannot reach Deploy');
+eq(run(waitArtifact, { ...artifactEnv, PAGES_ARTIFACT_ID: '' }).status, 1, 'a missing upload ID fails before deploying');
+
+// 4. Live click tests follow a real publish only
 const look = stepScript(wf('live-tests.yml'), 'Look at the publish run');
 function jobs(list) { answer('repos/k/book/actions/runs/7/jobs', { jobs: list.map(j => ({ name: j[0], conclusion: j[1] })) }); }
 clearAnswers();
@@ -158,8 +189,16 @@ jobs([['Check', 'success'], ['Deploy', 'skipped'], ['Published', 'success']]);
 eq(run(look, { EVENT: 'workflow_run', FROM: 'Publish site', RUN_ID: '7' }).run, 'false', 'live tests: not when nothing was published');
 clearAnswers();
 eq(run(look, { EVENT: 'workflow_run', FROM: 'Publish site', RUN_ID: '7' }).run, 'true', 'live tests: GitHub not answering runs them anyway');
+// A run that skips never cancels one that tests (24 Nov 2026): the cancelling sits on the test jobs, which a skipping
+// run never starts. At workflow level, #850's and #849's runs (nothing published) cancelled #851's live tests.
+const liveWf = wf('live-tests.yml');
+const jobBlock = name => { const m = new RegExp('^  ' + name + ':\\n([\\s\\S]*?)(?=^  [\\w-]+:\\n|(?![\\s\\S]))', 'm').exec(liveWf); return m ? m[1] : ''; };
+ok(!/^concurrency:/m.test(liveWf), 'live tests: no cancelling for the whole workflow, where a run that skips would cancel one that tests');
+ok(!/^    concurrency:/m.test(jobBlock('gate')), 'live tests: the publish look itself cancels nothing');
+ok(/^    concurrency:\n      group: live-tests-\$\{\{ matrix\.shard \}\}\n      cancel-in-progress: true$/m.test(jobBlock('test')), 'live tests: a newer run that tests replaces the older one share by share');
+ok(/^    concurrency:\n      group: live-tests-venues\n      cancel-in-progress: true$/m.test(jobBlock('venues')), 'live tests: and the venue copies check the same way');
 
-// 4. Publish rules waits for Published, which also runs when nothing needed publishing
+// 5. Publish rules waits for Published, which also runs when nothing needed publishing
 const access = stepScript(wf('publish-rules.yml'), 'access');
 commit(['firestore.rules'], 'rules only');
 clearAnswers(); jobs([['Check', 'success'], ['Deploy', 'skipped'], ['Published', 'success']]);

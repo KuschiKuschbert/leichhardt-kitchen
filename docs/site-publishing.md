@@ -18,6 +18,8 @@ Measured on the live site, 13 November 2026: `index.html` last changed on 9 Nove
 2. **Deploy** publishes the whole repository only when that script prints a file. Comparing with what is live, not with the previous commit, means a note merged after a failed publish still carries the earlier app change out.
 3. **Published** runs when the site is up to date with the commit: after a publish, or when nothing needed one.
 
+The Pages artifact is named for its workflow attempt. Before Deploy reads it, the workflow waits briefly for the exact upload ID to appear in that run. A retry also has its own name, so Deploy can find the new upload alongside earlier attempts.
+
 `scripts/site-changed.sh` leaves out only what people and GitHub read: `docs/`, every `*.md`, `scripts/`, `.github/`, `.claude/`, `firestore.rules`, `.gitignore`, and the tests run by node (`*.test.js`, `*.test.mjs`, `tests/lib.js`, `tests/run.js`, `tests/package*.json`, `tests/rules/`, `tests/fake/`). Anything else counts as needed, so a new folder the book loads is never missed. `tests/contact.html` and the files it loads count as needed because the live click tests open them from the site.
 
 When nothing needs publishing, the live site keeps the earlier copy of the notes too. They go out with the next app change, or straight away with **Run workflow** on Publish site, which always publishes.
@@ -29,6 +31,7 @@ A venue served by its own Firebase project (`venues/<id>.json` with `host: fireb
 ## What follows it
 
 - **Live click tests** run after the Deploy job publishes, and not after a merge that published nothing.
+- **A run that skips cancels nothing** (24 Nov 2026). A merge that publishes nothing still starts a Live click tests run, which then skips. The cancelling used to cover the whole workflow, so that run cancelled the live tests of the merge before it: #850's and #849's runs cancelled #851's twice. Now it sits on the test jobs (`live-tests-<share>` and `live-tests-venues`), which a skipping run never starts, so only a newer run that tests replaces an older one. `tests/site-publish.test.js` checks it: 3 failed of 40 on the old workflow, 0 of 40 now.
 - **Publish rules** runs after the Published job, so a change to `firestore.rules` alone still publishes the rules. It does not run when publishing the site failed, so stricter rules never go ahead of the code.
 - Both still follow GitHub's own `pages-build-deployment` while Pages publishes from the branch. Publish site then only warns and publishes nothing, so nothing runs twice.
 
@@ -48,4 +51,4 @@ The book's update check, the service worker, the 10-minute and 1-hour reload lim
 
 ## Tests
 
-`tests/site-publish.test.js` (no browser): the file list, then the Check, Live click tests and Publish rules steps run as bash against a made-up repository with a stand-in `gh`. It covers #684 (README alone: no publish), a note after a failed publish, a live commit the copy does not know, GitHub not answering, the branch publish still on, and rules alone.
+`tests/site-publish.test.js` (no browser): the file list, then the Check, artifact wait, Live click tests and Publish rules steps run as bash against a made-up repository with a stand-in `gh`. It covers #684 (README alone: no publish), a note after a failed publish, delayed artifact visibility, wrong or expired artifacts, a live commit the copy does not know, GitHub not answering, the branch publish still on, and rules alone.

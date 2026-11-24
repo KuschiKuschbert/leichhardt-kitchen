@@ -201,6 +201,9 @@
     if (searchMemory.size > 150) searchMemory.delete(searchMemory.keys().next().value);
     var placeholder = input.placeholder || 'Search', wrap = node('span', 'ux-search'), clear = node('button', 'ux-search-clear', '×'), status = node('span', 'ux-search-status');
     input.parentNode.insertBefore(wrap, input); wrap.appendChild(input); wrap.appendChild(clear); wrap.appendChild(status);
+    // the search pill's magnifier (.find-i) goes in with the box, so it stays centred on the box at any height while the
+    // status line shows under it (the consistency sweep, step 3, 20 Nov 2026)
+    var icon = wrap.previousElementSibling; if (icon && icon.classList && icon.classList.contains('find-i')) wrap.insertBefore(icon, input);
     clear.type = 'button'; clear.setAttribute('aria-label', 'Clear search'); input.dataset.smartSearch = 'true';
     status.id = 'ux-search-status-' + (++serial); status.setAttribute('role', 'status'); status.setAttribute('aria-atomic', 'true');
     input.setAttribute('aria-describedby', [input.getAttribute('aria-describedby'), status.id].filter(Boolean).join(' '));
@@ -449,7 +452,7 @@
   // Explicit choice actions exclude command buttons such as tick, delete, add and page navigation.
   var choiceActions = {
     'data-act': 'view free lens amode kind setview settext setshared setpractice',
-    'data-p': 'tr-vpick tr-ppick range heat calm hrm lv-f wunit punit ounit wreason tr-dir tr-unit n-tag n-dow n-quick n-mode mn-ast g-cat g-fcat g-fwho dk-pick cut-day ml-cat ml-pri todo-for',
+    'data-p': 'tr-vpick tr-ppick range heat calm hrm lv-f wunit punit ounit wreason tr-dir tr-unit n-tag n-dow n-mode mn-ast g-cat g-fcat g-fwho dk-pick cut-day ml-cat ml-pri todo-for',
     'data-mg': 'chip hand', 'data-fe': 'chip mode', 'data-dw': 'sm-st cat sub wfam ware tintc setIng', 'data-ai': 'range', 'data-su': 'group history-order'
   };
   function choiceAction(b) { var found; Object.keys(choiceActions).some(function (attr) { var v = b.getAttribute(attr); if (v && choiceActions[attr].split(' ').indexOf(v) >= 0) { found = attr + ':' + v; return true; } return false; }); return found; }

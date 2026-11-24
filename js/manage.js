@@ -1,23 +1,25 @@
 /*
-  Leichhardt Kitchen Book: Manage Recipes & Drawings (#/manage), for the head chef only (21 Oct 2026)
+  Leichhardt Kitchen Book: Manage Recipes & Drawings (#/manage), for head chefs, sous chefs and admins
   ===================================================================================================
-  Loaded by js/app.js the first time the page opens on the head chef's device (staff phones never download it).
-  The head chef changes any recipe in the book or adds a new one; the change is saved to Firestore (recipes/<id>,
+  Loaded by js/app.js when an authorised chef or admin first opens the page.
+  A chef or admin changes a recipe or adds a new one. The change is saved to Firestore (recipes/<id>,
   book/index) through the prep book's own write path (W in js/prep.js: the writer's id and PIN proof), and every
-  phone lays it over js/data.js (js/overlay.js). The rules let only the head chef write (bookBy() in firestore.rules).
+  phone lays it over js/data.js (js/overlay.js). The rules also check who may write (bookBy() in firestore.rules).
 
   Pages: #/manage (the recipe list), #/manage/r/<id> (change a recipe), #/manage/new and #/manage/new/<id> (a new
   recipe; with an id, a card still to come). Clicks use data-mg, typing data-f (the field it changes), classes mg-.
 
   Nothing is lost by accident: every change is kept on this device as it is typed (lk.mg.draft.<id>) until it is
   saved, and is offered back when the recipe is opened again. A save checks the version on the server first, so two
-  devices never overwrite each other without the head chef saying so. Every earlier version is kept (hist).
+  devices never overwrite each other without the editor confirming the change. Every earlier version is kept (hist).
 */
 (function () {
   'use strict';
 
   var API = 5;
   var D = window.LK_DATA, X = window.LK_RX, A = window.LK_APP, P = window.LK_PREP;
+  // a search box as the Recipes pill; an older js/app.js without it draws the plain box (20 Nov 2026)
+  function findPill(input) { return A && A.findWrap ? A.findWrap(input) : input; }
   var esc = A.esc, KIND = A.KIND, ALLERGENS = D.allergens;
   // Optional in lazy files: an older saved shell keeps its existing text feedback.
   function inkLabel(text, icon, state) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', state || 'busy') : esc(text); }
@@ -152,7 +154,7 @@
     return off + (list.length ? '<p class="hint" role="status">' + list.length + (kind === 'templates' ? (list.length === 1 ? ' template' : ' templates') : (list.length === 1 ? ' piece or servingware' : ' pieces and servingware')) + '. Drawings made from them keep their own copy.</p><ul class="mg-list">' + list.map(function (x) {
       var k = (kind === 'templates' ? 'tpl:' : 'lib:') + x.id;
       return '<li class="mg-row">' + pic(x) + '<span class="mg-rt"><b>' + esc(x.name || x.id) + '</b><span class="hint">' + esc(what(x)) + ' · version ' + esc(x.v || 1) + (x.removed ? ' · hidden' : '') + '</span></span>' +
-        '<button type="button" class="p-x" data-mg="mine-hide" data-v="' + esc(k) + '">' + (armed('mine-hide:' + k) ? 'Tap again to ' + (x.removed ? 'show it' : 'hide it') : x.removed ? 'Show it again' : 'Hide') + '</button></li>';
+        '<button type="button" class="p-x' + (armed('mine-hide:' + k) ? ' lk-del' : '') + '" data-mg="mine-hide" data-v="' + esc(k) + '">' + (armed('mine-hide:' + k) ? 'Tap again to ' + (x.removed ? 'show it' : 'hide it') : x.removed ? 'Show it again' : 'Hide') + '</button></li>';
     }).join('') + '</ul>' : off ? '' : '<p class="hint">' + none + '</p>');
   }
   function mineHide(k) {
@@ -164,12 +166,12 @@
     var nm = x.name || x.id;
     api.ready().then(function () { return api.W([['set', api.docRef(m[1] === 'tpl' ? 'drawtpl' : 'drawlib', x.id), out]]); }).then(function () {
       x.removed = out.removed; x.v = out.v; toast(out.removed ? 'Hidden: ' + nm + '. The drawing editor no longer offers it.' : 'Shown again in the drawing editor: ' + nm + '.'); draw();
-    }, function (e) { toast('Not changed: ' + nm + '. ' + (e && e.code === 'permission-denied' ? 'Only the head chef can change these.' : 'Check the signal and try again.'), false, true); });
+    }, function (e) { toast('Not changed: ' + nm + '. ' + (e && e.code === 'permission-denied' ? 'The book refused this change. Try again.' : 'Check the signal and try again.'), false, true); });
   }
   function listHTML() {
     var q = M.q.trim().toLowerCase(), words = q ? q.split(/\s+/) : [];
     var toCome = A.toCome();
-    var head = '<div class="mg-head"><h2 id="rtitle" tabindex="-1">Manage Recipes &amp; Drawings</h2>' +
+    var head = '<div class="mg-head"><h2 id="rtitle" tabindex="-1">Recipes &amp; drawings</h2>' +
       '<p class="hint">Change a recipe or add a new one. Staff see a saved change within half an hour. Put anything not confirmed yet in [square brackets].</p>' +
       '<div class="btn-row"><a class="btn dark" href="#/manage/new">New recipe</a><a class="btn" href="#/manage/print">Print cards</a></div></div>';
     var kind = kindOf(M.chip), n = {};
@@ -181,7 +183,8 @@
     }).join('') + '</div>' + (STATES.some(function (s) { return n[s[0]] || M.chip === s[0]; }) ? '<div class="chips mg-need" role="group" aria-label="Needs a look"><span class="label">Needs a look</span>' + STATES.filter(function (s) { return n[s[0]] || M.chip === s[0]; }).map(function (s) {
       return '<button type="button" class="chip" data-mg="chip" data-v="' + s[0] + '" aria-pressed="' + (M.chip === s[0]) + '">' + esc(s[1]) + ' · ' + (n[s[0]] || 0) + '</button>';
     }).join('') + '</div>' : '') + '</div>');
-    var find = '<div class="field"><label class="label" for="mg-q">Find a recipe</label><input id="mg-q" class="search" type="search" data-f="q" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Name, card number or ingredient" value="' + esc(M.q) + '"></div>';
+    // the Recipes pill (the consistency sweep, step 3, 20 Nov 2026): the magnifier inside, the label for screen readers
+    var find = '<div class="field"><label class="visually-hidden" for="mg-q">Find a recipe</label>' + findPill('<input id="mg-q" class="search" type="search" data-f="q" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Name, card number or ingredient" value="' + esc(M.q) + '">') + '</div>';
     var body;
     if (M.chip === 'templates' || M.chip === 'mylib') body = mineHTML(M.chip, words);
     else if (M.chip === 'drawings') {
@@ -409,7 +412,7 @@
      checked yet". No allergens comes first, the usual answer, and on a row with allergens it asks first: they go. */
   function tagChips(list, where, i, none, hand) {
     var tags = list || [], ing = where === 'ing';
-    var noneB = ing ? '<button type="button" class="chip mg-none' + (none ? ' is-has' : '') + '" data-mg="none" data-i="' + i + '" aria-pressed="' + !!none + '">' + (armed('none:' + i) ? 'Tap again: the allergens go' : 'No allergens') + '</button>' : '';
+    var noneB = ing ? '<button type="button" class="chip mg-none' + (none ? ' is-has' : '') + (armed('none:' + i) ? ' lk-del' : '') + '" data-mg="none" data-i="' + i + '" aria-pressed="' + !!none + '">' + (armed('none:' + i) ? 'Tap again: the allergens go' : 'No allergens') + '</button>' : '';
     return (ing && !none && !tags.length && !hand ? '<p class="mg-unk" role="note"><b>Not checked yet.</b> Choose its allergens, or No allergens.</p>' : '') +
       '<div class="chips mg-tags" role="group" aria-label="Allergens in this">' + noneB + ALLERGENS.map(function (a) {
       var st = tags.indexOf(a) >= 0 ? 'has' : tags.indexOf(a + '?') >= 0 ? 'may' : '';
@@ -457,25 +460,37 @@
     if (trimStr(i.note)) bits.push('<span class="mg-ing-note">' + esc(i.note) + '</span>');
     return '<span class="mg-ing-sum">' + bits.join('') + '</span>';
   }
-  function ingHTML(e) {
-    var d = e.d, n = d.ingredients.length;
+  var ingPanelMedia = window.matchMedia('(min-width: 1150px)');
+  function ingDetailHTML(e, k) {
+    var i = e.d.ingredients[k], n = e.d.ingredients.length;
+    return '<div class="mg-ing-open" id="mg-ing-detail-' + k + '">' +
+      '<div class="field mg-ing-field"><label class="label" for="mg-note-' + k + '">Note</label><input id="mg-note-' + k + '" class="search" data-f="ing.' + k + '.note" placeholder="For example: bought in, 170 g" maxlength="200" value="' + esc(i.note || '') + '"></div>' +
+      '<div class="field mg-ing-field"><label class="label" for="mg-link-' + k + '">Recipe link</label><div class="mg-linkbox">' + linkBox('ing.' + k + '.link', i.link || '', 'mg-link-' + k, 'Recipe link, ingredient ' + (k + 1)) + '</div>' +
+      '<span class="hint">A linked ingredient is tappable on the card and takes its allergens from its own recipe.</span></div>' +
+      (i.link ? '' : '<div class="field"><span class="label">Allergens</span>' + tagChips(i.tags, 'ing', k, i.none, e.handTags) + '</div>') +
+      '<div class="btn-row mg-mini">' + (k ? '<button type="button" class="btn" data-mg="ing-up" data-i="' + k + '" aria-label="Move ingredient ' + (k + 1) + ' up">Move up</button>' : '') +
+      (k < n - 1 ? '<button type="button" class="btn" data-mg="ing-down" data-i="' + k + '" aria-label="Move ingredient ' + (k + 1) + ' down">Move down</button>' : '') +
+      '<button type="button" class="p-x lk-del" data-mg="ing-del" data-i="' + k + '" aria-label="' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + ' ingredient ' + (k + 1) + '">' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + '</button></div></div>';
+  }
+  function ingPanelHTML(e, k) {
+    return '<aside class="mg-ing-panel" aria-labelledby="mg-ing-panel-name"><header class="mg-ing-panel-head"><div>' +
+      '<span class="label">Ingredient ' + (k + 1) + '</span><h3 class="h3" id="mg-ing-panel-name">' +
+      esc(trimStr(e.d.ingredients[k].name) || 'Ingredient details') + '</h3></div>' +
+      '<button type="button" class="btn" data-mg="ing-close" data-i="' + k + '">Close</button></header>' +
+      ingDetailHTML(e, k) + '</aside>';
+  }
+  function ingHTML(e, side) {
     return '<section class="set-block mg-sec" aria-labelledby="mg-h-ing"><div class="mg-sec-head"><h3 class="h3" id="mg-h-ing">Ingredients</h3>' + scaleBtn(e) + '</div>' +
       multiplierHTML(e) +
       '<p class="hint">Type the amount and the name in the row. The arrow opens the note, the recipe link, the allergens and moving.</p>' +
-      '<ol class="mg-ings">' + d.ingredients.map(function (i, k) {
+      '<ol class="mg-ings">' + e.d.ingredients.map(function (i, k) {
         var open = e.open === k, nm = trimStr(i.name) || 'ingredient ' + (k + 1);
         return '<li class="mg-ing' + (open ? ' open' : '') + '"><div class="mg-ing-top"><span class="mg-n" aria-hidden="true">' + (k + 1) + '</span>' +
           '<input class="search mg-q" data-f="ing.' + k + '.q" aria-label="Amount, ingredient ' + (k + 1) + '" placeholder="Amount" maxlength="40" value="' + esc(i.q || '') + '">' +
           '<input class="search mg-nm" data-f="ing.' + k + '.name" aria-label="Ingredient ' + (k + 1) + '" placeholder="Ingredient" maxlength="120" value="' + esc(i.name || '') + '">' +
-          '<button type="button" class="mg-ing-more" data-mg="ing-open" data-i="' + k + '" aria-expanded="' + open + '" aria-label="' + esc('Note, link, allergens and moving for ' + nm) + '">' + CHEV + '</button></div>' + ingSum(i, e.handTags) +
-          (open ? '<div class="mg-ing-open">' +
-            '<div class="field"><label class="label" for="mg-note-' + k + '">Note</label><input id="mg-note-' + k + '" class="search" data-f="ing.' + k + '.note" placeholder="For example: bought in, 170 g" maxlength="200" value="' + esc(i.note || '') + '"></div>' +
-            '<div class="field"><label class="label" for="mg-link-' + k + '">Recipe link</label><div class="mg-linkbox">' + linkBox('ing.' + k + '.link', i.link || '', 'mg-link-' + k, 'Recipe link, ingredient ' + (k + 1)) + '</div>' +
-            '<span class="hint">A linked ingredient is tappable on the card and takes its allergens from its own recipe.</span></div>' +
-            (i.link ? '' : '<div class="field"><span class="label">Allergens</span>' + tagChips(i.tags, 'ing', k, i.none, e.handTags) + '</div>') +
-            '<div class="btn-row mg-mini">' + (k ? '<button type="button" class="btn" data-mg="ing-up" data-i="' + k + '" aria-label="Move ingredient ' + (k + 1) + ' up">Move up</button>' : '') +
-            (k < n - 1 ? '<button type="button" class="btn" data-mg="ing-down" data-i="' + k + '" aria-label="Move ingredient ' + (k + 1) + ' down">Move down</button>' : '') +
-            '<button type="button" class="p-x mg-del" data-mg="ing-del" data-i="' + k + '" aria-label="' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + ' ingredient ' + (k + 1) + '">' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + '</button></div></div>' : '') + '</li>';
+          '<button type="button" class="mg-ing-more" data-mg="ing-open" data-i="' + k + '" aria-expanded="' + open + '"' +
+          (open ? ' aria-controls="mg-ing-detail-' + k + '"' : '') + ' aria-label="' + esc('Note, link, allergens and moving for ' + nm) + '">' + CHEV + '</button></div>' + ingSum(i, e.handTags) +
+          (open && !side ? ingDetailHTML(e, k) : '') + '</li>';
       }).join('') + '</ol><div class="btn-row"><button type="button" class="btn" data-mg="ing-add">Add an ingredient</button></div></section>';
   }
   function canScale() { return !!(P.bookEdit() && window.LK_AMT && window.LK_AMT.scale); }
@@ -527,7 +542,7 @@
           field('mg-ss-' + k, 'Steps', 'sec.' + k + '.steps', sc.steps.join('\n'), { area: true, rows: Math.max(4, sc.steps.length + 1) }) +
           '<div class="btn-row mg-mini">' + (k ? '<button type="button" class="p-x" data-mg="sec-up" data-i="' + k + '">Up</button>' : '') +
           (k < n - 1 ? '<button type="button" class="p-x" data-mg="sec-down" data-i="' + k + '">Down</button>' : '') +
-          '<button type="button" class="p-x" data-mg="sec-del" data-i="' + k + '">' + (armed('sec-del:' + k) ? 'Tap again to remove' : 'Remove this section') + '</button></div></div>';
+          '<button type="button" class="p-x lk-del" data-mg="sec-del" data-i="' + k + '">' + (armed('sec-del:' + k) ? 'Tap again to remove' : 'Remove this section') + '</button></div></div>';
       }).join('') + '<div class="btn-row"><button type="button" class="btn" data-mg="sec-add">Add a section</button></div></section>';
   }
   function rollTags(ro) { return ro.contains.concat(ro.check.map(function (a) { return a + '?'; })); }
@@ -544,7 +559,7 @@
     } else body = '<p class="hint">Worked out from the allergens tagged on each ingredient, and from the recipes linked.</p>';
     var change = JSON.stringify(now) === JSON.stringify(next) ? '' : '<p class="mg-change" role="status"><b>After saving:</b> ' + esc(next.length ? next.join(', ') : 'none') + (now.length || !e.isNew ? ' (now: ' + esc(now.length ? now.join(', ') : 'none') + ')' : '') + '</p>';
     return '<section class="set-block mg-sec" aria-labelledby="mg-h-alg"><h3 class="h3" id="mg-h-alg">Allergens</h3>' +
-      '<div class="chips" role="group" aria-label="How the allergens are set"><button type="button" class="chip" data-mg="hand" data-v="0" aria-pressed="' + !e.handTags + '">' + (armed('hand') ? 'Tap again: hand-set allergens go' : 'Worked out from the ingredients') + '</button><button type="button" class="chip" data-mg="hand" data-v="1" aria-pressed="' + e.handTags + '">Set by hand</button></div>' +
+      '<div class="chips" role="group" aria-label="How the allergens are set"><button type="button" class="chip' + (armed('hand') ? ' lk-del' : '') + '" data-mg="hand" data-v="0" aria-pressed="' + !e.handTags + '">' + (armed('hand') ? 'Tap again: hand-set allergens go' : 'Worked out from the ingredients') + '</button><button type="button" class="chip" data-mg="hand" data-v="1" aria-pressed="' + e.handTags + '">Set by hand</button></div>' +
       (e.handTags ? '<p class="hint">This recipe sets its allergens by hand, so the ingredient tags do not change them.</p>' : '') + body +
       '<div class="mg-alg-now"><span class="label">The card shows</span><span class="chips">' + (next.length ? next.map(function (t) { return '<span class="tag' + (/\?$/.test(t) ? ' maybe' : '') + '">' + esc(t) + '</span>'; }).join('') : '<span class="hint">' + (unk.length ? 'None found yet' : 'No allergens') + '</span>') + '</span>' +
       (ro.missing.length ? '<p class="hint">Not complete: ' + esc(ro.missing.join(', ')) + ' has no card yet.</p>' : '') +
@@ -633,7 +648,7 @@
             '<label class="field"><span class="label">Down %</span><input class="search" inputmode="decimal" data-f="pin.' + k + '.y" value="' + esc(p.y) + '"></label></div>' +
             '<div class="field"><label class="label" for="mg-pside-' + k + '">Label side</label><select id="mg-pside-' + k + '" class="search" data-f="pin.' + k + '.side"><option value=""' + (!p.side ? ' selected' : '') + '>Where it fits</option><option value="left"' + (p.side === 'left' ? ' selected' : '') + '>Left</option><option value="right"' + (p.side === 'right' ? ' selected' : '') + '>Right</option></select></div>' +
             (p.link ? '<p class="hint">Opens its recipe; its allergens come from there.</p>' : '<span class="label">Allergens in this part</span>' + tagChips(p.tags, 'pin', k) + '<p class="hint">These are the label\'s own tags, apart from the ingredient list.</p>') +
-            '<div class="btn-row mg-mini"><button type="button" class="p-x" data-mg="pin-del" data-i="' + k + '">' + (armed('pin-del:' + k) ? 'Tap again to remove' : 'Remove this label') + '</button></div>' : '') + '</li>';
+            '<div class="btn-row mg-mini"><button type="button" class="p-x lk-del" data-mg="pin-del" data-i="' + k + '">' + (armed('pin-del:' + k) ? 'Tap again to remove' : 'Remove this label') + '</button></div>' : '') + '</li>';
       }).join('') + '</ol><div class="btn-row"><button type="button" class="btn" data-mg="pin-add">Add a label</button></div>';
   }
   function histHTML(e) {
@@ -642,7 +657,7 @@
     // a failed read (the consistency sweep, step 2, 20 Nov 2026): the shared line, its Try again reads them again
     var list = h === 'loading' ? loading('Reading earlier versions...', 'recipes', 2) : h === 'error' ? histErr((e.histSig ? 'No signal. ' : '') + 'Could not read the earlier versions.') :
       h ? (h.length ? '<ol class="mg-hist">' + h.map(function (x, k) {
-        return '<li><span><b>Version ' + esc(x.v) + '</b> · ' + esc(x.when) + (x.who ? ' · ' + esc(x.who) : '') + (x.name ? ' · ' + esc(x.name) : '') + '</span><button type="button" class="p-x" data-mg="hist-use" data-i="' + k + '">' + (armed('hist-use:' + k) ? 'Not saved. Tap again' : 'Open this version') + '</button></li>';
+        return '<li><span><b>Version ' + esc(x.v) + '</b> · ' + esc(x.when) + (x.who ? ' · ' + esc(x.who) : '') + (x.name ? ' · ' + esc(x.name) : '') + '</span><button type="button" class="p-x' + (armed('hist-use:' + k) ? ' lk-del' : '') + '" data-mg="hist-use" data-i="' + k + '">' + (armed('hist-use:' + k) ? 'Not saved. Tap again' : 'Open this version') + '</button></li>';
       }).join('') + '</ol><p class="hint">Opening a version puts it in the form. Save to make it the card again.</p>' : '<p class="hint">No earlier versions yet.</p>') : '';
     return '<section class="set-block mg-sec" aria-labelledby="mg-h-hist"><h3 class="h3" id="mg-h-hist">Earlier versions</h3>' + list +
       (h ? '' : '<div class="btn-row"><button type="button" class="btn" data-mg="hist">Show earlier versions</button></div>') + '</section>';
@@ -664,7 +679,7 @@
   function moreHTML(e) {
     if (e.isNew) return '';
     var st = status(e.id), base = X.pristine(e.id), out = '';
-    if (base && !e.meta.off && (st.changed || e.meta.v)) out += '<div class="btn-row"><button type="button" class="btn" data-mg="off">' + (armed('off') ? 'Tap again: show the book file\'s copy' : 'Go back to the book file\'s copy') + '</button></div><p class="hint">Staff then see the recipe as js/data.js has it. This version stays in the earlier versions.</p>';
+    if (base && !e.meta.off && (st.changed || e.meta.v)) out += '<div class="btn-row"><button type="button" class="btn' + (armed('off') ? ' lk-del' : '') + '" data-mg="off">' + (armed('off') ? 'Tap again: show the book file\'s copy' : 'Go back to the book file\'s copy') + '</button></div><p class="hint">Staff then see the recipe as js/data.js has it. This version stays in the earlier versions.</p>';
     if (!out) return '';
     return '<section class="set-block mg-sec" aria-labelledby="mg-h-more"><h3 class="h3" id="mg-h-more">The book file</h3>' + out + '</section>';
   }
@@ -707,20 +722,21 @@
     var head = '<div class="mg-head"><h2 id="rtitle" tabindex="-1">' + esc(e.isNew ? (d.name ? 'New: ' + d.name : 'New recipe') : 'Change ' + d.name) + '</h2>' +
       (st && !e.isNew && A.byId(e.id) ? '<a class="p-x" href="#/r/' + encodeURIComponent(e.id) + '">Open the card</a>' : '') + '</div>';
     var kept = e.kept ? '<div class="box beige mg-kept" role="note"><span class="label">Changes not saved yet</span><div>This device kept changes to this recipe from ' + esc(B().dayShort(e.kept.at) + ' ' + B().clock(e.kept.at)) + '.</div>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-mg="kept-use">Keep editing them</button><button type="button" class="btn" data-mg="kept-drop">' + (armed('kept-drop') ? 'Tap again to throw them away' : 'Throw them away') + '</button></div></div>' : '';
+      '<div class="btn-row"><button type="button" class="btn dark" data-mg="kept-use">Keep editing them</button><button type="button" class="btn lk-del" data-mg="kept-drop">' + (armed('kept-drop') ? 'Tap again to throw them away' : 'Throw them away') + '</button></div></div>' : '';
     var fileNote = st && st.fileChanged ? '<div class="box beige" role="note"><span class="label">The book file changed</span><div>js/data.js has a newer copy of this recipe than the one this change was made from. Check the steps and amounts, then Save to keep this version, or go back to the book file\'s copy (The book file, below).</div></div>' : '';
     var conflict = e.conflict ? '<div class="warn" role="alert"><span class="label">Changed on another device</span><span>Version ' + esc(e.conflict.v) + ' was saved' + (e.conflict.who ? ' by ' + esc(e.conflict.who) : '') + (e.conflict.when ? ' at ' + esc(e.conflict.when) : '') + ' after you opened this recipe.</span>' +
-      '<div class="btn-row"><button type="button" class="btn" data-mg="theirs">' + (armed('theirs') ? 'Tap again: your changes go' : 'Open theirs') + '</button><button type="button" class="btn dark" data-mg="mine">Save mine over it</button></div></div>' : '';
+      '<div class="btn-row"><button type="button" class="btn' + (armed('theirs') ? ' lk-del' : '') + '" data-mg="theirs">' + (armed('theirs') ? 'Tap again: your changes go' : 'Open theirs') + '</button><button type="button" class="btn dark" data-mg="mine">Save mine over it</button></div></div>' : '';
     var errs = e.errs.length ? '<div class="warn" role="alert"><span class="label">Not saved yet</span><ul class="mg-errs">' + e.errs.map(function (x) { return '<li><a href="#' + esc(x.at) + '" data-mg="goto" data-v="' + esc(x.at) + '">' + esc(x.msg) + '</a></li>'; }).join('') + '</ul></div>' : '';
     var warns = e.warns.length ? '<div class="box beige" role="note">' + e.warns.map(function (w) { return '<div>' + esc(w) + '</div>'; }).join('') + '</div>' : '';
     var cur = chOf(e), part = function (k, html) { return '<div class="mg-ch" data-ch="' + k + '"' + (cur === k ? '' : ' hidden') + '>' + html + '</div>'; };
-    return '<div class="mg-wrap mg-ed">' + linkList() + head + kept + fileNote + conflict + errs + warns +
+    var side = cur === 'ing' && ingPanelMedia.matches && !!d.ingredients[e.open];
+    return '<div class="mg-wrap mg-ed' + (side ? ' mg-with-ing-panel' : '') + '">' + linkList() + head + kept + fileNote + conflict + errs + warns +
       '<div class="mg-body">' + chNavHTML(e) + '<div class="mg-chap">' +
-      part('ing', ingHTML(e)) + part('method', methodHTML(e)) + part('alg', allergenHTML(e)) + part('draw', drawingHTML(e)) +
-      part('card', swHTML(e) + basicsHTML(e) + moreCardHTML(e)) + (e.isNew ? '' : part('hist', histHTML(e) + moreHTML(e))) + '</div></div>' +
-      '<div class="mg-bar"><span class="mg-state" role="status">' + stateHTML() + '</span>' + (e.msg ? '<span class="p-err" role="alert">' + esc(e.msg) + '</span>' : '') +
+      part('ing', ingHTML(e, side)) + part('method', methodHTML(e)) + part('alg', allergenHTML(e)) + part('draw', drawingHTML(e)) +
+      part('card', swHTML(e) + basicsHTML(e) + moreCardHTML(e)) + (e.isNew ? '' : part('hist', histHTML(e) + moreHTML(e))) + '</div>' + (side ? ingPanelHTML(e, e.open) : '') + '</div>' +
+      '<div class="mg-bar sv-dock"><span class="mg-state" role="status">' + stateHTML() + '</span>' + (e.msg ? '<span class="p-err" role="alert">' + esc(e.msg) + '</span>' : '') +
       '<div class="btn-row">' + saveBtnHTML(e) +
-      (dirty() ? '<button type="button" class="btn" data-mg="undo-all">' + (armed('undo-all') ? 'Tap again to undo all' : 'Undo all changes') + '</button>' : '') + '</div></div></div>';
+      (dirty() ? '<button type="button" class="btn' + (armed('undo-all') ? ' lk-del' : '') + '" data-mg="undo-all">' + (armed('undo-all') ? 'Tap again to undo all' : 'Undo all changes') + '</button>' : '') + '</div></div></div>';
   }
 
   /* ---------- checking and saving ---------- */
@@ -822,7 +838,7 @@
     e.msg = ''; e.failed = false; e.conflict = force ? null : e.conflict;
     keepNow();   // kept on this device until the save is confirmed
     if (!e.meta.off && !e.meta.removed && !check(e)) { draw(); focusId(e.errs[0].at); return; }
-    if (!P.bookEdit()) { e.msg = 'Not saved: only the head chef can change recipes. Sign in with your PIN as Head chef.'; draw(); return; }
+    if (!P.bookEdit()) { e.msg = 'Not saved. Sign in as a head chef, sous chef or admin. Your changes are kept on this device.'; draw(); return; }
     var api = B(), owner = M.identity, context = api.writeContext ? api.writeContext() : null;
     var id = e.id, clean = cleanRecipe(e), menu = menuAfter(e), submitted = snapOf(e), recorder = api.who();
     var savedMeta = { src: e.meta.src, removed: !!e.meta.removed, off: !!e.meta.off };
@@ -893,7 +909,7 @@
       if (!owns(e, owner)) return;
       e.saving = ''; e.failed = true;
       var code = err && err.code;
-      e.msg = code === 'permission-denied' ? 'Not saved: the book refused it. Only the head chef can change recipes, and the recipe may have changed on another device. Try again.' : 'Not saved. Check the signal and try again. Your changes are kept on this device.';
+      e.msg = code === 'permission-denied' ? 'Not saved. The book refused this change. Your changes are kept on this device. Try again.' : 'Not saved. Check the signal and try again. Your changes are kept on this device.';
       if (M.ed === e) draw();
     });
   }
@@ -1000,14 +1016,56 @@
 
   /* ---------- drawing the page ---------- */
   var drawn = '';
+  var stopIngPanelFit = null;
+  function watchIngPanel(panel) {
+    if (stopIngPanelFit) stopIngPanelFit();
+    stopIngPanelFit = null;
+    if (!panel) return;
+    var dock = M.root.querySelector('.mg-bar'), frame = 0;
+    function fit() {
+      frame = 0;
+      // The panel starts below the page heading and then sticks. Fit to the real dock at its current position.
+      var bottom = Math.min(window.innerHeight, dock.getBoundingClientRect().top);
+      var room = Math.max(0, Math.floor(bottom - panel.getBoundingClientRect().top - 8)) + 'px';
+      if (panel.style.getPropertyValue('--mg-ing-panel-room') !== room) panel.style.setProperty('--mg-ing-panel-room', room);
+    }
+    function schedule() { if (!frame) frame = window.requestAnimationFrame(fit); }
+    var observer = window.ResizeObserver ? new ResizeObserver(schedule) : null;
+    if (observer) { observer.observe(dock); observer.observe(document.getElementById('app')); }
+    window.addEventListener('resize', schedule);
+    window.addEventListener('scroll', schedule, { passive: true });
+    stopIngPanelFit = function () {
+      if (observer) observer.disconnect();
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener('resize', schedule);
+      window.removeEventListener('scroll', schedule);
+    };
+    fit();
+  }
   function draw() {
     if (window.LK_DRAW && window.LK_DRAW.open()) return;
     if (!M.root || !document.body.contains(M.root)) return;
     var ae = document.activeElement, keep = ae && M.root.contains(ae) ? (ae.getAttribute('data-f') || ae.getAttribute('data-mg') + ':' + (ae.getAttribute('data-i') || '')) : '', fl = ae && M.root.contains(ae) ? ae.getAttribute('data-fl') : '';
-    var y = window.scrollY;
+    var scrollBox = M.root.querySelector('.mg-ing-panel .mg-ing-open'), detailTop = scrollBox && scrollBox.scrollTop, y = window.scrollY;
+    var source = ae && ae._uxSource ? ae._uxSource.querySelector('[data-mg="tag"]') : ae;
+    var tag = source && scrollBox && scrollBox.contains(source) && source.matches('[data-mg="tag"]') ? source.getAttribute('data-v') : null;
     M.root.innerHTML = M.ed ? editorHTML() : listHTML();
     window.scrollTo(0, y);
+    watchIngPanel(M.root.querySelector('.mg-ing-panel'));
+    var reappeared = scrollBox && M.root.querySelector('#' + scrollBox.id);
+    if (reappeared && reappeared.closest('.mg-ing-panel')) reappeared.scrollTop = detailTop;
     window.dispatchEvent(new Event('lk-nav'));
+    // Keep the focused allergen when the existing picker changes its source button and redraws the panel.
+    if (tag && reappeared) {
+      var tagButton = Array.from(reappeared.querySelectorAll('[data-mg="tag"]')).find(function (b) { return b.getAttribute('data-v') === tag; });
+      if (tagButton) {
+        if (window.LK_UX) window.LK_UX.enhance(reappeared);
+        var group = tagButton.closest('.ux-choice-source');
+        reappeared.scrollTop = detailTop;
+        (group ? group.nextElementSibling : tagButton).focus({ preventScroll: true });
+        return;
+      }
+    }
     // a recipe link box (data-fl) keeps the focus too
     if (fl) { var lb = M.root.querySelector('[data-fl="' + fl + '"]'); if (lb) lb.focus({ preventScroll: true }); }
     else if (keep) {
@@ -1015,6 +1073,15 @@
       if (el && el.focus) el.focus({ preventScroll: true });
     }
   }
+  ingPanelMedia.addEventListener('change', function () {
+    if (!M.root || !M.ed || !M.ed.d || !M.ed.d.ingredients[M.ed.open] || chOf(M.ed) !== 'ing') return;
+    var el = document.activeElement, close = el && el.getAttribute('data-mg') === 'ing-close', caret = el && el.selectionStart, end = el && el.selectionEnd;
+    draw();
+    if (close && !ingPanelMedia.matches) {
+      var arrow = M.root.querySelector('[data-mg="ing-open"][data-i="' + M.ed.open + '"]');
+      if (arrow) arrow.focus({ preventScroll: true });
+    } else if (caret != null && document.activeElement.setSelectionRange) document.activeElement.setSelectionRange(caret, end);
+  });
   /* The drawing editor (js/draw.js), the library (js/library.js, js/lib/) and the smart creator (js/smart.js) load the
      first time a drawing opens. */
   var drawLoad = null;
@@ -1024,7 +1091,7 @@
     if (!drawLoad) {
       drawLoad = A.load('js/library.js').then(function () {
         // a category file that fails to load leaves its drawings out; the editor still opens
-        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=10')]));
+        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=14')]));
       }).then(function () {
         // without the smart creator the editor still works by hand; the recipe reader (js/compose.js) needs it first
         return A.load('js/smart.js').then(function () { return A.load('js/compose.js'); }).catch(function () {});
@@ -1056,11 +1123,11 @@
       var have = document.getElementById('rcp-css');
       if (have) { ok(); return; }
       var l = document.createElement('link'), t = setTimeout(function () { no(new Error('styles')); }, 8000);
-      l.rel = 'stylesheet'; l.href = 'css/recipe-print.css?v=1'; l.id = 'rcp-css';
+      l.rel = 'stylesheet'; l.href = 'css/recipe-print.css?v=3'; l.id = 'rcp-css';
       l.onload = function () { clearTimeout(t); ok(); };
       l.onerror = function () { clearTimeout(t); l.remove(); no(new Error('styles')); };
       document.head.appendChild(l);
-    }).then(function () { return A.load('js/recipe-print.js?v=1'); }).catch(function (e) { printLoad = null; throw e; });
+    }).then(function () { return A.load('js/recipe-print.js?v=4'); }).catch(function (e) { printLoad = null; throw e; });
     return printLoad;
   }
   function mountPrint(root, sub) {
@@ -1096,6 +1163,7 @@
     M.sub = sub.slice();
     // Keep the last keystroke before a quick Back or another editor clears the current form.
     if (M.ed && M.ed.sub !== key && dirty()) keepNow();
+    if (sub[0] === 'print' || sub[0] === 'draw') watchIngPanel(null);
     if (sub[0] !== 'print' && window.LK_RCP) window.LK_RCP.unmount();
     if (sub[0] === 'print') { if (window.LK_DRAW && window.LK_DRAW.open()) window.LK_DRAW.unmount(); mountPrint(root, sub); return; }
     if (sub[0] === 'draw') { mountDraw(root, sub); return; }
@@ -1118,9 +1186,10 @@
   }
   /* A hand-over (Sign out, Not you?, the idle lock: leave() in js/prep.js, 29 Oct 2026): the open form and drawing go
      with the person. Before, the page closing after the sign-out kept them as a draft again, for the next person. */
-  function drop() { if (window.LK_RCP) window.LK_RCP.drop(); clearTimeout(keepTimer); if (window.LK_DRAW && window.LK_DRAW.drop) window.LK_DRAW.drop(); M.ed = null; M.identity = ''; M.suspended = false; drawn = ''; unarm(); }
+  function drop() { watchIngPanel(null); if (window.LK_RCP) window.LK_RCP.drop(); clearTimeout(keepTimer); if (window.LK_DRAW && window.LK_DRAW.drop) window.LK_DRAW.drop(); M.ed = null; M.identity = ''; M.suspended = false; drawn = ''; unarm(); }
   function unmount() {
     var hadRoot = !!M.root;
+    watchIngPanel(null);
     if (window.LK_RCP) window.LK_RCP.unmount();
     if (window.LK_DRAW && window.LK_DRAW.open()) window.LK_DRAW.unmount();
     var lock = workLock();
@@ -1176,7 +1245,7 @@
     if (a === 'mine') { save(true); return; }
     // a change while the kept box shows: the kept changes come back first, and this tap does nothing else (its row may
     // not be the same row in the kept changes)
-    if (e.kept && !/^(kept-use|kept-drop|hist|ing-tags|ing-open|scale|ch|more-card|pin-pick|theirs)$/.test(a)) { keptBack(e); return; }
+    if (e.kept && !/^(kept-use|kept-drop|hist|ing-tags|ing-open|ing-close|scale|ch|more-card|pin-pick|theirs)$/.test(a)) { keptBack(e); return; }
     if (a === 'ch') { if (chOf(e) !== v) { e.ch = v; unarm(); draw(); var top = M.root.querySelector('.mg-body'); if (top && top.getBoundingClientRect().top < 0) top.scrollIntoView({ block: 'start' }); } return; }
     if (a === 'more-card') { e.moreOpen = !e.moreOpen; draw(); return; }
     if (a === 'theirs') {
@@ -1207,7 +1276,14 @@
       var mb = M.root.querySelector('[data-mg="' + a + '"][data-i="' + to + '"]') || M.root.querySelector('[data-mg="ing-open"][data-i="' + to + '"]'); if (mb) mb.focus({ preventScroll: true });
       return;
     }
-    if (a === 'ing-open' || a === 'ing-tags') { e.open = e.open === i ? -1 : i; unarm(); draw(); return; }
+    if (a === 'ing-open' || a === 'ing-tags' || a === 'ing-close') {
+      e.open = a === 'ing-close' || e.open === i ? -1 : i;
+      unarm(); draw();
+      var control = a === 'ing-close' ? M.root.querySelector('[data-mg="ing-open"][data-i="' + i + '"]') :
+        e.open === i && M.root.querySelector('[data-mg="ing-close"]');
+      if (control) control.focus({ preventScroll: a !== 'ing-close' });
+      return;
+    }
     if (a === 'tag') {
       var w = el.getAttribute('data-w'), obj = w === 'pin' ? d.pins[i] : d.ingredients[i];
       obj.tags = cycleTag(obj.tags, v);
@@ -1255,7 +1331,13 @@
     var val = ev.target.type === 'checkbox' ? ev.target.checked : ev.target.value;
     setField(f, val);
     if (f === 'q') return;
-    if (M.ed) dirtyNote();
+    if (M.ed) {
+      dirtyNote();
+      if (f === 'ing.' + M.ed.open + '.name') {
+        var title = M.root.querySelector('#mg-ing-panel-name');
+        if (title) title.textContent = trimStr(val) || 'Ingredient details';
+      }
+    }
     // a change that alters what else the page shows (kind, drawing, section, links, allergens by hand): draw again
     if (ev.type === 'change' && /^(kind|art|menu\.sec|hand\.|ing\.\d+\.link|pin\.\d+\.link|pin\.\d+\.(x|y)|done)/.test(f)) draw();
   }
@@ -1281,7 +1363,13 @@
   document.addEventListener('keydown', function (ev) {
     if (!M.root || !M.root.contains(ev.target) || ev.key !== 'Enter') return;
     var f = ev.target.getAttribute('data-f') || '';
-    if (/^ing\.\d+\.(q|name|note)$/.test(f)) { ev.preventDefault(); var nx = ev.target.parentNode.parentNode.querySelector('[data-f$=".note"]'); if (/\.note$/.test(f) || !nx) { var b = M.root.querySelector('[data-mg="ing-add"]'); if (b) b.click(); } else if (/\.q$/.test(f)) ev.target.nextElementSibling.focus(); else nx.focus(); }
+    var ing = /^ing\.(\d+)\.(q|name|note)$/.exec(f);
+    if (!ing) return;
+    ev.preventDefault();
+    var note = M.root.querySelector('#mg-note-' + ing[1]);
+    if (ing[2] === 'note' || !note) M.root.querySelector('[data-mg="ing-add"]').click();
+    else if (ing[2] === 'q') ev.target.nextElementSibling.focus();
+    else note.focus();
   });
   /* Dragging a plate label (mouse, finger or pen): the number follows, and lets go where the part sits. */
   var drag = null, dragMoved = false;

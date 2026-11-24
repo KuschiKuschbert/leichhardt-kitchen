@@ -29,6 +29,8 @@ const withPerm = perm => '(' + init.toString().replace('PERM', JSON.stringify(pe
 async function openCutoffs(p) {
   await L.waitFor(p, () => !!document.querySelector('.o-cut-fold > summary'), null, 10000);
   if (!(await p.$eval('.o-cut-fold', e => e.open))) await p.click('.o-cut-fold > summary');
+  const more = p.locator('.o-cut-more[aria-expanded="false"]');
+  if (await more.isVisible()) await more.click();
 }
 
 (async () => {
@@ -39,6 +41,10 @@ async function openCutoffs(p) {
   p = await L.open(b, '#/orders', { who: 'sam', extra, wait: 1500, init: withPerm('granted') });
   await L.waitFor(p, () => !!document.querySelector('[data-p="cut-push-on"]'), null, 10000);
   ok(/even with the book closed/.test(await txt(p, '.cut-push')), 'sous chef: the order list offers pushes');
+  // Google's scheduler starts the push job every 10 minutes since 20 Nov 2026, so the offer promises the hour again
+  // (from 13 to 24 Nov it said a push can come late, while GitHub ran the job 3 to 7 times a day)
+  const offer = (await txt(p, '.cut-push-l')) || '';
+  ok(/an hour before each cut-off/.test(offer) && !/come late/.test(offer), 'the offer promises a push an hour before each cut-off (' + offer + ')');
   if (await p.$('.o-cut-fold')) await openCutoffs(p);
   await p.click('[data-p="cut-push-on"]');
   await L.waitFor(p, () => !!document.querySelector('[data-p="cut-push-off"]'), null, 10000);

@@ -112,6 +112,9 @@ out.drawtpl = await all('drawtpl'); out.drawlib = await all('drawlib');
 out.suppliers = await all('suppliers'); out.supplierOrders = await subs(out.suppliers, 'suppliers', 'orders');
 out.supplierAudit = await subs(out.suppliers, 'suppliers', 'audit'); out.supplierlinks = await all('supplierlinks');
 reads += out.suppliers.length + out.supplierlinks.length;
+// The latest private sales report and mapping take one named read per backup, including when absent.
+const sales = await K.collection('suppliersales').doc('weekly').get(); reads++;
+out.supplierSales = sales.exists ? plain(sales.data()) : null;
 // function bookings (21 Oct 2026), their earlier versions and the booking contacts
 out.functions = await all('functions'); out.functionsHist = await subs(out.functions, 'functions', 'hist'); out.fncontact = await all('fncontact'); out.fnsent = await all('fnsent');
 // who said Got it to a function on Home (fnseen, 10 Nov 2026)

@@ -68,8 +68,10 @@ const retainedSearch = p => p.evaluate(() => document.getElementById('find') ===
     releaseEditor();
     await p.locator('[data-act="mgretry"]').waitFor({ state: 'visible' });
     ok(/Could not open the recipe editor/.test(await L.txt(p, '#mg-root')) && await p.locator('#mg-root .ink-icon[data-state="busy"]').count() === 0, 'a failed lazy download replaces busy feedback with an honest retry state');
+    await L.settle(p, 150);
+    ok(/Could not open the recipe editor.*try again\./i.test(await L.txt(p, '#lk-live[role="status"][aria-live="polite"]') || ''), 'the shared live region announces the editor failure and how to retry');
     await p.context().unroute('**/js/manage.js*', editorRoute);
-    await p.click('[data-act="mgretry"]');
+    await p.locator('[data-act="mgretry"]').press('Enter');
     await L.waitFor(p, () => !!window.LK_MG && !document.querySelector('[data-act="mgretry"]'));
     ok(await p.locator('#mg-root .ink-status[data-state="busy"]').count() === 0, 'retry opens the real editor and clears its waiting message');
     const unexpected = p.errors.filter(e => !/Failed to load resource: net::ERR_FAILED/.test(e));

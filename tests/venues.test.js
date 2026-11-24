@@ -41,6 +41,8 @@ function registry(extra) {
   ok(list.length >= 1 && list.some(v => v.id === 'leichhardt' && v.host === 'pages' && v.book === 'full'), 'venues/leichhardt.json: Leichhardt on GitHub Pages with the full book');
   ok(!throws(() => V.checkPagesFiles(list), /./), 'js/firebase-config.js and the security header are word for word Leichhardt\'s venue file');
   ok(fs.readFileSync(path.join(root, 'js', 'firebase-config.js'), 'utf8') === V.configJs(home), 'the settings the phones load are made from venues/leichhardt.json');
+  ok(V.configJs(home).includes('window.LK_SUPPLIER_SALES_ENABLED = true;') &&
+    !V.configJs(demo).includes('LK_SUPPLIER_SALES_ENABLED'), 'the generated settings enable the supplier sales pilot only for an opted-in venue');
   const other = Object.assign(copy(home), { firebase: Object.assign(copy(home.firebase), { projectId: 'another-project', authDomain: 'another-project.firebaseapp.com', storageBucket: 'another-project.firebasestorage.app' }) });
   const fake = fs.mkdtempSync(path.join(tmp, 'pages-'));
   fs.mkdirSync(path.join(fake, 'js'));
@@ -52,6 +54,7 @@ function registry(extra) {
   ok(throws(() => V.checkPagesFiles(list, fake), /security header/), 'a security header naming a second sign-in host is refused');
 
   const bad = (change, re, msg) => ok(throws(() => V.validVenue(Object.assign(copy(demo), change)), re), 'a venue file is refused: ' + msg);
+  bad({ supplierSales: 'true' }, /supplierSales/, 'its sales pilot setting must be a boolean');
   bad({ firebase: Object.assign(copy(demo.firebase), { authDomain: 'other-project.firebaseapp.com' }) }, /authDomain/, 'its sign-in host is another project\'s');
   bad({ firebase: Object.assign(copy(demo.firebase), { appId: '1:999999999:web:abcdef0123' }) }, /appId/, 'its web app is another project\'s');
   bad({ firebase: Object.assign(copy(demo.firebase), { projectId: 'Bad_Project' }) }, /projectId/, 'its project id is not one');
@@ -95,6 +98,11 @@ function registry(extra) {
       if (readsKitchen) ok(guard > 0 && (firstUse < 0 || guard < firstUse), name + ' guards its venue\'s project before any script runs');
     });
   }
+  // config/platform (24 Nov 2026): every run of the access preparation gets the venue's own PLATFORM_ID, so publish writes
+  // the platform owner's record and the verify after publishing checks it (empty at Leichhardt: no record)
+  const accessSteps = fs.readFileSync(path.join(wfDir, 'publish-rules.yml'), 'utf8').split('\n      - name: ').filter(x => /node access-bootstrap\.mjs/.test(x));
+  ok(accessSteps.length === 2 && accessSteps.every(x => /\n          PLATFORM_ID: \$\{\{ secrets\.PLATFORM_STAFF_ID \}\}\n/.test(x)), 'publish rules: both access preparation steps pass PLATFORM_ID from PLATFORM_STAFF_ID (' + accessSteps.length + ' steps)');
+  ok(/KITCHEN_PIN="\$PIN" PLATFORM_ID="\$PID" node scripts\/access-bootstrap\.mjs/.test(fs.readFileSync(path.join(root, 'scripts', 'publish-rules.sh'), 'utf8')), 'publish-rules.sh passes the platform owner\'s profile id to the access preparation');
   ok(!/secrets\.KITCHEN_PIN/.test(fs.readFileSync(path.join(wfDir, 'nightly-backup.yml'), 'utf8').split('Last night\'s backup')[1].split('Read the book')[0]), 'backup: last night\'s file is found without the kitchen PIN');
   ok(/kitchen-book-\$VENUE-backup-\[0-9\]\+/.test(fs.readFileSync(path.join(wfDir, 'nightly-backup.yml'), 'utf8')), 'backup: only this venue\'s own artifact is looked for');
 
@@ -140,13 +148,28 @@ function registry(extra) {
   try {
     for (const width of [390, 768, 1280]) {
       const p = await L.open(b, '#/', { base, width, noPin: true, who: '', wait: 1500 });
-      const seen = await p.evaluate(() => ({ project: (window.LK_FIREBASE || {}).projectId, eyebrow: (document.querySelector('.rb-eb') || {}).textContent || '', title: document.title, recipes: (window.LK_DATA || {}).recipes.length, body: document.body.innerText }));
+      const seen = await p.evaluate(() => ({ project: (window.LK_FIREBASE || {}).projectId, eyebrow: (document.querySelector('.rb-eb') || {}).textContent || '', venue: (document.querySelector('.rb-venue') || {}).textContent || '', venueShown: !!document.querySelector('.rb-venue') && document.querySelector('.rb-venue').getBoundingClientRect().width > 0, home: (document.querySelector('.wtop-brand') || { getAttribute: () => '' }).getAttribute('aria-label'), title: document.title, recipes: (window.LK_DATA || {}).recipes.length, body: document.body.innerText }));
       ok(seen.project === 'demo-venue-kb', width + ' px: the copy talks to its own project only');
       ok(seen.eyebrow === 'Seaside Hotel Kitchen' && /Seaside/.test(seen.title) && !/Leichhardt/i.test(seen.body), width + ' px: the top bar says Seaside Hotel Kitchen, nothing says Leichhardt (' + seen.eyebrow + ' | ' + seen.title + ')');
+      ok(seen.venue === 'Seaside' && seen.venueShown === (width < 720) && seen.home === 'Kitchen Book, Seaside, home', width + ' px: the phone shows Seaside under the KB mark, and the home link says it (' + seen.venue + ')');
       ok(seen.recipes === 0, width + ' px: no recipes in the book');
       ok(!(await L.overflow(p)), width + ' px: no sideways scroll ' + (await L.overflow(p) || ''));
       await p.evaluate(() => { location.hash = '#/recipes'; }); await L.settle(p, 800);
       ok(!(await L.overflow(p)), width + ' px: the empty Recipes page has no sideways scroll');
+      await L.waitFor(p, () => window.LK_PREP.rxState() === 'ok');
+      for (const mode of ['pass', 'tiles']) {
+        await p.locator('.find-bar .vsw [data-val="' + mode + '"]').press('Enter');
+        ok(await L.txt(p, '#recipe-sync-status .empty') === 'No recipes yet.' && !(await p.$('[data-act="clearall"]')), width + ' px: ' + mode + ' says the confirmed empty book has no recipes');
+      }
+      if (width === 390) {
+        await p.evaluate(async () => {
+          const sdk = window.LK_PREP.book().fs(), get = sdk.getDoc;
+          sdk.getDoc = ref => ref.path.join('/') === 'publicBook/index' ? Promise.resolve({ metadata: { fromCache: true }, exists: () => false }) : get(ref);
+          try { await window.LK_PREP.rxSync(true); } finally { sdk.getDoc = get; }
+        });
+        const status = await L.txt(p, '#recipe-sync-status');
+        ok(/No signal/.test(status || '') && !/No recipes yet/.test(status || '') && !(await p.$('[data-act="clearall"]')), 'an empty memory snapshot reports no signal without claiming there are no recipes');
+      }
       const errs = p.errors.filter(e => !/net::ERR|Failed to load resource/i.test(e));
       ok(errs.length === 0, width + ' px: no JS errors (' + errs.slice(0, 3).join(' | ') + ')');
       await p.context().close();

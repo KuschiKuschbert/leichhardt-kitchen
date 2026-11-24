@@ -7,7 +7,9 @@
 const L = require('./lib');
 const { R, ok } = L.results();
 const key = (...parts) => ['kitchens', L.PIN, ...parts].join('/');
-const today = L.ymd(new Date(L.NOW)), tomorrow = L.ymd(new Date(L.NOW + 86400000)), CFG = key('config', 'main'), TEAM = key('team', today);
+// A Tuesday keeps both dates visible while a picker from the first date is held open.
+const clock = Date.parse('2026-11-17T04:00:00Z');
+const today = L.ymd(new Date(clock)), tomorrow = L.ymd(new Date(clock + 86400000)), CFG = key('config', 'main'), TEAM = key('team', today);
 const people = [
   { id: 'sam', name: 'Sam', role: 'sous', active: true, add: true, tick: true },
   { id: 'ann', name: 'Ann', role: 'staff', active: true, add: true, tick: true },
@@ -22,7 +24,7 @@ const fixture = overlap => ({
     { id: 'ann', sh: 'lunch', sec: 'grill' }, { id: 'ann', sh: 'dinner', sec: 'pans' },
     { id: 'bo', sh: 'dinner', sec: 'grill' }],
   br: [{ id: 'ann', sh: 'lunch', at: 825, len: 45 }, { id: 'ann', sh: 'dinner', at: 1140, len: 30 }],
-  v: 1, at: L.NOW - 3600000, upd: L.NOW - 3600000, by: 'sam' }
+  v: 1, at: clock - 3600000, upd: clock - 3600000, by: 'sam' }
 });
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const read = p => p.evaluate(k => __fake.dump()[k], TEAM);
@@ -32,7 +34,7 @@ const saveOff = p => p.locator('[data-p="tm-save"]').isDisabled();
 const click = async (p, selector) => { await p.locator(selector).click(); await L.settle(p, 150); };
 async function ready(p) { await L.waitFor(p, () => !!document.querySelector('select[data-k="tm-sec:ann:lunch"]'), null, 7000); }
 async function open(browser, base, options) {
-  const p = await L.open(browser, '#/team', Object.assign({ base, who: 'sam', width: 1280, extra: fixture(), wait: 900 }, options));
+  const p = await L.open(browser, '#/team', Object.assign({ base, clock, who: 'sam', width: 1280, extra: fixture(), wait: 900 }, options));
   await ready(p); return p;
 }
 async function holdPicker(p, name, value) {
@@ -161,8 +163,6 @@ const forge = (p, list) => p.evaluate(list => {
     twoDays[key('team', tomorrow)] = Object.assign({}, twoDays[TEAM], { day: tomorrow });
     p = await open(browser, base, { extra: twoDays });
     if (!await p.locator('.tm-weeknav').isVisible()) await click(p, '[data-p="tm-date-toggle"]');
-    // the week holding tomorrow on show, today still chosen (on a Sunday tomorrow is in next week)
-    for (let n = 0; n < 4 && !await p.locator('[data-p="tm-day"][data-day="' + tomorrow + '"]').count(); n++) await click(p, '[data-p="tm-week-next"]');
     ok(await p.locator('.tm-notebook').getAttribute('data-day') === today && await field(p, 'tm-addsvc:bo').getAttribute('data-day') === today,
       'Add a service: Bo\'s picker carries the date it was drawn for');
     ok(same(await field(p, 'tm-addsvc:bo').evaluate(e => [...e.options].map(o => o.value)), ['', 'lunch']), 'Add a service: Bo is offered only the service he is not on');

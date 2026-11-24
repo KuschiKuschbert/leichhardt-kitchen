@@ -187,6 +187,8 @@ Tests: `tests/supplier-rows.test.js` adds a 300-item example supplier: all rows 
 
 ### List first on a phone, 4 November 2026
 
+The [22 November Supplier order layout](supplier-order-rail-options/brief.md#built) moves the wide context into the supplier rail, keeps More with a hidden rail and brings Order history into the opening controls. The narrow info states, placed-order details and existing read limits still apply.
+
 The head chef found the order sheet took a lot of scrolling on a phone before ordering could start, and asked for the same treatment as the Prep list in the work pages design (design A, Clean notebook, PR #464: the list first, extras folded to one line, the action in a bar above the tabs). Measured at 390 by 844 with the test stand-in, a supplier with a cut-off today and a last order:
 
 | | Before | After |
@@ -204,6 +206,20 @@ The head chef found the order sheet took a lot of scrolling on a phone before or
 
 No schema, rules, reads or saved data change. `tests/supplier-rows.test.js` (57 checks) adds the first To order box above the Review bar at 390 px, Extra large text at 370 and 330 px (2 failed of 57 before the wrap and narrow-row fix), the folded line, More and Less, the line opening by itself for a placed order, the laptop keeping both blocks open, and the chip opening Asked for. On the old layout these fail (the first To order box at 1,330 px, no line, no chip).
 
+
+### Order history search and reuse
+
+Search filters the orders already loaded by date or item name. The date chooser, detail, **Copy this order** and **Use quantities again** refer to the same selected matching order. If the selection drops out of the results, choose a matching date to see its quantities. If there are no matches, the empty message says it covers loaded orders. **Older orders** can still extend the search with the existing bounded query.
+
+Changing the search or selecting another order cancels an armed **Replace draft quantities**. The confirmation names the order date and can only replace the current supplier draft after a fresh **Use quantities again**. Copying and reusing quantities do not record a supplier order. Typing, editing and clearing the history search with the keyboard keep focus in the search box. **Back to draft** keeps its existing return and draft behaviour.
+
+`tests/supplier-rail-history.test.js` checks zero, one and multiple loaded matches, the clipboard payload, the keyboard caret, and delayed confirmations during and after a search or selection change. This client repair changed no reads, outgoing writes, schema or rules. It shipped at `js/suppliers.js?v=32` with the existing module API.
+
+### Find an item in Supplier order and Catalogue
+
+Typing or editing **Find an item** in Supplier order and Manage catalogue keeps focus and the caret when results redraw. **Clear search** returns focus to the field and restores the list. The shared search keeps a query that is still waiting to apply through an unrelated redraw. The filter continues to work on loaded items and uses the same debounce and Enter behaviour as Order history.
+
+`tests/supplier-search-caret.test.js` checks full keyboard entry, edits at the caret, Clear, redraws and supplier reads and writes at 390, 768 and 1280 px. The same test checks the History caret and selected order. The compatible Supplier UI loads from `js/suppliers.js?v=33` with API 12.
 
 ### Ticked on the order list only, 5 November 2026
 

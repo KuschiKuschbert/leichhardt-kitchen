@@ -4,9 +4,12 @@
    headId PIN), the platform owner is admin through his own profile there (PLATFORM_EMAIL with PLATFORM_ID's PIN), and
    the venue's admin can neither change, lock out nor reset the PIN of that profile. Every role at each venue: signed
    out, the kitchen PIN alone, staff, view only, functions only, sous chef, head chef PIN, venue admin, platform owner
-   PIN, platform admin, and a wrong or unverified Google account. Made-up names and emails only. */
+   PIN, platform admin, and a wrong or unverified Google account. Made-up names and emails only.
+   config/platform (24 Nov 2026): the platform owner's profile id, which only the server writes. His Google and a live
+   admin read it; the venue owner's Google alone, every other role and every write are refused. At Leichhardt there is
+   no record: the owner's Google (the platform owner there) and the admin get "not there", nobody else even that. */
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, Timestamp, setLogLevel } from 'firebase/firestore';
+import { doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, Timestamp, setLogLevel, collection, query, where, documentId } from 'firebase/firestore';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { anonContext, adminGrant, nextFour } from './device-auth-fixtures.mjs';
@@ -38,6 +41,8 @@ async function venue(name, { owner, platform, platformId, cfg }) {
     for (const id of cfg.staffIds) { await setDoc(doc(d, K + 'pinset/' + id), { at: 1 }); await setDoc(doc(d, K + 'staffpins/' + id), { hash: hash(id) }); }
     await setDoc(doc(d, K + 'days/2020-01-01/items/private'), { text: 'Sample line', done: false });
     await setDoc(doc(d, 'publicBook/index'), { r: {} });
+    // what scripts/access-bootstrap.mjs writes: the platform owner's id, and no record where he is the owner
+    if (platformId) await setDoc(doc(d, K + 'config/platform'), { id: platformId });
   });
   const db = uid => anonContext(env, uid).firestore();
   const google = (uid, email, x = {}) => env.authenticatedContext(uid, { email, email_verified: true, auth_time: Math.floor(Date.now() / 1000), firebase: { sign_in_provider: 'google.com' }, ...x }).firestore();
@@ -51,6 +56,16 @@ async function venue(name, { owner, platform, platformId, cfg }) {
 }
 const privateRead = d => getDoc(doc(d, K + 'days/2020-01-01/items/private'));
 const admins = d => getDoc(doc(d, K + 'config/admins'));
+const platformGet = d => getDoc(doc(d, K + 'config/platform'));
+const platformList = d => getDocs(query(collection(d, K + 'config'), where(documentId(), '==', 'platform')));
+// every write to config/platform is the server's: create, change and delete, for each sign-in given
+async function platformWrites(where, list) {
+  for (const [who, d] of list) {
+    await check(where + ', ' + who + ': cannot write config/platform', () => setDoc(doc(d, K + 'config/platform'), { id: 'someone' }), false);
+    await check(where + ', ' + who + ': cannot change config/platform', () => setDoc(doc(d, K + 'config/platform'), { id: 'someone' }, { merge: true }), false);
+    await check(where + ', ' + who + ': cannot delete config/platform', () => deleteDoc(doc(d, K + 'config/platform')), false);
+  }
+}
 
 // Leichhardt's shape: one owner, PLATFORM_ID empty. Every role keeps what it had.
 {
@@ -75,6 +90,7 @@ const admins = d => getDoc(doc(d, K + 'config/admins'));
     await V.off(d => setDoc(doc(d, K + 'config/main'), cfg));
     const head = await V.issue('d-head', 'head');
     await check('Leichhardt, head chef PIN alone: not admin', () => admins(V.db('d-head')), false);
+    await check('Leichhardt, head chef PIN alone: no config/platform', () => platformGet(V.db('d-head')), false);
     await check('Leichhardt, the owner\'s Google alone verifies itself', () => admins(owner));
     await check('Leichhardt, the owner\'s Google alone: no private records', () => privateRead(owner), false);
     await check('Leichhardt, a wrong Google account: not the owner', () => admins(wrong), false);
@@ -83,6 +99,20 @@ const admins = d => getDoc(doc(d, K + 'config/admins'));
     await check('Leichhardt, the owner grants the head chef\'s session', () => V.grant(owner, 'google-owner', 'd-head', head));
     const admin = V.db('d-head');
     await check('Leichhardt, admin: reads config/admins', () => admins(admin));
+    // config/platform: no record here. Only the owner's Google (the platform owner here) and the admin may ask.
+    await check('Leichhardt, the owner\'s Google: may ask for config/platform (there is none)', async () => { const s = await platformGet(owner); if (s.exists()) throw new Error('a record'); });
+    await check('Leichhardt, admin: may ask for config/platform (there is none)', async () => { const s = await platformGet(admin); if (s.exists()) throw new Error('a record'); });
+    await check('Leichhardt, signed out: no config/platform', () => platformGet(V.env.unauthenticatedContext().firestore()), false);
+    await check('Leichhardt, the kitchen PIN alone: no config/platform', () => platformGet(V.db('pin-only')), false);
+    await check('Leichhardt, staff: no config/platform', () => platformGet(V.db('d-staff')), false);
+    await check('Leichhardt, view only: no config/platform', () => platformGet(V.db('d-view')), false);
+    await check('Leichhardt, functions only: no config/platform', () => platformGet(V.db('d-fn')), false);
+    await check('Leichhardt, sous chef: no config/platform', () => platformGet(V.db('d-sous')), false);
+    await check('Leichhardt, a wrong Google account: no config/platform', () => platformGet(wrong), false);
+    await check('Leichhardt, an unverified owner Google: no config/platform', () => platformGet(unverified), false);
+    await check('Leichhardt, admin: cannot list config/platform', () => platformList(admin), false);
+    await check('Leichhardt, the owner\'s Google: cannot list config/platform', () => platformList(owner), false);
+    await platformWrites('Leichhardt', [['admin', admin], ['the owner\'s Google', owner], ['staff', V.db('d-staff')]]);
     await check('Leichhardt, admin: changes anyone\'s lists', () => updateDoc(doc(admin, K + 'config/main'), { addIds: ['staff', 'view'], by: 'head' }));
     await check('Leichhardt, admin: opens a PIN set-up window', () => updateDoc(doc(admin, K + 'config/main'), { 'pinOpen.staff': Date.now() + 60000, by: 'head' }));
     await check('Leichhardt, admin: resets a staff PIN', () => { const b = writeBatch(admin); b.delete(doc(admin, K + 'staffpins/view')); b.delete(doc(admin, K + 'pinset/view')); return b.commit(); });
@@ -115,6 +145,18 @@ const admins = d => getDoc(doc(d, K + 'config/admins'));
     await check('venue, head chef PIN alone: not admin', () => admins(V.db('d-head')), false);
     await check('venue, platform owner PIN alone: not admin', () => admins(V.db('d-plat')), false);
     await check('venue, platform owner PIN alone: reads the kitchen as himself', () => privateRead(V.db('d-plat')));
+    await check('venue, head chef PIN alone: no config/platform', () => platformGet(V.db('d-head')), false);
+    await check('venue, platform owner PIN alone: no config/platform', () => platformGet(V.db('d-plat')), false);
+    await check('venue, the platform owner\'s Google alone: reads config/platform, his own id', async () => { const s = await platformGet(plat); if (!s.exists() || s.data().id !== 'plat') throw new Error('not his id'); });
+    await check('venue, the venue owner\'s Google alone: no config/platform', () => platformGet(head), false);
+    await check('venue, a wrong Google account: no config/platform', () => platformGet(wrong), false);
+    await check('venue, an unverified platform account: no config/platform', () => platformGet(unverified), false);
+    await check('venue, signed out: no config/platform', () => platformGet(V.env.unauthenticatedContext().firestore()), false);
+    await check('venue, the kitchen PIN alone: no config/platform', () => platformGet(V.db('pin-only')), false);
+    await check('venue, staff: no config/platform', () => platformGet(V.db('d-staff')), false);
+    await check('venue, view only: no config/platform', () => platformGet(V.db('d-view')), false);
+    await check('venue, functions only: no config/platform', () => platformGet(V.db('d-fn')), false);
+    await check('venue, sous chef: no config/platform', () => platformGet(V.db('d-sous')), false);
     await check('venue, the platform owner\'s Google alone verifies itself', () => admins(plat));
     await check('venue, the platform owner\'s Google alone: no private records', () => privateRead(plat), false);
     await check('venue, a wrong Google account: not an admin', () => admins(wrong), false);
@@ -128,6 +170,11 @@ const admins = d => getDoc(doc(d, K + 'config/admins'));
     await check('venue admin: reads config/admins', () => admins(vAdmin));
     await check('platform admin: reads config/admins', () => admins(pAdmin));
     await check('platform admin: reads the kitchen', () => privateRead(pAdmin));
+    await check('venue admin: reads config/platform, the platform owner\'s id', async () => { const s = await platformGet(vAdmin); if (!s.exists() || s.data().id !== 'plat') throw new Error('not his id'); });
+    await check('platform admin: reads config/platform', () => platformGet(pAdmin));
+    await check('venue admin: cannot list config/platform', () => platformList(vAdmin), false);
+    await check('the platform owner\'s Google: cannot list config/platform', () => platformList(plat), false);
+    await platformWrites('venue', [['venue admin', vAdmin], ['platform admin', pAdmin], ['the platform owner\'s Google', plat], ['the venue owner\'s Google', head], ['staff', V.db('d-staff')]]);
     // What the venue admin runs as before: his kitchen, his people, everyone but the platform owner's profile.
     await check('venue admin: changes a setting', () => updateDoc(doc(vAdmin, K + 'config/main'), { showBadges: false, by: 'hc' }));
     await check('venue admin: changes other people\'s lists', () => updateDoc(doc(vAdmin, K + 'config/main'), { addIds: ['plat', 'staff', 'view'], by: 'hc' }));
