@@ -15525,7 +15525,13 @@ if (list.length) sg('oreg', 's');
     }).catch(function () {
       if (tmPlan !== mine || accessEpoch !== epoch || tmPlan.weeks[start] !== read) return;
       read.st = 'err'; read.retry = Date.now() + TM_RETRY;
-      for (var n = 0; n < 7; n++) tmPlanEntry(shift(start, n)).st = 'err';
+      // Today's own read (teamLoad(), for the top bar's chip) that already answered keeps its plan: before, the page said
+      // Could not load when that answer came first and showed the plan when it came second (24 Nov 2026)
+      for (var n = 0; n < 7; n++) {
+        var failedDay = shift(start, n), failedEntry = tmPlanEntry(failedDay);
+        if (failedDay === dayNow() && tm.day === failedDay && tm.epoch === epoch && tm.st === 'ok' && failedEntry.st === 'ok') continue;
+        failedEntry.st = 'err';
+      }
       tmRsWeekIn(start, false);
       draw();
     });
