@@ -163,7 +163,7 @@ This audit does not claim real-device user research, screen-reader speech testin
 | Shared controls | Existing adaptive pickers, committed search, report tables and managed sheets | `js/controls.js`, `docs/adaptive-controls.md` |
 | Suppliers/functions/deliveries/admin | Lazy feature screens plus eager Functions schedule helper, with feature-specific data/acknowledgement contracts | `js/suppliers.js`, `js/supplier-core.js`, `js/supplier-store.js`, `js/functions.js`, `js/fnedit.js`, `js/deliveries.js`, `js/admin-intelligence.js`, `js/proofreader-admin.js` |
 | Offline/update | GitHub Pages, manifest, service worker, two workerless fallback lists and guarded update controller | `sw.js`, `js/upkeep.js`, `manifest.webmanifest` |
-| PDF runtime and browser tooling | Guides imports pdfjs-dist 4.10.38 from the allowed CDN; the test tree also pins it. Browser runner uses playwright-core 1.48.2 | `js/prep.js:7401`, `tests/package.json`, lockfile and CSP |
+| PDF runtime and browser tooling | Guides imports pdfjs-dist 4.10.38 from the allowed CDN; the test tree also pins it. Browser runner uses playwright-core 1.65.1 (1.48.2 until 25 Nov 2026) | `js/prep.js:7401`, `tests/package.json`, lockfile and CSP |
 | Rules tooling | rules-unit-testing 3.0.4, Firebase 10.14.1, Firebase Tools 13.29.1 | `tests/rules/package.json` and lockfile |
 | Privileged jobs | firebase-admin 12.7.0, scheduled learning/analysis/backup/cutoff jobs | `scripts/package.json`, `.github/workflows/` |
 | Required CI | Node 22, Java 21, syntax, browser, rules and five processing checks in Click tests | `.github/workflows/pr-tests.yml` |
