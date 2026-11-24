@@ -105,8 +105,11 @@ const owner = p => L.waitFor(p, () => window.LK_PREP.state.level === 'owner' && 
   p = await L.open(b, '#/admin', { admin: true, width: 1280, height: 900, wait: 1800, extra: venue(), init: venueInit });
   ok(await owner(p), 'venue: the venue owner\'s Google and the head chef\'s PIN open Admin');
   s = await state(p);
+  // One read with each owner check, as at Leichhardt above: on a busy runner the owner check runs a second time once the
+  // PIN session is in, and both reads are refused (2 of 12 runs under load counted two and failed, 24 Nov 2026).
   const refused = await p.evaluate(k => window.__fake.refused.filter(x => x.path === k).map(x => x.kind), K + 'config/platform');
-  ok(refused.length === 1 && refused[0] === 'server' && s.me === '', 'venue: the venue owner\'s Google cannot read config/platform (' + refused.join(', ') + ')');
+  const checks = await p.evaluate(k => window.__fake.reads.filter(x => x === k).length, K + 'config/admins');
+  ok(refused.length >= 1 && refused.length === checks && refused.every(k => k === 'server') && s.me === '', 'venue: the venue owner\'s Google cannot read config/platform, once with each owner check (' + refused.join(', ') + '; ' + checks + ' owner checks)');
   ok(s.who === 'hc' && (await dump(p, K + 'adminDevices/anon-test')).by === 'hc', 'venue: the grant names the head chef');
   ok(await L.waitFor(p, () => window.LK_PREP.state.platformSt === 'ok', null, 5000).then(() => true, () => false) && (await state(p)).id === 'plat-1', 'venue: the admin session reads the platform owner\'s id once the grant is in');
   await L.adminTab(p, 'people'); await L.settle(p, 300);
