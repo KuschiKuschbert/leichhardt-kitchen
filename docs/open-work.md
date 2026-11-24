@@ -16,9 +16,7 @@ Done on 22 Oct 2026 by the head chef: the Browser key works only from `kuschikus
 
 4. **Flaky click tests** (24 Nov 2026). The weekly issue "Click tests that needed a second try" (#523) marked 23 files "Yes" in the week to 23 Nov; `swipe-dismiss.test.js` needed a second try 34 times. Each retry slows every pull request. Fix one file per pull request, the most retried first, without loosening a check, and remove this item when the list has no "Yes". Done 24 Nov 2026: swipe-dismiss, mascot, section-box, update-confirmation (73 of the week's retries); the method is in [flaky tests](flaky-tests.md). Next: chef-panel, cleaning-schedule, csv-text (8 each).
 
-5. **A moment of the read-only notice on opening a work page** (found 24 Nov 2026). When the roster answers, the sign-in resumes and the page is drawn once before the kitchen settings are asked for (`resume()` then `accessChanged()` on the next turn), so Prep can show "You can read the book but not write..." for a frame between two Loading cards. Seen in the click-test stand-in (`tests/loading-wait.test.js` works around it); not yet seen on a phone. Fix: keep the loading card until `accessChanged()` has run.
-
-6. **Time a real cold start on the head chef's phone** (24 Nov 2026, [brief](loading-wait-options/brief.md)). The fixes for a slow first open (one start after an update, the step words, set publish times) were measured on the click-test stand-in only. The sign-in, App Check and the first answers on a real phone are not measured. Time one cold start with the sign-in apart from the reads. The App Check token lasts 1 hour by default (Firebase console, App Check, the web app's token time to live): the first open of the day then waits for a reCAPTCHA check. A longer time skips it on most opens but a stolen token works for longer: the owner's call.
+5. **Time a real cold start on the head chef's phone** (24 Nov 2026, [brief](loading-wait-options/brief.md)). The fixes for a slow first open (one start after an update, the step words, set publish times) were measured on the click-test stand-in only. The sign-in, App Check and the first answers on a real phone are not measured. Time one cold start with the sign-in apart from the reads. The App Check token lasts 1 hour by default (Firebase console, App Check, the web app's token time to live): the first open of the day then waits for a reCAPTCHA check. A longer time skips it on most opens but a stolen token works for longer: the owner's call.
 
 Remove each item here once it is done.
 
@@ -39,9 +37,9 @@ Done, all on 22 Oct 2026:
 Done on 2 November 2026:
 - admin report read-cache fidelity: the stand-in now loses its read cache on reload, matching `memoryLocalCache`. The truthful baseline is 219 reads after an admin reload and zero on same-page report returns in the current fixture. No production cache change is needed for that existing cost. Private reports stay in memory under the current access contract. The earlier proposal to persist private report records is superseded. The lifetime regression failed 3 of 12 checks against the old stand-in and passes all 12 with the corrected model.
 
-Still to do:
+Done on 24 Nov 2026: the cut-off bar no longer keeps its no-signal words after its listener is refused once the signal is back (`cutWatch()`'s error callback sets `cutState` to `'error'`, since 14 Nov 2026); `tests/offline-reads.test.js` checks it with the stand-in's new `__fake.denyListen` (2 failed of 66 with the old behaviour put back, 0 now).
 
-- a nit from the review of the no-signal fixes (28 Oct 2026), needing more than a line: the cut-off bar keeps its no-signal words after its listener is refused (`cutWatch()`'s error callback leaves `cutState` at `'offline'`; the stand-in needs to refuse a listener started with no signal once the signal is back to check it). Its partner is done (13 Nov 2026): `pickName()`, `loadAdmins()` and the chef to-do say No signal only for `unavailable` or `deadline-exceeded` (`noSignal()`); `loadMine()` already said "Could not check your sign-off".
+Still to do:
 
 - Records' nightly cleaning count (`scripts/records-core.mjs`, 13 Nov 2026) follows `js/cleaning.js` for a past day (`cleaningDue()`, `flowSummary()`, `flowState()`) in a copy of its own, because `js/cleaning.js` is a browser page that node cannot load. One shared core used by both (like `js/analysis-core.js`) would make them one; until then a change to how Cleaning reads a past day changes `scripts/records-core.mjs` and its `CLEAN_V` with it.
 

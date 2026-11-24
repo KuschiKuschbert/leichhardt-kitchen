@@ -8043,6 +8043,10 @@
     if (S.name === 'guides' && (S.guides || S.configState === 'ok')) return guidesPageHTML();
     if (S.configState === 'error') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Prep book</h2><p class="p-err">' + (quotaOn() ? esc(quotaText()) : 'Could not connect. Check the connection and try again.') + '</p><div class="btn-row"><button type="button" class="btn dark" data-p="retry">Try again</button></div></section>';
     if (S.configState !== 'ok') return loadingHTML();
+    // The roster let this person into the kitchen pages and the kitchen's own settings are asked for on the next turn
+    // (resume(), then accessChanged()): the loading card stays up meanwhile (24 Nov 2026). A page drawn from the roster
+    // alone, which has no capability lists, showed Prep's read-only notice for a frame between two Loading cards.
+    if (kitchenAccess() && !S.configFull && S.name !== 'admin') return loadingHTML();
     if (S.name === 'admin') return adminHTML();
     if (S.name === 'chef') return chefHTML();
     // the chef to-do list: a chef with their PIN, or the head chef's Google device with nobody signed in
@@ -8178,8 +8182,8 @@
     try { S.root.innerHTML = practiceHTML() + quotaHTML() + bodyHTML() + toastHTML(); }
     finally { if (key) delete ae._uxRedrawing; }
     // the wait ends once nothing on the page has waited for its first load for 0.4 s: a draw or two of something else
-    // between the roster and the settings (the list's own placeholder rows, or for a moment the read-only notice) are
-    // the same wait, so the breath and the 8 s carry on through them
+    // between the roster and the settings (the list's own placeholder rows) are the same wait, so the breath and the
+    // 8 s carry on through them
     if (waitSince) {
       if (S.root.querySelector('[data-wait], .ink-skeleton')) { clearTimeout(waitGone); waitGone = 0; }
       else if (!waitGone) waitGone = setTimeout(function () { waitGone = 0; if (S.root && !S.root.querySelector('[data-wait], .ink-skeleton')) waitDone(); }, 400);
@@ -15521,7 +15525,13 @@ if (list.length) sg('oreg', 's');
     }).catch(function () {
       if (tmPlan !== mine || accessEpoch !== epoch || tmPlan.weeks[start] !== read) return;
       read.st = 'err'; read.retry = Date.now() + TM_RETRY;
-      for (var n = 0; n < 7; n++) tmPlanEntry(shift(start, n)).st = 'err';
+      // Today's own read (teamLoad(), for the top bar's chip) that already answered keeps its plan: before, the page said
+      // Could not load when that answer came first and showed the plan when it came second (24 Nov 2026)
+      for (var n = 0; n < 7; n++) {
+        var failedDay = shift(start, n), failedEntry = tmPlanEntry(failedDay);
+        if (failedDay === dayNow() && tm.day === failedDay && tm.epoch === epoch && tm.st === 'ok' && failedEntry.st === 'ok') continue;
+        failedEntry.st = 'err';
+      }
       tmRsWeekIn(start, false);
       draw();
     });
