@@ -16,7 +16,7 @@ const { R, ok } = L.results();
     const held = sdk.replace(sub, sub + '\n  if (window.__hold && new RegExp(window.__hold).test(ref.path.join("/"))) { s.held = true; (window.__held = window.__held || []).push(s); }')
       .replace(del, del + '\n  if (s.held) return;') + '\nwindow.__let = src => (window.__held || []).forEach(s => { if (s.held && new RegExp(src).test(s.ref.path.join("/"))) { s.held = false; if (subs.has(s)) deliver(s); } });\n';
     // the card as it first showed, before the opening helper's own waits
-    const init = 'window.__hold = "(login/roster|config/main)$"; new MutationObserver(function () { var c = document.querySelector("[data-wait]"); if (c && !window.__first) window.__first = { words: (c.querySelector(".ink-status") || {}).textContent || "", breathing: !!c.querySelector(".ink-skeleton.is-breathing") }; }).observe(document, { childList: true, subtree: true });';
+    const init = 'window.__hold = "(login/roster|config/main)$"; new MutationObserver(function () { var c = document.querySelector("[data-wait]"); if (c && !window.__first) window.__first = { words: (c.querySelector(".ink-status") || {}).textContent || "", breathing: !!c.querySelector(".ink-skeleton.is-breathing") }; if (/You can read the book but not write/.test(document.body ? document.body.textContent : "")) window.__readOnly = true; }).observe(document, { childList: true, subtree: true });';
     const card = p => p.evaluate(() => {
       const c = document.querySelector('[data-wait]'), sk = c && c.querySelector('.ink-skeleton');
       const box = sk && sk.querySelector('.ink-skeleton-box');
@@ -25,7 +25,10 @@ const { R, ok } = L.results();
         icon: (c.querySelector('.ink-status .ink-icon') || { dataset: {} }).dataset.state || '', statuses: c.querySelectorAll('[role="status"]').length, at: Date.now() } : null;
     });
 
-    let p = await L.open(b, '#/prep', { who: 'sam', wait: 100, fakeSDK: { 'firebase-firestore.js': held }, init });
+    // Opened on Recipes, then the Prep list: the card's own clock starts here, not during the opening helper's waits,
+    // so a busy runner cannot reach the 8 s line before the checks below
+    let p = await L.open(b, '#/recipes', { who: 'sam', wait: 100, fakeSDK: { 'firebase-firestore.js': held }, init });
+    await p.evaluate(() => { location.hash = '#/prep'; });
     await L.waitFor(p, () => !!document.querySelector('[data-wait]'), null, 5000).catch(() => {});
     let c = await p.evaluate(() => window.__first);
     ok(!!c && /Connecting to the kitchen book/.test(c.words) && !c.breathing, 'first: the card says it is connecting, the rows still ' + JSON.stringify(c));
@@ -48,12 +51,16 @@ const { R, ok } = L.results();
     await p.evaluate(() => window.__let('config/main$'));
     await L.waitFor(p, () => [...document.querySelectorAll('.nb-row')].some(r => /Slice onions/.test(r.textContent)), null, 5000).catch(() => {});
     ok(await p.evaluate(() => !document.querySelector('[data-wait]') && [...document.querySelectorAll('.nb-row')].some(r => /Slice onions/.test(r.textContent))), 'the list replaces the card once the settings are in');
+    // Sam may add lines: between the roster and the settings no page is drawn from the roster alone (24 Nov 2026)
+    ok(await p.evaluate(() => !window.__readOnly), 'between the roster and the settings the read-only notice never shows, not even for a frame');
     ok(p.errors.length === 0, 'no page errors ' + p.errors.join(' | '));
     await p.context().close();
 
     // reduce motion: the words still change, nothing breathes
-    p = await L.open(b, '#/orders', { who: 'sam', wait: 100, fakeSDK: { 'firebase-firestore.js': held }, init });
+    p = await L.open(b, '#/recipes', { who: 'sam', wait: 100, fakeSDK: { 'firebase-firestore.js': held }, init });
     await p.emulateMedia({ reducedMotion: 'reduce' });
+    await p.evaluate(() => { location.hash = '#/orders'; });
+    await L.waitFor(p, () => !!document.querySelector('[data-wait]'), null, 5000).catch(() => {});
     await p.clock.runFor(1600);
     await p.evaluate(() => window.__let('login/roster$'));
     await L.waitFor(p, () => /Getting today/.test((document.querySelector('[data-wait] .ink-status') || {}).textContent || ''), null, 5000).catch(() => {});
