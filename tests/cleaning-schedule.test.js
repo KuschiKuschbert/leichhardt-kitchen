@@ -18,14 +18,26 @@ function fixture(codes, changes = {}) {
 async function general(p) {
   if (await p.locator('[data-cln="group"][data-group="general"][aria-expanded="false"]').count()) await p.click('[data-cln="group"][data-group="general"]');
 }
+// The list as the person sees it: the page is up and no longer says "Loading cleaning...". With a task code, that
+// task's row is on screen and not waiting to send. The book has no .cln-loading class, so the old wait passed while
+// the list was still being read. On a busy runner the General group was not there to open yet, and the next wait
+// timed out (24 Nov 2026, docs/flaky-tests.md).
+function listed(p, code) {
+  return L.waitFor(p, sel => {
+    const page = document.querySelector('.cln-page');
+    if (!page || /Loading cleaning/.test(page.textContent)) return false;
+    const r = sel && document.querySelector(sel);
+    return !sel || !!r && !r.classList.contains('is-pending');
+  }, code ? row(code) : '');
+}
 async function reopened(p) {
-  await L.waitFor(p, () => !!document.querySelector('.cln-page') && !document.querySelector('.cln-loading'));
+  await listed(p);
   await general(p);
   await L.waitFor(p, () => !!document.querySelector('.cln-plan-row'));
 }
 async function open(b, options = {}) {
   const p = await L.open(b, '#/cleaning', { who: 'sam', wait: 1000, ...options });
-  await L.waitFor(p, () => !!document.querySelector('.cln-page') && !document.querySelector('.cln-loading'));
+  await listed(p);
   await p.evaluate(async () => {
     const C = LK_PREP.cleaning(), day = LK_TIME.day();
     window.__cleanTest = { C, day, tasks: (await C.load(day, day)).tasks };
@@ -83,6 +95,8 @@ const row = code => '.cln-plan-row[data-id="' + id(code) + '"]';
     await p.locator('[data-cln="setup"]').first().click(); await p.click('.cln-import summary');
     await p.check('[data-cln-import-verifier="sam"]'); await p.click('[data-cln="import-schedule"]');
     await L.waitFor(p, () => Object.keys(__fake.dump()).filter(k => k.includes('/cleaningTasks/')).length === 26 && !LK_PREP.unsent());
+    // the import reads the list again after its writes: it is done when the page says so
+    await L.waitFor(p, () => /Loaded cleaning schedule: 26 added/.test((document.querySelector('.cln-setup-imports') || {}).textContent || ''));
     const first = await records(p, 'cleaningTasks');
     ok(first.length === 26 && first.every(t => t.path.endsWith('/clean-template-' + t.plan.template)), 'import: chef setup creates exactly 26 deterministic roots');
     ok(first.find(t => t.plan.template === 'c11').plan.verifiers.join(',') === 'sam', 'import: the explicitly selected local Pass checker is stored with food labelling');
@@ -122,11 +136,12 @@ const row = code => '.cln-plan-row[data-id="' + id(code) + '"]';
     p = await open(b, { clock: Date.parse('2026-11-09T12:00:00Z'), extra: { [key('cleaningTasks', id('c03'))]: task('c03', { from: at('2026-11-01') }) } });
     await p.locator('[data-cln="setup"]').first().click(); await p.click('.cln-pack-import summary'); await p.click('[data-cln="import-packdown"]');
     await L.waitFor(p, () => Object.values(__fake.dump()).filter(t => t.plan && /^pd-/.test(t.plan.template)).length === 25 && !LK_PREP.unsent());
+    await L.waitFor(p, () => /Loaded pack down schedule: 25 added/.test((document.querySelector('.cln-setup-imports') || {}).textContent || ''));
     const imported = (await records(p, 'cleaningTasks')).filter(t => /^pd-/.test(t.plan.template));
     ok(imported.length === 25 && (await records(p, 'cleaningTasks')).length === 26, 'pack down import: the explicit setup action adds 25 ordered tasks and preserves the existing floor task');
     const twice = await p.evaluate(() => LK_PREP.cleaning().importTasks(LK_CLEANING_SCHEDULE.packDownDrafts()));
     ok(twice.imported === 0 && twice.skipped === 25, 'pack down import: running the separate importer again creates no duplicate task or revision');
-    await p.click('[data-cln="today"]');
+    await p.click('[data-cln="today"]'); await listed(p);
     const shownGroups = await p.$$eval('[data-cln="group"]', es => es.map(e => e.getAttribute('data-group'))), order = [];
     for (const group of ['hot', 'grill', 'pans']) {
       await p.click('[data-cln="group"][data-group="' + group + '"]');
@@ -274,7 +289,7 @@ const row = code => '.cln-plan-row[data-id="' + id(code) + '"]';
     ok(!!(await act(p, 'c08', 'perform', { checked: offday.plan.checks })).error && !(await records(p, 'cleaningDone')).length, 'schedule: an unscheduled weekday cannot be completed through the API');
     ok(/^0\/1/.test(await L.txt(p, '.cln-progress')), 'schedule: non-scheduled work never inflates today\'s incomplete denominator');
     await p.setViewportSize({ width: 1280, height: 844 }); await p.click('[data-cln="week"]');
-    await L.waitFor(p, () => !!document.querySelector('.cln-week-day') && !document.querySelector('.cln-loading'));
+    await listed(p); await L.waitFor(p, () => !!document.querySelector('.cln-week-day'));
     await general(p);
     const week = await p.evaluate(() => ({ label: document.querySelector('.cln-week-nav').textContent,
       first: document.querySelector('[data-cln="day"]').textContent,
@@ -390,6 +405,7 @@ const row = code => '.cln-plan-row[data-id="' + id(code) + '"]';
     ok(!/AVC|Winery|Surry Hills|source schedule/i.test(text), 'page: no other-venue branding or provenance labels');
     await p.click('[data-cln="flow-quick"][data-id="' + id('c26') + '"]');
     await L.waitFor(p, () => Object.values(__fake.dump()).some(r => r.task === 'clean-template-c26' && r.done) && !LK_PREP.unsent());
+    await listed(p, 'c26');
     ok(!await p.locator(row('c26') + ' .cln-detail').count() && (await records(p, 'cleaningDone')).some(r => r.task === id('c26') && r.workerId === 'ann'), 'routine: a task without required subchecks completes in one tap');
     ok(/Ann/.test(await L.txt(p, row('c26') + ' .nb-meta')) && /14:00/.test(await L.txt(p, row('c26') + ' .nb-meta')), 'routine: collapsed completion names the confirmed worker and 24-hour time');
     await p.locator('[data-cln="details"][data-id="' + id('c08') + '"]').first().focus();
@@ -400,6 +416,7 @@ const row = code => '.cln-plan-row[data-id="' + id(code) + '"]';
     for (let i = 0; i < await checks.count(); i++) await checks.nth(i).check();
     await p.click('[data-cln="flow-perform"][data-id="' + id('c08') + '"]');
     await L.waitFor(p, () => Object.values(__fake.dump()).some(r => r.task === 'clean-template-c08' && r.done === true) && !LK_PREP.unsent());
+    await listed(p, 'c08');
     ok(/Ann|Saved/.test(await L.txt(p, row('c08'))), 'working journey: required checks and Complete save the signed-in worker visibly');
     for (const width of [390, 768, 1280]) { await p.setViewportSize({ width, height: 844 }); await L.settle(p, 150); ok(!(await L.overflow(p)), 'working journey: expanded instructions fit at ' + width + ' px'); }
     await p.reload(); await reopened(p);
