@@ -2,7 +2,7 @@
 
 Asked by the head chef on 24 November 2026: "now the app feels slow loading a lot of pages, whats the cause, can we find a great middle ground and maybe have the loading screen also show some kind of animation from the elements it already has while its loading longer?" Earlier the same day: "When I first start the app this loading screen loads for quite some time before I can see anything."
 
-Status: round 1 Build smaller (5 of 5); round 2 scored by six reviewers; recommendation below, waiting for the head chef's choice. Nothing in the book has changed. This is role-based analysis, not research with real staff.
+Status: chosen by the head chef on 24 November 2026 (see Chosen at the end). Built in small pull requests. This is role-based analysis, not research with real staff.
 
 ## What was measured
 
@@ -178,3 +178,9 @@ Build in three small pull requests, each with a check that fails first:
 Why it wins: it removes the double start (the likeliest cause of the slow first open), cuts new versions from 16 to 36 a day to 2 plus urgent, keeps the card calm and truthful, and adds no reads. Main downside: a fix not labelled `urgent` reaches the phones up to 16.5 hours later, which partly reverses this morning's choice to see changes sooner; the merges themselves still land at any time.
 
 For the head chef's choice: step 3 is a departure from this morning's always-open window, and the breathing the head chef asked for is not recommended now. If wanted, it can come last and on its own, at today's opacities and in step with the icon's 1.8 s trace.
+
+## Chosen (head chef, 24 November 2026)
+
+- **Card: words plus breathing.** One line names the real step; past 8 s the still line, "Still waiting for an answer from the kitchen book. You can use the recipes while you wait." No new button. On a long wait the four placeholder rows breathe together. This goes against the council's advice (six of six), so it is built with the screen designer's limits: never darker than today (boxes at most 0.55, lines at most 0.65), in step with the icon's 1.8 s trace, carried on from where it was when the card is redrawn (not restarted), stopped once the 8 s line shows, and none with reduce motion or when the browser says offline.
+- **A fresh open starts once.** The new copy downloads behind and is used at the next open or 2-minute rest; no reload part way through a start.
+- **Phones get new versions at 15:05 and 22:35**, `urgent` at once. Merges still land at any time. Built last, with the rules published once after their code is live and a waiting run for a skipped timed run.

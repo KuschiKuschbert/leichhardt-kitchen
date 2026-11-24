@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Fewer reloads and a clearer long wait, 24 November 2026 (chosen)
+
+The head chef found the book slow to load. 16 to 36 new versions a day reloaded phones coming back after 5 minutes, and a fresh open after a publish started twice. Round 1 Build smaller (5 of 5); round 2 three designs scored by six reviewers. Chosen: the card names the step with rows breathing on a long wait (against the council's advice), a fresh open starts once, and phones get new versions at 15:05 and 22:35. [Brief](loading-wait-options/brief.md).
+
 ## The release window open at all times, 24 November 2026 (head chef)
 
 The owner asked to keep the window open at all times. `RELEASE_WINDOWS` in `.github/workflows/auto-merge.yml` is `0000-2400`; the window logic is unchanged and `tests/auto-merge-queue.test.js` still checks it on the old windows, plus the all-day setting at the times that used to be closed. [Auto-merge](auto-merge.md), [decision](head-chef-decisions.md).
