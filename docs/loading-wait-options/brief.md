@@ -2,7 +2,7 @@
 
 Asked by the head chef on 24 November 2026: "now the app feels slow loading a lot of pages, whats the cause, can we find a great middle ground and maybe have the loading screen also show some kind of animation from the elements it already has while its loading longer?" Earlier the same day: "When I first start the app this loading screen loads for quite some time before I can see anything."
 
-Status: round 1 done (Build smaller, 5 of 5). Round 2 designs below, waiting for the council's scores and then the head chef's choice. Nothing in the book has changed. This is role-based analysis, not research with real staff.
+Status: round 1 Build smaller (5 of 5); round 2 scored by six reviewers; recommendation below, waiting for the head chef's choice. Nothing in the book has changed. This is role-based analysis, not research with real staff.
 
 ## What was measured
 
@@ -62,7 +62,7 @@ Common to all three: nothing from the list shows before the kitchen settings are
 **Central idea:** fewer new versions, nothing new on the phones' update rules. **Updates:** merges still land at any time, but Publish site sends a new version to the phones only at two set quiet times, 15:05 and 22:35, plus at once for a pull request labelled `urgent`. The phones' rules stay as they are. **Card:** one line names the real step: "Connecting to the kitchen book" until the roster answers, then "Getting today's prep list". Past 8 s: a still line, "Still waiting for an answer from the kitchen book. Recipes work now.", and an Open the recipes button. Rows stay still.
 
 - Pros: a workflow change only for Part 1 (`.github/workflows/publish-site.yml`, its test); at most two new versions a day (plus urgent), so at most two update reloads and two double starts per phone; Publish rules already follows Publish site, so rules and code stay together; urgent works because the publish itself knows the label.
-- Cons: a fresh open right after a set time still starts twice; a finished fix waits up to about 8 hours unless labelled urgent; the deferred publish must compare with the last published version, not one merge.
+- Cons: a fresh open right after a set time still starts twice; a finished fix waits up to 16.5 hours (22:35 to 15:05) unless labelled urgent (corrected in round 2); the deferred publish must compare with the last published version, not one merge.
 
 ### B: never start twice (rethinks when a phone moves)
 
@@ -122,4 +122,59 @@ Implemented-app checks still needed before release, for whichever is chosen: the
 | Headspace: calm, plain words | Works | Needs work: "Check today's sign-in" | Works |
 | Linear: one consistent frame | Works | Needs work: a second status layout | Works |
 
-Council scores, the mix assessment and the recommendation: to come.
+## Round 2 scores
+
+Six fresh reviewers saw all three designs, the same packet and the previews. No numeric scores; each ranked the three.
+
+| Reviewer | Ranking | Their recommendation |
+| --- | --- | --- |
+| Cook mid-service | A, C, B | A first, then B's fresh-open rule once a start count proves the double start. No breathing, no step list |
+| Head chef | A, B, C | A plus B's single fresh-open rule, A's words, no breathing |
+| Skeptic | B, A, C | B's update rule with A's one-line card; hold the set publish times until starts are counted |
+| New starter | A, C, B | C without breathing (A's card and publish times plus B's fresh-open rule); "You can use the recipes while you wait" in place of "Recipes work now" |
+| Keeper | A, B, C | A with two repairs (rules publish order; a waiting run for a skipped timed publish), then B's 8-second piece |
+| Screen designer | C, A, B | C's updates with A's still card; if the breathing is wanted, last, on its own, at today's opacities and one rhythm |
+
+Agreement: A's one-line card (6 of 6); no step list (6 of 6); no breathing now (6 of 6); B's "a fresh open never reloads part way" (5 of 6, the keeper after a start count). Disagreement: holding publishes to set times. Five include it; the skeptic would hold it until starts are counted. The head chef and the keeper note it reverses part of this morning's choice to keep the window open, and delays what the head chef sees live.
+
+Corrections from round 2: A's wait for an unlabelled fix is up to 16.5 hours, not about 8. In C the boxes would peak darker than today (0.65 against 0.55). The step names are close to today's "Loading the prep list..." (`js/prep.js`) and Open the recipes already exists on the offline card (`offlineHTML()`).
+
+### Break-it findings from round 2
+
+| Scenario | Expected | Hypothesis | Evidence | Smallest check |
+| --- | --- | --- | --- | --- |
+| A or C: a pull request with stricter `firestore.rules` and new code merges at 10:00 while the site publish is held | The rules publish after the code is live | Published runs on a skipped deploy, so Publish rules would go at 10:00 ahead of the code; if Published is held instead, the 15:05 run looks only at the last commit, so rules followed by another merge never publish | Source-reviewed (`publish-site.yml`, `publish-rules.yml`); Risk / Not evidenced | A `tests/site-publish.test.js` case: rules held, a later merge, then the timed publish; the rules publish once, after Deploy |
+| A or C: GitHub skips or delays the timed publish run | The held version goes out | Nothing publishes until the next run | `docs/auto-merge.md` records skipped timed runs; Risk | A waiting run, as the merge queue already has |
+| B or C: a phone stays on the previous saved copy after a fresh open, then opens Suppliers, Manage or Print cards | The page opens | Lazy files load network-first, so a newer lazy file can meet the older shell | Risk / Not evidenced; the lazy pages' API numbers (`MG_API` and others) and their "workspace-version" message bound it | A saved-copy test with the shell at N and a lazy file at N+1 |
+| B or C: a saved copy that breaks Prep, then an urgent fix, then a fresh open with a cook tapping | The fix within seconds, as today | With no reload part way, the touched page waits for its next open or rest | Risk / Not evidenced | `tests/saved-copy.test.js`: newer urgent version on a fresh open, touched and untouched |
+| C: `render()` replaces the card mid-breath | A smooth fade | The cycle restarts at each redraw, a visible flash | Preview source; Risk | `tests/ink-prep.test.js` redraws at 1.0, 2.0 and 2.5 s |
+
+## The mix of all three
+
+| From | Part | Take or reject | Why | Principle |
+| --- | --- | --- | --- | --- |
+| A | One line that names the step | Take | All six; plain words, one frame | Headspace, Linear |
+| A | Still line past 8 s | Take, reworded: "Still waiting for an answer from the kitchen book. You can use the recipes while you wait." | "Recipes work now" can read as "were broken" (new starter) | Headspace, Duolingo |
+| A | Open the recipes button | Reject | Recipes is already on the tab bar during the wait (combined preview); a new button on a service page needs the head chef's OK | Linear |
+| A | Publish to the phones at 15:05 and 22:35, `urgent` at once | Take as the last step, with the keeper's two repairs | The most reloads saved (five of six); the rules order and skipped runs must be fixed first | Flighty |
+| B | A fresh open never reloads part way | Take | Removes the double start behind "when I first start the app" (five of six) | Duolingo |
+| B | Step list with Done, Now, Next | Reject | A second status layout, wraps at 390 px, tags look like buttons, "Check today's sign-in" reads as an order (six of six) | Linear, Headspace |
+| B | 30 minutes away before a return reloads; the version note | Reject | With publishes held, few versions land in service; the note duplicates `urgent` and needs a workflow (keeper, head chef, cook) | |
+| C | Rows breathing together | Reject for now | Six of six: motion is not progress, a departure from Ink in motion, restarts on redraw; the measured waits end before 1.5 s | Flighty, Duolingo |
+
+All three blended (C with B's list) does not beat the recommendation: B's list repeats the status in a second layout and the breathing adds a contract departure for a wait nobody has timed long.
+
+Combined preview: `preview-mix.html` (A's card with the reworded line, no button), shown with the real top bar and tab bar: ![The recommended mix](shots/strip-mix.png). Review status: a lead synthesis of parts each reviewer assessed; the reworded line and the dropped button follow the new starter's, head chef's and screen designer's notes; the combined preview was not re-reviewed.
+
+## Recommendation
+
+**Recommend A's one-line card + B's "a fresh open never reloads part way" + A's set publish times as the last step.** No step list, no breathing.
+
+Build in three small pull requests, each with a check that fails first:
+1. The card names the step (`js/prep.js`): "Connecting to the kitchen book", then "Getting today's prep list" (by page); past 8 s, counted from when the card first showed, the still line. No change to motion. Test: redraws at 1.0, 2.0 and 2.5 s keep the words moving forward and the 8 s line once.
+2. A fresh open never reloads part way (`js/upkeep.js`): the new copy downloads behind and is used at the next open or 2-minute rest. First a stand-in test that counts starts and reads per fresh open after a publish (expected 2 today, 1 after). Plus the old-shell, new-lazy-file check.
+3. Publish to the phones at 15:05 and 22:35, `urgent` at once (`publish-site.yml`, `publish-rules.yml`), with the rules published once after their code is live and a waiting run for a skipped timed run. Merges still land at any time.
+
+Why it wins: it removes the double start (the likeliest cause of the slow first open), cuts new versions from 16 to 36 a day to 2 plus urgent, keeps the card calm and truthful, and adds no reads. Main downside: a fix not labelled `urgent` reaches the phones up to 16.5 hours later, which partly reverses this morning's choice to see changes sooner; the merges themselves still land at any time.
+
+For the head chef's choice: step 3 is a departure from this morning's always-open window, and the breathing the head chef asked for is not recommended now. If wanted, it can come last and on its own, at today's opacities and in step with the icon's 1.8 s trace.
