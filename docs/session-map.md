@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Live click tests: a run that skips no longer cancels one that tests, 24 November 2026 (fix)
+
+A merge that published nothing (#850, #849) started a Live click tests run that cancelled #851's live tests, then skipped. The cancelling moved from the whole workflow to the test jobs in `.github/workflows/live-tests.yml`. A CI fix, no council. `tests/site-publish.test.js`. [Note](site-publishing.md).
+
 ## The lists open one server answer sooner after a cold start, 24 November 2026 (fix)
 
 The head chef: the Prep list sat on Loading for a long time when the app first opened. The roster, the kitchen's settings and the page's own list were three server answers in a row; the list now asks with the settings (`listsMay()` in `js/prep.js`, prep, orders, wastage and transfers). About 0.3 to 0.6 s sooner on the test stand-in with a slowed phone. A fix, no council. `tests/cold-start.test.js`. [Note and measurements](loading-motion.md#the-first-list-after-a-cold-start-24-november-2026).
