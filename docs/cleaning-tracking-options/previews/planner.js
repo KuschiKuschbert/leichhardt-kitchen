@@ -6,19 +6,25 @@
           per (days a week it happens, 1 to 3), days (the weekdays it has now, [] for none; 0 is Sunday),
           move (the chef chose it to be planned), every (a repeat's days, 2 to 30 as the rules allow: 28 for a monthly job) }
    A job that is not chosen (move false) is never touched: it only counts toward each day's load.
-   opts: { quiet: [5, 6] (Friday, Saturday), share: 0.1, cap: 5, together: true (jobs of one kind share a day) }
+   opts: { quiet: [5, 6] (Friday, Saturday), share: 0.1, cap: 5, together: true (jobs of one kind share a day),
+           level: the heaviest job each weekday takes, Sunday first (3 heavy, 2 medium, 1 light), set by the admin.
+                  Left out, it is heavy every day but the quiet ones. Given, the quiet days are its light days.
+           order: 'kind' (rule 4 before rule 5, as below) or 'section' (rule 5 before rule 4: a job joins its kind's
+                  day only when that does not make its section's heaviest night heavier) }
    check(jobs, days, opts) -> the rules a set of days breaks, in words ([] for none): what a page runs again whenever a
    chef changes or leaves out one line of a proposal, so a plan never breaks its own rules without saying so.
 
    The order the rules win in, when they pull against each other:
-   1. Friday and Saturday take light jobs only. A job with no weight is never treated as light.
+   1. A day takes no job heavier than its level: Friday and Saturday take light jobs only. A job with no weight
+      counts as medium, never as light.
    2. Friday and Saturday together hold at most a tenth of the week's jobs that come round (share).
    3. A section never gets two heavy jobs on one day, and a job on several days has them at least two days apart.
    4. The same kind of job in different sections goes on the same day, unless that would push a section past cap
       weight points on that day. Then the kind gives way, and the plan says so (gave).
    5. Each section's days are as even as they can be, then the kitchen's days.
    6. A job that has a day keeps it unless a rule above moves it or its kind's day is elsewhere. With same-kind days
-      off, a job that has a day always keeps it. Friday and Saturday are allowed for a light job, never preferred.
+      off, a job that has a day keeps it unless that day's level does not take it (rule 1). Friday and Saturday are
+      allowed for a light job, never preferred.
    A job on whole weeks (every 7, 14, 21 or 28) keeps one weekday: it gets it by the same rules, and a starting week,
    1 to every / 7, so jobs on one rhythm do not all start in the same week.
    A job on any other rhythm (every 2 to 6, 8 to 13 and so on) has no weekday to choose: it falls on a different one
@@ -42,7 +48,9 @@
   }
   function plan(jobs, opts) {
     opts = opts || {};
-    var quiet = opts.quiet || [5, 6], share = opts.share === undefined ? 0.1 : opts.share, cap = opts.cap || 5, together = opts.together !== false;
+    var quiet = opts.quiet || [5, 6], share = opts.share === undefined ? 0.1 : opts.share, cap = opts.cap || 5, together = opts.together !== false, sectionFirst = opts.order === 'section';
+    if (opts.level) quiet = [0, 1, 2, 3, 4, 5, 6].filter(function (d) { return opts.level[d] === 1; });
+    var level = opts.level || [0, 1, 2, 3, 4, 5, 6].map(function (d) { return quiet.indexOf(d) >= 0 ? 1 : 3; });
     // a job's time cost in the day's load: light 1, medium 2, heavy 3. Not set counts as medium there, and is never
     // light enough for Friday or Saturday (rule 1).
     var cost = function (j) { return j.w >= 1 && j.w <= 3 ? j.w : 2; };
@@ -69,13 +77,15 @@
       var best = null, was = (j.days || []).slice().sort().join(','), kindGave = false, heavyGave = false, where = j.sec || 'the kitchen';
       sets(j.per || 1).forEach(function (set) {
         var q = set.filter(function (d) { return quiet.indexOf(d) >= 0; }).length;
-        if (q && (j.w !== 1 || quietUsed + q > quietMax)) return;                                          // rules 1 and 2
+        if (set.some(function (d) { return level[d] < cost(j); }) || (q && quietUsed + q > quietMax)) return;   // rules 1 and 2
         // a tenth is a limit, not a target: a job that has a day is never moved onto Friday or Saturday to even the week
         if (was && set.some(function (d) { return quiet.indexOf(d) >= 0 && (j.days || []).indexOf(d) < 0; })) return;
         if (j.w === 3 && j.sec && set.some(function (d) { return heavy[j.sec] && heavy[j.sec][d]; })) { if (together && j.kind && kinds[j.kind] && set.some(function (d) { return kinds[j.kind][d]; })) heavyGave = true; return; }   // rule 3
         var load = j.sec ? set.reduce(function (n, d) { return Math.max(n, ((sec[j.sec] || [])[d] || 0) + cost(j)); }, 0) : 0;
         var mates = together ? set.reduce(function (n, d) { return n + (j.kind && kinds[j.kind] ? kinds[j.kind][d] : 0); }, 0) : 0;
-        var over = load > cap, score = (over ? 0 : -1000 * mates) + (set.join(',') === was ? (together ? -300 : -100000) : 0) + 150 * q + 100 * load + 10 * set.reduce(function (n, d) { return n + kitchen[d]; }, 0);
+        // the section's heaviest night of the week if the job goes on this set
+        var worst = j.sec ? [0, 1, 2, 3, 4, 5, 6].reduce(function (n, d) { return Math.max(n, ((sec[j.sec] || [])[d] || 0) + (set.indexOf(d) >= 0 ? cost(j) : 0)); }, 0) : 0;
+        var over = load > cap, score = (sectionFirst ? 100000 * worst : 0) + (over ? 0 : -1000 * mates) + (set.join(',') === was ? (together ? -300 : -100000) : 0) + 150 * q + 100 * load + 10 * set.reduce(function (n, d) { return n + kitchen[d]; }, 0);
         if (over && mates) kindGave = true;
         if (!best || score < best.score) best = { set: set, score: score, mates: mates, over: over, load: load };
       });
@@ -97,12 +107,15 @@
   function check(jobs, days, opts) {
     opts = opts || {};
     var quiet = opts.quiet || [5, 6], share = opts.share === undefined ? 0.1 : opts.share, cap = opts.cap || 5, out = [], sec = {}, heavy = {}, q = 0, total = 0;
+    if (opts.level) quiet = [0, 1, 2, 3, 4, 5, 6].filter(function (d) { return opts.level[d] === 1; });
+    var level = opts.level || [0, 1, 2, 3, 4, 5, 6].map(function (d) { return quiet.indexOf(d) >= 0 ? 1 : 3; }), need = function (j) { return j.w >= 1 && j.w <= 3 ? j.w : 2; };
     jobs.forEach(function (j) {
       var mine = days[j.id] || (j.every ? [] : j.days || []);
       if (!j.every && mine.length >= 7 || !mine.length) return;
       total += mine.length;
       mine.forEach(function (d) {
-        if (quiet.indexOf(d) >= 0) { q++; if (days[j.id] && j.w !== 1) out.push(j.text + ': only a light job goes on ' + NAMES[d]); }
+        if (quiet.indexOf(d) >= 0) q++;
+        if (days[j.id] && level[d] < need(j)) out.push(j.text + (level[d] === 1 ? ': only a light job goes on ' + NAMES[d] : ': a heavy job does not go on ' + NAMES[d] + ', a medium day'));
         if (!j.sec) return;
         sec[j.sec] = sec[j.sec] || [0, 0, 0, 0, 0, 0, 0]; sec[j.sec][d] += j.w >= 1 && j.w <= 3 ? j.w : 2;
         if (j.w === 3) { heavy[j.sec + d] = (heavy[j.sec + d] || 0) + 1; if (heavy[j.sec + d] === 2) out.push(j.sec + ' has two heavy jobs on ' + NAMES[d]); }
@@ -110,7 +123,12 @@
     });
     if (q > Math.floor(total * share)) out.push('Friday and Saturday hold ' + q + ' jobs, more than a tenth of the week');
     // a job already on Friday or Saturday that is not marked light is the chef's to look at: the planner never chose it
-    jobs.forEach(function (j) { if (!days[j.id] && !j.every && (j.days || []).length < 7 && (j.days || []).some(function (d) { return quiet.indexOf(d) >= 0; }) && j.w !== 1) out.push(j.text + ' is on ' + j.days.filter(function (d) { return quiet.indexOf(d) >= 0; }).map(function (d) { return NAMES[d]; }).join(' and ') + ' and is not marked light'); });
+    jobs.forEach(function (j) {
+      if (days[j.id] || j.every || (j.days || []).length >= 7) return;
+      var lightDays = (j.days || []).filter(function (d) { return level[d] === 1 && need(j) > 1; }), mediumDays = (j.days || []).filter(function (d) { return level[d] === 2 && need(j) > 2; });
+      if (lightDays.length) out.push(j.text + ' is on ' + lightDays.map(function (d) { return NAMES[d]; }).join(' and ') + ' and is not marked light');
+      if (mediumDays.length) out.push(j.text + ' is marked heavy and is on ' + mediumDays.map(function (d) { return NAMES[d]; }).join(' and ') + ', a medium day');
+    });
     Object.keys(sec).forEach(function (name) { sec[name].forEach(function (load, d) { if (load > cap && jobs.some(function (j) { return days[j.id] && j.sec === name && days[j.id].indexOf(d) >= 0; })) out.push(name + ' is at weight ' + load + ' on ' + NAMES[d] + ', over ' + cap); }); });
     return out;
   }

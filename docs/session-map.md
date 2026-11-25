@@ -24,9 +24,9 @@ The head chef asked for cleaning tracking in the admin panel and a button that p
 
 | Files | Role and checks |
 | --- | --- |
-| `docs/cleaning-tracking-options/` | Proposal, brief, the three reviewer packets, the design page (`index.html`), and `previews/`: the pages with `build.cjs`, the preview planner `planner.js` (pure; `plan()`, `check()`, `tonight()`) with `planner.test.js` (26 node checks, run by hand, not by Click tests) and `jobs.js` (example kinds and weights, made up). |
+| `docs/cleaning-tracking-options/` | Proposal, brief, the three reviewer packets, the design page (`index.html`), and `previews/`: the pages with `build.cjs`, the preview planner `planner.js` (pure; `plan()`, `check()`, `tonight()`) with `planner.test.js` (32 node checks, run by hand, not by Click tests) and `jobs.js` (example kinds and weights, made up). |
 
-Open with the head chef: whether a close ever finishes after midnight, which jobs the flag covers, same-kind days on or off to start, whether Thursday takes heavy jobs, plan or own pick for "on that section", admin only or sous chefs too.
+Answered by the head chef on 26 November: a close never finishes after midnight; Thursday is a heavy day and Tuesday a medium one; the admin sets each day's level. Open: the order when same-kind days and an even week clash (the lead recommends the section's night first), whether Sunday, Monday and Wednesday are heavy, which jobs the flag covers, plan or own pick for "on that section", admin only or sous chefs too.
 
 ## Fewer reloads and a clearer long wait, 24 November 2026 (chosen)
 

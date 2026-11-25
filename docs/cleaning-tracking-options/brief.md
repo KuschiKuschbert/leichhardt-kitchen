@@ -241,37 +241,78 @@ Before ready, on the implemented app at 390, 768 and 1280 px: every save state, 
 | Duolingo: progress shows real work, no points | Not relevant | Works: no totals per person |
 | Linear: one frame, no second way to edit | Works: the strip never edits | Works: rows, no table |
 
+## The head chef's answers, 26 November 2026
+
+After the redrawn mixes he wrote, exactly as typed:
+
+> Oh yeah Thursday is a heavy cleaning day too, Tuesday is a medium cleaning day, let the admin set the heavy was of th days too.
+> Nah my closes don't finish after midnight.
+> I don't know which one to prioritise when the] clash, what would you recommend?
+
+The lead's reading:
+
+- Each weekday has a level, the heaviest job it takes: heavy, medium or light. Thursday is heavy, Tuesday is medium, Friday and Saturday are light (his earlier word). "let the admin set the heavy was of th days" is read as "let the admin set how heavy each day is". Sunday, Monday and Wednesday as heavy is the lead's reading of his earlier "Sunday to Wednesday", not his word.
+- A close never finishes after midnight. So "not ticked by midnight" is a fair meaning of missed, and that question no longer holds the morning flag.
+- "Which one to prioritise when they clash" is read as same-kind days against an even week, the two wishes the mixes showed pulling apart.
+
+### What the planner does with his day levels
+
+The lead's run, on the example kinds and weights. `previews/planner.js` now takes the day levels as an option, and has a second rule order, section first: a job joins its kind's day only when that does not make its section's heaviest night heavier. 32 node checks. The week is weekly jobs per day, Sunday to Saturday. The section columns are each section's heaviest night in weight points (light 1, medium 2, heavy 3).
+
+| Order | Week | Dated jobs moved | Grill | Pans | Fryers | Hot larder | Kinds with a day two sections share |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Now | 7,4,4,4,4,1,0 | | 2 | 3 | 3 | 5 | |
+| Same-kind days off | 7,5,5,4,4,1,0 | 1 of 15 | 2 | 3 | 3 | 5 | 3 of 4, not by design |
+| Kind first (the switch On, as drawn) | 5,8,5,3,4,1,0 | 10 of 15 | 2 | 3 | 4 | 5 | 4 of 4 |
+| Section first, then kind | 5,5,5,5,5,1,0 | 10 of 15 | 2 | 3 | 2 | 4 | 4 of 4 |
+
+The one move with same-kind days off is a job the example marks heavy that sits on Tuesday. It rests on a made-up weight, not on a fault in his list.
+
+### The lead's recommendation on the clash
+
+**The section's night wins, then same-kind days.** Not reviewed by the council: one run on made-up weights, and his own may give another result.
+
+- His first ask was that jobs do not all fall on the same day. Same-kind days came after, with "maybe even".
+- On the example it gives the most even week of the three, makes two sections' heaviest night lighter and none heavier, and every kind still has a day that two sections share. Kind first makes Fryers' heaviest night heavier.
+- With this order the switch is not needed. One rule order, no stored choice, and no "changing this later does not put days back". Planning again after a save moves no job (node check).
+- Cost: 10 of 15 dated jobs move, the same as kind first. While Cleaning is off a move costs no wait, so the plan is cheapest to set once, before Cleaning is switched on. After that each move costs that job one uneven week, shown on its line.
+- Downside: not every job of a kind lands on one day. Shelves in the example fall on Monday, Wednesday and Thursday; two sections share Monday and Fryers has two on Thursday.
+
+Out of date since these answers: both Plan the days pictures. They show the switch, say "behind equipment on Tuesday", and give monthly jobs a first date on a Tuesday, which a medium Tuesday rules out for a heavy job. They are redrawn once he agrees the order.
+
+Plan against own pick, still to settle for "who was on at close": the lead recommends that a cook's own pick wins over the plan, as the later and first-hand record, and that a day with neither says "nobody on the plan".
+
 ## Recommendation
 
-**Recommend both mixes, built in this order, with the morning flag held until the head chef answers the midnight question.**
+**Recommend both mixes, built in this order.** The midnight question is answered, so it no longer holds the morning flag. The flag still waits on two things: one rule for who was on when the plan and a cook's own pick differ, and Unable to complete for a job the chef typed in.
 
-1. **The nightly count, now.** Keep each missed and done job that comes round by its root id, with its section and who did it, leave Unable out of the totals, record the first night Cleaning is on, and bump `CLEAN_V`. It is cheapest before Cleaning is switched on, and nothing can be shown until it has run.
-2. **Weight and kind in the job's form, then Plan the days (P-mix)** with same-kind days as a switch, each section's heaviest night shown, and a job due tonight said plainly. It carries weights, Friday and Saturday light only, moving dated jobs and same-kind days, for weekly and monthly jobs. A job every 2 or 3 weeks is planned like a monthly one. A job on a rhythm that is not whole weeks (every 2, 3 or 10 days) gets only a start day, not a weekday: he asked for any rhythm, and that is as far as such a rhythm can go (see Not hidden by the ranking). It and shows what each choice does to the week before anything is saved.
+1. **The nightly count, now.** Keep each missed and done job that comes round by its root id, with its section and who did it, leave Unable out of the totals, record the first night Cleaning is on, and bump `CLEAN_V`. It is cheapest before Cleaning is switched on, and nothing can be shown until it has run. It does not depend on any planner question.
+2. **Weight and kind in the job's form, each day's level set by the admin, then Plan the days (P-mix)** with one rule order (the section's night, then same-kind days) in place of the switch, each section's heaviest night shown, and a job due tonight said plainly. It carries weights, day levels, moving dated jobs and same-kind days, for weekly and monthly jobs. A job every 2 or 3 weeks is planned like a monthly one. A job on a rhythm that is not whole weeks (every 2, 3 or 10 days) gets only a start day, not a weekday: he asked for any rhythm, and that is as far as such a rhythm can go (see Not hidden by the ranking). The page shows what the plan does to the week before anything is saved.
 3. **Cleaning by section in Reports (T-mix), then the Inbox flag** with names one tap behind it.
 
 Why these beat the originals: P-C alone hid the week and could break its own rules on one untick; P-B alone hid what a move costs; T-A alone showed only blame. The mixes keep each design's strongest part and drop the parts most reviewers rejected, each named in the mix table above. In the follow-up all three reviewers said build the mix, each with changes; none preferred an original design.
 
-Main downside: Plan the days has the most states of any option to build and test, for a page used at setup and now and then, and it is long on a phone: 3.0 screens with same-kind days off and 5.3 with them on (Preview); and tracking shows nothing until the count has run for a few weeks.
+Main downside: Plan the days has the most states of any option to build and test, for a page used at setup and now and then, and it is long on a phone: 3.0 screens with no moves and 5.3 with ten (Preview, as drawn before his answers); and tracking shows nothing until the count has run for a few weeks.
 
 Not hidden by the ranking:
 
-- His two wishes pull against each other on his list as the lead tagged it: the kinds and weights are made-up examples, and his own may change the result. With them, same-kind days cost 10 moves and a less even week. The switch makes that his choice each time; which way it starts is his to say.
-- A job on a rhythm that is not whole weeks (every 2, 3 or 10 days; the rules allow 2 to 30) cannot be given a day. It falls on a different weekday each time, so it reaches Friday and Saturday whatever its weight and the light-only rule cannot hold for it. The planner only starts two such jobs of one section on different days, never the night they are saved. A job every 7, 14, 21 or 28 days keeps its weekday and gets a starting week (2 node checks). The lists hold one job off whole weeks today (Change grill drip trays, every 2 days, a Pack down step, never moved).
-- He named Sunday to Wednesday for heavier work. The planner also uses Thursday.
-- A moved job has one uneven week, up to 13 days between cleans in the example (saved on a Wednesday; another save day gives other waits).
+- His two wishes pull against each other on his list as the lead tagged it: the kinds and weights are made-up examples, and his own may change the result. The lead's answer is the rule order above; it is one run, not a council finding.
+- A job on a rhythm that is not whole weeks (every 2, 3 or 10 days; the rules allow 2 to 30) cannot be given a day. It falls on a different weekday each time, so it reaches Friday and Saturday whatever its weight and no day level can hold for it. The planner only starts two such jobs of one section on different days, never the night they are saved. A job every 7, 14, 21 or 28 days keeps its weekday and gets a starting week (2 node checks). The lists hold one job off whole weeks today (Change grill drip trays, every 2 days, a Pack down step, never moved).
+- A moved job has one uneven week once Cleaning is on, up to 13 days between cleans in the example as first drawn (saved on a Wednesday; another save day gives other waits).
 - A missed weekly job is not due again until its next day, so a flag reports a miss and does not get it cleaned.
 - The skeptic would hold bulk moves until real weights and kinds exist, and the head chef reviewer would build the tracking page only after four weeks of counts. Step 1 does not conflict with either.
-- The mixes are a lead synthesis. Three reviewers (skeptic, keeper, cook) checked the first drawing and asked for changes. The lead redrew both; no reviewer has seen the redraw, and the head chef, new starter and screen designer have seen neither.
+- The mixes are a lead synthesis. Three reviewers (skeptic, keeper, cook) checked the first drawing and asked for changes. The lead redrew both; no reviewer has seen the redraw, and the head chef, new starter and screen designer have seen neither. No reviewer has seen day levels or the section-first order.
 
 ## Open with the head chef
 
-1. Does a close ever finish after midnight? It decides whether the morning flag can be trusted.
-2. "Not all tasks for that section": weekly and monthly jobs only, or nightly Pack down too?
-3. Same-kind days: on or off to start with?
-4. Is Thursday a day for heavy jobs?
-5. When the plan and a cook's own pick differ, which is "on that section"?
-6. The flag and the rows for the admin only, or for sous chefs too (a rules change)?
+Answered on 26 November 2026: a close never finishes after midnight; Thursday is a heavy day, Tuesday a medium day; the admin sets each day's level.
+
+1. The order when they clash: the section's night first, then same-kind days (the lead's recommendation)?
+2. Are Sunday, Monday and Wednesday heavy days? That is the lead's reading.
+3. "Not all tasks for that section": weekly and monthly jobs only, or nightly Pack down too?
+4. When the plan and a cook's own pick differ, which is "on that section"? The lead recommends the pick.
+5. The flag and the rows for the admin only, or for sous chefs too (a rules change)?
 
 ## Chosen
 
-Not chosen yet. The head chef decides.
+Not chosen yet. He has answered questions and asked for a recommendation; he has not said build. The head chef decides.
