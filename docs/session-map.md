@@ -19,6 +19,16 @@ Next: the tab's name and the page's design are looked at again with the head che
 
 Records' nightly cleaning count kept its own copy of how the Cleaning page reads a day, as did `cleaningDue()` in `js/prep.js`. All three now use `js/cleaning-core.js` (lazy, shared with node, like `js/analysis-core.js`). `cleaningDue()` asks the core, which loads with the Cleaning page, and refuses a write without it. A tidy-up, no council: the results are the same, proved on a synthetic programme of 124 jobs and 14,089 records against the copies as they were, so `CLEAN_V` stays 1. `tests/cleaning-core.test.js`, [Cleaning](cleaning-schedule.md#one-reading-of-a-day).
 
+## Cleaning results by section and planning the days, 26 November 2026 (the combined design chosen; step 1 next)
+
+The head chef asked for cleaning tracking in the admin panel and a button that plans which day each cleaning job falls on: a weight in three steps on each job, each weekday set for the heaviest job it takes, Friday and Saturday light only, dated jobs can move, same-kind jobs on one day, a missed job as its section's with a flag the next morning. A first council ran, then he asked for it to start again from scratch with the screen designer in both rounds. Second council: round 1 Build smaller 6 of 6; round 2, three whole designs drawn inside the book's real pages, B (one list) first for 5 of 6; a combined design checked by three reviewers and redrawn. Chosen by the head chef: the combined design, built results first (the nightly count, the Inbox row and Records, the weights list, then suggested days), each step its own pull request. These notes change nothing in the book. [Brief](cleaning-tracking-options/brief.md).
+
+| Files | Role and checks |
+| --- | --- |
+| `docs/cleaning-tracking-options/` | `proposal.md`, the three reviewer packets, `brief.md`, the design page (`index.html`), `baseline/` (today's pages from main, `shots.cjs`), `designs/` (A, B, C and the combined design drawn inside the real pages by `build.cjs` and `frame.cjs`, with `measurements.json`), `previews/` (the preview planner `planner.js` with `plan()`, `check()`, `tonight()`, 40 node checks run by hand, `many.js` for 2,000 random weightings, `jobs.js` with made-up kinds and weights), and `first-council*` (the first council, set aside). |
+
+Open with the head chef: the build order, whether the book suggests in bulk only while Cleaning is off, whether the flag covers nightly Pack down, whether Sunday, Monday and Wednesday take heavy jobs, which section owns a shared job that names two, one word for a miss, who sets what each day takes, and the lead's two suggested planner rules.
+
 ## Fewer reloads and a clearer long wait, 24 November 2026 (chosen)
 
 The head chef found the book slow to load. 16 to 36 new versions a day reloaded phones coming back after 5 minutes, and a fresh open after a publish started twice. Round 1 Build smaller (5 of 5); round 2 three designs scored by six reviewers. Chosen: the card names the step with rows breathing on a long wait (against the council's advice), a fresh open starts once, and phones get new versions at 15:05 and 22:35. [Brief](loading-wait-options/brief.md).
