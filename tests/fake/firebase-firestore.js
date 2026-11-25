@@ -250,6 +250,8 @@ function colRefused(ref, list) {
   if (c === 'push' || c === 'tries' || c === 'proofs') return true;
   if (rawOwner(ref) && !list && c === 'config' && ['main', 'admins'].includes(rel[1])) return false;
   if (isAdmin(ref)) return false;
+  // screens/<uid> (26 Nov 2026): each device's screen size, read only by the verified admin
+  if (c === 'screens') return true;
   // only the head chef's Google account: PIN fingerprints, the usage counts, the minutes' earlier versions, and the
   // lists of who has a PIN and of every mail's status (one record by id is for the kitchen)
   if (c === 'staffpins' || c === 'daily' || c === 'proofHistory' || c === 'dashwatch' || (c === 'minutes' && rel[2] === 'hist')) return true;

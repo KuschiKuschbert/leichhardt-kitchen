@@ -1,5 +1,9 @@
 # Firestore reads and writes: audit, 5 November 2026
 
+## Screens the book runs on, 26 November 2026
+
+Each device writes `screens/<its uid>` once, about 4 seconds after someone types their PIN on it, and again only when its screen, touch, pointer, mouse, installed app, type or section changes (`lk.screen.v1` remembers what it saved). About 10 to 30 writes in all, then almost none; the rules' own lookups for each write are billed like any write's. No read on any phone. The head chef reads them only when the Screens row in Admin, Kitchen opens or Read again is tapped: one query, one read per device (about 10 to 30), kept in memory. No listener, no timer ([device coverage](device-coverage.md#the-screens-row)).
+
 ## Supplier sales suggestions, 22 November 2026
 
 [Sales suggestions](supplier-sales.md#private-data-and-read-budget) use one direct server read of `suppliersales/weekly` when requested in the authorised Supplier order workspace. The same document holds the latest normalised report and its links. Publishing or editing reads the current revision in a transaction and writes one document when the content changed. An identical retry writes nothing. Review and calculations reuse memory, with zero startup reads, listeners, polling or per-item queries. The existing private backup and PIN copy include the one record. These are expected source costs. Confirm them in the final read-budget check before release.
