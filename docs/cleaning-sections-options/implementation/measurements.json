@@ -7,6 +7,7 @@
  "before": "general list and Pack down, a cook on Grill",
  "after": "the same plus the 21 section jobs, a cook on Prep (usual order)",
  "mine": "the same, a cook on Grill (section first)",
+ "screen": "a shared kitchen screen set to Grill, a Pans cook signed in",
  "results": {
   "before-390": {
    "jobs": 46,
@@ -194,6 +195,81 @@
    ]
   },
   "mine-1280": {
+   "jobs": 53,
+   "wholeJobsOnFirstScreen": 6,
+   "screensLong": 4.4,
+   "screensToGrillWeeklyJob": 0.5,
+   "screensToGrillPackDown": 0.7,
+   "sideways": false,
+   "smallLinesCutOff": 0,
+   "howOftenLinesCutOff": 0,
+   "howOftenLines": 5,
+   "buttonsUnder44": 0,
+   "oneTapBoxes": 16,
+   "headings": [
+    "Grill",
+    "Section clean",
+    "Pack down",
+    "Shared kitchen",
+    "Rest of the kitchen",
+    "Hot larder: section clean",
+    "Hot larder: pack down",
+    "Pans: pack down",
+    "Fryers: section clean",
+    "Floors after shelving"
+   ]
+  },
+  "screen-390": {
+   "jobs": 53,
+   "wholeJobsOnFirstScreen": 4,
+   "screensLong": 5.6,
+   "screensToGrillWeeklyJob": 0.5,
+   "screensToGrillPackDown": 0.7,
+   "sideways": false,
+   "smallLinesCutOff": 4,
+   "howOftenLinesCutOff": 0,
+   "howOftenLines": 5,
+   "buttonsUnder44": 0,
+   "oneTapBoxes": 16,
+   "headings": [
+    "Grill",
+    "Section clean",
+    "Pack down",
+    "Shared kitchen",
+    "Rest of the kitchen",
+    "Hot larder: section clean",
+    "Hot larder: pack down",
+    "Pans: pack down",
+    "Fryers: section clean",
+    "Floors after shelving"
+   ]
+  },
+  "screen-768": {
+   "jobs": 53,
+   "wholeJobsOnFirstScreen": 6,
+   "screensLong": 4.6,
+   "screensToGrillWeeklyJob": 0.5,
+   "screensToGrillPackDown": 0.7,
+   "sideways": false,
+   "smallLinesCutOff": 0,
+   "howOftenLinesCutOff": 0,
+   "howOftenLines": 5,
+   "buttonsUnder44": 0,
+   "oneTapBoxes": 16,
+   "headings": [
+    "Grill",
+    "Section clean",
+    "Pack down",
+    "Shared kitchen",
+    "Rest of the kitchen",
+    "Hot larder: section clean",
+    "Hot larder: pack down",
+    "Pans: pack down",
+    "Fryers: section clean",
+    "Floors after shelving"
+   ]
+  },
+  "screen-1280": {
    "jobs": 53,
    "wholeJobsOnFirstScreen": 6,
    "screensLong": 4.4,

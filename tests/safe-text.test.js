@@ -70,6 +70,17 @@ async function check(b, hash, o, name, see, then) {
     await p.fill('#tr-text', 'Ta'); await L.settle(p, 300);
   });
   await check(b, '#/deliveries', { who: 'ann' }, 'deliveries', 'Delivery');
+  // Section cleaning (26 Nov 2026): a cook's Cleaning page leads with their section's name, and a shared kitchen screen's
+  // Settings names the section the screen is set to. Both are the kitchen's own section names, shown as typed.
+  const secCfg = { [fsKey(['config', 'main'])]: Object.assign({}, L.seed()[fsKey(['config', 'main'])], { kitSecs: [{ id: 'x1', name: 'Section ' + P, off: false }] }) };
+  await check(b, '#/cleaning', { who: 'ann', extra: Object.assign({}, extra, secCfg), init: () => { const d = new Date(Date.now() + 36e5 * 10).toISOString().slice(0, 10); localStorage.setItem('lk.sec.ann', JSON.stringify({ d, sec: 'x1', name: 'x', self: true, at: Date.now() })); } }, 'cleaning, a cook on a section', 'Section', async p => {
+    await L.waitFor(p, () => !!document.querySelector('.cln-mine-title'));
+    ok((await L.txt(p, '.cln-mine-title')).includes('Section ' + P), 'cleaning, a cook on a section: the leading section\'s name is literal text');
+  });
+  await check(b, '#/settings', { who: 'ann', deviceMode: 'shared', profile: { v: 2, mode: 'shared', ownerId: '', sec: 'x1' }, extra: Object.assign({}, extra, secCfg) }, 'settings, this screen\'s section', 'Section', async p => {
+    await L.waitFor(p, () => !!document.querySelector('[data-row="screensec"]'), null, 10000);
+    ok((await L.txt(p, '[data-row="screensec"]')).includes('Section ' + P), 'settings, this screen\'s section: the section\'s name is literal text on the row');
+  });
   await check(b, '#/cleaning', { who: 'sam' }, 'cleaning', 'Cleaning', async p => {
     await L.waitFor(p, () => !!document.querySelector('[data-cln="group"][data-group="general"]'));
     await L.tap(p, '[data-cln="group"][data-group="general"]');

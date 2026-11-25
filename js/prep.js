@@ -2344,7 +2344,7 @@
     return { allowed: cleaningOK, chef: cleaningChef, permissionsReady: cleaningPermissionsReady, canTick: cleaningTickOK, identity: stableIdentity, context: cleaningContext,
       shared: shared, workers: function () { return ptPeople().map(function (p) { return { id: p.id, name: p.name }; }); }, recent: hereGet,
       checkers: function () { return ptPeople().filter(function (p) { return cleaningCanCheck(p.id); }).map(function (p) { return { id: p.id, name: p.name }; }); }, canCheck: cleaningCanCheck,
-      sections: function () { return kitSecs().map(function (s) { return { id: s.id, name: s.name }; }); }, section: mySecNow,
+      sections: secList, section: mySecNow, screenSection: screenSection,
       guides: function () { return featOn('guides') ? gLive().map(function (g) { return { id: g.id, title: g.title }; }) : []; }, loadGuides: loadGuides,
       box: function (done) { return done ? TICK : BOX; }, sheetBusy: function () { return sheetOpen() || ksWait || ovBack || dkFirstUp(); }, sheetNext: sheetNext,
       discardAttempt: function () { cleaningAttempt = null; cleaningActionAttempts = Object.create(null); },
@@ -17716,6 +17716,26 @@ if (list.length) sg('oreg', 's');
   function canChangeDevice() {
     return deviceReady() && canW() && !!me() && (shared() ? whoHead() : deviceOwner() === S.who);
   }
+  /* This screen's section (26 Nov 2026): the kitchen section a shared kitchen screen is set to, as its id and its name now,
+     or null (a personal device, none set, or a section since taken off the list). Only Cleaning's order follows it. It is
+     not the person's section: it never answers Your section today, feeds mySec() or writes shifts/. No read. */
+  // the id this screen is set to, as saved ('' on a personal device or with none set); the section may be off the list
+  function screenSecId() { return shared() && window.LK_DEVICE && window.LK_DEVICE.section ? window.LK_DEVICE.section() : ''; }
+  function screenSection() {
+    var id = screenSecId(), s = id ? kitSecs().filter(function (x) { return x.id === id; })[0] : null;
+    return s ? { id: s.id, name: s.name } : null;
+  }
+  // the kitchen's sections as id and name, for the pages that offer them (Cleaning's setup, this screen's section)
+  function secList() { return kitSecs().map(function (s) { return { id: s.id, name: s.name }; }); }
+  /* The head chef sets it on the screen itself, as they change a shared screen's type. Not an access change: nobody is
+     signed out, nothing is read, unsent work is left alone. Answers '' when saved, or why not: 'locked' (not the head
+     chef on a shared screen now), 'gone' (the section is off the kitchen's list) or 'storage' (the screen could not
+     remember it). */
+  function setScreenSection(id) {
+    if (!canChangeDevice() || !shared() || !window.LK_DEVICE || !window.LK_DEVICE.setSection) return 'locked';
+    if (id && !kitSecs().some(function (x) { return x.id === id; })) return 'gone';
+    return window.LK_DEVICE.setSection(id || '') ? '' : 'storage';
+  }
   function changeDevice(mode, discard) {
     if (sendingNow()) { toast('Not sent yet. Wait until all changes on this device are sent.'); return Promise.resolve(false); }
     if (!canChangeDevice()) { toast(sendingNow() ? 'Not sent yet. Wait until your changes are sent.' : 'Sign in as this device\'s owner before changing it.'); return Promise.resolve(false); }
@@ -17859,7 +17879,7 @@ if (list.length) sg('oreg', 's');
     identity: stableIdentity,
     dirtyForUpdate: dirtyForUpdate,
     blockedRecorder: blockedRecorder,
-    canChangeDevice: canChangeDevice,
+    canChangeDevice: canChangeDevice, setScreenSection: setScreenSection, screenSectionId: screenSecId, kitSections: secList,
     changeDevice: changeDevice,
     // the kitchen PIN is on this device (js/app.js: the signed-out Home says a new device enters it first)
     kitchenPin: function () { return !!S.pin; },

@@ -29,6 +29,9 @@ const listed = p => L.waitFor(p, () => { const page = document.querySelector('.c
 // L.open runs these in the page, so each names its section itself
 const pickedGrill = () => { const d = new Date(Date.now() + 36e5 * 10).toISOString().slice(0, 10); localStorage.setItem('lk.sec.ann', JSON.stringify({ d, sec: 'grill', name: 'Grill', self: true, at: Date.now() })); };
 const pickedSalads = () => { const d = new Date(Date.now() + 36e5 * 10).toISOString().slice(0, 10); localStorage.setItem('lk.sec.ann', JSON.stringify({ d, sec: 'salads', name: 'Salads and dessert', self: true, at: Date.now() })); };
+const pickedPans = () => { const d = new Date(Date.now() + 36e5 * 10).toISOString().slice(0, 10); localStorage.setItem('lk.sec.ann', JSON.stringify({ d, sec: 'pans', name: 'Pans', self: true, at: Date.now() })); };
+// a shared kitchen screen's own record, set to a section (js/device.js)
+const screen = sec => ({ v: 2, mode: 'shared', ownerId: '', ...(sec ? { sec } : {}) });
 // the page's titles and headings, top to bottom
 const outline = p => p.$$eval('.cln-body .cln-mine-title > span, .cln-body .cln-mine-title > small, .cln-body .cln-rest-title, .cln-body .cln-packdown-title, .cln-body .nb-hd > span:first-child', es => es.map(e => e.textContent.trim()).join('|'));
 const rowsIn = (p, sel) => p.$$eval(sel + ' .cln-row', es => es.map(e => e.getAttribute('data-id').replace('clean-template-', '')).join(','));
@@ -248,6 +251,150 @@ const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
     await p.locator('[data-cln="setup"]').first().click(); await p.click('.cln-section-import summary');
     const links = await p.locator('.cln-pack-links').innerText();
     ok(/Grill pack down is not tied to a section/.test(links) && /Pans pack down opens with Pans/.test(links) && /Hot larder pack down is not tied to a section/.test(links), 'setup: Repeat tasks says which section each Pack down opens with, and which is not tied (' + links + ')');
+  });
+
+  // ---- step 3: a shared kitchen screen set to a section ----
+  await step('a station screen opens on its own section', async () => {
+    p = await L.open(b, '#/cleaning', { who: 'ann', wait: 1000, clock: MON, deviceMode: 'shared', profile: screen('grill'), init: pickedPans, extra: loaded(whole) });
+    await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 13);
+    const said = await outline(p);
+    ok(said === 'Grill|This screen. You are on Pans today|Section clean|Pack down|Shared kitchen|Rest of the kitchen|Hot Larder: section clean|Hot larder: pack down|Pans: pack down|Fryers: section clean', 'station: the screen\'s section leads whoever signs in, and says so (' + said + ')');
+    ok(await p.locator('.cln-row').count() === 13 && await p.locator('.cln-body [hidden], .cln-body details').count() === 0, 'station: the rest of the kitchen is open below, nothing behind a tap');
+    ok(await p.locator('[data-cln="pack-down-jump"]').innerText() === 'Go to Pans pack down', 'station: the link names the cook\'s own Pack down');
+    await p.click('[data-cln="pack-down-jump"]');
+    ok(await p.evaluate(() => { const e = document.activeElement; return !!e && e.id === 'cln-packdown-2026-11-30' && /Pans: pack down/.test(e.textContent); }), 'station: Go to Pans pack down moves to the cook\'s own Pack down');
+    ok(!(await L.overflow(p)), 'station: no sideways scroll at 390 px');
+    ok(await p.evaluate(() => !localStorage.getItem('lk.sec.ann') || JSON.parse(localStorage.getItem('lk.sec.ann')).sec === 'pans') && (await records(p, 'shifts')).length === 0, 'station: the cook\'s own section is untouched and no shift record is written');
+
+    // one tick through Who did this, as on every shared screen
+    const before = await outline(p);
+    await p.click('[data-cln="flow-quick"][data-id="' + id('sc-grill-03') + '"]');
+    await L.waitFor(p, () => !!document.querySelector('#cln-worker-sheet [data-cln-person], #cln-worker-sheet [data-cln-picker="others"]'));
+    if (await p.locator('[data-cln-picker="others"]').count() && await p.locator('[data-cln-picker="others"]').isVisible()) await p.click('[data-cln-picker="others"]');
+    await p.click('[data-cln-person="ann"]');
+    await L.waitFor(p, () => Object.values(__fake.dump()).some(r => r.task === 'clean-template-sc-grill-03' && r.done && r.workerId === 'ann') && !LK_PREP.unsent());
+    ok(await outline(p) === before, 'station: a tick asks who did it, records them, and nothing reorders');
+  });
+
+  await step('a station screen and the cook\'s own section', async () => {
+    // nobody picked yet: the screen leads; the answer changes the words and the link, never the order
+    p = await L.open(b, '#/cleaning', { who: 'ann', wait: 1000, clock: MON, deviceMode: 'shared', profile: screen('grill'), extra: loaded(whole) });
+    await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 13);
+    await L.waitFor(p, () => !!document.querySelector('.ks-wrap, .ux-section-picker'));
+    let said = await outline(p);
+    ok(/^Grill\|This screen\|Section clean\|Pack down\|Shared kitchen/.test(said) && await p.locator('[data-cln="pack-down-jump"]').innerText() === 'Go to Pack down', 'no pick yet: the screen\'s section leads and the link is the plain one (' + said + ')');
+    await p.locator('.ks-wrap [data-ks="pans"], .ux-section-picker [data-ks="pans"], .ux-picker-option:has-text("Pans")').first().click();
+    await L.waitFor(p, () => /You are on Pans today/.test((document.querySelector('.cln-mine-title small') || {}).textContent || ''));
+    const answered = await outline(p);
+    ok(answered === said.replace('|This screen|', '|This screen. You are on Pans today|') && await p.locator('[data-cln="pack-down-jump"]').innerText() === 'Go to Pans pack down', 'answered: the words and the link change, the order does not (' + answered + ')');
+    // the cook moves to another section later: the words and the link follow, and still nothing reorders
+    await p.evaluate(() => { const v = JSON.parse(localStorage.getItem('lk.sec.ann')); localStorage.setItem('lk.sec.ann', JSON.stringify({ ...v, sec: 'hl', name: 'Hot Larder', at: Date.now() })); });
+    await p.click('[data-cln="details"][data-id="' + id('c01') + '"].cln-task-detail');
+    const later = await outline(p);
+    ok(later === said.replace('|This screen|', '|This screen. You are on Hot Larder today|') && await p.locator('[data-cln="pack-down-jump"]').innerText() === 'Go to Hot larder pack down', 'moved later: the words and the link name the section now, the order holds (' + later + ')');
+    // the screen's section is taken off the kitchen's list while the page is open: the cook's own section leads
+    const cfgKey = key('config', 'main');
+    await p.evaluate(k => { const c = __fake.dump()[k]; __fake.write(k, { ...c, kitSecs: c.kitSecs.filter(x => x.id !== 'grill') }); }, cfgKey);
+    await L.waitFor(p, () => { const t = document.querySelector('.cln-mine-title > span'); return !!t && t.textContent === 'Pans'; });
+    const gone = await outline(p);
+    ok(/^Pans\|Your section today\|/.test(gone), 'removed while open: the cook\'s own section leads without Refresh (' + gone + ')');
+    await p.context().close();
+
+    // the link names the Pack down group it goes to, whatever the section is called now
+    const saute = SECS.map(([sec, name]) => [sec, sec === 'pans' ? 'A much longer name for the saute and stove section' : name]);
+    p = await L.open(b, '#/cleaning', { who: 'ann', width: 360, wait: 1000, clock: MON, deviceMode: 'shared', profile: screen('grill'), init: pickedPans, extra: { ...loaded(whole), ...sections(saute) } });
+    await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 13);
+    ok(await p.locator('[data-cln="pack-down-jump"]').innerText() === 'Go to Pans pack down' && /Pans: pack down/.test(await outline(p)) && !(await L.overflow(p)), 'renamed long: the link is the Pack down group\'s own short name, matches its heading, and fits a 360 px phone');
+    ok(await p.$eval('.cln-readline', e => e.scrollWidth <= e.clientWidth + 1), 'renamed long: the line with the check time and the links does not run over');
+    await p.context().close();
+
+    // the screen is set to a section with no cleaning today: the cook's own section leads, as on a screen with none set
+    p = await L.open(b, '#/cleaning', { who: 'ann', wait: 1000, clock: MON, deviceMode: 'shared', profile: screen('salads'), init: pickedPans, extra: loaded(whole) });
+    await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 13);
+    said = await outline(p);
+    ok(/^Pans\|Your section today\|Pack down\|Shared kitchen/.test(said), 'no cleaning for the screen\'s section: the cook\'s own section leads (' + said + ')');
+    await p.context().close();
+
+    // renamed: the screen keeps its section by id and shows the name now
+    const renamed = SECS.map(([sec, name]) => [sec, sec === 'grill' ? 'Char grill' : name]);
+    p = await L.open(b, '#/cleaning', { who: 'ann', wait: 1000, clock: MON, deviceMode: 'shared', profile: screen('grill'), init: pickedPans, extra: { ...loaded(whole), ...sections(renamed) } });
+    await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 13);
+    said = await outline(p);
+    ok(/^Char grill\|This screen\. You are on Pans today\|Section clean\|Pack down/.test(said), 'renamed: the screen\'s section leads under its name now (' + said + ')');
+    await p.context().close();
+
+    // taken off the kitchen's list: the screen has no section, so the cook's own leads
+    const removed = SECS.filter(([sec]) => sec !== 'grill');
+    p = await L.open(b, '#/cleaning', { who: 'ann', wait: 1000, clock: MON, deviceMode: 'shared', profile: screen('grill'), init: pickedPans, extra: { ...loaded(whole), ...sections(removed) } });
+    await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 13);
+    said = await outline(p);
+    ok(/^Pans\|Your section today\|/.test(said), 'removed: a section no longer on the list leads nothing (' + said + ')');
+    await p.context().close();
+
+    // a personal device never follows a screen's section, even with one in its record
+    p = await L.open(b, '#/cleaning', { who: 'ann', wait: 1000, clock: MON, profile: { v: 2, mode: 'personal', ownerId: 'ann', sec: 'grill' }, init: pickedPans, extra: loaded(whole) });
+    await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 13);
+    said = await outline(p);
+    ok(/^Pans\|Your section today\|/.test(said) && await p.evaluate(() => LK_DEVICE.section() === '' && LK_DEVICE.setSection('grill') === false), 'personal device: the person\'s own section leads, and a screen\'s section cannot be set (' + said + ')');
+    await p.context().close();
+
+    // the longest names on the title line of a phone
+    const long = SECS.map(([sec, name]) => [sec, sec === 'fryers' ? 'Fryers, salads and dessert' : name]);
+    p = await L.open(b, '#/cleaning', { who: 'ann', width: 390, wait: 1000, clock: MON, deviceMode: 'shared', profile: screen('fryers'), init: pickedSalads, extra: { ...loaded(whole), ...sections(long) } });
+    await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 13);
+    const title = await p.$eval('.cln-mine-title', e => ({ text: e.textContent, cut: e.scrollWidth > e.clientWidth + 1, wide: e.getBoundingClientRect().right > innerWidth }));
+    ok(/Fryers, salads and dessert/.test(title.text) && /This screen\. You are on Salads and dessert today/.test(title.text) && !title.cut && !title.wide && !(await L.overflow(p)), 'long names: the title line wraps and nothing runs off a 390 px phone');
+  });
+
+  await step('the head chef sets this screen\'s section in Settings', async () => {
+    p = await L.open(b, '#/settings', { admin: true, deviceMode: 'shared', wait: 1800, extra: sections() });
+    await L.waitFor(p, () => !!document.querySelector('[data-row="screensec"]'), null, 10000);
+    const val = () => p.$eval('[data-row="screensec"] .st-v', e => e.textContent);
+    ok(await val() === 'None', 'settings: a shared kitchen screen shows This screen\'s section, None at first');
+    await p.click('[data-row="screensec"] .st-btn');
+    const chips = await p.$$eval('[data-row="screensec"] .chip', es => es.map(e => e.textContent + (e.getAttribute('aria-pressed') === 'true' ? '*' : '')).join('|'));
+    ok(chips === 'No section*|Grill|Pans|Fryers|Salads and dessert|Hot Larder', 'settings: the head chef has a chip for each kitchen section (' + chips + ')');
+    ok(/A head or sous chef's own view does not change/.test(await p.locator('[data-row="screensec"] .st-body').innerText()), 'settings: the row says whose page changes');
+    const signedIn = await p.evaluate(() => ({ who: LK_PREP.state.who, authed: LK_PREP.state.authed }));
+    await p.evaluate(() => { __fake.bill = []; __fake.ruleBill = []; __fake.writes = []; });
+    await p.click('[data-row="screensec"] [data-act="setscreensec"][data-val="grill"]');
+    await L.waitFor(p, () => (document.querySelector('[data-row="screensec"] .st-v') || {}).textContent === 'Grill');
+    const after = await p.evaluate(() => ({ who: LK_PREP.state.who, authed: LK_PREP.state.authed, profile: JSON.parse(localStorage.getItem('lk.device.v2')), reads: (__fake.bill || []).length + (__fake.ruleBill || []).length, writes: (__fake.writes || []).length, pressed: [...document.querySelectorAll('[data-row="screensec"] .chip[aria-pressed="true"]')].map(e => e.textContent).join(',') }));
+    ok(after.profile.sec === 'grill' && after.profile.mode === 'shared' && after.pressed === 'Grill', 'settings: one tap saves the section on this screen and the chip shows it');
+    ok(after.who === signedIn.who && after.authed === signedIn.authed && after.reads === 0 && after.writes === 0, 'settings: nobody is signed out, and the change costs no read and no write (' + after.reads + ' reads, ' + after.writes + ' writes)');
+    await p.click('[data-row="screensec"] [data-act="setscreensec"][data-val=""]');
+    await L.waitFor(p, () => (document.querySelector('[data-row="screensec"] .st-v') || {}).textContent === 'None');
+    ok(await p.evaluate(() => !('sec' in JSON.parse(localStorage.getItem('lk.device.v2')))), 'settings: No section clears it');
+    ok(await p.evaluate(() => { LK_DEVICE.setSection('grill'); LK_DEVICE.reset(); return localStorage.getItem('lk.device.v2') === null && LK_DEVICE.section() === ''; }), 'settings: Forget this device forgets the section with the device');
+    await p.context().close();
+
+    // the head chef comes back to a screen that already has a section, and changes it
+    p = await L.open(b, '#/settings', { admin: true, deviceMode: 'shared', profile: screen('grill'), wait: 1800, extra: sections() });
+    await L.waitFor(p, () => !!document.querySelector('[data-row="screensec"]'), null, 10000);
+    ok(await val() === 'Grill', 'settings: a screen already set shows its section to the head chef');
+    await p.click('[data-row="screensec"] .st-btn');
+    ok(await p.$$eval('[data-row="screensec"] .chip[aria-pressed="true"]', es => es.map(e => e.textContent).join(',')) === 'Grill', 'settings: its chip is the pressed one');
+    await p.click('[data-row="screensec"] [data-act="setscreensec"][data-val="pans"]');
+    await L.waitFor(p, () => (document.querySelector('[data-row="screensec"] .st-v') || {}).textContent === 'Pans');
+    ok(await p.evaluate(() => JSON.parse(localStorage.getItem('lk.device.v2')).sec === 'pans' && !!LK_PREP.state.who), 'settings: the head chef changes it to another section and stays signed in');
+    ok(await p.evaluate(() => LK_PREP.setScreenSection('not-a-section') === 'gone' && JSON.parse(localStorage.getItem('lk.device.v2')).sec === 'pans'), 'settings: a section that is not on the kitchen\'s list is refused as gone, and the saved one stays');
+    // another tab on this device changes only the section: Cleaning is told, and the access listeners stay asleep
+    const heard = await p.evaluate(() => { const got = []; ['lk-device', 'lk-device-section'].forEach(n => window.addEventListener(n, () => got.push(n))); const was = localStorage.getItem('lk.device.v2'), next = JSON.stringify({ ...JSON.parse(was), sec: 'grill' }); window.dispatchEvent(new StorageEvent('storage', { key: 'lk.device.v2', oldValue: was, newValue: next })); window.dispatchEvent(new StorageEvent('storage', { key: 'lk.device.v2', oldValue: was, newValue: JSON.stringify({ ...JSON.parse(was), mode: 'personal' }) })); return got.join(','); });
+    ok(heard === 'lk-device-section,lk-device', 'another tab: a change of the section alone is not an access change; a change of device type still is (' + heard + ')');
+    await p.context().close();
+
+    // a cook on the same kind of screen reads it and cannot change it
+    p = await L.open(b, '#/settings', { who: 'ann', deviceMode: 'shared', profile: screen('grill'), wait: 1800, init: pickedPans, extra: sections() });
+    await L.waitFor(p, () => !!document.querySelector('[data-row="screensec"]'), null, 10000);
+    await p.click('[data-row="screensec"] .st-btn');
+    ok(await val() === 'Grill' && await p.locator('[data-row="screensec"] .chip').count() === 0 && /The head chef can change this after signing in/.test(await p.locator('[data-row="screensec"] .st-body').innerText()), 'settings: a cook sees the section and cannot change it');
+    ok(await p.evaluate(() => LK_PREP.setScreenSection('pans') === 'locked' && JSON.parse(localStorage.getItem('lk.device.v2')).sec === 'grill'), 'settings: the book refuses a change from anyone but the head chef, and says why');
+    await p.context().close();
+
+    // a personal device has no such row
+    p = await L.open(b, '#/settings', { who: 'ann', wait: 1800, init: pickedPans, extra: sections() });
+    await L.waitFor(p, () => !!document.querySelector('[data-row="device"]'), null, 10000);
+    ok(await p.locator('[data-row="screensec"]').count() === 0, 'settings: a personal device has no screen section row');
   });
 
   await step('a held save says Not sent', async () => {

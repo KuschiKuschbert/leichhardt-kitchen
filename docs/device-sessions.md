@@ -11,6 +11,8 @@ Every browser or installed app without a version 2 device choice asks how it is 
 
 Settings shows the saved choice. An unlocked personal device's own person can change or forget it. Changing a shared screen requires the head chef. Unsent work blocks either action; actual unsaved work has an explicit discard confirmation. A handover clears the previous person's private work and Google identity. Clearing browser site data also forgets the choice. A browser and its installed app may have separate storage depending on the platform, so each storage profile asks once.
 
+A shared kitchen screen can also be given one kitchen section (26 November 2026): **This screen's section** in Settings, kept in the same device record as `sec`, changed by the head chef only. It orders the Cleaning page for cooks on that screen and nothing else: it grants no access, changes nobody's own section, signs nobody out and costs no read. Forgetting the device or changing its type forgets it. [The contract](cleaning-schedule.md#this-screens-section-26-november-2026-step-3).
+
 Wall board is available to every account already authorised for Prep on both device types (8 November 2026). Its saved browser view preference changes the layout. The selected device type continues to govern locking, identity and prep attribution.
 
 [Phone setup](device-sessions/choice-phone.png) and [desktop setup](device-sessions/choice-desktop.png) show the existing book typography and responsive dialog.
