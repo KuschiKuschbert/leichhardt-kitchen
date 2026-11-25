@@ -140,9 +140,142 @@ With kinds at random too: fewest moves is heavier in 7% of runs, moves 2.8 jobs,
 - **A saved job moving when one job is added:** the skeptic reported 25% and 43%; this run gives 41% and 52%, with a different seed and added job. Planning only the new job moves none.
 - The planner's reason no longer calls a night "a light day" (new starter): it says "Hot larder has the least on that night (4 points with it)".
 
-## Round 2
+## Round 2: designs
 
-Three whole designs are drawn inside the book's real pages (`designs/`, built by `designs/build.cjs`): A, on the job; B, one list; C, set up once. Their descriptions, the differences table and the counts are in [round2-packet.md](round2-packet.md). Six fresh reviewers are scoring them. No recommendation yet.
+Packet, with each design in full: [round2-packet.md](round2-packet.md). Side by side: [index.html](index.html). Six fresh reviewers (not the round 1 agents), each given the skill's text word for word and no favourite.
+
+The designs are drawn inside the book's real pages at `0acdaf72` (`designs/build.cjs`, `designs/frame.cjs`): the click-test stand-in opens the real page and the design's parts, built from the book's classes, are put into it. So the frame, forms, fonts and colours are the Implemented app's and the new parts are Preview. Nothing was tapped, saved or timed. Weights, kinds, people and counts are made up.
+
+- **A. On the job.** Weight, kind (the Area box, retyped) and day in the job's own form. The book checks and suggests, one job at a time, and never moves a job. Results in Records, that night.
+- **B. One list.** One view in Repeat tasks: every job that comes round is a row with three weight chips; Plan the days proposes the fewest moves and shows only the rows that change; one Save. Results on a new Reports page.
+- **C. Set up once.** Four steps while Cleaning is off: weigh a section at a time, say what each day takes, see the whole week replanned, switch on. After that the job form suggests a day. Results in the Inbox, then Records.
+
+### How they differ
+
+| | A. On the job | B. One list | C. Set up once |
+| --- | --- | --- | --- |
+| Where a job is weighed | Its own Edit form | A row in one list | A row in a setup step, one section at a time |
+| The plan's unit | One job | The list of changes | The whole week, once |
+| Who moves a dated job | Only the chef, by hand | The book proposes the fewest moves, any time | The book replans the week before switch-on; after that only the chef |
+| Where results are read | Records, that night | A new Reports page, 4 weeks | The Inbox, then Records |
+| New places | None | One view in Repeat tasks; an eighth Reports tab | A block on Repeat tasks that goes away |
+| After Cleaning is on | The same forms | The same view | The job form only |
+
+### Counts
+
+390 x 844 and 1280 x 900. Frame: Implemented app. New parts: Preview. Taps are counted from the pictures, not exercised.
+
+| | Today | A | B | C |
+| --- | --- | --- | --- | --- |
+| Weigh the 20 jobs that come round: taps | cannot | 60 (Edit, chip, Save each), plus finding each job 6 to a page | 22 (open, a chip each, Save) | 25 (a chip each, Save per section) |
+| Set the kind on 20 jobs | cannot | retype Area in each form | 40 (picker, choice) | 40 |
+| Get every job a day that fits, from weighed jobs | by hand in each form | 3 per job that needs one (Edit, the day, Save) | 2 (Plan the days, Save) | 2 (open step 3, Save) |
+| Read why a section was flagged | cannot | 1 (the Inbox button), names 1 more | 1, names 1 more | 1, names 1 more |
+| Whole job rows on the first phone screen while weighing | 0 | 0 (one job, in its form) | 1 | 1 |
+| Screens long at 390: weighing | Edit page 3.3 | 3.8 | 4.7 | 3.5 |
+| Screens long at 390: the plan | none | Repeat tasks 3.1 (today 2.5) | 3.2 (part saved 3.4) | 4.3 |
+| Screens long at 390: results | Records day 1.3 | 2.0 | 1.8 | Records day 2.0; Inbox 1.4 (today 1.2) |
+| Screens long at 1280: weighing, plan, results | | 2.9, 2.3, 2.5 | 2.7, 2.4, 1.5 | 2.5, 3.2, 2.5 |
+| Controls under 44 px | | 0 | 0 | 0 |
+| Lowest text contrast, rendered | | 4.86:1 | 4.76:1 | 5.05:1 |
+| Lowest control edge against its surround | | 15.9:1 | 4.84:1 | 4.84:1 |
+| Keyboard focus, reached with Tab | | 3 px ring, 3.33:1 | 3 px ring, 3.33:1 | 3 px ring, 3.33:1 |
+| Navigation levels to the plan | | Cleaning, Repeat tasks, Edit | Cleaning, Repeat tasks, Weigh and plan | Cleaning, Repeat tasks |
+| Build size, pull requests | | 3 | 4 | 4 |
+| Relearning | | Least: the same forms | A new view | A one-off run of steps |
+| New reads or rules | | Rules: weight and kind on a job, one day-levels record | The same, and a plan saved in steps | The same, and a plan saved in steps |
+| Main risk | | Slow: 60 taps, and no bulk plan | A part-saved plan; the longest list | The whole week replanned on made-up weights; nothing plans in bulk after switch-on |
+
+### Rankings
+
+| Reviewer | Ranking | Recommended | Main downside they named |
+| --- | --- | --- | --- |
+| Cook | B, C, A | A blend: B's list and moves, C's once-only timing and week strip, A's Records and form suggestion. Condition: one named section on the two shared jobs that name sections | Later imbalance is the chef's to spot |
+| Head chef | B, C, A | A blend with B's list as the only bulk editor and fewest moves only; C's strip and form suggestion; no new tab; results first; kind optional | No pattern page until weeks exist |
+| Skeptic | A, B, C | A, in order: the count, the Inbox row and Records first; then weights with B's weigh list; no Plan button until real weights exist | Days set by hand, and the outcome depends on the order of edits |
+| New starter | B, A, C | B with A's "light only" words, C's due-tonight warning and A's Records | A rarely used view, relearned |
+| Keeper | B, A, C | B's list with C's gate (the book plans in bulk only while Cleaning is off) and no new report page, built after part 1 | After switch-on a replan is by hand, one job at a time |
+| Screen designer | B, C, A | B's list and plan, A's weight chips in the form, C's results in the Inbox and Records | Nothing shows a section missing the same job week after week |
+
+B first: 5 of 6 (all but the skeptic, who put A first). Last place split: A for the cook, head chef and screen designer; C for the skeptic, new starter and keeper. Structurally different: yes for all six on planning. The cook and the screen designer noted that A and C share one results page and B and C one weigh row.
+
+### The mix (A + B + C)
+
+Five reviewers said a blend beats their preferred single design (cook, head chef, new starter, keeper, screen designer). The skeptic said A with B's weigh list beats A alone, and that all three does not: "C adds a rule, not a screen".
+
+| Part | Who took or rejected it | Principle | Why |
+| --- | --- | --- | --- |
+| B: weigh every job in one list | Take: all six | Todoist, Airbnb | 22 taps against 60; job and weight together |
+| B: the plan as changes only, fewest moves, with a way to keep the old day | Take: cook, head chef, new starter, keeper, screen designer. The skeptic would hold any Plan button until real weights exist | Things 3, Todoist | 3 of 15 days move in the example, not 10 |
+| B: planning in bulk at any time | Reject: keeper, skeptic; the cook named it as B's weakness ("days shift under us") | | Once Cleaning is on, each moved job costs an uneven week and extra reads |
+| B: a new Reports page as an eighth tab | Reject or hold: keeper, skeptic, screen designer, head chef, new starter. The cook rejected its clock times beside names and its wording | Linear, Flighty | Off screen at 390 px, nothing to show for weeks, and Records exists |
+| C: the book plans in bulk only while Cleaning is off; after that only the new job | Take: keeper, skeptic, cook | Flighty | While it is off nobody waits and no cook reads the jobs |
+| C: the four steps | Reject: keeper, skeptic, new starter, head chef, screen designer | Linear | They duplicate B's list and are used once |
+| C: the whole week replanned, section first | Reject: head chef. Named as C's weakness by the other five | | 10 moves reach the same heaviest nights as 3 in the example |
+| C: the week strip, each night was and now | Take: cook, head chef. Reject: screen designer ("56 point numbers") | Airbnb | Split. Not settled |
+| C: a Cleaning line in the Inbox's numbers | Take: head chef. Reject: cook, skeptic, screen designer | Airbnb, Linear | One miss shown twice |
+| C: the new job's suggested day and the "today means tonight" warning | Take: head chef, new starter, skeptic; the cook took A's form suggestion | Todoist, Flighty | A visible default, and it stops a job landing tonight unseen |
+| A: Records, that night, as the results page | Take: all six | Linear, Things 3 | One frame; names behind |
+| A: the kind as the Area box, retyped | Reject: cook, keeper, skeptic, head chef. The screen designer's own mix keeps the kind in Area. The head chef would make the kind optional | Headspace | Free text will not match across sections, and Area prints on a cook's row |
+| A: weight chips in the job's form | Take: screen designer. The head chef took each night's points under the day chips; the screen designer rejected those second lines | Todoist | A second place to weigh, so the same chips and words |
+| A: the "To look at" list | Take: keeper; the screen designer would add one line to the existing attention block. The cook noted it missed Hot larder's 5-point Sunday | Flighty | Honest status from what is kept |
+
+### Break-it findings, round 2
+
+| Scenario and role | Expected | Observed or hypothesis | Evidence | Smallest repair or check | Disposition |
+| --- | --- | --- | --- | --- | --- |
+| A chef adds a heavy Hot larder job after a saved plan; only the new job is planned (B, C after switch-on, and any form suggestion) | A day inside the rules, or "No day fits" | A night at 7 points with the reason "has the least on that night (7 points with it)", while the rule check says over 5 | Reproduced in `planner.js` on the example (skeptic) | The suggestion runs the rule check and says "over" in words; decide whether the 5-point limit is a hard rule | Fix in the planner, node check |
+| B: the chef presses Keep on one row and saves the rest | The other rows are still true | With the stove kept on Tuesday the planner would put two other jobs elsewhere; the pictured rows stay. None of the 256 part-saves of the 8 changes broke a new rule | Reproduced (stale rows) and checked in the example (skeptic) | Plan again on every Keep, or mark the rows that changed | In the combined preview |
+| A weight is saved for 18 jobs in one Save (B), or 7 (C) | All saved, or a named part-saved state | A weight on a job is a close and a create, each permanent: 36 writes for 18 weights. One save of 10 moves was refused in an earlier emulator run; 6 to 9 and real jobs are untried. With Cleaning on, cooks read both versions that day: over the budget of 90 | Risk / Not evidenced; rule shape read in source (keeper) | An emulator run of 6, 7 and 18 real jobs; then steps with the part-saved states on the weigh list too, or one side record of weights | Before part 2 is ready. A build choice for the head chef |
+| A chef weighs a job, then plans it the same day; or a save's steps straddle midnight | One version per job, one start day | Hypothesis: a version not yet in force is replaced, leaving a zero-length one; later steps stop and the saved part starts a day earlier | Risk / Not evidenced (keeper, source read) | Emulator test: replace twice in a day; a client test with the clock moved between steps | Before part 2 is ready |
+| The morning after switch-on, or after the 03:00 run failed | A flag only for counted nights; "Count not ready" otherwise | The nightly job never reads the release switch, so jobs loaded before switch-on count as missed; a record over 700,000 bytes stops the whole publish | Checked in source for the switch and the limit (keeper); size and how the row clears, Not evidenced | Part 1 first: the switch, a stored first night, the size check inside the cleaning block, a node test at full lists | Before part 1 is ready |
+| A: the chef presses the suggested day | The job moves to it | The day chips toggle, so the old day stays pressed: the job is now twice a week | Source read, not exercised (new starter) | The suggestion is a button that swaps the day | In the combined preview |
+| Shared jobs that name sections (the pass shelves, behind the deep fryers) | They count toward those sections' nights | They are planned as Shared kitchen, so a section's real night is heavier than shown: Pans 3 to 5 if counted in full | Checked in the cook's node run, made-up weights | Ask the head chef for one named section on each | Open with the head chef |
+
+### Faults found in the drawings
+
+Each is fixed in the combined preview or listed as open.
+
+- **The Save bar** sat at the foot of the window, under the tab bar on a phone, and covered the first row's chips (cook, head chef, new starter, screen designer). The contract is the docked Save bar above the tab bar. So "1 whole row on the first screen" was 0 usable rows.
+- **A wrong reason:** the stove moves because Tuesday does not take a heavy job, but its row said "with the other jobs of its kind" (head chef, screen designer, skeptic).
+- **Words:** "Weigh the jobs" reads as scales; "FRI light" reads as a quiet night; "jobs that come round" should be "weekly and monthly jobs"; "points" is not explained; "Nothing is saved yet ... Saved 5 at a time" contradicts itself (new starter). "Not ticked", "Nothing missed" and Records' own "Missed" are three names; so are "Unable to complete" and Records' "not possible" (new starter, cook, screen designer).
+- **Part-saved rows:** a Saved row still showed "Keep Tue"; "Try again keeps it" sat beside "Keep Sun"; Refused had no tag; Waiting did not say for what; "No day fits" sat outside the count of changes; Saved had no time (new starter, screen designer).
+- **Results:** the person led and the miss was small and below the first screen, against "a section problem, not a person's" (screen designer). B's report printed doers' names on the row face (keeper, head chef). The made-up results did not match the lists, and one Unable to complete was dated before counting began (cook, head chef).
+- **C's form suggestion** was hard-coded, disagreed with C's own week, and suggested for a section before one was chosen (cook, skeptic, new starter, screen designer). C's week grid left out the monthly jobs' nights (skeptic).
+- **The cook's page:** the before and after pictures were different days (Monday and Wednesday), so they did not prove "unchanged" (cook, new starter, screen designer). A's retyped Area would print on a cook's row, so "nothing changes" did not hold for A (head chef, source read).
+- **New rows dropped the handwritten job name**, and the day strip looked tappable with a faint edge (screen designer; edge 1.39:1 from the tokens, not rendered).
+- **"Jobs that come round"** was 20 in the weigh list but 25 to the planner: 5 dated general jobs sat outside, one on Friday with no weight (skeptic).
+
+### Contract fit, round 2
+
+All six said Needs work. None found a state that relied on colour alone (screen designer).
+
+| Check | A | B | C |
+| --- | --- | --- | --- |
+| Service rules: nothing on a cook's page | Needs work: retyped Area prints on the cook's row (head chef) | Works in the picture; the before and after were different days, so Not evidenced | The same as B |
+| No second sticky bar; Save docked above the tab bar | Works: the form's own Save | Needs work: the drawn bar was wrong (four reviewers) | Works: the steps' Save was not sticky |
+| "Never guess a day" | A proposed change he asked for; nothing saves unconfirmed (skeptic, keeper) | The same | The same |
+| State words | Works for Not saved | Needs work: the part-saved rows (above) | Not evidenced: no failure drawn (new starter) |
+| Missed is attention, not failure | Works in the Inbox row; Records prints "Missed" in failure red today and the picture hid that (screen designer) | Works in the Inbox; the report has no cue | The same as A |
+| Rendered contrast, 44 px targets, focus | Lowest text 4.86:1, no control under 44 px, 3 px ring at 3.33:1 | 4.76:1, none, the same ring | 5.05:1, none, the same ring |
+| Not evidenced in any design | Every tap and save, 768 px, large text, focus under the dock, several sections flagged at once, a failed read as a page, names opened | | |
+
+### Reference fit, round 2
+
+| Principle | A | B | C |
+| --- | --- | --- | --- |
+| Todoist: a known default, visible and editable | Works: the suggested day; Needs work: pressing it leaves the old day on | Works: Keep the old day; Needs work: no way to pick a third day (head chef) | Works in the new-job form |
+| Things 3: occasional detail tucked away | Works: names behind a button | Works: only the changes are shown | Needs work: the week is 56 numbers (screen designer) |
+| Airbnb: time, place, state together | Needs work: one job at a time, 1,273 px down the form | Works: each row has the day, the old day, the reason and the state | Needs work: the numbers line repeats the flag |
+| Flighty: honest status from kept data | Works: Records, "Count not ready" | Needs work: "4 weeks" after 24 nights | Works: plan while off, the tonight warning |
+| Linear: one frame, one way to edit | Works: no new place | Needs work: an eighth tab | Needs work: steps beside the list they duplicate |
+| Duolingo: truthful saves, no points | Not evidenced | Works: the only design that draws Not sent and Refused | Not evidenced |
+| Headspace: one name per thing | Needs work: kind as Area | Needs work: the words above | Needs work: "3 of 20 done" beside "Not saved" |
+
+
+## Recommendation
+
+Being written: a combined preview of the mix is drawn first, as the council skill asks.
 
 ## Open with the head chef
 
