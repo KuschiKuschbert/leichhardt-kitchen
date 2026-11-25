@@ -15,7 +15,7 @@ Verdict: (Build, Build smaller, Don't build, Your call, or Not needed with the r
 
 ## Tests
 <!-- Tests added or changed, and the run: node --check, cd tests && npm test (and tests/rules if the rules changed). -->
-<!-- Code the book runs, or the rules: the /code-review medium run and what it found, fixed or answered. Anything else: leave this out. -->
+<!-- Rules, saved shell or startup files, or a 100 line edit to js/prep.js or js/app.js (pre-merge.sh says): the /code-review medium run and what it found, fixed or answered. Anything else: leave this out. -->
 <!-- Layout changes: separate preview measurements from full implemented-app measurements and explain differences. Timed features: cover relevant calendar/deadline/recurrence boundaries and required-record readiness, separately from daily unlock. -->
 
 ## Reads, rules and saved data
