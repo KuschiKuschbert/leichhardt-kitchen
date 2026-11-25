@@ -43,8 +43,14 @@ body.pv { margin: 0; background: var(--bg, #efece4); color: var(--ink, #1c1b19);
 .pv-strip { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .25rem; margin: .3rem 0; }
 .pv-strip div { padding: .35rem .15rem; border: 1px solid var(--rule, #d9d3c5); border-radius: 8px; background: #fff; text-align: center; }
 .pv-strip b { display: block; font: 700 .8125rem var(--display, 'Barlow Condensed', sans-serif); letter-spacing: .06em; text-transform: uppercase; }
-.pv-strip span { display: block; font: 700 1.05rem/1.2 var(--body, 'Barlow', sans-serif); white-space: nowrap; }
-.pv-strip small { display: block; font-size: .625rem; color: var(--muted, #5f5a50); }
+.pv-strip span { display: block; font: 700 1.25rem/1.2 var(--body, 'Barlow', sans-serif); white-space: nowrap; }
+.pv-strip small { display: block; font-size: .6875rem; color: var(--muted, #5f5a50); white-space: nowrap; }
+.pv-strip .is-quiet { border-style: dashed; border-color: var(--ink, #1c1b19); }
+.pv-eg { margin: .2rem 0 .6rem; padding: .45rem .7rem; border: 1px dashed var(--ink, #1c1b19); border-radius: 8px; font-size: .8125rem; line-height: 1.4; }
+.pv-chips .chip[aria-pressed="true"] small { opacity: 1; font-weight: 600; color: inherit; }
+.pv-who summary { min-height: 44px; padding: .7rem 0 0; font-size: .8125rem; font-weight: 600; cursor: pointer; }
+.pv-rules + .pv-rules { margin-top: .6rem; }
+.pv-fold > b { display: block; margin: .6rem 0 0; }
 .pv-fold { margin: 1rem 0 0; font-size: .875rem; }
 .pv-fold summary { min-height: 44px; padding: .65rem 0; font-weight: 600; cursor: pointer; }
 .pv-row .btn { min-height: 44px; white-space: nowrap; }

@@ -1,5 +1,104 @@
 {
- "note": "planner.js on the built-in lists with example kinds and weights (jobs.js)",
+ "note": "planner.js on the built-in lists with example kinds and weights (jobs.js). The kinds and weights are made up by the lead, not set by the head chef. jobs below are the plan with same-kind days on.",
+ "weeklyJobsSunToSat": {
+  "now": [
+   7,
+   4,
+   4,
+   4,
+   4,
+   1,
+   0
+  ],
+  "sameKindOn": [
+   5,
+   7,
+   2,
+   7,
+   4,
+   1,
+   0
+  ],
+  "sameKindOff": [
+   7,
+   5,
+   5,
+   4,
+   4,
+   1,
+   0
+  ]
+ },
+ "datedJobsMoved": {
+  "of": 15,
+  "sameKindOn": 10,
+  "sameKindOff": 0
+ },
+ "heaviestNightWeeklyJobs": {
+  "now": {
+   "Grill": {
+    "m": 2,
+    "on": "Sunday"
+   },
+   "Pans": {
+    "m": 3,
+    "on": "Tuesday"
+   },
+   "Fryers, salads and dessert": {
+    "m": 3,
+    "on": "Thursday"
+   },
+   "Hot larder": {
+    "m": 5,
+    "on": "Sunday"
+   }
+  },
+  "sameKindOn": {
+   "Grill": {
+    "m": 2,
+    "on": "Sunday"
+   },
+   "Pans": {
+    "m": 3,
+    "on": "Tuesday"
+   },
+   "Fryers, salads and dessert": {
+    "m": 4,
+    "on": "Monday and Wednesday"
+   },
+   "Hot larder": {
+    "m": 5,
+    "on": "Thursday"
+   }
+  },
+  "sameKindOff": {
+   "Grill": {
+    "m": 2,
+    "on": "Sunday"
+   },
+   "Pans": {
+    "m": 3,
+    "on": "Tuesday"
+   },
+   "Fryers, salads and dessert": {
+    "m": 3,
+    "on": "Thursday"
+   },
+   "Hot larder": {
+    "m": 5,
+    "on": "Sunday"
+   }
+  }
+ },
+ "dueTonightIfSavedOnAWednesday": {
+  "sameKindOn": [
+   "new-pans-fridge"
+  ],
+  "sameKindOff": []
+ },
+ "rulesToLookAt": [
+  "Clean and organise chemical room; chemicals labelled; sanitiser available in spray bottle is on Friday and is not marked light"
+ ],
  "quiet": {
   "used": 1,
   "most": 2,

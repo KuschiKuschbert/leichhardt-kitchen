@@ -1,7 +1,7 @@
 /* Spreading cleaning jobs over the week: the planner behind the round 2 previews (26 Nov 2026). A pure function: the same
    jobs and settings in, the same days out. No reads, no clock, no random. It is a preview's engine, not the book's code.
 
-   plan(jobs, opts) -> { days, why, gave, week, load, quiet }
+   plan(jobs, opts) -> { days, why, gave, week, start, load, quiet }
    job: { id, text, sec (section name, '' for shared), kind ('' for none), w (1 light, 2 medium, 3 heavy, 0 not set),
           per (days a week it happens, 1 to 3), days (the weekdays it has now, [] for none; 0 is Sunday),
           move (the chef chose it to be planned), every (28 for a monthly job) }
@@ -20,7 +20,12 @@
    6. A job that has a day keeps it unless a rule above moves it or its kind's day is elsewhere. With same-kind days
       off, a job that has a day always keeps it. Friday and Saturday are allowed for a light job, never preferred.
    A monthly job (every 28) gets one weekday by the same rules and a starting week, 1 to 4, so they do not all start
-   in the same week. */
+   in the same week.
+   A job every few days (every 2 to 27) has no weekday to choose: it falls on a different one each time, and reaches
+   Friday and Saturday whatever its weight, so rules 1 and 2 cannot hold for it. All the plan can do is start two such
+   jobs of one section on different days (start: days after the save, 0 to every - 1), and say so.
+   tonight(jobs, days, today) -> the ids of new jobs whose proposed day is today (0 to 6). A new job starts the day it
+   is saved, so it would be due that night: the page says so and leaves it out until the chef puts it in. */
 (function (root) {
   'use strict';
   var NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -48,7 +53,12 @@
     };
     // the jobs that come round: on some weekdays, or every four weeks. A nightly job, or one every few days, loads
     // every day alike and is left out. A job not chosen is never touched: it only counts toward its days' load.
-    var comes = jobs.filter(function (j) { return j.every === 28 || (!j.every && (j.days || []).length > 0 && j.days.length < 7) || (j.move && !(j.days || []).length); });
+    var comes = jobs.filter(function (j) { return j.every === 28 || (!j.every && (((j.days || []).length > 0 && j.days.length < 7) || (j.move && !(j.days || []).length))); });
+    var few = {}; out.start = {};
+    jobs.filter(function (j) { return j.move && j.every > 1 && j.every < 28; }).sort(function (a, b) { return String(a.id).localeCompare(String(b.id)); }).forEach(function (j) {
+      var k = (j.sec || '') + '/' + j.every; few[k] = few[k] || 0; out.start[j.id] = few[k]++ % j.every;
+      out.why[j.id] = 'every ' + j.every + ' days has no weekday, so it reaches Friday and Saturday whatever its weight. It starts ' + (out.start[j.id] ? out.start[j.id] + (out.start[j.id] === 1 ? ' day' : ' days') + ' later than ' + (j.sec || 'the kitchen') + '\'s other job on this rhythm' : 'on the day it is saved');
+    });
     var total = comes.reduce(function (n, j) { return n + (j.move ? j.per || 1 : j.days.length); }, 0), quietMax = Math.floor(total * share), quietUsed = 0;
     comes.filter(function (j) { return !j.move; }).forEach(function (j) { j.days.forEach(function (d) { put(j, d); if (quiet.indexOf(d) >= 0) quietUsed++; }); });
     var dated = function (j) { return (j.days || []).length ? 0 : 1; };
@@ -103,6 +113,9 @@
     Object.keys(sec).forEach(function (name) { sec[name].forEach(function (load, d) { if (load > cap && jobs.some(function (j) { return days[j.id] && j.sec === name && days[j.id].indexOf(d) >= 0; })) out.push(name + ' is at weight ' + load + ' on ' + NAMES[d] + ', over ' + cap); }); });
     return out;
   }
-  var api = { plan: plan, check: check, sets: sets, NAMES: NAMES };
+  function tonight(jobs, days, today) {
+    return jobs.filter(function (j) { return !j.every && !(j.days || []).length && days[j.id] && days[j.id].indexOf(today) >= 0; }).map(function (j) { return j.id; });
+  }
+  var api = { plan: plan, check: check, tonight: tonight, sets: sets, NAMES: NAMES };
   if (typeof module === 'object' && module.exports) module.exports = api; else root.LK_CLEAN_PLANNER = api;
 })(typeof window === 'undefined' ? this : window);

@@ -64,22 +64,32 @@
   },
   "p-mix-390": {
    "sideways": false,
-   "screensLong": 2.9,
+   "screensLong": 3,
    "under44": 0
   },
   "p-mix-1280": {
    "sideways": false,
-   "screensLong": 1.9,
+   "screensLong": 2,
+   "under44": 0
+  },
+  "p-mix-on-390": {
+   "sideways": false,
+   "screensLong": 5.3,
+   "under44": 0
+  },
+  "p-mix-on-1280": {
+   "sideways": false,
+   "screensLong": 3.2,
    "under44": 0
   },
   "t-mix-390": {
    "sideways": false,
-   "screensLong": 1.4,
+   "screensLong": 2.4,
    "under44": 0
   },
   "t-mix-1280": {
    "sideways": false,
-   "screensLong": 1.2,
+   "screensLong": 1.9,
    "under44": 0
   }
  }

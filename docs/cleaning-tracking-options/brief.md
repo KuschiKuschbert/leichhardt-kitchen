@@ -106,7 +106,7 @@ Pinned before drawing:
 - On the rules emulator, 2 and 5 moves in one save were allowed and 10 and 20 refused, for the chef rows `owner`, `ownkit`, `kit` and `sam` of `tests/rules/client-shapes.test.mjs`. The test jobs carried no `plan`; a loaded section job carries one, and 6 to 9 moves were not tried. So "5 at a time" is a safe guess, not a measured limit: test it with real jobs before any build.
 - A change to a job starts exactly tomorrow by the rules; a new job starts today.
 - A job's fields are fixed in the rules, so a weight or a kind on the job needs a rules change and makes a revision; the other home is one small record read when the planner opens.
-- The planner behind the previews is one pure function, `previews/planner.js`, with 19 node checks, run on the book's own lists with example kinds and weights made up by the lead.
+- The planner behind the previews is one pure function, `previews/planner.js`, with 25 node checks, run on the book's own lists with example kinds and weights made up by the lead.
 
 ### Planning the days
 
@@ -165,7 +165,7 @@ T-A first: 5 of 6 (all but the new starter). Every reviewer rejected T-C's tick 
 | P-A: as the mover | Reject: keeper. All six named "ten forms for ten moves" as its weakness; the skeptic still recommended it | | Ten forms for ten moves |
 | P-B: each day's count, before and after | Take: skeptic, cook, head chef, screen designer. The keeper took only the Friday and Saturday line, the new starter only the "proposed" tag | Flighty, Linear | It shows the week bunching or evening out |
 | P-B: the board | Reject: skeptic, keeper, cook, new starter, screen designer. The head chef put P-B first and would keep its page | Linear | A second way to edit a job; false totals in the preview |
-| P-B: one Save for everything | Reject: head chef only. The mix still has one Save, in steps of 5: a disagreement, not settled | | He would rather save job by job |
+| P-B: one Save for everything | Reject: head chef only. The mix still has one Save, in steps of 5: a disagreement, not settled | | He gave no reason |
 | T-A: the job with its dates and who was on | Take: all six | Airbnb | Job, date, section and names together |
 | T-B: "done by, with the time" on an opened row | Take: cook, head chef, new starter, keeper, screen designer; the skeptic in his recommendation | Flighty | It shows the work that was done, not only the misses |
 | T-B: the table | Reject: all six | Linear | Words break at 390 px; no hand-built long tables |
@@ -178,9 +178,9 @@ Keeping all three pages whole was rejected for planning by the skeptic, the keep
 
 Packet: [round2-followup.md](round2-followup.md). Previews: `previews/p-mix-390-full.png`, `previews/t-mix-390-full.png`.
 
-**P-mix, Plan the days.** One page in Repeat tasks: a switch for same-kind days that says how many jobs each choice moves; a strip of the seven days with weekly jobs now and with the plan; lines for new days, moves and monthly first dates, each "Proposed, not saved" with a button in words; one Save, 5 at a time, with "0 of 15 saved". Weight and kind are set in the job's form. Preview, 390 px: 2.8 screens with three of the ten moves drawn; the cook's sum with all ten is about 4.4.
+**P-mix, Plan the days.** One page in Repeat tasks, drawn twice: with same-kind days off (how the page opens, at the skeptic's word; which side opens is the head chef's call) and on. A switch that says how many jobs each choice moves; a strip of the seven days with weekly jobs under the plan and now; each section's heaviest night, now and with the plan; lines for new days, moves and monthly first dates, each "Proposed, not saved" with a button in words; a new job whose day is today marked "due tonight" and left out until the chef puts it in; every move with its wait; a note that a job every few days is not planned; one Save, 5 at a time, with "0 of 5 saved". Weight and kind are set in the job's form. Preview, 390 px: 3.0 screens with the switch off (5 changes), 5.3 with it on (14 changes, all ten moves drawn).
 
-**T-mix, Cleaning by section.** No person has a total. A flag in the admin Inbox the next morning naming the section, the job and who was on at close; a row per section for the last 4 weeks, opening to each missed job with its dates and who was on, and each done job with who did it and when; Unable to complete apart and outside the totals; Shared kitchen counted with no names. Preview, 390 px: 1.4 screens.
+**T-mix, Cleaning by section.** No person has a total. A flag in the admin Inbox the next morning, worded "Hot larder: 1 job not ticked by midnight", with the job, its date, and who was on at close one tap behind it; it says it covers weekly and monthly jobs, not nightly Pack down. Two example mornings when it cannot know: "Count not ready" and "nobody was on the plan". A row per section for the last 4 weeks, opening to each missed job with its dates and who was on, and each done job with who did it and when; Unable to complete apart and outside the totals; Shared kitchen counted with no names; the four things to settle before the flag is switched on, printed on the page. Preview, 390 px: 2.4 screens with the counting rules open.
 
 Follow-up (the same three reviewers, continued with their context):
 
@@ -192,7 +192,9 @@ Follow-up (the same three reviewers, continued with their context):
 
 Faults the follow-up found in the planner, fixed in `planner.js` with a node check each: with same-kind days off a dated job (Clean the drawers) still moved, onto Saturday; now every dated job keeps its day when the switch is off, a dated job is never moved onto Friday or Saturday, and a quiet day is allowed for a light job but never preferred. The rule check now names a job already on Friday that is not marked light. With the switch on the plan still moves 10 of 15 dated jobs and the week goes from 7,4,4,4,4,1,0 to 5,7,2,7,4,1,0 (Sunday to Saturday). With it off, no dated job moves and the week is 7,5,5,4,4,1,0.
 
-Faults found in the mix previews and not redrawn: no section's heaviest night before and after (Hot larder keeps a 5-point night, Fryers goes from 3 to 4, twice); numbers spill from the strip at 390 px; "suggested" is hard to read on the pressed chip; names sit on the flag, not behind it; the Grill row says 6 done and lists three.
+Redrawn by the lead after the follow-up, and seen by no reviewer since: each section's heaviest night, now and with the plan; the strip with one number per day, so nothing spills at 390 px; "suggested" readable on the pressed chip; all ten moves with their waits; "due tonight" for a new job proposed for today, left out by default; the names one tap behind the flag; "not ticked by midnight" in place of "left 1 job"; which jobs the flag covers; "Count not ready"; the Grill row's counts matching its lines. Still not drawn: a line once it is Saved, Not sent or Refused; the page after a lock; what a cook's Cleaning row says in the week a job moved; the label for kind beside today's "Area or equipment".
+
+What the redraw shows on the lead's example weights (`previews/plan.json`): with same-kind days on, no section's heaviest night gets lighter. Hot larder keeps 5 (Sunday becomes Thursday), Fryers goes from 3 to 4, Grill stays 2 and Pans 3. With them off, no heaviest night changes. Friday and Saturday hold 1 job now, already there and not marked light; the plan adds none either way, against a limit of 2 (a tenth of 29: 26 weekly, 3 monthly).
 
 ### Break-it findings (round 2 and the follow-up)
 
@@ -202,12 +204,12 @@ Faults found in the mix previews and not redrawn: no section's heaviest night be
 | One line left out of a proposal | The rules still hold | Hot larder Wednesday at weight 7, over 5, with nothing said | Checked in `planner.js` by the skeptic and the keeper | `check()` runs on every change and names the rule | Fixed in the engine; the page state is Not evidenced |
 | The switch flipped after a save | The days go back | Before the planner fix: 3 (skeptic) or 4 (keeper) more jobs moved. Rerun by the lead on the fixed planner: Off after a saved On moves no job and puts none back; On after a saved Off moves 10 | Checked in `planner.js` | Store the choice; say "this does not put days back"; Save names how many saved jobs move again | Words in P-mix; storing it is to design |
 | 15 changes saved in steps of 5 across midnight, or with the signal lost | One start day, and the page says where it stopped | Hypothesis: steps land on two days, or are refused; the waits printed are stale | Risk / Not evidenced | A rules-emulator test either side of midnight; a client test with a refused second step; re-plan when the day changes | Before ready |
-| A new job whose proposed day is today | The chef knows it is due tonight | A new job starts today, and Cleaning has no listener, so an open page stays quiet until Refresh | Source read | "Due tonight on Pans", left out unless the chef puts it in | To design |
+| A new job whose proposed day is today | The chef knows it is due tonight | A new job starts today, and Cleaning has no listener, so an open page stays quiet until Refresh | Source read | "Due tonight on Pans", left out unless the chef puts it in | Drawn in P-mix with the switch on; `tonight()` and 3 node checks, one proving the page the chef first sees breaks no rule. The quiet open page on a cook's phone is still open |
 | A cook's "Every Tuesday" becomes Wednesday | The cook is told | Nothing tells the cook | Risk / Not evidenced | Open: what the staff row says in the week a job moved | Open |
 | A job already on Friday with no weight | Counted against "light only" or flagged | Shown under "light jobs only" as if it passed | Checked in `planner.js` | `check()` names it for the chef | Fixed in the engine |
 | A close finished after midnight | The job counts as done | A tick is refused once the date turns, so the flag names the section and its closers | Risk / Not evidenced (closing time unknown) | Ask the head chef; a fixture with a tick dated the next day; one cut-off for "missed" and "on at close" | Open with the head chef; holds the Inbox flag |
 | The plan says Grill, the cook's own pick says Pans; or a cook sent home early | One stated rule | Hypothesis: named either way; the plan keeps no move times | Risk / Not evidenced (source read) | Decide which wins and print it; a fixture where they differ | Before the flag |
-| The 03:00 count did not run, or nobody set a plan | "Count not ready", "nobody on the plan" | Hypothesis: an old night shown as last night, or a false all clear | Risk / Not evidenced | Fixtures with a missing and a stale row; the flag carries its date | Before ready |
+| The 03:00 count did not run, or nobody set a plan | "Count not ready", "nobody on the plan" | Hypothesis: an old night shown as last night, or a false all clear | Risk / Not evidenced | Fixtures with a missing and a stale row; the flag carries its date | Both states drawn in T-mix as examples; the fixtures are before ready |
 | A typed job that could not be done | Marked Unable with a reason | A typed job has no Unable: it is tick or flag | Source read | Give typed jobs Unable, or say so | Before the flag |
 | A job is moved or renamed | One history | Tracking by document id or by name splits it | Risk / Not evidenced | Key by the job's root id; a `cleanDay()` fixture across a move | Needs the nightly count changed |
 | A past day's plan is corrected later | The record follows | A day is counted once at 03:00 and carried | Source read | Decide whether a counted day can be counted again | Open |
@@ -231,10 +233,10 @@ Before ready, on the implemented app at 390, 768 and 1280 px: every save state, 
 
 | Principle | P-mix | T-mix |
 | --- | --- | --- |
-| Flighty: real dates, honest status | Works: each move's wait and each monthly date are printed | Works: the flag carries its date; Needs work until "Count not ready" is drawn |
+| Flighty: real dates, honest status | Works: each move's wait and each monthly date are printed | Works in the preview: the flag carries its date and "Count not ready" is drawn; Not evidenced on the app |
 | Todoist: a known default, visible and editable | Works: suggested day on the chips | Not relevant |
 | Airbnb: time, place, state together | Works on a line | Works on a row: job, date, section, who was on |
-| Things 3: occasional detail tucked away | Works: the rules are folded | Works for the counting rules; Needs work: names belong one tap behind the flag |
+| Things 3: occasional detail tucked away | Works: the rules are folded | Works: the names sit one tap behind the flag. The counting rules are drawn open here so they can be read |
 | Headspace: one name per thing | Needs work: "Kind of job" beside today's "Area or equipment" | Needs work: Unable to complete against Records' "Not possible" |
 | Duolingo: progress shows real work, no points | Not relevant | Works: no totals per person |
 | Linear: one frame, no second way to edit | Works: the strip never edits | Works: rows, no table |
@@ -244,7 +246,7 @@ Before ready, on the implemented app at 390, 768 and 1280 px: every save state, 
 **Recommend both mixes, built in this order, with the morning flag held until the head chef answers the midnight question.**
 
 1. **The nightly count, now.** Keep each missed and done job that comes round by its root id, with its section and who did it, leave Unable out of the totals, record the first night Cleaning is on, and bump `CLEAN_V`. It is cheapest before Cleaning is switched on, and nothing can be shown until it has run.
-2. **Weight and kind in the job's form, then Plan the days (P-mix)** with same-kind days as a switch, each section's heaviest night shown, and a job due tonight said plainly. It carries weights, Friday and Saturday light only, moving dated jobs and same-kind days, for weekly and monthly jobs. It does not plan a job that comes every few days: he asked for any rhythm, and that part is not met yet (see Not hidden by the ranking). It and shows what each choice does to the week before anything is saved.
+2. **Weight and kind in the job's form, then Plan the days (P-mix)** with same-kind days as a switch, each section's heaviest night shown, and a job due tonight said plainly. It carries weights, Friday and Saturday light only, moving dated jobs and same-kind days, for weekly and monthly jobs. A job that comes every few days gets only a start day, not a weekday: he asked for any rhythm, and that is as far as that rhythm can go (see Not hidden by the ranking). It and shows what each choice does to the week before anything is saved.
 3. **Cleaning by section in Reports (T-mix), then the Inbox flag** with names one tap behind it.
 
 Why these beat the originals: P-C alone hid the week and could break its own rules on one untick; P-B alone hid what a move costs; T-A alone showed only blame. The mixes keep each design's strongest part and drop the parts most reviewers rejected, each named in the mix table above. In the follow-up all three reviewers said build the mix, each with changes; none preferred an original design.
@@ -254,12 +256,12 @@ Main downside: Plan the days has the most states of any option to build and test
 Not hidden by the ranking:
 
 - His two wishes pull against each other on his list as the lead tagged it: the kinds and weights are made-up examples, and his own may change the result. With them, same-kind days cost 10 moves and a less even week. The switch makes that his choice each time; which way it starts is his to say.
-- A job that comes every few days is not planned. It falls on a different weekday each time, so it has no weekday to choose and will reach Friday and Saturday whatever its weight. The lists hold one such job today (Change grill drip trays, every 2 days, a Pack down step).
+- A job that comes every few days cannot be given a day. It falls on a different weekday each time, so it reaches Friday and Saturday whatever its weight and the light-only rule cannot hold for it. The planner only starts two such jobs of one section on different days (1 node check). The lists hold one such job today (Change grill drip trays, every 2 days, a Pack down step, never moved).
 - He named Sunday to Wednesday for heavier work. The planner also uses Thursday.
-- A moved job has one uneven week, up to 13 days between cleans in the example.
+- A moved job has one uneven week, up to 13 days between cleans in the example (saved on a Wednesday; another save day gives other waits).
 - A missed weekly job is not due again until its next day, so a flag reports a miss and does not get it cleaned.
 - The skeptic would hold bulk moves until real weights and kinds exist, and the head chef reviewer would build the tracking page only after four weeks of counts. Step 1 does not conflict with either.
-- The mixes are a lead synthesis. Three reviewers checked them and asked for the changes above, which are not all redrawn; the other three have not seen them.
+- The mixes are a lead synthesis. Three reviewers (skeptic, keeper, cook) checked the first drawing and asked for changes. The lead redrew both; no reviewer has seen the redraw, and the head chef, new starter and screen designer have seen neither.
 
 ## Open with the head chef
 

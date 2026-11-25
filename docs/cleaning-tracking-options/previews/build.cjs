@@ -104,52 +104,84 @@ function tC() {
 }
 
 
-/* ---------- the mixes (after round 2 and the head chef's word on sections) ---------- */
+/* ---------- the mixes (after round 2, the head chef's word on sections, and the follow-up) ---------- */
 // P-mix: C's list as the frame, A's fields and day chips when a line is opened, B's week as a strip of counts.
-function pMix() {
-  const apart = P.plan(J.jobs(chosen), { together: false });
-  const count = (days, d) => jobs.filter(j => !j.every && (j.move ? days[j.id] || [] : j.days.length < 7 ? j.days : []).includes(d)).length;
+// Drawn twice: with same-kind days off (the state the page opens in) and on. The example is saved on a Wednesday.
+const TODAY = 3, EXAMPLE = '<p class="pv-eg"><b>Example only.</b> The weights and kinds on this page were made up to show the planner working. Yours will change the days.</p>';
+const cost = j => j.w >= 1 && j.w <= 3 ? j.w : 2, cap1 = s => s[0].toUpperCase() + s.slice(1), list = a => a.length > 1 ? a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1] : a[0];
+// a section's weight on each night, weekly jobs only: now (days null) or with a set of proposed days
+const nights = days => { const s = {}; jobs.forEach(j => { if (!j.sec || j.every) return; ((days && days[j.id]) || (j.days.length < 7 ? j.days : [])).forEach(d => { s[j.sec] = s[j.sec] || [0, 0, 0, 0, 0, 0, 0]; s[j.sec][d] += cost(j); }); }); return s; };
+const worst = a => { const m = Math.max.apply(null, a); return { m, on: list(a.map((v, d) => v === m ? D[d] : '').filter(Boolean)) }; };
+function pMix(on) {
+  const pl = on ? plan : P.plan(J.jobs(chosen), { together: false }), other = on ? P.plan(J.jobs(chosen), { together: false }) : plan;
+  const nowOf = j => pl.days[j.id].map(d => D[d]).join(', '), movesIn = p => picked.filter(j => was(j) && j.days.join() !== p.days[j.id].join());
+  const mv = movesIn(pl), late = P.tonight(jobs, pl.days, TODAY), shown = Object.assign({}, pl.days); late.forEach(id => delete shown[id]);
+  const count = d => jobs.filter(j => !j.every && (j.move ? shown[j.id] || [] : j.days.length < 7 ? j.days : []).includes(d)).length;
   const today = d => jobs.filter(j => !j.every && j.days.length && j.days.length < 7 && j.days.includes(d)).length;
-  const movedApart = jobs.filter(j => j.move && was(j) && j.days.join() !== apart.days[j.id].join()).length;
-  const order = [1, 2, 3, 4, 5, 6, 0], broke = P.check(jobs, plan.days);
-  const line = (j, body, leave) => '<div class="pv-row"><div><b>' + esc(j.text) + '</b><small>' + esc(secName(j)) + ' · ' + (W[j.w] || 'No weight') + (j.kind ? ' · ' + esc(j.kind) : '') + '</small><small>' + body + '</small><small><span class="pv-tag">Proposed, not saved</span></small></div><div><button class="btn">' + leave + '</button></div></div>';
-  const open = jobs.find(x => x.id === 'new-grill-sticks'), has = d => jobs.filter(x => x.sec === 'Grill' && x.id !== open.id && !x.every && (x.move ? plan.days[x.id] : x.days.length < 7 ? x.days : []).includes(d)).length;
+  const order = [1, 2, 3, 4, 5, 6, 0], notes = P.check(jobs, shown), weekly = order.reduce((n, d) => n + count(d), 0);
+  const wait = j => { const a = j.days[0], b = pl.days[j.id][0], last = (TODAY - a + 7) % 7, next = ((b - TODAY + 7) % 7) || 7; return last + next; };
+  const line = (j, body, tag, btn) => '<div class="pv-row"><div><b>' + esc(j.text) + '</b><small>' + esc(secName(j)) + ' · ' + (W[j.w] || 'No weight') + (j.kind ? ' · ' + esc(j.kind) : '') + '</small><small>' + body + '</small><small><span class="pv-tag">' + tag + '</span></small></div><div><button class="btn">' + btn + '</button></div></div>';
+  const open = fresh.find(j => !late.includes(j.id)), has = d => jobs.filter(x => x.sec === open.sec && x.id !== open.id && !x.every && (x.move ? shown[x.id] || [] : x.days.length < 7 ? x.days : []).includes(d)).length;
   // a monthly job's first date: its weekday in its starting week, counted from Monday 30 November 2026
-  const first = j => { const d = plan.days[j.id][0], wk = plan.week[j.id], n = (wk - 1) * 7 + ((d + 6) % 7); return D[d] + ' ' + new Date(Date.UTC(2026, 10, 30 + n)).getUTCDate() + ' December'; };
-  return page('The mix: plan the days', 'Cleaning · Repeat tasks · Plan the days',
-    '<h1 class="pv-title">Plan the days</h1><p class="pv-sub">The book proposes. Nothing is saved until you press Save. Nightly jobs, the numbered Pack down steps and the general list are never moved.</p>' +
-    '<div class="pv-field"><span class="label">Jobs of one kind on the same day</span><div class="pv-chips chips"><button class="chip" aria-pressed="true">On<small>' + moved.length + ' jobs move</small></button><button class="chip" aria-pressed="false">Off<small>' + (movedApart ? movedApart + ' move' : 'no job moves') + '</small></button></div>' +
-    '<span class="hint">On: shelves on Monday, fridges on Wednesday, behind equipment on Tuesday, and a less even week. Off: every job that has a day keeps it, and new jobs go on light days. Changing this later does not put saved days back.</span></div>' +
-    '<h2 class="pv-h">The week <span>weekly jobs each day: now, then with this plan</span></h2><div class="pv-strip">' + order.map(d => '<div><b>' + S[d] + '</b><span>' + today(d) + ' → ' + count(plan.days, d) + '</span>' + (d === 5 || d === 6 ? '<small>light only</small>' : '') + '</div>').join('') + '</div>' +
-    '<p class="pv-note">Friday and Saturday: ' + plan.quiet.used + ' of at most ' + plan.quiet.most + ' jobs, light only. ' + (broke.length ? esc(broke.join('. ')) : 'Every rule holds.') + '</p>' +
+  const first = j => { const d = pl.days[j.id][0], n = (pl.week[j.id] - 1) * 7 + ((d + 6) % 7); const on = new Date(Date.UTC(2026, 10, 30 + n)); return D[d] + ' ' + on.getUTCDate() + ' ' + ['November', 'December'][on.getUTCMonth() - 10]; };
+  const before = nights(null), after = nights(shown), secs = Object.keys(after);
+  const changes = fresh.length - late.length + mv.length + monthly.length, few = jobs.filter(j => j.every > 1 && j.every < 28);
+  return page('The mix: plan the days, same-kind days ' + (on ? 'on' : 'off'), 'Cleaning · Repeat tasks · Plan the days',
+    '<h1 class="pv-title">Plan the days</h1><p class="pv-sub">The book proposes. Nothing is saved until you press Save. Nightly jobs, the numbered Pack down steps and the general list are never moved.</p>' + EXAMPLE +
+    '<div class="pv-field"><span class="label">Jobs of one kind on the same day</span><div class="pv-chips chips"><button class="chip" aria-pressed="' + !on + '">Off<small>' + (movesIn(on ? other : pl).length ? movesIn(on ? other : pl).length + ' jobs move' : 'no job moves') + '</small></button><button class="chip" aria-pressed="' + on + '">On<small>' + movesIn(on ? pl : other).length + ' jobs move</small></button></div>' +
+    '<span class="hint">Off: every job that has a day keeps it, and new jobs go on a light day for their section. On: shelves on Monday, fridges on Wednesday, behind equipment on Tuesday, and a less even week. Changing this after a save does not put days back.</span></div>' +
+    '<h2 class="pv-h">The week <span>weekly jobs each day</span></h2><div class="pv-strip">' + order.map(d => '<div' + (d === 5 || d === 6 ? ' class="is-quiet"' : '') + '><b>' + S[d] + '</b><span>' + count(d) + '</span><small>now ' + today(d) + '</small></div>').join('') + '</div>' +
+    '<p class="pv-note">Friday and Saturday (dashed) take light jobs only. They hold ' + pl.quiet.used + ' job now and this plan adds ' + (order.filter(d => d === 5 || d === 6).reduce((n, d) => n + count(d) - today(d), 0) || 'none') + '. The limit is ' + pl.quiet.most + ': a tenth of the ' + pl.quiet.of + ' jobs that come round (' + (pl.quiet.of - monthly.length) + ' weekly, ' + monthly.length + ' monthly).</p>' +
+    notes.map(n => '<p class="pv-note"><b>To look at:</b> ' + esc(n) + '.</p>').join('') +
+    '<h2 class="pv-h">Each section\'s heaviest night <span>light 1, medium 2, heavy 3</span></h2>' + secs.map(s => { const a = worst(before[s] || [0]), b = worst(after[s]); return '<div class="pv-row"><div><b>' + esc(s) + '</b><small>Now ' + a.m + ' on ' + a.on + '. With this plan ' + b.m + ' on ' + b.on + '.</small></div><div class="pv-num">' + a.m + ' → ' + b.m + '</div></div>'; }).join('') +
+    '<p class="pv-note">' + (secs.some(s => worst(after[s]).m > worst(before[s] || [0]).m) ? 'No section\'s heaviest night gets lighter, and ' + list(secs.filter(s => worst(after[s]).m > worst(before[s] || [0]).m)) + ' gets heavier.' : 'No section\'s heaviest night changes.') + ' A monthly job adds its weight on its own day, once every 4 weeks.</p>' +
     '<h2 class="pv-h">New days <span>' + fresh.length + ' jobs with no day yet</span></h2>' +
-    '<div class="pv-row"><div><b>' + esc(open.text) + '</b><small>Grill · Light · Equipment</small><small><span class="pv-tag">Proposed, not saved</span> ' + esc(plan.why[open.id][0].toUpperCase() + plan.why[open.id].slice(1)) + '. A new job starts today.</small>' +
-      '<div class="pv-chips chips">' + order.map(d => '<button class="chip" aria-pressed="' + (plan.days[open.id][0] === d) + '">' + S[d] + '<small>' + (plan.days[open.id][0] === d ? 'suggested' : d === 5 || d === 6 ? 'light only' : has(d) ? 'Grill has ' + has(d) : 'Grill has 0') + '</small></button>').join('') + '</div></div><div><button class="btn">Close</button></div></div>' +
-    fresh.filter(j => j !== open).map(j => line(j, '<b>' + now(j) + '</b>: ' + esc(plan.why[j.id]) + '. A new job starts today.', now(j).slice(0, 3) + ' ▾')).join('') +
-    '<h2 class="pv-h">Moves <span>' + moved.length + ' jobs that have a day</span></h2><p class="pv-note">A move starts tomorrow. Each line says how long that job waits this once, if you save today, a Wednesday.</p>' +
-    moved.slice(0, 3).map(j => line(j, esc(was(j)) + ' to <b>' + now(j) + '</b>. <b>' + gap(j) + ' days</b> between its last clean and its next. ' + esc(plan.why[j.id][0].toUpperCase() + plan.why[j.id].slice(1)) + '.', 'Leave on ' + was(j).slice(0, 3))).join('') +
-    '<p class="pv-note">and ' + (moved.length - 3) + ' more moves, each with its days and its wait.</p>' +
-    '<h2 class="pv-h">Monthly, first dates <span>' + monthly.length + ' jobs every 4 weeks</span></h2>' + monthly.map(j => line(j, '<b>' + first(j) + '</b>, then every 4 weeks. ' + esc(plan.why[j.id][0].toUpperCase() + plan.why[j.id].slice(1)) + '.', 'Pick a date')).join('') +
-    '<details class="pv-fold"><summary>How the days are chosen</summary><ol><li>Friday and Saturday take light jobs only, and at most a tenth of the week. A job with no weight is never light.</li><li>No section gets two heavy jobs on one day.</li><li>With the switch on, jobs of one kind share a day, unless that makes a section\'s day too heavy.</li><li>Each section\'s week is as even as it can be.</li><li>A job keeps its day unless a rule above moves it.</li></ol></details>' +
-    '<div class="pv-save"><span class="hint">0 of ' + (fresh.length + moved.length + monthly.length) + ' saved. Saved 5 at a time: if the signal drops, this line says how many are in and what is left.</span><button class="btn dark">Save ' + (fresh.length + moved.length + monthly.length) + ' changes</button></div>');
+    '<div class="pv-row"><div><b>' + esc(open.text) + '</b><small>' + esc(open.sec) + ' · ' + W[open.w] + ' · ' + esc(open.kind) + '</small><small><span class="pv-tag">Proposed, not saved</span> ' + esc(cap1(pl.why[open.id])) + '. A new job starts the day it is saved.</small>' +
+      '<div class="pv-chips chips">' + order.map(d => '<button class="chip" aria-pressed="' + (pl.days[open.id][0] === d) + '">' + S[d] + '<small>' + (pl.days[open.id][0] === d ? 'suggested' : d === TODAY ? 'tonight' : d === 5 || d === 6 ? 'light only' : esc(open.sec) + ' has ' + has(d)) + '</small></button>').join('') + '</div></div><div><button class="btn">Close</button></div></div>' +
+    fresh.filter(j => j !== open).map(j => late.includes(j.id)
+      ? line(j, '<b>' + nowOf(j) + ' is today.</b> Saved now, it is due tonight on ' + esc(j.sec) + '. Left out until you put it in or pick another day.', 'Left out, not saved', 'Put it in')
+      : line(j, '<b>' + nowOf(j) + '</b>: ' + esc(pl.why[j.id]) + '. A new job starts the day it is saved.', 'Proposed, not saved', nowOf(j).slice(0, 3) + ' ▾')).join('') +
+    '<h2 class="pv-h">Moves <span>' + (mv.length ? mv.length + ' jobs that have a day' : 'none') + '</span></h2>' + (mv.length
+      ? '<p class="pv-note">A move starts tomorrow. Each line says how long that job waits this once, if you save today, a Wednesday.</p>' + mv.map(j => line(j, esc(was(j)) + ' to <b>' + nowOf(j) + '</b>. <b>' + wait(j) + ' days</b> between its last clean and its next. ' + esc(cap1(pl.why[j.id])) + '.', 'Proposed, not saved', 'Leave on ' + was(j).slice(0, 3))).join('')
+      : '<p class="pv-note">Every job that has a day keeps it. To move one, open it and pick its day, or switch same-kind days on.</p>') +
+    '<h2 class="pv-h">Monthly, first dates <span>' + monthly.length + ' jobs every 4 weeks</span></h2>' + monthly.map(j => line(j, '<b>' + first(j) + '</b>, then every 4 weeks. ' + esc(cap1(pl.why[j.id])) + '.', 'Proposed, not saved', 'Pick a date')).join('') +
+    '<h2 class="pv-h">Every few days <span>not planned</span></h2><p class="pv-note">A job every 2 or 3 days falls on a different weekday each time, so it has no day to choose and will reach Friday and Saturday whatever its weight. If a section has two, the book starts them on different days. Your lists hold ' + few.length + ': ' + esc(few.map(j => j.text + ' (every ' + j.every + ' days, a Pack down step, never moved)').join('; ')) + '.</p>' +
+    '<details class="pv-fold"><summary>How the days are chosen</summary><ol><li>Friday and Saturday take light jobs only, and at most a tenth of the week. A job with no weight is never light.</li><li>A job that has a day is never moved onto Friday or Saturday.</li><li>No section gets two heavy jobs on one day.</li><li>With the switch on, jobs of one kind share a day, unless that makes a section\'s day too heavy.</li><li>Each section\'s week is as even as it can be.</li><li>With the switch off, a job that has a day always keeps it.</li></ol></details>' +
+    '<div class="pv-save"><span class="hint">0 of ' + changes + ' saved' + (late.length ? ', ' + late.length + ' left out' : '') + '. Saved 5 at a time: if the signal drops, this line says how many are in and what is left.</span><button class="btn dark">Save ' + changes + ' changes</button></div>');
 }
-// T-mix: the section's problem, not a person's. A morning flag, then sections with what they missed and who was on at close.
+// T-mix: the section's problem, not a person's. A morning flag with the names one tap behind it, then sections with
+// what they missed and who did what. Made-up people and counts.
 function tMix() {
-  const rows = [['Grill', 8, 6, true], ['Pans', 4, 4, false], ['Fryers', 20, 19, false], ['Hot larder', 27, 26, false], ['Shared kitchen', 9, 8, false]];
+  const rows = [['Grill', 5, 3, true], ['Pans', 4, 4, false], ['Fryers, salads and dessert', 20, 19, false], ['Hot larder', 27, 26, false], ['Shared kitchen', 36, 35, false]];
+  const who = names => '<details class="pv-who"><summary>Who was on at close</summary><small>' + names + '</small></details>';
   return page('The mix: cleaning by section', 'Admin · Inbox, and Reports · Cleaning',
-    '<h1 class="pv-title">Cleaning by section</h1><p class="pv-sub">A missed job is the section\'s, not one person\'s. Who was on that section at close is kept beside it. Nobody has a total.</p>' +
-    '<div class="pv-rules"><b>This morning, in your Inbox</b><div class="pv-row"><div><b>Hot larder left 1 job last night</b><small>Wednesday 25 November · Clean behind the pizza ovens (every Wednesday)</small><small>On Hot larder at close: Lou, Vic</small></div><div></div></div>' +
-      '<div class="pv-row"><div><b>Shared kitchen left 1 job last night</b><small>Wednesday 25 November · Clean the shelves above the pass (every Wednesday)</small><small>A shared job: no names.</small></div><div></div></div><p class="pv-note">Grill, Pans and Fryers finished everything. Missed means not ticked by midnight.</p></div>' +
-    '<h2 class="pv-h">The last 4 weeks <span>weekly and monthly jobs</span></h2>' +
+    '<h1 class="pv-title">Cleaning by section</h1><p class="pv-sub">A missed job is the section\'s, not one person\'s. Who was on that section at close is kept behind it. Nobody has a total.</p>' +
+    '<p class="pv-eg"><b>Example only.</b> The people and the counts on this page are made up.</p>' +
+    '<div class="pv-rules"><b>This morning, in your Inbox</b><small class="pv-note">Weekly and monthly jobs. Nightly Pack down is not in this flag.</small>' +
+      '<div class="pv-row"><div><b>Hot larder: 1 job not ticked by midnight</b><small>Wednesday 25 November · Clean behind the pizza ovens (every Wednesday)</small>' + who('Lou, Vic') + '</div><div></div></div>' +
+      '<div class="pv-row"><div><b>Shared kitchen: 1 job not ticked by midnight</b><small>Wednesday 25 November · Clean the shelves above the pass (every Wednesday)</small><small>A shared job: no names are kept.</small></div><div></div></div>' +
+      '<p class="pv-note">Grill, Pans and Fryers: every weekly and monthly job due on Wednesday was ticked.</p></div>' +
+    '<div class="pv-rules"><b>What it says when it cannot know</b><small class="pv-note">Two other mornings, as examples.</small>' +
+      '<div class="pv-row"><div><b>Count not ready for Wednesday 25 November</b><small>The 03:00 count has not run. Nothing is flagged, and nothing is called finished.</small></div><div></div></div>' +
+      '<div class="pv-row"><div><b>Pans: 1 job not ticked by midnight</b><small>Tuesday 24 November · Clean behind the stove (every 4 weeks)</small><small>Who was on at close: nobody was on the plan for Pans that day.</small></div><div></div></div></div>' +
+    '<h2 class="pv-h">The last 4 weeks <span>weekly and monthly jobs, done out of due</span></h2>' +
     rows.map(r => '<div class="pv-row"><div><b>' + r[0] + '</b><small>' + (r[1] - r[2] ? (r[1] - r[2]) + ' missed' : 'Nothing missed') + ' in 4 weeks</small>' +
-      (r[3] ? '<small><b>Clean the drawers</b> · missed Mon 9 Nov (on Grill at close: Ann) and Mon 16 Nov (on Grill at close: Ann, Bo)</small><small>Done Mon 2 Nov (Bo, 21:40) and Mon 23 Nov (Ann, 22:05)</small><small><b>Clean behind the grill</b> · done Tue 17 Nov (Bo, 22:10)</small>' : '') + '</div><div class="pv-num">' + r[2] + ' of ' + r[1] + '</div></div>').join('') +
+      (r[3] ? '<small><b>Clean the drawers</b> · not ticked Mon 9 Nov (on Grill at close: Ann) and Mon 16 Nov (on Grill at close: Ann, Bo)</small><small>Done Mon 2 Nov (Bo, 21:40) and Mon 23 Nov (Ann, 22:05)</small><small><b>Clean behind the grill</b> · done Tue 17 Nov (Bo, 22:10)</small>' : '') + '</div><div class="pv-num">' + r[2] + ' of ' + r[1] + '</div></div>').join('') +
+    '<p class="pv-note">Grill is drawn opened. The other rows open the same way.</p>' +
     '<h2 class="pv-h">Unable to complete <span>not a miss, not in the totals</span></h2>' + unable.map(u => '<div class="pv-row"><div><b>' + esc(u.job) + '</b><small>' + esc(u.sec) + ' · ' + esc(u.when) + ' · "' + esc(u.note) + '"</small></div><div></div></div>').join('') +
-    '<details class="pv-fold"><summary>How this is counted</summary><ul><li>A missed job belongs to its section. Shared kitchen jobs are counted, with no names.</li><li>"On at close" is who the plan, or their own pick, had on that section for the last service that day. A day with no plan says "nobody on the plan".</li><li>A job marked Unable to complete, with its reason, is not a miss and is not in the totals.</li><li>Missed means not ticked by midnight.</li><li>Counting starts the first night after Cleaning is switched on.</li><li>Nobody is ranked and nobody has a total.</li></ul></details>');
+    '<details class="pv-fold" open><summary>How this is counted</summary><ul><li>A missed job belongs to its section. Shared kitchen jobs are counted, with no names.</li><li>Missed means not ticked by midnight on its day.</li><li>A job marked Unable to complete, with its reason, is not a miss and is not in the totals.</li><li>Counting starts the first night after Cleaning is switched on.</li><li>Nobody is ranked and nobody has a total.</li></ul>' +
+      '<b>To settle before the morning flag is switched on</b><ul><li>A close that finishes after midnight would be flagged though the job was done.</li><li>"On at close" needs one rule for when the plan and a cook\'s own pick differ, and for a cook sent home early.</li><li>A job the chef typed in has no Unable to complete yet: it is tick or flag.</li><li>A night is counted once, at 03:00. A plan corrected later does not change it.</li></ul></details>');
 }
 
-const pages = { 'p-a': pA(), 'p-b': pB(), 'p-c': pC(), 't-a': tA(), 't-b': tB(), 't-c': tC(), 'p-mix': pMix(), 't-mix': tMix() };
+const pages = { 'p-a': pA(), 'p-b': pB(), 'p-c': pC(), 't-a': tA(), 't-b': tB(), 't-c': tC(), 'p-mix': pMix(false), 'p-mix-on': pMix(true), 't-mix': tMix() };
 Object.keys(pages).forEach(k => fs.writeFileSync(path.join(OUT, k + '.html'), pages[k]));
-fs.writeFileSync(path.join(OUT, 'plan.json'), JSON.stringify({ note: 'planner.js on the built-in lists with example kinds and weights (jobs.js)', quiet: plan.quiet, kitchenLoadSunToSat: plan.load.kitchen, sectionLoad: plan.load.sections, gaveWay: plan.gave,
+const offPlan = P.plan(J.jobs(chosen), { together: false }), perDay = days => [0, 1, 2, 3, 4, 5, 6].map(d => jobs.filter(j => !j.every && (j.move ? days[j.id] || [] : j.days.length < 7 ? j.days : []).includes(d)).length);
+const heaviest = days => { const s = nights(days), o = {}; Object.keys(s).forEach(k => { o[k] = worst(s[k]); }); return o; };
+fs.writeFileSync(path.join(OUT, 'plan.json'), JSON.stringify({ note: 'planner.js on the built-in lists with example kinds and weights (jobs.js). The kinds and weights are made up by the lead, not set by the head chef. jobs below are the plan with same-kind days on.',
+  weeklyJobsSunToSat: { now: [0, 1, 2, 3, 4, 5, 6].map(d => jobs.filter(j => !j.every && j.days.length && j.days.length < 7 && j.days.includes(d)).length), sameKindOn: perDay(plan.days), sameKindOff: perDay(offPlan.days) },
+  datedJobsMoved: { of: picked.filter(j => was(j)).length, sameKindOn: picked.filter(j => was(j) && j.days.join() !== plan.days[j.id].join()).length, sameKindOff: picked.filter(j => was(j) && j.days.join() !== offPlan.days[j.id].join()).length },
+  heaviestNightWeeklyJobs: { now: heaviest(null), sameKindOn: heaviest(plan.days), sameKindOff: heaviest(offPlan.days) },
+  dueTonightIfSavedOnAWednesday: { sameKindOn: P.tonight(jobs, plan.days, TODAY), sameKindOff: P.tonight(jobs, offPlan.days, TODAY) }, rulesToLookAt: P.check(jobs, plan.days), quiet: plan.quiet, kitchenLoadSunToSat: plan.load.kitchen, sectionLoad: plan.load.sections, gaveWay: plan.gave,
   jobs: picked.map(j => ({ job: j.text, section: secName(j), kind: j.kind, weight: W[j.w], was: was(j) || 'no day', now: now(j), week: plan.week[j.id] || undefined, why: plan.why[j.id] })) }, null, 1) + '\n');
 console.log('pages written. moved ' + moved.length + ', new ' + fresh.length + ', monthly ' + monthly.length + ', stays ' + stays.length + '; Friday and Saturday ' + plan.quiet.used + ' of ' + plan.quiet.most + '; tracking ' + tot[1] + ' of ' + tot[0]);
 

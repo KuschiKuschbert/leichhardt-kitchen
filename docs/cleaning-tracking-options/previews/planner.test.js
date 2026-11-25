@@ -35,5 +35,17 @@ ok(P.check(jobs, apart.days).length === 1, 'the plan with same-kind days off als
 ok(jobs.filter(j => j.move && j.days.length && j.days.length < 7).every(j => apart.days[j.id].every(d => (d !== 5 && d !== 6) || j.days.includes(d))) && jobs.filter(j => j.move && j.days.length && j.days.length < 7).every(j => r.days[j.id].every(d => (d !== 5 && d !== 6) || j.days.includes(d))), 'a job that has a day is never moved onto Friday or Saturday');
 ok(jobs.filter(j => j.move).every(j => !/not on the/.test(apart.why[j.id])), 'with same-kind days off, no reason speaks of a kind\'s day');
 ok(jobs.filter(j => j.move && j.days.length && j.days.length < 7).every(j => j.days.join() === apart.days[j.id].join()), 'with same-kind days off, every job that has a day keeps it');
+// a job every few days has no weekday: it gets a start day, never a weekday, and says it will reach Friday and Saturday
+const few = P.plan([{ id: 'a', sec: 'Grill', kind: '', w: 3, per: 1, days: [], every: 3, move: true }, { id: 'b', sec: 'Grill', kind: '', w: 1, per: 1, days: [], every: 3, move: true }, { id: 'c', sec: 'Pans', kind: '', w: 1, per: 1, days: [], every: 3, move: true }]);
+ok(few.days.a === undefined && few.days.b === undefined && few.start.a !== few.start.b && few.start.c === 0 && /reaches Friday and Saturday/.test(few.why.a), 'two jobs every 3 days in one section start on different days, get no weekday, and say they reach Friday and Saturday (' + few.start.a + ',' + few.start.b + ')');
+ok(jobs.filter(j => j.every > 1 && j.every < 28).every(j => !j.move && r.days[j.id] === undefined), 'the one job every few days in the book\'s lists is a Pack down step and is never touched');
+// a new job proposed for today is due tonight: the page leaves it out by default, and the rest still breaks no rule
+const WED = 3, late = P.tonight(jobs, r.days, WED), open = Object.assign({}, r.days); late.forEach(id => delete open[id]);
+ok(late.join() === 'new-pans-fridge' && P.tonight(jobs, apart.days, WED).length === 0, 'saved on a Wednesday, one new job would be due tonight with same-kind days on, and none with them off (' + late + ')');
+ok(P.check(jobs, open).length === 1 && /is on Friday and is not marked light/.test(P.check(jobs, open)[0]), 'with the job due tonight left out, the page the chef first sees breaks no rule');
+ok(jobs.filter(j => j.move && j.days.length).every(j => P.tonight(jobs, r.days, j.days[0]).indexOf(j.id) < 0), 'a job that already has a day is never called due tonight: a move starts tomorrow');
+// the switch after a save: Off never moves a job that has a day, so it puts none back either
+const saved = J.jobs(chosen).map(j => r.days[j.id] && !j.every ? Object.assign(j, { days: r.days[j.id].slice() }) : j), back = P.plan(saved, { together: false });
+ok(saved.filter(j => j.move && !j.every).every(j => j.days.join() === back.days[j.id].join()), 'after a save with same-kind days on, choosing off moves no job and puts none back');
 console.log('with same-kind days: ' + [0, 1, 2, 3, 4, 5, 6].map(d => jobs.filter(j => !j.every && (j.move ? r.days[j.id] : j.days.length < 7 ? j.days : []).includes(d)).length).join(',') + '; without: ' + [0, 1, 2, 3, 4, 5, 6].map(perDay).join(',') + '; moved without: ' + jobs.filter(j => j.move && j.days.length && j.days.length < 7 && j.days.join() !== apart.days[j.id].join()).length);
 console.log('PASS planner: ' + n + ' checks');
