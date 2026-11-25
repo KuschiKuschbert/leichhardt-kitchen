@@ -273,18 +273,90 @@ Head chef, skeptic, new starter, keeper and screen designer said Needs work. The
 | Headspace: one name per thing | Needs work: kind as Area | Needs work: the words above | Needs work: "3 of 20 done" beside "Not saved" |
 
 
+### The combined design (lead's synthesis, with a focused follow-up)
+
+Packet: [round2-followup.md](round2-followup.md). Pictures: `designs/m1-entry` to `designs/m7-records`. Drawn inside the real pages like the three designs. Review status: a lead synthesis; the skeptic, the keeper and the screen designer checked its first drawing, and the lead redrew it after them. No reviewer has seen the redraw, and the cook, head chef and new starter have seen neither.
+
+**What it is.** No new room and no new Reports tab.
+
+1. **Results.** One Inbox row the next morning with a quiet button: "Not ticked", the section, the job, its date, and "also not ticked" for an earlier week. It opens that night in Records, where today's lines stay and the weekly and monthly jobs follow by section: the miss first in the attention look, "Who was rostered" a link last. Shared kitchen has a line and no names.
+2. **Weights and days.** One view inside Repeat tasks, opened from one line there. Every weekly and monthly job is a row by section with its handwritten name and Light, Medium, Heavy. A kind is optional, from a short list, and on a phone it is set in the job's form.
+3. **Suggest the days.** Each change sits in its row: the new day and the old day, the reason, Keep the old day or Another day. No Keep where the old day breaks what that day takes. One Save, "20 weights and 8 days". A save that stops part way says so on each row in words.
+4. **Once Cleaning is on** the book suggests a day for new jobs only. A night that would become a section's heaviest says so.
+
+| | First drawing | Redrawn |
+| --- | --- | --- |
+| Screens long at 390: weights, changes, part saved, Cleaning on | 5.2, 4.5, 4.7, 2.6 | 4.5, 3.3, 3.8, 2.0 |
+| Screens long at 1280: weights, changes, Cleaning on | 3.0, 2.4, 1.7 | 2.8, 2.1, 1.4 |
+| Whole job rows on the first screen above the Save bar: phone, laptop | 0, 3 | 1, 3 on weights; 0, 2 on changes |
+| Controls on the changes page | 49 | 16 |
+| Controls under 44 px; lowest text contrast; focus ring | 0; 4.76:1; 3 px at 3.33:1 | The same |
+
+Preview inside the Implemented app's frame. Nothing was tapped or saved.
+
+**The follow-up.** All three said change it, then build. All three said the book should suggest in bulk only while Cleaning is off.
+
+| Reviewer | Changes asked | Done in the redraw |
+| --- | --- | --- |
+| Keeper | Store weights and kinds in one side record keyed by the job's root id: one write, read by chefs when the view opens, never by cooks. Then only the jobs whose day changes are saved again (8, inside the 9 spare reads), and weights need no gate | Save now reads "20 weights and 8 days". The store is a build choice, recommended below |
+| Skeptic | Ship the count, the Inbox row and Records first, alone. No Keep on a row whose old day breaks a day's level. Any Keep or Another day plans the rest again before Save. The 5 dated general jobs get rows, or the "29" goes. Hold "A move on offer" out of the first build | No Keep there; the offer is gone; the "29" is gone. Planning again after Keep is not drawn. The 5 general jobs still have no row |
+| Screen designer | Rows first, with the scope and day sentences in the fold. In Changes, weight and kind as words and tags only for exceptions. Refused in failure ink, what needs the chef first. Lift the Save bar only to 719 px. A lasting link to the view. One word for a miss, his call. Correct the Cleaning-on picture | All but the one word, which is his call, and fixed columns at 1280 px |
+
+Break-it, follow-up:
+
+| Scenario and role | Expected | Observed or hypothesis | Evidence | Smallest repair or check | Disposition |
+| --- | --- | --- | --- | --- | --- |
+| Cleaning on; the first drawing warned that Monday would become Hot larder's heaviest night and offered a move onto that Monday | One consistent state | The picture mixed two states; taking the offer would have made the night worse | Reproduced: picture against `planner.js` (skeptic, screen designer) | Draw from one state; no offers in the first build; a node check that an offer never raises a flagged night, when offers are built | Redrawn; offers held |
+| Keep Tuesday on a heavy job, under "Tuesday takes up to medium jobs" | The head chef's own day rule holds | The button let it stay, and two other rows went stale | Reproduced in `planner.js` (skeptic) | No Keep where the old day breaks a level; plan again on any Keep | First part redrawn; planning again is before ready |
+| Weights saved as a field on each job after switch-on | A cook's Cleaning opens inside 90 reads | 81 + 18 = 99 that day | Checked in source, not run (keeper) | The side record | Recommended |
+| One Save in steps; an acknowledgement is lost | The row says Saved | The book remembers one uncertain save at a time, so a saved job may read Refused | Risk / Not evidenced (keeper, source read) | Check the new version's id before Send again; a client test with a dropped acknowledgement | Before part 2 is ready |
+| "Also not ticked 18 November" for a job that moved, was Unable to complete, or on a night Cleaning was off | Only real earlier misses of that job | Hypothesis: a lookback by name or weekday misreads it | Risk / Not evidenced (keeper) | A node test: lookback by root id over done, missed, unable, not counted and earlier rows; say nothing for a night never counted | Part of step 1 |
+| One Save of weights and days; one job is refused | Its weight is still saved | Hypothesis: with weights on the job, the refused job keeps neither | Risk / Not evidenced (skeptic) | The side record saves every weight in one write, apart from the days | Recommended |
+
 ## Recommendation
 
-Being written: a combined preview of the mix is drawn first, as the council skill asks.
+**Recommend the combined design: B's one list leads, the results are the Inbox row and that night in Records, and it is built results first.** Five of six ranked B first and five said a blend beats any one design. The skeptic ranked A first; his build order and his cuts are taken.
+
+Build order, each step its own pull request:
+
+1. **The nightly count.** It honours the release switch and stores the first night Cleaning is on (D1). For weekly and monthly jobs only it keeps each job by its root id, its section, done or not, who did it and who was rostered; Unable to complete outside the totals. The size check moves inside the cleaning block, with a node test at full lists. No screen.
+2. **The Inbox row and that night in Records** (`m6`, `m7`). Admin only as the rules stand.
+3. **Weights and days, the list** (`m1`, `m2`). Weights and the optional kind in one side record keyed by root id. That is the keeper's pick and the lead's: one write, no new version of any job, no cook reads, and a weight can be set before or after switch-on. Its cost: the server checks the record's shape, not each job against its weight.
+4. **Suggest the days** (`m3`, `m4`), fewest moves, in bulk only while Cleaning is off. After switch-on, new jobs only (`m5`), and no offers in the first build.
+
+Why it beats the three as drawn: A never gets the weights set (60 taps, one form at a time) and has no button, his first ask. B alone plans in bulk at any time and adds a Reports tab that is off screen on a phone and empty for weeks. C replans 10 of 15 of his days to reach the same heaviest nights as 3 moves, and builds steps used once. The mix keeps the part every reviewer took from each: B's list, A's Records night, C's timing.
+
+Principles that help: Todoist (a suggested day you can keep or change), Airbnb (the day, the old day, the reason and the state in one row), Things 3 (only the changes; names behind a link), Flighty (honest dates, "Count not ready"), Linear (no new room, one Save bar), Duolingo (Saved, Not sent and Refused in words; no totals per person).
+
+Main downside: on a phone the weights list is 4.5 screens with one job on the first screen. It is a desk job, done once. And nothing shows a section missing the same job week after week beyond one "also not ticked" line, until there are weeks enough to judge a pattern page.
+
+Not hidden by the ranking:
+
+- **The skeptic dissents.** He would hold any button that suggests days until real weights exist and the head chef has seen what his own days leave wrong. Steps 1 to 3 come first, so that choice can be made then.
+- **The gate is not agreed.** Cook, keeper and skeptic took it in round 2 and all three follow-up reviewers backed it. The head chef reviewer kept the list as a bulk editor at any time, and D6 says a job that has a day can be moved. In the mix a dated job still moves after switch-on, by hand, one at a time.
+- **Two planner rules are the lead's, not the head chef's:** no section gets two heavy jobs on one night, and a night over 5 points is too heavy. "No day fits" comes from the first. They are drawn as suggestions he can change or drop.
+- **Every number about days rests on made-up weights and kinds.** Across 2,000 random weightings, fewest moves moved 2.8 of 15 dated jobs and left a section's heaviest night heavier in 0 to 7% of runs.
+- **Kinds buy shared days only** (head chef reviewer's run: leaving them out made no night heavier). So the kind is optional.
+- **Shared jobs that name sections** (the pass shelves, behind the deep fryers) are planned and reported as Shared kitchen, so a section's real night can be heavier than shown.
+- **A missed weekly job is not due again until next week.** The flag reports it; it does not get it cleaned. A cook who cleaned and did not tick reads as the section's miss, and a job the chef typed in has no Unable to complete.
+- **The five dated general-list jobs** (one on Friday with no weight) have no row in the list yet.
+
+Proposed changes to approved rules, each his to OK: the book suggesting a day ("never guess one"); a view inside Repeat tasks; an attention row with a quiet button in the Inbox; a miss drawn as attention in Records beside today's red "Missed" line; the two suggested planner rules.
+
+Before ready, on the implemented app at 390, 768 and 1280 px: every save state exercised with a refused and a dropped step; planning again after Keep; a lock, a reload and the day changing with suggestions on screen; a cook's page on the same day before and after, and in the week a job moved; several sections flagged on one morning; "Count not ready", Cleaning off and a failed read as whole pages; large text and focus past the first control; and on the rules emulator, 6 to 9 and 18 jobs in one save with real jobs, a second change to a job in one day, either side of midnight, and that staff and sous chefs cannot read the names.
 
 ## Open with the head chef
 
-1. "Not all tasks for that section": the jobs that come round only, or nightly Pack down too? Five of six reviewers would flag only the jobs that come round, and three said to ask you.
-2. Are Sunday, Monday and Wednesday days that take heavy jobs? That is the lead's reading.
-3. "Not just limited to tasks that happen more than once a day": every rhythm, or jobs done at each service?
-4. A shared job that names a role ("Grill chef"): does it count toward that section's night and its results?
-5. Who was on a section, for the record: the closing shift's plan, a cook's own pick, or both shown with their source?
-6. Who sets the day levels and runs the plan: the admin, or the chefs who manage cleaning jobs?
+1. Build it in that order, results first?
+2. The gate: the book suggests in bulk only while Cleaning is off, and after that you move a dated job by hand?
+3. "Not all tasks for that section": weekly and monthly jobs only, or nightly Pack down too? The designs flag weekly and monthly jobs.
+4. Do Sunday, Monday and Wednesday take heavy jobs? That is the lead's reading.
+5. "Not just limited to tasks that happen more than once a day": every rhythm, or jobs done at each service?
+6. A shared job that names sections (the pass shelves, behind the deep fryers): which one section owns it?
+7. Who was rostered, for the record: the closing shift's plan, a cook's own pick, or both shown with their source?
+8. One word for a miss: Records says "Missed" today; the designs say "Not ticked".
+9. Who sets what each day takes and presses Suggest the days: the admin, or the chefs who manage cleaning jobs?
+10. The two suggested planner rules: keep, change or drop?
 
 ## Chosen
 

@@ -672,9 +672,9 @@
    "firstDesignTop": 508
   },
   "m2-weights-390": {
-   "screensLong": 5.2,
+   "screensLong": 4.5,
    "sideways": false,
-   "controls": 86,
+   "controls": 65,
    "under44": [],
    "lowestContrast": {
     "ratio": 4.76,
@@ -686,15 +686,15 @@
    "lowestControlEdge": {
     "ratio": 4.84,
     "passes": true,
-    "on": "Save 18 jobs",
+    "on": "Save 18 weights",
     "how": "border"
    },
    "textUnder12px": [],
-   "wholeDesignRows": 0,
-   "firstDesignTop": 295,
+   "wholeDesignRows": 1,
+   "firstDesignTop": 285,
    "focus": {
     "reached": true,
-    "on": "Change",
+    "on": "All 20",
     "focusVisible": true,
     "outline": "solid 3px",
     "offset": "2px",
@@ -702,9 +702,9 @@
    }
   },
   "m2-weights-1280": {
-   "screensLong": 3,
+   "screensLong": 2.8,
    "sideways": false,
-   "controls": 86,
+   "controls": 85,
    "under44": [],
    "lowestContrast": {
     "ratio": 4.76,
@@ -716,37 +716,37 @@
    "lowestControlEdge": {
     "ratio": 4.84,
     "passes": true,
-    "on": "Save 18 jobs",
+    "on": "Save 18 weights",
     "how": "border"
    },
    "textUnder12px": [],
    "wholeDesignRows": 3,
-   "firstDesignTop": 320
+   "firstDesignTop": 310
   },
   "m3-changes-390": {
-   "screensLong": 4.5,
+   "screensLong": 3.3,
    "sideways": false,
-   "controls": 49,
+   "controls": 16,
    "under44": [],
    "lowestContrast": {
     "ratio": 5.05,
     "fontPx": 16,
     "large": false,
     "passes": true,
-    "text": "Save 20 jobs"
+    "text": "Save 20 weights and 8 days"
    },
    "lowestControlEdge": {
     "ratio": 4.84,
     "passes": true,
-    "on": "Save 20 jobs",
+    "on": "Save 20 weights and 8 da",
     "how": "border"
    },
    "textUnder12px": [],
    "wholeDesignRows": 0,
-   "firstDesignTop": 295,
+   "firstDesignTop": 285,
    "focus": {
     "reached": true,
-    "on": "Change",
+    "on": "All 20",
     "focusVisible": true,
     "outline": "solid 3px",
     "offset": "2px",
@@ -754,31 +754,31 @@
    }
   },
   "m3-changes-1280": {
-   "screensLong": 2.4,
+   "screensLong": 2.1,
    "sideways": false,
-   "controls": 49,
+   "controls": 16,
    "under44": [],
    "lowestContrast": {
     "ratio": 5.05,
     "fontPx": 16,
     "large": false,
     "passes": true,
-    "text": "Save 20 jobs"
+    "text": "Save 20 weights and 8 days"
    },
    "lowestControlEdge": {
     "ratio": 4.84,
     "passes": true,
-    "on": "Save 20 jobs",
+    "on": "Save 20 weights and 8 da",
     "how": "border"
    },
    "textUnder12px": [],
-   "wholeDesignRows": 1,
-   "firstDesignTop": 320
+   "wholeDesignRows": 2,
+   "firstDesignTop": 310
   },
   "m4-part-saved-390": {
-   "screensLong": 4.7,
+   "screensLong": 3.8,
    "sideways": false,
-   "controls": 45,
+   "controls": 12,
    "under44": [],
    "lowestContrast": {
     "ratio": 5.05,
@@ -795,10 +795,10 @@
    },
    "textUnder12px": [],
    "wholeDesignRows": 0,
-   "firstDesignTop": 295,
+   "firstDesignTop": 285,
    "focus": {
     "reached": true,
-    "on": "Change",
+    "on": "All 20",
     "focusVisible": true,
     "outline": "solid 3px",
     "offset": "2px",
@@ -806,29 +806,29 @@
    }
   },
   "m5-cleaning-on-390": {
-   "screensLong": 2.6,
+   "screensLong": 2,
    "sideways": false,
-   "controls": 18,
+   "controls": 14,
    "under44": [],
    "lowestContrast": {
     "ratio": 4.76,
     "fontPx": 15,
     "large": false,
     "passes": true,
-    "text": "New job"
+    "text": "New jobs"
    },
    "lowestControlEdge": {
     "ratio": 4.84,
     "passes": true,
-    "on": "Save 1 job",
+    "on": "Save Sort the meat donen",
     "how": "border"
    },
    "textUnder12px": [],
    "wholeDesignRows": 0,
-   "firstDesignTop": 295,
+   "firstDesignTop": 285,
    "focus": {
     "reached": true,
-    "on": "Change",
+    "on": "All 20",
     "focusVisible": true,
     "outline": "solid 3px",
     "offset": "2px",
@@ -836,26 +836,26 @@
    }
   },
   "m5-cleaning-on-1280": {
-   "screensLong": 1.7,
+   "screensLong": 1.4,
    "sideways": false,
-   "controls": 18,
+   "controls": 16,
    "under44": [],
    "lowestContrast": {
     "ratio": 4.76,
     "fontPx": 15,
     "large": false,
     "passes": true,
-    "text": "New job"
+    "text": "New jobs"
    },
    "lowestControlEdge": {
     "ratio": 4.84,
     "passes": true,
-    "on": "Save 1 job",
+    "on": "Save Sort the meat donen",
     "how": "border"
    },
    "textUnder12px": [],
-   "wholeDesignRows": 0,
-   "firstDesignTop": 320
+   "wholeDesignRows": 1,
+   "firstDesignTop": 310
   },
   "m6-inbox-390": {
    "screensLong": 1.4,
