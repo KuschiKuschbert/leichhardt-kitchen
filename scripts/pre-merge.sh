@@ -50,6 +50,24 @@ git worktree list --porcelain | awk -F'\t' '
 done
 echo "   Another session may still be working in one of these. Do not remove a worktree that is not yours."
 
+# A code change gets one /code-review medium before it is marked ready (25 Nov 2026, docs/auto-merge.md, For sessions).
+# "Code" is what the phones load, read from scripts/site-changed.sh so there is one list, limited to scripts and styles
+# and pages, plus the rules. Notes, tests, server scripts and workflows alone need none.
+echo "== Review:"
+changed="$(git diff --name-only origin/main...HEAD)"
+sitesh="$(dirname "$0")/site-changed.sh"
+if [ -f "$sitesh" ]; then
+  code="$({ printf '%s\n' "$changed" | bash "$sitesh" | grep -E '\.(js|css|html)$'; printf '%s\n' "$changed" | grep -Fx 'firestore.rules'; } || true)"
+  if [ -n "$code" ]; then
+    echo "!! This changes code the book runs or its rules ($(printf '%s\n' "$code" | wc -l | tr -d ' ') file(s))."
+    echo "   Run /code-review medium on this branch before marking it ready. Fix what it finds, or answer it in the pull request."
+  else
+    echo "   No book code or rules changed: no /code-review needed."
+  fi
+else
+  echo "!! scripts/site-changed.sh not found next to this script. If you changed code the book runs or its rules, run /code-review medium before marking ready."
+fi
+
 echo "== Checks before merging:"
 echo "   node --check on changed JS, then cd tests && npm install && npm test. firestore.rules changed? cd tests/rules && npm test, and publish first."
 echo "   README.md in step with the change. Mark it ready and stop: the queue merges it. After the merge: git -C <main checkout> pull --ff-only origin main, remove this worktree and its branch."
