@@ -100,7 +100,7 @@ The rules behind them are in `CLAUDE.md` (Service rules, Coding rules, Things th
 
 ## Where it goes, and how loud it is
 
-**Proposed 26 November 2026, until the head chef agrees the wording.** Several changes were reworked after a bit of use: too loud, too crowded, or in the wrong place ([the cases](design-misses.md)). This adds no class and no colour. It says which existing piece to reach for, and the service council answers it for every change people will see (`.claude/skills/service-council/SKILL.md`, Where it goes).
+**Head chef, 26 November 2026.** Several changes were reworked after a bit of use: too loud, too crowded, or in the wrong place ([the cases](design-misses.md)). This adds no class and no colour. It says which existing piece to reach for, and the service council answers it for every change people will see (`.claude/skills/service-council/SKILL.md`, Where it goes).
 
 - **Inline is the start.** The main job of a work page is on the page, one tap from its tab (service rule 1). A new piece goes inline first and moves only for a reason below.
 - **A fold** (`.tm-fold`, `.o-cut-fold`): detail a cook wants sometimes, not at every glance. The closed line still says what is inside and anything that needs action. Never fold what stops a mistake. A card that already holds the whole thing has no second copy behind a fold (On today, 10 Nov 2026).
