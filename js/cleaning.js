@@ -9,7 +9,7 @@
   var OPEN = 253402178400000, DAYS = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [0, 'Sun']];
   var AREAS = ['Coldroom', 'Freezer', 'Dry store', 'Oven', 'Fryers', 'Behind equipment', 'Pass', 'Shelves'];
   var M = blank(), generation = 0, recorder = '', context = '', picker = null, popup = null, savedTimer = null, boundaryTimer = null;
-  function blank() { return { root: null, view: 'today', today: T.day(), week: monday(T.day()), selected: T.day(), tasks: [], done: [], state: 'idle', error: '', readAt: 0, readAgain: false, cache: Object.create(null), range: '', pending: Object.create(null), tickErrors: Object.create(null), editor: false, draft: null, original: '', editId: '', saveBusy: false, saveState: '', saveError: '', savedText: '', archiveBusy: '', suspended: false, expanded: Object.create(null), workDrafts: Object.create(null), flowErrors: Object.create(null), flowSaved: Object.create(null), importBusy: false, importError: '', importText: '', temperatureOpen: false, lead: null, workGroup: '', workPage: 0, workQuery: '', workFilter: 'all', repeatPage: 0, repeatQuery: '', repeatGroup: 'all' }; }
+  function blank() { return { root: null, view: 'today', today: T.day(), week: monday(T.day()), selected: T.day(), tasks: [], done: [], state: 'idle', error: '', readAt: 0, readAgain: false, cache: Object.create(null), range: '', pending: Object.create(null), tickErrors: Object.create(null), editor: false, draft: null, original: '', editId: '', saveBusy: false, saveState: '', saveError: '', savedText: '', archiveBusy: '', suspended: false, expanded: Object.create(null), workDrafts: Object.create(null), flowErrors: Object.create(null), flowSaved: Object.create(null), importBusy: false, importError: '', importText: '', temperatureOpen: false, lead: null, leadStale: false, workGroup: '', workPage: 0, workQuery: '', workFilter: 'all', repeatPage: 0, repeatQuery: '', repeatGroup: 'all' }; }
   function shift(day, n) { return T.day(T.at(day) + n * 86400000 + 43200000); }
   function monday(day) { return shift(day, -((T.dow(T.at(day)) + 6) % 7)); }
   function dates() { return DAYS.map(function (_, i) { return shift(M.week, i); }); }
@@ -199,10 +199,6 @@
      .cln-often from css/app.css on purpose: this page is lazy and can be newer than the saved stylesheet on a phone. */
   function metaAttrs(task) { return rhythm(task) ? 'class="nb-meta cln-often" style="white-space:normal;overflow:visible;text-overflow:clip"' : 'class="nb-meta"'; }
   function packSection(task) { var id = task.plan && task.plan.template || ''; return id.indexOf('pd-hot-') === 0 ? 'Hot larder' : id.indexOf('pd-grill-') === 0 ? 'Grill' : id.indexOf('pd-pans-') === 0 ? 'Pans' : ''; }
-  /* Which kitchen section a Pack down group belongs to (25 Nov 2026, step 2, docs/cleaning-schedule.md). Never by name: it
-     is the section a chef chose for that group's section cleaning jobs at Load (the sc-hot-, sc-grill- and sc-pans- jobs),
-     and only while every one of those jobs in force that day is saved to the same live section. One job moved, the group
-     left on Shared kitchen, or the section removed: no link, and Pack down stays where it was. No read: the loaded tasks. */
   var PACK_GROUPS = [['hot', 'Hot larder'], ['grill', 'Grill'], ['pans', 'Pans']];
   /* Which section the page opens on: the one this shared kitchen screen is set to (step 3, 26 Nov 2026), else the one this
      person is on today. own keeps the person's own section beside a screen's, for the words and the Pack down link. */
@@ -211,21 +207,26 @@
     return screen ? { id: screen.id, name: screen.name, screen: true, own: own } : own;
   }
   /* What leads a cook's page that day, from the day's groups: the leading section (first), its groups (mine), the words
-     beside its name (why), and on a station screen the cook's own section when it is another one with a tied Pack down
-     (mate: Go to Pack down goes there). A screen's section with no cleaning that day gives way to the cook's own, as on a
-     screen with none set. No section, or no work for it: no first, and the page keeps its usual order. */
+     beside its name (why), and on a station screen the Pack down group tied to the cook's own section when that is
+     another one (mate: Go to Pack down names that group and goes there). The order comes from what was fixed when the
+     list was read (M.lead); the words and the link follow the cook's section as it is now, since they move nothing.
+     A screen's section with no cleaning that day, or one since taken off the kitchen's list, gives way to the cook's
+     own, as on a screen with none set. No section, or no work for it: no first, and the page keeps its usual order. */
   function leadPlan(grouped) {
     var live = function (x) { return !!x && C.sections().some(function (section) { return section.id === x.id; }); };
     var has = function (x) { return grouped.filter(function (group) { return (group.own || group.pack) && group.sec === x.id; }); };
-    var first = !C.chef() && live(M.lead) ? M.lead : null, mine = first ? has(first) : [], why = 'Your section today', mate = null;
-    if (first && first.screen) {
-      mate = live(first.own) && first.own.id !== first.id ? first.own : null;
-      if (mine.length) why = 'This screen' + (mate ? '. You are on ' + mate.name + ' today' : '');
-      else if (mate) { first = mate; mine = has(mate); mate = null; }
-    }
-    if (mate && !grouped.some(function (group) { return group.pack && group.sec === mate.id; })) mate = null;
+    var lead = C.chef() ? null : M.lead, first = live(lead) ? lead : null, mine = first ? has(first) : [], why = 'Your section today', mate = null;
+    if (first && first.screen && mine.length) {
+      var mateNow = C.section ? C.section() : null;
+      if (live(mateNow) && mateNow.id !== first.id) { why = 'This screen. You are on ' + mateNow.name + ' today'; mate = grouped.filter(function (group) { return group.pack && group.sec === mateNow.id; })[0] || null; }
+      else why = 'This screen';
+    } else if (lead && lead.screen && live(lead.own) && lead.own.id !== lead.id) { first = lead.own; mine = has(first); }
     return { first: mine.length ? first : null, mine: mine, why: why, mate: mate };
   }
+  /* Which kitchen section a Pack down group belongs to (25 Nov 2026, step 2, docs/cleaning-schedule.md). Never by name: it
+     is the section a chef chose for that group's section cleaning jobs at Load (the sc-hot-, sc-grill- and sc-pans- jobs),
+     and only while every one of those jobs in force that day is saved to the same live section. One job moved, the group
+     left on Shared kitchen, or the section removed: no link, and Pack down stays where it was. No read: the loaded tasks. */
   function packLinks(day) {
     var at = T.at(day), live = C.sections().map(function (section) { return section.id; }), out = {};
     PACK_GROUPS.forEach(function (group) {
@@ -270,15 +271,17 @@
       (error ? '<span class="cln-row-error" role="alert">' + esc(error) + ' <button type="button" class="p-link" data-cln="refresh">Refresh</button></span>' : '') + '</div>' +
       (task.guide && P.featOn('guides') ? '<a class="nb-go cln-how" href="#/guides/' + encodeURIComponent(task.guide) + '" aria-label="How to: ' + esc(task.text) + '">How to</a>' : '') + '</li>';
   }
-  function daily(day) {
+  // grouped and plan: the day's groups and what leads, when draw() has already worked them out for the read line
+  function daily(day, grouped, plan) {
     var tasks = tasksOn(day);
     if (!tasks.length) return '<div class="cln-empty"><p class="nb-empty">' + (M.tasks.length ? 'No cleaning tasks due on this day.' : 'No cleaning tasks set yet.') + '</p><p class="hint">' + (C.chef() ? 'Set the actual jobs, sections and repeat days in Repeat tasks.' : 'Your chef can set the jobs and repeat days.') + '</p>' + (C.chef() ? '<button type="button" class="btn" data-cln="setup">Set repeat tasks</button>' : '') + '</div>';
-    var grouped = groups(tasks, day), jump = 'cln-packdown-' + day, jumped = false, plan = leadPlan(grouped);
+    var jump = 'cln-packdown-' + day, jumped = false;
+    grouped = grouped || groups(tasks, day); plan = plan || leadPlan(grouped);
     // one group: its heading, its count and its rows. title is the heading's words; the first Pack down heading takes the
     // id that Go to Pack down moves to when there is no one Pack down block (the leading section's layout)
     function groupHTML(group, i, title, tag, note) {
       var count = workTotals(group.tasks, day), heading = tag || (group.pack ? 'h4' : 'h3'), id = 'cln-group-' + i + '-' + day;
-      if (note !== undefined && group.pack && !jumped && (!plan.mate || group.sec === plan.mate.id)) { jumped = true; id = jump; }
+      if (note !== undefined && group.pack && !jumped && (!plan.mate || group === plan.mate)) { jumped = true; id = jump; }
       return '<section' + (group.pack ? ' class="cln-packdown-group" data-cln-packdown-group="' + esc(group.name) + '"' : '') + ' aria-labelledby="' + id + '"><' + heading + ' class="nb-hd" id="' + id + '"' + (id === jump ? ' tabindex="-1"' : '') + '><span>' + esc(title || group.name + (group.own ? ': section clean' : '')) + '</span><span class="cln-group-count">' + count.complete + '/' + count.total + (count.events ? ' + repeats' : '') + '</span></' + heading + '>' + (note ? '<p class="hint">' + esc(note) + '</p>' : '') + '<ul class="nb-rows">' + group.tasks.map(function (task) { return row(task, day); }).join('') + '</ul></section>';
     }
     /* Your section first (head chef, 25 Nov 2026, design D): the page opens on the section this person is on today, with
@@ -471,17 +474,19 @@
     /* A section that becomes known after the list was read is taken once: the cook answers Your section today, or the
        Today's team plan arrives. It never replaces a section already leading, and never while a tick is sending, so the
        list cannot reorder under a thumb (docs/cleaning-schedule.md, Your section first). */
-    if (M.state === 'ok' && !busy()) { if (!M.lead) M.lead = leadNow(); else if (M.lead.screen && !M.lead.own && C.section) M.lead.own = C.section(); }
+    if (M.state === 'ok' && !busy()) { if (M.leadStale || !M.lead) M.lead = leadNow(); else if (M.lead.screen && !M.lead.own && C.section) M.lead.own = C.section(); M.leadStale = false; }
     var active = document.activeElement, focusAttribute = active && ['data-cln-field', 'data-cln-plan', 'data-cln-repeat', 'data-cln-control'].filter(function (attribute) { return active.hasAttribute(attribute); })[0], field = focusAttribute && active.getAttribute(focusAttribute), action = active && M.root.contains(active) && active.getAttribute('data-cln');
     var focusAttrs = {}; if (action) ['data-id', 'data-day', 'data-dow', 'data-group', 'data-page', 'data-cln-direction'].forEach(function (attribute) { if (active.hasAttribute(attribute)) focusAttrs[attribute] = active.getAttribute(attribute); }); if (action === 'group-page' || action === 'repeat-page') delete focusAttrs['data-page'];
     var pos = focusAttribute && typeof active.selectionStart === 'number' ? [active.selectionStart, active.selectionEnd] : null;
     var today = tasksOn(T.day()), totals = workTotals(today, T.day()), chef = C.chef(), week = chef && M.view === 'week', setup = chef && M.view === 'setup';
+    // a cook's day: its groups and what leads, worked out once for the read line and the list
+    var staffGroups = !chef && M.state === 'ok' && today.length ? groups(today, T.day()) : null, staffPlan = staffGroups ? leadPlan(staffGroups) : null;
     var toolbar = chef ? '<div class="cln-toolbar"><div class="chips" role="group" aria-label="Cleaning view"><button type="button" class="chip" data-cln="today" aria-pressed="' + (!week && !setup) + '">Today</button><button type="button" class="chip" data-cln="week" aria-pressed="' + week + '">Week</button><button type="button" class="chip" data-cln="setup" aria-pressed="' + setup + '" aria-expanded="' + setup + '" aria-controls="cln-plan-title">Repeat tasks</button></div>' + (!setup && M.draft ? '<button type="button" class="p-link cln-draft-return" data-cln="setup">' + (dirtyDraft() ? 'Unsaved repeat task' : 'Return to repeat task') + '</button>' : '') + '</div>' : '';
     M.root.innerHTML = '<div class="nb-wrap cln-page' + (chef ? ' cln-chef-page' : '') + '" data-cln-view="' + (setup ? 'setup' : week ? 'week' : 'today') + '">' + toolbar + (setup ? editor() :
-      '<section class="nb-page cln-book" aria-labelledby="rtitle"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Cleaning</h2><span class="nb-date">' + esc(week ? 'Week commencing ' + longDay(M.week) : longDay(T.day())) + '</span></div>' + (!week && M.state === 'ok' && today.length ? '<div class="nb-prog cln-progress">' + totals.complete + '/' + totals.total + '<small>' + (totals.events ? 'recorded; repeats apply' : 'done today') + '</small></div>' : '') + '</header>' + readLine(!chef && M.state === 'ok' && today.some(packSection), !chef && M.state === 'ok' && (leadPlan(groups(today, T.day())).mate || {}).name) +
+      '<section class="nb-page cln-book" aria-labelledby="rtitle"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Cleaning</h2><span class="nb-date">' + esc(week ? 'Week commencing ' + longDay(M.week) : longDay(T.day())) + '</span></div>' + (!week && M.state === 'ok' && today.length ? '<div class="nb-prog cln-progress">' + totals.complete + '/' + totals.total + '<small>' + (totals.events ? 'recorded; repeats apply' : 'done today') + '</small></div>' : '') + '</header>' + readLine(!chef && M.state === 'ok' && today.some(packSection), staffPlan && staffPlan.mate && staffPlan.mate.name) +
       '<div class="cln-temperature"><button type="button" class="p-link" data-cln="temperature" aria-expanded="' + M.temperatureOpen + '">Temperature logs: morning and before dinner service</button>' + (M.temperatureOpen ? '<p class="hint">Temperature logs must be completed first thing in the morning and before dinner service. The temperature log is not connected here. Record readings in the venue\'s temperature log. Cleaning checks do not record or validate temperatures.</p>' : '') + '</div>' + earlierNotice() +
       (!week && M.state === 'ok' && (totals.events || totals.awaiting || totals.blocked) ? '<p class="hint cln-coverage">' + (totals.events ? 'Record every required service, prep or use. The count covers known occurrences; repeat coverage is not configured. ' : '') + (totals.awaiting ? totals.awaiting + ' awaiting Pass check. ' : '') + (totals.blocked ? totals.blocked + ' unable to complete.' : '') + '</p>' : '') +
-      '<div class="nb-body cln-body">' + (M.state === 'error' ? clnFailLine() : M.state !== 'ok' ? loading() : week ? weekly() : chef ? chefDaily(T.day()) : daily(T.day())) + '</div></section>') + '</div>';
+      '<div class="nb-body cln-body">' + (M.state === 'error' ? clnFailLine() : M.state !== 'ok' ? loading() : week ? weekly() : chef ? chefDaily(T.day()) : daily(T.day(), staffGroups, staffPlan)) + '</div></section>') + '</div>';
     if (busy()) Array.prototype.forEach.call(M.root.querySelectorAll('[data-cln="refresh"], [data-cln="today"], [data-cln="week"], [data-cln="setup"], [data-cln="previous"], [data-cln="next"], [data-cln="this-week"]'), function (button) { button.disabled = true; });
     if (window.LK_UX) window.LK_UX.enhance(M.root);
     if (focusAttribute) { var el = Array.prototype.filter.call(M.root.querySelectorAll('input, textarea, select'), function (element) { return element.getAttribute(focusAttribute) === field; })[0]; if (el && !el.disabled) { el.focus({ preventScroll: true }); if (pos && el.setSelectionRange) el.setSelectionRange(pos[0], pos[1]); } }
@@ -751,7 +756,8 @@
   window.addEventListener('focus', function () { if (shown()) checkDay(); });
   document.addEventListener('visibilitychange', function () { if (!document.hidden && shown()) checkDay(); });
   window.addEventListener('beforeunload', function (event) { if (dirty() && !(window.LK_UPDATE && window.LK_UPDATE.letGo && window.LK_UPDATE.letGo())) { event.preventDefault(); event.returnValue = ''; } });
-  // The head chef changed this screen's section in Settings: take it now, unless a tick is still sending
-  window.addEventListener('lk-device-section', function () { if (M.state !== 'ok' || busy()) return; M.lead = leadNow(); if (shown()) draw(); });
+  // This screen's section was changed, here or in another tab on this device: take it at the next draw that is not
+  // waiting on a tick (draw() reads M.leadStale), so the change is never dropped and never lands mid-tick
+  window.addEventListener('lk-device-section', function () { M.leadStale = true; if (shown() && M.state === 'ok') draw(); });
   window.LK_CLEANING = { api: 2, mount: mount, unmount: unmount, reset: reset, dirty: dirty, busy: busy, overlay: function () { return !!popup; } };
 })();

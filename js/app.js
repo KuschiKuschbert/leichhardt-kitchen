@@ -1834,7 +1834,10 @@
   /* This screen's section (26 Nov 2026, docs/cleaning-schedule.md): on a shared kitchen screen, once someone is signed in
      and the kitchen has sections. The head chef picks one with the chips, as Text size is picked; everyone else reads it.
      Saved on this screen only (the device record), so it costs no read and changes nobody's access. */
-  var screenSecFail = false;
+  // why the last tap could not set it ('' when it could): shown in the row, and forgotten when Settings is left
+  var screenSecFail = '';
+  var SCREEN_SEC_SAY = { locked: 'Sign in as head chef on this screen to change its section.', gone: 'That section is no longer on the kitchen\'s list.', storage: 'This screen could not remember the section. Allow site storage, then try again.' };
+  window.addEventListener('hashchange', function () { screenSecFail = ''; });
   function screenSecRow(mode, who, canChange) {
     var P = window.LK_PREP, list = P && P.kitSections ? P.kitSections() : [];
     if (mode !== 'shared' || !who || !list.length || !P.screenSectionId) return '';
@@ -1844,7 +1847,7 @@
       (id && !cur ? '<p class="hint">The section this screen was set to is no longer on the kitchen\'s list, so no section leads.</p>' : '') +
       (canChange ? '<div class="chips" role="group" aria-label="This screen\'s section"><button type="button" class="chip" data-act="setscreensec" data-val="" data-k="setscreensec:" aria-pressed="' + !id + '">No section</button>' +
         list.map(function (x) { return '<button type="button" class="chip" data-act="setscreensec" data-val="' + esc(x.id) + '" data-k="setscreensec:' + esc(x.id) + '" aria-pressed="' + (x.id === id) + '">' + esc(x.name) + '</button>'; }).join('') + '</div>' +
-        (screenSecFail ? '<p class="p-err" role="alert">This screen could not remember the section. Allow site storage, then try again.</p>' : '')
+        (screenSecFail ? '<p class="p-err" role="alert">' + esc(SCREEN_SEC_SAY[screenSecFail] || SCREEN_SEC_SAY.storage) + '</p>' : '')
         : '<p class="hint">The head chef can change this after signing in.</p>'), { aria: 'This screen\'s section' });
   }
   var DEVICE_SAY = {
@@ -2492,7 +2495,7 @@
     else if (act === 'device-choice') { if (window.LK_DEVICE) window.LK_DEVICE.settings(); return; }
     else if (act === 'device-forget') { if (window.LK_DEVICE) window.LK_DEVICE.forget(); return; }
     else if (act === 'setpractice') { settings.practice = val === '1'; saveSettings(); }
-    else if (act === 'setscreensec') { var prep = window.LK_PREP; screenSecFail = !(prep && prep.setScreenSection && prep.setScreenSection(val || '')); }
+    else if (act === 'setscreensec') { var prep = window.LK_PREP; screenSecFail = prep && prep.setScreenSection ? prep.setScreenSection(val || '') : 'locked'; }
     else if (act === 'setkeepon') { settings.keepOn = val === '1'; saveSettings(); ko.refused = false; ko.paused = false; }
     else if (act === 'installno') { settings.installNo = true; saveSettings(); }
     else if (act === 'install') {

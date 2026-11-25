@@ -149,7 +149,15 @@
     },
     forget: function () { change('forget'); }
   };
-  window.addEventListener('storage', function (e) { if (e.key === KEY || e.key === null) { if (read() && finishDialog) finishDialog(); emit(); } });
+  // the same record's mode and owner: only the screen's section differs, which is not an access change
+  function sameAccess(a, b) { try { a = JSON.parse(a || 'null'); b = JSON.parse(b || 'null'); return !!a && !!b && a.v === 2 && b.v === 2 && a.mode === b.mode && a.ownerId === b.ownerId; } catch (e) { return false; } }
+  window.addEventListener('storage', function (e) {
+    if (e.key !== KEY && e.key !== null) return;
+    // Another tab on this device changed only this screen's section: tell Cleaning, and leave the access listeners asleep
+    if (e.key === KEY && sameAccess(e.oldValue, e.newValue)) { window.dispatchEvent(new Event('lk-device-section')); return; }
+    if (read() && finishDialog) finishDialog();
+    emit();
+  });
   function start() { if (!requested && !read()) { requested = true; window.LK_DEVICE.request(); } }
   if (document.readyState !== 'complete') document.addEventListener('DOMContentLoaded', start, { once: true }); else setTimeout(start, 0);
 }());
