@@ -349,6 +349,17 @@ const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
     ok(await p.evaluate(() => { LK_DEVICE.setSection('grill'); LK_DEVICE.reset(); return localStorage.getItem('lk.device.v2') === null && LK_DEVICE.section() === ''; }), 'settings: Forget this device forgets the section with the device');
     await p.context().close();
 
+    // the head chef comes back to a screen that already has a section, and changes it
+    p = await L.open(b, '#/settings', { admin: true, deviceMode: 'shared', profile: screen('grill'), wait: 1800, extra: sections() });
+    await L.waitFor(p, () => !!document.querySelector('[data-row="screensec"]'), null, 10000);
+    ok(await val() === 'Grill', 'settings: a screen already set shows its section to the head chef');
+    await p.click('[data-row="screensec"] .st-btn');
+    ok(await p.$$eval('[data-row="screensec"] .chip[aria-pressed="true"]', es => es.map(e => e.textContent).join(',')) === 'Grill', 'settings: its chip is the pressed one');
+    await p.click('[data-row="screensec"] [data-act="setscreensec"][data-val="pans"]');
+    await L.waitFor(p, () => (document.querySelector('[data-row="screensec"] .st-v') || {}).textContent === 'Pans');
+    ok(await p.evaluate(() => JSON.parse(localStorage.getItem('lk.device.v2')).sec === 'pans' && !!LK_PREP.state.who), 'settings: the head chef changes it to another section and stays signed in');
+    await p.context().close();
+
     // a cook on the same kind of screen reads it and cannot change it
     p = await L.open(b, '#/settings', { who: 'ann', deviceMode: 'shared', profile: screen('grill'), wait: 1800, init: pickedPans, extra: sections() });
     await L.waitFor(p, () => !!document.querySelector('[data-row="screensec"]'), null, 10000);
