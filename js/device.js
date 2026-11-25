@@ -13,13 +13,27 @@
     } catch (e) { return null; }
   }
   function emit() { declined = false; window.dispatchEvent(new Event('lk-device')); }
-  function save(p) {
+  // quiet: a change that is not about who may use the device (the screen's section), so the access listeners stay asleep
+  function save(p, quiet) {
     try {
       localStorage.setItem(KEY, JSON.stringify(p));
       var saved = read();
       if (!saved || saved.mode !== p.mode || saved.ownerId !== p.ownerId) return false;
-      emit(); return true;
+      if (!quiet) emit();
+      return true;
     } catch (e) { return false; }
+  }
+  /* This screen's section (26 Nov 2026, docs/cleaning-schedule.md): a shared kitchen screen may be given one kitchen
+     section, so Cleaning opens on it for the cooks who sign in there. It is a preference in the same record: a section id
+     checked by type, honoured only on a shared screen, gone with Forget and with a change of device type. Never access. */
+  function section() { var p = read(); return p && p.mode === 'shared' && typeof p.sec === 'string' && p.sec.length <= 80 ? p.sec : ''; }
+  function setSection(id) {
+    var p = read();
+    if (!p || p.mode !== 'shared' || typeof id !== 'string' || id.length > 80) return false;
+    if (id) p.sec = id; else delete p.sec;
+    if (!save(p, true) || section() !== id) return false;
+    window.dispatchEvent(new Event('lk-device-section'));
+    return true;
   }
   function mode() { var p = read(); return p ? p.mode : ''; }
   function ownerId() { var p = read(); return p ? p.ownerId : ''; }
@@ -113,6 +127,7 @@
   }
   window.LK_DEVICE = {
     mode: mode, ownerId: ownerId, classified: function () { return !!read(); }, choose: choose, verify: verify, reset: reset,
+    section: section, setSection: setSection,
     // o.auto: an automatic recheck (resume() when the kitchen settings, the sign-in or the clock answer). It never
     // reopens a prompt the person closed; a deliberate ask (sign in, Choose device, Forget) does.
     request: function (o) {
@@ -134,7 +149,15 @@
     },
     forget: function () { change('forget'); }
   };
-  window.addEventListener('storage', function (e) { if (e.key === KEY || e.key === null) { if (read() && finishDialog) finishDialog(); emit(); } });
+  // the same record's mode and owner: only the screen's section differs, which is not an access change
+  function sameAccess(a, b) { try { a = JSON.parse(a || 'null'); b = JSON.parse(b || 'null'); return !!a && !!b && a.v === 2 && b.v === 2 && a.mode === b.mode && a.ownerId === b.ownerId; } catch (e) { return false; } }
+  window.addEventListener('storage', function (e) {
+    if (e.key !== KEY && e.key !== null) return;
+    // Another tab on this device changed only this screen's section: tell Cleaning, and leave the access listeners asleep
+    if (e.key === KEY && sameAccess(e.oldValue, e.newValue)) { window.dispatchEvent(new Event('lk-device-section')); return; }
+    if (read() && finishDialog) finishDialog();
+    emit();
+  });
   function start() { if (!requested && !read()) { requested = true; window.LK_DEVICE.request(); } }
   if (document.readyState !== 'complete') document.addEventListener('DOMContentLoaded', start, { once: true }); else setTimeout(start, 0);
 }());

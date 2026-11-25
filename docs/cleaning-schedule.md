@@ -99,7 +99,18 @@ For a cook, the page opens on the section they are on today: its name, then **Se
 - **Go to Pack down** moves to the leading section's Pack down.
 - **Reads.** None added: the link and the section come from what the page and the phone already hold.
 
-Step 3 (This screen's section on a shared kitchen screen) is not built.
+### This screen's section (26 November 2026, step 3)
+
+A shared kitchen screen can be given one kitchen section, so the screen at a station opens Cleaning on that station's section for every cook who signs in there.
+
+- **Where it is set.** Settings on that screen, **This screen's section**, under How this device is used. The row shows on a shared kitchen screen once someone is signed in and the kitchen has sections. Only the head chef changes it (`canChangeDevice()`, the same gate as the screen's type); everyone else reads it.
+- **Where it is kept.** In the device's own record, `lk.device.v2`, as `sec`: a section id, checked by type and honoured only in shared mode (`LK_DEVICE.section()`). It goes with Forget this device and with a change of device type. No Firestore read, write or rule.
+- **Not an access change.** Setting it signs nobody out, runs no owner check and leaves unsent work alone. It is announced with its own event, `lk-device-section`, not the access event, in this tab and in any other tab open on the same device (a change of the section alone never fires `lk-device`). A refused change says why: not the head chef on a shared screen now, a section no longer on the list, or the screen could not remember it.
+- **Not the person's section.** It never answers Your section today, feeds `mySec()` or writes `shifts/`. Prep and wastage lines still go under each person's own section.
+- **What a cook sees.** The screen's section leads, with "This screen" beside its name. When the cook signed in is on another section, the words add "You are on Pans today", and Go to Pack down names the Pack down group tied to their section ("Go to Pans pack down": the group's own fixed name, the same as its heading, not the section's name) and moves there. The rest of the kitchen stays open below. The words and the link follow the cook's section as it is now, on every draw, because they move nothing; the order stays as it was when the list was read.
+- **No cleaning for that section today**, or a section taken off the kitchen's list (before the page opened or while it is open): the cook's own section leads, as on a screen with none set. A renamed section keeps leading under its name now.
+- **Chefs.** A head or sous chef keeps the grouped chef view on any screen.
+- **The screen's rules are unchanged.** It still needs a PIN, locks after 10 idle minutes and at 04:00, and each tick asks who did it.
 
 ## Completion and accountability
 
