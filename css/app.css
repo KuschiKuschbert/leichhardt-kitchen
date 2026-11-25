@@ -5654,6 +5654,11 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .cln-group-count { flex: none; font: 400 .8125rem var(--body); letter-spacing: 0; color: var(--muted); }
 .cln-packdown-title { margin: 1.1rem 0 .2rem; font: 700 2rem/1.2 'Caveat', cursive; scroll-margin-top: .5rem; }
 .cln-packdown > .hint { margin: .2rem 0 .65rem; line-height: 1.4; }
+/* your section first (25 Nov 2026): the leading section's title with why it leads on the same line, and the title over the rest */
+.cln-mine-title, .cln-rest-title { margin: 1.1rem 0 .2rem; font: 700 2rem/1.2 'Caveat', cursive; }
+.cln-mine-title { display: flex; justify-content: space-between; align-items: baseline; gap: .6rem; margin-top: .4rem; }
+.cln-mine-title small { font: 400 .8125rem/1.3 var(--body); color: var(--muted); text-align: right; }
+.cln-mine .cln-packdown-group > .hint { margin: .2rem 0 .65rem; line-height: 1.4; }
 .cln-row { flex-wrap: nowrap; }
 .cln-row .nb-box { align-self: center; margin-top: 0; }
 .cln-row .nb-main { min-width: 0; }
