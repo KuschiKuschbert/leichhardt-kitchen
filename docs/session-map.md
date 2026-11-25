@@ -18,6 +18,16 @@ Not built: step 3 (This screen's section on a shared kitchen screen). After it, 
 
 Records' nightly cleaning count kept its own copy of how the Cleaning page reads a day, as did `cleaningDue()` in `js/prep.js`. All three now use `js/cleaning-core.js` (lazy, shared with node, like `js/analysis-core.js`). `cleaningDue()` asks the core, which loads with the Cleaning page, and refuses a write without it. A tidy-up, no council: the results are the same, proved on a synthetic programme of 124 jobs and 14,089 records against the copies as they were, so `CLEAN_V` stays 1. `tests/cleaning-core.test.js`, [Cleaning](cleaning-schedule.md#one-reading-of-a-day).
 
+## Cleaning tracking and planning the days, 26 November 2026 (council, not chosen)
+
+The head chef asked for cleaning tracking in the admin panel and a button that plans which day each cleaning job falls on. His scope: a time weight in three steps on each job, Friday and Saturday for light jobs only and about a tenth of the week, jobs that have a day can move, jobs of one kind across sections on the same day, a missed job as its section's with who was on kept in the background, and a flag the next morning. Council: round 1 Build smaller for both (tracking 5 of 5; the button 4 of 5, the skeptic Don't build); round 2 the list of changes first for planning (4 of 6), by job first for tracking (5 of 6); a follow-up by three reviewers on two mixes, then a redraw no reviewer has seen. Recommended: the nightly count first, then weight and kind with Plan the days, then Cleaning by section. Not chosen. Nothing in the book changed. [Brief](cleaning-tracking-options/brief.md).
+
+| Files | Role and checks |
+| --- | --- |
+| `docs/cleaning-tracking-options/` | Proposal, brief, the three reviewer packets, the design page (`index.html`), and `previews/`: the pages with `build.cjs`, the preview planner `planner.js` (pure; `plan()`, `check()`, `tonight()`) with `planner.test.js` (25 node checks, run by hand, not by Click tests) and `jobs.js` (example kinds and weights, made up). |
+
+Open with the head chef: whether a close ever finishes after midnight, which jobs the flag covers, same-kind days on or off to start, whether Thursday takes heavy jobs, plan or own pick for "on that section", admin only or sous chefs too.
+
 ## Fewer reloads and a clearer long wait, 24 November 2026 (chosen)
 
 The head chef found the book slow to load. 16 to 36 new versions a day reloaded phones coming back after 5 minutes, and a fresh open after a publish started twice. Round 1 Build smaller (5 of 5); round 2 three designs scored by six reviewers. Chosen: the card names the step with rows breathing on a long wait (against the council's advice), a fresh open starts once, and phones get new versions at 15:05 and 22:35. [Brief](loading-wait-options/brief.md).
