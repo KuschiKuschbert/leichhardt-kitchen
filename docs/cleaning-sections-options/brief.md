@@ -275,3 +275,32 @@ Changed from the previews while building step 1, with the reason:
 - The loaded jobs belong to a kitchen section, chosen by the chef for each group when loading, not to a name prefix. A job the head chef types in Add cleaning task and a loaded job then sit in the same group, and step 2 has its link by section id. A group with no section chosen loads under Shared kitchen.
 - A line the list gives to two sections (the Wednesday shelf above the pass, the monthly clean behind the deep fryers) is one Shared kitchen job that names both, with a note for the chef to set one owner.
 - Pack down group headings stay as they are under the Pack down title (head chef reviewer).
+
+### Built: step 1 (25 November 2026)
+
+Twenty jobs in `sectionClean` (`js/cleaning-schedule.js`): Grill 2, Pans 3, Fryers with salads and dessert 5, Hot larder 7, shared 3. Loaded by a chef in Repeat tasks, **Load section cleaning**, with a kitchen section chosen for each group. [The contract](../cleaning-schedule.md#section-cleaning-25-november-2026).
+
+Left out of the list, for the head chef:
+
+- Already in Pack down or the general list: the flat grill, the chargrill brush, under the grill and flat top, the grill screen, the stove tops and their drip trays, the resting rack, the fryers, the microwave, the impinger, the parmie fridge, and the fridge doors (the daily general fridge task names doors).
+- Different from the saved Pack down steps, so not loaded: the drip tray every night (saved: every 2 days) and the OZ tank twice a week (saved: Sunday). A chef changes those two jobs in Repeat tasks.
+- No day given: the dishpit shelves, the meat doneness sticks, the wall behind the hand washing sink, the Pans drawer fridge, the screens on Pans, Fryers and Hot larder, the oven wipe down, the weekly step and top, the rack shelves under the oven, the second Hot larder "empty out fridges" line, and the outside area with the takeaway containers in the dry goods room. A chef adds each in Add cleaning task with its day.
+- Standing rules, not jobs: no more foil; keep the fridge and freezer tidy.
+
+Measured on the **Implemented app** (the click tests' Firebase stand-in, source of this pull request, line cook on Grill, synthetic Monday 30 November 2026, 844 px tall, Barlow, Barlow Condensed and Caveat, both existing lists loaded, then the 20 jobs as a chef would load them; `implementation/measure.cjs`, `implementation/measurements.json`):
+
+| | Before, 390 | After, 390 | Before, 768 | After, 768 | Before, 1280 | After, 1280 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Jobs on the page that Monday | 46 | 52 | 46 | 52 | 46 | 52 |
+| Whole jobs on the first screen | 5 | 4 | 7 | 5 | 8 | 5 |
+| Page length, screens | 4.9 | 5.6 | 4.0 | 4.6 | 3.8 | 4.4 |
+| Screens down to Grill pack down | 2.9 | 3.6 | 2.5 | 3.1 | 2.3 | 2.9 |
+| Lines that say how often, cut off | 0 of 1 | 0 of 5 | 0 of 1 | 0 of 5 | 0 of 1 | 0 of 5 |
+| Other small lines cut off (as before) | 4 | 4 | 0 | 0 | 0 | 0 |
+| Sideways scroll, buttons under 44 px | none | none | none | none | none | none |
+
+Taps to tick one of the new jobs: 1, exercised (`tests/cleaning-sections.test.js`), and the row does not move or change height when ticked. On a shared kitchen screen a tick still asks who did it, as before. Under service rule 4: the page loses one whole job on a phone's first screen and Grill pack down moves 0.7 screens further down, because the section groups sit above Shared kitchen as in design A. The reason it is worth it for now is that the weekly and monthly jobs are in the book at all; step 2 brings the cook's own section, with its Pack down, to the top.
+
+Differences from the preview of A: the headings under the Pack down title keep their names; the rows are planned rows, so the words open the method and the box is the one tap; a group's long name ("Fryers, salads and dessert") makes that group's small line wrap to two lines.
+
+Exercised in the click tests: load, the offered and chosen sections, loading twice, the first date notice and setting a date, the row at three widths, one tap and Undo, a held save reading Not sent, the chef's groups and editor. Not exercised: Extra large text, dark mode, keyboard focus order, contrast, a refused save on these rows, the rules emulator for this pull request (no rule changed; a task saved with an empty first date is already covered by `tests/rules/cleaning.test.mjs`). Not live: nothing is loaded in the real book until a chef presses Load.

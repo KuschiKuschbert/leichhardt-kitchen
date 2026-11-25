@@ -1,5 +1,18 @@
 # Session map: which note to read, and every file
 
+## Section cleaning, 25 November 2026 (step 1 of three built)
+
+The head chef gave a written cleaning list for Grill, Pans, Fryers with salads and dessert, and Hot larder. Council: round 1 Build smaller 5 of 5; round 2 A first of three for 5 of 6, B last 6 of 6, closed rows rejected 5 of 6; a follow-up on the mix. Chosen: D, your section first with nothing hidden, in three steps. [Brief](cleaning-sections-options/brief.md), [designs](cleaning-sections-options/index.html), [contract](cleaning-schedule.md#section-cleaning-25-november-2026).
+
+| Files | Role and checks |
+| --- | --- |
+| `js/cleaning-schedule.js` | `sectionClean`: 20 jobs with a stated day that Pack down and the general list do not hold, `sectionDrafts()`, `sectionGroups`, `sectionGroupOf()`. Three monthly jobs repeat every 28 days with no first date. `tests/cleaning-sections.test.js` (data). |
+| `js/cleaning.js` | **Load section cleaning** with a section picker per group (`sectionImportPanel()`, `sectionChoice()`), how often on the row (`rhythm()`, `.cln-often`), "Grill: section clean" headings, the first date notice (`firstDateNotice()`), no empty Method. `tests/cleaning-sections.test.js` (68 checks: load, sections, first date, the row at 390, 768 and 1280, one tap and Undo, a held save, the chef's view). |
+| `tests/read-budget.test.js` | Cleaning opened by a cook with all three lists: 80 reads, budget 90. |
+| `docs/cleaning-sections-options/` | Proposal, brief, both reviewer packets, the design page, previews with `build.cjs`, and `implementation/` (the built page measured by `measure.cjs`). |
+
+Not built: step 2 (the page opens on your section; needs a chef-set link from a kitchen section to its Pack down group) and step 3 (This screen's section on a shared kitchen screen). Open with the head chef: `docs/open-work.md`, Open items.
+
 ## One reading of a cleaning day, 24 November 2026 (code in line)
 
 Records' nightly cleaning count kept its own copy of how the Cleaning page reads a day, as did `cleaningDue()` in `js/prep.js`. All three now use `js/cleaning-core.js` (lazy, shared with node, like `js/analysis-core.js`). `cleaningDue()` asks the core, which loads with the Cleaning page, and refuses a write without it. A tidy-up, no council: the results are the same, proved on a synthetic programme of 124 jobs and 14,089 records against the copies as they were, so `CLEAN_V` stays 1. `tests/cleaning-core.test.js`, [Cleaning](cleaning-schedule.md#one-reading-of-a-day).

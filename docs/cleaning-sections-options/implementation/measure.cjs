@@ -43,7 +43,7 @@ const measure = p => p.evaluate(() => {
     await ready(p); await fonts(p);
     out[name + '-' + width] = await measure(p); if (p.errors.length) out[name + '-' + width].errors = p.errors;
     await p.screenshot({ path: path.join(OUT, 'staff-' + name + '-' + width + '.png') });
-    if (width === 390) await p.screenshot({ path: path.join(OUT, 'staff-' + name + '-390-full.png'), fullPage: true });
+    if (width === 390 && name === 'after') await p.screenshot({ path: path.join(OUT, 'staff-after-390-full.png'), fullPage: true });
     await p.context().close();
   }
   // the chef: the Load panel, and the first date notice once the list is in

@@ -73,6 +73,22 @@ The user supplied the three-minute grill-cleaner step and the ten-minute task es
 
 The broad general tasks and section-specific closing steps may describe related physical work. They remain distinct records unless the chef explicitly revises the programme; ticking one must not silently claim that another task, service or verification was completed.
 
+## Section cleaning (25 November 2026)
+
+The head chef's own weekly, monthly and extra daily jobs for each section are a third built-in list, `sectionClean` in `js/cleaning-schedule.js`, beside the 26 general tasks and the 25 Pack down steps. [The council's brief](cleaning-sections-options/brief.md) holds the designs and the choice (D, in three steps; this is step 1).
+
+- **Only what he said.** A line is in the list only when it has a stated day and neither Pack down nor the general list already holds the job. A line with no day is left for a chef to add in Repeat tasks; never guess one. His drip tray and OZ tank lines differ from the saved Pack down steps and are not loaded: a chef changes those two jobs in Repeat tasks.
+- **Explicit load.** **Load section cleaning** in Repeat tasks adds the missing jobs, as the other two lists do: deterministic ids (`clean-template-sc-...`), existing ids skipped, nothing seeded by itself, and a loaded job never rewritten by a later change to the file.
+- **A section by id.** Before loading, the chef chooses the kitchen section for each of the four groups. The section with the same name is offered first and can be changed; a group left on Shared kitchen loads as shared. The job is then saved to that section's id, exactly like a job typed in Add cleaning task, so both sit in the same group. Never tie a job to a section by matching names after the load.
+- **One job, one owner.** A line the list gives to two sections is one Shared kitchen job that names both in its responsible role, with a procedure note asking a chef to set one section.
+- **One tap.** The jobs have no checks, so the box records the job in one tap and the same tap undoes it within the usual two minutes. The words open the method where he gave one; a job with no method shows no Method heading.
+- **Monthly.** A monthly job repeats every 28 days from a first date. It loads with none, so it is never due and never counted until a chef sets it. Today and Repeat tasks name each repeat job that still needs a first date; a name opens that job's editor on the date.
+- **How often, in words.** A job that is not nightly says how often at the start of its small line: "Every Monday", "Mon, Wed, Fri", "Every 4 weeks", "Every 2 days". This holds for every list, loaded or typed. Only such a line may wrap, so the state at its end is never cut off. A nightly job's line is unchanged.
+- **Headings.** A section's own group is headed with its name and ": section clean". The same section's group under the Pack down title keeps its name.
+- **Reads.** No new query, listener or rule. Each loaded job is one more task document on every Cleaning open or Refresh: 20 more reads per open per device with the whole list loaded (`tests/read-budget.test.js`, Cleaning).
+
+Steps 2 (the page opens on your section) and 3 (This screen's section on a shared kitchen screen) are not built. Step 2 still needs an explicit link between a kitchen section and its Pack down group.
+
 ## Completion and accountability
 
 Legacy jobs retain their existing one-tap tick and recorder-only two-minute Undo. Enhanced jobs use inline details for instructions and saved checks. Their states are pending, blocked, awaiting Pass verification and complete.
