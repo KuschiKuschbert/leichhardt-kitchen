@@ -162,8 +162,11 @@
     return best;
   }
   function cardSheets(r, best) { return best.pages.map(function (b, i) { return sheetHTML(r, best.o, i === 0, i + 1, best.pages.length, b); }).join(''); }
-  /* Build the chosen cards into root, a few at a time so a phone stays responsive. After each card is drawn its pages are
-     checked where they will print; a page that came out taller than measured is laid out again with more room. */
+  /* Build the chosen cards into root, one card at a time so a phone stays responsive. After each card is drawn its pages
+     are checked where they will print; a page that came out taller than measured is laid out again with more room. The
+     first card waits for the next frame, so a tap shows its answer (Laying out the pages..., a ticked box) before the page
+     is busy, and a tap while it works waits for one card at most (24 Nov 2026: up to six big cards were laid out in the tap
+     itself, 3 s on a fast computer, and a busy test runner's tap on Print timed out after 10 s). */
   function build(ids, o, root, progress) {
     var host = document.createElement('div'); host.className = 'rcp-measure'; root.appendChild(host);
     var out = document.createElement('div'); root.appendChild(out);
@@ -171,7 +174,7 @@
     return new Promise(function (done, fail) {
       function step() {
         if (my !== S.run) { fail(new Error('stopped')); return; }
-        var end = Math.min(ids.length, i + 6);
+        var end = Math.min(ids.length, i + 1);
         for (; i < end; i++) {
           var r = A.byId(ids[i]); if (!r) continue;
           var room = 6, best = layCard(r, o, host, room), wrap = document.createElement('div');
@@ -184,7 +187,9 @@
         if (progress) progress(i, ids.length);
         if (i < ids.length) setTimeout(step, 0); else { host.remove(); done({ cards: ids.length, pages: pages }); }
       }
-      step();
+      // a page in the background draws no frames: it starts after 0.2 s instead
+      var started = false, first = function () { if (!started) { started = true; step(); } };
+      requestAnimationFrame(function () { setTimeout(first, 0); }); setTimeout(first, 200);
     });
   }
 

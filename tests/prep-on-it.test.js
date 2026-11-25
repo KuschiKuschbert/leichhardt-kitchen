@@ -48,7 +48,11 @@ async function tap(p, sel) { await p.click(sel); await L.settle(p, 400); }
   ok(!/on it/i.test(await txt(p, '#nbr-on1 .nb-on') || ''), 'a ticked line no longer says who is on it');
 
   // Bo's neutral badge and name identify ownership without fading work that Ann can still take over.
-  ok(await p.$eval('#nbr-on2', e => e.classList.contains('is-on-other') && getComputedStyle(e).opacity === '1') && /Bo on it/.test(await txt(p, '#nbr-on2 .nb-on') || '') && /Bo ✓/.test(await txt(p, onBtn('on2')) || ''), 'someone else\'s stamp: readable row, Bo on it, Bo ✓ on the button');
+  // one read of the whole row: p.$eval finds the row and reads it in two calls, and a redraw between them handed the check
+  // the old row, out of the page, with no computed opacity (25 Nov 2026)
+  const bo2 = () => p.evaluate(() => { const e = document.querySelector('#nbr-on2'), t = s => { const x = e && e.querySelector(s); return x ? x.textContent : ''; };
+    return !!e && e.classList.contains('is-on-other') && getComputedStyle(e).opacity === '1' && /Bo on it/.test(t('.nb-on')) && /Bo ✓/.test(t('.nb-onbtn')); });
+  ok(await bo2(), 'someone else\'s stamp: readable row, Bo on it, Bo ✓ on the button');
   ok(await p.getAttribute(onBtn('on2'), 'aria-label') === 'Take over Pick parsley from Bo' && await p.getAttribute(box('on2'), 'aria-label') === 'Tick Pick parsley, Bo on it', 'its button takes it over; its box still ticks');
   await tap(p, onBtn('on2'));
   d = await item(p, 'on2');

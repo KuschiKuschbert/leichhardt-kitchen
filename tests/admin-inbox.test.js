@@ -105,8 +105,12 @@ const findList = p => p.$$eval('#fd-list .sheet-o', els => els.map(e => e.queryS
     await p.keyboard.type('kitchen pin', { delay: 20 }); await L.settle(p, 150);
     const part = await findList(p);
     ok(part[0] === 'Kitchen PIN|On this page', width + ': the open page\'s parts come first (' + part.join(', ') + ')');
-    await p.click('#fd-list .sheet-o'); await L.settle(p, 900);
-    const top = await p.evaluate(() => { const h = [...document.querySelectorAll('.a-pane .set-block > .label')].find(e => e.textContent.trim() === 'Kitchen PIN'); return h ? { top: Math.round(h.getBoundingClientRect().top), room: innerHeight - 60, moved: scrollY > 0 } : null; });
+    await p.click('#fd-list .sheet-o');
+    // the jump waits for the sheet's own Back to land (up to 600 ms, then two frames), so wait for the jump, not a fixed time
+    const where = () => { const h = [...document.querySelectorAll('.a-pane .set-block > .label')].find(e => e.textContent.trim() === 'Kitchen PIN'); return h ? { top: Math.round(h.getBoundingClientRect().top), room: innerHeight - 60, moved: scrollY > 0 } : null; };
+    await L.waitFor(p, () => { const h = [...document.querySelectorAll('.a-pane .set-block > .label')].find(e => e.textContent.trim() === 'Kitchen PIN'); const t = h && h.getBoundingClientRect().top; return scrollY > 0 && t >= 0 && t < innerHeight - 60; }, null, 8000).catch(() => {});
+    await L.settle(p, 200);
+    const top = await p.evaluate(where);
     ok(!!top && top.moved && top.top >= 0 && top.top < top.room, width + ': it scrolls to that part (' + JSON.stringify(top) + ')');
 
     // Escape and the backdrop close it, and the cursor goes back to Find
