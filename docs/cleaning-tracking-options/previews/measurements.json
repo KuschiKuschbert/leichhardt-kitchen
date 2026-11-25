@@ -61,6 +61,26 @@
    "sideways": false,
    "screensLong": 1.1,
    "under44": 0
+  },
+  "p-mix-390": {
+   "sideways": false,
+   "screensLong": 2.8,
+   "under44": 0
+  },
+  "p-mix-1280": {
+   "sideways": false,
+   "screensLong": 1.8,
+   "under44": 0
+  },
+  "t-mix-390": {
+   "sideways": false,
+   "screensLong": 1.4,
+   "under44": 0
+  },
+  "t-mix-1280": {
+   "sideways": false,
+   "screensLong": 1.2,
+   "under44": 0
   }
  }
 }

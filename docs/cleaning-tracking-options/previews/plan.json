@@ -220,7 +220,7 @@
    "was": "no day",
    "now": "Tuesday",
    "week": 1,
-   "why": "the lightest day for the kitchen"
+   "why": "a day the rules allow"
   },
   {
    "job": "Sort the meat doneness sticks",
@@ -238,7 +238,7 @@
    "weight": "Medium",
    "was": "no day",
    "now": "Wednesday",
-   "why": "the lightest day for Pans"
+   "why": "a light day for Pans (weight 2 with it)"
   }
  ]
 }
