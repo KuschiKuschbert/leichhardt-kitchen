@@ -33,7 +33,7 @@ Six fresh reviewers, each given the skill's text word for word, the proposal and
 | Q5 Who sets levels and runs the plan | Cannot judge | Levels the admin; the plan, the chefs | Chefs run it; splitting levels to the admin adds a hand-off | Cannot judge | Cannot judge who. Chefs already write jobs | Admin sets levels; chefs read them and run the plan |
 
 - **Q1:** all six said the section's night comes before same-kind days. Kind first made a section's heaviest night heavier in 75 to 80% of the random draws.
-- **Q2:** five said jobs that come round only; the new starter drew the line at jobs whose row says how often, which lets two Pack down jobs in. The head chef, the cook and the screen designer said to ask him: he wrote "all tasks for that section".
+- **Q2:** cook, skeptic, keeper and screen designer said jobs that come round only. The head chef said the same for the flag, with Pack down as one quiet count beside it. The new starter drew the line at jobs whose row says how often, which lets two Pack down jobs in. The head chef, the cook and the screen designer said to ask him: he wrote "all tasks for that section".
 - **Q3:** nobody accepted the book's present rule for a record with names.
 - **Q5:** not settled. Three want the chefs to run the plan; the skeptic would not split levels off to the admin.
 
@@ -110,7 +110,35 @@ Keeper, skeptic, new starter and screen designer said Needs work. The cook said 
 
 ### What round 1 means for the designs
 
-Build smaller, in the reviewers' words: no new room; nothing new on a cook's page; weigh jobs in a list; the section's night before same-kind days; move as few dated jobs as the rules need; never plan a job with no weight; plan only the new job once a plan is saved; part 1 first.
+Each line names who asked for it. These are not one agreed list.
+
+| Rule for the designs | Who asked |
+| --- | --- |
+| No new room, and nothing new on a cook's page | Screen designer, cook; the head chef noted no new tab or pop-up is proposed |
+| Weigh jobs in a list, not one form at a time | Screen designer |
+| The section's night before same-kind days | All six (Q1) |
+| Move as few dated jobs as the rules need | Head chef |
+| Never plan a job that has no weight; show "No weight yet" | Skeptic, new starter |
+| Once a plan is saved, plan only the new job | Skeptic |
+| Part 1 first | Keeper, head chef, skeptic |
+| No Plan button until real weights exist | Skeptic alone. The head chef's first ask was a button, so every design keeps one; this is taken as build order |
+
+### The reviewers' numbers, run again in the planner
+
+Three figures above came from reviewers' own throwaway scripts. Each is now an option in `previews/planner.js` (37 node checks, defaults untouched) and a column in `previews/many.js` (2,000 random weightings, seeded).
+
+| Order, weights at random and kinds as one example | A section's heaviest night heavier than with days kept | None heavier, some lighter | Heaviest section night, average | Dated jobs moved, of 15 | Kinds with a shared day | One job added after a save, planned again: a saved job moves | The same, planning only the new job |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Days kept | 0% | 0% | 4.8 | 1.8 | 60% | 0% | 0% |
+| Kind first | 75% | 11% | 5.0 | 9.5 | 99% | 41% | 0% |
+| Section first | 3% | 92% | 3.5 | 8.3 | 90% | 52% | 0% |
+| Fewest moves | 0% | 89% | 3.8 | 2.8 | 82% | 11% | 0% |
+
+With kinds at random too: fewest moves is heavier in 7% of runs, moves 2.8 jobs, and 68% of kinds get a shared day. A job fits no day in 105 of 2,000 runs (113 with random kinds).
+
+- **Fewest moves** is the lead's build of the head chef reviewer's idea: a job that has a day keeps it unless its day's level refuses it; jobs with no day are placed section first; then one dated job at a time is moved, only when its section's heaviest night gets lighter. He reported 3.4 moves from a brute force; this build moves 2.8 and stops a little short of section first's nights (3.8 against 3.5).
+- **A saved job moving when one job is added:** the skeptic reported 25% and 43%; this run gives 41% and 52%, with a different seed and added job. Planning only the new job moves none.
+- The planner's reason no longer calls a night "a light day" (new starter): it says "Hot larder has the least on that night (4 points with it)".
 
 ## Round 2
 

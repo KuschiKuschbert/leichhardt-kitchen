@@ -9,8 +9,14 @@
    opts: { quiet: [5, 6] (Friday, Saturday), share: 0.1, cap: 5, together: true (jobs of one kind share a day),
            level: the heaviest job each weekday takes, Sunday first (3 heavy, 2 medium, 1 light), set by the admin.
                   Left out, it is heavy every day but the quiet ones. Given, the quiet days are its light days.
-           order: 'kind' (rule 4 before rule 5, as below) or 'section' (rule 5 before rule 4: a job joins its kind's
-                  day only when that does not make its section's heaviest night heavier) }
+           order: 'kind' (rule 4 before rule 5, as below), 'section' (rule 5 before rule 4: a job joins its kind's
+                  day only when that does not make its section's heaviest night heavier) or 'fewest' (round 1, the
+                  head chef reviewer: a job that has a day keeps it unless a rule refuses that day; jobs with no day
+                  are placed section first; then a dated job is moved only when that makes its section's heaviest
+                  night lighter, one move at a time)
+           only: 'new' (round 1, the skeptic: only jobs with no day are planned; a job that has a day is never moved)
+           needWeight: true (round 1, the skeptic and the new starter: a job with no weight is not planned, and says
+                  "No weight yet") }
    check(jobs, days, opts) -> the rules a set of days breaks, in words ([] for none): what a page runs again whenever a
    chef changes or leaves out one line of a proposal, so a plan never breaks its own rules without saying so.
 
@@ -55,23 +61,42 @@
     // light enough for Friday or Saturday (rule 1).
     var cost = function (j) { return j.w >= 1 && j.w <= 3 ? j.w : 2; };
     var sec = {}, kitchen = [0, 0, 0, 0, 0, 0, 0], heavy = {}, kinds = {}, out = { days: {}, why: {}, gave: [], week: {}, load: {}, quiet: {} };
-    var put = function (j, d) {
-      kitchen[d] += cost(j);
-      if (j.sec) { sec[j.sec] = sec[j.sec] || [0, 0, 0, 0, 0, 0, 0]; sec[j.sec][d] += cost(j); if (j.w === 3) { heavy[j.sec] = heavy[j.sec] || {}; heavy[j.sec][d] = 1; } }
-      if (j.kind) { kinds[j.kind] = kinds[j.kind] || [0, 0, 0, 0, 0, 0, 0]; kinds[j.kind][d]++; }
+    var put = function (j, d, n) {   // n is 1 to place a job on a day, -1 to take it off again
+      n = n || 1; kitchen[d] += n * cost(j);
+      if (j.sec) { sec[j.sec] = sec[j.sec] || [0, 0, 0, 0, 0, 0, 0]; sec[j.sec][d] += n * cost(j); if (j.w === 3) { heavy[j.sec] = heavy[j.sec] || {}; heavy[j.sec][d] = (heavy[j.sec][d] || 0) + n; } }
+      if (j.kind) { kinds[j.kind] = kinds[j.kind] || [0, 0, 0, 0, 0, 0, 0]; kinds[j.kind][d] += n; }
     };
+    var fewest = opts.order === 'fewest', weighed = function (j) { return j.w >= 1 && j.w <= 3; }, hasDay = function (j) { return !j.every && (j.days || []).length > 0 && j.days.length < 7; };
+    out.noWeight = [];
+    // which jobs this run plans. A job left out is never touched: it only counts toward its days' load
+    var planned = function (j) {
+      if (!j.move) return false;
+      if (opts.needWeight && !weighed(j)) return false;
+      if (opts.only === 'new' && hasDay(j)) return false;
+      return true;
+    };
+    jobs.forEach(function (j) { if (j.move && opts.needWeight && !weighed(j)) { out.noWeight.push(j.id); out.why[j.id] = 'No weight yet. Not planned.'; } });
+    if (fewest) sectionFirst = true;
     // the jobs that come round: on some weekdays, or every four weeks. A nightly job, or one every few days, loads
     // every day alike and is left out. A job not chosen is never touched: it only counts toward its days' load.
-    var comes = jobs.filter(function (j) { return (j.every && j.every % 7 === 0) || (!j.every && (((j.days || []).length > 0 && j.days.length < 7) || (j.move && !(j.days || []).length))); });
+    var comes = jobs.filter(function (j) { return (j.every && j.every % 7 === 0) || (!j.every && (((j.days || []).length > 0 && j.days.length < 7) || (planned(j) && !(j.days || []).length))); });
     var few = {}; out.start = {};
-    jobs.filter(function (j) { return j.move && j.every > 1 && j.every % 7 !== 0; }).sort(function (a, b) { return String(a.id).localeCompare(String(b.id)); }).forEach(function (j) {
+    jobs.filter(function (j) { return planned(j) && j.every > 1 && j.every % 7 !== 0; }).sort(function (a, b) { return String(a.id).localeCompare(String(b.id)); }).forEach(function (j) {
       var k = (j.sec || '') + '/' + j.every; few[k] = few[k] || 0; out.start[j.id] = few[k]++ % j.every + 1;
       out.why[j.id] = 'every ' + j.every + ' days has no weekday, so it reaches Friday and Saturday whatever its weight. It starts ' + (out.start[j.id] === 1 ? 'the day after it is saved' : out.start[j.id] + ' days after it is saved, apart from ' + (j.sec || 'the kitchen') + '\'s other job on this rhythm');
     });
-    var total = comes.reduce(function (n, j) { return n + (j.move ? j.per || 1 : j.days.length); }, 0), quietMax = Math.floor(total * share), quietUsed = 0;
-    comes.filter(function (j) { return !j.move; }).forEach(function (j) { j.days.forEach(function (d) { put(j, d); if (quiet.indexOf(d) >= 0) quietUsed++; }); });
+    var total = comes.reduce(function (n, j) { return n + (planned(j) ? j.per || 1 : j.days.length); }, 0), quietMax = Math.floor(total * share), quietUsed = 0;
+    comes.filter(function (j) { return !planned(j); }).forEach(function (j) { j.days.forEach(function (d) { put(j, d); if (quiet.indexOf(d) >= 0) quietUsed++; }); });
+    // fewest moves: a job that has a day keeps it, unless its day's level refuses it, a second heavy job would share the
+    // section's night, or Friday and Saturday are already full. Those, and the jobs with no day, are placed below.
+    var kept = [];
+    if (fewest) comes.filter(function (j) { return planned(j) && hasDay(j); }).sort(function (a, b) { return String(a.id).localeCompare(String(b.id)); }).forEach(function (j) {
+      var q = j.days.filter(function (d) { return quiet.indexOf(d) >= 0; }).length;
+      if (j.days.some(function (d) { return level[d] < cost(j) || (j.w === 3 && j.sec && heavy[j.sec] && heavy[j.sec][d]); }) || (q && quietUsed + q > quietMax)) return;
+      j.days.forEach(function (d) { put(j, d); }); quietUsed += q; kept.push(j); out.days[j.id] = j.days.slice(); out.why[j.id] = 'stays';
+    });
     var dated = function (j) { return (j.days || []).length ? 0 : 1; };
-    var todo = comes.filter(function (j) { return j.move; }).sort(function (a, b) { return (together ? 0 : dated(a) - dated(b)) || cost(b) - cost(a) || (b.per || 1) - (a.per || 1) || String(a.kind).localeCompare(String(b.kind)) || String(a.id).localeCompare(String(b.id)); });
+    var todo = comes.filter(function (j) { return planned(j) && kept.indexOf(j) < 0; }).sort(function (a, b) { return (together ? 0 : dated(a) - dated(b)) || cost(b) - cost(a) || (b.per || 1) - (a.per || 1) || String(a.kind).localeCompare(String(b.kind)) || String(a.id).localeCompare(String(b.id)); });
     var wk = {};
     todo.forEach(function (j) {
       var best = null, was = (j.days || []).slice().sort().join(','), kindGave = false, heavyGave = false, where = j.sec || 'the kitchen';
@@ -98,9 +123,30 @@
       if (best.mates && !best.over) bits.push('with the other ' + j.kind.toLowerCase() + ' jobs');
       else if (j.kind && heavyGave) { bits.push('not on the ' + j.kind.toLowerCase() + ' day: ' + where + ' already has a heavy job then'); out.gave.push(j.id); }
       else if (j.kind && kindGave) { bits.push('not on the ' + j.kind.toLowerCase() + ' day: ' + where + ' would be too heavy'); out.gave.push(j.id); }
-      else if (best.set.join(',') !== was) bits.push(j.sec ? 'a light day for ' + where + ' (weight ' + best.load + ' with it)' : 'a day the rules allow');
+      else if (best.set.join(',') !== was) bits.push(j.sec ? where + ' has the least on that night (' + best.load + (best.load === 1 ? ' point' : ' points') + ' with it)' : 'a day the rules allow');
       out.why[j.id] = bits.join(', ');
     });
+    // fewest moves, the offers: one dated job at a time, only when its section's heaviest night gets lighter
+    if (fewest) for (var guard = 0, moved = true; moved && guard < 40; guard++) {
+      moved = false;
+      Object.keys(sec).forEach(function (name) {
+        var arr = sec[name], top = Math.max.apply(null, arr), pick = null;
+        kept.filter(function (j) { return j.sec === name && out.days[j.id].some(function (d) { return arr[d] === top; }); }).forEach(function (j) {
+          var cur = out.days[j.id];
+          sets(j.per || 1).forEach(function (set) {
+            if (set.join(',') === cur.join(',') || set.some(function (d) { return level[d] < cost(j) || (quiet.indexOf(d) >= 0 && cur.indexOf(d) < 0) || (j.w === 3 && cur.indexOf(d) < 0 && heavy[name] && heavy[name][d]); })) return;
+            var after = arr.slice(); cur.forEach(function (d) { after[d] -= cost(j); }); set.forEach(function (d) { after[d] += cost(j); });
+            var next = Math.max.apply(null, after); if (next >= top) return;
+            var mates = together ? set.reduce(function (n, d) { return n + (j.kind && kinds[j.kind] ? kinds[j.kind][d] : 0); }, 0) : 0;
+            var score = 1000 * next - 10 * mates + 0.01 * set.reduce(function (n, d) { return n + kitchen[d]; }, 0);
+            if (!pick || score < pick.score) pick = { j: j, set: set, score: score, next: next };
+          });
+        });
+        if (!pick) return;
+        out.days[pick.j.id].forEach(function (d) { put(pick.j, d, -1); }); pick.set.forEach(function (d) { put(pick.j, d); });
+        out.days[pick.j.id] = pick.set; out.why[pick.j.id] = name + '\'s heaviest night goes from ' + top + ' to ' + pick.next + ' points'; moved = true;
+      });
+    }
     out.load = { sections: sec, kitchen: kitchen }; out.quiet = { used: quietUsed, most: quietMax, of: total };
     return out;
   }
