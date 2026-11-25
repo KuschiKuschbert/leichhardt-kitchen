@@ -117,7 +117,7 @@ Weight points: light 1, medium 2, heavy 3. "Days kept" still moves 1.8 jobs on a
 
 Also from the planner:
 
-- **No day fits.** In about 1 run in 16 a job could be given no day: a section with more heavy weekly jobs than the week has heavy days. The plan must say so and leave the job alone.
+- **No day fits.** In about 1 run in 19 (corrected after round 1: the first figure, 1 in 16, counted jobs, not runs) a job could be given no day: a section with more heavy weekly jobs than the week has heavy days. The plan must say so and leave the job alone.
 - **A new job proposed for today is due tonight**, because a new job starts the day it is saved.
 - **While Cleaning is off a move costs nothing.** Once it is on, a moved job has one uneven week: in one example up to 13 days between cleans.
 - **Planning again after a save moves no job** (checked for the section-first order on one example).
