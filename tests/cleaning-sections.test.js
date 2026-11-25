@@ -1,0 +1,170 @@
+// Section cleaning (25 Nov 2026): the head chef's own jobs for each section, loaded by a chef, each to a kitchen section,
+// and the words that say how often a job comes round. Synthetic kitchen sections and people on the Firebase stand-in.
+const L = require('./lib');
+const schedule = require('../js/cleaning-schedule');
+const { R, ok } = L.results();
+const DAY = 86400000, OPEN = 253402178400000;
+const MON = Date.parse('2026-11-30T04:00:00Z');   // Monday 30 November 2026, 14:00 in the kitchen
+const key = (...parts) => ['kitchens', L.PIN, ...parts].join('/');
+const id = code => 'clean-template-' + code;
+const at = day => Date.parse(day + 'T00:00:00+10:00');
+const all = () => schedule.drafts().concat(schedule.packDownDrafts(), schedule.sectionDrafts());
+// "Hot Larder" is spelt with a capital L here and no section is called "Fryers, salads and dessert": the Load panel
+// offers the section with the same name whatever its capitals, and leaves the other group on Shared kitchen
+const SECS = [['grill', 'Grill'], ['pans', 'Pans'], ['fryers', 'Fryers'], ['salads', 'Salads and dessert'], ['hl', 'Hot Larder']];
+const sections = () => ({
+  ...Object.fromEntries(SECS.map(([sec, name]) => [key('sections', sec), { name, uses: 5, hidden: false }])),
+  [key('config', 'main')]: { ...L.seed()[key('config', 'main')], kitSecs: SECS.map(([sec, name]) => ({ id: sec, name })) }
+});
+// a task as the import writes it: section is a kitchen section id, or '' for a shared one
+function task(code, section, changes = {}) {
+  const draft = all().find(t => t.plan.template === code), sec = SECS.find(s => s[0] === section);
+  return { ...draft, section: sec ? sec[0] : '', sectionName: sec ? sec[1] : '', shared: !sec, root: id(code), prev: '', next: '',
+    from: at('2026-11-01'), until: OPEN, at: MON - 20 * DAY, by: 'sam', ...changes };
+}
+const loaded = (list, changes = {}) => ({ ...sections(), ...Object.fromEntries(list.map(([code, section, more]) => [key('cleaningTasks', id(code)), task(code, section, more)])), ...changes });
+const records = (p, collection) => p.evaluate(name => Object.entries(__fake.dump()).filter(([k]) => k.includes('/' + name + '/')).map(([path, data]) => ({ path, ...data })), collection);
+const listed = p => L.waitFor(p, () => { const page = document.querySelector('.cln-page'); return !!page && !/Loading cleaning/.test(page.textContent); });
+// the cook picked a section at the start of shift, so Your section today stays away
+const picked = (who, sec, name) => new Function("var d=new Date(Date.now()+36e5*10).toISOString().slice(0,10);localStorage.setItem('lk.sec." + who + "',JSON.stringify({d:d,sec:'" + sec + "',name:'" + name + "',self:true,at:Date.now()}));");
+const row = code => '.cln-row[data-id="' + id(code) + '"]';
+const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
+
+(async () => {
+  // ---- the list itself, no browser ----
+  const drafts = schedule.sectionDrafts(), codes = drafts.map(t => t.plan.template);
+  ok(drafts.length === 20 && new Set(codes).size === 20 && codes.every(c => /^sc-(grill|pans|fry|hot|gen)-\d\d$/.test(c)), 'data: 20 section jobs with their own stable ids');
+  ok(schedule.templates.length === 26 && schedule.packDown.length === 25 && !schedule.drafts().concat(schedule.packDownDrafts()).some(t => /^sc-/.test(t.plan.template)), 'data: the general list and Pack down are untouched');
+  ok(drafts.every(t => !t.plan.checks.length && !t.plan.verification && t.plan.timing === 'daily'), 'data: every job is one tap, with no check list and no Pass check');
+  ok(drafts.every(t => t.dows.length >= 1 && t.shared === true && t.section === ''), 'data: every draft has a day and no section until a chef chooses one');
+  const monthly = drafts.filter(t => t.plan.repeat);
+  ok(monthly.length === 3 && monthly.every(t => t.plan.repeat.days === 28 && t.plan.repeat.anchor === '' && t.dows.length === 7), 'data: three monthly jobs repeat every 28 days and wait for a first date');
+  const byGroup = g => drafts.filter(t => schedule.sectionGroupOf(t) === g).length;
+  ok(schedule.sectionGroups.map(g => g.id + byGroup(g.id)).join(',') === 'grill2,pans3,fry5,hot7' && byGroup('') === 3, 'data: Grill 2, Pans 3, Fryers with salads and dessert 5, Hot larder 7, shared 3');
+  const two = drafts.filter(t => t.plan.review);
+  ok(two.length === 2 && two.every(t => schedule.sectionGroupOf(t) === '' && / and /.test(t.plan.responsibility)), 'data: a job the list gives to two sections is one shared job that names both, with a note');
+  const days = [1, 2, 3, 4, 5, 6, 0].map(d => drafts.filter(t => !t.plan.repeat && t.dows.includes(d)).length);
+  ok(days.join(',') === '5,6,4,5,2,2,5', 'data: Monday to Sunday the list adds 5,6,4,5,2,2,5 jobs, two of them every day (' + days.join(',') + ')');
+  ok(!/\u2014|Australian Venue|\bAVC\b/.test(JSON.stringify(drafts)) && drafts.every(t => t.text.length <= 160 && t.area.length <= 80 && t.plan.method.length <= 1000 && t.plan.review.length <= 500), 'data: plain words within the saved sizes');
+  drafts[0].text = 'Changed'; drafts[0].dows.push(9);
+  ok(schedule.sectionDrafts()[0].text === 'Clean the drawers' && schedule.sectionDrafts()[0].dows.length === 1, 'data: editing a draft cannot change the built-in list');
+
+  const b = await L.start(); let p;
+  async function step(label, run) {
+    try { await run(); }
+    catch (e) { ok(false, label + ': ' + String(e.stack || e).split('\n').slice(0, 2).join(' ')); }
+    finally { if (p) { ok(!p.errors.length, label + ': no browser errors ' + p.errors.join(' | ')); await p.context().close(); p = null; } }
+  }
+
+  await step('a chef loads the list and chooses the sections', async () => {
+    p = await L.open(b, '#/cleaning', { who: 'sam', wait: 1000, clock: MON, extra: sections() });
+    await listed(p);
+    ok((await records(p, 'cleaningTasks')).length === 0, 'load: opening Cleaning never adds the section jobs by itself');
+    await p.locator('[data-cln="setup"]').first().click(); await p.click('.cln-section-import summary');
+    const offered = await p.$$eval('[data-cln-import-section]', es => es.map(e => e.getAttribute('data-cln-import-section') + '=' + e.value).join(','));
+    ok(offered === 'grill=grill,pans=pans,fry=_shared,hot=hl', 'load: the section with the same name is offered, and a group with none stays on Shared kitchen (' + offered + ')');
+    // the book's own picker stands in for the select (docs/adaptive-controls.md)
+    await L.pick(p, '[data-cln-import-section="fry"]', 'fryers');
+    ok(await p.inputValue('[data-cln-import-section="fry"]') === 'fryers' && await p.inputValue('[data-cln-import-section="hot"]') === 'hl', 'load: a chosen section stays chosen, and the others stay as offered');
+    await p.click('[data-cln="import-section"]');
+    await L.waitFor(p, () => Object.keys(__fake.dump()).filter(k => k.includes('/cleaningTasks/')).length === 20 && !LK_PREP.unsent());
+    await L.waitFor(p, () => /Loaded section cleaning: 20 added, 0 already present/.test((document.querySelector('.cln-section-import') || {}).textContent || ''));
+    const said = await p.locator('.cln-section-import .lk-stamp').innerText();
+    ok(/3 repeat jobs need a first date in Repeat tasks/i.test(said), 'load: the panel says what it added and that three jobs wait for a first date');
+    const saved = await records(p, 'cleaningTasks'), find = code => saved.find(t => t.plan.template === code);
+    ok(find('sc-grill-01').section === 'grill' && find('sc-grill-01').sectionName === 'Grill' && find('sc-grill-01').shared === false, 'load: a Grill job is saved to the Grill section by its id');
+    ok(find('sc-fry-03').section === 'fryers' && find('sc-hot-05').section === 'hl' && find('sc-hot-05').sectionName === 'Hot Larder', 'load: the chosen section is saved for Fryers and Hot larder');
+    ok(['sc-gen-01', 'sc-gen-02', 'sc-gen-03'].every(code => find(code).shared === true && find(code).section === ''), 'load: the three shared jobs stay under Shared kitchen');
+    ok(saved.every(t => t.path.endsWith('/' + id(t.plan.template)) && t.by === 'sam' && t.until === OPEN && t.from === at('2026-11-30')), 'load: each job has its own stable document and starts today');
+    ok((await records(p, 'cleaningDone')).length === 0, 'load: loading records no cleaning');
+    const again = await p.evaluate(() => LK_PREP.cleaning().importTasks(LK_CLEANING_SCHEDULE.sectionDrafts()));
+    ok(again.imported === 0 && again.skipped === 20 && (await records(p, 'cleaningTasks')).length === 20, 'load: loading again adds nothing and keeps the sections a chef chose');
+
+    // the monthly jobs wait for a first date, and the page says so
+    const notice = p.locator('.cln-plan .cln-first-date');
+    ok(/3 repeat jobs need a first date/.test(await notice.innerText()) && await notice.locator('[data-cln="first-date"]').count() === 3, 'first date: Repeat tasks lists the three jobs that are not due yet');
+    const due = await p.evaluate(code => { const C = LK_PREP.cleaning(), t = Object.values(__fake.dump()).find(x => x.plan && x.plan.template === code); return [C.due(t, '2026-11-30'), C.due(t, '2026-12-28')]; }, 'sc-grill-02');
+    ok(!due[0] && !due[1], 'first date: a monthly job with no first date is never due');
+    await notice.locator('[data-cln="first-date"][data-id="' + id('sc-grill-02') + '"]').click();
+    ok(await p.evaluate(() => document.activeElement && document.activeElement.id === 'cln-repeat-anchor') && await p.inputValue('#cln-repeat-days') === '28', 'first date: the job opens in the editor on its first date, repeating every 28 days');
+    await p.fill('#cln-repeat-anchor', '2026-12-07'); await p.click('[data-cln="save"]');
+    await L.waitFor(p, () => Object.values(__fake.dump()).some(t => t.plan && t.plan.template === 'sc-grill-02' && t.plan.repeat.anchor === '2026-12-07') && !LK_PREP.unsent());
+    await L.waitFor(p, () => /2 repeat jobs need a first date/.test((document.querySelector('.cln-plan .cln-first-date') || {}).textContent || ''));
+    const dated = await p.evaluate(() => { const C = LK_PREP.cleaning(), t = Object.values(__fake.dump()).find(x => x.plan && x.plan.template === 'sc-grill-02' && x.plan.repeat.anchor); return [C.due(t, '2026-12-07'), C.due(t, '2026-12-08'), C.due(t, '2027-01-04')]; });
+    ok(dated[0] && !dated[1] && dated[2], 'first date: with a date set the job is due that day and every 28 days after');
+    await p.click('[data-cln="today"]'); await listed(p);
+    ok(/2 repeat jobs need a first date/.test(await p.locator('.cln-first-date').first().innerText()), 'first date: the chef also sees the count on Today');
+  });
+
+  for (const width of [390, 768, 1280]) await step('a cook reads the day at ' + width, async () => {
+    p = await L.open(b, '#/cleaning', { who: 'ann', width, wait: 1000, clock: MON, init: picked('ann', 'grill', 'Grill'), extra: loaded([
+      ['c01'], ['c15'], ['pd-grill-01'], ['pd-grill-04'],
+      ['sc-grill-01', 'grill'], ['sc-grill-02', 'grill', { plan: { ...task('sc-grill-02').plan, repeat: { days: 28, anchor: '2026-11-02' } } }],
+      ['sc-pans-01', 'pans'], ['sc-pans-02', 'pans'], ['sc-pans-03', 'pans'], ['sc-fry-02', 'fryers'], ['sc-hot-01', 'hl'], ['sc-gen-01'], ['sc-gen-03']]) });
+    await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 10);
+    const heads = await p.$$eval('.cln-body .nb-hd > span:first-child, .cln-packdown-title', es => es.map(e => e.textContent.trim()));
+    ok(heads.join('|') === 'Fryers: section clean|Grill: section clean|Hot Larder: section clean|Pans: section clean|Shared kitchen|Pack down|Grill', width + ': each section has its own section clean heading, apart from its Pack down (' + heads.join('|') + ')');
+    ok(await p.locator(row('sc-pans-02')).count() === 0 && await p.locator(row('sc-pans-03')).count() === 0 && await p.locator(row('sc-gen-01')).count() === 0, width + ': a Tuesday job, a Wednesday job and a monthly job with no first date are not on Monday');
+    ok(/^Every Monday · /.test(await meta(p, 'sc-grill-01')) && /^Every 4 weeks · /.test(await meta(p, 'sc-grill-02')) && /^Mon, Wed, Fri · /.test(await meta(p, 'c15')), width + ': a job that is not nightly says how often before anything else');
+    ok(await meta(p, 'sc-pans-01') === 'Pans · To do' && await meta(p, 'pd-grill-04') === 'Grill · To do' && await meta(p, 'sc-gen-03') === 'Sauces · Everyone · To do', width + ': a nightly job says nothing more than it did');
+    ok(/To do$/.test(await meta(p, 'sc-grill-01')) && /To do$/.test(await meta(p, 'c15')), width + ': the state is still the last words on the line');
+    const cut = await p.$$eval('.cln-row .nb-meta.cln-often', es => es.filter(e => e.scrollWidth > e.clientWidth + 1).length);
+    ok(cut === 0 && await p.locator('.cln-row .nb-meta.cln-often').count() === 5, width + ': no line that says how often is cut off');
+    ok(!(await L.overflow(p)), width + ': no sideways scroll');
+    const targets = await p.$$eval('.cln-row button', es => es.filter(e => e.getClientRects().length).map(e => { const r = e.getBoundingClientRect(); return { w: r.width, h: r.height }; }));
+    ok(targets.length >= 10 && targets.every(r => r.w >= 44 && r.h >= 44), width + ': every row control is at least 44 px');
+    if (width !== 390) return;
+
+    // one tap, and the same tap undoes it
+    const box = '[data-cln="flow-quick"][data-id="' + id('sc-grill-01') + '"]';
+    ok(await p.getAttribute(box, 'aria-pressed') === 'false', 'tick: a section job has a one-tap box');
+    const before = await p.locator(row('sc-grill-01')).boundingBox();
+    await p.click(box);
+    await L.waitFor(p, () => Object.values(__fake.dump()).some(r => r.task === 'clean-template-sc-grill-01' && r.day === '2026-11-30' && r.done) && !LK_PREP.unsent());
+    await L.waitFor(p, sel => { const r = document.querySelector(sel); return !!r && r.classList.contains('is-done') && !r.classList.contains('is-pending'); }, row('sc-grill-01'));
+    const done = (await records(p, 'cleaningDone')).filter(r => r.task === id('sc-grill-01'));
+    ok(done.length === 1 && done[0].doneById === 'ann' && done[0].flow && done[0].flow.slot === 'daily', 'tick: one tap records the job done by the cook');
+    ok(/^Every Monday · /.test(await meta(p, 'sc-grill-01')) && /Ann · \d\d:\d\d$/.test(await meta(p, 'sc-grill-01')), 'tick: the line now ends with who and when (' + await meta(p, 'sc-grill-01') + ')');
+    const after = await p.locator(row('sc-grill-01')).boundingBox();
+    ok(Math.abs(after.height - before.height) < 1 && Math.abs(after.y - before.y) < 1, 'tick: the row does not move or change height when ticked');
+    ok(/^1\//.test(await p.locator('.cln-progress').innerText()), 'tick: the page count goes up by one');
+    await p.click(box);
+    await L.waitFor(p, () => Object.values(__fake.dump()).some(r => r.task === 'clean-template-sc-grill-01' && r.done === false) && !LK_PREP.unsent());
+    await L.waitFor(p, sel => { const r = document.querySelector(sel); return !!r && !r.classList.contains('is-done') && !r.classList.contains('is-pending'); }, row('sc-grill-01'));
+    ok(/To do$/.test(await meta(p, 'sc-grill-01')), 'tick: the same tap undoes it within the two minutes');
+
+    // the words open the job: a method only where the head chef gave one
+    await p.click('[data-cln="details"][data-id="' + id('sc-grill-01') + '"].cln-task-detail');
+    const plain = await p.locator(row('sc-grill-01') + ' + .cln-detail, #cln-detail-2026-11-30_' + id('sc-grill-01')).first().innerText();
+    ok(!/Method/.test(plain) && /Responsible:\s*Grill/.test(plain), 'details: a job with no method shows who is responsible and no empty Method heading');
+    await p.click('[data-cln="details"][data-id="' + id('sc-fry-02') + '"].cln-task-detail');
+    const how = await p.locator('#cln-detail-2026-11-30_' + id('sc-fry-02')).innerText();
+    ok(/Method/.test(how) && /takeaway containers/.test(how), 'details: a job with a method shows it');
+  });
+
+  await step('a held save says Not sent', async () => {
+    p = await L.open(b, '#/cleaning', { who: 'ann', wait: 1000, clock: MON, init: picked('ann', 'grill', 'Grill'), extra: loaded([['sc-grill-01', 'grill']]) });
+    await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 1);
+    await p.evaluate(() => { __fake.mode = 'hold'; });
+    await p.click('[data-cln="flow-quick"][data-id="' + id('sc-grill-01') + '"]');
+    await L.waitFor(p, sel => { const r = document.querySelector(sel); return !!r && r.classList.contains('is-pending'); }, row('sc-grill-01'));
+    const held = await meta(p, 'sc-grill-01');
+    ok(/^Every Monday · /.test(held) && !/Ann · \d\d:\d\d$/.test(held), 'held save: the line keeps how often and does not say done (' + held + ')');
+    ok(await p.evaluate(() => !!LK_PREP.unsent()) && await p.getAttribute('[data-cln="flow-quick"][data-id="' + id('sc-grill-01') + '"]', 'aria-busy') === 'true', 'held save: the tick is waiting to send and the box says so');
+  });
+
+  await step('a chef sees the section jobs in General cleaning', async () => {
+    p = await L.open(b, '#/cleaning', { who: 'sam', wait: 1000, clock: MON, extra: loaded([['c01'], ['pd-grill-01'], ['sc-grill-01', 'grill'], ['sc-hot-01', 'hl']]) });
+    await listed(p);
+    const groups = await p.$$eval('[data-cln="group"]', es => es.map(e => e.getAttribute('data-group')).join(','));
+    ok(groups === 'general,grill', 'chef: the five work groups are unchanged; section jobs sit in General cleaning (' + groups + ')');
+    await p.click('[data-cln="group"][data-group="general"]');
+    ok(await p.locator('[data-cln-group="general"] ' + row('sc-grill-01')).count() === 1 && /^Every Monday · Grill · Grill · /.test(await meta(p, 'sc-grill-01')), 'chef: the row says how often, the area and its section');
+    await p.locator('[data-cln="setup"]').first().click();
+    await p.fill('#cln-repeat-search', 'drawers');
+    await p.click('[data-cln="edit"][data-id="' + id('sc-grill-01') + '"]');
+    ok(await p.inputValue('#cln-section') === 'grill' && await p.locator('[data-cln="dow"][aria-pressed="true"], .cln-repeat [aria-pressed="true"]').count() === 1, 'chef: a loaded job opens in the same editor, with its section and its day');
+  });
+
+  await b.close(); L.report(R);
+})().catch(e => { console.error(e); process.exit(1); });

@@ -69,10 +69,55 @@
     task('pd-pans-10', 'Clean back of stove tops', 'Pans', 'Spray the back of the stove tops with grill cleaner and scrub.', 'Pans', null, 'close', [], 'Follow the approved equipment and chemical procedure.')
   ];
   packDown.filter(function (entry) { return entry.plan.template === 'pd-grill-03'; })[0].plan.repeat = { days: 2, anchor: '2026-11-09' };
+  /* Section cleaning (head chef, 25 November 2026, docs/cleaning-sections-options/brief.md): his own weekly, monthly and
+     extra daily jobs for each section, in his words. Only lines with a stated day that Pack down and the general list do
+     not already hold; a line with no day is left for a chef to add in Repeat tasks, never guessed. A chef loads the list
+     once and chooses the kitchen section for each group (groups below); a group left alone loads under Shared kitchen.
+     A monthly job repeats every 28 days from a first date the chef sets in Repeat tasks: until then it is never due.
+     A line his list gives to two sections is one shared job that names both, with a note to set one owner.
+     Days: 0 is Sunday. No checks, so each is one tap. */
+  var sectionGroups = [
+    { id: 'grill', name: 'Grill' }, { id: 'pans', name: 'Pans' },
+    { id: 'fry', name: 'Fryers, salads and dessert' }, { id: 'hot', name: 'Hot larder' }
+  ];
+  function job(group, n, text, days, method, more) {
+    more = more || {};
+    var name = group ? sectionGroups.filter(function (g) { return g.id === group; })[0].name : more.area;
+    var entry = task('sc-' + (group || 'gen') + '-' + n, text, name, method || '', more.who || name, days, 'daily', [], more.review || '');
+    if (more.monthly) entry.plan.repeat = { days: 28, anchor: '' };
+    return entry;
+  }
+  var TWO = 'The list gives this job to two sections. A chef can set one responsible section in Repeat tasks.';
+  var sectionClean = [
+    job('grill', '01', 'Clean the drawers', [1]),
+    job('grill', '02', 'Clean behind the grill', null, '', { monthly: true }),
+    job('pans', '01', 'Wipe down the kick oven door'),
+    job('pans', '02', 'Clean both sides of the stove', [2], 'Pull the infill benches forward and clean the sides of the stove on both sides.'),
+    job('pans', '03', 'Clean behind the stove', null, 'Pull the stove forward and clean behind it.', { monthly: true }),
+    job('fry', '01', 'Clean out the topper ingredients fridge', [4], 'Clean out the left fridge with the topper ingredients. Wipe the bottom.'),
+    job('fry', '02', 'Clean the takeaway container shelves', [1], 'Clean the shelves with the takeaway containers and wipe them down.'),
+    job('fry', '03', 'Clean out the salad fridge', [2], 'Clean out the salad fridge. Wipe the bottom and clean the shelves.'),
+    job('fry', '04', 'Clean the shelves under the microwave', [4]),
+    job('fry', '05', 'Clean the corner shelves above the sink', [0], 'Clean the shelves in the corner above the sink.'),
+    job('hot', '01', 'Clean out the fridges', [1], 'Clean out the fridges and wipe the bottom.'),
+    job('hot', '02', 'Clean behind the pizza ovens', [3], 'Pull the impinger forward. Clean the back of the pizza ovens and the wall behind them.'),
+    job('hot', '03', 'Clean down the Hot larder shelves', [0], 'Clean down the shelves in the Hot larder section.'),
+    job('hot', '04', 'Deep clean the coldroom floors', [0]),
+    job('hot', '05', 'Wipe down the oil drum', [2], 'Wipe down the oil drum from all sides.'),
+    job('hot', '06', 'Clean the rack trolley', [2]),
+    job('hot', '07', 'Deep clean the oil filter machine', [4]),
+    job('', '01', 'Clean the shelves above the pass', [3], 'Wipe down the shelves above the pass and clean the plate shelf.', { area: 'Pass', who: 'Grill and Pans', review: TWO }),
+    job('', '02', 'Clean behind the deep fryers', null, 'Pull the deep fryers forward and clean behind them.', { area: 'Deep fryers', who: 'Fryers and Hot larder', review: TWO, monthly: true }),
+    job('', '03', 'Decant sauces into smaller containers', null, '', { area: 'Sauces', who: 'Everyone' })
+  ];
   // Return fresh drafts: chef edits must never mutate the built-in schedule or another import attempt.
   function drafts() { return JSON.parse(JSON.stringify(templates)); }
   function packDownDrafts() { return JSON.parse(JSON.stringify(packDown)); }
-  var api = { api: 1, templates: templates, drafts: drafts, packDown: packDown, packDownDrafts: packDownDrafts };
+  function sectionDrafts() { return JSON.parse(JSON.stringify(sectionClean)); }
+  // the group a section cleaning draft belongs to ('' for a shared one), from its template id
+  function sectionGroupOf(entry) { var m = /^sc-([a-z]+)-/.exec(entry && entry.plan && entry.plan.template || ''); return m && m[1] !== 'gen' ? m[1] : ''; }
+  var api = { api: 1, templates: templates, drafts: drafts, packDown: packDown, packDownDrafts: packDownDrafts,
+    sectionClean: sectionClean, sectionDrafts: sectionDrafts, sectionGroups: sectionGroups, sectionGroupOf: sectionGroupOf };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.LK_CLEANING_SCHEDULE = api;
 })(typeof window === 'undefined' ? this : window);

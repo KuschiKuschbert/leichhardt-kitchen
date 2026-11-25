@@ -1,0 +1,149 @@
+{
+ "kind": "Implemented app on the Firebase stand-in",
+ "day": "Monday 30 November 2026 (synthetic)",
+ "role": "line cook on Grill",
+ "viewports": "390, 768 and 1280 wide, 844 tall",
+ "fonts": "Barlow, Barlow Condensed, Caveat",
+ "before": "general list and Pack down",
+ "after": "the same plus the 20 section jobs",
+ "results": {
+  "before-390": {
+   "jobs": 46,
+   "wholeJobsOnFirstScreen": 5,
+   "screensLong": 4.9,
+   "screensToGrillWeeklyJob": null,
+   "screensToGrillPackDown": 2.9,
+   "sideways": false,
+   "smallLinesCutOff": 4,
+   "howOftenLinesCutOff": 0,
+   "howOftenLines": 1,
+   "buttonsUnder44": 0,
+   "oneTapBoxes": 9,
+   "headings": [
+    "Shared kitchen",
+    "Pack down",
+    "Hot larder",
+    "Grill",
+    "Pans",
+    "Floors after shelving"
+   ]
+  },
+  "before-768": {
+   "jobs": 46,
+   "wholeJobsOnFirstScreen": 7,
+   "screensLong": 4,
+   "screensToGrillWeeklyJob": null,
+   "screensToGrillPackDown": 2.5,
+   "sideways": false,
+   "smallLinesCutOff": 0,
+   "howOftenLinesCutOff": 0,
+   "howOftenLines": 1,
+   "buttonsUnder44": 0,
+   "oneTapBoxes": 9,
+   "headings": [
+    "Shared kitchen",
+    "Pack down",
+    "Hot larder",
+    "Grill",
+    "Pans",
+    "Floors after shelving"
+   ]
+  },
+  "before-1280": {
+   "jobs": 46,
+   "wholeJobsOnFirstScreen": 8,
+   "screensLong": 3.8,
+   "screensToGrillWeeklyJob": null,
+   "screensToGrillPackDown": 2.3,
+   "sideways": false,
+   "smallLinesCutOff": 0,
+   "howOftenLinesCutOff": 0,
+   "howOftenLines": 1,
+   "buttonsUnder44": 0,
+   "oneTapBoxes": 9,
+   "headings": [
+    "Shared kitchen",
+    "Pack down",
+    "Hot larder",
+    "Grill",
+    "Pans",
+    "Floors after shelving"
+   ]
+  },
+  "after-390": {
+   "jobs": 52,
+   "wholeJobsOnFirstScreen": 4,
+   "screensLong": 5.6,
+   "screensToGrillWeeklyJob": 0.6,
+   "screensToGrillPackDown": 3.6,
+   "sideways": false,
+   "smallLinesCutOff": 4,
+   "howOftenLinesCutOff": 0,
+   "howOftenLines": 5,
+   "buttonsUnder44": 0,
+   "oneTapBoxes": 15,
+   "headings": [
+    "Fryers: section clean",
+    "Grill: section clean",
+    "Hot larder: section clean",
+    "Pans: section clean",
+    "Shared kitchen",
+    "Pack down",
+    "Hot larder",
+    "Grill",
+    "Pans",
+    "Floors after shelving"
+   ]
+  },
+  "after-768": {
+   "jobs": 52,
+   "wholeJobsOnFirstScreen": 5,
+   "screensLong": 4.6,
+   "screensToGrillWeeklyJob": 0.6,
+   "screensToGrillPackDown": 3.1,
+   "sideways": false,
+   "smallLinesCutOff": 0,
+   "howOftenLinesCutOff": 0,
+   "howOftenLines": 5,
+   "buttonsUnder44": 0,
+   "oneTapBoxes": 15,
+   "headings": [
+    "Fryers: section clean",
+    "Grill: section clean",
+    "Hot larder: section clean",
+    "Pans: section clean",
+    "Shared kitchen",
+    "Pack down",
+    "Hot larder",
+    "Grill",
+    "Pans",
+    "Floors after shelving"
+   ]
+  },
+  "after-1280": {
+   "jobs": 52,
+   "wholeJobsOnFirstScreen": 5,
+   "screensLong": 4.4,
+   "screensToGrillWeeklyJob": 0.6,
+   "screensToGrillPackDown": 2.9,
+   "sideways": false,
+   "smallLinesCutOff": 0,
+   "howOftenLinesCutOff": 0,
+   "howOftenLines": 5,
+   "buttonsUnder44": 0,
+   "oneTapBoxes": 15,
+   "headings": [
+    "Fryers: section clean",
+    "Grill: section clean",
+    "Hot larder: section clean",
+    "Pans: section clean",
+    "Shared kitchen",
+    "Pack down",
+    "Hot larder",
+    "Grill",
+    "Pans",
+    "Floors after shelving"
+   ]
+  }
+ }
+}
