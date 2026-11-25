@@ -43,6 +43,13 @@ These are two proposals. Each gets its own verdict.
 - A weekly or monthly job that is missed is not due again until its next day. The book does not know it is "overdue". Whether a missed job should stay due is still an open question with the head chef.
 - Tracking counts nothing until Cleaning is switched on for the team and the lists are loaded. Whether that is so in the live book is not known.
 
+**Corrected after round 1.**
+
+- "No rules change" holds for the admin only. `analysis/{id}` is read by the admin alone (`firestore.rules`), so a tracking page for sous chefs needs a looser rule or a second record (keeper, head chef).
+- Done out of due cannot reach 100%. `cleanDay()` counts the record-every-time jobs (floors, food labels, mixers, bench tops) as due and never as done, so a perfect day with the built-in lists reads 46 to 49 of 50 to 53 (cook, new starter and head chef, each from a node run of `cleanDay()` on synthetic days). A rate must leave those jobs out.
+- The 8-name cap drops the weekly job on a bad night: with a section's Pack down unticked, the weekly job's name was the one not kept (head chef, cook, new starter, node runs).
+- The nightly count does not look at the team switch, so jobs loaded before Cleaning is switched on would read as missed (head chef, source read).
+
 ## Proposal 2: a button that spreads repeat jobs across the week
 
 **The problem.** The head chef's list has weekly jobs with no day ("once a week sort the meat doneness sticks") and a twice-a-week job with no days. He does not want to pick a day for each by hand, and he does not want every section's weekly jobs landing on the same day. Who has it: the head chef, when setting up and when adding jobs. How often: at setup, then now and then.
@@ -68,6 +75,14 @@ This is a deliberate departure from "never guess a day", asked for by the head c
 - The book does not know which days are busy. It would need the head chef to say which days to keep clear (today Friday and Saturday hold no weekly job).
 - Moving a job that already has a day changes that week's rhythm, as measured above.
 - A proposed day is not a confirmed day until a chef accepts it. The page must show which is which.
+
+**Corrected after round 1.**
+
+- "No rules change" holds only for the final save. The rules need at least one weekday on a job and a fixed list of fields, so "once a week, no day" and a "Jobs waiting for a day" list have nowhere to be saved (keeper, skeptic, head chef).
+- The weekday load counted section jobs only. With all three built-in lists the jobs that are not nightly fall Sunday 7, Monday to Thursday 4 each, Friday 1, Saturday 0 (cook, source count), so an even spread heads for Friday and Saturday.
+- Only two of the six weekly lines are ready to load: the meat doneness sticks and the Pans drawer fridge. The step is unclear, the second Hot larder line may be Monday's job, the outside area may be two jobs, and the OZ tank is already the Sunday Pack down step, whose method says "Every Sunday" (`docs/cleaning-sections-options/proposal.md`; cook, new starter, head chef).
+- New jobs start today and moved jobs tomorrow, so a job confirmed on a Friday night with Friday chosen is due that night (cook, new starter, source read).
+- A move closes one revision and opens another. Both are read on the day of the change, and Cleaning opens at 81 reads against a budget of 90 (keeper, source read).
 
 ## Baseline pictures
 
