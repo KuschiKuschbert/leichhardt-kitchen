@@ -23,13 +23,17 @@ const months = jobs.filter(j => j.move && j.every === 28).map(j => r.week[j.id])
 ok(months.length === 3 && new Set(months).size === 3, 'the three monthly jobs start in different weeks (' + months + ')');
 ok(by('sc-hot-04').days.join() === r.days['sc-hot-04'].join() && by('sc-grill-01').days.join() === r.days['sc-grill-01'].join(), 'a job with no reason to move keeps its day');
 // leaving one line out of a proposal: the page checks the rest again and says what it breaks
-ok(P.check(jobs, r.days).length === 0, 'the whole proposal breaks none of its own rules (' + P.check(jobs, r.days).join('; ') + ')');
+const notes = P.check(jobs, r.days);
+ok(notes.length === 1 && /is on Friday and is not marked light/.test(notes[0]), 'the whole proposal breaks none of its own rules, and names the one job already on Friday that is not marked light (' + notes.join('; ') + ')');
 const without = Object.assign({}, r.days); delete without['sc-hot-02'];
 ok(P.check(jobs, without).some(m => /Hot larder is at weight/.test(m)), 'with one line left out, the check says which day is now too heavy (' + P.check(jobs, without).join('; ') + ')');
 // same kind on the same day is a choice: off, the week is spread by load alone
 const apart = P.plan(J.jobs(chosen), { together: false });
 const perDay = d => jobs.filter(j => !j.every && (j.move ? apart.days[j.id] : j.days.length < 7 ? j.days : []).includes(d)).length;
 ok(new Set(jobs.filter(j => j.move && j.kind === 'Shelves').map(j => apart.days[j.id][0])).size > 1, 'with same-kind days off, shelves jobs are not pulled onto one day');
-ok(P.check(jobs, apart.days).length === 0, 'the plan with same-kind days off also breaks no rule');
+ok(P.check(jobs, apart.days).length === 1, 'the plan with same-kind days off also breaks no rule');
+ok(jobs.filter(j => j.move && j.days.length && j.days.length < 7).every(j => apart.days[j.id].every(d => (d !== 5 && d !== 6) || j.days.includes(d))) && jobs.filter(j => j.move && j.days.length && j.days.length < 7).every(j => r.days[j.id].every(d => (d !== 5 && d !== 6) || j.days.includes(d))), 'a job that has a day is never moved onto Friday or Saturday');
+ok(jobs.filter(j => j.move).every(j => !/not on the/.test(apart.why[j.id])), 'with same-kind days off, no reason speaks of a kind\'s day');
+ok(jobs.filter(j => j.move && j.days.length && j.days.length < 7).every(j => j.days.join() === apart.days[j.id].join()), 'with same-kind days off, every job that has a day keeps it');
 console.log('with same-kind days: ' + [0, 1, 2, 3, 4, 5, 6].map(d => jobs.filter(j => !j.every && (j.move ? r.days[j.id] : j.days.length < 7 ? j.days : []).includes(d)).length).join(',') + '; without: ' + [0, 1, 2, 3, 4, 5, 6].map(perDay).join(',') + '; moved without: ' + jobs.filter(j => j.move && j.days.length && j.days.length < 7 && j.days.join() !== apart.days[j.id].join()).length);
 console.log('PASS planner: ' + n + ' checks');
