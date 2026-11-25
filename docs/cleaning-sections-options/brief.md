@@ -343,6 +343,21 @@ At 768 and 1280 px, section first shows 6 whole jobs on the first screen (7 and 
 
 Exercised in the click tests (`tests/cleaning-sections.test.js`, 109 checks): a cook with no pick answering Your section today, a cook whose section comes from the Today's team plan, the order of every heading at three widths, the rows under Section clean and Pack down, the kick oven door after the Pans steps, Go to Pack down, a tick in the leading section with no row or heading moving, a move to another section holding until Refresh, the link with one job moved, the group left on Shared kitchen, a renamed section and a removed one, and the setup line. Checked in source, not exercised: a second cook signing in on a shared screen (the page starts again with a new read). Not exercised: a plan changed by a chef mid-shift (the cook's own move is), Extra large text, dark mode, focus order, contrast. The reviewers have not seen the built page.
 
+### Built: step 3, this screen's section (26 November 2026)
+
+A shared kitchen screen can be set to one kitchen section in Settings, by the head chef. Cleaning then opens on that section for every cook who signs in there, with the rest of the kitchen open below, as drawn. [The contract](../cleaning-schedule.md#this-screens-section-26-november-2026-step-3).
+
+Settled while building:
+
+- Kept inside the device's own record (`sec` in `lk.device.v2`), not a second key: Forget this device and a change of type clear it with nothing more to remember.
+- Not sent through the device change path, which signs the person out and drops Google. It has its own event, so no owner check runs and nothing is read.
+- One assumption on the design page changed. It said a screen on a section with no cleaning list shows the usual order. Built instead: the cook's own section leads there, because step 2 already does that on a shared screen with none set, and a screen set to Pass should not be worse than a screen set to nothing.
+- The cook's own section, learned after the list was read, changes the words and the link only. The order holds.
+
+Measured on the **Implemented app** (`implementation/measure.cjs`, "screen": a shared kitchen screen set to Grill, a Pans cook signed in, the same Monday and data): at 390 px, 53 jobs, 4 whole jobs on the first screen, 5.6 screens long, Grill pack down 0.7 screens down, no sideways scroll; 6 whole jobs at 768 and 1280 px. The same as a Grill cook's own phone.
+
+Exercised in the click tests (`tests/cleaning-sections.test.js`, 136 checks): the screen's section leading with its words, Go to Pans pack down, one tick through Who did this with nothing reordering, a cook with no pick answering Pans (words and link change, order does not), a section with no cleaning today, a renamed and a removed section, a personal device ignoring it, the longest names on a 390 px title line, and Settings: the head chef's chips, one tap saving it with 0 reads, 0 writes and nobody signed out, No section, Forget, a cook reading it without being able to change it, and no row on a personal device. `tests/safe-text.test.js` shows a section's name as typed in both new places. Checked in source, not exercised: the idle lock followed by a different cook (the page starts again and reads the screen's section and the new cook's own). Not exercised: Extra large text, dark mode, focus order, contrast. The head-chef-only limit is a rule of the device, like the screen's type: no server rule enforces a preference kept on the device.
+
 ### After step 3
 
 The head chef, 26 November 2026, on a new name for the tab: "wait until all other steps are done and then we can brainstorm name and design again". Names tried on the tab bar are in `docs/head-chef-decisions.md`.

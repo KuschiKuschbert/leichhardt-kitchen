@@ -1,18 +1,19 @@
 # Session map: which note to read, and every file
 
-## Section cleaning, 25 and 26 November 2026 (steps 1 and 2 of three built)
+## Section cleaning, 25 and 26 November 2026 (all three steps built)
 
 The head chef gave a written cleaning list for Grill, Pans, Fryers with salads and dessert, and Hot larder. Council: round 1 Build smaller 5 of 5; round 2 A first of three for 5 of 6, B last 6 of 6, closed rows rejected 5 of 6; a follow-up on the mix. Chosen: D, your section first with nothing hidden, in three steps. [Brief](cleaning-sections-options/brief.md), [designs](cleaning-sections-options/index.html), [contract](cleaning-schedule.md#section-cleaning-25-november-2026).
 
 | Files | Role and checks |
 | --- | --- |
 | `js/cleaning-schedule.js` | `sectionClean`: 21 jobs with a stated day that Pack down and the general list do not hold, `sectionDrafts()`, `sectionGroups`, `sectionGroupOf()`. Three monthly jobs repeat every 28 days with no first date. `tests/cleaning-sections.test.js` (data). |
-| `js/cleaning.js` | **Load section cleaning** with a section picker per group (`sectionImportPanel()`, `sectionChoice()`), how often on the row (`rhythm()`, `.cln-often`), "Grill: section clean" headings, the first date notice (`firstDateNotice()`), no empty Method. Step 2: the page opens on the cook's section (`M.lead` from `C.section()`, `.cln-mine`), the Pack down link by the section chosen at Load (`packLinks()`), one place per job. `tests/cleaning-sections.test.js` (109 checks: load, sections, first date, the row at 390, 768 and 1280, one tap and Undo, a held save, the chef's view, section first, the link's four cases, Refresh after a move). |
-| `js/prep.js` | `mySecNow()`: the person's section today by id (`mySec()` gives its name); on the Cleaning bridge as `section`. No read. |
+| `js/cleaning.js` | **Load section cleaning** with a section picker per group (`sectionImportPanel()`, `sectionChoice()`), how often on the row (`rhythm()`, `.cln-often`), "Grill: section clean" headings, the first date notice (`firstDateNotice()`), no empty Method. Step 2: the page opens on the cook's section (`M.lead` from `C.section()`, `.cln-mine`), the Pack down link by the section chosen at Load (`packLinks()`), one place per job. `tests/cleaning-sections.test.js` (109 checks at step 2: load, sections, first date, the row at 390, 768 and 1280, one tap and Undo, a held save, the chef's view, section first, the link's four cases, Refresh after a move). |
+| `js/prep.js` | `mySecNow()`: the person's section today by id (`mySec()` gives its name); on the Cleaning bridge as `section`. No read. Step 3: `screenSection()` and `setScreenSection()` (head chef only, no sign-out, no read). |
+| `js/device.js`, `js/app.js` | Step 3: a shared kitchen screen's section, `sec` in `lk.device.v2` (`LK_DEVICE.section()`, `setSection()`, the `lk-device-section` event), and its Settings row (`screenSecRow()`). `js/cleaning.js` leads with it (`leadNow()`, `leadPlan()`). `tests/cleaning-sections.test.js` (136 checks), `tests/safe-text.test.js`. |
 | `tests/read-budget.test.js` | Cleaning opened by a cook with all three lists: 81 reads, budget 90. |
 | `docs/cleaning-sections-options/` | Proposal, brief, both reviewer packets, the design page, previews with `build.cjs`, and `implementation/` (the built page measured by `measure.cjs`). |
 
-Not built: step 3 (This screen's section on a shared kitchen screen). After it, the tab's name and the page's design are looked at again with the head chef. Open with the head chef: `docs/open-work.md`, Open items.
+Next: the tab's name and the page's design are looked at again with the head chef (`docs/open-work.md`, Open items). Open with the head chef: `docs/open-work.md`, Open items.
 
 ## One reading of a cleaning day, 24 November 2026 (code in line)
 

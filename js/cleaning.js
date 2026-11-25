@@ -49,7 +49,7 @@
     M.tasks = data.tasks; M.done = data.done; M.readAt = data.readAt; M.state = 'ok'; M.error = '';
     // The section the page opens on (25 Nov 2026): worked out when the list is read (open, Refresh, a save's reload), never
     // on a redraw, so the list cannot reorder under a thumb. An older book without the bridge gives none.
-    M.lead = C.section ? C.section() : null;
+    M.lead = leadNow();
     Object.keys(M.workDrafts).forEach(function (key) { var d = M.workDrafts[key], r = M.done.filter(function (value) { return value.task === d.task && value.day === d.day && value.flow && value.flow.slot === d.slot; })[0]; if (r && JSON.stringify([d.checked.slice().sort(), d.note.trim()]) === JSON.stringify([r.flow.checked.slice().sort(), r.flow.note])) { if (M.flowErrors[key]) { var task = M.tasks.filter(function (value) { return value.id === d.task; })[0]; M.flowSaved[key] = 'Earlier save confirmed for ' + (task ? task.text : 'this clean') + '. Checked ' + T.clock(data.readAt) + '.'; } delete M.workDrafts[key]; delete M.flowErrors[key]; } });
   }
   function load(force) {
@@ -204,6 +204,28 @@
      and only while every one of those jobs in force that day is saved to the same live section. One job moved, the group
      left on Shared kitchen, or the section removed: no link, and Pack down stays where it was. No read: the loaded tasks. */
   var PACK_GROUPS = [['hot', 'Hot larder'], ['grill', 'Grill'], ['pans', 'Pans']];
+  /* Which section the page opens on: the one this shared kitchen screen is set to (step 3, 26 Nov 2026), else the one this
+     person is on today. own keeps the person's own section beside a screen's, for the words and the Pack down link. */
+  function leadNow() {
+    var own = C.section ? C.section() : null, screen = C.screenSection ? C.screenSection() : null;
+    return screen ? { id: screen.id, name: screen.name, screen: true, own: own } : own;
+  }
+  /* What leads a cook's page that day, from the day's groups: the leading section (first), its groups (mine), the words
+     beside its name (why), and on a station screen the cook's own section when it is another one with a tied Pack down
+     (mate: Go to Pack down goes there). A screen's section with no cleaning that day gives way to the cook's own, as on a
+     screen with none set. No section, or no work for it: no first, and the page keeps its usual order. */
+  function leadPlan(grouped) {
+    var live = function (x) { return !!x && C.sections().some(function (section) { return section.id === x.id; }); };
+    var has = function (x) { return grouped.filter(function (group) { return (group.own || group.pack) && group.sec === x.id; }); };
+    var first = !C.chef() && live(M.lead) ? M.lead : null, mine = first ? has(first) : [], why = 'Your section today', mate = null;
+    if (first && first.screen) {
+      mate = live(first.own) && first.own.id !== first.id ? first.own : null;
+      if (mine.length) why = 'This screen' + (mate ? '. You are on ' + mate.name + ' today' : '');
+      else if (mate) { first = mate; mine = has(mate); mate = null; }
+    }
+    if (mate && !grouped.some(function (group) { return group.pack && group.sec === mate.id; })) mate = null;
+    return { first: mine.length ? first : null, mine: mine, why: why, mate: mate };
+  }
   function packLinks(day) {
     var at = T.at(day), live = C.sections().map(function (section) { return section.id; }), out = {};
     PACK_GROUPS.forEach(function (group) {
@@ -251,22 +273,21 @@
   function daily(day) {
     var tasks = tasksOn(day);
     if (!tasks.length) return '<div class="cln-empty"><p class="nb-empty">' + (M.tasks.length ? 'No cleaning tasks due on this day.' : 'No cleaning tasks set yet.') + '</p><p class="hint">' + (C.chef() ? 'Set the actual jobs, sections and repeat days in Repeat tasks.' : 'Your chef can set the jobs and repeat days.') + '</p>' + (C.chef() ? '<button type="button" class="btn" data-cln="setup">Set repeat tasks</button>' : '') + '</div>';
-    var grouped = groups(tasks, day), jump = 'cln-packdown-' + day, jumped = false;
+    var grouped = groups(tasks, day), jump = 'cln-packdown-' + day, jumped = false, plan = leadPlan(grouped);
     // one group: its heading, its count and its rows. title is the heading's words; the first Pack down heading takes the
     // id that Go to Pack down moves to when there is no one Pack down block (the leading section's layout)
     function groupHTML(group, i, title, tag, note) {
       var count = workTotals(group.tasks, day), heading = tag || (group.pack ? 'h4' : 'h3'), id = 'cln-group-' + i + '-' + day;
-      if (note !== undefined && group.pack && !jumped) { jumped = true; id = jump; }
+      if (note !== undefined && group.pack && !jumped && (!plan.mate || group.sec === plan.mate.id)) { jumped = true; id = jump; }
       return '<section' + (group.pack ? ' class="cln-packdown-group" data-cln-packdown-group="' + esc(group.name) + '"' : '') + ' aria-labelledby="' + id + '"><' + heading + ' class="nb-hd" id="' + id + '"' + (id === jump ? ' tabindex="-1"' : '') + '><span>' + esc(title || group.name + (group.own ? ': section clean' : '')) + '</span><span class="cln-group-count">' + count.complete + '/' + count.total + (count.events ? ' + repeats' : '') + '</span></' + heading + '>' + (note ? '<p class="hint">' + esc(note) + '</p>' : '') + '<ul class="nb-rows">' + group.tasks.map(function (task) { return row(task, day); }).join('') + '</ul></section>';
     }
     /* Your section first (head chef, 25 Nov 2026, design D): the page opens on the section this person is on today, with
        its section clean and then its Pack down. Shared kitchen follows, then the rest of the kitchen, all open; floors stay
        last. For a cook only, and only when that section has work today: a chef, a cook with no section and a section with
        no cleaning list keep the page's usual order below. */
-    var lead = !C.chef() && M.lead && C.sections().some(function (section) { return section.id === M.lead.id; }) ? M.lead : null;
-    var mine = lead ? grouped.filter(function (group) { return (group.own || group.pack) && group.sec === lead.id; }) : [];
-    if (mine.length) {
-      var at = function (group) { return grouped.indexOf(group); }, html = '<section class="cln-mine" aria-labelledby="cln-mine-' + day + '"><h3 class="cln-mine-title" id="cln-mine-' + day + '"><span>' + esc(lead.name) + '</span><small>Your section today</small></h3>';
+    var lead = plan.first, mine = plan.mine;
+    if (lead) {
+      var at = function (group) { return grouped.indexOf(group); }, html = '<section class="cln-mine" aria-labelledby="cln-mine-' + day + '"><h3 class="cln-mine-title" id="cln-mine-' + day + '"><span>' + esc(lead.name) + '</span><small>' + esc(plan.why) + '</small></h3>';
       mine.filter(function (group) { return group.own; }).forEach(function (group) { html += groupHTML(group, at(group), 'Section clean', 'h4', ''); });
       mine.filter(function (group) { return group.pack; }).forEach(function (group) { html += groupHTML(group, at(group), 'Pack down', 'h4', 'Overhead shelves and frames first. Floors are last.'); });
       html += '</section>';
@@ -438,9 +459,9 @@
       '<div class="cln-repeat-browser"><div class="cln-searchbar"><label class="visually-hidden" for="cln-repeat-search">Find a repeat task in all groups</label><input type="search" class="search" id="cln-repeat-search" data-cln-control="repeat-query" placeholder="Find a repeat task or area" value="' + esc(M.repeatQuery) + '"><button type="button" class="btn dark" data-cln="add"' + (M.state !== 'ok' || M.saveBusy || M.archiveBusy ? ' disabled' : '') + '>Add cleaning task</button></div><label class="field" for="cln-repeat-group"><span class="label">Work group</span><select id="cln-repeat-group" data-cln-control="repeat-group"><option value="all">All groups</option>' + CHEF_GROUPS.map(function (group) { return '<option value="' + group[0] + '"' + (M.repeatGroup === group[0] ? ' selected' : '') + '>' + esc(group[1]) + '</option>'; }).join('') + '</select></label>' + (M.repeatQuery.trim() ? '<p class="hint cln-repeat-scope" role="status">Searching all groups. Clear search to use the selected work group.</p>' : '') + pager(matching.length, M.repeatPage, 'repeat-page', M.repeatGroup) +
       (!matching.length ? '<p class="hint" role="status">' + (current.length ? 'No tasks match this search or group.' : M.state === 'ok' ? 'No repeat tasks set yet. Add a task or load a schedule below.' : 'The task list is not available yet. Your draft is kept.') + '</p>' : '') + '<ul class="cln-templates cln-repeat-layout" role="list">' + items + '</ul></div><div class="cln-setup-imports">' + importPanel() + '</div></div></section>';
   }
-  function readLine(packDown) {
+  function readLine(packDown, own) {
     return '<div class="cln-readline"><span class="hint">' + (M.state === 'ok' ? 'Checked ' + esc(T.clock(M.readAt)) : 'Cleaning, with who and when') + '</span>' +
-      (packDown ? '<button type="button" class="p-link" data-cln="pack-down-jump" aria-controls="cln-packdown-' + T.day() + '">Go to Pack down</button>' : '') +
+      (packDown ? '<button type="button" class="p-link" data-cln="pack-down-jump" aria-controls="cln-packdown-' + T.day() + '">Go to ' + (own ? esc(own) + ' pack down' : 'Pack down') + '</button>' : '') +
       '<button type="button" class="p-link" data-cln="refresh"' + (M.state === 'loading' || busy() ? ' disabled' : '') + '>Refresh</button></div>';
   }
   function draw() {
@@ -450,14 +471,14 @@
     /* A section that becomes known after the list was read is taken once: the cook answers Your section today, or the
        Today's team plan arrives. It never replaces a section already leading, and never while a tick is sending, so the
        list cannot reorder under a thumb (docs/cleaning-schedule.md, Your section first). */
-    if (M.state === 'ok' && !M.lead && C.section && !busy()) M.lead = C.section();
+    if (M.state === 'ok' && !busy()) { if (!M.lead) M.lead = leadNow(); else if (M.lead.screen && !M.lead.own && C.section) M.lead.own = C.section(); }
     var active = document.activeElement, focusAttribute = active && ['data-cln-field', 'data-cln-plan', 'data-cln-repeat', 'data-cln-control'].filter(function (attribute) { return active.hasAttribute(attribute); })[0], field = focusAttribute && active.getAttribute(focusAttribute), action = active && M.root.contains(active) && active.getAttribute('data-cln');
     var focusAttrs = {}; if (action) ['data-id', 'data-day', 'data-dow', 'data-group', 'data-page', 'data-cln-direction'].forEach(function (attribute) { if (active.hasAttribute(attribute)) focusAttrs[attribute] = active.getAttribute(attribute); }); if (action === 'group-page' || action === 'repeat-page') delete focusAttrs['data-page'];
     var pos = focusAttribute && typeof active.selectionStart === 'number' ? [active.selectionStart, active.selectionEnd] : null;
     var today = tasksOn(T.day()), totals = workTotals(today, T.day()), chef = C.chef(), week = chef && M.view === 'week', setup = chef && M.view === 'setup';
     var toolbar = chef ? '<div class="cln-toolbar"><div class="chips" role="group" aria-label="Cleaning view"><button type="button" class="chip" data-cln="today" aria-pressed="' + (!week && !setup) + '">Today</button><button type="button" class="chip" data-cln="week" aria-pressed="' + week + '">Week</button><button type="button" class="chip" data-cln="setup" aria-pressed="' + setup + '" aria-expanded="' + setup + '" aria-controls="cln-plan-title">Repeat tasks</button></div>' + (!setup && M.draft ? '<button type="button" class="p-link cln-draft-return" data-cln="setup">' + (dirtyDraft() ? 'Unsaved repeat task' : 'Return to repeat task') + '</button>' : '') + '</div>' : '';
     M.root.innerHTML = '<div class="nb-wrap cln-page' + (chef ? ' cln-chef-page' : '') + '" data-cln-view="' + (setup ? 'setup' : week ? 'week' : 'today') + '">' + toolbar + (setup ? editor() :
-      '<section class="nb-page cln-book" aria-labelledby="rtitle"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Cleaning</h2><span class="nb-date">' + esc(week ? 'Week commencing ' + longDay(M.week) : longDay(T.day())) + '</span></div>' + (!week && M.state === 'ok' && today.length ? '<div class="nb-prog cln-progress">' + totals.complete + '/' + totals.total + '<small>' + (totals.events ? 'recorded; repeats apply' : 'done today') + '</small></div>' : '') + '</header>' + readLine(!chef && M.state === 'ok' && today.some(packSection)) +
+      '<section class="nb-page cln-book" aria-labelledby="rtitle"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Cleaning</h2><span class="nb-date">' + esc(week ? 'Week commencing ' + longDay(M.week) : longDay(T.day())) + '</span></div>' + (!week && M.state === 'ok' && today.length ? '<div class="nb-prog cln-progress">' + totals.complete + '/' + totals.total + '<small>' + (totals.events ? 'recorded; repeats apply' : 'done today') + '</small></div>' : '') + '</header>' + readLine(!chef && M.state === 'ok' && today.some(packSection), !chef && M.state === 'ok' && (leadPlan(groups(today, T.day())).mate || {}).name) +
       '<div class="cln-temperature"><button type="button" class="p-link" data-cln="temperature" aria-expanded="' + M.temperatureOpen + '">Temperature logs: morning and before dinner service</button>' + (M.temperatureOpen ? '<p class="hint">Temperature logs must be completed first thing in the morning and before dinner service. The temperature log is not connected here. Record readings in the venue\'s temperature log. Cleaning checks do not record or validate temperatures.</p>' : '') + '</div>' + earlierNotice() +
       (!week && M.state === 'ok' && (totals.events || totals.awaiting || totals.blocked) ? '<p class="hint cln-coverage">' + (totals.events ? 'Record every required service, prep or use. The count covers known occurrences; repeat coverage is not configured. ' : '') + (totals.awaiting ? totals.awaiting + ' awaiting Pass check. ' : '') + (totals.blocked ? totals.blocked + ' unable to complete.' : '') + '</p>' : '') +
       '<div class="nb-body cln-body">' + (M.state === 'error' ? clnFailLine() : M.state !== 'ok' ? loading() : week ? weekly() : chef ? chefDaily(T.day()) : daily(T.day())) + '</div></section>') + '</div>';
@@ -730,5 +751,7 @@
   window.addEventListener('focus', function () { if (shown()) checkDay(); });
   document.addEventListener('visibilitychange', function () { if (!document.hidden && shown()) checkDay(); });
   window.addEventListener('beforeunload', function (event) { if (dirty() && !(window.LK_UPDATE && window.LK_UPDATE.letGo && window.LK_UPDATE.letGo())) { event.preventDefault(); event.returnValue = ''; } });
+  // The head chef changed this screen's section in Settings: take it now, unless a tick is still sending
+  window.addEventListener('lk-device-section', function () { if (M.state !== 'ok' || busy()) return; M.lead = leadNow(); if (shown()) draw(); });
   window.LK_CLEANING = { api: 2, mount: mount, unmount: unmount, reset: reset, dirty: dirty, busy: busy, overlay: function () { return !!popup; } };
 })();
