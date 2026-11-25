@@ -122,6 +122,7 @@ Measured on 2 and 3 November 2026: most of the cost was repeated test runs and r
 - **Wait without spending.** One check-in per pull request (about 50 minutes, then 4 hours). Do not poll, do not re-read a pull request that has not changed, do not reply to a notice that needs nothing.
 - **A timing failure is not your bug until it repeats.** Read the failing test's name first. Re-run once; if it fails again, say so in the pull request and fix it in its own pull request. The weekly issue "Click tests that needed a second try" (#523, label `flaky-report`) lists the files to fix: one "Yes" file per pull request, the most retried first, and never by loosening a check. How to make one fail here first: `docs/flaky-tests.md`.
 - **Agents only where they pay.** Parallel agents for the service council (once per major decision) and wide audits. Do a lookup, a single file or a known fix yourself.
+- **The right model for the job** (24 Nov 2026). The model-router plugin on the head chef's account picks each session's model from its first request; Fable advises (`.claude/settings.json`). Every Agent call names its `model`: which one, in `docs/keeping-usage-down.md`.
 - **Few sessions at once.** Three or four open pull requests merge smoothly; eight make each other run Click tests again and again.
 - **Keep "Require branches to be up to date before merging" on** (head chef, 4 Nov 2026).
 - **Ready means merge in the next release window.** Mark it ready when it is finished and stop. `urgent` is for a fix the kitchen needs now, not to skip the wait.
