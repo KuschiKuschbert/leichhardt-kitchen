@@ -67,9 +67,9 @@ async function reportData(p) {
   // once on an open, the same pull request). The budgets went up by those lookups, not by new reads: first 680 to 960, firstSum 300 to 580,
   // firstDig 300 to 240 (down, with the digests), reload 40 to 110, admin 760 to 1300, adminDig 760 to 440, admin2 240 to
   // 400; proof and fnManage are new.
-  // 25 Nov 2026, cleaning (new): a cook opening Cleaning with all three lists loaded measured 80: the 71 task documents,
+  // 25 Nov 2026, cleaning (new): a cook opening Cleaning with all three lists loaded measured 81: the 72 task documents,
   // 1 for today's completions and 8 rule lookups. It was 60 with the general list and Pack down alone, so the section
-  // jobs add 20 reads per open per device. The budget of 90 leaves room for 10 tasks a chef types in.
+  // jobs add 21 reads per open per device. The budget of 90 leaves room for 9 tasks a chef types in.
   const BUDGET = { first: 960, firstSum: 580, firstDig: 240, reload: 110, admin: 1300, adminDig: 440, adminSamePage: 60, admin2: 400, proof: 260, fnManage: 140, cleaning: 90 };
   const show = !!process.env.RB_SHOW;
 
@@ -208,7 +208,7 @@ async function reportData(p) {
   await p.context().close();
 
   // Cleaning (25 Nov 2026, section cleaning): a cook opens Cleaning with the general list, Pack down and the section jobs
-  // all loaded: 71 task documents. The page reads every live task once per open or Refresh, so each task a chef adds is
+  // all loaded: 72 task documents. The page reads every live task once per open or Refresh, so each task a chef adds is
   // one more read here, per device. Counted from a book that is already open, so only Cleaning's own reads are in it.
   const sched = require('../js/cleaning-schedule'), withClean = Object.assign({}, extra);
   sched.drafts().concat(sched.packDownDrafts(), sched.sectionDrafts()).forEach(t => {
@@ -229,7 +229,7 @@ async function reportData(p) {
   {
     ok(proof <= BUDGET.proof, 'admin panel opened on the Proofreader with the day digests: ' + proof + ' reads (budget ' + BUDGET.proof + ')');
     ok(fnManage <= BUDGET.fnManage, 'Manage functions with 12 bookings ahead: ' + fnManage + ' reads (budget ' + BUDGET.fnManage + ')');
-    ok(cleaning <= BUDGET.cleaning, 'Cleaning opened by a cook with 71 tasks loaded: ' + cleaning + ' reads (budget ' + BUDGET.cleaning + ')');
+    ok(cleaning <= BUDGET.cleaning, 'Cleaning opened by a cook with 72 tasks loaded: ' + cleaning + ' reads (budget ' + BUDGET.cleaning + ')');
     ok(first <= BUDGET.first, 'staff first open today: ' + first + ' reads (budget ' + BUDGET.first + ')');
     ok(firstSum <= BUDGET.firstSum, 'staff first open today with the nightly summaries: ' + firstSum + ' reads (budget ' + BUDGET.firstSum + ')');
     ok(firstDig <= BUDGET.firstDig, 'staff first open today with the summaries and day digests: ' + firstDig + ' reads (budget ' + BUDGET.firstDig + ')');

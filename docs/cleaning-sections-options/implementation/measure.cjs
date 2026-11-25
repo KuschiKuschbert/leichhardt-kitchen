@@ -1,7 +1,7 @@
 /* Section cleaning, step 1: the implemented page, measured. Run from the repo root with the click tests' packages:
      node docs/cleaning-sections-options/implementation/measure.cjs
    The real book on the Firebase stand-in (tests/fake), synthetic Monday 30 November 2026, the kitchen's usual section
-   names, the general list, Pack down and the 20 section jobs as a chef would load them (Fryers chosen for the Fryers,
+   names, the general list, Pack down and the 21 section jobs as a chef would load them (Fryers chosen for the Fryers,
    salads and dessert group; the 28-day jobs given an example first date so one shows). Nothing is written to the real book. */
 const path = require('path'), fs = require('fs');
 const ROOT = path.resolve(__dirname, '../../..');
@@ -21,7 +21,7 @@ schedule.sectionDrafts().forEach(d => {
 const common = { ...Object.fromEntries(SECS.map(([id, name]) => [key('sections', id), { name, uses: 5, hidden: false }])), [key('config', 'main')]: { ...L.seed()[key('config', 'main')], kitSecs: SECS.map(([id, name]) => ({ id, name })) } };
 const FONTS = [['barlow', 'Barlow', 400], ['barlow-600', 'Barlow', 600], ['barlow-700', 'Barlow', 700], ['barlow-condensed', 'Barlow Condensed', 700], ['caveat', 'Caveat', 700]]
   .map(([f, fam, w]) => "@font-face{font-family:'" + fam + "';font-weight:" + w + ";src:url('/docs/cleaning-chef-options/fonts/" + f + ".woff2') format('woff2')}").join('');
-const pick = new Function("var d=new Date(Date.now()+36e5*10).toISOString().slice(0,10);localStorage.setItem('lk.sec.ann',JSON.stringify({d:d,sec:'grill',name:'Grill',self:true,at:Date.now()}));");
+const pick = () => { const d = new Date(Date.now() + 36e5 * 10).toISOString().slice(0, 10); localStorage.setItem('lk.sec.ann', JSON.stringify({ d, sec: 'grill', name: 'Grill', self: true, at: Date.now() })); };
 const ready = p => L.waitFor(p, () => { const pg = document.querySelector('.cln-page'); return pg && !/Loading cleaning/.test(pg.textContent); });
 async function fonts(p) { await p.addStyleTag({ content: FONTS }); await p.evaluate(() => document.fonts.ready); await L.settle(p, 400); }
 const measure = p => p.evaluate(() => {
@@ -56,7 +56,7 @@ const measure = p => p.evaluate(() => {
   p = await L.open(b, '#/cleaning', { who: 'sam', width: 390, base: url, extra: { ...common, ...built, ...waiting }, clock: MON, wait: 1000 });
   await ready(p); await fonts(p);
   await p.screenshot({ path: path.join(OUT, 'chef-first-date-390.png') }); await p.context().close();
-  fs.writeFileSync(path.join(OUT, 'measurements.json'), JSON.stringify({ kind: 'Implemented app on the Firebase stand-in', day: 'Monday 30 November 2026 (synthetic)', role: 'line cook on Grill', viewports: '390, 768 and 1280 wide, 844 tall', fonts: 'Barlow, Barlow Condensed, Caveat', before: 'general list and Pack down', after: 'the same plus the 20 section jobs', results: out }, null, 1) + '\n');
+  fs.writeFileSync(path.join(OUT, 'measurements.json'), JSON.stringify({ kind: 'Implemented app on the Firebase stand-in', day: 'Monday 30 November 2026 (synthetic)', role: 'line cook on Grill', viewports: '390, 768 and 1280 wide, 844 tall', fonts: 'Barlow, Barlow Condensed, Caveat', before: 'general list and Pack down', after: 'the same plus the 21 section jobs', results: out }, null, 1) + '\n');
   console.log(JSON.stringify(out, null, 1));
   await b.close(); server.close();
 })().catch(e => { console.error(e); process.exit(1); });

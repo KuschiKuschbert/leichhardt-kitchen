@@ -91,6 +91,7 @@
   var sectionClean = [
     job('grill', '01', 'Clean the drawers', [1]),
     job('grill', '02', 'Clean behind the grill', null, '', { monthly: true }),
+    job('grill', '03', 'Wipe under the meat sticks'),
     job('pans', '01', 'Wipe down the kick oven door'),
     job('pans', '02', 'Clean both sides of the stove', [2], 'Pull the infill benches forward and clean the sides of the stove on both sides.'),
     job('pans', '03', 'Clean behind the stove', null, 'Pull the stove forward and clean behind it.', { monthly: true }),

@@ -85,7 +85,7 @@ The head chef's own weekly, monthly and extra daily jobs for each section are a 
 - **Monthly.** A monthly job repeats every 28 days from a first date. It loads with none, so it is never due and never counted until a chef sets it. Today and Repeat tasks name each repeat job that still needs a first date; a name opens that job's editor on the date.
 - **How often, in words.** A job that is not nightly says how often at the start of its small line: "Every Monday", "Mon, Wed, Fri", "Every 4 weeks", "Every 2 days". This holds for every list, loaded or typed. Only such a line may wrap, so the state at its end is never cut off. A nightly job's line is unchanged.
 - **Headings.** A section's own group is headed with its name and ": section clean". The same section's group under the Pack down title keeps its name.
-- **Reads.** No new query, listener or rule. Each loaded job is one more task document on every Cleaning open or Refresh: 20 more reads per open per device with the whole list loaded (`tests/read-budget.test.js`, Cleaning).
+- **Reads.** No new query, listener or rule. Each loaded job is one more task document on every Cleaning open or Refresh: 21 more reads per open per device with the whole list loaded (`tests/read-budget.test.js`, Cleaning).
 
 Steps 2 (the page opens on your section) and 3 (This screen's section on a shared kitchen screen) are not built. Step 2 still needs an explicit link between a kitchen section and its Pack down group.
 

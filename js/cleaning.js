@@ -174,7 +174,7 @@
     var quickPending = quick && M.pending[key] && M.pending[key].control === 'quick';
     return '<li class="nb-row cln-row cln-plan-row' + (summary.done ? ' is-done' : '') + (M.pending[key] ? ' is-pending' : '') + '" data-id="' + esc(task.id) + '" data-cln-row="' + esc(key) + '">' +
       '<button type="button" class="nb-box" data-cln="' + (quick ? 'flow-quick' : 'details') + '" data-id="' + esc(task.id) + '" data-day="' + esc(day) + '"' + (quick ? ' data-slot="' + slot + '" data-kind="' + slot + '" aria-pressed="' + summary.done + '"' + (workEnabled(task, day) && (!summary.done || quickUndo) ? '' : ' disabled') : ' aria-expanded="' + open + '" aria-controls="cln-detail-' + esc(key) + '"') + (quickPending ? ' aria-busy="true"' : '') + ' aria-label="' + esc((quick ? summary.done ? quickUndo ? 'Undo: ' : 'Done: ' : 'Mark done: ' : open ? 'Close checks: ' : 'Open checks: ') + task.text + '. ' + flowState(task, day)) + '">' + C.box(summary.done) + '</button>' +
-      '<button type="button" class="nb-main cln-task-detail" data-cln="details" data-id="' + esc(task.id) + '" data-day="' + esc(day) + '" aria-expanded="' + open + '" aria-controls="cln-detail-' + esc(key) + '" aria-label="' + esc((open ? 'Close checks and method: ' : 'Open checks and method: ') + task.text) + '"><span class="nb-t">' + esc(task.text) + '</span><span class="' + metaClass(task) + '" title="' + esc(meta) + '">' + esc(meta) + '</span><span class="cln-detail-cue" aria-hidden="true">' + (open ? '▴' : '▾') + '</span></button>' + (open ? planDetails(task, day) : '') + '</li>';
+      '<button type="button" class="nb-main cln-task-detail" data-cln="details" data-id="' + esc(task.id) + '" data-day="' + esc(day) + '" aria-expanded="' + open + '" aria-controls="cln-detail-' + esc(key) + '" aria-label="' + esc((open ? 'Close checks and method: ' : 'Open checks and method: ') + task.text) + '"><span class="nb-t">' + esc(task.text) + '</span><span ' + metaAttrs(task) + ' title="' + esc(meta) + '">' + esc(meta) + '</span><span class="cln-detail-cue" aria-hidden="true">' + (open ? '▴' : '▾') + '</span></button>' + (open ? planDetails(task, day) : '') + '</li>';
   }
   function owner(task, day) {
     if (task.shared) return 'Shared kitchen';
@@ -192,8 +192,9 @@
     if (days.length === 1) return 'Every ' + (DAY_NAMES[days[0]] || '');
     return DAYS.filter(function (day) { return days.indexOf(day[0]) >= 0; }).map(function (day) { return day[1]; }).join(', ');
   }
-  // the small line's class: a line that says how often may wrap, so its state is never cut off
-  function metaClass(task) { return 'nb-meta' + (rhythm(task) ? ' cln-often' : ''); }
+  /* The small line's class. A line that says how often may wrap, so its state is never cut off. The style repeats
+     .cln-often from css/app.css on purpose: this page is lazy and can be newer than the saved stylesheet on a phone. */
+  function metaAttrs(task) { return rhythm(task) ? 'class="nb-meta cln-often" style="white-space:normal;overflow:visible;text-overflow:clip"' : 'class="nb-meta"'; }
   function packSection(task) { var id = task.plan && task.plan.template || ''; return id.indexOf('pd-hot-') === 0 ? 'Hot larder' : id.indexOf('pd-grill-') === 0 ? 'Grill' : id.indexOf('pd-pans-') === 0 ? 'Pans' : ''; }
   function groups(tasks, day) {
     var out = [], ids = [], pack = tasks.filter(function (task) { return !!packSection(task); }), floors = [];
@@ -218,7 +219,7 @@
     var label = (r && r.done ? C.canUndo(r) && day === T.day() ? 'Undo: ' : 'Done: ' : 'Mark done: ') + task.text + '. ' + meta;
     return '<li class="nb-row cln-row' + (complete ? ' is-done' : '') + (p ? ' is-pending' : '') + '" data-id="' + esc(task.id) + '" data-cln-row="' + esc(key) + '">' +
       '<button type="button" class="nb-box" data-cln="tick" data-id="' + esc(task.id) + '" data-day="' + esc(day) + '" aria-pressed="' + complete + '" aria-label="' + esc(label) + '"' + (can ? '' : ' disabled') + (p ? ' aria-busy="true"' : '') + '>' + C.box(complete) + '</button>' +
-      '<div class="nb-main"><span class="nb-t">' + esc(task.text) + '</span><span class="' + metaClass(task) + '" title="' + esc(meta) + '">' + esc(meta) + '</span>' +
+      '<div class="nb-main"><span class="nb-t">' + esc(task.text) + '</span><span ' + metaAttrs(task) + ' title="' + esc(meta) + '">' + esc(meta) + '</span>' +
       (error ? '<span class="cln-row-error" role="alert">' + esc(error) + ' <button type="button" class="p-link" data-cln="refresh">Refresh</button></span>' : '') + '</div>' +
       (task.guide && P.featOn('guides') ? '<a class="nb-go cln-how" href="#/guides/' + encodeURIComponent(task.guide) + '" aria-label="How to: ' + esc(task.text) + '">How to</a>' : '') + '</li>';
   }
@@ -342,7 +343,7 @@
   function firstDateNotice() {
     var list = C.chef() && M.state === 'ok' ? needFirstDate() : [];
     if (!list.length) return '';
-    return '<div class="cln-attention cln-first-date" role="status"><b>' + list.length + (list.length === 1 ? ' repeat job needs' : ' repeat jobs need') + ' a first date</b><span class="hint">Not due until a chef sets it.</span>' +
+    return '<div class="cln-attention cln-first-date" role="status"><b>' + list.length + (list.length === 1 ? ' repeat job needs' : ' repeat jobs need') + ' a first date</b><span class="hint">Not due until a chef sets it. Choose tomorrow or later: changes start tomorrow.</span>' +
       list.slice(0, 6).map(function (task) { return '<button type="button" class="p-link" data-cln="first-date" data-id="' + esc(task.id) + '">' + esc(task.text) + '</button>'; }).join('') + '</div>';
   }
   function earlierDrafts() { return Object.keys(M.workDrafts).filter(function (key) { return M.workDrafts[key].day < T.day() && workDirty(M.workDrafts[key]); }); }
@@ -587,7 +588,7 @@
     var button = event.target.closest && event.target.closest('[data-cln]'); if (!button || !M.root || !M.root.contains(button) || button.disabled || !C.allowed()) return;
     if (checkDay()) { event.preventDefault(); return; }
     var action = button.getAttribute('data-cln'), id = button.getAttribute('data-id'), task = id && taskById(id); event.preventDefault();
-    if (busy() && ['refresh', 'today', 'week', 'setup', 'previous', 'next', 'this-week'].indexOf(action) >= 0) { P.toast('Wait for the cleaning change to save.'); return; }
+    if (busy() && ['refresh', 'today', 'week', 'setup', 'first-date', 'previous', 'next', 'this-week'].indexOf(action) >= 0) { P.toast('Wait for the cleaning change to save.'); return; }
     if (action === 'tick' && task) tick(task, button.getAttribute('data-day'));
     else if (action === 'details' && hasPlan(task)) { var detailDay = button.getAttribute('data-day'), detailKey = occurrence(task, detailDay); M.expanded[detailKey] = !M.expanded[detailKey]; draw(); }
     else if (action === 'week-details' && hasPlan(task) && C.chef()) { M.selected = button.getAttribute('data-day'); M.expanded[occurrence(task, M.selected)] = true; draw(); var detail = M.root.querySelector('#cln-detail-' + occurrence(task, M.selected)); if (detail) { detail.setAttribute('tabindex', '-1'); detail.focus({ preventScroll: true }); } }

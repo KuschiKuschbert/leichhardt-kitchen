@@ -6,9 +6,9 @@ The head chef gave a written cleaning list for Grill, Pans, Fryers with salads a
 
 | Files | Role and checks |
 | --- | --- |
-| `js/cleaning-schedule.js` | `sectionClean`: 20 jobs with a stated day that Pack down and the general list do not hold, `sectionDrafts()`, `sectionGroups`, `sectionGroupOf()`. Three monthly jobs repeat every 28 days with no first date. `tests/cleaning-sections.test.js` (data). |
+| `js/cleaning-schedule.js` | `sectionClean`: 21 jobs with a stated day that Pack down and the general list do not hold, `sectionDrafts()`, `sectionGroups`, `sectionGroupOf()`. Three monthly jobs repeat every 28 days with no first date. `tests/cleaning-sections.test.js` (data). |
 | `js/cleaning.js` | **Load section cleaning** with a section picker per group (`sectionImportPanel()`, `sectionChoice()`), how often on the row (`rhythm()`, `.cln-often`), "Grill: section clean" headings, the first date notice (`firstDateNotice()`), no empty Method. `tests/cleaning-sections.test.js` (68 checks: load, sections, first date, the row at 390, 768 and 1280, one tap and Undo, a held save, the chef's view). |
-| `tests/read-budget.test.js` | Cleaning opened by a cook with all three lists: 80 reads, budget 90. |
+| `tests/read-budget.test.js` | Cleaning opened by a cook with all three lists: 81 reads, budget 90. |
 | `docs/cleaning-sections-options/` | Proposal, brief, both reviewer packets, the design page, previews with `build.cjs`, and `implementation/` (the built page measured by `measure.cjs`). |
 
 Not built: step 2 (the page opens on your section; needs a chef-set link from a kitchen section to its Pack down group) and step 3 (This screen's section on a shared kitchen screen). Open with the head chef: `docs/open-work.md`, Open items.

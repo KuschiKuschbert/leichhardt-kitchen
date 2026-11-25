@@ -26,25 +26,25 @@ const loaded = (list, changes = {}) => ({ ...sections(), ...Object.fromEntries(l
 const records = (p, collection) => p.evaluate(name => Object.entries(__fake.dump()).filter(([k]) => k.includes('/' + name + '/')).map(([path, data]) => ({ path, ...data })), collection);
 const listed = p => L.waitFor(p, () => { const page = document.querySelector('.cln-page'); return !!page && !/Loading cleaning/.test(page.textContent); });
 // the cook picked a section at the start of shift, so Your section today stays away
-const picked = (who, sec, name) => new Function("var d=new Date(Date.now()+36e5*10).toISOString().slice(0,10);localStorage.setItem('lk.sec." + who + "',JSON.stringify({d:d,sec:'" + sec + "',name:'" + name + "',self:true,at:Date.now()}));");
+const picked = () => { const d = new Date(Date.now() + 36e5 * 10).toISOString().slice(0, 10); localStorage.setItem('lk.sec.ann', JSON.stringify({ d, sec: 'grill', name: 'Grill', self: true, at: Date.now() })); };
 const row = code => '.cln-row[data-id="' + id(code) + '"]';
 const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
 
 (async () => {
   // ---- the list itself, no browser ----
   const drafts = schedule.sectionDrafts(), codes = drafts.map(t => t.plan.template);
-  ok(drafts.length === 20 && new Set(codes).size === 20 && codes.every(c => /^sc-(grill|pans|fry|hot|gen)-\d\d$/.test(c)), 'data: 20 section jobs with their own stable ids');
+  ok(drafts.length === 21 && new Set(codes).size === 21 && codes.every(c => /^sc-(grill|pans|fry|hot|gen)-\d\d$/.test(c)), 'data: 21 section jobs with their own stable ids');
   ok(schedule.templates.length === 26 && schedule.packDown.length === 25 && !schedule.drafts().concat(schedule.packDownDrafts()).some(t => /^sc-/.test(t.plan.template)), 'data: the general list and Pack down are untouched');
   ok(drafts.every(t => !t.plan.checks.length && !t.plan.verification && t.plan.timing === 'daily'), 'data: every job is one tap, with no check list and no Pass check');
   ok(drafts.every(t => t.dows.length >= 1 && t.shared === true && t.section === ''), 'data: every draft has a day and no section until a chef chooses one');
   const monthly = drafts.filter(t => t.plan.repeat);
   ok(monthly.length === 3 && monthly.every(t => t.plan.repeat.days === 28 && t.plan.repeat.anchor === '' && t.dows.length === 7), 'data: three monthly jobs repeat every 28 days and wait for a first date');
   const byGroup = g => drafts.filter(t => schedule.sectionGroupOf(t) === g).length;
-  ok(schedule.sectionGroups.map(g => g.id + byGroup(g.id)).join(',') === 'grill2,pans3,fry5,hot7' && byGroup('') === 3, 'data: Grill 2, Pans 3, Fryers with salads and dessert 5, Hot larder 7, shared 3');
+  ok(schedule.sectionGroups.map(g => g.id + byGroup(g.id)).join(',') === 'grill3,pans3,fry5,hot7' && byGroup('') === 3, 'data: Grill 3, Pans 3, Fryers with salads and dessert 5, Hot larder 7, shared 3');
   const two = drafts.filter(t => t.plan.review);
   ok(two.length === 2 && two.every(t => schedule.sectionGroupOf(t) === '' && / and /.test(t.plan.responsibility)), 'data: a job the list gives to two sections is one shared job that names both, with a note');
   const days = [1, 2, 3, 4, 5, 6, 0].map(d => drafts.filter(t => !t.plan.repeat && t.dows.includes(d)).length);
-  ok(days.join(',') === '5,6,4,5,2,2,5', 'data: Monday to Sunday the list adds 5,6,4,5,2,2,5 jobs, two of them every day (' + days.join(',') + ')');
+  ok(days.join(',') === '6,7,5,6,3,3,6', 'data: Monday to Sunday the list adds 6,7,5,6,3,3,6 jobs, three of them every day (' + days.join(',') + ')');
   ok(!/\u2014|Australian Venue|\bAVC\b/.test(JSON.stringify(drafts)) && drafts.every(t => t.text.length <= 160 && t.area.length <= 80 && t.plan.method.length <= 1000 && t.plan.review.length <= 500), 'data: plain words within the saved sizes');
   drafts[0].text = 'Changed'; drafts[0].dows.push(9);
   ok(schedule.sectionDrafts()[0].text === 'Clean the drawers' && schedule.sectionDrafts()[0].dows.length === 1, 'data: editing a draft cannot change the built-in list');
@@ -67,8 +67,8 @@ const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
     await L.pick(p, '[data-cln-import-section="fry"]', 'fryers');
     ok(await p.inputValue('[data-cln-import-section="fry"]') === 'fryers' && await p.inputValue('[data-cln-import-section="hot"]') === 'hl', 'load: a chosen section stays chosen, and the others stay as offered');
     await p.click('[data-cln="import-section"]');
-    await L.waitFor(p, () => Object.keys(__fake.dump()).filter(k => k.includes('/cleaningTasks/')).length === 20 && !LK_PREP.unsent());
-    await L.waitFor(p, () => /Loaded section cleaning: 20 added, 0 already present/.test((document.querySelector('.cln-section-import') || {}).textContent || ''));
+    await L.waitFor(p, () => Object.keys(__fake.dump()).filter(k => k.includes('/cleaningTasks/')).length === 21 && !LK_PREP.unsent());
+    await L.waitFor(p, () => /Loaded section cleaning: 21 added, 0 already present/.test((document.querySelector('.cln-section-import') || {}).textContent || ''));
     const said = await p.locator('.cln-section-import .lk-stamp').innerText();
     ok(/3 repeat jobs need a first date in Repeat tasks/i.test(said), 'load: the panel says what it added and that three jobs wait for a first date');
     const saved = await records(p, 'cleaningTasks'), find = code => saved.find(t => t.plan.template === code);
@@ -78,7 +78,7 @@ const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
     ok(saved.every(t => t.path.endsWith('/' + id(t.plan.template)) && t.by === 'sam' && t.until === OPEN && t.from === at('2026-11-30')), 'load: each job has its own stable document and starts today');
     ok((await records(p, 'cleaningDone')).length === 0, 'load: loading records no cleaning');
     const again = await p.evaluate(() => LK_PREP.cleaning().importTasks(LK_CLEANING_SCHEDULE.sectionDrafts()));
-    ok(again.imported === 0 && again.skipped === 20 && (await records(p, 'cleaningTasks')).length === 20, 'load: loading again adds nothing and keeps the sections a chef chose');
+    ok(again.imported === 0 && again.skipped === 21 && (await records(p, 'cleaningTasks')).length === 21, 'load: loading again adds nothing and keeps the sections a chef chose');
 
     // the monthly jobs wait for a first date, and the page says so
     const notice = p.locator('.cln-plan .cln-first-date');
@@ -97,7 +97,7 @@ const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
   });
 
   for (const width of [390, 768, 1280]) await step('a cook reads the day at ' + width, async () => {
-    p = await L.open(b, '#/cleaning', { who: 'ann', width, wait: 1000, clock: MON, init: picked('ann', 'grill', 'Grill'), extra: loaded([
+    p = await L.open(b, '#/cleaning', { who: 'ann', width, wait: 1000, clock: MON, init: picked, extra: loaded([
       ['c01'], ['c15'], ['pd-grill-01'], ['pd-grill-04'],
       ['sc-grill-01', 'grill'], ['sc-grill-02', 'grill', { plan: { ...task('sc-grill-02').plan, repeat: { days: 28, anchor: '2026-11-02' } } }],
       ['sc-pans-01', 'pans'], ['sc-pans-02', 'pans'], ['sc-pans-03', 'pans'], ['sc-fry-02', 'fryers'], ['sc-hot-01', 'hl'], ['sc-gen-01'], ['sc-gen-03']]) });
@@ -143,7 +143,7 @@ const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
   });
 
   await step('a held save says Not sent', async () => {
-    p = await L.open(b, '#/cleaning', { who: 'ann', wait: 1000, clock: MON, init: picked('ann', 'grill', 'Grill'), extra: loaded([['sc-grill-01', 'grill']]) });
+    p = await L.open(b, '#/cleaning', { who: 'ann', wait: 1000, clock: MON, init: picked, extra: loaded([['sc-grill-01', 'grill']]) });
     await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 1);
     await p.evaluate(() => { __fake.mode = 'hold'; });
     await p.click('[data-cln="flow-quick"][data-id="' + id('sc-grill-01') + '"]');

@@ -278,29 +278,40 @@ Changed from the previews while building step 1, with the reason:
 
 ### Built: step 1 (25 November 2026)
 
-Twenty jobs in `sectionClean` (`js/cleaning-schedule.js`): Grill 2, Pans 3, Fryers with salads and dessert 5, Hot larder 7, shared 3. Loaded by a chef in Repeat tasks, **Load section cleaning**, with a kitchen section chosen for each group. [The contract](../cleaning-schedule.md#section-cleaning-25-november-2026).
+Twenty-one jobs in `sectionClean` (`js/cleaning-schedule.js`): Grill 3, Pans 3, Fryers with salads and dessert 5, Hot larder 7, shared 3. Loaded by a chef in Repeat tasks, **Load section cleaning**, with a kitchen section chosen for each group. [The contract](../cleaning-schedule.md#section-cleaning-25-november-2026).
 
-Left out of the list, for the head chef:
+Every one of the 49 lines, by its number in the [proposal](proposal.md), and where it went:
 
-- Already in Pack down or the general list: the flat grill, the chargrill brush, under the grill and flat top, the grill screen, the stove tops and their drip trays, the resting rack, the fryers, the microwave, the impinger, the parmie fridge, and the fridge doors (the daily general fridge task names doors).
-- Different from the saved Pack down steps, so not loaded: the drip tray every night (saved: every 2 days) and the OZ tank twice a week (saved: Sunday). A chef changes those two jobs in Repeat tasks.
-- No day given: the dishpit shelves, the meat doneness sticks, the wall behind the hand washing sink, the Pans drawer fridge, the screens on Pans, Fryers and Hot larder, the oven wipe down, the weekly step and top, the rack shelves under the oven, the second Hot larder "empty out fridges" line, and the outside area with the takeaway containers in the dry goods room. A chef adds each in Add cleaning task with its day.
-- Standing rules, not jobs: no more foil; keep the fridge and freezer tidy.
+| Where it went | Lines | Count |
+| --- | --- | --- |
+| Loaded, 21 jobs | Grill 5, 6, 10 (wipe under the meat sticks), 12. Pans 4, 5, 6, 8. Fryers 5, 7, 8, 9, 11, 12. Hot larder 1, 3, 4, 7, 8, 9, 10, 11. Everyone: decant sauces | 23 |
+| Already in Pack down or the general list, not loaded | Grill 1, 2, 7 and the screen in 10. Pans 1, 3. Fryers 1, 6 (the daily general fridge task names doors), 10. Hot larder 2, 5 | 10 |
+| Differs from a saved Pack down step, not loaded | Grill 3 (drip tray every night; saved: every 2 days). Grill 4 (OZ tank twice a week; saved: Sunday) | 2 |
+| No day given, left for a chef to add | Grill 8, 9, 11. Pans 7, 9. Fryers 2, 3, 4, 13. Hot larder 6, 12. Everyone: the outside area and the takeaway containers | 12 |
+| A standing rule, not a job | Pans 2 (no more foil). Everyone: keep the fridge and freezer tidy | 2 |
 
-Measured on the **Implemented app** (the click tests' Firebase stand-in, source of this pull request, line cook on Grill, synthetic Monday 30 November 2026, 844 px tall, Barlow, Barlow Condensed and Caveat, both existing lists loaded, then the 20 jobs as a chef would load them; `implementation/measure.cjs`, `implementation/measurements.json`):
+Two pairs of lines are one job each: Grill 6 with Pans 8 (the shelves above the pass, Wednesday) and Fryers 12 with Hot larder 4 (behind the deep fryers, monthly). Each is a Shared kitchen job that names both sections, with a note to set one owner. Fryers 6 (the fridge doors) was drawn in the previews as its own job and is not loaded: the daily general fridge task already names doors.
+
+Measured on the **Implemented app** (the click tests' Firebase stand-in, source of this pull request, line cook on Grill, synthetic Monday 30 November 2026, 844 px tall, Barlow, Barlow Condensed and Caveat, both existing lists loaded, then the 21 jobs as a chef would load them; `implementation/measure.cjs`, `implementation/measurements.json`):
 
 | | Before, 390 | After, 390 | Before, 768 | After, 768 | Before, 1280 | After, 1280 |
 | --- | --- | --- | --- | --- | --- | --- |
-| Jobs on the page that Monday | 46 | 52 | 46 | 52 | 46 | 52 |
-| Whole jobs on the first screen | 5 | 4 | 7 | 5 | 8 | 5 |
-| Page length, screens | 4.9 | 5.6 | 4.0 | 4.6 | 3.8 | 4.4 |
-| Screens down to Grill pack down | 2.9 | 3.6 | 2.5 | 3.1 | 2.3 | 2.9 |
+| Jobs on the page that Monday | 46 | 53 | 46 | 53 | 46 | 53 |
+| Whole jobs on the first screen | 5 | 5 | 7 | 5 | 8 | 5 |
+| Page length, screens | 4.9 | 5.7 | 4.0 | 4.7 | 3.8 | 4.4 |
+| Screens down to Grill pack down | 2.9 | 3.7 | 2.5 | 3.2 | 2.3 | 3.0 |
 | Lines that say how often, cut off | 0 of 1 | 0 of 5 | 0 of 1 | 0 of 5 | 0 of 1 | 0 of 5 |
 | Other small lines cut off (as before) | 4 | 4 | 0 | 0 | 0 | 0 |
 | Sideways scroll, buttons under 44 px | none | none | none | none | none | none |
 
-Taps to tick one of the new jobs: 1, exercised (`tests/cleaning-sections.test.js`), and the row does not move or change height when ticked. On a shared kitchen screen a tick still asks who did it, as before. Under service rule 4: the page loses one whole job on a phone's first screen and Grill pack down moves 0.7 screens further down, because the section groups sit above Shared kitchen as in design A. The reason it is worth it for now is that the weekly and monthly jobs are in the book at all; step 2 brings the cook's own section, with its Pack down, to the top.
+Taps to tick one of the new jobs: 1, exercised (`tests/cleaning-sections.test.js`), and the row does not move or change height when ticked. On a shared kitchen screen a tick still asks who did it, as before. Under service rule 4: a phone's first screen still holds 5 whole jobs, but a tablet and a laptop lose 2 and 3, and Grill pack down moves 0.8 screens further down on a phone, because the section groups sit above Shared kitchen as in design A. The reason it is worth it for now is that the weekly and monthly jobs are in the book at all; step 2 brings the cook's own section, with its Pack down, to the top.
 
 Differences from the preview of A: the headings under the Pack down title keep their names; the rows are planned rows, so the words open the method and the box is the one tap; a group's long name ("Fryers, salads and dessert") makes that group's small line wrap to two lines.
 
-Exercised in the click tests: load, the offered and chosen sections, loading twice, the first date notice and setting a date, the row at three widths, one tap and Undo, a held save reading Not sent, the chef's groups and editor. Not exercised: Extra large text, dark mode, keyboard focus order, contrast, a refused save on these rows, the rules emulator for this pull request (no rule changed; a task saved with an empty first date is already covered by `tests/rules/cleaning.test.mjs`). Not live: nothing is loaded in the real book until a chef presses Load.
+Checked on the Firestore emulator (`tests/rules`, `client-shapes` and `cleaning`): one Load batch with a job saved to a kitchen section, an undated 28-day job and a shared job is allowed for the owner, the kitchen admin and a sous chef, and refused for staff, a lead, view only, Functions only and the shared tablet; 312 client shape rows and 742 cleaning rule checks pass. No rule changed.
+
+Exercised in the click tests: load, the offered and chosen sections, loading twice, the first date notice and setting a date, the row at three widths, one tap and Undo, a held save reading Not sent, the chef's groups and editor. Not exercised: two chefs pressing Load at the same moment (the second batch would be refused, since each task is a create; nothing is doubled, and that chef would see an error and Refresh), Extra large text, dark mode, keyboard focus order, contrast, a refused save on these rows. Not live: nothing is loaded in the real book until a chef presses Load.
+
+A first date set to today does not bring the job up today: a change to a job starts tomorrow, so it first comes up 28 days later. The notice says to choose tomorrow or later.
+
+The row's wrap is also set on the line itself, because the Cleaning page is lazy and can be newer than the stylesheet a phone has saved.
