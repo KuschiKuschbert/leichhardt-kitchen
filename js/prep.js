@@ -1920,7 +1920,7 @@
      installed app, personal or shared, and a shared screen's section id. Numbers and fixed words only, no browser name.
      Written by whoever signs in on the device, after their PIN (scrMark() from signedIn()): lk.screen.v1 keeps what was
      last saved, so the device writes once, and again only when its screen, touch, pointer, mouse, app, type or section
-     changes. Out of date: never; it is the device's own last reading. The window and the scale move with the address
+     changes, or the device's uid. Out of date: never; it is the device's own last reading. The window and the scale move with the address
      bar, the keyboard and zoom, so they are saved but do not count. Turning a phone does not count either. A refused
      or failed write is dropped quietly and tried at the next sign-in. Read only by the verified admin (scrLoad()). */
   var SCR_KEY = 'lk.screen.v1';
@@ -1936,9 +1936,12 @@
       kind: shared() ? 'shared' : deviceMode() === 'personal' ? 'personal' : '', sec: screenSecId()
     };
   }
-  function scrMark() {
-    if (!canW() || !S.uid || offline) return;
-    var r = scrReading(), key = [Math.min(r.sw, r.sh), Math.max(r.sw, r.sh), r.tp, r.ptr, r.mouse, r.app, r.kind, r.sec].join('|');
+  // n: tries so far. A session still opening or no signal: three more tries, 15 s apart, then the next sign-in
+  function scrMark(n) {
+    n = n || 0;
+    if (!canW() || !S.uid || offline) { if (n < 3) setTimeout(function () { scrMark(n + 1); }, 15000); return; }
+    // with the device's uid, so a new anonymous uid, or a record the admin removed and a new sign-in, saves again
+    var r = scrReading(), key = [S.uid, Math.min(r.sw, r.sh), Math.max(r.sw, r.sh), r.tp, r.ptr, r.mouse, r.app, r.kind, r.sec].join('|');
     if (lsGet(SCR_KEY) === key) return;
     W([['set', docRef('screens', S.uid), Object.assign({ at: now() }, r)]]).then(function () { lsSet(SCR_KEY, key); }, function () {});
   }
@@ -1948,6 +1951,7 @@
   function scrLoad() {
     if (scrBusy) return;
     scrBusy = true; scrErr = '';
+    // 201 at most: 200 show, and the 201st says there are more than the list holds
     sdk().then(function () { return fb.fs.getDocsFromServer(fb.fs.query(colRef('screens'), fb.fs.limit(201))); }).then(function (sn) {
       scrList = sn.docs.map(function (d) { return { id: d.id, x: d.data() || {} }; }); scrBusy = false;
       if (S.kOpen === 'screens') draw();
@@ -1961,10 +1965,10 @@
     var size = sw && sh ? sw + ' x ' + sh + (dpr && dpr !== 1 ? ' at ' + Math.round(dpr * 100) + ' %' : '') : 'Not known';
     var input = touch ? (mouse ? 'Touch and mouse' : 'Touch') : (mouse ? 'Mouse' : 'No touch or mouse');
     var sec = kind === 'shared' && typeof x.sec === 'string' && x.sec ? (secList().filter(function (s) { return s.id === x.sec; })[0] || { name: 'a section no longer on the list' }).name : '';
-    var person = typeof x.by === 'string' && x.by ? personName(x.by) || 'someone no longer on the list' : '';
+    var known = typeof x.by === 'string' && x.by ? personName(x.by) : '', person = known || (typeof x.by === 'string' && x.by ? 'someone no longer on the list' : '');
     return {
       kind: kind, size: size, input: input, app: x.app === true, person: person, at: typeof x.at === 'number' && x.at > 0 ? x.at : 0,
-      name: kind === 'shared' ? 'Shared screen' + (sec ? ', ' + sec : '') : kind === 'personal' ? (person && person.indexOf(' no longer') < 0 ? person + '\'s device' : 'A personal device') : 'A device',
+      name: kind === 'shared' ? 'Shared screen' + (sec ? ', ' + sec : '') : kind === 'personal' ? (known ? known + '\'s device' : 'A personal device') : 'A device',
       pixels: sw && sh && dpr ? Math.round(sw * dpr) + ' x ' + Math.round(sh * dpr) + ' pixels' : '', win: w && h ? 'Book window ' + w + ' x ' + h : '',
       sum: sw && sh ? size + ', ' + input.toLowerCase() : ''
     };
@@ -1974,10 +1978,11 @@
     var again = function (label) { return '<div class="btn-row"><button type="button" class="btn" data-p="screens-retry">' + label + '</button></div>'; };
     if (scrErr) return '<p class="hint" role="alert">' + (scrErr === 'denied' ? 'This device may not read the screens. It needs your PIN and your Google sign in on this device.' : 'Could not read the screens. Check the signal and try again.') + '</p>' + again('Try again');
     if (!scrList) return '<p class="hint" role="status">Reading the screens...</p>';
-    var rows = scrList.map(function (r) { return scrRow(r.x); }).sort(function (a, b) { return (a.kind === 'shared' ? 0 : 1) - (b.kind === 'shared' ? 0 : 1) || b.at - a.at; });
+    var more = scrList.length > 200, rows = scrList.slice(0, 200).map(function (r) { return scrRow(r.x); }).sort(function (a, b) { return (a.kind === 'shared' ? 0 : 1) - (b.kind === 'shared' ? 0 : 1) || b.at - a.at; });
     var count = {}, sums = [];
     rows.forEach(function (r) { if (r.kind === 'shared' && r.sum) { if (!count[r.sum]) sums.push(r.sum); count[r.sum] = (count[r.sum] || 0) + 1; } });
     return '<p class="hint">Each device saves its screen the first time someone signs in on it, and again only when its screen changes. Size is what the book sees, at the screen\'s scale; pixels is the screen itself.</p>' +
+      (more ? '<p class="hint" role="status">Showing the first 200 screens. There are more.</p>' : '') +
       (sums.length ? '<p class="hint">Shared screens: ' + esc(sums.map(function (s) { return s + ' (' + count[s] + ')'; }).join('. ')) + '.</p>' : '') +
       lvHTML({
         key: 'screens', items: rows, step: 30, noun: ['screen', 'screens'], ph: 'Search screens', empty: 'No screen has saved its size yet. Each one does the next time someone signs in on it.',
@@ -1985,7 +1990,7 @@
           { h: 'Screen', th: true, html: function (r) { return esc(r.name); } },
           { h: 'Size', html: function (r) { return esc(r.size) + (r.pixels ? '<br><small>' + esc(r.pixels) + '</small>' : '') + (r.win ? '<br><small>' + esc(r.win) + '</small>' : ''); } },
           { h: 'Touch and mouse', html: function (r) { return esc(r.input + (r.app ? ', installed app' : '')); } },
-          { h: 'Last signed in', html: function (r) { return esc([r.person, r.at ? ago(r.at) : ''].filter(Boolean).join(', ')); } }
+          { h: 'Saved by', html: function (r) { return esc([r.person, r.at ? ago(r.at) : ''].filter(Boolean).join(', ')); } }
         ]
       }) + again('Read again');
   }
@@ -2022,7 +2027,7 @@
         row('Who books functions', k ? plural(k.fns, 'person', 'people') : '', 'people', 'Team, People')) +
       group('Once a year', edit('fools', 'April Fools', '24 jokes on 1 April ' + foolsYear(), foolsAdminHTML)) +
       group('Records and safety', row('Confirmed item links', 'Names linked to recipes and supplier items', 'reference-records') +
-        edit('screens', 'Screens the book runs on', scrList ? plural(scrList.length, 'screen', 'screens') : 'Size, touch and mouse of each device', scrAdminHTML) +
+        edit('screens', 'Screens the book runs on', scrList ? (scrList.length > 200 ? 'More than 200 screens' : plural(scrList.length, 'screen', 'screens')) : 'Size, touch and mouse of each device', scrAdminHTML) +
         row('Backup', 'Every night at 03:30', 'tools') + row('Kitchen PIN', 'Change the PIN', 'tools'));
   }
   var ADMIN_OPEN = ['people', 'kitchen-home', 'notes', 'mail', 'cutoffs', 'tools'];

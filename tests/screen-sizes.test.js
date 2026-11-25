@@ -50,7 +50,7 @@ async function unlock(p, id) {
     ok(r && JSON.stringify(Object.keys(r).sort()) === JSON.stringify(FIELDS.slice().sort()), 'phone: the record has exactly its fields (' + (r ? Object.keys(r).sort().join(',') : 'none') + ')');
     ok(r && r.w === 390 && r.h > 0 && r.sw > 0 && r.sh > 0 && typeof r.dpr === 'number', 'phone: it says the book is 390 px wide on its screen (' + (r && r.w) + ')');
     ok(r && r.tp > 0 && r.kind === 'personal' && r.sec === '' && r.by === 'ann' && typeof r.at === 'number', 'phone: touch, a personal device, saved as Ann');
-    ok(await p.evaluate(() => !!localStorage.getItem('lk.screen.v1')), 'phone: the device keeps what it saved');
+    ok(await p.evaluate(u => (localStorage.getItem('lk.screen.v1') || '').startsWith(u + '|'), uid), 'phone: the device keeps what it saved, with its own id, so a new id or a removed record saves again');
     ok(!(await p.evaluate(() => [...document.querySelectorAll('.toast, [role="alert"]')].some(e => e.getClientRects().length && /screen/i.test(e.textContent)))), 'phone: nothing on screen says anything about it');
     ok(await screenWrites(p) === 1, 'phone: one write');
   });
@@ -102,6 +102,8 @@ async function unlock(p, id) {
     ok(/1920 x 1080 pixels/.test(text) && /Book window 1536 x 730/.test(text), w + ': the screen\'s pixels and the book\'s window show');
     ok(/Sam's device/.test(text) && /1170 x 2532 pixels/.test(text) && /Shared screen, a section no longer on the list/.test(text), w + ': a phone by its person, a screen by its section');
     ok(/Touch, installed app/.test(text), w + ': touch and the installed app say so');
+    const html = await p.evaluate(() => document.querySelector('#k-b-screens').innerHTML);
+    ok(/Saved by/.test(html) && !/Last signed in/.test(html), w + ': the last column says who saved it, not who signed in last');
     ok(await p.evaluate(() => !document.querySelector('#k-b-screens img, #k-b-screens b, #k-b-screens i, [onclick], [onerror]')), w + ': a hostile record adds no markup');
     ok(/A device/.test(text) && /Not known/.test(text) && /someone no longer on the list/.test(text), w + ': a record with wrong types shows plain words, not its values');
     ok(!(await L.overflow(p)), w + ': no sideways scroll with the row open');
