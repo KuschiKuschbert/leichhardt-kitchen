@@ -85,7 +85,7 @@ Flighty: real status from data the page already holds, and never stale status sh
 
 ## The head chef's decisions after round 1 (26 November 2026)
 
-He read round 1 and set the scope himself. In his words:
+He read round 1 and set the scope himself. In his words, spelling tidied:
 
 - "Cleaning schedule is not on, so we can start counting as soon as we have the cleaning on."
 - "I'd like to track instead who did, and who missed but in a fair way."
@@ -103,7 +103,7 @@ Packet: [round2-packet.md](round2-packet.md). Designs side by side: [index.html]
 
 Pinned before drawing:
 
-- On the rules emulator, 2 and 5 moves in one save are allowed for the owner, the kitchen admin and a sous chef; 10 and 20 are refused. Moves save 5 at a time.
+- On the rules emulator, 2 and 5 moves in one save were allowed and 10 and 20 refused, for the chef rows `owner`, `ownkit`, `kit` and `sam` of `tests/rules/client-shapes.test.mjs`. The test jobs carried no `plan`; a loaded section job carries one, and 6 to 9 moves were not tried. So "5 at a time" is a safe guess, not a measured limit: test it with real jobs before any build.
 - A change to a job starts exactly tomorrow by the rules; a new job starts today.
 - A job's fields are fixed in the rules, so a weight or a kind on the job needs a rules change and makes a revision; the other home is one small record read when the planner opens.
 - The planner behind the previews is one pure function, `previews/planner.js`, with 19 node checks, run on the book's own lists with example kinds and weights made up by the lead.
@@ -134,7 +134,7 @@ Pinned before drawing:
 | Keeper | P-C, P-A, P-B | P-C with P-A's fields and B's limit as one line |
 | Screen designer | P-C, P-A, P-B | A day strip of counts, P-C's lines below, a line opens P-A's chips |
 
-P-C first: 4 of 6. P-B last: 4 of 6. Structurally different: yes, 6 of 6.
+P-C first: 4 of 6 (cook, new starter, keeper, screen designer). P-B last: 5 of 6 (all but the head chef, who put it first). Structurally different: yes for five; the head chef said P-B and P-C are one planner and one save, read by week or by change.
 
 ### Tracking
 
@@ -151,27 +151,28 @@ P-C first: 4 of 6. P-B last: 4 of 6. Structurally different: yes, 6 of 6.
 | Keeper | T-A, T-B, T-C | T-A with who did each job that came round |
 | Screen designer | T-A, T-C, T-B | T-A as one list with a Done fold naming who and when |
 
-T-A first: 5 of 6. Every reviewer rejected T-C's tick total as a score. The head chef then ruled out a page by person, which removes the new starter's first choice.
+T-A first: 5 of 6 (all but the new starter). Every reviewer rejected T-C's tick total as a score. Structurally different: yes for four; the skeptic said partly (one set of counting rules, grouped three ways) and the head chef said T-A and T-B are the same data turned round. The head chef then ruled out a page by person, which removes the new starter's first choice.
 
 ### The mix (A + B + C), for each set
 
-| Part | Take or reject | Principle | Why |
+| Part | Who took or rejected it | Principle | Why |
 | --- | --- | --- | --- |
-| P-C: old day, new day, reason, wait | Take, 6 of 6 | Flighty, Airbnb | The only place a move's cost is shown |
-| P-C: the rules box on top | Reject, 5 of 6 | Things 3 | It filled the first screen; folded at the bottom |
-| P-C: a tick meaning "move this" | Reject (new starter, designer) | Headspace | A tick means done in Cleaning; a button with words |
-| P-A: weight and kind in the job's form | Take, 6 of 6 | Todoist | The one place they are set |
-| P-A: day chips with what the section has | Take, 5 of 6 | Todoist | A known default, visible and editable |
-| P-A: as the mover | Reject, 5 of 6 | | Ten forms for ten moves |
-| P-B: each day's count, before and after | Take, 5 of 6 | Flighty, Linear | It shows the week bunching or evening out |
-| P-B: the board and one Save for all | Reject, 5 of 6 | Linear | A second way to edit a job; false totals in the preview |
-| T-A: the job with its dates and who was on | Take, 6 of 6 | Airbnb | Job, date, section and names together |
-| T-B: "done by, with the time" on an opened row | Take, 6 of 6 | Flighty | It shows the work that was done, not only the misses |
-| T-B: the table | Reject, 6 of 6 | Linear | Words break at 390 px; no hand-built long tables |
-| T-C: the tick total | Reject, 6 of 6 | Duolingo | A score, whatever the words say |
-| T-C: "Not enough days yet" | Take in principle | | Not needed once nobody has a total |
+| P-C: old day, new day, reason, wait | Take: all six took the line or its wait | Flighty, Airbnb | The only place a move's cost is shown |
+| P-C: the rules box on top | Reject: skeptic, cook, head chef, screen designer. The keeper named it as a weakness; the new starter did not mention it | Things 3 | It filled the first screen; folded at the bottom |
+| P-C: a tick meaning "move this" | Reject: new starter (the tick), screen designer (the word "Change"). The cook and the head chef took the untick; the keeper took it only with a re-check | Headspace | A tick means done in Cleaning; the mix uses a button with words |
+| P-A: weight and kind in the job's form | Take: cook, head chef, new starter, keeper. The skeptic and the screen designer named it as P-A's strength. The head chef, new starter and screen designer rejected the label "Kind" beside today's "Area or equipment" | Todoist | The one place they are set |
+| P-A: day chips with what the section has | Take: skeptic, cook, screen designer. The head chef and the new starter warned that a suggested day drawn pressed looks chosen | Todoist | A known default, visible and editable |
+| P-A: as the mover | Reject: keeper. All six named "ten forms for ten moves" as its weakness; the skeptic still recommended it | | Ten forms for ten moves |
+| P-B: each day's count, before and after | Take: skeptic, cook, head chef, screen designer. The keeper took only the Friday and Saturday line, the new starter only the "proposed" tag | Flighty, Linear | It shows the week bunching or evening out |
+| P-B: the board | Reject: skeptic, keeper, cook, new starter, screen designer. The head chef put P-B first and would keep its page | Linear | A second way to edit a job; false totals in the preview |
+| P-B: one Save for everything | Reject: head chef only. The mix still has one Save, in steps of 5: a disagreement, not settled | | He would rather save job by job |
+| T-A: the job with its dates and who was on | Take: all six | Airbnb | Job, date, section and names together |
+| T-B: "done by, with the time" on an opened row | Take: cook, head chef, new starter, keeper, screen designer; the skeptic in his recommendation | Flighty | It shows the work that was done, not only the misses |
+| T-B: the table | Reject: all six | Linear | Words break at 390 px; no hand-built long tables |
+| T-C: the tick total | Reject: all six | Duolingo | A score, whatever the words say |
+| T-C: "Not enough days yet" | Take: all six | | Not needed once nobody has a total |
 
-An all-three blend with every page kept was rejected for both sets (three surfaces for one job). The part-blends are P-mix and T-mix.
+Keeping all three pages whole was rejected for planning by the skeptic, the keeper and the cook, and for tracking by five (the new starter wanted a blend built on T-C's rows). The reviewers did not ask for one planning blend. Cook, new starter, keeper and screen designer wanted P-C's list with P-A's fields. Of those, the cook (per section) and the screen designer asked for P-B's week as a strip of counts, the keeper for one limit line, the new starter for the "Proposed" tag. The head chef wanted the blend on P-B's page. The skeptic wanted P-A with P-C's wait line. P-mix and T-mix are the lead's part-blends of these.
 
 ### The two mixes (lead's synthesis, with a focused follow-up)
 
@@ -197,9 +198,9 @@ Faults found in the mix previews and not redrawn: no section's heaviest night be
 
 | Scenario | Expected | Observed or hypothesis | Evidence | Smallest repair or check | Disposition |
 | --- | --- | --- | --- | --- | --- |
-| Same-kind days on the book's own list | A more even week | Less even: Monday and Wednesday 7, Tuesday 2 | Checked in `planner.js` by four reviewers and the lead, example weights | A visible switch with both results | In P-mix |
-| One line left out of a proposal | The rules still hold | Hot larder Wednesday at weight 7, over 5, with nothing said | Checked in `planner.js` | `check()` runs on every change and names the rule | Fixed in the engine; the page state is Not evidenced |
-| The switch flipped after a save | The days go back | 3 or 4 more jobs move, each with another wait | Checked in `planner.js` | Store the choice; say "this does not put days back"; Save names how many saved jobs move again | Words in P-mix; storing it is to design |
+| Same-kind days on the book's own list | A more even week | Less even: Monday and Wednesday 7, Tuesday 2 | The skeptic and the head chef ran `planner.js`, the cook summed `plan.json`, the lead reran it. The kinds and weights are the lead's examples | A visible switch with both results | In P-mix |
+| One line left out of a proposal | The rules still hold | Hot larder Wednesday at weight 7, over 5, with nothing said | Checked in `planner.js` by the skeptic and the keeper | `check()` runs on every change and names the rule | Fixed in the engine; the page state is Not evidenced |
+| The switch flipped after a save | The days go back | Before the planner fix: 3 (skeptic) or 4 (keeper) more jobs moved. Rerun by the lead on the fixed planner: Off after a saved On moves no job and puts none back; On after a saved Off moves 10 | Checked in `planner.js` | Store the choice; say "this does not put days back"; Save names how many saved jobs move again | Words in P-mix; storing it is to design |
 | 15 changes saved in steps of 5 across midnight, or with the signal lost | One start day, and the page says where it stopped | Hypothesis: steps land on two days, or are refused; the waits printed are stale | Risk / Not evidenced | A rules-emulator test either side of midnight; a client test with a refused second step; re-plan when the day changes | Before ready |
 | A new job whose proposed day is today | The chef knows it is due tonight | A new job starts today, and Cleaning has no listener, so an open page stays quiet until Refresh | Source read | "Due tonight on Pans", left out unless the chef puts it in | To design |
 | A cook's "Every Tuesday" becomes Wednesday | The cook is told | Nothing tells the cook | Risk / Not evidenced | Open: what the staff row says in the week a job moved | Open |
@@ -243,16 +244,17 @@ Before ready, on the implemented app at 390, 768 and 1280 px: every save state, 
 **Recommend both mixes, built in this order, with the morning flag held until the head chef answers the midnight question.**
 
 1. **The nightly count, now.** Keep each missed and done job that comes round by its root id, with its section and who did it, leave Unable out of the totals, record the first night Cleaning is on, and bump `CLEAN_V`. It is cheapest before Cleaning is switched on, and nothing can be shown until it has run.
-2. **Weight and kind in the job's form, then Plan the days (P-mix)** with same-kind days as a switch, each section's heaviest night shown, and a job due tonight said plainly. It carries all of his scope (weights, Friday and Saturday light only, moving dated jobs, same-kind days) and shows what each choice does to the week before anything is saved.
+2. **Weight and kind in the job's form, then Plan the days (P-mix)** with same-kind days as a switch, each section's heaviest night shown, and a job due tonight said plainly. It carries weights, Friday and Saturday light only, moving dated jobs and same-kind days, for weekly and monthly jobs. It does not plan a job that comes every few days: he asked for any rhythm, and that part is not met yet (see Not hidden by the ranking). It and shows what each choice does to the week before anything is saved.
 3. **Cleaning by section in Reports (T-mix), then the Inbox flag** with names one tap behind it.
 
-Why these beat the originals: P-C alone hid the week and could break its own rules on one untick; P-B alone hid what a move costs; T-A alone showed only blame. The mixes keep each design's strongest part and drop what five or six reviewers rejected. In the follow-up all three reviewers said build the mix, each with changes; none preferred an original design.
+Why these beat the originals: P-C alone hid the week and could break its own rules on one untick; P-B alone hid what a move costs; T-A alone showed only blame. The mixes keep each design's strongest part and drop the parts most reviewers rejected, each named in the mix table above. In the follow-up all three reviewers said build the mix, each with changes; none preferred an original design.
 
 Main downside: Plan the days has the most states of any option to build and test, for a page used at setup and now and then; and tracking shows nothing until the count has run for a few weeks.
 
 Not hidden by the ranking:
 
-- His two wishes pull against each other on his own list. Same-kind days cost 10 moves and a less even week. The switch makes that his choice each time; which way it starts is his to say.
+- His two wishes pull against each other on his list as the lead tagged it: the kinds and weights are made-up examples, and his own may change the result. With them, same-kind days cost 10 moves and a less even week. The switch makes that his choice each time; which way it starts is his to say.
+- A job that comes every few days is not planned. It falls on a different weekday each time, so it has no weekday to choose and will reach Friday and Saturday whatever its weight. The lists hold one such job today (Change grill drip trays, every 2 days, a Pack down step).
 - He named Sunday to Wednesday for heavier work. The planner also uses Thursday.
 - A moved job has one uneven week, up to 13 days between cleans in the example.
 - A missed weekly job is not due again until its next day, so a flag reports a miss and does not get it cleaned.
