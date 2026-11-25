@@ -193,6 +193,30 @@ const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
     ok(moved === 'Pans|Your section today|Pack down|Shared kitchen|Rest of the kitchen|Hot Larder: section clean|Hot larder: pack down|Grill: section clean|Grill: pack down|Fryers: section clean', 'moved: Refresh opens the page on the new section (' + moved + ')');
   });
 
+  await step('the section arrives after the list is read', async () => {
+    // no pick yet: the book asks Your section today over the page, and the answer brings the section to the top at once
+    p = await L.open(b, '#/cleaning', { who: 'ann', wait: 1000, clock: MON, extra: loaded(whole) });
+    await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 13);
+    await L.waitFor(p, () => !!document.querySelector('.ks-wrap, .ux-section-picker'));
+    let said = await outline(p);
+    ok(/^Fryers: section clean\|Grill: section clean/.test(said) && !(await p.locator('.cln-mine').count()), 'no section yet: the page keeps its usual order while the book asks (' + said + ')');
+    await p.locator('.ks-wrap [data-ks="grill"], .ux-section-picker [data-ks="grill"], .ux-picker-option:has-text("Grill")').first().click();
+    await L.waitFor(p, () => { const t = document.querySelector('.cln-mine-title > span'); return !!t && t.textContent === 'Grill'; });
+    said = await outline(p);
+    ok(/^Grill\|Your section today\|Section clean\|Pack down\|Shared kitchen/.test(said), 'answered: the page opens on the chosen section without Refresh (' + said + ')');
+    await p.context().close();
+
+    // rostered: Today's team has the cook on Grill for lunch, so nobody is asked and Grill leads
+    const cfgKey = key('config', 'main'), rostered = loaded(whole);
+    rostered[cfgKey] = { ...rostered[cfgKey], kitShifts: [{ id: 'lunch', name: 'Lunch', from: 600, to: 900, off: false }, { id: 'dinner', name: 'Dinner', from: 960, to: 1320, off: false }] };
+    rostered[key('team', '2026-11-30')] = { day: '2026-11-30', on: [{ id: 'ann', sh: 'lunch', sec: 'grill' }, { id: 'ann', sh: 'dinner', sec: 'pans' }], br: [], v: 1, at: MON - 3600000, upd: MON - 3600000, by: 'sam' };
+    p = await L.open(b, '#/cleaning', { who: 'ann', wait: 1500, clock: MON, extra: rostered });
+    await listed(p);
+    await L.waitFor(p, () => { const t = document.querySelector('.cln-mine-title > span'); return !!t && t.textContent === 'Grill'; });
+    said = await outline(p);
+    ok(/^Grill\|Your section today\|Section clean\|Pack down\|Shared kitchen/.test(said) && !(await p.locator('.ks-wrap').count()), 'rostered: the section from Today\'s team leads, and the cook is not asked (' + said + ')');
+  });
+
   await step('a Pack down is tied only by the section a chef chose', async () => {
     // one Grill job moved to another section: Grill's Pack down is tied to no section and stays with the rest
     p = await L.open(b, '#/cleaning', { who: 'ann', wait: 1000, clock: MON, init: pickedGrill, extra: loaded([['c01'], ['pd-grill-01'], ['sc-grill-01', 'grill'], ['sc-grill-03', 'pans']]) });

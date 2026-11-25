@@ -324,8 +324,8 @@ For a cook, Cleaning opens on the section they are on today, as in the trimmed D
 
 Also settled while building, from the follow-up:
 
-- One place per job in both layouts: where a Pack down is tied to a section, that section's own nightly jobs follow its numbered steps. Step 1 had them under "section clean"; they moved, for everyone, so a job does not sit under a different heading depending on who is looking.
-- The leading section is fixed when the list is read, not on a redraw.
+- One place per job in both staff layouts: where a Pack down is tied to a section, that section's own nightly jobs follow its numbered steps. Step 1 had them under "section clean"; they moved, for every cook on the staff page, so a job does not sit under a different heading depending on which cook is looking. The chef's grouped view is unchanged.
+- The leading section is fixed when the list is read, not on a redraw. Found before ready: on a real shift the section often arrives after the list is read, so the page stayed in the usual order until Refresh. Repaired: when none was known at the read, the first section that becomes known is taken once, never while a tick is sending. The check for it fails on the code before the repair (1 failed of 108) and passes with it (0 of 109).
 - "Floor checks follow this list" would be untrue under the leading Pack down, so the reminder there is one line: "Overhead shelves and frames first. Floors are last." The usual order keeps the old words.
 
 Measured on the **Implemented app** (the same stand-in, day, fonts and data as step 1; `implementation/measure.cjs`: "before" is a Grill cook before the section jobs, "usual" a cook on Prep with them loaded, "section first" a Grill cook with them loaded):
@@ -341,7 +341,7 @@ Measured on the **Implemented app** (the same stand-in, day, fonts and data as s
 
 At 768 and 1280 px, section first shows 6 whole jobs on the first screen (7 and 8 before the section jobs) with Grill pack down 0.7 screens down (2.5 and 2.3 before). The usual order now shows 4 whole jobs on a phone, one fewer than step 1 measured, because the nightly Grill job moved under Pack down and the next heading takes its room.
 
-Exercised in the click tests (`tests/cleaning-sections.test.js`, 105 checks): the order of every heading at three widths, the rows under Section clean and Pack down, the kick oven door after the Pans steps, Go to Pack down, a tick in the leading section with no row or heading moving, a move to another section holding until Refresh, the link with one job moved, the group left on Shared kitchen, a renamed section and a removed one, and the setup line. Checked in source, not exercised: a second cook signing in on a shared screen (the page starts again with a new read). Not exercised: a plan change from Today's team rather than the cook's own pick, Extra large text, dark mode, focus order, contrast. The reviewers have not seen the built page.
+Exercised in the click tests (`tests/cleaning-sections.test.js`, 109 checks): a cook with no pick answering Your section today, a cook whose section comes from the Today's team plan, the order of every heading at three widths, the rows under Section clean and Pack down, the kick oven door after the Pans steps, Go to Pack down, a tick in the leading section with no row or heading moving, a move to another section holding until Refresh, the link with one job moved, the group left on Shared kitchen, a renamed section and a removed one, and the setup line. Checked in source, not exercised: a second cook signing in on a shared screen (the page starts again with a new read). Not exercised: a plan changed by a chef mid-shift (the cook's own move is), Extra large text, dark mode, focus order, contrast. The reviewers have not seen the built page.
 
 ### After step 3
 

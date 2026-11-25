@@ -447,6 +447,10 @@
     if (!shown()) return;
     if (!C.allowed()) { M.root.innerHTML = ''; return; }
     if (M.readAgain && !busy()) { M.readAgain = false; load(true); return; }
+    /* A section that becomes known after the list was read is taken once: the cook answers Your section today, or the
+       Today's team plan arrives. It never replaces a section already leading, and never while a tick is sending, so the
+       list cannot reorder under a thumb (docs/cleaning-schedule.md, Your section first). */
+    if (M.state === 'ok' && !M.lead && C.section && !busy()) M.lead = C.section();
     var active = document.activeElement, focusAttribute = active && ['data-cln-field', 'data-cln-plan', 'data-cln-repeat', 'data-cln-control'].filter(function (attribute) { return active.hasAttribute(attribute); })[0], field = focusAttribute && active.getAttribute(focusAttribute), action = active && M.root.contains(active) && active.getAttribute('data-cln');
     var focusAttrs = {}; if (action) ['data-id', 'data-day', 'data-dow', 'data-group', 'data-page', 'data-cln-direction'].forEach(function (attribute) { if (active.hasAttribute(attribute)) focusAttrs[attribute] = active.getAttribute(attribute); }); if (action === 'group-page' || action === 'repeat-page') delete focusAttrs['data-page'];
     var pos = focusAttribute && typeof active.selectionStart === 'number' ? [active.selectionStart, active.selectionEnd] : null;
