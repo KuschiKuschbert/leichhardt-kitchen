@@ -1,0 +1,56 @@
+/* Round 2 previews only (26 Nov 2026). The book's own stylesheet supplies the tokens, chips, buttons and hints. */
+@font-face { font-family: 'Barlow'; font-weight: 400; src: url('../../cleaning-chef-options/fonts/barlow.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow'; font-weight: 600; src: url('../../cleaning-chef-options/fonts/barlow-600.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow'; font-weight: 700; src: url('../../cleaning-chef-options/fonts/barlow-700.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow Condensed'; font-weight: 700; src: url('../../cleaning-chef-options/fonts/barlow-condensed.woff2') format('woff2'); }
+@font-face { font-family: 'Caveat'; font-weight: 700; src: url('../../cleaning-chef-options/fonts/caveat.woff2') format('woff2'); }
+body.pv { margin: 0; background: var(--bg, #efece4); color: var(--ink, #1c1b19); font: 400 1rem/1.45 var(--body, 'Barlow', sans-serif); }
+.pv-bar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .7rem 1rem; background: #23211e; color: #fff; font: 700 1.05rem var(--display, 'Barlow Condensed', sans-serif); letter-spacing: .06em; text-transform: uppercase; }
+.pv-bar small { font: 400 .8125rem var(--body, 'Barlow', sans-serif); letter-spacing: 0; text-transform: none; opacity: .8; }
+.pv-page { max-width: 1040px; margin: 0 auto; padding: 1rem; }
+.pv-card { padding: 1rem 1.1rem 1.2rem; background: var(--paper, #fbf8f1); border: 1px solid var(--rule, #d9d3c5); border-radius: 12px; }
+.pv-title { margin: 0; font: 700 2rem/1.15 'Caveat', cursive; }
+.pv-sub { margin: .1rem 0 .8rem; color: var(--muted, #5f5a50); font-size: .875rem; }
+.pv-h { display: flex; justify-content: space-between; align-items: baseline; gap: .6rem; margin: 1.1rem 0 .3rem; font: 700 .9375rem var(--display, 'Barlow Condensed', sans-serif); letter-spacing: .14em; text-transform: uppercase; color: var(--accent-ink, #b8431a); }
+.pv-h span { font: 400 .8125rem var(--body, 'Barlow', sans-serif); letter-spacing: 0; text-transform: none; color: var(--muted, #5f5a50); }
+.pv-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .2rem .8rem; padding: .6rem 0; border-bottom: 1px solid var(--rule, #d9d3c5); }
+.pv-row b { font-weight: 700; overflow-wrap: anywhere; }
+.pv-row small, .pv-note { display: block; color: var(--muted, #5f5a50); font-size: .8125rem; line-height: 1.4; overflow-wrap: anywhere; }
+.pv-num { font: 700 1.5rem/1.1 'Caveat', cursive; text-align: right; white-space: nowrap; }
+.pv-rules { margin: .8rem 0 0; padding: .6rem .8rem; border-left: 3px solid var(--small-ink, #5f5a50); background: var(--surface-reference, #f1ede3); font-size: .875rem; }
+.pv-rules li { margin: .15rem 0; }
+.pv-grid { width: 100%; border-collapse: collapse; font-size: .875rem; }
+.pv-grid th, .pv-grid td { padding: .45rem .5rem; border-bottom: 1px solid var(--rule, #d9d3c5); text-align: left; vertical-align: top; }
+.pv-grid th { font: 700 .8125rem var(--display, 'Barlow Condensed', sans-serif); letter-spacing: .1em; text-transform: uppercase; }
+.pv-grid td b { display: block; font: 700 1.3rem/1.1 'Caveat', cursive; }
+.pv-scroll { overflow-x: auto; }
+.pv-day { padding: .5rem 0 .6rem; border-bottom: 1px solid var(--rule, #d9d3c5); }
+.pv-day > b { display: flex; justify-content: space-between; font: 700 1.05rem var(--display, 'Barlow Condensed', sans-serif); letter-spacing: .08em; text-transform: uppercase; }
+.pv-day > b span { font: 400 .8125rem var(--body, 'Barlow', sans-serif); letter-spacing: 0; text-transform: none; color: var(--muted, #5f5a50); }
+.pv-job { display: flex; justify-content: space-between; gap: .6rem; margin: .3rem 0 0; padding: .35rem .55rem; border: 1px solid var(--rule, #d9d3c5); border-radius: 8px; background: #fff; font-size: .875rem; }
+.pv-job.is-new { border-style: dashed; border-color: var(--ink, #1c1b19); }
+.pv-job small { color: var(--muted, #5f5a50); white-space: nowrap; }
+.pv-tag { display: inline-block; padding: 0 .4rem; border: 1px solid currentColor; border-radius: 999px; font: 600 .6875rem/1.5 var(--body, 'Barlow', sans-serif); white-space: nowrap; }
+.pv-chips { display: flex; flex-wrap: wrap; gap: .35rem; margin: .35rem 0 0; }
+.pv-chips .chip { min-height: 44px; }
+.pv-chips .chip small { display: block; font-size: .6875rem; font-weight: 400; opacity: .8; }
+.pv-save { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .6rem; margin: 1rem -1.1rem -1.2rem; padding: .7rem 1.1rem; border-top: 2px solid var(--ink, #1c1b19); background: var(--paper, #fbf8f1); border-radius: 0 0 12px 12px; }
+.pv-meter { height: 8px; margin: .3rem 0; border-radius: 4px; background: var(--rule, #d9d3c5); overflow: hidden; }
+.pv-meter i { display: block; height: 100%; background: var(--ink, #1c1b19); }
+.pv-field { margin: .7rem 0 0; }
+@media (min-width: 900px) { .pv-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 2rem; } .pv-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .5rem; } .pv-week .pv-day { border: 0; } .pv-week .pv-job { flex-direction: column; gap: .1rem; } }
+.pv-card .field input, .pv-card .field select { min-height: 44px; }
+.pv-strip { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .25rem; margin: .3rem 0; }
+.pv-strip div { padding: .35rem .15rem; border: 1px solid var(--rule, #d9d3c5); border-radius: 8px; background: #fff; text-align: center; }
+.pv-strip b { display: block; font: 700 .8125rem var(--display, 'Barlow Condensed', sans-serif); letter-spacing: .06em; text-transform: uppercase; }
+.pv-strip span { display: block; font: 700 1.25rem/1.2 var(--body, 'Barlow', sans-serif); white-space: nowrap; }
+.pv-strip small { display: block; font-size: .6875rem; color: var(--muted, #5f5a50); white-space: nowrap; }
+.pv-strip .is-quiet { border-style: dashed; border-color: var(--ink, #1c1b19); }
+.pv-eg { margin: .2rem 0 .6rem; padding: .45rem .7rem; border: 1px dashed var(--ink, #1c1b19); border-radius: 8px; font-size: .8125rem; line-height: 1.4; }
+.pv-chips .chip[aria-pressed="true"] small { opacity: 1; font-weight: 600; color: inherit; }
+.pv-who summary { min-height: 44px; padding: .7rem 0 0; font-size: .8125rem; font-weight: 600; cursor: pointer; }
+.pv-rules + .pv-rules { margin-top: .6rem; }
+.pv-fold > b { display: block; margin: .6rem 0 0; }
+.pv-fold { margin: 1rem 0 0; font-size: .875rem; }
+.pv-fold summary { min-height: 44px; padding: .65rem 0; font-weight: 600; cursor: pointer; }
+.pv-row .btn { min-height: 44px; white-space: nowrap; }

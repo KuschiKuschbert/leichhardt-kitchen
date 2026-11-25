@@ -1,0 +1,343 @@
+{
+ "note": "planner.js on the built-in lists with example kinds and weights (jobs.js). The kinds and weights are made up by the lead, not set by the head chef. jobs below are the plan with same-kind days on.",
+ "weeklyJobsSunToSat": {
+  "now": [
+   7,
+   4,
+   4,
+   4,
+   4,
+   1,
+   0
+  ],
+  "sameKindOn": [
+   5,
+   7,
+   2,
+   7,
+   4,
+   1,
+   0
+  ],
+  "sameKindOff": [
+   7,
+   5,
+   5,
+   4,
+   4,
+   1,
+   0
+  ]
+ },
+ "datedJobsMoved": {
+  "of": 15,
+  "sameKindOn": 10,
+  "sameKindOff": 0
+ },
+ "heaviestNightWeeklyJobs": {
+  "now": {
+   "Grill": {
+    "m": 2,
+    "on": "Sunday"
+   },
+   "Pans": {
+    "m": 3,
+    "on": "Tuesday"
+   },
+   "Fryers, salads and dessert": {
+    "m": 3,
+    "on": "Thursday"
+   },
+   "Hot larder": {
+    "m": 5,
+    "on": "Sunday"
+   }
+  },
+  "sameKindOn": {
+   "Grill": {
+    "m": 2,
+    "on": "Sunday"
+   },
+   "Pans": {
+    "m": 3,
+    "on": "Tuesday"
+   },
+   "Fryers, salads and dessert": {
+    "m": 4,
+    "on": "Monday and Wednesday"
+   },
+   "Hot larder": {
+    "m": 5,
+    "on": "Thursday"
+   }
+  },
+  "sameKindOff": {
+   "Grill": {
+    "m": 2,
+    "on": "Sunday"
+   },
+   "Pans": {
+    "m": 3,
+    "on": "Tuesday"
+   },
+   "Fryers, salads and dessert": {
+    "m": 3,
+    "on": "Thursday"
+   },
+   "Hot larder": {
+    "m": 5,
+    "on": "Sunday"
+   }
+  }
+ },
+ "dueTonightIfSavedOnAWednesday": {
+  "sameKindOn": [
+   "new-pans-fridge"
+  ],
+  "sameKindOff": []
+ },
+ "rulesToLookAt": [
+  "Clean and organise chemical room; chemicals labelled; sanitiser available in spray bottle is on Friday and is not marked light"
+ ],
+ "quiet": {
+  "used": 1,
+  "most": 2,
+  "of": 29
+ },
+ "kitchenLoadSunToSat": [
+  11,
+  14,
+  12,
+  14,
+  8,
+  2,
+  0
+ ],
+ "sectionLoad": {
+  "Grill": [
+   2,
+   1,
+   3,
+   0,
+   1,
+   0,
+   0
+  ],
+  "Hot larder": [
+   3,
+   2,
+   3,
+   4,
+   5,
+   0,
+   0
+  ],
+  "Pans": [
+   0,
+   3,
+   3,
+   2,
+   0,
+   0,
+   0
+  ],
+  "Fryers, salads and dessert": [
+   0,
+   4,
+   0,
+   4,
+   0,
+   0,
+   0
+  ]
+ },
+ "gaveWay": [
+  "sc-pans-03",
+  "sc-hot-06"
+ ],
+ "jobs": [
+  {
+   "job": "Clean the drawers",
+   "section": "Grill",
+   "kind": "Drawers",
+   "weight": "Light",
+   "was": "Monday",
+   "now": "Monday",
+   "why": "stays"
+  },
+  {
+   "job": "Clean behind the grill",
+   "section": "Grill",
+   "kind": "Behind equipment",
+   "weight": "Heavy",
+   "was": "no day",
+   "now": "Tuesday",
+   "week": 2,
+   "why": "with the other behind equipment jobs"
+  },
+  {
+   "job": "Clean both sides of the stove",
+   "section": "Pans",
+   "kind": "Behind equipment",
+   "weight": "Heavy",
+   "was": "Tuesday",
+   "now": "Tuesday",
+   "why": "stays, with the other behind equipment jobs"
+  },
+  {
+   "job": "Clean behind the stove",
+   "section": "Pans",
+   "kind": "Behind equipment",
+   "weight": "Heavy",
+   "was": "no day",
+   "now": "Monday",
+   "week": 3,
+   "why": "not on the behind equipment day: Pans already has a heavy job then"
+  },
+  {
+   "job": "Clean out the topper ingredients fridge",
+   "section": "Fryers, salads and dessert",
+   "kind": "Fridges",
+   "weight": "Medium",
+   "was": "Thursday",
+   "now": "Wednesday",
+   "why": "with the other fridges jobs"
+  },
+  {
+   "job": "Clean the takeaway container shelves",
+   "section": "Fryers, salads and dessert",
+   "kind": "Shelves",
+   "weight": "Medium",
+   "was": "Monday",
+   "now": "Monday",
+   "why": "stays"
+  },
+  {
+   "job": "Clean out the salad fridge",
+   "section": "Fryers, salads and dessert",
+   "kind": "Fridges",
+   "weight": "Medium",
+   "was": "Tuesday",
+   "now": "Wednesday",
+   "why": "with the other fridges jobs"
+  },
+  {
+   "job": "Clean the shelves under the microwave",
+   "section": "Fryers, salads and dessert",
+   "kind": "Shelves",
+   "weight": "Light",
+   "was": "Thursday",
+   "now": "Monday",
+   "why": "with the other shelves jobs"
+  },
+  {
+   "job": "Clean the corner shelves above the sink",
+   "section": "Fryers, salads and dessert",
+   "kind": "Shelves",
+   "weight": "Light",
+   "was": "Sunday",
+   "now": "Monday",
+   "why": "with the other shelves jobs"
+  },
+  {
+   "job": "Clean out the fridges",
+   "section": "Hot larder",
+   "kind": "Fridges",
+   "weight": "Medium",
+   "was": "Monday",
+   "now": "Wednesday",
+   "why": "with the other fridges jobs"
+  },
+  {
+   "job": "Clean behind the pizza ovens",
+   "section": "Hot larder",
+   "kind": "Behind equipment",
+   "weight": "Heavy",
+   "was": "Wednesday",
+   "now": "Tuesday",
+   "why": "with the other behind equipment jobs"
+  },
+  {
+   "job": "Clean down the Hot larder shelves",
+   "section": "Hot larder",
+   "kind": "Shelves",
+   "weight": "Medium",
+   "was": "Sunday",
+   "now": "Monday",
+   "why": "with the other shelves jobs"
+  },
+  {
+   "job": "Deep clean the coldroom floors",
+   "section": "Hot larder",
+   "kind": "Floors",
+   "weight": "Heavy",
+   "was": "Sunday",
+   "now": "Sunday",
+   "why": "stays"
+  },
+  {
+   "job": "Wipe down the oil drum",
+   "section": "Hot larder",
+   "kind": "Equipment",
+   "weight": "Medium",
+   "was": "Tuesday",
+   "now": "Thursday",
+   "why": "with the other equipment jobs"
+  },
+  {
+   "job": "Clean the rack trolley",
+   "section": "Hot larder",
+   "kind": "Equipment",
+   "weight": "Medium",
+   "was": "Tuesday",
+   "now": "Wednesday",
+   "why": "not on the equipment day: Hot larder would be too heavy"
+  },
+  {
+   "job": "Deep clean the oil filter machine",
+   "section": "Hot larder",
+   "kind": "Equipment",
+   "weight": "Heavy",
+   "was": "Thursday",
+   "now": "Thursday",
+   "why": "stays"
+  },
+  {
+   "job": "Clean the shelves above the pass",
+   "section": "Shared kitchen",
+   "kind": "Shelves",
+   "weight": "Medium",
+   "was": "Wednesday",
+   "now": "Monday",
+   "why": "with the other shelves jobs"
+  },
+  {
+   "job": "Clean behind the deep fryers",
+   "section": "Shared kitchen",
+   "kind": "Behind equipment",
+   "weight": "Heavy",
+   "was": "no day",
+   "now": "Tuesday",
+   "week": 1,
+   "why": "a day the rules allow"
+  },
+  {
+   "job": "Sort the meat doneness sticks",
+   "section": "Grill",
+   "kind": "Equipment",
+   "weight": "Light",
+   "was": "no day",
+   "now": "Thursday",
+   "why": "with the other equipment jobs"
+  },
+  {
+   "job": "Wipe out and sanitise the drawer fridge",
+   "section": "Pans",
+   "kind": "Fridges",
+   "weight": "Medium",
+   "was": "no day",
+   "now": "Wednesday",
+   "why": "a light day for Pans (weight 2 with it)"
+  }
+ ]
+}
