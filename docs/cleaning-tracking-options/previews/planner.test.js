@@ -1,0 +1,25 @@
+// The planner behind the previews, checked with node: node docs/cleaning-tracking-options/previews/planner.test.js
+const assert = require('assert');
+const P = require('./planner.js'), J = require('./jobs.js');
+const chosen = id => /^sc-/.test(id) && !['sc-pans-01', 'sc-grill-03', 'sc-gen-03'].includes(id);
+const jobs = J.jobs(chosen), r = P.plan(jobs), by = id => jobs.find(j => j.id === id);
+let n = 0; const ok = (c, m) => { assert.ok(c, m); n++; };
+ok(JSON.stringify(P.plan(J.jobs(chosen))) === JSON.stringify(r), 'the same jobs give the same plan');
+ok(jobs.filter(j => !j.move).every(j => r.days[j.id] === undefined), 'a job that was not chosen is never given a day');
+ok(jobs.filter(j => /^pd-/.test(j.id) || /^c\d/.test(j.id)).every(j => !j.move), 'Pack down steps and the general list are never chosen here');
+const quiet = id => r.days[id].some(d => d === 5 || d === 6);
+ok(jobs.filter(j => j.move && quiet(j.id)).every(j => j.w === 1), 'Friday and Saturday take light jobs only');
+ok(r.quiet.used <= r.quiet.most && r.quiet.most === Math.floor(r.quiet.of * 0.1), 'Friday and Saturday hold at most a tenth of the jobs that come round');
+const heavyDays = {}; jobs.filter(j => j.w === 3 && j.sec).forEach(j => (j.move ? r.days[j.id] : j.days).forEach(d => { const k = j.sec + d; heavyDays[k] = (heavyDays[k] || 0) + 1; }));
+ok(Object.values(heavyDays).every(v => v === 1), 'no section has two heavy jobs on one day');
+const shelves = jobs.filter(j => j.move && j.kind === 'Shelves').map(j => r.days[j.id][0]);
+ok(new Set(shelves).size === 1, 'every shelves job lands on one day (' + shelves.join(',') + ')');
+ok(r.gave.length >= 1 && r.gave.every(id => /not on the/.test(r.why[id])), 'a job kept off its kind\'s day says why');
+const unset = P.plan([{ id: 'a', sec: 'Grill', kind: '', w: 0, per: 1, days: [], move: true }, ...[0, 1, 2, 3, 4].map(d => ({ id: 'f' + d, sec: 'Grill', kind: '', w: 3, per: 1, days: [d], move: false }))]);
+ok(unset.days.a.every(d => d !== 5 && d !== 6), 'a job with no weight is never put on Friday or Saturday, even when every other day is heavier');
+const twice = P.plan([{ id: 't', sec: 'Grill', kind: '', w: 2, per: 2, days: [], move: true }]).days.t;
+ok(twice.length === 2 && Math.min(Math.abs(twice[0] - twice[1]), 7 - Math.abs(twice[0] - twice[1])) >= 2, 'a job on two days a week has them at least two days apart (' + twice + ')');
+const months = jobs.filter(j => j.move && j.every === 28).map(j => r.week[j.id]);
+ok(months.length === 3 && new Set(months).size === 3, 'the three monthly jobs start in different weeks (' + months + ')');
+ok(by('sc-hot-04').days.join() === r.days['sc-hot-04'].join() && by('sc-grill-01').days.join() === r.days['sc-grill-01'].join(), 'a job with no reason to move keeps its day');
+console.log('PASS planner: ' + n + ' checks');

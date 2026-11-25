@@ -1,0 +1,82 @@
+/* Spreading cleaning jobs over the week: the planner behind the round 2 previews (26 Nov 2026). A pure function: the same
+   jobs and settings in, the same days out. No reads, no clock, no random. It is a preview's engine, not the book's code.
+
+   plan(jobs, opts) -> { days, why, gave, week, load, quiet }
+   job: { id, text, sec (section name, '' for shared), kind ('' for none), w (1 light, 2 medium, 3 heavy, 0 not set),
+          per (days a week it happens, 1 to 3), days (the weekdays it has now, [] for none; 0 is Sunday),
+          move (the chef chose it to be planned), every (28 for a monthly job) }
+   A job that is not chosen (move false) is never touched: it only counts toward each day's load.
+   opts: { quiet: [5, 6] (Friday, Saturday), share: 0.1, cap: 5 }
+
+   The order the rules win in, when they pull against each other:
+   1. Friday and Saturday take light jobs only. A job with no weight is never treated as light.
+   2. Friday and Saturday together hold at most a tenth of the week's jobs that come round (share).
+   3. A section never gets two heavy jobs on one day, and a job on several days has them at least two days apart.
+   4. The same kind of job in different sections goes on the same day, unless that would push a section past cap
+      weight points on that day. Then the kind gives way, and the plan says so (gave).
+   5. Each section's days are as even as they can be, then the kitchen's days.
+   6. A job that has a day keeps it unless a rule above moves it or its kind's day is elsewhere.
+   A monthly job (every 28) gets one weekday by the same rules and a starting week, 1 to 4, so they do not all start
+   in the same week. */
+(function (root) {
+  'use strict';
+  var NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  function sets(per) {   // the weekday sets a job on per days a week may take, days at least two apart round the week
+    var out = [], a, b, c, gap = function (x, y) { var d = Math.abs(x - y); return Math.min(d, 7 - d); };
+    if (per <= 1) { for (a = 0; a < 7; a++) out.push([a]); return out; }
+    for (a = 0; a < 7; a++) for (b = a + 1; b < 7; b++) {
+      if (gap(a, b) < 2) continue;
+      if (per === 2) { out.push([a, b]); continue; }
+      for (c = b + 1; c < 7; c++) if (gap(a, c) >= 2 && gap(b, c) >= 2) out.push([a, b, c]);
+    }
+    return out;
+  }
+  function plan(jobs, opts) {
+    opts = opts || {};
+    var quiet = opts.quiet || [5, 6], share = opts.share === undefined ? 0.1 : opts.share, cap = opts.cap || 5;
+    // a job's time cost in the day's load: light 1, medium 2, heavy 3. Not set counts as medium there, and is never
+    // light enough for Friday or Saturday (rule 1).
+    var cost = function (j) { return j.w >= 1 && j.w <= 3 ? j.w : 2; };
+    var sec = {}, kitchen = [0, 0, 0, 0, 0, 0, 0], heavy = {}, kinds = {}, out = { days: {}, why: {}, gave: [], week: {}, load: {}, quiet: {} };
+    var put = function (j, d) {
+      kitchen[d] += cost(j);
+      if (j.sec) { sec[j.sec] = sec[j.sec] || [0, 0, 0, 0, 0, 0, 0]; sec[j.sec][d] += cost(j); if (j.w === 3) { heavy[j.sec] = heavy[j.sec] || {}; heavy[j.sec][d] = 1; } }
+      if (j.kind) { kinds[j.kind] = kinds[j.kind] || [0, 0, 0, 0, 0, 0, 0]; kinds[j.kind][d]++; }
+    };
+    // the jobs that come round: on some weekdays, or every four weeks. A nightly job, or one every few days, loads
+    // every day alike and is left out. A job not chosen is never touched: it only counts toward its days' load.
+    var comes = jobs.filter(function (j) { return j.every === 28 || (!j.every && (j.days || []).length > 0 && j.days.length < 7) || (j.move && !(j.days || []).length); });
+    var total = comes.reduce(function (n, j) { return n + (j.move ? j.per || 1 : j.days.length); }, 0), quietMax = Math.floor(total * share), quietUsed = 0;
+    comes.filter(function (j) { return !j.move; }).forEach(function (j) { j.days.forEach(function (d) { put(j, d); if (quiet.indexOf(d) >= 0) quietUsed++; }); });
+    var todo = comes.filter(function (j) { return j.move; }).sort(function (a, b) { return cost(b) - cost(a) || (b.per || 1) - (a.per || 1) || String(a.kind).localeCompare(String(b.kind)) || String(a.id).localeCompare(String(b.id)); });
+    var monthly = 0;
+    todo.forEach(function (j) {
+      var best = null, was = (j.days || []).slice().sort().join(','), kindGave = false, heavyGave = false, where = j.sec || 'the kitchen';
+      sets(j.per || 1).forEach(function (set) {
+        var q = set.filter(function (d) { return quiet.indexOf(d) >= 0; }).length;
+        if (q && (j.w !== 1 || quietUsed + q > quietMax)) return;                                          // rules 1 and 2
+        if (j.w === 3 && j.sec && set.some(function (d) { return heavy[j.sec] && heavy[j.sec][d]; })) { if (j.kind && kinds[j.kind] && set.some(function (d) { return kinds[j.kind][d]; })) heavyGave = true; return; }   // rule 3
+        var load = j.sec ? set.reduce(function (n, d) { return Math.max(n, ((sec[j.sec] || [])[d] || 0) + cost(j)); }, 0) : 0;
+        var mates = set.reduce(function (n, d) { return n + (j.kind && kinds[j.kind] ? kinds[j.kind][d] : 0); }, 0);
+        var over = load > cap, score = (over ? 0 : -1000 * mates) + (set.join(',') === was ? -300 : 0) + 100 * load + 10 * set.reduce(function (n, d) { return n + kitchen[d]; }, 0);
+        if (over && mates) kindGave = true;
+        if (!best || score < best.score) best = { set: set, score: score, mates: mates, over: over };
+      });
+      if (!best) { out.days[j.id] = (j.days || []).slice(); out.why[j.id] = 'No day fits the rules. Left as it is.'; return; }
+      best.set.forEach(function (d) { put(j, d); if (quiet.indexOf(d) >= 0) quietUsed++; });
+      out.days[j.id] = best.set;
+      if (j.every === 28) out.week[j.id] = monthly++ % 4 + 1;   // monthly jobs start in different weeks
+      var bits = [];
+      if (best.set.join(',') === was) bits.push('stays');
+      if (best.mates && !best.over) bits.push('with the other ' + j.kind.toLowerCase() + ' jobs');
+      else if (j.kind && heavyGave) { bits.push('not on the ' + j.kind.toLowerCase() + ' day: ' + where + ' already has a heavy job then'); out.gave.push(j.id); }
+      else if (j.kind && kindGave) { bits.push('not on the ' + j.kind.toLowerCase() + ' day: ' + where + ' would be too heavy'); out.gave.push(j.id); }
+      else if (best.set.join(',') !== was) bits.push('the lightest day for ' + where);
+      out.why[j.id] = bits.join(', ');
+    });
+    out.load = { sections: sec, kitchen: kitchen }; out.quiet = { used: quietUsed, most: quietMax, of: total };
+    return out;
+  }
+  var api = { plan: plan, sets: sets, NAMES: NAMES };
+  if (typeof module === 'object' && module.exports) module.exports = api; else root.LK_CLEAN_PLANNER = api;
+})(typeof window === 'undefined' ? this : window);
