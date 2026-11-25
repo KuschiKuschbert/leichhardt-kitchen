@@ -138,10 +138,37 @@ const BEFORE = { fixture: '9364f00a77c8e95f3eb8e137', records: 'f55dd109d250b4a6
     const days = F.days.map(d => R.cleanDay(F.tasks.concat([null]), F.done.concat([null]), d));
     const total = k => days.reduce((a, c) => a + (Array.isArray(c[k]) ? c[k].length : c[k]), 0);
     assert.deepEqual(['due', 'done', 'missN', 'unableN', 'waitN', 'ev', 'evRec'].map(total), [1988, 259, 442, 233, 255, 799, 338]);
-    assert.ok(days.every(c => c.cv === R.CLEAN_V && c.cv === 1 && c.due === c.done + c.missN + c.unableN + c.waitN + c.ev), 'every due job is counted once');
+    assert.ok(days.every(c => c.cv === R.CLEAN_V && c.cv === 2 && c.due === c.done + c.missN + c.unableN + c.waitN + c.ev), 'every due job is counted once');
     assert.ok(days.every(c => c.miss.length === Math.min(8, c.missN) && c.unable.length === Math.min(8, c.unableN) && c.wait.length === Math.min(8, c.waitN)), 'at most 8 names a list, whole counts');
     assert.deepEqual([days.filter(c => c.missN > 8).length, days.filter(c => c.unableN > 8).length, days.filter(c => c.waitN > 8).length], [5, 1, 1], 'the fixture fills each list past 8 names');
-    assert.equal(sha(days), BEFORE.records);
+    // CLEAN_V 2 (26 Nov 2026) adds the weekly and monthly jobs one by one. How a day reads did not change: without
+    // the added parts, and under the old version number, every day is exactly the earlier result.
+    const whole = days.map(c => { const o = Object.assign({}, c, { cv: 1 }); ['r', 'rN', 'rn', 'ro'].forEach(k => delete o[k]); return o; });
+    assert.equal(sha(whole), BEFORE.records);
+  });
+
+  check('a weekly or monthly job is the one whose row says how often, and the count keeps each of them once', () => {
+    // rhythm() is the small line a cook reads on the row (js/cleaning.js). round() in the core must agree with it:
+    // a line, and not "Every N days" for a repeat that is not whole weeks.
+    const ctx = { DAY_NAMES: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'], DAYS: [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [0, 'Sun']] };
+    vm.runInNewContext(grab(file('js/cleaning.js'), 'rhythm') + '; this.rhythm = rhythm;', ctx);
+    const says = task => { const line = ctx.rhythm(task); return !!line && !/^Every \d+ days$/.test(line); };
+    const extra = [{ dows: [1] }, { dows: [1, 3, 5] }, { dows: [0, 1, 2, 3, 4, 5, 6] }, { dows: [] }, { dows: [2], plan: { repeat: { days: 28, anchor: '' } } }, { dows: [2], plan: { repeat: { days: 7, anchor: '2026-11-03' } } },
+      { dows: [0, 1, 2, 3, 4, 5, 6], plan: { repeat: { days: 2, anchor: '2026-11-09' } } }, { dows: [0, 1, 2, 3, 4, 5, 6], plan: { repeat: { days: 14, anchor: '2026-11-09' } } }, { dows: [4], plan: { repeat: { days: 10, anchor: '2026-11-05' } } }];
+    const all = F.tasks.concat(extra);
+    assert.ok(all.every(task => K.round(task) === says(task)), 'round() and the row agree on every job: ' + JSON.stringify(all.filter(task => K.round(task) !== says(task)).slice(0, 3)));
+    assert.deepEqual(extra.map(K.round), [true, true, false, false, true, true, false, true, false]);
+    assert.ok(all.filter(K.round).length > 10 && all.filter(task => !K.round(task)).length > 10, 'the fixture holds both kinds');
+    assert.equal(K.round(null), false);
+    const QLD = { at: R.at, dow: R.dow, day: R.qldDay }, states = { done: 'd', blocked: 'u', awaiting: 'w', missed: 'm' };
+    F.days.forEach(d => {
+      const c = R.cleanDay(F.tasks, F.done, d), mine = F.done.filter(x => x.day === d);
+      const want = F.tasks.filter(task => K.due(task, d, QLD) && K.round(task)).map(task => [task, K.past(task, d, mine)]).filter(x => x[1].state !== 'event');
+      assert.equal(c.rN, want.length, d + ': every weekly or monthly job due is kept once');
+      assert.deepEqual(c.r.map(x => [x.k, x.st]), want.slice(0, 40).map(x => [x[0].root || x[0].id, states[x[1].state]]), d + ': under its root id, with the state the page reads');
+      assert.deepEqual([c.rn.due, c.rn.unable], [c.rn.done + c.rn.miss + c.rn.wait, want.filter(x => x[1].state === 'blocked').length], d + ': Unable to complete is apart from the due count');
+      assert.ok(c.r.every(x => x.st === 'd' ? typeof x.by === 'string' && typeof x.at === 'string' : x.by === undefined), d + ': only a done job says who did it');
+    });
   });
 
   const M = { tasks: F.tasks, done: F.done, workDrafts: F.drafts, pending: F.pending };

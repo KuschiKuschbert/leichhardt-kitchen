@@ -7605,6 +7605,8 @@
   }
   function recClean(c) {
     if (!c) return { short: '<span class="rec-wait">Cleaning: count not ready</span>', plain: 'Cleaning: count not ready' };
+    // not counted (26 Nov 2026): the nightly count starts the day it first finds Cleaning switched on for the team
+    if (c.nc) return { short: 'Cleaning: not counted', plain: 'Cleaning: not counted' };
     if (!c.due) return { short: 'Cleaning: no tasks due', plain: 'Cleaning: no tasks due' };
     var more = (c.unableN ? ', ' + c.unableN + ' not possible' : '') + (c.waitN ? ', ' + c.waitN + ' awaiting Pass check' : '');
     var miss = 'Cleaning: ' + (c.missN || 0) + ' missed';
@@ -7688,6 +7690,7 @@
   }
   function recCleanLines(c) {
     if (!c) return ['Cleaning: count not ready. The Cleaning page shows the day now.'];
+    if (c.nc) return ['Cleaning: not counted. The count starts once Cleaning is switched on for the team.'];
     if (!c.due) return ['Cleaning: no tasks were due.'];
     var out = ['Cleaning: ' + c.done + ' of ' + c.due + ' done.'];
     if (c.missN) out.push('Missed: ' + c.miss.join(', ') + (c.missN > c.miss.length ? ' and ' + (c.missN - c.miss.length) + ' more' : '') + '.');

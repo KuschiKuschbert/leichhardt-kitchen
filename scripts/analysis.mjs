@@ -4,7 +4,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import { dashDay } from './dashboard.mjs';
-import { CLEAN_V, cleanDay, dayDeliveries, coolDay, at as qldAt } from './records-core.mjs';
+import { CLEAN_V, cleanDay, notCounted, fitClean, dayDeliveries, coolDay, at as qldAt } from './records-core.mjs';
 const core = createRequire(import.meta.url)('../js/analysis-core.js');
 const shift = (day, n) => new Date(Date.parse(day + 'T12:00:00Z') + n * 86400000).toISOString().slice(0, 10);
 const bytes = x => Buffer.byteLength(JSON.stringify(x));
@@ -139,6 +139,17 @@ export async function analyse(K, options = {}) {
      (its records cannot change after the day) and carried from the last board after that: the first night reads the
      window's completions once, a normal night one day (about 35 reads) plus the open task revisions. A failure here
      leaves the cleaning count out ("Count not ready" on the page) and never stops the rest from publishing. */
+  /* Today's team plans (8 weeks) and section picks (30 days), read here since 26 Nov 2026 so the cleaning count below
+     can keep who was on a section; teamsum/main is built from the same two reads further down. No new read. */
+  const teamFrom = shift(today, -7 * TEAM_WEEKS), shiftFrom = shift(today, -TEAM_DAYS);
+  const plans = await read(K.collection('team').where('day', '>=', teamFrom).where('day', '<=', to));
+  const picks = await read(K.collection('shifts').where('day', '>=', shiftFrom).where('day', '<=', to));
+  /* Results by section, step 1 (head chef, 26 Nov 2026: "we can start counting as soon as we have the cleaning on").
+     cleanFrom is the kitchen day of the first run that found Cleaning switched on for the team (config/main
+     staffSee.cleaning, already read above), carried in analysis/current while it stays on and cleared when it is off.
+     A day before it, or any day while it is off, is not counted: jobs loaded before switch-on never read as missed. */
+  const cleanOn = !!(cfg.staffSee && cfg.staffSee.cleaning === true);
+  const cleanFrom = cleanOn ? (isDay(prev.cleanFrom) ? prev.cleanFrom : today) : '';
   let recReads = 0;
   try {
     let prevRows = oldRows;
@@ -147,7 +158,8 @@ export async function analyse(K, options = {}) {
       prevRows = {}; if (ob.exists) (ob.data().days || []).forEach(r => { if (r && isDay(r.day)) prevRows[r.day] = r; });
     }
     const counted = day => { const f = prevRows[day] && prevRows[day].fs; return f && f.c && f.c.cv === CLEAN_V ? f.c : null; };
-    const need = dash.filter(r => r && isDay(r.day) && !counted(r.day)).map(r => r.day).sort();
+    // only the days the count covers are read; the rest are marked not counted, with no read
+    const need = dash.filter(r => r && isDay(r.day) && !counted(r.day) && cleanFrom && r.day >= cleanFrom).map(r => r.day).sort();
     let tasks = [], done = [];
     if (need.length) {
       const r0 = reads;
@@ -160,12 +172,17 @@ export async function analyse(K, options = {}) {
     const kept = day => { const f = prevRows[day] && prevRows[day].fs; return f && f.cool && f.cool.k ? f.cool : null; };
     const firstRun = !Object.keys(prevRows).some(d => kept(d)), yday = shift(today, -1), names = {};
     (Array.isArray(cfg.people) ? cfg.people : []).forEach(p => { if (p && typeof p.id === 'string') names[p.id] = String(p.name || '').slice(0, 60); });
+    const team = { plans, picks, names, from: { plans: teamFrom, picks: shiftFrom } };
     let cur = null, rec = null;
     if (dash.some(r => r && isDay(r.day) && !kept(r.day))) {
       const [a, b] = await Promise.all([K.collection('cooling').doc('current').get(), K.collection('cooling').doc('recorded').get()]); reads += 2; recReads += 2;
       cur = a.exists ? a.data() : null; rec = b.exists ? b.data() : null;
     }
-    dash.forEach(row => { if (row && isDay(row.day)) row.fs = { v: 1, del: dayDeliveries(deliveries, row.day), c: counted(row.day) || cleanDay(tasks, done, row.day), cool: kept(row.day) || coolDay(cur, rec, row.day, names, firstRun, yday) }; });
+    dash.forEach(row => { if (row && isDay(row.day)) row.fs = { v: 1, del: dayDeliveries(deliveries, row.day), c: counted(row.day) || (need.indexOf(row.day) >= 0 ? cleanDay(tasks, done, row.day, team) : notCounted()), cool: kept(row.day) || coolDay(cur, rec, row.day, names, firstRun, yday) }; });
+    // the board has one size limit for everything on it: if the one-by-one cleaning detail would push it near, the
+    // detail goes (oldest days first) and the whole counts stay, so the rest still publishes
+    const cut = fitClean(dash, 600000, bytes);
+    if (cut) console.log('Records: the board was near its size limit, so ' + cut + ' days keep their cleaning counts without the one-by-one detail');
   } catch (e) {
     console.log('Records: the cleaning count was left out tonight (' + (e && e.message ? String(e.message).slice(0, 60) : 'error') + ')');
     dash.forEach(row => { if (row && isDay(row.day) && !row.fs) row.fs = { v: 1, del: dayDeliveries(deliveries, row.day), c: null }; });
@@ -182,7 +199,7 @@ export async function analyse(K, options = {}) {
     publications.push([String(n), data]);
   }
   // The admin Dashboard reads this one record (one read) instead of 60 days of lines. Admin only, like every analysis record.
-  const board = { v: 1, generation, at, from, to, days: dash };
+  const board = { v: 1, generation, at, from, to, days: dash, cleanFrom };
   // Needs you: the Review desk's two queues, counted with the same shared code (js/analysis-core.js). Counts only, no names.
   const pub = Object.fromEntries(publications);
   const people = (Array.isArray(cfg.people) ? cfg.people : []).filter(p => p && typeof p.id === 'string' && p.active !== false).map(p => ({ id: p.id, name: String(p.name || '') }));
@@ -190,9 +207,6 @@ export async function analyse(K, options = {}) {
   // the training counts went with the written assessments (10 Nov 2026) and nothing read them (13 Nov 2026, R4)
   board.needs = { links: core.linkQueue(pub['90'], refs).length };
   if (bytes(board) > 700000) throw new Error('analysis-dashboard-too-large');
-  const teamFrom = shift(today, -7 * TEAM_WEEKS), shiftFrom = shift(today, -TEAM_DAYS);
-  const plans = await read(K.collection('team').where('day', '>=', teamFrom).where('day', '<=', to));
-  const picks = await read(K.collection('shifts').where('day', '>=', shiftFrom).where('day', '<=', to));
   // plain objects for Firestore (the shared code builds them without a prototype)
   const teamsum = JSON.parse(JSON.stringify({ v: 1, at, day: today, from: shiftFrom, to,
     days: core.teamStints(plans, picks, Array.isArray(cfg.kitSecs) ? cfg.kitSecs : [], shiftFrom, to),
@@ -207,7 +221,7 @@ export async function analyse(K, options = {}) {
   for (const [n, data] of publications) batch.set(K.collection('analysis').doc('range-' + n), data);
   batch.set(K.collection('analysis').doc('dashboard'), board);
   batch.set(K.collection('teamsum').doc('main'), teamsum);
-  batch.set(K.collection('analysis').doc('current'), { v: 1, generation, at, from, to, days: window, reads, references: refs.length, suppliers: suppliers.length, inventory, comparisonOnly: true, previous: prev.generation || '', previousFrom: isDay(prev.from) ? prev.from : '', previousTo: isDay(prev.to) ? prev.to : '', first, full, reused, code: CODE, refsPrint, side });
+  batch.set(K.collection('analysis').doc('current'), { v: 1, generation, at, from, to, days: window, reads, references: refs.length, suppliers: suppliers.length, inventory, comparisonOnly: true, previous: prev.generation || '', previousFrom: isDay(prev.from) ? prev.from : '', previousTo: isDay(prev.to) ? prev.to : '', first, full, reused, code: CODE, refsPrint, side, cleanFrom });
   batch.set(K.collection('analysis').doc('health'), { at, status: 'ok', generation, reads });
   await batch.commit();
   // The day digests, once everything above is published: only the days whose lines changed. A day taken from the
@@ -245,5 +259,5 @@ export async function analyse(K, options = {}) {
     for (let i = 0; i < refs.length; i += 400) { const b = K.firestore.batch(); refs.slice(i, i + 400).forEach(r => b.delete(r)); await b.commit(); }
     removed = refs.length;
   } catch (e) { await K.collection('analysis').doc('health').set({ at, status: 'ok', generation, reads, cleanup: 'pending' }).catch(() => {}); }
-  return { days: window, reads, full, first, reused, cleanup, removed, digests: { written: write.length, deleted: gone.length }, records: { reads: recReads }, team: { days: teamsum.days.length, plans: plans.length, picks: picks.length } };
+  return { days: window, reads, full, first, reused, cleanup, removed, digests: { written: write.length, deleted: gone.length }, records: { reads: recReads, cleanFrom }, team: { days: teamsum.days.length, plans: plans.length, picks: picks.length } };
 }
