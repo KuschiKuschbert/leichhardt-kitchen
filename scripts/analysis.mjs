@@ -4,7 +4,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import { dashDay } from './dashboard.mjs';
-import { CLEAN_V, cleanDay, notCounted, trimClean, dayDeliveries, coolDay, at as qldAt } from './records-core.mjs';
+import { CLEAN_V, cleanDay, notCounted, fitClean, dayDeliveries, coolDay, at as qldAt } from './records-core.mjs';
 const core = createRequire(import.meta.url)('../js/analysis-core.js');
 const shift = (day, n) => new Date(Date.parse(day + 'T12:00:00Z') + n * 86400000).toISOString().slice(0, 10);
 const bytes = x => Buffer.byteLength(JSON.stringify(x));
@@ -181,7 +181,8 @@ export async function analyse(K, options = {}) {
     dash.forEach(row => { if (row && isDay(row.day)) row.fs = { v: 1, del: dayDeliveries(deliveries, row.day), c: counted(row.day) || (need.indexOf(row.day) >= 0 ? cleanDay(tasks, done, row.day, team) : notCounted()), cool: kept(row.day) || coolDay(cur, rec, row.day, names, firstRun, yday) }; });
     // the board has one size limit for everything on it: if the one-by-one cleaning detail would push it near, the
     // detail goes (oldest days first) and the whole counts stay, so the rest still publishes
-    for (let i = 0; i < dash.length && bytes(dash) > 600000; i++) if (dash[i] && dash[i].fs && dash[i].fs.c) trimClean(dash[i].fs.c);
+    const cut = fitClean(dash, 600000, bytes);
+    if (cut) console.log('Records: the board was near its size limit, so ' + cut + ' days keep their cleaning counts without the one-by-one detail');
   } catch (e) {
     console.log('Records: the cleaning count was left out tonight (' + (e && e.message ? String(e.message).slice(0, 60) : 'error') + ')');
     dash.forEach(row => { if (row && isDay(row.day) && !row.fs) row.fs = { v: 1, del: dayDeliveries(deliveries, row.day), c: null }; });

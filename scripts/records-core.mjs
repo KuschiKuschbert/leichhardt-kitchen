@@ -47,7 +47,9 @@ function doer(task, day, mine) {
    own pick } (objects, because Firestore keeps no list inside a list).
    k: 'l' listed, 'n' nobody, 'x' not kept (the day is older than the plans the run read). pk 0 when the picks for
    that day were not read (older than 30 days), so only the plan is listed. team: { plans, picks, names, from: { plans,
-   picks } }. Matched by section id: a section's name can change. */
+   picks } }. Matched by section id: a section's name can change. A pick record marked auto with no log is the plan's
+   own section copied to the phone (tmApply in js/prep.js), not a pick: it is skipped, so nobody is listed twice or
+   given a pick they did not make. A log entry is always the person's own move. */
 export function rostered(day, sec, team) {
   if (!team || !team.from || day < team.from.plans) return { s: sec, k: 'x' };
   const w = [], seen = {}, name = id => text((team.names || {})[id], 60) || 'Someone';
@@ -57,7 +59,7 @@ export function rostered(day, sec, team) {
   if (pk) (team.picks || []).forEach(x => {
     if (!x || x.day !== day) return;
     const log = Array.isArray(x.log) ? x.log : [];
-    if (log.length) log.forEach(l => { if (l && l.sec === sec) add(x.by, l.sh, 'k'); }); else if (x.sec === sec) add(x.by, x.sh, 'k');
+    if (log.length) log.forEach(l => { if (l && l.sec === sec) add(x.by, l.sh, 'k'); }); else if (x.sec === sec && x.auto !== true) add(x.by, x.sh, 'k');
   });
   return { s: sec, k: w.length ? 'l' : 'n', pk: pk ? 1 : 0, w: w.slice(0, STINTS) };
 }
@@ -90,6 +92,14 @@ export function cleanDay(tasks, done, day, team) {
 }
 // When the board would be too large, the one-by-one detail goes and the whole counts stay; cut says so.
 export function trimClean(c) { if (c && !c.nc && (c.r || c.ro)) { delete c.r; delete c.ro; c.cut = 1; } return c; }
+/* The board (analysis/dashboard) has one size limit for everything on it. If its rows would pass `limit` bytes the
+   cleaning detail is dropped, oldest day first, until they fit; the whole counts stay. A trimmed day is carried as
+   counted like any other, so its detail does not come back. Returns how many days were trimmed. */
+export function fitClean(rows, limit, bytes) {
+  let n = 0;
+  for (let i = 0; i < rows.length && bytes(rows) > limit; i++) { const c = rows[i] && rows[i].fs && rows[i].fs.c; if (c && !c.nc && (c.r || c.ro)) { trimClean(c); n++; } }
+  return n;
+}
 // A day's deliveries as recorded: time, supplier, temperatures (as recorded, never judged), note and who received it
 export function dayDeliveries(list, day) {
   return (list || []).filter(r => r && r.day === day && !r.tst && typeof r.receivedAt === 'number')

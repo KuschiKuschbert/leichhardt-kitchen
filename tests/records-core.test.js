@@ -74,6 +74,30 @@ const assert = require('node:assert/strict');
   assert.deepEqual([big.r.length, big.rN, big.rn.miss], [40, 45, 45], 'at most 40 jobs kept one by one a day; the counts stay whole');
   assert.deepEqual(Object.keys(R.trimClean(R.cleanDay(round, ticks, day, team))).filter(k => ['r', 'ro', 'cut', 'rn', 'rN'].includes(k)), ['rN', 'rn', 'cut'], 'when the board is too large the detail goes and the whole counts stay');
   assert.deepEqual(R.trimClean(R.notCounted()), { cv: R.CLEAN_V, nc: 1 });
+  // a pick record marked auto with no log is the plan's section copied to the phone, not a cook's own pick
+  const mirrored = { names: { lou: 'Lou' }, from: { plans: '2026-09-13', picks: '2026-10-09' }, plans: [{ day, on: [{ id: 'lou', sh: 'dinner', sec: 'hot' }] }],
+    picks: [{ day, by: 'lou', sec: 'hot', sh: 'dinner', auto: true }, { day, by: 'vic', sec: 'hot', sh: 'dinner', auto: true, log: [{ sh: 'dinner', sec: 'hot', at: 1 }] }] };
+  assert.deepEqual(R.rostered(day, 'hot', mirrored).w, [{ n: 'Lou', sh: 'dinner', by: 'p' }, { n: 'Someone', sh: 'dinner', by: 'k' }], 'the plan copied to a phone is not listed again as a pick; a logged move is a pick');
+  // Size at full lists (the brief's step 1): the book's three built-in lists, 90 days, nothing ticked, every section
+  // with a missed job carrying the most people kept. The cleaning part must stay far inside the board's 700,000 bytes.
+  const sched = require('../js/cleaning-schedule.js'), SECS = { grill: 'Grill', pans: 'Pans', fry: 'Fryers, salads and dessert', hot: 'Hot larder' };
+  const full = sched.drafts().concat(sched.packDownDrafts(), sched.sectionDrafts()).map(d => { const g = sched.sectionGroupOf(d), id = 'clean-template-' + d.plan.template, plan = Object.assign({}, d.plan);
+    if (plan.repeat && !plan.repeat.anchor) plan.repeat = { days: plan.repeat.days, anchor: '2026-08-03' };   // a first date set, so the monthly jobs come due
+    return Object.assign({}, d, { id, root: id, plan, shared: !g, section: g || '', sectionName: g ? SECS[g] : '', from: R.at('2026-07-01'), until: open }); });
+  const crowd = d => ({ names: {}, from: { plans: '2026-07-01', picks: '2026-07-01' }, picks: [], plans: [{ day: d, on: Object.keys(SECS).flatMap(sec => Array.from({ length: 12 }, (x, i) => ({ id: 'person-' + i, sh: 'dinner-service', sec }))) }] });
+  const days90 = Array.from({ length: 90 }, (x, i) => R.qldDay(R.at('2026-08-10') + i * 86400000));
+  const board = days90.map(d => ({ day: d, fs: { v: 1, del: [], c: R.cleanDay(full, [], d, crowd(d)) } }));
+  const size = x => Buffer.byteLength(JSON.stringify(x)), detail = size(board.map(r => ({ r: r.fs.c.r, ro: r.fs.c.ro, rn: r.fs.c.rn, rN: r.fs.c.rN })));
+  assert.deepEqual([full.length, full.filter(require('../js/cleaning-core.js').round).length], [72, 23], 'the three lists hold 72 jobs, 23 of them weekly or monthly');
+  assert.ok(detail < 150000 && size(board) < 250000, 'full lists, 90 days, nothing ticked: the one-by-one detail is ' + detail + ' bytes and the cleaning rows ' + size(board) + ' in all');
+  assert.ok(board.every(r => r.fs.c.rN <= 40 && r.fs.c.r.length === r.fs.c.rN), 'no day reaches the 40 a day cap on the real lists');
+  // and if a board were too large anyway, the detail goes oldest day first until it fits, and the whole counts stay
+  const fat = Array.from({ length: 90 }, (x, i) => ({ day: 'd' + i, fs: { c: R.cleanDay(Array.from({ length: 40 }, (y, k) => wk('f' + k, 'A long job name that takes its whole eighty characters of room on the row, number ' + k, { section: 'hot', sectionName: 'Hot larder', shared: false })), [], day, crowd(day)) } }));
+  const beforeFit = size(fat), trimmed = R.fitClean(fat, 600000, size);
+  assert.ok(beforeFit > 600000 && size(fat) <= 600000 && trimmed > 0 && trimmed < 90, 'a board of ' + beforeFit + ' bytes is cut to ' + size(fat) + ' by trimming ' + trimmed + ' days');
+  assert.ok(fat.slice(0, trimmed).every(r => r.fs.c.cut === 1 && !r.fs.c.r && r.fs.c.rN === 40 && r.fs.c.missN === 40) && fat.slice(trimmed).every(r => !r.fs.c.cut && r.fs.c.r.length === 40), 'the oldest days lose the detail first and keep their whole counts');
+  assert.equal(R.fitClean([{ day: 'x', fs: { c: R.notCounted() } }], 1, size), 0, 'a day that was not counted has nothing to trim');
+  console.log('  size at full lists: detail ' + detail + ' bytes, cleaning rows ' + size(board) + ' bytes over 90 days');
   const del = R.dayDeliveries([
     { day, receivedAt: R.at(day, 9 * 60 + 5), supplier: 'Fresh produce', chilled: 4, frozen: null, note: '', receivedBy: 'Ann' },
     { day, receivedAt: R.at(day, 7 * 60 + 42), supplier: 'Bidfood', chilled: 3.14, frozen: -19.55, note: 'All there', receivedBy: 'Bo' },
