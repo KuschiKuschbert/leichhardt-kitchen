@@ -24,7 +24,7 @@ The head chef asked for cleaning tracking in the admin panel and a button that p
 
 | Files | Role and checks |
 | --- | --- |
-| `docs/cleaning-tracking-options/` | Proposal, brief, the three reviewer packets, the design page (`index.html`), and `previews/`: the pages with `build.cjs`, the preview planner `planner.js` (pure; `plan()`, `check()`, `tonight()`) with `planner.test.js` (25 node checks, run by hand, not by Click tests) and `jobs.js` (example kinds and weights, made up). |
+| `docs/cleaning-tracking-options/` | Proposal, brief, the three reviewer packets, the design page (`index.html`), and `previews/`: the pages with `build.cjs`, the preview planner `planner.js` (pure; `plan()`, `check()`, `tonight()`) with `planner.test.js` (26 node checks, run by hand, not by Click tests) and `jobs.js` (example kinds and weights, made up). |
 
 Open with the head chef: whether a close ever finishes after midnight, which jobs the flag covers, same-kind days on or off to start, whether Thursday takes heavy jobs, plan or own pick for "on that section", admin only or sous chefs too.
 

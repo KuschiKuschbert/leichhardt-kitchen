@@ -4,7 +4,7 @@
    plan(jobs, opts) -> { days, why, gave, week, start, load, quiet }
    job: { id, text, sec (section name, '' for shared), kind ('' for none), w (1 light, 2 medium, 3 heavy, 0 not set),
           per (days a week it happens, 1 to 3), days (the weekdays it has now, [] for none; 0 is Sunday),
-          move (the chef chose it to be planned), every (28 for a monthly job) }
+          move (the chef chose it to be planned), every (a repeat's days, 2 to 30 as the rules allow: 28 for a monthly job) }
    A job that is not chosen (move false) is never touched: it only counts toward each day's load.
    opts: { quiet: [5, 6] (Friday, Saturday), share: 0.1, cap: 5, together: true (jobs of one kind share a day) }
    check(jobs, days, opts) -> the rules a set of days breaks, in words ([] for none): what a page runs again whenever a
@@ -19,11 +19,12 @@
    5. Each section's days are as even as they can be, then the kitchen's days.
    6. A job that has a day keeps it unless a rule above moves it or its kind's day is elsewhere. With same-kind days
       off, a job that has a day always keeps it. Friday and Saturday are allowed for a light job, never preferred.
-   A monthly job (every 28) gets one weekday by the same rules and a starting week, 1 to 4, so they do not all start
-   in the same week.
-   A job every few days (every 2 to 27) has no weekday to choose: it falls on a different one each time, and reaches
-   Friday and Saturday whatever its weight, so rules 1 and 2 cannot hold for it. All the plan can do is start two such
-   jobs of one section on different days (start: days after the save, 0 to every - 1), and say so.
+   A job on whole weeks (every 7, 14, 21 or 28) keeps one weekday: it gets it by the same rules, and a starting week,
+   1 to every / 7, so jobs on one rhythm do not all start in the same week.
+   A job on any other rhythm (every 2 to 6, 8 to 13 and so on) has no weekday to choose: it falls on a different one
+   each time and reaches Friday and Saturday whatever its weight, so rules 1 and 2 cannot hold for it. All the plan
+   can do is start two such jobs of one section on different days (start: days after the save, 1 to every, so it is
+   never due the night it is saved), and say so.
    tonight(jobs, days, today) -> the ids of new jobs whose proposed day is today (0 to 6). A new job starts the day it
    is saved, so it would be due that night: the page says so and leaves it out until the chef puts it in. */
 (function (root) {
@@ -53,17 +54,17 @@
     };
     // the jobs that come round: on some weekdays, or every four weeks. A nightly job, or one every few days, loads
     // every day alike and is left out. A job not chosen is never touched: it only counts toward its days' load.
-    var comes = jobs.filter(function (j) { return j.every === 28 || (!j.every && (((j.days || []).length > 0 && j.days.length < 7) || (j.move && !(j.days || []).length))); });
+    var comes = jobs.filter(function (j) { return (j.every && j.every % 7 === 0) || (!j.every && (((j.days || []).length > 0 && j.days.length < 7) || (j.move && !(j.days || []).length))); });
     var few = {}; out.start = {};
-    jobs.filter(function (j) { return j.move && j.every > 1 && j.every < 28; }).sort(function (a, b) { return String(a.id).localeCompare(String(b.id)); }).forEach(function (j) {
-      var k = (j.sec || '') + '/' + j.every; few[k] = few[k] || 0; out.start[j.id] = few[k]++ % j.every;
-      out.why[j.id] = 'every ' + j.every + ' days has no weekday, so it reaches Friday and Saturday whatever its weight. It starts ' + (out.start[j.id] ? out.start[j.id] + (out.start[j.id] === 1 ? ' day' : ' days') + ' later than ' + (j.sec || 'the kitchen') + '\'s other job on this rhythm' : 'on the day it is saved');
+    jobs.filter(function (j) { return j.move && j.every > 1 && j.every % 7 !== 0; }).sort(function (a, b) { return String(a.id).localeCompare(String(b.id)); }).forEach(function (j) {
+      var k = (j.sec || '') + '/' + j.every; few[k] = few[k] || 0; out.start[j.id] = few[k]++ % j.every + 1;
+      out.why[j.id] = 'every ' + j.every + ' days has no weekday, so it reaches Friday and Saturday whatever its weight. It starts ' + (out.start[j.id] === 1 ? 'the day after it is saved' : out.start[j.id] + ' days after it is saved, apart from ' + (j.sec || 'the kitchen') + '\'s other job on this rhythm');
     });
     var total = comes.reduce(function (n, j) { return n + (j.move ? j.per || 1 : j.days.length); }, 0), quietMax = Math.floor(total * share), quietUsed = 0;
     comes.filter(function (j) { return !j.move; }).forEach(function (j) { j.days.forEach(function (d) { put(j, d); if (quiet.indexOf(d) >= 0) quietUsed++; }); });
     var dated = function (j) { return (j.days || []).length ? 0 : 1; };
     var todo = comes.filter(function (j) { return j.move; }).sort(function (a, b) { return (together ? 0 : dated(a) - dated(b)) || cost(b) - cost(a) || (b.per || 1) - (a.per || 1) || String(a.kind).localeCompare(String(b.kind)) || String(a.id).localeCompare(String(b.id)); });
-    var monthly = 0;
+    var wk = {};
     todo.forEach(function (j) {
       var best = null, was = (j.days || []).slice().sort().join(','), kindGave = false, heavyGave = false, where = j.sec || 'the kitchen';
       sets(j.per || 1).forEach(function (set) {
@@ -81,7 +82,7 @@
       if (!best) { out.days[j.id] = (j.days || []).slice(); out.why[j.id] = 'No day fits the rules. Left as it is.'; return; }
       best.set.forEach(function (d) { put(j, d); if (quiet.indexOf(d) >= 0) quietUsed++; });
       out.days[j.id] = best.set;
-      if (j.every === 28) out.week[j.id] = monthly++ % 4 + 1;   // monthly jobs start in different weeks
+      if (j.every) { wk[j.every] = wk[j.every] || 0; out.week[j.id] = wk[j.every]++ % (j.every / 7) + 1; }   // jobs on one rhythm of whole weeks start in different weeks
       var bits = [];
       if (best.set.join(',') === was) bits.push('stays');
       if (best.mates && !best.over) bits.push('with the other ' + j.kind.toLowerCase() + ' jobs');

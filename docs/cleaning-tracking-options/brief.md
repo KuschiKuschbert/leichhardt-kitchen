@@ -103,10 +103,10 @@ Packet: [round2-packet.md](round2-packet.md). Designs side by side: [index.html]
 
 Pinned before drawing:
 
-- On the rules emulator, 2 and 5 moves in one save were allowed and 10 and 20 refused, for the chef rows `owner`, `ownkit`, `kit` and `sam` of `tests/rules/client-shapes.test.mjs`. The test jobs carried no `plan`; a loaded section job carries one, and 6 to 9 moves were not tried. So "5 at a time" is a safe guess, not a measured limit: test it with real jobs before any build.
+- On the rules emulator, 2 and 5 moves in one save were allowed and 10 and 20 refused, for the chef rows `owner`, `ownkit`, `kit` and `sam`, run as temporary rows in `tests/rules/client-shapes.test.mjs` and not kept; the crew rows were refused throughout. The test jobs carried no `plan`; a loaded section job carries one, and 6 to 9 moves were not tried. So "5 at a time" is a safe guess, not a measured limit: test it with real jobs before any build.
 - A change to a job starts exactly tomorrow by the rules; a new job starts today.
 - A job's fields are fixed in the rules, so a weight or a kind on the job needs a rules change and makes a revision; the other home is one small record read when the planner opens.
-- The planner behind the previews is one pure function, `previews/planner.js`, with 25 node checks, run on the book's own lists with example kinds and weights made up by the lead.
+- The planner behind the previews is one pure function, `previews/planner.js`, with 26 node checks, run on the book's own lists with example kinds and weights made up by the lead.
 
 ### Planning the days
 
@@ -120,7 +120,7 @@ Pinned before drawing:
 | Whole week visible | No | Yes | No |
 | What a move does to this week | Not shown | Not shown | On each line |
 | Moving 10 jobs | 10 forms | One Save | One Confirm |
-| Page length at 390 px (Preview) | 1.0 screens | 2.7 | 3.3 |
+| Page length at 390 px (Preview) | 1.1 screens | 2.7 | 3.3 |
 | Build size | 1 pull request | 2 to 3 | 2 to 3 |
 | New reads or rules | A rules change if weight and kind sit on the job | The same, or 1 read for a side record | The same |
 | Risk | Low | False totals, a second way to edit a job | A long list saved blind |
@@ -194,7 +194,7 @@ Faults the follow-up found in the planner, fixed in `planner.js` with a node che
 
 Redrawn by the lead after the follow-up, and seen by no reviewer since: each section's heaviest night, now and with the plan; the strip with one number per day, so nothing spills at 390 px; "suggested" readable on the pressed chip; all ten moves with their waits; "due tonight" for a new job proposed for today, left out by default; the names one tap behind the flag; "not ticked by midnight" in place of "left 1 job"; which jobs the flag covers; "Count not ready"; the Grill row's counts matching its lines. Still not drawn: a line once it is Saved, Not sent or Refused; the page after a lock; what a cook's Cleaning row says in the week a job moved; the label for kind beside today's "Area or equipment".
 
-What the redraw shows on the lead's example weights (`previews/plan.json`): with same-kind days on, no section's heaviest night gets lighter. Hot larder keeps 5 (Sunday becomes Thursday), Fryers goes from 3 to 4, Grill stays 2 and Pans 3. With them off, no heaviest night changes. Friday and Saturday hold 1 job now, already there and not marked light; the plan adds none either way, against a limit of 2 (a tenth of 29: 26 weekly, 3 monthly).
+What the redraw shows on the lead's example weights (`previews/plan.json`): with same-kind days on, no section's heaviest night gets lighter. Hot larder keeps 5 (Sunday becomes Thursday), Fryers goes from 3 to 4, Grill stays 2 and Pans 3. With them off, no heaviest night changes. The picture with them on shows Wednesday at 6, not the 7 quoted elsewhere, because the new job due tonight is left out there. Friday and Saturday hold 1 job now, already there and not marked light; the plan adds none either way, against a limit of 2 (a tenth of 29: 26 weekly, 3 monthly).
 
 ### Break-it findings (round 2 and the follow-up)
 
@@ -204,7 +204,7 @@ What the redraw shows on the lead's example weights (`previews/plan.json`): with
 | One line left out of a proposal | The rules still hold | Hot larder Wednesday at weight 7, over 5, with nothing said | Checked in `planner.js` by the skeptic and the keeper | `check()` runs on every change and names the rule | Fixed in the engine; the page state is Not evidenced |
 | The switch flipped after a save | The days go back | Before the planner fix: 3 (skeptic) or 4 (keeper) more jobs moved. Rerun by the lead on the fixed planner: Off after a saved On moves no job and puts none back; On after a saved Off moves 10 | Checked in `planner.js` | Store the choice; say "this does not put days back"; Save names how many saved jobs move again | Words in P-mix; storing it is to design |
 | 15 changes saved in steps of 5 across midnight, or with the signal lost | One start day, and the page says where it stopped | Hypothesis: steps land on two days, or are refused; the waits printed are stale | Risk / Not evidenced | A rules-emulator test either side of midnight; a client test with a refused second step; re-plan when the day changes | Before ready |
-| A new job whose proposed day is today | The chef knows it is due tonight | A new job starts today, and Cleaning has no listener, so an open page stays quiet until Refresh | Source read | "Due tonight on Pans", left out unless the chef puts it in | Drawn in P-mix with the switch on; `tonight()` and 3 node checks, one proving the page the chef first sees breaks no rule. The quiet open page on a cook's phone is still open |
+| A new job whose proposed day is today | The chef knows it is due tonight | A new job starts today, and Cleaning has no listener, so an open page stays quiet until Refresh | Source read | "Due tonight on Pans", left out unless the chef puts it in | Drawn in P-mix with the switch on; `tonight()` and 3 node checks, one proving the page with same-kind days on, as drawn with that job left out, breaks no rule. The quiet open page on a cook's phone is still open |
 | A cook's "Every Tuesday" becomes Wednesday | The cook is told | Nothing tells the cook | Risk / Not evidenced | Open: what the staff row says in the week a job moved | Open |
 | A job already on Friday with no weight | Counted against "light only" or flagged | Shown under "light jobs only" as if it passed | Checked in `planner.js` | `check()` names it for the chef | Fixed in the engine |
 | A close finished after midnight | The job counts as done | A tick is refused once the date turns, so the flag names the section and its closers | Risk / Not evidenced (closing time unknown) | Ask the head chef; a fixture with a tick dated the next day; one cut-off for "missed" and "on at close" | Open with the head chef; holds the Inbox flag |
@@ -246,17 +246,17 @@ Before ready, on the implemented app at 390, 768 and 1280 px: every save state, 
 **Recommend both mixes, built in this order, with the morning flag held until the head chef answers the midnight question.**
 
 1. **The nightly count, now.** Keep each missed and done job that comes round by its root id, with its section and who did it, leave Unable out of the totals, record the first night Cleaning is on, and bump `CLEAN_V`. It is cheapest before Cleaning is switched on, and nothing can be shown until it has run.
-2. **Weight and kind in the job's form, then Plan the days (P-mix)** with same-kind days as a switch, each section's heaviest night shown, and a job due tonight said plainly. It carries weights, Friday and Saturday light only, moving dated jobs and same-kind days, for weekly and monthly jobs. A job that comes every few days gets only a start day, not a weekday: he asked for any rhythm, and that is as far as that rhythm can go (see Not hidden by the ranking). It and shows what each choice does to the week before anything is saved.
+2. **Weight and kind in the job's form, then Plan the days (P-mix)** with same-kind days as a switch, each section's heaviest night shown, and a job due tonight said plainly. It carries weights, Friday and Saturday light only, moving dated jobs and same-kind days, for weekly and monthly jobs. A job every 2 or 3 weeks is planned like a monthly one. A job on a rhythm that is not whole weeks (every 2, 3 or 10 days) gets only a start day, not a weekday: he asked for any rhythm, and that is as far as such a rhythm can go (see Not hidden by the ranking). It and shows what each choice does to the week before anything is saved.
 3. **Cleaning by section in Reports (T-mix), then the Inbox flag** with names one tap behind it.
 
 Why these beat the originals: P-C alone hid the week and could break its own rules on one untick; P-B alone hid what a move costs; T-A alone showed only blame. The mixes keep each design's strongest part and drop the parts most reviewers rejected, each named in the mix table above. In the follow-up all three reviewers said build the mix, each with changes; none preferred an original design.
 
-Main downside: Plan the days has the most states of any option to build and test, for a page used at setup and now and then; and tracking shows nothing until the count has run for a few weeks.
+Main downside: Plan the days has the most states of any option to build and test, for a page used at setup and now and then, and it is long on a phone: 3.0 screens with same-kind days off and 5.3 with them on (Preview); and tracking shows nothing until the count has run for a few weeks.
 
 Not hidden by the ranking:
 
 - His two wishes pull against each other on his list as the lead tagged it: the kinds and weights are made-up examples, and his own may change the result. With them, same-kind days cost 10 moves and a less even week. The switch makes that his choice each time; which way it starts is his to say.
-- A job that comes every few days cannot be given a day. It falls on a different weekday each time, so it reaches Friday and Saturday whatever its weight and the light-only rule cannot hold for it. The planner only starts two such jobs of one section on different days (1 node check). The lists hold one such job today (Change grill drip trays, every 2 days, a Pack down step, never moved).
+- A job on a rhythm that is not whole weeks (every 2, 3 or 10 days; the rules allow 2 to 30) cannot be given a day. It falls on a different weekday each time, so it reaches Friday and Saturday whatever its weight and the light-only rule cannot hold for it. The planner only starts two such jobs of one section on different days, never the night they are saved. A job every 7, 14, 21 or 28 days keeps its weekday and gets a starting week (2 node checks). The lists hold one job off whole weeks today (Change grill drip trays, every 2 days, a Pack down step, never moved).
 - He named Sunday to Wednesday for heavier work. The planner also uses Thursday.
 - A moved job has one uneven week, up to 13 days between cleans in the example (saved on a Wednesday; another save day gives other waits).
 - A missed weekly job is not due again until its next day, so a flag reports a miss and does not get it cleaned.
