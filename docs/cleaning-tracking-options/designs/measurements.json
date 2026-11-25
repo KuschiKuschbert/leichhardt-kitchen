@@ -619,13 +619,341 @@
    "screensLong": 5.4,
    "sideways": false,
    "rows": 52,
-   "wholeRowsOnFirstScreen": 6
+   "wholeRowsOnFirstScreen": 5,
+   "day": "Wednesday 2 December 2026, the day every chef scene here is drawn on"
   },
   "cook-unchanged-1280": {
    "screensLong": 4,
    "sideways": false,
    "rows": 52,
-   "wholeRowsOnFirstScreen": 7
+   "wholeRowsOnFirstScreen": 7,
+   "day": "Wednesday 2 December 2026, the day every chef scene here is drawn on"
+  },
+  "m1-entry-390": {
+   "screensLong": 2.6,
+   "sideways": false,
+   "controls": 1,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 4.86,
+    "fontPx": 14,
+    "large": false,
+    "passes": true,
+    "text": "Weights and days"
+   },
+   "lowestControlEdge": null,
+   "textUnder12px": [],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 517,
+   "focus": {
+    "reached": true,
+    "on": "Weights and days",
+    "focusVisible": true,
+    "outline": "solid 3px",
+    "offset": "2px",
+    "ringAgainstSurround": 3.08
+   }
+  },
+  "m1-entry-1280": {
+   "screensLong": 1.9,
+   "sideways": false,
+   "controls": 1,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 4.86,
+    "fontPx": 14,
+    "large": false,
+    "passes": true,
+    "text": "Weights and days"
+   },
+   "lowestControlEdge": null,
+   "textUnder12px": [],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 508
+  },
+  "m2-weights-390": {
+   "screensLong": 5.2,
+   "sideways": false,
+   "controls": 86,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 4.76,
+    "fontPx": 15,
+    "large": false,
+    "passes": true,
+    "text": "Grill"
+   },
+   "lowestControlEdge": {
+    "ratio": 4.84,
+    "passes": true,
+    "on": "Save 18 jobs",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 295,
+   "focus": {
+    "reached": true,
+    "on": "Change",
+    "focusVisible": true,
+    "outline": "solid 3px",
+    "offset": "2px",
+    "ringAgainstSurround": 3.33
+   }
+  },
+  "m2-weights-1280": {
+   "screensLong": 3,
+   "sideways": false,
+   "controls": 86,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 4.76,
+    "fontPx": 15,
+    "large": false,
+    "passes": true,
+    "text": "Grill"
+   },
+   "lowestControlEdge": {
+    "ratio": 4.84,
+    "passes": true,
+    "on": "Save 18 jobs",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 3,
+   "firstDesignTop": 320
+  },
+  "m3-changes-390": {
+   "screensLong": 4.5,
+   "sideways": false,
+   "controls": 49,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 5.05,
+    "fontPx": 16,
+    "large": false,
+    "passes": true,
+    "text": "Save 20 jobs"
+   },
+   "lowestControlEdge": {
+    "ratio": 4.84,
+    "passes": true,
+    "on": "Save 20 jobs",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 295,
+   "focus": {
+    "reached": true,
+    "on": "Change",
+    "focusVisible": true,
+    "outline": "solid 3px",
+    "offset": "2px",
+    "ringAgainstSurround": 3.33
+   }
+  },
+  "m3-changes-1280": {
+   "screensLong": 2.4,
+   "sideways": false,
+   "controls": 49,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 5.05,
+    "fontPx": 16,
+    "large": false,
+    "passes": true,
+    "text": "Save 20 jobs"
+   },
+   "lowestControlEdge": {
+    "ratio": 4.84,
+    "passes": true,
+    "on": "Save 20 jobs",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 1,
+   "firstDesignTop": 320
+  },
+  "m4-part-saved-390": {
+   "screensLong": 4.7,
+   "sideways": false,
+   "controls": 45,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 5.05,
+    "fontPx": 16,
+    "large": false,
+    "passes": true,
+    "text": "Send the rest"
+   },
+   "lowestControlEdge": {
+    "ratio": 4.84,
+    "passes": true,
+    "on": "Send the rest",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 295,
+   "focus": {
+    "reached": true,
+    "on": "Change",
+    "focusVisible": true,
+    "outline": "solid 3px",
+    "offset": "2px",
+    "ringAgainstSurround": 3.33
+   }
+  },
+  "m5-cleaning-on-390": {
+   "screensLong": 2.6,
+   "sideways": false,
+   "controls": 18,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 4.76,
+    "fontPx": 15,
+    "large": false,
+    "passes": true,
+    "text": "New job"
+   },
+   "lowestControlEdge": {
+    "ratio": 4.84,
+    "passes": true,
+    "on": "Save 1 job",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 295,
+   "focus": {
+    "reached": true,
+    "on": "Change",
+    "focusVisible": true,
+    "outline": "solid 3px",
+    "offset": "2px",
+    "ringAgainstSurround": 3.33
+   }
+  },
+  "m5-cleaning-on-1280": {
+   "screensLong": 1.7,
+   "sideways": false,
+   "controls": 18,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 4.76,
+    "fontPx": 15,
+    "large": false,
+    "passes": true,
+    "text": "New job"
+   },
+   "lowestControlEdge": {
+    "ratio": 4.84,
+    "passes": true,
+    "on": "Save 1 job",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 320
+  },
+  "m6-inbox-390": {
+   "screensLong": 1.4,
+   "sideways": false,
+   "controls": 1,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 5.27,
+    "fontPx": 11.84,
+    "large": false,
+    "passes": true,
+    "text": "Not ticked"
+   },
+   "lowestControlEdge": {
+    "ratio": 15.9,
+    "passes": true,
+    "on": "Open that night",
+    "how": "border"
+   },
+   "textUnder12px": [
+    "11.84px: Not ticked"
+   ],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 533,
+   "focus": {
+    "reached": true,
+    "on": "Open that night",
+    "focusVisible": true,
+    "outline": "solid 3px",
+    "offset": "2px",
+    "ringAgainstSurround": 3.33
+   }
+  },
+  "m6-inbox-1280": {
+   "screensLong": 1.1,
+   "sideways": false,
+   "controls": 1,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 5.27,
+    "fontPx": 11.84,
+    "large": false,
+    "passes": true,
+    "text": "Not ticked"
+   },
+   "lowestControlEdge": {
+    "ratio": 15.9,
+    "passes": true,
+    "on": "Open that night",
+    "how": "border"
+   },
+   "textUnder12px": [
+    "11.84px: Not ticked"
+   ],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 600
+  },
+  "m7-records-390": {
+   "screensLong": 1.8,
+   "sideways": false,
+   "controls": 1,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 6.73,
+    "fontPx": 13,
+    "large": false,
+    "passes": true,
+    "text": "Count not ready."
+   },
+   "lowestControlEdge": null,
+   "textUnder12px": [],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 829,
+   "focus": {
+    "reached": true,
+    "on": "Who was rostered on Hot ",
+    "focusVisible": true,
+    "outline": "solid 3px",
+    "offset": "2px",
+    "ringAgainstSurround": 3.33
+   }
+  },
+  "m7-records-1280": {
+   "screensLong": 2.5,
+   "sideways": false,
+   "controls": 1,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 6.73,
+    "fontPx": 13,
+    "large": false,
+    "passes": true,
+    "text": "Count not ready."
+   },
+   "lowestControlEdge": null,
+   "textUnder12px": [],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 818
   }
  }
 }

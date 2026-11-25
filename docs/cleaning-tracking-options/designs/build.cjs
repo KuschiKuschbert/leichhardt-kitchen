@@ -38,8 +38,21 @@ const CSS = `
 .dz-ctl { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
 .dz-ctl .chip { min-width: 44px; }
 @media (max-width: 700px) { .dz-row.is-weigh { grid-template-columns: minmax(0, 1fr); } }
-.dz-dock { position: sticky; bottom: 0; display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; justify-content: space-between; margin-top: 1rem; padding: .7rem 0; border-top: 2px solid var(--ink); background: var(--bg); }
+.dz-dock { position: sticky; bottom: 0; z-index: 3; display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; justify-content: space-between; margin-top: 1rem; padding: .7rem 0; border-top: 2px solid var(--ink); background: var(--bg); }
 .dz-dock .hint { flex: 1 1 14rem; }
+@media (max-width: 899px) { .dz-dock.sv-dock { bottom: var(--tabbar-h, 68px); } }
+.dz-change { margin: .1rem 0 .5rem; padding: .5rem .7rem; border-left: 3px solid var(--ink); background: var(--surface-paper, #FBF8F1); }
+.dz-change .dz-now { display: block; font-size: 1rem; font-weight: 700; }
+.dz-change small { display: block; color: var(--muted); font-size: .8125rem; line-height: 1.45; }
+.dz-item { padding: 0 0 .5rem; border-bottom: 1px solid var(--line); }
+.dz-item .cln-template-summary { border-bottom: 0; padding: .45rem 0 .25rem; }
+.dz-item .dz-ctl .chip { padding: 0 .7rem; }
+@media (max-width: 899px) { .dz-dock.sv-dock { padding: .45rem 0; } .dz-dock.sv-dock .hint { flex: 1 1 8rem; } }
+.dz-state { display: block; margin-top: .45rem; font-size: .8125rem; color: var(--muted); }
+.dz-miss { margin: .5rem 0; padding: .55rem .75rem; border-left: 4px solid var(--accent); background: var(--surface-paper, #FBF8F1); }
+.dz-miss > b { display: block; font: 700 1.1rem/1.2 var(--display); }
+.dz-miss small { display: block; font-size: .875rem; color: var(--ink); }
+.dz-miss .p-link { min-height: 44px; }
 .dz-box { margin: .8rem 0; padding: .7rem .8rem; border: 1px solid var(--edge); border-left: 4px solid var(--ink); border-radius: 6px; background: var(--surface-paper, #FBF8F1); }
 .dz-box > b { display: block; font: 700 1.05rem/1.2 var(--display); }
 .dz-box > .hint, .dz-box > .p-link { display: block; }
@@ -199,6 +212,68 @@ const flagRow = where => '<li class="dsh-need dsh-need-att dz-need-quiet" data-d
 scenes['ab-inbox'] = { open: w => F.adminPage(w, ''), draw: p => put(p, a => { document.querySelector('.dsh-need-list').insertAdjacentHTML('beforeend', a); const h = document.querySelector('.dsh-needs .hint'); if (h) h.textContent = '2 to look at'; document.querySelectorAll('.a-quick').forEach(q => { const n = [...q.querySelectorAll('*')].find(e => !e.children.length && e.textContent.trim() === '1'); if (n) n.textContent = '2'; }); }, flagRow('Open that night')) };
 scenes['c-inbox'] = { open: w => F.adminPage(w, ''), draw: p => put(p, a => { document.querySelector('.dsh-need-list').insertAdjacentHTML('beforeend', a.row); const h = document.querySelector('.dsh-needs .hint'); if (h) h.textContent = '2 to look at'; document.querySelectorAll('.a-quick').forEach(q => { const n = [...q.querySelectorAll('*')].find(e => !e.children.length && e.textContent.trim() === '1'); if (n) n.textContent = '2'; }); document.querySelector('.dsh-dtiles').insertAdjacentHTML('afterbegin', a.tile); },
   { row: flagRow('Open that night'), tile: '<button type="button" class="dsh-dtile" data-design><span class="dsh-dtile-lab">Cleaning, Wednesday</span> <span class="dsh-dtile-num">5<small> of 6</small></span> <span class="dsh-dtile-sub">jobs that came round. Hot larder: 1 not ticked</span></button>' }) };
+
+// THE MIX (after round 2): B's one list leads, with one Save for weight and day together; the book plans in bulk only
+// while Cleaning is off; results are the Inbox row and that night in Records. No new room, no new Reports tab.
+const LEVELS_LINE = '<p class="hint" data-design><b>Each day takes jobs up to:</b> ' + ORDER.map(d => S[d] + ' ' + TAKES[LEVEL[d]]).join(', ') + '. Friday and Saturday together: at most ' + fewest.quiet.most + ' of the week\'s ' + fewest.quiet.of + ' jobs. Set by the admin. <button type="button" class="p-link">Change</button></p>';
+const RULES_FOLD = '<details class="pv-fold" data-design><summary style="min-height:44px;padding:.7rem 0;font-weight:600">How the book suggests a day</summary><ol><li>A day takes no job longer than it is set for.</li><li>A job keeps the day it has, unless that day does not take it.</li><li>A job with no day goes on the night its section has least on.</li><li>A job moves only when that makes its section\'s heaviest night lighter.</li><li>Jobs of one kind share a day where rule 3 or 4 leaves a choice.</li></ol><p class="hint"><b>Two more rules are the book\'s suggestion, not yours yet:</b> no section gets two heavy jobs on one night, and a section\'s night over 5 points is called too heavy. Change them or drop them. Points: light 1, medium 2, heavy 3.</p></details>';
+const kindBtn = j => '<button type="button" class="ux-picker-trigger" style="min-height:44px;width:auto;flex:0 1 auto" aria-label="Kind of job, optional">' + (j && j.kind ? esc(j.kind) : 'Kind') + ' ▾</button>';
+const mixRow = (j, o) => { o = o || {}; const blank = o.blank, r = fewest, ch = !blank && (movedIn(r).includes(j) || !j.days.length || j.every === 28);
+  const now = j.every === 28 ? firstDate(r, j) + ', then every 4 weeks' : !j.days.length ? D[r.days[j.id][0]] : D[r.days[j.id][0]] + ', was ' + D[j.days[0]];
+  const keep = j.every === 28 ? '<button type="button" class="btn">Pick a date</button>' : !j.days.length ? '<button type="button" class="btn">Another day ▾</button>' : '<button type="button" class="btn">Keep ' + D[j.days[0]] + '</button><button type="button" class="btn">Another day ▾</button>';
+  return '<li class="cln-template-item dz-item" role="listitem" data-design><div class="cln-template-summary"><div><b>' + esc(j.text) + '</b><small>' + esc(secName(j.sec)) + ' · ' + rhythm(j) + (blank ? ' · <b>No weight yet</b>' : '') + '</small></div></div>' +
+    '<div class="dz-ctl">' + chips3(blank ? 0 : j.w) + kindBtn(blank ? null : j) + '</div>' +
+    (ch && o.change !== false ? '<div class="dz-change"><span class="dz-now">' + now + '</span><small>' + esc(cap1(r.why[j.id])) + '.</small>' + (o.state && /Saved|Refused|No day/.test(o.state) ? '' : '<div class="dz-ctl" style="margin-top:.4rem">' + keep + '</div>') + '</div>' : '') +
+    (o.state ? '<span class="dz-state">' + o.state + '</span>' : ch && o.change !== false ? '<span class="dz-state">' + tag('Suggested, not saved') + '</span>' : '') + '</li>'; };
+const mixView = state => ({ open: w => F.chef(w), draw: async p => {
+  const r = fewest, mv = movedIn(r), changed = mv.concat(fresh, monthly), blank = ['sc-hot-05', 'sc-fry-04'];
+  const filter = (a, c, n) => '<div class="chips" role="group" aria-label="Show" data-design style="margin:.6rem 0">' + [['All', picked.length], ['Changes', c], ['No weight', n]].map((x, i) => '<button type="button" class="chip" aria-pressed="' + (i === a) + '">' + x[0] + ' ' + x[1] + '</button>').join('') + '</div>';
+  let body = '<p class="hint" data-design>Weekly and monthly jobs. Nightly jobs and the numbered Pack down steps are not here.</p>' + EG('The weights and kinds are made up. Yours will change the days.') + LEVELS_LINE, dock;
+  if (state === 'all') {
+    body += filter(0, 0, 2) + SECTIONS.map(s => { const js = picked.filter(j => j.sec === s); return js.length ? '<h3 class="nb-hd" data-design>' + esc(secName(s)) + '<span>' + js.length + ' jobs</span></h3><ul class="cln-templates" role="list" style="list-style:none;margin:0;padding:0">' + js.map(j => mixRow(j, { blank: blank.includes(j.id), change: false })).join('') + '</ul>' : ''; }).join('');
+    dock = '<span class="hint"><b>18 not saved.</b> 2 have no weight yet.</span><span class="dz-ctl"><button type="button" class="btn">Suggest the days</button><button type="button" class="btn dark">Save 18 jobs</button></span>';
+  } else if (state === 'changes') {
+    body += '<div class="dz-box" data-design><b>The book suggests ' + changed.length + ' changes</b><span class="hint">' + mv.length + ' jobs move, ' + fresh.length + ' new jobs get a day, ' + monthly.length + ' monthly jobs get a first date. ' + (picked.length - changed.length) + ' keep their day. Cleaning is switched off, so no job waits. One Save keeps each job\'s weight and day together.</span></div>' + filter(1, changed.length, 0) +
+      '<ul class="cln-templates" role="list" style="list-style:none;margin:0;padding:0">' + changed.map(j => mixRow(j)).join('') + '</ul>' + RULES_FOLD;
+    dock = '<span class="hint"><b>Nothing is saved yet.</b></span><span class="dz-ctl"><button type="button" class="btn dark">Save 20 jobs</button></span>';
+  } else if (state === 'saving') {
+    const st = ['<span class="lk-stamp">Saved</span> 14:02. Starts tomorrow.', '<span class="lk-stamp">Saved</span> 14:02. Starts tomorrow.', tag('Not sent') + ' No signal. Your choice is kept on this phone. <button type="button" class="btn" style="margin-left:.4rem">Send again</button>', tag('Refused') + ' Someone changed this job on another phone. <button type="button" class="btn" style="margin-left:.4rem">Refresh</button>'];
+    body += '<div class="dz-box" data-design><b>12 of 20 jobs saved</b><span class="hint">1 not sent, 1 refused, 6 waiting to send, 1 has no day that fits. The jobs already saved start tomorrow. Nothing else has changed.</span></div>' + filter(1, changed.length + 1, 0) +
+      '<ul class="cln-templates" role="list" style="list-style:none;margin:0;padding:0">' + changed.map((j, i) => mixRow(j, { state: st[i] || tag('Waiting to send', true) })).join('') +
+      '<li class="cln-template-item dz-item" role="listitem" data-design><div class="cln-template-summary"><div><b>Deep clean the oil filter machine</b><small>Hot larder · every Thursday</small></div></div><div class="dz-change"><span class="dz-now">No day fits. Left on Thursday.</span><small>Hot larder already has a heavy job on every day that takes one. That is one of the book\'s two suggested rules: open "How the book suggests a day" to change it.</small></div><span class="dz-state">' + tag('No day fits') + '</span></li></ul>';
+    dock = '<span class="hint"><b>12 of 20 saved.</b> 8 still to send.</span><span class="dz-ctl"><button type="button" class="btn dark">Send the rest</button></span>';
+  } else {
+    const off = picked.find(j => j.id === 'sc-hot-03'), nw = fresh[0];
+    body = '<p class="hint" data-design>Weekly and monthly jobs. Nightly jobs and the numbered Pack down steps are not here.</p>' + EG('The weights, kinds and the added jobs are made up.') +
+      '<div class="dz-box" data-design><b>Cleaning is on</b><span class="hint">The book now gives a day to new jobs only. A job that has a day moves only when you say so, one at a time, because a moved job has one uneven week.</span></div>' + LEVELS_LINE + filter(1, 3, 0) +
+      '<h3 class="nb-hd" data-design>New job<span>1 with no day yet</span></h3><ul class="cln-templates" role="list" style="list-style:none;margin:0;padding:0">' +
+      '<li class="cln-template-item dz-item" role="listitem" data-design><div class="cln-template-summary"><div><b>' + esc(nw.text) + '</b><small>Grill · No day yet</small></div></div><div class="dz-ctl">' + chips3(1) + kindBtn(nw) + '</div><div class="dz-change"><span class="dz-now">Tuesday</span><small>Grill has the least on that night. A new job starts the day it is saved: today is Wednesday, so it is first due next Tuesday.</small><div class="dz-ctl" style="margin-top:.4rem"><button type="button" class="btn">Another day ▾</button></div></div><span class="dz-state">' + tag('Suggested, not saved') + '</span></li>' +
+      '<li class="cln-template-item dz-item" role="listitem" data-design><div class="cln-template-summary"><div><b>Degrease the charcoal oven hood</b><small>Hot larder · No day yet</small></div></div><div class="dz-ctl">' + chips3(3) + kindBtn(null) + '</div><div class="dz-change"><span class="dz-now">Monday, but it becomes Hot larder\'s heaviest night, at 7 points</span><small>No lighter night takes a heavy job. That is over the book\'s suggested limit of 5 points. Pick another day, or move one of Monday\'s jobs first.</small><div class="dz-ctl" style="margin-top:.4rem"><button type="button" class="btn">Another day ▾</button></div></div><span class="dz-state">' + tag('To look at') + '</span></li></ul>' +
+      '<h3 class="nb-hd" data-design>A move on offer<span>your call</span></h3><ul class="cln-templates" role="list" style="list-style:none;margin:0;padding:0">' +
+      '<li class="cln-template-item dz-item" role="listitem" data-design><div class="cln-template-summary"><div><b>' + esc(off.text) + '</b><small>Hot larder · every Sunday · Medium</small></div></div><div class="dz-change"><span class="dz-now">Monday, was Sunday</span><small>Hot larder\'s heaviest night goes from 5 to 4 points. This once, 8 days between cleans: last cleaned Sunday, next due the Monday after.</small><div class="dz-ctl" style="margin-top:.4rem"><button type="button" class="btn">Leave on Sunday</button><button type="button" class="btn">Move to Monday</button></div></div><span class="dz-state">' + tag('Offered, not saved') + '</span></li></ul>' + RULES_FOLD;
+    dock = '<span class="hint"><b>Nothing is saved yet.</b></span><span class="dz-ctl"><button type="button" class="btn dark">Save 1 job</button></span>';
+  }
+  await put(p, a => { document.querySelector('#cln-plan-title').textContent = a.title; document.querySelector('.cln-plan .nb-ph .p-link').textContent = 'Back to Repeat tasks'; document.querySelector('.cln-plan-body').innerHTML = a.body; },
+    { title: 'Weights and days · ' + picked.length + ' weekly and monthly jobs', body: body + '<div class="dz-dock sv-dock" data-design>' + dock + '</div>' });
+} });
+scenes['m1-entry'] = { open: w => F.chef(w), draw: p => put(p, a => { const first = document.querySelector('.cln-first-date'); first.insertAdjacentHTML('afterend', a); },
+  '<div class="cln-attention" role="status" data-design><b>18 weekly and monthly jobs have no weight yet</b><span class="hint">Say how long each takes: light, medium or heavy. Then the book can suggest the days.</span><button type="button" class="p-link">Weights and days</button></div>') };
+scenes['m2-weights'] = mixView('all');
+scenes['m3-changes'] = mixView('changes');
+scenes['m4-part-saved'] = Object.assign(mixView('saving'), { widths: [390] });
+scenes['m5-cleaning-on'] = mixView('on');
+const mixFlag = '<li class="dsh-need dsh-need-att dz-need-quiet" data-design><span class="dsh-need-mark" aria-hidden="true"></span><div><p class="dsh-tag dsh-tag-att">Not ticked</p><p class="dsh-need-title">Hot larder: 1 weekly job last night</p><p class="dsh-need-detail">Wednesday 25 November · Clean behind the pizza ovens (every Wednesday). Also not ticked Wednesday 18 November.</p></div><button type="button" class="btn">Open that night</button></li>';
+scenes['m6-inbox'] = { open: w => F.adminPage(w, ''), draw: p => put(p, a => { document.querySelector('.dsh-need-list').insertAdjacentHTML('beforeend', a); const h = document.querySelector('.dsh-needs .hint'); if (h) h.textContent = '2 to look at'; document.querySelectorAll('.a-quick').forEach(q => { const n = [...q.querySelectorAll('*')].find(e => !e.children.length && e.textContent.trim() === '1'); if (n) n.textContent = '2'; }); }, mixFlag) };
+scenes['m7-records'] = { open: w => F.adminPage(w, 'records'), draw: async p => {
+  await p.click('.rec-dayrow[data-d="' + F.day(1) + '"]'); await F.L.settle(p, 500);
+  await put(p, a => { const v = document.querySelector('.rec-dayv'), lines = v.querySelectorAll('.rec-line'), last = lines[lines.length - 1] || v.querySelector('.chiprow'); last.insertAdjacentHTML('afterend', a); },
+    '<h4 class="a-ch-h" data-design style="margin-top:1rem">Weekly and monthly jobs, by section</h4>' + EG('The people are made up. The lines above are Records as it is today.') +
+    '<div class="dz-miss" data-design><b>Hot larder: 1 of 1 not ticked by midnight</b><small>Clean behind the pizza ovens (every Wednesday). Also not ticked Wednesday 18 November. Done Wednesday 11 November.</small><button type="button" class="p-link" aria-expanded="false">Who was rostered on Hot larder</button></div>' +
+    '<p class="rec-line" data-design><b>Shared kitchen:</b> 1 of 1 done. Clean the shelves above the pass. A shared job has no section, so nobody is listed.</p>' +
+    '<p class="rec-line" data-design><b>Grill, Pans, Fryers salads and dessert:</b> no weekly or monthly job due that Wednesday.</p>' +
+    '<div class="dz-box" data-design><b>What this says when it cannot know</b><span class="hint"><span class="rec-wait">Count not ready.</span> The nightly run counts this day at 03:00.</span><span class="hint">Not counted: Cleaning was switched off that day.</span><span class="hint">Rostered on Hot larder: nobody was set on the plan that day.</span></div>');
+} };
+
 // the page no design may change: a cook's Cleaning day (the same picture serves A, B and C)
 scenes['cook-unchanged'] = { open: w => F.cook(w), draw: async () => {}, plain: true };
 
@@ -207,8 +282,8 @@ scenes['cook-unchanged'] = { open: w => F.cook(w), draw: async () => {}, plain: 
   for (const name of Object.keys(scenes).filter(n => !ONLY || n.indexOf(ONLY) === 0)) for (const width of scenes[name].widths || [390, 1280]) {
     const sc = scenes[name], p = await sc.open(width);
     await p.addStyleTag({ content: CSS }); await sc.draw(p); await F.L.settle(p, 350);
-    await p.evaluate(() => scrollTo(0, 0)); const firstScreen = await p.evaluate(() => ({ wholeDesignRows: [...document.querySelectorAll('.dz-row')].filter(e => { const b = e.getBoundingClientRect(); return b.top >= 0 && b.bottom <= innerHeight - 68; }).length, firstDesignTop: (() => { const e = document.querySelector('[data-design]'); return e ? Math.round(e.getBoundingClientRect().top + scrollY) : null; })() }));
-    const m = sc.plain ? await p.evaluate(() => ({ screensLong: Math.round(document.documentElement.scrollHeight / innerHeight * 10) / 10, sideways: document.documentElement.scrollWidth > innerWidth, rows: document.querySelectorAll('.cln-row').length, wholeRowsOnFirstScreen: [...document.querySelectorAll('.cln-row')].filter(e => { const b = e.getBoundingClientRect(); return b.top >= 0 && b.bottom <= innerHeight; }).length })) : await F.measure(p);
+    await p.evaluate(() => scrollTo(0, 0)); const firstScreen = await p.evaluate(() => ({ wholeDesignRows: (() => { const dock = document.querySelector('.dz-dock'), bar = document.querySelector('.tabbar, nav.tabs, #tabbar'), floor = Math.min(dock ? dock.getBoundingClientRect().top : innerHeight, innerWidth < 900 ? innerHeight - 68 : innerHeight); return [...document.querySelectorAll('.dz-row, .dz-item')].filter(e => { const b = e.getBoundingClientRect(); return b.top >= 0 && b.bottom <= floor; }).length; })(), firstDesignTop: (() => { const e = document.querySelector('[data-design]'); return e ? Math.round(e.getBoundingClientRect().top + scrollY) : null; })() }));
+    const m = sc.plain ? await p.evaluate(() => ({ screensLong: Math.round(document.documentElement.scrollHeight / innerHeight * 10) / 10, sideways: document.documentElement.scrollWidth > innerWidth, rows: document.querySelectorAll('.cln-row').length, wholeRowsOnFirstScreen: [...document.querySelectorAll('.cln-row')].filter(e => { const b = e.getBoundingClientRect(); return b.top >= 0 && b.bottom <= (innerWidth < 900 ? innerHeight - 68 : innerHeight); }).length, day: 'Wednesday 2 December 2026, the day every chef scene here is drawn on' })) : await F.measure(p);
     await p.screenshot({ path: path.join(OUT, name + '-' + width + '.png') });
     // the whole page: the window is made as tall as the page, so the fixed tab bar and a sticky Save bar sit at the foot, not across the middle
     const tall = await p.evaluate(() => document.documentElement.scrollHeight), was = p.viewportSize();

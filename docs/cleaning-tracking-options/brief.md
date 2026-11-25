@@ -209,7 +209,7 @@ Five reviewers said a blend beats their preferred single design (cook, head chef
 | B: the plan as changes only, fewest moves, with a way to keep the old day | Take: cook, head chef, new starter, keeper, screen designer. The skeptic would hold any Plan button until real weights exist | Things 3, Todoist | 3 of 15 days move in the example, not 10 |
 | B: planning in bulk at any time | Reject: keeper, skeptic; the cook named it as B's weakness ("days shift under us") | | Once Cleaning is on, each moved job costs an uneven week and extra reads |
 | B: a new Reports page as an eighth tab | Reject or hold: keeper, skeptic, screen designer, head chef, new starter. The cook rejected its clock times beside names and its wording | Linear, Flighty | Off screen at 390 px, nothing to show for weeks, and Records exists |
-| C: the book plans in bulk only while Cleaning is off; after that only the new job | Take: keeper, skeptic, cook | Flighty | While it is off nobody waits and no cook reads the jobs |
+| C: the book plans in bulk only while Cleaning is off; after that only the new job | Take: keeper, skeptic, cook. Not agreed: the head chef reviewer said switch-on need not wait for the planner and kept B's list as the bulk editor, and the head chef's own D6 says a job that has a day can be moved | Flighty | While it is off nobody waits and no cook reads the jobs |
 | C: the four steps | Reject: keeper, skeptic, new starter, head chef, screen designer | Linear | They duplicate B's list and are used once |
 | C: the whole week replanned, section first | Reject: head chef. Named as C's weakness by the other five | | 10 moves reach the same heaviest nights as 3 in the example |
 | C: the week strip, each night was and now | Take: cook, head chef. Reject: screen designer ("56 point numbers") | Airbnb | Split. Not settled |
@@ -248,7 +248,7 @@ Each is fixed in the combined preview or listed as open.
 
 ### Contract fit, round 2
 
-All six said Needs work. None found a state that relied on colour alone (screen designer).
+Head chef, skeptic, new starter, keeper and screen designer said Needs work. The cook gave results by item: the cook's page Works, B's Save bar Needs work, a moved row Not evidenced. The screen designer found no state that relied on colour alone.
 
 | Check | A | B | C |
 | --- | --- | --- | --- |

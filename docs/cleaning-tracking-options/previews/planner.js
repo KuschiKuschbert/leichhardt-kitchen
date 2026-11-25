@@ -20,6 +20,11 @@
    check(jobs, days, opts) -> the rules a set of days breaks, in words ([] for none): what a page runs again whenever a
    chef changes or leaves out one line of a proposal, so a plan never breaks its own rules without saying so.
 
+   Whose rules. The head chef's: a weight in three steps, each day's level, Friday and Saturday light only and a tenth
+   of the week, same-kind days, dated jobs can move. The lead's, PROPOSED and his to change or drop: rule 3 (no section
+   gets two heavy jobs on one night) and cap (a section's night is "too heavy" past 5 points). "No day fits" and "over 5"
+   come from those two.
+
    The order the rules win in, when they pull against each other:
    1. A day takes no job heavier than its level: Friday and Saturday take light jobs only. A job with no weight
       counts as medium, never as light.
@@ -42,6 +47,7 @@
 (function (root) {
   'use strict';
   var NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  function poss(name) { return /s$/.test(name) ? name + '\'' : name + '\'s'; }   // Pans' night, Grill's night
   function sets(per) {   // the weekday sets a job on per days a week may take, days at least two apart round the week
     var out = [], a, b, c, gap = function (x, y) { var d = Math.abs(x - y); return Math.min(d, 7 - d); };
     if (per <= 1) { for (a = 0; a < 7; a++) out.push([a]); return out; }
@@ -112,18 +118,20 @@
         var worst = j.sec ? [0, 1, 2, 3, 4, 5, 6].reduce(function (n, d) { return Math.max(n, ((sec[j.sec] || [])[d] || 0) + (set.indexOf(d) >= 0 ? cost(j) : 0)); }, 0) : 0;
         var over = load > cap, score = (sectionFirst ? 100000 * worst : 0) + (over ? 0 : -1000 * mates) + (set.join(',') === was ? (together ? -300 : -100000) : 0) + 150 * q + 100 * load + 10 * set.reduce(function (n, d) { return n + kitchen[d]; }, 0);
         if (over && mates) kindGave = true;
-        if (!best || score < best.score) best = { set: set, score: score, mates: mates, over: over, load: load };
+        if (!best || score < best.score) best = { set: set, score: score, mates: mates, over: over, load: load, before: j.sec ? Math.max.apply(null, sec[j.sec] || [0]) : 0 };
       });
       if (!best) { out.days[j.id] = (j.days || []).slice(); out.why[j.id] = 'No day fits the rules. Left as it is.'; return; }
       best.set.forEach(function (d) { put(j, d); if (quiet.indexOf(d) >= 0) quietUsed++; });
       out.days[j.id] = best.set;
       if (j.every) { wk[j.every] = wk[j.every] || 0; out.week[j.id] = wk[j.every]++ % (j.every / 7) + 1; }   // jobs on one rhythm of whole weeks start in different weeks
-      var bits = [];
+      var bits = [], refused = (j.days || []).filter(function (d) { return hasDay(j) && level[d] < cost(j); });
+      if (refused.length) bits.push(NAMES[refused[0]] + ' takes up to ' + ['', 'light', 'medium', 'heavy'][level[refused[0]]] + ' jobs');
       if (best.set.join(',') === was) bits.push('stays');
       if (best.mates && !best.over) bits.push('with the other jobs of its kind (' + j.kind.toLowerCase() + ')');
       else if (j.kind && heavyGave) { bits.push('not on the day of its kind (' + j.kind.toLowerCase() + '): ' + where + ' already has a heavy job then'); out.gave.push(j.id); }
       else if (j.kind && kindGave) { bits.push('not on the day of its kind (' + j.kind.toLowerCase() + '): ' + where + ' would be too heavy'); out.gave.push(j.id); }
       else if (best.set.join(',') !== was) bits.push(j.sec ? where + ' has the least on that night (' + best.load + (best.load === 1 ? ' point' : ' points') + ' with it)' : 'a day the rules allow');
+      if (j.sec && best.load > best.before) { bits = bits.filter(function (b) { return !/has the least/.test(b); }); bits.push('it becomes ' + poss(where) + ' heaviest night, at ' + best.load + ' points'); out.heaviest = (out.heaviest || []).concat([j.id]); }
       out.why[j.id] = bits.join(', ');
     });
     // fewest moves, the offers: one dated job at a time, only when its section's heaviest night gets lighter
@@ -144,7 +152,7 @@
         });
         if (!pick) return;
         out.days[pick.j.id].forEach(function (d) { put(pick.j, d, -1); }); pick.set.forEach(function (d) { put(pick.j, d); });
-        out.days[pick.j.id] = pick.set; out.why[pick.j.id] = name + '\'s heaviest night goes from ' + top + ' to ' + pick.next + ' points'; moved = true;
+        out.days[pick.j.id] = pick.set; out.why[pick.j.id] = poss(name) + ' heaviest night goes from ' + top + ' to ' + pick.next + ' points'; moved = true;
       });
     }
     out.load = { sections: sec, kitchen: kitchen }; out.quiet = { used: quietUsed, most: quietMax, of: total };

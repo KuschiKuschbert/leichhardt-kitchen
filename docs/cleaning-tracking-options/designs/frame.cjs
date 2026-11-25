@@ -15,9 +15,9 @@ schedule.drafts().concat(schedule.packDownDrafts(), schedule.sectionDrafts()).fo
 SECS.forEach(([id, name]) => { cleaning[key('sections', id)] = { name, uses: 5, hidden: false }; });
 cleaning[key('config', 'main')] = { ...L.seed()[key('config', 'main')], kitSecs: SECS.map(([id, name]) => ({ id, name })) };
 const day = n => L.ymd(new Date(L.NOW - n * DAY)), rows = [];
-for (let i = 40; i >= 2; i--) rows.push({ day: day(i), p: { n: 20, w: 18, t: 17, r: 2, sec: {}, mins: {}, who: {} }, w: { n: 0, reason: {}, sec: {}, items: [] }, x: { out: 0, in: 0 },
-  fs: { v: 1, del: [], c: { cv: 1, due: 50, done: 46, miss: [], missN: 0, unable: [], unableN: 0, wait: [], waitN: 0, ev: 4, evRec: 4 }, cool: { k: 'none' } } });
-const admin = { [key('analysis', 'dashboard')]: { v: 1, generation: 'g1', at: L.NOW - 11 * 3600000, from: day(40), to: day(2), days: rows }, [key('analysis', 'health')]: { at: L.NOW - 11 * 3600000, status: 'ok' } };
+for (let i = 40; i >= 1; i--) rows.push({ day: day(i), p: { n: 20, w: 18, t: 17, r: 2, sec: {}, mins: {}, who: {} }, w: { n: 0, reason: {}, sec: {}, items: [] }, x: { out: 0, in: 0 },
+  fs: { v: 1, del: [], c: i === 1 ? { cv: 1, due: 52, done: 47, miss: ['Clean behind the pizza ovens'], missN: 1, unable: [], unableN: 0, wait: [], waitN: 0, ev: 4, evRec: 4 } : { cv: 1, due: 50, done: 46, miss: [], missN: 0, unable: [], unableN: 0, wait: [], waitN: 0, ev: 4, evRec: 4 }, cool: { k: 'none' } } });
+const admin = { [key('analysis', 'dashboard')]: { v: 1, generation: 'g1', at: L.NOW - 11 * 3600000, from: day(40), to: day(1), days: rows }, [key('analysis', 'health')]: { at: L.NOW - 11 * 3600000, status: 'ok' } };
 const fonts = p => p.addStyleTag({ content: ['barlow:Barlow:400', 'barlow-600:Barlow:600', 'barlow-700:Barlow:700', 'barlow-condensed:Barlow Condensed:700', 'caveat:Caveat:700'].map(f => { const [file, fam, w] = f.split(':'); return "@font-face{font-family:'" + fam + "';font-weight:" + w + ";src:url('/docs/cleaning-chef-options/fonts/" + file + ".woff2') format('woff2')}"; }).join('') }).then(() => p.evaluate(() => document.fonts.ready));
 let base = '', browser = null;
 async function start() { const port = 20000 + Math.floor(Math.random() * 20000); await new Promise(r => server.listen(port, '127.0.0.1', r)); base = 'http://127.0.0.1:' + port + '/'; browser = await L.start(); }
@@ -93,4 +93,4 @@ async function focusRing(p) {
     const ring = rgba(cs.outlineColor), l1 = lum(ring.slice(0, 3)), l2 = lum(bg.slice(0, 3));
     return { reached: true, on: (e.textContent || e.tagName).trim().slice(0, 24), focusVisible: e.matches(':focus-visible'), outline: cs.outlineStyle + ' ' + cs.outlineWidth, offset: cs.outlineOffset, ringAgainstSurround: Math.round((Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05) * 100) / 100 }; });
 }
-module.exports = { L, start, stop, chef, cook, adminPage, measure, focusRing, fonts, SECS, WED, schedule };
+module.exports = { L, start, stop, chef, cook, adminPage, measure, focusRing, fonts, SECS, WED, schedule, day };
