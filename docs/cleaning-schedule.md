@@ -55,6 +55,18 @@ One file decides how a cleaning day reads: `js/cleaning-core.js` (24 November 20
 
 The Cleaning page, the book's cleaning write check (`cleaningDue()` in `js/prep.js`) and the nightly Records count (`scripts/records-core.mjs`) all use it. The page keeps its own words, such as Not sent, Due and To do (`flowState()`). The core is pure: the kitchen clock comes in as an argument, `LK_TIME` on a phone and Queensland time in node. It is lazy and loads with Cleaning, before `js/cleaning.js`; without it the book refuses a cleaning write rather than guess. `firestore.rules` keeps its own check of a due day: change the two together. A change to how a finished day reads bumps `CLEAN_V` in `scripts/records-core.mjs` and the results in `tests/cleaning-core.test.js`.
 
+## What the nightly count keeps
+
+Results by section, step 1 of 4 (head chef, 26 November 2026, [brief](cleaning-tracking-options/brief.md)). The 03:00 job counts each finished day with `cleanDay()` in `scripts/records-core.mjs` (`CLEAN_V` 2) and keeps the count on that day's row of `analysis/dashboard`, which only the admin reads.
+
+- **When counting starts.** A day is counted from the day the nightly run first finds Cleaning switched on for the team (`config/main` `staffSee.cleaning`). That day is kept as `cleanFrom` in `analysis/current` and on the board, and cleared while Cleaning is off. The run sees the switch once, at 03:00, so the day Cleaning was switched on is not counted and the next one is. Every other day is `{ cv, nc: 1 }`: Records says "Cleaning: not counted". Jobs loaded before switch-on never read as missed. A counted day stays counted.
+- **Weekly and monthly jobs, one by one.** A job that comes round weekly or monthly is the one whose row says how often: some weekdays but not all, or a repeat of whole weeks (`round()` in `js/cleaning-core.js`, checked against `rhythm()` in `js/cleaning.js`). A nightly job is not, nor is a repeat every 2 days. Weekly Pack down steps are. Each one due that day is kept in `r` under its root id, so a job that was moved keeps one history: its section id and name, done, missed, unable or awaiting, and for a done job who did it and when. At most 40 a day; `rN` and `rn` hold the whole counts. Unable to complete is apart from `rn.due`.
+- **Who was on.** For a section with a missed weekly or monthly job, `ro` keeps who was on that section that day as facts with their source: the chef's plan or a cook's own pick, each with its shift, matched by section id. It says listed, nobody, or not kept (the run reads 8 weeks of plans and 30 days of picks). The job does not decide who closed. A shared job has no section, so nobody is listed.
+- **Nightly jobs** stay in the whole-day counts (due, done, missed, with up to 8 names), as before.
+- **Size.** If the board would pass 600,000 bytes the one-by-one detail is dropped, oldest days first (`cut`), and the whole counts stay. The cleaning count never stops the rest of the nightly publish.
+
+No screen reads `r`, `rn` or `ro` yet. The Inbox row and the Records night that do are step 2.
+
 ## Ordered pack down
 
 Use the existing daily view and expand checks inline. Preserve section and numeric step order: Hot larder, then Grill, then Pans. Existing general work stays available. When the pack-down list is present, show the existing after-service floor task once after the pack-down section, with a reminder to finish overhead shelves and frames before the final floor clean. Earlier after-service floor checks remain separate. Do not create a duplicate floor task or change its recurrence.

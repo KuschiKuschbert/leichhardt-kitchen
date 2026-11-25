@@ -53,7 +53,9 @@ for (const [id, x] of Object.entries(waste)) await K2.collection('waste').doc(d2
 for (const [id, x] of Object.entries({ a: { dir: 'out', text: 'Milk' }, b: { dir: 'in', text: 'Eggs' }, c: { dir: 'out', text: 'Old', deleted: true } })) await K2.collection('transfers').doc(d2).collection('lines').doc(id).set(x);
 await K2.collection('references').doc('ai-slaw').set({ alias: 'Slaw', label: 'Slaw', recipeId: 'slaw' });
 await K2.collection('config').doc('main').set({ people: [{ id: 'ann', name: 'Ann' }, { id: 'cy', name: 'Cy' }, { id: 'dee', name: 'Dee' }, { id: 'gone', name: 'Gone', active: false }],
-  kitSecs: [{ id: 'larder', name: 'Larder' }, { id: 'grill', name: 'Grill', off: true }] });
+  kitSecs: [{ id: 'larder', name: 'Larder' }, { id: 'grill', name: 'Grill', off: true }], staffSee: { cleaning: true } });
+// Cleaning has been switched on for this kitchen since 1 October: the count covers the whole window
+await K2.collection('analysis').doc('current').set({ cleanFrom: '2026-10-01' });
 await K2.collection('training').doc('t1').set({ personId: 'ann', section: 'Larder', status: 'confirmed', day: d2 });
 await K2.collection('training').doc('t2').set({ personId: 'dee', section: 'Larder', status: 'in-training', day: d2 });
 await K2.collection('training').doc('t3').set({ personId: 'cy', section: 'Larder', recipeId: 'slaw', status: 'confirmed', day: d2 });
@@ -97,6 +99,40 @@ assert.deepEqual([board.days[0].fs.cool.k, board.days[2].fs.cool.k], ['before', 
 await K2.collection('cleaningDone').doc('2026-10-28_c2').set({ day: '2026-10-28', task: 'c2', done: true });
 await analyse(K2, { days: 3, at: at + 1000 });
 assert.equal((await K2.collection('analysis').doc('dashboard').get()).data().days[0].fs.c.missN, 2, 'Records: a counted day stays counted (its records cannot change after the day).');
+assert.deepEqual([board.cleanFrom, row.fs.c.cv, row.fs.c.r, row.fs.c.rN], ['2026-10-01', 2, [], 0], 'Records: the board says when counting began; nightly jobs are not kept one by one: ' + JSON.stringify(row.fs.c));
+// Results by section, step 1 (26 Nov 2026). Counting starts the day the run first finds Cleaning switched on.
+const KC = db.collection('kitchens').doc('000009'), dashC = async () => (await KC.collection('analysis').doc('dashboard').get()).data();
+await db.recursiveDelete(KC);
+await KC.collection('config').doc('main').set({ people: [{ id: 'lou', name: 'Lou' }, { id: 'vic', name: 'Vic' }], kitSecs: [{ id: 'hot', name: 'Hot larder' }] });
+await KC.collection('days').doc(yesterday).collection('items').doc('p').set({ text: 'Milk' });
+// loaded before switch-on: a nightly job and a Saturday job for Hot larder, in two revisions with one root
+await KC.collection('cleaningTasks').doc('n1').set({ text: 'Wipe benches', from: cfrom, until: copen, dows: cdows, shared: true, section: '' });
+await KC.collection('cleaningTasks').doc('w1a').set({ text: 'Clean behind the pizza ovens', root: 'w1', from: cfrom, until: Date.parse('2026-10-20T00:00:00+10:00'), dows: [3], shared: false, section: 'hot', sectionName: 'Hot larder' });
+await KC.collection('cleaningTasks').doc('w1b').set({ text: 'Clean behind the pizza ovens', root: 'w1', from: Date.parse('2026-10-20T00:00:00+10:00'), until: copen, dows: [6], shared: false, section: 'hot', sectionName: 'Hot larder' });
+await KC.collection('team').doc('2026-10-31').set({ day: '2026-10-31', on: [{ id: 'lou', sh: 'dinner', sec: 'hot' }], br: [], v: 1, at: 1, upd: 1, by: 'sam' });
+await KC.collection('shifts').doc('2026-10-31_vic').set({ day: '2026-10-31', sec: 'hot', name: 'Hot larder', auto: false, at: 1, by: 'vic', sh: 'dinner' });
+const offRun = await analyse(KC, { days: 3, at });
+let bc = await dashC();
+assert.deepEqual([bc.cleanFrom, bc.days.map(x => x.fs.c)], ['', [{ cv: 2, nc: 1 }, { cv: 2, nc: 1 }, { cv: 2, nc: 1 }]], 'Cleaning is not switched on: no day is counted, so jobs loaded early never read as missed: ' + JSON.stringify(bc.days.map(x => x.fs.c)));
+assert.ok(offRun.records.reads <= 3, 'a night that counts no day reads no cleaning jobs or ticks (the board and the cooling batch only): ' + offRun.records.reads);
+await KC.collection('config').doc('main').set({ staffSee: { cleaning: true } }, { merge: true });
+const onRun = await analyse(KC, { days: 3, at: at + 1000 });
+bc = await dashC();
+assert.deepEqual([onRun.records.cleanFrom, bc.cleanFrom, bc.days.every(x => x.fs.c.nc === 1)], ['2026-10-31', '2026-10-31', true], 'the first run that finds Cleaning on starts counting from that day; the days before it stay not counted');
+// the next night: Saturday 31 October is a finished day on or after the first day, and is counted
+const nextRun = await analyse(KC, { days: 3, at: at + 86400000 });
+bc = await dashC();
+const satC = bc.days.find(x => x.day === '2026-10-31').fs.c;
+assert.deepEqual([bc.cleanFrom, bc.days.map(x => x.day + ':' + (x.fs.c.nc ? 'not counted' : 'counted'))], ['2026-10-31', ['2026-10-29:not counted', '2026-10-30:not counted', '2026-10-31:counted']], 'only the days from the first day on are counted');
+assert.deepEqual([satC.due, satC.missN, satC.r, satC.rn], [2, 2, [{ k: 'w1', t: 'Clean behind the pizza ovens', s: 'hot', sn: 'Hot larder', st: 'm' }], { due: 1, done: 0, miss: 1, unable: 0, wait: 0 }],
+  'the weekly job is kept by its root id with its section; the nightly job is in the whole counts only: ' + JSON.stringify(satC));
+assert.deepEqual(satC.ro, [{ s: 'hot', k: 'l', pk: 1, w: [{ n: 'Lou', sh: 'dinner', by: 'p' }, { n: 'Vic', sh: 'dinner', by: 'k' }] }], 'who was on the section with the missed job: the plan and an own pick, each with its source: ' + JSON.stringify(satC.ro));
+assert.ok(nextRun.records.reads >= 2, 'the counted day read its jobs: ' + nextRun.records.reads);
+// switched off again: the next day is not counted, and the counted day stays counted
+await KC.collection('config').doc('main').set({ staffSee: { cleaning: false } }, { merge: true });
+await analyse(KC, { days: 3, at: at + 2 * 86400000 });
+bc = await dashC();
+assert.deepEqual([bc.cleanFrom, bc.days.map(x => x.day + ':' + (x.fs.c.nc ? 'not counted' : 'counted'))], ['', ['2026-10-30:not counted', '2026-10-31:counted', '2026-11-01:not counted']], 'switched off: no new day is counted, and a counted day stays counted');
 assert.equal(JSON.stringify(board).includes('price'), false);
 // Needs you: Slaw is linked, so 6 of 7 recorded names wait; Cy (recipe only) and Dee (in training) need a Larder review.
 assert.deepEqual(board.needs, { links: 6 }, 'Needs you counts the item links to review (the training counts went with the assessments): ' + JSON.stringify(board.needs));

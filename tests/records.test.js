@@ -9,13 +9,13 @@ const day = n => L.ymd(new Date(L.NOW - n * 86400000));
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const short = d => DOW[new Date(d + 'T12:00:00Z').getUTCDay()] + ' ' + (+d.slice(8));
 const at = (d, hm) => Date.parse(d + 'T' + hm + ':00+10:00');
-const target = day(3), notCounted = day(1), counted = day(2);
+const target = day(3), notCounted = day(1), counted = day(2), outside = day(5);   // outside: a day the cleaning count does not cover
 const rows = [];
 for (let i = 40; i >= 2; i--) {
   const d = day(i);
   rows.push({ day: d, p: { n: 20, w: 18, t: 17, r: 2, sec: {}, mins: {}, who: {} }, w: { n: 0, reason: {}, sec: {}, items: [] }, x: { out: 0, in: 0 },
     fs: { v: 1, del: d === target ? [{ at: '07:42', s: 'Bidfood', c: 3.1, f: null, n: 'All there', by: 'Ann' }, { at: '10:20', s: 'Seafood', c: 1.8, f: -19.5, n: '', by: 'Bo' }] : [],
-      c: d === counted ? null : d === target ? { cv: 1, due: 35, done: 31, miss: ['Fryer oil change', 'Cool room floor'], missN: 2, unable: [{ t: 'Hood filters', n: 'No degreaser' }], unableN: 1, wait: ['Probe check'], waitN: 1, ev: 0, evRec: 0 }
+      c: d === counted ? null : d === outside ? { cv: 2, nc: 1 } : d === target ? { cv: 1, due: 35, done: 31, miss: ['Fryer oil change', 'Cool room floor'], missN: 2, unable: [{ t: 'Hood filters', n: 'No degreaser' }], unableN: 1, wait: ['Probe check'], waitN: 1, ev: 0, evRec: 0 }
         : { cv: 1, due: 30, done: 30, miss: [], missN: 0, unable: [], unableN: 0, wait: [], waitN: 0, ev: 0, evRec: 0 },
       cool: d === target ? { k: 'batch', start: '14:05', by: 'Bo', s2: '16:10', s2by: 'Bo', r1: '16:07', r1by: 'Bo', r2: '', r2by: '' } : i > 20 ? { k: 'before' } : { k: 'none' } } });
 }
@@ -41,6 +41,12 @@ const reads = p => p.evaluate(() => window.__fake.bill.filter(b => /analysis|was
   ok(/^0 deliveries · Cleaning: count not ready · Cooling: no batch$/.test(row(counted)[2] || ''), 'a day whose cleaning was not counted says so, never 0 missed (' + row(counted)[2] + ')');
   ok(/^Count not ready\. The nightly run counts this day at 03:00\.$/.test(row(notCounted)[2] || ''), 'yesterday, after the last count, says it is not counted yet (' + row(notCounted)[2] + ')');
   ok(!!(await p.$('.rec-pick')) && await p.isVisible('.rec-pick'), 'the laptop opens with no day chosen: no day is read on open');
+  // 26 Nov 2026: a day the nightly count does not cover (before Cleaning was switched on for the team) says so, and
+  // never "no tasks due" or a number of missed jobs
+  ok(/^0 deliveries · Cleaning: not counted · /.test(row(outside)[2] || ''), 'a day the cleaning count does not cover says not counted in the list (' + row(outside)[2] + ')');
+  await p.click('.rec-dayrow[data-d="' + outside + '"]'); await L.settle(p, 300);
+  const offView = await dayText(p);
+  ok(offView.indexOf('Cleaning: not counted. The count starts once Cleaning is switched on for the team.') >= 0 && !/missed|no tasks/i.test(offView), 'and on the day itself (' + offView.slice(0, 160) + ')');
   const open1 = await reads(p);
   ok(open1.filter(x => /^analysis\/dashboard$/.test(x)).length === 1 && open1.filter(x => !/^analysis\//.test(x)).length === 0, 'opening Records reads the nightly record once and nothing else (' + open1.join(', ') + ')');
 
