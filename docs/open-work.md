@@ -20,6 +20,8 @@ Done on 22 Oct 2026 by the head chef: the Browser key works only from `kuschikus
 
 5. **Time a real cold start on the head chef's phone** (24 Nov 2026, [brief](loading-wait-options/brief.md)). The fixes for a slow first open (one start after an update, the step words, set publish times) were measured on the click-test stand-in only. The sign-in, App Check and the first answers on a real phone are not measured. Time one cold start with the sign-in apart from the reads. The App Check token lasts 1 hour by default (Firebase console, App Check, the web app's token time to live): the first open of the day then waits for a reCAPTCHA check. A longer time skips it on most opens but a stolen token works for longer: the owner's call.
 
+6. **Count the pull requests left behind** (25 Nov 2026, [Claude Ship](auto-merge.md#claude-ship-25-november-2026)). Over a fortnight, note each pull request that sat with failed Click tests or a conflict after its session ended, and how long it waited. If it is more than a few, weigh a scheduled task that finds them and starts a session to fix them. If it is rare, do nothing.
+
 Remove each item here once it is done.
 
 ### Bringing the code in line (22 Oct 2026)

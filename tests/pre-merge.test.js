@@ -117,6 +117,27 @@ ok(r.code === 0 && /== Worktrees:/.test(r.out), 'and the rest of the check still
 r = run(two);
 ok(/the queue merges it/.test(r.out) && !/Squash merge/.test(r.out), 'the closing hint says the queue merges, not a hand squash merge');
 
+// 6. A code change gets a /code-review reminder (25 Nov 2026, docs/auto-merge.md, For sessions). Code is what scripts/site-changed.sh
+// says the phones load, limited to .js, .css and .html, plus firestore.rules. Notes, tests and server scripts alone need none.
+function commit(files, msg) {
+  for (const f of files) { fs.mkdirSync(path.dirname(path.join(work, f)), { recursive: true }); fs.writeFileSync(path.join(work, f), msg + '\n'); }
+  git(work, 'add', '.');
+  git(work, 'commit', '-q', '-m', msg);
+}
+r = run(two);
+ok(/== Review:\n {3}No book code or rules changed: no \/code-review needed\./.test(r.out), 'a branch with no changes asks for no review');
+commit(['docs/note.md', 'tests/thing.test.js', 'scripts/job.mjs', '.github/workflows/x.yml', 'README.md'], 'notes, tests, server scripts, workflows');
+r = run(two);
+ok(/no \/code-review needed/.test(r.out) && !/\/code-review medium/.test(r.out), 'notes, tests, server scripts and workflows alone ask for no review');
+commit(['firestore.rules'], 'rules');
+r = run(two);
+ok(/!! This changes code the book runs or its rules \(1 file\(s\)\)\./.test(r.out) && /Run \/code-review medium on this branch before marking it ready/.test(r.out),
+  'a change to the rules asks for /code-review medium');
+commit(['js/prep.js', 'css/app.css', 'index.html', 'icons/a.png'], 'book code');
+r = run(two);
+ok(/\(4 file\(s\)\)/.test(r.out), 'the book\'s scripts, styles and pages count with the rules, and an icon does not (' + (/\((\d+) file/.exec(r.out) || [])[1] + ' files)');
+ok(r.code === 0 && /== Checks before merging:/.test(r.out), 'and the check still finishes');
+
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log((n - fails) + ' of ' + n + ' passed');
 process.exit(fails ? 1 : 0);
