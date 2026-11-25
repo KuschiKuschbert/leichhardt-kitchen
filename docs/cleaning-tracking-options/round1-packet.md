@@ -1,8 +1,29 @@
-# Cleaning tracking and spreading the days: round 1 reviewer packet
+# Cleaning: results by section and planning the days. Round 1 reviewer packet
 
-26 November 2026. Source commit `91c5bc4b`. The same packet goes to all five reviewers. It holds no recommendation.
+26 November 2026. Source commit `0acdaf72` (`main`). The same packet goes to all six reviewers. It holds no recommendation.
 
-Read `docs/cleaning-tracking-options/proposal.md` in full: it holds both proposals, what exists today, the costs, the baseline pictures and the current contracts. Open the pictures it lists. You may read source to check a claim.
+## What to read
+
+1. `docs/cleaning-tracking-options/proposal.md`, in full. It holds the head chef's words, what he has decided, the lead's readings, the open questions, what exists today, the planner numbers, the cost, the baseline pictures and the current contracts.
+2. The pictures it lists under `docs/cleaning-tracking-options/baseline/`. Open them.
+3. Source, to check a claim. The application source at the packet's commit is in the main checkout, `/Users/danielkuschmierz/Documents/leichhardt kitchen book` (read only: change nothing there). This worktree's `js/` is older.
+
+Do not read `first-council*.md`, `first-council.html` or the pictures in `previews/`. They are an earlier council's work and the head chef asked for a fresh start. `previews/planner.js`, `previews/planner.test.js`, `previews/jobs.js` and `previews/many.js` are the planner and you may read and run them with node.
+
+Change no file. Use made-up people only.
+
+## How this round differs from the skill, at the head chef's word
+
+- The kitchen screen designer sits in round 1 as well as round 2 ("with ... the UI UX designer"). The skill's brief for the designer is written for round 2, so a round 1 brief is given below.
+- The head chef has decided parts of the scope (the table "Decided by the head chef"). Do not vote on whether he may want them. Judge whether the proposal as a whole is worth building as described, what to cut or change in how it is done, what could go wrong, and what the designs must show.
+- Answer the open questions Q1 to Q5 that you can judge from your seat, in a line each, with your reason. Say which you cannot judge.
+- Challenge any of the lead's readings R1 to R7 you think is wrong.
+
+So your answer has: Verdict (Build, Build smaller, Don't build or Your call), your three main reasons, the one change that would most improve it, your lines on Q1 to Q5, a short Contract fit result, and for the skeptic and the keeper up to three Break-it scenarios. Up to 350 words, not the skill's 200, because of the questions.
+
+## The round 1 brief for the kitchen screen designer
+
+> You design screens read in a hot, loud kitchen and at a head chef's desk. No design exists yet. From the pictures of today's pages and the contracts, say for each of the three parts what a person must see first, what belongs one tap behind, and where in today's pages it most naturally lives (which room, which page, which block). Name the existing patterns it should reuse and anything that would need a new look, which is the head chef's call. Say what evidence round 2 must bring for you to judge: the real page frame, full forms, 390 and 1280 px, which states (proposed, Not sent, Saved, refused, empty, failed read, Count not ready), rendered contrast and focus. Point out where the proposal would make a long page on a 390 px phone, and where words would have to carry a state without colour.
 
 ## The council skill, word for word
 

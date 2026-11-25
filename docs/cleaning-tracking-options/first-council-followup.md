@@ -2,7 +2,7 @@
 
 **Correction by the lead, after this packet went out.** The line below, "Five of six asked for a planning blend ... P-B's week as counts", overstates it. Cook, new starter, keeper and screen designer asked for P-C's list with P-A's fields; only the cook and the screen designer asked for the week as a strip of counts; the keeper asked for one limit line, the new starter for the "Proposed" tag, and the head chef for a blend on P-B's page. The three follow-up reviewers read the packet as first written. "With same-kind days off: 7,4,4,5,4,1,1 for 1 move" was true of the planner then; it now moves none (7,5,5,4,4,1,0). The head chef's words are quoted with spelling tidied.
 
-26 November 2026. Source commit `91c5bc4b`. A focused follow-up for the skeptic, the keeper of the book and the cook. It holds no recommendation. `round2-packet.md` still applies: its contracts, design references and Try to break it are unchanged.
+26 November 2026. Source commit `91c5bc4b`. A focused follow-up for the skeptic, the keeper of the book and the cook. It holds no recommendation. `first-council-round2-packet.md` still applies: its contracts, design references and Try to break it are unchanged.
 
 ## What changed since you scored the six designs
 

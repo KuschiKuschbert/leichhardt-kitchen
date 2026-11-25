@@ -1,6 +1,8 @@
 # Cleaning tracking and spreading the days: council brief
 
-26 November 2026. Source commit `91c5bc4b`. The head chef asked for "smart tracking" of cleaning with the results in the admin panel, and for a button that spreads repeat jobs across the week so not every section's jobs fall on the same day, for any rhythm. Two proposals: [proposal.md](proposal.md). Packet: [round1-packet.md](round1-packet.md). Nothing is built and no design is chosen.
+> **Superseded on 26 November 2026.** The head chef asked for the council to start again from scratch with everything learned. This file is the record of the first council (two proposals, two sets of three designs, two mixes). Its recommendation is not current. The current brief is [brief.md](brief.md).
+
+26 November 2026. Source commit `91c5bc4b`. The head chef asked for "smart tracking" of cleaning with the results in the admin panel, and for a button that spreads repeat jobs across the week so not every section's jobs fall on the same day, for any rhythm. Two proposals: [first-council-proposal.md](first-council-proposal.md). Packet: [first-council-round1-packet.md](first-council-round1-packet.md). Nothing is built and no design is chosen.
 
 This is role-based analysis by five fresh reviewers reading the source and the notes, each given the skill's text word for word, the proposal and the baseline pictures, with no leads from the lead. It is not research with real staff. Three of them ran the nightly count's own code on synthetic days; nobody ran the app. No measurement was taken, so every tap and density claim is Not evidenced. Each reviewer answered each proposal in under 200 words.
 
@@ -99,7 +101,7 @@ Then, while round 2 was being scored: "just make the section jobs a section prob
 
 ## Round 2: designs
 
-Packet: [round2-packet.md](round2-packet.md). Designs side by side: [index.html](index.html). Six fresh reviewers, each given the skill's text word for word and no leads, ranked two sets of three. All measurements are **Preview**: schematic static pages with the book's stylesheet, no app shell, nothing tapped, saved or timed.
+Packet: [first-council-round2-packet.md](first-council-round2-packet.md). Designs side by side: [index.html](first-council.html). Six fresh reviewers, each given the skill's text word for word and no leads, ranked two sets of three. All measurements are **Preview**: schematic static pages with the book's stylesheet, no app shell, nothing tapped, saved or timed.
 
 Pinned before drawing:
 
@@ -176,7 +178,7 @@ Keeping all three pages whole was rejected for planning by the skeptic, the keep
 
 ### The two mixes (lead's synthesis, with a focused follow-up)
 
-Packet: [round2-followup.md](round2-followup.md). Previews: `previews/p-mix-390-full.png`, `previews/t-mix-390-full.png`.
+Packet: [first-council-followup.md](first-council-followup.md). Previews: `previews/p-mix-390-full.png`, `previews/t-mix-390-full.png`.
 
 **P-mix, Plan the days.** One page in Repeat tasks, drawn twice: with same-kind days off (how the page opens, at the skeptic's word; which side opens is the head chef's call) and on. A switch that says how many jobs each choice moves; a strip of the seven days with weekly jobs under the plan and now; each section's heaviest night, now and with the plan; lines for new days, moves and monthly first dates, each "Proposed, not saved" with a button in words; a new job whose day is today marked "due tonight" and left out until the chef puts it in; every move with its wait; a note that a job every few days is not planned; one Save, 5 at a time, with "0 of 5 saved". Weight and kind are set in the job's form. Preview, 390 px: 3.0 screens with the switch off (5 changes), 5.3 with it on (14 changes, all ten moves drawn).
 
