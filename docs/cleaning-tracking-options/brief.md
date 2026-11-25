@@ -142,7 +142,7 @@ With kinds at random too: fewest moves is heavier in 7% of runs, moves 2.8 jobs,
 
 ## Round 2
 
-Not run yet.
+Three whole designs are drawn inside the book's real pages (`designs/`, built by `designs/build.cjs`): A, on the job; B, one list; C, set up once. Their descriptions, the differences table and the counts are in [round2-packet.md](round2-packet.md). Six fresh reviewers are scoring them. No recommendation yet.
 
 ## Open with the head chef
 

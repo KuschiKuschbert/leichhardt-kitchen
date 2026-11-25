@@ -28,8 +28,19 @@ async function chef(width, edit) {
   const p = await L.open(browser, '#/cleaning', { who: 'sam', ...size(width), base, extra: cleaning, clock: WED, wait: 1000 });
   await L.waitFor(p, () => { const pg = document.querySelector('.cln-page'); return pg && !/Loading cleaning/.test(pg.textContent); });
   await fonts(p); await p.click('[data-cln="setup"]'); await L.settle(p, 300);
-  if (edit) { await p.fill('#cln-repeat-search, .cln-searchbar input', edit).catch(() => {}); await L.settle(p, 300); await p.click('[data-cln="edit"]'); await L.settle(p, 400); }
+  if (edit) {
+    await p.fill('.cln-searchbar input', edit); await L.settle(p, 500); await p.click('[data-cln="edit"]'); await L.settle(p, 500);
+    const title = await p.$eval('.cln-editor-title', e => e.textContent.trim());
+    if (title.toLowerCase().indexOf(edit.toLowerCase()) < 0) throw new Error('the editor opened "' + title + '", not a job matching "' + edit + '"');
+  }
   return p;
+}
+// a cook's Cleaning day, on a personal phone, having picked Grill: the page no design may change
+async function cook(width) {
+  const p = await L.open(browser, '#/cleaning', { who: 'ann', ...size(width), base, extra: cleaning, clock: WED, wait: 1000,
+    init: () => { const d = new Date(Date.now() + 36e5 * 10).toISOString().slice(0, 10); localStorage.setItem('lk.sec.ann', JSON.stringify({ d, sec: 'grill', name: 'Grill', self: true, at: Date.now() })); } });
+  await L.waitFor(p, () => { const pg = document.querySelector('.cln-page'); return pg && !/Loading cleaning/.test(pg.textContent); });
+  await fonts(p); return p;
 }
 // the admin panel: '' is Today's Inbox; a tab name opens that Reports page
 async function adminPage(width, tab) {
@@ -58,11 +69,28 @@ const measure = p => p.evaluate(() => {
   });
   const controls = roots.flatMap(r => [...r.querySelectorAll('button, a[href], select, input, textarea, summary, [role="button"]')]).filter(e => e.getClientRects().length && !e.closest('.visually-hidden'));
   const under = controls.filter(e => { const b = e.getBoundingClientRect(); return b.height < 44 || b.width < 44; }).map(e => (e.textContent || e.getAttribute('aria-label') || e.tagName).trim().slice(0, 24) + ' ' + Math.round(e.getBoundingClientRect().width) + 'x' + Math.round(e.getBoundingClientRect().height));
+  // a control's edge: its border against what it sits on, or its fill against that when it has no border
+  const ratioOf = (a, b) => { const l1 = lum(a), l2 = lum(b); return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05); };
+  let edge = null;
+  controls.filter(e => !e.matches('a, summary, .p-link')).forEach(e => {
+    const cs = getComputedStyle(e), around = bgOf(e.parentElement), bw = parseFloat(cs.borderTopWidth), bc = rgba(cs.borderTopColor), fill = rgba(cs.backgroundColor);
+    const line = bw > 0 && bc[3] > 0 ? over(bc, around) : fill[3] > 0 ? over(fill, around) : null; if (!line) return;
+    const r = ratioOf(line, around); if (!edge || r < edge.ratio) edge = { ratio: Math.round(r * 100) / 100, passes: r >= 3, on: (e.textContent || e.getAttribute('aria-label') || e.tagName).trim().slice(0, 24), how: bw > 0 && bc[3] > 0 ? 'border' : 'fill' };
+  });
   return { screensLong: Math.round(document.documentElement.scrollHeight / innerHeight * 10) / 10, sideways: document.documentElement.scrollWidth > innerWidth, controls: controls.length, under44: under,
-    lowestContrast: worst && { ratio: worst.ratio, fontPx: worst.px, large: worst.large, passes: worst.margin >= 1, text: worst.text }, textUnder12px: small.slice(0, 5) };
+    lowestContrast: worst && { ratio: worst.ratio, fontPx: worst.px, large: worst.large, passes: worst.margin >= 1, text: worst.text }, lowestControlEdge: edge, textUnder12px: small.slice(0, 5) };
 });
 // keyboard focus on the first control a design added: the ring the book draws, as rendered
+// reached with the Tab key, not a scripted focus, so the browser draws the ring a keyboard user sees
 async function focusRing(p) {
-  return p.evaluate(() => { const e = document.querySelector('[data-design] button, [data-design] select, [data-design] input, [data-design] summary'); if (!e) return null; e.focus({ focusVisible: true }); const cs = getComputedStyle(e); return { on: (e.textContent || e.tagName).trim().slice(0, 24), outline: cs.outlineStyle + ' ' + cs.outlineWidth + ' ' + cs.outlineColor, offset: cs.outlineOffset, boxShadow: cs.boxShadow.slice(0, 80) }; });
+  const ok = await p.evaluate(() => { const all = [...document.querySelectorAll('button, a[href], select, input, textarea, summary')].filter(e => e.getClientRects().length && !e.disabled && e.tabIndex >= 0), first = all.findIndex(e => e.closest('[data-design]')); if (first < 1) return false; all[first - 1].focus(); return true; });
+  if (!ok) return null;
+  await p.keyboard.press('Tab');
+  return p.evaluate(() => { const e = document.activeElement; if (!e || !e.closest('[data-design]')) return { reached: false, on: e ? (e.textContent || e.tagName).trim().slice(0, 24) : '' };
+    const cs = getComputedStyle(e), rgba = s => { const m = /rgba?\(([^)]+)\)/.exec(s); const v = m ? m[1].split(',').map(Number) : [0, 0, 0, 0]; return [v[0], v[1], v[2], v.length > 3 ? v[3] : 1]; };
+    const lum = c => { const a = c.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2]; };
+    let bg = [255, 255, 255, 1]; for (let n = e.parentElement; n; n = n.parentElement) { const c = rgba(getComputedStyle(n).backgroundColor); if (c[3] > 0) { bg = c; break; } }
+    const ring = rgba(cs.outlineColor), l1 = lum(ring.slice(0, 3)), l2 = lum(bg.slice(0, 3));
+    return { reached: true, on: (e.textContent || e.tagName).trim().slice(0, 24), focusVisible: e.matches(':focus-visible'), outline: cs.outlineStyle + ' ' + cs.outlineWidth, offset: cs.outlineOffset, ringAgainstSurround: Math.round((Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05) * 100) / 100 }; });
 }
-module.exports = { L, start, stop, chef, adminPage, measure, focusRing, fonts, SECS, WED, schedule };
+module.exports = { L, start, stop, chef, cook, adminPage, measure, focusRing, fonts, SECS, WED, schedule };

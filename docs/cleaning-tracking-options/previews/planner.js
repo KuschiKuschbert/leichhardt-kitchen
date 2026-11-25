@@ -120,9 +120,9 @@
       if (j.every) { wk[j.every] = wk[j.every] || 0; out.week[j.id] = wk[j.every]++ % (j.every / 7) + 1; }   // jobs on one rhythm of whole weeks start in different weeks
       var bits = [];
       if (best.set.join(',') === was) bits.push('stays');
-      if (best.mates && !best.over) bits.push('with the other ' + j.kind.toLowerCase() + ' jobs');
-      else if (j.kind && heavyGave) { bits.push('not on the ' + j.kind.toLowerCase() + ' day: ' + where + ' already has a heavy job then'); out.gave.push(j.id); }
-      else if (j.kind && kindGave) { bits.push('not on the ' + j.kind.toLowerCase() + ' day: ' + where + ' would be too heavy'); out.gave.push(j.id); }
+      if (best.mates && !best.over) bits.push('with the other jobs of its kind (' + j.kind.toLowerCase() + ')');
+      else if (j.kind && heavyGave) { bits.push('not on the day of its kind (' + j.kind.toLowerCase() + '): ' + where + ' already has a heavy job then'); out.gave.push(j.id); }
+      else if (j.kind && kindGave) { bits.push('not on the day of its kind (' + j.kind.toLowerCase() + '): ' + where + ' would be too heavy'); out.gave.push(j.id); }
       else if (best.set.join(',') !== was) bits.push(j.sec ? where + ' has the least on that night (' + best.load + (best.load === 1 ? ' point' : ' points') + ' with it)' : 'a day the rules allow');
       out.why[j.id] = bits.join(', ');
     });

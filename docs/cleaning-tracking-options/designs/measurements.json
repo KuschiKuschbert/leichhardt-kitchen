@@ -1,0 +1,631 @@
+{
+ "kind": "Preview inside the implemented app's real pages (click-test stand-in, synthetic data). The page frame, top bar, tab bar, rail and the real forms are the app's; the parts marked data-design are drawn in and do nothing when tapped.",
+ "commit": "0acdaf72",
+ "viewports": "390 x 844 and 1280 x 900",
+ "plan": {
+  "fewestMoves": {
+   "moved": 3,
+   "new": 2,
+   "monthly": 3
+  },
+  "sectionFirst": {
+   "moved": 10
+  }
+ },
+ "results": {
+  "a1-job-form-390": {
+   "screensLong": 3.8,
+   "sideways": false,
+   "controls": 10,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 6.73,
+    "fontPx": 13,
+    "large": false,
+    "passes": true,
+    "text": "Jobs with the same area fall on the same day where"
+   },
+   "lowestControlEdge": {
+    "ratio": 15.9,
+    "passes": true,
+    "on": "Monhas 2",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 1273,
+   "focus": {
+    "reached": true,
+    "on": "Monhas 2",
+    "focusVisible": true,
+    "outline": "solid 3px",
+    "offset": "2px",
+    "ringAgainstSurround": 3.33
+   }
+  },
+  "a1-job-form-1280": {
+   "screensLong": 2.9,
+   "sideways": false,
+   "controls": 10,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 6.73,
+    "fontPx": 13,
+    "large": false,
+    "passes": true,
+    "text": "Jobs with the same area fall on the same day where"
+   },
+   "lowestControlEdge": {
+    "ratio": 15.9,
+    "passes": true,
+    "on": "Monhas 2",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 1070
+  },
+  "a2-repeat-tasks-390": {
+   "screensLong": 3.1,
+   "sideways": false,
+   "controls": 5,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 4.86,
+    "fontPx": 14,
+    "large": false,
+    "passes": true,
+    "text": "18 jobs have no weight yet"
+   },
+   "lowestControlEdge": null,
+   "textUnder12px": [],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 339,
+   "focus": {
+    "reached": true,
+    "on": "Change what a day takes",
+    "focusVisible": true,
+    "outline": "solid 3px",
+    "offset": "2px",
+    "ringAgainstSurround": 3.33
+   }
+  },
+  "a2-repeat-tasks-1280": {
+   "screensLong": 2.3,
+   "sideways": false,
+   "controls": 5,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 4.86,
+    "fontPx": 14,
+    "large": false,
+    "passes": true,
+    "text": "18 jobs have no weight yet"
+   },
+   "lowestControlEdge": null,
+   "textUnder12px": [],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 396
+  },
+  "a3-records-day-390": {
+   "screensLong": 2,
+   "sideways": false,
+   "controls": 1,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 6.73,
+    "fontPx": 13,
+    "large": false,
+    "passes": true,
+    "text": "1 of 1 done"
+   },
+   "lowestControlEdge": {
+    "ratio": 15.9,
+    "passes": true,
+    "on": "Who was rostered on Hot ",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 658,
+   "focus": {
+    "reached": true,
+    "on": "Who was rostered on Hot ",
+    "focusVisible": true,
+    "outline": "solid 3px",
+    "offset": "2px",
+    "ringAgainstSurround": 3.33
+   }
+  },
+  "a3-records-day-1280": {
+   "screensLong": 2.5,
+   "sideways": false,
+   "controls": 1,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 6.73,
+    "fontPx": 13,
+    "large": false,
+    "passes": true,
+    "text": "1 of 1 done"
+   },
+   "lowestControlEdge": {
+    "ratio": 15.9,
+    "passes": true,
+    "on": "Who was rostered on Hot ",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 1,
+   "firstDesignTop": 647
+  },
+  "b1-weigh-390": {
+   "screensLong": 4.7,
+   "sideways": false,
+   "controls": 83,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 4.76,
+    "fontPx": 15,
+    "large": false,
+    "passes": true,
+    "text": "Grill"
+   },
+   "lowestControlEdge": {
+    "ratio": 4.84,
+    "passes": true,
+    "on": "Save 18 weights",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 1,
+   "firstDesignTop": 295,
+   "focus": {
+    "reached": true,
+    "on": "Change",
+    "focusVisible": true,
+    "outline": "solid 3px",
+    "offset": "2px",
+    "ringAgainstSurround": 3.33
+   }
+  },
+  "b1-weigh-1280": {
+   "screensLong": 2.7,
+   "sideways": false,
+   "controls": 83,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 4.76,
+    "fontPx": 15,
+    "large": false,
+    "passes": true,
+    "text": "Grill"
+   },
+   "lowestControlEdge": {
+    "ratio": 4.84,
+    "passes": true,
+    "on": "Save 18 weights",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 3,
+   "firstDesignTop": 320
+  },
+  "b2-plan-390": {
+   "screensLong": 3.2,
+   "sideways": false,
+   "controls": 12,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 4.76,
+    "fontPx": 15,
+    "large": false,
+    "passes": true,
+    "text": "Moves"
+   },
+   "lowestControlEdge": {
+    "ratio": 4.84,
+    "passes": true,
+    "on": "Save 8 changes",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 295,
+   "focus": {
+    "reached": true,
+    "on": "Change",
+    "focusVisible": true,
+    "outline": "solid 3px",
+    "offset": "2px",
+    "ringAgainstSurround": 3.33
+   }
+  },
+  "b2-plan-1280": {
+   "screensLong": 2.4,
+   "sideways": false,
+   "controls": 12,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 4.76,
+    "fontPx": 15,
+    "large": false,
+    "passes": true,
+    "text": "Moves"
+   },
+   "lowestControlEdge": {
+    "ratio": 4.84,
+    "passes": true,
+    "on": "Save 8 changes",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 1,
+   "firstDesignTop": 320
+  },
+  "b2s-saving-390": {
+   "screensLong": 3.4,
+   "sideways": false,
+   "controls": 12,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 4.76,
+    "fontPx": 15,
+    "large": false,
+    "passes": true,
+    "text": "Moves"
+   },
+   "lowestControlEdge": {
+    "ratio": 4.84,
+    "passes": true,
+    "on": "Try again",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 295,
+   "focus": {
+    "reached": true,
+    "on": "Change",
+    "focusVisible": true,
+    "outline": "solid 3px",
+    "offset": "2px",
+    "ringAgainstSurround": 3.33
+   }
+  },
+  "b3-report-390": {
+   "screensLong": 1.8,
+   "sideways": false,
+   "controls": 5,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 6.73,
+    "fontPx": 13,
+    "large": false,
+    "passes": true,
+    "text": "Jobs that come round, the last 4 weeks. Counted to"
+   },
+   "lowestControlEdge": {
+    "ratio": 15.9,
+    "passes": true,
+    "on": "Open",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 2,
+   "firstDesignTop": 325,
+   "focus": {
+    "reached": true,
+    "on": "Cleaning",
+    "focusVisible": true,
+    "outline": "solid 3px",
+    "offset": "2px",
+    "ringAgainstSurround": 3.39
+   }
+  },
+  "b3-report-1280": {
+   "screensLong": 1.5,
+   "sideways": false,
+   "controls": 5,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 6.73,
+    "fontPx": 13,
+    "large": false,
+    "passes": true,
+    "text": "Jobs that come round, the last 4 weeks. Counted to"
+   },
+   "lowestControlEdge": {
+    "ratio": 15.9,
+    "passes": true,
+    "on": "Open",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 2,
+   "firstDesignTop": 410
+  },
+  "c1-setup-weigh-390": {
+   "screensLong": 3.5,
+   "sideways": false,
+   "controls": 17,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 5.05,
+    "fontPx": 16,
+    "large": false,
+    "passes": true,
+    "text": "Save Grill, then Pans"
+   },
+   "lowestControlEdge": {
+    "ratio": 4.84,
+    "passes": true,
+    "on": "Save Grill, then Pans",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 1,
+   "firstDesignTop": 339,
+   "focus": {
+    "reached": true,
+    "on": "1. Weigh the jobs3 of 20",
+    "focusVisible": true,
+    "outline": "solid 3px",
+    "offset": "2px",
+    "ringAgainstSurround": 3.33
+   }
+  },
+  "c1-setup-weigh-1280": {
+   "screensLong": 2.5,
+   "sideways": false,
+   "controls": 17,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 5.05,
+    "fontPx": 16,
+    "large": false,
+    "passes": true,
+    "text": "Save Grill, then Pans"
+   },
+   "lowestControlEdge": {
+    "ratio": 4.84,
+    "passes": true,
+    "on": "Save Grill, then Pans",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 3,
+   "firstDesignTop": 396
+  },
+  "c2-setup-week-390": {
+   "screensLong": 4.3,
+   "sideways": false,
+   "controls": 5,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 5.05,
+    "fontPx": 16,
+    "large": false,
+    "passes": true,
+    "text": "Save this week"
+   },
+   "lowestControlEdge": {
+    "ratio": 4.84,
+    "passes": true,
+    "on": "Save this week",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 339,
+   "focus": {
+    "reached": true,
+    "on": "1. Weigh the jobsDone · ",
+    "focusVisible": true,
+    "outline": "solid 3px",
+    "offset": "2px",
+    "ringAgainstSurround": 3.33
+   }
+  },
+  "c2-setup-week-1280": {
+   "screensLong": 3.2,
+   "sideways": false,
+   "controls": 5,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 5.05,
+    "fontPx": 16,
+    "large": false,
+    "passes": true,
+    "text": "Save this week"
+   },
+   "lowestControlEdge": {
+    "ratio": 4.84,
+    "passes": true,
+    "on": "Save this week",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 396
+  },
+  "c3-new-job-390": {
+   "screensLong": 3.7,
+   "sideways": false,
+   "controls": 11,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 6.73,
+    "fontPx": 13,
+    "large": false,
+    "passes": true,
+    "text": "Pans has the least on that night, and Hot larder c"
+   },
+   "lowestControlEdge": {
+    "ratio": 15.9,
+    "passes": true,
+    "on": "Monsuggested",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 1149,
+   "focus": {
+    "reached": true,
+    "on": "Monsuggested",
+    "focusVisible": true,
+    "outline": "solid 3px",
+    "offset": "2px",
+    "ringAgainstSurround": 3.33
+   }
+  },
+  "c3-new-job-1280": {
+   "screensLong": 2.3,
+   "sideways": false,
+   "controls": 11,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 6.73,
+    "fontPx": 13,
+    "large": false,
+    "passes": true,
+    "text": "Pans has the least on that night, and Hot larder c"
+   },
+   "lowestControlEdge": {
+    "ratio": 15.9,
+    "passes": true,
+    "on": "Monsuggested",
+    "how": "border"
+   },
+   "textUnder12px": [],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 1136
+  },
+  "ab-inbox-390": {
+   "screensLong": 1.4,
+   "sideways": false,
+   "controls": 1,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 5.27,
+    "fontPx": 11.84,
+    "large": false,
+    "passes": true,
+    "text": "Not ticked"
+   },
+   "lowestControlEdge": {
+    "ratio": 15.9,
+    "passes": true,
+    "on": "Open that night",
+    "how": "border"
+   },
+   "textUnder12px": [
+    "11.84px: Not ticked"
+   ],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 533,
+   "focus": {
+    "reached": true,
+    "on": "Open that night",
+    "focusVisible": true,
+    "outline": "solid 3px",
+    "offset": "2px",
+    "ringAgainstSurround": 3.33
+   }
+  },
+  "ab-inbox-1280": {
+   "screensLong": 1.1,
+   "sideways": false,
+   "controls": 1,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 5.27,
+    "fontPx": 11.84,
+    "large": false,
+    "passes": true,
+    "text": "Not ticked"
+   },
+   "lowestControlEdge": {
+    "ratio": 15.9,
+    "passes": true,
+    "on": "Open that night",
+    "how": "border"
+   },
+   "textUnder12px": [
+    "11.84px: Not ticked"
+   ],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 600
+  },
+  "c-inbox-390": {
+   "screensLong": 1.4,
+   "sideways": false,
+   "controls": 1,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 5.27,
+    "fontPx": 11.84,
+    "large": false,
+    "passes": true,
+    "text": "Not ticked"
+   },
+   "lowestControlEdge": {
+    "ratio": 15.9,
+    "passes": true,
+    "on": "Open that night",
+    "how": "border"
+   },
+   "textUnder12px": [
+    "11.84px: Not ticked",
+    "11.88px: of 6"
+   ],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 533,
+   "focus": {
+    "reached": true,
+    "on": "Open that night",
+    "focusVisible": true,
+    "outline": "solid 3px",
+    "offset": "2px",
+    "ringAgainstSurround": 3.33
+   }
+  },
+  "c-inbox-1280": {
+   "screensLong": 1.2,
+   "sideways": false,
+   "controls": 1,
+   "under44": [],
+   "lowestContrast": {
+    "ratio": 5.27,
+    "fontPx": 11.84,
+    "large": false,
+    "passes": true,
+    "text": "Not ticked"
+   },
+   "lowestControlEdge": {
+    "ratio": 15.9,
+    "passes": true,
+    "on": "Open that night",
+    "how": "border"
+   },
+   "textUnder12px": [
+    "11.84px: Not ticked",
+    "11.88px: of 6"
+   ],
+   "wholeDesignRows": 0,
+   "firstDesignTop": 600
+  },
+  "cook-unchanged-390": {
+   "screensLong": 5.4,
+   "sideways": false,
+   "rows": 52,
+   "wholeRowsOnFirstScreen": 6
+  },
+  "cook-unchanged-1280": {
+   "screensLong": 4,
+   "sideways": false,
+   "rows": 52,
+   "wholeRowsOnFirstScreen": 7
+  }
+ }
+}

@@ -33,17 +33,33 @@ const shot = async (p, name, width) => {
   const base = 'http://127.0.0.1:' + port + '/', b = await L.start(), ready = p => L.waitFor(p, () => { const pg = document.querySelector('.cln-page'); return pg && !/Loading cleaning/.test(pg.textContent); });
   for (const width of [390, 1280]) {
     const height = width === 390 ? 844 : 900;
-    let p = await L.open(b, '#/cleaning', { who: 'ann', width, height, base, extra, clock: MON, wait: 1000 });
+    // a cook who picked Grill today, so the section sheet is not over the list (round 1: the first pictures were covered)
+    let p = await L.open(b, '#/cleaning', { who: 'ann', width, height, base, extra, clock: MON, wait: 1000,
+      init: () => { const d = new Date(Date.now() + 36e5 * 10).toISOString().slice(0, 10); localStorage.setItem('lk.sec.ann', JSON.stringify({ d, sec: 'grill', name: 'Grill', self: true, at: Date.now() })); } });
     await ready(p); await fonts(p); await shot(p, 'cook-today', width);
-    counts['cook-today-' + width].rows = await p.$$eval('.cln-row', r => r.length); await p.context().close();
+    counts['cook-today-' + width].rows = await p.$$eval('.cln-row', r => r.length);
+    counts['cook-today-' + width].wholeRowsOnFirstScreen = await p.$$eval('.cln-row', r => r.filter(e => { const b = e.getBoundingClientRect(); return b.top >= 0 && b.bottom <= innerHeight; }).length);
+    counts['cook-today-' + width].sheetOpen = !!(await p.$('.ks-sheet, [data-ks]'));
+    counts['cook-today-' + width].firstRowText = await p.$eval('.cln-row', e => e.textContent.replace(/\s+/g, ' ').trim().slice(0, 120)).catch(() => '');
+    await p.context().close();
     p = await L.open(b, '#/cleaning', { who: 'sam', width, height, base, extra, clock: MON, wait: 1000 });
     await ready(p); await fonts(p); await shot(p, 'chef-today', width);
+    await p.click('[data-cln="week"]'); await shot(p, 'chef-week', width);
     await p.click('[data-cln="setup"]'); await shot(p, 'chef-repeat', width);
     counts['chef-repeat-' + width].controls = await p.$$eval('[data-cln]', es => [...new Set(es.map(e => e.dataset.cln))].slice(0, 60));
     const add = await p.$('[data-cln="add"]'); if (add) { await add.click(); await L.settle(p, 400); const ed = await p.$('.cln-editor'); if (ed) await ed.scrollIntoViewIfNeeded(); await p.evaluate(() => scrollBy(0, -70)); await shot(p, 'chef-form', width);
       counts['chef-form-' + width].fields = await p.$$eval('.cln-editor label, .cln-editor .label', es => es.map(e => e.textContent.trim().slice(0, 40)));
       counts['chef-form-' + width].formHeight = await p.$eval('.cln-editor', e => Math.round(e.getBoundingClientRect().height)); }
     if (p.errors.length) counts['chef-errors-' + width] = p.errors; await p.context().close();
+    // Edit on a loaded job with a long name: the whole form, which holds more than Add does
+    p = await L.open(b, '#/cleaning', { who: 'sam', width, height, base, extra, clock: MON, wait: 1000 });
+    await ready(p); await fonts(p); await p.click('[data-cln="setup"]'); await L.settle(p, 300);
+    await p.fill('.cln-searchbar input', 'topper'); await L.settle(p, 500); await p.click('[data-cln="edit"]'); await L.settle(p, 500);
+    { const ed = await p.$('.cln-editor'); if (ed) await ed.scrollIntoViewIfNeeded(); await p.evaluate(() => scrollBy(0, -70)); await shot(p, 'chef-edit-loaded', width);
+      counts['chef-edit-loaded-' + width].title = await p.$eval('.cln-editor-title', e => e.textContent.trim());
+      counts['chef-edit-loaded-' + width].fields = await p.$$eval('.cln-editor .label', es => es.map(e => e.textContent.trim().slice(0, 40)));
+      counts['chef-edit-loaded-' + width].formHeight = await p.$eval('.cln-editor', e => Math.round(e.getBoundingClientRect().height)); }
+    await p.context().close();
     p = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width, height, base, extra: admin, wait: 2200 });
     await fonts(p); await shot(p, 'admin-inbox', width); await p.context().close();
     p = await L.open(b, '#/admin', { admin: true, width, height, base, extra: admin, wait: 2200 });
