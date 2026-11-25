@@ -87,7 +87,19 @@ The head chef's own weekly, monthly and extra daily jobs for each section are a 
 - **Headings.** A section's own group is headed with its name and ": section clean". The same section's group under the Pack down title keeps its name.
 - **Reads.** No new query, listener or rule. Each loaded job is one more task document on every Cleaning open or Refresh: 21 more reads per open per device with the whole list loaded (`tests/read-budget.test.js`, Cleaning).
 
-Steps 2 (the page opens on your section) and 3 (This screen's section on a shared kitchen screen) are not built. Step 2 still needs an explicit link between a kitchen section and its Pack down group.
+### Your section first (26 November 2026, step 2)
+
+For a cook, the page opens on the section they are on today: its name, then **Section clean** (its jobs that come round), then **Pack down** (its numbered steps, then its own nightly jobs), with the reminder "Overhead shelves and frames first. Floors are last." Shared kitchen follows, then **Rest of the kitchen**: every other section's clean and Pack down, all open. Floors after shelving stays last. Nothing is folded and no job is hidden.
+
+- **Whose section.** `mySecNow()` in `js/prep.js`: the person's section today by id, from the Today's team plan or their own pick, as `mySec()` already gives by name. No read. Staff and leads only: a head or sous chef has no section and keeps the chef view.
+- **Worked out when the list is read.** The page fixes the leading section at open, on Refresh and after a reload that follows a save, never on a redraw, so a list cannot reorder under a thumb. A cook moved mid-shift sees the new section after Refresh. A new person on a shared screen starts a new read.
+- **When it applies.** Only when that section has work due that day. A cook with no section, or on a section with no cleaning list, keeps the usual order: section clean groups, Shared kitchen, the Pack down block, floors.
+- **Which Pack down belongs to a section.** Never by name. A Pack down group is tied to the kitchen section a chef chose for that group's section cleaning jobs at Load (`packLinks()` in `js/cleaning.js`: the `sc-hot-`, `sc-grill-` and `sc-pans-` jobs), and only while every one of those jobs in force is saved to the same live section. One job moved to another section, the group left on Shared kitchen, or the section removed: no link, and that Pack down sits with the rest under its own name. A renamed section keeps its link, because the link is its id. Repeat tasks says which section each Pack down opens with, and which is not tied.
+- **One place per job, whoever is looking.** Where a Pack down group is tied to a section, that section's own nightly jobs follow its numbered steps in both layouts, so the kick oven door is wiped after the oven is turned off, and "section clean" holds the jobs that come round. Where none is tied, they stay under the section's own heading.
+- **Go to Pack down** moves to the leading section's Pack down.
+- **Reads.** None added: the link and the section come from what the page and the phone already hold.
+
+Step 3 (This screen's section on a shared kitchen screen) is not built.
 
 ## Completion and accountability
 

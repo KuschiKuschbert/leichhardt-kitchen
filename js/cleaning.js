@@ -9,7 +9,7 @@
   var OPEN = 253402178400000, DAYS = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [0, 'Sun']];
   var AREAS = ['Coldroom', 'Freezer', 'Dry store', 'Oven', 'Fryers', 'Behind equipment', 'Pass', 'Shelves'];
   var M = blank(), generation = 0, recorder = '', context = '', picker = null, popup = null, savedTimer = null, boundaryTimer = null;
-  function blank() { return { root: null, view: 'today', today: T.day(), week: monday(T.day()), selected: T.day(), tasks: [], done: [], state: 'idle', error: '', readAt: 0, readAgain: false, cache: Object.create(null), range: '', pending: Object.create(null), tickErrors: Object.create(null), editor: false, draft: null, original: '', editId: '', saveBusy: false, saveState: '', saveError: '', savedText: '', archiveBusy: '', suspended: false, expanded: Object.create(null), workDrafts: Object.create(null), flowErrors: Object.create(null), flowSaved: Object.create(null), importBusy: false, importError: '', importText: '', temperatureOpen: false, workGroup: '', workPage: 0, workQuery: '', workFilter: 'all', repeatPage: 0, repeatQuery: '', repeatGroup: 'all' }; }
+  function blank() { return { root: null, view: 'today', today: T.day(), week: monday(T.day()), selected: T.day(), tasks: [], done: [], state: 'idle', error: '', readAt: 0, readAgain: false, cache: Object.create(null), range: '', pending: Object.create(null), tickErrors: Object.create(null), editor: false, draft: null, original: '', editId: '', saveBusy: false, saveState: '', saveError: '', savedText: '', archiveBusy: '', suspended: false, expanded: Object.create(null), workDrafts: Object.create(null), flowErrors: Object.create(null), flowSaved: Object.create(null), importBusy: false, importError: '', importText: '', temperatureOpen: false, lead: null, workGroup: '', workPage: 0, workQuery: '', workFilter: 'all', repeatPage: 0, repeatQuery: '', repeatGroup: 'all' }; }
   function shift(day, n) { return T.day(T.at(day) + n * 86400000 + 43200000); }
   function monday(day) { return shift(day, -((T.dow(T.at(day)) + 6) % 7)); }
   function dates() { return DAYS.map(function (_, i) { return shift(M.week, i); }); }
@@ -47,6 +47,9 @@
   }
   function useData(data) {
     M.tasks = data.tasks; M.done = data.done; M.readAt = data.readAt; M.state = 'ok'; M.error = '';
+    // The section the page opens on (25 Nov 2026): worked out when the list is read (open, Refresh, a save's reload), never
+    // on a redraw, so the list cannot reorder under a thumb. An older book without the bridge gives none.
+    M.lead = C.section ? C.section() : null;
     Object.keys(M.workDrafts).forEach(function (key) { var d = M.workDrafts[key], r = M.done.filter(function (value) { return value.task === d.task && value.day === d.day && value.flow && value.flow.slot === d.slot; })[0]; if (r && JSON.stringify([d.checked.slice().sort(), d.note.trim()]) === JSON.stringify([r.flow.checked.slice().sort(), r.flow.note])) { if (M.flowErrors[key]) { var task = M.tasks.filter(function (value) { return value.id === d.task; })[0]; M.flowSaved[key] = 'Earlier save confirmed for ' + (task ? task.text : 'this clean') + '. Checked ' + T.clock(data.readAt) + '.'; } delete M.workDrafts[key]; delete M.flowErrors[key]; } });
   }
   function load(force) {
@@ -196,11 +199,33 @@
      .cln-often from css/app.css on purpose: this page is lazy and can be newer than the saved stylesheet on a phone. */
   function metaAttrs(task) { return rhythm(task) ? 'class="nb-meta cln-often" style="white-space:normal;overflow:visible;text-overflow:clip"' : 'class="nb-meta"'; }
   function packSection(task) { var id = task.plan && task.plan.template || ''; return id.indexOf('pd-hot-') === 0 ? 'Hot larder' : id.indexOf('pd-grill-') === 0 ? 'Grill' : id.indexOf('pd-pans-') === 0 ? 'Pans' : ''; }
+  /* Which kitchen section a Pack down group belongs to (25 Nov 2026, step 2, docs/cleaning-schedule.md). Never by name: it
+     is the section a chef chose for that group's section cleaning jobs at Load (the sc-hot-, sc-grill- and sc-pans- jobs),
+     and only while every one of those jobs in force that day is saved to the same live section. One job moved, the group
+     left on Shared kitchen, or the section removed: no link, and Pack down stays where it was. No read: the loaded tasks. */
+  var PACK_GROUPS = [['hot', 'Hot larder'], ['grill', 'Grill'], ['pans', 'Pans']];
+  function packLinks(day) {
+    var at = T.at(day), live = C.sections().map(function (section) { return section.id; }), out = {};
+    PACK_GROUPS.forEach(function (group) {
+      var ids = M.tasks.filter(function (task) { return task.from <= at && task.until > at && task.plan && String(task.plan.template || '').indexOf('sc-' + group[0] + '-') === 0; }).map(function (task) { return task.shared ? '' : task.section; });
+      if (ids.length && ids[0] && live.indexOf(ids[0]) >= 0 && ids.every(function (id) { return id === ids[0]; })) out[group[1]] = ids[0];
+    });
+    return out;
+  }
   function groups(tasks, day) {
-    var out = [], ids = [], pack = tasks.filter(function (task) { return !!packSection(task); }), floors = [];
-    tasks.forEach(function (task) { if (packSection(task)) return; if (pack.length && task.plan && task.plan.template === 'c03') { floors.push(task); return; } var id = task.shared ? '_shared' : task.section, i = ids.indexOf(id); if (i < 0) { ids.push(id); out.push({ name: owner(task, day), own: !task.shared, tasks: [] }); i = out.length - 1; } out[i].tasks.push(task); });
+    var out = [], ids = [], pack = tasks.filter(function (task) { return !!packSection(task); }), floors = [], links = packLinks(day);
+    tasks.forEach(function (task) { if (packSection(task)) return; if (pack.length && task.plan && task.plan.template === 'c03') { floors.push(task); return; } var id = task.shared ? '_shared' : task.section, i = ids.indexOf(id); if (i < 0) { ids.push(id); out.push({ name: owner(task, day), own: !task.shared, sec: task.shared ? '' : task.section, tasks: [] }); i = out.length - 1; } out[i].tasks.push(task); });
     out.sort(function (a, b) { return a.name === 'Shared kitchen' ? 1 : b.name === 'Shared kitchen' ? -1 : a.name.localeCompare(b.name); });
-    ['Hot larder', 'Grill', 'Pans'].forEach(function (name) { var list = pack.filter(function (task) { return packSection(task) === name; }).sort(function (a, b) { return a.plan.template.localeCompare(b.plan.template); }); if (list.length) out.push({ name: name, pack: true, tasks: list }); });
+    PACK_GROUPS.forEach(function (info) {
+      var name = info[1], list = pack.filter(function (task) { return packSection(task) === name; }).sort(function (a, b) { return a.plan.template.localeCompare(b.plan.template); });
+      if (!list.length) return;
+      /* One place per job, whoever is looking: a section's own nightly jobs follow its Pack down steps (so the kick oven
+         door is wiped after the oven is turned off), and its section clean keeps the jobs that come round. Only where the
+         group is tied to that section; otherwise they stay under the section's own heading. */
+      var sec = links[name] || '', own = sec && out.filter(function (group) { return group.own && group.sec === sec; })[0];
+      if (own) { list = list.concat(own.tasks.filter(function (task) { return !rhythm(task); })); own.tasks = own.tasks.filter(function (task) { return !!rhythm(task); }); if (!own.tasks.length) out.splice(out.indexOf(own), 1); }
+      out.push({ name: name, pack: true, sec: sec, tasks: list });
+    });
     if (floors.length) out.push({ name: 'Floors after shelving', floors: true, tasks: floors });
     return out;
   }
@@ -226,8 +251,33 @@
   function daily(day) {
     var tasks = tasksOn(day);
     if (!tasks.length) return '<div class="cln-empty"><p class="nb-empty">' + (M.tasks.length ? 'No cleaning tasks due on this day.' : 'No cleaning tasks set yet.') + '</p><p class="hint">' + (C.chef() ? 'Set the actual jobs, sections and repeat days in Repeat tasks.' : 'Your chef can set the jobs and repeat days.') + '</p>' + (C.chef() ? '<button type="button" class="btn" data-cln="setup">Set repeat tasks</button>' : '') + '</div>';
-    var grouped = groups(tasks, day);
-    function groupHTML(group, i) { var count = workTotals(group.tasks, day), heading = group.pack ? 'h4' : 'h3'; return '<section' + (group.pack ? ' class="cln-packdown-group" data-cln-packdown-group="' + esc(group.name) + '"' : '') + ' aria-labelledby="cln-group-' + i + '-' + day + '"><' + heading + ' class="nb-hd" id="cln-group-' + i + '-' + day + '"><span>' + esc(group.name + (group.own ? ': section clean' : '')) + '</span><span class="cln-group-count">' + count.complete + '/' + count.total + (count.events ? ' + repeats' : '') + '</span></' + heading + '><ul class="nb-rows">' + group.tasks.map(function (task) { return row(task, day); }).join('') + '</ul></section>'; }
+    var grouped = groups(tasks, day), jump = 'cln-packdown-' + day, jumped = false;
+    // one group: its heading, its count and its rows. title is the heading's words; the first Pack down heading takes the
+    // id that Go to Pack down moves to when there is no one Pack down block (the leading section's layout)
+    function groupHTML(group, i, title, tag, note) {
+      var count = workTotals(group.tasks, day), heading = tag || (group.pack ? 'h4' : 'h3'), id = 'cln-group-' + i + '-' + day;
+      if (note !== undefined && group.pack && !jumped) { jumped = true; id = jump; }
+      return '<section' + (group.pack ? ' class="cln-packdown-group" data-cln-packdown-group="' + esc(group.name) + '"' : '') + ' aria-labelledby="' + id + '"><' + heading + ' class="nb-hd" id="' + id + '"' + (id === jump ? ' tabindex="-1"' : '') + '><span>' + esc(title || group.name + (group.own ? ': section clean' : '')) + '</span><span class="cln-group-count">' + count.complete + '/' + count.total + (count.events ? ' + repeats' : '') + '</span></' + heading + '>' + (note ? '<p class="hint">' + esc(note) + '</p>' : '') + '<ul class="nb-rows">' + group.tasks.map(function (task) { return row(task, day); }).join('') + '</ul></section>';
+    }
+    /* Your section first (head chef, 25 Nov 2026, design D): the page opens on the section this person is on today, with
+       its section clean and then its Pack down. Shared kitchen follows, then the rest of the kitchen, all open; floors stay
+       last. For a cook only, and only when that section has work today: a chef, a cook with no section and a section with
+       no cleaning list keep the page's usual order below. */
+    var lead = !C.chef() && M.lead && C.sections().some(function (section) { return section.id === M.lead.id; }) ? M.lead : null;
+    var mine = lead ? grouped.filter(function (group) { return (group.own || group.pack) && group.sec === lead.id; }) : [];
+    if (mine.length) {
+      var at = function (group) { return grouped.indexOf(group); }, html = '<section class="cln-mine" aria-labelledby="cln-mine-' + day + '"><h3 class="cln-mine-title" id="cln-mine-' + day + '"><span>' + esc(lead.name) + '</span><small>Your section today</small></h3>';
+      mine.filter(function (group) { return group.own; }).forEach(function (group) { html += groupHTML(group, at(group), 'Section clean', 'h4', ''); });
+      mine.filter(function (group) { return group.pack; }).forEach(function (group) { html += groupHTML(group, at(group), 'Pack down', 'h4', 'Overhead shelves and frames first. Floors are last.'); });
+      html += '</section>';
+      grouped.filter(function (group) { return !group.own && !group.pack && !group.floors; }).forEach(function (group) { html += groupHTML(group, at(group)); });
+      // the rest: each Pack down group in its usual order with its own section's clean above it, then any other section
+      var rest = [], others = grouped.filter(function (group) { return mine.indexOf(group) < 0 && (group.own || group.pack); });
+      others.filter(function (group) { return group.pack; }).forEach(function (group) { var own = group.sec && others.filter(function (other) { return other.own && other.sec === group.sec; })[0]; if (own) rest.push(own); rest.push(group); });
+      others.forEach(function (group) { if (rest.indexOf(group) < 0) rest.push(group); });
+      if (rest.length) html += '<h3 class="cln-rest-title">Rest of the kitchen</h3>' + rest.map(function (group) { return groupHTML(group, at(group), group.name + (group.pack ? ': pack down' : ': section clean'), 'h4', ''); }).join('');
+      return html + grouped.filter(function (group) { return group.floors; }).map(function (group) { return groupHTML(group, at(group)); }).join('');
+    }
     var regular = '', pack = '', floors = '';
     grouped.forEach(function (group, i) { var html = groupHTML(group, i); if (group.pack) pack += html; else if (group.floors) floors += html; else regular += html; });
     return regular + (pack ? '<section class="cln-packdown" aria-labelledby="cln-packdown-' + day + '"><h3 class="cln-packdown-title" id="cln-packdown-' + day + '" tabindex="-1">Pack down</h3><p class="hint">Finish overhead shelves and frames before the final floor clean. Keep each after-service floor check separate.' + (floors ? ' Floor checks follow this list.' : '') + '</p>' + pack + '</section>' : '') + floors;
@@ -323,6 +373,15 @@
     var same = sections.filter(function (s) { return String(s.name).trim().toLowerCase() === group.name.toLowerCase(); })[0];
     return same ? same.id : '_shared';
   }
+  // Setup says which section each Pack down opens with for a cook on that section, and when one is not tied (packLinks())
+  function packLinkLine() {
+    if (!M.tasks.some(function (task) { return task.until === OPEN && task.plan && /^sc-(hot|grill|pans)-/.test(task.plan.template || ''); })) return '';
+    var links = packLinks(T.day()), sections = C.sections();
+    return '<p class="hint cln-pack-links">' + PACK_GROUPS.map(function (group) {
+      var section = sections.filter(function (item) { return item.id === links[group[1]]; })[0];
+      return esc(group[1]) + ' pack down ' + (section ? 'opens with ' + esc(section.name) : 'is not tied to a section');
+    }).join('. ') + '. A Pack down is tied to a section only while all of that group\'s loaded jobs are in that one section.</p>';
+  }
   function sectionImportPanel() {
     var source = window.LK_CLEANING_SCHEDULE;
     if (!source || !source.sectionDrafts || !C.importTasks) return '';
@@ -334,7 +393,7 @@
         var chosen = sectionChoice(group);
         return '<label class="field" for="cln-import-section-' + group.id + '"><span class="label">' + esc(group.name) + '</span><select id="cln-import-section-' + group.id + '" data-cln-import-section="' + group.id + '"' + (M.importBusy ? ' disabled' : '') + '><option value="_shared"' + (chosen === '_shared' ? ' selected' : '') + '>Shared kitchen</option>' +
           sections.map(function (s) { return '<option value="' + esc(s.id) + '"' + (chosen === s.id ? ' selected' : '') + '>' + esc(s.name) + '</option>'; }).join('') + '</select></label>';
-      }).join('') + '</div><p class="hint">' + monthly + ' monthly jobs repeat every 4 weeks. They come up only after a chef sets their first date in Repeat tasks.</p>' +
+      }).join('') + '</div>' + packLinkLine() + '<p class="hint">' + monthly + ' monthly jobs repeat every 4 weeks. They come up only after a chef sets their first date in Repeat tasks.</p>' +
       '<button type="button" class="btn" data-cln="import-section"' + (busy() || dirtyDraft() || M.state !== 'ok' ? ' disabled' : '') + '>' + (M.importBusy && M.importKind === 'section' ? 'Loading section cleaning...' : 'Load section cleaning') + '</button>' +
       (M.sectionImportError ? '<p class="p-err" role="alert">' + esc(M.sectionImportError) + '</p>' : '') + (M.sectionImportText ? '<p class="lk-stamp" role="status">' + esc(M.sectionImportText) + '</p>' : '') + '</details>';
   }
@@ -599,7 +658,7 @@
     else if (action === 'exception' && C.chef() && task) { var exceptionDay = button.getAttribute('data-day'); if (M.view === 'setup') { M.view = exceptionDay === T.day() ? 'today' : 'week'; M.selected = exceptionDay; M.week = monday(exceptionDay); } M.workQuery = ''; M.workFilter = 'all'; M.workGroup = chefGroupId(task); var exceptionGroup = chefGroups(tasksOn(exceptionDay)).filter(function (group) { return group.id === M.workGroup; })[0]; M.workPage = exceptionGroup ? Math.max(0, Math.floor(exceptionGroup.tasks.map(function (item) { return item.id; }).indexOf(task.id) / 6)) : 0; M.expanded[occurrence(task, exceptionDay)] = true; if (M.range !== range().join('|') || M.state === 'idle' || M.state === 'error') load(); draw(); var target = M.root.querySelector('#cln-detail-' + occurrence(task, exceptionDay)) || Array.prototype.filter.call(M.root.querySelectorAll('[data-cln-row]'), function (element) { return element.getAttribute('data-cln-row') === occurrence(task, exceptionDay); })[0]; if (target) { target.setAttribute('tabindex', '-1'); target.focus({ preventScroll: true }); target.scrollIntoView({ block: 'nearest' }); } }
     else if (action === 'temperature') { M.temperatureOpen = !M.temperatureOpen; draw(); }
     else if (action === 'pack-down-jump') {
-      var packHeading = M.root.querySelector('.cln-packdown-title');
+      var packHeading = M.root.querySelector('#cln-packdown-' + T.day()) || M.root.querySelector('.cln-packdown-title');
       if (packHeading) { packHeading.focus({ preventScroll: true }); packHeading.scrollIntoView({ block: 'start' }); }
     }
     else if (action === 'discard-earlier') { if (!earlierDrafts().length || B.arm && !B.arm('cln-discard-earlier', draw)) return; earlierDrafts().forEach(function (key) { delete M.workDrafts[key]; delete M.flowErrors[key]; delete M.flowSaved[key]; }); M.earlierCleared = 'Undone: earlier unsaved cleaning checks. Saved records were kept.'; draw(); var confirmation = M.root.querySelector('.cln-earlier-status'); if (confirmation) confirmation.focus({ preventScroll: true }); P.toast('Undone: earlier unsaved cleaning checks'); }

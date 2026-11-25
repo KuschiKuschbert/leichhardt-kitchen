@@ -12,9 +12,9 @@ const all = () => schedule.drafts().concat(schedule.packDownDrafts(), schedule.s
 // "Hot Larder" is spelt with a capital L here and no section is called "Fryers, salads and dessert": the Load panel
 // offers the section with the same name whatever its capitals, and leaves the other group on Shared kitchen
 const SECS = [['grill', 'Grill'], ['pans', 'Pans'], ['fryers', 'Fryers'], ['salads', 'Salads and dessert'], ['hl', 'Hot Larder']];
-const sections = () => ({
-  ...Object.fromEntries(SECS.map(([sec, name]) => [key('sections', sec), { name, uses: 5, hidden: false }])),
-  [key('config', 'main')]: { ...L.seed()[key('config', 'main')], kitSecs: SECS.map(([sec, name]) => ({ id: sec, name })) }
+const sections = (list = SECS) => ({
+  ...Object.fromEntries(list.map(([sec, name]) => [key('sections', sec), { name, uses: 5, hidden: false }])),
+  [key('config', 'main')]: { ...L.seed()[key('config', 'main')], kitSecs: list.map(([sec, name]) => ({ id: sec, name })) }
 });
 // a task as the import writes it: section is a kitchen section id, or '' for a shared one
 function task(code, section, changes = {}) {
@@ -26,7 +26,12 @@ const loaded = (list, changes = {}) => ({ ...sections(), ...Object.fromEntries(l
 const records = (p, collection) => p.evaluate(name => Object.entries(__fake.dump()).filter(([k]) => k.includes('/' + name + '/')).map(([path, data]) => ({ path, ...data })), collection);
 const listed = p => L.waitFor(p, () => { const page = document.querySelector('.cln-page'); return !!page && !/Loading cleaning/.test(page.textContent); });
 // the cook picked a section at the start of shift, so Your section today stays away
-const picked = () => { const d = new Date(Date.now() + 36e5 * 10).toISOString().slice(0, 10); localStorage.setItem('lk.sec.ann', JSON.stringify({ d, sec: 'grill', name: 'Grill', self: true, at: Date.now() })); };
+// L.open runs these in the page, so each names its section itself
+const pickedGrill = () => { const d = new Date(Date.now() + 36e5 * 10).toISOString().slice(0, 10); localStorage.setItem('lk.sec.ann', JSON.stringify({ d, sec: 'grill', name: 'Grill', self: true, at: Date.now() })); };
+const pickedSalads = () => { const d = new Date(Date.now() + 36e5 * 10).toISOString().slice(0, 10); localStorage.setItem('lk.sec.ann', JSON.stringify({ d, sec: 'salads', name: 'Salads and dessert', self: true, at: Date.now() })); };
+// the page's titles and headings, top to bottom
+const outline = p => p.$$eval('.cln-body .cln-mine-title > span, .cln-body .cln-mine-title > small, .cln-body .cln-rest-title, .cln-body .cln-packdown-title, .cln-body .nb-hd > span:first-child', es => es.map(e => e.textContent.trim()).join('|'));
+const rowsIn = (p, sel) => p.$$eval(sel + ' .cln-row', es => es.map(e => e.getAttribute('data-id').replace('clean-template-', '')).join(','));
 const row = code => '.cln-row[data-id="' + id(code) + '"]';
 const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
 
@@ -97,7 +102,8 @@ const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
   });
 
   for (const width of [390, 768, 1280]) await step('a cook reads the day at ' + width, async () => {
-    p = await L.open(b, '#/cleaning', { who: 'ann', width, wait: 1000, clock: MON, init: picked, extra: loaded([
+    // Salads and dessert has no cleaning list here, so the page keeps its usual order (the section first layout is below)
+    p = await L.open(b, '#/cleaning', { who: 'ann', width, wait: 1000, clock: MON, init: pickedSalads, extra: loaded([
       ['c01'], ['c15'], ['pd-grill-01'], ['pd-grill-04'],
       ['sc-grill-01', 'grill'], ['sc-grill-02', 'grill', { plan: { ...task('sc-grill-02').plan, repeat: { days: 28, anchor: '2026-11-02' } } }],
       ['sc-pans-01', 'pans'], ['sc-pans-02', 'pans'], ['sc-pans-03', 'pans'], ['sc-fry-02', 'fryers'], ['sc-hot-01', 'hl'], ['sc-gen-01'], ['sc-gen-03']]) });
@@ -142,8 +148,86 @@ const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
     ok(/Method/.test(how) && /takeaway containers/.test(how), 'details: a job with a method shows it');
   });
 
+
+  // ---- step 2: the page opens on your section ----
+  const dated = { plan: { ...task('sc-grill-02').plan, repeat: { days: 28, anchor: '2026-11-02' } } };
+  const whole = [['c01'], ['c15'], ['pd-hot-01'], ['pd-grill-01'], ['pd-grill-04'], ['pd-pans-01'],
+    ['sc-grill-01', 'grill'], ['sc-grill-02', 'grill', dated], ['sc-grill-03', 'grill'],
+    ['sc-pans-01', 'pans'], ['sc-pans-02', 'pans'], ['sc-hot-01', 'hl'], ['sc-fry-02', 'fryers'], ['sc-gen-03']];
+  for (const width of [390, 768, 1280]) await step('your section first at ' + width, async () => {
+    p = await L.open(b, '#/cleaning', { who: 'ann', width, wait: 1000, clock: MON, init: pickedGrill, extra: loaded(whole) });
+    await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 13);
+    const said = await outline(p);
+    ok(said === 'Grill|Your section today|Section clean|Pack down|Shared kitchen|Rest of the kitchen|Hot Larder: section clean|Hot larder: pack down|Pans: pack down|Fryers: section clean', width + ': the cook\'s section leads, Shared kitchen follows, then the rest, nothing folded (' + said + ')');
+    ok(await rowsIn(p, '.cln-mine section:not([data-cln-packdown-group])') === 'sc-grill-01,sc-grill-02', width + ': Section clean holds the jobs that come round');
+    ok(await rowsIn(p, '.cln-mine [data-cln-packdown-group="Grill"]') === 'pd-grill-01,pd-grill-04,sc-grill-03', width + ': the section\'s nightly job follows its numbered Pack down steps');
+    ok(await rowsIn(p, '.cln-body > [data-cln-packdown-group="Pans"]') === 'pd-pans-01,sc-pans-01', width + ': the same rule for another section: the kick oven door after the Pans steps');
+    ok(/Overhead shelves and frames first\. Floors are last\./.test(await p.locator('.cln-mine [data-cln-packdown-group="Grill"] .hint').innerText()), width + ': the floor reminder stays with the leading Pack down');
+    ok(await p.locator('.cln-body [hidden], .cln-body details').count() === 0 && await p.locator('.cln-row').count() === 13, width + ': all 13 jobs are on the page, none behind a tap');
+    ok(!(await L.overflow(p)) && await p.$$eval('.cln-row .nb-meta.cln-often', es => es.filter(e => e.scrollWidth > e.clientWidth + 1).length) === 0, width + ': no sideways scroll and no line that says how often cut off');
+    const targets = await p.$$eval('.cln-row button', es => es.filter(e => e.getClientRects().length).map(e => { const r = e.getBoundingClientRect(); return { w: r.width, h: r.height }; }));
+    ok(targets.every(r => r.w >= 44 && r.h >= 44), width + ': every row control is at least 44 px');
+    if (width !== 390) return;
+
+    // Go to Pack down lands on the leading section's Pack down
+    await p.click('[data-cln="pack-down-jump"]');
+    ok(await p.evaluate(() => { const e = document.activeElement; return !!e && e.id === 'cln-packdown-2026-11-30' && !!e.closest('.cln-mine') && /Pack down/.test(e.textContent); }), 'jump: Go to Pack down moves to the leading section\'s Pack down heading');
+
+    // a tick inside the leading section: one tap, and nothing on the page moves
+    // where a row sits on the page itself, so a scroll does not count as a move
+    const place = code => p.$eval(row(code), e => { const r = e.getBoundingClientRect(); return { y: Math.round(r.top + scrollY), height: Math.round(r.height) }; });
+    const first = await place('sc-grill-01'), before = await place('sc-grill-03');
+    await p.click('[data-cln="flow-quick"][data-id="' + id('sc-grill-03') + '"]');
+    await L.waitFor(p, () => Object.values(__fake.dump()).some(r => r.task === 'clean-template-sc-grill-03' && r.done) && !LK_PREP.unsent());
+    await L.waitFor(p, sel => { const r = document.querySelector(sel); return !!r && r.classList.contains('is-done') && !r.classList.contains('is-pending'); }, row('sc-grill-03'));
+    const after = await place('sc-grill-03'), firstAfter = await place('sc-grill-01'), saidAfter = await outline(p);
+    ok(after.y === before.y && after.height === before.height && firstAfter.y === first.y && saidAfter === said, 'tick: one tap in the leading section, and no row or heading moves (' + JSON.stringify([before, after, first, firstAfter]) + (saidAfter === said ? '' : ' ' + saidAfter) + ')');
+
+    // moved to another section mid-shift: the page keeps its order until it is read again
+    await p.evaluate(() => { const v = JSON.parse(localStorage.getItem('lk.sec.ann')); localStorage.setItem('lk.sec.ann', JSON.stringify({ ...v, sec: 'pans', name: 'Pans', at: Date.now() })); });
+    await p.click('[data-cln="details"][data-id="' + id('c01') + '"].cln-task-detail');
+    ok(await outline(p) === said, 'moved: a redraw does not reorder the page under the cook');
+    await p.click('[data-cln="refresh"]');
+    await L.waitFor(p, () => { const t = document.querySelector('.cln-mine-title > span'); return !!t && t.textContent === 'Pans' && !/Loading cleaning/.test(document.querySelector('.cln-page').textContent); });
+    const moved = await outline(p);
+    ok(moved === 'Pans|Your section today|Pack down|Shared kitchen|Rest of the kitchen|Hot Larder: section clean|Hot larder: pack down|Grill: section clean|Grill: pack down|Fryers: section clean', 'moved: Refresh opens the page on the new section (' + moved + ')');
+  });
+
+  await step('a Pack down is tied only by the section a chef chose', async () => {
+    // one Grill job moved to another section: Grill's Pack down is tied to no section and stays with the rest
+    p = await L.open(b, '#/cleaning', { who: 'ann', wait: 1000, clock: MON, init: pickedGrill, extra: loaded([['c01'], ['pd-grill-01'], ['sc-grill-01', 'grill'], ['sc-grill-03', 'pans']]) });
+    await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 4);
+    let said = await outline(p);
+    ok(said === 'Grill|Your section today|Section clean|Shared kitchen|Rest of the kitchen|Grill: pack down|Pans: section clean', 'one job moved: the section still leads with its own jobs, and its Pack down is not claimed (' + said + ')');
+    ok(await rowsIn(p, '[data-cln-packdown-group="Grill"]') === 'pd-grill-01' && await rowsIn(p, '.cln-body > section:last-child') === 'sc-grill-03', 'one job moved: a nightly job stays under its own section when no Pack down is tied to it');
+    await p.context().close();
+
+    // the group left on Shared kitchen: nothing is tied, so the page keeps its usual order for a Grill cook too
+    p = await L.open(b, '#/cleaning', { who: 'ann', wait: 1000, clock: MON, init: pickedGrill, extra: loaded([['c01'], ['pd-grill-01'], ['sc-grill-01'], ['sc-grill-03']]) });
+    await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 4);
+    said = await outline(p);
+    ok(said === 'Shared kitchen|Pack down|Grill', 'left on Shared kitchen: no section leads and Pack down stays where it was (' + said + ')');
+    await p.context().close();
+
+    // a renamed section: the link is the section's id, so the new name leads with its Pack down
+    const renamed = SECS.map(([sec, name]) => [sec, sec === 'grill' ? 'Char grill' : name]);
+    p = await L.open(b, '#/cleaning', { who: 'ann', wait: 1000, clock: MON, init: pickedGrill, extra: { ...loaded([['c01'], ['pd-grill-01'], ['sc-grill-01', 'grill'], ['sc-grill-03', 'grill']]), ...sections(renamed) } });
+    await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 4);
+    said = await outline(p);
+    ok(said === 'Char grill|Your section today|Section clean|Pack down|Shared kitchen', 'renamed: the section leads under its name now, with its Pack down (' + said + ')');
+    await p.context().close();
+
+    // a section taken off the kitchen's list: its jobs tie nothing
+    const removed = SECS.filter(([sec]) => sec !== 'grill');
+    p = await L.open(b, '#/cleaning', { who: 'sam', wait: 1000, clock: MON, extra: { ...loaded([['c01'], ['pd-grill-01'], ['pd-pans-01'], ['sc-grill-01', 'grill'], ['sc-pans-01', 'pans']]), ...sections(removed) } });
+    await listed(p);
+    await p.locator('[data-cln="setup"]').first().click(); await p.click('.cln-section-import summary');
+    const links = await p.locator('.cln-pack-links').innerText();
+    ok(/Grill pack down is not tied to a section/.test(links) && /Pans pack down opens with Pans/.test(links) && /Hot larder pack down is not tied to a section/.test(links), 'setup: Repeat tasks says which section each Pack down opens with, and which is not tied (' + links + ')');
+  });
+
   await step('a held save says Not sent', async () => {
-    p = await L.open(b, '#/cleaning', { who: 'ann', wait: 1000, clock: MON, init: picked, extra: loaded([['sc-grill-01', 'grill']]) });
+    p = await L.open(b, '#/cleaning', { who: 'ann', wait: 1000, clock: MON, init: pickedGrill, extra: loaded([['sc-grill-01', 'grill']]) });
     await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 1);
     await p.evaluate(() => { __fake.mode = 'hold'; });
     await p.click('[data-cln="flow-quick"][data-id="' + id('sc-grill-01') + '"]');
