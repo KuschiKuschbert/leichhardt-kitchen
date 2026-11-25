@@ -1,0 +1,552 @@
+{
+ "source": "27ae8275",
+ "day": "Monday 30 November 2026 (synthetic); D-tue is Tuesday 1 December",
+ "role": "line cook",
+ "viewport": "390 x 844 and 1280 x 844",
+ "fonts": "Barlow, Barlow Condensed, Caveat",
+ "kind": "Preview over the real page on the Firebase stand-in",
+ "results": {
+  "today-390": {
+   "screensToMyExtraJob": null,
+   "screensToMyPackDown": 2.9,
+   "screensLong": 4.9,
+   "rows": 46,
+   "rowsOnFirstScreen": 5,
+   "firstRows": [
+    "Ovens inside and out (pizza, combi)",
+    "Walk-in and service fridges inside and out, including doors, shelves, floor, ceiling and seals; no food on floor",
+    "Microwave inside and outside",
+    "Fryers inside and outside; replace oil",
+    "Sinks"
+   ],
+   "pageHeight": 4130,
+   "sideways": false,
+   "metaCutOff": [
+    "Food labels · Everyone; checked by Pass · 0/2 recorded; record each prep",
+    "Mixers · Production chef · 0/0 recorded; record each use",
+    "Bench tops · CDPS · 0/0 recorded; record each prep and service",
+    "Floors · Kitchen hand · 0/0 recorded; record each service"
+   ],
+   "targetsUnder44": 0,
+   "oneTap": 0,
+   "opensChecks": 37,
+   "headings": [
+    "Shared kitchen",
+    "Pack down",
+    "Hot larder",
+    "Grill",
+    "Pans",
+    "Floors after shelving"
+   ]
+  },
+  "today-1280": {
+   "screensToMyExtraJob": null,
+   "screensToMyPackDown": 2.3,
+   "screensLong": 3.8,
+   "rows": 46,
+   "rowsOnFirstScreen": 8,
+   "firstRows": [
+    "Ovens inside and out (pizza, combi)",
+    "Walk-in and service fridges inside and out, including doors, shelves, floor, ceiling and seals; no food on floor",
+    "Microwave inside and outside",
+    "Fryers inside and outside; replace oil",
+    "Sinks",
+    "Walls",
+    "Cover and label all food",
+    "Organise tubs, utensils, pots and pans"
+   ],
+   "pageHeight": 3176,
+   "sideways": false,
+   "metaCutOff": [],
+   "targetsUnder44": 0,
+   "oneTap": 0,
+   "opensChecks": 37,
+   "headings": [
+    "Shared kitchen",
+    "Pack down",
+    "Hot larder",
+    "Grill",
+    "Pans",
+    "Floors after shelving"
+   ]
+  },
+  "typed-390": {
+   "screensToMyExtraJob": 0.7,
+   "screensToMyPackDown": 3.7,
+   "screensLong": 5.7,
+   "rows": 54,
+   "rowsOnFirstScreen": 4,
+   "firstRows": [
+    "Clean the takeaway container shelves, wipe down",
+    "Wipe the doors of all fridges",
+    "Clean the drawers",
+    "Clean behind the grill"
+   ],
+   "pageHeight": 4819,
+   "sideways": false,
+   "metaCutOff": [
+    "Food labels · Everyone; checked by Pass · 0/2 recorded; record each prep",
+    "Mixers · Production chef · 0/0 recorded; record each use",
+    "Bench tops · CDPS · 0/0 recorded; record each prep and service",
+    "Floors · Kitchen hand · 0/0 recorded; record each service"
+   ],
+   "targetsUnder44": 0,
+   "oneTap": 7,
+   "opensChecks": 37,
+   "headings": [
+    "Fryers, salads and dessert",
+    "Grill",
+    "Hot larder",
+    "Pans",
+    "Shared kitchen",
+    "Pack down",
+    "Hot larder",
+    "Grill",
+    "Pans",
+    "Floors after shelving"
+   ]
+  },
+  "typed-1280": {
+   "screensToMyExtraJob": 0.6,
+   "screensToMyPackDown": 3.1,
+   "screensLong": 4.5,
+   "rows": 54,
+   "rowsOnFirstScreen": 6,
+   "firstRows": [
+    "Clean the takeaway container shelves, wipe down",
+    "Wipe the doors of all fridges",
+    "Clean the drawers",
+    "Clean behind the grill",
+    "Clean out the fridges, wipe the bottom",
+    "Wipe down all fridge doors"
+   ],
+   "pageHeight": 3793,
+   "sideways": false,
+   "metaCutOff": [],
+   "targetsUnder44": 0,
+   "oneTap": 7,
+   "opensChecks": 37,
+   "headings": [
+    "Fryers, salads and dessert",
+    "Grill",
+    "Hot larder",
+    "Pans",
+    "Shared kitchen",
+    "Pack down",
+    "Hot larder",
+    "Grill",
+    "Pans",
+    "Floors after shelving"
+   ]
+  },
+  "A-390": {
+   "screensToMyExtraJob": 0.7,
+   "screensToMyPackDown": 3.8,
+   "screensLong": 5.7,
+   "rows": 54,
+   "rowsOnFirstScreen": 4,
+   "firstRows": [
+    "Clean the takeaway container shelves, wipe down",
+    "Wipe the doors of all fridges",
+    "Clean the drawers",
+    "Clean behind the grill"
+   ],
+   "pageHeight": 4837,
+   "sideways": false,
+   "metaCutOff": [
+    "Food labels · Everyone; checked by Pass · 0/2 recorded; record each prep",
+    "Mixers · Production chef · 0/0 recorded; record each use",
+    "Bench tops · CDPS · 0/0 recorded; record each prep and service",
+    "Floors · Kitchen hand · 0/0 recorded; record each service"
+   ],
+   "targetsUnder44": 0,
+   "oneTap": 7,
+   "opensChecks": 37,
+   "headings": [
+    "Fryers, salads and dessert: section clean",
+    "Grill: section clean",
+    "Hot larder: section clean",
+    "Pans: section clean",
+    "Shared kitchen",
+    "Pack down",
+    "Hot larder: pack down",
+    "Grill: pack down",
+    "Pans: pack down",
+    "Floors after shelving"
+   ]
+  },
+  "A-1280": {
+   "screensToMyExtraJob": 0.6,
+   "screensToMyPackDown": 3.1,
+   "screensLong": 4.5,
+   "rows": 54,
+   "rowsOnFirstScreen": 6,
+   "firstRows": [
+    "Clean the takeaway container shelves, wipe down",
+    "Wipe the doors of all fridges",
+    "Clean the drawers",
+    "Clean behind the grill",
+    "Clean out the fridges, wipe the bottom",
+    "Wipe down all fridge doors"
+   ],
+   "pageHeight": 3793,
+   "sideways": false,
+   "metaCutOff": [],
+   "targetsUnder44": 0,
+   "oneTap": 7,
+   "opensChecks": 37,
+   "headings": [
+    "Fryers, salads and dessert: section clean",
+    "Grill: section clean",
+    "Hot larder: section clean",
+    "Pans: section clean",
+    "Shared kitchen",
+    "Pack down",
+    "Hot larder: pack down",
+    "Grill: pack down",
+    "Pans: pack down",
+    "Floors after shelving"
+   ]
+  },
+  "B-390": {
+   "screensToMyExtraJob": 0.6,
+   "screensToMyPackDown": 3.6,
+   "screensLong": 5.7,
+   "rows": 54,
+   "rowsOnFirstScreen": 4,
+   "firstRows": [
+    "Clean the takeaway container shelves, wipe down",
+    "Clean the drawers",
+    "Clean behind the grill",
+    "Clean out the fridges, wipe the bottom"
+   ],
+   "pageHeight": 4833,
+   "sideways": false,
+   "metaCutOff": [
+    "Food labels · Everyone; checked by Pass · 0/2 recorded; record each prep",
+    "Mixers · Production chef · 0/0 recorded; record each use",
+    "Bench tops · CDPS · 0/0 recorded; record each prep and service",
+    "Floors · Kitchen hand · 0/0 recorded; record each service"
+   ],
+   "targetsUnder44": 0,
+   "oneTap": 7,
+   "opensChecks": 37,
+   "headings": [
+    "Today only",
+    "Every night",
+    "Shared kitchen",
+    "Pack down",
+    "Hot larder",
+    "Grill",
+    "Pans",
+    "Fryers, salads and dessert",
+    "Floors after shelving"
+   ]
+  },
+  "B-1280": {
+   "screensToMyExtraJob": 0.6,
+   "screensToMyPackDown": 2.9,
+   "screensLong": 4.5,
+   "rows": 54,
+   "rowsOnFirstScreen": 5,
+   "firstRows": [
+    "Clean the takeaway container shelves, wipe down",
+    "Clean the drawers",
+    "Clean behind the grill",
+    "Clean out the fridges, wipe the bottom",
+    "Clean and organise chemical room; chemicals labelled; sanitiser available in spray bottle"
+   ],
+   "pageHeight": 3789,
+   "sideways": false,
+   "metaCutOff": [],
+   "targetsUnder44": 0,
+   "oneTap": 7,
+   "opensChecks": 37,
+   "headings": [
+    "Today only",
+    "Every night",
+    "Shared kitchen",
+    "Pack down",
+    "Hot larder",
+    "Grill",
+    "Pans",
+    "Fryers, salads and dessert",
+    "Floors after shelving"
+   ]
+  },
+  "C-390": {
+   "screensToMyExtraJob": 0.6,
+   "screensToMyPackDown": 0.7,
+   "screensLong": 2.2,
+   "rows": 10,
+   "rowsOnFirstScreen": 4,
+   "firstRows": [
+    "Clean the drawers",
+    "Clean behind the grill",
+    "Scrub grill and remove build-up",
+    "Wipe under grill"
+   ],
+   "pageHeight": 1817,
+   "sideways": false,
+   "metaCutOff": [],
+   "targetsUnder44": 0,
+   "oneTap": 1,
+   "opensChecks": 6,
+   "headings": [
+    "Grill",
+    "Section clean",
+    "Pack down",
+    "Rest of the kitchen",
+    "Fryers, salads and dessert",
+    "Hot larder",
+    "Pans",
+    "Shared kitchen",
+    "Floors after shelving"
+   ]
+  },
+  "C-1280": {
+   "screensToMyExtraJob": 0.6,
+   "screensToMyPackDown": 0.7,
+   "screensLong": 1.9,
+   "rows": 10,
+   "rowsOnFirstScreen": 6,
+   "firstRows": [
+    "Clean the drawers",
+    "Clean behind the grill",
+    "Scrub grill and remove build-up",
+    "Wipe under grill",
+    "Clean hot-line shelf and frame before floors",
+    "Wrap and label nine-drawer grill fridge"
+   ],
+   "pageHeight": 1562,
+   "sideways": false,
+   "metaCutOff": [],
+   "targetsUnder44": 0,
+   "oneTap": 1,
+   "opensChecks": 6,
+   "headings": [
+    "Grill",
+    "Section clean",
+    "Pack down",
+    "Rest of the kitchen",
+    "Fryers, salads and dessert",
+    "Hot larder",
+    "Pans",
+    "Shared kitchen",
+    "Floors after shelving"
+   ]
+  },
+  "D-390": {
+   "screensToMyExtraJob": 0.5,
+   "screensToMyPackDown": 0.7,
+   "screensLong": 5.8,
+   "rows": 54,
+   "rowsOnFirstScreen": 4,
+   "firstRows": [
+    "Clean the drawers",
+    "Clean behind the grill",
+    "Scrub grill and remove build-up",
+    "Wipe under grill"
+   ],
+   "pageHeight": 4863,
+   "sideways": false,
+   "metaCutOff": [
+    "Food labels · Everyone; checked by Pass · 0/2 recorded; record each prep",
+    "Mixers · Production chef · 0/0 recorded; record each use",
+    "Bench tops · CDPS · 0/0 recorded; record each prep and service",
+    "Floors · Kitchen hand · 0/0 recorded; record each service"
+   ],
+   "targetsUnder44": 0,
+   "oneTap": 7,
+   "opensChecks": 37,
+   "headings": [
+    "GrillYour section today",
+    "Section clean",
+    "Pack down",
+    "Shared kitchen",
+    "Rest of the kitchen",
+    "Hot larder: section clean",
+    "Hot larder: pack down",
+    "Pans: pack down",
+    "Fryers, salads and dessert: section clean",
+    "Fryers, salads and dessert: pack down",
+    "Floors after shelving"
+   ]
+  },
+  "D-1280": {
+   "screensToMyExtraJob": 0.5,
+   "screensToMyPackDown": 0.7,
+   "screensLong": 4.6,
+   "rows": 54,
+   "rowsOnFirstScreen": 6,
+   "firstRows": [
+    "Clean the drawers",
+    "Clean behind the grill",
+    "Scrub grill and remove build-up",
+    "Wipe under grill",
+    "Clean hot-line shelf and frame before floors",
+    "Wrap and label nine-drawer grill fridge"
+   ],
+   "pageHeight": 3856,
+   "sideways": false,
+   "metaCutOff": [],
+   "targetsUnder44": 0,
+   "oneTap": 7,
+   "opensChecks": 37,
+   "headings": [
+    "GrillYour section today",
+    "Section clean",
+    "Pack down",
+    "Shared kitchen",
+    "Rest of the kitchen",
+    "Hot larder: section clean",
+    "Hot larder: pack down",
+    "Pans: pack down",
+    "Fryers, salads and dessert: section clean",
+    "Fryers, salads and dessert: pack down",
+    "Floors after shelving"
+   ]
+  },
+  "D-screen-390": {
+   "screensToMyExtraJob": 0.5,
+   "screensToMyPackDown": 0.7,
+   "screensLong": 5.8,
+   "rows": 54,
+   "rowsOnFirstScreen": 4,
+   "firstRows": [
+    "Clean the drawers",
+    "Clean behind the grill",
+    "Scrub grill and remove build-up",
+    "Wipe under grill"
+   ],
+   "pageHeight": 4863,
+   "sideways": false,
+   "metaCutOff": [
+    "Food labels · Everyone; checked by Pass · 0/2 recorded; record each prep",
+    "Mixers · Production chef · 0/0 recorded; record each use",
+    "Bench tops · CDPS · 0/0 recorded; record each prep and service",
+    "Floors · Kitchen hand · 0/0 recorded; record each service"
+   ],
+   "targetsUnder44": 0,
+   "oneTap": 7,
+   "opensChecks": 37,
+   "headings": [
+    "GrillThis screen. You are on Pans today",
+    "Section clean",
+    "Pack down",
+    "Shared kitchen",
+    "Rest of the kitchen",
+    "Hot larder: section clean",
+    "Hot larder: pack down",
+    "Pans: pack down",
+    "Fryers, salads and dessert: section clean",
+    "Fryers, salads and dessert: pack down",
+    "Floors after shelving"
+   ]
+  },
+  "D-screen-1280": {
+   "screensToMyExtraJob": 0.5,
+   "screensToMyPackDown": 0.7,
+   "screensLong": 4.6,
+   "rows": 54,
+   "rowsOnFirstScreen": 6,
+   "firstRows": [
+    "Clean the drawers",
+    "Clean behind the grill",
+    "Scrub grill and remove build-up",
+    "Wipe under grill",
+    "Clean hot-line shelf and frame before floors",
+    "Wrap and label nine-drawer grill fridge"
+   ],
+   "pageHeight": 3856,
+   "sideways": false,
+   "metaCutOff": [],
+   "targetsUnder44": 0,
+   "oneTap": 7,
+   "opensChecks": 37,
+   "headings": [
+    "GrillThis screen. You are on Pans today",
+    "Section clean",
+    "Pack down",
+    "Shared kitchen",
+    "Rest of the kitchen",
+    "Hot larder: section clean",
+    "Hot larder: pack down",
+    "Pans: pack down",
+    "Fryers, salads and dessert: section clean",
+    "Fryers, salads and dessert: pack down",
+    "Floors after shelving"
+   ]
+  },
+  "D-tue-390": {
+   "screensToMyExtraJob": 0.5,
+   "screensToMyPackDown": 0.7,
+   "screensLong": 5.7,
+   "rows": 54,
+   "rowsOnFirstScreen": 3,
+   "firstRows": [
+    "Pull the infill benches forward and clean both sides of the stove",
+    "Pack down mash, rissoles and cob-mix bain-marie",
+    "Empty poaching pots"
+   ],
+   "pageHeight": 4793,
+   "sideways": false,
+   "metaCutOff": [
+    "Food labels · Everyone; checked by Pass · 0/2 recorded; record each prep",
+    "Mixers · Production chef · 0/0 recorded; record each use",
+    "Bench tops · CDPS · 0/0 recorded; record each prep and service",
+    "Floors · Kitchen hand · 0/0 recorded; record each service"
+   ],
+   "targetsUnder44": 0,
+   "oneTap": 8,
+   "opensChecks": 37,
+   "headings": [
+    "PansYour section today",
+    "Section clean",
+    "Pack down",
+    "Shared kitchen",
+    "Rest of the kitchen",
+    "Hot larder: section clean",
+    "Hot larder: pack down",
+    "Grill: pack down",
+    "Fryers, salads and dessert: section clean",
+    "Fryers, salads and dessert: pack down",
+    "Floors after shelving"
+   ]
+  },
+  "D-tue-1280": {
+   "screensToMyExtraJob": 0.5,
+   "screensToMyPackDown": 0.7,
+   "screensLong": 4.6,
+   "rows": 54,
+   "rowsOnFirstScreen": 6,
+   "firstRows": [
+    "Pull the infill benches forward and clean both sides of the stove",
+    "Pack down mash, rissoles and cob-mix bain-marie",
+    "Empty poaching pots",
+    "Clean holding shelves above stove tops",
+    "Remove stove tops and leave to cool",
+    "Scrub stove area and empty drip tray"
+   ],
+   "pageHeight": 3857,
+   "sideways": false,
+   "metaCutOff": [],
+   "targetsUnder44": 0,
+   "oneTap": 8,
+   "opensChecks": 37,
+   "headings": [
+    "PansYour section today",
+    "Section clean",
+    "Pack down",
+    "Shared kitchen",
+    "Rest of the kitchen",
+    "Hot larder: section clean",
+    "Hot larder: pack down",
+    "Grill: pack down",
+    "Fryers, salads and dessert: section clean",
+    "Fryers, salads and dessert: pack down",
+    "Floors after shelving"
+   ]
+  }
+ }
+}

@@ -158,7 +158,7 @@
   function planDetails(task, day) {
     var plan = task.plan, list = flowList(task, day), key = occurrence(task, day), kinds = plan.timing === 'service' ? ['service'] : plan.timing === 'prep-service' ? ['prep', 'service'] : plan.timing === 'food' ? ['prep'] : plan.timing === 'use' ? ['use'] : [];
     var waiting = M.pending[key], canAdd = workEnabled(task, day);
-    return '<div class="cln-detail" id="cln-detail-' + esc(key) + '"><p class="cln-method"><b>Method</b> ' + esc(plan.method) + '</p><p class="hint"><b>Responsible:</b> ' + esc(plan.responsibility) + '</p>' +
+    return '<div class="cln-detail" id="cln-detail-' + esc(key) + '">' + (plan.method ? '<p class="cln-method"><b>Method</b> ' + esc(plan.method) + '</p>' : '') + '<p class="hint"><b>Responsible:</b> ' + esc(plan.responsibility) + '</p>' +
       (plan.review ? '<p class="cln-review"><b>Check the procedure:</b> ' + esc(plan.review) + '</p>' : '') +
       (kinds.length ? '<p class="hint">Record every ' + (plan.timing === 'prep-service' ? 'prep and service' : plan.timing === 'food' ? 'prep, plus opening and closing checks' : kinds[0]) + '. Counts cover recorded occurrences only.</p>' : '') +
       (task.guide && P.featOn('guides') ? '<a class="p-link cln-guide-link" href="#/guides/' + encodeURIComponent(task.guide) + '">How to: ' + esc(task.text) + '</a>' : '') +
@@ -170,21 +170,35 @@
       }).join('') + '</div>' : '') + '</div>';
   }
   function planRow(task, day) {
-    var key = occurrence(task, day), open = !!M.expanded[key], summary = flowSummary(task, day), completed = summary.done && flowList(task, day)[0].record, stateText = completed ? completionText(completed) : flowState(task, day), meta = task.area + (C.chef() && !task.shared ? ' · ' + owner(task, day) : '') + (task.plan.responsibility.toLowerCase() === task.area.toLowerCase() ? '' : ' · ' + task.plan.responsibility) + ' · ' + stateText, quick = !task.plan.checks.length && !task.plan.verification && !summary.events, slot = task.plan.timing === 'close' ? 'close' : 'daily', quickRecord = quick && flowRecord(task, day, slot), quickUndo = quickRecord && quickRecord.done && C.canUndo(quickRecord);
+    var key = occurrence(task, day), open = !!M.expanded[key], summary = flowSummary(task, day), completed = summary.done && flowList(task, day)[0].record, stateText = completed ? completionText(completed) : flowState(task, day), how = rhythm(task), meta = (how ? how + ' · ' : '') + task.area + (C.chef() && !task.shared ? ' · ' + owner(task, day) : '') + (task.plan.responsibility.toLowerCase() === task.area.toLowerCase() ? '' : ' · ' + task.plan.responsibility) + ' · ' + stateText, quick = !task.plan.checks.length && !task.plan.verification && !summary.events, slot = task.plan.timing === 'close' ? 'close' : 'daily', quickRecord = quick && flowRecord(task, day, slot), quickUndo = quickRecord && quickRecord.done && C.canUndo(quickRecord);
     var quickPending = quick && M.pending[key] && M.pending[key].control === 'quick';
     return '<li class="nb-row cln-row cln-plan-row' + (summary.done ? ' is-done' : '') + (M.pending[key] ? ' is-pending' : '') + '" data-id="' + esc(task.id) + '" data-cln-row="' + esc(key) + '">' +
       '<button type="button" class="nb-box" data-cln="' + (quick ? 'flow-quick' : 'details') + '" data-id="' + esc(task.id) + '" data-day="' + esc(day) + '"' + (quick ? ' data-slot="' + slot + '" data-kind="' + slot + '" aria-pressed="' + summary.done + '"' + (workEnabled(task, day) && (!summary.done || quickUndo) ? '' : ' disabled') : ' aria-expanded="' + open + '" aria-controls="cln-detail-' + esc(key) + '"') + (quickPending ? ' aria-busy="true"' : '') + ' aria-label="' + esc((quick ? summary.done ? quickUndo ? 'Undo: ' : 'Done: ' : 'Mark done: ' : open ? 'Close checks: ' : 'Open checks: ') + task.text + '. ' + flowState(task, day)) + '">' + C.box(summary.done) + '</button>' +
-      '<button type="button" class="nb-main cln-task-detail" data-cln="details" data-id="' + esc(task.id) + '" data-day="' + esc(day) + '" aria-expanded="' + open + '" aria-controls="cln-detail-' + esc(key) + '" aria-label="' + esc((open ? 'Close checks and method: ' : 'Open checks and method: ') + task.text) + '"><span class="nb-t">' + esc(task.text) + '</span><span class="nb-meta" title="' + esc(meta) + '">' + esc(meta) + '</span><span class="cln-detail-cue" aria-hidden="true">' + (open ? '▴' : '▾') + '</span></button>' + (open ? planDetails(task, day) : '') + '</li>';
+      '<button type="button" class="nb-main cln-task-detail" data-cln="details" data-id="' + esc(task.id) + '" data-day="' + esc(day) + '" aria-expanded="' + open + '" aria-controls="cln-detail-' + esc(key) + '" aria-label="' + esc((open ? 'Close checks and method: ' : 'Open checks and method: ') + task.text) + '"><span class="nb-t">' + esc(task.text) + '</span><span ' + metaAttrs(task) + ' title="' + esc(meta) + '">' + esc(meta) + '</span><span class="cln-detail-cue" aria-hidden="true">' + (open ? '▴' : '▾') + '</span></button>' + (open ? planDetails(task, day) : '') + '</li>';
   }
   function owner(task, day) {
     if (task.shared) return 'Shared kitchen';
     var section = C.sections().filter(function (s) { return s.id === task.section; })[0];
     return day < T.day() ? task.sectionName || section && section.name || 'Section to assign' : section && section.name || (task.sectionName ? task.sectionName + ' (reassign)' : 'Section to assign');
   }
+  /* How often a job comes round, for its small line: nothing for a nightly job, "Every Monday" for one weekday, "Mon, Wed,
+     Fri" for several, "Every 4 weeks" or "Every 2 days" for a repeat. templateLabel() below is the chef's setup line (every
+     day listed, with the first date); this is the short form a cook reads on the row (25 Nov 2026). */
+  var DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  function rhythm(task) {
+    var repeat = task.plan && task.plan.repeat, days = Array.isArray(task.dows) ? task.dows : [];
+    if (repeat) return repeat.days % 7 ? 'Every ' + repeat.days + ' days' : repeat.days === 7 ? 'Every week' : 'Every ' + repeat.days / 7 + ' weeks';
+    if (days.length >= 7 || !days.length) return '';
+    if (days.length === 1) return 'Every ' + (DAY_NAMES[days[0]] || '');
+    return DAYS.filter(function (day) { return days.indexOf(day[0]) >= 0; }).map(function (day) { return day[1]; }).join(', ');
+  }
+  /* The small line's class. A line that says how often may wrap, so its state is never cut off. The style repeats
+     .cln-often from css/app.css on purpose: this page is lazy and can be newer than the saved stylesheet on a phone. */
+  function metaAttrs(task) { return rhythm(task) ? 'class="nb-meta cln-often" style="white-space:normal;overflow:visible;text-overflow:clip"' : 'class="nb-meta"'; }
   function packSection(task) { var id = task.plan && task.plan.template || ''; return id.indexOf('pd-hot-') === 0 ? 'Hot larder' : id.indexOf('pd-grill-') === 0 ? 'Grill' : id.indexOf('pd-pans-') === 0 ? 'Pans' : ''; }
   function groups(tasks, day) {
     var out = [], ids = [], pack = tasks.filter(function (task) { return !!packSection(task); }), floors = [];
-    tasks.forEach(function (task) { if (packSection(task)) return; if (pack.length && task.plan && task.plan.template === 'c03') { floors.push(task); return; } var id = task.shared ? '_shared' : task.section, i = ids.indexOf(id); if (i < 0) { ids.push(id); out.push({ name: owner(task, day), tasks: [] }); i = out.length - 1; } out[i].tasks.push(task); });
+    tasks.forEach(function (task) { if (packSection(task)) return; if (pack.length && task.plan && task.plan.template === 'c03') { floors.push(task); return; } var id = task.shared ? '_shared' : task.section, i = ids.indexOf(id); if (i < 0) { ids.push(id); out.push({ name: owner(task, day), own: !task.shared, tasks: [] }); i = out.length - 1; } out[i].tasks.push(task); });
     out.sort(function (a, b) { return a.name === 'Shared kitchen' ? 1 : b.name === 'Shared kitchen' ? -1 : a.name.localeCompare(b.name); });
     ['Hot larder', 'Grill', 'Pans'].forEach(function (name) { var list = pack.filter(function (task) { return packSection(task) === name; }).sort(function (a, b) { return a.plan.template.localeCompare(b.plan.template); }); if (list.length) out.push({ name: name, pack: true, tasks: list }); });
     if (floors.length) out.push({ name: 'Floors after shelving', floors: true, tasks: floors });
@@ -201,11 +215,11 @@
     if (hasPlan(task)) return planRow(task, day);
     var r = record(task, day), key = occurrence(task, day), p = M.pending[key], complete = p ? !p.undo : !!(r && r.done), error = M.tickErrors[key];
     var can = canAct(task, day) && (!r || !r.done || C.canUndo(r)), state = status(task, day);
-    var meta = task.area + (C.chef() ? ' · ' + owner(task, day) : '') + ' · ' + (p ? 'Not sent' : r && r.done ? completionText(r) : day === T.day() ? 'To do today' : state);
+    var how = rhythm(task), meta = (how ? how + ' · ' : '') + task.area + (C.chef() ? ' · ' + owner(task, day) : '') + ' · ' + (p ? 'Not sent' : r && r.done ? completionText(r) : day === T.day() ? 'To do today' : state);
     var label = (r && r.done ? C.canUndo(r) && day === T.day() ? 'Undo: ' : 'Done: ' : 'Mark done: ') + task.text + '. ' + meta;
     return '<li class="nb-row cln-row' + (complete ? ' is-done' : '') + (p ? ' is-pending' : '') + '" data-id="' + esc(task.id) + '" data-cln-row="' + esc(key) + '">' +
       '<button type="button" class="nb-box" data-cln="tick" data-id="' + esc(task.id) + '" data-day="' + esc(day) + '" aria-pressed="' + complete + '" aria-label="' + esc(label) + '"' + (can ? '' : ' disabled') + (p ? ' aria-busy="true"' : '') + '>' + C.box(complete) + '</button>' +
-      '<div class="nb-main"><span class="nb-t">' + esc(task.text) + '</span><span class="nb-meta" title="' + esc(meta) + '">' + esc(meta) + '</span>' +
+      '<div class="nb-main"><span class="nb-t">' + esc(task.text) + '</span><span ' + metaAttrs(task) + ' title="' + esc(meta) + '">' + esc(meta) + '</span>' +
       (error ? '<span class="cln-row-error" role="alert">' + esc(error) + ' <button type="button" class="p-link" data-cln="refresh">Refresh</button></span>' : '') + '</div>' +
       (task.guide && P.featOn('guides') ? '<a class="nb-go cln-how" href="#/guides/' + encodeURIComponent(task.guide) + '" aria-label="How to: ' + esc(task.text) + '">How to</a>' : '') + '</li>';
   }
@@ -213,7 +227,7 @@
     var tasks = tasksOn(day);
     if (!tasks.length) return '<div class="cln-empty"><p class="nb-empty">' + (M.tasks.length ? 'No cleaning tasks due on this day.' : 'No cleaning tasks set yet.') + '</p><p class="hint">' + (C.chef() ? 'Set the actual jobs, sections and repeat days in Repeat tasks.' : 'Your chef can set the jobs and repeat days.') + '</p>' + (C.chef() ? '<button type="button" class="btn" data-cln="setup">Set repeat tasks</button>' : '') + '</div>';
     var grouped = groups(tasks, day);
-    function groupHTML(group, i) { var count = workTotals(group.tasks, day), heading = group.pack ? 'h4' : 'h3'; return '<section' + (group.pack ? ' class="cln-packdown-group" data-cln-packdown-group="' + esc(group.name) + '"' : '') + ' aria-labelledby="cln-group-' + i + '-' + day + '"><' + heading + ' class="nb-hd" id="cln-group-' + i + '-' + day + '"><span>' + esc(group.name) + '</span><span class="cln-group-count">' + count.complete + '/' + count.total + (count.events ? ' + repeats' : '') + '</span></' + heading + '><ul class="nb-rows">' + group.tasks.map(function (task) { return row(task, day); }).join('') + '</ul></section>'; }
+    function groupHTML(group, i) { var count = workTotals(group.tasks, day), heading = group.pack ? 'h4' : 'h3'; return '<section' + (group.pack ? ' class="cln-packdown-group" data-cln-packdown-group="' + esc(group.name) + '"' : '') + ' aria-labelledby="cln-group-' + i + '-' + day + '"><' + heading + ' class="nb-hd" id="cln-group-' + i + '-' + day + '"><span>' + esc(group.name + (group.own ? ': section clean' : '')) + '</span><span class="cln-group-count">' + count.complete + '/' + count.total + (count.events ? ' + repeats' : '') + '</span></' + heading + '><ul class="nb-rows">' + group.tasks.map(function (task) { return row(task, day); }).join('') + '</ul></section>'; }
     var regular = '', pack = '', floors = '';
     grouped.forEach(function (group, i) { var html = groupHTML(group, i); if (group.pack) pack += html; else if (group.floors) floors += html; else regular += html; });
     return regular + (pack ? '<section class="cln-packdown" aria-labelledby="cln-packdown-' + day + '"><h3 class="cln-packdown-title" id="cln-packdown-' + day + '" tabindex="-1">Pack down</h3><p class="hint">Finish overhead shelves and frames before the final floor clean. Keep each after-service floor check separate.' + (floors ? ' Floor checks follow this list.' : '') + '</p>' + pack + '</section>' : '') + floors;
@@ -246,7 +260,7 @@
     return '<div class="cln-work-notices" role="status"><b>Work kept on this device</b>' + link(changed, 'with unsaved checks') + link(pending, 'not sent') + link(failed, 'to retry') + '</div>';
   }
   function chefDaily(day) {
-    var tasks = tasksOn(day), grouped = chefGroups(tasks), active = M.workQuery.trim() || M.workFilter !== 'all', html = attention(tasks, day) + workSearch(), notices = workNotices(tasks, day);
+    var tasks = tasksOn(day), grouped = chefGroups(tasks), active = M.workQuery.trim() || M.workFilter !== 'all', html = firstDateNotice() + attention(tasks, day) + workSearch(), notices = workNotices(tasks, day);
     if (!tasks.length) return html + daily(day);
     if (active) {
       var matching = workMatches(grouped.reduce(function (list, group) { return list.concat(group.tasks); }, []), day); M.workPage = Math.max(0, Math.min(M.workPage, Math.ceil(matching.length / 6) - 1));
@@ -293,12 +307,44 @@
     if (!window.LK_CLEANING_SCHEDULE || !C.importTasks) return '';
     return '<details class="cln-import"' + (M.importOpen ? ' open' : '') + '><summary>Cleaning schedule: 26 tasks</summary><p class="hint">Load the cleaning schedule, then review responsibilities and procedures. Existing tasks and completed records stay as recorded. Loading it again adds only missing tasks.</p><span class="label">Pass checkers for food labelling</span><p class="hint">Choose the people who check food labelling. If none are selected, checks wait for the checker to be configured.</p>' + verifierChoices(M.importVerifiers || [], 'data-cln-import-verifier') +
       '<button type="button" class="btn" data-cln="import-schedule"' + (busy() || dirtyDraft() || M.state !== 'ok' ? ' disabled' : '') + '>' + (M.importBusy ? 'Loading schedule...' : 'Load cleaning schedule') + '</button>' +
-      (M.importError ? '<p class="p-err" role="alert">' + esc(M.importError) + '</p>' : '') + (M.importText ? '<p class="lk-stamp" role="status">' + esc(M.importText) + '</p>' : '') + '</details>' + packImportPanel();
+      (M.importError ? '<p class="p-err" role="alert">' + esc(M.importError) + '</p>' : '') + (M.importText ? '<p class="lk-stamp" role="status">' + esc(M.importText) + '</p>' : '') + '</details>' + packImportPanel() + sectionImportPanel();
   }
   function packImportPanel() {
     var source = window.LK_CLEANING_SCHEDULE;
     if (!source || !source.packDownDrafts || !C.importTasks) return '';
     return '<details class="cln-import cln-pack-import"' + (M.packImportOpen ? ' open' : '') + '><summary>Pack down: Hot larder, Grill and Pans</summary><p class="hint">Load ' + source.packDown.length + ' ordered pack down tasks. Review methods and responsibility in Repeat tasks. Existing tasks and completed records stay as recorded.</p><p class="hint">Clean overhead shelves and frames before the final floor clean. Review repeat intervals and their first due date in Repeat tasks.</p><button type="button" class="btn" data-cln="import-packdown"' + (busy() || dirtyDraft() || M.state !== 'ok' ? ' disabled' : '') + '>' + (M.importBusy && M.importKind === 'packdown' ? 'Loading pack down...' : 'Load pack down schedule') + '</button>' + (M.packImportError ? '<p class="p-err" role="alert">' + esc(M.packImportError) + '</p>' : '') + (M.packImportText ? '<p class="lk-stamp" role="status">' + esc(M.packImportText) + '</p>' : '') + '</details>';
+  }
+  /* Section cleaning (25 Nov 2026): the head chef's own jobs for each section. The chef says which kitchen section each
+     group belongs to. The section with the same name is offered first and can be changed; a group left on Shared kitchen
+     loads as shared. The choice is by section id, never by matching names later. */
+  function sectionChoice(group) {
+    var chosen = M.importSections && M.importSections[group.id], sections = C.sections();
+    if (chosen !== undefined) return chosen === '_shared' || sections.some(function (s) { return s.id === chosen; }) ? chosen : '_shared';
+    var same = sections.filter(function (s) { return String(s.name).trim().toLowerCase() === group.name.toLowerCase(); })[0];
+    return same ? same.id : '_shared';
+  }
+  function sectionImportPanel() {
+    var source = window.LK_CLEANING_SCHEDULE;
+    if (!source || !source.sectionDrafts || !C.importTasks) return '';
+    var sections = C.sections(), monthly = source.sectionClean.filter(function (entry) { return entry.plan.repeat; }).length;
+    return '<details class="cln-import cln-section-import"' + (M.sectionImportOpen ? ' open' : '') + '><summary>Section cleaning: ' + source.sectionClean.length + ' jobs</summary>' +
+      '<p class="hint">Load the weekly, monthly and extra daily jobs for each section. Jobs already in Pack down are not in this list. Each job is one tap and comes up on its own days. Loading it again adds only missing jobs.</p>' +
+      '<p class="hint">Choose the kitchen section each group belongs to. A group left on Shared kitchen is listed under Shared kitchen.</p><div class="cln-fields">' +
+      source.sectionGroups.map(function (group) {
+        var chosen = sectionChoice(group);
+        return '<label class="field" for="cln-import-section-' + group.id + '"><span class="label">' + esc(group.name) + '</span><select id="cln-import-section-' + group.id + '" data-cln-import-section="' + group.id + '"' + (M.importBusy ? ' disabled' : '') + '><option value="_shared"' + (chosen === '_shared' ? ' selected' : '') + '>Shared kitchen</option>' +
+          sections.map(function (s) { return '<option value="' + esc(s.id) + '"' + (chosen === s.id ? ' selected' : '') + '>' + esc(s.name) + '</option>'; }).join('') + '</select></label>';
+      }).join('') + '</div><p class="hint">' + monthly + ' monthly jobs repeat every 4 weeks. They come up only after a chef sets their first date in Repeat tasks.</p>' +
+      '<button type="button" class="btn" data-cln="import-section"' + (busy() || dirtyDraft() || M.state !== 'ok' ? ' disabled' : '') + '>' + (M.importBusy && M.importKind === 'section' ? 'Loading section cleaning...' : 'Load section cleaning') + '</button>' +
+      (M.sectionImportError ? '<p class="p-err" role="alert">' + esc(M.sectionImportError) + '</p>' : '') + (M.sectionImportText ? '<p class="lk-stamp" role="status">' + esc(M.sectionImportText) + '</p>' : '') + '</details>';
+  }
+  /* A repeat job with no first date is never due and never counted, so a chef is told and taken to its date (25 Nov 2026). */
+  function needFirstDate() { return M.tasks.filter(function (task) { return task.until === OPEN && task.plan && task.plan.repeat && !task.plan.repeat.anchor; }); }
+  function firstDateNotice() {
+    var list = C.chef() && M.state === 'ok' ? needFirstDate() : [];
+    if (!list.length) return '';
+    return '<div class="cln-attention cln-first-date" role="status"><b>' + list.length + (list.length === 1 ? ' repeat job needs' : ' repeat jobs need') + ' a first date</b><span class="hint">Not due until a chef sets it. Choose tomorrow or later: changes start tomorrow.</span>' +
+      list.slice(0, 6).map(function (task) { return '<button type="button" class="p-link" data-cln="first-date" data-id="' + esc(task.id) + '">' + esc(task.text) + '</button>'; }).join('') + '</div>';
   }
   function earlierDrafts() { return Object.keys(M.workDrafts).filter(function (key) { return M.workDrafts[key].day < T.day() && workDirty(M.workDrafts[key]); }); }
   function earlierNotice() {
@@ -327,7 +373,7 @@
     if (d && !inline) items = '<li class="cln-template-item cln-new-editor" role="listitem">' + editorBlock(!!M.editId) + '</li>' + items;
     if (!d) items += '<li class="cln-template-item cln-new-editor" role="listitem"><div class="cln-editor"><p class="hint">Choose Edit beside a task, or Add cleaning task. One editor opens here.</p></div></li>';
     return '<section class="nb-page cln-plan" aria-labelledby="rtitle"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Cleaning</h2><p class="nb-date" id="cln-plan-title" tabindex="-1">Repeat tasks' + (M.state === 'ok' ? ' · ' + current.length + ' current tasks' : '') + '</p></div><button type="button" class="p-link" data-cln="hide-setup">Back to Today</button></header><div class="cln-plan-body">' + readLine() + earlierNotice() +
-      '<p class="hint">New tasks start today. Changes and archiving start tomorrow. Earlier cleaning records stay as recorded.</p>' + workNotices(tasksOn(T.day()), T.day()) +
+      '<p class="hint">New tasks start today. Changes and archiving start tomorrow. Earlier cleaning records stay as recorded.</p>' + firstDateNotice() + workNotices(tasksOn(T.day()), T.day()) +
       (M.state === 'error' ? clnFailLine() : M.state !== 'ok' ? loading() : '') +
       (M.saveError && !d ? '<p class="p-err" role="alert">' + esc(M.saveError) + '</p>' : '') +
       '<div class="cln-repeat-browser"><div class="cln-searchbar"><label class="visually-hidden" for="cln-repeat-search">Find a repeat task in all groups</label><input type="search" class="search" id="cln-repeat-search" data-cln-control="repeat-query" placeholder="Find a repeat task or area" value="' + esc(M.repeatQuery) + '"><button type="button" class="btn dark" data-cln="add"' + (M.state !== 'ok' || M.saveBusy || M.archiveBusy ? ' disabled' : '') + '>Add cleaning task</button></div><label class="field" for="cln-repeat-group"><span class="label">Work group</span><select id="cln-repeat-group" data-cln-control="repeat-group"><option value="all">All groups</option>' + CHEF_GROUPS.map(function (group) { return '<option value="' + group[0] + '"' + (M.repeatGroup === group[0] ? ' selected' : '') + '>' + esc(group[1]) + '</option>'; }).join('') + '</select></label>' + (M.repeatQuery.trim() ? '<p class="hint cln-repeat-scope" role="status">Searching all groups. Clear search to use the selected work group.</p>' : '') + pager(matching.length, M.repeatPage, 'repeat-page', M.repeatGroup) +
@@ -368,15 +414,22 @@
   }
   function importSchedule(kind) {
     if (!C.chef() || !C.importTasks || busy() || dirtyDraft() || M.state !== 'ok') return;
-    var model = M, pack = kind === 'packdown', templates = pack ? window.LK_CLEANING_SCHEDULE.packDownDrafts() : window.LK_CLEANING_SCHEDULE.drafts();
+    var model = M, pack = kind === 'packdown', section = kind === 'section', source = window.LK_CLEANING_SCHEDULE, templates = pack ? source.packDownDrafts() : section ? source.sectionDrafts() : source.drafts();
+    // which panel this load reports in: M.importError and so on, M.packImport..., M.sectionImport...
+    var slot = pack ? 'packImport' : section ? 'sectionImport' : 'import';
     templates.forEach(function (task) { if (task.plan.verification) task.plan.verifiers = (M.importVerifiers || []).slice(); });
-    M.importBusy = true; M.importKind = kind || 'cleaning'; if (pack) { M.packImportError = M.packImportText = ''; M.packImportOpen = true; } else { M.importError = M.importText = ''; M.importOpen = true; } draw();
+    if (section) templates.forEach(function (task) {
+      var id = source.sectionGroupOf(task), group = source.sectionGroups.filter(function (item) { return item.id === id; })[0], chosen = group ? sectionChoice(group) : '_shared';
+      if (chosen !== '_shared') { task.shared = false; task.section = chosen; }
+    });
+    M.importBusy = true; M.importKind = kind || 'cleaning'; M[slot + 'Error'] = M[slot + 'Text'] = ''; M[slot + 'Open'] = true; draw();
     C.importTasks(templates).then(function (data) {
       if (M !== model) return; M.importBusy = false; M.cache = Object.create(null); M.range = data.from + '|' + data.to; useData(data); M.importVerifiers = [];
-      var message = 'Loaded ' + (pack ? 'pack down schedule' : 'cleaning schedule') + ': ' + data.imported + ' added, ' + data.skipped + ' already present. Review responsibilities and procedures before releasing it to the team.';
-      if (pack) M.packImportText = message; else M.importText = message; draw();
+      var waiting = section ? needFirstDate().length : 0;
+      var message = 'Loaded ' + (pack ? 'pack down schedule' : section ? 'section cleaning' : 'cleaning schedule') + ': ' + data.imported + ' added, ' + data.skipped + ' already present. ' + (waiting ? waiting + (waiting === 1 ? ' repeat job needs' : ' repeat jobs need') + ' a first date in Repeat tasks. ' : '') + 'Review responsibilities and procedures before releasing it to the team.';
+      M[slot + 'Text'] = message; draw();
       if (M.view === 'week') load(true);
-    }, function (error) { if (M !== model) return; M.importBusy = false; var message = error && error.message || 'Could not load the schedule. Your choices are kept. Try again.'; if (pack) M.packImportError = message; else M.importError = message; draw(); });
+    }, function (error) { if (M !== model) return; M.importBusy = false; M[slot + 'Error'] = error && error.message || 'Could not load the schedule. Your choices are kept. Try again.'; draw(); });
   }
   function flowAction(task, day, slot, kind, action, workerId, control) {
     if (!hasPlan(task) || !workEnabled(task, day)) return;
@@ -535,7 +588,7 @@
     var button = event.target.closest && event.target.closest('[data-cln]'); if (!button || !M.root || !M.root.contains(button) || button.disabled || !C.allowed()) return;
     if (checkDay()) { event.preventDefault(); return; }
     var action = button.getAttribute('data-cln'), id = button.getAttribute('data-id'), task = id && taskById(id); event.preventDefault();
-    if (busy() && ['refresh', 'today', 'week', 'setup', 'previous', 'next', 'this-week'].indexOf(action) >= 0) { P.toast('Wait for the cleaning change to save.'); return; }
+    if (busy() && ['refresh', 'today', 'week', 'setup', 'first-date', 'previous', 'next', 'this-week'].indexOf(action) >= 0) { P.toast('Wait for the cleaning change to save.'); return; }
     if (action === 'tick' && task) tick(task, button.getAttribute('data-day'));
     else if (action === 'details' && hasPlan(task)) { var detailDay = button.getAttribute('data-day'), detailKey = occurrence(task, detailDay); M.expanded[detailKey] = !M.expanded[detailKey]; draw(); }
     else if (action === 'week-details' && hasPlan(task) && C.chef()) { M.selected = button.getAttribute('data-day'); M.expanded[occurrence(task, M.selected)] = true; draw(); var detail = M.root.querySelector('#cln-detail-' + occurrence(task, M.selected)); if (detail) { detail.setAttribute('tabindex', '-1'); detail.focus({ preventScroll: true }); } }
@@ -552,6 +605,8 @@
     else if (action === 'discard-earlier') { if (!earlierDrafts().length || B.arm && !B.arm('cln-discard-earlier', draw)) return; earlierDrafts().forEach(function (key) { delete M.workDrafts[key]; delete M.flowErrors[key]; delete M.flowSaved[key]; }); M.earlierCleared = 'Undone: earlier unsaved cleaning checks. Saved records were kept.'; draw(); var confirmation = M.root.querySelector('.cln-earlier-status'); if (confirmation) confirmation.focus({ preventScroll: true }); P.toast('Undone: earlier unsaved cleaning checks'); }
     else if (action === 'import-schedule') importSchedule();
     else if (action === 'import-packdown') importSchedule('packdown');
+    else if (action === 'import-section') importSchedule('section');
+    else if (action === 'first-date' && C.chef() && task) { M.repeatQuery = ''; M.repeatGroup = 'all'; startEditor(task); var firstDate = M.root.querySelector('#cln-repeat-anchor'); if (firstDate) firstDate.focus(); }
     else if (action === 'flow-add' && hasPlan(task)) addFlow(task, button.getAttribute('data-day'), button.getAttribute('data-kind'));
     else if (action === 'flow-discard' && hasPlan(task)) { var discardKey = flowKey(task, button.getAttribute('data-day'), button.getAttribute('data-slot')); delete M.workDrafts[discardKey]; delete M.flowErrors[discardKey]; draw(); }
     else if (action === 'flow-quick' && hasPlan(task)) { var quickDay = button.getAttribute('data-day'), quickSlot = button.getAttribute('data-slot'), quickKind = button.getAttribute('data-kind'), quickCurrent = flowRecord(task, quickDay, quickSlot); if (quickCurrent && quickCurrent.done) { if (!C.canUndo(quickCurrent)) return; workDraft(task, quickDay, { slot: quickSlot, kind: quickKind, record: quickCurrent }).note = 'Undo by recorder'; flowAction(task, quickDay, quickSlot, quickKind, 'reopen', null, 'quick'); } else flowAction(task, quickDay, quickSlot, quickKind, 'perform', null, 'quick'); }
@@ -591,9 +646,10 @@
     if (!M.root || !M.root.contains(event.target)) return;
     if (event.target.hasAttribute('data-cln-check')) changeWork(event.target);
     else if (event.target.hasAttribute('data-cln-verifier') || event.target.hasAttribute('data-cln-plan') || event.target.hasAttribute('data-cln-repeat')) changePlan(event.target);
+    else if (event.target.hasAttribute('data-cln-import-section') && !M.importBusy) (M.importSections || (M.importSections = {}))[event.target.getAttribute('data-cln-import-section')] = event.target.value;
     else if (event.target.hasAttribute('data-cln-import-verifier') && !M.importBusy) { var id = event.target.getAttribute('data-cln-import-verifier'), ids = M.importVerifiers || (M.importVerifiers = []), at = ids.indexOf(id); if (event.target.checked && at < 0) ids.push(id); else if (!event.target.checked && at >= 0) ids.splice(at, 1); }
   });
-  document.addEventListener('toggle', function (event) { if (event.target.classList && event.target.classList.contains('cln-import')) { if (event.target.classList.contains('cln-pack-import')) M.packImportOpen = event.target.open; else M.importOpen = event.target.open; } }, true);
+  document.addEventListener('toggle', function (event) { if (event.target.classList && event.target.classList.contains('cln-import')) { if (event.target.classList.contains('cln-pack-import')) M.packImportOpen = event.target.open; else if (event.target.classList.contains('cln-section-import')) M.sectionImportOpen = event.target.open; else M.importOpen = event.target.open; } }, true);
   document.addEventListener('input', function (event) { if (M.root && M.root.contains(event.target) && event.target.hasAttribute('data-cln-control') && event.target.tagName === 'INPUT') changeControl(event.target); });
   document.addEventListener('change', function (event) { if (M.root && M.root.contains(event.target) && event.target.hasAttribute('data-cln-control') && event.target.tagName === 'SELECT') changeControl(event.target); });
   document.addEventListener('submit', function (event) { if (event.target.id === 'cln-form') { event.preventDefault(); save(); } });

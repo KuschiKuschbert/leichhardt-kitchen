@@ -1015,6 +1015,15 @@ row('js/prep.js cleaningImport(): explicit bounded query includes archived roots
 row('js/prep.js cleaningImport(): deterministic checked task is created by a chef', { ok: CHEFS, asks: CHEFS,
   prep: r => put({ ['cleaningTasks/clean-template-fixture-' + r]: null }),
   run: (db, w, r) => W(r, [['set', 'cleaningTasks/clean-template-fixture-' + r, cleanTask('clean-template-fixture-' + r, { by: w, plan: cleanPlan({ template: 'fixture-' + r }) })]]) });
+// Section cleaning (25 Nov 2026): one Load batch holds a job saved to a kitchen section, a 28-day job with no first date
+// yet (never due until a chef sets it) and a shared job that names two sections. A second Load finds the ids and writes
+// nothing, so only the first write is a shape the rules see.
+row('js/prep.js cleaningImport(): section cleaning, a section job, an undated 28-day job and a shared job in one batch', { ok: CHEFS, asks: CHEFS,
+  prep: r => put({ ['cleaningTasks/clean-template-sc-a-' + r]: null, ['cleaningTasks/clean-template-sc-b-' + r]: null, ['cleaningTasks/clean-template-sc-c-' + r]: null }),
+  run: (db, w, r) => W(r, [
+    ['set', 'cleaningTasks/clean-template-sc-a-' + r, cleanTask('clean-template-sc-a-' + r, { by: w, dows: [1], plan: cleanPlan({ template: 'sc-a-' + r, method: '', checks: [] }) })],
+    ['set', 'cleaningTasks/clean-template-sc-b-' + r, cleanTask('clean-template-sc-b-' + r, { by: w, plan: cleanPlan({ template: 'sc-b-' + r, method: '', checks: [], repeat: { days: 28, anchor: '' } }) })],
+    ['set', 'cleaningTasks/clean-template-sc-c-' + r, cleanTask('clean-template-sc-c-' + r, { by: w, section: '', sectionName: '', shared: true, dows: [3], plan: cleanPlan({ template: 'sc-c-' + r, checks: [], responsibility: 'Grill and Pans', review: 'Set one responsible section.' }) })]]) });
 for (const action of ['save', 'block', 'perform']) {
   row('js/prep.js cleaningAct(): ' + action + ' occurrence and immutable server-stamped audit atomically', { ok: TICKS, asks: TICKS,
     prep: r => put({ ['cleaningTasks/clean-flow-' + action + '-' + r]: cleanTask('clean-flow-' + action + '-' + r, { plan: cleanPlan() }) }),

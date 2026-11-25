@@ -5658,6 +5658,8 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .cln-row .nb-box { align-self: center; margin-top: 0; }
 .cln-row .nb-main { min-width: 0; }
 .cln-row .nb-meta { font-size: .8125rem; }
+/* a small line that says how often ("Every Monday") may wrap, so the state at its end is never cut off (25 Nov 2026) */
+.cln-row .nb-meta.cln-often { white-space: normal; overflow: visible; text-overflow: clip; }
 .cln-row.is-done .nb-t { color: var(--muted); }
 .cln-row.is-pending .nb-meta { color: var(--accent-ink); font-weight: 600; }
 .cln-how { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
@@ -5733,6 +5735,9 @@ button[data-cln-ready-label] > span { position: absolute; inset: 0; display: gri
 .cln-import summary { min-height: 44px; padding: .65rem 0; cursor: pointer; font-weight: 600; }
 .cln-import .btn { margin-top: .5rem; }
 .cln-import .hint { font-size: .875rem; }
+/* section cleaning (25 Nov 2026): one section picker per group in its Load panel, and the chef's first date notice */
+.cln-section-import .cln-fields { margin: .5rem 0; }
+.cln-chef-page .cln-first-date .hint { margin: 0; font-size: .875rem; }
 .cln-guide-link { display: inline-flex; align-items: center; }
 @media (min-width: 720px) { .cln-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1000px) {

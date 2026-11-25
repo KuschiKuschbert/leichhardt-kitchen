@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Section cleaning: three designs</title>
+<style>
+  @font-face { font-family: 'Barlow'; font-weight: 400; src: url('../cleaning-chef-options/fonts/barlow.woff2') format('woff2'); }
+  @font-face { font-family: 'Barlow'; font-weight: 700; src: url('../cleaning-chef-options/fonts/barlow-700.woff2') format('woff2'); }
+  @font-face { font-family: 'Barlow Condensed'; font-weight: 700; src: url('../cleaning-chef-options/fonts/barlow-condensed.woff2') format('woff2'); }
+  :root { --ink: #1c1b19; --muted: #5f5a50; --paper: #f7f4ec; --card: #fffdf8; --rule: #d9d3c5; --accent: #b8431a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 24px 16px 48px; background: var(--paper); color: var(--ink); font: 400 16px/1.5 'Barlow', system-ui, sans-serif; }
+  main { max-width: 1500px; margin: 0 auto; }
+  h1 { margin: 0 0 4px; font: 700 2.2rem/1.1 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: .03em; }
+  h2 { margin: 0 0 2px; font: 700 1.45rem/1.15 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); }
+  h3 { margin: 28px 0 8px; font: 700 1.2rem/1.2 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: .06em; }
+  p { margin: 0 0 10px; }
+  .lead { max-width: 70ch; color: var(--muted); }
+  .tag { display: inline-block; margin: 8px 0 18px; padding: 3px 10px; border: 2px solid var(--ink); border-radius: 999px; font-weight: 700; font-size: .875rem; }
+  .phones { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; align-items: start; }
+  figure { margin: 0; padding: 14px; background: var(--card); border: 1px solid var(--rule); border-radius: 12px; }
+  figure img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 8px; }
+  figcaption { margin-bottom: 10px; }
+  figcaption .idea { font-weight: 700; }
+  figcaption ul { margin: 6px 0 0; padding-left: 18px; font-size: .9375rem; }
+  .full { display: inline-block; margin-top: 8px; font-size: .875rem; color: var(--ink); }
+  .scroll { overflow-x: auto; }
+  table { width: 100%; min-width: 640px; border-collapse: collapse; background: var(--card); border: 1px solid var(--rule); font-size: .9375rem; }
+  th, td { padding: 8px 10px; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+  th { font-weight: 700; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .note { max-width: 80ch; padding: 12px 14px; background: var(--card); border-left: 4px solid var(--accent); }
+  .note li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Section cleaning: the designs</h1>
+  <p class="lead">How your section jobs could read on the Cleaning page, on a phone. Drawn on the real page with made-up data, with the general list and Pack down both loaded. Nothing in the book has changed.</p>
+  <span class="tag">Recommended: D, built in three steps. Council: A first of the three for 5 of 6, B last for all 6, closed rows rejected by 5 of 6.</span>
+
+  <h3>D. Your section first, nothing hidden (the mix)</h3>
+  <p class="lead">The page opens on one section: the one you are on today, or the one this screen is set to. Its weekly and monthly jobs sit beside its Pack down. The rest of the kitchen follows, all open. A job that is not nightly says how often.</p>
+  <div class="phones">
+    <figure>
+      <figcaption>
+        <h2>Your own phone</h2>
+        <p class="idea">A cook on Grill today, from Today's team or their own pick.</p>
+        <ul><li>Grill pack down is 0.7 screens down. Today it is 2.9.</li><li>Nothing is behind a tap.</li></ul>
+      </figcaption>
+      <img src="previews/d-390.png" alt="Design D on a cook's phone: a Grill title, Your section today, then Section clean and Pack down.">
+      <a class="full" href="previews/d-390-full.png">Whole page</a>
+    </figure>
+    <figure>
+      <figcaption>
+        <h2>A station screen</h2>
+        <p class="idea">A shared screen set to Grill, with a cook from Pans signed in.</p>
+        <ul><li>The screen's section leads, and the page says so. The link at the top takes the cook to their own Pack down.</li><li>It still needs a PIN, locks after 10 idle minutes, and asks who did each job, as every shared screen does now.</li></ul>
+      </figcaption>
+      <img src="previews/d-screen-390.png" alt="Design D on a shared screen: a Grill title with the words This screen. You are on Pans today, and a link Go to Pans pack down.">
+      <a class="full" href="previews/d-screen-390-full.png">Whole page</a>
+    </figure>
+    <figure>
+      <figcaption>
+        <h2>Another day</h2>
+        <p class="idea">A cook on Pans on a Tuesday.</p>
+        <ul><li>Tuesday's job is the first row.</li><li>On a day with no weekly job, the section opens on its Pack down.</li></ul>
+      </figcaption>
+      <img src="previews/d-tue-390.png" alt="Design D for Pans on a Tuesday: Pull the infill benches forward, Every Tuesday, then Pack down.">
+      <a class="full" href="previews/d-tue-390-full.png">Whole page</a>
+    </figure>
+    <figure>
+      <figcaption>
+        <h2>Setting a screen</h2>
+        <p class="idea">One new row in Settings, on a shared screen only.</p>
+        <ul><li>Only the head chef changes it.</li><li>Saved on that screen. It changes the order of Cleaning and nothing else.</li></ul>
+      </figcaption>
+      <img src="previews/d-settings-390.png" alt="Settings on a shared screen: a row This screen's section, set to Grill, with a chip for each section.">
+    </figure>
+  </div>
+
+  <h3>The three the council scored</h3>
+  <div class="phones">
+    <figure>
+      <figcaption>
+        <h2>Today</h2>
+        <p class="idea">The page as it is, without your jobs.</p>
+        <ul><li>46 jobs, 4.9 phone screens long.</li><li>No row says how often it comes round.</li></ul>
+      </figcaption>
+      <img src="previews/baseline-today-390.png" alt="Today's Cleaning page on a phone: one long list starting with Shared kitchen.">
+      <a class="full" href="previews/baseline-today-390-full.png">Whole page</a>
+    </figure>
+    <figure>
+      <figcaption>
+        <h2>A. Same page, clearer rows</h2>
+        <p class="idea">Each section's own clean gets its own heading. A job that is not nightly says how often.</p>
+        <ul><li>Ranked first by 5 of 6: nothing hidden, smallest build.</li><li>A Grill cook's page opens on Fryers, and Grill pack down is 3.8 screens down.</li></ul>
+      </figcaption>
+      <img src="previews/a-390.png" alt="Design A: headings such as Grill: section clean, with Every Monday and Every 4 weeks on the rows.">
+      <a class="full" href="previews/a-390-full.png">Whole page</a>
+    </figure>
+    <figure>
+      <figcaption>
+        <h2>B. Today only, on top</h2>
+        <p class="idea">The weekly and monthly jobs due today come first, for every section.</p>
+        <ul><li>Ranked last by all 6.</li><li>It mixes sections and pulls steps out of Pack down order.</li></ul>
+      </figcaption>
+      <img src="previews/b-390.png" alt="Design B: a Today only block listing each section's weekly and monthly jobs with the section name on the row.">
+      <a class="full" href="previews/b-390-full.png">Whole page</a>
+    </figure>
+    <figure>
+      <figcaption>
+        <h2>C. My section first, rest closed</h2>
+        <p class="idea">Your section is open. Everything else is one closed row per section.</p>
+        <ul><li>Ranked second by 5 of 6. Own section first was kept for D.</li><li>The closed rows were rejected by 5 of 6: they hide Missed and Not sent jobs. The new starter would close other sections only.</li></ul>
+      </figcaption>
+      <img src="previews/c-390.png" alt="Design C: a Grill heading with Section clean and Pack down under it.">
+      <a class="full" href="previews/c-390-full.png">Whole page</a>
+    </figure>
+    <figure>
+      <figcaption>
+        <h2>C, further down</h2>
+        <p class="idea">The rest of the kitchen as closed rows.</p>
+        <ul><li>The page drops to 2.2 screens.</li><li>44 of 54 jobs sit behind a tap.</li></ul>
+      </figcaption>
+      <img src="previews/c-rest-390.png" alt="Design C scrolled down: rows for Fryers, salads and dessert, Hot larder, Pans, Shared kitchen and Floors, each with a count and Show.">
+    </figure>
+  </div>
+
+  <h3>Measured on the previews</h3>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>On a 390 px phone, Grill cook, Monday</th><th class="n">Today</th><th class="n">A</th><th class="n">B</th><th class="n">C</th><th class="n">D</th></tr></thead>
+    <tbody>
+      <tr><td>Jobs on the page</td><td class="n">46</td><td class="n">54</td><td class="n">54</td><td class="n">54 (10 open)</td><td class="n">54</td></tr>
+      <tr><td>Whole jobs on the first screen</td><td class="n">5</td><td class="n">4</td><td class="n">4</td><td class="n">4</td><td class="n">4</td></tr>
+      <tr><td>Page length, in phone screens</td><td class="n">4.9</td><td class="n">5.7</td><td class="n">5.7</td><td class="n">2.2</td><td class="n">5.8</td></tr>
+      <tr><td>Screens down to the Grill cook's weekly job</td><td class="n">not in the book</td><td class="n">0.7</td><td class="n">0.6</td><td class="n">0.6</td><td class="n">0.5</td></tr>
+      <tr><td>Screens down to Grill pack down</td><td class="n">2.9</td><td class="n">3.8</td><td class="n">3.6</td><td class="n">0.7</td><td class="n">0.7</td></tr>
+      <tr><td>Taps to tick one of your own new jobs</td><td class="n">not in the book</td><td class="n">1</td><td class="n">1</td><td class="n">1</td><td class="n">1</td></tr>
+      <tr><td>Taps to tick a Shared kitchen job</td><td class="n">as today</td><td class="n">as today</td><td class="n">as today</td><td class="n">1 more, to open it</td><td class="n">as today</td></tr>
+      <tr><td>Sideways scroll, buttons under 44 px</td><td class="n">none</td><td class="n">none</td><td class="n">none</td><td class="n">none</td><td class="n">none</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>What I assumed to draw these. Tell me where it is wrong.</h3>
+  <div class="note">
+    <ul>
+      <li>Only jobs whose day you gave are drawn. No day is guessed.</li>
+      <li>Lines already in Pack down are left out, so nothing shows twice.</li>
+      <li>"Once a month" is drawn as "Every 4 weeks". The start date here is an example.</li>
+      <li>Your new jobs are one tap, with no check list.</li>
+      <li>A section's new nightly jobs follow its numbered Pack down steps, so the kick oven door is wiped after the oven is turned off.</li>
+      <li>"Fryers, salads and dessert" is one cleaning list, as in your list. The book has them as two sections, so either one opens on it.</li>
+      <li>On a station screen the screen's section leads, even when the cook signed in is rostered elsewhere.</li>
+      <li>The floor reminder under Pack down is cut to one line: "Overhead shelves and frames first. Floors are last." That wording is mine, for you to change.</li>
+      <li>The screen's section changes the order of Cleaning only. Prep and wastage lines still go under the person's own section.</li>
+      <li>A screen or person on a section with no cleaning list, such as Pass or Prep, sees the page in today's order.</li>
+    </ul>
+  </div>
+
+  <h3>How these were made</h3>
+  <p class="lead">The real Cleaning page, running on the test stand-in with made-up data, with its rows moved into each layout by <code>previews/build.cjs</code>. They are previews, not the finished page. The Settings row is a copy of the real device row. Ticking, saving, no-signal states and opening a closed row are not exercised here. Numbers: <code>previews/measurements.json</code>.</p>
+</main>
+</body>
+</html>
