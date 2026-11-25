@@ -50,22 +50,21 @@ git worktree list --porcelain | awk -F'\t' '
 done
 echo "   Another session may still be working in one of these. Do not remove a worktree that is not yours."
 
-# A code change gets one /code-review medium before it is marked ready (25 Nov 2026, docs/auto-merge.md, For sessions).
-# "Code" is what the phones load, read from scripts/site-changed.sh so there is one list, limited to scripts and styles
-# and pages, plus the rules. Notes, tests, server scripts and workflows alone need none.
+# The risky changes get one /code-review medium before the pull request is marked ready (25 Nov 2026, docs/auto-merge.md,
+# Claude Ship). Not every code change: on 200 pull requests merged 11 to 25 Nov 2026, 151 changed code the phones load, about
+# 11 reviews a day on the plan's usage. These are the rules, the saved shell and startup files, and a big edit to the two
+# main files: 37 of the 200, about 2.6 a day. 100 lines is added plus deleted lines in one file.
 echo "== Review:"
-changed="$(git diff --name-only origin/main...HEAD)"
-sitesh="$(dirname "$0")/site-changed.sh"
-if [ -f "$sitesh" ]; then
-  code="$({ printf '%s\n' "$changed" | bash "$sitesh" | grep -E '\.(js|css|html)$'; printf '%s\n' "$changed" | grep -Fx 'firestore.rules'; } || true)"
-  if [ -n "$code" ]; then
-    echo "!! This changes code the book runs or its rules ($(printf '%s\n' "$code" | wc -l | tr -d ' ') file(s))."
-    echo "   Run /code-review medium on this branch before marking it ready. Fix what it finds, or answer it in the pull request."
-  else
-    echo "   No book code or rules changed: no /code-review needed."
-  fi
+why="$(git diff --numstat origin/main...HEAD | awk -F'\t' '
+  $3 == "firestore.rules" { r["the rules"] = 1 }
+  $3 ~ /^(sw\.js|index\.html|js\/upkeep\.js|js\/boot\.js)$/ { r["the saved shell (" $3 ")"] = 1 }
+  $3 ~ /^js\/(prep|app)\.js$/ && $1 + $2 >= 100 { r[$3 " by " ($1 + $2) " lines"] = 1 }
+  END { for (k in r) print k }' | LC_ALL=C sort | paste -sd, - | sed 's/,/, /g')"
+if [ -n "$why" ]; then
+  echo "!! This changes $why."
+  echo "   Run /code-review medium on this branch before marking it ready. Fix what it finds, or answer it in the pull request."
 else
-  echo "!! scripts/site-changed.sh not found next to this script. If you changed code the book runs or its rules, run /code-review medium before marking ready."
+  echo "   No change to the rules, the saved shell or startup files, and no edit of 100 lines or more to js/prep.js or js/app.js: no /code-review needed."
 fi
 
 echo "== Checks before merging:"
