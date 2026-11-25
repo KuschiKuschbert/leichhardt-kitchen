@@ -170,7 +170,7 @@ The page opens on one section: a title with its name, "Section clean" (its weekl
 | Screens down to "Clean the drawers" | not in the book | 0.7 | 0.5 |
 | Screens down to Grill pack down | 2.9 | 3.8 | 0.7 |
 
-D costs one whole job on the first screen against today (the section title and two headings take the room) and saves 2.2 screens of scrolling to the cook's own Pack down. Open in D: an explicit link between a kitchen section and its cleaning groups (the previews match by name, which the contract bars); Fryers and Salads and dessert are two sections with one list; fryer shutdown is a Hot larder step.
+D costs one whole job on the first screen against today (the section title and two headings take the room) and saves 2.2 screens of scrolling to the cook's own Pack down. Open in D when drawn, settled in step 2 (below): an explicit link between a kitchen section and its cleaning groups (the previews match by name, which the contract bars); Fryers and Salads and dessert are two sections with one list; fryer shutdown is a Hot larder step.
 
 Review status: a lead synthesis with a focused follow-up from three reviewers, below. Not a council-endorsed design.
 
@@ -315,3 +315,35 @@ Exercised in the click tests: load, the offered and chosen sections, loading twi
 A first date set to today does not bring the job up today: a change to a job starts tomorrow, so it first comes up 28 days later. The notice says to choose tomorrow or later.
 
 The row's wrap is also set on the line itself, because the Cleaning page is lazy and can be newer than the stylesheet a phone has saved.
+
+### Built: step 2, your section first (26 November 2026)
+
+For a cook, Cleaning opens on the section they are on today, as in the trimmed D: the section's name with "Your section today", Section clean, Pack down, then Shared kitchen, Rest of the kitchen and floors, nothing folded. [The contract](../cleaning-schedule.md#your-section-first-26-november-2026-step-2).
+
+**Quick check on the Pack down link (lead, 26 November 2026; a small change inside the chosen design, so no new round).** The follow-up asked for an explicit link set by a chef, never a name match. Two ways were costed. A stored field in `config/main` needs a rules change published first, and only the verified admin could set it. The section a chef already chooses for each group at Load is by id, is saved on the loaded jobs, and needs no storage, rule or read. Chosen: the second, with three conditions from the break-it findings: the link holds only while every job of the group in force is in the same live section (never the most common one); Repeat tasks says which section each Pack down opens with and which is not tied; and a group that is not tied stays with the rest under its own name. Reference fit: Todoist (a known default that is visible and can be changed, nothing guessed from text), Headspace (one name per thing). Contract fit: no fuzzy matching, no new read, no rule. Its cost: a kitchen that never loads the section jobs has no link, so there only a section's own typed jobs lead.
+
+Also settled while building, from the follow-up:
+
+- One place per job in both staff layouts: where a Pack down is tied to a section, that section's own nightly jobs follow its numbered steps. Step 1 had them under "section clean"; they moved, for every cook on the staff page, so a job does not sit under a different heading depending on which cook is looking. The chef's grouped view is unchanged.
+- The leading section is fixed when the list is read, not on a redraw. Found before ready: on a real shift the section often arrives after the list is read, so the page stayed in the usual order until Refresh. Repaired: when none was known at the read, the first section that becomes known is taken once, never while a tick is sending. The check for it fails on the code before the repair (1 failed of 108) and passes with it (0 of 109).
+- "Floor checks follow this list" would be untrue under the leading Pack down, so the reminder there is one line: "Overhead shelves and frames first. Floors are last." The usual order keeps the old words.
+
+Measured on the **Implemented app** (the same stand-in, day, fonts and data as step 1; `implementation/measure.cjs`: "before" is a Grill cook before the section jobs, "usual" a cook on Prep with them loaded, "section first" a Grill cook with them loaded):
+
+| 390 x 844 | Before | Usual order | Section first | Trimmed D preview |
+| --- | --- | --- | --- | --- |
+| Jobs on the page that Monday | 46 | 53 | 53 | 54 |
+| Whole jobs on the first screen | 5 | 4 | 4 | 4 |
+| Page length, screens | 4.9 | 5.6 | 5.6 | 5.8 |
+| Screens down to Grill pack down | 2.9 | 3.5 | 0.7 | 0.7 |
+| Lines that say how often, cut off | 0 | 0 | 0 | not measured |
+| Sideways scroll | none | none | none | none |
+
+At 768 and 1280 px, section first shows 6 whole jobs on the first screen (7 and 8 before the section jobs) with Grill pack down 0.7 screens down (2.5 and 2.3 before). The usual order now shows 4 whole jobs on a phone, one fewer than step 1 measured, because the nightly Grill job moved under Pack down and the next heading takes its room.
+
+Exercised in the click tests (`tests/cleaning-sections.test.js`, 109 checks): a cook with no pick answering Your section today, a cook whose section comes from the Today's team plan, the order of every heading at three widths, the rows under Section clean and Pack down, the kick oven door after the Pans steps, Go to Pack down, a tick in the leading section with no row or heading moving, a move to another section holding until Refresh, the link with one job moved, the group left on Shared kitchen, a renamed section and a removed one, and the setup line. Checked in source, not exercised: a second cook signing in on a shared screen (the page starts again with a new read). Not exercised: a plan changed by a chef mid-shift (the cook's own move is), Extra large text, dark mode, focus order, contrast. The reviewers have not seen the built page.
+
+### After step 3
+
+The head chef, 26 November 2026, on a new name for the tab: "wait until all other steps are done and then we can brainstorm name and design again". Names tried on the tab bar are in `docs/head-chef-decisions.md`.
+

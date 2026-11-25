@@ -2344,7 +2344,7 @@
     return { allowed: cleaningOK, chef: cleaningChef, permissionsReady: cleaningPermissionsReady, canTick: cleaningTickOK, identity: stableIdentity, context: cleaningContext,
       shared: shared, workers: function () { return ptPeople().map(function (p) { return { id: p.id, name: p.name }; }); }, recent: hereGet,
       checkers: function () { return ptPeople().filter(function (p) { return cleaningCanCheck(p.id); }).map(function (p) { return { id: p.id, name: p.name }; }); }, canCheck: cleaningCanCheck,
-      sections: function () { return kitSecs().map(function (s) { return { id: s.id, name: s.name }; }); },
+      sections: function () { return kitSecs().map(function (s) { return { id: s.id, name: s.name }; }); }, section: mySecNow,
       guides: function () { return featOn('guides') ? gLive().map(function (g) { return { id: g.id, title: g.title }; }) : []; }, loadGuides: loadGuides,
       box: function (done) { return done ? TICK : BOX; }, sheetBusy: function () { return sheetOpen() || ksWait || ovBack || dkFirstUp(); }, sheetNext: sheetNext,
       discardAttempt: function () { cleaningAttempt = null; cleaningActionAttempts = Object.create(null); },
@@ -14007,15 +14007,18 @@ if (list.length) sg('oreg', 's');
   function ksPut(id, sec, name, extra) { lsSet('lk.sec.' + id, JSON.stringify(Object.assign({ d: dayNow(), sec: sec, name: name }, extra || {}))); }
   function ksLog(l) { return (Array.isArray(l) ? l : []).filter(function (x) { return x && typeof x.sh === 'string' && x.sh.length <= 40 && typeof x.sec === 'string' && x.sec.length <= 40 && typeof x.at === 'number'; }).map(function (x) { return { sh: x.sh, sec: x.sec, at: x.at }; }).slice(-30); }
   /* the section a line goes under when the box is left alone. Staff and leads only: a sous chef writes for every section. */
-  function mySec() {
-    var p = me(); if (!ksPicks(p)) return '';
+  function mySec() { var s = mySecNow(); return s ? s.name : ''; }
+  /* The same section as its id and its name now, or null (staff and leads only). The Cleaning page opens on it by id
+     (25 Nov 2026, docs/cleaning-schedule.md). No read: the pick and the plan are already on the phone. */
+  function mySecNow() {
+    var p = me(); if (!ksPicks(p)) return null;
     var v = ksGet(p.id), plan = tmPlanSec(p.id);
     // Today's team (7 Nov 2026): the plan's section on the shift that counts now, unless the person moved themselves on
     // that shift after the chef saved the plan
-    if (plan && !(v && v.self && v.sec && v.sh === plan.sh && v.at > tm.rec.upd)) return plan.name;
-    if (!v || !v.sec) return '';
+    if (plan && !(v && v.self && v.sec && v.sh === plan.sh && v.at > tm.rec.upd)) return { id: plan.sec, name: plan.name };
+    if (!v || !v.sec) return null;
     var s = kitSecs().filter(function (x) { return x.id === v.sec; })[0];
-    return s ? s.name : '';   // renamed today: the new name; taken off the list: none
+    return s ? { id: s.id, name: s.name } : null;   // renamed today: the new name; taken off the list: none
   }
   /* after the PIN (and when the book opens on a new day): staff and leads are asked once a day, chefs are given their role */
   function ksCheck() {

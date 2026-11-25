@@ -47,7 +47,7 @@ const CLASSES = [
   'cln-page', 'cln-book', 'cln-row', 'cln-matrix', 'cln-day-pick', 'cln-form', 'cln-detail', 'cln-task-detail', 'cln-occurrence', 'cln-checks', 'cln-import', 'cln-packdown', 'cln-packdown-title', 'cln-temperature',
   'cln-chef-page', 'cln-fold', 'cln-fold-toggle', 'cln-repeat-browser', 'cln-repeat-layout', 'cln-template-summary', 'cln-editor',
   // section cleaning (25 Nov 2026): the small line that says how often, the Load panel and the first date notice
-  'cln-often', 'cln-section-import', 'cln-first-date',
+  'cln-often', 'cln-section-import', 'cln-first-date', 'cln-mine', 'cln-mine-title', 'cln-rest-title',
   'dr-notebook', 'dr-book', 'dr-bookhead', 'dr-usual', 'dr-work', 'dr-spine', 'dr-people',
   'is-leaving', 'nb-offw', 'nb-fnoff', 'fn-next-off', 'nb-forfn', 'nb-tick-status', 'p-toast-chip',
   'fn-ahead', 'fn-ahead-b', 'fn-ahead-l', 'fn-ahead-t', 'fn-ahead-n', 'fn-ahead-p', 'fn-ahead-more', 'fn-ahead-hide', 'is-ahead',
