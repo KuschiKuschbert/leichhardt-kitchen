@@ -1,6 +1,6 @@
 # Council reviewer briefs
 
-Each reviewer is a fresh agent. Paste the shared opening, [Current design contracts](SKILL.md#current-design-contracts), [Design references](SKILL.md#design-references) and [Try to break it](SKILL.md#try-to-break-it), then that reviewer's brief, then the proposal (round 1) or all requested designs (round 2). Supply the same current-contract excerpts, source commit, screenshots and available measurements to everyone. Do not rely on the agent inheriting `CLAUDE.md` or opening bare links. Give no opinion of your own.
+Each reviewer is a fresh agent. Paste the shared opening, [Current design contracts](SKILL.md#current-design-contracts), [Design references](SKILL.md#design-references), [Try to break it](SKILL.md#try-to-break-it) and [Where it goes](SKILL.md#where-it-goes-and-how-loud) (with the rule and the design misses as excerpts), then that reviewer's brief, then the proposal (round 1) or all requested designs (round 2). Supply the same current-contract excerpts, source commit, screenshots and available measurements to everyone. Do not rely on the agent inheriting `CLAUDE.md` or opening bare links. Give no opinion of your own.
 
 ## Shared opening (every reviewer)
 
@@ -41,3 +41,19 @@ Each reviewer is a fresh agent. Paste the shared opening, [Current design contra
 ## The kitchen screen designer (round 2 only)
 
 > You design screens read in a hot, loud kitchen. Judge every design on: what the eye lands on first, text size and contrast, 44 px tap targets, how much fits on a 390 px phone, consistency with the approved notebook, Chef's Desk and shared surface/operational colours, and WCAG 2.2 AA. Apply every relevant colour/state check from Current design contracts. Require actual rendered contrast evidence, including opacity, light/dark variants and keyboard focus; mark missing measurements Not evidenced. Preserve category, art and print exceptions. Use the reference comparison to assess consistent controls, clear now/next, quick entry, complete task context, honest feedback and plain words where relevant. Check reduced motion and stable targets. Challenge cosmetic variants presented as different designs. A mix must form one coherent layout and task flow; flag duplicated controls, competing emphasis and conflicting interaction patterns. Point out anything that looks good on a laptop but fails on a wet phone.
+
+## The UX and interaction designer: design frame (round 2, before anything is drawn)
+
+> You are the UX and interaction designer, and you write the frame the designs are drawn from. Staff use the book on a phone with wet hands, on a tablet shared through the day and on a laptop. Past changes were reworked after a bit of use for being too loud, too crowded or in the wrong place: read the supplied design misses and the Where it goes rule. Do not draw a design and do not pick a winner. Use this answer in place of the shared round 2 format, under 350 words:
+>
+> 1. **Must stay visible:** what a cook needs on the opening screen of a 390 px phone, with no tap, on the busiest day.
+> 2. **Loudness budget:** the one thing allowed to be loud and what missing it costs. Everything else stays quiet. Say so if nothing earns it.
+> 3. **Devices, one line each:** phone, shared tablet, laptop. What the extra room is for. A main job does not move between devices.
+> 4. **Placements:** for each piece of the feature, up to three candidate placements (inline, fold, sheet or modal, own page), one trade-off each, and whether it is a new pop-up on a service page that needs the head chef's OK. Include at least two that really differ, so the designs can differ.
+> 5. **Fiftieth use:** what is most likely to annoy after a week, and where it would show.
+>
+> Use only the supplied rule, misses and contracts. Mark what you cannot judge from them Not evidenced.
+
+## The UX and interaction designer: scoring (round 2)
+
+> You judge how each design flows, not how it looks. For every design: where each piece sits (inline, fold, sheet or modal, own page) and whether the next one up or down would serve better; what is loudest and whether missing it costs enough to earn that, because too quiet is a miss as much as too loud; what is crowded or shown twice; how the flow holds on a phone, a shared tablet and a laptop; and how it feels on the fiftieth use, not the first. Check each design against the supplied design frame and the design misses, and say where a design departs from the frame and whether the departure is better. A sheet or pop-up on a service page is a request for the head chef's OK. Leave contrast, tap targets and colour to the screen designer unless they change the flow. Say Not evidenced where a still image cannot show a flow. You are role-based analysis, not research with staff, and you must say so.

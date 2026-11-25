@@ -33,7 +33,7 @@ The head chef shared a video on getting Opus-level thinking without paying Opus 
 | Sonnet | The main session on a computer without the plugin | `"model": "sonnet"` in `.claude/settings.json` |
 | Fable | The advisor in every session. It sees the whole conversation and is asked before an approach is chosen, when an error keeps coming back and before the work is called done | `"advisorModel": "fable"` in `.claude/settings.json` |
 | Fable | The council's skeptic and keeper of the book (Try to break it, failure and recovery) | `model: "fable"` on their Agent calls (`.claude/skills/service-council/SKILL.md`) |
-| Opus | The other council reviewers, the screen designer and wide-audit reviewers: judgement that counts, many at once | `model: "opus"` on their Agent calls |
+| Opus | The other council reviewers, the screen designer, the UX and interaction designer (the design frame and the scoring) and wide-audit reviewers: judgement that counts, many at once | `model: "opus"` on their Agent calls |
 | Sonnet | A helper agent with a known job: write or check code a set way | `model: "sonnet"` on its Agent call; the router sets Sonnet when none is named |
 | Haiku | A helper agent that finds, searches, reads a log or fetches a page | `model: "haiku"` on its Agent call; the router sets Haiku for Explore and the other lookup agents |
 
