@@ -118,7 +118,7 @@
         var worst = j.sec ? [0, 1, 2, 3, 4, 5, 6].reduce(function (n, d) { return Math.max(n, ((sec[j.sec] || [])[d] || 0) + (set.indexOf(d) >= 0 ? cost(j) : 0)); }, 0) : 0;
         var over = load > cap, score = (sectionFirst ? 100000 * worst : 0) + (over ? 0 : -1000 * mates) + (set.join(',') === was ? (together ? -300 : -100000) : 0) + 150 * q + 100 * load + 10 * set.reduce(function (n, d) { return n + kitchen[d]; }, 0);
         if (over && mates) kindGave = true;
-        if (!best || score < best.score) best = { set: set, score: score, mates: mates, over: over, load: load, before: j.sec ? Math.max.apply(null, sec[j.sec] || [0]) : 0 };
+        if (!best || score < best.score) best = { set: set, score: score, mates: mates, over: over, load: load, before: j.sec ? Math.max(Math.max.apply(null, sec[j.sec] || [0]), hasDay(j) ? j.days.reduce(function (n, d) { return Math.max(n, ((sec[j.sec] || [])[d] || 0) + cost(j)); }, 0) : 0) : 0 };
       });
       if (!best) { out.days[j.id] = (j.days || []).slice(); out.why[j.id] = 'No day fits the rules. Left as it is.'; return; }
       best.set.forEach(function (d) { put(j, d); if (quiet.indexOf(d) >= 0) quietUsed++; });

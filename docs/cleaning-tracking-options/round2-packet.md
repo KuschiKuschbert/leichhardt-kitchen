@@ -8,7 +8,7 @@
 2. `docs/cleaning-tracking-options/proposal.md`: the head chef's words, what he has decided (D1 to D8), the lead's readings, what exists today, the current contracts. Its planner table is replaced by the one below.
 3. The pictures under `docs/cleaning-tracking-options/designs/`, listed below. Each scene has `-390.png` (the first phone screen), `-390-full.png` (the whole page) and `-1280.png`. Start with the `-390-full.png` of each scene, then the `-1280.png` where your seat needs it. `designs/measurements.json` holds every count.
 4. Today's pages, for before and after: `docs/cleaning-tracking-options/baseline/` and its `counts.json`.
-5. Source, to check a claim: the application at the packet's commit is in the main checkout, `/Users/danielkuschmierz/Documents/leichhardt kitchen book` (read only). You may run node on `previews/planner.js`, `previews/planner.test.js`, `previews/jobs.js` and `previews/many.js`.
+5. Source, to check a claim: the application at the packet's commit is in the main checkout, the main checkout of this repository on the lead's computer (read only). You may run node on `previews/planner.js`, `previews/planner.test.js`, `previews/jobs.js` and `previews/many.js`.
 
 Do not read `first-council*` files or the pictures in `previews/`: an earlier council, set aside at the head chef's word. You may read the Round 1 part of `brief.md`. Change no file.
 

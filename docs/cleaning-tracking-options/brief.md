@@ -125,7 +125,7 @@ Each line names who asked for it. These are not one agreed list.
 
 ### The reviewers' numbers, run again in the planner
 
-Three figures above came from reviewers' own throwaway scripts. Each is now an option in `previews/planner.js` (37 node checks, defaults untouched) and a column in `previews/many.js` (2,000 random weightings, seeded).
+Three figures above came from reviewers' own throwaway scripts. Each is now an option in `previews/planner.js` (37 node checks then, 40 now, defaults untouched) and a column in `previews/many.js` (2,000 random weightings, seeded).
 
 | Order, weights at random and kinds as one example | A section's heaviest night heavier than with days kept | None heavier, some lighter | Heaviest section night, average | Dated jobs moved, of 15 | Kinds with a shared day | One job added after a save, planned again: a saved job moves | The same, planning only the new job |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -300,7 +300,7 @@ Preview inside the Implemented app's frame. Nothing was tapped or saved.
 | --- | --- | --- |
 | Keeper | Store weights and kinds in one side record keyed by the job's root id: one write, read by chefs when the view opens, never by cooks. Then only the jobs whose day changes are saved again (8, inside the 9 spare reads), and weights need no gate | Save now reads "20 weights and 8 days". The store is a build choice, recommended below |
 | Skeptic | Ship the count, the Inbox row and Records first, alone. No Keep on a row whose old day breaks a day's level. Any Keep or Another day plans the rest again before Save. The 5 dated general jobs get rows, or the "29" goes. Hold "A move on offer" out of the first build | No Keep there; the offer is gone; the "29" is gone. Planning again after Keep is not drawn. The 5 general jobs still have no row |
-| Screen designer | Rows first, with the scope and day sentences in the fold. In Changes, weight and kind as words and tags only for exceptions. Refused in failure ink, what needs the chef first. Lift the Save bar only to 719 px. A lasting link to the view. One word for a miss, his call. Correct the Cleaning-on picture | All but the one word, which is his call, and fixed columns at 1280 px |
+| Screen designer | Rows first, with the scope and day sentences in the fold. In Changes, weight and kind as words and tags only for exceptions. Refused in failure ink, what needs the chef first. Lift the Save bar only to 719 px. A lasting link to the view. One word for a miss, his call. Correct the Cleaning-on picture | The weights and changes pages, the Save bar and the Cleaning-on picture. Not done: the one word, which is his call; fixed columns at 1280 px; and the Records night, which was not redrawn, so on a phone the miss still sits below the first screen under today's red "Missed" line |
 
 Break-it, follow-up:
 
@@ -315,16 +315,16 @@ Break-it, follow-up:
 
 ## Recommendation
 
-**Recommend the combined design: B's one list leads, the results are the Inbox row and that night in Records, and it is built results first.** Five of six ranked B first and five said a blend beats any one design. The skeptic ranked A first; his build order and his cuts are taken.
+**Recommend the combined design: B's one list leads, the results are the Inbox row and that night in Records, and it is built results first.** Five of six ranked B first and five said a blend beats any one design. The skeptic ranked A first. Taken from him: results first, no Keep on a day that breaks a level, no offers in the first build, and bulk suggestions only while Cleaning is off. Not taken: his main cut, no button that suggests days until real weights exist.
 
 Build order, each step its own pull request:
 
 1. **The nightly count.** It honours the release switch and stores the first night Cleaning is on (D1). For weekly and monthly jobs only it keeps each job by its root id, its section, done or not, who did it and who was rostered; Unable to complete outside the totals. The size check moves inside the cleaning block, with a node test at full lists. No screen.
 2. **The Inbox row and that night in Records** (`m6`, `m7`). Admin only as the rules stand.
 3. **Weights and days, the list** (`m1`, `m2`). Weights and the optional kind in one side record keyed by root id. That is the keeper's pick and the lead's: one write, no new version of any job, no cook reads, and a weight can be set before or after switch-on. Its cost: the server checks the record's shape, not each job against its weight.
-4. **Suggest the days** (`m3`, `m4`), fewest moves, in bulk only while Cleaning is off. After switch-on, new jobs only (`m5`), and no offers in the first build.
+4. **Suggest the days** (`m3`, `m4`), fewest moves, in bulk only while Cleaning is off. After switch-on, new jobs only (`m5`), and no offers in the first build. A job cannot be saved with no day under today's rules, so a new job gets its day in the Add cleaning task form, with the suggestion and the "today means tonight" warning drawn in `a1` and `c3`. The "No day yet" rows in `m3` and `m5` stand for jobs a chef is adding: the list cannot hold them until that form has given them a day, or the rules change.
 
-Why it beats the three as drawn: A never gets the weights set (60 taps, one form at a time) and has no button, his first ask. B alone plans in bulk at any time and adds a Reports tab that is off screen on a phone and empty for weeks. C replans 10 of 15 of his days to reach the same heaviest nights as 3 moves, and builds steps used once. The mix keeps the part every reviewer took from each: B's list, A's Records night, C's timing.
+Why it beats the three as drawn: A never gets the weights set (60 taps, one form at a time) and has no button, his first ask. B alone plans in bulk at any time and adds a Reports tab that is off screen on a phone and empty for weeks. C replans 10 of 15 of his days to reach the same heaviest nights as 3 moves in the example (over 2,000 random weightings, 3.5 points against 3.8), and builds steps used once. The mix keeps B's list and A's Records night, which all six took, and C's timing, which three took in round 2 and which is not agreed (below).
 
 Principles that help: Todoist (a suggested day you can keep or change), Airbnb (the day, the old day, the reason and the state in one row), Things 3 (only the changes; names behind a link), Flighty (honest dates, "Count not ready"), Linear (no new room, one Save bar), Duolingo (Saved, Not sent and Refused in words; no totals per person).
 

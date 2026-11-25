@@ -75,6 +75,7 @@ const bare = J.jobs(chosen); bare.find(j => j.id === 'new-grill-sticks').w = 0; 
 ok(nw.days['new-grill-sticks'] === undefined && nw.noWeight.join() === 'new-grill-sticks' && /No weight yet/.test(nw.why['new-grill-sticks']), 'a job with no weight is not planned and says "No weight yet"');
 ok(Object.keys(lv).concat(['few']).every(k => Object.values((k === 'few' ? few2 : lv[k]).why).every(w => !/light day/.test(w))), 'no reason calls a night "a light day": light is a job\'s weight and a day\'s level only');
 // round 2: a refused day says so first, and a suggested night that becomes the section's heaviest says so (the skeptic's case)
+ok(!/becomes/.test(few2.why['sc-pans-02']), 'a job moved off a night it was already the whole of does not claim a new heaviest night (' + few2.why['sc-pans-02'] + ')');
 ok(/^Tuesday takes up to medium jobs/.test(few2.why['sc-pans-02']), 'a heavy job moved off a medium Tuesday says so first (' + few2.why['sc-pans-02'] + ')');
 const afterPlan = J.jobs(chosen).map(j => few2.days[j.id] && !j.every ? Object.assign(j, { days: few2.days[j.id].slice() }) : j).concat([{ id: 'late', text: 'A heavy job added later', sec: 'Hot larder', kind: '', w: 3, per: 1, days: [], every: 0, move: true }]);
 const lateJob = P.plan(afterPlan, { level: LEVEL, order: 'section', only: 'new' });

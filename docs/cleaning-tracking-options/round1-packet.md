@@ -6,7 +6,7 @@
 
 1. `docs/cleaning-tracking-options/proposal.md`, in full. It holds the head chef's words, what he has decided, the lead's readings, the open questions, what exists today, the planner numbers, the cost, the baseline pictures and the current contracts.
 2. The pictures it lists under `docs/cleaning-tracking-options/baseline/`. Open them.
-3. Source, to check a claim. The application source at the packet's commit is in the main checkout, `/Users/danielkuschmierz/Documents/leichhardt kitchen book` (read only: change nothing there). This worktree's `js/` is older.
+3. Source, to check a claim. The application source at the packet's commit is in the main checkout, the main checkout of this repository on the lead's computer (read only: change nothing there). This worktree's `js/` is older.
 
 Do not read `first-council*.md`, `first-council.html` or the pictures in `previews/`. They are an earlier council's work and the head chef asked for a fresh start. `previews/planner.js`, `previews/planner.test.js`, `previews/jobs.js` and `previews/many.js` are the planner and you may read and run them with node.
 
