@@ -1815,6 +1815,19 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .jumps .chip { min-height: 44px; }
 @media (min-width: 900px) { .jumps { display: none; } }
 #r-allergens, #r-ing, .jump-at { scroll-margin-top: 0.75rem; }
+/* The Pass view's recipe (step 2 findings, head chef 26 Nov 2026): from 900 px the drawing takes the left column, so
+   Method sits under the ingredients, below the first screen. The jump row joins the trail row, between the trail and
+   Keep screen on, wrapping under the trail when it does not fit. Under 900 px the wrapper has no box of its own, so the
+   row still sticks under the top bar as before. The Tiles card keeps its two columns and no row. */
+.rx-top { display: contents; }
+@media (min-width: 900px) {
+  .rx-top { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
+  .rx-top > .ko-row { display: contents; }
+  .rx-top > .crumbs, .rx-top > .ko-row > .crumbs { flex: 1 1 auto; min-width: 0; order: 0; }
+  .rx-top > .jumps { display: flex; order: 1; }
+  .rx-top > .ko-row > .ko-chip { order: 2; }
+  .rx-top > .ko-say { flex: 1 1 100%; order: 3; }
+}
 .jump-at { height: 0; }
 @media (max-width: 599px) { .find-bar { margin: 0 -1rem; padding: 0.6rem 1rem 0.7rem; } }
 
@@ -4497,7 +4510,7 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .hm-board::before, .hm-paper::before { content: ''; position: absolute; left: 50%; top: -6px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--accent-ink); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25); }
 .hm-board { padding: 0.9rem 1rem 0.4rem; background: var(--bar); color: var(--bar-text); box-shadow: 0 6px 0 rgba(28, 29, 31, 0.18); }
 .hm-bh { display: flex; align-items: baseline; justify-content: space-between; gap: 0.6rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(251, 248, 241, 0.18); }
-.hm-bt { margin: 0; font: 700 0.8rem/1.2 var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--bar-text); }
+.hm-bt { min-width: 0; margin: 0; font: 700 0.8rem/1.2 var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--bar-text); overflow-wrap: anywhere; }   /* a shared screen's "<name>'s day" wraps a long name */
 .hm-clock { font: 700 1rem/1 var(--display); letter-spacing: 0.06em; color: var(--bar-accent); }
 .hm-rows { list-style: none; margin: 0; padding: 0; }
 .hm-rows li + li { border-top: 1px solid rgba(251, 248, 241, 0.14); }
@@ -5801,6 +5814,64 @@ button[data-cln-ready-label] > span { position: absolute; inset: 0; display: gri
 .cln-chef-page .cln-pager button { min-width: 44px; min-height: 44px; max-width: 100%; white-space: normal; }
 .cln-chef-page .cln-repeat-browser { min-width: 0; padding-top: .2rem; }
 .cln-chef-page .cln-repeat-browser > .field { max-width: 22rem; }
+/* Weights and days (head chef, 26 Nov 2026, results by section, step 3): every weekly and monthly job as a row by
+   section, Light / Medium / Heavy chips and an optional kind, then the one Save bar frame (.sv-dock), docked above the
+   phone tab bar. Chosen is ink, as every chip; no colour carries a state. */
+.cln-weigh-filter { margin: .5rem 0 .2rem; }
+.cln-weigh-h { margin-top: .9rem; }
+.cln-weigh-h span { font: 400 .8125rem var(--body); letter-spacing: 0; text-transform: none; color: var(--muted); }
+.cln-weigh-list { list-style: none; margin: 0; padding: 0; }
+.cln-chef-page .cln-weigh-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .2rem .8rem; padding: .35rem 0 .55rem; border-bottom: 1px solid var(--rule); }
+.cln-chef-page .cln-weigh-row .cln-template-summary { padding: .25rem 0; border-bottom: 0; }
+.cln-weigh-ctl { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .35rem; }
+.cln-weigh-ctl .chips { gap: .35rem; }
+.cln-weigh-ctl .chip { padding: 0 .75rem; }
+.cln-kind select { min-height: 44px; max-width: 13rem; }
+.cln-weigh-dock { position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .4rem 1rem; margin-top: 1rem; padding: .6rem 0; }
+.cln-weigh-dock .hint { flex: 1 1 12rem; }
+.cln-weigh-dock .btn-row { margin: 0; }
+.cln-weigh-err { color: var(--bad-ink); font-weight: 700; }
+/* What each day takes (head chef, 26 Nov 2026, results by section, step 4a): a fold above the weights list, seven rows
+   with three chips each (Friday and Saturday fixed at light), the staffing suggestion in words under each, and its own
+   Save. */
+.cln-days { margin: .4rem 0 .6rem; }
+.cln-days-sum { margin: .1rem 0 0; }
+/* Suggest the days (results by section, step 4b, 26 Nov 2026): each change in its row, under a rule like the m3 picture */
+.cln-sug-wrap { margin: .4rem 0 .6rem; }
+.cln-sug-start .btn { margin: .3rem 0 0; }
+.cln-sug-off { margin: .4rem 0; }
+.cln-sug-notes b { color: var(--ink); }
+.cln-sug-dock .btn-row { flex-wrap: wrap; }
+.cln-chef-page .cln-sug-sum { flex-direction: column; align-items: flex-start; gap: .2rem; }
+.cln-sug-rules { margin: .5rem 0 .2rem; }
+.cln-sug-rules .label { display: block; margin-bottom: .25rem; }
+.cln-sug-rules .chips { gap: .35rem; flex-wrap: wrap; max-width: 100%; }
+.cln-sug-rules .chip { white-space: normal; text-align: left; min-height: 44px; height: auto; max-width: 100%; min-width: 0; flex: 0 1 auto; overflow-wrap: anywhere; }
+.cln-sug-list { list-style: none; margin: 0; padding: 0; }
+.cln-chef-page .cln-sug-row { padding: .35rem 0 .7rem; border-bottom: 1px solid var(--rule); }
+.cln-chef-page .cln-sug-row .cln-template-summary { padding: .25rem 0; border-bottom: 0; }
+.cln-sug { margin: .3rem 0 0; padding: .2rem 0 .2rem .75rem; border-left: 3px solid var(--ink); }
+.cln-sug .hint { margin: .15rem 0 .45rem; }
+.cln-sug .btn-row { margin: 0; }
+.cln-sug-pick { display: block; margin: 0 0 .45rem; }
+.cln-sug-pick input { min-height: 44px; max-width: 100%; }
+.cln-sug-state { margin: .4rem 0 0; }
+.cln-day-list { list-style: none; margin: .3rem 0 0; padding: 0; }
+.cln-day-row { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); align-items: center; gap: .2rem .8rem; padding: .35rem 0; border-bottom: 1px solid var(--rule); }
+.cln-day-row .chips { gap: .35rem; }
+.cln-day-fixed { font-weight: 600; }
+.cln-day-staff { grid-column: 2; color: var(--muted); font-size: .8125rem; }
+.cln-days-save { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .4rem 1rem; padding: .6rem 0 .2rem; }
+.cln-days-save .hint { flex: 1 1 12rem; }
+.cln-days-save .btn-row { margin: 0; }
+@media (max-width: 719px) { .cln-day-row { grid-template-columns: minmax(0, 1fr); } .cln-day-staff { grid-column: 1; } }
+@media (max-width: 719px) {
+  .cln-chef-page .cln-weigh-row { grid-template-columns: minmax(0, 1fr); }
+  .cln-weigh-ctl { justify-content: flex-start; }
+  .cln-kind { flex: 1 0 100%; }   /* its own line, so a longer or shorter kind never re-wraps the row */
+  .cln-weigh-dock { bottom: var(--tabbar-h); }
+  html:has(.cln-weigh-dock) { scroll-padding-bottom: calc(var(--tabbar-h) + 96px); }
+}
 .cln-chef-page .cln-repeat-browser > .hint { margin: .6rem 0; }
 .cln-chef-page .cln-repeat-browser .cln-searchbar > .btn { flex: 0 0 auto; max-width: 100%; white-space: normal; }
 .cln-chef-page .cln-repeat-layout { margin: .75rem 0 .4rem; }
@@ -6520,9 +6591,10 @@ html:has(.tm-focus-page) {
   .tm-tlsvc > .tm-tlsvc-more { justify-self: end; }
 }
 @media (min-width: 1100px) {
-  /* the sentence first, the break line beside it when both fit; a longer line (an older day with more breaks, large
-     text) drops under the sentence and wraps there, never scrolling the page sideways */
-  .tm-tlday > .tm-roster-time { flex: 1 1 12rem; }
+  /* the sentence first, the break line straight after it when both fit (not at the far end of the row: on the section
+     screens that was about 200 px away, step 2 findings, head chef 26 Nov 2026); a longer line (an older day with more
+     breaks, large text) drops under the sentence and wraps there, never scrolling the page sideways */
+  .tm-tlday > .tm-roster-time { flex: 0 1 auto; }
   .tm-tlday > .tm-brline { flex: 0 1 auto; margin: 0; }
   .tm-tlsvc { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; }
   .tm-tlsvc > .tm-tlsvc-name { flex: 0 0 10rem; }

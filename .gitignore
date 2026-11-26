@@ -21,3 +21,6 @@ scripts/tutorials/__pycache__/
 # a Backup holds the whole kitchen: never commit one (scripts/fold-recipes.mjs reads it)
 kitchen-book-*.json
 kitchen-book-*.json.enc
+scripts/ai-bakeoff/node_modules/
+scripts/ai-bakeoff/results/
+scripts/ai-bakeoff/results-selftest/

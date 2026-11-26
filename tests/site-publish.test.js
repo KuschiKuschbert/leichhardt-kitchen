@@ -55,7 +55,10 @@ eq(needs(['tests/prep.test.js', 'tests/rules/access.test.mjs', 'tests/fake/fireb
 eq(needs(['scripts/nightly-learning.mjs', 'scripts/site-changed.sh', '.github/workflows/publish-site.yml', '.claude/settings.json', 'firestore.rules', '.gitignore']), [], 'server scripts, workflows, the rules template: nothing to publish');
 eq(needs(['js/app.js', 'js/data.js', 'css/app.css', 'index.html', 'sw.js', 'manifest.webmanifest', 'fonts/a.ttf', 'art/mascot/a.png', 'guides/smoke-prep.png', 'icons/a.png', 'qr.svg', '.nojekyll']),
   ['js/app.js', 'js/data.js', 'css/app.css', 'index.html', 'sw.js', 'manifest.webmanifest', 'fonts/a.ttf', 'art/mascot/a.png', 'guides/smoke-prep.png', 'icons/a.png', 'qr.svg', '.nojekyll'], 'every file the book loads is published');
-eq(needs(['tests/contact.html', 'tests/compose-read.js']), ['tests/contact.html', 'tests/compose-read.js'], 'the test page the live click tests open from the site is published');
+eq(needs(['tests/contact.html', 'tests/contact-page.js']), ['tests/contact.html', 'tests/contact-page.js'], 'the test page the live click tests open from the site, and its script, are published');
+// 26 Nov 2026: the helpers, fixtures and runners in tests/ that only node runs asked every phone to update
+eq(needs(['tests/plating-check.js', 'tests/compose-read.js', 'tests/compose-sheet.js', 'tests/smart-match.js', 'tests/library-check.js', 'tests/style-check.js', 'tests/shots-diff.js', 'tests/serve.js', 'tests/contact.js', 'tests/avc-fixture.js', 'tests/roster-fixture.js', 'tests/supplier-fixtures.js', 'tests/timings.json', 'tests/newhelper.js']), [], 'helpers, fixtures and runners only node runs: nothing to publish, a new one too');
+eq(needs(['tests/plating-check.js', 'tests/contact-page.js']), ['tests/contact-page.js'], 'a helper with the live test page: the page is published');
 eq(needs(['newfolder/thing.js']), ['newfolder/thing.js'], 'a file in a folder nobody named counts as needed');
 eq(needs(['README.md', 'js/prep.js']), ['js/prep.js'], 'a mixed change publishes');
 eq(needs(['venues/leichhardt.json', 'venues/demo/qr.svg']), [], 'the venue files are read by the workflows only: nothing to publish (19 Nov 2026)');

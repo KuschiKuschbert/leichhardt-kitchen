@@ -2202,6 +2202,52 @@
     if (['service', 'prep', 'use'].indexOf(kind) < 0 || !fb || !fb.fs) throw cleaningError('invalid-argument');
     return kind + '-' + fb.fs.doc(colRef('cleaningDone')).id;
   }
+  /* Cleaning weights (head chef, 26 Nov 2026, results by section, step 3; docs/cleaning-schedule.md, Weights and days).
+     One record, cleaningPlan/main, keyed by each job's root id: w, how long a job takes (1 light, 2 medium, 3 heavy),
+     and k, its kind. Chefs only; staff never read it. When: a chef opens Repeat tasks, and Refresh. Cost: 1 read, kept
+     in the page's memory. A missing record is an answer (no weights yet); a refused or failed read is not. */
+  function cleaningPlanRead() {
+    if (!cleaningChef()) return Promise.reject(cleaningError('permission-denied'));
+    return sdk().then(function () { return fb.fs.getDocFromServer(docRef('cleaningPlan', 'main')); }).then(function (sn) { return sn.exists() ? sn.data() : {}; });
+  }
+  // one merged save: only the jobs changed are sent, so a second chef's entries stay. w and k: { root id: value }
+  // An empty map in a merged save is a value to Firestore: it would replace the stored map and wipe every entry. So a
+  // map is sent only when it holds a change. A kind of '' clears that job's kind (the page reads '' as none).
+  // d: what each weekday takes, Sunday first, 1 light to 3 heavy (step 4, 26 Nov 2026), set by the same chefs as the
+  // weights, and only whole: the rules check all seven.
+  function cleaningPlanSave(w, k, d) {
+    var hasW = !!w && typeof w === 'object' && Object.keys(w).length > 0, hasK = !!k && typeof k === 'object' && Object.keys(k).length > 0;
+    var hasD = Array.isArray(d) && d.length === 7 && d.every(function (v) { return v === 1 || v === 2 || v === 3; });
+    if (!canW()) return Promise.reject(cleaningError('unauthenticated'));   // the PIN session lapsed: unlock, then save
+    if (!cleaningChef() || !(hasW || hasK || hasD)) return Promise.reject(cleaningError('permission-denied'));
+    var data = { v: 1, at: now() };
+    if (hasW) data.w = w;
+    if (hasK) data.k = k;
+    if (hasD) data.d = d.slice();
+    return W([['set', docRef('cleaningPlan', 'main'), data, true]]);
+  }
+  /* The suggestion for what each weekday takes, from staffing (head chef, 26 Nov 2026: "learn then based on what days
+     we have more staff on"). How many people were on each weekday, from teamsum/main: the last 30 days of the chefs'
+     plans and the cooks' own picks, written each night. When: the head chef opens What each day takes. Through
+     tsLoad(), so it shares Today's team's copy, its retry wait and who it was read for: none when the chef's pages
+     already read it today, else 1 read, kept for the kitchen day, a missing or late count included. A night count
+     older than yesterday, or none, gives no suggestion (fresh false), never an old one. */
+  function cleaningStaffing() {
+    if (!cleaningChef()) return Promise.reject(cleaningError('permission-denied'));
+    var p = tsLoad(); if (!p) return Promise.reject(cleaningError('unavailable'));
+    return p.then(function () {
+      if (tsum.st !== 'ok') throw cleaningError('unavailable');
+      if (!tsum.rec) return { fresh: false, none: true };
+      var rec = tsFresh(); if (!rec) return { fresh: false };
+      var sum = [0, 0, 0, 0, 0, 0, 0], n = [0, 0, 0, 0, 0, 0, 0];
+      rec.days.forEach(function (d) {
+        var people = {}; d.s.forEach(function (x) { people[x.p] = 1; });
+        var k = Object.keys(people).length; if (!k) return;
+        var w = T.dow(T.at(d.day)); sum[w] += k; n[w]++;
+      });
+      return { fresh: true, avg: sum.map(function (v, i) { return n[i] ? Math.round(v / n[i] * 10) / 10 : null; }), n: n };
+    });
+  }
   function cleaningImport(templates) {
     if (!cleaningChef() || !canW() || !Array.isArray(templates) || !templates.length || templates.length > 100) return Promise.reject(cleaningError('permission-denied'));
     var drafts;
@@ -2320,6 +2366,59 @@
       });
     });
   }
+  /* Suggest the days, saved (head chef, 26 Nov 2026, results by section, step 4b; docs/cleaning-schedule.md, Suggest the
+     days). Up to 5 jobs move in one W(): each the replace path of cleaningSave (root kept, the old revision closed, the
+     new one starting tomorrow). The rules emulator refused 10 at once and allowed 5. A batch lands whole or not at all.
+     moves: [{ old (the open revision), dows, anchor (a monthly job's new first date, else undefined) }].
+     Each job remembers its own uncertain send (cleaningMoveAttempts, by the old revision's id), never cleaningAttempt,
+     so a lost answer for one job cannot make a saved job read as refused. Reads: none on an ordinary save. Only Send
+     again after a lost answer reads each remembered new revision from the server first: at most 5 reads, on a tap. */
+  var cleaningMoveAttempts = Object.create(null);
+  function cleaningMoves(moves) {
+    if (!cleaningChef() || !canW() || !Array.isArray(moves) || !moves.length || moves.length > 5) return Promise.reject(cleaningError(!canW() ? 'unauthenticated' : 'permission-denied'));
+    if ((S.config.staffSee || {}).cleaning === true) return Promise.reject(cleaningError('cleaning-on'));   // bulk moves only while Cleaning is off
+    var context = writeContext(), access = cleaningContext(), identity = stableIdentity(), today = dayNow(), tomorrow = T.at(shift(today, 1));
+    var bad = moves.filter(function (m) { return !m || !m.old || !/^[a-zA-Z0-9_-]{1,80}$/.test(m.old.id) || m.old.until !== CLEAN_OPEN || m.old.from > tomorrow; });
+    if (bad.length) { var stale = cleaningError('stale'); stale.ids = bad.map(function (m) { return m && m.old && m.old.id; }); return Promise.reject(stale); }
+    var drafts = [], wrong = [];
+    moves.forEach(function (m) {
+      var o = m.old, plan = o.plan ? JSON.parse(JSON.stringify(o.plan)) : undefined;
+      if (m.anchor !== undefined) { if (!plan || !plan.repeat || !cleaningDate(m.anchor) || T.at(m.anchor) < tomorrow) { wrong.push(o.id); return; } plan.repeat.anchor = m.anchor; }
+      try { drafts.push({ m: m, data: cleaningDraft({ text: o.text, area: o.area, section: o.section || '', shared: !!o.shared, dows: m.dows, guide: o.guide || '', plan: plan }) }); }
+      catch (e) { wrong.push(o.id); }
+    });
+    if (wrong.length) { var invalid = cleaningError('invalid-argument'); invalid.ids = wrong; return Promise.reject(invalid); }
+    function valid() { if (!cleaningChef() || access !== cleaningContext() || identity !== stableIdentity() || today !== dayNow()) throw cleaningError('cancelled'); }
+    // a job sent before with no answer: its new revision on the server says it landed (the old one is closed with it)
+    return sdk().then(function () {
+      return Promise.all(drafts.map(function (d) {
+        var a = cleaningMoveAttempts[d.m.old.id];
+        if (!a || a.identity !== identity) { delete cleaningMoveAttempts[d.m.old.id]; return null; }
+        return fb.fs.getDocFromServer(docRef('cleaningTasks', a.task.id)).then(function (sn) {
+          valid(); if (sn.metadata && sn.metadata.fromCache) throw cleaningError('unavailable');
+          if (!sn.exists()) { delete cleaningMoveAttempts[d.m.old.id]; return null; }
+          var saved = Object.assign({}, sn.data(), { id: sn.id });
+          if (saved.root !== a.task.root || saved.prev !== d.m.old.id) throw cleaningError('stale');
+          delete cleaningMoveAttempts[d.m.old.id]; return { id: d.m.old.id, task: saved, closed: a.closed, recovered: true };
+        });
+      }));
+    }).then(function (known) {
+      valid();
+      var out = known.filter(Boolean), ops = [], sent = [];
+      drafts.forEach(function (d, i) {
+        if (known[i]) return;
+        var old = d.m.old, ref = fb.fs.doc(colRef('cleaningTasks'));
+        var data = Object.assign(d.data, { root: old.root, prev: old.id, next: '', from: tomorrow, until: CLEAN_OPEN, at: now(), by: context.by });
+        ops.push(['upd', docRef('cleaningTasks', old.id), { until: tomorrow, next: ref.id }]); ops.push(['set', ref, data]);
+        sent.push({ id: old.id, task: Object.assign({}, data, { id: ref.id }), closed: Object.assign({}, old, { until: tomorrow, next: ref.id, by: context.by }) });
+      });
+      if (!ops.length) return out;
+      return W(ops, context).then(function () { sent.forEach(function (s) { delete cleaningMoveAttempts[s.id]; }); return out.concat(sent); }, function (error) {
+        if (identity === stableIdentity() && !(error && ['permission-denied', 'cancelled', 'invalid-argument'].indexOf(error.code) >= 0)) sent.forEach(function (s) { cleaningMoveAttempts[s.id] = { identity: identity, task: s.task, closed: s.closed }; });
+        error = error || cleaningError('unavailable'); error.saved = out; throw error;
+      });
+    });
+  }
   function cleaningArchive(task) {
     if (!cleaningChef() || !canW()) return Promise.reject(cleaningError('permission-denied'));
     if (!task || !/^[a-zA-Z0-9_-]{1,80}$/.test(task.id) || task.until !== CLEAN_OPEN || task.from > T.at(shift(dayNow(), 1))) return Promise.reject(cleaningError('stale'));
@@ -2347,9 +2446,9 @@
       sections: secList, section: mySecNow, screenSection: screenSection,
       guides: function () { return featOn('guides') ? gLive().map(function (g) { return { id: g.id, title: g.title }; }) : []; }, loadGuides: loadGuides,
       box: function (done) { return done ? TICK : BOX; }, sheetBusy: function () { return sheetOpen() || ksWait || ovBack || dkFirstUp(); }, sheetNext: sheetNext,
-      discardAttempt: function () { cleaningAttempt = null; cleaningActionAttempts = Object.create(null); },
+      discardAttempt: function () { cleaningAttempt = null; cleaningActionAttempts = Object.create(null); cleaningMoveAttempts = Object.create(null); },
       load: cleaningLoad, saveTask: cleaningSave, archiveTask: cleaningArchive, tick: cleaningTick, undo: cleaningUndo, canUndo: cleaningCanUndo,
-      importTasks: cleaningImport, act: cleaningAct, newSlot: cleaningNewSlot, due: cleaningDue, who: function () { return S.who; },
+      importTasks: cleaningImport, planRead: cleaningPlanRead, planSave: cleaningPlanSave, staffing: cleaningStaffing, moveTasks: cleaningMoves, teamOn: function () { return S.configState === 'ok' && !!S.configFull ? (S.config.staffSee || {}).cleaning === true : null; }, act: cleaningAct, newSlot: cleaningNewSlot, due: cleaningDue, who: function () { return S.who; },
       canVerify: function (task) { return cleaningTickOK() && !!task.plan && task.plan.verification && task.plan.verifiers.indexOf(S.who) >= 0; } };
   }
   /* Supplier workspace (24 Oct 2026). This bridge shares the kitchen's sign-in, writer, clock and pending-write
@@ -3643,6 +3742,7 @@
       .then(function () { return all('cleaningTasks'); }).then(function (r) { out.cleaningTasks = r; })
       .then(function () { return all('cleaningDone'); }).then(function (r) { out.cleaningDone = r; })
       .then(function () { return all('cleaningActions'); }).then(function (r) { out.cleaningActions = r; })
+      .then(function () { return all('cleaningPlan'); }).then(function (r) { out.cleaningPlan = r; })
       .then(function () { return all('team'); }).then(function (r) { out.team = r; })
       .then(function () { return all('cutdone'); }).then(function (r) { out.cutdone = r; })
       .then(function () { part = 'deliveries'; return f.getDocs(f.query(colRef('deliveries'), f.where('day', '>=', shift(dayNow(), -399)), f.where('day', '<=', dayNow()))).then(grab); }).then(function (r) { out.deliveries = r; })
@@ -3786,7 +3886,8 @@
     })
       .then(function () {
         // Immutable cleaning history needs a source-bound copy procedure. Refuse before any destination write.
-        return Promise.all(['cleaningTasks', 'cleaningDone', 'cleaningActions'].map(function (name) {
+        // the cleaning weights (cleaningPlan) only exist beside these, so a kitchen that has them is refused here too
+        return Promise.all(['cleaningTasks', 'cleaningDone', 'cleaningActions', 'cleaningPlan'].map(function (name) {
           return f.getDocs(f.query(oc(name), f.limit(1))).then(function (sn) { got(sn); if (sn.docs.length) throw { code: 'cleaning-copy' }; });
         }));
       }).then(readRoster).then(function () { return readCol('pinset'); }).then(function () { return readCol('staffpins'); }).then(function () { return readCol('activity'); }).then(function () { return readCol('sections'); })
@@ -6061,6 +6162,12 @@
     function secOf(x) { if (board && x.fn) return FNCOL; if (tonightLine(x, date, cut)) return TONIGHT; return S.tab === FN_TAB ? FNS : S.tab || lineSec(x); }
     shown.forEach(function (x) { var k = secOf(x); if (!seen[k]) { seen[k] = 1; order.push(k); } });
     [FNCOL, TONIGHT].forEach(function (last) { if (seen[last]) order = order.filter(function (k) { return k !== last; }).concat([last]); });
+    // Your own section first under All on today's list (head chef, 26 Nov 2026, step 2 findings, D): the section you are
+    // on today (mySecNow(): Today's team or your own pick, no read), then the rest in their usual order. Staff and leads
+    // only; a chef, a section's tab, the wall board and another day's list are as they were. Start here keeps its numbers.
+    var mine = !board && !S.tab && date === dayNow() ? mySecNow() : null;
+    var mk = mine ? order.filter(function (k) { return k !== TONIGHT && k !== FNCOL && !!k && okey(k) === okey(mine.name); })[0] : null;
+    if (mk) order = [mk].concat(order.filter(function (k) { return k !== mk; }));
     var finUsed = false;
     var out = order.map(function (sec) {
       var all = shown.filter(function (x) { return secOf(x) === sec; });
@@ -9809,7 +9916,9 @@ if (list.length) sg('oreg', 's');
       var head = (out ? 'Lent to ' : 'Borrowed from ') + v;
       var since = (d >= 1 ? dayShort(x.date) + ' ' : '') + (x.addedAt ? clock(x.addedAt) : '');
       var who = pn ? (out ? pn + ' came for it' : pn + ' gave it') : '';
-      return '<article class="tr-card' + (old ? ' is-old' : '') + '" aria-label="' + esc(head + ', ' + (d >= 1 ? age + ' out' : 'today')) + '"><div class="tr-ch"><h4 class="tr-cv">' + esc(head) + '</h4>' +
+      // the In or Out pill the rows use leads the heading, so which way the stock went reads first (step 2 findings,
+      // head chef 26 Nov 2026); the heading says it in words, so the pill is not read out twice
+      return '<article class="tr-card' + (old ? ' is-old' : '') + '" aria-label="' + esc(head + ', ' + (d >= 1 ? age + ' out' : 'today')) + '"><div class="tr-ch"><h4 class="tr-cv"><span class="tr-way tr-way-' + (out ? 'out' : 'in') + '" aria-hidden="true">' + (out ? 'Out' : 'In') + '</span> ' + esc(head) + '</h4>' +
         '<span class="tr-age' + (old ? ' is-old' : '') + (d >= 1 ? '' : ' is-today') + '" title="' + esc('Since ' + longDate(x.date)) + '">' + age + '</span></div>' +
         metaHTML([esc(since), esc(who)], esc(x.addedBy || ''), '', 'logged by ').replace('class="nb-meta"', 'class="nb-meta tr-cs"') +
         '<ul class="nb-rows">' + c.rows.map(xLoanRow).join('') + '</ul></article>';
@@ -13220,7 +13329,9 @@ if (list.length) sg('oreg', 's');
     var value = sec || (ready || d.state === 'unset' ? 'Not assigned' : d.state === 'error' ? 'Unavailable' : 'Checking...');
     if (unavailable) { sub = 'Your saved shift is unavailable. Check with the chef.'; value = sec || 'Unavailable'; }
     if (manual && !n) sub = 'Your pick today · ' + sub;
-    var changed = ready && tmChanged(p.id), head = '<div class="hm-bh"><h3 class="hm-bt" id="hm-day-h">Your day' +
+    // on a shared screen the card names whose day it is ("Ann's day"), so the next cook does not read Ann's break as
+    // theirs before the screen locks (head chef, 26 Nov 2026, step 2 findings, D); a personal phone keeps "Your day"
+    var changed = ready && tmChanged(p.id), head = '<div class="hm-bh"><h3 class="hm-bt" id="hm-day-h">' + (shared() && p.name ? esc(p.name) + '\'s day' : 'Your day') +
       (changed ? ' <span class="hm-day-changed">Changed</span>' : '') + '</h3><b class="hm-clock">' + esc(T.clock(now())) + '</b></div>';
     var section = '<li data-hm-priority="section"><a class="hm-a hm-day-row" href="#/prep"' + (sec ? ' data-hm-sec="' + esc(sec) + '"' : '') + '>' +
       '<span class="hm-i" aria-hidden="true">' + homeIcon('todo') + '</span><span class="hm-w"><b class="hm-t">' + title + '</b><small class="hm-s">' + esc(sub) + '</small></span><b class="hm-day-value">' + esc(value) + '</b></a></li>';
@@ -15655,7 +15766,7 @@ if (list.length) sg('oreg', 's');
   function tmNeedPin() { return teamOK() && !tmCanRead() && !sessP; }
   function tmMe() { var p = me(); return p ? p.id : ((S.config && S.config.headId) || ''); }
   // the next person on the phone starts with nothing of the last chef's
-  function tmReset() { if (tmPop) { tmPop.remove(); tmPop = null; tmPrev = null; } tsum = { day: '', rec: null, st: '', retry: 0, epoch: -1 }; tm = { day: '', rec: null, st: '', at: 0, retry: 0, epoch: -1, stamp: 0 }; tmf = null; tmSnap = ''; tmLastBusy = false; tmLastJob = null; tmPlan = { day: '', owner: '', epoch: -1, days: {}, weeks: {} }; tmSh = ''; tmMsg = ''; tmShowOff = false; tmFind = ''; tmAssignMsg = ''; tmUi = { shifts: 0, sections: 0, people: {}, batch: false, overview: false }; tmRs = null; svStop('t'); }
+  function tmReset() { if (tmPop) { tmPop.remove(); tmPop = null; tmPrev = null; } tsum = { day: '', rec: null, st: '', retry: 0, epoch: -1, p: null }; tm = { day: '', rec: null, st: '', at: 0, retry: 0, epoch: -1, stamp: 0 }; tmf = null; tmSnap = ''; tmLastBusy = false; tmLastJob = null; tmPlan = { day: '', owner: '', epoch: -1, days: {}, weeks: {} }; tmSh = ''; tmMsg = ''; tmShowOff = false; tmFind = ''; tmAssignMsg = ''; tmUi = { shifts: 0, sections: 0, people: {}, batch: false, overview: false }; tmRs = null; svStop('t'); }
   /* today's team: one read (team/<today>) the first time a chef's page or top bar needs it each kitchen day, when the
      page opens (unless read in the last minute), on Refresh and once for each team stamp another phone writes
      (pastCheck()). A failed read, and a "no record" that came from the memory copy with no signal, is never "not set
@@ -17619,19 +17730,21 @@ if (list.length) sg('oreg', 's');
      the sous chefs and the admin only (the rules refuse staff). Read once a kitchen day, when the chef's page, the
      Kitchen sections row or the Team report first needs it (1 read); kept in memory only, as it says who is in
      training. A failed read waits 5 minutes; no record yet (the job has not run) is none, never an error. */
-  var tsum = { day: '', rec: null, st: '', retry: 0, epoch: -1 };
+  var tsum = { day: '', rec: null, st: '', retry: 0, epoch: -1, p: null };
   function tsCan() { return teamOK() && tmCanRead(); }
   /* One freshness rule for the planner's suggestions (head chef, 15 Nov 2026, docs/team-smart-sections-options/brief.md):
      the nightly counts (teamsum/main, read once a kitchen day by tsLoad()) are used only when read from the server and
      made today or yesterday. A late or failed nightly job gives no Usually, no Often and no cross-training hint, rather
      than suggesting from old plans without saying so. */
   function tsFresh() { var r = tsum.rec; return tsCan() && tsum.st === 'ok' && r && r.day && r.day >= shift(dayNow(), -1) ? r : null; }
+  // answers with the read in flight or done (tsum.p), so Cleaning's What each day takes waits on the same one
   function tsLoad() {
     var day = dayNow();
-    if (tsum.day !== day || tsum.epoch !== accessEpoch) tsum = { day: day, rec: null, st: '', retry: 0, epoch: accessEpoch };
-    if (!tsCan() || tsum.st === 'busy' || tsum.st === 'ok' || (tsum.st === 'err' && Date.now() < tsum.retry)) return;
+    if (tsum.day !== day || tsum.epoch !== accessEpoch) tsum = { day: day, rec: null, st: '', retry: 0, epoch: accessEpoch, p: null };
+    if (!tsCan()) return null;
+    if (tsum.st === 'busy' || tsum.st === 'ok' || (tsum.st === 'err' && Date.now() < tsum.retry)) return tsum.p || Promise.resolve();
     var mine = tsum; tsum.st = 'busy';
-    fb.fs.getDoc(docRef('teamsum', 'main')).then(function (sn) {
+    return tsum.p = fb.fs.getDoc(docRef('teamsum', 'main')).then(function (sn) {
       if (tsum !== mine) return;
       if (!sn.exists() && cacheOnly(sn)) throw { code: 'unavailable', cache: true };
       tsum.rec = sn.exists() ? tsClean(sn.data()) : null; tsum.st = 'ok'; draw();

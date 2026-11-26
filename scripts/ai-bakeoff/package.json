@@ -1,0 +1,9 @@
+{
+  "name": "leichhardt-ai-bakeoff",
+  "private": true,
+  "description": "The AI drawing bake-off, run by hand away from the book (docs/ai-drawing-options/brief.md). Not loaded by the book or the click tests.",
+  "type": "commonjs",
+  "dependencies": {
+    "@anthropic-ai/sdk": "1.13.0"
+  }
+}

@@ -349,10 +349,10 @@ Before ready, on the implemented app at 390, 768 and 1280 px: every save state e
 
 Answered on 26 November 2026 by "Yes proceed with your recommendations": build it in the recommended order; the book suggests in bulk only while Cleaning is off; the flag covers weekly and monthly jobs, not nightly Pack down. Answered the same day: the one word for a miss is "Missed", as Records and Cleaning say today ("That's fine"), with "not ticked by midnight" as its explanation; and Cleaning is switched on at Leichhardt first, then at the Strand.
 
-1. Do Sunday, Monday and Wednesday take heavy jobs? That is the lead's reading.
+1. ~~Do Sunday, Monday and Wednesday take heavy jobs?~~ Answered: Sunday, Monday, Wednesday and Thursday, and the book learns from staffing (Step 4a below).
 2. "Not just limited to tasks that happen more than once a day": every rhythm, or jobs done at each service?
 3. A shared job that names sections (the pass shelves, behind the deep fryers): which one section owns it?
-4. Who sets what each day takes and presses Suggest the days: the admin, or the chefs who manage cleaning jobs?
+4. Who sets what each day takes and presses Suggest the days: ~~the admin, or the chefs?~~ What each day takes: "admin, headchef or sous chef of that venue" (Step 4a). Suggest the days: still his call, with step 4b.
 5. The two suggested planner rules: keep, change or drop?
 
 Who was rostered is no longer a question for him: step 1 keeps both the closing plan and a cook's own pick, each with its source.
@@ -365,8 +365,72 @@ Who was rostered is no longer a question for him: step 1 keeps both the closing 
 | --- | --- | --- |
 | 1 | The nightly count: the release switch and the first night, weekly and monthly jobs by root id with section, who did it and who was rostered, the size check inside the cleaning block | [#890](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/890), merged 26 November 2026. What it keeps: [the cleaning note](../cleaning-schedule.md#what-the-nightly-count-keeps) |
 | 2 | The Inbox row and that night in Records | Built, 26 November 2026. What the admin sees: [the cleaning note](../cleaning-schedule.md#what-the-admin-sees-of-it). As built: `built/` |
-| 3 | The weights list, weights in one side record | To come |
-| 4 | Suggested days, in bulk only while Cleaning is off | To come |
+| 3 | The weights list, weights in one side record | Built 26 November 2026: weights and the optional kind. What each day takes is in the same record's rule, set with step 4. [The cleaning note](../cleaning-schedule.md#weights-and-days) |
+| 4a | What each day takes: his days until changed, set by each venue's chefs, a suggestion from staffing | Built 26 November 2026. [The cleaning note](../cleaning-schedule.md#what-each-day-takes); quick check below |
+| 4b | Suggested days, in bulk only while Cleaning is off, fewest moves | Built 26 November 2026. [The cleaning note](../cleaning-schedule.md#suggest-the-days); as built and its departures below |
+| 4c | A suggested day in the Add form after switch-on, with the "today means tonight" warning | To come |
+
+## Step 4a: what each day takes (quick check)
+
+The council drew what each day takes as a row of seven levels on the weights list (`m1`, `m2`) and asked the head chef questions 1 and 4. His answer (26 November 2026) added something the council did not see: "learn then based on what days we have more staff on". So step 4 is split: 4a sets the days, 4b suggests the jobs' days, 4c is the Add form. 4a adds no page, tab, button bar or pop-up; it is a fold on a view the council chose. Quick check, no new review round.
+
+- **Is it needed?** Yes: step 4b cannot suggest a day without knowing what each day takes, and he asked for it to learn.
+- **Taps.** Head chef: Repeat tasks, Weights and days, What each day takes, Use the suggestions, Save the days: 4 taps from Repeat tasks; one tap more for each day changed by hand. A sous chef the same. With the fold closed, the line under it gives the days with no tap.
+- **Lines.** Implemented app, click-test stand-in, synthetic jobs and a made-up team count (`built/days-shots.cjs`, `built/days-counts.json`). Closed, the fold and its line are 64 px: whole job rows on the first screen go from 0 to 0 at 390 x 844, 3 to 2 at 768 x 900 and 4 to 3 at 1280 x 900; the list is 6.3 screens at 390, was 6.2. Open, the days are 922 px at 390 (1.1 screens) and 656 px at 1280. A desk job, done once, so worth the row.
+- **Contract fit.** Works: chips and the fold are existing patterns; chosen is ink, words carry every state ("Not saved.", "Saved 14:05.", "Refused: ..."), the summary line and "Light only" say it without colour; every control is 44 px; no sideways scroll at 390, 768 and 1280. The days have their own Save line, not the list's Save bar, so "Save jobs" and "Save the days" never share a button. Not evidenced: contrast was not measured again (no new colour; the chips and hint are the step 3 ones).
+- **Reference fit.** Todoist: known defaults visible and editable (his days, shown before anything is saved). Flighty: the staffing words come from data the page may already hold, never stale as live ("The team count is not up to date"). Duolingo: each tap answers at once, Saved only after the write. Headspace: "About 6 on. Suggests heavy." in plain words.
+- **A departure, his to OK.** The book suggests ("never guess one"). Here it never fills a day by itself: Use the suggestions is his tap, and Save the days a second one.
+
+Break-it findings, each checked in `tests/cleaning-days.test.js` (stand-in) or `tests/rules/cleaning.test.mjs` (emulator):
+
+| Scenario | Expected | Observed |
+| --- | --- | --- |
+| Staff write `d` by hand | Refused | Checked on the emulator: refused. A weight save leaves the days, a days save the weights |
+| Another chef saves weights while the head chef has unsaved days | Both kept | Checked: one merged write keeps the other chef's weight |
+| A refused save | Says so, keeps the change | Checked: "Refused: only the head chef and the sous chefs set the days. Nothing was saved." with the chip still on |
+| Back with unsaved days | Stays and says so | Checked, focus on Save the days |
+| An old, short, missing or unreadable team count | No suggestion, the reason in words | Checked for all four; a failed read is never "no count" |
+| A roster that is busy on Friday | Friday stays light | Checked: Friday and Saturday never take a suggestion |
+| Risk, not evidenced | A day with many people on a function, not cleaning | The suggestion counts people, not their jobs. It is a suggestion only. |
+
+## Step 4b as built: Suggest the days
+
+Implemented app on the click-test stand-in, the three built-in lists with the council's made-up weights and kinds, his starting days, Cleaning off, and seven made-up medium jobs on a Friday so the save needs three batches (`built/suggest-shots.cjs`, `built/suggest-counts.json`). Pictures: `built/suggest-390`, `-768`, `-1280` (the changes), `built/suggest-part-saved-390` (one refused, one answer lost, the rest waiting), `built/suggest-cleaning-on-390`.
+
+- **Taps.** Repeat tasks, Weights and days, Suggest the days, Save: 3 taps from Repeat tasks. Keep or Another day: one tap each, and the rest is planned again at once.
+- **Lines.** The changes view is 4.5 screens long at 390 for the lists plus seven Friday jobs (`m3`, 8 changes: 3.3), 3.1 at 768 and 2.9 at 1280. Whole change rows on the first screen above the Save bar: 0 at 390, as in the redrawn `m3`. 19 controls; none under 44 px; no sideways scroll at 390, 768 and 1280.
+
+Departures from `m3` and `m4`: quick check (26 November 2026). The first build had six. Asked, the head chef said "I'd go with their recommendation". The council's record decided each one; no new reviewers ran (a small change on a chosen view).
+
+| Departure in the first build | The council's record | Recommendation | Built |
+| --- | --- | --- | --- |
+| Only jobs that break a rule move | The head chef reviewer's fewest moves (round 1) also moves a dated job when that makes its section's heaviest night lighter; `m3` drew two such moves with Keep; 2,000 random weightings: 2.8 of 15 dated jobs moved | Back to the council's design | Fewest moves as drawn: the stove off Tuesday, the shelves under the microwave Thursday to Sunday, the Hot larder shelves Sunday to Monday, each with its reason and Keep. 300 random weightings: 2.7 dated moves (1.5 with rule breaks only), and planning again after a save moved nothing in any |
+| No Pick a date on monthly jobs | Drawn in `m3`; Todoist: a suggested day you can keep or change | Back to the council's design | Pick a date on each monthly row, from tomorrow; the picked date is his, saved as picked, with Suggest again |
+| The lead's two rules as chips, both on | "Drawn as suggestions he can change or drop" | Keep | As built; his question 5 stays open. Over 5 points never moves a dated job; the summary names any night still over 5 |
+| "Save 4 days", not "Save 20 weights and 8 days" | The keeper's side record (chosen) saves weights apart | Keep | As built: step 3 saves the weights |
+| States in words, not boxed tags | Screen designer: Refused in failure ink, what needs the chef first; Duolingo: Saved only after the answer | Keep | The green Saved stamp with the time; Waiting to send, Not sent, Refused in failure ink |
+| A shared job naming two sections stays Shared kitchen | "Ask the head chef for one named section on each" | Keep until he names them | His question 3 stays open |
+
+Contract fit: existing patterns only (the attention look, chips, the docked Save bar, the Saved stamp); every control 44 px; no sideways scroll at 390, 768 and 1280 with wider letters too. Where it goes: inline on Weights and days, no sheet; the loudest thing is the attention summary (a missed rule costs an overloaded night). On the built-in lists the book now suggests 6 changes, as `m3` drew them (`m3` showed 8 with two made-up new jobs).
+
+Break-it findings, each checked in `tests/cleaning-suggest.test.js` (stand-in), `tests/cleaning-plan.test.js` (node) or `tests/rules/cleaning.test.mjs` (emulator):
+
+| Scenario | Expected | Observed |
+| --- | --- | --- |
+| Save of 11 jobs | 5 at a time | Checked: batches of 10 writes, then 2 |
+| One job in a batch refused by the rules | The others still save | Checked: the batch is tried one job at a time; that row says Refused, the rest Saved |
+| The first batch lands, its answer is lost | Not sent, then no job saved twice | Checked: 5 Not sent, 6 Waiting to send; Send the rest counts the landed ones as Saved; every job has one open and one closed revision |
+| No signal | Nothing moves, Not sent | Checked; Send the rest saves them once the signal is back |
+| Cleaning switched on with a suggestion on screen | Nothing more saved | Checked: Save says why and moves nothing |
+| Keep, then plan again | The rest still keeps every day's level | Checked in node and on the stand-in: two heavy Grill jobs on a Monday, Keep one, the other moves instead, focus stays on the kept row; no Keep where the old day breaks a level |
+| A plan that still breaks a rule | Said in words | Checked: a Pans night at 6 points is named in the summary while that rule is on, and not once it is dropped |
+| No signal at all (the write waits) | Says so, saves once the signal is back | Checked: rows say Sending and the dock Saving, as the weights Save does while it waits (no Drop until it answers); then every row Saved, each job once |
+| A new day with a suggestion on screen | Dropped, never saved with yesterday's tomorrow | Checked: at midnight the suggestion is dropped in words and nothing moves |
+| Plan again after a save | Nothing moves, monthly jobs included | Checked in node |
+| A job with no weight | Counted, never planned | Checked: "5 jobs have no weight yet ... The book never guesses a weight", Weigh them first opens them |
+| Real revisions on the emulator | 5 in one batch, refused whole when one is stale | Checked, a job with checks and a monthly first date among them; a second move the same day allowed. 8 jobs in one batch allowed, 9 refused |
+| Risk, not evidenced | A save that straddles midnight | Each batch checks the day before it sends; a new day stops the save in words. Not run with the clock moved mid-save |
+| Not tested | A lock or a reload with a suggestion on screen | The suggestion lives in the page's memory: a lock or reload drops it. Unsaved, it counts as unsent work like unsaved weights, so a handover waits for it |
 
 ## Step 2 as built, against the previews
 
