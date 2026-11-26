@@ -199,7 +199,7 @@ function hasPrivateContact(value) {
   const gone = fn({ name: 'Jones wake', status: 'cancelled', start: '15:00', rounds: ['15:00'] });
   const moved = fn({ name: 'Brown 21st', date: day2, was: { date: today, start: at(today, '17:00'), first: at(today, '17:00'), from: at(today, '00:00'), until: at(today, '19:00') } });
   const draft = fn({ name: 'Draft do', status: 'draft' });
-  p = await L.open(b, '#/waste', { who: 'ann', extra: extra({ smith, gone, moved, draft }), wait: 1200 });   // the full band (Prep starts with the strip)
+  p = await L.open(b, '#/recipes', { who: 'ann', extra: extra({ smith, gone, moved, draft }), wait: 1200 });   // the full band (Prep starts with the strip; Orders, Wastage, Transfers, Cleaning, Today's team and the recipe card with the fold)
   await L.waitFor(p, () => document.querySelectorAll('#fn-band .fn-row').length >= 2);
   let bt = await txt(p, '#fn-band') || '';
   ok(/\+1 more/.test(bt) && (await p.$$('#fn-band .fn-row')).length === 2, 'several: two show, then "+1 more"');
@@ -346,8 +346,9 @@ function hasPrivateContact(value) {
 
   // the band the day before: an order reminder on the order day, and tomorrow's function; and the strip while scrolling
   const tm = fn({ name: 'Tomorrow do', date: tomorrow, rounds: ['12:00'] }); tm.od = today;
-  // (Prep starts with the slim strip since 19 Nov 2026, tests/prep-strip-place.test.js: the full band is checked on Wastage)
-  p = await L.open(b, '#/waste', { who: 'ann', extra: extra({ smith, tm }), wait: 1500 });
+  // (Prep starts with the slim strip since 19 Nov 2026, tests/prep-strip-place.test.js; Wastage and four more pages with
+  // the fold since 26 Nov 2026, tests/orders-functions-fold.test.js: the full band is checked on the Recipes list)
+  p = await L.open(b, '#/recipes', { who: 'ann', extra: extra({ smith, tm }), wait: 1500 });
   await L.waitFor(p, () => /Tomorrow do/.test((document.getElementById('fn-band') || {}).textContent || ''));
   const bn = (await txt(p, '#fn-band') || '').replace(/\s+/g, ' ');
   ok(/Order today\s*Short notice Stock for Tomorrow do/.test(bn) && /on the order list/.test(bn), 'order: the band reminds the kitchen to order on the order day (' + bn.slice(0, 260) + ')');
