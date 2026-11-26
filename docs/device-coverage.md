@@ -65,6 +65,8 @@ A pull request can count for more than one page; 91 matched none and are in the 
 
 ## Each page today, in the tests
 
+Since 26 Nov 2026 `tests/pages-wide.test.js` adds 1920 x 1080 with touch and with a mouse for every page below, and the five sizes for the pages marked **no** under Every-page test. The counts below are from before it.
+
 Later pull requests replace earlier ones, so the work is on each page as it is now, not on each old pull request. Test files that name the page, and how many of them name each width (approximate, from `tests/*.test.js` on 26 Nov 2026):
 
 | Page | Route | Every-page test | Own test files | Tablet | Laptop | 1920 | Wide and touch |
@@ -93,7 +95,7 @@ Later pull requests replace earlier ones, so the work is on each page as it is n
 After the cleaning sessions, one step at a time, each with the head chef's go:
 
 0. **Read the real screens. Done 26 Nov 2026.** The Screens row in Admin, Kitchen read every shared screen as 1920 x 1080 at 100 %, the book's window 1920 x 1008, touch and a mouse, and the head chef said the front of house screen is 1920 x 1080 too. The head chef's own computer is 1920 x 1080 with a mouse. The Screens row has done its job and can come out in one pull request ([The Screens row](#the-screens-row)).
-1. **Put the real sizes into the every-page test.** Add 1920 x 1080 with touch as the main input, the same with the mouse as the main input (the section and front of house screens), and 1920 x 1080 with a mouse (the head chef's computer), and add Today's team, Cleaning, the three Functions pages, Deliveries, Suppliers and the chef panel to its pages. One test-only pull request. It catches sideways scroll and errors on every page at once. A failure is a finding to fix, never a check to loosen.
+1. **Put the real sizes into the every-page test. Done 26 Nov 2026.** `tests/pages-wide.test.js` opens every page, admin tab and Manage page of `tests/pages.test.js` at 1920 x 1080 with touch and with a mouse, and the eight pages it leaves out (Today's team, the chef panel, Cleaning, `#/fn`, `#/fn/now`, `#/functions`, Deliveries and Suppliers) at all five sizes, each as someone who may use it and checked by its own address and words. Result: 0 failed of 110. No page scrolls sideways or throws an error at the kitchen's real size, with touch or with a mouse. Playwright gives a page touch or a mouse, not both at once, so these two runs cover the book's two branches, `(hover: hover) and (pointer: fine)` and the rest. What the pages do with the room is step 2.
 2. **A Where it goes pass on the service pages**, at the section size with touch, 768 and 390, with a busy-day fixture: Prep, Orders, Wastage, Transfers, Cleaning, Home, Today's team and the recipe card. The questions are the council's ([Where it goes](../.claude/skills/service-council/SKILL.md#where-it-goes-and-how-loud)), read against [design misses](design-misses.md). About six agents, one per group of pages, with the UX and interaction designer brief. The findings go into this note, page by page.
 3. **Functions on the front of house screen:** `#/fn`, `#/fn/now` and `#/functions` at that screen's size, the pages with no tablet or wide test today.
 4. **Admin and the chef panel at 1280**, then at a section size if the head chef uses them there. Already the most measured, so last.
