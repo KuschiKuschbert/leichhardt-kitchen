@@ -347,14 +347,13 @@ Before ready, on the implemented app at 390, 768 and 1280 px: every save state e
 
 ## Open with the head chef
 
-Answered on 26 November 2026 by "Yes proceed with your recommendations": build it in the recommended order; the book suggests in bulk only while Cleaning is off; the flag covers weekly and monthly jobs, not nightly Pack down.
+Answered on 26 November 2026 by "Yes proceed with your recommendations": build it in the recommended order; the book suggests in bulk only while Cleaning is off; the flag covers weekly and monthly jobs, not nightly Pack down. Answered the same day: the one word for a miss is "Missed", as Records and Cleaning say today ("That's fine"), with "not ticked by midnight" as its explanation; and Cleaning is switched on at Leichhardt first, then at the Strand.
 
 1. Do Sunday, Monday and Wednesday take heavy jobs? That is the lead's reading.
 2. "Not just limited to tasks that happen more than once a day": every rhythm, or jobs done at each service?
 3. A shared job that names sections (the pass shelves, behind the deep fryers): which one section owns it?
-4. One word for a miss: Records says "Missed" today; the designs say "Not ticked".
-5. Who sets what each day takes and presses Suggest the days: the admin, or the chefs who manage cleaning jobs?
-6. The two suggested planner rules: keep, change or drop?
+4. Who sets what each day takes and presses Suggest the days: the admin, or the chefs who manage cleaning jobs?
+5. The two suggested planner rules: keep, change or drop?
 
 Who was rostered is no longer a question for him: step 1 keeps both the closing plan and a cook's own pick, each with its source.
 
@@ -364,7 +363,23 @@ Who was rostered is no longer a question for him: step 1 keeps both the closing 
 
 | Step | What | Pull request |
 | --- | --- | --- |
-| 1 | The nightly count: the release switch and the first night, weekly and monthly jobs by root id with section, who did it and who was rostered, the size check inside the cleaning block | To come |
-| 2 | The Inbox row and that night in Records | To come |
+| 1 | The nightly count: the release switch and the first night, weekly and monthly jobs by root id with section, who did it and who was rostered, the size check inside the cleaning block | [#890](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/890), merged 26 November 2026. What it keeps: [the cleaning note](../cleaning-schedule.md#what-the-nightly-count-keeps) |
+| 2 | The Inbox row and that night in Records | Built, 26 November 2026. What the admin sees: [the cleaning note](../cleaning-schedule.md#what-the-admin-sees-of-it). As built: `built/` |
 | 3 | The weights list, weights in one side record | To come |
 | 4 | Suggested days, in bulk only while Cleaning is off | To come |
+
+## Step 2 as built, against the previews
+
+Implemented app on the click-test stand-in, synthetic data, 390 x 844, 768 x 900 and 1280 x 900 (`built/shots.cjs`, `built/counts.json`). Pictures: `built/inbox-*.png`, `built/records-night-*.png`, `built/records-night-open-*.png`.
+
+| | Preview (`m6`, `m7`) | Built |
+| --- | --- | --- |
+| The Inbox row | "Not ticked", one section in the title | "Missed", the head chef's word. One row for the night: one section named in the title, or "2 weekly or monthly cleaning jobs missed last night", with each section and job in the detail (a shared job has no section, so the row does not count sections) |
+| Inbox, screens long at 390 | 1.4 | 1.4; the row is whole on the first screen at all three widths; its button is 143 x 44 px |
+| Records night, screens long at 390 | 1.8 | 1.9 |
+| Where the miss is when opened from the Inbox, at 390 | Below the first screen, under today's red "Missed" line | The page lands on the heading, 149 px from the top, with the missed section's block whole on screen and the heading in focus |
+| Who was on | "Who was rostered", a link | "Who was on Hot larder", the page's fold, 44 px tall, closed until asked for. Not "rostered": it lists the plan and each cook's own pick, with the source said |
+| People's names | None on the face of the page | None on the face of the page. Who did a job sits behind the section's fold too ("Who did Grill's jobs" on a section that finished). A first build printed them beside each done job; that was a departure from the chosen picture and was changed before it went ready |
+| Earlier misses | One line, "also not ticked 18 November" | "Also missed Wed 18 Nov" by the job's own key, and "Last done Wed 11 Nov". A day whose jobs were not kept one by one is never called a miss |
+
+Differences that were not in a preview: a night not counted yet is its own row ("Not counted yet"); a section or shift no longer on the list is said in words; a job that was not possible sits in its section with its note. Still as before: Records' own red "Missed:" line above the block (a colour clash noted in `docs/open-work.md`), and Print and CSV, which carry none of the new lines.
