@@ -6165,14 +6165,31 @@
     // Your own section first under All on today's list (head chef, 26 Nov 2026, step 2 findings, D): the section you are
     // on today (mySecNow(): Today's team or your own pick, no read), then the rest in their usual order. Staff and leads
     // only; a chef, a section's tab, the wall board and another day's list are as they were. Start here keeps its numbers.
-    var mine = !board && !S.tab && date === dayNow() ? mySecNow() : null;
+    var mine = !S.tab && date === dayNow() ? mySecNow() : null;
     var mk = mine ? order.filter(function (k) { return k !== TONIGHT && k !== FNCOL && !!k && okey(k) === okey(mine.name); })[0] : null;
-    if (mk) order = [mk].concat(order.filter(function (k) { return k !== mk; }));
+    // The wall board's columns keep their places (head chef, 26 Nov 2026, docs/screen-1920-options/brief.md, Chosen): the
+    // kitchen's section list in its own order, your own section first, then any other section in the order it first
+    // appears, function platters and tonight's lines last. A line marked urgent no longer moves a column, and a section
+    // whose lines are all done keeps its column (drawn below), so nothing slides sideways under a finger.
+    if (board) {
+      var listed = kitSecs().map(function (s) { return okey(s.name); });
+      var rank = function (k) {
+        if (k === FNCOL) return 3e6; if (k === TONIGHT) return 3e6 + 1; if (mk && k === mk) return -1;
+        var i = k ? listed.indexOf(okey(k)) : -1;
+        return i >= 0 ? i : 1e6 + order.indexOf(k);
+      };
+      order = order.slice().sort(function (a, b) { return rank(a) - rank(b); });
+    } else if (mk) order = [mk].concat(order.filter(function (k) { return k !== mk; }));
+    // a finished section holds its column only while another still has a line to tick; once every line is done the
+    // board says so in its own words, as before
+    var anyOpen = board && shown.some(function (x) { return !(x.done && !x.deleted) || lingers(x); });
     var finUsed = false;
     var out = order.map(function (sec) {
       var all = shown.filter(function (x) { return secOf(x) === sec; });
       var live = all.filter(function (x) { return !x.deleted; });
       var rows = all.filter(function (x) { return !(x.done && !x.deleted) || lingers(x); });
+      // on the board a section with every line done keeps its column, so the others never slide into its place
+      if (!rows.length && anyOpen && live.length && sec !== TONIGHT) return '<section class="wb-col is-done" aria-label="' + esc(sec === FNCOL ? FNS : sec || 'No section') + '"><div class="nb-hd"><span>' + esc(sec === FNCOL ? FNS : sec || 'No section') + '</span>' + secBar(live) + '<span>' + live.length + '/' + live.length + '</span></div><p class="nb-empty">Nothing left to do.</p></section>';
       if (!rows.length) return '';
       var name = sec === FNCOL ? FNS : sec || (board ? 'No section' : ''), out;
       if (sec === TONIGHT) out = (fin && !board ? (finUsed = true, fin) : '') + '<div class="nb-hd nb-hd-tonight"><span>Tonight, for tomorrow</span><span>' + live.length + '</span></div><p class="nb-sd nb-tonight-sd">On tomorrow\'s list. Tick here if it gets done tonight.</p>' +
