@@ -22,6 +22,7 @@ const A = { bp: 1536, prepWall: false, css: `@media (min-width: 1536px) {
 // (Back to the prep list). Orders in two columns, down then across. From 1600 px (125 % keeps today's layout).
 const B = { bp: 1600, prepWall: true, css: `@media (min-width: 1600px) {
   .wb .nb-row .nb-more { display: inline-flex !important; }
+  .wb .nb-row .nb-t { overflow-wrap: break-word; }   /* whole words on the board's narrower rows (round 2 scores: "barramun / di") */
   .wb-col.pv-mine { order: -1; }
   .wb-cols { grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
   .o-page:not(.w-page):not(.tr-page) .o-main > .nb-rows, .o-page:not(.w-page):not(.tr-page) .nb-body > .nb-rows { column-count: 2; column-gap: 2.5rem; }
@@ -39,7 +40,7 @@ const C = { bp: 1281, prepWall: false, fold: true, css: `@media (min-width: 1281
   .nb-wrap:not(.nb-later) .nb-left > .nb-body .pv-done { column-span: all; margin-top: 0.75rem; }
   .o-page:not(.w-page):not(.tr-page) { max-width: 47rem; }
 }` };
-const DESIGNS = { A, B, C };
+const DESIGNS = process.env.ONLY ? { [process.env.ONLY]: { A, B, C }[process.env.ONLY] } : { A, B, C };
 
 async function apply(p, d) {
   await p.addStyleTag({ content: d.css });
@@ -94,6 +95,7 @@ const measure = (p, sel) => p.evaluate(sel => {
       }
     }
   }
-  fs.writeFileSync(path.join(OUT, 'metrics.json'), JSON.stringify(out, null, 1) + '\n');
+  const prev = (() => { try { return JSON.parse(fs.readFileSync(path.join(OUT, 'metrics.json'), 'utf8')); } catch (e) { return {}; } })();
+  fs.writeFileSync(path.join(OUT, 'metrics.json'), JSON.stringify(Object.assign(prev, out), null, 1) + '\n');
   await b.close(); server.close(); console.log('previews in ' + OUT); process.exit(0);
 })().catch(e => { console.error(e); process.exit(1); });
