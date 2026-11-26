@@ -63,3 +63,22 @@ Carried from `docs/open-work.md` item 5. The council does not answer these; the 
 2. **The drip tray and the OZ tank.** His list says the drip tray every night and the OZ tank twice a week; the saved Pack down steps say every 2 days from 9 November and Sunday only. Which is right? A chef changes the saved step in Repeat tasks; no second job is loaded beside it.
 3. **A missed weekly or monthly job.** Does it stay due the next day, or wait for its next turn (next week, or 28 days)? Today it waits. Staying due changes the recurrence and the rules.
 4. **A Fryers cook's Pack down.** Which Pack down does a cook on Fryers do, and is "Fryers, salads and dessert" one cleaning list? Today no Pack down is tied to Fryers, so a Fryers cook sees their section clean first and every Pack down under Rest of the kitchen.
+
+## Round 2: the design frame
+
+Written before anything was drawn by a fresh UX and interaction designer (`opus`), from the round 1 record, the packet and the baseline. Kept as given, lightly shortened.
+
+1. **Must stay visible on a 390 px phone, no tap:** the cook's section name and its own count ("0 of 9"), the Pack down reminder "Overhead shelves and frames first. Floors are last.", and at least 5 complete job rows with their boxes (today: first box at 454 px, 5 rows). The temperature wording in some form, but not ahead of the jobs. The Functions fold stays one 50 px line on a routine day. The busiest day (a function warning open, Extra large text) is Not evidenced.
+2. **Loudness budget:** one loud thing: a tick that is Not sent, refused, or has unsaved checks. Missing it, a cook leaves thinking a job is recorded when it is not. Today the loudest thing is the orange handwritten "0/50", and missing it costs nothing: it goes quiet. The temperature line is a standing reminder at close, not a deadline: quiet.
+3. **Devices:** phone, the design width, one column, jobs start high. Tablet (768): more rows, nothing else, same order. Section screen (1920, touch): use the 340 px of empty space each side, or the full width, to show where the cook stands; from the bench a cook reads their own section's name and count and whose list leads ("This screen: Grill. You: Pans"), never small text at x 1350; bench reading Not evidenced. Laptop: chef views out of scope. The tick never moves between devices.
+4. **Placements:**
+   - Title and 0/50: (a) one line with the cook's section count first; (b) the kitchen count in the Rest of the kitchen heading, said once where it applies.
+   - Read line: (a) merged into the title line (about 44 px back); (b) as it is. No fold: Go to Pack down is a jump.
+   - Temperature reminder: (a) one quiet inline line, the contract words in full; (b) a link in the read line (risks "must be shown"); (c) below the cook's own section (same question).
+   - Coverage hint: (a) removed for staff; (b) under Shared kitchen, beside the jobs it describes; (c) a fold (breaks "nothing folded": the head chef's call).
+   - Own section and Pack down: first, inline. A section screen with a cook from another section: (a) the cook's own Pack down leads (against the order fixed at read); (b) a large two-name heading with a 44 px jump.
+   - Shared kitchen, Rest, Floors: inline and open (25 November). Folding is a rule change for the head chef.
+   - A row's small line: drop the section name when it repeats the heading; keep the state and how often.
+   - Who did this: the approved sheet stays (not a new pop-up). Removing it is a rule change.
+   - Functions fold: unchanged.
+5. **Fiftieth use:** scrolling past four lines of the same notices every night; "Grill · To do" nine times; on a section screen the second tap for every job (about 10 a night); a Pans cook scrolling past Grill's 9 rows to reach their own; a temperature line at 22:00 nobody reads. No design may move the next box after a tick (S1).

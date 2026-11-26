@@ -1,0 +1,382 @@
+{
+ "kind": "Preview inside the implemented app's real Cleaning page (click-test stand-in, synthetic data). The shell, top bar, tab bar, rows, tick, Undo and Who did this are the app's; the parts marked data-design are rearranged or drawn in and put back after every redraw.",
+ "commit": "33eba568",
+ "viewports": "390 x 844, 768 x 1024, 1920 x 1080 (section screen: shared, touch, set to Grill)",
+ "results": {
+  "a-cook-390": {
+   "rowsTotal": 52,
+   "rowsInView": 6,
+   "firstBoxTop": 344,
+   "screensLong": 5.5,
+   "sideways": false,
+   "checks": {
+    "screensLong": 5.5,
+    "sideways": false,
+    "controls": 0,
+    "under44": [],
+    "lowestContrast": {
+     "ratio": 6.73,
+     "fontPx": 13,
+     "large": false,
+     "passes": true,
+     "text": "0 of 50 in the kitchen"
+    },
+    "lowestControlEdge": null,
+    "textUnder12px": [],
+    "focus": null
+   },
+   "s1": {
+    "tried": true,
+    "nextBoxY": {
+     "before": 459,
+     "afterTick": 459,
+     "afterUndo": 459
+    },
+    "moved": false,
+    "stillApplied": true
+   },
+   "notSent": {
+    "row": "Wipe under grill",
+    "meta": "Not sent",
+    "visible": true
+   }
+  },
+  "a-cook-768": {
+   "rowsTotal": 52,
+   "rowsInView": 9,
+   "firstBoxTop": 430,
+   "screensLong": 3.7,
+   "sideways": false,
+   "checks": {
+    "screensLong": 3.7,
+    "sideways": false,
+    "controls": 0,
+    "under44": [],
+    "lowestContrast": {
+     "ratio": 6.73,
+     "fontPx": 13,
+     "large": false,
+     "passes": true,
+     "text": "0 of 50 in the kitchen"
+    },
+    "lowestControlEdge": null,
+    "textUnder12px": []
+   }
+  },
+  "a-station-1920": {
+   "rowsTotal": 52,
+   "rowsInView": 10,
+   "firstBoxTop": 430,
+   "screensLong": 3.4,
+   "sideways": false,
+   "checks": {
+    "screensLong": 3.4,
+    "sideways": false,
+    "controls": 0,
+    "under44": [],
+    "lowestContrast": {
+     "ratio": 6.73,
+     "fontPx": 13,
+     "large": false,
+     "passes": true,
+     "text": "0 of 50 in the kitchen"
+    },
+    "lowestControlEdge": null,
+    "textUnder12px": []
+   },
+   "s1": {
+    "tried": true,
+    "nextBoxY": {
+     "before": 537,
+     "afterTick": 537,
+     "afterUndo": null
+    },
+    "moved": false,
+    "stillApplied": true
+   }
+  },
+  "a-station-pans-cook-1920": {
+   "rowsTotal": 52,
+   "rowsInView": 9,
+   "firstBoxTop": 488,
+   "screensLong": 3.5,
+   "sideways": false,
+   "checks": {
+    "screensLong": 3.5,
+    "sideways": false,
+    "controls": 0,
+    "under44": [],
+    "lowestContrast": {
+     "ratio": 6.73,
+     "fontPx": 13,
+     "large": false,
+     "passes": true,
+     "text": "0 of 50 in the kitchen"
+    },
+    "lowestControlEdge": null,
+    "textUnder12px": []
+   }
+  },
+  "b-cook-390": {
+   "rowsTotal": 52,
+   "rowsInView": 6,
+   "firstBoxTop": 317,
+   "screensLong": 5.4,
+   "sideways": false,
+   "checks": {
+    "screensLong": 5.4,
+    "sideways": false,
+    "controls": 20,
+    "under44": [],
+    "lowestContrast": {
+     "ratio": 5.05,
+     "fontPx": 15,
+     "large": false,
+     "passes": true,
+     "text": "Pack down"
+    },
+    "lowestControlEdge": null,
+    "textUnder12px": [],
+    "focus": {
+     "reached": true,
+     "on": "Go to Pack down",
+     "focusVisible": true,
+     "outline": "solid 3px",
+     "offset": "2px",
+     "ringAgainstSurround": 3.33
+    }
+   },
+   "s1": {
+    "tried": true,
+    "nextBoxY": {
+     "before": 446,
+     "afterTick": 446,
+     "afterUndo": 446
+    },
+    "moved": false,
+    "stillApplied": true
+   },
+   "notSent": {
+    "row": "Wipe under grill",
+    "meta": "Not sent",
+    "visible": true
+   }
+  },
+  "b-cook-768": {
+   "rowsTotal": 52,
+   "rowsInView": 9,
+   "firstBoxTop": 382,
+   "screensLong": 3.7,
+   "sideways": false,
+   "checks": {
+    "screensLong": 3.7,
+    "sideways": false,
+    "controls": 20,
+    "under44": [],
+    "lowestContrast": {
+     "ratio": 5.05,
+     "fontPx": 15,
+     "large": false,
+     "passes": true,
+     "text": "Pack down"
+    },
+    "lowestControlEdge": null,
+    "textUnder12px": []
+   }
+  },
+  "b-station-1920": {
+   "rowsTotal": 52,
+   "rowsInView": 23,
+   "firstBoxTop": 380,
+   "screensLong": 2.8,
+   "sideways": false,
+   "checks": {
+    "screensLong": 2.8,
+    "sideways": false,
+    "controls": 20,
+    "under44": [],
+    "lowestContrast": {
+     "ratio": 5.05,
+     "fontPx": 15,
+     "large": false,
+     "passes": true,
+     "text": "Pack down"
+    },
+    "lowestControlEdge": null,
+    "textUnder12px": []
+   },
+   "s1": {
+    "tried": true,
+    "nextBoxY": {
+     "before": 482,
+     "afterTick": 482,
+     "afterUndo": null
+    },
+    "moved": false,
+    "stillApplied": true
+   }
+  },
+  "b-station-pans-cook-1920": {
+   "rowsTotal": 52,
+   "rowsInView": 23,
+   "firstBoxTop": 459,
+   "screensLong": 2.8,
+   "sideways": false,
+   "checks": {
+    "screensLong": 2.8,
+    "sideways": false,
+    "controls": 20,
+    "under44": [],
+    "lowestContrast": {
+     "ratio": 5.05,
+     "fontPx": 16,
+     "large": false,
+     "passes": true,
+     "text": "Go to Pans pack down"
+    },
+    "lowestControlEdge": {
+     "ratio": 4.76,
+     "passes": true,
+     "on": "Go to Pans pack down",
+     "how": "border"
+    },
+    "textUnder12px": []
+   }
+  },
+  "c-cook-390": {
+   "rowsTotal": 52,
+   "rowsInView": 7,
+   "firstBoxTop": 281,
+   "screensLong": 1.6,
+   "sideways": false,
+   "checks": {
+    "screensLong": 1.6,
+    "sideways": false,
+    "controls": 92,
+    "under44": [],
+    "lowestContrast": {
+     "ratio": 4.76,
+     "fontPx": 15,
+     "large": false,
+     "passes": true,
+     "text": "Shared kitchen"
+    },
+    "lowestControlEdge": null,
+    "textUnder12px": [],
+    "focus": {
+     "reached": true,
+     "on": "Temperature logs",
+     "focusVisible": true,
+     "outline": "solid 3px",
+     "offset": "2px",
+     "ringAgainstSurround": 3.33
+    }
+   },
+   "s1": {
+    "tried": true,
+    "nextBoxY": {
+     "before": 396,
+     "afterTick": 396,
+     "afterUndo": 396
+    },
+    "moved": false,
+    "stillApplied": true
+   },
+   "notSent": {
+    "row": "Wipe under grill",
+    "meta": "Not sent",
+    "visible": true
+   }
+  },
+  "c-cook-768": {
+   "rowsTotal": 52,
+   "rowsInView": 9,
+   "firstBoxTop": 358,
+   "screensLong": 1.2,
+   "sideways": false,
+   "checks": {
+    "screensLong": 1.2,
+    "sideways": false,
+    "controls": 92,
+    "under44": [],
+    "lowestContrast": {
+     "ratio": 4.76,
+     "fontPx": 15,
+     "large": false,
+     "passes": true,
+     "text": "Shared kitchen"
+    },
+    "lowestControlEdge": null,
+    "textUnder12px": []
+   }
+  },
+  "c-station-1920": {
+   "rowsTotal": 52,
+   "rowsInView": 11,
+   "firstBoxTop": 358,
+   "screensLong": 1.1,
+   "sideways": false,
+   "checks": {
+    "screensLong": 1.1,
+    "sideways": false,
+    "controls": 92,
+    "under44": [],
+    "lowestContrast": {
+     "ratio": 4.76,
+     "fontPx": 15,
+     "large": false,
+     "passes": true,
+     "text": "Shared kitchen"
+    },
+    "lowestControlEdge": null,
+    "textUnder12px": []
+   },
+   "s1": {
+    "tried": true,
+    "nextBoxY": {
+     "before": 465,
+     "afterTick": 465,
+     "afterUndo": null
+    },
+    "moved": false,
+    "stillApplied": true
+   }
+  },
+  "c-station-pans-cook-1920": {
+   "rowsTotal": 52,
+   "rowsInView": 11,
+   "firstBoxTop": 326,
+   "screensLong": 1.1,
+   "sideways": false,
+   "checks": {
+    "screensLong": 1.1,
+    "sideways": false,
+    "controls": 88,
+    "under44": [],
+    "lowestContrast": {
+     "ratio": 4.76,
+     "fontPx": 15,
+     "large": false,
+     "passes": true,
+     "text": "Pack down"
+    },
+    "lowestControlEdge": null,
+    "textUnder12px": []
+   }
+  },
+  "name-clean-down-390": {
+   "rowsTotal": 52,
+   "rowsInView": 5,
+   "firstBoxTop": 454,
+   "screensLong": 5.4,
+   "sideways": false
+  },
+  "name-clean-down-1920": {
+   "rowsTotal": 52,
+   "rowsInView": 9,
+   "firstBoxTop": 504,
+   "screensLong": 3.4,
+   "sideways": false
+  }
+ }
+}
