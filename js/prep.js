@@ -7461,7 +7461,9 @@
       chefTile('prep-history', 'Prep', prep ? prep.filter(function (x) { return x.done; }).length + ' of ' + prep.length + ' done' : prepWait, dayNow()) +
       chefTile('order-history', 'Orders', orders ? orders.filter(function (x) { return !x.ordered; }).length + ' still to order' : orderWait, dayNow()) +
       chefTile('plan', "Today's team", teamText) + '</div></section>' +
-      '<section class="set-block"><h3 class="a-ch-h">Run the shift</h3><div class="btn-row"><button type="button" class="btn dark" data-p="c-tab" data-t="todo">Chef to-do</button>' +
+      // the one orange button is the job that needs doing: with no team saved it is Set today's team, as on the admin Inbox
+      // (head chef, 27 Nov 2026, step 4); otherwise Chef to-do, as before
+      '<section class="set-block"><h3 class="a-ch-h">Run the shift</h3><div class="btn-row">' + (need === 'unset' && chefTabAllowed('plan') ? '<button type="button" class="btn dark" data-p="c-tab" data-t="plan">Set today\'s team</button><button type="button" class="btn" data-p="c-tab" data-t="todo">Chef to-do</button>' : '<button type="button" class="btn dark" data-p="c-tab" data-t="todo">Chef to-do</button>') +
       (chefTabAllowed('notes') ? '<button type="button" class="btn" data-p="c-tab" data-t="notes">Write a shift ping</button>' : '') +
       (chefTabAllowed('mail') ? '<button type="button" class="btn" data-p="c-tab" data-t="mail">Kitchen mail</button>' : '') +
       '<a class="btn" href="#/fn/now">Functions service view</a></div></section>';

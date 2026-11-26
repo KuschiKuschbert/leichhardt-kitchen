@@ -29,6 +29,24 @@ const store = p => p.evaluate(() => window.__fake.dump());
     await p.context().close();
   }
 
+  // the chef Dashboard: the one orange button is Set today's team while no team is saved, Chef to-do once one is
+  {
+    const today = L.ymd(new Date(L.NOW)), dark = p => p.$$eval('.ad-main .btn.dark', e => e.filter(x => x.getClientRects().length).map(x => x.textContent.trim()));
+    let p = await L.open(b, '#/chef', { who: 'sam', width: 1920, height: 1008, touch: false, wait: 1800 });
+    await L.waitFor(p, () => /Set the team/.test(document.body.textContent), null, 8000).catch(() => {});
+    let d = await dark(p);
+    ok(d.length === 1 && d[0] === "Set today's team", 'chef Dashboard, no team saved: the one orange button is Set today\'s team (' + JSON.stringify(d) + ')');
+    await p.click('.ad-main .btn.dark'); await L.settle(p, 500);
+    ok(await p.evaluate(() => (window.LK_PREP && window.LK_PREP.state || {}).ctab) === 'plan', 'chef Dashboard: it opens Today\'s team');
+    ok(!p.errors.length, 'chef Dashboard: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+    p = await L.open(b, '#/chef', { who: 'sam', width: 1920, height: 1008, touch: false, wait: 1800, extra: { [K('team', today)]: { day: today, on: [{ id: 'bo', sh: 'lunch', sec: '' }], at: L.NOW - 3600000, by: 'sam' } } });
+    await L.waitFor(p, () => /Plan saved/.test(document.body.textContent), null, 8000).catch(() => {});
+    d = await dark(p);
+    ok(d.length === 1 && d[0] === 'Chef to-do', 'chef Dashboard, a team saved: Chef to-do is the orange button, as before (' + JSON.stringify(d) + ')');
+    await p.context().close();
+  }
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });
