@@ -155,7 +155,7 @@ Not evidenced: weekly volume; pans, side views, builds.
 
 ## The blend (lead's combined proposal after scoring, 26 Nov 2026)
 
-**Review status: a lead synthesis.** Built from the seven scorers' take and reject lists; focused follow-up from the UX scorer, the keeper and the screen designer recorded in the brief. Previews: `previews/M1-ask-390.png` to `M6-stale-390.png`, with `M3-list` and `M4-ready` at 768, 1280 and 1920; all on one sheet: `previews/blend.png`.
+**Review status: a lead synthesis.** Built from the seven scorers' take and reject lists; focused follow-up from the UX scorer, the keeper and the screen designer recorded in the brief. Previews: `previews/M1-ask-390.png` to `M6-stale-390.png` (with `M4b-shown`), and `M3-list`, `M4-ready` and `M4b-shown` at 768, 1280 and 1920; on one sheet: `previews/blend.png`.
 
 **Central idea.** A's flow on C's path. The chef asks Claude from the book's own note, in one name. Claude draws overnight in its own nightly job. Next day, the chef finds the dish under a "Claude's plates" chip in Recipes & drawings, and sees Claude's plate full size on the canvas, where hand fixes happen. Save keeps whichever plate is on screen.
 
@@ -163,25 +163,33 @@ Not evidenced: weekly volume; pans, side views, builds.
 - **Path** (C): a request saved through `W()`, so the rules decide who may ask (head chef and sous chefs). A nightly step in its own job, with its own time limit, after the analysis. A slow or failed night never stops the Records count (keeper, skeptic). About US$0.03 a plate warm. No Blaze, no security header change, no access code outside the rules.
 - **Asked** (M2): on reopening the drawing, a quiet line in the note: "Asked Claude to draw this tonight. Its plate shows here tomorrow, and in Recipes & drawings under Claude's plates", with Cancel the ask.
 - **Ready** (M3): a chip "Claude's plates · 3" in the existing chip row of Recipes & drawings, second in the row and only while plates are ready. It filters the list, and each row says "Claude's plate ready, drawn last night". No new page, and no notice on Home, the work pages or a ping, so no OK is needed under service rule 2.
-- **Compare and keep** (M4, A and the new starter):
-  - Opening the drawing shows Claude's plate full size on the canvas.
-  - The note says "Claude's plate, drawn last night. Save keeps the plate on screen", with Show the book's (a swap, equal weight).
-  - There is no separate Keep. Save is the one commit, so the Pass labels come out as today.
+- **Compare and keep** (M4, M4b; A, the new starter, and the follow-up):
+  - Opening the drawing shows the plate that is saved, or the draft on this device, never replacing either.
+  - The note leads with "Claude's plate from last night is ready", with Show Claude's plate (M4).
+  - Shown, Claude's plate is full size on the canvas, and the note says "Claude's plate is on screen. Save keeps it", with Show the book's (M4b). The screen designer asked for the note to say which plate is on screen. The UX designer warned that habit Saves could keep Claude's plate by accident.
+  - There is no separate Keep. Save is the one commit, so the Pass labels come out as today, and it clears Claude's plate from the chip in the same batch (keeper).
+  - Choosing the book's plate unchanged also clears it, with a decline write (keeper).
 - **The loud line** (all): food left off that a guest sees, in the amber attention line, with Add it and Leave it off as 44 px links (screen designer).
 - **Failed** (M5): red words in the note (`--bad-on-dark`), the book's plate stays, Ask again tonight.
 - **Stale** (M6): the recipe changed after Claude drew it (the card's signature is checked), so its plate is not shown, with Ask again tonight.
-- **No new marker.** A kept Claude plate is saved as not book-made (no `layout.auto`). `redrawFrom()` then never redraws it (`js/smart.js`, read in source only: the `!x.layout.auto` return), so there is no departure from Keep until redraw. A failing-first case in `tests/autodraw.test.js` comes with the build.
+- **No new marker.** A kept Claude plate is saved with `layout.auto` and without `lv` (the keeper's change). `redrawFrom()` then keeps it as it is (Keep until redraw: an `lv` below 2 is never drawn again), and today's save slip and its red "no Pass label" line still cover it (`js/smart.js`, read in source only). The slip's words name Claude's plate, not "the older plate". A failing-first case in `tests/autodraw.test.js` comes with the build.
+- **Where it lives** (the keeper):
+  - One private document per dish, `claude/<rid>`, holds the state, the card's signatures at the ask, and Claude's parts and places, never SVG. It is not a field on `drawings/<id>`, which anyone may read and which `publicDrawings` copies.
+  - Reads: opening Recipes & drawings is one query (1 to 3 reads), not day-cached, so a late night run still shows. Opening a drawing is 1 read. The nightly step is about 3 reads a dish.
+  - Rules: recipe managers only. A client may write only `asked`, `by` and `at`, through `recipeWrite()` with a key check. The rules get looser, so publish them before the code.
+- **The note on a phone** (found in the preview): with a third button the note's actions overflow at 390 px, so the row wraps (M1, M4). On a dish with a long "Drawn from their recipes" line, the note then reaches the top of the board. Build: when Claude's plate is ready, the note leads with it and folds the recipe lines; note buttons at 44 px (the screen designer measured Show the book's at about 38 px).
+- **Wide screens** (UX follow-up): from 1280 px, both plates side by side, with the note beside them, not over the food. Not in the previews: Not evidenced.
 - **Boards:** offered.
 - **Stage 0, optional:** the bake-off's 81 answers, kept on the owner's Mac (`scripts/ai-bakeoff/results/`, not in the repo), could fill the chip at no new cost. That needs the files brought over, and each recipe's signature checked against 26 Nov.
 
 | | Blend |
 | --- | --- |
-| Taps for a Claude plate | Day 1: Draw it for me (1), Ask Claude tonight (1), Save the book's for now (1). Day 2: Recipes & drawings (about 1 to 2), the chip (1), the dish (1), Save (1). About 7 to 8 over two days; 2 to 3 for each further dish (Preview) |
+| Taps for a Claude plate | Day 1: Draw it for me (1), Ask Claude tonight (1), Save the book's for now (1). Day 2: Recipes & drawings (about 1 to 2), the chip (1), the dish (1), Show Claude's plate (1), Save (1). About 8 to 9 over two days; 3 to 4 for each further dish (Preview) |
 | Plate on the 390 px opening screen | Full size on the canvas under the note (M4). The book's note on this dish is long already (M1, M2) |
 | Navigation levels | 0 new (a chip in an existing page) |
 | New pieces | 1 note button, note lines, 1 chip, 1 row line |
 | Build size | About 4 pull requests: the request and its rules; the nightly step in its own job; the note, chip and row line; tests (rules emulator, autodraw, stale, a node test with a stand-in API) |
-| New reads, rules | A request write per ask. Reading the ready list for the chip: Not evidenced, the keeper's follow-up. A new rule for the requests (publish rules before the code) |
+| New reads, rules | A write per ask; 1 query (1 to 3 reads) when Recipes & drawings opens; 1 read when a drawing opens; about 3 reads a dish at night. A new private collection `claude/` with its rules (looser: publish before the code) |
 | Needs from the head chef | Reversing 21 Oct and 15 Nov; the request rules; the key as an Actions secret; extending the save slip to name food left off (a proposed change). No Blaze, no header change |
 | Cost a plate | About US$0.03 |
 | Risk | A day's wait. The chip is new to find. A Save is not blocked by the amber line: the cook wanted Keep to wait for Add it or Leave it off, recorded as a disagreement |
