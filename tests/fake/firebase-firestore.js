@@ -248,6 +248,8 @@ function colRefused(ref, list) {
   if (c === 'adminDevices') return list || !(rawOwner(ref) || rawPlatform(ref) || authUid(ref) && rel[1] === authUid(ref));
   if (c === 'sessions') return list || !authUid(ref) || rel[1] !== authUid(ref);
   if (c === 'push' || c === 'tries' || c === 'proofs') return true;
+  // screens/<uid>: the Screens row was added and removed on 26 Nov 2026; the rules refuse it to everyone, the admin too
+  if (c === 'screens') return true;
   if (rawOwner(ref) && !list && c === 'config' && ['main', 'admins'].includes(rel[1])) return false;
   if (isAdmin(ref)) return false;
   // only the head chef's Google account: PIN fingerprints, the usage counts, the minutes' earlier versions, and the

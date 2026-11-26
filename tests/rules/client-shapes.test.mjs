@@ -855,7 +855,7 @@ row('js/prep.js: an April Fools record in another person\'s name (never sent)', 
   run: (db, w, r) => { const o = w === 'ann' ? 'sam' : 'ann'; return W(r, [['set', FOOL(o), Object.assign(foolRec(), { by: o })]]); } });
 row('js/prep.js: an April Fools record for another day (never sent)', { ok: [], asks: [],
   prep: (r, w) => put({ [`fools/2027-04-02_${w}`]: null }), run: (db, w, r) => W(r, [['set', `fools/2027-04-02_${w}`, { day: '2027-04-02', at: Date.now() }]]) });
-// Screens the book runs on (26 Nov 2026 to 26 Nov 2026, docs/device-coverage.md): the Screens row is gone, so the
+// Screens the book runs on (added and removed 26 Nov 2026, docs/device-coverage.md): the Screens row is gone, so the
 // rules refuse screens/<device uid> to everyone, writes and the admin's list alike (stricter, published after the code)
 const SCR = r => `screens/${UID[r]}`;
 const scrRec = () => ({ sw: 1920, sh: 1080, w: 1920, h: 1008, dpr: 1, tp: 10, ptr: 'coarse', mouse: true, hov: true, app: true, kind: 'shared', sec: '', at: Date.now() });
