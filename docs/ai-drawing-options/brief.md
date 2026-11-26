@@ -252,4 +252,20 @@ No Blaze and no security header change.
 - The packet first said the head chef picked neither "on 3 of 4 boards". In fact, of the 8 boards and platters, Claude won 5 and neither won 3.
 - The cost of a single cold tap is about US$0.19 (measured once), not the warm US$0.03. The same holds overnight: the prompt is cached for minutes, so the first plate of each night pays about US$0.19 and only further plates that night pay about US$0.03.
 
-**Head chef's choice:** waiting.
+## Chosen (26 Nov 2026)
+
+**The blend**, in the head chef's words: "we take the blend yes", and "for now I'd like to keep the drawings we already have". Stage 0 is not taken: the bake-off's 81 plates are not filled in, and no saved drawing changes unless a chef asks Claude and saves. Recorded in `docs/head-chef-decisions.md`.
+
+**Build plan**, in small pull requests, each with its tests:
+1. **The rules and the store.** A private `claude/<rid>` collection for head chefs and sous chefs. A client writes only an ask (`asked`, `by`, `at`) or a decline. Rules emulator rows: head and sous chefs may ask; staff, function-only and signed out are refused; a client cannot write a plate. The rules get looser, so publish them before the code.
+2. **The nightly step.** It runs in its own job and time limit, after the analysis, and reads the asks, the cards and the library. The Claude API key is a GitHub Actions secret, which the owner adds. It checks each card's signature before paying, stops at a nightly cap, writes Claude's parts and places, and keeps "not drawn yet" apart from failed. A node test runs it against a stand-in API, covering the cap, a cut-off answer, an unknown piece, a stale card, a skipped night and a rerun that pays nothing twice.
+3. **The studio and the chip.**
+   - The studio: Ask Claude tonight and Cancel the ask in the note; the note's ready, shown, failed and stale lines; Show Claude's plate and Show the book's.
+   - Saving: Save keeps the plate on screen and clears the ask in the same batch, with a decline when the book's plate is kept. A kept Claude plate is saved with `layout.auto` and no `lv`.
+   - The slip: it names Claude's plate and any food left off.
+   - Recipes & drawings: the Claude's plates chip.
+   - The note on a phone: its buttons wrap and are 44 px, and the recipe lines fold when Claude's plate is ready.
+   - Tests: a failing-first case in `tests/autodraw.test.js`, click tests at 390, 768 and 1280 px, and a read-budget line.
+4. **Then:** both plates side by side from 1280 px (the UX designer's point), only after step 3 is in use.
+
+**Head chef's choice:** the blend (above).
