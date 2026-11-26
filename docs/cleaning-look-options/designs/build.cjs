@@ -134,6 +134,26 @@ const C = function () {
   window.dzStrip(lead, leadName); window.dzRestStrip(page);
 };
 
+
+// M, the mix the scorers converged on: A everywhere; from 1100 px B's two columns (not sticky) across the whole width;
+// on a shared screen with a cook from another section, B's "You: Pans" band with A's quiet outline button, on every width.
+const M = function () {
+  var page = document.querySelector('#cleaning-root .cln-page'); if (!page || page.dataset.dz) return;
+  window.dzA(); page.dataset.dz = 'm';
+  var mine = page.querySelector('.cln-mine'), body = page.querySelector('.cln-body'), who = window.dzWho(page); if (!mine || !body) return;
+  if (who.screen) {
+    var title = mine.querySelector('.cln-mine-title'), small = title.querySelector('small'), jump = page.querySelector('.dz-jump');
+    title.querySelector('span').textContent = 'This screen: ' + who.name; if (small) small.remove();
+    if (who.own && jump) { var band = document.createElement('div'); band.className = 'dz-you is-quiet'; band.setAttribute('data-design', ''); var theirs = [].filter.call(page.querySelectorAll('.cln-body .cln-packdown-group'), function (g) { return new RegExp('^' + who.own + ': pack down', 'i').test((g.querySelector('.nb-hd > span') || {}).textContent || ''); })[0], tc = window.dzCount(theirs);
+      band.innerHTML = '<b>You: ' + who.own + (theirs ? ', ' + tc[0] + ' of ' + tc[1] : '') + '</b>'; band.appendChild(jump); mine.insertBefore(band, mine.firstChild); }
+  }
+  var rest = document.createElement('div'); rest.className = 'dz-rest';
+  [].slice.call(body.children).forEach(function (c) { if (c !== mine) rest.appendChild(c); });
+  body.appendChild(rest); body.classList.add('dz-split', 'is-flow');
+  if (!rest.querySelector('.cln-rest-title')) rest.insertAdjacentHTML('afterbegin', '<h3 class="cln-rest-title" data-design>Rest of the kitchen</h3>');
+  for (var n = page.parentElement; n && n !== document.body; n = n.parentElement) if (getComputedStyle(n).maxWidth !== 'none' && innerWidth >= 1100) n.style.maxWidth = 'none';
+};
+
 const CSS = `
 .cln-page .dz-prog { text-align: right; font-family: var(--body); }
 .cln-page .dz-prog b { display: block; font: 700 1.25rem/1.2 var(--display); color: var(--ink); white-space: nowrap; }
@@ -160,6 +180,12 @@ const CSS = `
   .cln-page .dz-split > .dz-rest > .cln-rest-title:first-child { margin-top: .4rem; }
   .cln-page .dz-panel .nb-t { font-size: 1.5rem; }
 }
+.cln-page .dz-you.is-quiet { border-width: 2px; background: var(--paper); }
+.cln-page .dz-you.is-quiet .btn { margin: 0; }
+@media (min-width: 1100px) {
+  .cln-page .dz-split.is-flow > .cln-mine { grid-column: 1; position: static; }
+  .cln-page .dz-split.is-flow > .dz-rest { grid-column: 2; grid-row: 1; }
+}
 /* C */
 .cln-page .dz-folds { margin-top: 1rem; }
 .cln-page .dz-fold { border-top: 1px solid var(--line); }
@@ -174,7 +200,7 @@ const CSS = `
 }
 `;
 
-const DESIGNS = { a: A, b: B, c: C };
+const DESIGNS = { a: A, b: B, c: C, m: M };
 
 /* ---------- opening the real page as each person ---------- */
 const SIZES = { 390: [390, 844], 768: [768, 1024], 1920: [1920, 1080] };
@@ -187,10 +213,10 @@ async function station(picked) {
 }
 async function apply(p, key) {
   await p.addStyleTag({ content: CSS });
-  await p.evaluate(([common, fn]) => {
-    (new Function('(' + common + ')()'))(); window.dzApply = new Function('(' + fn + ')()');
+  await p.evaluate(([common, fn, a]) => {
+    (new Function('(' + common + ')()'))(); window.dzA = new Function('(' + a + ')()'); window.dzApply = new Function('(' + fn + ')()');
     window.dzApply(); new MutationObserver(() => window.dzApply()).observe(document.getElementById('cleaning-root'), { childList: true, subtree: false });
-  }, [COMMON.toString(), DESIGNS[key].toString()]);
+  }, [COMMON.toString(), DESIGNS[key].toString(), A.toString()]);
   await F.L.settle(p, 350);
 }
 // what the opening screen shows (the same count as the baseline)
