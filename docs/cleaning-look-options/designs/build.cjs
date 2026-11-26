@@ -143,13 +143,17 @@ const M = function () {
   var mine = page.querySelector('.cln-mine'), body = page.querySelector('.cln-body'), who = window.dzWho(page); if (!mine || !body) return;
   if (who.screen) {
     var title = mine.querySelector('.cln-mine-title'), small = title.querySelector('small'), jump = page.querySelector('.dz-jump');
-    title.querySelector('span').textContent = 'This screen: ' + who.name; if (small) small.remove();
+    title.querySelector('span').textContent = 'This screen: ' + who.name; if (small) small.remove(); title.classList.add('dz-screen-title');
+    // the follow-up: on a shared screen the header does not repeat a section's count; the kitchen's stays
+    var pb = page.querySelector('.dz-prog b'); if (pb) pb.remove();
     if (who.own && jump) { var band = document.createElement('div'); band.className = 'dz-you is-quiet'; band.setAttribute('data-design', ''); var theirs = [].filter.call(page.querySelectorAll('.cln-body .cln-packdown-group'), function (g) { return new RegExp('^' + who.own + ': pack down', 'i').test((g.querySelector('.nb-hd > span') || {}).textContent || ''); })[0], tc = window.dzCount(theirs);
       band.innerHTML = '<b>You: ' + who.own + (theirs ? ', ' + tc[0] + ' of ' + tc[1] : '') + '</b>'; band.appendChild(jump); mine.insertBefore(band, mine.firstChild); }
   }
   var rest = document.createElement('div'); rest.className = 'dz-rest';
   [].slice.call(body.children).forEach(function (c) { if (c !== mine) rest.appendChild(c); });
   body.appendChild(rest); body.classList.add('dz-split', 'is-flow');
+  // the follow-up: counts in words, and no "+ repeats" where the plain hint already says it
+  page.querySelectorAll('.cln-group-count').forEach(function (c) { var m = /(\d+)\/(\d+)/.exec(c.textContent); if (m) { c.textContent = m[1] + ' of ' + m[2]; c.setAttribute('data-design', ''); } });
   if (!rest.querySelector('.cln-rest-title')) rest.insertAdjacentHTML('afterbegin', '<h3 class="cln-rest-title" data-design>Rest of the kitchen</h3>');
   for (var n = page.parentElement; n && n !== document.body; n = n.parentElement) if (getComputedStyle(n).maxWidth !== 'none' && innerWidth >= 1100) n.style.maxWidth = 'none';
 };
@@ -181,6 +185,9 @@ const CSS = `
   .cln-page .dz-panel .nb-t { font-size: 1.5rem; }
 }
 .cln-page .dz-you.is-quiet { border-width: 2px; background: var(--paper); }
+.cln-page .cln-mine-title.dz-screen-title { font-size: 2.4rem; }
+.cln-page .cln-group-count[data-design] { text-transform: none; letter-spacing: 0; }
+@media (min-width: 1100px) { .cln-page .dz-split.is-flow > .dz-rest .nb-row { max-width: 60rem; } }
 .cln-page .dz-you.is-quiet .btn { margin: 0; }
 @media (min-width: 1100px) {
   .cln-page .dz-split.is-flow > .cln-mine { grid-column: 1; position: static; }
@@ -271,9 +278,23 @@ async function notSent(p) {
         const p = await station(picked); await apply(p, key);
         const m = await F.measure(p); await shoot(p, key + '-' + name + '-1920', { checks: m });
         if (name === 'station') out[key + '-station-1920'].s1 = await tickStill(p, true);
+        if (name === 'station-pans-cook' && key === 'm') {
+          await p.click('.dz-you .btn'); await F.L.settle(p, 500);
+          const id = await p.evaluate(() => { const g = [...document.querySelectorAll('.cln-packdown-group')].find(x => /^Pans: pack down/i.test(x.querySelector('.nb-hd > span').textContent)); const b = g && g.querySelector('[data-cln="flow-quick"]:not([disabled])'); return b && b.getAttribute('data-id'); });
+          const pos = () => p.evaluate(i => { const row = document.querySelector('.nb-row [data-id="' + i + '"]').closest('.nb-row'), nx = row.nextElementSibling; return { next: nx ? Math.round(nx.querySelector('.nb-box').getBoundingClientRect().top + scrollY) : null, band: document.querySelector('.dz-you b').textContent, heading: [...document.querySelectorAll('.cln-packdown-group')].find(x => /^Pans: pack down/i.test(x.querySelector('.nb-hd > span').textContent)).querySelector('.cln-group-count').textContent }; }, id);
+          const before = await pos(); await p.screenshot({ path: path.join(OUT, 'm-station-pans-cook-1920-jumped.png') });
+          await p.click('[data-cln="flow-quick"][data-id="' + id + '"]'); await F.L.waitFor(p, () => !!document.querySelector('#cln-worker-sheet [data-cln-person], #cln-worker-sheet [data-cln-picker="others"]'));
+          if (!(await p.locator('#cln-worker-sheet [data-cln-person="ann"]').isVisible())) await p.click('[data-cln-picker="others"]'); await p.click('#cln-worker-sheet [data-cln-person="ann"]');
+          await F.L.waitFor(p, () => !LK_PREP.unsent()); await F.L.settle(p, 400);
+          out['m-station-pans-cook-1920'].rightColumnTick = { job: id, before, after: await pos() };
+        }
         if (p.errors && p.errors.length) out[key + '-' + name + '-1920'].errors = p.errors;
         await p.context().close();
       }
+    }
+    if (!ONLY || ONLY.indexOf('m') >= 0) for (const w of [1100, 1280]) {
+      const p = await F.cook(w); await p.setViewportSize({ width: w, height: 800 }); await apply(p, 'm');
+      await shoot(p, 'm-cook-' + w, { checks: await F.measure(p) }); await p.context().close();
     }
     // the name on its own: today's page with Clean down on the tab and the title
     if (!ONLY || ONLY.indexOf('name') >= 0) for (const w of [390, 1920]) {

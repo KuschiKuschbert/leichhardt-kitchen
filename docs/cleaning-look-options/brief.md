@@ -165,7 +165,83 @@ C last for all seven: its folds hide work that is the cook's (the skeptic found 
 | --- | --- | --- | --- |
 | 390 px: first box / rows | 454 / 5 | 344 / 6 | 344 / 6 |
 | 768 px: rows / first box | 9 / 504 | 9 / 430 | 9 / 430 |
-| Section screen, cook on that section: rows / first box | 9 / 504 | 10 / 430 | 22 / 430 |
-| Section screen, cook from another section: rows / first box | 9 / 504 | 9 / 488 | 22 / 502 |
+| 1100 / 1280 px (laptop, a tablet on its side): rows / first box | | | 14 / 393, 15 / 393, no sideways scroll |
+| Section screen, cook on that section: rows / first box | 9 / 504 | 10 / 430 | 21 / 437 |
+| Section screen, cook from another section: rows / first box | 9 / 504 | 9 / 488 | 21 / 509 |
+| A tick in the right column after Go to Pans pack down, through Who did this | | | next box still (2,382); band and heading both "1 of 11" |
 | Next box after a real tick, ack and Undo (390), and through Who did this (1920) | | still | still |
 | Lowest drawn text contrast; drawn controls under 44 px | | 6.73:1; 0 | 6.73:1; 0 |
+
+### Focused follow-up on M
+
+Four of the scorers looked again at M's pictures and numbers (the skeptic, the keeper, the screen designer and the UX designer, each continuing from their own round 2 review). The first M had two faults they named; both are fixed in the pictures now in `designs/m-*.png`, and the numbers above are after the fix.
+
+| Reviewer | Score for M (their round 2 first choice) | What they said |
+| --- | --- | --- |
+| Keeper | 8.5 (A 8) | Beats A: same phone, 22 rows on the screen, nothing new to break. Costs a few dozen `.cln-` lines in the shell and two widths in the tests. With an old `app.css` the new classes go unstyled and the page falls back to today's open column (safe, Not evidenced) |
+| UX designer | 8.5 (A 8) | Fits the frame: the band fixes the bench miss (item 3); only unsent work is loud (item 2). Beats A only from 1100 px |
+| Screen designer | 8 (B 8) | One layout, each control once; the outline button ends B's orange competition |
+| Skeptic | 7.5 (A 7) | Only just beats A, only on the screen; the Grill cook's own Shared kitchen jobs ("Walls · Grill chef") now sit beside her Pack down instead of three screens down |
+
+**Fixed after the follow-up:** on a shared screen the header no longer repeats a section's count (it said "Grill: 0 of 9" above a band saying "You: Pans, 0 of 11"; screen designer, UX designer, skeptic); "This screen: Grill" is heading size (UX designer); group counts read "0 of 24", without "+ REPEATS" next to the plain hint (skeptic); the right column's rows stop at 60 rem so the arrow stays near the words (screen designer). **Checked after the follow-up:** a tick in the right column after the jump (skeptic): the next box did not move, and the band and the Pans heading moved to "1 of 11" together (the keeper's two-counts worry, in this preview); 1100 and 1280 px: no sideways scroll (skeptic).
+
+**Still open from the follow-up:** the left column ends while the right runs on, so its lower half is empty on the screen (skeptic); the 13 px "To do" line and the header's kitchen count may not read from the bench (screen designer); where Pans pack down lands and the way back to Grill on the fiftieth use (UX designer). Review status: **a lead's synthesis with a focused follow-up from four of the seven scorers**, not a full council round.
+
+### Break-it findings, round 2
+
+| # | Scenario | Expected | Observed or hypothesis | Evidence | Repair or check | Disposition |
+| --- | --- | --- | --- | --- | --- | --- |
+| S1 | A real tick, its acknowledgement and Undo; a tick through Who did this | The next box stays put | Stayed put in A, B, C and M at 390 and 1920, and in M's right column after the jump | Checked in the design fixture (`designs/build.cjs`, Wednesday, Grill and Pans) | The same check in the real build, in `tests/cleaning-sections.test.js` | Passed in preview; repeat in the build |
+| S2 | Ann on Pans at the Grill screen | She sees she is on Pans and reaches her Pack down | Today: small words at x 1350. M: "You: Pans, 0 of 11" band at the top of the left column, outline button, one tap | Checked in the design fixture | Test the band and the jump at 1100 and 1920 | Fixed in M |
+| SK1 | C: a Grill cook on a phone | All her jobs in sight | Grill chef jobs in Shared kitchen sit in a closed fold while the header reads "0 of 9" | Checked in the design fixture (C pictures) | Never fold | C not recommended |
+| SK2 | C: unsaved checks or a refused save in a folded group, then a reload or the daily lock | The fold opens | The drawing opens a fold only on Not sent, busy or a row error, not on unsaved checks; the open state also passes to the next person on a shared screen | Risk (drawing and source read) | Never fold | C not recommended |
+| KB | B: a sticky panel taller than the screen (Extra large text, a long section) | Every row can be reached | Hypothesis: its last rows cannot be scrolled to | Risk / Not evidenced | Not sticky | Fixed in M (not sticky) |
+| K1 | An old saved `app.css` meets the new page | The page opens, readable | M's new classes would be unstyled: today's open column | Risk / Not evidenced | New class names only, never restyle old ones; one `tests/saved-copy.test.js` case | Into the build plan |
+| KW | The page's width limit lifted from 1100 px | Only Cleaning widens | The drawing lifts it on the page's parents | Checked in the drawing only | Scope it to the Cleaning page; run the 1280 and 1920 checks on another page | Into the build plan |
+| K3 | Who did this at 1920, a double tap while the write is held | One sheet, nothing redraws under it | Not tried | Risk / Not evidenced | `tests/cleaning-feedback.test.js` at 1920 | Into the build plan |
+
+Security: no access, rule or session change in any design; nothing private to record.
+
+### Contract fit, round 2
+
+| Check | A | B | C | M |
+| --- | --- | --- | --- | --- |
+| Service rules: taps, lines, no new pop-up | Works: no taps added, +1 row on a phone | Works | Needs work: Shared kitchen +1 tap, 41 of 50 jobs behind folds | Works: no taps added, +1 row on a phone, +12 on the screen |
+| Approved rules (nothing folded; the screen's section leads; the order fixed at read) | Works | Works | Changes two (the head chef's call) | Works |
+| Surface and state colours | Works: the orange count goes quiet ink | Needs work: a filled orange button is a second loud thing | Works | Works: outline button; only Not sent is loud |
+| The approved count style (`.nb-prog`, handwritten) | Proposed change: ink, not handwriting | Proposed change | Proposed change | **Proposed change, for the head chef** |
+| Status without colour | Works: Not sent in words, seen in the preview | Works | Works | Works |
+| Contrast, 44 px targets, focus (drawn parts) | Works: 6.73:1, 0 under 44 | Works: 5.05:1 | Works: 4.76:1 | Works: 6.73:1, 0 under 44 |
+| The temperature words (must be shown) | Works: in full | Works: in full | Needs work: behind a link | Works: in full |
+| Not evidenced in every design | Extra large text; the Functions fold on a function night; a refused tick; bench reading on a real screen; the old saved shell (K1) | | | |
+
+### Reference fit, round 2
+
+| Principle | A | B | C | M |
+| --- | --- | --- | --- | --- |
+| Linear: the work before the frame | Works: first box 454 to 344 | Works: 317 | Works: 281, but by hiding work | Works: 344 |
+| Things 3: today's work stays visible | Works | Works | Needs work: folds today's shared jobs | Works |
+| Airbnb: where, whose and what next together | Needs work: the cook's section far right on the screen | Works: the band | Works: theirs leads | Works: the band, with their count |
+| Flighty: the glanceable board | Needs work: 10 rows on a 1920 screen | Works: 23 | Needs work: 11 | Works: 21 |
+| Duolingo: real progress | Works: "Grill: 0 of 9" | Works | Works | Works |
+| Headspace: plain words, said once | Works | Needs work: kept the jargon, dropped the hint | Needs work: "Floors after shelving 0 of 0" with an arrow | Works |
+
+## Recommendation
+
+**Recommend M: A's page on every device, with B's two columns on the section screens and B's "You: Pans" band made quiet.** Not C.
+
+- **Why it beats the others.** On a phone and the tablet it is A, the design four of seven put first: the first box moves from 454 to 344 px (6 rows instead of 5), the orange handwritten "0/50, recorded; repeats apply" becomes a quiet "Grill: 0 of 9", the temperature words stay in full after your jobs, the coverage hint becomes one plain line under Shared kitchen, and "Grill · To do" stops repeating under Grill. On the five section screens, everyone's main work screen, it uses the width B showed: 21 rows instead of 9, the cook's own Shared kitchen jobs beside their Pack down. A cook from another section sees "You: Pans, 0 of 11" and one 44 px button. It changes no approved rule, adds no tap, no read, no rule and no pop-up. Follow-up scores 7.5 to 8.5, each at or above that reviewer's own first choice.
+- **Principles that help:** Linear (work before the frame), Flighty (the screen as a board), Airbnb (where you are and what is next, together), Headspace (plain words, said once).
+- **Main downside:** a second layout in the saved shell's CSS (K1) and two more widths to test. On the screen the left column ends early and leaves empty space below it, and bench reading is still unproven.
+- **Departure for his OK:** the done count leaves the handwritten face (the `.nb-prog` style) for quiet ink, on this page only.
+- **Disagreement kept:** the head chef reviewer and the skeptic would stop at A plus the band and keep one column on the screens (no proof cooks read the right column from the bench; more shell CSS).
+- **Before it is called ready:** in the real build at 390, 768, 1100, 1280 and 1920 x 1080 touch, with a busy day: Extra large text, the Functions fold above the page on a function night, a refused tick and its Refresh, the old saved shell (K1), Who did this with a double tap (K3), the width change scoped to Cleaning (KW), and one look at a real section screen from the bench.
+- **Build in two pull requests:** (1) the phone and tablet frame, the counts in words, the row lines and the quiet band; (2) the two columns from 1100 px.
+
+### The name
+
+**Recommend keeping Cleaning.** Four of seven in round 2 (the new starter, the screen designer, the keeper, the skeptic) said keep it; three (the cook, the head chef reviewer, the UX designer) said Clean down. Cleaning is the word every new starter already knows, it covers the weekly and morning jobs as well as close, and it is already on about 50 lines the team reads (the admin switch, the Inbox, Records, Settings). Clean down is what cooks say at close, and it fits the tab bar at every text size, so it is a fair choice if he wants it. If he does: one pull request for every word the team sees, with a test that the tab, the title and the admin switch agree; the address stays `#/cleaning`; and `js/fools.js` gets its 1 April joke back for the new word.
+
+## Chosen
+
+Not yet: waiting for the head chef.

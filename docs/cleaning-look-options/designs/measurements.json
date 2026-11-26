@@ -1,6 +1,6 @@
 {
  "kind": "Preview inside the implemented app's real Cleaning page (click-test stand-in, synthetic data). The shell, top bar, tab bar, rows, tick, Undo and Who did this are the app's; the parts marked data-design are rearranged or drawn in and put back after every redraw.",
- "commit": "907e3de5",
+ "commit": "f05dcd52",
  "viewports": "390 x 844, 768 x 1024, 1920 x 1080 (section screen: shared, touch, set to Grill)",
  "results": {
   "a-cook-390": {
@@ -440,12 +440,12 @@
   },
   "m-station-1920": {
    "rowsTotal": 52,
-   "rowsInView": 22,
-   "firstBoxTop": 430,
-   "screensLong": 2.8,
+   "rowsInView": 21,
+   "firstBoxTop": 437,
+   "screensLong": 2.9,
    "sideways": false,
    "checks": {
-    "screensLong": 2.8,
+    "screensLong": 2.9,
     "sideways": false,
     "controls": 0,
     "under44": [],
@@ -462,8 +462,8 @@
    "s1": {
     "tried": true,
     "nextBoxY": {
-     "before": 537,
-     "afterTick": 537,
+     "before": 544,
+     "afterTick": 544,
      "afterUndo": null
     },
     "moved": false,
@@ -472,12 +472,12 @@
   },
   "m-station-pans-cook-1920": {
    "rowsTotal": 52,
-   "rowsInView": 22,
-   "firstBoxTop": 502,
-   "screensLong": 2.8,
+   "rowsInView": 21,
+   "firstBoxTop": 509,
+   "screensLong": 2.9,
    "sideways": false,
    "checks": {
-    "screensLong": 2.8,
+    "screensLong": 2.9,
     "sideways": false,
     "controls": 1,
     "under44": [],
@@ -494,6 +494,63 @@
      "on": "Go to Pans pack down",
      "how": "border"
     },
+    "textUnder12px": []
+   },
+   "rightColumnTick": {
+    "job": "clean-template-pd-pans-02",
+    "before": {
+     "next": 2382,
+     "band": "You: Pans, 0 of 11",
+     "heading": "0 of 11"
+    },
+    "after": {
+     "next": 2382,
+     "band": "You: Pans, 1 of 11",
+     "heading": "1 of 11"
+    }
+   }
+  },
+  "m-cook-1100": {
+   "rowsTotal": 52,
+   "rowsInView": 14,
+   "firstBoxTop": 393,
+   "screensLong": 3.8,
+   "sideways": false,
+   "checks": {
+    "screensLong": 3.8,
+    "sideways": false,
+    "controls": 0,
+    "under44": [],
+    "lowestContrast": {
+     "ratio": 6.73,
+     "fontPx": 13,
+     "large": false,
+     "passes": true,
+     "text": "0 of 50 in the kitchen"
+    },
+    "lowestControlEdge": null,
+    "textUnder12px": []
+   }
+  },
+  "m-cook-1280": {
+   "rowsTotal": 52,
+   "rowsInView": 15,
+   "firstBoxTop": 393,
+   "screensLong": 3.8,
+   "sideways": false,
+   "checks": {
+    "screensLong": 3.8,
+    "sideways": false,
+    "controls": 0,
+    "under44": [],
+    "lowestContrast": {
+     "ratio": 6.73,
+     "fontPx": 13,
+     "large": false,
+     "passes": true,
+     "text": "0 of 50 in the kitchen"
+    },
+    "lowestControlEdge": null,
     "textUnder12px": []
    }
   }
