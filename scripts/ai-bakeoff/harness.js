@@ -3,7 +3,22 @@
   For each plated dish: what the book draws today (Draw it for me, seed 0), the brief Claude gets, Claude's answer turned
   into a drawing from the book's own parts and library pieces, and both scored with tests/plating-check.js's measures.
 */
-const pc = require('../../tests/plating-check.js');
+const fs = require('fs'), path = require('path'), Module = require('module');
+/* tests/plating-check.js as it is, with one change made here when it loads: auto() can also measure a drawing made
+   elsewhere (dPre), with the plating style Draw it for me picked for the dish (stylePre). Changing the file itself
+   would make every phone offer an update when it merged (scripts/site-changed.sh counts it as a site file). */
+function loadPlatingCheck() {
+  const file = path.join(__dirname, '..', '..', 'tests', 'plating-check.js');
+  let src = fs.readFileSync(file, 'utf8');
+  const a = "function auto(r, seed) {\n  const d = DR.blank(r.id, 'plate'); let res = null;\n  DR.withDrawing(d, () => { res = S.drawIt(seed || 0); });";
+  const b = "function auto(r, seed, dPre, stylePre) {\n  const d = dPre || DR.blank(r.id, 'plate'); let res = dPre ? { style: stylePre, unsure: [] } : null;\n  if (!dPre) DR.withDrawing(d, () => { res = S.drawIt(seed || 0); });";
+  const e = 'module.exports = { check, print, draw, RULES, OBSERVED };';
+  if (src.indexOf(a) < 0 || src.indexOf(e) < 0) throw new Error('tests/plating-check.js has changed: update loadPlatingCheck() in scripts/ai-bakeoff/harness.js');
+  src = src.replace(a, b).replace(e, 'module.exports = { check, print, draw, RULES, OBSERVED, auto, score, book, bind, env, LINE_OK, fam };');
+  const m = new Module(file, module); m.filename = file; m.paths = Module._nodeModulePaths(path.dirname(file)); m._compile(src, file);
+  return m.exports;
+}
+const pc = loadPlatingCheck();
 pc.bind();
 const { win, D, S, DR, Rn, LIB } = pc.env();
 const KINDS = ['main', 'snack', 'side', 'dessert'];
@@ -94,4 +109,4 @@ function svgOf(d) {
   return win.LK_RX && win.LK_RX.clean ? win.LK_RX.clean(s) : s;
 }
 
-module.exports = { known, DISHES, WARE, CATALOGUE, rules, brief, toDrawing, scoreAI, svgOf, band };
+module.exports = { LIB, known, DISHES, WARE, CATALOGUE, rules, brief, toDrawing, scoreAI, svgOf, band };

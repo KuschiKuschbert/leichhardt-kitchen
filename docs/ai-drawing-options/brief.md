@@ -79,11 +79,65 @@ If AI clearly wins, round 2 designs the studio piece with break-it 2 to 5 built 
 
 ## The bake-off
 
-Built and ready to run: `scripts/ai-bakeoff/` (how to run it, what Claude is sent and its limits: its `README.md`).
+Run on the owner's Mac on 26 Nov 2026: `scripts/ai-bakeoff/` (how to run it, what Claude is sent and its limits: its `README.md`). The numbers: `bakeoff/summary.md` and `bakeoff/results.json`; the blind page: `bakeoff/blind.html`.
 
 - **What it does.** Claude lays out each of the 81 plated dishes from the book's own parts and library pieces (option 1). The prompt gives it each dish, its method, what Draw it for me draws today, the servingware names, the library and the house style measured from the 76 hand-made plates.
-- **How it is scored.** Each plate is scored with the same measures as Draw it for me's own gate (`tests/plating-check.js`, which now also measures a drawing made elsewhere). A self-test turns six of the book's own plates (among them the four worst) into answers and back, and each scores exactly the same.
+- **How it is scored.** Each plate is scored with the same measures as Draw it for me's own gate (`tests/plating-check.js`, which the bake-off loads with one change so it can also measure a drawing made elsewhere; the file itself is unchanged, so merging this republishes nothing). A self-test turns six of the book's own plates (among them the four worst) into answers and back, and each scores exactly the same.
 - **Cost and limits.** A hard cap stops it before US$15. About 21,000 tokens of the prompt are cached and each dish adds about 1,000. Real cost and wait per plate are recorded.
 - **The blind pick.** 15 dishes (the 10 Draw it for me draws worst, and 5 more) side by side, left and right shuffled (`docs/ai-drawing-options/bakeoff/blind.html` once run). The head chef sends back a code.
-- **Blocked on the key.** A Claude API key cannot be a network secret in the cloud environment. It can only be an environment variable there (readable by every session and command in it). On the owner's own computer it need not be saved at all: `run.js` asks for it when it starts, hides the typing and keeps it in memory for that run only (24 Nov 2026).
+- **The key.** A Claude API key cannot be a network secret in the cloud environment, only an environment variable there (readable by every session and command in it). So it ran on the owner's Mac, where `run.js` asks for the key when it starts, hides the typing and keeps it in memory for that run only.
 - **Left out on purpose.** Pans, side views and builds: a batch card's pan is drawn from the card as one part, so there is nothing to place.
+
+### Results (26 Nov 2026)
+
+**Cost and wait (measured).**
+- All 81 dishes got an answer: none failed, none was handed to another model, and none named a piece or part that does not exist.
+- US$2.46 for all 81: a median of US$0.03 a plate, at most US$0.19.
+- Wait: a median of 9 s, the slowest 10% over 15 s, at most 23 s.
+- At that cost, the US$100 credit is about 3,000 AI plates. The round 1 estimate was US$0.10 to 0.20 a plate.
+
+**The head chef's blind picks: Claude 10, Draw it for me 1, neither 4, of 15.**
+
+| # | Dish | Picked | Draw it for me score | Claude score |
+| --- | --- | --- | --- | --- |
+| 1 | Grill Maiden's Board | Neither | 0.76 | 0.50 |
+| 2 | Philly Cheesesteak Loaded Potato | Claude | 0.00 | 3.54 |
+| 3 | Pizza Platter | Neither | 1.28 | 0.15 |
+| 4 | Fried Chicken Wings | Neither | 0.03 | 1.99 |
+| 5 | Guacho Taco Share Board | Claude | 0.98 | 2.86 |
+| 6 | Wedges | Claude | 1.15 | 0.53 |
+| 7 | Haloumi Tacos | Claude | 1.00 | 4.71 |
+| 8 | Seafood Platter | Claude | 1.53 | 3.44 |
+| 9 | Yumcha Platter | Claude | 0.90 | 1.15 |
+| 10 | 500 g Rump | Claude | 0.00 | 0.25 |
+| 11 | Sticky Toffee Pudding | Claude | 0.07 | 0.42 |
+| 12 | Kids Spaghetti Bolognese | Draw it for me | 0.00 | 0.19 |
+| 13 | Butchers Board | Claude | 1.39 | 0.44 |
+| 14 | Aussie Platter | Claude | 0.87 | 3.46 |
+| 15 | The Beast Board | Neither | 1.07 | 2.58 |
+
+- On the 10 dishes Draw it for me draws worst, Claude won 7. The other 3 were neither, all boards.
+- On the 5 dishes the check already rated about 0, Claude still won 3.
+- Which side was Claude's was worked out after the picks, from the page's fixed shuffle. All 81 dishes had an answer, so the page held exactly these 15.
+
+**The score and the eye disagree.**
+- By `tests/plating-check.js`, Claude did worse: a median of 0.44 against 0.01. 47 dishes scored worse by more than 0.1, 6 better and 28 the same. 12 scored over 2, against none for Draw it for me.
+- Yet 8 of the head chef's 10 Claude picks scored worse than Draw it for me's plate, some by a lot: the loaded potato 3.54 against 0.00, the haloumi tacos 4.71 against 1.00, the Aussie platter 3.46 against 0.87.
+- The check measures how close a plate sits to the house style of the 76 hand-made plates. Draw it for me was tuned to it on 15 Nov. The check marks down what loaded and share dishes do on purpose: toppings over a base, tacos side by side, a board's many pieces, a sauce zigzagged across.
+- So the check is a guard for Draw it for me's own rules. It is not a judge of what the head chef likes, and it should not gate an AI plate.
+
+**What Claude got wrong.**
+- 7 dishes have something from the recipe missing from the plate (Check's own words; Draw it for me: 1). Some are right to leave off: the adobo's vinegar, onion and peppercorns are cooked in, and the pie mix is inside the pie. Some are real misses: the maple butter on the Butchers and Beast Boards, the chilli jalapeño butter on the corn, the gravy with the chips.
+- Its "left off" list sometimes names a line it did draw under the book's own part names: chips and salad drawn as Chips and Salad, a burger's layers inside the book's burger. Check does not flag those.
+- Boards are still the weak spot for both: 3 of the 4 neither picks were boards.
+
+### Lead's recommendation after the bake-off
+
+AI clearly wins by the head chef's eye: 10 of 15 against 1. That is the condition the council set for round 2, which designs the studio piece. Carry into round 2:
+- the measured cost (US$0.03) and wait (9 s, up to 23 s), in place of the round 1 estimates;
+- the five break-it risks from round 1;
+- Check's "in the recipe but not on the plate" line kept on every AI plate;
+- no `plating-check` gate on AI plates (it marks down what the head chef picked);
+- boards treated with care, since neither drawer pleased the head chef there.
+
+**Head chef's choice:** waiting (round 2, or stop here).

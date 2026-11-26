@@ -80,7 +80,7 @@ async function main() {
   // conversion and the scoring are faithful before any money is spent (writes stand-in answers to results-selftest/)
   if (process.argv.includes('--selftest')) {
     const ST = path.join(__dirname, 'results-selftest'); fs.mkdirSync(ST, { recursive: true }); let bad = 0;
-    const LIB = require('../../tests/plating-check.js').env().LIB;
+    const LIB = H.LIB;
     for (const id of (arg('--selftest', '') || 'chicken-adobo,seafood-platter,wedges,butchers-board,caesar,haloumi-tacos').split(',')) {
       const r = H.DISHES.find(d => d.id === id), x = H.rules(r), b = H.brief(r, x), area = LIB.surface(x.surf).area;
       const parts = x.d.els.filter(e => e.t === 'item' || e.t === 'raw').map(e => { const it = e.t === 'item' ? LIB.get(e.a.split('@')[0]) : null, bx = String(e.bx || '').split(' ').map(Number), w = it ? it.w : bx[2] - bx[0];
