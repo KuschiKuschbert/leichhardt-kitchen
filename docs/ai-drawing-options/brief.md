@@ -140,4 +140,132 @@ AI clearly wins by the head chef's eye: 10 of 15 against 1. That is the conditio
 - no `plating-check` gate on AI plates (it marks down what the head chef picked);
 - boards treated with care, since neither drawer pleased the head chef there.
 
-**Head chef's choice:** waiting (round 2, or stop here).
+**Head chef's choice (26 Nov 2026):** run round 2.
+
+## Round 2 (26 Nov 2026)
+
+Evidence packet: [round2/packet.md](round2/packet.md). Designs, the frame and the blend: [round2/designs.md](round2/designs.md). Previews: `round2/previews/`, made in the real studio on the click-test stand-in with Claude's real bake-off plates. All measurements are Preview, not Implemented app. This is role-based review by fresh agents, not research with staff.
+
+**The frame** (a UX and interaction designer, before anything was drawn). The one loud thing is guest-visible food left off the plate, because the allergen lens reads Pass labels made from parts. Count, money and used up stay quiet. Studio pieces need no OK; a "ready" notice on Home, the work pages or a ping would. Where the call runs is a real axis: a Cloud Function keeps a wait in the studio; the nightly job removes it.
+
+**The three designs.**
+- **A: Claude's version in the book's note.** Seconds, through a Cloud Function. Claude's plate swaps onto the canvas.
+- **B: two buttons on the empty plate.** Claude's plate arrives in the studio's panel beside the book's. Seconds.
+- **C: ask for tonight, pick tomorrow.** The nightly job (about US$0.19 for a night's first plate, US$0.03 for each further one), with a review page.
+
+### Scores
+
+| Reviewer | Ranking | Recommends |
+| --- | --- | --- |
+| Cook | A, C, B | A, with B's worded choices and a Keep that waits on the amber line |
+| Head chef | C, A, B | C, staged: the bake-off plates first, the nightly ask only if used |
+| Skeptic | C, A, B | C's path and list, asked from A's note, Keep opening the studio; the existing plates first |
+| New starter | A, C, B | A, with Save alone keeping the plate on screen; explain "Claude" once |
+| Keeper | C, A, B | C with A's note ask and Keep opening the studio |
+| Screen designer | A, C, B | A, with red failure words, equal-weight buttons and a 44 px Add it |
+| UX designer (scoring) | A, C, B | A, with the late answer offered, not applied |
+
+First place: A 4, C 3. B was last for all seven.
+
+**What all seven agree on:**
+- Ask from the book's note, under one name.
+- Reject B's second Draw button (Headspace, Linear).
+
+Most also wanted Claude's plate seen full size in the studio before it is kept, rather than from a 150 px thumbnail: the cook, keeper, skeptic and UX designer (Airbnb). Three rejected a filled orange Keep, because the amber line should be the loudest thing: the screen designer, UX designer and new starter. **The real split was the path:** seconds, with Blaze, a header change and about US$0.19 a cold tap, against overnight, with no server and about US$0.03 for each plate after a night's first.
+
+### The mix
+
+| Source and part | Take or reject | Principle | Why |
+| --- | --- | --- | --- |
+| A: the ask in the book's note | Take (7 of 7) | Headspace, one name | The chef asks after seeing the free plate, so pays only when it disappoints |
+| A: Claude's plate full size on the canvas | Take | Airbnb, the whole job together | Overlaps show where hand fixes happen |
+| A: the Cloud Function, seconds | Reject | | Blaze, a header change, a second access check outside the rules; nobody asked again needed seconds (follow-up). Cost is about the same for one plate (US$0.19 either way); only further plates in the same night are cheaper |
+| B: the second hero button | Reject (7 of 7) | Linear, Headspace | Two names; a choice before the free plate shows |
+| B: worded choices, red failure words on paper | Take | Duolingo, truthful | Plain words for what stays |
+| B: the panel compare | Reject | | At 390 px the note hid the book's plate; at 1920 Claude's plate was about 200 px |
+| C: the nightly path | Take | | No server, a revert stops it; about US$0.19 for the first plate of a night and US$0.03 for each further one that night |
+| C: its own review page | Reject for a chip | Where it goes: the smallest place that works | No new route; the plates open full size |
+| C: one-tap Keep from a thumbnail | Reject | Airbnb | Hides a 64% overlap; skips the studio's save and Pass labels |
+| C: its failure and stale words | Take | Duolingo | "The book's plate stays" |
+
+**All three together** would mean two server paths, two counts and two places to compare: worse, said by every reviewer who assessed it. **The blend** is A's flow on C's path: Ask Claude tonight in the note, a "Claude's plates" chip in Recipes & drawings, Show Claude's plate full size on the canvas, and Save keeps the plate on screen. Its previews: `round2/previews/blend.png`.
+
+**Review status: a lead synthesis, endorsed in a focused follow-up by the 3 of 3 reviewers asked** (the UX designer, the screen designer and the keeper). The cook, head chef, skeptic and new starter were not asked again.
+- **Seconds or overnight** (asked of the two A-camp designers): neither needs seconds. Menu changes are planned ahead, and the book's plate covers tonight. A short-lived special may never get Claude's plate: say so plainly.
+- **Their changes, taken into the blend:**
+  - open on the book's plate and offer Claude's in the note;
+  - the note says which plate is on screen;
+  - keep `layout.auto` without `lv` (no new marker);
+  - a private `claude/<rid>` document per dish;
+  - a decline write when the book's plate is kept;
+  - 44 px note buttons.
+- **From 1280 px, both plates side by side** (UX designer): not previewed.
+
+### Recommendation
+
+**Recommend the blend: A's ask and full-size swap in the book's note, on C's overnight path, with a Claude's plates chip in Recipes & drawings.**
+- **Why it wins.** It keeps the one name every reviewer asked for. It shows Claude's plate full size where it can be fixed. It needs no Blaze, no security header change and no access code outside the rules. On a menu-change day the chef asks for ten dishes and reviews all ten in one list, and that night costs about US$0.19 for the first plate and US$0.03 for each further one. A single ask costs about the same as the Cloud Function's US$0.19, so the cost case only holds for several dishes at once. A trimmed prompt would cut the first figure (Not evidenced).
+- **Main downside.** A day's wait. A one-night special gains nothing.
+- **Stage 0, optional.** The 81 plates Claude already drew could fill the chip first at no new cost, as the head chef reviewer and the skeptic asked. That needs the bake-off's answers brought over from the owner's Mac, and each recipe checked against 26 Nov.
+
+**Disagreement:**
+- **Cook:** Keep should wait until the amber line is answered (Add it or Leave it off). The blend does not block Save. Instead, the save slip names food left off, a proposed contract change.
+- **New starter:** explain "Claude" once, where it is first offered. That is for the build.
+- **UX designer:** wide screens should show both plates side by side. Not evidenced until built.
+
+### Break-it findings
+
+| # | Scenario | Evidence | Repair or check | Disposition |
+| --- | --- | --- | --- | --- |
+| 1 | A recipe save redraws a kept Claude plate | Risk; source read of `redrawFrom()` only | `layout.auto` without `lv`; a failing-first case in `tests/autodraw.test.js`. With that, `keptOlder()` runs and today's slip says "Kept the older plate drawing... tap Draw it again", which would tell the chef to throw Claude's plate away: the slip must name Claude's plate instead | In the build |
+| 2 | A slow night stops the Records count | Risk | The step in its own job with its own time limit, after the analysis; a node test with a stand-in API | In the build |
+| 3 | Claude's plate offered over newer work: the card changed, a draft on the device, or the day 1 save rewrote the Pass labels | Risk | Check the card's signature without the Pass labels; offer in the note, never replace a draft | In the build |
+| 4 | A plate saved with guest-visible food left off | Risk (Claude left off 7 dishes' items in the bake-off) | The amber line with Add it and Leave it off; the save slip names it (proposed change) | Head chef's call on the slip |
+| 5 | The ready state cleared in a separate write that fails | Risk | Clear it in Save's batch through `W()`; a decline write | In the build |
+| 6 | A third note button at 390 px | Reproduced in Preview: the actions ran past the note's edges (M4 before the fix) | The row wraps; the note leads with Claude's line and folds the recipe lines; 44 px buttons | Fixed in the preview, check in the build |
+| 7 | Failure words on the dark note | Reproduced in Preview (cream in A4) | `--bad-on-dark`, measured 7.09:1 in the blend (screen designer) | Fixed in the preview |
+| 8 | The wait shown as "about 10 s" | The bake-off: Butchers Board took 17 s | The blend has no wait on screen | Gone |
+| 9 | The 03:00 run is late or skipped (GitHub drops some scheduled runs), or the chef asks after that night's run | Risk | Say "after tonight's run" and show the date asked; a "not drawn yet" state kept apart from failed; a node test of a skipped night | In the build |
+
+### Contract fit
+
+- **Service rules:** Works. The studio and Recipes & drawings are not service pages. There is no notice on Home, the work pages or a ping.
+- **Where it goes:** Works. A line in the existing note, and a chip in the existing chip row of Recipes & drawings, second in the row and only while plates are ready.
+- **Loudness:** Works. The amber line is the one loud thing: words 12.96:1, edge 5.05:1, from the tokens.
+- **Colour and state:** Works on these points: red failure words 7.09:1; equal-weight choices; Save stays the one orange commit.
+- **Not evidenced:**
+  - focus and reduced motion;
+  - Extra large text in the note;
+  - the chip's unselected look;
+  - the tap areas of the 44 px links.
+- **Devices:** 390, 768, 1280 and 1920 previewed. Side by side from 1280 px is Not evidenced. The section screens are not relevant: this is chef management, not read from the bench.
+
+**Departures for the head chef:**
+- reversing 21 Oct ("no AI service") and 15 Nov ("without any AI for now");
+- a new private `claude/` collection and its rules (looser, published before the code);
+- the Claude API key as a GitHub Actions secret;
+- the save slip naming food left off.
+
+No Blaze and no security header change.
+
+**Corrections made during round 2:**
+- The packet first said the head chef picked neither "on 3 of 4 boards". In fact, of the 8 boards and platters, Claude won 5 and neither won 3.
+- The cost of a single cold tap is about US$0.19 (measured once), not the warm US$0.03. The same holds overnight: the prompt is cached for minutes, so the first plate of each night pays about US$0.19 and only further plates that night pay about US$0.03.
+
+## Chosen (26 Nov 2026)
+
+**The blend**, in the head chef's words: "we take the blend yes", and "for now I'd like to keep the drawings we already have". Stage 0 is not taken: the bake-off's 81 plates are not filled in, and no saved drawing changes unless a chef asks Claude and saves. Recorded in `docs/head-chef-decisions.md`.
+
+**Build plan**, in small pull requests, each with its tests:
+1. **The rules and the store.** A private `claude/<rid>` collection for head chefs and sous chefs. A client writes only an ask (`asked`, `by`, `at`) or a decline. Rules emulator rows: head and sous chefs may ask; staff, function-only and signed out are refused; a client cannot write a plate. The rules get looser, so publish them before the code.
+2. **The nightly step.** It runs in its own job and time limit, after the analysis, and reads the asks, the cards and the library. The Claude API key is a GitHub Actions secret, which the owner adds. It checks each card's signature before paying, stops at a nightly cap, writes Claude's parts and places, and keeps "not drawn yet" apart from failed. A node test runs it against a stand-in API, covering the cap, a cut-off answer, an unknown piece, a stale card, a skipped night and a rerun that pays nothing twice.
+3. **The studio and the chip.**
+   - The studio: Ask Claude tonight and Cancel the ask in the note; the note's ready, shown, failed and stale lines; Show Claude's plate and Show the book's.
+   - Saving: Save keeps the plate on screen and clears the ask in the same batch, with a decline when the book's plate is kept. A kept Claude plate is saved with `layout.auto` and no `lv`.
+   - The slip: it names Claude's plate and any food left off.
+   - Recipes & drawings: the Claude's plates chip.
+   - The note on a phone: its buttons wrap and are 44 px, and the recipe lines fold when Claude's plate is ready.
+   - Tests: a failing-first case in `tests/autodraw.test.js`, click tests at 390, 768 and 1280 px, and a read-budget line.
+4. **Then:** both plates side by side from 1280 px (the UX designer's point), only after step 3 is in use.
+
+**Head chef's choice:** the blend (above).
