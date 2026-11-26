@@ -19,11 +19,12 @@ jobs[key('config', 'main')] = { ...L.seed()[key('config', 'main')], kitSecs: SEC
 const PLAN = key('cleaningPlan', 'main'), TS = key('teamsum', 'main');
 // Queensland days: i days ago
 const dayN = i => new Date(L.NOW + 10 * 3600000 - i * DAY).toISOString().slice(0, 10), dow = d => new Date(d + 'T00:00:00Z').getUTCDay();
-// how many people were on each weekday, Sunday first: Monday quiet, Tuesday busy
+// how many people were on each weekday, Sunday first: Monday quiet, Tuesday busy; the last Monday had one more
+// (3.25 on average, shown as 3)
 const ON = [6, 3, 6, 6, 5, 7, 8];
 const tsum = (made, days) => {
   const list = [];
-  for (let i = days; i >= 1; i--) { const d = dayN(i); list.push({ day: d, s: Array.from({ length: ON[dow(d)] }, (x, n) => ({ p: 'cook' + n, sec: 'Grill', sh: 'dinner' })) }); }
+  for (let i = days; i >= 1; i--) { const d = dayN(i); list.push({ day: d, s: Array.from({ length: ON[dow(d)] + (dow(d) === 1 && i <= 7 ? 1 : 0) }, (x, n) => ({ p: 'cook' + n, sec: 'Grill', sh: 'dinner' })) }); }
   return { [TS]: { v: 1, at: L.NOW - 11 * 3600000, day: made, from: dayN(days), to: dayN(1), days: list, usual: {}, learn: {} } };
 };
 const open = async (b, o, width, extra) => {
@@ -52,8 +53,8 @@ const saved = p => L.waitFor(p, () => /Saved|Refused|Not saved\. /.test((documen
     const r1 = await tsReads(p);
     ok(await pressed(p) === 'Monday:Heavy|Tuesday:Medium|Wednesday:Heavy|Thursday:Heavy|Friday:fixed|Saturday:fixed|Sunday:Heavy' && r1 - r0 <= 1 && r1 >= 1, width + ': open, Monday first, Friday and Saturday fixed at light; the team count read at most once (' + await pressed(p) + ', reads ' + r0 + '>' + r1 + ')');
     const words = await staff(p);
-    ok(words.join('|') === 'About 3 on. Suggests medium.|About 6 on. Suggests heavy.|About 6 on. Suggests heavy.|About 5 on. Suggests medium.|Light only, your rule.|Light only, your rule.|About 6 on. Suggests heavy.', width + ': each day says how many were on and what the book suggests (' + words.join('|') + ')');
-    ok(/^Not saved yet: these are the days you gave on 26 November\.$/.test(await text(p, '.cln-days-save .hint')) && !(await p.$eval('[data-cln="days-save"]', e => e.disabled)) && !!(await p.$('[data-cln="days-suggest"]')), width + ': Save the days is on before the first save, with Use the suggestions');
+    ok(words.join('|') === 'About 3 on. Suggests medium.|About 6 on. Suggests heavy.|About 6 on. Suggests heavy.|About 5 on. Suggests medium.|Light only.|Light only.|About 6 on. Suggests heavy.', width + ': each day says how many were on and what the book suggests (' + words.join('|') + ')');
+    ok(/^Not saved yet: these are the starting days\.$/.test(await text(p, '.cln-days-save .hint')) && !(await p.$eval('[data-cln="days-save"]', e => e.disabled)) && !!(await p.$('[data-cln="days-suggest"]')), width + ': Save the days is on before the first save, with Use the suggestions');
     ok(JSON.stringify((await stored(p)).d) === undefined, width + ': nothing is saved until the head chef presses Save');
     // the suggestions fill the days; nothing is saved
     await p.click('[data-cln="days-suggest"]'); await L.settle(p, 150);
@@ -99,7 +100,7 @@ const saved = p => L.waitFor(p, () => /Saved|Refused|Not saved\. /.test((documen
     const p = await open(b, { admin: true }, 390, extra);
     await fold(p);
     const w = await staff(p);
-    ok(w[0] === says && w[4] === 'Light only, your rule.' && !(await p.$('[data-cln="days-suggest"]')) && /Monday:Heavy\|Tuesday:Medium/.test(await pressed(p)), label + ': no suggestion, and it says ' + says + ' (' + w[0] + ')');
+    ok(w[0] === says && w[4] === 'Light only.' && !(await p.$('[data-cln="days-suggest"]')) && /Monday:Heavy\|Tuesday:Medium/.test(await pressed(p)), label + ': no suggestion, and it says ' + says + ' (' + w[0] + ')');
     await p.context().close();
   }
   // the team count cannot be read: it says so, and the days still save

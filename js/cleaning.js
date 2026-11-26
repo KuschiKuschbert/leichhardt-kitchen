@@ -568,13 +568,13 @@
     if (!head) return html + '<p class="hint">Each day takes jobs up to that weight. Friday and Saturday take light jobs only. The head chef sets these.</p></div>';
     var s = M.staff, sug = s.state === 'ok' ? daySuggest(s) : null;
     var staffWords = function (d) {
-      if (QUIET.indexOf(d) >= 0) return 'Light only, your rule.';
+      if (QUIET.indexOf(d) >= 0) return 'Light only.';
       if (s.state === 'loading' || s.state === 'idle') return 'Reading the team.';
       if (s.state === 'error') return 'Could not read the team.';
       if (s.none) return 'No team count yet.';
       if (!s.fresh) return 'The team count is not up to date.';
       if (!s.n[d] || s.n[d] < 3) return 'Not enough weeks yet.';
-      return 'About ' + s.avg[d] + ' on' + (sug && sug[d] ? '. Suggests ' + TAKES[sug[d]] + '.' : '.');
+      return 'About ' + Math.round(s.avg[d]) + ' on' + (sug && sug[d] ? '. Suggests ' + TAKES[sug[d]] + '.' : '.');
     };
     html += '<p class="hint">Each day takes jobs up to that weight. The book suggests from how many people were on each day in the last 30 days of Today\'s team: a day with more people takes heavier jobs. Friday and Saturday stay light.</p>' +
       '<ul class="cln-day-list" role="list">' + DAY_ORDER.map(function (d) {
@@ -584,7 +584,7 @@
           '<small class="cln-day-staff">' + esc(staffWords(d)) + '</small></li>';
       }).join('') + '</ul>';
     var useful = sug && [0, 1, 2, 3, 4].some(function (d) { return sug[d] && sug[d] !== lv[d]; });
-    var say = M.dError ? '<span class="cln-weigh-err" role="alert">' + esc(M.dError) + '</span>' : M.dBusy ? 'Saving the days...' : daysDirty() ? '<b>Not saved.</b>' : M.dSaved ? '<span class="lk-stamp">Saved</span> ' + esc(T.clock(M.dSaved)) + '.' : saved ? '' : 'Not saved yet: these are the days you gave on 26 November.';
+    var say = M.dError ? '<span class="cln-weigh-err" role="alert">' + esc(M.dError) + '</span>' : M.dBusy ? 'Saving the days...' : daysDirty() ? '<b>Not saved.</b>' : M.dSaved ? '<span class="lk-stamp">Saved</span> ' + esc(T.clock(M.dSaved)) + '.' : saved ? '' : 'Not saved yet: these are the starting days.';
     return html + '<div class="cln-days-save"><span class="hint" role="status">' + say + '</span><span class="btn-row">' +
       (useful && !M.dBusy ? '<button type="button" class="btn" data-cln="days-suggest">Use the suggestions</button>' : '') +
       (daysDirty() && !M.dBusy ? '<button type="button" class="btn" data-cln="days-undo">Undo</button>' : '') +
