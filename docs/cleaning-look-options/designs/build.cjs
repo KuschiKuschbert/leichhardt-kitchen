@@ -210,7 +210,7 @@ const CSS = `
 const DESIGNS = { a: A, b: B, c: C, m: M };
 
 /* ---------- opening the real page as each person ---------- */
-const SIZES = { 390: [390, 844], 768: [768, 1024], 1920: [1920, 1080] };
+const SIZES = { 390: [390, 844], 768: [768, 1024], 1280: [1280, 800], 1920: [1920, 1080] };
 async function cookPage(width) { const p = await F.cook(width); await p.setViewportSize({ width: SIZES[width][0], height: SIZES[width][1] }); return p; }
 async function station(picked) {
   const p = await F.L.open(F.browser(), '#/cleaning', { who: 'ann', width: 1920, height: 1080, touch: true, base: F.base(), extra: F.cleaning, clock: F.WED, wait: 1000, deviceMode: 'shared', profile: { v: 2, mode: 'shared', ownerId: '', sec: 'grill' },
@@ -260,7 +260,7 @@ async function notSent(p) {
   const shoot = async (p, name, m) => { await p.evaluate(() => scrollTo(0, 0)); await p.screenshot({ path: path.join(OUT, name + '.png') }); out[name] = Object.assign(await look(p), m || {}); };
   try {
     for (const key of Object.keys(DESIGNS).filter(k => !ONLY || ONLY.indexOf(k) >= 0)) {
-      for (const w of [390, 768]) {
+      for (const w of key === 'm' ? [390, 768] : [390, 768, 1280]) {
         const p = await cookPage(w); await apply(p, key);
         const m = await F.measure(p);
         await shoot(p, key + '-cook-' + w, { checks: m });

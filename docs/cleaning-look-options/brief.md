@@ -98,6 +98,7 @@ Drawn inside the real page ([designs/build.cjs](designs/build.cjs)): the real ro
 | 390 px: first box / complete rows | 454 / 5 | 344 / 6 | 317 / 6 | 281 / 7 |
 | 390 px: page length (screens) | 5.4 | 5.5 | 5.4 | 1.6 |
 | 768 px: rows / first box | 9 / 504 | 9 / 430 | 9 / 382 | 9 / 358 |
+| 1280 x 800 px (a laptop), cook: rows / first box | not measured | 7 / 393 | 17 / 344 | 9 / 321 |
 | Section screen, cook on that section: rows / first box | 9 / 504 | 10 / 430 | 23 / 380 | 11 / 358 |
 | Section screen, cook from another section: rows / first box | 9 / 504 | 9 / 488 | 23 / 459 | 11 / 326 |
 | Tick in your section: phone / section screen | 1 / 2 | 1 / 2 | 1 / 2 | 1 / 2 |
@@ -111,7 +112,7 @@ Drawn inside the real page ([designs/build.cjs](designs/build.cjs)): the real ro
 | New reads or rules | none | none | none | none (two approved rules change) |
 | Risk | low | sticky panel, second layout in shell CSS | folds can hide unsent work; rule changes |
 
-A Grill close on a phone is 32 taps in every design (9 jobs, 7 with checks, 16 checks); on the section screen one name tap more per recorded job. No design changes that.
+A Grill close on a phone is 31 taps in every design (9 jobs due on a Wednesday, 6 with checks, 16 checks; counted in the fixture); on the section screen one name tap more per recorded job. No design changes that.
 
 ### How they differ
 

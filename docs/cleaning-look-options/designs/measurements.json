@@ -1,6 +1,6 @@
 {
  "kind": "Preview inside the implemented app's real Cleaning page (click-test stand-in, synthetic data). The shell, top bar, tab bar, rows, tick, Undo and Who did this are the app's; the parts marked data-design are rearranged or drawn in and put back after every redraw.",
- "commit": "f05dcd52",
+ "commit": "973f8fab",
  "viewports": "390 x 844, 768 x 1024, 1920 x 1080 (section screen: shared, touch, set to Grill)",
  "results": {
   "a-cook-390": {
@@ -549,6 +549,72 @@
      "large": false,
      "passes": true,
      "text": "0 of 50 in the kitchen"
+    },
+    "lowestControlEdge": null,
+    "textUnder12px": []
+   }
+  },
+  "a-cook-1280": {
+   "rowsTotal": 52,
+   "rowsInView": 7,
+   "firstBoxTop": 393,
+   "screensLong": 4.5,
+   "sideways": false,
+   "checks": {
+    "screensLong": 4.5,
+    "sideways": false,
+    "controls": 0,
+    "under44": [],
+    "lowestContrast": {
+     "ratio": 6.73,
+     "fontPx": 13,
+     "large": false,
+     "passes": true,
+     "text": "0 of 50 in the kitchen"
+    },
+    "lowestControlEdge": null,
+    "textUnder12px": []
+   }
+  },
+  "b-cook-1280": {
+   "rowsTotal": 52,
+   "rowsInView": 17,
+   "firstBoxTop": 344,
+   "screensLong": 3.7,
+   "sideways": false,
+   "checks": {
+    "screensLong": 3.7,
+    "sideways": false,
+    "controls": 20,
+    "under44": [],
+    "lowestContrast": {
+     "ratio": 5.05,
+     "fontPx": 15,
+     "large": false,
+     "passes": true,
+     "text": "Pack down"
+    },
+    "lowestControlEdge": null,
+    "textUnder12px": []
+   }
+  },
+  "c-cook-1280": {
+   "rowsTotal": 52,
+   "rowsInView": 9,
+   "firstBoxTop": 321,
+   "screensLong": 1.4,
+   "sideways": false,
+   "checks": {
+    "screensLong": 1.4,
+    "sideways": false,
+    "controls": 92,
+    "under44": [],
+    "lowestContrast": {
+     "ratio": 4.76,
+     "fontPx": 15,
+     "large": false,
+     "passes": true,
+     "text": "Shared kitchen"
     },
     "lowestControlEdge": null,
     "textUnder12px": []

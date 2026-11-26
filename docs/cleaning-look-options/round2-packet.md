@@ -46,6 +46,7 @@ The page opens on the cook's own section as its title; every other group is one 
 | 390 px: complete rows above the tab bar | 5 | 6 | 6 | 7 |
 | 390 px: page length (screens) | 5.4 | 5.5 | 5.4 | 1.6 |
 | 768 px: rows / first box | 9 / 504 | 9 / 430 | 9 / 382 | 9 / 358 |
+| 1280 x 800 px (a laptop), cook: rows / first box (drawn after scoring) | not measured | 7 / 393 | 17 / 344 | 9 / 321 |
 | Section screen 1920 x 1080, cook on Grill: rows / first box | 9 / 504 | 10 / 430 | 23 / 380 | 11 / 358 |
 | Same, cook on Pans: rows / first box | 9 / 504 | 9 / 488 | 23 / 459 | 11 / 326 (Pans leads) |
 | Section screen page length (screens) | 3.4 | 3.4 | 2.8 | 1.1 |
@@ -62,7 +63,7 @@ The page opens on the cook's own section as its title; every other group is one 
 | Keyboard focus on the first drawn control (390) | | no drawn control on the phone | Go to Pack down: 3 px ring, 3.33:1 | Temperature logs: 3 px ring, 3.33:1 |
 | New reads, rules, saved-shell files | | none; CSS in the shell (K1) | none; CSS in the shell (K1) | none; CSS in the shell (K1) |
 
-Whole Grill close on a phone, any design (from the saved lists): 9 jobs, 7 with checks (16 checks): 7 opens, 16 checks, 7 Record done, 2 plain ticks = 32 taps; on the section screen one more name tap per recorded job. No design changes that; changing Who did this is a rule change none of them proposes.
+Whole Grill close on a phone, any design (from the saved lists): 9 jobs due on a Wednesday, 6 with checks (16 checks): 6 opens, 16 checks, 6 Record done, 3 plain ticks = 31 taps (counted in the fixture); on the section screen one more name tap per recorded job. No design changes that; changing Who did this is a rule change none of them proposes.
 
 Not evidenced in any design: Extra large text; the Functions fold above the page on a function night; a refused tick and its Refresh; a fold opening by itself on unsent work in C (the code is drawn, the case was not exercised); bench reading of a real 21 to 24 inch screen; the old saved shell meeting a new page (K1).
 
