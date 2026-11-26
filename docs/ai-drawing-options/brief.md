@@ -151,7 +151,7 @@ Evidence packet: [round2/packet.md](round2/packet.md). Designs, the frame and th
 **The three designs.**
 - **A: Claude's version in the book's note.** Seconds, through a Cloud Function. Claude's plate swaps onto the canvas.
 - **B: two buttons on the empty plate.** Claude's plate arrives in the studio's panel beside the book's. Seconds.
-- **C: ask for tonight, pick tomorrow.** The nightly job at about US$0.03 a plate, with a review page.
+- **C: ask for tonight, pick tomorrow.** The nightly job (about US$0.19 for a night's first plate, US$0.03 for each further one), with a review page.
 
 ### Scores
 
@@ -171,7 +171,7 @@ First place: A 4, C 3. B was last for all seven.
 - Ask from the book's note, under one name.
 - Reject B's second Draw button (Headspace, Linear).
 
-Most also wanted Claude's plate seen full size in the studio before it is kept, rather than from a 150 px thumbnail: the cook, keeper, skeptic and UX designer (Airbnb). Three rejected a filled orange Keep, because the amber line should be the loudest thing: the screen designer, UX designer and new starter. **The real split was the path:** seconds, with Blaze, a header change and about US$0.19 a cold tap, against overnight, with no server and about US$0.03.
+Most also wanted Claude's plate seen full size in the studio before it is kept, rather than from a 150 px thumbnail: the cook, keeper, skeptic and UX designer (Airbnb). Three rejected a filled orange Keep, because the amber line should be the loudest thing: the screen designer, UX designer and new starter. **The real split was the path:** seconds, with Blaze, a header change and about US$0.19 a cold tap, against overnight, with no server and about US$0.03 for each plate after a night's first.
 
 ### The mix
 
@@ -179,11 +179,11 @@ Most also wanted Claude's plate seen full size in the studio before it is kept, 
 | --- | --- | --- | --- |
 | A: the ask in the book's note | Take (7 of 7) | Headspace, one name | The chef asks after seeing the free plate, so pays only when it disappoints |
 | A: Claude's plate full size on the canvas | Take | Airbnb, the whole job together | Overlaps show where hand fixes happen |
-| A: the Cloud Function, seconds | Reject | | Blaze, a header change, a second access check, 6 times the cost; nobody needed seconds (follow-up) |
+| A: the Cloud Function, seconds | Reject | | Blaze, a header change, a second access check outside the rules; nobody asked again needed seconds (follow-up). Cost is about the same for one plate (US$0.19 either way); only further plates in the same night are cheaper |
 | B: the second hero button | Reject (7 of 7) | Linear, Headspace | Two names; a choice before the free plate shows |
 | B: worded choices, red failure words on paper | Take | Duolingo, truthful | Plain words for what stays |
 | B: the panel compare | Reject | | At 390 px the note hid the book's plate; at 1920 Claude's plate was about 200 px |
-| C: the nightly path | Take | | US$0.03 a plate, no server, a revert stops it |
+| C: the nightly path | Take | | No server, a revert stops it; about US$0.19 for the first plate of a night and US$0.03 for each further one that night |
 | C: its own review page | Reject for a chip | Where it goes: the smallest place that works | No new route; the plates open full size |
 | C: one-tap Keep from a thumbnail | Reject | Airbnb | Hides a 64% overlap; skips the studio's save and Pass labels |
 | C: its failure and stale words | Take | Duolingo | "The book's plate stays" |
@@ -204,7 +204,7 @@ Most also wanted Claude's plate seen full size in the studio before it is kept, 
 ### Recommendation
 
 **Recommend the blend: A's ask and full-size swap in the book's note, on C's overnight path, with a Claude's plates chip in Recipes & drawings.**
-- **Why it wins.** It keeps the one name every reviewer asked for. It shows Claude's plate full size where it can be fixed. It costs about US$0.03 a plate with no Blaze, no security header change and no access code outside the rules. On a menu-change day the chef asks for ten dishes and reviews all ten in one list.
+- **Why it wins.** It keeps the one name every reviewer asked for. It shows Claude's plate full size where it can be fixed. It needs no Blaze, no security header change and no access code outside the rules. On a menu-change day the chef asks for ten dishes and reviews all ten in one list, and that night costs about US$0.19 for the first plate and US$0.03 for each further one. A single ask costs about the same as the Cloud Function's US$0.19, so the cost case only holds for several dishes at once. A trimmed prompt would cut the first figure (Not evidenced).
 - **Main downside.** A day's wait. A one-night special gains nothing.
 - **Stage 0, optional.** The 81 plates Claude already drew could fill the chip first at no new cost, as the head chef reviewer and the skeptic asked. That needs the bake-off's answers brought over from the owner's Mac, and each recipe checked against 26 Nov.
 
@@ -217,7 +217,7 @@ Most also wanted Claude's plate seen full size in the studio before it is kept, 
 
 | # | Scenario | Evidence | Repair or check | Disposition |
 | --- | --- | --- | --- | --- |
-| 1 | A recipe save redraws a kept Claude plate | Risk; source read of `redrawFrom()` only | `layout.auto` without `lv`; a failing-first case in `tests/autodraw.test.js` | In the build |
+| 1 | A recipe save redraws a kept Claude plate | Risk; source read of `redrawFrom()` only | `layout.auto` without `lv`; a failing-first case in `tests/autodraw.test.js`. With that, `keptOlder()` runs and today's slip says "Kept the older plate drawing... tap Draw it again", which would tell the chef to throw Claude's plate away: the slip must name Claude's plate instead | In the build |
 | 2 | A slow night stops the Records count | Risk | The step in its own job with its own time limit, after the analysis; a node test with a stand-in API | In the build |
 | 3 | Claude's plate offered over newer work: the card changed, a draft on the device, or the day 1 save rewrote the Pass labels | Risk | Check the card's signature without the Pass labels; offer in the note, never replace a draft | In the build |
 | 4 | A plate saved with guest-visible food left off | Risk (Claude left off 7 dishes' items in the bake-off) | The amber line with Add it and Leave it off; the save slip names it (proposed change) | Head chef's call on the slip |
@@ -225,6 +225,7 @@ Most also wanted Claude's plate seen full size in the studio before it is kept, 
 | 6 | A third note button at 390 px | Reproduced in Preview: the actions ran past the note's edges (M4 before the fix) | The row wraps; the note leads with Claude's line and folds the recipe lines; 44 px buttons | Fixed in the preview, check in the build |
 | 7 | Failure words on the dark note | Reproduced in Preview (cream in A4) | `--bad-on-dark`, measured 7.09:1 in the blend (screen designer) | Fixed in the preview |
 | 8 | The wait shown as "about 10 s" | The bake-off: Butchers Board took 17 s | The blend has no wait on screen | Gone |
+| 9 | The 03:00 run is late or skipped (GitHub drops some scheduled runs), or the chef asks after that night's run | Risk | Say "after tonight's run" and show the date asked; a "not drawn yet" state kept apart from failed; a node test of a skipped night | In the build |
 
 ### Contract fit
 
@@ -249,6 +250,6 @@ No Blaze and no security header change.
 
 **Corrections made during round 2:**
 - The packet first said the head chef picked neither "on 3 of 4 boards". In fact, of the 8 boards and platters, Claude won 5 and neither won 3.
-- The cost of a single cold tap is about US$0.19 (measured once), not the warm US$0.03.
+- The cost of a single cold tap is about US$0.19 (measured once), not the warm US$0.03. The same holds overnight: the prompt is cached for minutes, so the first plate of each night pays about US$0.19 and only further plates that night pay about US$0.03.
 
 **Head chef's choice:** waiting.

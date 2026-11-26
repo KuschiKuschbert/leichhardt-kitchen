@@ -103,7 +103,7 @@ Not evidenced: weekly volume; pans, side views, builds.
 
 ## Design C: ask for tonight, pick tomorrow
 
-**Central idea.** No wait and no server. Claude draws overnight in the 03:00 job, with the cache warm (about US$0.03 a plate). The chef asks from the studio's More tools, and picks the next day on a review page, with the plates side by side, as in the bake-off.
+**Central idea.** No wait and no server. Claude draws overnight in the 03:00 job: about US$0.19 for the first plate of a night, US$0.03 for each further one with the cache warm. The chef asks from the studio's More tools, and picks the next day on a review page, with the plates side by side, as in the bake-off.
 
 - **Path:** the nightly job (`nightly-learning.yml`). No Blaze, no security header change. The ask is a request saved through `W()`, so the rules already decide who may ask.
 - **Main task, a plate from Claude:**
@@ -129,7 +129,7 @@ Not evidenced: weekly volume; pans, side views, builds.
 | Relearning | A new page to find. Asking is a quiet tile |
 | New reads, rules | A request write per ask; the nightly job's reads; the review page reads the waiting results once when opened |
 | Needs from the head chef | Reversing 21 Oct and 15 Nov, the marker. No Blaze, no header change |
-| Cost a plate | About US$0.03 (measured warm) |
+| Cost a plate | About US$0.19 for the first plate of a night, US$0.03 for each further one (measured warm) |
 | Risk | A day's wait. A recipe changed after the ask makes the night's plate stale (needs the card's signature checked before it is offered). The tile is easy to miss. Plates are small side by side on a phone |
 
 ## How they differ
@@ -142,7 +142,7 @@ Not evidenced: weekly volume; pans, side views, builds.
 | How you compare | One at a time on the canvas | Side by side, canvas and panel | Side by side on a review page |
 | Names | One (Draw it for me, with Claude's version inside it) | Two buttons | One, with a tile |
 | Navigation | None new | None new | A new page |
-| Cost a plate | About US$0.19 cold | About US$0.19 cold | About US$0.03 |
+| Cost a plate | About US$0.19 cold | About US$0.19 cold | About US$0.19 for a night's first, US$0.03 each further |
 
 ## The same in all three
 
@@ -160,7 +160,7 @@ Not evidenced: weekly volume; pans, side views, builds.
 **Central idea.** A's flow on C's path. The chef asks Claude from the book's own note, in one name. Claude draws overnight in its own nightly job. Next day, the chef finds the dish under a "Claude's plates" chip in Recipes & drawings, and sees Claude's plate full size on the canvas, where hand fixes happen. Save keeps whichever plate is on screen.
 
 - **Ask** (A, all seven): Ask Claude tonight in the book's note, after Draw it for me has drawn. No second Draw button (all seven put B last).
-- **Path** (C): a request saved through `W()`, so the rules decide who may ask (head chef and sous chefs). A nightly step in its own job, with its own time limit, after the analysis. A slow or failed night never stops the Records count (keeper, skeptic). About US$0.03 a plate warm. No Blaze, no security header change, no access code outside the rules.
+- **Path** (C): a request saved through `W()`, so the rules decide who may ask (head chef and sous chefs). A nightly step in its own job, with its own time limit, after the analysis. A slow or failed night never stops the Records count (keeper, skeptic). About US$0.19 for the first plate of a night and US$0.03 for each further one that night (the prompt is cached for minutes, not across nights). No Blaze, no security header change, no access code outside the rules.
 - **Asked** (M2): on reopening the drawing, a quiet line in the note: "Asked Claude to draw this tonight. Its plate shows here tomorrow, and in Recipes & drawings under Claude's plates", with Cancel the ask.
 - **Ready** (M3): a chip "Claude's plates · 3" in the existing chip row of Recipes & drawings, second in the row and only while plates are ready. It filters the list, and each row says "Claude's plate ready, drawn last night". No new page, and no notice on Home, the work pages or a ping, so no OK is needed under service rule 2.
 - **Compare and keep** (M4, M4b; A, the new starter, and the follow-up):
@@ -191,5 +191,5 @@ Not evidenced: weekly volume; pans, side views, builds.
 | Build size | About 4 pull requests: the request and its rules; the nightly step in its own job; the note, chip and row line; tests (rules emulator, autodraw, stale, a node test with a stand-in API) |
 | New reads, rules | A write per ask; 1 query (1 to 3 reads) when Recipes & drawings opens; 1 read when a drawing opens; about 3 reads a dish at night. A new private collection `claude/` with its rules (looser: publish before the code) |
 | Needs from the head chef | Reversing 21 Oct and 15 Nov; the request rules; the key as an Actions secret; extending the save slip to name food left off (a proposed change). No Blaze, no header change |
-| Cost a plate | About US$0.03 |
+| Cost a plate | About US$0.19 for the first plate of a night, US$0.03 for each further one that night |
 | Risk | A day's wait. The chip is new to find. A Save is not blocked by the amber line: the cook wanted Keep to wait for Add it or Leave it off, recorded as a disagreement |
