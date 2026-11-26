@@ -5862,7 +5862,7 @@ button[data-cln-ready-label] > span { position: absolute; inset: 0; display: gri
 .cln-day-chip[aria-pressed="true"] small { color: #fff; }
 .cln-add-sug { display: flex; flex-direction: column; gap: .3rem; margin: .7rem 0 .2rem; }
 .cln-chef-page .cln-editor .cln-add-sug .hint { margin: 0; }
-.cln-add-tonight { color: var(--ink); }
+.cln-chef-page .cln-editor .cln-add-sug .cln-add-tonight { color: var(--ink); font: 600 .875rem/1.4 var(--body); }
 .cln-add-weight { margin-top: .6rem; }
 .cln-add-weight .chips { gap: .35rem; margin: .3rem 0 .2rem; }
 .cln-add-kind { margin-top: .4rem; max-width: 22rem; }

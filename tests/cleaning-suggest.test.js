@@ -198,7 +198,7 @@ const MONTHLY = ['clean-template-sc-grill-02', 'clean-template-sc-pans-03', 'cle
   {
     const jobs = base(); jobs[CFG].staffSee = { cleaning: true };
     const p = await open(b, { admin: true }, 390, jobs);
-    ok(!(await p.$('[data-cln="sug-start"]')) && /Cleaning is on for the team, so the book no longer suggests days in bulk/.test(await text(p, '.cln-sug-off')), 'with Cleaning on there is no Suggest the days, and the page says why');
+    ok(!(await p.$('[data-cln="sug-start"]')) && /Cleaning is on.*The book now suggests a day for new jobs only, in Add cleaning task\. A job that has a day stays there until you open it and change it\./.test(await text(p, '.cln-sug-off')), 'with Cleaning on there is no Suggest the days, and the page says why');
     await p.context().close();
   }
   {

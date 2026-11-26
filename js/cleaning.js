@@ -500,7 +500,7 @@
     if (on && M.plan.state === 'ok' && addPlanner()) p = addPlan(d);
     var chips = DAYS.map(function (day) {
       var tag = on ? addTag(day[0], p, lv, today) : '';
-      return '<button type="button" class="chip' + (on ? ' cln-day-chip' : '') + '" data-cln="repeat" data-dow="' + day[0] + '" aria-pressed="' + (d.dows.indexOf(day[0]) >= 0) + '"' + (M.saveBusy ? ' disabled' : '') + '>' + (on ? '<span>' + day[1] + '</span><small>' + esc(tag || ' ') + '</small>' : day[1]) + '</button>';
+      return '<button type="button" class="chip' + (on ? ' cln-day-chip' : '') + '"' + (on ? ' style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;line-height:1.15"' : '') + ' data-cln="repeat" data-dow="' + day[0] + '" aria-pressed="' + (d.dows.indexOf(day[0]) >= 0) + '"' + (M.saveBusy ? ' disabled' : '') + '>' + (on ? '<span>' + day[1] + '</span> <small style="font-size:.72rem;font-weight:400">' + esc(tag || '\u00a0') + '</small>' : day[1]) + '</button>';
     }).join('');
     return '<div class="cln-add-day"><div><span class="label" id="cln-repeat-label">Repeat on</span><div class="chips cln-repeat" role="group" aria-labelledby="cln-repeat-label">' + chips + '</div></div>' + (on ? addDayMore(d, p, lv, today) : '') + '</div>';
   }
@@ -520,7 +520,7 @@
       box.push('<b>Suggested: ' + esc(dayWords(p.days)) + '</b><span class="hint">' + esc(sentence(p.why)) + (p.mates.length && /of its kind/.test(p.why) ? ' ' + esc(p.mates.join(' and ') + (p.mates.length > 1 ? ' clean their ' : ' cleans its ') + M.newK.toLowerCase() + ' on a ' + DAY_NAME[p.days[0]] + ' too.') : '') + (p.heaviest ? ' Pick another day if that is too much.' : '') + ' ' + (same ? 'Chosen.' : n ? 'You chose ' + esc(dayWords(d.dows.slice().sort(function (a, b) { return DAY_ORDER.indexOf(a) - DAY_ORDER.indexOf(b); }))) + '.' : 'No day is chosen until you press one.') + '</span>');
     }
     // a new job starts the day it is saved: today's chip pressed makes it due at tonight's close
-    tonight = d.dows.indexOf(today) >= 0 ? '<b class="cln-add-tonight">' + todayName + ' is today: saved now, this job is due at tonight\'s close.</b>' : '<span class="hint">' + todayName + ' is today: a new job starts the day it is saved, so pressing ' + DAYS.filter(function (x) { return x[0] === today; })[0][1] + ' makes it due tonight.</span>';
+    tonight = d.dows.indexOf(today) >= 0 ? '<strong class="cln-add-tonight">' + todayName + ' is today: saved now, this job is due at tonight\'s close.</strong>' : p && p.days && p.days.indexOf(today) >= 0 ? '<strong class="cln-add-tonight">' + todayName + ' is today and the suggested day: pressed, this job is due at tonight\'s close.</strong>' : '<span class="hint">' + todayName + ' is today: a new job starts the day it is saved, so pressing ' + DAYS.filter(function (x) { return x[0] === today; })[0][1] + ' makes it due tonight.</span>';
     box.push(tonight);
     if (p && p.has) box.push('<span class="hint">Under each day: the points ' + esc(p.name) + ' already has that night (light 1, medium 2, heavy 3).</span>');
     var weight = '<div class="cln-add-weight"><span class="label" id="cln-weight-label">How long it takes</span><div class="chips" role="group" aria-labelledby="cln-weight-label">' + [1, 2, 3].map(function (w) { return '<button type="button" class="chip" data-cln="add-weight" data-w="' + w + '" aria-pressed="' + (M.newW === w) + '"' + (M.saveBusy ? ' disabled' : '') + '>' + WEIGHTS[w] + '</button>'; }).join('') + '</div>' +
@@ -528,14 +528,22 @@
     var kind = '<label class="field cln-add-kind" for="cln-add-kind"><span class="label">Kind of job (optional)</span><select id="cln-add-kind" data-cln-field="addkind"' + (M.saveBusy ? ' disabled' : '') + '><option value="">None</option>' + KINDS.map(function (x) { return '<option' + (x === M.newK ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select></label>';
     return '<div class="cln-sug cln-add-sug" aria-live="polite">' + box.join('') + '</div>' + weight + kind;
   }
-  // the new job's day block drawn again in place, focus kept on the control in hand
+  // the new job's day block brought up to date in place: the day chips, the weight chips and the kind keep their nodes
+  // (focus and the kind's picker stay put), and the box keeps its live region, so a new suggestion is announced. Only
+  // when what the form offers changes (the weights came in, a section chosen, every day pressed) is it drawn again.
   function patchAddDay() {
     var at = M.root && M.root.querySelector('.cln-add-day'); if (!at || !M.draft) return;
-    var a = document.activeElement, had = a && at.contains(a) ? a.id || a.getAttribute('data-cln') : '', dow = had && a.getAttribute('data-dow'), w = had && a.getAttribute('data-w');
-    at.outerHTML = addDayBlock(M.draft);
-    if (!had) return;
-    var back = [].filter.call(M.root.querySelectorAll('.cln-add-day [data-cln], .cln-add-day select'), function (el) { return (el.id === had || el.getAttribute('data-cln') === had) && (!dow || el.getAttribute('data-dow') === dow) && (!w || el.getAttribute('data-w') === w); })[0];
-    if (back) back.focus({ preventScroll: true });
+    var tmp = document.createElement('div'); tmp.innerHTML = addDayBlock(M.draft); var next = tmp.firstChild;
+    var shape = function (el) { return [].map.call(el.querySelectorAll('[data-cln], select, .cln-add-sug, .cln-add-note'), function (x) { return x.tagName + (x.getAttribute('data-cln') || '') + (x.getAttribute('data-dow') || x.getAttribute('data-w') || '') + (x.className === 'cln-add-note' ? x.textContent : ''); }).join(); };
+    if (shape(at) !== shape(next)) {
+      var a = document.activeElement, dow = a && at.contains(a) && a.getAttribute('data-dow');
+      at.replaceWith(next); if (dow) { var back = next.querySelector('[data-cln="repeat"][data-dow="' + dow + '"]'); if (back) back.focus({ preventScroll: true }); } return;
+    }
+    [].forEach.call(next.querySelectorAll('[data-cln="repeat"], [data-cln="add-weight"]'), function (b) {
+      var attr = b.hasAttribute('data-dow') ? 'data-dow' : 'data-w', old = at.querySelector('[data-cln="' + b.getAttribute('data-cln') + '"][' + attr + '="' + b.getAttribute(attr) + '"]'); if (!old) return;
+      old.setAttribute('aria-pressed', b.getAttribute('aria-pressed')); old.disabled = b.disabled; if (old.innerHTML !== b.innerHTML) old.innerHTML = b.innerHTML;
+    });
+    ['.cln-add-sug', '.cln-add-weight > .hint'].forEach(function (sel) { var o = at.querySelector(sel), n = next.querySelector(sel); if (o && n && o.innerHTML !== n.innerHTML) o.innerHTML = n.innerHTML; });
   }
   // what a new job's save carries: its weight and kind, only for a job that comes round weekly (1 to 6 days)
   function addWeigh() { return addOn() && M.newW && M.plan.state === 'ok' && M.draft.dows.length >= 1 && M.draft.dows.length <= 6 ? { w: M.newW, k: M.newK } : null; }
@@ -755,7 +763,7 @@
   function sugBlock() { return '<div class="cln-sug-wrap">' + sugInner() + '</div>'; }
   function sugInner() {
     var on = teamOn(); if (on === null || M.plan.state !== 'ok') return '';
-    if (on) return '<p class="hint cln-sug-off">Cleaning is on for the team, so the book no longer suggests days in bulk. Change a job\'s day in Repeat tasks, one at a time.</p>';
+    if (on) return '<div class="cln-attention cln-sug-off" role="status"><b>Cleaning is on</b><span class="hint">The book now suggests a day for new jobs only, in Add cleaning task. A job that has a day stays there until you open it and change it.</span></div>';
     var s = M.sug, wait = weighDirty() || daysDirty();
     if (!s) return '<div class="cln-sug-start">' + (M.sugNote ? '<p class="hint" role="status">' + esc(M.sugNote) + '</p>' : '') + '<p class="hint">Cleaning is off for the team, so the book can suggest a day for each weekly and monthly job. It moves as few as it can. Nothing moves until you save.</p>' +
       '<button type="button" class="btn" data-cln="sug-start"' + (wait ? ' disabled' : '') + '>Suggest the days</button>' + (wait ? '<p class="hint" role="status">Save the weights and the days first.</p>' : '') + '</div>';

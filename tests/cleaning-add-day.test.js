@@ -43,8 +43,18 @@ const add = async (p, name, sec) => {
 const weigh = async (p, w) => { await p.click('[data-cln="add-weight"][data-w="' + w + '"]'); await L.settle(p, 50); };
 const pressDay = async (p, dow) => { await p.click('.cln-repeat [data-cln="repeat"][data-dow="' + dow + '"]'); await L.settle(p, 50); };
 const saveNow = async p => { await p.click('[data-cln="save"]'); await L.waitFor(p, () => !document.querySelector('[data-cln="save"][aria-busy="true"]'), null, 6000).catch(() => {}); await L.settle(p, 100); };
+// SHOTS=1: the form as the head chef sees it, with the fixed bars hidden so they do not paint across a tall element shot
+const SHOT = async (p, name) => {
+  if (!process.env.SHOTS) return;
+  await p.evaluate(() => document.querySelectorAll('body *').forEach(e => { const c = getComputedStyle(e).position; if ((c === 'fixed' || c === 'sticky') && !e.closest('.cln-editor')) e.setAttribute('data-shot-hide', e.style.visibility || '-'), e.style.visibility = 'hidden'; }));
+  await p.locator('.cln-editor').screenshot({ path: require('path').join(__dirname, '..', 'docs', 'cleaning-tracking-options', 'built', 'add-day-' + name + '-390.png') }).catch(() => {});
+  await p.evaluate(() => document.querySelectorAll('[data-shot-hide]').forEach(e => { const v = e.getAttribute('data-shot-hide'); e.style.visibility = v === '-' ? '' : v; e.removeAttribute('data-shot-hide'); }));
+};
+const formHeight = p => p.$eval('.cln-editor', e => Math.round(e.getBoundingClientRect().height));
+const inForm = p => p.evaluate(() => !!document.activeElement && !!document.activeElement.closest('.cln-editor'));
 const suggested = async p => (await chips(p)).filter(c => c.tag === 'suggested').map(c => c.dow);
 
+let ON_HEIGHT = 0;
 (async () => {
   const b = await L.start();
   // the form at each width: tags under the days, weight, kind, the suggestion, the tonight line; Save carries the weight
@@ -60,7 +70,11 @@ const suggested = async p => (await chips(p)).filter(c => c.tag === 'suggested')
     const c1 = await chips(p);
     ok(c1.filter(c => c.dow !== TODAY && c.dow !== 5 && c.dow !== 6).every(c => /^has \d+$/.test(c.tag)) && /points Pans already has that night/.test(await text(p, '.cln-add-sug')), width + ': with Pans chosen, each other day says the points Pans has that night (' + c1.map(c => c.day + ':' + c.tag).join(' ') + ')');
     ok(/Choose how long it takes, and the book suggests a day/.test(await text(p, '.cln-add-sug')) && /The book needs it to suggest a day/.test(await text(p, '.cln-add-weight')), width + ': with no weight, no suggestion: "Your call. The book needs it to suggest a day."');
-    await weigh(p, 2); await L.pick(p, '#cln-add-kind', 'Fridges'); await L.settle(p, 50);
+    if (width === 390) await SHOT(p, 'no-weight');
+    await weigh(p, 2);
+    ok(await p.evaluate(() => document.activeElement && document.activeElement.getAttribute('data-w') === '2'), width + ': after Medium, focus stays on Medium');
+    await L.pick(p, '#cln-add-kind', 'Fridges'); await L.settle(p, 50);
+    ok(await inForm(p) && await p.$eval('#cln-add-kind', e => e.value) === 'Fridges', width + ': after picking a kind, focus is still in the form and the kind is kept');
     const sug = await suggested(p), box = await text(p, '.cln-add-sug');
     ok(sug.length === 1 && new RegExp('Suggested: ' + NAME[sug[0]]).test(box) && /No day is chosen until you press one/.test(box) && (await chips(p)).every(c => !c.on), width + ': Medium and Fridges give one suggested day, shown on its chip and in words, nothing pressed (' + box + ')');
     ok(/Pans has the least|with the other jobs of its kind|heaviest night/i.test(box), width + ': the reason is in plain words (' + box + ')');
@@ -72,7 +86,7 @@ const suggested = async p => (await chips(p)).filter(c => c.tag === 'suggested')
     if (process.env.WIDEFONT) await p.addStyleTag({ content: '* { letter-spacing: .08em !important; }' });
     const lay = await p.evaluate(() => ({ wide: document.documentElement.scrollWidth <= innerWidth, small: [...document.querySelectorAll('.cln-add-day button, .cln-add-day select')].filter(e => e.getClientRects().length && e.getBoundingClientRect().height < 44).map(e => e.textContent.trim()) }));
     ok(lay.wide && !lay.small.length, width + ': no sideways scroll, every control at least 44 px (' + JSON.stringify(lay) + ')');
-    if (width === 390 && process.env.SHOTS) await p.screenshot({ path: require('path').join(__dirname, 'shots', 'cleaning-add-day-390.png'), fullPage: true }).catch(() => {});
+    if (width === 390) { await SHOT(p, 'suggested'); ON_HEIGHT = await formHeight(p); }
     await pressDay(p, sug[0]);
     ok(/Chosen\./.test(await text(p, '.cln-add-sug')) && (await chips(p)).find(c => c.dow === sug[0]).on && await p.evaluate(d => document.activeElement && document.activeElement.getAttribute('data-dow') === String(d), sug[0]), width + ': pressing the suggested day chooses it, and focus stays on that chip');
     await saveNow(p);
@@ -82,21 +96,33 @@ const suggested = async p => (await chips(p)).filter(c => c.tag === 'suggested')
     await p.context().close();
   }
   // today pressed: due at tonight's close, before and after Save
-  {
-    const p = await open(b, 390, base());
+  for (const width of [390, 768, 1280]) {
+    const p = await open(b, width, base());
     await add(p, 'Made-up tonight job', 'grill'); await weigh(p, 1); await pressDay(p, TODAY);
-    ok(new RegExp(NAME[TODAY] + ' is today: saved now, this job is due at tonight\'s close').test(await text(p, '.cln-add-sug')), 'today pressed: the box says the job is due at tonight\'s close');
+    ok(new RegExp(NAME[TODAY] + ' is today: saved now, this job is due at tonight\'s close').test(await text(p, '.cln-add-sug')), width + ': today pressed: the box says the job is due at tonight\'s close');
+    if (width === 390) await SHOT(p, 'tonight');
     await saveNow(p);
-    ok(/Starts today: due at tonight's close\./.test(await text(p, '.cln-save-note')), 'after Save: "Starts today: due at tonight\'s close." (' + await text(p, '.cln-save-note') + ')');
+    ok(/Starts today: due at tonight's close\./.test(await text(p, '.cln-save-note')), width + ': after Save: "Starts today: due at tonight\'s close." (' + await text(p, '.cln-save-note') + ')');
+    await p.context().close();
+  }
+  // a Monday: the suggested day is today. Its chip says suggested and the box says pressing it makes the job due tonight
+  {
+    const MON = L.NOW + ((1 - TODAY + 7) % 7) * DAY;
+    const p = await open(b, 390, base(), { clock: MON });
+    await add(p, 'Made-up Monday job', 'pans'); await weigh(p, 2); await L.pick(p, '#cln-add-kind', 'Fridges'); await L.settle(p, 50);
+    const c = await chips(p), box = await text(p, '.cln-add-sug');
+    ok(c[0].day === 'Mon' && c[0].tag === 'suggested' && /Monday is today and the suggested day: pressed, this job is due at tonight's close/.test(box), 'on a Monday with Monday suggested: Mon says suggested, first in the week, and the box says pressing it makes the job due tonight (' + c[0].tag + '; ' + box + ')');
     await p.context().close();
   }
   // no weights saved yet: the new job still gets a suggestion from its own weight; a refused weights read: no offer, Save still works
   {
-    const p = await open(b, 390, base({ noWeights: true }));
-    await add(p, 'Made-up no weights job', 'hot'); await weigh(p, 3);
-    ok((await suggested(p)).length === 1 && /Suggested: /.test(await text(p, '.cln-add-sug')), 'with no weights saved yet, a heavy new job still gets a suggested day (' + await text(p, '.cln-add-sug') + ')');
-    ok((await suggested(p)).every(d => d !== 5 && d !== 6), 'a heavy job is never suggested for Friday or Saturday');
-    await p.context().close();
+    for (const width of [390, 768, 1280]) {
+      const p = await open(b, width, base({ noWeights: true }));
+      await add(p, 'Made-up no weights job', 'hot'); await weigh(p, 3);
+      ok((await suggested(p)).length === 1 && /Suggested: /.test(await text(p, '.cln-add-sug')), width + ': with no weights saved yet, a heavy new job still gets a suggested day (' + await text(p, '.cln-add-sug') + ')');
+      ok((await suggested(p)).every(d => d !== 5 && d !== 6) && await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), width + ': a heavy job is never suggested for Friday or Saturday; no sideways scroll');
+      await p.context().close();
+    }
     const q = await L.open(b, '#/cleaning', { width: 390, height: 844, extra: base(), wait: 1000, admin: true });
     await q.evaluate(() => { window.__fake.denyReads = /cleaningPlan/; });
     await L.waitFor(q, () => { const pg = document.querySelector('.cln-page'); return pg && !/Loading cleaning/.test(pg.textContent); }, null, 8000).catch(() => {});
@@ -110,11 +136,12 @@ const suggested = async p => (await chips(p)).filter(c => c.tag === 'suggested')
   }
   // a refused batch: neither the job nor its weight; a lost answer: both landed, saved once
   {
-    const p = await open(b, 768, base());
+    const p = await open(b, 390, base());
     await add(p, 'Made-up refused job', 'fry'); await weigh(p, 2); await pressDay(p, 2);
     await p.evaluate(() => { window.__fake.deny = /cleaningPlan/; });
     await saveNow(p);
     let s = await store(p);
+    await SHOT(p, 'refused');
     ok(!newJobs(s, 'Made-up refused job').length && /Refused: nothing was saved, neither the job nor its weight/.test(await text(p, '.cln-save-note')) && await p.$eval('[data-cln="add-weight"][data-w="2"]', e => e.getAttribute('aria-pressed')) === 'true', 'the weight refused: the job is not saved either, it says so, and the form keeps the weight (' + await text(p, '.cln-save-note') + ')');
     await p.evaluate(() => { window.__fake.deny = null; window.__fake.lose = /cleaningPlan/; });
     await saveNow(p);
@@ -130,6 +157,8 @@ const suggested = async p => (await chips(p)).filter(c => c.tag === 'suggested')
   {
     const p = await open(b, 390, base({ off: true }));
     await add(p, 'Made-up job while off', 'grill');
+    const offHeight = await formHeight(p);
+    ok(offHeight > 0 && ON_HEIGHT > offHeight, 'the Add form at 390 px: ' + offHeight + ' px with Cleaning off, ' + ON_HEIGHT + ' px on with the suggestion (' + Math.round((ON_HEIGHT - offHeight) / 844 * 10) / 10 + ' screens more)');
     ok(!(await p.$('.cln-add-sug')) && !(await p.$('[data-cln="add-weight"]')) && (await chips(p)).every(c => !c.tag && /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)$/.test(c.day)), 'Cleaning off: the Add form is as before, no weight and no suggestion');
     await p.context().close();
     const q = await open(b, 390, base());
