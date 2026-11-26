@@ -9830,7 +9830,9 @@ if (list.length) sg('oreg', 's');
       var head = (out ? 'Lent to ' : 'Borrowed from ') + v;
       var since = (d >= 1 ? dayShort(x.date) + ' ' : '') + (x.addedAt ? clock(x.addedAt) : '');
       var who = pn ? (out ? pn + ' came for it' : pn + ' gave it') : '';
-      return '<article class="tr-card' + (old ? ' is-old' : '') + '" aria-label="' + esc(head + ', ' + (d >= 1 ? age + ' out' : 'today')) + '"><div class="tr-ch"><h4 class="tr-cv">' + esc(head) + '</h4>' +
+      // the In or Out pill the rows use leads the heading, so which way the stock went reads first (step 2 findings,
+      // head chef 26 Nov 2026); the heading says it in words, so the pill is not read out twice
+      return '<article class="tr-card' + (old ? ' is-old' : '') + '" aria-label="' + esc(head + ', ' + (d >= 1 ? age + ' out' : 'today')) + '"><div class="tr-ch"><h4 class="tr-cv"><span class="tr-way tr-way-' + (out ? 'out' : 'in') + '" aria-hidden="true">' + (out ? 'Out' : 'In') + '</span> ' + esc(head) + '</h4>' +
         '<span class="tr-age' + (old ? ' is-old' : '') + (d >= 1 ? '' : ' is-today') + '" title="' + esc('Since ' + longDate(x.date)) + '">' + age + '</span></div>' +
         metaHTML([esc(since), esc(who)], esc(x.addedBy || ''), '', 'logged by ').replace('class="nb-meta"', 'class="nb-meta tr-cs"') +
         '<ul class="nb-rows">' + c.rows.map(xLoanRow).join('') + '</ul></article>';

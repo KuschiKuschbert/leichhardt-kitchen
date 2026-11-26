@@ -146,8 +146,32 @@ async function waitForJump(p, id, allowEnd) {
   ok(/6\.5 L of the mayonnaise.*Measure the sauce.*bring it to 10 L/.test(await L.txt(tartare, '.steps')), 'Tartare Sauce: add mayonnaise to the measured volume');
   await tartare.context().close();
   await p.context().close();
-  p = await L.open(b, '#/r/barra', { width: 1280, height: 900, wait: 1200 });
-  ok(await p.evaluate(() => getComputedStyle(document.querySelector('.jumps')).display === 'none'), 'desktop card: no jump row (columns side by side)');
+  p = await L.open(b, '#/r/barra', { width: 1280, height: 900, wait: 1200, settings: { view: 'tiles' } });
+  ok(await p.evaluate(() => getComputedStyle(document.querySelector('.jumps')).display === 'none'), 'desktop Tiles card: no jump row (columns side by side)');
+  await p.context().close();
+  // the Pass view from 900 px (26 Nov 2026): the drawing takes the left column and Method is under the ingredients, so the
+  // jump row sits on the trail row, between the trail and Keep screen on; the row is no taller; Method lands at the top
+  for (const [w, h] of [[1920, 1008], [1280, 900]]) {
+    p = await L.open(b, '#/r/laksa', { width: w, height: h, touch: w === 1920, wait: 1200, settings: { view: 'pass' } });
+    const row = await p.evaluate(() => {
+      const j = document.querySelector('.rx-top > .jumps'), c = document.querySelector('.rx-top .crumbs'), k = document.querySelector('.rx-top .ko-chip');
+      if (!j || !c) return null;
+      const jb = j.getBoundingClientRect(), cb = c.getBoundingClientRect(), kb = k ? k.getBoundingClientRect() : null, top = document.querySelector('.rx-top').getBoundingClientRect();
+      return { shown: getComputedStyle(j).display !== 'none' && jb.height > 0, sticky: getComputedStyle(j).position, words: [...j.querySelectorAll('[data-act="jump"]')].map(e => e.textContent),
+        oneRow: Math.abs((jb.top + jb.bottom) / 2 - (cb.top + cb.bottom) / 2) < 8, between: jb.left > cb.left && (!kb || jb.right <= kb.left + 1), h: Math.round(top.height) };
+    });
+    ok(!!row && row.shown && row.sticky !== 'sticky' && row.words.slice(0, 3).join() === 'Allergens,Ingredients,Method' && row.oneRow && row.between && row.h <= 52,
+      w + ' Pass recipe: the jump row sits on the trail row, between the trail and Keep screen on, the row no taller (' + JSON.stringify(row) + ')');
+    await p.click('[data-act="jump"][data-val="r-steps"]'); await L.settle(p, 900);
+    // the method at the top, or the page scrolled to its end with the method in view (a short card cannot go further)
+    const at = await p.evaluate(() => ({ top: Math.round(document.getElementById('r-steps').getBoundingClientRect().top), y: Math.round(scrollY),
+      end: Math.abs(scrollY + innerHeight - document.documentElement.scrollHeight) < 4, vh: innerHeight }));
+    ok(at.y > 0 && (at.top >= 0 && at.top < 120 || at.end && at.top < at.vh - 100), w + ' Pass recipe: Method jumps to the method (' + JSON.stringify(at) + ')');
+    ok(!p.errors.length && !(await L.overflow(p)), w + ' Pass recipe: no page errors, no sideways scroll ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+  p = await L.open(b, '#/r/laksa', { width: 390, height: 844, touch: true, wait: 1200, settings: { view: 'pass' } });
+  ok(await p.evaluate(() => { const j = document.querySelector('.jumps'); return !!j && getComputedStyle(j).position === 'sticky' && getComputedStyle(document.querySelector('.rx-top')).display === 'contents'; }), '390 Pass recipe: the jump row still sticks under the top bar');
   await p.context().close();
 
   // a dish used on another dish (Side Salad on the Grill Maiden's Board): the Pass card links to it, as Tiles does (23 Oct 2026).
