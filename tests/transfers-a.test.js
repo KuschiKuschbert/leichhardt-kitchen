@@ -24,7 +24,9 @@ const lines = async (p, text) => Object.entries(await store(p)).filter(([k, v]) 
 
   // Still out first: the earlier days with their age, then today's; the returned line under Done today
   const out = await p.$$eval('.tr-outstanding .tr-card', l => l.map(c => c.querySelector('.tr-cv').textContent + ': ' + [...c.querySelectorAll('.tr-row strong')].map(e => e.textContent).join(', ') + ' ' + c.querySelector('.tr-age').textContent + (c.classList.contains('is-old') && c.querySelector('.tr-age.is-old') ? '!' : '')));
-  ok(out.join(' | ') === 'Lent to Grand Hotel: Cream 9 days! | Lent to Riviera: Butter 3 days | Lent to Riviera: Brioche buns Today', 'Still out: a card a loan, earlier days with their age (red from 7 days), then today\'s (' + out.join(' | ') + ')');
+  ok(out.join(' | ') === 'Out Lent to Grand Hotel: Cream 9 days! | Out Lent to Riviera: Butter 3 days | Out Lent to Riviera: Brioche buns Today', 'Still out: a card a loan, earlier days with their age (red from 7 days), then today\'s (' + out.join(' | ') + ')');
+  // the rows' In and Out pill leads each card's heading (26 Nov 2026), not read out twice: the heading says it in words
+  ok(await p.$$eval('.tr-outstanding .tr-cv', l => l.length === 3 && l.every(h => { const w = h.firstElementChild; return !!w && w.matches('.tr-way.tr-way-out') && w.getAttribute('aria-hidden') === 'true' && w.textContent === 'Out'; })), 'Still out: each card\'s heading starts with the Out pill');
   const sub = await txt(p, '.tr-card:nth-child(2) .tr-cs') || '';
   ok(/Jo came for it · logged by Bo$/.test(sub.trim()), 'a card says since when, who came for it and who logged it (' + sub + ')');
   ok(/Lemons/.test(await txt(p, '.tr-done') || '') && !/Lemons/.test(await txt(p, '.tr-outstanding') || ''), 'Done today: the returned line, and only there');

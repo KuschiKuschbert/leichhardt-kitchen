@@ -6,7 +6,7 @@ Home answers the staff questions first: **what section and shift, when is my bre
 
 ## Contract
 
-- `#hm-day` shows the existing personal section precedence, configured shift hours and full break window, length and return. On-break, split, completed-break, no-break, changed, unassigned, loading and failed-plan states stay distinct. Your day retains additional breaks, later shifts and save metadata.
+- `#hm-day` is headed "Your day" on a personal phone and "<name>'s day" on a shared screen (26 Nov 2026, so the next cook does not read it as theirs). It shows the existing personal section precedence, configured shift hours and full break window, length and return. On-break, split, completed-break, no-break, changed, unassigned, loading and failed-plan states stay distinct. Your day retains additional breaks, later shifts and save metadata.
 - `#hm-with` shows scheduled coworkers by selected shift or overlapping configured shift hours, excluding the signed-in person. This is a saved plan, not a claim that somebody is physically present. Names stay visible. Without a usable personal assignment, use the full saved day and label it On today. Since 10 November 2026 both show as the section board in [On today board](#on-today-board-10-november-2026).
 - The native full-team disclosure retains every saved shift, person, section and break. Since 10 November 2026 it shows only when the card holds one shift's coworkers; a card that already holds the whole day has no fold. Staff get read-only records; chef planner links retain `teamOK()`.
 - Work reminders, order cut-offs, functions, pings, minutes and Prep by section follow the personal/team group. A confirmed empty work board is hidden; loading/error information is retained.

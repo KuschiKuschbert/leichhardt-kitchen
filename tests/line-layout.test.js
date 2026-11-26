@@ -61,7 +61,7 @@ const meta = (p, id) => p.evaluate(sel => {
       const sb = s.getBoundingClientRect(), hb = h.getBoundingClientRect(), rb = r.getBoundingClientRect();
       return { head: h.textContent, text: s.textContent.trim(), under: sb.top >= hb.bottom - 1 && sb.bottom <= rb.top + 1, shown: sb.height > 0 };
     }, row('s4x'));
-    ok(!!m && m.head === 'Lent to Riviera' && /^\d\d:\d\d · Jo came for it · logged by Bo$/.test(m.text) && m.under && m.shown, w + ' px transfers: the card names the venue, then when, who came and who logged it, above the item (' + JSON.stringify(m) + ')');
+    ok(!!m && m.head === 'Out Lent to Riviera' && /^\d\d:\d\d · Jo came for it · logged by Bo$/.test(m.text) && m.under && m.shown, w + ' px transfers: the card names the venue, then when, who came and who logged it, above the item (' + JSON.stringify(m) + ')');
     if (w === 390) {
       await p.click(row('s4x') + ' .nb-more'); await L.settle(p, 200);
       ok(/Written by Bo/.test(await txt(p, '#lm-sheet .lm-who') || ''), 'transfers: the ⋯ sheet still says who wrote it');
