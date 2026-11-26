@@ -50,11 +50,13 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.nb-left .nb-hd
   let hs = await heads(p);
   ok(hs[0] === 'Grill', 'no section known today: the usual order (' + hs.join(', ') + ')');
   await p.context().close();
-  // the wall board: every section in its usual place
+  // the wall board
   p = await L.open(b, '#/prep', { who: 'ann', deviceMode: 'shared', width: 1920, height: 1008, extra: fixture(), wait: 1500, init: "localStorage.setItem('lk.wall', '1')" });
   await L.waitFor(p, () => document.querySelectorAll('.wb-col').length >= 3, null, 8000).catch(() => {});
   const cols = await p.$$eval('.wb-col', l => l.map(e => e.getAttribute('aria-label')));
-  ok(cols[0] === 'Grill', 'the wall board keeps its usual order (' + cols.join(', ') + ')');
+  // since 26 Nov 2026 the board follows the section list with your own section first, and its columns keep their places
+  // (tests/section-screens.test.js): here the list is Larder, Grill, Sauce and Ann is on Larder
+  ok(cols.join(', ') === 'Larder, Grill, Sauce', 'the wall board: your own section first, then the section list (' + cols.join(', ') + ')');
   await p.context().close();
 
   // Home: whose day it is on a shared screen; "Your day" on a personal phone
