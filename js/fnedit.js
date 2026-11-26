@@ -548,16 +548,19 @@
     var out = '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(e.isNew ? 'New function' : (s.name || 'Function')) + '</h2><div class="btn-row">' + stTag + (e.savedAt && !dirty() ? '<span class="lk-stamp">Saved ' + esc(e.savedAt) + '</span>' : '') + '<button type="button" class="btn" data-fe="print"' + (e.saving ? ' disabled' : '') + '>Print function</button></div></div>' +
       (e.restored ? '<p class="fe-note">Changes not saved yet were kept on this device and are back in the form. <button type="button" class="linkish lk-del" data-fe="drop">' + (armed('drop') ? 'Tap again to drop them' : 'Drop them') + '</button></p>' : '') +
       (!e.isNew ? '<p class="hint">Last changed by ' + esc(FN.nameOf(s.by)) + ', ' + esc(stamp(s.upd)) + '. Version ' + s.v + '.</p>' : '') +
-      '<section class="set-block"><span class="label">The function</span>' + inp('name', 'Name or reference', d.name, ' maxlength="80" autocomplete="off" placeholder="Smith birthday"') +
+      // three plain wrappers, in the page's own order (head chef, 26 Nov 2026, docs/foh-layout-options/brief.md): from
+      // 1150 px The function, the notes and the comment sit on the left and Platters and When they go out on the right;
+      // below that the wrappers take no room (display: contents), so a phone and the tablet read as before
+      '<div class="fe-body"><section class="set-block"><span class="label">The function</span>' + inp('name', 'Name or reference', d.name, ' maxlength="80" autocomplete="off" placeholder="Smith birthday"') +
       '<div class="fe-row2">' + inp('date', 'Date', d.date, ' type="date"') + startHTML(d) + '</div>' +
       '<div class="fe-row2">' + guestsHTML(d) + inp('loc', 'Room, area or table (optional)', d.loc, ' maxlength="60" list="fe-locs" autocomplete="off"') + '</div>' +
       '<datalist id="fe-locs">' + locs().map(function (l) { return '<option value="' + esc(l) + '">'; }).join('') + '</datalist>' + contactHTML(e) + '</section>' +
-      '<section class="set-block"><span class="label">Platters</span><span class="hint">Whole platters, as booked. Guests never change them.</span>' + linesHTML(e) + '</section>' +
-      '<section class="set-block"><span class="label">When the platters go out</span>' + serviceHTML(e) + '</section>' +
-      '<section class="set-block"><span class="label">Service and dietary notes</span><label class="visually-hidden" for="fe-notes">Service and dietary notes</label><textarea id="fe-notes" class="search fe-ta" data-ff="notes" maxlength="1000" rows="3" placeholder="Two guests coeliac: keep their platter apart.">' + esc(d.notes) + '</textarea></section>' +
+      '<div class="fe-out"><section class="set-block"><span class="label">Platters</span><span class="hint">Whole platters, as booked. Guests never change them.</span>' + linesHTML(e) + '</section>' +
+      '<section class="set-block"><span class="label">When the platters go out</span>' + serviceHTML(e) + '</section></div>' +
+      '<div class="fe-side"><section class="set-block"><span class="label">Service and dietary notes</span><label class="visually-hidden" for="fe-notes">Service and dietary notes</label><textarea id="fe-notes" class="search fe-ta" data-ff="notes" maxlength="1000" rows="3" placeholder="Two guests coeliac: keep their platter apart.">' + esc(d.notes) + '</textarea></section>' +
       '<section class="set-block fe-kcb"><span class="label">Kitchen comment</span><span class="hint">The kitchen reads this with your name and the time. No phone numbers or emails.</span>' +
       '<label class="visually-hidden" for="fe-kc">Kitchen comment</label><textarea id="fe-kc" class="search fe-ta" data-ff="kc" maxlength="2000" rows="4">' + esc(d.kc) + '</textarea>' +
-      (s && s.kc ? '<span class="hint">Saved comment by ' + esc(FN.nameOf(s.kcBy)) + ', ' + esc(stamp(s.kcAt)) + '.</span>' : '') + '</section>' +
+      (s && s.kc ? '<span class="hint">Saved comment by ' + esc(FN.nameOf(s.kcBy)) + ', ' + esc(stamp(s.kcAt)) + '.</span>' : '') + '</section></div></div>' +
       // the bar holds the Save buttons, like the recipe editor's (the consistency sweep, step 3, head chef 20 Nov 2026): the
       // summary (#fe-live, drawn again while typing, so the buttons are never replaced under a finger), Saving... or the red
       // reason, a conflict, each right above the Save that was tapped, then Save. Duplicate, Cancel function and History

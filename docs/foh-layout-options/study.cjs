@@ -16,7 +16,9 @@
    that tap (the second Confirm out; the time list above the Save bar), and whether the phone, tablet and kitchen
    pictures are the same pixels as today's. */
 const path = require('path'), fs = require('fs'), ROOT = process.cwd(), DESIGN = process.env.DESIGN || '';
-const DIR = path.join(ROOT, 'docs/foh-layout-options'), OUT = path.join(DIR, DESIGN ? 'previews/' + DESIGN : 'today');
+// OUTDIR=built measures the book as built (no design laid over it) into built/, against today's pictures (the book
+// before the build); today/ is never drawn again once the build is in
+const DIR = path.join(ROOT, 'docs/foh-layout-options'), OUT = path.join(DIR, process.env.OUTDIR || (DESIGN ? 'previews/' + DESIGN : 'today'));
 const CSS = DESIGN ? fs.readFileSync(path.join(DIR, 'designs', DESIGN + '.css'), 'utf8') : '';
 // a design may also put the form's sections in plain wrappers, in the page's own order (what a build would do in
 // js/fnedit.js): designs/<name>.js runs once after the page draws, and every picture and check is taken before a redraw
@@ -170,7 +172,7 @@ async function samePixels(b, f1, f2) {
 }
 if (require.main === module) (async () => {
   const port = 20000 + Math.floor(Math.random() * 20000); await new Promise(r => server.listen(port, '127.0.0.1', r));
-  const baseUrl = 'http://127.0.0.1:' + port + '/', b = await L.start(), out = { design: DESIGN || 'today', cases: {}, checks: {} };
+  const baseUrl = 'http://127.0.0.1:' + port + '/', b = await L.start(), out = { design: DESIGN || process.env.OUTDIR || 'today', cases: {}, checks: {} };
   fs.mkdirSync(OUT, { recursive: true });
   const open = async (hash, size, extra, o) => {
     const [w, h, touch] = SIZES[size];
@@ -204,7 +206,7 @@ if (require.main === module) (async () => {
     out.checks['form-order-new-restored-' + size] = await formOrder(p); await p.context().close();
   }
   // a picture the same as today's is not kept twice: the check says so, and today's picture stands for it
-  if (DESIGN) for (const n of SAME) { const f = path.join(OUT, n + '.png'), r = out.checks['same-as-today-' + n] = await samePixels(b, f, path.join(DIR, 'today', n + '.png')); if (r === 'identical') fs.unlinkSync(f); }
+  if (DESIGN || process.env.OUTDIR) for (const n of SAME) { const f = path.join(OUT, n + '.png'), r = out.checks['same-as-today-' + n] = await samePixels(b, f, path.join(DIR, 'today', n + '.png')); if (r === 'identical') fs.unlinkSync(f); }
   fs.writeFileSync(path.join(OUT, 'study.json'), JSON.stringify(out, null, 1) + '\n');
   await b.close(); server.close(); console.log('pictures and study.json in ' + OUT); process.exit(0);
 })().catch(e => { console.error(e); process.exit(1); });
