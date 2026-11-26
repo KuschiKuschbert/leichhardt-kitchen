@@ -80,12 +80,23 @@ async function assertQuiet(p, label) {
 }
 
 async function layouts(p, label) {
-  for (const width of [390, 768, 1280]) for (const size of ['normal', 'xlarge']) {
+  for (const width of [390, 768, 1280, 1920]) for (const size of ['normal', 'xlarge']) {
     await p.setViewportSize({ width, height: 900 }); await p.evaluate(s => document.documentElement.dataset.text = s, size); await L.settle(p, 150);
     // the row's own buttons (Take off, + Break) and its pickers replaced the Breaks link: every one a 44 px target
     // read in one go (see assertQuiet): an old control out of the page has no size, so it would pass unmeasured
     const small = await p.evaluate(() => [...document.querySelectorAll('.tm-tlsvc .ux-picker-trigger, .tm-brline .ux-picker-trigger, [data-p="tm-off"], [data-p="tm-addbr"], .tm-weeknav button, [data-p="tm-date-toggle"], [data-p="tm-save"], .tm-batch > summary')].filter(e => e.getClientRects().length).map(e => ({ label: e.textContent.trim(), w: e.getBoundingClientRect().width, h: e.getBoundingClientRect().height })).filter(e => e.w < 43.5 || e.h < 43.5));
     ok(!await L.overflow(p) && !small.length, label + ' ' + width + ' ' + size + ': no sideways page scroll and visible planner controls remain 44 px ' + JSON.stringify(small));
+    // from 1100 px a person's break pickers follow their sentence, or drop under its start; never at the row's far end
+    // (26 Nov 2026: on the 1920 section screens they sat about 200 px away)
+    if (width >= 1280) {
+      const far = await p.evaluate(() => [...document.querySelectorAll('.tm-tlday')].filter(d => d.querySelector('.tm-brline .tm-brone')).map(d => {
+        const s = d.querySelector('.tm-roster-time'), r = document.createRange(); r.selectNodeContents(s);
+        const t = [...r.getClientRects()].pop(), b = d.querySelector('.tm-brline').getBoundingClientRect(), sb = s.getBoundingClientRect();
+        const after = Math.abs(b.top - sb.top) < 30 && b.left - t.right >= -1 && b.left - t.right <= 24, under = b.top >= sb.bottom - 2 && Math.abs(b.left - sb.left) <= 2;
+        return after || under ? null : { who: d.closest('.tm-person-row').dataset.id, gap: Math.round(b.left - t.right) };
+      }).filter(Boolean));
+      ok(!far.length, label + ' ' + width + ' ' + size + ': each break line sits straight after its sentence or under its start ' + JSON.stringify(far));
+    }
     // was: one roster and one contextual workbench. The workbench is gone: the one roster spans the notebook
     if (width === 1280 && size === 'normal') ok(await p.evaluate(() => { const e = document.querySelector('.tm-nbook'); if (!e) return false; const work = e.querySelector('.tm-focus-grid'), spine = e.querySelector('.tm-nspine'); return !!work && e.querySelectorAll('.tm-worksheet').length === 1 && e.querySelectorAll('.tm-people').length === 1 && !e.querySelector('.tm-detail-workbench') && work.getBoundingClientRect().width >= e.getBoundingClientRect().width - 60 && (!spine || getComputedStyle(spine).display === 'none'); }), label + ': desktop writing region spans the notebook with one roster and no separate workbench');
   }

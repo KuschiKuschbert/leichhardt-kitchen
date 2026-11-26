@@ -1413,7 +1413,9 @@
       left = '<div class="pan-art' + (r.done ? ' done' : '') + '"' + (r.art && ART.pans[r.art] ? ' id="r-plate"' : '') + '>' + art(r, 'art') + '</div>' + usedBox(r, stack, 'Goes on') + tipBox(r) + guideBox(r);
     }
     // phones: the name, yield and allergens come first, then the drawing, then the rest (order in app.css, .cols under 900px)
-    return '<div class="page">' + trail + jumps(r, true) + lensFold() +
+    // .rx-top: from 900 px the jump row sits on the trail row (the drawing takes the left column, so Method is under the
+    // ingredients, below the first screen; head chef 26 Nov 2026); on phones it has no box, so the row sticks as before
+    return '<div class="page"><div class="rx-top">' + trail + jumps(r, true) + '</div>' + lensFold() +
       '<main id="main" class="cols"><div class="col">' + left + '</div><div class="col wide">' + cardHead(r) + editSlot(r) + allergenBox(r) +
       '<div class="sec"><h3 class="h3" id="r-ing">' + (dish ? 'Everything on it' : 'Into the pan') + '</h3>' + ingTable(r, stack, true) + '</div>' +
       '<div id="r-steps" class="jump-at"></div>' + safetyBox(r) + diagram(r) + (dish ? guideBox(r) : '') + steps(r) +

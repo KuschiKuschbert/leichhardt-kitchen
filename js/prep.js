@@ -6109,6 +6109,12 @@
     function secOf(x) { if (board && x.fn) return FNCOL; if (tonightLine(x, date, cut)) return TONIGHT; return S.tab === FN_TAB ? FNS : S.tab || lineSec(x); }
     shown.forEach(function (x) { var k = secOf(x); if (!seen[k]) { seen[k] = 1; order.push(k); } });
     [FNCOL, TONIGHT].forEach(function (last) { if (seen[last]) order = order.filter(function (k) { return k !== last; }).concat([last]); });
+    // Your own section first under All on today's list (head chef, 26 Nov 2026, step 2 findings, D): the section you are
+    // on today (mySecNow(): Today's team or your own pick, no read), then the rest in their usual order. Staff and leads
+    // only; a chef, a section's tab, the wall board and another day's list are as they were. Start here keeps its numbers.
+    var mine = !board && !S.tab && date === dayNow() ? mySecNow() : null;
+    var mk = mine ? order.filter(function (k) { return k !== TONIGHT && k !== FNCOL && !!k && okey(k) === okey(mine.name); })[0] : null;
+    if (mk) order = [mk].concat(order.filter(function (k) { return k !== mk; }));
     var finUsed = false;
     var out = order.map(function (sec) {
       var all = shown.filter(function (x) { return secOf(x) === sec; });
@@ -9857,7 +9863,9 @@ if (list.length) sg('oreg', 's');
       var head = (out ? 'Lent to ' : 'Borrowed from ') + v;
       var since = (d >= 1 ? dayShort(x.date) + ' ' : '') + (x.addedAt ? clock(x.addedAt) : '');
       var who = pn ? (out ? pn + ' came for it' : pn + ' gave it') : '';
-      return '<article class="tr-card' + (old ? ' is-old' : '') + '" aria-label="' + esc(head + ', ' + (d >= 1 ? age + ' out' : 'today')) + '"><div class="tr-ch"><h4 class="tr-cv">' + esc(head) + '</h4>' +
+      // the In or Out pill the rows use leads the heading, so which way the stock went reads first (step 2 findings,
+      // head chef 26 Nov 2026); the heading says it in words, so the pill is not read out twice
+      return '<article class="tr-card' + (old ? ' is-old' : '') + '" aria-label="' + esc(head + ', ' + (d >= 1 ? age + ' out' : 'today')) + '"><div class="tr-ch"><h4 class="tr-cv"><span class="tr-way tr-way-' + (out ? 'out' : 'in') + '" aria-hidden="true">' + (out ? 'Out' : 'In') + '</span> ' + esc(head) + '</h4>' +
         '<span class="tr-age' + (old ? ' is-old' : '') + (d >= 1 ? '' : ' is-today') + '" title="' + esc('Since ' + longDate(x.date)) + '">' + age + '</span></div>' +
         metaHTML([esc(since), esc(who)], esc(x.addedBy || ''), '', 'logged by ').replace('class="nb-meta"', 'class="nb-meta tr-cs"') +
         '<ul class="nb-rows">' + c.rows.map(xLoanRow).join('') + '</ul></article>';
@@ -13268,7 +13276,9 @@ if (list.length) sg('oreg', 's');
     var value = sec || (ready || d.state === 'unset' ? 'Not assigned' : d.state === 'error' ? 'Unavailable' : 'Checking...');
     if (unavailable) { sub = 'Your saved shift is unavailable. Check with the chef.'; value = sec || 'Unavailable'; }
     if (manual && !n) sub = 'Your pick today · ' + sub;
-    var changed = ready && tmChanged(p.id), head = '<div class="hm-bh"><h3 class="hm-bt" id="hm-day-h">Your day' +
+    // on a shared screen the card names whose day it is ("Ann's day"), so the next cook does not read Ann's break as
+    // theirs before the screen locks (head chef, 26 Nov 2026, step 2 findings, D); a personal phone keeps "Your day"
+    var changed = ready && tmChanged(p.id), head = '<div class="hm-bh"><h3 class="hm-bt" id="hm-day-h">' + (shared() && p.name ? esc(p.name) + '\'s day' : 'Your day') +
       (changed ? ' <span class="hm-day-changed">Changed</span>' : '') + '</h3><b class="hm-clock">' + esc(T.clock(now())) + '</b></div>';
     var section = '<li data-hm-priority="section"><a class="hm-a hm-day-row" href="#/prep"' + (sec ? ' data-hm-sec="' + esc(sec) + '"' : '') + '>' +
       '<span class="hm-i" aria-hidden="true">' + homeIcon('todo') + '</span><span class="hm-w"><b class="hm-t">' + title + '</b><small class="hm-s">' + esc(sub) + '</small></span><b class="hm-day-value">' + esc(value) + '</b></a></li>';
