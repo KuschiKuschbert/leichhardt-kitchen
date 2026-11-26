@@ -3205,6 +3205,20 @@ a.fn-svc { display: inline-flex; align-items: center; color: var(--bar-text); te
 .fe .fe-num, .fe .fe-time { min-height: 40px; }
 .fe-row { padding: 0.4rem 0.6rem; }
 @media (min-width: 900px) { .fe .set-block .fe-row2 { grid-template-columns: repeat(2, minmax(0, 18rem)); } }
+/* The booking form in two columns from 1150 px (head chef, 26 Nov 2026, docs/foh-layout-options/brief.md): The function,
+   then the notes and the kitchen comment on the left (.fe-side); Platters and When the platters go out on the right
+   (.fe-out), which spans both rows so no gap opens under The function. The wrappers are plain and in the page's own
+   order, so the keyboard and a screen reader go The function, Platters, When, notes, comment, and the Save bar stays
+   last; below 1150 px they take no room. Each section keeps its line under it inside its wrapper. */
+.fe-body, .fe-out, .fe-side { display: contents; }
+.fe-out > .set-block:last-child, .fe-side > .set-block:last-child { border-bottom: 1px solid var(--line); }
+@media (min-width: 1150px) {
+  .fe .fe-body { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); grid-template-rows: auto 1fr; gap: 0.6rem 1.5rem; align-items: start; }
+  .fe .fe-body > .set-block { grid-column: 1; grid-row: 1; }
+  .fe .fe-out { display: flex; flex-direction: column; gap: 0.6rem; grid-column: 2; grid-row: 1 / span 2; min-width: 0; }
+  .fe .fe-side { display: flex; flex-direction: column; gap: 0.6rem; grid-column: 1; grid-row: 2; min-width: 0; }
+  .fe .fe-body .set-block .fe-row2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 /* the prep list's Functions tab (22 Oct 2026): a function's platters, kept apart from the day's own prep by its name and
    place; since the consistency sweep, step 3, 20 Nov 2026, it looks like the other section tabs, orange when chosen (no yellow) */
 .nb-tab-n { display: inline-block; min-width: 1.3em; margin-left: 0.3em; padding: 0 0.3em; border-radius: 999px; background: var(--accent); color: var(--ink); font-size: 0.8em; text-align: center; }
@@ -4943,6 +4957,12 @@ html.tm-open, html.tm-open body { overflow: hidden; }
   .fn-svc-board > .fn-svc-wl { grid-area: 2 / 1; }
   .fn-svc-board > .fn-svc-rows { grid-area: 3 / 1; }
   .fn-svc-board > .fn-svc-rows + .fn-svc-shelf { grid-area: 2 / 2 / span 2; min-width: 0; margin: 0; padding: 0.65rem 0 0.35rem 1rem; border-top: 0; border-inline-start: 1px solid rgba(251, 248, 241, 0.32); scroll-margin-block-start: 5rem; }
+  /* The functions person's shelf (head chef, 26 Nov 2026, docs/foh-layout-options/brief.md): the trips waiting for them
+     side by side as cards, each with what went, sent and Waiting, the dietaries and Confirm out at its foot; the shelf
+     stays first and on top, the rounds under it. The kitchen's shelf beside its rounds is as it was. */
+  .fn-svc-board:has(> .fn-svc-sec) .fn-svc-trips { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); gap: 0.75rem; margin: 0.4rem 0 0.6rem; }
+  .fn-svc-board:has(> .fn-svc-sec) .fn-svc-trip { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.65rem 0.8rem 0.75rem; border: 1px solid rgba(251, 248, 241, 0.24); border-radius: 10px; }
+  .fn-svc-board:has(> .fn-svc-sec) .fn-svc-trip > .fn-svc-tacts { margin-top: auto; padding-top: 0.2rem; }
 }
 .fn-band .fn-li-out { display: flex; align-items: center; gap: 0.5rem; border-top: 1px solid rgba(251, 248, 241, 0.16); }
 .fn-band .fn-li-out:first-child { border-top: 0; }
