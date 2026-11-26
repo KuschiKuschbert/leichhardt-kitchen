@@ -34,6 +34,8 @@ const listens = p => p.evaluate(() => (window.__fake.bill || []).filter(x => x.k
 // where the freshness line sits: right under the page heading (a one-line hint under the heading may come between)
 const placed = p => p.evaluate(() => {
   const e = document.querySelector('#main .fn-fresh'); if (!e) return 'no freshness line';
+  // on #/fn "Up to date" sits on the Today heading line since 26 Nov 2026 (step 3); a failed read stays under the heading
+  if (e.closest('.fn-sec-h')) return /^Today/.test(e.closest('.fn-sec-h').textContent.trim()) ? 'today' : 'in another heading';
   let prev = e.previousElementSibling;
   if (prev && prev.matches('p.hint')) prev = prev.previousElementSibling;
   if (prev && (prev.matches('h2#rtitle') || prev.matches('.fn-page-head') && prev.querySelector('#rtitle'))) return 'under';
@@ -101,7 +103,7 @@ async function failing(b, hash) {
     p = await L.open(b, hash, { who: 'sam', extra, width: 390, height: 844, wait: 1600 });
     await L.waitFor(p, s => !!document.querySelector('#main ' + s) && !!document.querySelector('#main .fn-fresh'), shows, 6000).catch(() => {});
     const w = await placed(p);
-    ok(w === 'under', (hash === '#/fn' ? '' : '(old) ') + name + ': the freshness line sits right under the heading (' + w + ')');
+    ok(w === (hash === '#/fn' ? 'today' : 'under'), (hash === '#/fn' ? 'the list: Up to date sits on the Today heading line' : '(old) ' + name + ': the freshness line sits right under the heading') + ' (' + w + ')');
     ok(/^Up to date, \d\d:\d\d\./.test(await p.evaluate(() => (document.querySelector('#main .fn-fresh') || {}).textContent || '')), name + ': the line says when the functions were read');
     ok(!p.errors.length, name + ', freshness: no page errors ' + p.errors.join(' | '));
     await p.context().close();
