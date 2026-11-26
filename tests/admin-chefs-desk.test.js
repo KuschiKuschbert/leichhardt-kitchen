@@ -150,7 +150,10 @@ const privateWrites = p => p.evaluate(() => window.__fake.writes.flat().filter(x
     await p.click('[data-ai="save"]');
     await L.waitFor(p, label => Object.values(window.__fake.dump()).some(r => r && r.alias === 'House slaw' && r.label === label && r.recipeId === 'slaw'), label);
     const savedLink = await p.evaluate(() => Object.values(window.__fake.dump()).find(r => r && r.alias === 'House slaw' && r.recipeId === 'slaw'));
-    ok(savedLink.by === 'owner' && savedLink.v === 1 && !await p.evaluate(() => LK_PREP.unsaved()), width + ': the acknowledged Save retains the existing owner and revision contract');
+    // the stand-in holds the record a moment before the book hears back from the Save: wait for that answer, then check
+    // nothing is left unsaved (it failed at one width in most runs when read in the same moment, 26 Nov 2026)
+    const acked = await L.waitFor(p, () => !LK_PREP.unsaved(), null, 5000).then(() => true, () => false);
+    ok(savedLink.by === 'owner' && savedLink.v === 1 && acked, width + ': the acknowledged Save retains the existing owner and revision contract');
 
     if (width < 720) {
       await chapter(p, 'kitchen', 'tools');
