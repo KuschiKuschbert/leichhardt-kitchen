@@ -326,7 +326,7 @@ const row = code => '.cln-plan-row[data-id="' + id(code) + '"]';
     await p.click('[data-cln="flow-quick"][data-id="' + id('c26') + '"]');
     await L.waitFor(p, () => Object.values(__fake.dump()).some(r => r.task === 'clean-template-c26' && r.day === '2026-10-04' && r.done) && !LK_PREP.unsent());
     await p.clock.runFor(90000);
-    await L.waitFor(p, () => LK_TIME.day() === '2026-10-05' && /^0\/1/.test((document.querySelector('.cln-progress') || {}).textContent || ''));
+    await L.waitFor(p, () => LK_TIME.day() === '2026-10-05' && /^0 of 1(?!\d)/.test((document.querySelector('.cln-progress') || {}).textContent || ''));   // a cook's count is in words (design M)
     const saved = await records(p, 'cleaningDone');
     ok(saved.length === 1 && saved[0].day === '2026-10-04', 'clock: a new kitchen date starts incomplete and never copies the previous completion');
   });

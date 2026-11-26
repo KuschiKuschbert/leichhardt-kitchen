@@ -1,0 +1,42 @@
+{
+ "kind": "Implemented app in the click-test stand-in (synthetic data)",
+ "commit": "0737149b",
+ "results": {
+  "cook-390": {
+   "rowsInView": 6,
+   "firstBoxTop": 344,
+   "screensLong": 5.5,
+   "sideways": false
+  },
+  "cook-768": {
+   "rowsInView": 9,
+   "firstBoxTop": 430,
+   "screensLong": 3.7,
+   "sideways": false
+  },
+  "cook-1280": {
+   "rowsInView": 7,
+   "firstBoxTop": 393,
+   "screensLong": 4.5,
+   "sideways": false
+  },
+  "station-1920": {
+   "rowsInView": 9,
+   "firstBoxTop": 437,
+   "screensLong": 3.5,
+   "sideways": false
+  },
+  "station-pans-cook-1920": {
+   "rowsInView": 9,
+   "firstBoxTop": 511,
+   "screensLong": 3.5,
+   "sideways": false
+  },
+  "station-pans-cook-390": {
+   "rowsInView": 5,
+   "firstBoxTop": 462,
+   "screensLong": 5.6,
+   "sideways": false
+  }
+ }
+}

@@ -93,4 +93,4 @@ async function focusRing(p) {
     const ring = rgba(cs.outlineColor), l1 = lum(ring.slice(0, 3)), l2 = lum(bg.slice(0, 3));
     return { reached: true, on: (e.textContent || e.tagName).trim().slice(0, 24), focusVisible: e.matches(':focus-visible'), outline: cs.outlineStyle + ' ' + cs.outlineWidth, offset: cs.outlineOffset, ringAgainstSurround: Math.round((Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05) * 100) / 100 }; });
 }
-module.exports = { L, start, stop, chef, cook, adminPage, measure, focusRing, fonts, SECS, WED, schedule, day };
+module.exports = { L, start, stop, chef, cook, adminPage, measure, focusRing, fonts, SECS, WED, schedule, day, cleaning, browser: () => browser, base: () => base };
