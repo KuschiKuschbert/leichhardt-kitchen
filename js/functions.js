@@ -570,6 +570,28 @@
     });
     return out.sort(function (a, b) { return a.t.sentAt - b.t.sentAt || a.t.k - b.t.k; });
   }
+  // A trip confirmed on this screen holds its place a moment once the server has it (head chef, 26 Nov 2026,
+  // docs/foh-layout-options/brief.md, break-it): it says it is out, with no button, so the next trip's Confirm out does
+  // not slide under a second tap. Prep's ticked lines linger the same way. In memory only; HELD[id] is true until it goes.
+  var HELD = {}, HOLD_MS = 3500;
+  function holdOut(id) { HELD[id] = true; setTimeout(function () { delete HELD[id]; F.sv++; changed(); }, HOLD_MS); }
+  // the trips held in place (confirmed here, still showing), with the trips still waiting, in the shelf's order
+  function heldTrips(fid) {
+    var out = [];
+    F.list.forEach(function (f) {
+      if (fid && f.id !== fid) return;
+      (f.rounds || []).forEach(function (r, i) { tripsOf(f.id, r.at).forEach(function (t) { if (HELD[t.id] && t.outAt && !t.void && !F.pend[t.id]) out.push({ f: f, i: i, t: t, held: true }); }); });
+    });
+    return out;
+  }
+  function withHeld(wt, fid) {
+    var h = heldTrips(fid);
+    return h.length ? wt.concat(h).sort(function (a, b) { return a.t.sentAt - b.t.sentAt || a.t.k - b.t.k; }) : wt;
+  }
+  // the room of the Confirm out a held trip no longer has, so nothing moves and a second tap lands on nothing (Prep's
+  // .nb-onslot does the same for a ticked line)
+  function outSlot() { return '<span class="btn fn-out-b fn-out-slot" aria-hidden="true">' + I_TICKS + ' Confirm out</span>'; }
+  function outWords(x) { return '<span class="fn-trip-out">' + I_TICKS + ' out ' + esc(kclock(x.outAt)) + ', ' + esc(x.outFor ? 'confirmed by ' + nameOf(x.outBy) + ' for Functions' : nameOf(x.outBy)) + '</span>'; }
   // trips confirmed out today, newest first
   function outTrips(t) {
     var day = kday(t), out = [];
@@ -615,12 +637,13 @@
     }
     // Functions people (14 Nov 2026): a trip the kitchen sent waits here with Confirm out beside the row (never their own)
     var me = ahWho(), wt = fnPerson(me) ? waitingTrips(f.id).filter(function (y) { return y.t.sentBy !== me; }) : [];
+    var hw = wt.length ? withHeld(wt, f.id) : [];   // a trip just confirmed here holds the row a moment (holdOut)
     if (wt.length) {
-      var w0 = wt[0].t;
-      return '<li class="fn-li fn-li-out">' + out.slice('<li class="fn-li">'.length) + '<span class="fn-r1"><span class="fn-due">' + esc(when(f.rounds[wt[0].i].at, kday(t))) + '</span> <b>' + esc(f.name) + '</b>' + (f.loc ? ' · ' + esc(f.loc) : '') + '</span>' +
-        '<span class="fn-r2">Trip ' + w0.k + ': <b>' + esc(tripText(f, w0.n, true)) + '</b>, sent ' + esc(kclock(w0.sentAt)) + ' ' + esc(nameOf(w0.sentBy)) + ' ' + waitPill(f, w0, t) +
-        (wt.length > 1 ? ' <span class="fn-of">+' + (wt.length - 1) + ' more waiting</span>' : '') + '</span></button>' +
-        (F.pend[w0.id] ? '' : '<button type="button" class="btn fn-out-b" data-fn="trip-out" data-id="' + esc(w0.id) + '">' + I_TICKS + ' Confirm out</button>') + '</li>';
+      var w0 = hw[0].t, wi = hw[0].i, held = !!hw[0].held;
+      return '<li class="fn-li fn-li-out">' + out.slice('<li class="fn-li">'.length) + '<span class="fn-r1"><span class="fn-due">' + esc(when(f.rounds[wi].at, kday(t))) + '</span> <b>' + esc(f.name) + '</b>' + (f.loc ? ' · ' + esc(f.loc) : '') + '</span>' +
+        '<span class="fn-r2">Trip ' + w0.k + ': <b>' + esc(tripText(f, w0.n, true)) + '</b>, sent ' + esc(kclock(w0.sentAt)) + ' ' + esc(nameOf(w0.sentBy)) + ' ' + (held ? outWords(w0) : waitPill(f, w0, t)) +
+        (wt.length > (held ? 0 : 1) ? ' <span class="fn-of">+' + (wt.length - (held ? 0 : 1)) + ' more waiting</span>' : '') + '</span></button>' +
+        (held ? outSlot() : F.pend[w0.id] ? '' : '<button type="button" class="btn fn-out-b" data-fn="trip-out" data-id="' + esc(w0.id) + '">' + I_TICKS + ' Confirm out</button>') + '</li>';
     }
     // two lines (22 Oct 2026): the time of the next round not sent, the name and place; then what goes in it
     var c = recent(f), w = nowOf(f, t);
@@ -1395,7 +1418,7 @@
     var up = { outAt: now(), outBy: me, outFor: !!forFn }, what = f.name + ' trip ' + t0.k + ' (' + tripText(f, t0.n) + ')';
     F.sent[id] = Object.assign({}, x, up); F.pend[id] = true; F.sv++; changed();
     api.ready().then(function () { return api.W([['set', api.docRef('fnsent', id), up, true]]); }).then(function () {
-      delete F.pend[id]; F.sv++; changed();
+      delete F.pend[id]; holdOut(id); F.sv++; changed();
       api.say('Confirmed out: ' + what + '.');
     }, function (e) {
       delete F.pend[id]; F.sent[id] = x; F.sv++; changed();
@@ -1902,9 +1925,10 @@
     var detail = onlySending ? 'waiting for the send to finish' : coord ? 'confirm each trip when it is out' : 'sent, not confirmed yet';
     if (sending && !onlySending) detail += ' · sending shown below';
     var out = '<section class="fn-svc-shelf" id="fn-shelf" aria-label="' + heading + '"><h4 class="fn-svc-sh">' + heading + ' <small>' + detail + '</small></h4>';
-    if (wt.length) out += '<ul class="fn-svc-trips">' + wt.map(function (w) {
+    if (wt.length) out += '<ul class="fn-svc-trips">' + withHeld(wt).map(function (w) {
       var f = w.f, x = w.t, pend = !!F.pend[x.id], age = t - x.sentAt, mine = x.sentBy === me, acts = '';
-      if (!pend) {
+      if (w.held) acts = outSlot();
+      else if (!pend) {
         if (fnPerson(me) && !mine) acts += '<button type="button" class="btn fn-out-b" data-fn="trip-out" data-id="' + esc(x.id) + '">' + I_TICKS + ' Confirm out</button>';
         else if (chef && age >= 10 * MIN) acts += '<button type="button" class="btn fn-for-b" data-fn="trip-for" data-id="' + esc(x.id) + '">Confirm for Functions</button>';
         if (canSend() && (chef || mine && age < 2 * MIN)) acts += '<button type="button" class="linkish fn-svc-link" data-fn="trip-undo" data-id="' + esc(x.id) + '">Undo</button>';
@@ -1913,7 +1937,7 @@
       // who sent it are the small lines around it
       return '<li class="fn-svc-trip"><p class="fn-svc-th"><span class="fn-trip-k">Trip ' + x.k + '</span> · ' + esc(kclock(f.rounds[w.i].at)) + ' <b>' + esc(f.name) + '</b>' + (f.loc ? ' · ' + esc(f.loc) : '') + '</p>' +
         '<p class="fn-svc-what fn-svc-tq">' + tripQs(f, x.n) + '</p>' +
-        '<p class="fn-svc-tm">' + (pend && !x.outAt ? '' : I_TICK + ' sent ' + esc(kclock(x.sentAt)) + ' ' + esc(nameOf(x.sentBy)) + ' ') + waitPill(f, x, t) + '</p>' +
+        '<p class="fn-svc-tm">' + (pend && !x.outAt ? '' : I_TICK + ' sent ' + esc(kclock(x.sentAt)) + ' ' + esc(nameOf(x.sentBy)) + ' ') + (w.held ? outWords(x) : waitPill(f, x, t)) + '</p>' +
         // the dietaries go with the trip, read before Confirm out (head chef, 26 Nov 2026, step 3): they were only on the
         // rounds still to go, so a function's last trip showed none
         (f.notes ? '<p class="fn-svc-diet"><span class="fn-svc-dl">Dietaries and notes</span><span class="fn-svc-dt">' + esc(f.notes) + '</span></p>' : '') +
