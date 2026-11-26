@@ -75,3 +75,12 @@ Taps and lines on a 390 px phone: ticking a line stays 1 tap; 6 of 18 lines in v
 1. On the board: the columns in the section list's order with your own section first, and ⋯ back on each row. Cost: long words in lines with a Recipe link break mid-word in a 367 px column. Recommended: yes for the order and your section first; ⋯ only if the mid-word break is acceptable.
 2. The board on the section screens: recommended, try it on one section screen for a week (tap Wall board once there); any cook's Back returns that screen to the notebook. A head-chef-only "this screen opens on the board" setting would be new code and a new Settings row (his OK).
 3. Orders: the cook-only reading width, or leave it. Recommended: leave it for now; the reach matters only on a long day and the width is Not evidenced for the cook alone.
+
+## Chosen (head chef, 26 November 2026)
+
+- **Wall board:** "Order and own first only". The columns follow the kitchen's section list with the cook's own section first; ⋯ stays hidden on the board, so words stay whole.
+- **Section screens:** "Keep the notebook". They open on the notebook; the board stays one tap away.
+- **Orders:** "Narrow it for cooks". From 1536 px a cook's list keeps a reading width; a chef's beside the cut-offs is as it was.
+- **With them, as a fix:** a finished section keeps its column on the board, and a line marked urgent on another phone no longer moves the columns (both Reproduced on the old code; the second was the skeptic's trigger, read in the source and then reproduced with a second writer in `tests/section-screens.test.js`).
+
+Built in #906: on the old code 7 of its new checks fail; the cook's Orders ⋯ is 669 px from the tick at 1920 and 1536 (1,000 before), the board's columns hold their places through a finished section and an urgent mark from another phone. Recorded in `docs/head-chef-decisions.md`.
