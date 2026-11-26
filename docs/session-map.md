@@ -19,7 +19,7 @@ Next: the tab's name and the page's design are looked at again with the head che
 
 Records' nightly cleaning count kept its own copy of how the Cleaning page reads a day, as did `cleaningDue()` in `js/prep.js`. All three now use `js/cleaning-core.js` (lazy, shared with node, like `js/analysis-core.js`). `cleaningDue()` asks the core, which loads with the Cleaning page, and refuses a write without it. A tidy-up, no council: the results are the same, proved on a synthetic programme of 124 jobs and 14,089 records against the copies as they were, so `CLEAN_V` stays 1. `tests/cleaning-core.test.js`, [Cleaning](cleaning-schedule.md#one-reading-of-a-day).
 
-## Cleaning: its name and its look, 26 November 2026 (council done, waiting for the head chef)
+## Cleaning: its name and its look, 26 November 2026 (M chosen, the name stays Cleaning; to build)
 
 Once every cleaning step was built, the head chef asked to "brainstorm name and design again" and chose the full council. Round 1: the look Build smaller 5 of 5 (the cook's page only: cut the frame above the first job, keep the order, nothing folded), the name his call between Cleaning and Clean down. Round 2: three designs drawn inside the real page and ticked for real (A the same page tidied, B your section beside the rest, C tonight first with the rest folded); A first for 4 of 7, B for 3, C last for all 7. Recommended: M, A's page on every device with B's two columns on the section screens and a quiet "You: Pans" band, checked by four scorers after it was drawn. The name: keep Cleaning (4 of 7). Also carries his four open list questions. No change to the book. [Brief](cleaning-look-options/brief.md).
 

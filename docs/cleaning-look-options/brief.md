@@ -245,4 +245,4 @@ Security: no access, rule or session change in any design; nothing private to re
 
 ## Chosen
 
-Not yet: waiting for the head chef.
+26 November 2026. The head chef: "I am good with the recommendation". **M, and the name stays Cleaning**, including the one departure named for his OK (the done count in plain ink, not the handwritten face, on this page). Recorded in `docs/head-chef-decisions.md`. Build in two pull requests, each with the checks under Recommendation before ready: (1) the phone and tablet frame, the counts in words, the row lines and the quiet band; (2) the two columns from 1100 px, scoped to Cleaning. His four list questions above stay open.
