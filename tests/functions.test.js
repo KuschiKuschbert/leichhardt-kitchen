@@ -202,8 +202,10 @@ function hasPrivateContact(value) {
   p = await L.open(b, '#/recipes', { who: 'ann', extra: extra({ smith, gone, moved, draft }), wait: 1200 });   // the full band (Prep starts with the strip; Orders, Wastage, Transfers, Cleaning, Today's team and the recipe card with the fold)
   await L.waitFor(p, () => document.querySelectorAll('#fn-band .fn-row').length >= 2);
   let bt = await txt(p, '#fn-band') || '';
-  ok(/\+1 more/.test(bt) && (await p.$$('#fn-band .fn-row')).length === 2, 'several: two show, then "+1 more"');
-  await tap(p, '#fn-band [data-fn="more"]'); await L.settle(p, 100);
+  // a cancellation and a move are warnings: since 26 Nov 2026 they lead the band on every page, all of them, never behind
+  // "+N more" (docs/device-coverage/step3/findings.md); before, the full band showed two rows, then "+1 more"
+  const rows = await p.$$eval('#fn-band .fn-row', l => l.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
+  ok(!/\+\d+ more/.test(bt) && rows.length === 3 && /Cancelled/.test(rows[0]) && /Rescheduled/.test(rows[1]) && /Smith 50th/.test(rows[2]), 'several: the cancellation and the move lead, all shown, then Smith (' + rows.join(' | ') + ')');
   bt = await txt(p, '#fn-band') || '';
   ok(/Cancelled/.test(bt) && /Jones wake/.test(bt) && /Do not send/.test(bt), 'cancel: a cancelled function shows as a notice in its old window');
   ok(/Rescheduled/.test(bt) && /Brown 21st/.test(bt) && new RegExp('now ' + M.dayName(day2)).test(bt), 'move: a moved function says where it went');
@@ -354,13 +356,22 @@ function hasPrivateContact(value) {
   ok(/Order today\s*Short notice Stock for Tomorrow do/.test(bn) && /on the order list/.test(bn), 'order: the band reminds the kitchen to order on the order day (' + bn.slice(0, 260) + ')');
   ok(/Tomorrow\s*Tomorrow do · event 18:00 · food 12:00/.test(bn), 'tomorrow: a short line for tomorrow\'s function');
   ok(/^Functions today and soon/.test(bn), 'band: the label says today and soon (' + bn.slice(0, 60) + ')');
-  // the round minus folds the band to one line for the rest of the day on this phone; the plus opens it again
+  // a short-notice order is a warning: since 26 Nov 2026 the minus is off on every page while one is up, so nothing that
+  // needs the kitchen (or a trip waiting for Functions) can be folded away for the day (docs/device-coverage/step3/findings.md)
+  ok(await p.$eval('#fn-band [data-fn="fold"]', e => e.textContent === '\u2212' && e.getAttribute('aria-disabled') === 'true' && e.getAttribute('aria-label') === 'Function alerts are shown'), 'fold: with a warning up the minus is off (Function alerts are shown)');
+  await tap(p, '#fn-band [data-fn="fold"]'); await L.settle(p, 150);
+  ok(!!(await p.$('#fn-band .fn-row')) && await p.evaluate(() => localStorage.getItem('lk.fn.fold')) === null, 'fold: a tap on it with a warning up folds nothing and saves nothing');
+  await p.context().close();
+  // the round minus folds a routine band (no warning) to one line for the rest of the day on this phone; the plus opens it again
+  const tm2 = fn({ name: 'Tomorrow do', date: tomorrow, rounds: ['12:00'] });
+  p = await L.open(b, '#/recipes', { who: 'ann', extra: extra({ smith: Object.assign({}, smith, { kc: '', kcBy: '', kcAt: 0 }), tm: tm2 }), wait: 1500 });   // Smith without its kitchen comment (a comment is a warning)
+  await L.waitFor(p, () => /Tomorrow do/.test((document.getElementById('fn-band') || {}).textContent || ''));
   ok(await p.$eval('#fn-band [data-fn="fold"]', e => e.textContent === '\u2212' && e.getAttribute('aria-label') === 'Hide functions' && e.offsetWidth <= 40), 'fold: the button is a small round minus');
   await tap(p, '#fn-band [data-fn="fold"]'); await L.settle(p, 150);
   ok(await p.$eval('#fn-band [data-fn="fold"]', e => e.textContent === '+' && e.getAttribute('aria-label') === 'Show functions'), 'fold: folded, the button is a plus');
-  ok(!(await p.$('#fn-band .fn-row')) && /Smith 50th/.test(await txt(p, '#fn-band .fn-band-sum') || '') && await p.$eval('#fn-band .fn-sum-more', e => !e.hidden && e.textContent === '+2') && await p.evaluate(() => localStorage.getItem('lk.fn.fold')) === today, 'fold: on a phone Hide folds the band to one line, the next function and +2');
+  ok(!(await p.$('#fn-band .fn-row')) && /Smith 50th/.test(await txt(p, '#fn-band .fn-band-sum') || '') && await p.evaluate(() => localStorage.getItem('lk.fn.fold')) === today, 'fold: on a phone Hide folds the band to one line, the next function first');
   await p.setViewportSize({ width: 1280, height: 800 }); await L.settle(p, 200);
-  ok(await p.$$eval('#fn-band .fn-sum-i:not([hidden])', e => e.length) === 3 && await p.$eval('#fn-band .fn-sum-more', e => e.hidden), 'fold: on a wide screen the one line shows all three, with no +N');
+  ok(await p.$$eval('#fn-band .fn-sum-i:not([hidden])', e => e.length) === 2 && await p.$eval('#fn-band .fn-sum-more', e => e.hidden), 'fold: on a wide screen the one line shows both, with no +N');
   await p.setViewportSize({ width: 390, height: 844 }); await L.settle(p, 200);
   await p.reload(); await L.settle(p, 1200);
   await L.waitFor(p, () => /Smith 50th/.test((document.getElementById('fn-band') || {}).textContent || ''));
