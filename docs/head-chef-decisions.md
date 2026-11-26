@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **26 November 2026, the Functions fold on five more pages.** Shown the step 2 findings on the 1920 x 1080 section screens, the head chef said "Yes all recommendations". Wastage, Transfers, Cleaning, Today's team and the recipe card now open with Orders' fold: one 50 px line on a routine day instead of the 218 px band, opening by itself for a cancellation, move, change, kitchen comment, a trip waiting for you, a short-notice order, a round due within the hour, No signal or Could not load. Show on one fold page lasts for that person and kitchen day on every fold page. This changes 22 October 2026 (the full band on every page) and widens 23 November 2026 (the fold on Orders). The Recipes list, Home and the other pages keep the full band and its minus; Prep keeps its strip. [Decision and measurements](band-options/brief.md#the-fold-on-five-more-pages-26-november-2026).
+
 - **26 November 2026, Cleaning goes on at Leichhardt first, then the Strand; a missed job is called "Missed".** Asked whether Cleaning is switched on at the Strand, the head chef said: "When cleaning is on for Leichhardt we can turn cleaning on for strand too". So each venue's cleaning count starts the day after its own switch is turned on, Leichhardt first. Asked which word the results use for a job nobody ticked, he agreed to keep "Missed", the word Records and Cleaning already use, with "not ticked by midnight" as its explanation ("That's fine"). [Brief](cleaning-tracking-options/brief.md).
 
 - **26 November 2026, the Screens row comes out again.** With the sizes read (1920 x 1080 for every shared screen, the front of house screen and the head chef's computer), the head chef said "okay" to taking it out, as he had only needed it once. The code, its rules block and its test are gone; the rules now refuse `screens/` (stricter, after the code). Saved records stay in Firestore, unread. [Device coverage](device-coverage.md#the-screens-row).
@@ -101,7 +103,7 @@
     1. The strip mended: cancelled, rescheduled and changed functions lead and are never dropped, it says Functions, and it carries the No signal and Could not load words.
     2. Prep keeps your place for the day, per person, day, section and board, by line. Tapping Prep while on Prep goes to the top.
     3. Prep starts with the strip.
-  - This changes the 22 October decision that the full band shows on every page: on Prep it starts as the strip. The other pages keep the band and its minus.
+  - This changes the 22 October decision that the full band shows on every page: on Prep it starts as the strip. The other pages keep the band and its minus (since 23 and 26 November 2026, Orders and five more pages start with the fold).
   - The cut-off in the strip (F) is held: at 390 px the names are cut to "N…".
 
 
