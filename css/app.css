@@ -5818,6 +5818,20 @@ button[data-cln-ready-label] > span { position: absolute; inset: 0; display: gri
 .cln-weigh-dock .hint { flex: 1 1 12rem; }
 .cln-weigh-dock .btn-row { margin: 0; }
 .cln-weigh-err { color: var(--bad-ink); font-weight: 700; }
+/* What each day takes (head chef, 26 Nov 2026, results by section, step 4a): a fold above the weights list, seven rows
+   with three chips each (Friday and Saturday fixed at light), the staffing suggestion in words under each, and its own
+   Save. */
+.cln-days { margin: .4rem 0 .6rem; }
+.cln-days-sum { margin: .1rem 0 0; }
+.cln-day-list { list-style: none; margin: .3rem 0 0; padding: 0; }
+.cln-day-row { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); align-items: center; gap: .2rem .8rem; padding: .35rem 0; border-bottom: 1px solid var(--rule); }
+.cln-day-row .chips { gap: .35rem; }
+.cln-day-fixed { font-weight: 600; }
+.cln-day-staff { grid-column: 2; color: var(--muted); font-size: .8125rem; }
+.cln-days-save { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .4rem 1rem; padding: .6rem 0 .2rem; }
+.cln-days-save .hint { flex: 1 1 12rem; }
+.cln-days-save .btn-row { margin: 0; }
+@media (max-width: 719px) { .cln-day-row { grid-template-columns: minmax(0, 1fr); } .cln-day-staff { grid-column: 1; } }
 @media (max-width: 719px) {
   .cln-chef-page .cln-weigh-row { grid-template-columns: minmax(0, 1fr); }
   .cln-weigh-ctl { justify-content: flex-start; }
