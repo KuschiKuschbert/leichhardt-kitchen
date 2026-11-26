@@ -1,0 +1,22 @@
+/* Design B, "Two columns" (the head chef's candidate). A preview laid over the app, never the live book.
+   The form, from 1150 px (the recipe editor's panel): The function, then the notes and the kitchen comment on the left;
+   Platters and When the platters go out on the right; the Save bar docked across both. The page keeps its order for a
+   screen reader and the keyboard (The function, Platters, When, notes, comment), so Tab goes right, then back left.
+   The service view, from 1100 px (the kitchen's grid, mirrored): the coordinator's shelf on the left, first in reading
+   order, the rounds still to go on the right. With nothing waiting there is no shelf and the rounds take the width. */
+@media (min-width: 1150px) {
+  #fe-root .fe-wrap:has(> .fe-bar) { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); column-gap: 1.5rem; align-items: start; }
+  #fe-root .fe-wrap:has(> .fe-bar) > * { grid-column: 1 / -1; }
+  #fe-root .fe-wrap > .set-block:has(#fe-name) { grid-column: 1; grid-row: 3 / span 2; }
+  #fe-root .fe-wrap > .set-block:has(#fe-notes) { grid-column: 1; grid-row: 5; }
+  #fe-root .fe-wrap > .set-block.fe-kcb { grid-column: 1; grid-row: 6; }
+  #fe-root .fe-wrap > .set-block:has(.fe-lines) { grid-column: 2; grid-row: 3; }
+  #fe-root .fe-wrap > .set-block:has(.fe-mode) { grid-column: 2; grid-row: 4 / span 4; }
+  #fe-root .fe-wrap .set-block .fe-row2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1100px) {
+  .fn-svc-board:has(> .fn-svc-sec):has(> .fn-svc-shelf) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto 1fr; column-gap: 1.25rem; align-items: start; }
+  .fn-svc-board:has(> .fn-svc-sec) > .fn-svc-bh { grid-column: 1 / -1; }
+  .fn-svc-board:has(> .fn-svc-sec) > .fn-svc-shelf { grid-area: 2 / 1; min-width: 0; margin: 0; padding: 0.55rem 0 0.35rem; }
+  .fn-svc-board:has(> .fn-svc-sec):has(> .fn-svc-shelf) > .fn-svc-sec { grid-area: 2 / 2; min-width: 0; margin: 0; padding: 0.55rem 0 0.35rem 1.25rem; border-top: 0; border-inline-start: 1px solid rgba(251, 248, 241, 0.32); }
+}
