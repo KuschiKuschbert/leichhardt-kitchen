@@ -25,7 +25,7 @@ Recorded as written (one fresh agent; it read the proposal, the packet, the cont
 >
 > **5. Fiftieth use.** Stacked, each Confirm out lifts the rounds 220 px; a second tap hits the next trip (Risk). Not evidenced: Fay's usual fields, touch, nested scrolling, a third Confirm out in a narrow column.
 
-The lead's note: the frame's band and dock figures were read off the pictures. Measured (`today/metrics.json`): the Save bar's top is at 940 px at 1920, 738 at 1536 and 732 at 1280.
+The lead's note: the frame's band and dock figures were read off the pictures. Measured (`today/study.json`): the Save bar's top is at 940 px at 1920, 738 at 1536 and 732 at 1280.
 
 ## Three designs
 
@@ -83,4 +83,58 @@ Each is CSS laid over the implemented app on the click-test stand-in ([`study.cj
 | Page errors; sideways scroll (every case) | 0; none | 0; none | 0; none | 0; none |
 
 Notes: "Fields in view" counts boxes wholly above the Save bar. "Scrolls" for the guests and round 2's time: 0, both in view as the page opens; 1, one scroll shows both together; 2, Fay scrolls between them. On the form the open band (402 px at 1920, 366 at 1536 and 1280, a trip waiting for Fay) stays: with it, no design brings a round time above the Save bar on the first screen. The time list under Event start already runs over the Save bar today (its last row still takes a tap); no design changes that.
+
+## Scores (seven fresh scorers, 1 to 10, each page on its own)
+
+Every scorer read the brief, the packet, the contracts, the design misses, the frame and the pictures; none saw the others or the lead's view. All seven said the designs differ structurally. Their answers, as given, are kept in [scores.md](scores.md).
+
+| Scorer | Form A | Form B | Form C | Service A | Service B | Service C | Recommends |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| The cook mid-service | 5 | 7 | 6 | 7 | 5 | 6 | B's form with A's service view |
+| The head chef | 4 | 7 | 6 | 7 | 6 | 5 | C's form with A's service view (CSS only, no decision changed) |
+| The skeptic | 3 | 6 | 5 | 6 | 4 | 5 | A's service view, then B's form |
+| The new starter | 6 | 7 | 5 | 8 | 6 | 6 | B's form with A's service view |
+| The keeper of the book | 5 | 5 | 7 (4 as previewed) | 7 | 6 | 6 | C's form with pair wrappers, with A's service view |
+| The kitchen screen designer | 3 | 7 | 6 | 8 | 5 | 6 | B's form with A's service view |
+| The UX and interaction designer | 4 | 6 | 7 | 7 | 6 | 5 | C's form with A's service view |
+| **Total** | **30** | **45** | **42** (39 with the keeper's 4) | **50** | **38** | **39** | |
+
+- **The service view: A, all seven.** Every Confirm out and the next round's countdown in view as the page opens at 1920, 1536 and 1280; the shelf stays first and on top (22 Nov 2026) and the platters still lead each trip (14 Nov 2026). Rejected: B's shelf beside the rounds (the rounds jump from 1168 to 553 px wide when the first trip lands, and Out today keeps the shelf, so they stay half width for the rest of the shift); C's rows (Confirm out 750 to 1,100 px from its trip's name; what went no longer leads; 0 rounds whole at 1536 and 1280).
+- **The form: B, four of seven (and the highest total); C, three.** For B: the platter rows on the first screen at every wide width, beside the facts they depend on; one scroll for the guests and round 2's time instead of two. For C: the guests in view at every width, one scroll even for a six-kind booking (B needs two), and the page reads in its own order (B's Tab goes right, then back left). Against C: about 430 to 450 px of blank paper under Platters beside the taller round grid; no platter row on the first screen at 1920. A's form: no gain on the laptop, where most bookings are made.
+- **A blend of all three: no, said all seven.** A's cards, B's side column and C's rows are rival shapes of one shelf, and B's and C's forms exclude each other. Every scorer split by page instead.
+
+## Break-it findings
+
+| Scenario | Evidence | Disposition |
+| --- | --- | --- |
+| **A second tap confirms the next trip.** Fay taps Confirm out on trip 1; once it is out, trip 2's Confirm out sits under the same spot (1920 and 1280, today and in every design). A double tap, or a second tap before she looks, marks trip 2 out and clears it from the kitchen's shelf; Fay has no Undo (source). | **Reproduced** on the stand-in (`checks.second-tap-*` in every `study.json`). | Not a layout: no design fixes it. Smallest repair, its own pull request: a confirmed trip holds its place a moment, saying it is out, as Prep's ticked lines do, so the next trip does not slide under the finger. A click test taps the same spot twice and expects trip 2 still waiting. |
+| **The form's sections pinned to numbered rows** (B and C as previewed): on a new function the Save bar lands under the heading (B) or after The function (C) and scrolls away; on a restored draft C puts The function after the comment. | **Reproduced** by the keeper in a static copy of the form's order, then on the stand-in (`checks.form-order-new-*`). | **Repaired in the mix**: the grid places each section in the page's own order (only The function and When the platters go out say how many rows they span). **Checked** on the stand-in: an existing function, a new one and a new one's restored draft at 1920 and 1280 all read head, function, platters, when, notes, comment, Save bar. Not evidenced: a save conflict, problems listed, the review step, All at once. |
+| **B's shelf beside the rounds moves the board**: the first trip shrinks the rounds from 1168 to 553 px wide and moves them 615 px sideways; once a trip is out, Out today keeps two columns for the rest of the shift. | **Checked** (`fnnow-1920-t0`, `-t1`); the rest of the shift from source (`shelfHTML()`). | B's service view not recommended. |
+| **Four trips waiting.** | **Checked**: the mix (A's cards) shows all 4 Confirm out with the next countdown at 1920 and 3 of 4 at 1536; B 3 of 4 at 1920; today 3 of 4. | Five or more trips: Not evidenced. |
+| **A big booking** (six kinds in five rounds): in a half-width column the round grid scrolls sideways inside its box, with no sign that it does. | **Checked**: no page scrolls sideways; the grid's box does, in B, C and the mix. Touch: Not evidenced. | Before release: a sign that the grid goes on, or a narrower round note so six kinds fit at 1280. |
+| **The time list under Event start** runs over the Save bar (with a mouse). | **Checked**: today and every design; its last row still takes a tap. | Unchanged by this study. |
+
+## The mix: B's form with A's service view (combined preview)
+
+[`designs/mix.css`](designs/mix.css), pictures in `previews/mix/`. A lead synthesis of the parts most scorers chose, with the keeper's fault repaired; its numbers are its own, measured on the stand-in.
+
+| Source and part | Take or reject | Principle | Kitchen benefit | Conflict or cost | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| B: the form in two columns from 1150 px | Take, repaired (no numbered rows) | Airbnb (time, guests and platters together) | The platters beside the facts; one scroll for the guests and round 2's time | Tab goes right, then back left; the laptop changes; two scrolls for a six-kind booking at 1280 | `previews/mix/form-*.png`, `study.json` |
+| A: the waiting trips as cards across the shelf from 1100 px | Take | Linear (the action beside its work), Flighty (now and next together) | Every Confirm out with the next countdown in view at every wide width | With one trip, two thirds of the shelf is empty, and the rounds below show as today | `previews/mix/fnnow-*.png` |
+| C: The function's boxes four across; the bands | Reject in the mix (the alternative for the form) | Todoist (known fields in view) | Guests in view at every width | Blank paper beside the round grid; four boxes do not fit B's half column | `previews/c/` |
+| B's shelf beside, C's trip rows, A's form | Reject | Flighty; Linear | | The board moves; Confirm out far from its trip; no laptop gain | above |
+
+| The mix, measured | 1920 | 1536 | 1280 |
+| --- | --- | --- | --- |
+| Form: fields wholly above the Save bar, band open (today) | 9 (7) | 5 (3) | 5 (3) |
+| Form: the same at a quiet hour, smaller band (today) | 13 (7) | | 9 (7) |
+| Form: platter rows on the first screen (today) | 2 of 2 (0) | 2 of 2 (0) | 2 of 2 (0) |
+| Form: scrolls to change the guests and round 2's time (today) | 1 (2) | 1 (2) | 1 (2); 2 for a six-kind booking (2) |
+| Service, 3 trips: every Confirm out and the next countdown in view (today) | yes (no) | yes (no) | yes (no) |
+| Service, 4 trips: Confirm out in view (today) | 4 of 4 (3) | 3 of 4 (2) | |
+
+Phones, the tablet and the kitchen's service view: the same pixels as today. Page errors 0, no sideways scroll, in every case.
+
+**Review status:** the mix is two parts every scorer already judged (B's form, A's service view), plus the repair. The repair went back to the keeper, who reproduced the fault (below).
 

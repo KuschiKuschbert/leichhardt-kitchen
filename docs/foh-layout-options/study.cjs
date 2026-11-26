@@ -4,8 +4,8 @@
      DESIGN=a node docs/foh-layout-options/study.cjs     designs/a.css laid over the app (a preview, never the live
                                                          book), into docs/foh-layout-options/previews/a/
    From the repo root, with the click tests' packages installed (CHROME=... as for the click tests in a cloud session).
-   A design is CSS only: it moves the page's own pieces with the grid and never changes their order in the page, so the
-   page draws again (every 20 seconds, after a tap) with the same look.
+   A design is CSS (and at most plain wrappers in the page's own order, designs/<name>.js): it moves the page's own
+   pieces and never changes their order in the page.
    The day at 14:00: a birthday 60th with three rounds (14:10, 14:50, 15:30, dietary notes), a club lunch at 14:30 with a
    kitchen comment, a wedding tomorrow and a quiz night in three days. The kitchen has sent two trips of the 60th's first
    round and the club lunch's round; all three wait for front of house to confirm them out (and 0 or 1 waiting, for the
@@ -18,6 +18,10 @@
 const path = require('path'), fs = require('fs'), ROOT = process.cwd(), DESIGN = process.env.DESIGN || '';
 const DIR = path.join(ROOT, 'docs/foh-layout-options'), OUT = path.join(DIR, DESIGN ? 'previews/' + DESIGN : 'today');
 const CSS = DESIGN ? fs.readFileSync(path.join(DIR, 'designs', DESIGN + '.css'), 'utf8') : '';
+// a design may also put the form's sections in plain wrappers, in the page's own order (what a build would do in
+// js/fnedit.js): designs/<name>.js runs once after the page draws, and every picture and check is taken before a redraw
+const JSF = DESIGN && fs.existsSync(path.join(DIR, 'designs', DESIGN + '.js')) ? fs.readFileSync(path.join(DIR, 'designs', DESIGN + '.js'), 'utf8') : '';
+const dress = async p => { if (CSS) await p.addStyleTag({ content: CSS }); if (JSF) await p.evaluate(JSF); };
 const L = require(path.join(ROOT, 'tests/lib')), server = require(path.join(ROOT, 'tests/serve'));
 const M = require(path.join(ROOT, 'js/functions.js'));
 const K = (...p) => ['kitchens', L.PIN, ...p].join('/'), today = L.ymd(new Date(L.NOW)), at = (d, hm) => M.kat(d, M.hmMin(hm));
@@ -37,18 +41,19 @@ const LONG = Object.assign({}, B60, { guests: 120, rounds: ['14:10', '14:50', '1
   lines: [['antipasto-platter', 'Antipasto Platter', [2, 2, 1, 1, 0]], ['aussie-platter', 'Aussie Platter', [1, 1, 1, 0, 0]], ['pizza-platter', 'Pizza Platter', [2, 2, 2, 1, 1]],
     ['seafood-platter', 'Seafood Platter', [1, 1, 0, 0, 0]], ['vege-platter', 'Vege Platter', [1, 1, 1, 1, 1]], ['yumcha-platter', 'Yum Cha Platter', [0, 2, 2, 2, 0]]] });
 const FNS = o => ({
-  b60: fn(o && o.long ? LONG : B60),
+  b60: fn(Object.assign({}, o && o.long ? LONG : B60, o && o.quiet ? { date: M.addDays(today, 5) } : {})),
   club: fn({ name: 'Club lunch', start: '12:00', rounds: ['14:30'], guests: 25, loc: 'Beer garden', lines: [['antipasto-platter', 'Antipasto Platter', [4]]], kc: 'Platters on the side bench.' }),
   wed: fn({ name: 'Wedding reception', date: M.addDays(today, 1), start: '17:30', rounds: ['18:30'], guests: 80 }),
   quiz: fn({ name: 'Quiz night', date: M.addDays(today, 3), start: '18:00', rounds: ['19:00'], guests: 30 })
 });
 const base = L.seed(), cfgKey = K('config', 'main');
-// trips: how many wait for Fay (0, 1 or 3)
+// trips: how many wait for Fay (0, 1, 3 or 4)
 function data(trips, o) {
   const fns = FNS(o), x = { [cfgKey]: Object.assign({}, base[cfgKey], {
     people: [P('bo', 'Bo', 'head'), P('sam', 'Sam', 'sous'), P('ann', 'Ann', 'staff'), P('fay', 'Fay', 'staff')], headId: 'bo', sousIds: ['bo', 'sam'], pingIds: ['bo', 'sam'],
     staffIds: ['bo', 'sam', 'ann', 'fay'], fnIds: ['fay'], fnOnlyIds: ['fay'], showBadges: true }) };
   x[K('pinset', 'fay')] = { at: 1 };   // Fay has chosen her PIN
+  if (o && o.quiet) delete fns.club;   // a quiet hour: nothing today, the 60th booked for next week, a wedding tomorrow
   Object.keys(fns).forEach(id => { x[K('functions', id)] = fns[id]; });
   const r1 = at(today, '14:10'), rc = at(today, '14:30');
   if (trips >= 1) x[K('fnsent', 'b60_' + r1 + '_t1')] = { fid: 'b60', at: r1, day: today, k: 1, n: { 'antipasto-platter': 1, 'pizza-platter': 1 }, sentAt: L.NOW - 360000, sentBy: 'sam', by: 'sam' };
@@ -56,6 +61,7 @@ function data(trips, o) {
     x[K('fnsent', 'b60_' + r1 + '_t2')] = { fid: 'b60', at: r1, day: today, k: 2, n: { 'antipasto-platter': 1, 'pizza-platter': 1 }, sentAt: L.NOW - 240000, sentBy: 'sam', by: 'sam' };
     x[K('fnsent', 'club_' + rc + '_t1')] = { fid: 'club', at: rc, day: today, k: 1, n: { 'antipasto-platter': 4 }, sentAt: L.NOW - 60000, sentBy: 'ann', by: 'ann' };
   }
+  if (trips >= 4) { const r2 = at(today, '14:50'); x[K('fnsent', 'b60_' + r2 + '_t1')] = { fid: 'b60', at: r2, day: today, k: 1, n: { 'pizza-platter': 1 }, sentAt: L.NOW - 30000, sentBy: 'sam', by: 'sam' }; }
   return x;
 }
 const FAY = { who: 'fay' }, SIZES = { 1920: [1920, 1008, true], 1536: [1536, 806, true], 1280: [1280, 800, false], 768: [768, 1024, true], 390: [390, 844, true], '1920m': [1920, 1008, false] };
@@ -65,7 +71,9 @@ for (const s of ['1920', '1536', '1280', '768', '390']) CASES.push(['form-' + s,
 CASES.push(['form-1536-xlarge', '#/functions/b60', '1536', data(3), { settings: { text: 'xlarge' } }],
   ['form-long-1280', '#/functions/b60', '1280', data(3, { long: true })], ['form-long-1536', '#/functions/b60', '1536', data(3, { long: true })],
   ['fnnow-1920-t0', '#/fn/now', '1920', data(0)], ['fnnow-1920-t1', '#/fn/now', '1920', data(1)], ['fnnow-1536-t1', '#/fn/now', '1536', data(1)],
-  ['fnnow-1920-kitchen', '#/fn/now', '1920', data(3), { who: 'sam' }]);
+  ['fnnow-1920-kitchen', '#/fn/now', '1920', data(3), { who: 'sam' }],
+  ['fnnow-1920-t4', '#/fn/now', '1920', data(4)], ['fnnow-1536-t4', '#/fn/now', '1536', data(4)],
+  ['form-quiet-1920', '#/functions/b60', '1920', data(0, { quiet: true })], ['form-quiet-1280', '#/functions/b60', '1280', data(0, { quiet: true })]);
 // pictures that every design must leave exactly as they are
 const SAME = ['form-390', 'form-768', 'fnnow-390', 'fnnow-768', 'fnnow-1920-kitchen'];
 const fonts = p => p.addStyleTag({ content: ['barlow:Barlow:400', 'barlow-600:Barlow:600', 'barlow-700:Barlow:700', 'barlow-condensed:Barlow Condensed:700', 'caveat:Caveat:700']
@@ -132,6 +140,19 @@ async function timeList(p, id) {
       bottomRowTappable: !!(hit && l.contains(hit)) };
   }, id);
 }
+// the form's order on the screen, in its other states (the keeper's check, 26 Nov 2026): with the Save bar held in the
+// flow, the pieces sorted by where they sit (top, then left); a new function, and a new function's draft restored
+async function formOrder(p) {
+  await p.addStyleTag({ content: '.fe-bar { position: static !important; }' }); await L.settle(p, 200);
+  return p.evaluate(() => {
+    const w = document.querySelector('#fe-root .fe-wrap'); if (!w) return 'no form';
+    const name = e => e.matches('.fe-head') ? 'head' : e.matches('.fe-note') ? 'restored' : e.matches('p.hint') ? 'last changed' : e.matches('.fe-bar') ? 'SAVE BAR' : e.matches('.set-block') ?
+      (e.querySelector('#fe-name') ? 'function' : e.querySelector('.fe-lines') ? 'platters' : e.querySelector('.fe-mode') ? 'when' : e.querySelector('#fe-notes') ? 'notes' : e.matches('.fe-kcb') ? 'comment' : 'history') :
+      e.matches('.btn-row') ? 'buttons' : e.tagName.toLowerCase() + '.' + [...e.classList].join('.');
+    return [...w.querySelectorAll(':scope > *, :scope > .fe-body > *, .fe-out > *, .fe-side > *')].filter(e => !e.matches('.fe-body, .fe-out, .fe-side') && e.getClientRects().length).map(e => ({ n: name(e), r: e.getBoundingClientRect() }))
+      .sort((a, b) => Math.round(a.r.top) - Math.round(b.r.top) || a.r.left - b.r.left).map(x => x.n).join(', ');
+  });
+}
 // two pictures the same, pixel for pixel (in the browser: no image package needed)
 async function samePixels(b, f1, f2) {
   if (!fs.existsSync(f1) || !fs.existsSync(f2)) return 'missing';
@@ -154,7 +175,7 @@ if (require.main === module) (async () => {
   const open = async (hash, size, extra, o) => {
     const [w, h, touch] = SIZES[size];
     const p = await L.open(b, hash, Object.assign({ deviceMode: 'shared', width: w, height: h, touch, base: baseUrl, extra, wait: 2400 }, FAY, o || {}));
-    await fonts(p); if (CSS) await p.addStyleTag({ content: CSS }); await L.settle(p, 700);
+    await fonts(p); await dress(p); await L.settle(p, 700);
     return p;
   };
   for (const [name, hash, size, extra, o] of CASES) {
@@ -172,6 +193,15 @@ if (require.main === module) (async () => {
   for (const size of ['1920m', '1280']) for (const id of ['fe-startT', 'fe-foodT']) {
     const p = await open('#/functions/b60', size, data(3));
     out.checks['time-list-' + size + '-' + id.slice(3)] = await timeList(p, id); await p.context().close();
+  }
+  for (const size of ['1920', '1280']) {
+    let p = await open('#/functions/b60', size, data(3));
+    out.checks['form-order-' + size] = await formOrder(p); await p.context().close();
+    p = await open('#/functions/new', size, data(3));
+    out.checks['form-order-new-' + size] = await formOrder(p);
+    await p.fill('#fe-name', 'Quiz night prizes'); await L.settle(p, 1200);
+    await p.reload(); await L.waitFor(p, () => !!document.querySelector('.fe-note'), null, 8000).catch(() => {}); await fonts(p); await dress(p); await L.settle(p, 700);
+    out.checks['form-order-new-restored-' + size] = await formOrder(p); await p.context().close();
   }
   // a picture the same as today's is not kept twice: the check says so, and today's picture stands for it
   if (DESIGN) for (const n of SAME) { const f = path.join(OUT, n + '.png'), r = out.checks['same-as-today-' + n] = await samePixels(b, f, path.join(DIR, 'today', n + '.png')); if (r === 'identical') fs.unlinkSync(f); }

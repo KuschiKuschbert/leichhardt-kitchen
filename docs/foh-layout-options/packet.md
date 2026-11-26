@@ -1,6 +1,6 @@
 # Evidence packet: front of house layouts (26 Nov 2026)
 
-Label for everything here: **Implemented app on the click-test stand-in, synthetic data, role-based review.** Nobody has watched a functions person use these screens. Source commit: `7ff635f` of `main` (after #910). Pictures and numbers come from [`today.cjs`](today.cjs) (the step 3 fixture with three trips waiting: `TRIPS=3`).
+Label for everything here: **Implemented app on the click-test stand-in, synthetic data, role-based review.** Nobody has watched a functions person use these screens. Source commit: `7ff635f` of `main` (after #910). Pictures and numbers come from [`study.cjs`](study.cjs) (the step 3 fixture with three trips waiting; it was `today.cjs` when this packet went to the frame, with the same pictures).
 
 Read with [the proposal](proposal.md). Every reviewer also reads, in full:
 
@@ -12,7 +12,7 @@ Read with [the proposal](proposal.md). Every reviewer also reads, in full:
 
 - **The booking form** (`#/functions/b60`, `js/fnedit.js`): Fay changes the Birthday 60th (40 guests, event 13:45, three rounds 14:10, 14:50 and 15:30; 2 Antipasto and 2 Pizza in round 1, 1 and 2 in round 2, 0 and 1 in round 3; notes "3 gluten free, 1 vegan. Nut allergy at table 4."). The form, in order: the head (name, Confirmed tag, Print function), Last changed, **The function** (Name or reference; Date and Event start with TBC; Guests with Not known yet, and Room, area or table with its picker), **Platters** (one row per kind: the platter, how many in each round, the total; Add a platter), **When the platters go out** (All at once or In rounds; each round's time, typed, with a note), **Service and dietary notes**, **Kitchen comment**, then the docked Save bar (`.fe-bar sv-dock`: the summary "8 platters · 3 rounds from 14:10 · 40 guests" on the left, Save changes on the right), then problems, Duplicate, Cancel function, Delete, History at the foot.
 - **The service view's shelf** (`#/fn/now`, `js/functions.js` `shelfHTML()` and `serviceHTML()`): for Fay (a coordinator: she confirms, she never sends) the dark board says Functions service and the clock, then the shelf **Waiting for Functions** (confirm each trip when it is out), then **Still to go out** (the kitchen sends these) with every round of the day. Each trip on the shelf: Trip k · round time **Function** · room; what went, large (2 × Antipasto, 2 × Pizza); sent 13:55 Sam and the Waiting pill (Waiting N min in orange from 10 min); since 26 Nov the dietaries and notes; **Confirm out** (white, 48 px). Out today: N trips, last ... under the trips. Then To plate now, the two prints and All functions. The page draws again every 20 seconds (no reads).
-- **The day at 14:00** (busy, `TRIPS=3`): Birthday 60th trip 1 sent 13:54 and trip 2 sent 13:56 (1 Antipasto and 1 Pizza each, from round 1), Club lunch trip 1 sent 13:59 by Ann (4 Antipasto), so three trips wait for Fay; rounds still to go: 60th 14:10 (what is left), 14:50, 15:30; Club lunch 14:30 (a kitchen comment: "Platters on the side bench."). Tomorrow a wedding, in three days a quiz night.
+- **The day at 14:00** (busy, `TRIPS=3`): Birthday 60th trip 1 sent 13:54 and trip 2 sent 13:56 (1 Antipasto and 1 Pizza each, from round 1), Club lunch trip 1 sent 13:59 by Ann (4 Antipasto), so three trips wait for Fay; the 60th's 14:10 and the club lunch's 14:30 are all sent, so the rounds still to go are the 60th's 14:50 and 15:30 (the club lunch has a kitchen comment: "Platters on the side bench."). Other cases: 0, 1 or 4 trips waiting; a quiet hour (nothing today, the 60th booked for next week); six kinds in five rounds with long notes; extra large text. Tomorrow a wedding, in three days a quiz night.
 
 ## Code facts a design must work with
 
@@ -35,13 +35,13 @@ Read with [the proposal](proposal.md). Every reviewer also reads, in full:
 
 `form-1920.png`, `form-1536.png`, `form-1280.png`, `form-768.png`, `form-390.png`; `fnnow-1920.png`, `fnnow-1536.png`, `fnnow-1280.png`, `fnnow-768.png`, `fnnow-390.png`; `fnnow-1920-kitchen.png` (Sam, the kitchen's view of the same moment: rounds left, shelf right). Fay at 1920 x 1008, 1536 x 806 (125 %), 768 x 1024 and 390 x 844 with touch; 1280 x 800 with a mouse.
 
-## The numbers ([`today/metrics.json`](today/metrics.json))
+## The numbers ([`today/study.json`](today/study.json))
 
 | Page | 1920 | 1536 | 1280 | 768 | 390 |
 | --- | --- | --- | --- | --- | --- |
-| Form: fields in view (of 27) | 7 | 4 | 4 | 7 | 0 |
+| Form: fields wholly above the Save bar (of 27) | 7 | 3 | 3 | 7 | 0 |
 | Form: screens tall | 2.56 | 3.15 | 3.18 | 2.5 | 4 |
 | Service view (Fay): screens tall | 1.62 | 1.98 | 1.99 | 1.59 | 1.98 |
 | Service view (Sam, the kitchen): screens tall | 1.27 | | | | |
 
-At 1920 the band above the form is about 270 px with trips waiting (it stays open while a trip waits for Fay). On the service view at 1920 each waiting trip with its dietaries takes about 220 px; three trips fill the first screen, and Still to go out starts below it.
+The band above the form ends at 402 px at 1920 and 366 px at 1536 and 1280 with trips waiting (it stays open while a trip waits for Fay). On the service view at 1920 each waiting trip with its dietaries takes about 220 px; three trips fill the first screen, and Still to go out starts below it.
