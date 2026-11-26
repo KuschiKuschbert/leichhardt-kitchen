@@ -82,3 +82,90 @@ Written before anything was drawn by a fresh UX and interaction designer (`opus`
    - Who did this: the approved sheet stays (not a new pop-up). Removing it is a rule change.
    - Functions fold: unchanged.
 5. **Fiftieth use:** scrolling past four lines of the same notices every night; "Grill · To do" nine times; on a section screen the second tap for every job (about 10 a night); a Pans cook scrolling past Grill's 9 rows to reach their own; a temperature line at 22:00 nobody reads. No design may move the next box after a tick (S1).
+
+## Round 2: three designs
+
+Drawn inside the real page ([designs/build.cjs](designs/build.cjs)): the real rows, tick, Undo, Not sent and Who did this, rearranged and put back after every redraw, so each design was ticked for real. Full description and numbers: [round2-packet.md](round2-packet.md). All three keep the title "Cleaning"; the name is judged on its own.
+
+- **A. The same page, tidied.** One column everywhere, today's order. A quiet ink count ("Grill: 0 of 9", "0 of 50 in the kitchen" under it) in place of the orange handwritten "0/50"; the temperature words in full after your section; the coverage hint in plain words under Shared kitchen; no section name repeated on rows; on a shared screen with a cook from another section, bold words and a 44 px outline button.
+- **B. Your section beside the rest.** A smaller header that holds the read line; your section a bordered panel with a big count; from 1100 px two columns across the whole width (the panel sticky on the left); the coverage hint gone; on a shared screen a "You: Pans" band with a filled orange button.
+- **C. Tonight's close first, the rest folded.** Your section is the page title; every other group is one 48 px line with its count that opens in place; on a shared screen the cook's own section leads and the screen's is a fold. Changes two approved rules.
+
+### Counts (Preview inside the implemented app)
+
+| | Today | A | B | C |
+| --- | --- | --- | --- | --- |
+| 390 px: first box / complete rows | 454 / 5 | 344 / 6 | 317 / 6 | 281 / 7 |
+| 390 px: page length (screens) | 5.4 | 5.5 | 5.4 | 1.6 |
+| 768 px: rows / first box | 9 / 504 | 9 / 430 | 9 / 382 | 9 / 358 |
+| Section screen, cook on that section: rows / first box | 9 / 504 | 10 / 430 | 23 / 380 | 11 / 358 |
+| Section screen, cook from another section: rows / first box | 9 / 504 | 9 / 488 | 23 / 459 | 11 / 326 |
+| Tick in your section: phone / section screen | 1 / 2 | 1 / 2 | 1 / 2 | 1 / 2 |
+| Tick a Shared kitchen job, phone | 1 | 1 | 1 | 2 |
+| Cook from another section reaches their Pack down | small link | 44 px button | filled 44 px button | 0 (it leads) |
+| Next box after a real tick, ack and Undo (S1) | | still | still | still |
+| Lowest drawn text contrast; drawn controls under 44 px | | 6.73:1; 0 | 5.05:1; 0 | 4.76:1; 0 |
+| Navigation levels | 1 | 1 | 1 | 2 (folds) |
+| Build size | | 1 pull request | 1 to 2 | 2, plus rules talk |
+| Relearning | none | none | little on a phone, a new layout on the screens | a new page shape |
+| New reads or rules | none | none | none | none (two approved rules change) |
+| Risk | low | sticky panel, second layout in shell CSS | folds can hide unsent work; rule changes |
+
+A Grill close on a phone is 32 taps in every design (9 jobs, 7 with checks, 16 checks); on the section screen one name tap more per recorded job. No design changes that.
+
+### How they differ
+
+| | A | B | C |
+| --- | --- | --- | --- |
+| Layout | One column | Two columns from 1100 px | One column, folds two across from 1100 px |
+| Hierarchy | Title, count, your section | Your section is a panel with the big count | Your section is the title |
+| Rest of the kitchen | Open | Open, beside you on wide screens | One line per group |
+| Another section's cook on a shared screen | Bold words, outline button | Band, filled button | Their own section leads |
+| Approved rules changed | None | None | Folds; person before screen |
+
+### Scores
+
+Seven fresh scorers (`opus`), scores out of 10.
+
+| Scorer | A | B | C | First |
+| --- | --- | --- | --- | --- |
+| Cook mid-service | 6 | 7 | 5 | B |
+| Head chef | 8 | 6 | 5 | A |
+| Skeptic | 7 | 6 | 4 | A |
+| New starter | 6.5 | 7.5 | 5.5 | B |
+| Keeper of the book | 8 | 6.5 | 5 | A |
+| Kitchen screen designer | 7 | 8 | 5 | B |
+| UX and interaction designer | 8 | 7 | 6 | A |
+| **Total** | **50.5** | **48** | **35.5** | A 4, B 3 |
+
+C last for all seven: its folds hide work that is the cook's (the skeptic found Grill chef jobs, "Walls" and "Hot plate, grill and stove (end of day)", inside the closed Shared kitchen fold while the header read "0 of 9, your section"), and it reverses two rules set on 25 and 26 November. A and B split on what the section screen is for: the head chef, skeptic, keeper and UX designer put no rule risk and the cheapest build first; the cook, new starter and screen designer put B's 23 rows on everyone's main work screen first.
+
+**Agreed by all seven, whatever their first choice:** drop the repeated section name on rows (A); a quiet ink count in place of the orange handwritten one (A); no folds (C rejected); the "You: Pans" pair on a shared screen, because it stops a mistake (B), but not with an orange fill: orange is the brand and main-action colour, and the loudness budget gives loud only to Not sent (screen designer, UX designer, skeptic).
+
+**Disagreement, one line each:**
+- B's two columns: take them (cook, new starter, screen designer, UX designer, keeper without the sticky panel) against reject them (head chef: "the 23 rows are other people's jobs"; skeptic: nobody has shown cooks read the right column from the bench, and they add shell CSS).
+- The coverage hint: keep it in plain words under Shared kitchen (new starter, screen designer) against drop it (B); the new starter noted B dropped the hint but kept its jargon ("0/24 + REPEATS", "0/2 recorded; record each prep").
+- The count: the screen designer notes that moving the done count off the handwritten face changes the approved `.nb-prog` type rule, so it needs the head chef's OK.
+
+### The mix (A + B + C)
+
+| From | Part | Take or reject | Why | Principle |
+| --- | --- | --- | --- | --- |
+| A | Quiet ink count; temperature words in full; coverage hint in plain words under Shared kitchen; no repeated section name | Take (7 of 7 for the row line and count) | Less to read in a glance; nothing hidden | Headspace, Linear |
+| A | 44 px outline Go to Pans pack down | Take | Big plain target, said once, not loud | Linear |
+| B | Two columns from 1100 px, the whole width | Take, not sticky (5 of 7) | Uses the section screen's width; a sticky panel taller than the screen cannot reach its last rows (keeper) | Flighty |
+| B | "You: Pans" with "This screen: Grill" | Take, quiet (7 of 7) | Stops a cook ticking another section's jobs (S2) | Airbnb (where, whose, what next) |
+| B | Filled orange button; dropping the coverage hint; the bordered panel on a phone | Reject | A second loud thing; jargon stays unexplained; the panel narrows rows so more wrap | Loudness budget |
+| C | Folds; the person before the screen | Reject (7 of 7) | Hides the cook's own work; two rule changes; unsent work can sit in a closed fold | Things 3 (today's work stays visible) |
+| C | "0 of 9" as the first thing | Taken already in A's count | | Duolingo |
+
+**The combined design M** (lead's synthesis, drawn as its own preview): A on every width; from 1100 px B's two columns across the whole width, not sticky; on a shared screen the section is headed "This screen: Grill", and when the cook is on another section a quiet bordered band "You: Pans, 0 of 11" with A's 44 px outline button, on every width. No folds; the screen's section still leads. Pictures `designs/m-*.png`.
+
+| | Today | A | M |
+| --- | --- | --- | --- |
+| 390 px: first box / rows | 454 / 5 | 344 / 6 | 344 / 6 |
+| 768 px: rows / first box | 9 / 504 | 9 / 430 | 9 / 430 |
+| Section screen, cook on that section: rows / first box | 9 / 504 | 10 / 430 | 22 / 430 |
+| Section screen, cook from another section: rows / first box | 9 / 504 | 9 / 488 | 22 / 502 |
+| Next box after a real tick, ack and Undo (390), and through Who did this (1920) | | still | still |
+| Lowest drawn text contrast; drawn controls under 44 px | | 6.73:1; 0 | 6.73:1; 0 |
