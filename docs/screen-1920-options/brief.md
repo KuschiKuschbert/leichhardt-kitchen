@@ -183,3 +183,70 @@ From 1281 px. The notebook's list runs on across both pages, each section kept w
 | Task sequence for Done today | In view | One Back | One fold |
 | Orders | Reading width | Two columns | Reading width |
 | What moves | Nothing | Columns (unless mended) | Lines across the spine |
+
+## Round 2 scores (seven reviewers, 26 November 2026)
+
+Role-based analysis on Preview over the implemented app, synthetic data; not research with staff. Every reviewer said the designs differ structurally on Prep. The screen designer noted A's and C's Orders are the same.
+
+| Reviewer | Ranking | Their recommendation |
+| --- | --- | --- |
+| Cook mid-service | A, B, C | A now; next preview: own section and Handy on the left page, other sections pinned to the right, B's Orders |
+| Head chef | **B**, A, C | A smaller B: mend the board, set each screen to it once, no opening by width, Orders alone |
+| Skeptic | **B**, A, C | Don't build a new layout: fix the board's column jump now, fixed column order with your own section first and ⋯ back, set each screen once, Orders alone |
+| New starter | A, B, C | A now, then B's mends on the Wall board already one tap away |
+| Keeper | A, B, C | A's Orders width for the cook only, plus held board columns as a fix; the board opt-in per screen |
+| Kitchen screen designer | A, C, B | C's two wide pages with each section pinned to its page and held when done, A's margin, Handy as a fold, the cook-only Orders width (Not evidenced) |
+| UX designer (scoring) | A, B, C | A, plus B's mended board as a set-once screen setting |
+
+First place: A five, B two. C is last for six of seven: the tick that moved 6 lines across the spine was decisive.
+
+### What they agree on
+
+- **Mend the Wall board's columns (seven of seven).** A column that empties keeps its place, and the columns follow the kitchen's section list, not the urgent lines. The jump is Reproduced on `main` today, so this is a fix (skeptic, keeper). The skeptic adds a second trigger, read in the source: a line marked urgent on another phone reorders the columns on the board, because their order follows the first line of each section (`sortItems`); the notebook does the same up and down.
+- **Do not open the board by width (six of seven; the head chef also wants no width code).** A screen at 125 % would open a different page (UX designer); "Back to the prep list" is a page a new starter never saw.
+- **Reject C's balanced pages (seven of seven).** Every tick rebalances them.
+- **Leave the notebook's height alone** (head chef, keeper): it gains nothing on a busy day and would have to follow the band.
+
+### Where they differ
+
+- **⋯ and your own section first on the board:** wanted by the head chef, skeptic, new starter and UX designer; the keeper says the board hiding ⋯ was a decided choice, so it is the head chef's call.
+- **Orders:** the cook-only reading width (keeper, UX designer, screen designer), or leave Orders alone (head chef, skeptic); the cook alone would take B's two columns; three reviewers reject two columns until a reflow test runs (Risk: a request added on another phone rebalances them under a finger).
+- **The opening:** five keep the notebook as the opening; the head chef and skeptic would set each section screen to the board once.
+
+### Corrections to the previews (found by the keeper and skeptic)
+
+- **C as drawn hides Fryer and Pastry off to the side**, not below: the notebook body has a fixed height, so the CSS columns spilled sideways past the page edge (Reproduced in the preview). C's 13 of 18 counts only what is in view; the rest could not be scrolled to. A fixed C would scroll down; its spine move stands either way.
+- **B's 12 moved rows after an ordinary tick are a preview fault**: the redraw dropped the preview's own-section-first class. The brief's "only when a section empties" overstated the evidence: held columns and own section first are Not evidenced until drawn in `pageBody()` and tick-tested.
+- **The board as an opening loses** the finished-list mascot and its words (the mascot contract leaves them off the board), Done today, Pace and Stuck lines (keeper); C's hidden Handy also drops Closing soon and the waste note.
+
+### The mix of all three
+
+| Part | Take or reject | Why | Principle |
+| --- | --- | --- | --- |
+| A: the notebook as the opening | **Take** (six of seven) | Nothing moves, Done today in view, the same on every device | Flighty, Things 3 |
+| A: the notebook to the window bottom | Reject | Nothing on a busy day; must follow the band | |
+| A: Orders at a reading width | Take for the cook only, or leave (split) | Reach 1,000 to 600 px; the chef's rows wrap and lose a line | Linear, Airbnb |
+| B: held columns in the section list's order | **Take** (seven of seven), as a fix | Reproduced fault on `main` | Flighty |
+| B: ⋯ back and your own section first on the board | Take (four), head chef's call (keeper) | Fixes on the board without a Back; changes a decided board choice | Things 3 |
+| B: opening the board by width | Reject (six) | A different page at 125 %; a Back to a page never seen | Linear, Headspace |
+| B: two Orders columns | Reject until tested (three), take (one) | 21 of 26, but rebalancing is Not evidenced | Flighty, Todoist |
+| C: balanced pages | Reject (seven) | A tick moves lines across the spine (Reproduced) | Flighty |
+| C: sections pinned to a page, Handy as a fold | Keep in reserve | Untested; conflicts with A's Handy page | |
+
+All three cannot blend: the board and the spread are rival Prep layouts that every later change would have to keep in step, and three breakpoints would have to become one. A and B blend cleanly, because the board already exists one tap away.
+
+## Recommendation
+
+**Recommend A's notebook as the opening, plus B's mends on the existing Wall board: columns in the kitchen's section list order that keep their place, ⋯ back on each row, and your own section's column first. The board stays one tap away and is remembered per screen, so a section screen can be set to it once.** Orders stays as it is for now; the cook-only reading width is a separate, smaller question.
+
+Why it beats the alternatives: it removes the one Reproduced fault (columns jumping under a finger), gives a section screen all 18 lines whenever its cooks choose the board, and changes nothing for the phone, the tablet, the laptop or anyone who keeps the notebook. It reuses a layout the book already has instead of adding a third.
+
+Main downside: a section screen still opens at 9 of 18 unless it is set to the board, and on the board Done today and quick add cost a Back. And the board is remembered per screen: when one cook taps Back to the prep list, the screen stays on the notebook until someone taps Wall board again (new starter, UX designer).
+
+Combined preview: the opening is today's notebook ([prep-notebook-1920-default.png](round2/prep-notebook-1920-default.png)), the board is B's preview with ⋯ and your own section first ([B-prep-1920.png](previews/B-prep-1920.png)). **Review status: a lead synthesis of what five reviewers named themselves (head chef, skeptic, new starter, keeper, UX designer); held columns are Not evidenced until built**, with a tick test from this screen and another (0 rows moved), a section emptying, an urgent mark from another phone, Extra large, 1536 and the breakpoint.
+
+**The head chef decides:**
+1. The column fix (a fix of a Reproduced fault; it will ship with its test).
+2. ⋯ back and your own section first on the board (a change to a decided board choice).
+3. Whether the section screens are set to the board (by a tap on each screen; no code).
+4. Orders: the cook-only reading width, or leave it.
