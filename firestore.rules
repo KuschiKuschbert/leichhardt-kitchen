@@ -1750,7 +1750,7 @@ service cloud.firestore {
     // k, its kind from a short list; d, what each weekday takes (Sunday first, 1 to 3). Chefs read it when they open
     // the list (1 read); staff never. One write saves many jobs, merged, so two chefs keep each other's entries.
     // The rules bound each map's size and check d whole; they cannot check every entry in a map, so the page checks
-    // each value it reads and ignores anything else. The head chef and the sous chefs write it, as they write the jobs.
+    // each value it reads and ignores anything else. The head chef and the sous chefs write it, as they write the jobs, the days included.
     match /kitchens/KITCHEN_PIN/cleaningPlan/{id} {
       function cleanPlanWriter() {
         let c = cfg();
