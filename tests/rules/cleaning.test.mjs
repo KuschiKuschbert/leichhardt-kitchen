@@ -379,6 +379,13 @@ try {
   await check('the first save of all may hold kinds only', () => setDoc(ref(dbs.head, planPath), (({ w, ...x }) => x)(weightRec('head', { k: { first: 'Shelves' } })), { merge: true }));
   await put({ [planPath]: weightRec('head', { w: { first: 1, second: 3 }, k: { first: 'Shelves' } }) });
   await check('what each day takes, seven days of 1 to 3', () => setDoc(ref(dbs.head, planPath), weightRec('head', { d: [3, 3, 2, 3, 3, 1, 1] }), { merge: true }));
+  // what each day takes is the head chef's: a sous chef saves weights and leaves the days as they were
+  await check('refused: a sous chef changes what each day takes', () => setDoc(ref(dbs.sous, planPath), weightRec('sous', { d: [1, 1, 1, 1, 1, 1, 1] }), { merge: true }), false);
+  await check('refused: a sous chef makes the first days', async () => { await put({ [planPath]: weightRec('head', { w: { first: 1, second: 3 } }) }); return setDoc(ref(dbs.sous, planPath), weightRec('sous', { d: [3, 3, 2, 3, 3, 1, 1] }), { merge: true }); }, false);
+  await put({ [planPath]: weightRec('head', { w: { first: 1, second: 3 }, k: { first: 'Shelves' }, d: [3, 3, 2, 3, 3, 1, 1] }) });
+  await check('a sous chef saves a weight and the days stay', () => setDoc(ref(dbs.sous, planPath), weightRec('sous', { w: { third: 2 } }), { merge: true }));
+  await check('the days are as the head chef saved them', async () => { let d = null; await env.withSecurityRulesDisabled(async c => { d = (await getDoc(ref(c.firestore(), planPath))).data(); }); if (JSON.stringify(d.d) !== '[3,3,2,3,3,1,1]' || d.w.third !== 2 || d.w.first !== 1) throw new Error(JSON.stringify(d)); });
+  await check('the admin changes what each day takes', () => setDoc(ref(dbs.owner, planPath), (({ w, ...x }) => x)(weightRec('head', { d: [3, 2, 3, 3, 2, 1, 1] })), { merge: true }));
   for (const [label, x] of [['six days', { d: [3, 3, 2, 3, 3, 1] }], ['a level of 4', { d: [3, 3, 2, 3, 3, 1, 4] }], ['a level as text', { d: [3, 3, '2', 3, 3, 1, 1] }],
     ['weights that are not a map', { w: [1, 2] }], ['an unknown field', { note: 'x' }], ['a version other than 1', { v: 2 }], ['an old time', { at: Date.now() - 3600000 }],
     ['another chef\'s name', { by: 'sous' }], ['too many weights', { w: Object.fromEntries(Array.from({ length: 401 }, (x, i) => ['j' + i, 1])) }]])

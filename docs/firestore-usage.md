@@ -46,6 +46,8 @@ Since 14 November 2026 Reports, Transfers also reads the loans still out (`trans
 
 ## Cleaning schedule extension, 9 November 2026
 
+What each day takes (26 November 2026, results by section, step 4a): the head chef or the admin opening the fold on Weights and days reads `teamsum/main` once (`cleaningStaffing()`), none when the page already holds today's count. The days are saved in the same `cleaningPlan/main` record and write as the weights do: one merged write per Save.
+
 The chosen [M1 chef layout](cleaning-chef-options/implementation.md) adds no query, listener, persistent private cache or schema. Groups, six-row pages and global search use the loaded tasks. Repeat tasks reuses the loaded range, including existing post-save refreshes. Explicit import results identify their today-only range so returning to Week reloads the correct bounded week. Named same-range work-return actions do not schedule an extra refresh during a pending write.
 
 Opening or refreshing Cleaning keeps the existing two bounded queries: applicable task revisions and today's occurrence states, or at most a week for canonical chefs. Explicit schedule import adds one bounded all-revision query, one missing-task batch and a normal two-query reload; repeating it never creates duplicate tasks. Every enhanced action writes current state plus one immutable audit snapshot atomically. Daily and week views do not read the action history. No startup cleaning query, listener, polling or private persistent copy is added. The nightly backup adds one action day-range query. Existing session/config rule lookups and task/audit validation reads remain separate server-rule costs. See [the feature contract](cleaning-schedule.md).

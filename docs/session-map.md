@@ -33,6 +33,8 @@ Step 2, the Inbox row and that night in Records: `cleanCount()` and `cleanNeed()
 
 Step 3, Weights and days: `cleaningPlan/{id}` in `firestore.rules` (one record, `main`), `cleaningPlanRead()` and `cleaningPlanSave()` in `js/prep.js` (on the Cleaning bridge as `planRead`, `planSave`; in the owner's backup), `weightsNotice()`, `weightsPage()`, `saveWeights()` and `patchWeigh()` in `js/cleaning.js`, `.cln-weigh-*` in `css/app.css`, `scripts/nightly-backup.mjs`. Checked by `tests/cleaning-weights.test.js` (new), `tests/rules/cleaning.test.mjs`, `tests/rules/client-shapes.test.mjs`, `scripts/backup-recovery-check.mjs`.
 
+Step 4a, What each day takes (26 Nov 2026, his days and the staffing suggestion): `d` in `cleaningPlan/main`, changed only by the head chef or the admin (`cleanPlanDays()` in `firestore.rules`); `cleaningHead()`, `cleaningStaffing()` and `cleaningPlanSave(w, k, d)` in `js/prep.js` (bridge `head`, `staffing`); `daysBlock()`, `daySuggest()`, `loadStaff()`, `patchDays()` and `saveDays()` in `js/cleaning.js`; `.cln-day*` in `css/app.css`. Checked by `tests/cleaning-days.test.js` (new) and `tests/rules/cleaning.test.mjs`. Pictures: `docs/cleaning-tracking-options/built/days-*`.
+
 Open with the head chef: whether Sunday, Monday and Wednesday take heavy jobs, which section owns a shared job that names two, who sets what each day takes, and the lead's two suggested planner rules.
 
 ## Fewer reloads and a clearer long wait, 24 November 2026 (chosen)

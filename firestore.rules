@@ -1750,12 +1750,18 @@ service cloud.firestore {
     // k, its kind from a short list; d, what each weekday takes (Sunday first, 1 to 3). Chefs read it when they open
     // the list (1 read); staff never. One write saves many jobs, merged, so two chefs keep each other's entries.
     // The rules bound each map's size and check d whole; they cannot check every entry in a map, so the page checks
-    // each value it reads and ignores anything else. The head chef and the sous chefs write it, as they write the jobs.
+    // each value it reads and ignores anything else. The head chef and the sous chefs write it, as they write the jobs; d only the head chef or the admin.
     match /kitchens/KITCHEN_PIN/cleaningPlan/{id} {
       function cleanPlanWriter() {
         let c = cfg();
         let by = request.resource.data.by;
         return session() && by == reader() && !(by in c.get('fnOnlyIds', [])) && (by == c.get('headId', '') || by in c.get('sousIds', []));
+      }
+      // d, what each weekday takes, is the head chef's (26 Nov 2026: "let the admin decide which days are heavy load
+      // days"): only the head chef or the admin changes it; a sous chef's save of weights leaves it as it was.
+      function cleanPlanDays() {
+        let was = resource == null ? null : resource.data.get('d', null);
+        return request.resource.data.get('d', null) == was || isAdmin() || request.resource.data.by == cfg().get('headId', '');
       }
       function cleanPlanLevel(v) { return v is int && v >= 1 && v <= 3; }
       function cleanPlanShape(d) {
@@ -1768,7 +1774,7 @@ service cloud.firestore {
       }
       allow get: if id == 'main' && (isAdmin() || kitchenRead() && chefId(reader()));
       allow list: if isAdmin();
-      allow create, update: if id == 'main' && cleanPlanWriter() && cleanPlanShape(request.resource.data);
+      allow create, update: if id == 'main' && cleanPlanWriter() && cleanPlanShape(request.resource.data) && cleanPlanDays();
       allow delete: if false;
     }
     match /kitchens/KITCHEN_PIN/push/{id} {

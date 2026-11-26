@@ -2213,13 +2213,45 @@
   // one merged save: only the jobs changed are sent, so a second chef's entries stay. w and k: { root id: value }
   // An empty map in a merged save is a value to Firestore: it would replace the stored map and wipe every entry. So a
   // map is sent only when it holds a change. A kind of '' clears that job's kind (the page reads '' as none).
-  function cleaningPlanSave(w, k) {
+  // d: what each weekday takes, Sunday first, 1 light to 3 heavy (step 4, 26 Nov 2026), sent only by the head chef or
+  // the admin, and only whole: the rules check all seven.
+  function cleaningPlanSave(w, k, d) {
     var hasW = !!w && typeof w === 'object' && Object.keys(w).length > 0, hasK = !!k && typeof k === 'object' && Object.keys(k).length > 0;
-    if (!cleaningChef() || !canW() || !(hasW || hasK)) return Promise.reject(cleaningError('permission-denied'));
+    var hasD = Array.isArray(d) && d.length === 7 && d.every(function (v) { return v === 1 || v === 2 || v === 3; });
+    if (!cleaningChef() || !canW() || !(hasW || hasK || hasD) || (hasD && !cleaningHead())) return Promise.reject(cleaningError('permission-denied'));
     var data = { v: 1, at: now() };
     if (hasW) data.w = w;
     if (hasK) data.k = k;
+    if (hasD) data.d = d.slice();
     return W([['set', docRef('cleaningPlan', 'main'), data, true]]);
+  }
+  /* Who says what each weekday takes (head chef, 26 Nov 2026: "let the admin decide which days are heavy load days"):
+     the head chef, or the owner's admin device. The sous chefs see the days and cannot change them. */
+  function cleaningHead() { var c = S.config || {}; return cleaningChef() && (admDev() || (!!S.who && S.who === c.headId)); }
+  /* The suggestion for what each weekday takes, from staffing (head chef, 26 Nov 2026: "learn then based on what days
+     we have more staff on"). How many people were on each weekday, from teamsum/main: the last 30 days of the chefs'
+     plans and the cooks' own picks, written each night. When: the head chef opens What each day takes. Cost: none when
+     the chef's pages already read it today (tsFresh()); else 1 read, kept for the day. A night count older than
+     yesterday, or none, gives no suggestion (fresh false), never an old one. */
+  function cleaningStaffing() {
+    if (!cleaningChef()) return Promise.reject(cleaningError('permission-denied'));
+    var count = function (rec) {
+      var sum = [0, 0, 0, 0, 0, 0, 0], n = [0, 0, 0, 0, 0, 0, 0];
+      (rec.days || []).forEach(function (d) {
+        var people = {}; d.s.forEach(function (x) { people[x.p] = 1; });
+        var k = Object.keys(people).length; if (!k) return;
+        var w = T.dow(T.at(d.day)); sum[w] += k; n[w]++;
+      });
+      return { fresh: true, day: rec.day, from: rec.days.length ? rec.days[0].day : '', avg: sum.map(function (v, i) { return n[i] ? Math.round(v / n[i] * 10) / 10 : null; }), n: n };
+    };
+    var r = tsFresh(); if (r) return Promise.resolve(count(r));
+    return sdk().then(function () { return fb.fs.getDocFromServer(docRef('teamsum', 'main')); }).then(function (sn) {
+      var rec = sn.exists() ? tsClean(sn.data()) : null;
+      if (!rec) return { fresh: false, none: true };
+      if (!rec.day || rec.day < shift(dayNow(), -1)) return { fresh: false };
+      if (tsum.day === dayNow() && tsum.st !== 'busy') { tsum.rec = rec; tsum.st = 'ok'; }
+      return count(rec);
+    });
   }
   function cleaningImport(templates) {
     if (!cleaningChef() || !canW() || !Array.isArray(templates) || !templates.length || templates.length > 100) return Promise.reject(cleaningError('permission-denied'));
@@ -2368,7 +2400,7 @@
       box: function (done) { return done ? TICK : BOX; }, sheetBusy: function () { return sheetOpen() || ksWait || ovBack || dkFirstUp(); }, sheetNext: sheetNext,
       discardAttempt: function () { cleaningAttempt = null; cleaningActionAttempts = Object.create(null); },
       load: cleaningLoad, saveTask: cleaningSave, archiveTask: cleaningArchive, tick: cleaningTick, undo: cleaningUndo, canUndo: cleaningCanUndo,
-      importTasks: cleaningImport, planRead: cleaningPlanRead, planSave: cleaningPlanSave, act: cleaningAct, newSlot: cleaningNewSlot, due: cleaningDue, who: function () { return S.who; },
+      importTasks: cleaningImport, planRead: cleaningPlanRead, planSave: cleaningPlanSave, head: cleaningHead, staffing: cleaningStaffing, act: cleaningAct, newSlot: cleaningNewSlot, due: cleaningDue, who: function () { return S.who; },
       canVerify: function (task) { return cleaningTickOK() && !!task.plan && task.plan.verification && task.plan.verifiers.indexOf(S.who) >= 0; } };
   }
   /* Supplier workspace (24 Oct 2026). This bridge shares the kitchen's sign-in, writer, clock and pending-write
