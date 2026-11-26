@@ -4948,6 +4948,7 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .fn-band .fn-li-out:first-child { border-top: 0; }
 .fn-band .fn-li-out > .fn-row { flex: 1 1 auto; min-width: 0; border-top: 0; }
 .fn-band .fn-out-b { flex: 0 0 auto; }
+.fn-out-slot { visibility: hidden; }   /* a held trip keeps its button's room (js/functions.js holdOut) */
 .fn-band .fn-out-b:focus-visible { outline: 3px solid var(--bar-accent); outline-offset: 2px; }
 .fn-round-trips { list-style: none; grid-column: 1 / -1; margin: 0.3rem 0 0; padding: 0; font-size: 0.92rem; }
 .fn-round-trips li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem 0.5rem; padding: 0.15rem 0; }
