@@ -1,0 +1,605 @@
+{
+ "prep-notebook-default": {
+  "rows": 18,
+  "whole": 9,
+  "medianRowH": 53,
+  "tallestRowH": 53,
+  "controls": [
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": true,
+    "tickToMore": 453,
+    "rowW": 536
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": true,
+    "tickToMore": 453,
+    "rowW": 536
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": true,
+    "tickToMore": 453,
+    "rowW": 536
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": true,
+    "tickToMore": 453,
+    "rowW": 536
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": true,
+    "tickToMore": 453,
+    "rowW": 536
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": true,
+    "tickToMore": 445,
+    "rowW": 536
+   }
+  ]
+ },
+ "prep-wall-default": {
+  "columns": [
+   {
+    "name": "Grill",
+    "x": 399,
+    "w": 367,
+    "top": 319,
+    "rows": 4,
+    "whole": 4,
+    "medianRowH": 82,
+    "more": 4,
+    "onIt": 4
+   },
+   {
+    "name": "Sauce",
+    "x": 786,
+    "w": 367,
+    "top": 319,
+    "rows": 4,
+    "whole": 4,
+    "medianRowH": 53,
+    "more": 4,
+    "onIt": 4
+   },
+   {
+    "name": "Larder",
+    "x": 1172,
+    "w": 367,
+    "top": 319,
+    "rows": 5,
+    "whole": 5,
+    "medianRowH": 53,
+    "more": 5,
+    "onIt": 5
+   },
+   {
+    "name": "Fryer",
+    "x": 399,
+    "w": 367,
+    "top": 711,
+    "rows": 2,
+    "whole": 2,
+    "medianRowH": 82,
+    "more": 2,
+    "onIt": 2
+   },
+   {
+    "name": "Pastry",
+    "x": 786,
+    "w": 367,
+    "top": 711,
+    "rows": 3,
+    "whole": 3,
+    "medianRowH": 53,
+    "more": 3,
+    "onIt": 3
+   }
+  ],
+  "controls": [
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": false,
+    "tickToMore": null,
+    "rowW": 367
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": false,
+    "tickToMore": null,
+    "rowW": 367
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": false,
+    "tickToMore": null,
+    "rowW": 367
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": false,
+    "tickToMore": null,
+    "rowW": 367
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": false,
+    "tickToMore": null,
+    "rowW": 367
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": false,
+    "tickToMore": null,
+    "rowW": 367
+   }
+  ]
+ },
+ "prep-notebook-xlarge": {
+  "rows": 18,
+  "whole": 6,
+  "medianRowH": 65,
+  "tallestRowH": 101,
+  "controls": [
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": true,
+    "tickToMore": 405,
+    "rowW": 488
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": true,
+    "tickToMore": 405,
+    "rowW": 488
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": true,
+    "tickToMore": 405,
+    "rowW": 488
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": true,
+    "tickToMore": 405,
+    "rowW": 488
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": true,
+    "tickToMore": 405,
+    "rowW": 488
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": true,
+    "tickToMore": 395,
+    "rowW": 488
+   }
+  ]
+ },
+ "prep-wall-xlarge": {
+  "columns": [
+   {
+    "name": "Grill",
+    "x": 414,
+    "w": 355,
+    "top": 354,
+    "rows": 4,
+    "whole": 4,
+    "medianRowH": 137,
+    "more": 4,
+    "onIt": 4
+   },
+   {
+    "name": "Sauce",
+    "x": 794,
+    "w": 355,
+    "top": 354,
+    "rows": 4,
+    "whole": 4,
+    "medianRowH": 101,
+    "more": 4,
+    "onIt": 4
+   },
+   {
+    "name": "Larder",
+    "x": 1174,
+    "w": 355,
+    "top": 354,
+    "rows": 5,
+    "whole": 5,
+    "medianRowH": 101,
+    "more": 5,
+    "onIt": 5
+   },
+   {
+    "name": "Fryer",
+    "x": 414,
+    "w": 355,
+    "top": 898,
+    "rows": 2,
+    "whole": 0,
+    "medianRowH": 137,
+    "more": 2,
+    "onIt": 2
+   },
+   {
+    "name": "Pastry",
+    "x": 794,
+    "w": 355,
+    "top": 898,
+    "rows": 3,
+    "whole": 0,
+    "medianRowH": 65,
+    "more": 3,
+    "onIt": 3
+   }
+  ],
+  "controls": [
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": false,
+    "tickToMore": null,
+    "rowW": 355
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": false,
+    "tickToMore": null,
+    "rowW": 355
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": false,
+    "tickToMore": null,
+    "rowW": 355
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": false,
+    "tickToMore": null,
+    "rowW": 355
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": false,
+    "tickToMore": null,
+    "rowW": 355
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": false,
+    "tickToMore": null,
+    "rowW": 355
+   }
+  ]
+ },
+ "last-line-notebook-1920": {
+  "scrollBefore": [
+   0,
+   0
+  ],
+  "scrollAfter": [
+   0,
+   0
+  ],
+  "ticked": 2,
+  "otherRows": 16,
+  "sharedMove": "0,60",
+  "rowsWithSharedMove": 13,
+  "movedOtherwise": 3,
+  "examples": [
+   "nbr-b10 396,1350 -> 396,1254",
+   "nbr-b11 396,1404 -> 396,1307",
+   "nbr-b13 396,1457 -> 396,1360"
+  ]
+ },
+ "last-line-wall-1920": {
+  "scrollBefore": [
+   0,
+   0
+  ],
+  "scrollAfter": [
+   0,
+   0
+  ],
+  "ticked": 2,
+  "otherRows": 16,
+  "sharedMove": "0,60",
+  "rowsWithSharedMove": 13,
+  "movedOtherwise": 3,
+  "examples": [
+   "nbr-b10 786,759 -> 399,819",
+   "nbr-b11 786,812 -> 399,872",
+   "nbr-b13 786,865 -> 399,925"
+  ]
+ },
+ "orders-long-ann": {
+  "rows": 26,
+  "whole": 10,
+  "medianRowH": 70,
+  "tallestRowH": 70,
+  "controls": [
+   {
+    "tick": true,
+    "onIt": false,
+    "urgent": false,
+    "more": true,
+    "tickToMore": 1000,
+    "rowW": 1083
+   },
+   {
+    "tick": true,
+    "onIt": false,
+    "urgent": false,
+    "more": true,
+    "tickToMore": 1000,
+    "rowW": 1083
+   },
+   {
+    "tick": true,
+    "onIt": false,
+    "urgent": false,
+    "more": true,
+    "tickToMore": 1000,
+    "rowW": 1083
+   },
+   {
+    "tick": true,
+    "onIt": false,
+    "urgent": false,
+    "more": true,
+    "tickToMore": 1000,
+    "rowW": 1083
+   },
+   {
+    "tick": true,
+    "onIt": false,
+    "urgent": false,
+    "more": true,
+    "tickToMore": 1000,
+    "rowW": 1083
+   },
+   {
+    "tick": true,
+    "onIt": false,
+    "urgent": false,
+    "more": true,
+    "tickToMore": 1000,
+    "rowW": 1083
+   }
+  ]
+ },
+ "orders-long-sam": {
+  "rows": 26,
+  "whole": 9,
+  "medianRowH": 70,
+  "tallestRowH": 70,
+  "controls": [
+   {
+    "tick": true,
+    "onIt": false,
+    "urgent": false,
+    "more": true,
+    "tickToMore": 584,
+    "rowW": 667
+   },
+   {
+    "tick": true,
+    "onIt": false,
+    "urgent": false,
+    "more": true,
+    "tickToMore": 584,
+    "rowW": 667
+   },
+   {
+    "tick": true,
+    "onIt": false,
+    "urgent": false,
+    "more": true,
+    "tickToMore": 584,
+    "rowW": 667
+   },
+   {
+    "tick": true,
+    "onIt": false,
+    "urgent": false,
+    "more": true,
+    "tickToMore": 584,
+    "rowW": 667
+   },
+   {
+    "tick": true,
+    "onIt": false,
+    "urgent": false,
+    "more": true,
+    "tickToMore": 584,
+    "rowW": 667
+   },
+   {
+    "tick": true,
+    "onIt": false,
+    "urgent": false,
+    "more": true,
+    "tickToMore": 584,
+    "rowW": 667
+   }
+  ]
+ },
+ "orders-long-sam-1845": {
+  "rows": 26,
+  "whole": 6,
+  "medianRowH": 70,
+  "tallestRowH": 70,
+  "band": 279
+ },
+ "prep-1536": {
+  "rows": 18,
+  "whole": 6,
+  "medianRowH": 53,
+  "tallestRowH": 53,
+  "overflow": false,
+  "controls": [
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": true,
+    "tickToMore": 453,
+    "rowW": 536
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": true,
+    "tickToMore": 453,
+    "rowW": 536
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": true,
+    "tickToMore": 453,
+    "rowW": 536
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": true,
+    "tickToMore": 453,
+    "rowW": 536
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": true,
+    "tickToMore": 453,
+    "rowW": 536
+   },
+   {
+    "tick": true,
+    "onIt": true,
+    "urgent": true,
+    "more": true,
+    "tickToMore": 445,
+    "rowW": 536
+   }
+  ]
+ },
+ "orders-1536": {
+  "rows": 26,
+  "whole": 8,
+  "medianRowH": 70,
+  "tallestRowH": 70,
+  "overflow": false,
+  "controls": [
+   {
+    "tick": true,
+    "onIt": false,
+    "urgent": false,
+    "more": true,
+    "tickToMore": 1000,
+    "rowW": 1083
+   },
+   {
+    "tick": true,
+    "onIt": false,
+    "urgent": false,
+    "more": true,
+    "tickToMore": 1000,
+    "rowW": 1083
+   },
+   {
+    "tick": true,
+    "onIt": false,
+    "urgent": false,
+    "more": true,
+    "tickToMore": 1000,
+    "rowW": 1083
+   },
+   {
+    "tick": true,
+    "onIt": false,
+    "urgent": false,
+    "more": true,
+    "tickToMore": 1000,
+    "rowW": 1083
+   },
+   {
+    "tick": true,
+    "onIt": false,
+    "urgent": false,
+    "more": true,
+    "tickToMore": 1000,
+    "rowW": 1083
+   },
+   {
+    "tick": true,
+    "onIt": false,
+    "urgent": false,
+    "more": true,
+    "tickToMore": 1000,
+    "rowW": 1083
+   }
+  ]
+ }
+}
