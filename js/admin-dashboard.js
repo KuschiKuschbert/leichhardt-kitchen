@@ -302,7 +302,12 @@
     else if (nd.mail.n) {
       // the rows come from js/prep.js (mlRow, every field through esc()); an older book without mailRows keeps the one line
       var mr = api.mailRows ? api.mailRows(MAIL_MAX) : null;
-      var mailRow = needRow('due', nd.mail.fresh ? 'New' : 'Open', nd.mail.n + ' kitchen mail' + (nd.mail.n === 1 ? '' : 's') + ' open', nd.mail.fresh ? nd.mail.fresh + ' not read yet.' : 'All read, not done yet.', 'mail', mr ? 'All kitchen mail' : 'Open mail');
+      // red only while a mail is new, or one marked Today or Food safety is still open; read mail that can wait is the quiet
+      // waiting row (head chef, 27 Nov 2026, step 4: red every day stopped meaning anything). An older book without urg
+      // keeps the red.
+      var urg = nd.mail.urg === undefined ? nd.mail.n : nd.mail.urg, hot = !!(nd.mail.fresh || urg);
+      var mailRow = needRow(hot ? 'due' : 'wait', nd.mail.fresh ? 'New' : 'Open', nd.mail.n + ' kitchen mail' + (nd.mail.n === 1 ? '' : 's') + ' open',
+        nd.mail.fresh ? nd.mail.fresh + ' not read yet.' : urg ? 'All read. ' + urg + ' marked Today or Food safety.' : 'All read, not done yet.', 'mail', mr ? 'All kitchen mail' : 'Open mail');
       var details = mr && mr.html ? '<li class="dsh-todo-mail"><ul class="dsh-ml" aria-label="Open kitchen mail, most urgent first">' + mr.html + '</ul>' + (mr.more ? '<p class="hint">' + n(mr.more) + ' more in Kitchen mail.</p>' : '') + '</li>' : '';
       // In the Inbox, the priority queue comes first in the document, including for keyboard and screen-reader users.
       if (inbox) mailDetails = details;

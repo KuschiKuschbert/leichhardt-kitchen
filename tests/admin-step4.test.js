@@ -63,6 +63,25 @@ const store = p => p.evaluate(() => window.__fake.dump());
     await p.context().close();
   }
 
+  // the Inbox's kitchen mail row is red only while a mail is new, or one marked Today or Food safety is open
+  {
+    const row = p => p.evaluate(() => { const r = [...document.querySelectorAll('.dsh-need')].find(e => /kitchen mails? open/.test(e.textContent)); return r ? { cls: r.className, tag: (r.querySelector('.dsh-tag') || {}).className, text: r.textContent.replace(/\s+/g, ' ').trim() } : null; });
+    const open = extra => L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width: 1280, height: 800, touch: false, wait: 1800, extra: Object.assign({ [K('config', 'admins')]: { x: 1, mailOpened: L.NOW } }, extra) });
+    let p = await open(L.mail());
+    await L.waitFor(p, () => /kitchen mails? open/.test(document.body.textContent), null, 8000).catch(() => {}); await L.settle(p, 400);
+    let r = await row(p);
+    ok(!!r && /dsh-need-due/.test(r.cls) && /dsh-tag-bad/.test(r.tag), 'Inbox: open mail with one marked Today and one Food safety stays red (' + JSON.stringify(r) + ')');
+    await p.context().close();
+    const idea = { [K('mail', 'm3')]: { from: 'sam', by: 'sam', cat: 'idea', pri: 'week', text: 'Pickle the leftover red onion', at: L.NOW - 5 * 3600000, done: false, seen: true },
+      [K('mailstat', 'm3')]: { seen: true, done: false, by: 'sam' } };
+    p = await open(idea);
+    await L.waitFor(p, () => /kitchen mail open/.test(document.body.textContent), null, 8000).catch(() => {}); await L.settle(p, 400);
+    r = await row(p);
+    ok(!!r && /dsh-need-wait/.test(r.cls) && !/dsh-tag-bad/.test(r.tag) && /All read, not done yet\./.test(r.text), 'Inbox: one read idea for this week is the quiet waiting row, not red (' + JSON.stringify(r) + ')');
+    ok(!p.errors.length, 'Inbox: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });

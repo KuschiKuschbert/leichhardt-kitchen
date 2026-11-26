@@ -15238,8 +15238,9 @@ if (list.length) sg('oreg', 's');
       toast(on ? 'Sous chefs can read and tick off kitchen mail now.' : 'Only you read kitchen mail now.');
     }, function (e) { failed(e); draw(); });
   }
-  // n: open mail (the count on the chef hat), fresh: how many of them nobody has opened the Mail tab for yet
-  function mlInfo() { var l = mlOwner() && mlOpen ? mlOpen : []; return { n: l.length, fresh: l.filter(function (x) { return !x.seen; }).length }; }
+  // n: open mail (the count on the chef hat), fresh: how many of them nobody has opened the Mail tab for yet, urg: how many
+  // are marked Today or Food safety (the Inbox row is red only while one is fresh or urgent: head chef, 27 Nov 2026, step 4)
+  function mlInfo() { var l = mlOwner() && mlOpen ? mlOpen : []; return { n: l.length, fresh: l.filter(function (x) { return !x.seen; }).length, urg: l.filter(function (x) { return x.pri === 'today' || x.cat === 'safety'; }).length }; }
   function mlTell() { var n = mlInfo().n; if (n !== mlLastN) { mlLastN = n; try { window.dispatchEvent(new Event('lk-mail')); } catch (e) {} } }
   function mlGrab(sn) { return sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); }
   /* open mail: one query (one read per open message), on the head chef's device when the book opens and after 30 minutes
