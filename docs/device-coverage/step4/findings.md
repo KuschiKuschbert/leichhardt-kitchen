@@ -65,6 +65,10 @@ No standard row shows at either size: at 1920 Add standard sits at 952 to 996 px
 
 The test data had no prep standards, no to-do jobs, no suppliers or cut-offs and no team saved, so how many rows show on a real day is not pictured. Ann was signed in to the chef panel by PIN without Google (with Google the intro changes and an Admin panel link shows). The cleaning results row of 26 Nov was not judged (the test data lacks its start date). Positions were read off the pictures; the date box reads mm/dd/yyyy only because the test browser is set to US English.
 
-## Chosen (head chef)
+## Chosen (head chef, 27 November 2026)
 
-To come.
+- **Build, admin quick fixes:** slimmer page tops (the heading or bar that repeats the tab goes; a page's count or time sits on its intro line) (1); one Inbox count (5); Prep standards on one row (7); Kitchen Overview narrower, values wrapping (6).
+- **Build, chef panel and Today's team quick fixes:** the orange on Set the team when no team is saved; the chef panel's headings use the page's own name and one date style; Ctrl+Enter (Cmd+Enter) adds a job on Chef to-do (8); the board's "no team saved" words said once (3).
+- **Build, with his OK (each changes an earlier choice):** open kitchen mail red only while a mail is new or urgent (2, the colour contract); the Google account line beside the rail's Find (1, from 23 Oct); with no team saved, Today's team hides the On break now board and the toolbar until it is saved (3, extends 9 Nov); Order cut-offs before the once-set Order days (6, changes 24 Nov).
+- **His use:** at his computer the admin panel is mostly for setting things up (People, Today's team, the Kitchen pages), so the Inbox keeps its single column (question 1: no numbers beside it).
+- **Not asked yet:** the Records pane (4), Kitchen Overview with only its own rows and Suppliers & pars opening the catalogue (6); questions 2 to 4.
