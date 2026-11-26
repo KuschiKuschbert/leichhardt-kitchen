@@ -48,6 +48,8 @@ const CLASSES = [
   'cln-chef-page', 'cln-fold', 'cln-fold-toggle', 'cln-repeat-browser', 'cln-repeat-layout', 'cln-template-summary', 'cln-editor',
   // section cleaning (25 Nov 2026): the small line that says how often, the Load panel and the first date notice
   'cln-often', 'cln-section-import', 'cln-first-date', 'cln-mine', 'cln-mine-title', 'cln-rest-title',
+  // design M (26 Nov 2026): a cook's count in plain ink, a station screen's band, the temperature line after the cook's jobs
+  'cln-count', 'cln-you', 'cln-temp-line',
   'dr-notebook', 'dr-book', 'dr-bookhead', 'dr-usual', 'dr-work', 'dr-spine', 'dr-people',
   'is-leaving', 'nb-offw', 'nb-fnoff', 'fn-next-off', 'nb-forfn', 'nb-tick-status', 'p-toast-chip',
   'fn-ahead', 'fn-ahead-b', 'fn-ahead-l', 'fn-ahead-t', 'fn-ahead-n', 'fn-ahead-p', 'fn-ahead-more', 'fn-ahead-hide', 'is-ahead',

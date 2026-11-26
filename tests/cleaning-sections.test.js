@@ -115,7 +115,8 @@ const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
     ok(heads.join('|') === 'Fryers: section clean|Grill: section clean|Hot Larder: section clean|Pans: section clean|Shared kitchen|Pack down|Grill', width + ': each section has its own section clean heading, apart from its Pack down (' + heads.join('|') + ')');
     ok(await p.locator(row('sc-pans-02')).count() === 0 && await p.locator(row('sc-pans-03')).count() === 0 && await p.locator(row('sc-gen-01')).count() === 0, width + ': a Tuesday job, a Wednesday job and a monthly job with no first date are not on Monday');
     ok(/^Every Monday · /.test(await meta(p, 'sc-grill-01')) && /^Every 4 weeks · /.test(await meta(p, 'sc-grill-02')) && /^Mon, Wed, Fri · /.test(await meta(p, 'c15')), width + ': a job that is not nightly says how often before anything else');
-    ok(await meta(p, 'sc-pans-01') === 'Pans · To do' && await meta(p, 'pd-grill-04') === 'Grill · To do' && await meta(p, 'sc-gen-03') === 'Sauces · Everyone · To do', width + ': a nightly job says nothing more than it did');
+    // design M (26 Nov 2026): a row does not repeat the section its heading says; a shared job keeps its place
+    ok(await meta(p, 'sc-pans-01') === 'To do' && await meta(p, 'pd-grill-04') === 'To do' && await meta(p, 'sc-gen-03') === 'Sauces · Everyone · To do', width + ': a nightly job says only what its heading does not (' + await meta(p, 'pd-grill-04') + ')');
     ok(/To do$/.test(await meta(p, 'sc-grill-01')) && /To do$/.test(await meta(p, 'c15')), width + ': the state is still the last words on the line');
     const cut = await p.$$eval('.cln-row .nb-meta.cln-often', es => es.filter(e => e.scrollWidth > e.clientWidth + 1).length);
     ok(cut === 0 && await p.locator('.cln-row .nb-meta.cln-often').count() === 5, width + ': no line that says how often is cut off');
@@ -136,7 +137,7 @@ const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
     ok(/^Every Monday · /.test(await meta(p, 'sc-grill-01')) && /Ann · \d\d:\d\d$/.test(await meta(p, 'sc-grill-01')), 'tick: the line now ends with who and when (' + await meta(p, 'sc-grill-01') + ')');
     const after = await p.locator(row('sc-grill-01')).boundingBox();
     ok(Math.abs(after.height - before.height) < 1 && Math.abs(after.y - before.y) < 1, 'tick: the row does not move or change height when ticked');
-    ok(/^1\//.test(await p.locator('.cln-progress').innerText()), 'tick: the page count goes up by one');
+    ok(/^1 of \d+\s+done today/.test(await p.locator('.cln-progress').innerText()), 'tick: the page count goes up by one, in words (' + await p.locator('.cln-progress').innerText() + ')');
     await p.click(box);
     await L.waitFor(p, () => Object.values(__fake.dump()).some(r => r.task === 'clean-template-sc-grill-01' && r.done === false) && !LK_PREP.unsent());
     await L.waitFor(p, sel => { const r = document.querySelector(sel); return !!r && !r.classList.contains('is-done') && !r.classList.contains('is-pending'); }, row('sc-grill-01'));
@@ -170,6 +171,18 @@ const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
     ok(!(await L.overflow(p)) && await p.$$eval('.cln-row .nb-meta.cln-often', es => es.filter(e => e.scrollWidth > e.clientWidth + 1).length) === 0, width + ': no sideways scroll and no line that says how often cut off');
     const targets = await p.$$eval('.cln-row button', es => es.filter(e => e.getClientRects().length).map(e => { const r = e.getBoundingClientRect(); return { w: r.width, h: r.height }; }));
     ok(targets.every(r => r.w >= 44 && r.h >= 44), width + ': every row control is at least 44 px');
+    // design M (head chef, 26 Nov 2026, docs/cleaning-look-options/brief.md): the frame above the jobs is cut
+    const frame = await p.evaluate(() => {
+      const count = document.querySelector('.cln-progress'), mine = document.querySelector('.cln-mine'), temp = document.querySelector('.cln-mine .cln-temp-line');
+      const shared = [...document.querySelectorAll('.cln-body > section')].find(s => /^Shared kitchen/.test(s.querySelector('.nb-hd').textContent));
+      return { count: count.innerText.replace(/\s+/g, ' ').trim(), handwritten: count.classList.contains('nb-prog'), toggle: !!document.querySelector('[data-cln="temperature"]'),
+        temp: temp ? temp.textContent : '', tempLast: !!temp && mine.lastElementChild === temp, topHint: /Record every/.test((document.querySelector('.cln-coverage') || {}).textContent || ''),
+        sharedHint: shared ? [...shared.querySelectorAll(':scope > .hint')].map(h => h.textContent).join('') : '', groupCount: (document.querySelector('.cln-mine .cln-group-count') || {}).textContent || '' };
+    });
+    ok(/^Grill: 0 of \d+ 0 of \d+ in the kitchen$/.test(frame.count) && !frame.handwritten, width + ': the count is the cook\'s section first, in plain ink, the kitchen\'s under it (' + frame.count + ')');
+    ok(!frame.toggle && frame.temp === 'Temperature logs must be completed first thing in the morning and before dinner service. Record them in the venue\'s temperature log.' && frame.tempLast, width + ': the temperature reminder is in full after the cook\'s own jobs, not a link above them');
+    ok(!frame.topHint && (!frame.sharedHint || /^Jobs after each service, prep or use: record each one\./.test(frame.sharedHint)), width + ': no repeats hint above the jobs; where there is one, it sits under Shared kitchen in plain words (' + frame.sharedHint + ')');
+    ok(/^\d+ of \d+$/.test(frame.groupCount), width + ': a group\'s count is in words (' + frame.groupCount + ')');
     if (width !== 390) return;
 
     // Go to Pack down lands on the leading section's Pack down
@@ -253,12 +266,31 @@ const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
     ok(/Grill pack down is not tied to a section/.test(links) && /Pans pack down opens with Pans/.test(links) && /Hot larder pack down is not tied to a section/.test(links), 'setup: Repeat tasks says which section each Pack down opens with, and which is not tied (' + links + ')');
   });
 
+  await step('design M: the repeats hint sits under Shared kitchen', async () => {
+    // a job recorded after each use (c16) is on the day: the plain hint goes with Shared kitchen, not above the jobs
+    p = await L.open(b, '#/cleaning', { who: 'ann', width: 390, wait: 1000, clock: MON, init: pickedGrill, extra: loaded(whole.concat([['c16']])) });
+    await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 14);
+    const at = await p.evaluate(() => { const shared = [...document.querySelectorAll('.cln-body > section')].find(s => /^Shared kitchen/.test(s.querySelector('.nb-hd').textContent)); const hint = shared && shared.querySelector(':scope > .hint'); return { hint: hint ? hint.textContent : '', top: /Record every/.test((document.querySelector('.cln-coverage') || {}).textContent || ''), count: (shared.querySelector('.cln-group-count') || {}).textContent }; });
+    ok(at.hint === 'Jobs after each service, prep or use: record each one. The count only knows the ones recorded.' && !at.top, 'repeats: the hint is one plain line under Shared kitchen, none above the jobs');
+    ok(/^\d+ of \d+$/.test(at.count), 'repeats: Shared kitchen counts in words, without "+ repeats" beside the hint (' + at.count + ')');
+  });
+
+  await step('design M on a phone still holding the older saved stylesheet', async () => {
+    // the page is lazy and can be newer than the saved css/app.css (sw.js): without the new rules it must still read and fit
+    p = await L.open(b, '#/cleaning', { who: 'ann', width: 390, wait: 1000, clock: MON, deviceMode: 'shared', profile: screen('grill'), init: pickedPans, extra: loaded(whole) });
+    await listed(p); await L.waitFor(p, () => !!document.querySelector('.cln-you'));
+    await p.evaluate(() => { for (const sheet of document.styleSheets) { let rules; try { rules = sheet.cssRules; } catch (e) { continue; } for (let i = rules.length - 1; i >= 0; i--) if (/\.cln-(count|you|temp-line)|is-screen/.test(rules[i].cssText)) sheet.deleteRule(i); } });
+    await L.settle(p, 200);
+    const old = await p.evaluate(() => { const b = document.querySelector('.cln-you .btn').getBoundingClientRect(); return { h: b.height, band: document.querySelector('.cln-you b').textContent, temp: !!document.querySelector('.cln-temp-line').textContent }; });
+    ok(!(await L.overflow(p)) && old.h >= 44 && /^You: Pans/.test(old.band) && old.temp, 'old stylesheet: the band, its 44 px link and the temperature words still show, with no sideways scroll (' + Math.round(old.h) + ' px)');
+  });
+
   // ---- step 3: a shared kitchen screen set to a section ----
   await step('a station screen opens on its own section', async () => {
     p = await L.open(b, '#/cleaning', { who: 'ann', wait: 1000, clock: MON, deviceMode: 'shared', profile: screen('grill'), init: pickedPans, extra: loaded(whole) });
     await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 13);
     const said = await outline(p);
-    ok(said === 'Grill|This screen. You are on Pans today|Section clean|Pack down|Shared kitchen|Rest of the kitchen|Hot Larder: section clean|Hot larder: pack down|Pans: pack down|Fryers: section clean', 'station: the screen\'s section leads whoever signs in, and says so (' + said + ')');
+    ok(said === 'This screen: Grill|Section clean|Pack down|Shared kitchen|Rest of the kitchen|Hot Larder: section clean|Hot larder: pack down|Pans: pack down|Fryers: section clean', 'station: the screen\'s section leads whoever signs in, and says so (' + said + ')');
     ok(await p.locator('.cln-row').count() === 13 && await p.locator('.cln-body [hidden], .cln-body details').count() === 0, 'station: the rest of the kitchen is open below, nothing behind a tap');
     ok(await p.locator('[data-cln="pack-down-jump"]').innerText() === 'Go to Pans pack down', 'station: the link names the cook\'s own Pack down');
     await p.click('[data-cln="pack-down-jump"]');
@@ -282,16 +314,16 @@ const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
     await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 13);
     await L.waitFor(p, () => !!document.querySelector('.ks-wrap, .ux-section-picker'));
     let said = await outline(p);
-    ok(/^Grill\|This screen\|Section clean\|Pack down\|Shared kitchen/.test(said) && await p.locator('[data-cln="pack-down-jump"]').innerText() === 'Go to Pack down', 'no pick yet: the screen\'s section leads and the link is the plain one (' + said + ')');
+    ok(/^This screen: Grill\|Section clean\|Pack down\|Shared kitchen/.test(said) && !(await p.locator('.cln-you').count()) && await p.locator('[data-cln="pack-down-jump"]').innerText() === 'Go to Pack down', 'no pick yet: the screen\'s section leads and the link is the plain one (' + said + ')');
     await p.locator('.ks-wrap [data-ks="pans"], .ux-section-picker [data-ks="pans"], .ux-picker-option:has-text("Pans")').first().click();
-    await L.waitFor(p, () => /You are on Pans today/.test((document.querySelector('.cln-mine-title small') || {}).textContent || ''));
-    const answered = await outline(p);
-    ok(answered === said.replace('|This screen|', '|This screen. You are on Pans today|') && await p.locator('[data-cln="pack-down-jump"]').innerText() === 'Go to Pans pack down', 'answered: the words and the link change, the order does not (' + answered + ')');
+    await L.waitFor(p, () => /^You: Pans/.test((document.querySelector('.cln-you b') || {}).textContent || ''));
+    const answered = await outline(p), band = await p.locator('.cln-you b').innerText();
+    ok(answered === said && /^You: Pans, pack down 0 of \d+$/.test(band) && await p.locator('[data-cln="pack-down-jump"]').count() === 1 && await p.locator('.cln-you [data-cln="pack-down-jump"]').innerText() === 'Go to Pans pack down', 'answered: a band names the cook\'s section, its count and the one link; the order does not change (' + band + ')');
     // the cook moves to another section later: the words and the link follow, and still nothing reorders
     await p.evaluate(() => { const v = JSON.parse(localStorage.getItem('lk.sec.ann')); localStorage.setItem('lk.sec.ann', JSON.stringify({ ...v, sec: 'hl', name: 'Hot Larder', at: Date.now() })); });
     await p.click('[data-cln="details"][data-id="' + id('c01') + '"].cln-task-detail');
     const later = await outline(p);
-    ok(later === said.replace('|This screen|', '|This screen. You are on Hot Larder today|') && await p.locator('[data-cln="pack-down-jump"]').innerText() === 'Go to Hot larder pack down', 'moved later: the words and the link name the section now, the order holds (' + later + ')');
+    ok(later === said && /^You: Hot Larder/.test(await p.locator('.cln-you b').innerText()) && await p.locator('[data-cln="pack-down-jump"]').innerText() === 'Go to Hot larder pack down', 'moved later: the words and the link name the section now, the order holds (' + later + ')');
     // the screen's section is taken off the kitchen's list while the page is open: the cook's own section leads
     const cfgKey = key('config', 'main');
     await p.evaluate(k => { const c = __fake.dump()[k]; __fake.write(k, { ...c, kitSecs: c.kitSecs.filter(x => x.id !== 'grill') }); }, cfgKey);
@@ -320,7 +352,7 @@ const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
     p = await L.open(b, '#/cleaning', { who: 'ann', wait: 1000, clock: MON, deviceMode: 'shared', profile: screen('grill'), init: pickedPans, extra: { ...loaded(whole), ...sections(renamed) } });
     await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 13);
     said = await outline(p);
-    ok(/^Char grill\|This screen\. You are on Pans today\|Section clean\|Pack down/.test(said), 'renamed: the screen\'s section leads under its name now (' + said + ')');
+    ok(/^This screen: Char grill\|Section clean\|Pack down/.test(said) && /^You: Pans/.test(await p.locator('.cln-you b').innerText()), 'renamed: the screen\'s section leads under its name now (' + said + ')');
     await p.context().close();
 
     // taken off the kitchen's list: the screen has no section, so the cook's own leads
@@ -343,7 +375,8 @@ const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
     p = await L.open(b, '#/cleaning', { who: 'ann', width: 390, wait: 1000, clock: MON, deviceMode: 'shared', profile: screen('fryers'), init: pickedSalads, extra: { ...loaded(whole), ...sections(long) } });
     await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 13);
     const title = await p.$eval('.cln-mine-title', e => ({ text: e.textContent, cut: e.scrollWidth > e.clientWidth + 1, wide: e.getBoundingClientRect().right > innerWidth }));
-    ok(/Fryers, salads and dessert/.test(title.text) && /This screen\. You are on Salads and dessert today/.test(title.text) && !title.cut && !title.wide && !(await L.overflow(p)), 'long names: the title line wraps and nothing runs off a 390 px phone');
+    const you = await p.$eval('.cln-you', e => ({ text: e.textContent, cut: e.scrollWidth > e.clientWidth + 1, wide: e.getBoundingClientRect().right > innerWidth }));
+    ok(/This screen: Fryers, salads and dessert/.test(title.text) && /^You: Salads and dessert/.test(you.text) && !title.cut && !title.wide && !you.cut && !you.wide && !(await L.overflow(p)), 'long names: the title and the band wrap and nothing runs off a 390 px phone (' + you.text + ')');
   });
 
   await step('the head chef sets this screen\'s section in Settings', async () => {

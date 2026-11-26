@@ -5706,6 +5706,18 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .cln-mine-title { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0 .6rem; margin-top: .4rem; }
 .cln-mine-title small { font: 400 .8125rem/1.3 var(--body); color: var(--muted); text-align: right; }
 .cln-mine .cln-packdown-group > .hint { margin: .2rem 0 .65rem; line-height: 1.4; }
+/* Design M (head chef, 26 Nov 2026, docs/cleaning-look-options/brief.md): a cook's count in plain ink, not the handwritten
+   orange; on a station screen the heading says whose list it is and a cook from another section gets one quiet band;
+   the temperature reminder in full after the cook's own jobs. New classes only, so an older saved page ignores them. */
+.cln-count { flex: none; text-align: right; }
+.cln-count b { display: block; font: 700 1.25rem/1.2 var(--display); color: var(--ink); white-space: nowrap; }
+.cln-count small { display: block; font-size: .8125rem; color: var(--muted); }
+.cln-mine-title.is-screen { font-size: 2.4rem; }
+.cln-you { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem .8rem; margin: .5rem 0 .2rem; padding: .55rem .8rem; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); }
+.cln-you b { font: 700 1.5rem/1.2 var(--display); overflow-wrap: anywhere; }
+.cln-you .btn { min-height: 44px; margin: 0; }
+.cln-page:not(.cln-chef-page) .cln-group-count { text-transform: none; letter-spacing: 0; }
+.cln-temp-line { margin: .6rem 0 .2rem; padding-top: .5rem; border-top: 1px solid var(--line); font-size: .875rem; color: var(--ink); }
 .cln-row { flex-wrap: nowrap; }
 .cln-row .nb-box { align-self: center; margin-top: 0; }
 .cln-row .nb-main { min-width: 0; }

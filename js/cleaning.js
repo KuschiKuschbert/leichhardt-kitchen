@@ -173,8 +173,8 @@
           (canAdd ? '' : ' disabled') + (adding ? flowWaiting('Add ' + kind + ' clean', 'Adding ' + kind + ' clean...') : '>Add ' + kind + ' clean') + '</button>';
       }).join('') + '</div>' : '') + '</div>';
   }
-  function planRow(task, day) {
-    var key = occurrence(task, day), open = !!M.expanded[key], summary = flowSummary(task, day), completed = summary.done && flowList(task, day)[0].record, stateText = completed ? completionText(completed) : flowState(task, day), how = rhythm(task), meta = (how ? how + ' · ' : '') + task.area + (C.chef() && !task.shared ? ' · ' + owner(task, day) : '') + (task.plan.responsibility.toLowerCase() === task.area.toLowerCase() ? '' : ' · ' + task.plan.responsibility) + ' · ' + stateText, quick = !task.plan.checks.length && !task.plan.verification && !summary.events, slot = task.plan.timing === 'close' ? 'close' : 'daily', quickRecord = quick && flowRecord(task, day, slot), quickUndo = quickRecord && quickRecord.done && C.canUndo(quickRecord);
+  function planRow(task, day, under) {
+    var key = occurrence(task, day), open = !!M.expanded[key], summary = flowSummary(task, day), completed = summary.done && flowList(task, day)[0].record, stateText = completed ? completionText(completed) : flowState(task, day), how = rhythm(task), at = place(task, under), meta = (how ? how + ' · ' : '') + [at, C.chef() && !task.shared ? owner(task, day) : '', task.plan.responsibility.toLowerCase() === task.area.toLowerCase() ? '' : task.plan.responsibility].filter(Boolean).map(function (part) { return part + ' · '; }).join('') + stateText, quick = !task.plan.checks.length && !task.plan.verification && !summary.events, slot = task.plan.timing === 'close' ? 'close' : 'daily', quickRecord = quick && flowRecord(task, day, slot), quickUndo = quickRecord && quickRecord.done && C.canUndo(quickRecord);
     var quickPending = quick && M.pending[key] && M.pending[key].control === 'quick';
     return '<li class="nb-row cln-row cln-plan-row' + (summary.done ? ' is-done' : '') + (M.pending[key] ? ' is-pending' : '') + '" data-id="' + esc(task.id) + '" data-cln-row="' + esc(key) + '">' +
       '<button type="button" class="nb-box" data-cln="' + (quick ? 'flow-quick' : 'details') + '" data-id="' + esc(task.id) + '" data-day="' + esc(day) + '"' + (quick ? ' data-slot="' + slot + '" data-kind="' + slot + '" aria-pressed="' + summary.done + '"' + (workEnabled(task, day) && (!summary.done || quickUndo) ? '' : ' disabled') : ' aria-expanded="' + open + '" aria-controls="cln-detail-' + esc(key) + '"') + (quickPending ? ' aria-busy="true"' : '') + ' aria-label="' + esc((quick ? summary.done ? quickUndo ? 'Undo: ' : 'Done: ' : 'Mark done: ' : open ? 'Close checks: ' : 'Open checks: ') + task.text + '. ' + flowState(task, day)) + '">' + C.box(summary.done) + '</button>' +
@@ -188,6 +188,8 @@
   /* How often a job comes round, for its small line: nothing for a nightly job, "Every Monday" for one weekday, "Mon, Wed,
      Fri" for several, "Every 4 weeks" or "Every 2 days" for a repeat. templateLabel() below is the chef's setup line (every
      day listed, with the first date); this is the short form a cook reads on the row (25 Nov 2026). */
+  var TEMPERATURE = 'Temperature logs must be completed first thing in the morning and before dinner service. Record them in the venue\'s temperature log.';
+  var REPEATS = 'Jobs after each service, prep or use: record each one. The count only knows the ones recorded.';
   var DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   function rhythm(task) {
     var repeat = task.plan && task.plan.repeat, days = Array.isArray(task.dows) ? task.dows : [];
@@ -216,13 +218,15 @@
   function leadPlan(grouped) {
     var live = function (x) { return !!x && C.sections().some(function (section) { return section.id === x.id; }); };
     var has = function (x) { return grouped.filter(function (group) { return (group.own || group.pack) && group.sec === x.id; }); };
-    var lead = C.chef() ? null : M.lead, first = live(lead) ? lead : null, mine = first ? has(first) : [], why = 'Your section today', mate = null;
+    var lead = C.chef() ? null : M.lead, first = live(lead) ? lead : null, mine = first ? has(first) : [], why = 'Your section today', mate = null, you = '';
     if (first && first.screen && mine.length) {
       var mateNow = C.section ? C.section() : null;
-      if (live(mateNow) && mateNow.id !== first.id) { why = 'This screen. You are on ' + mateNow.name + ' today'; mate = grouped.filter(function (group) { return group.pack && group.sec === mateNow.id; })[0] || null; }
+      if (live(mateNow) && mateNow.id !== first.id) { why = 'This screen. You are on ' + mateNow.name + ' today'; you = mateNow.name; mate = grouped.filter(function (group) { return group.pack && group.sec === mateNow.id; })[0] || null; }
       else why = 'This screen';
     } else if (lead && lead.screen && live(lead.own) && lead.own.id !== lead.id) { first = lead.own; mine = has(first); }
-    return { first: mine.length ? first : null, mine: mine, why: why, mate: mate };
+    // repeats: the day has jobs recorded after each service, prep or use, so Shared kitchen carries the plain hint (design M)
+    var repeats = grouped.some(function (group) { return workTotals(group.tasks, T.day()).events; });
+    return { first: mine.length ? first : null, mine: mine, why: why, mate: mate, you: you, repeats: repeats };
   }
   /* Which kitchen section a Pack down group belongs to (25 Nov 2026, step 2, docs/cleaning-schedule.md). Never by name: it
      is the section a chef chose for that group's section cleaning jobs at Load (the sc-hot-, sc-grill- and sc-pans- jobs),
@@ -260,11 +264,14 @@
   }
   function completionText(r) { return (r.worker || r.doneBy || 'Recorded') + ' · ' + T.clock(r.doneAt); }
   function canAct(task, day) { return day === T.day() && C.canTick() && due(task, day) && M.state === 'ok' && !M.pending[occurrence(task, day)] && !M.tickErrors[occurrence(task, day)]; }
-  function row(task, day) {
-    if (hasPlan(task)) return planRow(task, day);
+  /* A row's place on its small line, unless the heading above already says it: under Grill a Grill job reads "To do",
+     not "Grill · To do" (head chef, 26 Nov 2026, design M, docs/cleaning-look-options/brief.md). Chefs keep it. */
+  function place(task, under) { return under && String(task.area || '').toLowerCase() === String(under).toLowerCase() ? '' : task.area; }
+  function row(task, day, under) {
+    if (hasPlan(task)) return planRow(task, day, under);
     var r = record(task, day), key = occurrence(task, day), p = M.pending[key], complete = p ? !p.undo : !!(r && r.done), error = M.tickErrors[key];
-    var can = canAct(task, day) && (!r || !r.done || C.canUndo(r)), state = status(task, day);
-    var how = rhythm(task), meta = (how ? how + ' · ' : '') + task.area + (C.chef() ? ' · ' + owner(task, day) : '') + ' · ' + (p ? 'Not sent' : r && r.done ? completionText(r) : day === T.day() ? 'To do today' : state);
+    var can = canAct(task, day) && (!r || !r.done || C.canUndo(r)), state = status(task, day), at = place(task, under);
+    var how = rhythm(task), meta = (how ? how + ' · ' : '') + (at ? at + ' · ' : '') + (C.chef() ? owner(task, day) + ' · ' : '') + (p ? 'Not sent' : r && r.done ? completionText(r) : day === T.day() ? 'To do today' : state);
     var label = (r && r.done ? C.canUndo(r) && day === T.day() ? 'Undo: ' : 'Done: ' : 'Mark done: ') + task.text + '. ' + meta;
     return '<li class="nb-row cln-row' + (complete ? ' is-done' : '') + (p ? ' is-pending' : '') + '" data-id="' + esc(task.id) + '" data-cln-row="' + esc(key) + '">' +
       '<button type="button" class="nb-box" data-cln="tick" data-id="' + esc(task.id) + '" data-day="' + esc(day) + '" aria-pressed="' + complete + '" aria-label="' + esc(label) + '"' + (can ? '' : ' disabled') + (p ? ' aria-busy="true"' : '') + '>' + C.box(complete) + '</button>' +
@@ -283,7 +290,7 @@
     function groupHTML(group, i, title, tag, note) {
       var count = workTotals(group.tasks, day), heading = tag || (group.pack ? 'h4' : 'h3'), id = 'cln-group-' + i + '-' + day;
       if (note !== undefined && group.pack && !jumped && (!plan.mate || group === plan.mate)) { jumped = true; id = jump; }
-      return '<section' + (group.pack ? ' class="cln-packdown-group" data-cln-packdown-group="' + esc(group.name) + '"' : '') + ' aria-labelledby="' + id + '"><' + heading + ' class="nb-hd" id="' + id + '"' + (id === jump ? ' tabindex="-1"' : '') + '><span>' + esc(title || group.name + (group.own ? ': section clean' : '')) + '</span><span class="cln-group-count">' + count.complete + '/' + count.total + (count.events ? ' + repeats' : '') + '</span></' + heading + '>' + (note ? '<p class="hint">' + esc(note) + '</p>' : '') + '<ul class="nb-rows">' + group.tasks.map(function (task) { return row(task, day); }).join('') + '</ul></section>';
+      return '<section' + (group.pack ? ' class="cln-packdown-group" data-cln-packdown-group="' + esc(group.name) + '"' : '') + ' aria-labelledby="' + id + '"><' + heading + ' class="nb-hd" id="' + id + '"' + (id === jump ? ' tabindex="-1"' : '') + '><span>' + esc(title || group.name + (group.own ? ': section clean' : '')) + '</span><span class="cln-group-count">' + (C.chef() ? count.complete + '/' + count.total + (count.events ? ' + repeats' : '') : count.complete + ' of ' + count.total) + '</span></' + heading + '>' + (note ? '<p class="hint">' + esc(note) + '</p>' : '') + '<ul class="nb-rows">' + group.tasks.map(function (task) { return row(task, day, C.chef() || group.floors ? '' : group.name); }).join('') + '</ul></section>';
     }
     /* Your section first (head chef, 25 Nov 2026, design D): the page opens on the section this person is on today, with
        its section clean and then its Pack down. Shared kitchen follows, then the rest of the kitchen, all open; floors stay
@@ -291,11 +298,17 @@
        no cleaning list keep the page's usual order below. */
     var lead = plan.first, mine = plan.mine;
     if (lead) {
-      var at = function (group) { return grouped.indexOf(group); }, html = '<section class="cln-mine" aria-labelledby="cln-mine-' + day + '"><h3 class="cln-mine-title" id="cln-mine-' + day + '"><span>' + esc(lead.name) + '</span><small>' + esc(plan.why) + '</small></h3>';
+      /* Design M (head chef, 26 Nov 2026): on a station screen the heading says whose list it is ("This screen: Grill"), and
+         a cook from another section gets one quiet band with their own Pack down count and the one link to it, so the
+         read line does not repeat it. The words and the count follow the cook as they are now; nothing moves. */
+      var at = function (group) { return grouped.indexOf(group); }, mateCount = plan.mate ? workTotals(plan.mate.tasks, day) : null;
+      var html = '<section class="cln-mine" aria-labelledby="cln-mine-' + day + '">' + (plan.you ? '<div class="cln-you"><b>You: ' + esc(plan.you) + (mateCount ? ', pack down ' + mateCount.complete + ' of ' + mateCount.total : '') + '</b>' + (plan.mate ? '<button type="button" class="btn" data-cln="pack-down-jump" aria-controls="cln-packdown-' + day + '">Go to ' + esc(plan.mate.name) + ' pack down</button>' : '') + '</div>' : '') +
+        '<h3 class="cln-mine-title' + (lead.screen ? ' is-screen' : '') + '" id="cln-mine-' + day + '"><span>' + esc(lead.screen ? 'This screen: ' + lead.name : lead.name) + '</span>' + (lead.screen ? '' : '<small>' + esc(plan.why) + '</small>') + '</h3>';
       mine.filter(function (group) { return group.own; }).forEach(function (group) { html += groupHTML(group, at(group), 'Section clean', 'h4', ''); });
       mine.filter(function (group) { return group.pack; }).forEach(function (group) { html += groupHTML(group, at(group), 'Pack down', 'h4', 'Overhead shelves and frames first. Floors are last.'); });
-      html += '</section>';
-      grouped.filter(function (group) { return !group.own && !group.pack && !group.floors; }).forEach(function (group) { html += groupHTML(group, at(group)); });
+      // the temperature reminder in full, after the cook's own jobs, not ahead of them (design M)
+      html += '<p class="hint cln-temp-line">' + esc(TEMPERATURE) + '</p></section>';
+      grouped.filter(function (group) { return !group.own && !group.pack && !group.floors; }).forEach(function (group) { html += groupHTML(group, at(group), '', '', !group.own && plan.repeats ? REPEATS : undefined); });
       // the rest: each Pack down group in its usual order with its own section's clean above it, then any other section
       var rest = [], others = grouped.filter(function (group) { return mine.indexOf(group) < 0 && (group.own || group.pack); });
       others.filter(function (group) { return group.pack; }).forEach(function (group) { var own = group.sec && others.filter(function (other) { return other.own && other.sec === group.sec; })[0]; if (own) rest.push(own); rest.push(group); });
@@ -901,6 +914,14 @@
       (packDown ? '<button type="button" class="p-link" data-cln="pack-down-jump" aria-controls="cln-packdown-' + T.day() + '">Go to ' + (own ? esc(own) + ' pack down' : 'Pack down') + '</button>' : '') +
       '<button type="button" class="p-link" data-cln="refresh"' + (M.state === 'loading' || busy() ? ' disabled' : '') + '>Refresh</button></div>';
   }
+  /* A cook's count, in plain ink (head chef, 26 Nov 2026, design M): their own section first on their own phone ("Grill: 0
+     of 9", the kitchen's under it); on a station screen only the kitchen's, since the heading and the band carry the
+     sections'; with no section, the day's. Not the handwritten done count: that stays the chefs'. */
+  function staffCount(totals, plan) {
+    var lead = plan && plan.first, kitchen = totals.complete + ' of ' + totals.total;
+    if (lead && !lead.screen) { var own = workTotals(plan.mine.reduce(function (all, group) { return all.concat(group.tasks); }, []), T.day()); return '<div class="cln-progress cln-count"><b>' + esc(lead.name) + ': ' + own.complete + ' of ' + own.total + '</b><small>' + kitchen + ' in the kitchen</small></div>'; }
+    return '<div class="cln-progress cln-count"><b>' + kitchen + '</b><small>' + (lead ? 'in the kitchen' : 'done today') + '</small></div>';
+  }
   function draw() {
     if (!shown()) return;
     if (!C.allowed()) { M.root.innerHTML = ''; return; }
@@ -914,12 +935,12 @@
     var pos = focusAttribute && typeof active.selectionStart === 'number' ? [active.selectionStart, active.selectionEnd] : null;
     var today = tasksOn(T.day()), totals = workTotals(today, T.day()), chef = C.chef(), week = chef && M.view === 'week', setup = chef && M.view === 'setup';
     // a cook's day: its groups and what leads, worked out once for the read line and the list
-    var staffGroups = !chef && M.state === 'ok' && today.length ? groups(today, T.day()) : null, staffPlan = staffGroups ? leadPlan(staffGroups) : null;
+    var staffGroups = !chef && M.state === 'ok' && today.length ? groups(today, T.day()) : null, staffPlan = staffGroups ? leadPlan(staffGroups) : null, staffLead = !!(staffPlan && staffPlan.first), staffHint = staffLead && staffGroups.some(function (group) { return !group.own && !group.pack && !group.floors; });
     var toolbar = chef ? '<div class="cln-toolbar"><div class="chips" role="group" aria-label="Cleaning view"><button type="button" class="chip" data-cln="today" aria-pressed="' + (!week && !setup) + '">Today</button><button type="button" class="chip" data-cln="week" aria-pressed="' + week + '">Week</button><button type="button" class="chip" data-cln="setup" aria-pressed="' + setup + '" aria-expanded="' + setup + '" aria-controls="cln-plan-title">Repeat tasks</button></div>' + (!setup && M.draft ? '<button type="button" class="p-link cln-draft-return" data-cln="setup">' + (dirtyDraft() ? 'Unsaved repeat task' : 'Return to repeat task') + '</button>' : '') + '</div>' : '';
     M.root.innerHTML = '<div class="nb-wrap cln-page' + (chef ? ' cln-chef-page' : '') + '" data-cln-view="' + (setup ? 'setup' : week ? 'week' : 'today') + '">' + toolbar + (setup ? editor() :
-      '<section class="nb-page cln-book" aria-labelledby="rtitle"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Cleaning</h2><span class="nb-date">' + esc(week ? 'Week commencing ' + longDay(M.week) : longDay(T.day())) + '</span></div>' + (!week && M.state === 'ok' && today.length ? '<div class="nb-prog cln-progress">' + totals.complete + '/' + totals.total + '<small>' + (totals.events ? 'recorded; repeats apply' : 'done today') + '</small></div>' : '') + '</header>' + readLine(!chef && M.state === 'ok' && today.some(packSection), staffPlan && staffPlan.mate && staffPlan.mate.name) +
-      '<div class="cln-temperature"><button type="button" class="p-link" data-cln="temperature" aria-expanded="' + M.temperatureOpen + '">Temperature logs: morning and before dinner service</button>' + (M.temperatureOpen ? '<p class="hint">Temperature logs must be completed first thing in the morning and before dinner service. The temperature log is not connected here. Record readings in the venue\'s temperature log. Cleaning checks do not record or validate temperatures.</p>' : '') + '</div>' + earlierNotice() +
-      (!week && M.state === 'ok' && (totals.events || totals.awaiting || totals.blocked) ? '<p class="hint cln-coverage">' + (totals.events ? 'Record every required service, prep or use. The count covers known occurrences; repeat coverage is not configured. ' : '') + (totals.awaiting ? totals.awaiting + ' awaiting Pass check. ' : '') + (totals.blocked ? totals.blocked + ' unable to complete.' : '') + '</p>' : '') +
+      '<section class="nb-page cln-book" aria-labelledby="rtitle"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Cleaning</h2><span class="nb-date">' + esc(week ? 'Week commencing ' + longDay(M.week) : longDay(T.day())) + '</span></div>' + (!week && M.state === 'ok' && today.length ? (chef ? '<div class="nb-prog cln-progress">' + totals.complete + '/' + totals.total + '<small>' + (totals.events ? 'recorded; repeats apply' : 'done today') + '</small></div>' : staffCount(totals, staffPlan)) : '') + '</header>' + readLine(!chef && M.state === 'ok' && today.some(packSection) && !(staffLead && staffPlan.you && staffPlan.mate), staffPlan && staffPlan.mate && staffPlan.mate.name) +
+      (staffLead ? '' : '<div class="cln-temperature"><button type="button" class="p-link" data-cln="temperature" aria-expanded="' + M.temperatureOpen + '">Temperature logs: morning and before dinner service</button>' + (M.temperatureOpen ? '<p class="hint">Temperature logs must be completed first thing in the morning and before dinner service. The temperature log is not connected here. Record readings in the venue\'s temperature log. Cleaning checks do not record or validate temperatures.</p>' : '') + '</div>') + earlierNotice() +
+      (!week && M.state === 'ok' && (totals.events && !staffHint || totals.awaiting || totals.blocked) ? '<p class="hint cln-coverage">' + (totals.events && !staffHint ? 'Record every required service, prep or use. The count covers known occurrences; repeat coverage is not configured. ' : '') + (totals.awaiting ? totals.awaiting + ' awaiting Pass check. ' : '') + (totals.blocked ? totals.blocked + ' unable to complete.' : '') + '</p>' : '') +
       '<div class="nb-body cln-body">' + (M.state === 'error' ? clnFailLine() : M.state !== 'ok' ? loading() : week ? weekly() : chef ? chefDaily(T.day()) : daily(T.day(), staffGroups, staffPlan)) + '</div></section>') + '</div>';
     if (busy()) Array.prototype.forEach.call(M.root.querySelectorAll('[data-cln="refresh"], [data-cln="today"], [data-cln="week"], [data-cln="setup"], [data-cln="previous"], [data-cln="next"], [data-cln="this-week"]'), function (button) { button.disabled = true; });
     if (window.LK_UX) window.LK_UX.enhance(M.root);
