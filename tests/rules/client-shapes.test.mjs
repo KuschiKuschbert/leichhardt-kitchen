@@ -992,7 +992,7 @@ row('js/prep.js cleaningPlanRead(): a chef reads the weights once when the list 
   run: db => getDocFromServer(D(db, 'cleaningPlan/main')) });
 row('js/prep.js cleaningPlanSave(): a chef saves weights and kinds, merged into the one record', { ok: CHEFS, asks: CHEFS,
   run: (db, w, r) => W(r, [['set', 'cleaningPlan/main', { v: 1, w: { ['job-' + r]: 2 }, k: { ['job-' + r]: 'Shelves' }, at: Date.now() }, true]]) });
-row('js/prep.js cleaningPlanSave(): what each day takes, saved whole by the head chef or the admin only (a sous chef is never offered it)', { ok: HEAD_CHEFS, asks: HEAD_CHEFS,
+row('js/prep.js cleaningPlanSave(): what each day takes, saved whole by a chef (head chef, sous chefs, the admin)', { ok: CHEFS, asks: CHEFS,
   prep: () => put({ 'cleaningPlan/main': { v: 1, w: { seed: 2 }, d: [1, 1, 1, 1, 1, 1, 1], at: NOW, by: 'kit' } }),
   run: (db, w, r) => W(r, [['set', 'cleaningPlan/main', { v: 1, d: [3, 3, 2, 3, 3, 1, 1], at: Date.now() }, true]]) });
 row('js/prep.js cleaningArchive(): chef archives a schedule from tomorrow', { ok: CHEFS, asks: CHEFS,

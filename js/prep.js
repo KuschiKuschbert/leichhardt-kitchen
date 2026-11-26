@@ -2213,22 +2213,19 @@
   // one merged save: only the jobs changed are sent, so a second chef's entries stay. w and k: { root id: value }
   // An empty map in a merged save is a value to Firestore: it would replace the stored map and wipe every entry. So a
   // map is sent only when it holds a change. A kind of '' clears that job's kind (the page reads '' as none).
-  // d: what each weekday takes, Sunday first, 1 light to 3 heavy (step 4, 26 Nov 2026), sent only by the head chef or
-  // the admin, and only whole: the rules check all seven.
+  // d: what each weekday takes, Sunday first, 1 light to 3 heavy (step 4, 26 Nov 2026), set by the same chefs as the
+  // weights, and only whole: the rules check all seven.
   function cleaningPlanSave(w, k, d) {
     var hasW = !!w && typeof w === 'object' && Object.keys(w).length > 0, hasK = !!k && typeof k === 'object' && Object.keys(k).length > 0;
     var hasD = Array.isArray(d) && d.length === 7 && d.every(function (v) { return v === 1 || v === 2 || v === 3; });
     if (!canW()) return Promise.reject(cleaningError('unauthenticated'));   // the PIN session lapsed: unlock, then save
-    if (!cleaningChef() || !(hasW || hasK || hasD) || (hasD && !cleaningHead())) return Promise.reject(cleaningError('permission-denied'));
+    if (!cleaningChef() || !(hasW || hasK || hasD)) return Promise.reject(cleaningError('permission-denied'));
     var data = { v: 1, at: now() };
     if (hasW) data.w = w;
     if (hasK) data.k = k;
     if (hasD) data.d = d.slice();
     return W([['set', docRef('cleaningPlan', 'main'), data, true]]);
   }
-  /* Who says what each weekday takes (head chef, 26 Nov 2026: "let the admin decide which days are heavy load days"):
-     the head chef, or the owner's admin device. The sous chefs see the days and cannot change them. */
-  function cleaningHead() { var c = S.config || {}; return cleaningChef() && (admDev() || (!!S.who && S.who === c.headId)); }
   /* The suggestion for what each weekday takes, from staffing (head chef, 26 Nov 2026: "learn then based on what days
      we have more staff on"). How many people were on each weekday, from teamsum/main: the last 30 days of the chefs'
      plans and the cooks' own picks, written each night. When: the head chef opens What each day takes. Through
@@ -2398,7 +2395,7 @@
       box: function (done) { return done ? TICK : BOX; }, sheetBusy: function () { return sheetOpen() || ksWait || ovBack || dkFirstUp(); }, sheetNext: sheetNext,
       discardAttempt: function () { cleaningAttempt = null; cleaningActionAttempts = Object.create(null); },
       load: cleaningLoad, saveTask: cleaningSave, archiveTask: cleaningArchive, tick: cleaningTick, undo: cleaningUndo, canUndo: cleaningCanUndo,
-      importTasks: cleaningImport, planRead: cleaningPlanRead, planSave: cleaningPlanSave, head: cleaningHead, staffing: cleaningStaffing, act: cleaningAct, newSlot: cleaningNewSlot, due: cleaningDue, who: function () { return S.who; },
+      importTasks: cleaningImport, planRead: cleaningPlanRead, planSave: cleaningPlanSave, staffing: cleaningStaffing, act: cleaningAct, newSlot: cleaningNewSlot, due: cleaningDue, who: function () { return S.who; },
       canVerify: function (task) { return cleaningTickOK() && !!task.plan && task.plan.verification && task.plan.verifiers.indexOf(S.who) >= 0; } };
   }
   /* Supplier workspace (24 Oct 2026). This bridge shares the kitchen's sign-in, writer, clock and pending-write

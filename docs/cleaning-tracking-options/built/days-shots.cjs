@@ -1,7 +1,7 @@
 /* Step 4a as built: What each day takes, on Weights and days, on the click-test stand-in (26 Nov 2026).
      OUT=<this folder> node <this file>     (from the repo root, with the click tests' packages)
    Synthetic jobs and a made-up team count: 28 days, Monday quiet, Tuesday busy. The head chef has opened the fold and
-   tapped Use the suggestions; nothing is saved. Then a sous chef's view of the saved days. */
+   tapped Use the suggestions; nothing is saved. Then a sous chef with saved days: the same chips. */
 const path = require('path'), fs = require('fs'), ROOT = process.cwd(), OUT = process.env.OUT;
 const L = require(path.join(ROOT, 'tests/lib')), server = require(path.join(ROOT, 'tests/serve')), schedule = require(path.join(ROOT, 'js/cleaning-schedule'));
 const key = (...p) => ['kitchens', L.PIN, ...p].join('/'), OPEN = 253402178400000, DAY = 86400000;

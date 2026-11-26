@@ -1,7 +1,7 @@
 // Cleaning results by section, step 4a (head chef, 26 Nov 2026, docs/cleaning-tracking-options/brief.md): What each day
 // takes. On Weights and days a fold shows what each weekday takes, light to heavy. Until it is saved the page shows his
-// days (Sunday, Monday, Wednesday and Thursday heavy, Tuesday medium, Friday and Saturday light). The head chef or the
-// admin changes them; the sous chefs read them. The book suggests from how many people were on each weekday in the
+// days (Sunday, Monday, Wednesday and Thursday heavy, Tuesday medium, Friday and Saturday light). The head chef, the sous
+// chefs and the admin change them. The book suggests from how many people were on each weekday in the
 // last 30 days (teamsum/main), never saves a suggestion on its own, and says so when the count is old, short or missing.
 // Synthetic jobs and made-up people.
 const L = require('./lib');
@@ -80,7 +80,7 @@ const saved = p => L.waitFor(p, () => /Saved|Refused|Not saved\. /.test((documen
       // refused: the change stays on screen and the page says why
       await p.evaluate(() => { window.__fake.mode = 'deny'; });
       await p.click('[data-cln="day-level"][data-dow="1"][data-w="3"]'); await p.click('[data-cln="days-save"]'); await saved(p);
-      ok(await text(p, '.cln-days-save .hint') === 'Refused: only the head chef or the admin sets the days. Nothing was saved.' && /Monday:Heavy/.test(await pressed(p)) && JSON.stringify((await stored(p)).d) === '[3,2,1,3,2,1,1]', width + ': a refused save says so and keeps the change on screen (' + await text(p, '.cln-days-save .hint') + ')');
+      ok(await text(p, '.cln-days-save .hint') === 'Refused: only the head chef and the sous chefs set the days. Nothing was saved.' && /Monday:Heavy/.test(await pressed(p)) && JSON.stringify((await stored(p)).d) === '[3,2,1,3,2,1,1]', width + ': a refused save says so and keeps the change on screen (' + await text(p, '.cln-days-save .hint') + ')');
       await p.evaluate(() => { window.__fake.mode = 'ok'; });
       await p.click('[data-cln="days-undo"]'); await L.settle(p, 150);
     }
@@ -88,12 +88,15 @@ const saved = p => L.waitFor(p, () => /Saved|Refused|Not saved\. /.test((documen
     ok(!(await p.$('.cln-days')), width + ': with the days saved, Back leaves');
     await p.context().close();
   }
-  // a sous chef reads the days and cannot change them; the team count is not read for them
+  // a sous chef sets the days too, from the same suggestions
   {
     const p = await open(b, { who: 'sam' }, 390, Object.assign(tsum(dayN(0), 28), { [PLAN]: { v: 1, w: {}, d: [3, 2, 3, 3, 2, 1, 1], at: L.NOW - DAY, by: 'head' } }));
     ok(await text(p, '[data-cln="days-fold"]') === 'What each day takes' && await text(p, '.cln-days-sum') === 'Heavy: Tue, Wed, Sun. Medium: Mon, Thu. Light: Fri, Sat.', 'sous chef: the line gives the saved days (' + await text(p, '.cln-days-sum') + ')');
     await fold(p);
-    ok(!(await p.$('.cln-day-list')) && !(await p.$('[data-cln="days-save"]')) && /The head chef sets these\.$/.test(await text(p, '.cln-days')) && !!(await p.$('.cln-days-sum')) && await tsReads(p) === 0, 'sous chef: no chips, no Save, says the head chef sets them; no team count read');
+    ok(/^Monday:Medium\|Tuesday:Heavy/.test(await pressed(p)) && (await staff(p))[0] === 'About 3 on. Suggests medium.' && await tsReads(p) <= 1, 'sous chef: the saved days on the chips, the staffing words, the team count read once (' + await pressed(p) + ')');
+    await p.click('[data-cln="day-level"][data-dow="1"][data-w="3"]'); await p.click('[data-cln="days-save"]'); await saved(p);
+    const s = await stored(p);
+    ok(s && JSON.stringify(s.d) === '[3,3,3,3,2,1,1]' && s.by === 'sam' && /^Saved \d\d:\d\d\.$/.test(await text(p, '.cln-days-save .hint')), 'sous chef: saves a change to the days, by name (' + JSON.stringify(s && { d: s.d, by: s.by }) + ')');
     await p.context().close();
   }
   // the team count is old, short or missing: no suggestion, and the page says why
