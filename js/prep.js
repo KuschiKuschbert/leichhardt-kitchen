@@ -2366,6 +2366,59 @@
       });
     });
   }
+  /* Suggest the days, saved (head chef, 26 Nov 2026, results by section, step 4b; docs/cleaning-schedule.md, Suggest the
+     days). Up to 5 jobs move in one W(): each the replace path of cleaningSave (root kept, the old revision closed, the
+     new one starting tomorrow). The rules emulator refused 10 at once and allowed 5. A batch lands whole or not at all.
+     moves: [{ old (the open revision), dows, anchor (a monthly job's new first date, else undefined) }].
+     Each job remembers its own uncertain send (cleaningMoveAttempts, by the old revision's id), never cleaningAttempt,
+     so a lost answer for one job cannot make a saved job read as refused. Reads: none on an ordinary save. Only Send
+     again after a lost answer reads each remembered new revision from the server first: at most 5 reads, on a tap. */
+  var cleaningMoveAttempts = Object.create(null);
+  function cleaningMoves(moves) {
+    if (!cleaningChef() || !canW() || !Array.isArray(moves) || !moves.length || moves.length > 5) return Promise.reject(cleaningError(!canW() ? 'unauthenticated' : 'permission-denied'));
+    if ((S.config.staffSee || {}).cleaning === true) return Promise.reject(cleaningError('cleaning-on'));   // bulk moves only while Cleaning is off
+    var context = writeContext(), access = cleaningContext(), identity = stableIdentity(), today = dayNow(), tomorrow = T.at(shift(today, 1));
+    var bad = moves.filter(function (m) { return !m || !m.old || !/^[a-zA-Z0-9_-]{1,80}$/.test(m.old.id) || m.old.until !== CLEAN_OPEN || m.old.from > tomorrow; });
+    if (bad.length) { var stale = cleaningError('stale'); stale.ids = bad.map(function (m) { return m && m.old && m.old.id; }); return Promise.reject(stale); }
+    var drafts = [], wrong = [];
+    moves.forEach(function (m) {
+      var o = m.old, plan = o.plan ? JSON.parse(JSON.stringify(o.plan)) : undefined;
+      if (m.anchor !== undefined) { if (!plan || !plan.repeat || !cleaningDate(m.anchor) || T.at(m.anchor) < tomorrow) { wrong.push(o.id); return; } plan.repeat.anchor = m.anchor; }
+      try { drafts.push({ m: m, data: cleaningDraft({ text: o.text, area: o.area, section: o.section || '', shared: !!o.shared, dows: m.dows, guide: o.guide || '', plan: plan }) }); }
+      catch (e) { wrong.push(o.id); }
+    });
+    if (wrong.length) { var invalid = cleaningError('invalid-argument'); invalid.ids = wrong; return Promise.reject(invalid); }
+    function valid() { if (!cleaningChef() || access !== cleaningContext() || identity !== stableIdentity() || today !== dayNow()) throw cleaningError('cancelled'); }
+    // a job sent before with no answer: its new revision on the server says it landed (the old one is closed with it)
+    return sdk().then(function () {
+      return Promise.all(drafts.map(function (d) {
+        var a = cleaningMoveAttempts[d.m.old.id];
+        if (!a || a.identity !== identity) { delete cleaningMoveAttempts[d.m.old.id]; return null; }
+        return fb.fs.getDocFromServer(docRef('cleaningTasks', a.task.id)).then(function (sn) {
+          valid(); if (sn.metadata && sn.metadata.fromCache) throw cleaningError('unavailable');
+          if (!sn.exists()) { delete cleaningMoveAttempts[d.m.old.id]; return null; }
+          var saved = Object.assign({}, sn.data(), { id: sn.id });
+          if (saved.root !== a.task.root || saved.prev !== d.m.old.id) throw cleaningError('stale');
+          delete cleaningMoveAttempts[d.m.old.id]; return { id: d.m.old.id, task: saved, closed: a.closed, recovered: true };
+        });
+      }));
+    }).then(function (known) {
+      valid();
+      var out = known.filter(Boolean), ops = [], sent = [];
+      drafts.forEach(function (d, i) {
+        if (known[i]) return;
+        var old = d.m.old, ref = fb.fs.doc(colRef('cleaningTasks'));
+        var data = Object.assign(d.data, { root: old.root, prev: old.id, next: '', from: tomorrow, until: CLEAN_OPEN, at: now(), by: context.by });
+        ops.push(['upd', docRef('cleaningTasks', old.id), { until: tomorrow, next: ref.id }]); ops.push(['set', ref, data]);
+        sent.push({ id: old.id, task: Object.assign({}, data, { id: ref.id }), closed: Object.assign({}, old, { until: tomorrow, next: ref.id, by: context.by }) });
+      });
+      if (!ops.length) return out;
+      return W(ops, context).then(function () { sent.forEach(function (s) { delete cleaningMoveAttempts[s.id]; }); return out.concat(sent); }, function (error) {
+        if (identity === stableIdentity() && !(error && ['permission-denied', 'cancelled', 'invalid-argument'].indexOf(error.code) >= 0)) sent.forEach(function (s) { cleaningMoveAttempts[s.id] = { identity: identity, task: s.task, closed: s.closed }; });
+        error = error || cleaningError('unavailable'); error.saved = out; throw error;
+      });
+    });
+  }
   function cleaningArchive(task) {
     if (!cleaningChef() || !canW()) return Promise.reject(cleaningError('permission-denied'));
     if (!task || !/^[a-zA-Z0-9_-]{1,80}$/.test(task.id) || task.until !== CLEAN_OPEN || task.from > T.at(shift(dayNow(), 1))) return Promise.reject(cleaningError('stale'));
@@ -2393,9 +2446,9 @@
       sections: secList, section: mySecNow, screenSection: screenSection,
       guides: function () { return featOn('guides') ? gLive().map(function (g) { return { id: g.id, title: g.title }; }) : []; }, loadGuides: loadGuides,
       box: function (done) { return done ? TICK : BOX; }, sheetBusy: function () { return sheetOpen() || ksWait || ovBack || dkFirstUp(); }, sheetNext: sheetNext,
-      discardAttempt: function () { cleaningAttempt = null; cleaningActionAttempts = Object.create(null); },
+      discardAttempt: function () { cleaningAttempt = null; cleaningActionAttempts = Object.create(null); cleaningMoveAttempts = Object.create(null); },
       load: cleaningLoad, saveTask: cleaningSave, archiveTask: cleaningArchive, tick: cleaningTick, undo: cleaningUndo, canUndo: cleaningCanUndo,
-      importTasks: cleaningImport, planRead: cleaningPlanRead, planSave: cleaningPlanSave, staffing: cleaningStaffing, act: cleaningAct, newSlot: cleaningNewSlot, due: cleaningDue, who: function () { return S.who; },
+      importTasks: cleaningImport, planRead: cleaningPlanRead, planSave: cleaningPlanSave, staffing: cleaningStaffing, moveTasks: cleaningMoves, teamOn: function () { return S.configState === 'ok' && !!S.configFull ? (S.config.staffSee || {}).cleaning === true : null; }, act: cleaningAct, newSlot: cleaningNewSlot, due: cleaningDue, who: function () { return S.who; },
       canVerify: function (task) { return cleaningTickOK() && !!task.plan && task.plan.verification && task.plan.verifiers.indexOf(S.who) >= 0; } };
   }
   /* Supplier workspace (24 Oct 2026). This bridge shares the kitchen's sign-in, writer, clock and pending-write
