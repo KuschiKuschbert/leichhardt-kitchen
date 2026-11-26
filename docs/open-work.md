@@ -20,6 +20,8 @@ Done on 22 Oct 2026 by the head chef: the Browser key works only from `kuschikus
 
 5. **Time a real cold start on the head chef's phone** (24 Nov 2026, [brief](loading-wait-options/brief.md)). The fixes for a slow first open (one start after an update, the step words, set publish times) were measured on the click-test stand-in only. The sign-in, App Check and the first answers on a real phone are not measured. Time one cold start with the sign-in apart from the reads. The App Check token lasts 1 hour by default (Firebase console, App Check, the web app's token time to live): the first open of the day then waits for a reCAPTCHA check. A longer time skips it on most opens but a stolen token works for longer: the owner's call.
 
+6. **Cleaning results by section: what is left** (26 Nov 2026, [brief](cleaning-tracking-options/brief.md)). Built: the nightly count (step 1) and the Inbox row with that night in Records (step 2). To build: the Weights and days list (step 3) and suggested days (step 4). With the head chef: Records draws its own "Missed:" line in failure red while the new block below it draws a missed section as attention, so one night has both; the designs called a miss attention, and which the old line should be is his call. The Sunday grill and OZ tank deep clean is saved as a shared job, so it shows under Shared kitchen, not Grill. The other questions are listed in the brief.
+
 Remove each item here once it is done.
 
 ### Bringing the code in line (22 Oct 2026)

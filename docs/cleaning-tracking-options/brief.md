@@ -364,6 +364,21 @@ Who was rostered is no longer a question for him: step 1 keeps both the closing 
 | Step | What | Pull request |
 | --- | --- | --- |
 | 1 | The nightly count: the release switch and the first night, weekly and monthly jobs by root id with section, who did it and who was rostered, the size check inside the cleaning block | [#890](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/890), merged 26 November 2026. What it keeps: [the cleaning note](../cleaning-schedule.md#what-the-nightly-count-keeps) |
-| 2 | The Inbox row and that night in Records | To come |
+| 2 | The Inbox row and that night in Records | Built, 26 November 2026. What the admin sees: [the cleaning note](../cleaning-schedule.md#what-the-admin-sees-of-it). As built: `built/` |
 | 3 | The weights list, weights in one side record | To come |
 | 4 | Suggested days, in bulk only while Cleaning is off | To come |
+
+## Step 2 as built, against the previews
+
+Implemented app on the click-test stand-in, synthetic data, 390 x 844, 768 x 900 and 1280 x 900 (`built/shots.cjs`, `built/counts.json`). Pictures: `built/inbox-*.png`, `built/records-night-*.png`, `built/records-night-open-*.png`.
+
+| | Preview (`m6`, `m7`) | Built |
+| --- | --- | --- |
+| The Inbox row | "Not ticked", one section in the title | "Missed", the head chef's word. One row for the night: one section named in the title, or "2 weekly or monthly cleaning jobs missed last night, in 2 sections", with each section and job in the detail |
+| Inbox, screens long at 390 | 1.4 | 1.4; the row is whole on the first screen at all three widths; its button is 143 x 44 px |
+| Records night, screens long at 390 | 1.8 | 1.9 |
+| Where the miss is when opened from the Inbox, at 390 | Below the first screen, under today's red "Missed" line | The page lands on the heading, 149 px from the top, with the missed section's block whole on screen and the heading in focus |
+| Who was on | "Who was rostered", a link | "Who was on Hot larder", the page's fold, 44 px tall, closed until asked for. Not "rostered": it lists the plan and each cook's own pick, with the source said |
+| Earlier misses | One line, "also not ticked 18 November" | "Also missed Wed 18 Nov" by the job's own key, and "Last done Wed 11 Nov (Lou, 21:55)". A day whose jobs were not kept one by one is never called a miss |
+
+Differences that were not in a preview: a night not counted yet is its own row ("Not counted yet"); a section or shift no longer on the list is said in words; a job that was not possible sits in its section with its note. Still as before: Records' own red "Missed:" line above the block (a colour clash noted in `docs/open-work.md`), and Print and CSV, which carry none of the new lines.

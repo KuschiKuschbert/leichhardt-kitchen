@@ -7172,9 +7172,20 @@
         if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs', 'references'].indexOf(tab) < 0 || (tab === 'mail' && !mlOwner())) return;
         if (tab === 'insights' || tab === 'waste' || tab === 'transfers') setReportDays(days === 7 ? 7 : 30);
         S.atab = tab; S.agLast = S.agLast || {}; S.agLast[adminGroupOf(tab)[0]] = tab; lsSet('lk.prep.atab', tab); draw(); adminToTop();
-      }
+      },
+      /* Results by section, step 2 (26 Nov 2026): the Inbox's Missed row opens that night in Records, at its weekly
+         and monthly jobs. Its own method, so a dashboard file newer than this shell finds no method and draws no
+         button, instead of a button that does nothing. Records reads the board itself when it opens (1 read). */
+      openRecords: function (day) {
+        if (!/^\d{4}-\d\d-\d\d$/.test(day)) return;
+        recCheck();   // a first visit starts Records' memory afresh: do that before choosing the day
+        REC.day = day; REC.month = day.slice(0, 7); REC.all = false; REC.jump = true;
+        S.atab = 'records'; S.agLast = S.agLast || {}; S.agLast[adminGroupOf('records')[0]] = 'records'; lsSet('lk.prep.atab', 'records'); draw(); adminToTop(); recJump();
+      },
+      // a section's name now, by its id; else the name its job was saved with; never the raw id
+      secName: function (id, saved) { return recSecName(id, saved); }
     });
-    if (!dashLoading && !dashError) dashLoading = window.LK_APP.load('js/admin-dashboard.js?v=7').then(function () { if (!dashModule()) throw { code: 'workspace-version' }; dashLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { dashLoading = null; dashError = true; if (intelligenceAllowed()) draw(); });
+    if (!dashLoading && !dashError) dashLoading = window.LK_APP.load('js/admin-dashboard.js?v=8').then(function () { if (!dashModule()) throw { code: 'workspace-version' }; dashLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { dashLoading = null; dashError = true; if (intelligenceAllowed()) draw(); });
     return '<section class="set-block"><h3 class="label">Dashboard</h3><p class="hint" role="status">' + (dashError ? 'Could not load the dashboard. Check the connection and reload this page.' : inkLabel('Loading...', 'chef')) + '</p></section>';
   }
   function dashWeek() {
@@ -7579,9 +7590,9 @@
      plan and the nightly day record (supplier orders, functions), read when asked: about 10 to 30 reads, kept in memory.
      A part that could not load says so and is never "nothing that day". Cooling is recorded in Operandio; the book keeps
      only today's batch. Print and Export CSV use only what is on the page (Print this month: no reads). Admin only. */
-  var REC = { ctx: '', board: null, state: '', err: '', month: '', day: '', all: false, days: {}, at: 0 };
+  var REC = { ctx: '', board: null, state: '', err: '', month: '', day: '', all: false, days: {}, at: 0, who: {}, jump: false };
   var REC_DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  function recCheck() { if (REC.ctx !== intelligenceContext()) REC = { ctx: intelligenceContext(), board: null, state: '', err: '', month: '', day: '', all: false, days: {}, at: 0 }; }
+  function recCheck() { if (REC.ctx !== intelligenceContext()) REC = { ctx: intelligenceContext(), board: null, state: '', err: '', month: '', day: '', all: false, days: {}, at: 0, who: {}, jump: false }; }
   function recLoad(force) {
     recCheck();
     if (!intelligenceAllowed() || REC.state === 'loading' || (REC.board && !force)) return;
@@ -7590,7 +7601,7 @@
     fb.fs.getDocFromServer(docRef('analysis', 'dashboard')).then(function (sn) {
       if (REC.ctx !== ctx) return;
       REC.board = sn.exists() ? sn.data() : { days: [] }; REC.state = 'ok'; REC.at = now(); if (force) REC.days = {};
-      if (S.name === 'admin' && S.atab === 'records') draw();
+      if (S.name === 'admin' && S.atab === 'records') { draw(); recJump(); }
     }, function (e) { if (REC.ctx !== ctx) return; REC.state = 'error'; REC.err = errMsg(e && e.code === 'permission-denied' ? 'Only the head chef\'s Google account can read the records.' : 'Could not read the records. Check the signal and tap Refresh.'); if (S.name === 'admin' && S.atab === 'records') draw(); });
   }
   function recRows() { var m = {}; ((REC.board && REC.board.days) || []).forEach(function (r) { if (r && typeof r.day === 'string' && /^\d{4}-\d\d-\d\d$/.test(r.day)) m[r.day] = r; }); return m; }
@@ -7611,6 +7622,83 @@
     var more = (c.unableN ? ', ' + c.unableN + ' not possible' : '') + (c.waitN ? ', ' + c.waitN + ' awaiting Pass check' : '');
     var miss = 'Cleaning: ' + (c.missN || 0) + ' missed';
     return { short: (c.missN ? '<span class="rec-adv">' + miss + '</span>' : miss) + esc(more), plain: miss + more };
+  }
+  /* Results by section, step 2 (head chef, 26 Nov 2026, docs/cleaning-tracking-options/brief.md). The nightly count
+     keeps each weekly or monthly job one by one (r, by its root id) and, for a section with a missed job, who was on
+     that day (ro). Records shows them under the day's own cleaning lines: a section with a miss first, in the
+     attention look, with who was on behind a fold; then the sections that finished. A missed job is the section's:
+     no person has a count. Reads nothing: it is all on the board Records already holds. Admin only, like the board. */
+  function recSecName(id, saved) {
+    if (!id) return 'Shared kitchen';
+    var s = ((S.config && S.config.kitSecs) || []).filter(function (x) { return x && x.id === id && String(x.name || '').trim(); })[0];
+    return s ? String(s.name).trim() : (typeof saved === 'string' && saved.trim() ? saved.trim().slice(0, 40) : 'A section no longer on the list');
+  }
+  function recShiftName(id) {
+    if (!id) return '';
+    var s = ((S.config && S.config.kitShifts) || []).filter(function (x) { return x && x.id === id && String(x.name || '').trim(); })[0];
+    return s ? String(s.name).trim() : 'a shift no longer on the list';
+  }
+  // the weekly and monthly jobs a counted day keeps one by one, or null (not counted, an older count, or trimmed)
+  function recRound(c) { return c && !c.nc && !c.cut && Array.isArray(c.r) ? c.r.filter(function (x) { return x && typeof x.k === 'string' && typeof x.t === 'string'; }) : null; }
+  // one job on the days before this one: when it was missed (newest first) and when it was last done. Only a day
+  // that kept the job counts: a day not counted, trimmed, or where the job was not due says nothing.
+  function recBefore(key, day) {
+    var rows = recRows(), out = { missed: [], done: null };
+    Object.keys(rows).filter(function (d) { return d < day; }).sort().reverse().forEach(function (d) {
+      var list = recRound(rows[d].fs && rows[d].fs.c) || [], x = list.filter(function (j) { return j.k === key; })[0];
+      if (!x) return;
+      if (x.st === 'm' && out.missed.length < 3) out.missed.push(d);
+      if (x.st === 'd' && !out.done) out.done = { day: d, by: typeof x.by === 'string' ? x.by : '', at: typeof x.at === 'string' ? x.at : '' };
+    });
+    return out;
+  }
+  function recWhoWords(o, sec) {
+    if (!o || o.k === 'x') return ['Not kept for this day. The nightly count reads the last 8 weeks of plans.'];
+    var w = Array.isArray(o.w) ? o.w.filter(function (x) { return x && typeof x.n === 'string'; }) : [];
+    var say = function (src) { return w.filter(function (x) { return x.by === src; }).map(function (x) { var sh = recShiftName(typeof x.sh === 'string' ? x.sh : ''); return x.n + (sh ? ' (' + sh + ')' : ''); }).join(', '); };
+    var plan = say('p'), pick = say('k'), out = [];
+    out.push(plan ? 'On the plan: ' + plan + '.' : 'Nobody was on the plan for ' + sec + ' that day.');
+    out.push(!o.pk ? 'Own picks were not kept for this day.' : pick ? 'Picked the section themselves: ' + pick + '.' : 'Nobody picked the section themselves.');
+    return out;
+  }
+  function recCleanSecs(day, c) {
+    if (!c || c.nc || !c.rn || !c.rN) return '';
+    var head = '<h5 class="a-ch-h rec-sec-h" id="rec-clean-sec" tabindex="-1">Weekly and monthly jobs, by section</h5>';
+    var list = recRound(c), rn = c.rn;
+    var whole = (rn.done || 0) + ' of ' + (rn.due || 0) + ' done' + (rn.miss ? ', ' + rn.miss + ' missed' : '') + (rn.wait ? ', ' + rn.wait + ' awaiting Pass check' : '') + (rn.unable ? ', ' + rn.unable + ' not possible' : '') + '.';
+    if (!list) return head + '<p class="rec-line">' + esc(whole) + ' The jobs were not kept one by one for this day.</p>';
+    var secs = [], by = {};
+    list.forEach(function (x) { var s = typeof x.s === 'string' ? x.s : ''; if (!by[s]) { by[s] = []; secs.push(s); } by[s].push(x); });
+    var missed = function (s) { return by[s].filter(function (x) { return x.st === 'm'; }).length; };
+    secs.sort(function (a, b) { return (missed(b) ? 1 : 0) - (missed(a) ? 1 : 0) || (a ? 0 : 1) - (b ? 0 : 1); });
+    var short = function (d) { return recShort(d) + ' ' + parseYmd(d).toLocaleDateString('en-AU', { month: 'short' }); };
+    var jobLine = function (x) {
+      if (x.st === 'd') return 'Done: ' + x.t + (x.by ? ' (' + x.by + (x.at ? ', ' + x.at : '') + ')' : '') + '.';
+      if (x.st === 'u') return 'Not possible: ' + x.t + (x.n ? ' (' + x.n + ')' : '') + '.';
+      if (x.st === 'w') return 'Awaiting Pass check: ' + x.t + '.';
+      var b = recBefore(x.k, day);
+      return 'Missed: ' + x.t + '. Not ticked by midnight.' + (b.missed.length ? ' Also missed ' + b.missed.map(short).join(' and ') + '.' : '') +
+        (b.done ? ' Last done ' + short(b.done.day) + (b.done.by ? ' (' + b.done.by + (b.done.at ? ', ' + b.done.at : '') + ')' : '') + '.' : '');
+    };
+    var ro = Array.isArray(c.ro) ? c.ro : [];
+    var out = secs.map(function (s) {
+      var name = recSecName(s, (by[s][0] || {}).sn), jobs = by[s], m = missed(s), due = jobs.filter(function (x) { return x.st !== 'u'; }).length;
+      var lines = jobs.slice().sort(function (a, b) { return (a.st === 'm' ? 0 : 1) - (b.st === 'm' ? 0 : 1); }).map(function (x) { return '<p class="rec-line">' + esc(jobLine(x)) + '</p>'; }).join('');
+      if (!m) return '<div class="rec-sec"><p class="rec-line"><b>' + esc(name) + ':</b> ' + esc(due ? jobs.filter(function (x) { return x.st === 'd'; }).length + ' of ' + due + ' done.' : 'nothing due but a job that was not possible.') + '</p>' + lines + '</div>';
+      var key = day + '|' + s, open = !!REC.who[key], o = ro.filter(function (x) { return x && x.s === s; })[0];
+      return '<div class="rec-sec rec-miss"><p class="rec-miss-h">' + esc(name) + ': ' + m + ' of ' + due + ' missed</p>' + lines +
+        (s ? '<button type="button" class="tm-fold rec-who" data-p="rec-who" data-s="' + esc(s) + '" aria-expanded="' + open + '">' + (open ? 'Hide who was on ' : 'Who was on ') + esc(name) + '</button>' +
+          (open ? '<div class="rec-who-list">' + recWhoWords(o, name).map(function (l) { return '<p class="rec-line">' + esc(l) + '</p>'; }).join('') + '</div>' : '')
+          : '<p class="rec-line hint">A shared job has no section, so nobody is listed.</p>') + '</div>';
+    }).join('');
+    return head + '<p class="rec-line">' + esc(whole) + (c.rN > list.length ? ' ' + (c.rN - list.length) + ' more jobs are counted but not listed.' : '') + '</p>' + out;
+  }
+  // after the Inbox opened this night: land on the block, once the day is drawn (the board may still be loading)
+  function recJump() {
+    if (!REC.jump || !S.root) return;
+    var h = S.root.querySelector('#rec-clean-sec');
+    if (!h) { if (REC.state === 'ok' || REC.state === 'error') REC.jump = false; return; }
+    REC.jump = false; h.scrollIntoView({ block: 'start' }); h.focus({ preventScroll: true });
   }
   function recWords(day) {
     var r = recRows()[day];
@@ -7745,7 +7833,7 @@
       '<div class="chiprow" role="group" aria-label="Show"><button type="button" class="chip" data-p="rec-show" data-v="fs" aria-pressed="' + !all + '">Food safety</button><button type="button" class="chip" data-p="rec-show" data-v="all" aria-pressed="' + all + '">Everything</button></div>' +
       status + fails + outputStatus + extra +
       (ev.length ? '<ol class="rec-tl">' + ev.map(function (e) { return '<li><time>' + esc(e[0]) + '</time><span class="rec-k">' + esc(e[1]) + '</span><span>' + esc(e[2]) + '</span></li>'; }).join('') + '</ol>' : empty ? '<p class="rec-line">' + esc(empty) + '</p>' : '') +
-      (counted ? '<div class="rec-clean"><p class="rec-line"><b>' + esc(cl[0]) + '</b></p>' + cl.slice(1).map(function (l) { return '<p class="rec-line' + (/^Missed/.test(l) ? ' rec-adv' : '') + '">' + esc(l) + '</p>'; }).join('') + '</div>' : '') +
+      (counted ? '<div class="rec-clean"><p class="rec-line"><b>' + esc(cl[0]) + '</b></p>' + cl.slice(1).map(function (l) { return '<p class="rec-line' + (/^Missed/.test(l) ? ' rec-adv' : '') + '">' + esc(l) + '</p>'; }).join('') + recCleanSecs(day, c) + '</div>' : '') +
       '<p class="hint">' + esc(REC_COOL) + ' Temperatures as recorded: the book sets no limits until the head chef confirms them.</p></div>';
   }
   function recordsHTML() {
@@ -14616,6 +14704,7 @@ if (list.length) sg('oreg', 's');
     if (a === 'a-group') { if (intelligenceBusy()) return; S.personId = ''; var gg = A_GROUPS.filter(function (g) { return g[0] === el.getAttribute('data-g'); })[0]; if (gg) { S.atab = (S.agLast || {})[gg[0]] || gg[2].filter(function (t) { return t !== 'mail' || mlOwner(); })[0]; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); } return; }
     // Records (13 Nov 2026): a day, back, Food safety or Everything, another month, Refresh, Try again, print, CSV
     if (a === 'rec-day') { var rdy = el.getAttribute('data-d') || ''; if (/^\d{4}-\d\d-\d\d$/.test(rdy)) { REC.day = rdy; REC.month = rdy.slice(0, 7); draw(); var rdh = S.root.querySelector('.rec-dt'); if (rdh) rdh.focus(); } return; }
+    if (a === 'rec-who') { var rws = REC.day + '|' + (el.getAttribute('data-s') || ''); REC.who[rws] = !REC.who[rws]; draw(); var rwb = [].filter.call(S.root.querySelectorAll('.rec-who'), function (b) { return b.getAttribute('data-s') === el.getAttribute('data-s'); })[0]; if (rwb) rwb.focus(); return; }
     if (a === 'rec-back') { var rbk = REC.day; REC.day = ''; draw(); var rbr = S.root.querySelector('.rec-dayrow[data-d="' + rbk + '"]'); if (rbr) rbr.focus(); return; }
     if (a === 'rec-show') { REC.all = el.getAttribute('data-v') === 'all'; draw(); return; }
     if (a === 'rec-month') { var rmv = el.getAttribute('data-v') || ''; if (/^\d{4}-\d\d$/.test(rmv)) { REC.month = rmv; REC.day = ''; draw(); } return; }
