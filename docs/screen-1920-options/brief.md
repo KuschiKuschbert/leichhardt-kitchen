@@ -70,3 +70,46 @@ Evidence to gather before round 2's design frame: the Wall board at 1920 (busy, 
 **The head chef decides:** round 2 at this smaller scope once A and the quick wins are live, or stop after them.
 
 **Chosen (head chef, 26 Nov 2026):** "Yes, smaller". Round 2 runs at the smaller scope once the fold (#900) and the quick wins are live: first the evidence above, then designs for Prep at 1920 and Orders at a reading width, Cleaning after its weights work settles. Above 1280 px only, CSS only, the same rows.
+
+## Round 2 evidence (26 November 2026, after the fold and quick wins went live)
+
+Implemented app on `main` at 4967d46 (the fold, the quick wins and your own section first are in), on the click-test stand-in with the step 2 busy afternoon: 20 prep lines in five sections, a cook (Ann) on Larder on a shared section screen, Sam the sous chef. Synthetic data, role-based. Pictures and numbers in [round2/](round2/) ([metrics.json](round2/metrics.json), made by [evidence.cjs](round2/evidence.cjs)). Complete rows count only rows wholly in view, not under a bar or a dock.
+
+### Prep at 1920 x 1008
+
+| | Notebook (today's opening) | Wall board (one tap: Wall board) |
+| --- | --- | --- |
+| Open lines in view, default text | 9 of 18 | **18 of 18**, in five columns of 367 px |
+| Open lines in view, Extra large | 6 of 18 | 13 of 18 |
+| Your own section first | Yes (Larder leads All) | No: Grill, Sauce, Larder, Fryer, Pastry |
+| Tick, On it, Urgent on each row | Yes | Yes |
+| ⋯ (More: Remove, fix) on each row | Yes, 453 px from the tick | **Hidden** on every row |
+| Handy (Done today, quick add) and section tabs | Yes | No (Back to the prep list) |
+| Rows that wrap | none (53 px each) | Grill and Fryer: 82 px ("Marinate chicken thighs 5 kg", "Blanch chips 4 trays"); 137 px at Extra large |
+
+**A section's last line ticked** (Fryer's two lines, ticked where they are, no scroll; on Ann's own device, because a shared screen first asks who did the line):
+- Wall board: Pastry's 3 rows jump sideways from the middle column into Fryer's place under Grill (x 786 to x 399). **Reproduced** (round 1's keeper predicted it from `.wb-cols` auto-fill).
+- Notebook: Pastry's rows move up within the list, below the first screen. No row in view changes column.
+- Both: every row moved down 60 px once, because the test data starts with no ticks in the last 7 days and the first tick draws Top tickers above the book. In a kitchen that ticks every day the strip is already there; reported, not counted.
+
+The notebook running to the window bottom (moved here from the quick wins): 9 to 10 lines on a quiet day at 1920, none on a busy day, unless the page's 40 px bottom margin goes and the slip with Undo (19 px up, 60 px tall) covers the bottom line's On it, Urgent and ⋯.
+
+### Orders at 1920 x 1008, a long order day (26 requests)
+
+| | Cook (Ann, shared) | Sous chef (Sam, with the cut-offs) |
+| --- | --- | --- |
+| Requests in view | 10 of 26 (70 px each) | 9 of 26 |
+| Row width | 1,083 px | 667 px |
+| Tick to ⋯ | **1,000 px** | 584 px |
+| At 18:45, the 18:30 round due (band opens, 279 px) | | 6 of 26 |
+
+### A section screen set to 125 % (1536 x 806)
+
+Prep 6 of 18, Orders 8 of 26, no sideways scroll; the same layouts as 1920 (Prep rows 536 px, Orders rows 1,083 px). A breakpoint above 1536 would leave a screen at 125 % on today's layout.
+
+### What this changes for round 2
+
+- The Prep question is now: should the section screens open on the Wall board, mended (columns that keep their place, ⋯ on each row, your own section first), or should the notebook show more? The board already shows every line at 1920.
+- Orders' reach is a cook's problem: 1,000 px from tick to ⋯ on a shared screen; the chef's rows are 667 px because the cut-offs sit beside them.
+- Cleaning waits: its day levels (#901) landed today; it joins round 2 once that settles.
+
