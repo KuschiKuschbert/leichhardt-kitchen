@@ -59,13 +59,13 @@ The decided fold (A) on the session branch, the step 2 busy afternoon (three rou
 
 **Build smaller.** Take only what is still hidden after the fold and the quick wins, and keep every row the same row:
 
-1. **Prep at 1920:** picture and measure the Wall board as it is, and the notebook after its quick win (running to the bottom of the window), with each section kept whole. Draw designs only if neither shows enough.
+1. **Prep at 1920:** picture and measure the Wall board as it is, and the notebook's height, with each section kept whole. Draw designs only if neither shows enough. The notebook running to the bottom of the window moved here from the quick wins (head chef, 26 Nov 2026): measured, it gives 9 to 10 lines at 1920 on a quiet day and none on a busy day, unless the page's 40 px bottom margin goes and the slip with Undo (19 px up, 60 px tall) covers the bottom line's On it, Urgent and ⋯ for a few seconds after each tick.
 2. **Orders' rows at a reading width** so the ⋯ sits near its tick. CSS only, the same `rowHTML()` row.
 3. **Cleaning** once its results work has merged, against the new `main`.
 
 Switched on above 1280 px (the laptop stays as it is), one breakpoint, tested at the breakpoint, 1 px either side, 1536 and 1920, with touch and a mouse. Out: the top bar, text size, Home, Wastage, Transfers and the recipe card (the fold and quick wins cover them), the front of house Functions pages (step 3), the admin and chef panels (step 4).
 
-Evidence to gather before round 2's design frame: the Wall board at 1920 (busy, default and Extra large text), Prep after the notebook quick win, a long order day (20 or more requests), a full roster on Today's team, 19:30 with a round due (the band open), a section's last line ticked (does anything move), and 1536 px.
+Evidence to gather before round 2's design frame: the Wall board at 1920 (busy, default and Extra large text), the notebook's height against the slip, a long order day (20 or more requests), a full roster on Today's team, 19:30 with a round due (the band open), a section's last line ticked (does anything move), and 1536 px.
 
 **The head chef decides:** round 2 at this smaller scope once A and the quick wins are live, or stop after them.
 
