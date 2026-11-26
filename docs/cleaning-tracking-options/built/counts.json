@@ -12,7 +12,7 @@
   },
   "records-night-390": {
    "screensLong": 1.9,
-   "headingTopAfterTheInboxButton": 149,
+   "headingTopAfterTheInboxButton": 100,
    "missBlockWholeOnScreen": true,
    "fold": "330x44",
    "focus": "rec-clean-sec",
@@ -29,7 +29,7 @@
   },
   "records-night-768": {
    "screensLong": 1.6,
-   "headingTopAfterTheInboxButton": 361,
+   "headingTopAfterTheInboxButton": 334,
    "missBlockWholeOnScreen": true,
    "fold": "700x44",
    "focus": "rec-clean-sec",

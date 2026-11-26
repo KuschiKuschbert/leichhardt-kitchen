@@ -379,6 +379,7 @@ Implemented app on the click-test stand-in, synthetic data, 390 x 844, 768 x 900
 | Records night, screens long at 390 | 1.8 | 1.9 |
 | Where the miss is when opened from the Inbox, at 390 | Below the first screen, under today's red "Missed" line | The page lands on the heading, 149 px from the top, with the missed section's block whole on screen and the heading in focus |
 | Who was on | "Who was rostered", a link | "Who was on Hot larder", the page's fold, 44 px tall, closed until asked for. Not "rostered": it lists the plan and each cook's own pick, with the source said |
-| Earlier misses | One line, "also not ticked 18 November" | "Also missed Wed 18 Nov" by the job's own key, and "Last done Wed 11 Nov (Lou, 21:55)". A day whose jobs were not kept one by one is never called a miss |
+| People's names | None on the face of the page | None on the face of the page. Who did a job sits behind the section's fold too ("Who did Grill's jobs" on a section that finished). A first build printed them beside each done job; that was a departure from the chosen picture and was changed before it went ready |
+| Earlier misses | One line, "also not ticked 18 November" | "Also missed Wed 18 Nov" by the job's own key, and "Last done Wed 11 Nov". A day whose jobs were not kept one by one is never called a miss |
 
 Differences that were not in a preview: a night not counted yet is its own row ("Not counted yet"); a section or shift no longer on the list is said in words; a job that was not possible sits in its section with its note. Still as before: Records' own red "Missed:" line above the block (a colour clash noted in `docs/open-work.md`), and Print and CSV, which carry none of the new lines.

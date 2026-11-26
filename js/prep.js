@@ -7630,8 +7630,8 @@
   /* Results by section, step 2 (head chef, 26 Nov 2026, docs/cleaning-tracking-options/brief.md). The nightly count
      keeps each weekly or monthly job one by one (r, by its root id) and, for a section with a missed job, who was on
      that day (ro). Records shows them under the day's own cleaning lines: a section with a miss first, in the
-     attention look, with who was on behind a fold; then the sections that finished. A missed job is the section's:
-     no person has a count. Reads nothing: it is all on the board Records already holds. Admin only, like the board. */
+     attention look; then the sections that finished. A missed job is the section's: no person has a count, and no
+     person's name is on the face of the page. Who was on, and who did a job, sit behind each section's fold. Reads nothing: it is all on the board Records already holds. Admin only, like the board. */
   function recSecName(id, saved) {
     if (!id) return 'Shared kitchen';
     // by id over the whole saved list: kitSecs() leaves out a section that is switched off, and a past night may name one
@@ -7683,24 +7683,39 @@
     var short = function (d) { return recShort(d) + ' ' + parseYmd(d).toLocaleDateString('en-AU', { month: 'short' }); }, before = recBefore(day);
     // the count keeps at most 40 jobs a day: past that, a section's lines are only the jobs listed, and say so
     var part = c.rN > list.length;
+    // the face of the page: the job, its state, its times and dates. Never a person's name (those are behind the fold)
     var jobLine = function (x) {
-      if (x.st === 'd') return 'Done: ' + x.t + (x.by ? ' (' + x.by + (x.at ? ', ' + x.at : '') + ')' : '') + '.';
+      if (x.st === 'd') return 'Done: ' + x.t + (x.at ? ' (' + x.at + ')' : '') + '.';
       if (x.st === 'u') return 'Not possible: ' + x.t + (x.n ? ' (' + x.n + ')' : '') + '.';
       if (x.st === 'w') return 'Awaiting Pass check: ' + x.t + '.';
       var b = before[x.k] || { missed: [], done: null };
       return 'Missed: ' + x.t + '. Not ticked by midnight.' + (b.missed.length ? ' Also missed ' + b.missed.map(short).join(' and ') + '.' : '') +
-        (b.done ? ' Last done ' + short(b.done.day) + (b.done.by ? ' (' + b.done.by + (b.done.at ? ', ' + b.done.at : '') + ')' : '') + '.' : '');
+        (b.done ? ' Last done ' + short(b.done.day) + '.' : '');
+    };
+    // behind the fold: who did each done job that day, and who last did a job that was missed
+    var doers = function (jobs) {
+      var out = [];
+      jobs.forEach(function (x) {
+        if (x.st === 'd' && x.by) out.push('Done by: ' + x.t + ', ' + x.by + '.');
+        var b = x.st === 'm' ? before[x.k] : null;
+        if (b && b.done && b.done.by) out.push('Last done by: ' + x.t + ', ' + b.done.by + ' (' + short(b.done.day) + ').');
+      });
+      return out;
+    };
+    var foldHTML = function (s, label, lines) {
+      var open = !!REC.who[day + '|' + s];
+      return '<button type="button" class="tm-fold rec-who" data-p="rec-who" data-s="' + esc(s) + '" aria-expanded="' + open + '">' + esc((open ? 'Hide ' : '') + (open ? label.charAt(0).toLowerCase() + label.slice(1) : label)) + '</button>' +
+        (open ? '<div class="rec-who-list">' + lines.map(function (l) { return '<p class="rec-line">' + esc(l) + '</p>'; }).join('') + '</div>' : '');
     };
     var ro = Array.isArray(c.ro) ? c.ro : [];
     var out = secs.map(function (s) {
       var name = recSecName(s, (by[s][0] || {}).sn), jobs = by[s], m = missed(s), due = jobs.filter(function (x) { return x.st !== 'u'; }).length;
       var lines = jobs.slice().sort(function (a, b) { return (a.st === 'm' ? 0 : 1) - (b.st === 'm' ? 0 : 1); }).map(function (x) { return '<p class="rec-line">' + esc(jobLine(x)) + '</p>'; }).join('');
-      if (!m) return '<div class="rec-sec"><p class="rec-line"><b>' + esc(name) + ':</b> ' + esc(part ? 'the jobs listed.' : due ? jobs.filter(function (x) { return x.st === 'd'; }).length + ' of ' + due + ' done.' : 'nothing due but a job that was not possible.') + '</p>' + lines + '</div>';
-      var key = day + '|' + s, open = !!REC.who[key], o = ro.filter(function (x) { return x && x.s === s; })[0];
+      var did = doers(jobs), didFold = did.length ? foldHTML(s, s ? 'Who did ' + name + '\'s jobs' : 'Who did the shared jobs', did) : '';
+      if (!m) return '<div class="rec-sec"><p class="rec-line"><b>' + esc(name) + ':</b> ' + esc(part ? 'the jobs listed.' : due ? jobs.filter(function (x) { return x.st === 'd'; }).length + ' of ' + due + ' done.' : 'nothing due but a job that was not possible.') + '</p>' + lines + didFold + '</div>';
+      var o = ro.filter(function (x) { return x && x.s === s; })[0];
       return '<div class="rec-sec rec-miss"><p class="rec-miss-h">' + esc(name) + ': ' + (part ? 'at least ' + m + ' missed' : m + ' of ' + due + ' missed') + '</p>' + lines +
-        (s ? '<button type="button" class="tm-fold rec-who" data-p="rec-who" data-s="' + esc(s) + '" aria-expanded="' + open + '">' + (open ? 'Hide who was on ' : 'Who was on ') + esc(name) + '</button>' +
-          (open ? '<div class="rec-who-list">' + recWhoWords(o, name).map(function (l) { return '<p class="rec-line">' + esc(l) + '</p>'; }).join('') + '</div>' : '')
-          : '<p class="rec-line hint">A shared job has no section, so nobody is listed.</p>') + '</div>';
+        (s ? foldHTML(s, 'Who was on ' + name, recWhoWords(o, name).concat(did)) : '<p class="rec-line hint">A shared job has no section, so nobody is listed.</p>' + didFold) + '</div>';
     }).join('');
     return head + '<p class="rec-line">' + esc(whole) + (part ? ' ' + (c.rN - list.length) + ' more jobs are counted but not listed, so each section below shows only the jobs listed.' : '') + '</p>' + out;
   }
