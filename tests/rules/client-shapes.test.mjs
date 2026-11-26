@@ -983,6 +983,10 @@ row('js/prep.js cleaningSave(): retry reads the generated revision from the serv
   run: (db, w, r) => getDocFromServer(D(db, 'cleaningTasks/clean-save-retry-' + r)) });
 row('js/prep.js cleaningSave(): chef creates a schedule starting today', { ok: CHEFS, asks: CHEFS,
   run: (db, w, r) => W(r, [['set', 'cleaningTasks/clean-new-' + r, cleanTask('clean-new-' + r, { by: w })]]) });
+row('js/prep.js cleaningSave(): a new job and its weight and kind in one batch (step 4c), merged into the weights record', { ok: CHEFS, asks: CHEFS,
+  prep: () => put({ 'cleaningPlan/main': { v: 1, w: { seed: 2 }, at: NOW, by: 'kit' } }),
+  run: (db, w, r) => W(r, [['set', 'cleaningTasks/clean-wnew-' + r, cleanTask('clean-wnew-' + r, { by: w, dows: [1] })],
+    ['set', 'cleaningPlan/main', { v: 1, w: { ['clean-wnew-' + r]: 2 }, k: { ['clean-wnew-' + r]: 'Fridges' }, at: Date.now() }, true]]) });
 row('js/prep.js cleaningSave(): chef replaces a schedule tomorrow in one batch', { ok: CHEFS, asks: CHEFS,
   prep: r => put({ ['cleaningTasks/clean-old-' + r]: cleanTask('clean-old-' + r), ['cleaningTasks/clean-next-' + r]: null }),
   run: (db, w, r) => W(r, [['upd', 'cleaningTasks/clean-old-' + r, { until: MIDNIGHT + DAY, next: 'clean-next-' + r }],

@@ -368,7 +368,7 @@ Who was rostered is no longer a question for him: step 1 keeps both the closing 
 | 3 | The weights list, weights in one side record | Built 26 November 2026: weights and the optional kind. What each day takes is in the same record's rule, set with step 4. [The cleaning note](../cleaning-schedule.md#weights-and-days) |
 | 4a | What each day takes: his days until changed, set by each venue's chefs, a suggestion from staffing | Built 26 November 2026. [The cleaning note](../cleaning-schedule.md#what-each-day-takes); quick check below |
 | 4b | Suggested days, in bulk only while Cleaning is off, fewest moves | Built 26 November 2026. [The cleaning note](../cleaning-schedule.md#suggest-the-days); as built and its departures below |
-| 4c | A suggested day in the Add form after switch-on, with the "today means tonight" warning | To come |
+| 4c | A suggested day in the Add form after switch-on, with the "today means tonight" warning | Built 26 November 2026. [The cleaning note](../cleaning-schedule.md#a-new-jobs-day); as built below |
 
 ## Step 4a: what each day takes (quick check)
 
@@ -431,6 +431,38 @@ Break-it findings, each checked in `tests/cleaning-suggest.test.js` (stand-in), 
 | Real revisions on the emulator | 5 in one batch, refused whole when one is stale | Checked, a job with checks and a monthly first date among them; a second move the same day allowed. 8 jobs in one batch allowed, 9 refused |
 | Risk, not evidenced | A save that straddles midnight | Each batch checks the day before it sends; a new day stops the save in words. Not run with the clock moved mid-save |
 | Not tested | A lock or a reload with a suggestion on screen | The suggestion lives in the page's memory: a lock or reload drops it. Unsaved, it counts as unsent work like unsaved weights, so a handover waits for it |
+
+## Step 4c as built: a new job's day
+
+Implemented app on the click-test stand-in, the three built-in lists with the council's made-up weights and kinds, Cleaning on. Pictures at 390: `built/add-day-no-weight-390`, `-suggested-390`, `-tonight-390`, `-refused-390` (`SHOTS=1` with `tests/cleaning-add-day.test.js`, 72 checks at 390, 768 and 1280 px, with a run pinned to a Monday).
+
+- **Taps.** Add cleaning task, then the weight (1 tap) and the suggested day (1 tap): the same count as typing a job and pressing its day before, plus the weight, which the job needs anyway (step 3 asked for every weekly and monthly job).
+- **Lines.** Measured at 390 with a job typed and a suggestion on screen: the form is 763 px with Cleaning off and 1,180 px with it on, 417 px or half a 844 px screen more (the box, the weight row and the kind; each day chip grows to two lines). It is a chef's form at setup, not a service page. No sideways scroll at 390, 768 and 1280; every control at least 44 px.
+- **Where it goes.** Inline in the form, as `c3` draws it: tags under the days, the box with the reason and the tonight line, then How long it takes and Kind of job. No sheet, no new button outside the form.
+
+Against `c3`, `a1` and `m5`:
+
+| Drawn | Built | Why |
+| --- | --- | --- |
+| `c3`: "Wednesday is today: ... so it would be due tonight", always | The same line, and a firmer one when today is pressed ("saved now, this job is due at tonight's close"); Saved repeats it | A plain warning where it matters |
+| `c3`: the reason names the other section ("Hot larder cleans its fridges on a Monday too") | The planner's reason, then that sentence ("With the other jobs of its kind (fridges). Hot larder cleans its fridges on a Monday too.") | As drawn |
+| `a1`: the suggestion in an edit form | Add form only | The council's choice: no offers on existing jobs (m5) |
+| `m5`: "Cleaning is on. The book now suggests a day for new jobs only" | The same words on Weights and days, pointing to Add cleaning task | As drawn |
+| `m5`: a monthly job without a day | Not in the form | Add cleaning task cannot make a monthly job; monthly jobs come from Section cleaning and get their first date in Suggest the days (before switch-on) or by hand |
+
+Break-it findings, each checked on the stand-in or the emulator:
+
+| Scenario | Expected | Observed |
+| --- | --- | --- |
+| The weights record refuses the write | Neither the job nor its weight lands | Checked: nothing saved, "Refused: nothing was saved, neither the job nor its weight", the form keeps the weight |
+| The answer is lost after both landed | One job, its weight, Saved on the next press | Checked: one job, weight 2 under its root, Saved |
+| The weights read is refused | No guessed weight, the job still saves | Checked |
+| No weights saved yet | A suggestion from the new job's own weight | Checked; a heavy job is never suggested for Friday or Saturday |
+| Cleaning off; an existing job opened after switch-on | No weight, no suggestion | Checked |
+| A Monday-first week | Each chip is its own weekday, tags on the right chip | Checked; on a Monday with Monday suggested, Mon says suggested and the box says pressing it makes the job due tonight |
+| A kind picked, a weight pressed | Focus stays in place; the box announces the new suggestion | Checked: the controls keep their nodes and the box its live region |
+| The combined batch on the rules emulator | Chefs allowed, staff refused | Checked, every role |
+| Risk, not evidenced | More than 400 weights ever saved | The rules bound the map at 400 keys; past that a new job with a weight would be refused whole. The kitchen has 23 such jobs today |
 
 ## Step 2 as built, against the previews
 
