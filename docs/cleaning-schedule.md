@@ -65,7 +65,17 @@ Results by section, step 1 of 4 (head chef, 26 November 2026, [brief](cleaning-t
 - **Nightly jobs** stay in the whole-day counts (due, done, missed, with up to 8 names), as before.
 - **Size.** If the board would pass 600,000 bytes the one-by-one detail is dropped, oldest days first (`cut`, `fitClean()`), and the whole counts stay. A trimmed day is carried as counted, so its detail does not come back. With the three lists loaded, nothing ticked for 90 days and 12 people listed on every section, the detail is about 128,000 bytes (`tests/records-core.test.js`). The cleaning count never stops the rest of the nightly publish.
 
-No screen reads `r`, `rn` or `ro` yet. The Inbox row and the Records night that do are step 2.
+## What the admin sees of it
+
+Results by section, step 2 of 4 (head chef, 26 November 2026, [brief](cleaning-tracking-options/brief.md)). Both pages read only the board they already hold (`analysis/dashboard`, admin only): no new read.
+
+- **The Inbox** has one row for last night when a weekly or monthly job was missed (`cleanNeed()` in `js/admin-dashboard.js`): the tag Missed, the sections by their name now and their jobs, the date, "(also missed Wed 18 Nov)" when the same job was missed on an earlier counted night, and a quiet button, Open that night. It names no person: the dashboard file does not even copy who did a job or who was on (`cleanCount()`).
+- **It says only what the count knows.** Nothing while Cleaning is not switched on, for a day the count does not cover, or for an older count. "Not counted yet" when the nightly run has not reached last night. A number with no sections when the jobs were not kept one by one. When nothing was missed, the all clear line adds last night's weekly and monthly cleaning.
+- **Records, that night.** Under the day's own cleaning lines, which are unchanged, comes **Weekly and monthly jobs, by section** (`recCleanSecs()` in `js/prep.js`). A section with a miss is first, as an attention block; in it the miss first, "Not ticked by midnight", with when that job was missed before and when it was last done. Then the section's other jobs: done with its time, not possible with its note, awaiting Pass check. Sections that finished follow as plain lines. Shared kitchen has a line. No person's name is on the face of the page.
+- **Names are behind a fold**, closed until asked for, and it stays open when the day is drawn again. On a section with a miss it is "Who was on Hot larder": who was on the plan and who picked the section themselves, each with the shift's name, or that nobody was, or that the plan or the picks were not kept for that day; then who did the section's jobs and who last did the missed one. On a section that finished it is "Who did Grill's jobs". A shift or section no longer on the list is said in words, never as an id.
+- **The way in.** The Inbox button opens Records on that night and lands on the block's heading (`api.openRecords`, `recJump()`). A dashboard file newer than the saved shell finds no such method and draws no button.
+- **Names stay on screen.** Print and Export CSV are unchanged: they are built from Records' own cleaning lines (`recCleanLines()`), which hold no names. Print this day is checked for it in `tests/cleaning-results.test.js`.
+- **Not done here:** the Sunday grill and OZ tank deep clean is saved as a shared job, so it shows under Shared kitchen.
 
 ## Ordered pack down
 

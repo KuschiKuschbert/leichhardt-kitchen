@@ -5414,6 +5414,8 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 /* today's team not set: attention, not failure (its words and the filled button carry it) */
 .dsh-tag-att { color: var(--small-ink); }
 .dsh-need-att .dsh-need-mark { background: var(--accent); }
+/* last night's missed weekly and monthly cleaning (26 Nov 2026): attention, with the plain button, since a finished night can only be read */
+.dsh-need-miss .dsh-need-mark { background: var(--accent); }
 /* today's numbers on the Inbox: one line each, a tap into its report */
 .dsh-inbox .dsh-dtiles { grid-template-columns: minmax(0, 1fr); gap: 0; margin: 0; }
 .dsh-inbox .dsh-dtile { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: .15rem .5rem; padding: .55rem 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; text-align: left; }
@@ -6404,6 +6406,17 @@ html:has(.tm-focus-page) {
 .rec-dayrow:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
 .rec-adv { color: var(--bad-ink); font-weight: 700; }
 .rec-wait { color: var(--muted); font-weight: 700; }
+/* Results by section, step 2 (head chef, 26 Nov 2026, docs/cleaning-tracking-options/brief.md): a day's weekly and
+   monthly cleaning jobs under Records' own lines. A section with a missed job is attention (an accent edge on quiet
+   paper, said in words), not failure; who was on sits behind the page's fold (.tm-fold). */
+.rec-sec-h { margin: 1rem 0 .3rem; scroll-margin-top: 5rem; }
+.rec-sec-h:focus { outline: none; }
+.rec-sec-h:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.rec-sec { margin: .5rem 0; }
+.rec-miss { padding: .55rem .75rem; border-left: 4px solid var(--accent); background: var(--surface-paper); }
+.rec-miss-h { margin: 0 0 .2rem; font: 700 1.1rem/1.2 var(--display); }
+.rec-who { margin-top: .3rem; }
+.rec-who-list { padding-bottom: .2rem; }
 .rec-dt { margin: 0; font: 700 1.35rem var(--display); }
 .rec-line { margin: .25rem 0; font-size: .9375rem; }
 .rec-bad { margin: .3rem 0; padding: .5rem .7rem; border-left: 3px solid var(--bad-ink); background: var(--bad-tint); color: var(--bad-ink); font-weight: 700; font-size: .875rem; display: flex; justify-content: space-between; align-items: center; gap: .6rem; }

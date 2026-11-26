@@ -120,6 +120,20 @@ async function check(b, hash, o, name, see, then) {
     await p.evaluate(d => document.querySelector('.rec-dayrow[data-d="' + d + '"]').click(), yd); await L.settle(p, 300);
     await p.evaluate(() => document.querySelector('[data-p="rec-show"][data-v="all"]').click()); await L.settle(p, 500);
   });
+  // Cleaning results by section (26 Nov 2026): the job name, the section name it was saved with, who did it, the
+  // unable note, and who was on with their shift, on the Records night (fold open) and in the Inbox row
+  const y1 = L.ymd(new Date(L.NOW - 86400000)), cc = { cv: 2, due: 3, done: 1, miss: ['Task ' + P], missN: 1, unable: [], unableN: 0, wait: [], waitN: 0, ev: 0, evRec: 0,
+    r: [{ k: 'k1 ' + P, t: 'Job ' + P, s: 'gone ' + P, sn: 'Sec ' + P, st: 'm' }, { k: 'k2', t: 'Done ' + P, s: 'gone ' + P, sn: 'Sec ' + P, st: 'd', by: 'Doer ' + P, at: 'At ' + P }, { k: 'k3', t: 'Unable ' + P, s: 'gone ' + P, sn: 'Sec ' + P, st: 'u', n: 'Why ' + P }],
+    rN: 3, rn: { due: 2, done: 1, miss: 1, unable: 1, wait: 0 }, ro: [{ s: 'gone ' + P, k: 'l', pk: 1, w: [{ n: 'On ' + P, sh: 'Shift ' + P, by: 'p' }, { n: 'Pick ' + P, sh: '', by: 'k' }] }] };
+  const cr = Object.assign({}, extra, { [fsKey(['analysis', 'health'])]: { at: L.NOW - 3600000, status: 'ok' },
+    [fsKey(['analysis', 'dashboard'])]: { v: 1, generation: 'g1', at: L.NOW - 3600000, from: y1, to: y1, cleanFrom: y1, needs: { links: 0 }, days: [{ day: y1, p: { n: 1, w: 1, t: 1, r: 0 }, w: {}, x: {}, fs: { v: 1, del: [], c: cc, cool: { k: 'none' } } }] } });
+  await check(b, '#/admin', { admin: true, who: '', extra: cr }, 'admin records, cleaning by section', 'Job', async p => {
+    await L.adminTab(p, 'records'); await L.waitFor(p, () => !!document.querySelector('.rec-dayrow'), null, 5000).catch(() => {});
+    await p.evaluate(d => document.querySelector('.rec-dayrow[data-d="' + d + '"]').click(), y1); await L.settle(p, 300);
+    await p.evaluate(() => { const f = document.querySelector('.rec-who'); if (f) f.click(); }); await L.settle(p, 300);
+    ok(await p.evaluate(() => !!document.querySelector('.rec-who-list') && /On Zz/.test(document.querySelector('.rec-who-list').textContent) && /Doer Zz/.test(document.querySelector('.rec-clean').textContent)), 'admin records, cleaning by section: who was on and who did the job are on the page as typed');
+  });
+  await check(b, '#/admin', { admin: true, adminPage: '', who: '', extra: cr }, 'admin inbox, missed cleaning', 'Job', async p => { await L.waitFor(p, () => !!document.querySelector('.dsh-need-miss'), null, 8000).catch(() => {}); });
   // Filled for you (13 Nov 2026): the line under the boxes names the section from the nightly summary
   await check(b, '#/waste', { who: 'bo', touch: true }, 'wastage filled line', null, async p => {
     await L.wLog(p); await p.fill('#w-text', 'Often ' + P); await p.evaluate(() => { const el = document.querySelector('#w-text'); el.dispatchEvent(new Event('change', { bubbles: true })); el.blur(); });

@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **26 November 2026, Cleaning goes on at Leichhardt first, then the Strand; a missed job is called "Missed".** Asked whether Cleaning is switched on at the Strand, the head chef said: "When cleaning is on for Leichhardt we can turn cleaning on for strand too". So each venue's cleaning count starts the day after its own switch is turned on, Leichhardt first. Asked which word the results use for a job nobody ticked, he agreed to keep "Missed", the word Records and Cleaning already use, with "not ticked by midnight" as its explanation ("That's fine"). [Brief](cleaning-tracking-options/brief.md).
+
 - **26 November 2026, the Screens row comes out again.** With the sizes read (1920 x 1080 for every shared screen, the front of house screen and the head chef's computer), the head chef said "okay" to taking it out, as he had only needed it once. The code, its rules block and its test are gone; the rules now refuse `screens/` (stricter, after the code). Saved records stay in Firestore, unread. [Device coverage](device-coverage.md#the-screens-row).
 
 - **26 November 2026, no Fable by default.** "Fable is too expensive." The model-router (version 0.2.0) picks Haiku, Sonnet or Opus, never Fable, and turns a helper agent's Fable into Opus. The advisor and every council reviewer run on Opus. Fable stays available by hand with `/model fable`. Detail: `docs/keeping-usage-down.md` (The right model for the job).
