@@ -622,8 +622,9 @@
   }
   /* Suggest the days (head chef, 26 Nov 2026, results by section, step 4b; docs/cleaning-schedule.md, Suggest the days).
      Only while Cleaning is off for the team (C.teamOn() false): after switch-on a job's day changes one at a time in
-     Repeat tasks. The planner (js/cleaning-plan.js) is lazy, loaded on the press. Fewest moves: a dated job moves only
-     when its day breaks a rule that is on; a monthly job with no first date gets one. It plans from the saved weights
+     Repeat tasks. The planner (js/cleaning-plan.js) is lazy, loaded on the press. Fewest moves (the council's m3): a dated
+     job moves when its day breaks a rule that is on, or to make its section's heaviest night lighter; a monthly job with
+     no first date gets one, and Pick a date sets it by hand. It plans from the saved weights
      and the saved days only, never a guessed weight. Each change sits in its row with the old day and the reason, Keep
      (not where the old day breaks a day's level) and Another day; both plan the rest again. Nothing moves until Save:
      5 jobs at a time through C.moveTasks, each row saying Saved, Refused, Not sent or Waiting to send. No reads. */
@@ -635,18 +636,22 @@
   function sugRun() {
     var Pl = window.LK_CLEANING_PLAN, s = M.sug; if (!Pl || !s) return;
     var tasks = weighJobs(), jobs = Pl.jobsFrom(tasks, { w: M.plan.w, k: M.plan.k, key: jobKey, sec: function (task) { return task.shared ? '' : owner(task, T.day()); }, clock: sugClock() });
-    jobs.forEach(function (j) { if (s.keep[j.id]) j.move = false; });
+    // a monthly date the chef picked is his: it only counts toward that weekday, and is saved as picked
+    jobs.forEach(function (j) { if (s.keep[j.id]) j.move = false; if (s.pick[j.id]) { j.move = false; j.days = [T.dow(T.at(s.pick[j.id]))]; } });
     s.levels = JSON.stringify(M.plan.d || LEVEL_DEFAULT);
-    var opts = { level: M.plan.d || LEVEL_DEFAULT, order: 'fewest', even: false, needWeight: true, twoHeavy: s.twoHeavy, cap: s.cap ? 5 : false, avoid: s.avoid }, out = Pl.plan(jobs, opts);
+    // fewest moves as the council chose it (m3): a dated job moves when its day breaks a rule, or to make its section's
+    // heaviest night lighter (each with Keep where its old day takes it); planning again after a save moves nothing
+    var opts = { level: M.plan.d || LEVEL_DEFAULT, order: 'fewest', even: true, needWeight: true, twoHeavy: s.twoHeavy, cap: s.cap ? 5 : false, avoid: s.avoid }, out = Pl.plan(jobs, opts);
     s.jobs = jobs; s.out = out; s.state = 'ready'; s.day = T.day();
     // what the plan as it stands still breaks, in words: a kept day, a night over 5 points, a job left where it was
     s.notes = Pl.check(jobs, out.days, opts);
     s.changes = Pl.changes(jobs, out, sugClock(), T.day());
+    Object.keys(s.pick).forEach(function (id) { s.changes.push({ id: id, days: [T.dow(T.at(s.pick[id]))], was: [], anchor: s.pick[id], picked: true }); });
     s.noFit = jobs.filter(function (j) { return j.move && /No day fits/.test(out.why[j.id] || ''); }).map(function (j) { return j.id; });
   }
   function sugStart() {
     if (!C.chef() || teamOn() !== false || weighDirty() || daysDirty() || M.plan.state !== 'ok') return;
-    M.sug = { state: 'loading', twoHeavy: true, cap: true, keep: {}, avoid: {}, rows: {}, saved: [], saving: false, error: '' }; M.sugNote = ''; draw();
+    M.sug = { state: 'loading', twoHeavy: true, cap: true, keep: {}, avoid: {}, pick: {}, rows: {}, saved: [], saving: false, error: '' }; M.sugNote = ''; draw();
     var model = M, go = function () { if (M !== model || !M.sug) return; sugRun(); M.wFilter = 'changes'; draw(); var h = M.root.querySelector('.cln-sug-sum'); if (h) h.focus({ preventScroll: true }); };
     if (window.LK_CLEANING_PLAN && window.LK_CLEANING_PLAN.api === 1) { go(); return; }
     window.LK_APP.load('js/cleaning-plan.js?v=1').then(function () { if (!window.LK_CLEANING_PLAN || window.LK_CLEANING_PLAN.api !== 1) throw new Error('planner'); go(); },
@@ -699,9 +704,11 @@
     s.changes.forEach(function (c) {
       var r = s.rows[c.id]; if (r && r.st === 'saved') return;
       var task = taskById(c.id); if (!task) return;
-      var why = Pl.out.why[c.id] || '', breaks = /^\w+ takes up to /.test(why), every = task.plan && task.plan.repeat ? task.plan.repeat.days : 0;
+      var why = c.picked ? 'you picked this date' : Pl.out.why[c.id] || '', breaks = /^\w+ takes up to /.test(why), every = task.plan && task.plan.repeat ? task.plan.repeat.days : 0;
       var title = c.anchor ? dateWords(c.anchor) + ', then every ' + (every % 7 ? every + ' days' : every / 7 + ' weeks') : dayWords(c.days) + ', was ' + dayWords(c.was);
-      var ctl = busyNow || r && r.st === 'busy' ? '' : '<span class="btn-row">' + (c.was.length && !breaks ? '<button type="button" class="btn" data-cln="sug-keep" data-id="' + esc(c.id) + '">Keep ' + esc(dayWords(c.was)) + '</button>' : '') + '<button type="button" class="btn" data-cln="sug-other" data-id="' + esc(c.id) + '">Another day</button></span>';
+      // a monthly job: Pick a date (from tomorrow) as drawn in m3; a picked date offers Suggest again
+      var pick = c.anchor ? '<label class="cln-sug-pick"><span class="label">Pick a date</span><input type="date" data-cln-sugdate="' + esc(c.id) + '" min="' + esc(shift(T.day(), 1)) + '" value="' + esc(c.anchor) + '"></label>' : '';
+      var ctl = busyNow || r && r.st === 'busy' ? '' : pick + '<span class="btn-row">' + (c.was.length && !breaks ? '<button type="button" class="btn" data-cln="sug-keep" data-id="' + esc(c.id) + '">Keep ' + esc(dayWords(c.was)) + '</button>' : '') + (c.picked ? '<button type="button" class="btn" data-cln="sug-reset" data-id="' + esc(c.id) + '">Suggest again</button>' : '<button type="button" class="btn" data-cln="sug-other" data-id="' + esc(c.id) + '">Another day</button>') + '</span>';
       rows.push(sugRowFor(task, '<b>' + esc(title) + '</b><p class="hint">' + esc(sentence(why)) + '</p>' + ctl, sugTag(r)));
     });
     s.jobs.filter(function (j) { return s.keep[j.id] || s.noFit.indexOf(j.id) >= 0; }).forEach(function (j) {
@@ -1047,7 +1054,7 @@
       if (action === 'sug-rule') { var rule = button.getAttribute('data-rule'); if (rule === 'twoHeavy' || rule === 'cap') sg2[rule] = !sg2[rule]; }
       else if (action === 'sug-keep') sg2.keep[sid] = true;
       else if (action === 'sug-other') { var ch2 = sg2.changes.filter(function (c) { return c.id === sid; })[0]; if (ch2) sg2.avoid[sid] = (sg2.avoid[sid] || []).concat(ch2.days); }
-      else { delete sg2.keep[sid]; delete sg2.avoid[sid]; }
+      else { delete sg2.keep[sid]; delete sg2.avoid[sid]; delete sg2.pick[sid]; }
       sg2.error = ''; sugRun(); draw();
       // focus stays with the job that was changed, or the rule pressed
       var back2 = action === 'sug-rule' ? M.root.querySelector('[data-cln="sug-rule"][data-rule="' + button.getAttribute('data-rule') + '"]') : Array.prototype.filter.call(M.root.querySelectorAll('.cln-sug-row'), function (row) { return row.getAttribute('data-template') === focusId; })[0];
@@ -1106,6 +1113,14 @@
   document.addEventListener('toggle', function (event) { if (event.target.classList && event.target.classList.contains('cln-import')) { if (event.target.classList.contains('cln-pack-import')) M.packImportOpen = event.target.open; else if (event.target.classList.contains('cln-section-import')) M.sectionImportOpen = event.target.open; else M.importOpen = event.target.open; } }, true);
   document.addEventListener('input', function (event) { if (M.root && M.root.contains(event.target) && event.target.hasAttribute('data-cln-control') && event.target.tagName === 'INPUT') changeControl(event.target); });
   document.addEventListener('change', function (event) { if (M.root && M.root.contains(event.target) && event.target.hasAttribute('data-cln-control') && event.target.tagName === 'SELECT') changeControl(event.target); });
+  // Pick a date on a monthly job's suggestion: a real date from tomorrow; the rest is planned again around it
+  document.addEventListener('change', function (event) {
+    var el = event.target; if (!M.root || !M.root.contains(el) || !el.hasAttribute('data-cln-sugdate') || !C.chef() || !M.sug || M.sug.state !== 'ready' || M.sug.saving) return;
+    var id = el.getAttribute('data-cln-sugdate'), v = el.value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || T.day(T.at(v)) !== v || v <= T.day()) { M.sug.error = 'Pick a date from tomorrow.'; draw(); return; }
+    M.sug.pick[id] = v; delete M.sug.avoid[id]; M.sug.error = ''; sugRun(); draw();
+    var back = M.root.querySelector('[data-cln-sugdate="' + id + '"]'); if (back) back.focus({ preventScroll: true });
+  });
   // a job's kind on Weights and days: kept as this page's work, no redraw (see patchWeigh)
   document.addEventListener('change', function (event) {
     var el = event.target; if (!M.root || !M.root.contains(el) || !el.hasAttribute('data-cln-kind') || !C.chef() || M.wBusy) return;

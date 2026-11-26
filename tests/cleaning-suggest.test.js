@@ -51,11 +51,14 @@ const MONTHLY = ['clean-template-sc-grill-02', 'clean-template-sc-pans-03', 'cle
     const reads0 = await p.evaluate(() => window.__fake.reads.length);
     await suggest(p);
     const r = await rows(p), stove = r.find(x => x.id === STOVE) || {};
-    ok(/^The book suggests 4 changes/.test(await text(p, '.cln-sug-sum')) && r.length === 4 && await p.$eval('[data-cln="weights-filter"][data-f="changes"]', e => e.getAttribute('aria-pressed')) === 'true', width + ': the book suggests 4 changes, shown as rows under Changes (' + await text(p, '.cln-sug-sum') + ')');
+    ok(/^The book suggests 6 changes/.test(await text(p, '.cln-sug-sum')) && r.length === 6 && await p.$eval('[data-cln="weights-filter"][data-f="changes"]', e => e.getAttribute('aria-pressed')) === 'true', width + ': the book suggests 6 changes, as the council\'s m3 drew them, shown as rows under Changes (' + await text(p, '.cln-sug-sum') + ')');
     ok(stove.title === 'Wednesday, was Tuesday' && /^Tuesday takes up to medium jobs/.test(stove.why) && !stove.keep && stove.other, width + ': the stove moves off Tuesday, says why first, and has no Keep: Tuesday cannot take it (' + stove.title + ': ' + stove.why + ')');
     ok(MONTHLY.every(id => / \d+ (December|January), then every 4 weeks$/.test(r.find(x => x.id === id).title)), width + ': each monthly job gets a first date and its rhythm (' + MONTHLY.map(id => r.find(x => x.id === id).title).join(' | ') + ')');
     ok(await p.evaluate(() => window.__fake.reads.length) === reads0, width + ': suggesting reads nothing');
-    ok(await p.evaluate(s => !!document.querySelector(s), '.cln-sug-dock [data-cln="sug-save"]') && await text(p, '[data-cln="sug-save"]') === 'Save 4 days' && /Nothing is saved yet/.test(await text(p, '.cln-sug-dock')), width + ': one Save, "Save 4 days", and nothing is saved yet');
+    ok(await p.evaluate(s => !!document.querySelector(s), '.cln-sug-dock [data-cln="sug-save"]') && await text(p, '[data-cln="sug-save"]') === 'Save 6 days' && /Nothing is saved yet/.test(await text(p, '.cln-sug-dock')), width + ': one Save, "Save 6 days", and nothing is saved yet');
+    const hot = r.find(x => x.id === 'clean-template-sc-hot-03') || {}, fry = r.find(x => x.id === 'clean-template-sc-fry-04') || {};
+    ok(hot.title === 'Monday, was Sunday' && /^Hot larder's heaviest night goes from 5 to 4 points/.test(hot.why) && hot.keep && /^Sunday, was Thursday$/.test(fry.title) && fry.keep, width + ': as in m3, two jobs move to make a section\'s heaviest night lighter, each saying so with Keep (' + hot.title + '; ' + fry.title + ')');
+    ok(MONTHLY.every(id => r.find(x => x.id === id)) && await p.$$eval('[data-cln-sugdate]', e => e.length) === 3, width + ': each monthly job offers Pick a date');
     if (process.env.WIDEFONT) await p.addStyleTag({ content: '* { letter-spacing: .08em !important; }' });
     const box = await p.evaluate(() => ({ wide: document.documentElement.scrollWidth <= innerWidth, over: [...document.querySelectorAll('.cln-plan *')].filter(e => e.getBoundingClientRect().right > innerWidth + 1).slice(0, 4).map(e => e.tagName + '.' + e.className + ':' + Math.round(e.getBoundingClientRect().right) + ' ' + e.textContent.trim().slice(0, 40)), small: [...document.querySelectorAll('.cln-sug-wrap button, .cln-sug-list button, .cln-sug-dock button')].filter(e => e.getClientRects().length && e.getBoundingClientRect().height < 44).map(e => e.textContent.trim()) }));
     ok(box.wide && !box.small.length, width + ': no sideways scroll, every control 44 px tall (' + JSON.stringify(box) + ')');
@@ -86,16 +89,31 @@ const MONTHLY = ['clean-template-sc-grill-02', 'clean-template-sc-pans-03', 'cle
     ok(!(await p.$('.cln-sug-row')) && /Suggestion dropped\. Nothing was saved\./.test(await text(p, '.cln-sug-start')) && openRev(await store(p), STOVE)[0].dows.join() === '2', 'Drop the suggestion leaves every job as it was, and says so');
     await p.context().close();
   }
+  // Pick a date on a monthly job: the date is his, saved as picked, and Suggest again puts the book's back
+  {
+    const p = await open(b, { admin: true }, 390, base()), id = MONTHLY[0];
+    await suggest(p);
+    const pickDay = new Date(L.NOW + 10 * 3600000 + 10 * DAY).toISOString().slice(0, 10);
+    await p.$eval('[data-cln-sugdate="' + id + '"]', (e, v) => { e.value = v; e.dispatchEvent(new Event('change', { bubbles: true })); }, pickDay); await L.settle(p, 200);
+    const picked = await row(p, id);
+    ok(/^You picked this date\.$/.test(picked.why) && picked.title.endsWith(', then every 4 weeks') && !!(await p.$('[data-cln="sug-reset"][data-id="' + id + '"]')) && await p.evaluate(i => document.activeElement && document.activeElement.getAttribute('data-cln-sugdate') === i, id), 'Pick a date: the row shows the picked date, says so, offers Suggest again, and focus stays on the date (' + picked.title + ')');
+    await p.$eval('[data-cln-sugdate="' + id + '"]', (e, v) => { e.value = v; e.dispatchEvent(new Event('change', { bubbles: true })); }, new Date(L.NOW + 10 * 3600000).toISOString().slice(0, 10)); await L.settle(p, 200);
+    ok(/Pick a date from tomorrow/.test(await text(p, '.cln-sug-dock')), 'a date of today is refused in words');
+    await p.click('[data-cln="sug-save"]'); await saved(p);
+    ok(openRev(await store(p), id)[0].plan.repeat.anchor === pickDay, 'Save keeps the picked first date (' + pickDay + ')');
+    await p.context().close();
+  }
   // Keep: two heavy Grill jobs on a Monday; the lead's rule moves one, which may be kept. A night over 5 points is named.
   {
     const jobs = base(), job = (id, x) => { jobs[key('cleaningTasks', id)] = { text: 'Made-up job ' + id, area: 'Shelves', section: 'grill', sectionName: 'Grill', shared: false, dows: [1], guide: '', root: id, prev: '', next: '', from: L.NOW - 20 * DAY, until: OPEN, at: L.NOW - 20 * DAY, by: 'sam', ...x }; };
     job('hv-a'); job('hv-b'); jobs[PLAN].w['hv-a'] = 3; jobs[PLAN].w['hv-b'] = 3;
-    ['pv-a', 'pv-b', 'pv-c'].forEach(id => { job(id, { section: 'pans', sectionName: 'Pans', dows: [4] }); jobs[PLAN].w[id] = 2; });
+    ['pv-a', 'pv-b', 'pv-c'].forEach(id => { job(id, { section: 'pans', sectionName: 'Pans', dows: [0, 1, 2, 3, 4] }); jobs[PLAN].w[id] = 2; });
+    job('pv-d', { section: 'pans', sectionName: 'Pans', dows: [4] }); jobs[PLAN].w['pv-d'] = 2;
     const p = await open(b, { admin: true }, 390, jobs);
     await suggest(p);
     const hb = await row(p, 'hv-b');
     ok(/, was Monday$/.test(hb.title) && /^Grill already has a heavy job on Monday \(a suggested rule\)/.test(hb.why) && hb.keep, 'a heavy job moved by the suggested rule says so and offers Keep Monday (' + hb.title + ': ' + hb.why + ')');
-    ok(/Still against a rule: .*Pans is at weight 6 on Thursday, over 5/.test(await text(p, '.cln-sug-sum')), 'the summary names a night over 5 points in words (' + await text(p, '.cln-sug-notes') + ')');
+    ok(/Still against a rule: .*Pans is at weight \d+ on Thursday, over 5/.test(await text(p, '.cln-sug-sum')), 'the summary names a night over 5 points in words (' + await text(p, '.cln-sug-notes') + ')');
     await p.click('[data-cln="sug-keep"][data-id="hv-b"]'); await L.settle(p, 200);
     const kb = await row(p, 'hv-b'), ka = await row(p, 'hv-a');
     ok(kb.title === 'Stays on Monday. You kept it.' && /, was Monday$/.test(ka.title) && /already has a heavy job on Monday/.test(ka.why) && await p.evaluate(() => { const a = document.activeElement; return !!a && !!a.closest('.cln-sug-row') && a.closest('.cln-sug-row').getAttribute('data-template') === 'hv-b'; }),
@@ -112,7 +130,7 @@ const MONTHLY = ['clean-template-sc-grill-02', 'clean-template-sc-pans-03', 'cle
     await suggest(p);
     await p.evaluate(() => { window.__fake.mode = 'hold'; });
     await p.click('[data-cln="sug-save"]'); await L.settle(p, 400);
-    ok((await rows(p)).some(x => /^Sending/.test(x.state)) && /Saving 4 changes, 5 at a time/.test(await text(p, '.cln-sug-dock')) && !(await p.$('[data-cln="sug-drop"]')), 'no signal: the rows say Sending and the dock Saving, as the weights Save does while it waits (' + await text(p, '.cln-sug-dock') + ')');
+    ok((await rows(p)).some(x => /^Sending/.test(x.state)) && /Saving 6 changes, 5 at a time/.test(await text(p, '.cln-sug-dock')) && !(await p.$('[data-cln="sug-drop"]')), 'no signal: the rows say Sending and the dock Saving, as the weights Save does while it waits (' + await text(p, '.cln-sug-dock') + ')');
     await p.evaluate(() => window.__fake.warm()); await saved(p);
     const s = await store(p);
     ok((await rows(p)).every(x => /^Saved/.test(x.state)) && [STOVE].concat(MONTHLY).every(id => openRev(s, id).length === 1 && revs(s, id).length === 2), 'signal back: every row says Saved, each job once');
@@ -123,7 +141,7 @@ const MONTHLY = ['clean-template-sc-grill-02', 'clean-template-sc-pans-03', 'cle
     const tomorrow = new Date(L.NOW + 10 * 3600000 + DAY).toISOString().slice(0, 10), midnight = Date.parse(tomorrow + 'T00:00:00Z') - 10 * 3600000;
     const p = await open(b, { admin: true, clock: midnight - 120000 }, 390, base());
     await suggest(p);
-    ok((await rows(p)).length === 4, 'a suggestion at 23:58');
+    ok((await rows(p)).length === 6, 'a suggestion at 23:58');
     await p.clock.runFor(180000); await L.settle(p, 300);
     await p.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); await L.settle(p, 500);
     const sav = await p.$('[data-cln="sug-save"]');
@@ -135,7 +153,8 @@ const MONTHLY = ['clean-template-sc-grill-02', 'clean-template-sc-pans-03', 'cle
   {
     const p = await open(b, { admin: true }, 390, fridays(base(), 7));
     await suggest(p);
-    ok((await rows(p)).length === 11 && await text(p, '[data-cln="sug-save"]') === 'Save 11 days', '11 changes: 4 from the lists and 7 Friday jobs');
+    const many = (await rows(p)).length;
+    ok(many >= 11 && await text(p, '[data-cln="sug-save"]') === 'Save ' + many + ' days', many + ' changes, the 7 Friday jobs among them, so the save needs 3 batches');
     // the rules refuse one job (changed on another phone): its batch is tried one job at a time, the rest still save
     await p.evaluate(() => { window.__fake.deny = /\/cleaningTasks\/fri-3$/; });
     const w0 = await p.evaluate(() => window.__fake.writes.length);
@@ -153,7 +172,7 @@ const MONTHLY = ['clean-template-sc-grill-02', 'clean-template-sc-pans-03', 'cle
     await p.evaluate(() => { window.__fake.lose = /\/cleaningTasks\//; });
     await p.click('[data-cln="sug-save"]'); await saved(p);
     const r1 = await rows(p);
-    ok(r1.filter(x => /^Not sent\./.test(x.state)).length === 5 && r1.filter(x => x.state === 'Waiting to send.').length === 6 && await text(p, '[data-cln="sug-save"]') === 'Send the rest', 'a lost answer: 5 rows say Not sent, 6 say Waiting to send, and Save becomes Send the rest (' + r1.map(x => x.state).join(' | ') + ')');
+    ok(r1.filter(x => /^Not sent\./.test(x.state)).length === 5 && r1.filter(x => x.state === 'Waiting to send.').length === r1.length - 5 && r1.length >= 11 && await text(p, '[data-cln="sug-save"]') === 'Send the rest', 'a lost answer: the first 5 rows say Not sent, the rest Waiting to send, and Save becomes Send the rest (' + r1.map(x => x.state).join(' | ') + ')');
     await p.evaluate(() => { window.__fake.lose = null; });
     await p.click('[data-cln="sug-save"]'); await saved(p);
     const s2 = await store(p), all = ['fri-1', 'fri-2', 'fri-3', 'fri-4', 'fri-5', 'fri-6', 'fri-7', STOVE].concat(MONTHLY);
@@ -166,7 +185,8 @@ const MONTHLY = ['clean-template-sc-grill-02', 'clean-template-sc-pans-03', 'cle
     await suggest(p);
     await p.evaluate(() => { window.__fake.mode = 'fail'; });
     await p.click('[data-cln="sug-save"]'); await saved(p);
-    ok((await rows(p)).every(x => /^Not sent\./.test(x.state)) && openRev(await store(p), STOVE)[0].dows.join() === '2', 'no signal: every row says Not sent and nothing moved');
+    const ns = await rows(p);
+    ok(ns.slice(0, 5).every(x => /^Not sent\./.test(x.state)) && ns.slice(5).every(x => x.state === 'Waiting to send.') && openRev(await store(p), STOVE)[0].dows.join() === '2', 'no signal: the first batch says Not sent, the rest Waiting to send, and nothing moved');
     await p.evaluate(() => { window.__fake.mode = 'ok'; });
     await p.click('[data-cln="sug-save"]'); await saved(p);
     ok((await rows(p)).every(x => /^Saved/.test(x.state)) && openRev(await store(p), STOVE)[0].dows.join() === '3', 'with signal back, Send the rest saves them');

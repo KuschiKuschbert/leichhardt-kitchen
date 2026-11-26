@@ -7,14 +7,14 @@
     "sideways": false
   },
   "changes-390": {
-    "screensLong": 4.3,
+    "screensLong": 4.5,
     "wholeRowsOnFirstScreen": 0,
     "controls": 19,
     "under44": 0,
     "sideways": false
   },
   "part-saved-390": {
-    "screensLong": 4.7,
+    "screensLong": 4.8,
     "wholeRowsOnFirstScreen": 0,
     "controls": 16,
     "under44": 0,
@@ -28,7 +28,7 @@
     "sideways": false
   },
   "changes-768": {
-    "screensLong": 2.9,
+    "screensLong": 3.1,
     "wholeRowsOnFirstScreen": 0,
     "controls": 19,
     "under44": 0,
@@ -42,7 +42,7 @@
     "sideways": false
   },
   "changes-1280": {
-    "screensLong": 2.7,
+    "screensLong": 2.9,
     "wholeRowsOnFirstScreen": 0,
     "controls": 19,
     "under44": 0,

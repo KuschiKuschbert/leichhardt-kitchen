@@ -5840,6 +5840,8 @@ button[data-cln-ready-label] > span { position: absolute; inset: 0; display: gri
 .cln-sug { margin: .3rem 0 0; padding: .2rem 0 .2rem .75rem; border-left: 3px solid var(--ink); }
 .cln-sug .hint { margin: .15rem 0 .45rem; }
 .cln-sug .btn-row { margin: 0; }
+.cln-sug-pick { display: block; margin: 0 0 .45rem; }
+.cln-sug-pick input { min-height: 44px; max-width: 100%; }
 .cln-sug-state { margin: .4rem 0 0; }
 .cln-day-list { list-style: none; margin: .3rem 0 0; padding: 0; }
 .cln-day-row { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); align-items: center; gap: .2rem .8rem; padding: .35rem 0; border-bottom: 1px solid var(--rule); }

@@ -90,16 +90,17 @@ const SECN = { grill: 'Grill', pans: 'Pans', fry: 'Fryers, salads and dessert', 
 const revs = () => schedule.drafts().concat(schedule.packDownDrafts(), schedule.sectionDrafts()).map(d => { const id = 'clean-template-' + d.plan.template, g = schedule.sectionGroupOf(d); return Object.assign(JSON.parse(JSON.stringify(d)), { id, root: id, section: g || '', shared: !g }); }).filter(K.round);
 const W8 = {}, K8 = {}; Object.keys(J.EX).forEach(t => { W8['clean-template-' + t] = J.EX[t][1]; K8['clean-template-' + t] = J.EX[t][0]; });
 const adapt = (tasks, w) => P.jobsFrom(tasks, { w: w || W8, k: K8, key: t => t.root, sec: t => t.shared ? '' : SECN[t.section], clock });
-const BOOK = { level: LEVEL, order: 'fewest', even: false, needWeight: true }, TODAY = '2026-11-26';   // a Thursday
+const BOOK = { level: LEVEL, order: 'fewest', even: true, needWeight: true }, TODAY = '2026-11-26';   // a Thursday
 const tasks0 = revs(), bj = adapt(tasks0), bp = P.plan(bj, BOOK), ch = P.changes(bj, bp, clock, TODAY);
 ok(tasks0.length >= 20 && bj.filter(j => j.move).length >= 15, 'the three built-in lists give the weekly and monthly jobs, most of them free to move (' + bj.filter(j => j.move).length + ' of ' + bj.length + ')');
 const datedMoves = ch.filter(c => c.was.length);
 if (process.env.SHOW) ch.forEach(c => console.log(c.id, c.was, '->', c.days, c.anchor || '', bp.why[c.id]));
-ok(datedMoves.length >= 1 && datedMoves.every(c => /^\w+ takes up to (light|medium) jobs|already has a heavy job on \w+ \(a suggested rule\)|Friday and Saturday already hold/.test(bp.why[c.id])), 'fewest moves, the book\'s call: a dated job moves only when its day breaks a rule, and its reason names that rule first (' + datedMoves.map(c => c.id.replace('clean-template-', '') + ': ' + bp.why[c.id]).join(' | ') + ')');
-ok(Object.values(bp.why).every(w => !/heaviest night goes from/.test(w)), 'with even off, no job is moved only to even out a section\'s nights');
+ok(datedMoves.length >= 1 && datedMoves.every(c => /^\w+ takes up to (light|medium) jobs|already has a heavy job on \w+ \(a suggested rule\)|Friday and Saturday already hold|heaviest night goes from \d+ to \d+ points/.test(bp.why[c.id])) && datedMoves.length === 3, 'fewest moves, the book\'s call (the council\'s m3): a dated job moves when its day breaks a rule or to lighten its section\'s heaviest night, and its reason says which (' + datedMoves.map(c => c.id.replace('clean-template-', '') + ': ' + bp.why[c.id]).join(' | ') + ')');
+const offPlan = P.plan(bj, Object.assign({}, BOOK, { even: false }));
+ok(Object.values(offPlan.why).every(w => !/heaviest night goes from/.test(w)) && P.changes(bj, offPlan, clock, TODAY).filter(c => c.was.length).length === 1, 'with even off, only the job whose day breaks a rule moves');
 ok(P.check(bj, bp.days, BOOK).every(m => !/only a light job goes on|a heavy job does not go on/.test(m)), 'the book\'s plan puts no job on a day lighter than the job (' + P.check(bj, bp.days, BOOK).join('; ') + ')');
 const loose = P.plan(bj, Object.assign({}, BOOK, { twoHeavy: false })), looseCh = P.changes(bj, loose, clock, TODAY).filter(c => c.was.length);
-ok(looseCh.length <= datedMoves.length && looseCh.every(c => /^\w+ takes up to/.test(loose.why[c.id])) && P.check(bj, loose.days, Object.assign({}, BOOK, { twoHeavy: false })).every(m => !/two heavy jobs/.test(m)), 'with the lead\'s two-heavy rule dropped, only jobs on a day too light for them move, and the check no longer names two heavy jobs (' + looseCh.length + ' against ' + datedMoves.length + ')');
+ok(looseCh.length <= datedMoves.length && looseCh.every(c => /^\w+ takes up to|heaviest night goes from/.test(loose.why[c.id])) && P.check(bj, loose.days, Object.assign({}, BOOK, { twoHeavy: false })).every(m => !/two heavy jobs/.test(m)), 'with the lead\'s two-heavy rule dropped, only jobs on a day too light for them move, and the check no longer names two heavy jobs (' + looseCh.length + ' against ' + datedMoves.length + ')');
 // monthly jobs: one with a first date stays on its weekday; one with none gets a weekday, a week and a first date from tomorrow
 const monthly = bj.filter(j => j.every === 28);
 ok(monthly.length >= 3 && monthly.every(j => j.move && !j.days.length), 'the built-in monthly jobs have no first date yet, so each may be planned');
@@ -117,8 +118,9 @@ const kept = two.map(j => j.id === 'hv-b' ? Object.assign({}, j, { move: false }
 ok(kp.days['hv-b'] === undefined && kp.days['hv-a'].indexOf(1) < 0 && /already has a heavy job on Monday/.test(kp.why['hv-a']) && P.check(kept, kp.days, BOOK).every(m => !/two heavy jobs|only a light job goes on|a heavy job does not go on/.test(m)), 'Keep the old day: that job stays on Monday and the rest is planned again around it, so the other heavy job moves instead and no rule is broken (' + kp.days['hv-a'] + ')');
 const both = two.map(j => /^hv-/.test(j.id) ? Object.assign({}, j, { move: false }) : j), bp2 = P.plan(both, BOOK);
 ok(P.check(both, Object.assign({}, bp2.days, { 'hv-a': [1], 'hv-b': [1] }), BOOK).some(m => m === 'Grill has two heavy jobs on Monday') && P.check(both, Object.assign({}, bp2.days, { 'hv-a': [1], 'hv-b': [1] }), Object.assign({}, BOOK, { twoHeavy: false })).every(m => !/two heavy jobs/.test(m)), 'both kept: the check names the two heavy jobs while that rule is on, and not once it is dropped');
-// a night over 5 points: three medium Pans jobs on a Thursday stay (no rule moves them), and the check says so while the rule is on
-const over = bj.concat(['pv-a', 'pv-b', 'pv-c'].map(id => hv(id, { sec: 'Pans', w: 2, days: [4] }))), op = P.plan(over, BOOK);
+// a night over 5 points: three medium Pans jobs on five weekdays (they never move) and one more on a Thursday. Every
+// night it could take is already at 6, so it stays, and the check says so while the rule is on
+const over = bj.concat(['pv-a', 'pv-b', 'pv-c'].map(id => hv(id, { sec: 'Pans', w: 2, days: [0, 1, 2, 3, 4], move: false })), [hv('pv-d', { sec: 'Pans', w: 2, days: [4] })]), op = P.plan(over, BOOK);
 ok(P.check(over, op.days, BOOK).some(m => /^Pans is at weight \d+ on Thursday, over 5$/.test(m)) && P.check(over, op.days, Object.assign({}, BOOK, { cap: false })).every(m => !/over 5/.test(m)), 'a Pans night over 5 points is named while that rule is on, and not once it is dropped (' + P.check(over, op.days, BOOK).filter(m => /over 5/.test(m)).join('; ') + ')');
 // Another day: the suggested day is never offered again for that job
 const mover = datedMoves[0], av = P.plan(bj, Object.assign({}, BOOK, { avoid: { [mover.id]: mover.days } }));
