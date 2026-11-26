@@ -60,3 +60,10 @@ Candidate (a fix): 44 px tap areas, the text the same size.
 - **The full band above booking work** (Measured): 262 px, 26 % of the screen at 1920. Candidate: the bookings list and the form open with the band folded, as Orders does. At 14:00 here it would stay open anyway (a round within the hour, a trip waiting, a kitchen comment), so it saves room only at quieter hours; untested. Changes 22 Oct as extended 23 and 26 Nov.
 - **The Room field is said twice** (Seen): a box, then a two-line "Choose Room, area or table (optional) ▾" pill. It comes from the shared picker (`js/controls.js`), so a change reaches every field of that kind: a quick check against `docs/adaptive-controls.md`.
 - **Fiftieth use:** the two different "next" times on `#/fn` will wear worst (Fay learns to trust one of them, and it may not be the band); the intro sentence above the service board helps only the first time.
+
+## Chosen (head chef, 26 November 2026)
+
+- **Build, fixes:** Confirm out can't hide (a waiting trip or any other warning keeps the band open on every page, as on the fold pages); 44 px tap areas on the controls in 6; the dietaries and notes under each waiting trip.
+- **Build, tidy-ups:** the Functions list says it once (3); a function's page puts its notes first (4).
+- **Design study first:** the form's Platters beside the boxes (5); Fay's waiting trips beside the rounds (7).
+- **Not now:** Home's equal buttons, the band folded on the bookings pages, the Room field's picker.
