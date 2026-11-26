@@ -64,7 +64,8 @@ async function visit(b, label, options, fn) {
       ok(!(await p.$('[data-p="a-tab"], [data-p="a-group"], [data-p="move-pin"], [data-p="export"]')), label + ': no owner controls in chef workspace');
       for (const [g, tabs] of Object.entries(rooms)) {
         await p.click('[data-p="c-group"][data-g="' + g + '"]'); await L.settle(p, 200);
-        ok(await L.txt(p, '#rtitle') === roomNames[g] && await p.locator('[data-p="c-group"][data-g="' + g + '"][aria-current="page"]').count() === 1, label + ': ' + roomNames[g] + ' heading and active room');
+        // Today opens on its Dashboard, named Dashboard as the admin panel's is (head chef, 27 Nov 2026, step 4)
+        ok(await L.txt(p, '#rtitle') === (g === 'today' ? 'Dashboard' : roomNames[g]) && await p.locator('[data-p="c-group"][data-g="' + g + '"][aria-current="page"]').count() === 1, label + ': ' + roomNames[g] + ' heading and active room');
         ok((await p.locator('.a-tabs [data-p="c-tab"]').evaluateAll(es => es.map(e => e.dataset.t))).join() === tabs.join(), label + ': ' + roomNames[g] + ' has only its chef pages');
       }
       await tab(p, 'dashboard');

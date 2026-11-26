@@ -7028,7 +7028,9 @@
     return { canRead: psCanRead, canEdit: psCanEdit, canAdd: psCanAdd, identity: stableIdentity, workLock: workLock,
       sections: kitSecs, defaultSection: psDefaultSection, recipes: function () { return D.recipes.filter(function (r) { return r.id && r.name; }); },
       read: psRead, save: psSave, draw: draw, refreshHint: psHintPaint, listHTML: lvHTML,
-      now: now, day: dayNow, clock: function (ms) { return T.day(ms) + ' ' + T.clock(ms); }, esc: esc, inkWait: inkWait,
+      // one date style across both panels (head chef, 27 Nov 2026, step 4): "Read 14:00" today, "Thu, 26 Nov, 14:00" before,
+      // as Kitchen mail and Records say it (it was 2026-11-27 14:00)
+      now: now, day: dayNow, clock: function (ms) { return T.day(ms) === dayNow() ? T.clock(ms) : mlWhen(ms); }, esc: esc, inkWait: inkWait,
       saveButton: svButton, saveStart: svStart, saveDone: svDone, saveFail: svFail, saveLine: svLine,
       saveStop: svStop, saveHeld: svHeld, arm: arm, armed: armed, btnPatch: btnPatch, errMsg: errMsg,
       pick: psPick, add: psAdd, openWork: psOpenWork };
@@ -7457,7 +7459,7 @@
     var prepWait = S.date !== dayNow() || S.itemsState === 'idle' ? 'Not read yet' : S.itemsState === 'error' ? 'Could not load' : S.itemsState === 'offline' ? 'No signal' : 'Checking the list';
     var orderWait = S.ordState === 'error' ? 'Could not load' : S.ordState === 'offline' ? 'No signal' : S.ordState === 'loading' ? 'Checking the list' : 'Not read yet';
     var need = teamNeed(), teamText = { set: 'Plan saved', unset: 'Set the team', error: 'Could not load', loading: 'Checking the plan' }[need] || 'Checking the plan';
-    return '<section class="set-block"><h3 class="a-ch-h">Today at a glance</h3><p class="hint">' + esc(longDate(dayNow())) + '. From today’s lists on this device.</p><div class="dsh-dtiles c-tiles">' +
+    return '<section class="set-block"><h3 class="a-ch-h">Today at a glance</h3><p class="hint">' + esc(dayShort(dayNow())) + '. From today’s lists on this device.</p><div class="dsh-dtiles c-tiles">' +
       chefTile('prep-history', 'Prep', prep ? prep.filter(function (x) { return x.done; }).length + ' of ' + prep.length + ' done' : prepWait, dayNow()) +
       chefTile('order-history', 'Orders', orders ? orders.filter(function (x) { return !x.ordered; }).length + ' still to order' : orderWait, dayNow()) +
       chefTile('plan', "Today's team", teamText) + '</div></section>' +
@@ -7547,7 +7549,8 @@
     else pane = chefKitchenHTML();
     pane = pane.replace(/ id="rtitle"/g, '');
     var bar = '<div class="p-bar"><span><strong>' + title + '</strong> · ' + esc(whoName()) + '</span><span class="p-links">' + (adminTabs() ? '<a class="p-link" href="#/admin">Admin panel</a>' : '') + '</span></div>';
-    var heading = find('a-find-head') + '<p class="ad-eyebrow">' + title + '</p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + group[1] + '</h2><p class="ad-intro">' + ({today:'Run the shift with the team. ' + (adminTabs() ? 'Owner reports, permissions and settings are in the Admin panel.' : whoHead() ? 'Owner reports, permissions and settings need the Admin panel’s Google sign-in.' : 'Owner reports, permissions and settings are the head chef’s.'),reports:'Read the prep and order records for a day.',team:'Plan the team and look after the people.',kitchen:'The recipe book and the kitchen tools.',prep:'The prep each section should have ready before service.'})[group[0]] + '</p>';
+    // the Dashboard is called Dashboard, as the admin panel's is (head chef, 27 Nov 2026, step 4: one place, one name)
+    var heading = find('a-find-head') + '<p class="ad-eyebrow">' + title + '</p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + (at === 'dashboard' ? C_NAMES.dashboard : group[1]) + '</h2><p class="ad-intro">' + ({today:'Run the shift with the team. ' + (adminTabs() ? 'Owner reports, permissions and settings are in the Admin panel.' : whoHead() ? 'Owner reports, permissions and settings need the Admin panel’s Google sign-in.' : 'Owner reports, permissions and settings are the head chef’s.'),reports:'Read the prep and order records for a day.',team:'Plan the team and look after the people.',kitchen:'The recipe book and the kitchen tools.',prep:'The prep each section should have ready before service.'})[group[0]] + '</p>';
     if (at === 'plan') {
       bar = '';
       heading = find('a-find-head') + '<div class="tm-chef-identity"><p><strong>' + title + '</strong> · ' + esc(whoName()) + '</p>' + (adminTabs() ? '<a class="p-link" href="#/admin">Admin panel</a>' : '') + '</div><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + group[1] + '</h2>';

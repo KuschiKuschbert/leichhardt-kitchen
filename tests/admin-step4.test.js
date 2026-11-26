@@ -47,6 +47,22 @@ const store = p => p.evaluate(() => window.__fake.dump());
     await p.context().close();
   }
 
+  // one place, one name, one date style: the chef Dashboard is called Dashboard, its date and Prep standards' read time
+  // read as the rest of both panels do ("Fri, 27 Nov", "Read 14:00")
+  {
+    let p = await L.open(b, '#/chef', { who: 'sam', width: 1280, height: 800, touch: false, wait: 1800 });
+    await L.waitFor(p, () => !!document.querySelector('.c-tiles'), null, 8000).catch(() => {});
+    const h = await p.evaluate(() => ({ title: document.querySelector('#rtitle').textContent, date: (document.querySelector('.c-tiles') || {}).previousElementSibling.textContent }));
+    ok(h.title === 'Dashboard' && /^[A-Z][a-z]{2}, \d{1,2} [A-Z][a-z]{2}\. From today/.test(h.date), 'chef Dashboard: named Dashboard, the day as "Fri, 27 Nov" (' + JSON.stringify(h) + ')');
+    await p.context().close();
+    const secs = { [K('config', 'main')]: Object.assign({}, L.seed()[K('config', 'main')], { kitSecs: [{ id: 'larder', name: 'Larder' }, { id: 'grill', name: 'Grill' }] }) };
+    p = await L.open(b, '#/admin', { admin: true, adminPage: 'prep-standards', who: '', width: 1280, height: 800, touch: false, extra: secs, wait: 1800 });
+    await L.waitFor(p, () => !!document.querySelector('.ps-read'), null, 8000).catch(() => {});
+    const read = await p.evaluate(() => (document.querySelector('.ps-read') || {}).textContent || '');
+    ok(/^Read \d\d:\d\d\. /.test(read), 'Prep standards: read today says "Read 14:00." (' + read + ')');
+    await p.context().close();
+  }
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });
