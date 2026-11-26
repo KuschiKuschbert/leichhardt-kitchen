@@ -5801,6 +5801,30 @@ button[data-cln-ready-label] > span { position: absolute; inset: 0; display: gri
 .cln-chef-page .cln-pager button { min-width: 44px; min-height: 44px; max-width: 100%; white-space: normal; }
 .cln-chef-page .cln-repeat-browser { min-width: 0; padding-top: .2rem; }
 .cln-chef-page .cln-repeat-browser > .field { max-width: 22rem; }
+/* Weights and days (head chef, 26 Nov 2026, results by section, step 3): every weekly and monthly job as a row by
+   section, Light / Medium / Heavy chips and an optional kind, then the one Save bar frame (.sv-dock), docked above the
+   phone tab bar. Chosen is ink, as every chip; no colour carries a state. */
+.cln-weigh-filter { margin: .5rem 0 .2rem; }
+.cln-weigh-h { margin-top: .9rem; }
+.cln-weigh-h span { font: 400 .8125rem var(--body); letter-spacing: 0; text-transform: none; color: var(--muted); }
+.cln-weigh-list { list-style: none; margin: 0; padding: 0; }
+.cln-chef-page .cln-weigh-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .2rem .8rem; padding: .35rem 0 .55rem; border-bottom: 1px solid var(--rule); }
+.cln-chef-page .cln-weigh-row .cln-template-summary { padding: .25rem 0; border-bottom: 0; }
+.cln-weigh-ctl { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .35rem; }
+.cln-weigh-ctl .chips { gap: .35rem; }
+.cln-weigh-ctl .chip { padding: 0 .75rem; }
+.cln-kind select { min-height: 44px; max-width: 13rem; }
+.cln-weigh-dock { position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .4rem 1rem; margin-top: 1rem; padding: .6rem 0; }
+.cln-weigh-dock .hint { flex: 1 1 12rem; }
+.cln-weigh-dock .btn-row { margin: 0; }
+.cln-weigh-err { color: var(--bad-ink); font-weight: 700; }
+@media (max-width: 719px) {
+  .cln-chef-page .cln-weigh-row { grid-template-columns: minmax(0, 1fr); }
+  .cln-weigh-ctl { justify-content: flex-start; }
+  .cln-kind { flex: 1 0 100%; }   /* its own line, so a longer or shorter kind never re-wraps the row */
+  .cln-weigh-dock { bottom: var(--tabbar-h); }
+  html:has(.cln-weigh-dock) { scroll-padding-bottom: calc(var(--tabbar-h) + 96px); }
+}
 .cln-chef-page .cln-repeat-browser > .hint { margin: .6rem 0; }
 .cln-chef-page .cln-repeat-browser .cln-searchbar > .btn { flex: 0 0 auto; max-width: 100%; white-space: normal; }
 .cln-chef-page .cln-repeat-layout { margin: .75rem 0 .4rem; }

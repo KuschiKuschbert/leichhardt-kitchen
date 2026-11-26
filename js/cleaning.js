@@ -9,7 +9,7 @@
   var OPEN = 253402178400000, DAYS = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [0, 'Sun']];
   var AREAS = ['Coldroom', 'Freezer', 'Dry store', 'Oven', 'Fryers', 'Behind equipment', 'Pass', 'Shelves'];
   var M = blank(), generation = 0, recorder = '', context = '', picker = null, popup = null, savedTimer = null, boundaryTimer = null;
-  function blank() { return { root: null, view: 'today', today: T.day(), week: monday(T.day()), selected: T.day(), tasks: [], done: [], state: 'idle', error: '', readAt: 0, readAgain: false, cache: Object.create(null), range: '', pending: Object.create(null), tickErrors: Object.create(null), editor: false, draft: null, original: '', editId: '', saveBusy: false, saveState: '', saveError: '', savedText: '', archiveBusy: '', suspended: false, expanded: Object.create(null), workDrafts: Object.create(null), flowErrors: Object.create(null), flowSaved: Object.create(null), importBusy: false, importError: '', importText: '', temperatureOpen: false, lead: null, leadStale: false, workGroup: '', workPage: 0, workQuery: '', workFilter: 'all', repeatPage: 0, repeatQuery: '', repeatGroup: 'all' }; }
+  function blank() { return { root: null, view: 'today', today: T.day(), week: monday(T.day()), selected: T.day(), tasks: [], done: [], state: 'idle', error: '', readAt: 0, readAgain: false, cache: Object.create(null), range: '', pending: Object.create(null), tickErrors: Object.create(null), editor: false, draft: null, original: '', editId: '', saveBusy: false, saveState: '', saveError: '', savedText: '', archiveBusy: '', suspended: false, expanded: Object.create(null), workDrafts: Object.create(null), flowErrors: Object.create(null), flowSaved: Object.create(null), importBusy: false, importError: '', importText: '', temperatureOpen: false, lead: null, leadStale: false, workGroup: '', workPage: 0, workQuery: '', workFilter: 'all', repeatPage: 0, repeatQuery: '', repeatGroup: 'all', plan: { state: 'idle', w: {}, k: {}, error: '' }, weights: false, wDraft: {}, kDraft: {}, wBusy: false, wError: '', wSaved: 0, wFilter: 'all' }; }
   function shift(day, n) { return T.day(T.at(day) + n * 86400000 + 43200000); }
   function monday(day) { return shift(day, -((T.dow(T.at(day)) + 6) % 7)); }
   function dates() { return DAYS.map(function (_, i) { return shift(M.week, i); }); }
@@ -20,8 +20,8 @@
   function shown() { return !!(M.root && document.body.contains(M.root)); }
   function dirtyDraft() { return !!(M.draft && JSON.stringify(M.draft) !== M.original); }
   function workDirty(draft) { return !!(draft && (draft.newEvent || JSON.stringify([draft.checked, draft.note]) !== draft.original)); }
-  function dirty() { return dirtyDraft() || M.saveBusy || M.importBusy || !!M.archiveBusy || Object.keys(M.pending).length > 0 || Object.keys(M.workDrafts).some(function (key) { return workDirty(M.workDrafts[key]); }) || !!(picker && (picker.busy || picker.selected)); }
-  function busy() { return M.saveBusy || M.importBusy || !!M.archiveBusy || Object.keys(M.pending).length > 0; }
+  function dirty() { return dirtyDraft() || weighDirty() || M.wBusy || M.saveBusy || M.importBusy || !!M.archiveBusy || Object.keys(M.pending).length > 0 || Object.keys(M.workDrafts).some(function (key) { return workDirty(M.workDrafts[key]); }) || !!(picker && (picker.busy || picker.selected)); }
+  function busy() { return M.wBusy || M.saveBusy || M.importBusy || !!M.archiveBusy || Object.keys(M.pending).length > 0; }
   function clearReads() { generation++; M.tasks = []; M.done = []; M.cache = Object.create(null); M.state = 'idle'; M.range = ''; M.error = ''; M.readAt = 0; }
   function reset() { var root = M.root; closePicker(true, true); clearTimeout(savedTimer); clearTimeout(boundaryTimer); if (C.discardAttempt) C.discardAttempt(); generation++; recorder = context = ''; M = blank(); M.root = root; }
   function access() {
@@ -50,6 +50,7 @@
     // The section the page opens on (25 Nov 2026): worked out when the list is read (open, Refresh, a save's reload), never
     // on a redraw, so the list cannot reorder under a thumb. An older book without the bridge gives none.
     M.lead = leadNow();
+    if (M.view === 'setup' && C.chef()) loadPlan();
     Object.keys(M.workDrafts).forEach(function (key) { var d = M.workDrafts[key], r = M.done.filter(function (value) { return value.task === d.task && value.day === d.day && value.flow && value.flow.slot === d.slot; })[0]; if (r && JSON.stringify([d.checked.slice().sort(), d.note.trim()]) === JSON.stringify([r.flow.checked.slice().sort(), r.flow.note])) { if (M.flowErrors[key]) { var task = M.tasks.filter(function (value) { return value.id === d.task; })[0]; M.flowSaved[key] = 'Earlier save confirmed for ' + (task ? task.text : 'this clean') + '. Checked ' + T.clock(data.readAt) + '.'; } delete M.workDrafts[key]; delete M.flowErrors[key]; } });
   }
   function load(force) {
@@ -448,15 +449,106 @@
   function repeatTasks() { return chefGroups(M.tasks.filter(function (task) { return task.until === OPEN; })).reduce(function (list, group) { return list.concat(group.tasks); }, []); }
   function repeatMatches() { return repeatTasks().filter(function (task) { return (M.repeatQuery.trim() || M.repeatGroup === 'all' || chefGroupId(task) === M.repeatGroup) && matchesWords(task, M.repeatQuery, T.day()); }); }
   function editorBlock(outside) { return '<div class="cln-editor">' + (outside ? '<p class="hint cln-editor-context">Your selected task is outside this search or page. Its changes are kept here.</p>' : '') + '<h3 class="cln-editor-title">' + esc(M.editId ? M.draft.text || 'Edit cleaning task' : 'New cleaning task') + '</h3>' + editorForm() + '</div>'; }
+  /* Weights and days (head chef, 26 Nov 2026, results by section, step 3; docs/cleaning-schedule.md, Weights and days).
+     Every weekly and monthly job (K.round(): the jobs whose row says how often) as one row by section, with Light,
+     Medium and Heavy and an optional kind, and one Save. The weights live in one record keyed by each job's root id,
+     so a job moved to another day keeps its weight: C.planRead (1 read when a chef opens Repeat tasks, and Refresh)
+     and C.planSave (one merged write of the jobs changed). A failed read is never "no weight yet": the count waits and
+     Save stays off. Unsaved weights are this page's work: they count as unsent, and go with a lock or a handover. */
+  var WEIGHTS = ['', 'Light', 'Medium', 'Heavy'], KINDS = ['Shelves', 'Fridges', 'Behind equipment', 'Floors', 'Drawers', 'Equipment'];
+  function jobKey(task) { return typeof task.root === 'string' && task.root ? task.root : task.id; }
+  function weighJobs() { return K && K.round ? M.tasks.filter(function (task) { return task.until === OPEN && K.round(task); }) : []; }
+  // only the values this page knows: a weight of 1 to 3, a kind from the list. Anything else in the record is left alone
+  function planClean(data) {
+    var w = {}, k = {}, dw = data && data.w && typeof data.w === 'object' ? data.w : {}, dk = data && data.k && typeof data.k === 'object' ? data.k : {};
+    Object.keys(dw).forEach(function (key) { if ([1, 2, 3].indexOf(dw[key]) >= 0) w[key] = dw[key]; });
+    Object.keys(dk).forEach(function (key) { if (KINDS.indexOf(dk[key]) >= 0) k[key] = dk[key]; });
+    return { w: w, k: k };
+  }
+  function weightOf(task) { var key = jobKey(task); return M.wDraft[key] || M.plan.w[key] || 0; }
+  function kindOf(task) { var key = jobKey(task); return key in M.kDraft ? M.kDraft[key] : M.plan.k[key] || ''; }
+  function weighChanges() {
+    var w = {}, k = {}, n = {};
+    Object.keys(M.wDraft).forEach(function (key) { if (M.wDraft[key] !== (M.plan.w[key] || 0)) { w[key] = M.wDraft[key]; n[key] = 1; } });
+    Object.keys(M.kDraft).forEach(function (key) { if (M.kDraft[key] !== (M.plan.k[key] || '') && M.kDraft[key]) { k[key] = M.kDraft[key]; n[key] = 1; } });
+    return { w: w, k: k, jobs: Object.keys(n).length };
+  }
+  function weighDirty() { return weighChanges().jobs > 0; }
+  function loadPlan(force) {
+    if (!C.chef() || !C.planRead || M.plan.state === 'loading' || (M.plan.state === 'ok' && !force)) return;
+    var gen = generation; M.plan.state = 'loading'; M.plan.error = '';
+    // On Repeat tasks only the one line changes (patchNotice), so the page is not drawn again under the chef's hand
+    C.planRead().then(function (data) { if (gen !== generation) return; var c = planClean(data); M.plan = { state: 'ok', w: c.w, k: c.k, error: '' }; if (M.weights) draw(); else patchNotice(); },
+      function (error) { if (gen !== generation) return; M.plan.state = 'error'; M.plan.error = error && error.code === 'permission-denied' ? 'Only the head chef and the sous chefs can read the weights.' : navigator.onLine === false || error && (error.code === 'unavailable' || error.code === 'deadline-exceeded') ? 'No signal.' : 'Check the connection.'; if (M.weights) draw(); else patchNotice(); });
+  }
+  function patchNotice() {
+    var at = M.root && M.root.querySelector('.cln-weights-notice, .cln-weights-link'); if (!at) { if (M.view === 'setup') draw(); return; }
+    var had = at.contains(document.activeElement), html = weightsNotice();
+    if (!html) { at.remove(); return; }
+    at.outerHTML = html; if (had) { var link = M.root.querySelector('[data-cln="weights"]'); if (link) link.focus({ preventScroll: true }); }
+  }
+  // the line on Repeat tasks that opens the list: how many jobs still have no weight, once the weights are read
+  function weightsNotice() {
+    if (!C.planRead || M.state !== 'ok') return '';
+    var jobs = weighJobs(); if (!jobs.length) return '';
+    var link = '<button type="button" class="p-link" data-cln="weights">Weights and days</button>';
+    var none = M.plan.state === 'ok' ? jobs.filter(function (task) { return !M.plan.w[jobKey(task)]; }).length : -1;
+    if (none > 0) return '<div class="cln-attention cln-weights-notice" role="status"><b>' + none + (none === 1 ? ' weekly or monthly job has' : ' weekly and monthly jobs have') + ' no weight yet</b><span class="hint">Say how long each takes at close: light, medium or heavy.</span>' + link + '</div>';
+    return '<p class="hint cln-weights-link">' + (M.plan.state === 'error' ? 'Could not read the weights. ' : M.plan.state === 'ok' ? 'Every weekly and monthly job has a weight. ' : '') + link + '</p>';
+  }
+  function weighRow(task) {
+    var w = weightOf(task), kind = kindOf(task), id = esc(task.id), name = esc(task.text);
+    return '<li class="cln-template-item cln-weigh-row" role="listitem" data-template="' + id + '"><div class="cln-template-summary"><div><b>' + name + '</b><small class="cln-weigh-meta">' + esc(rhythm(task)) + (w ? '' : ' · No weight yet') + '</small></div></div>' +
+      '<div class="cln-weigh-ctl"><span class="chips" role="group" aria-label="How long ' + name + ' takes">' + [1, 2, 3].map(function (n) { return '<button type="button" class="chip" data-cln="weigh" data-id="' + id + '" data-w="' + n + '" aria-pressed="' + (w === n) + '"' + (M.wBusy ? ' disabled' : '') + '>' + WEIGHTS[n] + '</button>'; }).join('') + '</span>' +
+      '<label class="cln-kind"><span class="visually-hidden">Kind of job, optional: ' + name + '</span><select data-cln-kind="' + id + '"' + (M.wBusy ? ' disabled' : '') + '><option value="">Kind (optional)</option>' + KINDS.map(function (x) { return '<option' + (x === kind ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select></label></div></li>';
+  }
+  function weighDock() {
+    var c = weighChanges(), none = weighJobs().filter(function (task) { return !weightOf(task); }).length;
+    var say = M.wError ? '<span class="cln-weigh-err" role="alert">' + esc(M.wError) + '</span>' : M.wBusy ? 'Saving ' + c.jobs + (c.jobs === 1 ? ' job...' : ' jobs...') : c.jobs ? '<b>' + c.jobs + ' not saved.</b>' + (none ? ' ' + none + ' with no weight yet.' : '') : M.wSaved ? '<span class="lk-stamp">Saved</span> ' + esc(T.clock(M.wSaved)) + '.' + (none ? ' ' + none + ' with no weight yet.' : '') : none ? none + ' with no weight yet.' : 'Every job has a weight.';
+    return '<div class="cln-weigh-dock sv-dock"><span class="hint" role="status">' + say + '</span><span class="btn-row">' + (c.jobs && !M.wBusy ? '<button type="button" class="btn" data-cln="weights-undo">Undo changes</button>' : '') +
+      '<button type="button" class="btn dark" data-cln="weights-save"' + (c.jobs && !M.wBusy && M.plan.state === 'ok' ? '' : ' disabled') + '>' + (M.wBusy ? ink('Saving...') : 'Save ' + (c.jobs || '') + (c.jobs === 1 ? ' job' : ' jobs')) + '</button></span></div>';
+  }
+  function weightsPage() {
+    var jobs = weighJobs(), st = M.plan.state;
+    var head = '<section class="nb-page cln-plan cln-weights" aria-labelledby="rtitle"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Cleaning</h2><p class="nb-date" id="cln-plan-title" tabindex="-1">Weights and days' + (M.state === 'ok' ? ' · ' + jobs.length + ' weekly and monthly jobs' : '') + '</p></div><button type="button" class="p-link" data-cln="weights-back">Back to Repeat tasks</button></header><div class="cln-plan-body">' + readLine();
+    if (M.state === 'error') return head + clnFailLine() + '</div></section>';
+    if (M.state !== 'ok' || st === 'loading' || st === 'idle') return head + loading() + '</div></section>';
+    if (st === 'error') return head + '<div class="p-err" role="alert">Could not read the weights. ' + esc(M.plan.error) + ' <button type="button" class="chip" data-cln="weights-retry">Try again</button></div></div></section>';
+    if (!jobs.length) return head + '<p class="hint" role="status">No weekly or monthly jobs yet. Add one, or load the section cleaning list in Repeat tasks.</p></div></section>';
+    var none = jobs.filter(function (task) { return !weightOf(task); }).length, shown = M.wFilter === 'none' ? jobs.filter(function (task) { return !M.plan.w[jobKey(task)]; }) : jobs;
+    var groupsOf = {}, order = [];
+    shown.forEach(function (task) { var name = owner(task, T.day()); if (!groupsOf[name]) { groupsOf[name] = []; order.push(name); } groupsOf[name].push(task); });
+    order.sort(function (a, b) { return (a === 'Shared kitchen' ? 1 : 0) - (b === 'Shared kitchen' ? 1 : 0) || (a < b ? -1 : a > b ? 1 : 0); });
+    return head + '<p class="hint">How long each weekly or monthly job takes at close: light, medium or heavy. Nightly jobs and the numbered Pack down steps are not here.</p>' +
+      '<div class="chips cln-weigh-filter" role="group" aria-label="Show"><button type="button" class="chip" data-cln="weights-filter" data-f="all" aria-pressed="' + (M.wFilter !== 'none') + '">All ' + jobs.length + '</button><button type="button" class="chip" data-cln="weights-filter" data-f="none" aria-pressed="' + (M.wFilter === 'none') + '">No weight ' + none + '</button></div>' +
+      (shown.length ? order.map(function (name) { return '<h3 class="nb-hd cln-weigh-h">' + esc(name) + '<span>' + groupsOf[name].length + (groupsOf[name].length === 1 ? ' job' : ' jobs') + '</span></h3><ul class="cln-templates cln-weigh-list" role="list">' + groupsOf[name].map(weighRow).join('') + '</ul>'; }).join('')
+        : '<p class="hint" role="status">Every weekly and monthly job has a weight.</p>') +
+      weighDock() + '</div></section>';
+  }
+  // a weight or a kind changes this page's work without drawing it again, so nothing moves under the thumb
+  function patchWeigh() { var dock = M.root && M.root.querySelector('.cln-weigh-dock'); if (dock) dock.outerHTML = weighDock(); }
+  function saveWeights() {
+    var c = weighChanges(); if (!c.jobs || M.wBusy || M.plan.state !== 'ok' || !C.planSave) return;
+    var model = M; M.wBusy = true; M.wError = ''; draw();
+    C.planSave(c.w, c.k).then(function () {
+      if (M !== model) return;
+      Object.keys(c.w).forEach(function (key) { M.plan.w[key] = c.w[key]; }); Object.keys(c.k).forEach(function (key) { M.plan.k[key] = c.k[key]; });
+      M.wDraft = {}; M.kDraft = {}; M.wBusy = false; M.wSaved = T.now(); draw();
+    }, function (error) {
+      if (M !== model) return;
+      M.wBusy = false; M.wError = error && error.code === 'permission-denied' ? 'Refused: only the head chef and the sous chefs change the weights. Nothing was saved.' : 'Not saved. ' + (navigator.onLine === false ? 'No signal. ' : '') + 'Your changes are kept here: press Save again.'; draw();
+    });
+  }
   function editor() {
     if (!C.chef() || !M.editor) return '';
+    if (M.weights) return weightsPage();
     var current = repeatTasks(), matching = repeatMatches(), d = M.draft; M.repeatPage = Math.max(0, Math.min(M.repeatPage, Math.ceil(matching.length / 6) - 1));
     var shownTasks = matching.slice(M.repeatPage * 6, M.repeatPage * 6 + 6), inline = d && M.editId && shownTasks.some(function (task) { return task.id === M.editId; });
     var items = shownTasks.map(function (task, i) { return '<li class="cln-template-item" role="listitem" data-template="' + esc(task.id) + '"><div class="cln-template-summary" style="--cln-row:' + (i + 1) + '"><div><b>' + esc(task.text) + '</b><small>' + esc(task.area + ' · ' + owner(task, T.day())) + '</small><small>' + esc(templateLabel(task)) + (task.from > T.at(T.day()) ? ' · Starts ' + esc(shortDay(T.day(task.from))) : '') + '</small></div><div class="cln-template-actions"><button type="button" class="p-link" data-cln="edit" data-id="' + esc(task.id) + '"' + (M.saveBusy || M.archiveBusy ? ' disabled' : '') + '>Edit</button><button type="button" class="p-link" data-cln="archive" data-id="' + esc(task.id) + '"' + (M.saveBusy || M.archiveBusy ? ' disabled' : '') + '>' + (M.archiveBusy === task.id ? ink('Archiving...') : B.armed && B.armed('cln-archive-' + task.id) ? 'Tap again to archive' : 'Archive') + '</button></div></div>' + (d && M.editId === task.id ? editorBlock(false) : '') + '</li>'; }).join('');
     if (d && !inline) items = '<li class="cln-template-item cln-new-editor" role="listitem">' + editorBlock(!!M.editId) + '</li>' + items;
     if (!d) items += '<li class="cln-template-item cln-new-editor" role="listitem"><div class="cln-editor"><p class="hint">Choose Edit beside a task, or Add cleaning task. One editor opens here.</p></div></li>';
     return '<section class="nb-page cln-plan" aria-labelledby="rtitle"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Cleaning</h2><p class="nb-date" id="cln-plan-title" tabindex="-1">Repeat tasks' + (M.state === 'ok' ? ' · ' + current.length + ' current tasks' : '') + '</p></div><button type="button" class="p-link" data-cln="hide-setup">Back to Today</button></header><div class="cln-plan-body">' + readLine() + earlierNotice() +
-      '<p class="hint">New tasks start today. Changes and archiving start tomorrow. Earlier cleaning records stay as recorded.</p>' + firstDateNotice() + workNotices(tasksOn(T.day()), T.day()) +
+      '<p class="hint">New tasks start today. Changes and archiving start tomorrow. Earlier cleaning records stay as recorded.</p>' + firstDateNotice() + weightsNotice() + workNotices(tasksOn(T.day()), T.day()) +
       (M.state === 'error' ? clnFailLine() : M.state !== 'ok' ? loading() : '') +
       (M.saveError && !d ? '<p class="p-err" role="alert">' + esc(M.saveError) + '</p>' : '') +
       '<div class="cln-repeat-browser"><div class="cln-searchbar"><label class="visually-hidden" for="cln-repeat-search">Find a repeat task in all groups</label><input type="search" class="search" id="cln-repeat-search" data-cln-control="repeat-query" placeholder="Find a repeat task or area" value="' + esc(M.repeatQuery) + '"><button type="button" class="btn dark" data-cln="add"' + (M.state !== 'ok' || M.saveBusy || M.archiveBusy ? ' disabled' : '') + '>Add cleaning task</button></div><label class="field" for="cln-repeat-group"><span class="label">Work group</span><select id="cln-repeat-group" data-cln-control="repeat-group"><option value="all">All groups</option>' + CHEF_GROUPS.map(function (group) { return '<option value="' + group[0] + '"' + (M.repeatGroup === group[0] ? ' selected' : '') + '>' + esc(group[1]) + '</option>'; }).join('') + '</select></label>' + (M.repeatQuery.trim() ? '<p class="hint cln-repeat-scope" role="status">Searching all groups. Clear search to use the selected work group.</p>' : '') + pager(matching.length, M.repeatPage, 'repeat-page', M.repeatGroup) +
@@ -700,11 +792,24 @@
     else if (action === 'flow-discard' && hasPlan(task)) { var discardKey = flowKey(task, button.getAttribute('data-day'), button.getAttribute('data-slot')); delete M.workDrafts[discardKey]; delete M.flowErrors[discardKey]; draw(); }
     else if (action === 'flow-quick' && hasPlan(task)) { var quickDay = button.getAttribute('data-day'), quickSlot = button.getAttribute('data-slot'), quickKind = button.getAttribute('data-kind'), quickCurrent = flowRecord(task, quickDay, quickSlot); if (quickCurrent && quickCurrent.done) { if (!C.canUndo(quickCurrent)) return; workDraft(task, quickDay, { slot: quickSlot, kind: quickKind, record: quickCurrent }).note = 'Undo by recorder'; flowAction(task, quickDay, quickSlot, quickKind, 'reopen', null, 'quick'); } else flowAction(task, quickDay, quickSlot, quickKind, 'perform', null, 'quick'); }
     else if (hasPlan(task) && ['flow-save', 'flow-block', 'flow-perform', 'flow-verify', 'flow-reopen'].indexOf(action) >= 0) flowAction(task, button.getAttribute('data-day'), button.getAttribute('data-slot'), button.getAttribute('data-kind'), action.slice(5));
-    else if (action === 'refresh') load(true);
+    else if (action === 'refresh') { if (M.view === 'setup' && C.chef() && !M.wBusy) M.plan.state = 'idle'; load(true); }
+    else if (action === 'weights' && C.chef()) { M.weights = true; M.wError = ''; draw(); loadPlan(); var wh = M.root.querySelector('#cln-plan-title'); if (wh) wh.focus(); }
+    else if (action === 'weights-back' && C.chef()) { M.weights = false; draw(); var wb = M.root.querySelector('[data-cln="weights"]'); if (wb) wb.focus(); else { var rh = M.root.querySelector('#cln-plan-title'); if (rh) rh.focus(); } }
+    else if (action === 'weights-retry' && C.chef()) { M.plan.state = 'idle'; loadPlan(); draw(); }
+    else if (action === 'weights-filter' && C.chef()) { M.wFilter = button.getAttribute('data-f') === 'none' ? 'none' : 'all'; draw(); }
+    else if (action === 'weights-undo' && C.chef() && !M.wBusy) { M.wDraft = {}; M.kDraft = {}; M.wError = ''; draw(); }
+    else if (action === 'weights-save' && C.chef()) saveWeights();
+    else if (action === 'weigh' && C.chef() && task && !M.wBusy) {
+      var wk = jobKey(task), wv = +button.getAttribute('data-w');
+      M.wDraft[wk] = wv; M.wError = ''; M.wSaved = 0;
+      Array.prototype.forEach.call(button.parentNode.querySelectorAll('[data-cln="weigh"]'), function (chip) { chip.setAttribute('aria-pressed', String(+chip.getAttribute('data-w') === wv)); });
+      var meta = button.closest('.cln-weigh-row').querySelector('.cln-weigh-meta'); if (meta) meta.textContent = rhythm(task);
+      patchWeigh();
+    }
     else if (action === 'today' || action === 'week') { M.view = action === 'week' && C.chef() ? 'week' : 'today'; draw(); load(); }
     else if (C.chef() && (action === 'previous' || action === 'next' || action === 'this-week')) { M.week = action === 'this-week' ? monday(T.day()) : shift(M.week, action === 'previous' ? -7 : 7); M.selected = M.week <= T.day() && T.day() <= shift(M.week, 6) ? T.day() : M.week; draw(); load(); }
     else if (action === 'day' && C.chef()) { M.selected = button.getAttribute('data-day'); M.workPage = 0; draw(); }
-    else if (action === 'setup' && C.chef()) { M.editor = true; M.view = 'setup'; draw(); if (M.state === 'idle') load(); var heading = M.root.querySelector('#cln-plan-title'); if (heading) heading.focus(); }
+    else if (action === 'setup' && C.chef()) { M.editor = true; M.view = 'setup'; M.weights = false; draw(); if (M.state === 'idle') load(); else loadPlan(); var heading = M.root.querySelector('#cln-plan-title'); if (heading) heading.focus(); }
     else if (action === 'hide-setup' && C.chef()) { if (dirtyDraft() || M.saveBusy) { M.saveError = 'Save or undo your unsaved changes before closing.'; draw(); } else { M.editor = false; M.view = 'today'; draw(); load(); } }
     else if (action === 'add') startEditor(null);
     else if (action === 'edit' && task) startEditor(task);
@@ -741,6 +846,12 @@
   document.addEventListener('toggle', function (event) { if (event.target.classList && event.target.classList.contains('cln-import')) { if (event.target.classList.contains('cln-pack-import')) M.packImportOpen = event.target.open; else if (event.target.classList.contains('cln-section-import')) M.sectionImportOpen = event.target.open; else M.importOpen = event.target.open; } }, true);
   document.addEventListener('input', function (event) { if (M.root && M.root.contains(event.target) && event.target.hasAttribute('data-cln-control') && event.target.tagName === 'INPUT') changeControl(event.target); });
   document.addEventListener('change', function (event) { if (M.root && M.root.contains(event.target) && event.target.hasAttribute('data-cln-control') && event.target.tagName === 'SELECT') changeControl(event.target); });
+  // a job's kind on Weights and days: kept as this page's work, no redraw (see patchWeigh)
+  document.addEventListener('change', function (event) {
+    var el = event.target; if (!M.root || !M.root.contains(el) || !el.hasAttribute('data-cln-kind') || !C.chef() || M.wBusy) return;
+    var task = taskById(el.getAttribute('data-cln-kind')); if (!task) return;
+    M.kDraft[jobKey(task)] = KINDS.indexOf(el.value) >= 0 ? el.value : ''; M.wError = ''; M.wSaved = 0; patchWeigh();
+  });
   document.addEventListener('submit', function (event) { if (event.target.id === 'cln-form') { event.preventDefault(); save(); } });
   document.addEventListener('click', function (event) {
     if (!popup || !popup.contains(event.target)) return; var button = event.target.closest('[data-cln-person], [data-cln-picker]'); if (!button || button.disabled) return; event.preventDefault();

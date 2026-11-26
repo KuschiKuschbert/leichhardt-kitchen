@@ -2285,6 +2285,21 @@
     if (['service', 'prep', 'use'].indexOf(kind) < 0 || !fb || !fb.fs) throw cleaningError('invalid-argument');
     return kind + '-' + fb.fs.doc(colRef('cleaningDone')).id;
   }
+  /* Cleaning weights (head chef, 26 Nov 2026, results by section, step 3; docs/cleaning-schedule.md, Weights and days).
+     One record, cleaningPlan/main, keyed by each job's root id: w, how long a job takes (1 light, 2 medium, 3 heavy),
+     and k, its kind. Chefs only; staff never read it. When: a chef opens Repeat tasks, and Refresh. Cost: 1 read, kept
+     in the page's memory. A missing record is an answer (no weights yet); a refused or failed read is not. */
+  function cleaningPlanRead() {
+    if (!cleaningChef()) return Promise.reject(cleaningError('permission-denied'));
+    return sdk().then(function () { return fb.fs.getDocFromServer(docRef('cleaningPlan', 'main')); }).then(function (sn) { return sn.exists() ? sn.data() : {}; });
+  }
+  // one merged save: only the jobs changed are sent, so a second chef's entries stay. w and k: { root id: value }
+  function cleaningPlanSave(w, k) {
+    if (!cleaningChef() || !canW() || !w || typeof w !== 'object') return Promise.reject(cleaningError('permission-denied'));
+    var data = { v: 1, w: w, at: now() };
+    if (k && typeof k === 'object' && Object.keys(k).length) data.k = k;
+    return W([['set', docRef('cleaningPlan', 'main'), data, true]]);
+  }
   function cleaningImport(templates) {
     if (!cleaningChef() || !canW() || !Array.isArray(templates) || !templates.length || templates.length > 100) return Promise.reject(cleaningError('permission-denied'));
     var drafts;
@@ -2432,7 +2447,7 @@
       box: function (done) { return done ? TICK : BOX; }, sheetBusy: function () { return sheetOpen() || ksWait || ovBack || dkFirstUp(); }, sheetNext: sheetNext,
       discardAttempt: function () { cleaningAttempt = null; cleaningActionAttempts = Object.create(null); },
       load: cleaningLoad, saveTask: cleaningSave, archiveTask: cleaningArchive, tick: cleaningTick, undo: cleaningUndo, canUndo: cleaningCanUndo,
-      importTasks: cleaningImport, act: cleaningAct, newSlot: cleaningNewSlot, due: cleaningDue, who: function () { return S.who; },
+      importTasks: cleaningImport, planRead: cleaningPlanRead, planSave: cleaningPlanSave, act: cleaningAct, newSlot: cleaningNewSlot, due: cleaningDue, who: function () { return S.who; },
       canVerify: function (task) { return cleaningTickOK() && !!task.plan && task.plan.verification && task.plan.verifiers.indexOf(S.who) >= 0; } };
   }
   /* Supplier workspace (24 Oct 2026). This bridge shares the kitchen's sign-in, writer, clock and pending-write
@@ -3726,6 +3741,7 @@
       .then(function () { return all('cleaningTasks'); }).then(function (r) { out.cleaningTasks = r; })
       .then(function () { return all('cleaningDone'); }).then(function (r) { out.cleaningDone = r; })
       .then(function () { return all('cleaningActions'); }).then(function (r) { out.cleaningActions = r; })
+      .then(function () { return all('cleaningPlan'); }).then(function (r) { out.cleaningPlan = r; })
       .then(function () { return all('team'); }).then(function (r) { out.team = r; })
       .then(function () { return all('cutdone'); }).then(function (r) { out.cutdone = r; })
       .then(function () { part = 'deliveries'; return f.getDocs(f.query(colRef('deliveries'), f.where('day', '>=', shift(dayNow(), -399)), f.where('day', '<=', dayNow()))).then(grab); }).then(function (r) { out.deliveries = r; })
@@ -3869,7 +3885,8 @@
     })
       .then(function () {
         // Immutable cleaning history needs a source-bound copy procedure. Refuse before any destination write.
-        return Promise.all(['cleaningTasks', 'cleaningDone', 'cleaningActions'].map(function (name) {
+        // the cleaning weights (cleaningPlan) only exist beside these, so a kitchen that has them is refused here too
+        return Promise.all(['cleaningTasks', 'cleaningDone', 'cleaningActions', 'cleaningPlan'].map(function (name) {
           return f.getDocs(f.query(oc(name), f.limit(1))).then(function (sn) { got(sn); if (sn.docs.length) throw { code: 'cleaning-copy' }; });
         }));
       }).then(readRoster).then(function () { return readCol('pinset'); }).then(function () { return readCol('staffpins'); }).then(function () { return readCol('activity'); }).then(function () { return readCol('sections'); })
