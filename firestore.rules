@@ -1379,25 +1379,6 @@ service cloud.firestore {
       allow create: if staff() && foolsOk(sid);
       allow update, delete: if false;
     }
-    match /kitchens/KITCHEN_PIN/screens/{uid} {
-      // Screens the book runs on (26 Nov 2026, docs/device-coverage.md): one record per device, screens/<its anonymous uid>,
-      // { sw, sh, w, h, dpr, tp, ptr, mouse, hov, app, kind, sec, at, by }. Written by anyone signed in on that device with
-      // their own PIN, functions only too (the front of house screen), as a whole record (set, no merge), so a second person
-      // on a shared screen replaces it. Numbers in range and words from fixed lists only. Read and removed by the verified admin.
-      function screenOk(uid) {
-        let d = request.resource.data;
-        let keys = ['sw', 'sh', 'w', 'h', 'dpr', 'tp', 'ptr', 'mouse', 'hov', 'app', 'kind', 'sec', 'at', 'by'];
-        return request.auth != null && request.auth.uid == uid && d.keys().hasAll(keys) && d.keys().hasOnly(keys)
-          && d.sw is int && d.sw >= 0 && d.sw <= 20000 && d.sh is int && d.sh >= 0 && d.sh <= 20000
-          && d.w is int && d.w >= 0 && d.w <= 20000 && d.h is int && d.h >= 0 && d.h <= 20000
-          && d.dpr is number && d.dpr > 0 && d.dpr <= 10 && d.tp is int && d.tp >= 0 && d.tp <= 64
-          && d.ptr in ['coarse', 'fine', 'none'] && d.mouse is bool && d.hov is bool && d.app is bool
-          && d.kind in ['shared', 'personal', ''] && d.sec is string && d.sec.size() <= 80
-          && d.at is int && d.at > 0 && d.at <= request.time.toMillis() + 300000;
-      }
-      allow read, delete: if isAdmin();
-      allow create, update: if session() && screenOk(uid);
-    }
     // Who has seen a shift ping: one small record per person, ping and day, written when they tap Got it.
     // The record id is the day, an underscore and the writer's id. Records are never changed or deleted.
     match /kitchens/KITCHEN_PIN/notes/{id}/seen/{sid} {
