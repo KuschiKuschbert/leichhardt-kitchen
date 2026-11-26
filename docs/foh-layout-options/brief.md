@@ -116,7 +116,7 @@ Every scorer read the brief, the packet, the contracts, the design misses, the f
 
 ## The mix: B's form with A's service view (combined preview)
 
-[`designs/mix.css`](designs/mix.css), pictures in `previews/mix/`. A lead synthesis of the parts most scorers chose, with the keeper's fault repaired; its numbers are its own, measured on the stand-in.
+[`designs/mix.css`](designs/mix.css) and [`designs/mix.js`](designs/mix.js), pictures in `previews/mix/`. A lead synthesis of the parts most scorers chose, with the keeper's fault repaired; its numbers are its own, measured on the stand-in. The form is drawn as the build would draw it: The function, then a plain wrapper of Platters and When the platters go out, then a plain wrapper of the notes and the kitchen comment, all in the page's own order, in a grid of two rows (`mix.js` stands in for the change to `js/fnedit.js`). Nothing is pinned to a numbered row, and the right column's second row takes the slack, so no gap opens under The function (a first repair without wrappers left gaps of about 90 px, the keeper found).
 
 | Source and part | Take or reject | Principle | Kitchen benefit | Conflict or cost | Evidence |
 | --- | --- | --- | --- | --- | --- |
@@ -134,7 +134,41 @@ Every scorer read the brief, the packet, the contracts, the design misses, the f
 | Service, 3 trips: every Confirm out and the next countdown in view (today) | yes (no) | yes (no) | yes (no) |
 | Service, 4 trips: Confirm out in view (today) | 4 of 4 (3) | 3 of 4 (2) | |
 
-Phones, the tablet and the kitchen's service view: the same pixels as today. Page errors 0, no sideways scroll, in every case.
+Phones and the kitchen's service view: the same pixels as today. The tablet's form: 102 pixels differ, all at box corners (the wrappers take no room there, and the edges fall on a slightly different fraction of a pixel; side by side there is no visible change); the build checks it again. Page errors 0, no sideways scroll, in every case.
 
-**Review status:** the mix is two parts every scorer already judged (B's form, A's service view), plus the repair. The repair went back to the keeper, who reproduced the fault (below).
+**Review status:** the mix is two parts every scorer already judged (B's form, A's service view), plus the repair. The repair went back to the keeper, who reproduced the fault. Its answer: "The repair holds: with no numbered rows, each piece sits in page order." Its own copy of the form's order adds a restored draft on a saved function and a problems list, in page order too. It scored the mix's form 7, up from 5 for B as previewed, level with C. It named one new cost, gaps in the left column; the wrappers above remove them (the notes now start at 1041 px at 1920, against 1110 with the gaps). Still Not evidenced, it said: the draft bar (Check and confirm, Save draft), a save conflict, the review step, All at once with no rounds, an open booking contact, and Tab order; on the service view, Out today only, a pending confirm, a failed read, Waiting N min. With four trips at 1536 one Confirm out and the next countdown fall below.
 
+## Recommendation
+
+**Recommend the mix: B's form (two columns from 1150 px, drawn with plain wrappers in the page's order) with A's service view (the waiting trips side by side across the shelf from 1100 px).**
+
+- **The service view, A, is the council's clear choice (seven of seven, 50 points against 38 and 39).** With three trips waiting, every Confirm out and the next round's countdown are in view as the page opens at 1920, 1536 and 1280; today none of the rounds are. It keeps the 22 Nov 2026 order (the coordinator's confirmation queue first, on top) and the 14 Nov 2026 trip (the platters lead, large). It needs only CSS.
+- **The form, B, by four of seven and the highest total (45 against 42).** The platter rows sit on the first screen beside the guests, date and time they depend on, at every wide width (today none do); the guests and round 2's time are one scroll apart instead of two; at a quiet hour 13 fields are in view at 1920 (7 today) and 9 on the laptop (7). It changes the laptop, where most bookings are made.
+- **Why not C's form** (the head chef's scorer, the keeper and the UX designer preferred it): it keeps the guests on the laptop's first screen with the band open and one scroll for a six-kind booking, and reads in page order; but no platter row reaches the first screen at 1920, and about 440 px of paper sits blank beside the round grid. It is the alternative if you would rather keep the guests in view on the laptop than the platters.
+- **Main downside:** on the laptop with the band open the guests sit just below the first screen, and a six-kind booking still takes two scrolls; Tab goes from The function to the platters on the right, then back to the notes on the left.
+- **Not a layout, a fix:** the second tap that confirms the next trip (Reproduced today and in every design) goes in its own pull request whichever you choose.
+- **Disagreement:** the head chef's scorer, the keeper and the UX designer would take C's form. The skeptic and the head chef's scorer call the whole study a modest gain; "Build nothing" is a fair answer, as Fay can scroll and the kitchen sends either way.
+- **Departures:** none from a decision. The form's two columns are a new layout (your OK).
+
+## Contract fit and references
+
+| Check | The mix | Evidence |
+| --- | --- | --- |
+| Surface purpose | Works: the form stays quiet paper, the service board charcoal, the band charcoal | Pictures |
+| State meaning | Works: Waiting, Waiting N min and Confirm out keep their words, icons and colours; nothing new is coloured | Pictures; Waiting N min and Not confirmed Not evidenced in a picture |
+| Words and exceptions | Works: no word changes | Source |
+| Real contrast and focus | Not evidenced: no new colour (the cards' edge is the board's own line colour); contrast and keyboard focus not measured | |
+| Relevant states | Needs work: checked existing, new and restored forms, 0, 1, 3 and 4 trips; the rest the keeper named are Not evidenced | `study.json` |
+| Service continuity | Works: Confirm out one tap, 48 px, unchanged; on a confirm the rounds move 33 px (184 today); no new tap, sheet or button | `checks.second-tap-*` |
+
+| Reference | A | B | C | The mix |
+| --- | --- | --- | --- | --- |
+| Linear (the action beside its work) | Works (each Confirm out in its trip) | Works | Needs work (Confirm out 750 to 1,100 px from its trip) | Works |
+| Things 3 (today's work in view) | Works (service) | Needs work (2 of 3 trips at 1536) | Needs work (0 rounds at 1536) | Works |
+| Airbnb (time, place, needs and next step together) | Needs work (form: nothing at 1280) | Works (form) | Works (form: guests in view) | Works |
+| Flighty (now and next; nothing moving) | Works (rounds move 33 px) | Needs work (rounds jump 615 px sideways) | Works | Works |
+| Todoist (known fields in view) | Works at 1536 only | Works | Works | Works |
+
+## Before the build is ready
+
+One pull request for the layout (`css/app.css`, the wrappers in `js/fnedit.js`; no reads, writes, listeners or rules), measured again on the implemented app at 1099, 1100, 1101, 1149, 1150, 1151, 1280, 1536 and 1920, and at 390 and 768 (the same pixels, or the corner anti-aliasing named): a new function, a draft with Check and confirm and Save draft, a restored draft, a save conflict, problems listed, the review step, All at once, an open booking contact, six kinds in five rounds (with a sign that the round grid goes on), extra large text; the service view with 0, 1, 3, 4 and 5 trips, Out today only, a pending confirm, a failed read, Waiting N min and Not confirmed; Tab through the form at 1280. A click test file holds the order and the cards. The second-tap fix goes in its own pull request, with a test that taps the same spot twice.
