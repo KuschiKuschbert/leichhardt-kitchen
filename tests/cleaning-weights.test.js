@@ -55,8 +55,13 @@ const dock = p => p.evaluate(() => { const d = document.querySelector('.cln-weig
     // the kind is the book's own picker over a select (LK_UX); choosing in it sets the select and sends change
     await p.evaluate(() => { const s = document.querySelector('.cln-weigh-row[data-template="clean-template-sc-fry-01"] select'); s.value = 'Fridges'; s.dispatchEvent(new Event('change', { bubbles: true })); });
     const after = await at();
-    ok((await row('clean-template-sc-pans-02')).pressed === 'Medium' && Math.abs(after - before) < 2 && /^2 not saved\. 19 with no weight yet\. ?Undo changes ?Save 2 jobs$/.test(await dock(p)), width + ': a chosen weight shows at once and nothing moves; the bar says what is not saved (' + await dock(p) + ', moved ' + (after - before) + ' px)');
-    ok(await p.evaluate(() => window.LK_PREP && typeof LK_PREP.dirty === 'function' ? LK_PREP.dirty() : true), width + ': the unsaved weights count as this page\'s work');
+    ok((await row('clean-template-sc-pans-02')).pressed === 'Medium' && Math.abs(after - before) < 2 && /^2 not saved\. 21 with no weight saved yet\. ?Undo changes ?Save 2 jobs$/.test(await dock(p)), width + ': a chosen weight shows at once and nothing moves; the bar says what is not saved (' + await dock(p) + ', moved ' + (after - before) + ' px)');
+    // leaving with unsaved weights says so and stays
+    await p.click('[data-cln="weights-back"]'); await L.settle(p, 200);
+    ok(!!(await p.$('.cln-weigh-row')) && /Save your weight changes, or Undo changes, before leaving\./.test(await dock(p)) && await p.evaluate(() => document.activeElement && document.activeElement.getAttribute('data-cln') === 'weights-save'), width + ': Back with unsaved weights says so, stays on the list, and puts focus on Save');
+    // Refresh keeps the list and its unsaved changes on screen
+    await p.click('[data-cln="refresh"]'); await L.settle(p, 600);
+    ok((await row('clean-template-sc-pans-02')).pressed === 'Medium' && (await p.$$('.cln-weigh-row')).length === ROUND, width + ': Refresh keeps the list and the unsaved changes on screen');
     const bar = await p.evaluate(() => { const d = document.querySelector('.cln-weigh-dock').getBoundingClientRect(), tab = document.querySelector('nav.tabbar'), tr = tab && tab.getClientRects().length ? tab.getBoundingClientRect() : null; return { bottom: Math.round(d.bottom), vh: innerHeight, tab: tr && tr.top > innerHeight / 2 ? Math.round(tr.top) : innerHeight, wide: document.documentElement.scrollWidth <= innerWidth,
       small: [...document.querySelectorAll('.cln-weights button, .cln-weights select')].filter(e => e.getClientRects().length && e.getBoundingClientRect().height < 44).map(e => e.textContent.trim().slice(0, 20)) }; });
     ok(bar.wide && !bar.small.length && bar.bottom <= Math.min(bar.vh, bar.tab) + 1, width + ': no sideways scroll, every control 44 px tall, the Save bar above the tab bar (' + JSON.stringify(bar) + ')');
@@ -67,7 +72,13 @@ const dock = p => p.evaluate(() => { const d = document.querySelector('.cln-weig
     const s = await stored(p);
     ok(s && s.w['clean-template-sc-pans-02'] === 2 && s.w['clean-template-sc-fry-01'] === 1 && s.k['clean-template-sc-fry-01'] === 'Fridges' && s.w['clean-template-sc-hot-02'] === 3 && s.w['clean-template-sc-hot-01'] === 2 && s.k['clean-template-sc-hot-02'] === 'Behind equipment' && s.by === 'sam' && s.v === 1,
       width + ': one merged save keeps the weights already saved, another chef\'s too, and says who saved (' + JSON.stringify(s && { w: Object.keys(s.w).length, k: s.k, by: s.by }) + ')');
-    ok(/^Saved \d\d:\d\d\. 19 with no weight yet\. ?Save jobs$/.test(await dock(p)), width + ': the bar says Saved with the time (' + await dock(p) + ')');
+    ok(/^Saved \d\d:\d\d\. 19 with no weight yet\. ?Save jobs$/.test(await dock(p)) && await p.$eval('[data-cln="weights-filter"][data-f="none"]', e => e.textContent) === 'No weight 19', width + ': the bar says Saved with the time (' + await dock(p) + ')');
+    // a kind put back to none is a change, saved as none; a save of kinds only keeps every weight
+    await p.evaluate(() => { const s = document.querySelector('.cln-weigh-row[data-template="clean-template-sc-hot-02"] select'); s.value = ''; s.dispatchEvent(new Event('change', { bubbles: true })); });
+    ok(/^1 not saved\./.test(await dock(p)), width + ': putting a kind back to none counts as a change (' + await dock(p) + ')');
+    await p.click('[data-cln="weights-save"]'); await L.waitFor(p, () => /Saved/.test((document.querySelector('.cln-weigh-dock') || {}).textContent || ''), null, 6000).catch(() => {});
+    const s2 = await stored(p);
+    ok(s2 && s2.k['clean-template-sc-hot-02'] === '' && s2.w['clean-template-sc-hot-02'] === 3 && Object.keys(s2.w).length === 5 && (await row('clean-template-sc-hot-02')).kind === '', width + ': the kind is saved as none and every weight stays (' + JSON.stringify(s2 && s2.k) + ')');
     // back to Repeat tasks: the count follows, and the link stays once every job has one
     await p.click('[data-cln="weights-back"]'); await L.settle(p, 200);
     ok(/^19 weekly and monthly jobs have no weight yet/.test(await p.$eval('.cln-weights-notice', e => e.textContent.trim())) && await p.evaluate(() => document.activeElement && document.activeElement.getAttribute('data-cln') === 'weights'), width + ': back on Repeat tasks the count follows the save, the link in focus');

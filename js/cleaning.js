@@ -470,19 +470,23 @@
   function weighChanges() {
     var w = {}, k = {}, n = {};
     Object.keys(M.wDraft).forEach(function (key) { if (M.wDraft[key] !== (M.plan.w[key] || 0)) { w[key] = M.wDraft[key]; n[key] = 1; } });
-    Object.keys(M.kDraft).forEach(function (key) { if (M.kDraft[key] !== (M.plan.k[key] || '') && M.kDraft[key]) { k[key] = M.kDraft[key]; n[key] = 1; } });
+    Object.keys(M.kDraft).forEach(function (key) { if (M.kDraft[key] !== (M.plan.k[key] || '')) { k[key] = M.kDraft[key]; n[key] = 1; } });
     return { w: w, k: k, jobs: Object.keys(n).length };
   }
   function weighDirty() { return weighChanges().jobs > 0; }
   function loadPlan(force) {
-    if (!C.chef() || !C.planRead || M.plan.state === 'loading' || (M.plan.state === 'ok' && !force)) return;
-    var gen = generation; M.plan.state = 'loading'; M.plan.error = '';
+    if (!C.chef() || !C.planRead || M.plan.state === 'loading' || M.plan.again || (M.plan.state === 'ok' && !force)) return;
+    var gen = generation, again = M.plan.state === 'ok';
+    // read again (Refresh): the list and its unsaved changes stay on screen until the answer
+    if (again) { M.plan.again = true; C.planRead().then(function (data) { if (gen !== generation) return; var c = planClean(data); M.plan = { state: 'ok', w: c.w, k: c.k, error: '' }; if (M.weights) draw(); else patchNotice(); },
+      function () { if (gen !== generation) return; M.plan.again = false; if (M.weights) { M.wError = 'Could not check the weights again. These are the ones read before.'; patchWeigh(); } }); return; }
+    M.plan.state = 'loading'; M.plan.error = '';
     // On Repeat tasks only the one line changes (patchNotice), so the page is not drawn again under the chef's hand
     C.planRead().then(function (data) { if (gen !== generation) return; var c = planClean(data); M.plan = { state: 'ok', w: c.w, k: c.k, error: '' }; if (M.weights) draw(); else patchNotice(); },
       function (error) { if (gen !== generation) return; M.plan.state = 'error'; M.plan.error = error && error.code === 'permission-denied' ? 'Only the head chef and the sous chefs can read the weights.' : navigator.onLine === false || error && (error.code === 'unavailable' || error.code === 'deadline-exceeded') ? 'No signal.' : 'Check the connection.'; if (M.weights) draw(); else patchNotice(); });
   }
   function patchNotice() {
-    var at = M.root && M.root.querySelector('.cln-weights-notice, .cln-weights-link'); if (!at) { if (M.view === 'setup') draw(); return; }
+    var at = M.root && M.root.querySelector('.cln-weights-notice, .cln-weights-link'); if (!at) return;   // no line on the page: nothing to show
     var had = at.contains(document.activeElement), html = weightsNotice();
     if (!html) { at.remove(); return; }
     at.outerHTML = html; if (had) { var link = M.root.querySelector('[data-cln="weights"]'); if (link) link.focus({ preventScroll: true }); }
@@ -503,8 +507,8 @@
       '<label class="cln-kind"><span class="visually-hidden">Kind of job, optional: ' + name + '</span><select data-cln-kind="' + id + '"' + (M.wBusy ? ' disabled' : '') + '><option value="">Kind (optional)</option>' + KINDS.map(function (x) { return '<option' + (x === kind ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select></label></div></li>';
   }
   function weighDock() {
-    var c = weighChanges(), none = weighJobs().filter(function (task) { return !weightOf(task); }).length;
-    var say = M.wError ? '<span class="cln-weigh-err" role="alert">' + esc(M.wError) + '</span>' : M.wBusy ? 'Saving ' + c.jobs + (c.jobs === 1 ? ' job...' : ' jobs...') : c.jobs ? '<b>' + c.jobs + ' not saved.</b>' + (none ? ' ' + none + ' with no weight yet.' : '') : M.wSaved ? '<span class="lk-stamp">Saved</span> ' + esc(T.clock(M.wSaved)) + '.' + (none ? ' ' + none + ' with no weight yet.' : '') : none ? none + ' with no weight yet.' : 'Every job has a weight.';
+    var c = weighChanges(), none = weighJobs().filter(function (task) { return !M.plan.w[jobKey(task)]; }).length;   // saved, like the No weight filter
+    var say = M.wError ? '<span class="cln-weigh-err" role="alert">' + esc(M.wError) + '</span>' : M.wBusy ? 'Saving ' + c.jobs + (c.jobs === 1 ? ' job...' : ' jobs...') : c.jobs ? '<b>' + c.jobs + ' not saved.</b>' + (none ? ' ' + none + ' with no weight saved yet.' : '') : M.wSaved ? '<span class="lk-stamp">Saved</span> ' + esc(T.clock(M.wSaved)) + '.' + (none ? ' ' + none + ' with no weight yet.' : '') : none ? none + ' with no weight yet.' : 'Every job has a weight.';
     return '<div class="cln-weigh-dock sv-dock"><span class="hint" role="status">' + say + '</span><span class="btn-row">' + (c.jobs && !M.wBusy ? '<button type="button" class="btn" data-cln="weights-undo">Undo changes</button>' : '') +
       '<button type="button" class="btn dark" data-cln="weights-save"' + (c.jobs && !M.wBusy && M.plan.state === 'ok' ? '' : ' disabled') + '>' + (M.wBusy ? ink('Saving...') : 'Save ' + (c.jobs || '') + (c.jobs === 1 ? ' job' : ' jobs')) + '</button></span></div>';
   }
@@ -515,7 +519,7 @@
     if (M.state !== 'ok' || st === 'loading' || st === 'idle') return head + loading() + '</div></section>';
     if (st === 'error') return head + '<div class="p-err" role="alert">Could not read the weights. ' + esc(M.plan.error) + ' <button type="button" class="chip" data-cln="weights-retry">Try again</button></div></div></section>';
     if (!jobs.length) return head + '<p class="hint" role="status">No weekly or monthly jobs yet. Add one, or load the section cleaning list in Repeat tasks.</p></div></section>';
-    var none = jobs.filter(function (task) { return !weightOf(task); }).length, shown = M.wFilter === 'none' ? jobs.filter(function (task) { return !M.plan.w[jobKey(task)]; }) : jobs;
+    var none = jobs.filter(function (task) { return !M.plan.w[jobKey(task)]; }).length, shown = M.wFilter === 'none' ? jobs.filter(function (task) { return !M.plan.w[jobKey(task)]; }) : jobs;
     var groupsOf = {}, order = [];
     shown.forEach(function (task) { var name = owner(task, T.day()); if (!groupsOf[name]) { groupsOf[name] = []; order.push(name); } groupsOf[name].push(task); });
     order.sort(function (a, b) { return (a === 'Shared kitchen' ? 1 : 0) - (b === 'Shared kitchen' ? 1 : 0) || (a < b ? -1 : a > b ? 1 : 0); });
@@ -532,7 +536,7 @@
     var model = M; M.wBusy = true; M.wError = ''; draw();
     C.planSave(c.w, c.k).then(function () {
       if (M !== model) return;
-      Object.keys(c.w).forEach(function (key) { M.plan.w[key] = c.w[key]; }); Object.keys(c.k).forEach(function (key) { M.plan.k[key] = c.k[key]; });
+      Object.keys(c.w).forEach(function (key) { M.plan.w[key] = c.w[key]; }); Object.keys(c.k).forEach(function (key) { if (c.k[key]) M.plan.k[key] = c.k[key]; else delete M.plan.k[key]; });
       M.wDraft = {}; M.kDraft = {}; M.wBusy = false; M.wSaved = T.now(); draw();
     }, function (error) {
       if (M !== model) return;
@@ -770,7 +774,8 @@
     if (checkDay()) { event.preventDefault(); return; }
     var action = button.getAttribute('data-cln'), id = button.getAttribute('data-id'), task = id && taskById(id); event.preventDefault();
     if (busy() && ['refresh', 'today', 'week', 'setup', 'first-date', 'previous', 'next', 'this-week'].indexOf(action) >= 0) { P.toast('Wait for the cleaning change to save.'); return; }
-    if (action === 'tick' && task) tick(task, button.getAttribute('data-day'));
+    if (M.weights && weighDirty() && ['weights-back', 'today', 'week', 'setup', 'hide-setup'].indexOf(action) >= 0) { M.wError = 'Save your weight changes, or Undo changes, before leaving.'; patchWeigh(); var sv = M.root.querySelector('[data-cln="weights-save"]'); if (sv) sv.focus(); }
+    else if (action === 'tick' && task) tick(task, button.getAttribute('data-day'));
     else if (action === 'details' && hasPlan(task)) { var detailDay = button.getAttribute('data-day'), detailKey = occurrence(task, detailDay); M.expanded[detailKey] = !M.expanded[detailKey]; draw(); }
     else if (action === 'week-details' && hasPlan(task) && C.chef()) { M.selected = button.getAttribute('data-day'); M.expanded[occurrence(task, M.selected)] = true; draw(); var detail = M.root.querySelector('#cln-detail-' + occurrence(task, M.selected)); if (detail) { detail.setAttribute('tabindex', '-1'); detail.focus({ preventScroll: true }); } }
     else if (action === 'group' && C.chef()) { var group = button.getAttribute('data-group'); M.workGroup = M.workGroup === group ? '' : group; M.workPage = 0; draw(); }
@@ -792,7 +797,7 @@
     else if (action === 'flow-discard' && hasPlan(task)) { var discardKey = flowKey(task, button.getAttribute('data-day'), button.getAttribute('data-slot')); delete M.workDrafts[discardKey]; delete M.flowErrors[discardKey]; draw(); }
     else if (action === 'flow-quick' && hasPlan(task)) { var quickDay = button.getAttribute('data-day'), quickSlot = button.getAttribute('data-slot'), quickKind = button.getAttribute('data-kind'), quickCurrent = flowRecord(task, quickDay, quickSlot); if (quickCurrent && quickCurrent.done) { if (!C.canUndo(quickCurrent)) return; workDraft(task, quickDay, { slot: quickSlot, kind: quickKind, record: quickCurrent }).note = 'Undo by recorder'; flowAction(task, quickDay, quickSlot, quickKind, 'reopen', null, 'quick'); } else flowAction(task, quickDay, quickSlot, quickKind, 'perform', null, 'quick'); }
     else if (hasPlan(task) && ['flow-save', 'flow-block', 'flow-perform', 'flow-verify', 'flow-reopen'].indexOf(action) >= 0) flowAction(task, button.getAttribute('data-day'), button.getAttribute('data-slot'), button.getAttribute('data-kind'), action.slice(5));
-    else if (action === 'refresh') { if (M.view === 'setup' && C.chef() && !M.wBusy) M.plan.state = 'idle'; load(true); }
+    else if (action === 'refresh') { load(true); if (M.view === 'setup' && C.chef() && !M.wBusy) loadPlan(true); }
     else if (action === 'weights' && C.chef()) { M.weights = true; M.wError = ''; draw(); loadPlan(); var wh = M.root.querySelector('#cln-plan-title'); if (wh) wh.focus(); }
     else if (action === 'weights-back' && C.chef()) { M.weights = false; draw(); var wb = M.root.querySelector('[data-cln="weights"]'); if (wb) wb.focus(); else { var rh = M.root.querySelector('#cln-plan-title'); if (rh) rh.focus(); } }
     else if (action === 'weights-retry' && C.chef()) { M.plan.state = 'idle'; loadPlan(); draw(); }

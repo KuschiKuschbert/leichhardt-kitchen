@@ -1778,8 +1778,8 @@ service cloud.firestore {
       }
       function cleanPlanLevel(v) { return v is int && v >= 1 && v <= 3; }
       function cleanPlanShape(d) {
-        return d.keys().hasOnly(['v', 'w', 'k', 'd', 'at', 'by']) && d.keys().hasAll(['v', 'w', 'at', 'by'])
-          && d.v == 1 && d.w is map && d.w.size() <= 400
+        return d.keys().hasOnly(['v', 'w', 'k', 'd', 'at', 'by']) && d.keys().hasAll(['v', 'at', 'by'])
+          && d.v == 1 && (!('w' in d) || d.w is map && d.w.size() <= 400)
           && (!('k' in d) || d.k is map && d.k.size() <= 400)
           && (!('d' in d) || d.d is list && d.d.size() == 7 && cleanPlanLevel(d.d[0]) && cleanPlanLevel(d.d[1]) && cleanPlanLevel(d.d[2])
             && cleanPlanLevel(d.d[3]) && cleanPlanLevel(d.d[4]) && cleanPlanLevel(d.d[5]) && cleanPlanLevel(d.d[6]))

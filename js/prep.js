@@ -2294,10 +2294,14 @@
     return sdk().then(function () { return fb.fs.getDocFromServer(docRef('cleaningPlan', 'main')); }).then(function (sn) { return sn.exists() ? sn.data() : {}; });
   }
   // one merged save: only the jobs changed are sent, so a second chef's entries stay. w and k: { root id: value }
+  // An empty map in a merged save is a value to Firestore: it would replace the stored map and wipe every entry. So a
+  // map is sent only when it holds a change. A kind of '' clears that job's kind (the page reads '' as none).
   function cleaningPlanSave(w, k) {
-    if (!cleaningChef() || !canW() || !w || typeof w !== 'object') return Promise.reject(cleaningError('permission-denied'));
-    var data = { v: 1, w: w, at: now() };
-    if (k && typeof k === 'object' && Object.keys(k).length) data.k = k;
+    var hasW = !!w && typeof w === 'object' && Object.keys(w).length > 0, hasK = !!k && typeof k === 'object' && Object.keys(k).length > 0;
+    if (!cleaningChef() || !canW() || !(hasW || hasK)) return Promise.reject(cleaningError('permission-denied'));
+    var data = { v: 1, at: now() };
+    if (hasW) data.w = w;
+    if (hasK) data.k = k;
     return W([['set', docRef('cleaningPlan', 'main'), data, true]]);
   }
   function cleaningImport(templates) {

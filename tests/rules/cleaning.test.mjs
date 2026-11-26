@@ -370,6 +370,14 @@ try {
     let d = null; await env.withSecurityRulesDisabled(async c => { d = (await getDoc(ref(c.firestore(), planPath))).data(); });
     if (!(d.w.first === 1 && d.w.second === 3 && d.k.first === 'Shelves' && d.k.second === 'Fridges' && d.by === 'sous')) throw new Error(JSON.stringify(d));
   });
+  await check('a save of kinds only keeps every saved weight (no empty map is sent)', async () => {
+    await setDoc(ref(dbs.head, planPath), (({ w, ...x }) => x)(weightRec('head', { k: { first: 'Floors' } })), { merge: true });
+    let d = null; await env.withSecurityRulesDisabled(async c => { d = (await getDoc(ref(c.firestore(), planPath))).data(); });
+    if (!(d.w.first === 1 && d.w.second === 3 && d.k.first === 'Floors' && d.k.second === 'Fridges')) throw new Error(JSON.stringify(d));
+  });
+  await put({ [planPath]: null });
+  await check('the first save of all may hold kinds only', () => setDoc(ref(dbs.head, planPath), (({ w, ...x }) => x)(weightRec('head', { k: { first: 'Shelves' } })), { merge: true }));
+  await put({ [planPath]: weightRec('head', { w: { first: 1, second: 3 }, k: { first: 'Shelves' } }) });
   await check('what each day takes, seven days of 1 to 3', () => setDoc(ref(dbs.head, planPath), weightRec('head', { d: [3, 3, 2, 3, 3, 1, 1] }), { merge: true }));
   for (const [label, x] of [['six days', { d: [3, 3, 2, 3, 3, 1] }], ['a level of 4', { d: [3, 3, 2, 3, 3, 1, 4] }], ['a level as text', { d: [3, 3, '2', 3, 3, 1, 1] }],
     ['weights that are not a map', { w: [1, 2] }], ['an unknown field', { note: 'x' }], ['a version other than 1', { v: 2 }], ['an old time', { at: Date.now() - 3600000 }],
