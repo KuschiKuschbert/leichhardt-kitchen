@@ -5716,6 +5716,14 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .cln-you { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem .8rem; margin: .5rem 0 .2rem; padding: .55rem .8rem; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); }
 .cln-you b { font: 700 1.5rem/1.2 var(--display); overflow-wrap: anywhere; }
 .cln-you .btn { min-height: 44px; margin: 0; }
+/* Design M step 2: from 1100 px a cook's section and the rest of the kitchen side by side, not sticky, across the screen's
+   width (the page is held to 1240 px elsewhere; only a cook's Cleaning page lifts it). */
+@media (min-width: 1100px) {
+  .page:has(#cleaning-root .cln-split) { max-width: 1880px; }
+  .cln-split { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: 2.5rem; align-items: start; }
+  .cln-split > .cln-mine > .cln-you:first-child, .cln-split > .cln-mine > .cln-mine-title:first-child { margin-top: .4rem; }
+  .cln-split > .cln-others .nb-row { max-width: 60rem; }
+}
 .cln-page:not(.cln-chef-page) .cln-group-count { text-transform: none; letter-spacing: 0; }
 .cln-temp-line { margin: .6rem 0 .2rem; padding-top: .5rem; border-top: 1px solid var(--line); font-size: .875rem; color: var(--ink); }
 .cln-row { flex-wrap: nowrap; }
