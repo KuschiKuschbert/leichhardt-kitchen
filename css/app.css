@@ -5856,6 +5856,17 @@ button[data-cln-ready-label] > span { position: absolute; inset: 0; display: gri
 .cln-sug-pick { display: block; margin: 0 0 .45rem; }
 .cln-sug-pick input { min-height: 44px; max-width: 100%; }
 .cln-sug-state { margin: .4rem 0 0; }
+/* A new job's day in the Add form (step 4c): two-line day chips, the suggestion box, the weight and the kind */
+.cln-editor .cln-repeat .cln-day-chip { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 4.1rem; min-height: 52px; line-height: 1.15; }
+.cln-day-chip small { font: 400 .72rem/1.2 var(--body); color: var(--muted); }
+.cln-day-chip[aria-pressed="true"] small { color: #fff; }
+.cln-add-sug { display: flex; flex-direction: column; gap: .3rem; margin: .7rem 0 .2rem; }
+.cln-chef-page .cln-editor .cln-add-sug .hint { margin: 0; }
+.cln-add-tonight { color: var(--ink); }
+.cln-add-weight { margin-top: .6rem; }
+.cln-add-weight .chips { gap: .35rem; margin: .3rem 0 .2rem; }
+.cln-add-kind { margin-top: .4rem; max-width: 22rem; }
+.cln-add-note { margin: .5rem 0 0; }
 .cln-day-list { list-style: none; margin: .3rem 0 0; padding: 0; }
 .cln-day-row { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); align-items: center; gap: .2rem .8rem; padding: .35rem 0; border-bottom: 1px solid var(--rule); }
 .cln-day-row .chips { gap: .35rem; }
