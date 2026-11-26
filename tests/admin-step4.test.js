@@ -82,6 +82,15 @@ const store = p => p.evaluate(() => window.__fake.dump());
     await p.context().close();
   }
 
+  // one Inbox count: on a laptop the rail's Inbox shows its count and Today none; a phone keeps Today (3)
+  for (const [w, h, touch] of [[1280, 800, false], [390, 844, true]]) {
+    const p = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width: w, height: h, touch, wait: 1800, extra: Object.assign({ [K('config', 'admins')]: { x: 1, mailOpened: L.NOW } }, L.mail()) });
+    await L.waitFor(p, () => /kitchen mails? open/.test(document.body.textContent), null, 8000).catch(() => {}); await L.settle(p, 400);
+    const c = await p.evaluate(() => ({ today: (document.querySelector('[data-p="a-group"][data-g="today"]') || {}).innerText || '', inbox: ((document.querySelector('.a-quick[data-v="inbox"] em') || {}).innerText || '') }));
+    ok(w === 1280 ? c.today.trim() === 'Today' && /^\d+$/.test(c.inbox) : /^Today \(3\)$/.test(c.today.trim()), w + ': one count for the Inbox (' + JSON.stringify(c) + ')');
+    await p.context().close();
+  }
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });

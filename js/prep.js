@@ -7369,6 +7369,8 @@
     var navBusy = intelligenceBusy(), mlN = mlInfo().n, ag = adminGroupOf(at), agTabs = ag[2].filter(function (t) { return t !== 'overview' && (t !== 'mail' || mlOwner()); });
     // The shared rooms (4 Nov 2026 design B, plus Prep on 8 Nov): a rail on a laptop and one row on
     // a phone, with the room's pages as tabs beside its title. Page ids are the same as before the rooms.
+    // Today's mail count (.a-g-n) hides where the Inbox shows its own count beside it: one count for one queue (head chef,
+    // 27 Nov 2026, step 4); a phone, with no Inbox badge, keeps it
     // Redesign step 8 (8 Nov 2026, admin B): on a laptop the rail is dark and starts with Find (/), then the Inbox with its
     // count and the Dashboard, one tap from any room; the rooms follow. On a phone Find sits in the page heading and the
     // rooms stay one row. Drawn after the page, so the Inbox count is the one the page just drew (no read of its own).
@@ -7378,7 +7380,7 @@
         return '<button type="button" class="a-quick" data-p="a-view" data-v="' + q[0] + '"' + (navBusy ? ' disabled' : '') + ' aria-current="' + (at === q[0]) + '"><span>' + q[1] + '</span>' + (q[0] === 'inbox' && n ? '<em>' + n + '</em>' : '') + '</button>';
       }).join('') + '</div>' : '';
       return '<aside class="a-nav">' + findBtn('a-find-rail') + quick + '<p class="ad-nav-label">Admin panel</p><nav class="a-groups" aria-label="Admin rooms">' + A_GROUPS.map(function (g) {
-        return '<button type="button" class="a-group" data-p="a-group" data-g="' + g[0] + '"' + (navBusy ? ' disabled' : '') + ' aria-current="' + (ag[0] === g[0] ? 'page' : 'false') + '"><span>' + g[1] + (g[0] === 'today' && mlN ? ' (' + mlN + ')' : '') + '</span></button>';
+        return '<button type="button" class="a-group" data-p="a-group" data-g="' + g[0] + '"' + (navBusy ? ' disabled' : '') + ' aria-current="' + (ag[0] === g[0] ? 'page' : 'false') + '"><span>' + g[1] + (g[0] === 'today' && mlN ? '<span class="a-g-n"> (' + mlN + ')</span>' : '') + '</span></button>';
       }).join('') + '</nav></aside>';
     }
     function findBtn(cls) { return '<button type="button" class="a-find ' + cls + '" data-p="a-find"' + (navBusy ? ' disabled' : '') + ' aria-haspopup="dialog" aria-keyshortcuts="/"><span>Find</span><kbd aria-hidden="true">/</kbd></button>'; }

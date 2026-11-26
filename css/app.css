@@ -5435,6 +5435,7 @@ html.tm-open, html.tm-open body { overflow: hidden; }
   .p-admin.ad-admin .a-group[aria-current="page"] { background: rgba(251, 248, 241, .12); box-shadow: inset 3px 0 var(--accent); color: var(--bar-text); }
   .p-admin.ad-admin .a-find-rail { display: flex; width: 100%; margin-bottom: .7rem; border-color: rgba(251, 248, 241, .4); background: rgba(251, 248, 241, .08); color: var(--bar-text); }
   .p-admin.ad-admin .a-quick-list { display: flex; flex-direction: column; gap: .2rem; }
+  .p-admin.ad-admin:has(.a-quick em) .a-g-n { display: none; }   /* one Inbox count where the Inbox shows its own (27 Nov 2026) */
   .p-admin.ad-admin .a-quick { display: flex; align-items: center; justify-content: space-between; gap: .5rem; min-height: 44px; padding: .5rem .7rem; border: 0; border-radius: 8px; background: transparent; color: var(--bar-text); font: 600 1rem/1.1 var(--body); text-align: left; cursor: pointer; }
   .p-admin.ad-admin .a-quick[aria-current="true"] { background: rgba(251, 248, 241, .12); box-shadow: inset 3px 0 var(--accent); }
   .p-admin.ad-admin .a-quick em { min-width: 1.5rem; padding: 2px 7px; border-radius: 11px; background: var(--small-ink); color: #fff; font: normal 700 .8125rem/1.25 var(--body); text-align: center; }
