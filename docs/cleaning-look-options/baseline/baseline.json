@@ -1,0 +1,700 @@
+{
+ "cook-390": {
+  "rowsTotal": 52,
+  "rowsInView": 5,
+  "rowsInViewIgnoringTabBar": 6,
+  "firstRowTop": 451,
+  "firstBoxTop": 454,
+  "title": "Cleaning",
+  "headingsInView": [
+   "GrillYour section today",
+   "Pack down0/9"
+  ],
+  "aboveTheRows": [
+   "nb-ph 90px",
+   "cln-readline 44px",
+   "cln-temperature 45px",
+   "cln-coverage 55px"
+  ],
+  "screensLong": 5.4,
+  "sideways": false
+ },
+ "tabs": {
+  "360": [
+   {
+    "tightestTab": "Recipes 24px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Cleaning",
+    "oneLine": true,
+    "labelWidth": 41,
+    "tabWidth": 65,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 21px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Clean down",
+    "oneLine": true,
+    "labelWidth": 54,
+    "tabWidth": 75,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 26px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Reset",
+    "oneLine": true,
+    "labelWidth": 26,
+    "tabWidth": 52,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Orders 26px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Close",
+    "oneLine": true,
+    "labelWidth": 26,
+    "tabWidth": 52,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Orders 21px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Close down",
+    "oneLine": true,
+    "labelWidth": 53,
+    "tabWidth": 74,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Orders 24px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Wrap up",
+    "oneLine": true,
+    "labelWidth": 37,
+    "tabWidth": 62,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Wastage 26px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Shine",
+    "oneLine": true,
+    "labelWidth": 24,
+    "tabWidth": 51,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 23px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Checklist",
+    "oneLine": true,
+    "labelWidth": 45,
+    "tabWidth": 68,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 23px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Knock off",
+    "oneLine": true,
+    "labelWidth": 45,
+    "tabWidth": 68,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 24px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Clean up",
+    "oneLine": true,
+    "labelWidth": 40,
+    "tabWidth": 64,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 25px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Closing",
+    "oneLine": true,
+    "labelWidth": 35,
+    "tabWidth": 60,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 21px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Night clean",
+    "oneLine": true,
+    "labelWidth": 54,
+    "tabWidth": 75,
+    "clipped": false
+   }
+  ],
+  "390": [
+   {
+    "tightestTab": "Recipes 29px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Cleaning",
+    "oneLine": true,
+    "labelWidth": 41,
+    "tabWidth": 70,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 27px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Clean down",
+    "oneLine": true,
+    "labelWidth": 54,
+    "tabWidth": 81,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 31px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Reset",
+    "oneLine": true,
+    "labelWidth": 26,
+    "tabWidth": 57,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Orders 31px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Close",
+    "oneLine": true,
+    "labelWidth": 26,
+    "tabWidth": 57,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 27px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Close down",
+    "oneLine": true,
+    "labelWidth": 53,
+    "tabWidth": 80,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Orders 29px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Wrap up",
+    "oneLine": true,
+    "labelWidth": 37,
+    "tabWidth": 67,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Wastage 31px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Shine",
+    "oneLine": true,
+    "labelWidth": 24,
+    "tabWidth": 56,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 28px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Checklist",
+    "oneLine": true,
+    "labelWidth": 45,
+    "tabWidth": 73,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 28px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Knock off",
+    "oneLine": true,
+    "labelWidth": 45,
+    "tabWidth": 74,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 29px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Clean up",
+    "oneLine": true,
+    "labelWidth": 40,
+    "tabWidth": 69,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 30px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Closing",
+    "oneLine": true,
+    "labelWidth": 35,
+    "tabWidth": 65,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Transfers 26px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Night clean",
+    "oneLine": true,
+    "labelWidth": 54,
+    "tabWidth": 81,
+    "clipped": false
+   }
+  ],
+  "360-xlarge": [
+   {
+    "tightestTab": "Recipes 14px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Cleaning",
+    "oneLine": true,
+    "labelWidth": 51,
+    "tabWidth": 65,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 11px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Clean down",
+    "oneLine": true,
+    "labelWidth": 67,
+    "tabWidth": 78,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 18px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Reset",
+    "oneLine": true,
+    "labelWidth": 32,
+    "tabWidth": 51,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 18px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Close",
+    "oneLine": true,
+    "labelWidth": 32,
+    "tabWidth": 50,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 11px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Close down",
+    "oneLine": true,
+    "labelWidth": 66,
+    "tabWidth": 77,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 15px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Wrap up",
+    "oneLine": true,
+    "labelWidth": 47,
+    "tabWidth": 62,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 18px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Shine",
+    "oneLine": true,
+    "labelWidth": 30,
+    "tabWidth": 49,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 13px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Checklist",
+    "oneLine": true,
+    "labelWidth": 56,
+    "tabWidth": 69,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 13px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Knock off",
+    "oneLine": true,
+    "labelWidth": 57,
+    "tabWidth": 70,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 14px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Clean up",
+    "oneLine": true,
+    "labelWidth": 50,
+    "tabWidth": 65,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 15px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Closing",
+    "oneLine": true,
+    "labelWidth": 43,
+    "tabWidth": 59,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 11px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Night clean",
+    "oneLine": true,
+    "labelWidth": 68,
+    "tabWidth": 79,
+    "clipped": false
+   }
+  ],
+  "390-xlarge": [
+   {
+    "tightestTab": "Recipes 20px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Cleaning",
+    "oneLine": true,
+    "labelWidth": 51,
+    "tabWidth": 71,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 17px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Clean down",
+    "oneLine": true,
+    "labelWidth": 67,
+    "tabWidth": 84,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 23px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Reset",
+    "oneLine": true,
+    "labelWidth": 32,
+    "tabWidth": 56,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 23px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Close",
+    "oneLine": true,
+    "labelWidth": 32,
+    "tabWidth": 56,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 17px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Close down",
+    "oneLine": true,
+    "labelWidth": 66,
+    "tabWidth": 83,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 21px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Wrap up",
+    "oneLine": true,
+    "labelWidth": 47,
+    "tabWidth": 68,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 24px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Shine",
+    "oneLine": true,
+    "labelWidth": 30,
+    "tabWidth": 54,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 19px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Checklist",
+    "oneLine": true,
+    "labelWidth": 56,
+    "tabWidth": 75,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 19px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Knock off",
+    "oneLine": true,
+    "labelWidth": 57,
+    "tabWidth": 76,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 20px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Clean up",
+    "oneLine": true,
+    "labelWidth": 50,
+    "tabWidth": 71,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 21px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Closing",
+    "oneLine": true,
+    "labelWidth": 43,
+    "tabWidth": 65,
+    "clipped": false
+   },
+   {
+    "tightestTab": "Recipes 17px spare, 1 line(s)",
+    "anyTabTwoLines": false,
+    "word": "Night clean",
+    "oneLine": true,
+    "labelWidth": 68,
+    "tabWidth": 85,
+    "clipped": false
+   }
+  ]
+ },
+ "cook-768": {
+  "rowsTotal": 52,
+  "rowsInView": 9,
+  "rowsInViewIgnoringTabBar": 9,
+  "firstRowTop": 500,
+  "firstBoxTop": 504,
+  "title": "Cleaning",
+  "headingsInView": [
+   "GrillYour section today",
+   "Pack down0/9"
+  ],
+  "aboveTheRows": [
+   "nb-ph 99px",
+   "cln-readline 44px",
+   "cln-temperature 45px",
+   "cln-coverage 18px"
+  ],
+  "screensLong": 3.7,
+  "sideways": false
+ },
+ "station-1920": {
+  "rowsTotal": 52,
+  "rowsInView": 9,
+  "rowsInViewIgnoringTabBar": 9,
+  "firstRowTop": 500,
+  "firstBoxTop": 504,
+  "title": "Cleaning",
+  "headingsInView": [
+   "GrillThis screen",
+   "Pack down0/9",
+   "Shared kitchen0/24 + repeats"
+  ],
+  "aboveTheRows": [
+   "nb-ph 99px",
+   "cln-readline 44px",
+   "cln-temperature 45px",
+   "cln-coverage 18px"
+  ],
+  "screensLong": 3.4,
+  "sideways": false
+ },
+ "stationPlainTickTaps": 2,
+ "station-1920-pans-cook": {
+  "rowsTotal": 52,
+  "rowsInView": 9,
+  "rowsInViewIgnoringTabBar": 9,
+  "firstRowTop": 500,
+  "firstBoxTop": 504,
+  "title": "Cleaning",
+  "headingsInView": [
+   "GrillThis screen. You are on Pans today",
+   "Pack down0/9",
+   "Shared kitchen0/24 + repeats"
+  ],
+  "aboveTheRows": [
+   "nb-ph 99px",
+   "cln-readline 44px",
+   "cln-temperature 45px",
+   "cln-coverage 18px"
+  ],
+  "screensLong": 3.4,
+  "sideways": false
+ },
+ "chef-today-390": {
+  "rowsTotal": 0,
+  "rowsInView": 0,
+  "rowsInViewIgnoringTabBar": 0,
+  "firstRowTop": null,
+  "firstBoxTop": null,
+  "title": "Cleaning",
+  "headingsInView": [
+   "General cleaningShared and section jobs ",
+   "Hot larderPack down5 leftOpen tasks"
+  ],
+  "aboveTheRows": [
+   "cln-toolbar 44px",
+   "nb-ph 90px",
+   "cln-readline 44px",
+   "cln-temperature 45px",
+   "cln-coverage 55px"
+  ],
+  "screensLong": 1.6,
+  "sideways": false
+ },
+ "chef-week-390": {
+  "rowsTotal": 0,
+  "rowsInView": 0,
+  "rowsInViewIgnoringTabBar": 0,
+  "firstRowTop": null,
+  "firstBoxTop": null,
+  "title": "Cleaning",
+  "headingsInView": [],
+  "aboveTheRows": [
+   "cln-toolbar 44px",
+   "nb-ph 90px",
+   "cln-readline 44px",
+   "cln-temperature 45px"
+  ],
+  "screensLong": 1.8,
+  "sideways": false
+ },
+ "chef-setup-390": {
+  "rowsTotal": 0,
+  "rowsInView": 0,
+  "rowsInViewIgnoringTabBar": 0,
+  "firstRowTop": null,
+  "firstBoxTop": null,
+  "title": "Cleaning",
+  "headingsInView": [],
+  "aboveTheRows": [
+   "cln-toolbar 44px",
+   "nb-ph 90px",
+   "cln-readline 44px"
+  ],
+  "screensLong": 2.6,
+  "sideways": false
+ },
+ "chef-today-1280": {
+  "rowsTotal": 0,
+  "rowsInView": 0,
+  "rowsInViewIgnoringTabBar": 0,
+  "firstRowTop": null,
+  "firstBoxTop": null,
+  "title": "Cleaning",
+  "headingsInView": [
+   "General cleaningShared and section jobs ",
+   "Hot larderPack down5 leftOpen tasks",
+   "GrillPack down8 leftOpen tasks"
+  ],
+  "aboveTheRows": [
+   "cln-toolbar 44px",
+   "nb-ph 99px",
+   "cln-readline 44px",
+   "cln-temperature 45px",
+   "cln-coverage 18px"
+  ],
+  "screensLong": 1.4,
+  "sideways": false
+ },
+ "chef-week-1280": {
+  "rowsTotal": 0,
+  "rowsInView": 0,
+  "rowsInViewIgnoringTabBar": 0,
+  "firstRowTop": null,
+  "firstBoxTop": null,
+  "title": "Cleaning",
+  "headingsInView": [
+   "General cleaningShared and section jobs "
+  ],
+  "aboveTheRows": [
+   "cln-toolbar 44px",
+   "nb-ph 99px",
+   "cln-readline 44px",
+   "cln-temperature 45px"
+  ],
+  "screensLong": 1.6,
+  "sideways": false
+ },
+ "chef-setup-1280": {
+  "rowsTotal": 0,
+  "rowsInView": 0,
+  "rowsInViewIgnoringTabBar": 0,
+  "firstRowTop": null,
+  "firstBoxTop": null,
+  "title": "Cleaning",
+  "headingsInView": [],
+  "aboveTheRows": [
+   "cln-toolbar 44px",
+   "nb-ph 90px",
+   "cln-readline 44px"
+  ],
+  "screensLong": 2.1,
+  "sideways": false
+ },
+ "chef-today-1920": {
+  "rowsTotal": 0,
+  "rowsInView": 0,
+  "rowsInViewIgnoringTabBar": 0,
+  "firstRowTop": null,
+  "firstBoxTop": null,
+  "title": "Cleaning",
+  "headingsInView": [
+   "General cleaningShared and section jobs ",
+   "Hot larderPack down5 leftOpen tasks",
+   "GrillPack down8 leftOpen tasks",
+   "PansPack down10 leftOpen tasks",
+   "Final floor cleanAfter overhead work; ea"
+  ],
+  "aboveTheRows": [
+   "cln-toolbar 44px",
+   "nb-ph 99px",
+   "cln-readline 44px",
+   "cln-temperature 45px",
+   "cln-coverage 18px"
+  ],
+  "screensLong": 1,
+  "sideways": false
+ },
+ "chef-week-1920": {
+  "rowsTotal": 0,
+  "rowsInView": 0,
+  "rowsInViewIgnoringTabBar": 0,
+  "firstRowTop": null,
+  "firstBoxTop": null,
+  "title": "Cleaning",
+  "headingsInView": [
+   "General cleaningShared and section jobs ",
+   "Hot larderPack down5 leftOpen tasks",
+   "GrillPack down8 leftOpen tasks",
+   "PansPack down10 leftOpen tasks"
+  ],
+  "aboveTheRows": [
+   "cln-toolbar 44px",
+   "nb-ph 99px",
+   "cln-readline 44px",
+   "cln-temperature 45px"
+  ],
+  "screensLong": 1.2,
+  "sideways": false
+ },
+ "chef-setup-1920": {
+  "rowsTotal": 0,
+  "rowsInView": 0,
+  "rowsInViewIgnoringTabBar": 0,
+  "firstRowTop": null,
+  "firstBoxTop": null,
+  "title": "Cleaning",
+  "headingsInView": [],
+  "aboveTheRows": [
+   "cln-toolbar 44px",
+   "nb-ph 90px",
+   "cln-readline 44px"
+  ],
+  "screensLong": 1.6,
+  "sideways": false
+ }
+}
