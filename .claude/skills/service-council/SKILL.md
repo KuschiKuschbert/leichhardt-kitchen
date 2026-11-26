@@ -108,7 +108,7 @@ Judge from the evidence. This is role-based analysis, not research with staff: s
 ## Round 1: should we build it?
 
 1. **Write the proposal first, no code.** One page: the problem in the kitchen, who has it, how often, what people do today, the change, and its cost (reads, files, tests, risk). Prepare the current-contract evidence packet above. Name the relevant design-reference principles and the benefit to test, or why none apply. Add screenshots of today's page at 390 px, 768 px and 1920 x 1080 for a service page (1280 px for admin pages and anything else used on a laptop).
-2. **Run the five reviewers at the same time**: five Agent calls in one message, fresh agents, not forks. Name the model on each call: `fable` for the skeptic and the keeper of the book (Try to break it), `opus` for the others (`docs/keeping-usage-down.md`, The right model for the job). Give each the proposal, the same evidence packet, the service rules and its brief from [reviewers.md](reviewers.md). Do not give them your own opinion or the answer you hope for.
+2. **Run the five reviewers at the same time**: five Agent calls in one message, fresh agents, not forks. Name the model on each call: `opus` for every reviewer, the skeptic and the keeper of the book included (`docs/keeping-usage-down.md`, The right model for the job). Give each the proposal, the same evidence packet, the service rules and its brief from [reviewers.md](reviewers.md). Do not give them your own opinion or the answer you hope for.
 3. **Reconcile.** The verdict is what most reviewers say. Record any disagreement in one line each and carry the leading Break-it findings into the brief and verification plan. Never invent agreement.
 
 | Verdict | Meaning |
