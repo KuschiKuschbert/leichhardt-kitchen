@@ -1,5 +1,9 @@
 # Front of house layouts: the council's round 2 (26 November 2026)
 
+## Chosen (head chef, 26 November 2026)
+
+**The mix: B's two columns for the booking form, A's cards for the service view**, as recommended; and the second-tap fix in its own pull request. Asked: "Fay's booking form ... which layout should I build?" "B's two columns (Recommended)". "Fay's service view ... build A's cards?" "Build A's cards (Recommended)". "Fix it by holding a confirmed trip's place for a moment, as Prep does with ticked lines?" "Yes, fix it (Recommended)". The build follows [Before the build is ready](#before-the-build-is-ready).
+
 The study: [proposal](proposal.md), [evidence packet](packet.md), today's [pictures and numbers](today/). Round 1 is the step 3 review and the head chef's choice to study these two layouts ([findings](../device-coverage/step3/findings.md), Chosen). Everything here is **role-based analysis on the click-test stand-in with synthetic data**, not research with staff.
 
 ## Design frame (the UX and interaction designer, before anything was drawn)
@@ -29,7 +33,7 @@ The lead's note: the frame's band and dock figures were read off the pictures. M
 
 ## Three designs
 
-Each is CSS laid over the implemented app on the click-test stand-in ([`study.cjs`](study.cjs), [`designs/`](designs/)): the page's own pieces, moved with the grid, never reordered in the page, so a redraw (every 20 seconds on the service view, after every tap) keeps the look. Pictures of what shows without scrolling, plus whole pages (`*-whole.png`; the docked Save bar shows mid-page there because it is sticky), in [`today/`](today/) and `previews/a/`, `previews/b/`, `previews/c/`. A build would put the same pieces in two wrappers in the HTML strings; the order a screen reader and the keyboard follow stays as it is in every design. No new reads, writes, listeners, rules, sheets, pop-ups or buttons in any of them. Phones and the tablet are pixel for pixel as today in all three, and so is the kitchen's own service view.
+Each is CSS laid over the implemented app on the click-test stand-in ([`study.cjs`](study.cjs), [`designs/`](designs/)): the page's own pieces, moved with the grid, never reordered in the page, so a redraw (every 20 seconds on the service view, after every tap) keeps the look. Pictures of what shows without scrolling, plus whole pages (`*-whole.png`; the docked Save bar shows mid-page there because it is sticky), in [`today/`](today/) and `previews/a/`, `previews/b/`, `previews/c/` (the six the scorers were sent; `study.cjs` draws every other case again, and each `study.json` keeps all the numbers) and `previews/mix/` (every case, and `compare-*.png`: today beside the mix). A build would put the same pieces in two wrappers in the HTML strings; the order a screen reader and the keyboard follow stays as it is in every design. No new reads, writes, listeners, rules, sheets, pop-ups or buttons in any of them. Phones and the tablet are pixel for pixel as today in all three, and so is the kitchen's own service view.
 
 | | A: Wider boxes, trips across | B: Two columns | C: Bands across the width |
 | --- | --- | --- | --- |
