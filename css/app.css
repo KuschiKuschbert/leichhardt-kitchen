@@ -1579,6 +1579,10 @@ html.ks-open, html.ks-open body { overflow: hidden; }
   .o-page .o-add .nb-in-text { flex: 5 1 0; min-width: 0; }
   .o-page .o-add .nb-in-qty { flex: 1 1 0; min-width: 6rem; }
 }
+/* A cook's Orders on a section screen (head chef, 26 Nov 2026, docs/screen-1920-options/brief.md, Chosen): from 1536 px
+   the list keeps a reading width, so ⋯ sits about 600 px from the tick, not 1,000. A chef's list (the cut-offs sit
+   beside it) is left as it is; with Ordered today beside it the list is narrower than this anyway. */
+@media (min-width: 1536px) { .o-page:not(:has(> .o-cut-fold)) .o-cols > .o-main { max-width: 47rem; } }
 
 /* ---------- big admin lists: search, filter chips, sort, Show more ---------- */
 /* One look for every list in the admin area that can grow (People, learned items, notes, minutes register, waste, orders, team, insights).
