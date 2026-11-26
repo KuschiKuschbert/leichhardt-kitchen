@@ -44,7 +44,7 @@ const NAMES = /\b(Lou|Vic|Bo)\b/;
     const p = await inbox(b, base(board()), width);
     const row = await p.evaluate(() => { const e = document.querySelector('.dsh-need-miss'); if (!e) return null; const btn = e.querySelector('button');
       return { tag: e.querySelector('.dsh-tag').textContent, title: e.querySelector('.dsh-need-title').textContent, detail: e.querySelector('.dsh-need-detail').textContent, btn: btn ? btn.textContent : '', cls: btn ? btn.className : '', h: btn ? Math.round(btn.getBoundingClientRect().height) : 0 }; });
-    ok(!!row && row.tag === 'Missed' && row.title === '2 weekly or monthly cleaning jobs missed last night, in 2 sections', width + ': the Inbox has one row for last night\'s missed weekly and monthly jobs (' + JSON.stringify(row && [row.tag, row.title]) + ')');
+    ok(!!row && row.tag === 'Missed' && row.title === '2 weekly or monthly cleaning jobs missed last night', width + ': the Inbox has one row for last night\'s missed weekly and monthly jobs (' + JSON.stringify(row && [row.tag, row.title]) + ')');
     ok(!!row && row.detail.indexOf('Hot larder: Clean behind the pizza ovens (also missed ' + short(wk) + ').') > 0 && row.detail.indexOf('Shared kitchen: Clean the shelves above the pass.') > 0 && /Not ticked by midnight\.$/.test(row.detail),
       width + ': it names each section by its name now and its job, with an earlier miss of the same job (' + (row && row.detail) + ')');
     ok(!!row && !NAMES.test(row.title + row.detail) && !/Hot side|\bhot\b|Fryer oil change/.test(row.title + row.detail), width + ': it names no person, no old section name or id, and no nightly job');
@@ -64,9 +64,11 @@ const NAMES = /\b(Lou|Vic|Bo)\b/;
     ok(secs[2] === 'Grill: 1 of 1 done. | Done: Clean the drawers (Bo, 22:05).' && secs[3] === 'Old section: nothing due but a job that was not possible. | Not possible: Deep clean the oil filter machine (No degreaser).',
       width + ': a section that finished says so, and a job that was not possible is apart, under the name its job was saved with when the section is gone (' + secs.slice(2).join(' // ') + ')');
     const view = await p.evaluate(() => { const v = document.querySelector('.rec-dayv'), miss = v.querySelector('.rec-miss'), fold = v.querySelector('.rec-who');
-      return { red: [...v.querySelectorAll('.rec-adv')].map(e => e.textContent), edge: getComputedStyle(miss).borderLeftColor, ink: getComputedStyle(miss.querySelector('.rec-miss-h')).color, exp: fold.getAttribute('aria-expanded'), h: Math.round(fold.getBoundingClientRect().height), wide: document.documentElement.scrollWidth <= innerWidth }; });
+      return { red: [...v.querySelectorAll('.rec-adv')].map(e => e.textContent), failure: getComputedStyle(v.querySelector('.rec-adv')).color, edge: getComputedStyle(miss).borderLeftColor, ink: getComputedStyle(miss.querySelector('.rec-miss-h')).color,
+        lines: [...miss.querySelectorAll('.rec-line')].map(e => getComputedStyle(e).color), exp: fold.getAttribute('aria-expanded'), h: Math.round(fold.getBoundingClientRect().height), wide: document.documentElement.scrollWidth <= innerWidth }; });
     ok(view.red.length === 1 && /^Missed: Clean behind the pizza ovens, Clean the shelves above the pass, Fryer oil change\.$/.test(view.red[0]), width + ': Records\' own Missed line stays as it is (' + view.red.join(' // ') + ')');
-    ok(view.exp === 'false' && view.h >= 44 && view.wide && view.ink !== view.red && view.edge !== 'rgb(155, 39, 22)', width + ': the block is attention, not failure red; the fold is closed and 44 px tall; no sideways scroll (' + JSON.stringify([view.edge, view.ink, view.h]) + ')');
+    ok(/^rgb/.test(view.failure) && view.ink !== view.failure && view.edge !== view.failure && view.lines.every(c => c !== view.failure), width + ': the block is attention: its edge, heading and lines are not the failure red of Records\' own Missed line (' + JSON.stringify([view.failure, view.edge, view.ink]) + ')');
+    ok(view.exp === 'false' && view.h >= 44 && view.wide, width + ': the fold is closed and 44 px tall; no sideways scroll (' + view.h + ')');
     await p.evaluate(() => document.querySelector('.rec-who').click()); await L.settle(p, 300);
     const who = await p.evaluate(() => ({ lines: [...document.querySelectorAll('.rec-who-list .rec-line')].map(e => e.textContent), exp: document.querySelector('.rec-who').getAttribute('aria-expanded'), label: document.querySelector('.rec-who').textContent, focus: document.activeElement && document.activeElement.className }));
     ok(who.exp === 'true' && who.lines.join(' | ') === 'On the plan: Lou (Dinner). | Picked the section themselves: Vic (a shift no longer on the list).' && /rec-who/.test(who.focus || '') && who.label === 'Hide who was on Hot larder',
@@ -84,7 +86,7 @@ const NAMES = /\b(Lou|Vic|Bo)\b/;
       ok(/Cleaning: 47 of 52 done/.test(printed) && /Missed: Clean behind the pizza ovens/.test(printed), 'and keeps Records\' own cleaning lines');
     }
     // the other shapes a day can have: trimmed, not counted, an older count, not ready
-    const open = async d => { await p.evaluate(dd => { LK_PREP.state.atab = 'records'; }, d); await p.evaluate(() => document.querySelector('[data-p="rec-show"][data-v="fs"]').click()); await L.settle(p, 200);
+    const open = async d => { await p.evaluate(() => document.querySelector('[data-p="rec-show"][data-v="fs"]').click()); await L.settle(p, 200);
       await p.evaluate(() => { const bk = document.querySelector('[data-p="rec-back"]'); if (bk) bk.click(); }); await L.settle(p, 200);
       await p.evaluate(dd => { const r = document.querySelector('.rec-dayrow[data-d="' + dd + '"]'); if (r) r.click(); }, d); await L.settle(p, 300);
       return p.evaluate(() => ({ head: !!document.querySelector('#rec-clean-sec'), miss: document.querySelectorAll('.rec-miss').length, text: (document.querySelector('.rec-clean') || document.querySelector('.rec-dayv')).textContent.replace(/\s+/g, ' ') })); };
@@ -113,6 +115,39 @@ const NAMES = /\b(Lou|Vic|Bo)\b/;
     ok(rowsOk(list) && clearOk(cl), 'Inbox, ' + name + ': it says only what the count knows (' + list.filter(x => /leaning|issed/.test(x)).join(' // ') + ' // ' + cl + ')');
     ok(!p.errors.length, 'Inbox, ' + name + ': no page errors ' + p.errors.join(' | '));
     await p.context().close();
+  }
+  // Records may hold an older board than the Inbox that offers the night: the button reads the board again
+  {
+    const before = base(board({ days: rows({ [y]: null }), at: L.NOW - 30 * 3600000 })), p = await L.open(b, '#/admin', { admin: true, who: '', width: 1280, height: 900, extra: before, wait: 2000 });
+    await L.adminTab(p, 'records'); await L.waitFor(p, () => !!document.querySelector('.rec-days'), null, 8000).catch(() => {});
+    ok(/count not ready/i.test(await p.evaluate(dd => (document.querySelector('.rec-dayrow[data-d="' + dd + '"]') || document.body).textContent, y)), 'Records opened before the nightly run holds no count for last night');
+    await p.evaluate(a => { window.__fake.write(a[0], a[1]); }, [key('analysis', 'dashboard'), board()]);
+    await p.evaluate(() => document.querySelector('.a-quick[data-v="inbox"]').click()); await L.settle(p, 600);
+    await p.evaluate(() => { const r = document.querySelector('[data-dsh="refresh"]'); if (r) r.click(); });
+    await L.waitFor(p, () => !!document.querySelector('.dsh-need-miss button'), null, 8000).catch(() => {});
+    ok(!!(await p.$('.dsh-need-miss button')), 'the Inbox, read after the run, offers last night');
+    await p.evaluate(() => { const x = document.querySelector('.dsh-need-miss button'); if (x) x.click(); });
+    await L.waitFor(p, () => !!document.querySelector('#rec-clean-sec'), null, 8000).catch(() => {}); await L.settle(p, 300);
+    ok(await p.evaluate(() => !!document.querySelector('.rec-miss') && document.activeElement.id === 'rec-clean-sec' && !/count not ready/i.test(document.querySelector('.rec-dayv').textContent)), 'its button makes Records read the board again, so the night shows its missed jobs and not "Count not ready"');
+    ok(!p.errors.length, 'older Records board: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+  // a section with a miss but no kept record of who was on; and a day that kept only some of its jobs
+  {
+    const noRo = whole({ r: [{ k: 'w3', t: 'Clean the drawers', s: 'grill', sn: 'Grill', st: 'm' }], rN: 1, rn: { due: 1, done: 0, miss: 1, unable: 0, wait: 0 }, missN: 1, miss: ['Clean the drawers'] });
+    const partial = whole({ r: [pizza('m'), { k: 'w3', t: 'Clean the drawers', s: 'grill', sn: 'Grill', st: 'd', by: 'Bo', at: '22:05' }], rN: 5, rn: { due: 5, done: 3, miss: 2, unable: 0, wait: 0 }, missN: 2, miss: ['Clean behind the pizza ovens', 'Another'] });
+    const p = await L.open(b, '#/admin', { admin: true, who: '', width: 1280, height: 900, extra: base(board({ days: rows({ [y]: noRo, [day(2)]: partial }) })), wait: 2000 });
+    await L.adminTab(p, 'records'); await L.waitFor(p, () => !!document.querySelector('.rec-days'), null, 8000).catch(() => {});
+    await p.evaluate(dd => document.querySelector('.rec-dayrow[data-d="' + dd + '"]').click(), y); await L.settle(p, 300);
+    await p.evaluate(() => document.querySelector('.rec-who').click()); await L.settle(p, 300);
+    ok((await p.$$eval('.rec-who-list .rec-line', els => els.map(e => e.textContent))).join('|') === 'Who was on was not kept for this section.', 'a section with no record of who was on says so, and not that the plan is too old');
+    await p.evaluate(dd => { document.querySelector('[data-p="rec-back"]').click(); document.querySelector('.rec-dayrow[data-d="' + dd + '"]').click(); }, day(2)); await L.settle(p, 300);
+    const part = await block(p), top = await p.evaluate(() => document.querySelector('#rec-clean-sec').nextElementSibling.textContent);
+    ok(/3 more jobs are counted but not listed, so each section below shows only the jobs listed\./.test(top) && /^Hot larder: at least 1 missed /.test(part[0]) && /^Grill: the jobs listed\. /.test(part[1]), 'a day that kept only some of its jobs never reads as whole sections (' + part.join(' // ') + ')');
+    const inb = await inbox(b, base(board({ days: rows({ [y]: partial }) })), 1280), list = await needs(inb);
+    ok(list.some(x => /^Missed2 weekly or monthly cleaning jobs missed last night/.test(x) && !/Hot larder|pizza/.test(x)), 'and the Inbox gives the number without sections for it (' + list.filter(x => /issed/.test(x)).join(' // ') + ')');
+    ok(!p.errors.length && !inb.errors.length, 'partial and unkept: no page errors');
+    await inb.context().close(); await p.context().close();
   }
   L.report(R); await b.close();
 })().catch(e => { console.error(e); process.exit(1); });

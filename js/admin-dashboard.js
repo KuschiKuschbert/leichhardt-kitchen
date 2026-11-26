@@ -243,6 +243,8 @@
      The open kitchen mail is listed with the Kitchen mail page's own rows, ticked off and given a new "how soon" in
      place; every other row opens its page. Shown before the numbers, so it never waits for the nightly record. ---------- */
   var MAIL_MAX = 8;
+  // the kitchen day before a kitchen day: plain date arithmetic on the day the book gave (api.today()), like dow() and daysSince()
+  function dayBefore(day) { return new Date(Date.parse(day + 'T12:00:00Z') - 86400000).toISOString().slice(0, 10); }
   function daysSince(day, today) { return Math.max(0, Math.round((Date.parse(today + 'T12:00:00Z') - Date.parse(day + 'T12:00:00Z')) / 86400000)); }
   /* One Inbox row: its state word, title, detail and the button to the page where it is done. The laptop picked-row pane
      (8 Nov 2026) was removed on 10 Nov 2026 (head chef, docs/admin-dashboard-restyle-options/brief.md): it repeated the row. */
@@ -260,7 +262,7 @@
      this shell can do that (api.openRecords). */
   function cleanNeed(dd, today) {
     if (!dd || !dd.cleanFrom || !Array.isArray(dd.days)) return null;
-    var y = new Date(Date.parse(today + 'T12:00:00Z') - 86400000).toISOString().slice(0, 10);
+    var y = dayBefore(today);
     if (y < dd.cleanFrom) return null;
     var say = function (day, o) { return new Date(day + 'T12:00:00Z').toLocaleDateString('en-AU', Object.assign({ timeZone: 'UTC' }, o)); };
     var when = say(y, { weekday: 'long', day: 'numeric', month: 'long' });
@@ -278,13 +280,14 @@
       var name = function (s) { return api.secName ? api.secName(s, by[s][0].sn) : (s ? by[s][0].sn || 'A section' : 'Shared kitchen'); };
       // the same job missed on an earlier night that kept it, by its key: the latest one
       var also = function (x) { var d = ''; dd.days.forEach(function (r) { if (r.day < y && r.day > d && r.c && r.c.r && r.c.r.some(function (j) { return j.k === x.k && j.st === 'm'; })) d = r.day; }); return d ? ' (also missed ' + say(d, { weekday: 'short', day: 'numeric', month: 'short' }).replace(',', '') + ')' : ''; };
-      title = secs.length === 1 ? name(secs[0]) + ': ' + m + jobs + ' missed last night' : m + ' weekly or monthly cleaning jobs missed last night, in ' + secs.length + ' sections';
+      // one place named in the title; with more, the detail names each (a shared job has no section, so no count of sections)
+      if (secs.length === 1) title = name(secs[0]) + ': ' + m + jobs + ' missed last night';
       var shown = 0;
       detail += ' ' + secs.map(function (s) { var js = by[s].filter(function () { return shown++ < 4; }); return js.length ? name(s) + ': ' + js.map(function (x) { return x.t + also(x); }).join('; ') + '.' : ''; }).filter(Boolean).join(' ') + (m > 4 ? ' And ' + (m - 4) + ' more.' : '');
     }
     detail += ' Not ticked by midnight.';
     return { html: '<li class="dsh-need dsh-need-miss"><span class="dsh-need-mark" aria-hidden="true"></span><div><p class="dsh-tag dsh-tag-att">Missed</p><p class="dsh-need-title">' + esc(title) + '</p><p class="dsh-need-detail">' + esc(detail) + '</p></div>' +
-      (api.openRecords ? '<button type="button" class="btn" data-dsh="records" data-day="' + y + '">Open that night</button>' : '') + '</li>' };
+      (api.openRecords ? '<button type="button" class="btn" data-dsh="records" data-day="' + y + '" data-at="' + n(dd.at) + '">Open that night</button>' : '') + '</li>' };
   }
   function needsHTML(inbox) {
     var nd = api.needs ? api.needs() : {}, rows = [], mailDetails = '', clear = [], today = api.today();
@@ -605,7 +608,7 @@
       watchSet(w2.list.filter(function (x, j) { return j !== i; }), 'Stopped watching ' + gone + '.'); return;
     }
     // a tile of today's numbers on the Inbox says its own period (data-days="7"), the Dashboard's follow the period chips
-    if (a === 'records') { if (api.openRecords) api.openRecords(el.getAttribute('data-day') || ''); return; }
+    if (a === 'records') { if (api.openRecords) api.openRecords(el.getAttribute('data-day') || '', +el.getAttribute('data-at') || 0); return; }
     if (a === 'open') { var t = el.getAttribute('data-t'); if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs', 'references', 'team'].indexOf(t) >= 0) api.open(t, el.getAttribute('data-days') === '7' ? 7 : state.period); }
   }
   // Typing in the watch list's Find box narrows the choices (the admin panel keeps focus and cursor through redraws).

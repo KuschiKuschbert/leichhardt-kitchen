@@ -374,7 +374,7 @@ Implemented app on the click-test stand-in, synthetic data, 390 x 844, 768 x 900
 
 | | Preview (`m6`, `m7`) | Built |
 | --- | --- | --- |
-| The Inbox row | "Not ticked", one section in the title | "Missed", the head chef's word. One row for the night: one section named in the title, or "2 weekly or monthly cleaning jobs missed last night, in 2 sections", with each section and job in the detail |
+| The Inbox row | "Not ticked", one section in the title | "Missed", the head chef's word. One row for the night: one section named in the title, or "2 weekly or monthly cleaning jobs missed last night", with each section and job in the detail (a shared job has no section, so the row does not count sections) |
 | Inbox, screens long at 390 | 1.4 | 1.4; the row is whole on the first screen at all three widths; its button is 143 x 44 px |
 | Records night, screens long at 390 | 1.8 | 1.9 |
 | Where the miss is when opened from the Inbox, at 390 | Below the first screen, under today's red "Missed" line | The page lands on the heading, 149 px from the top, with the missed section's block whole on screen and the heading in focus |

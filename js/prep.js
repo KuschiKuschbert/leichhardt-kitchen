@@ -7176,9 +7176,13 @@
       /* Results by section, step 2 (26 Nov 2026): the Inbox's Missed row opens that night in Records, at its weekly
          and monthly jobs. Its own method, so a dashboard file newer than this shell finds no method and draws no
          button, instead of a button that does nothing. Records reads the board itself when it opens (1 read). */
-      openRecords: function (day) {
+      openRecords: function (day, boardAt) {
         if (!/^\d{4}-\d\d-\d\d$/.test(day)) return;
         recCheck();   // a first visit starts Records' memory afresh: do that before choosing the day
+        // Records may hold an older copy of the board than the Inbox that offered this night (opened before the 03:00
+        // run, say): then it reads the board again, so the two pages never disagree about one night. 1 read.
+        var held = REC.board && recRows()[day], heldCount = held && held.fs && held.fs.c;
+        if (REC.board && REC.state !== 'loading' && (!heldCount || (typeof boardAt === 'number' && boardAt > (+REC.board.at || 0)))) { REC.board = null; REC.state = ''; REC.days = {}; }
         REC.day = day; REC.month = day.slice(0, 7); REC.all = false; REC.jump = true;
         S.atab = 'records'; S.agLast = S.agLast || {}; S.agLast[adminGroupOf('records')[0]] = 'records'; lsSet('lk.prep.atab', 'records'); draw(); adminToTop(); recJump();
       },
@@ -7630,30 +7634,35 @@
      no person has a count. Reads nothing: it is all on the board Records already holds. Admin only, like the board. */
   function recSecName(id, saved) {
     if (!id) return 'Shared kitchen';
+    // by id over the whole saved list: kitSecs() leaves out a section that is switched off, and a past night may name one
     var s = ((S.config && S.config.kitSecs) || []).filter(function (x) { return x && x.id === id && String(x.name || '').trim(); })[0];
-    return s ? String(s.name).trim() : (typeof saved === 'string' && saved.trim() ? saved.trim().slice(0, 40) : 'A section no longer on the list');
+    return s ? String(s.name).replace(/\s+/g, ' ').trim().slice(0, 40) : (typeof saved === 'string' && saved.trim() ? saved.trim().slice(0, 40) : 'A section no longer on the list');
   }
   function recShiftName(id) {
     if (!id) return '';
+    // by id over the whole saved list: kitShifts() leaves out a shift that is switched off, and a past night may name one
     var s = ((S.config && S.config.kitShifts) || []).filter(function (x) { return x && x.id === id && String(x.name || '').trim(); })[0];
-    return s ? String(s.name).trim() : 'a shift no longer on the list';
+    return s ? String(s.name).replace(/\s+/g, ' ').trim().slice(0, 40) : 'a shift no longer on the list';
   }
   // the weekly and monthly jobs a counted day keeps one by one, or null (not counted, an older count, or trimmed)
   function recRound(c) { return c && !c.nc && !c.cut && Array.isArray(c.r) ? c.r.filter(function (x) { return x && typeof x.k === 'string' && typeof x.t === 'string'; }) : null; }
   // one job on the days before this one: when it was missed (newest first) and when it was last done. Only a day
   // that kept the job counts: a day not counted, trimmed, or where the job was not due says nothing.
-  function recBefore(key, day) {
-    var rows = recRows(), out = { missed: [], done: null };
+  // Built once for a drawn night (one pass over the board), then read per job: { key: { missed: [days], done } }.
+  function recBefore(day) {
+    var rows = recRows(), out = {};
     Object.keys(rows).filter(function (d) { return d < day; }).sort().reverse().forEach(function (d) {
-      var list = recRound(rows[d].fs && rows[d].fs.c) || [], x = list.filter(function (j) { return j.k === key; })[0];
-      if (!x) return;
-      if (x.st === 'm' && out.missed.length < 3) out.missed.push(d);
-      if (x.st === 'd' && !out.done) out.done = { day: d, by: typeof x.by === 'string' ? x.by : '', at: typeof x.at === 'string' ? x.at : '' };
+      (recRound(rows[d].fs && rows[d].fs.c) || []).forEach(function (x) {
+        var o = out[x.k] = out[x.k] || { missed: [], done: null };
+        if (x.st === 'm' && o.missed.length < 3) o.missed.push(d);
+        if (x.st === 'd' && !o.done) o.done = { day: d, by: typeof x.by === 'string' ? x.by : '', at: typeof x.at === 'string' ? x.at : '' };
+      });
     });
     return out;
   }
   function recWhoWords(o, sec) {
-    if (!o || o.k === 'x') return ['Not kept for this day. The nightly count reads the last 8 weeks of plans.'];
+    if (!o) return ['Who was on was not kept for this section.'];
+    if (o.k === 'x') return ['Not kept for this day. The nightly count reads the last 8 weeks of plans.'];
     var w = Array.isArray(o.w) ? o.w.filter(function (x) { return x && typeof x.n === 'string'; }) : [];
     var say = function (src) { return w.filter(function (x) { return x.by === src; }).map(function (x) { var sh = recShiftName(typeof x.sh === 'string' ? x.sh : ''); return x.n + (sh ? ' (' + sh + ')' : ''); }).join(', '); };
     var plan = say('p'), pick = say('k'), out = [];
@@ -7671,12 +7680,14 @@
     list.forEach(function (x) { var s = typeof x.s === 'string' ? x.s : ''; if (!by[s]) { by[s] = []; secs.push(s); } by[s].push(x); });
     var missed = function (s) { return by[s].filter(function (x) { return x.st === 'm'; }).length; };
     secs.sort(function (a, b) { return (missed(b) ? 1 : 0) - (missed(a) ? 1 : 0) || (a ? 0 : 1) - (b ? 0 : 1); });
-    var short = function (d) { return recShort(d) + ' ' + parseYmd(d).toLocaleDateString('en-AU', { month: 'short' }); };
+    var short = function (d) { return recShort(d) + ' ' + parseYmd(d).toLocaleDateString('en-AU', { month: 'short' }); }, before = recBefore(day);
+    // the count keeps at most 40 jobs a day: past that, a section's lines are only the jobs listed, and say so
+    var part = c.rN > list.length;
     var jobLine = function (x) {
       if (x.st === 'd') return 'Done: ' + x.t + (x.by ? ' (' + x.by + (x.at ? ', ' + x.at : '') + ')' : '') + '.';
       if (x.st === 'u') return 'Not possible: ' + x.t + (x.n ? ' (' + x.n + ')' : '') + '.';
       if (x.st === 'w') return 'Awaiting Pass check: ' + x.t + '.';
-      var b = recBefore(x.k, day);
+      var b = before[x.k] || { missed: [], done: null };
       return 'Missed: ' + x.t + '. Not ticked by midnight.' + (b.missed.length ? ' Also missed ' + b.missed.map(short).join(' and ') + '.' : '') +
         (b.done ? ' Last done ' + short(b.done.day) + (b.done.by ? ' (' + b.done.by + (b.done.at ? ', ' + b.done.at : '') + ')' : '') + '.' : '');
     };
@@ -7684,14 +7695,14 @@
     var out = secs.map(function (s) {
       var name = recSecName(s, (by[s][0] || {}).sn), jobs = by[s], m = missed(s), due = jobs.filter(function (x) { return x.st !== 'u'; }).length;
       var lines = jobs.slice().sort(function (a, b) { return (a.st === 'm' ? 0 : 1) - (b.st === 'm' ? 0 : 1); }).map(function (x) { return '<p class="rec-line">' + esc(jobLine(x)) + '</p>'; }).join('');
-      if (!m) return '<div class="rec-sec"><p class="rec-line"><b>' + esc(name) + ':</b> ' + esc(due ? jobs.filter(function (x) { return x.st === 'd'; }).length + ' of ' + due + ' done.' : 'nothing due but a job that was not possible.') + '</p>' + lines + '</div>';
+      if (!m) return '<div class="rec-sec"><p class="rec-line"><b>' + esc(name) + ':</b> ' + esc(part ? 'the jobs listed.' : due ? jobs.filter(function (x) { return x.st === 'd'; }).length + ' of ' + due + ' done.' : 'nothing due but a job that was not possible.') + '</p>' + lines + '</div>';
       var key = day + '|' + s, open = !!REC.who[key], o = ro.filter(function (x) { return x && x.s === s; })[0];
-      return '<div class="rec-sec rec-miss"><p class="rec-miss-h">' + esc(name) + ': ' + m + ' of ' + due + ' missed</p>' + lines +
+      return '<div class="rec-sec rec-miss"><p class="rec-miss-h">' + esc(name) + ': ' + (part ? 'at least ' + m + ' missed' : m + ' of ' + due + ' missed') + '</p>' + lines +
         (s ? '<button type="button" class="tm-fold rec-who" data-p="rec-who" data-s="' + esc(s) + '" aria-expanded="' + open + '">' + (open ? 'Hide who was on ' : 'Who was on ') + esc(name) + '</button>' +
           (open ? '<div class="rec-who-list">' + recWhoWords(o, name).map(function (l) { return '<p class="rec-line">' + esc(l) + '</p>'; }).join('') + '</div>' : '')
           : '<p class="rec-line hint">A shared job has no section, so nobody is listed.</p>') + '</div>';
     }).join('');
-    return head + '<p class="rec-line">' + esc(whole) + (c.rN > list.length ? ' ' + (c.rN - list.length) + ' more jobs are counted but not listed.' : '') + '</p>' + out;
+    return head + '<p class="rec-line">' + esc(whole) + (part ? ' ' + (c.rN - list.length) + ' more jobs are counted but not listed, so each section below shows only the jobs listed.' : '') + '</p>' + out;
   }
   // after the Inbox opened this night: land on the block, once the day is drawn (the board may still be loading)
   function recJump() {
