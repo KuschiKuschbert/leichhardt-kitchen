@@ -42,9 +42,9 @@ The page column stops at 1240 px, leaving 340 px empty each side (Measured), and
 
 Candidates: wide layouts from 1100 px (Prep's sections running on to the right page with Done today folded; Cleaning's groups side by side; Orders at a reading width or with Used in on the item's line; the ⋯ and ▾ nearer their row). Each is a new look: round 2 designs first, gated at 1100 px so 768 and 390 stay as they are, and checked at the 1280 laptop.
 
-## 3. Touch controls are drawn at mouse size (Prep, Orders)
+## 3. Touch controls: the tap areas are 44 px (corrected 26 Nov 2026)
 
-On it is about 40 x 23 px and sits 12 px from Urgent; the tick box is about 30 px; the same with touch and with a mouse (Measured, drawn size only: tap areas not measured). The phone gets bigger controls because of its width, not its touch. Cost (Opinion): a reach from the bench marks a line Urgent for everyone. Candidate: switch the bigger controls on with `(any-pointer: coarse)`, which also reaches the tablet; `(pointer: coarse)` may never switch on, as the screens' main input is unknown. Trade-off: taller rows, against section 2. First measure the real tap areas.
+The reviewers measured the drawn pills (On it about 40 x 23 px). Probed by tap on 26 Nov 2026 ([taps.json](../../screen-1920-options/taps.json), `docs/screen-1920-options/taps.cjs`), the tick box, On it, Urgent and ⋯ are all at least 44 px tall at 1920 with touch and with a mouse, at 768 and at 390. On it and Urgent touch each other (0 to 2 px apart), as on the phone where the head chef chose them (5 Nov 2026). The one small target is Orders' orange Used in recipe link, 16 px tall at every size. So C needs no bigger controls; the Used in link and the On it to Urgent gap go to the council on the 1920 screens.
 
 ## 4. Your own work is not first
 
@@ -80,6 +80,6 @@ Small, no earlier decision touched (each a quick check, then a pull request grou
 The head chef's choices:
 - **A. The functions band** on Wastage, Transfers, Cleaning, Today's team and the recipe card: Orders' fold (recommended by three of four reviewers), Prep's strip, or as it is.
 - **B. Use the room at 1920** (wide layouts from 1100 px for Prep, Orders and Cleaning): a council round 2 with designs, or not now.
-- **C. Bigger touch controls** wherever touch is present: measure first, then decide.
+- **C. Bigger touch controls:** measured, not needed (section 3); the Used in link's 16 px tap goes to the council.
 - **D. Your own work first** on Prep (own section first) and Home ("Ann's day" on shared screens).
 - The 132 px top bar at 1920 is a whole-book question for later.

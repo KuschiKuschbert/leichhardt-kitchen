@@ -83,7 +83,8 @@ const measure = (p, rowSel) => p.evaluate(rowSel => {
     rows: rows ? rows.length : null, rowsInView: rows ? rows.filter(seen).length : null, firstRowTop: rows && rows.length ? Math.round(rows[0].getBoundingClientRect().top) : null,
     text: { smallest: pick(0), median: pick(0.5), largest: pick(0.999) }, bars, scrollHeight: document.documentElement.scrollHeight };
 }, rowSel);
-(async () => {
+module.exports = { extra, quiet, fonts };
+if (require.main === module) (async () => {
   const port = 20000 + Math.floor(Math.random() * 20000); await new Promise(r => server.listen(port, '127.0.0.1', r));
   const baseUrl = 'http://127.0.0.1:' + port + '/', b = await L.start(), out = {};
   fs.mkdirSync(OUT, { recursive: true });

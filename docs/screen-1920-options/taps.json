@@ -1,0 +1,666 @@
+{
+ "prep-1920-touch": {
+  "rowHeight": 53,
+  "controls": [
+   {
+    "name": "Tick Portion rump",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 399,
+    "x2": 442,
+    "gapToNext": 10
+   },
+   {
+    "name": "Portion rump 20. Start h",
+    "drawn": [
+     310,
+     46
+    ],
+    "tap": [
+     310,
+     48
+    ],
+    "x": 453,
+    "x2": 762,
+    "gapToNext": -310
+   },
+   {
+    "name": "Portion rump 20. Start h",
+    "drawn": [
+     310,
+     29
+    ],
+    "tap": [
+     310,
+     30
+    ],
+    "x": 453,
+    "x2": 762,
+    "gapToNext": 8
+   },
+   {
+    "name": "Who's on it: Portion rum",
+    "drawn": [
+     50,
+     44
+    ],
+    "tap": [
+     52,
+     44
+    ],
+    "x": 771,
+    "x2": 822,
+    "gapToNext": 0
+   },
+   {
+    "name": "Not urgent: Portion rump",
+    "drawn": [
+     62,
+     44
+    ],
+    "tap": [
+     64,
+     44
+    ],
+    "x": 823,
+    "x2": 886,
+    "gapToNext": 2
+   },
+   {
+    "name": "More for Portion rump",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 889,
+    "x2": 932
+   }
+  ]
+ },
+ "prep-1920-mouse": {
+  "rowHeight": 51,
+  "controls": [
+   {
+    "name": "Tick Portion rump",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 399,
+    "x2": 442,
+    "gapToNext": 10
+   },
+   {
+    "name": "Portion rump 20. Start h",
+    "drawn": [
+     310,
+     44
+    ],
+    "tap": [
+     310,
+     46
+    ],
+    "x": 453,
+    "x2": 762,
+    "gapToNext": -310
+   },
+   {
+    "name": "Portion rump 20. Start h",
+    "drawn": [
+     310,
+     27
+    ],
+    "tap": [
+     310,
+     28
+    ],
+    "x": 453,
+    "x2": 762,
+    "gapToNext": 8
+   },
+   {
+    "name": "Who's on it: Portion rum",
+    "drawn": [
+     50,
+     44
+    ],
+    "tap": [
+     52,
+     44
+    ],
+    "x": 771,
+    "x2": 822,
+    "gapToNext": 0
+   },
+   {
+    "name": "Not urgent: Portion rump",
+    "drawn": [
+     62,
+     44
+    ],
+    "tap": [
+     64,
+     44
+    ],
+    "x": 823,
+    "x2": 886,
+    "gapToNext": 2
+   },
+   {
+    "name": "More for Portion rump",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 889,
+    "x2": 932
+   }
+  ]
+ },
+ "prep-768": {
+  "rowHeight": 53,
+  "controls": [
+   {
+    "name": "Tick Portion rump",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 40,
+    "x2": 83,
+    "gapToNext": 43
+   },
+   {
+    "name": "Portion rump 20. Start h",
+    "drawn": [
+     467,
+     46
+    ],
+    "tap": [
+     401,
+     48
+    ],
+    "x": 127,
+    "x2": 527,
+    "gapToNext": -401
+   },
+   {
+    "name": "Portion rump 20. Start h",
+    "drawn": [
+     467,
+     29
+    ],
+    "tap": [
+     401,
+     30
+    ],
+    "x": 127,
+    "x2": 527,
+    "gapToNext": 42
+   },
+   {
+    "name": "Who's on it: Portion rum",
+    "drawn": [
+     50,
+     44
+    ],
+    "tap": [
+     52,
+     44
+    ],
+    "x": 570,
+    "x2": 621,
+    "gapToNext": 0
+   },
+   {
+    "name": "Not urgent: Portion rump",
+    "drawn": [
+     62,
+     44
+    ],
+    "tap": [
+     64,
+     44
+    ],
+    "x": 622,
+    "x2": 685,
+    "gapToNext": 1
+   },
+   {
+    "name": "More for Portion rump",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 687,
+    "x2": 730
+   }
+  ]
+ },
+ "prep-390": {
+  "rowHeight": 51,
+  "controls": [
+   {
+    "name": "Tick Portion rump",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 33,
+    "x2": 76,
+    "gapToNext": 2
+   },
+   {
+    "name": "Portion rump 20. Start h",
+    "drawn": [
+     142,
+     39
+    ],
+    "tap": [
+     142,
+     43
+    ],
+    "x": 79,
+    "x2": 220,
+    "gapToNext": -142
+   },
+   {
+    "name": "Portion rump 20. Start h",
+    "drawn": [
+     142,
+     21
+    ],
+    "tap": [
+     142,
+     26
+    ],
+    "x": 79,
+    "x2": 220,
+    "gapToNext": 4
+   },
+   {
+    "name": "Not urgent: Portion rump",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 225,
+    "x2": 268,
+    "gapToNext": 0
+   },
+   {
+    "name": "Who's on it: Portion rum",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 269,
+    "x2": 312,
+    "gapToNext": 0
+   },
+   {
+    "name": "More for Portion rump",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 313,
+    "x2": 356
+   }
+  ]
+ },
+ "orders-1920-touch": {
+  "rowHeight": 70,
+  "controls": [
+   {
+    "name": "Ordered: Milk",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 391,
+    "x2": 434,
+    "gapToNext": 54
+   },
+   {
+    "name": "Yorkshire Pudding",
+    "drawn": [
+     105,
+     16
+    ],
+    "tap": [
+     106,
+     16
+    ],
+    "x": 489,
+    "x2": 594,
+    "gapToNext": 840
+   },
+   {
+    "name": "More for Milk",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 1435,
+    "x2": 1478
+   }
+  ]
+ },
+ "orders-1920-mouse": {
+  "rowHeight": 68,
+  "controls": [
+   {
+    "name": "Ordered: Milk",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 391,
+    "x2": 434,
+    "gapToNext": 54
+   },
+   {
+    "name": "Yorkshire Pudding",
+    "drawn": [
+     105,
+     16
+    ],
+    "tap": [
+     106,
+     16
+    ],
+    "x": 489,
+    "x2": 594,
+    "gapToNext": 840
+   },
+   {
+    "name": "More for Milk",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 1435,
+    "x2": 1478
+   }
+  ]
+ },
+ "orders-768": {
+  "rowHeight": 70,
+  "controls": [
+   {
+    "name": "Ordered: Milk",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 32,
+    "x2": 75,
+    "gapToNext": 54
+   },
+   {
+    "name": "Yorkshire Pudding",
+    "drawn": [
+     105,
+     16
+    ],
+    "tap": [
+     106,
+     16
+    ],
+    "x": 130,
+    "x2": 235,
+    "gapToNext": 451
+   },
+   {
+    "name": "More for Milk",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 687,
+    "x2": 730
+   }
+  ]
+ },
+ "orders-390": {
+  "rowHeight": 67,
+  "controls": [
+   {
+    "name": "Ordered: Milk",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 28,
+    "x2": 71,
+    "gapToNext": 50
+   },
+   {
+    "name": "Yorkshire Pudding",
+    "drawn": [
+     105,
+     16
+    ],
+    "tap": [
+     106,
+     16
+    ],
+    "x": 122,
+    "x2": 227,
+    "gapToNext": 85
+   },
+   {
+    "name": "More for Milk",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 313,
+    "x2": 356
+   }
+  ]
+ },
+ "cleaning-1920-touch": {
+  "rowHeight": 54,
+  "controls": [
+   {
+    "name": "Open checks: Ovens insid",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 372,
+    "x2": 415,
+    "gapToNext": 371
+   },
+   {
+    "name": "Open checks and method: ",
+    "drawn": [
+     1112,
+     47
+    ],
+    "tap": [
+     401,
+     48
+    ],
+    "x": 787,
+    "x2": 1187
+   }
+  ]
+ },
+ "cleaning-1920-mouse": {
+  "rowHeight": 52,
+  "controls": [
+   {
+    "name": "Open checks: Ovens insid",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 372,
+    "x2": 415,
+    "gapToNext": 371
+   },
+   {
+    "name": "Open checks and method: ",
+    "drawn": [
+     1112,
+     45
+    ],
+    "tap": [
+     401,
+     46
+    ],
+    "x": 787,
+    "x2": 1187
+   }
+  ]
+ },
+ "cleaning-768": {
+  "rowHeight": 54,
+  "controls": [
+   {
+    "name": "Open checks: Ovens insid",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 32,
+    "x2": 75,
+    "gapToNext": 135
+   },
+   {
+    "name": "Open checks and method: ",
+    "drawn": [
+     640,
+     47
+    ],
+    "tap": [
+     401,
+     48
+    ],
+    "x": 211,
+    "x2": 611
+   }
+  ]
+ },
+ "cleaning-390": {
+  "rowHeight": 77,
+  "controls": [
+   {
+    "name": "Open checks: Ovens insid",
+    "drawn": [
+     44,
+     44
+    ],
+    "tap": [
+     44,
+     44
+    ],
+    "x": 28,
+    "x2": 71,
+    "gapToNext": 10
+   },
+   {
+    "name": "Open checks and method: ",
+    "drawn": [
+     274,
+     70
+    ],
+    "tap": [
+     276,
+     74
+    ],
+    "x": 82,
+    "x2": 357
+   }
+  ]
+ }
+}
