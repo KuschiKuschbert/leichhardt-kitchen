@@ -3000,6 +3000,11 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
    whole row the link, its name, what this role can do there and Open in words. One layout at every width, the block
    capped so the rows do not stop short of it on a laptop. */
 .p-admin.ad-admin .a-pane:has(> .c-tools) { max-width: 48rem; }
+/* the admin Kitchen Overview at the chef Kitchen's width, each value whole and wrapping beside its label (head chef,
+   27 Nov 2026, step 4: labels sat 700 to 1,050 px from their values, and Shifts was cut to "Dinner 16:00 ...") */
+.p-admin.ad-admin .a-pane:has(> .k-home) { max-width: 48rem; }
+.k-home .st-v { max-width: 26rem; }
+.k-home .st-v > span { overflow: visible; overflow-wrap: anywhere; white-space: normal; }
 .p-admin.ad-admin .a-tabs[hidden] { display: none; }
 .c-tool { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: center; align-items: baseline; column-gap: .8rem; min-height: 56px; padding: .4rem 0; border-top: 1px solid var(--line); color: inherit; text-decoration: none; }
 .c-tool strong { font-size: 1.0625rem; }

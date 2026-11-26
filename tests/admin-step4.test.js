@@ -103,6 +103,23 @@ const store = p => p.evaluate(() => window.__fake.dump());
     await p.context().close();
   }
 
+  // Kitchen Overview: at the chef Kitchen's width, each value whole beside its label (the shifts were cut off)
+  for (const [w, h] of [[1920, 1008], [1280, 800]]) {
+    const cfg = { [K('config', 'main')]: Object.assign({}, L.seed()[K('config', 'main')], { kitSecs: [{ id: 'larder', name: 'Larder' }, { id: 'grill', name: 'Grill' }],
+      kitShifts: [{ id: 'lunch', name: 'Lunch', from: 600, to: 900 }, { id: 'dinner', name: 'Dinner', from: 960, to: 1320 }, { id: 'close', name: 'Close', from: 1320, to: 1410 }] }) };
+    const p = await L.open(b, '#/admin', { admin: true, adminPage: 'kitchen-home', who: '', width: w, height: h, touch: false, extra: cfg, wait: 1800 });
+    await L.waitFor(p, () => !!document.querySelector('.k-home .st-v'), null, 8000).catch(() => {});
+    const k = await p.evaluate(() => {
+      const rows = [...document.querySelectorAll('.k-home .st-row')].filter(e => e.getClientRects().length), wide = Math.max(...rows.map(e => e.getBoundingClientRect().width));
+      const cut = [...document.querySelectorAll('.k-home .st-v > span')].filter(e => e.scrollWidth > e.clientWidth + 1).map(e => e.textContent);
+      const gaps = rows.map(r => { const l = r.querySelector('.st-l'), v = r.querySelector('.st-v > span'); return l && v && v.textContent.trim() ? Math.round(v.getBoundingClientRect().left - l.getBoundingClientRect().right) : 0; });
+      return { wide: Math.round(wide), cut, gap: Math.max(...gaps) };
+    });
+    ok(k.wide <= 800 && !k.cut.length && k.gap < 520, w + ': Kitchen Overview: rows at most 768 px wide, no value cut off, label and value near (' + JSON.stringify(k) + ')');
+    ok(!p.errors.length && !(await L.overflow(p)), w + ': Kitchen Overview: no page errors, no sideways scroll ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });
