@@ -5827,6 +5827,7 @@ button[data-cln-ready-label] > span { position: absolute; inset: 0; display: gri
 .cln-sug-wrap { margin: .4rem 0 .6rem; }
 .cln-sug-start .btn { margin: .3rem 0 0; }
 .cln-sug-off { margin: .4rem 0; }
+.cln-sug-notes b { color: var(--ink); }
 .cln-sug-dock .btn-row { flex-wrap: wrap; }
 .cln-chef-page .cln-sug-sum { flex-direction: column; align-items: flex-start; gap: .2rem; }
 .cln-sug-rules { margin: .5rem 0 .2rem; }

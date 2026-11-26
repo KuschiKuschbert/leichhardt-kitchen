@@ -637,8 +637,10 @@
     var tasks = weighJobs(), jobs = Pl.jobsFrom(tasks, { w: M.plan.w, k: M.plan.k, key: jobKey, sec: function (task) { return task.shared ? '' : owner(task, T.day()); }, clock: sugClock() });
     jobs.forEach(function (j) { if (s.keep[j.id]) j.move = false; });
     s.levels = JSON.stringify(M.plan.d || LEVEL_DEFAULT);
-    var out = Pl.plan(jobs, { level: M.plan.d || LEVEL_DEFAULT, order: 'fewest', even: false, needWeight: true, twoHeavy: s.twoHeavy, cap: s.cap ? 5 : false, avoid: s.avoid });
-    s.jobs = jobs; s.out = out; s.state = 'ready';
+    var opts = { level: M.plan.d || LEVEL_DEFAULT, order: 'fewest', even: false, needWeight: true, twoHeavy: s.twoHeavy, cap: s.cap ? 5 : false, avoid: s.avoid }, out = Pl.plan(jobs, opts);
+    s.jobs = jobs; s.out = out; s.state = 'ready'; s.day = T.day();
+    // what the plan as it stands still breaks, in words: a kept day, a night over 5 points, a job left where it was
+    s.notes = Pl.check(jobs, out.days, opts);
     s.changes = Pl.changes(jobs, out, sugClock(), T.day());
     s.noFit = jobs.filter(function (j) { return j.move && /No day fits/.test(out.why[j.id] || ''); }).map(function (j) { return j.id; });
   }
@@ -672,6 +674,7 @@
     if (s.noFit.length) bits.push(s.noFit.length + (s.noFit.length === 1 ? ' job has' : ' jobs have') + ' no day that fits.');
     bits.push(s.saved.length ? 'A saved day starts tomorrow.' : 'Nothing is saved yet. A saved day starts tomorrow.');
     return '<div class="cln-attention cln-sug-sum" tabindex="-1" role="status"><b>' + esc(head) + '</b><span class="hint">' + esc(bits.join(' ')) + '</span>' +
+      (s.notes.length ? '<span class="hint cln-sug-notes"><b>Still against a rule:</b> ' + esc(s.notes.slice(0, 4).join('. ') + '.' + (s.notes.length > 4 ? ' And ' + (s.notes.length - 4) + ' more.' : '')) + '</span>' : '') +
       (noW ? '<span class="hint">' + noW + (noW === 1 ? ' job has' : ' jobs have') + ' no weight yet, so ' + (noW === 1 ? 'it is' : 'they are') + ' not planned. The book never guesses a weight. <button type="button" class="p-link" data-cln="weights-filter" data-f="none">Weigh ' + (noW === 1 ? 'it' : 'them') + ' first</button></span>' : '') + '</div>' +
       '<div class="cln-sug-rules"><span class="label" id="cln-sug-rules-l">Suggested rules, yours to keep or drop</span><span class="chips" role="group" aria-labelledby="cln-sug-rules-l">' +
       '<button type="button" class="chip" data-cln="sug-rule" data-rule="twoHeavy" aria-pressed="' + s.twoHeavy + '"' + (s.saving ? ' disabled' : '') + '>No section gets two heavy jobs on one night</button>' +
@@ -721,6 +724,7 @@
   // time to find the job the rules refuse. A lost answer stops here: Send the rest checks what landed first.
   function sugSave() {
     var s = M.sug; if (!s || s.saving || !C.moveTasks) return;
+    if (s.day !== T.day()) { sugDrop('A new day began, so the suggestion was dropped. Press Suggest the days again.'); draw(); return; }
     if (teamOn() !== false) { s.error = 'Cleaning is on for the team now, so the book no longer moves days in bulk. Nothing more was saved.'; draw(); return; }
     var list = sugPending().filter(function (c) { var r = s.rows[c.id]; return !r || r.st !== 'refused'; }), model = M;
     if (!list.length) return;
@@ -1083,6 +1087,7 @@
   }
   function checkDay() {
     if (M.today === T.day()) { armBoundary(); return false; }
+    if (M.sug && !M.sug.saving) sugDrop('A new day began, so the suggestion was dropped. Press Suggest the days again.');
     M.today = T.day(); M.selected = T.day(); M.week = monday(T.day()); closePicker(true, true); clearReads(); draw(); load(); return true;
   }
   function mount(root) { if (!C.act || !C.importTasks || !C.due || !window.LK_CLEANING_SCHEDULE || !K || K.api !== 1) { root.innerHTML = '<p class="hint" role="status">Reload the book to use the current cleaning schedule.</p><button type="button" class="btn dark" data-act="reload">Reload</button>'; return; } access(); M.root = root; checkDay(); draw(); load(); }

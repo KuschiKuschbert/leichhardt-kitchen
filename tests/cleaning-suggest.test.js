@@ -85,6 +85,51 @@ const MONTHLY = ['clean-template-sc-grill-02', 'clean-template-sc-pans-03', 'cle
     ok(!(await p.$('.cln-sug-row')) && /Suggestion dropped\. Nothing was saved\./.test(await text(p, '.cln-sug-start')) && openRev(await store(p), STOVE)[0].dows.join() === '2', 'Drop the suggestion leaves every job as it was, and says so');
     await p.context().close();
   }
+  // Keep: two heavy Grill jobs on a Monday; the lead's rule moves one, which may be kept. A night over 5 points is named.
+  {
+    const jobs = base(), job = (id, x) => { jobs[key('cleaningTasks', id)] = { text: 'Made-up job ' + id, area: 'Shelves', section: 'grill', sectionName: 'Grill', shared: false, dows: [1], guide: '', root: id, prev: '', next: '', from: L.NOW - 20 * DAY, until: OPEN, at: L.NOW - 20 * DAY, by: 'sam', ...x }; };
+    job('hv-a'); job('hv-b'); jobs[PLAN].w['hv-a'] = 3; jobs[PLAN].w['hv-b'] = 3;
+    ['pv-a', 'pv-b', 'pv-c'].forEach(id => { job(id, { section: 'pans', sectionName: 'Pans', dows: [4] }); jobs[PLAN].w[id] = 2; });
+    const p = await open(b, { admin: true }, 390, jobs);
+    await suggest(p);
+    const hb = await row(p, 'hv-b');
+    ok(/, was Monday$/.test(hb.title) && /^Grill already has a heavy job on Monday \(a suggested rule\)/.test(hb.why) && hb.keep, 'a heavy job moved by the suggested rule says so and offers Keep Monday (' + hb.title + ': ' + hb.why + ')');
+    ok(/Still against a rule: .*Pans is at weight 6 on Thursday, over 5/.test(await text(p, '.cln-sug-sum')), 'the summary names a night over 5 points in words (' + await text(p, '.cln-sug-notes') + ')');
+    await p.click('[data-cln="sug-keep"][data-id="hv-b"]'); await L.settle(p, 200);
+    const kb = await row(p, 'hv-b'), ka = await row(p, 'hv-a');
+    ok(kb.title === 'Stays on Monday. You kept it.' && /, was Monday$/.test(ka.title) && /already has a heavy job on Monday/.test(ka.why) && await p.evaluate(() => { const a = document.activeElement; return !!a && !!a.closest('.cln-sug-row') && a.closest('.cln-sug-row').getAttribute('data-template') === 'hv-b'; }),
+      'Keep: the job stays on Monday, the rest is planned again so the other heavy job moves instead, and focus stays on the kept row (' + ka.title + ')');
+    await p.click('[data-cln="sug-rule"][data-rule="cap"]'); await L.settle(p, 200);
+    ok(!/over 5/.test(await text(p, '.cln-sug-sum')) && await p.$eval('[data-cln="sug-rule"][data-rule="cap"]', e => e.getAttribute('aria-pressed')) === 'false', 'with the over-5 rule dropped, the night is no longer named');
+    await p.click('[data-cln="sug-reset"][data-id="hv-b"]'); await L.settle(p, 200);
+    ok(/, was Monday$/.test((await row(p, 'hv-b')).title), 'Suggest again puts the kept job back into the plan');
+    await p.context().close();
+  }
+  // no signal at all (the write waits, as on a phone): the rows say Sending, then Saved once the signal is back, once each
+  {
+    const p = await open(b, { admin: true }, 390, base());
+    await suggest(p);
+    await p.evaluate(() => { window.__fake.mode = 'hold'; });
+    await p.click('[data-cln="sug-save"]'); await L.settle(p, 400);
+    ok((await rows(p)).some(x => /^Sending/.test(x.state)) && /Saving 4 changes, 5 at a time/.test(await text(p, '.cln-sug-dock')) && !(await p.$('[data-cln="sug-drop"]')), 'no signal: the rows say Sending and the dock Saving, as the weights Save does while it waits (' + await text(p, '.cln-sug-dock') + ')');
+    await p.evaluate(() => window.__fake.warm()); await saved(p);
+    const s = await store(p);
+    ok((await rows(p)).every(x => /^Saved/.test(x.state)) && [STOVE].concat(MONTHLY).every(id => openRev(s, id).length === 1 && revs(s, id).length === 2), 'signal back: every row says Saved, each job once');
+    await p.context().close();
+  }
+  // a new day with a suggestion on screen: it is dropped in words, never saved with yesterday's tomorrow
+  {
+    const tomorrow = new Date(L.NOW + 10 * 3600000 + DAY).toISOString().slice(0, 10), midnight = Date.parse(tomorrow + 'T00:00:00Z') - 10 * 3600000;
+    const p = await open(b, { admin: true, clock: midnight - 120000 }, 390, base());
+    await suggest(p);
+    ok((await rows(p)).length === 4, 'a suggestion at 23:58');
+    await p.clock.runFor(180000); await L.settle(p, 300);
+    await p.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); await L.settle(p, 500);
+    const sav = await p.$('[data-cln="sug-save"]');
+    if (sav) { await sav.click(); await L.settle(p, 300); }
+    ok(!(await p.$('.cln-sug-row')) && /A new day began, so the suggestion was dropped/.test(await text(p, '.cln-plan')) && openRev(await store(p), STOVE)[0].dows.join() === '2', 'after midnight the suggestion is dropped in words and nothing moves');
+    await p.context().close();
+  }
   // more than 5 changes: batches of 5; one job refused; an answer lost; Send the rest
   {
     const p = await open(b, { admin: true }, 390, fridays(base(), 7));

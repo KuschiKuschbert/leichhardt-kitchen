@@ -109,10 +109,17 @@ ok(mCh.length === monthly.length && mCh.every(c => c.anchor > TODAY && clock.dow
 const after = revs().map(t => { const c = ch.find(x => x.id === t.id); if (!c) return t; if (c.anchor) t.plan.repeat = { days: t.plan.repeat.days, anchor: c.anchor }; else t.dows = c.days.slice(); return t; });
 const aj = adapt(after), again = P.changes(aj, P.plan(aj, BOOK), clock, TODAY);
 ok(again.length === 0 && aj.filter(j => j.every === 28).every(j => !j.move && j.days.length === 1), 'planning again after a save moves nothing, and a monthly job with its new first date stays put (' + again.map(c => c.id).join(',') + ')');
-// Keep the old day: that job stays where it was, the rest is planned again around it and still breaks no day level
-const keepable = datedMoves.find(c => !/takes up to/.test(bp.why[c.id]));
-if (keepable) { const kj = bj.map(j => j.id === keepable.id ? Object.assign({}, j, { move: false }) : j), kp = P.plan(kj, BOOK);
-  ok(kp.days[keepable.id] === undefined && P.check(kj, kp.days, BOOK).every(m => !/only a light job goes on|a heavy job does not go on/.test(m)), 'Keep the old day: the job keeps it, and the rest planned again breaks no day level'); }
+// Keep the old day: two heavy Grill jobs on a Monday. The lead's rule moves one, which can be kept (Monday takes heavy)
+const hv = (id, x) => Object.assign({ id, key: id, text: 'Made-up heavy job ' + id, sec: 'Grill', kind: '', w: 3, per: 1, days: [1], every: 0, move: true }, x || {});
+const two = bj.concat([hv('hv-a'), hv('hv-b')]), tp = P.plan(two, BOOK), tc = P.changes(two, tp, clock, TODAY).filter(c => /^hv-/.test(c.id));
+ok(tc.length === 1 && tc[0].id === 'hv-b' && /^Grill already has a heavy job on Monday \(a suggested rule\)/.test(tp.why['hv-b']) && !/takes up to/.test(tp.why['hv-b']), 'two heavy jobs on one Grill night: one moves, naming the suggested rule, so it may be kept (' + tp.why['hv-b'] + ')');
+const kept = two.map(j => j.id === 'hv-b' ? Object.assign({}, j, { move: false }) : j), kp = P.plan(kept, BOOK);
+ok(kp.days['hv-b'] === undefined && kp.days['hv-a'].indexOf(1) < 0 && /already has a heavy job on Monday/.test(kp.why['hv-a']) && P.check(kept, kp.days, BOOK).every(m => !/two heavy jobs|only a light job goes on|a heavy job does not go on/.test(m)), 'Keep the old day: that job stays on Monday and the rest is planned again around it, so the other heavy job moves instead and no rule is broken (' + kp.days['hv-a'] + ')');
+const both = two.map(j => /^hv-/.test(j.id) ? Object.assign({}, j, { move: false }) : j), bp2 = P.plan(both, BOOK);
+ok(P.check(both, Object.assign({}, bp2.days, { 'hv-a': [1], 'hv-b': [1] }), BOOK).some(m => m === 'Grill has two heavy jobs on Monday') && P.check(both, Object.assign({}, bp2.days, { 'hv-a': [1], 'hv-b': [1] }), Object.assign({}, BOOK, { twoHeavy: false })).every(m => !/two heavy jobs/.test(m)), 'both kept: the check names the two heavy jobs while that rule is on, and not once it is dropped');
+// a night over 5 points: three medium Pans jobs on a Thursday stay (no rule moves them), and the check says so while the rule is on
+const over = bj.concat(['pv-a', 'pv-b', 'pv-c'].map(id => hv(id, { sec: 'Pans', w: 2, days: [4] }))), op = P.plan(over, BOOK);
+ok(P.check(over, op.days, BOOK).some(m => /^Pans is at weight \d+ on Thursday, over 5$/.test(m)) && P.check(over, op.days, Object.assign({}, BOOK, { cap: false })).every(m => !/over 5/.test(m)), 'a Pans night over 5 points is named while that rule is on, and not once it is dropped (' + P.check(over, op.days, BOOK).filter(m => /over 5/.test(m)).join('; ') + ')');
 // Another day: the suggested day is never offered again for that job
 const mover = datedMoves[0], av = P.plan(bj, Object.assign({}, BOOK, { avoid: { [mover.id]: mover.days } }));
 ok(av.days[mover.id].every(d => mover.days.indexOf(d) < 0) || /No day fits/.test(av.why[mover.id]), 'Another day: the job gets a different day, or says no day fits (' + mover.days + ' to ' + av.days[mover.id] + ')');

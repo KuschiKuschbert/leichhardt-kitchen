@@ -398,13 +398,13 @@ Break-it findings, each checked in `tests/cleaning-days.test.js` (stand-in) or `
 Implemented app on the click-test stand-in, the three built-in lists with the council's made-up weights and kinds, his starting days, Cleaning off, and seven made-up medium jobs on a Friday so the save needs three batches (`built/suggest-shots.cjs`, `built/suggest-counts.json`). Pictures: `built/suggest-390`, `-768`, `-1280` (the changes), `built/suggest-part-saved-390` (one refused, one answer lost, the rest waiting), `built/suggest-cleaning-on-390`.
 
 - **Taps.** Repeat tasks, Weights and days, Suggest the days, Save: 3 taps from Repeat tasks. Keep or Another day: one tap each, and the rest is planned again at once.
-- **Lines.** The changes view is 4.2 screens long at 390 for 11 changes (`m3`, 8 changes: 3.3), 2.9 at 768 and 2.7 at 1280. Whole change rows on the first screen above the Save bar: 0 at 390, as in the redrawn `m3`. 19 controls; none under 44 px; no sideways scroll at 390, 768 and 1280.
+- **Lines.** The changes view is 4.3 screens long at 390 for 11 changes (`m3`, 8 changes: 3.3), 2.9 at 768 and 2.7 at 1280. Whole change rows on the first screen above the Save bar: 0 at 390, as in the redrawn `m3`. 19 controls; none under 44 px; no sideways scroll at 390, 768 and 1280.
 - **On the built-in lists** the book's call suggests 4 changes: the stove off a medium Tuesday, and a first date for each of the three monthly jobs. The council's `m3` showed 8.
 
 Departures from `m3` and `m4`, each his to OK before this goes ready:
 
 1. **Only jobs that break a rule move.** The task for 4b says fewest moves: only dated jobs that break a day's level. `m3` also moved two jobs to make a section's heaviest night lighter (shelves under the microwave, the Hot larder shelves). That pass is in the planner (`even`) and off in the book. Turning it on would bring back those two kinds of move.
-2. **The lead's two rules are chips he can drop**, both on to start: no section gets two heavy jobs on one night, and a night over 5 points is too heavy. With them dropped, only jobs on a day too light for them move. Question 5 below stays open.
+2. **The lead's two rules are chips he can drop**, both on to start. Two heavy jobs on one night moves a dated job (and gives it Keep). Over 5 points never moves a dated job: it only keeps jobs of one kind off a night it would push over 5, and the summary names any night still over 5 ("Still against a rule: Pans is at weight 6 on Thursday, over 5"). Dropping a chip plans again and takes its lines away. Question 5 below stays open.
 3. **Save says "Save 4 days"**, not "Save 20 weights and 8 days": the weights save on their own since step 3.
 4. **No Pick a date on monthly jobs.** A monthly job with no first date gets one from the suggestion (from tomorrow, on its weekday, in its week); Another day changes it. One that has a first date keeps it: the date is the chef's, changed in Repeat tasks.
 5. **States in words, not boxed tags**: the green Saved stamp with the time, Waiting to send, Not sent, and Refused in failure ink. Send the rest replaces Save after a part save.
@@ -419,11 +419,15 @@ Break-it findings, each checked in `tests/cleaning-suggest.test.js` (stand-in), 
 | The first batch lands, its answer is lost | Not sent, then no job saved twice | Checked: 5 Not sent, 6 Waiting to send; Send the rest counts the landed ones as Saved; every job has one open and one closed revision |
 | No signal | Nothing moves, Not sent | Checked; Send the rest saves them once the signal is back |
 | Cleaning switched on with a suggestion on screen | Nothing more saved | Checked: Save says why and moves nothing |
-| Keep, then plan again | The rest still keeps every day's level | Checked in node; no Keep where the old day breaks a level |
+| Keep, then plan again | The rest still keeps every day's level | Checked in node and on the stand-in: two heavy Grill jobs on a Monday, Keep one, the other moves instead, focus stays on the kept row; no Keep where the old day breaks a level |
+| A plan that still breaks a rule | Said in words | Checked: a Pans night at 6 points is named in the summary while that rule is on, and not once it is dropped |
+| No signal at all (the write waits) | Says so, saves once the signal is back | Checked: rows say Sending and the dock Saving, as the weights Save does while it waits (no Drop until it answers); then every row Saved, each job once |
+| A new day with a suggestion on screen | Dropped, never saved with yesterday's tomorrow | Checked: at midnight the suggestion is dropped in words and nothing moves |
 | Plan again after a save | Nothing moves, monthly jobs included | Checked in node |
 | A job with no weight | Counted, never planned | Checked: "5 jobs have no weight yet ... The book never guesses a weight", Weigh them first opens them |
 | Real revisions on the emulator | 5 in one batch, refused whole when one is stale | Checked, a job with checks and a monthly first date among them; a second move the same day allowed. 8 jobs in one batch allowed, 9 refused |
-| Risk, not evidenced | A save that straddles midnight | Each batch checks the day before it sends; a new day stops the save in words. Not run with the clock moved |
+| Risk, not evidenced | A save that straddles midnight | Each batch checks the day before it sends; a new day stops the save in words. Not run with the clock moved mid-save |
+| Not tested | A lock or a reload with a suggestion on screen | The suggestion lives in the page's memory: a lock or reload drops it. Unsaved, it counts as unsent work like unsaved weights, so a handover waits for it |
 
 ## Step 2 as built, against the previews
 
