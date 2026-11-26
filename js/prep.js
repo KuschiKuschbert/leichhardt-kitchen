@@ -2216,15 +2216,22 @@
   // d: what each weekday takes, Sunday first, 1 light to 3 heavy (step 4, 26 Nov 2026), set by the same chefs as the
   // weights, and only whole: the rules check all seven.
   function cleaningPlanSave(w, k, d) {
+    if (!canW()) return Promise.reject(cleaningError('unauthenticated'));   // the PIN session lapsed: unlock, then save
+    var data = cleaningPlanData(w, k, d);
+    if (!cleaningChef() || !data) return Promise.reject(cleaningError('permission-denied'));
+    return W([['set', docRef('cleaningPlan', 'main'), data, true]]);
+  }
+  // the merged record's data, or null with nothing to send. One helper for the weights list and a new job's save (step
+  // 4c), so neither sends an empty map (it would replace the stored one)
+  function cleaningPlanData(w, k, d) {
     var hasW = !!w && typeof w === 'object' && Object.keys(w).length > 0, hasK = !!k && typeof k === 'object' && Object.keys(k).length > 0;
     var hasD = Array.isArray(d) && d.length === 7 && d.every(function (v) { return v === 1 || v === 2 || v === 3; });
-    if (!canW()) return Promise.reject(cleaningError('unauthenticated'));   // the PIN session lapsed: unlock, then save
-    if (!cleaningChef() || !(hasW || hasK || hasD)) return Promise.reject(cleaningError('permission-denied'));
+    if (!(hasW || hasK || hasD)) return null;
     var data = { v: 1, at: now() };
     if (hasW) data.w = w;
     if (hasK) data.k = k;
     if (hasD) data.d = d.slice();
-    return W([['set', docRef('cleaningPlan', 'main'), data, true]]);
+    return data;
   }
   /* The suggestion for what each weekday takes, from staffing (head chef, 26 Nov 2026: "learn then based on what days
      we have more staff on"). How many people were on each weekday, from teamsum/main: the last 30 days of the chefs'
@@ -2331,11 +2338,15 @@
       });
     });
   }
-  function cleaningSave(draft, old) {
+  /* weigh (step 4c, 26 Nov 2026): a new job's weight and kind, { w: 1 to 3, k: a kind or '' }, saved in the same batch as
+     the job, merged into cleaningPlan/main under the new root id. One batch lands whole or not at all, so a job is never
+     saved without the weight the chef chose, nor a weight without its job. Only a new job carries one. No extra read. */
+  function cleaningSave(draft, old, weigh) {
     if (!cleaningChef() || !canW()) return Promise.reject(cleaningError('permission-denied'));
     var data;
     try { data = cleaningDraft(draft); } catch (e) { return Promise.reject(e); }
-    var context = writeContext(), access = cleaningContext(), identity = stableIdentity(), today = dayNow(), signature = JSON.stringify([data, old && old.id || '']);
+    weigh = !old && weigh && [1, 2, 3].indexOf(weigh.w) >= 0 ? { w: weigh.w, k: typeof weigh.k === 'string' && weigh.k.length <= 40 ? weigh.k : '' } : null;
+    var context = writeContext(), access = cleaningContext(), identity = stableIdentity(), today = dayNow(), signature = JSON.stringify([data, old && old.id || '', weigh]);
     // A lost acknowledgement must not make a second job. A retry checks the exact generated revision first;
     // failed reads preserve the attempt. No extra read is needed for an ordinary successful save.
     return sdk().then(function () {
@@ -2350,7 +2361,7 @@
         // without permitting another create; the normal stale-revision guard still protects a further edit.
         if (saved.root !== prior.task.root || saved.prev !== prior.task.prev || saved.at !== prior.task.at) throw { code: 'stale', message: 'This task changed on another device. Refresh before editing it.' };
         cleaningAttempt = null;
-        return { task: saved, closed: prior.closed, recovered: prior.signature !== signature };
+        return { task: saved, closed: prior.closed, recovered: prior.signature !== signature, weighed: prior.weighed || null };
       });
     }).then(function (kept) {
       if (kept) return kept;
@@ -2360,9 +2371,11 @@
       data = Object.assign(data, { root: old ? old.root : ref.id, prev: old ? old.id : '', next: '', from: from, until: CLEAN_OPEN, at: now(), by: context.by });
       if (old) { closed = Object.assign({}, old, { until: from, next: ref.id, by: context.by }); ops.push(['upd', docRef('cleaningTasks', old.id), { until: from, next: ref.id }]); }
       ops.push(['set', ref, data]);
+      var plan = weigh ? cleaningPlanData((function (m) { m[ref.id] = weigh.w; return m; })({}), weigh.k ? (function (m) { m[ref.id] = weigh.k; return m; })({}) : null) : null;
+      if (plan) ops.push(['set', docRef('cleaningPlan', 'main'), plan, true]);
       var task = Object.assign({}, data, { id: ref.id });
-      return W(ops, context).then(function () { return { task: task, closed: closed }; }, function (error) {
-        if (identity === stableIdentity()) cleaningAttempt = { identity: identity, signature: signature, task: task, closed: closed }; throw error;
+      return W(ops, context).then(function () { return { task: task, closed: closed, weighed: weigh }; }, function (error) {
+        if (identity === stableIdentity()) cleaningAttempt = { identity: identity, signature: signature, task: task, closed: closed, weighed: weigh }; throw error;
       });
     });
   }
