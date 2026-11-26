@@ -5653,6 +5653,12 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .ps-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 2rem; align-items: start; margin-top: 1rem; }
 .ps-grid > *, .ps-fields, .ps-form-grid > * { min-width: 0; }
 .ps-section { max-width: 24rem; margin: .85rem 0; }
+/* the Section picker, the read time and Add standard on one row where they fit, wrapping on a phone (head chef, 27 Nov
+   2026, step 4: the standards start about 160 px higher) */
+.ps-bar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .5rem 1.25rem; margin: .85rem 0 0; }
+.ps-bar > .ps-section { flex: 0 1 20rem; margin: 0; }
+.ps-bar > .ps-read, .ps-bar > .hint, .ps-bar > .p-err { margin: 0; align-self: center; }
+.ps-bar > .ps-bar-add { margin: 0 0 0 auto; }
 .ps-reference .lv-tools { flex-wrap: wrap; align-items: flex-end; gap: .25rem .5rem; }
 .ps-reference .lv-tools > .ps-section { flex: 0 1 8rem; min-width: 0; margin: 0; }
 .ps-reference .lv-tools > .ps-section select { min-width: 0; width: 100%; }

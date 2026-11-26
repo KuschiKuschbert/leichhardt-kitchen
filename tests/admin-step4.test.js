@@ -91,6 +91,18 @@ const store = p => p.evaluate(() => window.__fake.dump());
     await p.context().close();
   }
 
+  // Prep standards: the Section picker, the read time and Add standard share one row on the laptop and the computer
+  for (const [w, h] of [[1920, 1008], [1280, 800]]) {
+    const secs = { [K('config', 'main')]: Object.assign({}, L.seed()[K('config', 'main')], { kitSecs: [{ id: 'larder', name: 'Larder' }, { id: 'grill', name: 'Grill' }] }) };
+    const p = await L.open(b, '#/admin', { admin: true, adminPage: 'prep-standards', who: '', width: w, height: h, touch: false, extra: secs, wait: 1800 });
+    await L.waitFor(p, () => !!document.querySelector('.ps-read'), null, 8000).catch(() => {});
+    const r = await p.evaluate(() => { const t = e => e && e.getBoundingClientRect(), s = t(document.querySelector('.ps-manager .ps-bar > .ps-section')), a = t(document.querySelector('[data-ps="new"]'));
+      return s && a ? { selTop: Math.round(s.top), addTop: Math.round(a.top), addBottom: Math.round(a.bottom), vh: innerHeight } : null; });
+    ok(!!r && Math.abs(r.addTop - r.selTop) < 30 && r.addBottom <= r.vh, w + ': Prep standards: Section and Add standard on one row, Add standard on the first screen (' + JSON.stringify(r) + ')');
+    ok(!p.errors.length && !(await L.overflow(p)), w + ': Prep standards: no page errors, no sideways scroll ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });
