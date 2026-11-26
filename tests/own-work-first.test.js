@@ -63,6 +63,14 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.nb-left .nb-hd
     await L.waitFor(p, () => !!document.getElementById('hm-day-h'), null, 8000).catch(() => {});
     const t = await p.evaluate(() => { const e = document.getElementById('hm-day-h'); return e ? e.firstChild.textContent.trim() : null; });
     ok(t === want, mode + ' screen: the day card says "' + want + '" (' + t + ')');
+    // a long unbroken name wraps in the heading: the phone never scrolls sideways
+    if (mode === 'shared') {
+      const long = 'W'.repeat(40), fx = fixture(); fx[key('config', 'main')].people.find(x => x.id === 'ann').name = long;
+      const q = await L.open(b, '#/', { who: 'ann', deviceMode: 'shared', extra: fx, width: 390, height: 844, wait: 1500 });
+      await L.waitFor(q, () => !!document.getElementById('hm-day-h'), null, 8000).catch(() => {});
+      ok(new RegExp('^' + long + "'s day").test(await q.evaluate(() => document.getElementById('hm-day-h').textContent.trim())) && !(await L.overflow(q)), '390 shared: a 40 letter name wraps in its day card heading, no sideways scroll');
+      await q.context().close();
+    }
     ok(!p.errors.length, mode + ' Home: no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }

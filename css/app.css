@@ -4510,7 +4510,7 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .hm-board::before, .hm-paper::before { content: ''; position: absolute; left: 50%; top: -6px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--accent-ink); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25); }
 .hm-board { padding: 0.9rem 1rem 0.4rem; background: var(--bar); color: var(--bar-text); box-shadow: 0 6px 0 rgba(28, 29, 31, 0.18); }
 .hm-bh { display: flex; align-items: baseline; justify-content: space-between; gap: 0.6rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(251, 248, 241, 0.18); }
-.hm-bt { margin: 0; font: 700 0.8rem/1.2 var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--bar-text); }
+.hm-bt { min-width: 0; margin: 0; font: 700 0.8rem/1.2 var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--bar-text); overflow-wrap: anywhere; }   /* a shared screen's "<name>'s day" wraps a long name */
 .hm-clock { font: 700 1rem/1 var(--display); letter-spacing: 0.06em; color: var(--bar-accent); }
 .hm-rows { list-style: none; margin: 0; padding: 0; }
 .hm-rows li + li { border-top: 1px solid rgba(251, 248, 241, 0.14); }
