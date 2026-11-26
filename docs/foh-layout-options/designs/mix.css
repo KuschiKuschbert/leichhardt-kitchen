@@ -1,0 +1,26 @@
+/* The mix: B's form (two columns from 1150 px) with A's service view (the waiting trips side by side across the shelf
+   from 1100 px, the shelf first and full width, the rounds under it). A preview laid over the app, never the live book.
+   Departs from no decision: the coordinator's confirmation queue stays first and on top (22 Nov 2026), and the platters
+   still lead each trip (14 Nov 2026). The form's columns are a new layout: the head chef's OK. */
+/* B's two columns, as the build would draw them (after the keeper's checks): The function, then a wrapper of Platters
+   and When the platters go out, then a wrapper of the notes and the kitchen comment, in the page's own order
+   (designs/mix.js stands in for js/fnedit.js). Nothing is pinned to a numbered row, so a new function, a restored draft
+   or a problems list keep the Save bar last; and the right column spans a second row that takes the slack, so no gap
+   opens under The function. Below 1150 px the wrappers take no room. */
+.fe-body, .fe-out, .fe-side { display: contents; }
+/* the wrappers make When and the kitchen comment the last in a box; .set-block:last-child would take their line away
+   (the keeper's check), so they keep it, at every width */
+#fe-root .fe-out > .set-block:last-child, #fe-root .fe-side > .set-block:last-child { border-bottom: 1px solid var(--line); }
+@media (min-width: 1150px) {
+  #fe-root .fe-body { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); grid-template-rows: auto 1fr; gap: 0.6rem 1.5rem; align-items: start; }
+  #fe-root .fe-body > .set-block { grid-column: 1; grid-row: 1; }
+  #fe-root .fe-out { display: flex; flex-direction: column; gap: 0.6rem; grid-column: 2; grid-row: 1 / span 2; min-width: 0; }
+  #fe-root .fe-side { display: flex; flex-direction: column; gap: 0.6rem; grid-column: 1; grid-row: 2; min-width: 0; }
+  #fe-root .fe-body .set-block .fe-row2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1100px) {
+  .fn-svc-board:has(> .fn-svc-sec) .fn-svc-trips { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); gap: 0.75rem; margin: 0.4rem 0 0.6rem; }
+  .fn-svc-board:has(> .fn-svc-sec) .fn-svc-trip { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.65rem 0.8rem 0.75rem; border: 1px solid rgba(251, 248, 241, 0.24); border-radius: 10px; }
+  .fn-svc-board:has(> .fn-svc-sec) .fn-svc-trip:first-child { border-top: 1px solid rgba(251, 248, 241, 0.24); }
+  .fn-svc-board:has(> .fn-svc-sec) .fn-svc-trip > .fn-svc-tacts { margin-top: auto; padding-top: 0.2rem; }
+}

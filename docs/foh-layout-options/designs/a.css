@@ -1,0 +1,18 @@
+/* Design A, "Wider boxes, trips across" (changes the least). A preview laid over the app, never the live book.
+   The form: one column as today; from 1500 px only (the front of house screen, and 125 %), The function's boxes and
+   When the platters go out's boxes go four across, so Platters and the round grid rise. The laptop (1280) is as today.
+   The service view: from 1100 px the coordinator's waiting trips sit side by side across the shelf, each a card with
+   its dietaries and Confirm out at its foot; the shelf stays first and full width, the rounds under it. */
+@media (min-width: 1500px) {
+  #fe-root .set-block:has(#fe-name), #fe-root .set-block:has(.fe-mode) { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.4rem 0.75rem; align-items: start; }
+  #fe-root .set-block:has(#fe-name) > *, #fe-root .set-block:has(.fe-mode) > * { grid-column: 1 / -1; }
+  #fe-root .set-block:has(#fe-name) > .fe-row2, #fe-root .set-block:has(.fe-mode) > .fe-row2 { display: contents; }
+  #fe-root .set-block:has(#fe-name) > .fe-row2 > *, #fe-root .set-block:has(.fe-mode) > .fe-row2 > * { grid-column: auto; }
+  #fe-root .set-block:has(.fe-mode) > .fe-mode { grid-column: 1 / span 2; margin-bottom: 0; }
+}
+@media (min-width: 1100px) {
+  .fn-svc-board:has(> .fn-svc-sec) .fn-svc-trips { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); gap: 0.75rem; margin: 0.4rem 0 0.6rem; }
+  .fn-svc-board:has(> .fn-svc-sec) .fn-svc-trip { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.65rem 0.8rem 0.75rem; border: 1px solid rgba(251, 248, 241, 0.24); border-radius: 10px; }
+  .fn-svc-board:has(> .fn-svc-sec) .fn-svc-trip:first-child { border-top: 1px solid rgba(251, 248, 241, 0.24); }
+  .fn-svc-board:has(> .fn-svc-sec) .fn-svc-trip > .fn-svc-tacts { margin-top: auto; padding-top: 0.2rem; }
+}
