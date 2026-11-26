@@ -537,7 +537,7 @@
      admin changes them (C.head()); the sous chefs read them. The book suggests from staffing: how many people were on
      each weekday in the last 30 days of plans and picks (C.staffing()). Busier days with more people take heavier
      jobs; Friday and Saturday stay light whatever the roster says. A suggestion is never saved on its own. */
-  var LEVEL_DEFAULT = [3, 3, 2, 3, 3, 1, 1], TAKES = ['', 'light', 'medium', 'heavy'], DAY_ORDER = [1, 2, 3, 4, 5, 6, 0], QUIET = [5, 6];
+  var LEVEL_DEFAULT = [3, 3, 2, 3, 3, 1, 1], DAY_ORDER = [1, 2, 3, 4, 5, 6, 0], QUIET = [5, 6], DAY_NAME = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   function dayLevels() { return M.dDraft || M.plan.d || LEVEL_DEFAULT; }
   function daysDirty() { return !!M.dDraft && JSON.stringify(M.dDraft) !== JSON.stringify(M.plan.d || LEVEL_DEFAULT); }
   function canDays() { return !!(C.head && C.head()); }
@@ -558,9 +558,9 @@
       function () { if (M !== model) return; M.staff = { state: 'error' }; patchDays(); });
   }
   // in one short line, heaviest first: "Heavy: Mon, Wed, Thu, Sun. Medium: Tue. Light: Fri, Sat."
-  function daysSummary() { var lv = dayLevels(); return [3, 2, 1].map(function (n) { var on = DAY_ORDER.filter(function (d) { return lv[d] === n; }).map(function (d) { return SHORT[d]; }); return on.length ? WEIGHTS[n] + ': ' + on.join(', ') + '.' : ''; }).filter(Boolean).join(' '); }
-  var SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  function daysSummary() { var lv = dayLevels(); return [3, 2, 1].map(function (n) { var on = DAY_ORDER.filter(function (d) { return lv[d] === n; }).map(function (d) { return DAY_NAME[d].slice(0, 3); }); return on.length ? WEIGHTS[n] + ': ' + on.join(', ') + '.' : ''; }).filter(Boolean).join(' '); }
   function daysBlock() {
+    if (M.plan.state !== 'ok') return '';   // drawn only from a record read from the server, never from no answer
     var lv = dayLevels(), head = canDays(), saved = !!M.plan.d, open = M.daysOpen;
     var html = '<div class="cln-days">' + '<button type="button" class="tm-fold cln-days-fold" data-cln="days-fold" aria-expanded="' + open + '">What each day takes' + (saved ? '' : ' (not saved yet)') + '</button>';
     if (!open || !head) html += '<p class="hint cln-days-sum">' + esc(daysSummary()) + '</p>';
@@ -574,13 +574,13 @@
       if (s.none) return 'No team count yet.';
       if (!s.fresh) return 'The team count is not up to date.';
       if (!s.n[d] || s.n[d] < 3) return 'Not enough weeks yet.';
-      return 'About ' + Math.round(s.avg[d]) + ' on' + (sug && sug[d] ? '. Suggests ' + TAKES[sug[d]] + '.' : '.');
+      return 'About ' + Math.round(s.avg[d]) + ' on' + (sug && sug[d] ? '. Suggests ' + WEIGHTS[sug[d]].toLowerCase() + '.' : '.');
     };
     html += '<p class="hint">Each day takes jobs up to that weight. The book suggests from how many people were on each day in the last 30 days of Today\'s team: a day with more people takes heavier jobs. Friday and Saturday stay light.</p>' +
       '<ul class="cln-day-list" role="list">' + DAY_ORDER.map(function (d) {
         var quiet = QUIET.indexOf(d) >= 0;
-        return '<li class="cln-day-row"><b>' + esc(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d]) + '</b>' +
-          (quiet ? '<span class="cln-day-fixed">Light</span>' : '<span class="chips" role="group" aria-label="What ' + esc(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d]) + ' takes">' + [1, 2, 3].map(function (n) { return '<button type="button" class="chip" data-cln="day-level" data-dow="' + d + '" data-w="' + n + '" aria-pressed="' + (lv[d] === n) + '"' + (M.dBusy ? ' disabled' : '') + '>' + WEIGHTS[n] + '</button>'; }).join('') + '</span>') +
+        return '<li class="cln-day-row"><b>' + DAY_NAME[d] + '</b>' +
+          (quiet ? '<span class="cln-day-fixed">Light</span>' : '<span class="chips" role="group" aria-label="What ' + DAY_NAME[d] + ' takes">' + [1, 2, 3].map(function (n) { return '<button type="button" class="chip" data-cln="day-level" data-dow="' + d + '" data-w="' + n + '" aria-pressed="' + (lv[d] === n) + '"' + (M.dBusy ? ' disabled' : '') + '>' + WEIGHTS[n] + '</button>'; }).join('') + '</span>') +
           '<small class="cln-day-staff">' + esc(staffWords(d)) + '</small></li>';
       }).join('') + '</ul>';
     var useful = sug && [0, 1, 2, 3, 4].some(function (d) { return sug[d] && sug[d] !== lv[d]; });
@@ -590,12 +590,12 @@
       (daysDirty() && !M.dBusy ? '<button type="button" class="btn" data-cln="days-undo">Undo</button>' : '') +
       '<button type="button" class="btn dark" data-cln="days-save"' + ((daysDirty() || !saved) && !M.dBusy && M.plan.state === 'ok' ? '' : ' disabled') + '>' + (M.dBusy ? ink('Saving...') : 'Save the days') + '</button></span></div></div>';
   }
-  function patchDays() { var at = M.root && M.root.querySelector('.cln-days'); if (at) { var had = at.contains(document.activeElement) && document.activeElement.getAttribute('data-cln'), dw = document.activeElement && document.activeElement.getAttribute('data-dow'), wv = document.activeElement && document.activeElement.getAttribute('data-w'); at.outerHTML = daysBlock(); if (had) { var back = [].filter.call(M.root.querySelectorAll('.cln-days [data-cln="' + had + '"]'), function (b) { return (!dw || b.getAttribute('data-dow') === dw) && (!wv || b.getAttribute('data-w') === wv); })[0] || M.root.querySelector('.cln-days [data-cln="days-save"]'); if (back) back.focus({ preventScroll: true }); } } }
+  function patchDays() { var at = M.root && M.root.querySelector('.cln-days'); if (at) { var had = at.contains(document.activeElement) && document.activeElement.getAttribute('data-cln'), dw = document.activeElement && document.activeElement.getAttribute('data-dow'), wv = document.activeElement && document.activeElement.getAttribute('data-w'); at.outerHTML = daysBlock(); if (had) { var back = [].filter.call(M.root.querySelectorAll('.cln-days [data-cln="' + had + '"]'), function (b) { return !b.disabled && (!dw || b.getAttribute('data-dow') === dw) && (!wv || b.getAttribute('data-w') === wv); })[0] || M.root.querySelector('.cln-days [data-cln="days-save"]:not([disabled])') || M.root.querySelector('[data-cln="days-fold"]'); if (back) back.focus({ preventScroll: true }); } } }
   function saveDays() {
     if (!canDays() || M.dBusy || M.plan.state !== 'ok' || !C.planSave) return;
     var d = dayLevels().slice(), model = M; M.dBusy = true; M.dError = ''; patchDays();
     C.planSave(null, null, d).then(function () { if (M !== model) return; M.plan.d = d; M.dDraft = null; M.dBusy = false; M.dSaved = T.now(); patchDays(); },
-      function (error) { if (M !== model) return; M.dBusy = false; M.dError = error && error.code === 'permission-denied' ? 'Refused: only the head chef or the admin sets the days. Nothing was saved.' : 'Not saved. ' + (navigator.onLine === false ? 'No signal. ' : '') + 'Press Save the days again.'; patchDays(); });
+      function (error) { if (M !== model) return; M.dBusy = false; M.dError = error && error.code === 'unauthenticated' ? 'Not saved: unlock with your PIN, then press Save the days. Your change is kept here.' : error && error.code === 'permission-denied' ? 'Refused: only the head chef or the admin sets the days. Nothing was saved.' : 'Not saved. ' + (navigator.onLine === false ? 'No signal. ' : '') + 'Press Save the days again.'; patchDays(); });
   }
   // a weight or a kind changes this page's work without drawing it again, so nothing moves under the thumb
   function patchWeigh() { var dock = M.root && M.root.querySelector('.cln-weigh-dock'); if (dock) dock.outerHTML = weighDock(); }
@@ -608,7 +608,7 @@
       M.wDraft = {}; M.kDraft = {}; M.wBusy = false; M.wSaved = T.now(); draw();
     }, function (error) {
       if (M !== model) return;
-      M.wBusy = false; M.wError = error && error.code === 'permission-denied' ? 'Refused: only the head chef and the sous chefs change the weights. Nothing was saved.' : 'Not saved. ' + (navigator.onLine === false ? 'No signal. ' : '') + 'Your changes are kept here: press Save again.'; draw();
+      M.wBusy = false; M.wError = error && error.code === 'unauthenticated' ? 'Not saved: unlock with your PIN, then press Save. Your changes are kept here.' : error && error.code === 'permission-denied' ? 'Refused: only the head chef and the sous chefs change the weights. Nothing was saved.' : 'Not saved. ' + (navigator.onLine === false ? 'No signal. ' : '') + 'Your changes are kept here: press Save again.'; draw();
     });
   }
   function editor() {

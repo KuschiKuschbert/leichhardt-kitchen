@@ -1761,7 +1761,7 @@ service cloud.firestore {
       // days"): only the head chef or the admin changes it; a sous chef's save of weights leaves it as it was.
       function cleanPlanDays() {
         let was = resource == null ? null : resource.data.get('d', null);
-        return request.resource.data.get('d', null) == was || isAdmin() || request.resource.data.by == cfg().get('headId', '');
+        return request.resource.data.get('d', null) == was || request.resource.data.by == cfg().get('headId', '') || isAdmin();
       }
       function cleanPlanLevel(v) { return v is int && v >= 1 && v <= 3; }
       function cleanPlanShape(d) {

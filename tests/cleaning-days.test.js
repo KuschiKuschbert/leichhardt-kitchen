@@ -75,6 +75,7 @@ const saved = p => L.waitFor(p, () => /Saved|Refused|Not saved\. /.test((documen
     ok(s && JSON.stringify(s.d) === '[3,2,1,3,2,1,1]' && s.w['clean-template-sc-hot-02'] === 3 && s.w['clean-template-sc-hot-01'] === 2 && s.by === 'head' && s.v === 1, width + ': Save the days sends all seven, Sunday first, and keeps every weight (' + JSON.stringify(s && { d: s.d, w: s.w, by: s.by }) + ')');
     ok(/^Saved \d\d:\d\d\.$/.test(await text(p, '.cln-days-save .hint')) && await p.$eval('[data-cln="days-save"]', e => e.disabled) && await text(p, '[data-cln="days-fold"]') === 'What each day takes' && !(await p.$('.cln-days-sum')),
       width + ': it says Saved with the time; the fold no longer says not saved (' + await text(p, '.cln-days-save .hint') + ')');
+    ok(await p.evaluate(() => document.activeElement && document.activeElement.getAttribute('data-cln') === 'days-fold'), width + ': with Save off after saving, focus goes to the fold, not the top of the page');
     if (width === 390) {
       // refused: the change stays on screen and the page says why
       await p.evaluate(() => { window.__fake.mode = 'deny'; });

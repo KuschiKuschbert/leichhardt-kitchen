@@ -2218,7 +2218,8 @@
   function cleaningPlanSave(w, k, d) {
     var hasW = !!w && typeof w === 'object' && Object.keys(w).length > 0, hasK = !!k && typeof k === 'object' && Object.keys(k).length > 0;
     var hasD = Array.isArray(d) && d.length === 7 && d.every(function (v) { return v === 1 || v === 2 || v === 3; });
-    if (!cleaningChef() || !canW() || !(hasW || hasK || hasD) || (hasD && !cleaningHead())) return Promise.reject(cleaningError('permission-denied'));
+    if (!canW()) return Promise.reject(cleaningError('unauthenticated'));   // the PIN session lapsed: unlock, then save
+    if (!cleaningChef() || !(hasW || hasK || hasD) || (hasD && !cleaningHead())) return Promise.reject(cleaningError('permission-denied'));
     var data = { v: 1, at: now() };
     if (hasW) data.w = w;
     if (hasK) data.k = k;
@@ -2230,27 +2231,24 @@
   function cleaningHead() { var c = S.config || {}; return cleaningChef() && (admDev() || (!!S.who && S.who === c.headId)); }
   /* The suggestion for what each weekday takes, from staffing (head chef, 26 Nov 2026: "learn then based on what days
      we have more staff on"). How many people were on each weekday, from teamsum/main: the last 30 days of the chefs'
-     plans and the cooks' own picks, written each night. When: the head chef opens What each day takes. Cost: none when
-     the chef's pages already read it today (tsFresh()); else 1 read, kept for the day. A night count older than
-     yesterday, or none, gives no suggestion (fresh false), never an old one. */
+     plans and the cooks' own picks, written each night. When: the head chef opens What each day takes. Through
+     tsLoad(), so it shares Today's team's copy, its retry wait and who it was read for: none when the chef's pages
+     already read it today, else 1 read, kept for the kitchen day, a missing or late count included. A night count
+     older than yesterday, or none, gives no suggestion (fresh false), never an old one. */
   function cleaningStaffing() {
     if (!cleaningChef()) return Promise.reject(cleaningError('permission-denied'));
-    var count = function (rec) {
+    var p = tsLoad(); if (!p) return Promise.reject(cleaningError('unavailable'));
+    return p.then(function () {
+      if (tsum.st !== 'ok') throw cleaningError('unavailable');
+      if (!tsum.rec) return { fresh: false, none: true };
+      var rec = tsFresh(); if (!rec) return { fresh: false };
       var sum = [0, 0, 0, 0, 0, 0, 0], n = [0, 0, 0, 0, 0, 0, 0];
-      (rec.days || []).forEach(function (d) {
+      rec.days.forEach(function (d) {
         var people = {}; d.s.forEach(function (x) { people[x.p] = 1; });
         var k = Object.keys(people).length; if (!k) return;
         var w = T.dow(T.at(d.day)); sum[w] += k; n[w]++;
       });
-      return { fresh: true, day: rec.day, from: rec.days.length ? rec.days[0].day : '', avg: sum.map(function (v, i) { return n[i] ? Math.round(v / n[i] * 10) / 10 : null; }), n: n };
-    };
-    var r = tsFresh(); if (r) return Promise.resolve(count(r));
-    return sdk().then(function () { return fb.fs.getDocFromServer(docRef('teamsum', 'main')); }).then(function (sn) {
-      var rec = sn.exists() ? tsClean(sn.data()) : null;
-      if (!rec) return { fresh: false, none: true };
-      if (!rec.day || rec.day < shift(dayNow(), -1)) return { fresh: false };
-      if (tsum.day === dayNow() && tsum.st !== 'busy') { tsum.rec = rec; tsum.st = 'ok'; }
-      return count(rec);
+      return { fresh: true, avg: sum.map(function (v, i) { return n[i] ? Math.round(v / n[i] * 10) / 10 : null; }), n: n };
     });
   }
   function cleaningImport(templates) {
@@ -15708,7 +15706,7 @@ if (list.length) sg('oreg', 's');
   function tmNeedPin() { return teamOK() && !tmCanRead() && !sessP; }
   function tmMe() { var p = me(); return p ? p.id : ((S.config && S.config.headId) || ''); }
   // the next person on the phone starts with nothing of the last chef's
-  function tmReset() { if (tmPop) { tmPop.remove(); tmPop = null; tmPrev = null; } tsum = { day: '', rec: null, st: '', retry: 0, epoch: -1 }; tm = { day: '', rec: null, st: '', at: 0, retry: 0, epoch: -1, stamp: 0 }; tmf = null; tmSnap = ''; tmLastBusy = false; tmLastJob = null; tmPlan = { day: '', owner: '', epoch: -1, days: {}, weeks: {} }; tmSh = ''; tmMsg = ''; tmShowOff = false; tmFind = ''; tmAssignMsg = ''; tmUi = { shifts: 0, sections: 0, people: {}, batch: false, overview: false }; tmRs = null; svStop('t'); }
+  function tmReset() { if (tmPop) { tmPop.remove(); tmPop = null; tmPrev = null; } tsum = { day: '', rec: null, st: '', retry: 0, epoch: -1, p: null }; tm = { day: '', rec: null, st: '', at: 0, retry: 0, epoch: -1, stamp: 0 }; tmf = null; tmSnap = ''; tmLastBusy = false; tmLastJob = null; tmPlan = { day: '', owner: '', epoch: -1, days: {}, weeks: {} }; tmSh = ''; tmMsg = ''; tmShowOff = false; tmFind = ''; tmAssignMsg = ''; tmUi = { shifts: 0, sections: 0, people: {}, batch: false, overview: false }; tmRs = null; svStop('t'); }
   /* today's team: one read (team/<today>) the first time a chef's page or top bar needs it each kitchen day, when the
      page opens (unless read in the last minute), on Refresh and once for each team stamp another phone writes
      (pastCheck()). A failed read, and a "no record" that came from the memory copy with no signal, is never "not set
@@ -17672,19 +17670,21 @@ if (list.length) sg('oreg', 's');
      the sous chefs and the admin only (the rules refuse staff). Read once a kitchen day, when the chef's page, the
      Kitchen sections row or the Team report first needs it (1 read); kept in memory only, as it says who is in
      training. A failed read waits 5 minutes; no record yet (the job has not run) is none, never an error. */
-  var tsum = { day: '', rec: null, st: '', retry: 0, epoch: -1 };
+  var tsum = { day: '', rec: null, st: '', retry: 0, epoch: -1, p: null };
   function tsCan() { return teamOK() && tmCanRead(); }
   /* One freshness rule for the planner's suggestions (head chef, 15 Nov 2026, docs/team-smart-sections-options/brief.md):
      the nightly counts (teamsum/main, read once a kitchen day by tsLoad()) are used only when read from the server and
      made today or yesterday. A late or failed nightly job gives no Usually, no Often and no cross-training hint, rather
      than suggesting from old plans without saying so. */
   function tsFresh() { var r = tsum.rec; return tsCan() && tsum.st === 'ok' && r && r.day && r.day >= shift(dayNow(), -1) ? r : null; }
+  // answers with the read in flight or done (tsum.p), so Cleaning's What each day takes waits on the same one
   function tsLoad() {
     var day = dayNow();
-    if (tsum.day !== day || tsum.epoch !== accessEpoch) tsum = { day: day, rec: null, st: '', retry: 0, epoch: accessEpoch };
-    if (!tsCan() || tsum.st === 'busy' || tsum.st === 'ok' || (tsum.st === 'err' && Date.now() < tsum.retry)) return;
+    if (tsum.day !== day || tsum.epoch !== accessEpoch) tsum = { day: day, rec: null, st: '', retry: 0, epoch: accessEpoch, p: null };
+    if (!tsCan()) return null;
+    if (tsum.st === 'busy' || tsum.st === 'ok' || (tsum.st === 'err' && Date.now() < tsum.retry)) return tsum.p || Promise.resolve();
     var mine = tsum; tsum.st = 'busy';
-    fb.fs.getDoc(docRef('teamsum', 'main')).then(function (sn) {
+    return tsum.p = fb.fs.getDoc(docRef('teamsum', 'main')).then(function (sn) {
       if (tsum !== mine) return;
       if (!sn.exists() && cacheOnly(sn)) throw { code: 'unavailable', cache: true };
       tsum.rec = sn.exists() ? tsClean(sn.data()) : null; tsum.st = 'ok'; draw();
