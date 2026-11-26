@@ -150,6 +150,10 @@ const moreOff = (p, rid) => p.$eval(wedRow + ' [data-fn="pick-more"][data-r="0|'
   await L.waitFor(p, k => !!(window.__fake.dump()[k] || {}).outAt, TRIP(1)); await L.settle(p, 300);
   let t1 = (await store(p))[TRIP(1)];
   ok(t1.outBy === 'fay' && t1.outFor === false && t1.by === 'fay', 'Fay confirms trip 1 from her band');
+  // the confirmed trip holds the row a moment, out and with no button, so a second tap confirms nothing (26 Nov 2026,
+  // tests/fn-confirm-hold.test.js); then the band moves on
+  ok(/Trip 1: .*out 18:40, Fay/.test(flat(await txt(p, '#fn-band .fn-li-out'))) && !(await p.$('#fn-band .fn-li-out [data-fn="trip-out"]')), 'Fay\'s band holds trip 1 a moment, out, with no button');
+  await L.waitFor(p, () => /Trip 2:/.test((document.querySelector('#fn-band .fn-li-out') || {}).textContent || ''), null, 6000).catch(() => {});
   ok(/Trip 2: 3 × Sliders, sent 18:3\d Sam/.test(flat(await txt(p, '#fn-band .fn-li-out'))), 'Fay\'s band moves on to the next trip waiting');
   await p.goto(L.BASE + '#/fn/now'); await L.settle(p, 800);
   await L.waitFor(p, () => !!document.querySelector('.fn-svc-shelf'));
@@ -163,6 +167,7 @@ const moreOff = (p, rid) => p.$eval(wedRow + ' [data-fn="pick-more"][data-r="0|'
     'held coordinator confirmation: the already-sent trip stays with the queue and says Confirming out');
   await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
   await L.waitFor(p, k => !!(window.__fake.dump()[k] || {}).outAt, TRIP(2)); await L.settle(p, 300);
+  await L.waitFor(p, () => document.querySelectorAll('.fn-svc-trip').length === 1, null, 6000).catch(() => {});   // after the hold
   ok((await p.$$('.fn-svc-trip')).length === 1, 'Fay confirms trip 2 on the shelf: one trip left waiting');
   ok(p.errors.length === 0 && !(await L.overflow(p)), '390 px Fay: no page errors, no sideways scroll ' + p.errors.join(' | '));
   s = await store(p);

@@ -60,7 +60,7 @@ const CLASSES = [
   'tr-list-head',
   'lk-del', 'nt-later', 'mlp-go', 'mlp-later', 'sheet-o', 'ps-pick', 'view-opt', 'nb-tab', 'nb-onbtn', 'mg-sw', 'fn-more', 'gz-b', 'su-use', 'p-toast-btn', 'upd-bar',
   // the day control and its step chips, the supplier mark (the consistency sweep, step 3, 20 Nov 2026)
-  'find-wrap', 'sv-dock', 'a-savebar', 'mg-bar', 'fe-bar', 'fe-live', 'fe-btns', 'su-order-actions', 'empty', 'ux-table-empty', 'lv-none', 'nt-none', 'nb-empty', 'fn-strip-l', 'fn-strip-stale', 'fn-strip-in', 'is-strip', 'p-readerr', 'nb-nav', 'nav-step', 'o-dayctl', 'cut-mark'
+  'find-wrap', 'sv-dock', 'a-savebar', 'mg-bar', 'fe-bar', 'fe-live', 'fe-btns', 'fe-body', 'fe-out', 'fe-side', 'fn-out-slot', 'su-order-actions', 'empty', 'ux-table-empty', 'lv-none', 'nt-none', 'nb-empty', 'fn-strip-l', 'fn-strip-stale', 'fn-strip-in', 'is-strip', 'p-readerr', 'nb-nav', 'nav-step', 'o-dayctl', 'cut-mark'
 ];
 const TOKENS = ['--ink', '--wall-ink', '--paper', '--bg', '--muted', '--faint', '--line', '--accent', '--accent-ink', '--tag', '--done', '--done-ink',
   '--bar', '--bar-text', '--display', '--body', '--r-act', '--r-pick', '--small-ink', '--hit',

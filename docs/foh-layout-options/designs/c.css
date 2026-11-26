@@ -1,0 +1,26 @@
+/* Design C, "Bands across the width" (removes the most scrolling). A preview laid over the app, never the live book.
+   The form, from 1150 px: The function's boxes four across; then Platters beside When the platters go out; then the
+   notes beside the kitchen comment. Each band reads left to right, in the page's own order; the Save bar docked under.
+   The service view, from 1100 px: the shelf stays first and full width, and each waiting trip is one row: which trip and
+   function, what went (large), sent and Waiting, Confirm out at the row's end, the dietaries across under it. */
+@media (min-width: 1150px) {
+  #fe-root .set-block:has(#fe-name) { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.4rem 0.75rem; align-items: start; }
+  #fe-root .set-block:has(#fe-name) > * { grid-column: 1 / -1; }
+  #fe-root .set-block:has(#fe-name) > .fe-row2 { display: contents; }
+  #fe-root .set-block:has(#fe-name) > .fe-row2 > * { grid-column: auto; }
+  #fe-root .fe-wrap:has(> .fe-bar) { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); column-gap: 1.5rem; align-items: start; }
+  #fe-root .fe-wrap:has(> .fe-bar) > * { grid-column: 1 / -1; }
+  #fe-root .fe-wrap > .set-block:has(.fe-lines) { grid-column: 1; grid-row: 4; }
+  #fe-root .fe-wrap > .set-block:has(.fe-mode) { grid-column: 2; grid-row: 4; }
+  #fe-root .fe-wrap > .set-block:has(#fe-notes) { grid-column: 1; grid-row: 5; }
+  #fe-root .fe-wrap > .set-block.fe-kcb { grid-column: 2; grid-row: 5; }
+  #fe-root .fe-wrap .set-block:has(.fe-mode) .fe-row2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1100px) {
+  .fn-svc-board:has(> .fn-svc-sec) .fn-svc-trip { display: grid; grid-template-columns: minmax(11rem, 1fr) minmax(0, 1.5fr) minmax(9rem, auto) auto; grid-template-areas: "th tq tm acts" "diet diet diet acts"; gap: 0.3rem 1rem; align-items: center; }
+  .fn-svc-board:has(> .fn-svc-sec) .fn-svc-trip > .fn-svc-th { grid-area: th; }
+  .fn-svc-board:has(> .fn-svc-sec) .fn-svc-trip > .fn-svc-tq { grid-area: tq; }
+  .fn-svc-board:has(> .fn-svc-sec) .fn-svc-trip > .fn-svc-tm { grid-area: tm; }
+  .fn-svc-board:has(> .fn-svc-sec) .fn-svc-trip > .fn-svc-diet { grid-area: diet; margin: 0; }
+  .fn-svc-board:has(> .fn-svc-sec) .fn-svc-trip > .fn-svc-tacts { grid-area: acts; justify-content: flex-end; }
+}

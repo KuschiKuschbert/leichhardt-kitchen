@@ -1,0 +1,809 @@
+{
+ "design": "a",
+ "cases": {
+  "form-1920": {
+   "errors": 0,
+   "screens": 2.35,
+   "sideways": false,
+   "band": 402,
+   "barTop": 940,
+   "fieldsInView": 7,
+   "fields": 27,
+   "guests": true,
+   "platterRowsInView": 0,
+   "platterRows": 2,
+   "roundTimesInView": 0,
+   "roundTimes": 3,
+   "placedInView": false,
+   "notesInView": false,
+   "kcInView": false,
+   "gridScrolls": false,
+   "gridBox": {
+    "top": 1426,
+    "bottom": 1749,
+    "left": 360,
+    "width": 1200,
+    "inView": false
+   },
+   "guestsBox": {
+    "top": 667,
+    "bottom": 717,
+    "left": 966,
+    "width": 291,
+    "inView": true
+   },
+   "notesBox": {
+    "top": 1850,
+    "bottom": 1930,
+    "left": 360,
+    "width": 1200,
+    "inView": false
+   },
+   "task": {
+    "scrolls": 2,
+    "apart": 931
+   }
+  },
+  "fnnow-1920": {
+   "errors": 0,
+   "screens": 1.26,
+   "sideways": false,
+   "band": 0,
+   "trips": 3,
+   "tripsInView": 3,
+   "confirmOut": 3,
+   "confirmOutInView": 3,
+   "rounds": 2,
+   "roundsInView": 2,
+   "firstRound": {
+    "top": 675,
+    "bottom": 825,
+    "left": 376,
+    "width": 1168,
+    "inView": true
+   },
+   "shelf": {
+    "top": 364,
+    "bottom": 641,
+    "left": 360,
+    "width": 1200,
+    "inView": true
+   },
+   "diets": 4,
+   "dietsInView": 4,
+   "allWithNext": true
+  },
+  "form-1536": {
+   "errors": 0,
+   "screens": 2.9,
+   "sideways": false,
+   "band": 366,
+   "barTop": 738,
+   "fieldsInView": 6,
+   "fields": 27,
+   "guests": true,
+   "platterRowsInView": 0,
+   "platterRows": 2,
+   "roundTimesInView": 0,
+   "roundTimes": 3,
+   "placedInView": false,
+   "notesInView": false,
+   "kcInView": false,
+   "gridScrolls": false,
+   "gridBox": {
+    "top": 1390,
+    "bottom": 1713,
+    "left": 168,
+    "width": 1200,
+    "inView": false
+   },
+   "guestsBox": {
+    "top": 631,
+    "bottom": 681,
+    "left": 774,
+    "width": 291,
+    "inView": true
+   },
+   "notesBox": {
+    "top": 1814,
+    "bottom": 1894,
+    "left": 168,
+    "width": 1200,
+    "inView": false
+   },
+   "task": {
+    "scrolls": 2,
+    "apart": 931
+   }
+  },
+  "fnnow-1536": {
+   "errors": 0,
+   "screens": 1.53,
+   "sideways": false,
+   "band": 0,
+   "trips": 3,
+   "tripsInView": 3,
+   "confirmOut": 3,
+   "confirmOutInView": 3,
+   "rounds": 2,
+   "roundsInView": 1,
+   "firstRound": {
+    "top": 639,
+    "bottom": 789,
+    "left": 184,
+    "width": 1168,
+    "inView": true
+   },
+   "shelf": {
+    "top": 328,
+    "bottom": 605,
+    "left": 168,
+    "width": 1200,
+    "inView": true
+   },
+   "diets": 4,
+   "dietsInView": 3,
+   "allWithNext": true
+  },
+  "form-1280": {
+   "errors": 0,
+   "screens": 3.18,
+   "sideways": false,
+   "band": 366,
+   "barTop": 732,
+   "fieldsInView": 3,
+   "fields": 27,
+   "guests": false,
+   "platterRowsInView": 0,
+   "platterRows": 2,
+   "roundTimesInView": 0,
+   "roundTimes": 3,
+   "placedInView": false,
+   "notesInView": false,
+   "kcInView": false,
+   "gridScrolls": false,
+   "gridBox": {
+    "top": 1597,
+    "bottom": 1921,
+    "left": 40,
+    "width": 1200,
+    "inView": false
+   },
+   "guestsBox": {
+    "top": 784,
+    "bottom": 834,
+    "left": 40,
+    "width": 288,
+    "inView": false
+   },
+   "notesBox": {
+    "top": 2021,
+    "bottom": 2101,
+    "left": 40,
+    "width": 1200,
+    "inView": false
+   },
+   "task": {
+    "scrolls": 2,
+    "apart": 985
+   }
+  },
+  "fnnow-1280": {
+   "errors": 0,
+   "screens": 1.54,
+   "sideways": false,
+   "band": 0,
+   "trips": 3,
+   "tripsInView": 3,
+   "confirmOut": 3,
+   "confirmOutInView": 3,
+   "rounds": 2,
+   "roundsInView": 1,
+   "firstRound": {
+    "top": 639,
+    "bottom": 789,
+    "left": 56,
+    "width": 1168,
+    "inView": true
+   },
+   "shelf": {
+    "top": 328,
+    "bottom": 605,
+    "left": 40,
+    "width": 1200,
+    "inView": true
+   },
+   "diets": 4,
+   "dietsInView": 3,
+   "allWithNext": true
+  },
+  "form-768": {
+   "errors": 0,
+   "screens": 2.5,
+   "sideways": false,
+   "band": 402,
+   "barTop": 956,
+   "fieldsInView": 7,
+   "fields": 27,
+   "guests": true,
+   "platterRowsInView": 0,
+   "platterRows": 2,
+   "roundTimesInView": 0,
+   "roundTimes": 3,
+   "placedInView": false,
+   "notesInView": false,
+   "kcInView": false,
+   "gridScrolls": false,
+   "gridBox": {
+    "top": 1616,
+    "bottom": 1939,
+    "left": 20,
+    "width": 728,
+    "inView": false
+   },
+   "guestsBox": {
+    "top": 820,
+    "bottom": 870,
+    "left": 20,
+    "width": 359,
+    "inView": true
+   },
+   "notesBox": {
+    "top": 2040,
+    "bottom": 2120,
+    "left": 20,
+    "width": 728,
+    "inView": false
+   },
+   "task": {
+    "scrolls": 2,
+    "apart": 968
+   }
+  },
+  "fnnow-768": {
+   "errors": 0,
+   "screens": 1.59,
+   "sideways": false,
+   "band": 0,
+   "trips": 3,
+   "tripsInView": 3,
+   "confirmOut": 3,
+   "confirmOutInView": 3,
+   "rounds": 2,
+   "roundsInView": 0,
+   "firstRound": {
+    "top": 1038,
+    "bottom": 1188,
+    "left": 36,
+    "width": 696,
+    "inView": false
+   },
+   "shelf": {
+    "top": 364,
+    "bottom": 1003,
+    "left": 20,
+    "width": 728,
+    "inView": true
+   },
+   "diets": 4,
+   "dietsInView": 2,
+   "allWithNext": false
+  },
+  "form-390": {
+   "errors": 0,
+   "screens": 4,
+   "sideways": false,
+   "band": 426,
+   "barTop": 676,
+   "fieldsInView": 0,
+   "fields": 27,
+   "guests": false,
+   "platterRowsInView": 0,
+   "platterRows": 2,
+   "roundTimesInView": 0,
+   "roundTimes": 3,
+   "placedInView": false,
+   "notesInView": false,
+   "kcInView": false,
+   "gridScrolls": true,
+   "gridBox": {
+    "top": 2163,
+    "bottom": 2647,
+    "left": 16,
+    "width": 398,
+    "inView": false
+   },
+   "guestsBox": {
+    "top": 997,
+    "bottom": 1046,
+    "left": 16,
+    "width": 358,
+    "inView": false
+   },
+   "notesBox": {
+    "top": 2747,
+    "bottom": 2827,
+    "left": 16,
+    "width": 358,
+    "inView": false
+   },
+   "task": {
+    "scrolls": 2,
+    "apart": 1392
+   }
+  },
+  "fnnow-390": {
+   "errors": 0,
+   "screens": 1.98,
+   "sideways": false,
+   "band": 0,
+   "trips": 3,
+   "tripsInView": 2,
+   "confirmOut": 3,
+   "confirmOutInView": 2,
+   "rounds": 2,
+   "roundsInView": 0,
+   "firstRound": {
+    "top": 943,
+    "bottom": 1116,
+    "left": 32,
+    "width": 326,
+    "inView": false
+   },
+   "shelf": {
+    "top": 251,
+    "bottom": 908,
+    "left": 16,
+    "width": 358,
+    "inView": false
+   },
+   "diets": 4,
+   "dietsInView": 2,
+   "allWithNext": false
+  },
+  "form-1536-xlarge": {
+   "errors": 0,
+   "screens": 3.45,
+   "sideways": false,
+   "band": 398,
+   "barTop": 732,
+   "fieldsInView": 1,
+   "fields": 27,
+   "guests": false,
+   "platterRowsInView": 0,
+   "platterRows": 2,
+   "roundTimesInView": 0,
+   "roundTimes": 3,
+   "placedInView": false,
+   "notesInView": false,
+   "kcInView": false,
+   "gridScrolls": false,
+   "gridBox": {
+    "top": 1639,
+    "bottom": 2041,
+    "left": 173,
+    "width": 1190,
+    "inView": false
+   },
+   "guestsBox": {
+    "top": 718,
+    "bottom": 780,
+    "left": 776,
+    "width": 286,
+    "inView": true
+   },
+   "notesBox": {
+    "top": 2167,
+    "bottom": 2267,
+    "left": 173,
+    "width": 1190,
+    "inView": false
+   },
+   "task": {
+    "scrolls": 2,
+    "apart": 1136
+   }
+  },
+  "form-long-1280": {
+   "errors": 0,
+   "screens": 3.74,
+   "sideways": false,
+   "band": 366,
+   "barTop": 732,
+   "fieldsInView": 3,
+   "fields": 59,
+   "guests": false,
+   "platterRowsInView": 0,
+   "platterRows": 6,
+   "roundTimesInView": 0,
+   "roundTimes": 5,
+   "placedInView": false,
+   "notesInView": false,
+   "kcInView": false,
+   "gridScrolls": false,
+   "gridBox": {
+    "top": 1881,
+    "bottom": 2374,
+    "left": 40,
+    "width": 1200,
+    "inView": false
+   },
+   "guestsBox": {
+    "top": 784,
+    "bottom": 834,
+    "left": 40,
+    "width": 288,
+    "inView": false
+   },
+   "notesBox": {
+    "top": 2474,
+    "bottom": 2554,
+    "left": 40,
+    "width": 1200,
+    "inView": false
+   },
+   "task": {
+    "scrolls": 2,
+    "apart": 1268
+   }
+  },
+  "form-long-1536": {
+   "errors": 0,
+   "screens": 3.46,
+   "sideways": false,
+   "band": 366,
+   "barTop": 738,
+   "fieldsInView": 6,
+   "fields": 59,
+   "guests": true,
+   "platterRowsInView": 0,
+   "platterRows": 6,
+   "roundTimesInView": 0,
+   "roundTimes": 5,
+   "placedInView": false,
+   "notesInView": false,
+   "kcInView": false,
+   "gridScrolls": false,
+   "gridBox": {
+    "top": 1673,
+    "bottom": 2166,
+    "left": 168,
+    "width": 1200,
+    "inView": false
+   },
+   "guestsBox": {
+    "top": 631,
+    "bottom": 681,
+    "left": 774,
+    "width": 291,
+    "inView": true
+   },
+   "notesBox": {
+    "top": 2267,
+    "bottom": 2347,
+    "left": 168,
+    "width": 1200,
+    "inView": false
+   },
+   "task": {
+    "scrolls": 2,
+    "apart": 1214
+   }
+  },
+  "fnnow-1920-t0": {
+   "errors": 0,
+   "screens": 1.42,
+   "sideways": false,
+   "band": 0,
+   "trips": 0,
+   "tripsInView": 0,
+   "confirmOut": 0,
+   "confirmOutInView": 0,
+   "rounds": 4,
+   "roundsInView": 4,
+   "firstRound": {
+    "top": 396,
+    "bottom": 546,
+    "left": 376,
+    "width": 1168,
+    "inView": true
+   },
+   "shelf": null,
+   "diets": 3,
+   "dietsInView": 3,
+   "allWithNext": false
+  },
+  "fnnow-1920-t1": {
+   "errors": 0,
+   "screens": 1.73,
+   "sideways": false,
+   "band": 0,
+   "trips": 1,
+   "tripsInView": 1,
+   "confirmOut": 1,
+   "confirmOutInView": 1,
+   "rounds": 4,
+   "roundsInView": 2,
+   "firstRound": {
+    "top": 675,
+    "bottom": 855,
+    "left": 376,
+    "width": 1168,
+    "inView": true
+   },
+   "shelf": {
+    "top": 364,
+    "bottom": 641,
+    "left": 360,
+    "width": 1200,
+    "inView": true
+   },
+   "diets": 4,
+   "dietsInView": 2,
+   "allWithNext": true
+  },
+  "fnnow-1536-t1": {
+   "errors": 0,
+   "screens": 2.11,
+   "sideways": false,
+   "band": 0,
+   "trips": 1,
+   "tripsInView": 1,
+   "confirmOut": 1,
+   "confirmOutInView": 1,
+   "rounds": 4,
+   "roundsInView": 0,
+   "firstRound": {
+    "top": 639,
+    "bottom": 819,
+    "left": 184,
+    "width": 1168,
+    "inView": false
+   },
+   "shelf": {
+    "top": 328,
+    "bottom": 605,
+    "left": 168,
+    "width": 1200,
+    "inView": true
+   },
+   "diets": 4,
+   "dietsInView": 2,
+   "allWithNext": true
+  },
+  "fnnow-1920-kitchen": {
+   "errors": 0,
+   "screens": 1.27,
+   "sideways": false,
+   "band": 0,
+   "trips": 3,
+   "tripsInView": 3,
+   "confirmOut": 0,
+   "confirmOutInView": 0,
+   "rounds": 2,
+   "roundsInView": 2,
+   "firstRound": {
+    "top": 408,
+    "bottom": 625,
+    "left": 376,
+    "width": 755,
+    "inView": true
+   },
+   "shelf": {
+    "top": 361,
+    "bottom": 988,
+    "left": 1151,
+    "width": 393,
+    "inView": true
+   },
+   "diets": 4,
+   "dietsInView": 4,
+   "allWithNext": false
+  },
+  "fnnow-1920-t4": {
+   "errors": 0,
+   "screens": 1.52,
+   "sideways": false,
+   "band": 0,
+   "trips": 4,
+   "tripsInView": 4,
+   "confirmOut": 4,
+   "confirmOutInView": 4,
+   "rounds": 2,
+   "roundsInView": 0,
+   "firstRound": {
+    "top": 915,
+    "bottom": 1094,
+    "left": 376,
+    "width": 1168,
+    "inView": false
+   },
+   "shelf": {
+    "top": 364,
+    "bottom": 881,
+    "left": 360,
+    "width": 1200,
+    "inView": true
+   },
+   "diets": 5,
+   "dietsInView": 3,
+   "allWithNext": true
+  },
+  "fnnow-1536-t4": {
+   "errors": 0,
+   "screens": 1.86,
+   "sideways": false,
+   "band": 0,
+   "trips": 4,
+   "tripsInView": 3,
+   "confirmOut": 4,
+   "confirmOutInView": 3,
+   "rounds": 2,
+   "roundsInView": 0,
+   "firstRound": {
+    "top": 879,
+    "bottom": 1058,
+    "left": 184,
+    "width": 1168,
+    "inView": false
+   },
+   "shelf": {
+    "top": 328,
+    "bottom": 845,
+    "left": 168,
+    "width": 1200,
+    "inView": false
+   },
+   "diets": 5,
+   "dietsInView": 3,
+   "allWithNext": false
+  },
+  "form-quiet-1920": {
+   "errors": 0,
+   "screens": 2.18,
+   "sideways": false,
+   "band": 233,
+   "barTop": 940,
+   "fieldsInView": 9,
+   "fields": 27,
+   "guests": true,
+   "platterRowsInView": 2,
+   "platterRows": 2,
+   "roundTimesInView": 0,
+   "roundTimes": 3,
+   "placedInView": false,
+   "notesInView": false,
+   "kcInView": false,
+   "gridScrolls": false,
+   "gridBox": {
+    "top": 1257,
+    "bottom": 1580,
+    "left": 360,
+    "width": 1200,
+    "inView": false
+   },
+   "guestsBox": {
+    "top": 498,
+    "bottom": 548,
+    "left": 966,
+    "width": 291,
+    "inView": true
+   },
+   "notesBox": {
+    "top": 1681,
+    "bottom": 1761,
+    "left": 360,
+    "width": 1200,
+    "inView": false
+   },
+   "task": {
+    "scrolls": 2,
+    "apart": 931
+   }
+  },
+  "form-quiet-1280": {
+   "errors": 0,
+   "screens": 2.97,
+   "sideways": false,
+   "band": 197,
+   "barTop": 732,
+   "fieldsInView": 7,
+   "fields": 27,
+   "guests": true,
+   "platterRowsInView": 0,
+   "platterRows": 2,
+   "roundTimesInView": 0,
+   "roundTimes": 3,
+   "placedInView": false,
+   "notesInView": false,
+   "kcInView": false,
+   "gridScrolls": false,
+   "gridBox": {
+    "top": 1429,
+    "bottom": 1752,
+    "left": 40,
+    "width": 1200,
+    "inView": false
+   },
+   "guestsBox": {
+    "top": 616,
+    "bottom": 665,
+    "left": 40,
+    "width": 288,
+    "inView": true
+   },
+   "notesBox": {
+    "top": 1852,
+    "bottom": 1932,
+    "left": 40,
+    "width": 1200,
+    "inView": false
+   },
+   "task": {
+    "scrolls": 2,
+    "apart": 985
+   }
+  }
+ },
+ "checks": {
+  "second-tap-1920": {
+   "confirmed": true,
+   "underTheFinger": "trip-out: Trip 2 · 14:10 Birthday 60th · Function room",
+   "roundMovedBy": 33,
+   "roundLeftMovedBy": 0,
+   "tripsLeft": 2
+  },
+  "second-tap-1280": {
+   "confirmed": true,
+   "underTheFinger": "trip-out: Trip 2 · 14:10 Birthday 60th · Function room",
+   "roundMovedBy": 33,
+   "roundLeftMovedBy": 0,
+   "tripsLeft": 2
+  },
+  "time-list-1920m-startT": {
+   "open": true,
+   "boxTop": 667,
+   "listBottom": 987,
+   "barTop": 940,
+   "clearOfBar": false,
+   "bottomRowTappable": true
+  },
+  "time-list-1920m-foodT": {
+   "open": true,
+   "boxTop": 403,
+   "listBottom": 723,
+   "barTop": 940,
+   "clearOfBar": true,
+   "bottomRowTappable": true
+  },
+  "time-list-1280-startT": {
+   "open": true,
+   "boxTop": 631,
+   "listBottom": 951,
+   "barTop": 732,
+   "clearOfBar": false,
+   "bottomRowTappable": true
+  },
+  "time-list-1280-foodT": {
+   "open": true,
+   "boxTop": 320,
+   "listBottom": 640,
+   "barTop": 732,
+   "clearOfBar": true,
+   "bottomRowTappable": true
+  },
+  "form-order-1920": "head, last changed, function, platters, when, notes, comment, SAVE BAR, buttons, history",
+  "form-order-new-1920": "head, function, platters, when, notes, comment, SAVE BAR",
+  "form-order-new-restored-1920": "head, restored, function, platters, when, notes, comment, SAVE BAR, buttons",
+  "form-order-1280": "head, last changed, function, platters, when, notes, comment, SAVE BAR, buttons, history",
+  "form-order-new-1280": "head, function, platters, when, notes, comment, SAVE BAR",
+  "form-order-new-restored-1280": "head, restored, function, platters, when, notes, comment, SAVE BAR, buttons",
+  "same-as-today-form-390": "identical",
+  "same-as-today-form-768": "identical",
+  "same-as-today-form-390-whole": "identical",
+  "same-as-today-form-768-whole": "identical",
+  "same-as-today-fnnow-390": "identical",
+  "same-as-today-fnnow-768": "identical",
+  "same-as-today-fnnow-1920-kitchen": "identical"
+ }
+}
