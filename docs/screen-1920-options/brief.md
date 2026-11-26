@@ -68,3 +68,5 @@ Switched on above 1280 px (the laptop stays as it is), one breakpoint, tested at
 Evidence to gather before round 2's design frame: the Wall board at 1920 (busy, default and Extra large text), Prep after the notebook quick win, a long order day (20 or more requests), a full roster on Today's team, 19:30 with a round due (the band open), a section's last line ticked (does anything move), and 1536 px.
 
 **The head chef decides:** round 2 at this smaller scope once A and the quick wins are live, or stop after them.
+
+**Chosen (head chef, 26 Nov 2026):** "Yes, smaller". Round 2 runs at the smaller scope once the fold (#900) and the quick wins are live: first the evidence above, then designs for Prep at 1920 and Orders at a reading width, Cleaning after its weights work settles. Above 1280 px only, CSS only, the same rows.
