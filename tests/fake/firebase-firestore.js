@@ -5,6 +5,7 @@
 //   | 'fail' (every write and every read from the server fails, unavailable; getDoc, getDocs and listeners still
 //   answer, so it is not no signal: __fake.cold below is)
 //   __fake.deny = /regex/ refuses only the writes whose path matches
+//   __fake.lose = /regex/ applies the writes whose path matches but answers unavailable, like an answer lost after the send
 //   __fake.failReads = /regex/ makes getDoc, getDocs and getDocFromServer fail (unavailable) for the paths that match, like a read lost to a bad signal
 //   __fake.denyReads = /regex/ makes queries and explicit server reads refuse matching paths (permission-denied), like unpublished rules
 //   __fake.cold = /regex/ is no signal the way the book's memory cache answers it (26 Oct 2026, #387, memoryLocalCache), for
@@ -479,6 +480,8 @@ function finishOps(ops) {
     ops.forEach(o => pendingKeys.add(key(o.ref.path))); run();
     return new Promise(res => held.push(res));
   }
+  // __fake.lose: the write lands on the server but its answer is lost (a dropped connection after the send)
+  if (window.__fake.lose && ops.some(o => window.__fake.lose.test(key(o.ref.path)))) { run(); return delay(undefined).then(() => Promise.reject({ code: 'unavailable' })); }
   run(); return delay(undefined);
 }
 const exactKeys = (value, names) => value && Object.keys(value).length === names.length && names.every(name => Object.hasOwn(value, name));

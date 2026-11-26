@@ -400,6 +400,55 @@ try {
   await check('Cleaning switched off: a chef still saves a weight', () => setDoc(ref(dbs.sous, planPath), weightRec('sous', { w: { off: 1 } }), { merge: true }));
   await check('Cleaning switched off: staff still cannot read them', () => getDoc(ref(dbs.staff, planPath)), false);
   await put({ 'config/main': cfg });
+  // Suggest the days, saved (results by section, step 4b, 26 Nov 2026): while Cleaning is off, up to 5 jobs move in one
+  // batch, each the replace path (the old revision closed, the new one from tomorrow, root kept). Real revisions: plain
+  // weekly jobs, one with checks and a Pass check plan, a monthly job whose first date changes.
+  {
+    await put({ 'config/main': { ...cfg, staffSee: { ...cfg.staffSee, cleaning: false } } });
+    const plan = (x = {}) => ({ template: 'sc-t', method: 'Pull it out and clean behind.', responsibility: 'Grill', checks: ['Behind cleaned', 'Floor dried'], timing: 'daily', verification: false, verifiers: [], review: '', ...x });
+    const weekly = (id, x = {}) => task(id, { dows: [2], from: START - 7 * DAY, ...x });
+    const ANCHOR = day(START + 9 * DAY);
+    const seedMoves = (prefix, count) => { const m = {}; for (let i = 0; i < count; i++) { const id = prefix + i; m[taskPath(id)] = i === 1 ? weekly(id, { plan: plan() }) : i === 2 ? weekly(id, { dows: [0, 1, 2, 3, 4, 5, 6], plan: plan({ repeat: { days: 28, anchor: '' } }) }) : weekly(id); } return m; };
+    const moveBatch = (db, prefix, count, by = 'head') => {
+      const b = writeBatch(db);
+      for (let i = 0; i < count; i++) {
+        const old = prefix + i, next = old + '-n';
+        b.update(ref(db, taskPath(old)), { until: START + DAY, next, by });
+        const x = i === 1 ? { dows: [3], plan: plan() } : i === 2 ? { dows: [0, 1, 2, 3, 4, 5, 6], plan: plan({ repeat: { days: 28, anchor: ANCHOR } }) } : { dows: [3] };
+        b.set(ref(db, taskPath(next)), task(old, { prev: old, from: START + DAY, by, ...x }));
+      }
+      return b.commit();
+    };
+    await put(seedMoves('mv', 5));
+    await check('step 4b: a chef moves 5 jobs in one batch (a plain job, one with checks, a monthly first date)', () => moveBatch(dbs.head, 'mv', 5));
+    await same('step 4b: each moved job has its old revision closed tonight and a new one from tomorrow', async () => {
+      const a = (await getDoc(ref(dbs.head, taskPath('mv2')))).data(), b = (await getDoc(ref(dbs.head, taskPath('mv2-n')))).data();
+      return a.until === START + DAY && a.next === 'mv2-n' && b.prev === 'mv2' && b.root === 'mv2' && b.plan.repeat.anchor === ANCHOR;
+    });
+    await put(seedMoves('sv', 5));
+    await check('step 4b: a sous chef moves 5 jobs in one batch', () => moveBatch(dbs.sous, 'sv', 5, 'sous'));
+    await put(seedMoves('st', 1));
+    await check('step 4b refused: staff move a job', () => moveBatch(dbs.staff, 'st', 1, 'staff'), false);
+    // a stale revision inside a batch: one job was already moved on another phone, so the whole batch is refused
+    await put(seedMoves('sl', 5)); await put({ [taskPath('sl3')]: weekly('sl3', { until: START + DAY, next: 'elsewhere' }) });
+    await check('step 4b refused: a batch with one job already moved elsewhere (it lands whole or not at all)', () => moveBatch(dbs.head, 'sl', 5), false);
+    await same('step 4b: nothing of the refused batch landed', async () => (await getDoc(ref(dbs.head, taskPath('sl0')))).data().until === OPEN && !(await getDoc(ref(dbs.head, taskPath('sl0-n')))).exists());
+    // a second move of the same job on the same day: the revision not yet in force is closed before it starts
+    await check('step 4b: the same job moved again the same day', async () => {
+      const b = writeBatch(dbs.head);
+      b.update(ref(dbs.head, taskPath('mv0-n')), { until: START + DAY, next: 'mv0-m', by: 'head' });
+      b.set(ref(dbs.head, taskPath('mv0-m')), task('mv0', { prev: 'mv0-n', from: START + DAY, dows: [4] }));
+      return b.commit();
+    });
+    // how many fit in one batch: the book sends 5. Reported, not a limit the book relies on
+    const edge = [];
+    for (const count of [6, 7, 8, 9, 10]) {
+      await put(seedMoves('e' + count + '_', count));
+      try { await moveBatch(dbs.head, 'e' + count + '_', count); edge.push(count + ' allowed'); } catch (e) { edge.push(count + ' refused'); }
+    }
+    console.log('step 4b, jobs moved in one batch: 5 allowed; ' + edge.join(', '));
+    await put({ 'config/main': cfg });
+  }
   console.log(`${fails} failed of ${n} cleaning rule checks`);
 } finally { await env.cleanup(); }
 if (fails) process.exit(1);

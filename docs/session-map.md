@@ -35,6 +35,8 @@ Step 3, Weights and days: `cleaningPlan/{id}` in `firestore.rules` (one record, 
 
 Step 4a, What each day takes (26 Nov 2026, his days and the staffing suggestion): `d` in `cleaningPlan/main`, set by the same chefs as the weights; `cleaningStaffing()` (through `tsLoad()`) and `cleaningPlanSave(w, k, d)` in `js/prep.js` (bridge `staffing`); `daysBlock()`, `daySuggest()`, `loadStaff()`, `patchDays()` and `saveDays()` in `js/cleaning.js`; `.cln-day*` in `css/app.css`. Checked by `tests/cleaning-days.test.js` (new) and `tests/rules/cleaning.test.mjs`. Pictures: `docs/cleaning-tracking-options/built/days-*`.
 
+Step 4b, Suggest the days (26 Nov 2026, in bulk only while Cleaning is off, fewest moves): `js/cleaning-plan.js` (new, lazy, `LK_CLEANING_PLAN`, the council's preview planner with `even`, `twoHeavy`, `avoid`, `jobsFrom()` and `changes()` added; not in the saved shell), loaded by `sugStart()` in `js/cleaning.js` with `sugRun()`, `sugBlock()`, `sugRows()`, `sugDock()`, `sugSave()` and `patchSug()`; `cleaningMoves()` and `teamOn` in `js/prep.js` (bridge `moveTasks`, `teamOn`); `.cln-sug*` in `css/app.css`; `__fake.lose` in `tests/fake/firebase-firestore.js`. Checked by `tests/cleaning-plan.test.js` (new, node, with `tests/cleaning-plan-jobs.js`), `tests/cleaning-suggest.test.js` (new), `tests/rules/cleaning.test.mjs` and `tests/rules/client-shapes.test.mjs`. Pictures: `docs/cleaning-tracking-options/built/suggest-*`.
+
 Open with the head chef: whether Sunday, Monday and Wednesday take heavy jobs, which section owns a shared job that names two, who sets what each day takes, and the lead's two suggested planner rules.
 
 ## Fewer reloads and a clearer long wait, 24 November 2026 (chosen)

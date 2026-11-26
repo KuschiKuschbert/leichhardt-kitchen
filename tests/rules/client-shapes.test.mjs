@@ -987,6 +987,13 @@ row('js/prep.js cleaningSave(): chef replaces a schedule tomorrow in one batch',
   prep: r => put({ ['cleaningTasks/clean-old-' + r]: cleanTask('clean-old-' + r), ['cleaningTasks/clean-next-' + r]: null }),
   run: (db, w, r) => W(r, [['upd', 'cleaningTasks/clean-old-' + r, { until: MIDNIGHT + DAY, next: 'clean-next-' + r }],
     ['set', 'cleaningTasks/clean-next-' + r, cleanTask('clean-old-' + r, { prev: 'clean-old-' + r, from: MIDNIGHT + DAY, by: w })]]) });
+row('js/prep.js cleaningMoves(): Suggest the days saves 5 jobs in one batch, each replaced from tomorrow', { ok: CHEFS, asks: CHEFS,
+  prep: r => { const m = {}; for (let i = 0; i < 5; i++) { m['cleaningTasks/mv-old-' + i + '-' + r] = cleanTask('mv-old-' + i + '-' + r, { dows: [2] }); m['cleaningTasks/mv-new-' + i + '-' + r] = null; } return put(m); },
+  run: (db, w, r) => W(r, [0, 1, 2, 3, 4].flatMap(i => [['upd', 'cleaningTasks/mv-old-' + i + '-' + r, { until: MIDNIGHT + DAY, next: 'mv-new-' + i + '-' + r }],
+    ['set', 'cleaningTasks/mv-new-' + i + '-' + r, cleanTask('mv-old-' + i + '-' + r, { prev: 'mv-old-' + i + '-' + r, dows: [3], from: MIDNIGHT + DAY, by: w })]])) });
+row('js/prep.js cleaningMoves(): Send again reads a remembered new revision from the server after a lost answer', { ok: KITCHEN, asks: CHEFS,
+  prep: r => put({ ['cleaningTasks/mv-lost-' + r]: cleanTask('mv-lost-' + r) }),
+  run: (db, w, r) => getDocFromServer(D(db, 'cleaningTasks/mv-lost-' + r)) });
 row('js/prep.js cleaningPlanRead(): a chef reads the weights once when the list opens', { ok: CHEFS, asks: CHEFS,
   prep: () => put({ 'cleaningPlan/main': { v: 1, w: { seed: 2 }, at: NOW, by: 'kit' } }),
   run: db => getDocFromServer(D(db, 'cleaningPlan/main')) });
