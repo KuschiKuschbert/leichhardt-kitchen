@@ -1,0 +1,2079 @@
+[
+ {
+  "id": "burger",
+  "name": "Chicken Burger",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 5.162,
+  "cost": 0.016261400000000002,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "The assembled chicken burger sits at the back, a little left of centre, with the chips piled on the side at the front.",
+  "leftOff": [
+   {
+    "ingredient": "Crumbed chicken thigh",
+    "why": "inside the burger, drawn as part of the bun stack"
+   },
+   {
+    "ingredient": "Sliced cheese",
+    "why": "inside the burger, drawn as part of the bun stack"
+   },
+   {
+    "ingredient": "Ranch",
+    "why": "inside the burger across both layers, not seen from above"
+   },
+   {
+    "ingredient": "Oak leaf",
+    "why": "inside the burger, drawn as part of the bun stack"
+   },
+   {
+    "ingredient": "Tomato",
+    "why": "inside the burger, drawn as part of the bun stack"
+   }
+  ],
+  "parts": 2
+ },
+ {
+  "id": "pie",
+  "name": "Guinness Beef Pie",
+  "rules": 0.0009426804313333894,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 11.147,
+  "cost": 0.0312094,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 1.4780538738772293,
+  "aiFlags": [
+   "overlap Pie shell and lid / Green peas 38%"
+  ],
+  "errors": [],
+  "missing": [
+   "Guinness beef pie mix is in the recipe but not on the plate."
+  ],
+  "ware": "book",
+  "idea": "Pie sits half on a mash mound at the back, peas spill off the front right, with gravy poured over and herbs on top.",
+  "leftOff": [
+   {
+    "ingredient": "Guinness beef pie mix",
+    "why": "Filling hidden inside the pie under the lid"
+   }
+  ],
+  "parts": 5
+ },
+ {
+  "id": "barra",
+  "name": "Barramundi",
+  "rules": 0.08806913275286843,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 12.209,
+  "cost": 0.0335974,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.21102523897573242,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "A centred stack: laksa pooled around a round of rice, the four charred greens fanned over it, and the crispy-skin barra on top.",
+  "leftOff": [
+   {
+    "ingredient": "Sesame oil",
+    "why": "cooked into the greens, not seen"
+   }
+  ],
+  "parts": 7
+ },
+ {
+  "id": "ribs",
+  "name": "New Pork Ribs",
+  "rules": 0.5,
+  "rulesFlags": [
+   "long Corn ribs 4.5"
+  ],
+  "rulesMissing": [],
+  "seconds": 9.711,
+  "cost": 0.0269614,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.5,
+  "aiFlags": [
+   "sauce stick Bourbon BBQ sauce 3.5"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Ribs at the back with bourbon BBQ drizzled over them, corn ribs criss-cross stacked at front left and slaw at front right.",
+  "leftOff": [],
+  "parts": 5
+ },
+ {
+  "id": "snickers",
+  "name": "Snickers Spring Rolls",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 12.535,
+  "cost": 0.0341414,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.43030969984170625,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Three fried rolls criss-cross stacked left of centre with butterscotch drizzle and peanuts on top, and a scoop of ice cream beside them on the right.",
+  "leftOff": [
+   {
+    "ingredient": "Small Snickers bars",
+    "why": "Filling hidden inside the fried wrappers"
+   }
+  ],
+  "parts": 6
+ },
+ {
+  "id": "skillet",
+  "name": "Skillet Cookie",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 7.169,
+  "cost": 0.0238294,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 1.0142991211845753,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "Cast-iron skillet",
+  "idea": "The baked cookie fills the cast-iron skillet, with a vanilla quenelle in the centre and a light butterscotch drizzle over the top.",
+  "leftOff": [],
+  "parts": 3
+ },
+ {
+  "id": "eye-fillet",
+  "name": "180 g Eye Fillet",
+  "rules": 0.006115926700848418,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 8.451,
+  "cost": 0.026485400000000003,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Eye fillet at the back left of centre, sauce of choice in a ramekin at 2 o'clock, chips front left and salad front right.",
+  "leftOff": [
+   {
+    "ingredient": "Sea salt flakes",
+    "why": "seasoning, not seen on the plate"
+   },
+   {
+    "ingredient": "Chips and salad",
+    "why": "drawn as its Chips and Salad parts"
+   }
+  ],
+  "parts": 4
+ },
+ {
+  "id": "rump-250",
+  "name": "250 g Rump",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 8.884,
+  "cost": 0.027605400000000002,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Rump at the back left of centre, chips front left, garden salad front right, and the sauce of choice in a ramekin at 2 o'clock.",
+  "leftOff": [
+   {
+    "ingredient": "Sea salt flakes",
+    "why": "seasoning, not seen on the plate"
+   },
+   {
+    "ingredient": "Chips and salad",
+    "why": "drawn as its parts, Chips and Salad"
+   }
+  ],
+  "parts": 4
+ },
+ {
+  "id": "rib-fillet",
+  "name": "300 g Rib Fillet",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 7.991,
+  "cost": 0.024497400000000003,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Rib fillet at the back left of centre, the sauce of choice in a ramekin at 2 o'clock, chips front left and salad front right.",
+  "leftOff": [
+   {
+    "ingredient": "Sea salt flakes",
+    "why": "Seasoning, not seen on the plate"
+   },
+   {
+    "ingredient": "Chips and salad",
+    "why": "Drawn as its separate chips and salad parts"
+   }
+  ],
+  "parts": 4
+ },
+ {
+  "id": "rump-500",
+  "name": "500 g Rump",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 7.26,
+  "cost": 0.023525400000000002,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.24757676908273063,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "The 500 g rump sits at the back, a little left of centre, with chips at the front left, salad at the front right and the sauce of choice in a ramekin at 2 o'clock.",
+  "leftOff": [
+   {
+    "ingredient": "Sea salt flakes",
+    "why": "seasoning, not seen on the plate"
+   },
+   {
+    "ingredient": "Chips and salad",
+    "why": "drawn as its Chips and Salad parts"
+   }
+  ],
+  "parts": 4
+ },
+ {
+  "id": "flank",
+  "name": "350 g Flank Steak",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 9.908,
+  "cost": 0.025521400000000003,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Sliced flank steak at the back left of centre topped with cowboy butter, chips front left and garden salad front right.",
+  "leftOff": [
+   {
+    "ingredient": "Chips and salad",
+    "why": "Combined card; drawn as its separate chips and salad parts"
+   }
+  ],
+  "parts": 4
+ },
+ {
+  "id": "schnitzel-french",
+  "name": "Chicken Schnitzel French",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 16.499,
+  "cost": 0.0420334,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 1,
+  "aiFlags": [
+   "garnish big: French parmi topper 51% of main",
+   "4 extra copies"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Schnitzel at the back, topped with melted brie, bacon, avocado fan and béarnaise, with chips front left and salad front right.",
+  "leftOff": [
+   {
+    "ingredient": "Chips and salad",
+    "why": "drawn as its parts, Chips and Salad"
+   }
+  ],
+  "parts": 8
+ },
+ {
+  "id": "schnitzel-mexican",
+  "name": "Chicken Schnitzel Mexican",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 12.359,
+  "cost": 0.034289400000000005,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 1,
+  "aiFlags": [
+   "garnish big: Mexican topper 76% of main",
+   "4 extra copies"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Mexican-topped schnitzel at the back left of centre, chips front left, garden salad front right.",
+  "leftOff": [
+   {
+    "ingredient": "Chips and salad",
+    "why": "drawn as its Chips and Salad parts"
+   }
+  ],
+  "parts": 8
+ },
+ {
+  "id": "schnitzel-americana",
+  "name": "Chicken Schnitzel Americana",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 10.279,
+  "cost": 0.0292414,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 4.857142857142858,
+  "aiFlags": [
+   "overlap Chicken schnitzel / Americana topper 100%"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Schnitzel at the back left of centre topped with pulled pork and smoked mac and cheese side by side, chips front left, salad front right.",
+  "leftOff": [
+   {
+    "ingredient": "Chips and salad",
+    "why": "Drawn as its parts, Chips and Salad"
+   }
+  ],
+  "parts": 5
+ },
+ {
+  "id": "beef-schnitzel",
+  "name": "Beef Schnitzel",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 11.835,
+  "cost": 0.0308294,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Schnitzel across the back left with a lemon wedge on top, the chosen sauce in a ramekin at 2 o'clock, chips front left and salad front right.",
+  "leftOff": [
+   {
+    "ingredient": "Chips and salad",
+    "why": "Combined card; drawn as separate chips and salad parts"
+   }
+  ],
+  "parts": 5
+ },
+ {
+  "id": "smash",
+  "name": "Smash Burger",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 9.095,
+  "cost": 0.025437400000000002,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.13765182186234826,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Closed smash burger at the back just left of centre, with a pile of chips on the side at the front left.",
+  "leftOff": [
+   {
+    "ingredient": "Smash patty",
+    "why": "inside the closed burger; the bun's drawing stands for it"
+   },
+   {
+    "ingredient": "Burger cheese",
+    "why": "inside the closed burger"
+   },
+   {
+    "ingredient": "Bread and butter pickles",
+    "why": "inside the closed burger"
+   },
+   {
+    "ingredient": "American mustard",
+    "why": "spread inside the bun, not seen"
+   },
+   {
+    "ingredient": "Tomato sauce",
+    "why": "spread inside the bun, not seen"
+   },
+   {
+    "ingredient": "Oak leaf lettuce",
+    "why": "not in the plating method; hidden in the burger if used"
+   }
+  ],
+  "parts": 2
+ },
+ {
+  "id": "oz-smash",
+  "name": "The OZ Smash Burger",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 16.677,
+  "cost": 0.0427494,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "The closed burger sits at the back, a little left of centre, with a half serve of chips piled at the front beside it.",
+  "leftOff": [
+   {
+    "ingredient": "Smash patty",
+    "why": "inside the closed burger, part of the Milk bun card's stack"
+   },
+   {
+    "ingredient": "Burger cheese",
+    "why": "inside the closed burger, part of the Milk bun card's stack"
+   },
+   {
+    "ingredient": "Shortcut bacon",
+    "why": "inside the closed burger, part of the Milk bun card's stack"
+   },
+   {
+    "ingredient": "Sliced beetroot",
+    "why": "inside the closed burger, part of the Milk bun card's stack"
+   },
+   {
+    "ingredient": "Tomato",
+    "why": "inside the closed burger, part of the Milk bun card's stack"
+   },
+   {
+    "ingredient": "Red onion",
+    "why": "inside the closed burger, part of the Milk bun card's stack"
+   },
+   {
+    "ingredient": "Bread and butter pickles",
+    "why": "inside the closed burger, part of the Milk bun card's stack"
+   },
+   {
+    "ingredient": "Tomato ketchup",
+    "why": "on the bun base inside the burger, part of the Milk bun card's stack"
+   },
+   {
+    "ingredient": "Oak leaf lettuce",
+    "why": "inside the closed burger, part of the Milk bun card's stack"
+   }
+  ],
+  "parts": 2
+ },
+ {
+  "id": "fish-burger",
+  "name": "Fish Burger",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 9.386,
+  "cost": 0.0275654,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 1.5659398761266936,
+  "aiFlags": [
+   "overlap Milk bun / Chips 42%"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "The assembled fish burger sits at the back, a little left of centre, with a pile of chips on the side at the front.",
+  "leftOff": [
+   {
+    "ingredient": "Blue grenadier fillet",
+    "why": "Inside the burger, covered by the bun top"
+   },
+   {
+    "ingredient": "Beer batter",
+    "why": "Coats the fish inside the burger"
+   },
+   {
+    "ingredient": "Tartare sauce",
+    "why": "Spread inside the burger under the bun top"
+   },
+   {
+    "ingredient": "Green oak lettuce",
+    "why": "Inside the burger, covered by the bun top"
+   },
+   {
+    "ingredient": "Tomato",
+    "why": "Inside the burger, covered by the bun top"
+   },
+   {
+    "ingredient": "Red onion",
+    "why": "Inside the burger, covered by the bun top"
+   }
+  ],
+  "parts": 2
+ },
+ {
+  "id": "chickpea-burger",
+  "name": "Chickpea Mushroom Burger",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 3.251,
+  "cost": 0.0159814,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.1373506184775028,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "The built burger sits at the back, a little left of centre, with chips on the side at the front.",
+  "leftOff": [
+   {
+    "ingredient": "Beetroot falafel",
+    "why": "inside the burger, drawn by the milk bun part"
+   },
+   {
+    "ingredient": "Vegan aioli",
+    "why": "spread inside the bun, drawn by the milk bun part"
+   },
+   {
+    "ingredient": "Chunky avocado",
+    "why": "inside the burger, drawn by the milk bun part"
+   },
+   {
+    "ingredient": "Tomato",
+    "why": "inside the burger, drawn by the milk bun part"
+   },
+   {
+    "ingredient": "Green oak lettuce",
+    "why": "inside the burger, drawn by the milk bun part"
+   }
+  ],
+  "parts": 2
+ },
+ {
+  "id": "steak-sandwich",
+  "name": "Steak Sandwich",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 5.119,
+  "cost": 0.019029400000000002,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 1.471547355557644,
+  "aiFlags": [
+   "overlap Turkish roll / Side sauce of choice 34%"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Closed steak sandwich across the back of the plate, chips front left and a ramekin of the guest's sauce at 2 o'clock.",
+  "leftOff": [
+   {
+    "ingredient": "Topside steak",
+    "why": "inside the closed roll, drawn by the Turkish roll part"
+   },
+   {
+    "ingredient": "Cheese",
+    "why": "inside the roll"
+   },
+   {
+    "ingredient": "Shortcut bacon",
+    "why": "inside the roll"
+   },
+   {
+    "ingredient": "Egg",
+    "why": "inside the roll"
+   },
+   {
+    "ingredient": "Tomato relish",
+    "why": "inside the roll"
+   },
+   {
+    "ingredient": "Aioli",
+    "why": "spread inside the top half of the roll"
+   },
+   {
+    "ingredient": "Oak leaf lettuce",
+    "why": "inside the roll"
+   },
+   {
+    "ingredient": "Tomato",
+    "why": "inside the roll"
+   }
+  ],
+  "parts": 3
+ },
+ {
+  "id": "lamb-rissoles",
+  "name": "Lamb Rissoles",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 14.84,
+  "cost": 0.0368894,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.15442592332233346,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Mash fills the left half of the bowl with three rissoles in a row on it under gravy and onion rings, and the seasonal vegetables fill the right half.",
+  "leftOff": [],
+  "parts": 5
+ },
+ {
+  "id": "vegan-rissoles",
+  "name": "Vegan Rissoles",
+  "rules": 0.030350859170819276,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 7.142,
+  "cost": 0.0220534,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.16680469480709928,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Mash on the left half of the bowl with three beetroot bites on it under a gravy pour, seasonal vegetables on the right half.",
+  "leftOff": [
+   {
+    "ingredient": "Table salt",
+    "why": "seasoning cooked in, not seen"
+   }
+  ],
+  "parts": 4
+ },
+ {
+  "id": "pork-belly",
+  "name": "Pork Belly",
+  "rules": 0.01060876567898804,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 14.581,
+  "cost": 0.0422574,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.37037138114127155,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "A spinach purée wave runs across the plate, with mash just left of centre topped by the pork belly and jus, and peas and bacon in jus beside the mash and on the belly, finished with shallots and greens.",
+  "leftOff": [
+   {
+    "ingredient": "Oil",
+    "why": "used for frying, not seen"
+   },
+   {
+    "ingredient": "Table salt",
+    "why": "seasoning on the crackling, not seen"
+   }
+  ],
+  "parts": 11
+ },
+ {
+  "id": "carbonara",
+  "name": "Carbonara",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 14.364,
+  "cost": 0.0374494,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [
+   "Creamy garlic sauce is in the recipe but not on the plate."
+  ],
+  "ware": "Dinner plate 30 cm",
+  "idea": "Fettuccine in creamy sauce piled in the centre with bacon bits, parmesan shavings and chives on top, and a half garlic bread on the right side.",
+  "leftOff": [
+   {
+    "ingredient": "Creamy garlic sauce",
+    "why": "tossed through the fettuccine, shown by the creamy pasta"
+   },
+   {
+    "ingredient": "White cooking wine",
+    "why": "cooked in, not seen"
+   }
+  ],
+  "parts": 5
+ },
+ {
+  "id": "grill-board",
+  "name": "Grill Maiden's Board",
+  "rules": 0.7608695652173914,
+  "rulesFlags": [
+   "long Pork Cumberland sausage 4.6"
+  ],
+  "rulesMissing": [],
+  "seconds": 9.829,
+  "cost": 0.0324734,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.5,
+  "aiFlags": [
+   "long Pork Cumberland sausage 4.6"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Rectangular board packed in two rows: brisket, rump and wings across the back, chips, sausage and salad across the front, with the two sauce ramekins stacked at the front right.",
+  "leftOff": [
+   {
+    "ingredient": "Oven brisket",
+    "why": "alternative to smoked brisket, drawn by the brisket part"
+   },
+   {
+    "ingredient": "Wing flour",
+    "why": "coating cooked into the wings, not seen separately"
+   }
+  ],
+  "parts": 8
+ },
+ {
+  "id": "taco-board",
+  "name": "Guacho Taco Share Board",
+  "rules": 0.9766565735121824,
+  "rulesFlags": [
+   "5 extra copies"
+  ],
+  "rulesMissing": [],
+  "seconds": 13.029,
+  "cost": 0.037397400000000004,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 2.8605885678801686,
+  "aiFlags": [
+   "garnish big: Pico de gallo 66% of main, Chunky avocado 65% of main"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Board packed in three rows: tortillas, brisket and pulled pork at the back; tenders, slaw and corn in the middle; pico, avocado and a sour cream ramekin at the front.",
+  "leftOff": [
+   {
+    "ingredient": "Oven brisket",
+    "why": "either/or with smoked brisket; drawn as the brisket part"
+   }
+  ],
+  "parts": 11
+ },
+ {
+  "id": "senior-schnitzel",
+  "name": "Senior Chicken Schnitzel",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 10.281,
+  "cost": 0.028861400000000002,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Half schnitzel at the back with a lemon wedge on it, gravy in a ramekin at 2 o'clock, chips front left and salad front right.",
+  "leftOff": [
+   {
+    "ingredient": "Chips and salad",
+    "why": "Card name only; chips and salad are drawn as their own parts"
+   }
+  ],
+  "parts": 5
+ },
+ {
+  "id": "senior-parmy",
+  "name": "Senior Parmy",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 10.69,
+  "cost": 0.0303614,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Half parmy topped with Napoli, ham and mozzarella at the back, a little left of centre, with chips at the front left and salad at the front right.",
+  "leftOff": [
+   {
+    "ingredient": "Chips and salad",
+    "why": "Drawn as its parts, Chips and Salad"
+   }
+  ],
+  "parts": 6
+ },
+ {
+  "id": "senior-rissoles",
+  "name": "Senior Lamb Rissoles",
+  "rules": 0.004115708938051718,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 5.804,
+  "cost": 0.0204534,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.07058880007163736,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Two rissoles sit on the mash at the back, a little left, with gravy poured over them and the seasonal veg at the front right.",
+  "leftOff": [],
+  "parts": 4
+ },
+ {
+  "id": "senior-bolognese",
+  "name": "Senior Spaghetti Bolognese",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 9.167,
+  "cost": 0.0254814,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "A twirled nest of spaghetti sits back-centre in the pasta bowl with the bolognese spooned on top and parmesan shavings over it, and the half garlic bread leans at the front right.",
+  "leftOff": [],
+  "parts": 4
+ },
+ {
+  "id": "kids-spaghetti-bolognese",
+  "name": "Kids Spaghetti Bolognese",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 8.115,
+  "cost": 0.0240374,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.18658819613120617,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "A twirled spaghetti nest sits left of centre, topped with bolognese and grated parmesan, with the half garlic bread at the front right.",
+  "leftOff": [],
+  "parts": 4
+ },
+ {
+  "id": "side-salad",
+  "name": "Side Salad",
+  "rules": 0.6908652123197156,
+  "rulesFlags": [
+   "long Continental cucumber 3.8"
+  ],
+  "rulesMissing": [],
+  "seconds": 6.526,
+  "cost": 0.0216294,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.8123204330820115,
+  "aiFlags": [
+   "long Continental cucumber 3.8"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "A mound of mixed leaves fills the bowl with cucumber, cherry tomatoes, carrot and raw red onion spread over it, finished with a drizzle of French dressing.",
+  "leftOff": [],
+  "parts": 6
+ },
+ {
+  "id": "wedges",
+  "name": "Wedges",
+  "rules": 1.1489281586837436,
+  "rulesFlags": [
+   "Sweet chilli sauce under Seasoned potato wedges"
+  ],
+  "rulesMissing": [],
+  "seconds": 10.406,
+  "cost": 0.189471,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.5252942874520866,
+  "aiFlags": [
+   "sauce stick Sweet chilli sauce 4.0"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "A deep bowl piled with wedges, sweet chilli zigzagged over the top and a dollop of sour cream sitting just right of centre.",
+  "leftOff": [],
+  "parts": 3
+ },
+ {
+  "id": "mac-side",
+  "name": "Smoked Mac and Cheese",
+  "rules": 0.42936309251135024,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 5.862,
+  "cost": 0.0168014,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 1.2957574023376344,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "The smoked mac and cheese fills the deep round bowl, with a toasted panko crumb scattered over the centre of the top.",
+  "leftOff": [],
+  "parts": 2
+ },
+ {
+  "id": "slaw-side",
+  "name": "Slaw Serve",
+  "rules": 0.11255753847733403,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 2.105,
+  "cost": 0.011125400000000002,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.8944643302064382,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "A mound of creamy slaw fills the middle of the small bowl with snipped chives scattered on top.",
+  "leftOff": [],
+  "parts": 2
+ },
+ {
+  "id": "mash-side",
+  "name": "Mash Serve",
+  "rules": 0.3104268040075159,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 5.078,
+  "cost": 0.016809400000000002,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.08823991050069498,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "A mound of mash fills the middle of the bowl, with gravy poured into its top and a pinch of snipped chives on the gravy.",
+  "leftOff": [],
+  "parts": 3
+ },
+ {
+  "id": "greens-side",
+  "name": "Steamed Seasonal Vegetables",
+  "rules": 0.6563839911623734,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 5.443,
+  "cost": 0.0157854,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.9224128265884113,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "A single heap of steamed carrot, cauliflower and broccoli fills the centre of the small deep bowl.",
+  "leftOff": [],
+  "parts": 1
+ },
+ {
+  "id": "sticky-toffee",
+  "name": "Sticky Toffee Pudding",
+  "rules": 0.06632156949001798,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 7.426,
+  "cost": 0.022405400000000002,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.42001387919833144,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Pudding sits a little left of centre in a pool of rum butterscotch with honeycomb shards on top and a vanilla scoop beside it at front right.",
+  "leftOff": [],
+  "parts": 4
+ },
+ {
+  "id": "donut-fries",
+  "name": "Donut Fries",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 7.334,
+  "cost": 0.0221334,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.9180590514902515,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "A pile of donut fries sits just left of centre with maple syrup drizzled over them and a whipped cream rosette at the front right.",
+  "leftOff": [
+   {
+    "ingredient": "Ground cinnamon",
+    "why": "tossed through the fries as a coating"
+   },
+   {
+    "ingredient": "Icing sugar mix",
+    "why": "fine dusting tossed through the fries, part of their drawn look"
+   }
+  ],
+  "parts": 3
+ },
+ {
+  "id": "poutine",
+  "name": "Poutine Fries",
+  "rules": 0.2593752744538977,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 6.358,
+  "cost": 0.021433400000000002,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.27611012305515686,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "A centred pile of chips in the bowl, layered with melted mozzarella, smothered in gravy, zigzagged with cheese sauce across the whole gravy and topped with crispy shallots.",
+  "leftOff": [],
+  "parts": 5
+ },
+ {
+  "id": "lamb-nachos",
+  "name": "Smoked Pulled Lamb Nachos",
+  "rules": 0.32978309820050794,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 9.824,
+  "cost": 0.0333214,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 1.3021648564217452,
+  "aiFlags": [
+   "garnish big: Grated mozzarella 199% of main, Smashed avocado puree 55% of main, Pico de gallo 50% of main"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Corn chips under melted mozzarella fill the bowl, pulled lamb piled in the middle, avocado on the left and sour cream on the right, feta and ranch over the top, pico at the front and pea tendrils on the lamb.",
+  "leftOff": [],
+  "parts": 9
+ },
+ {
+  "id": "buffalo-corn-cob-with-cashew-crumb",
+  "name": "Buffalo BBQ Corn on the Cob",
+  "rules": 0.045086114343370766,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 14.478,
+  "cost": 0.0351414,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 1.244635588552199,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [
+   "Chilli jalapeño butter is in the recipe but not on the plate."
+  ],
+  "ware": "book",
+  "idea": "One whole buffalo corn cob lies across the middle of the plate, coated in buffalo mayo with cashew crumb and a small tuft of snow pea tendrils on top.",
+  "leftOff": [
+   {
+    "ingredient": "Chilli jalapeño butter",
+    "why": "brushed on before cooking, hidden under the buffalo mayo"
+   }
+  ],
+  "parts": 4
+ },
+ {
+  "id": "beetroot-bites",
+  "name": "Crispy Beetroot Bites",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 8.335,
+  "cost": 0.0232614,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 1.0273793790281058,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "One pile of seven jam-tossed beetroot bites in the middle of the plate, a glaze of chilli jam over them and Korean-style cucumber on top.",
+  "leftOff": [],
+  "parts": 3
+ },
+ {
+  "id": "brisket-cob",
+  "name": "Brisket Cob",
+  "rules": 0.12992895408456512,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 8.135,
+  "cost": 0.0243814,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.05872109999447033,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "A whole cob loaf sits in the centre of the plate, its opening topped with melted mozzarella and a small scatter of spring onion.",
+  "leftOff": [
+   {
+    "ingredient": "Cob loaf mix",
+    "why": "Filling inside the cob under the mozzarella; the cob loaf part stands for it"
+   }
+  ],
+  "parts": 3
+ },
+ {
+  "id": "wings",
+  "name": "Fried Chicken Wings",
+  "rules": 0.033720130150784185,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 5.149,
+  "cost": 0.0196454,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 1.987397087092071,
+  "aiFlags": [
+   "sauce stick Double-smoked BBQ sauce 3.5"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "A pile of wings in the centre, glossed with double-smoked BBQ sauce, with a small heap of cowboy candy on top.",
+  "leftOff": [
+   {
+    "ingredient": "Wing flour",
+    "why": "Cooked into the crust, not seen"
+   }
+  ],
+  "parts": 3
+ },
+ {
+  "id": "haloumi-tacos",
+  "name": "Haloumi Tacos",
+  "rules": 1,
+  "rulesFlags": [
+   "garnish big: Avocado 60% of main",
+   "long Haloumi 6.6"
+  ],
+  "rulesMissing": [],
+  "seconds": 13.96,
+  "cost": 0.0384894,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 4.707320362663796,
+  "aiFlags": [
+   "overlap Haloumi / Charred corn 64%",
+   "sauce stick Lime aioli 11.6",
+   "long Charred corn 8.2",
+   "7 extra copies"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Two open flour tortillas side by side, each topped with slaw, grilled haloumi, charred corn, avocado and dollops of lime aioli and sour cream.",
+  "leftOff": [],
+  "parts": 14
+ },
+ {
+  "id": "pork-belly-bites",
+  "name": "Crispy Pork Belly Bites",
+  "rules": 0.24626951463453853,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 9.085,
+  "cost": 0.0256614,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 2.4926871992543416,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "A single pile of chilli-jam-glazed pork belly bites in the middle of the plate, with Korean-style cucumber heaped on top.",
+  "leftOff": [],
+  "parts": 3
+ },
+ {
+  "id": "calamari",
+  "name": "Salt and Szechuan Pepper Calamari",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 7.609,
+  "cost": 0.023169400000000003,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "A pile of crumbed calamari strips centre-left, lime aioli in a ramekin at 2 o'clock and a lemon wedge at the front right.",
+  "leftOff": [
+   {
+    "ingredient": "Corn flour",
+    "why": "dusting fried into the coating"
+   },
+   {
+    "ingredient": "Szechuan seasoning",
+    "why": "tossed through, seasoning not drawn"
+   }
+  ],
+  "parts": 3
+ },
+ {
+  "id": "riblets",
+  "name": "Smoked BBQ Pork Riblets",
+  "rules": 0.30122088611960507,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 9.163,
+  "cost": 0.0256614,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.3858106443542187,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Riblets tossed in bourbon BBQ sauce piled in the centre of the plate, a glossy streak of sauce over them and cowboy candy on top.",
+  "leftOff": [],
+  "parts": 3
+ },
+ {
+  "id": "garlic-bread",
+  "name": "Garlic Bread",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 7.603,
+  "cost": 0.020893400000000003,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.6117321130337494,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "The garlic bread is cut diagonally into two halves, laid side by side and slightly staggered at the centre of the plate.",
+  "leftOff": [],
+  "parts": 2
+ },
+ {
+  "id": "bacon-cheese-bread",
+  "name": "Bacon and Cheese Bread",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 12.474,
+  "cost": 0.030589400000000003,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.06520930732096453,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "The bread is cut diagonally into two halves set together in the centre of the plate, with melted cheese and a bacon rasher showing on top of each half.",
+  "leftOff": [],
+  "parts": 5
+ },
+ {
+  "id": "chips-snack",
+  "name": "Chips",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 6.199,
+  "cost": 0.0189094,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [
+   "Gravy is in the recipe but not on the plate."
+  ],
+  "ware": "book",
+  "idea": "A pile of chips fills the bowl, with the guest's choice of aioli or gravy in a ramekin at 2 o'clock.",
+  "leftOff": [
+   {
+    "ingredient": "Gravy",
+    "why": "Guest's choice; the single ramekin shows the chosen sauce (aioli or gravy)"
+   }
+  ],
+  "parts": 2
+ },
+ {
+  "id": "beef-cheek",
+  "name": "Beef Cheek",
+  "rules": 0.4430639265878994,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 3.34,
+  "cost": 0.015189400000000002,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.8079926508545205,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "A pumpkin purée swoosh across the plate, the beef cheek a bit left of centre on it with fried shallots on top, and herb oil dotted round.",
+  "leftOff": [],
+  "parts": 4
+ },
+ {
+  "id": "fish-chips",
+  "name": "Fish and Chips",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 8.89,
+  "cost": 0.027165400000000003,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Battered fish across the back left, chips front left, salad front right, tartare in a ramekin at 2 o'clock and a lemon wedge beside the fish.",
+  "leftOff": [
+   {
+    "ingredient": "Beer batter",
+    "why": "Drawn as part of the battered fish fillet"
+   },
+   {
+    "ingredient": "Chips and salad",
+    "why": "Drawn as its separate chips and salad parts"
+   }
+  ],
+  "parts": 5
+ },
+ {
+  "id": "chicken-schnitzel",
+  "name": "Chicken Schnitzel",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 6.941,
+  "cost": 0.021129400000000003,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Schnitzel across the back left of centre, chips front left, salad front right, sauce of choice in a ramekin at 2 o'clock.",
+  "leftOff": [],
+  "parts": 4
+ },
+ {
+  "id": "chicken-parmy",
+  "name": "Chicken Parmy",
+  "rules": 0.5,
+  "rulesFlags": [
+   "garnish big: Mozzarella 58% of main"
+  ],
+  "rulesMissing": [],
+  "seconds": 9.148,
+  "cost": 0.0279574,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.5,
+  "aiFlags": [
+   "garnish big: Mozzarella 58% of main"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Schnitzel at the back topped with napoli, shaved ham and melted mozzarella, chips front left and salad front right.",
+  "leftOff": [
+   {
+    "ingredient": "Chips and salad",
+    "why": "Combined card; drawn as separate Chips and Salad parts"
+   }
+  ],
+  "parts": 6
+ },
+ {
+  "id": "caesar",
+  "name": "Pub Caesar",
+  "rules": 0.09589041095890347,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 10.853,
+  "cost": 0.028913400000000002,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Cos leaves fill the bowl with toasted sourdough tucked at the back, dressing drizzled over, bacon crumb and parmesan shavings scattered either side and the poached egg sitting on top in the centre.",
+  "leftOff": [],
+  "parts": 8
+ },
+ {
+  "id": "green-bowl",
+  "name": "Green Bowl",
+  "rules": 0.3118053626825462,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 8.327,
+  "cost": 0.023533400000000003,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "The green bowl mix is crowded in the centre of the bowl, charred broccolini lies along the left and right sides, and crumbled toasted cashews sit on top of the mix.",
+  "leftOff": [],
+  "parts": 4
+ },
+ {
+  "id": "pumpkin-salad",
+  "name": "Honey and Maple Roasted Pumpkin",
+  "rules": 0.26895816453007887,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 9.632,
+  "cost": 0.0289214,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 1.9809497614658669,
+  "aiFlags": [
+   "Basil pesto under Pumpkin",
+   "sauce stick Maple 3.9"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Five-spice pumpkin wedges sit in the middle of the bowl over a dollop of pesto, glazed with maple and topped with seed granola and feta, with fried kale tucked in at the back right.",
+  "leftOff": [],
+  "parts": 6
+ },
+ {
+  "id": "senior-fish-chips",
+  "name": "Senior Fish and Chips",
+  "rules": 0.024013259398733718,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 7.29,
+  "cost": 0.022717400000000002,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Senior-sized battered fish at the back left, chips front left, salad front right, and tartare in a ramekin at 2 o'clock.",
+  "leftOff": [
+   {
+    "ingredient": "Beer batter",
+    "why": "Drawn as part of the battered fish"
+   },
+   {
+    "ingredient": "Chips and salad",
+    "why": "Drawn as separate chips and salad parts"
+   }
+  ],
+  "parts": 4
+ },
+ {
+  "id": "senior-calamari",
+  "name": "Senior Calamari",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 9.565,
+  "cost": 0.024789400000000003,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "The 12 calamari pieces sit in one pile at the back, a little left of centre, with chips at the front left and salad at the front right.",
+  "leftOff": [
+   {
+    "ingredient": "Chips and salad",
+    "why": "Grouping card; drawn as its Chips and Salad parts"
+   }
+  ],
+  "parts": 3
+ },
+ {
+  "id": "butchers-board",
+  "name": "Butchers Board",
+  "rules": 1.3871854926637932,
+  "rulesFlags": [
+   "long Texas sausages 4.5",
+   "scattered: every part under 8%"
+  ],
+  "rulesMissing": [],
+  "seconds": 17.042,
+  "cost": 0.0480454,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.4376271795864477,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [
+   "Maple butter is in the recipe but not on the plate."
+  ],
+  "ware": "book",
+  "idea": "Back row left to right: cornbread on slaw, pulled pork, pulled lamb, two Texas sausages, brisket; four small bowls of pickles and the three sauces along the front left.",
+  "leftOff": [
+   {
+    "ingredient": "Maple butter",
+    "why": "glaze baked onto the cornbread, not a separate part"
+   }
+  ],
+  "parts": 11
+ },
+ {
+  "id": "beast-board",
+  "name": "The Beast Board",
+  "rules": 1.0659757711993174,
+  "rulesFlags": [
+   "long Texas sausages 4.6",
+   "scattered: every part under 8%"
+  ],
+  "rulesMissing": [],
+  "seconds": 20.079,
+  "cost": 0.0581854,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 2.583949602431069,
+  "aiFlags": [
+   "overlap Smoked brisket / Chicken wings 31%",
+   "5 extra copies"
+  ],
+  "errors": [],
+  "missing": [
+   "Maple butter is in the recipe but not on the plate."
+  ],
+  "ware": "book",
+  "idea": "Back row left to right: cornbread on slaw, pulled pork, pulled lamb, sausages, brisket and wings; front row has four small bowls of pickles and sauces at left and sliders at right.",
+  "leftOff": [
+   {
+    "ingredient": "Maple butter",
+    "why": "glaze baked onto the cornbread, not a separate part"
+   }
+  ],
+  "parts": 17
+ },
+ {
+  "id": "pulled-pork-burger",
+  "name": "Pulled Pork Burger",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 7.045,
+  "cost": 0.0217174,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Pulled pork burger at the back just right of centre, with a pile of fries on the side at the front left.",
+  "leftOff": [
+   {
+    "ingredient": "Pulled pork",
+    "why": "inside the bun, shown by the burger drawing"
+   },
+   {
+    "ingredient": "Carolina BBQ sauce",
+    "why": "tossed through the pork inside the bun"
+   },
+   {
+    "ingredient": "New slaw",
+    "why": "inside the bun under the pork, shown by the burger drawing"
+   }
+  ],
+  "parts": 2
+ },
+ {
+  "id": "brisket-board",
+  "name": "Brisket Board",
+  "rules": 0.6963216595888586,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 2.667,
+  "cost": 0.0129574,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 2.2401072822857726,
+  "aiFlags": [
+   "overlap Smoked brisket / Fries 35%"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Sliced brisket across the back left of the wood-finish board, fries at the front left and slaw down the right, packed edge to edge.",
+  "leftOff": [],
+  "parts": 3
+ },
+ {
+  "id": "feast-of-the-feather",
+  "name": "Feast of the Feather",
+  "rules": 0.052631578947368224,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 11.506,
+  "cost": 0.0344254,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 6.89423640643565,
+  "aiFlags": [
+   "overlap Yorkshire pudding / Smoked chicken 100%"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "The whole smoked chicken sits breast up in the middle of the giant Yorkshire on the left, with plenty of golden pudding showing. Mash, mushy peas and red cabbage sit in their own mounds in a column beside it on the right, and the gravy jug goes at the right edge.",
+  "leftOff": [],
+  "parts": 6
+ },
+ {
+  "id": "beast-burger",
+  "name": "Beast Burger",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 11.599,
+  "cost": 0.0305774,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "The towering cob-loaf burger, seen from above as its top, sits at the back a little left, with the chips piled at the front right so the two don't overlap; the fillings and sauces stay hidden inside the cob.",
+  "leftOff": [],
+  "parts": 2
+ },
+ {
+  "id": "philly-potato",
+  "name": "Philly Cheesesteak Loaded Potato",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 12.613,
+  "cost": 0.0368734,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 3.5350419703100213,
+  "aiFlags": [
+   "overlap Pulled BBQ brisket / Roast capsicum strips 54%",
+   "garnish big: Caramelised onion 52% of main"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "The two squashed potatoes sit in the centre of the plate. They are loaded with brisket, capsicum, onion and cheese sauce, then topped with a ranch drizzle, fried onions and spring onion.",
+  "leftOff": [],
+  "parts": 8
+ },
+ {
+  "id": "loaded-fries",
+  "name": "BBQ Pulled Beef Loaded Fries",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 9.746,
+  "cost": 0.029881400000000002,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 6.055121409868067,
+  "aiFlags": [
+   "overlap Pulled BBQ brisket / Cowboy candy 100%",
+   "sauce stick Alabama white sauce 3.5"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "One central mound of chips loaded with pulled brisket, cheese sauce ladled over, white sauce zigzagged across, and fried shallots and cowboy candy scattered on top.",
+  "leftOff": [],
+  "parts": 6
+ },
+ {
+  "id": "pork-knuckle",
+  "name": "Pork Knuckle",
+  "rules": 0.07940645222632219,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 13.485,
+  "cost": 0.0372694,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.5,
+  "aiFlags": [
+   "sauce stick Hot honey glaze 3.6"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "Glazed pork knuckle sits on a mound of mash in a pool of pork sauce, topped with stacked onion rings and fried shallots, with sauerkraut at the front right.",
+  "leftOff": [],
+  "parts": 7
+ },
+ {
+  "id": "chicken-adobo",
+  "name": "Chicken Adobo",
+  "rules": 0,
+  "rulesFlags": [
+   "unsure: White cane vinegar"
+  ],
+  "rulesMissing": [
+   "White cane vinegar is in the recipe but not on the plate."
+  ],
+  "seconds": 10.696,
+  "cost": 0.0347174,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.49718391854826083,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [
+   "White cane vinegar is in the recipe but not on the plate.",
+   "Brown onion is in the recipe but not on the plate.",
+   "Whole black peppercorns is in the recipe but not on the plate."
+  ],
+  "ware": "book",
+  "idea": "A mound of jasmine rice in the centre with the adobo thigh skin side up on it, glossy sauce spooned over and spring onion curls and chilli on top.",
+  "leftOff": [
+   {
+    "ingredient": "White cane vinegar",
+    "why": "cooked into the braising sauce"
+   },
+   {
+    "ingredient": "Brown onion",
+    "why": "cooked down into the sauce"
+   },
+   {
+    "ingredient": "Whole black peppercorns",
+    "why": "marinade aromatic, in the sauce"
+   },
+   {
+    "ingredient": "Unsalted chicken stock",
+    "why": "braising liquid"
+   },
+   {
+    "ingredient": "Garlic",
+    "why": "marinade and aromatics, cooked in"
+   },
+   {
+    "ingredient": "Bay leaves",
+    "why": "braising aromatic, not served"
+   },
+   {
+    "ingredient": "Brown sugar",
+    "why": "cooked into the sauce"
+   },
+   {
+    "ingredient": "Neutral cooking oil",
+    "why": "used for browning"
+   }
+  ],
+  "parts": 5
+ },
+ {
+  "id": "pizza-platter",
+  "name": "Pizza Platter",
+  "rules": 1.2840650360391197,
+  "rulesFlags": [
+   "long Garlic bread 3.6"
+  ],
+  "rulesMissing": [],
+  "seconds": 11.704,
+  "cost": 0.028393400000000003,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.15484881784942733,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "Marble board",
+  "idea": "On the marble board, the margherita and pepperoni pizzas sit side by side across the back row, with the garlic bread in a row along the front.",
+  "leftOff": [],
+  "parts": 3
+ },
+ {
+  "id": "aussie-platter",
+  "name": "Aussie Platter",
+  "rules": 0.8719758112570994,
+  "rulesFlags": [
+   "long Spring rolls, duck 3.7"
+  ],
+  "rulesMissing": [],
+  "seconds": 17.349,
+  "cost": 0.0474214,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 3.455149894276688,
+  "aiFlags": [
+   "overlap Meatballs / Quiche 37%",
+   "6 extra copies"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "Marble board",
+  "idea": "A marble board packed in three rows: the three sauce ramekins and meatballs at the back, party pies and quiche through the middle, sausage rolls and duck spring rolls at the front.",
+  "leftOff": [],
+  "parts": 14
+ },
+ {
+  "id": "vege-platter",
+  "name": "Vege Platter",
+  "rules": 0.7366852052840389,
+  "rulesFlags": [
+   "long Mozzarella sticks 4.2"
+  ],
+  "rulesMissing": [],
+  "seconds": 22.146,
+  "cost": 0.0591454,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.9025723959526845,
+  "aiFlags": [
+   "11 extra copies"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "Marble board",
+  "idea": "Marble board packed in three rows: garlic bread and three sauce ramekins at the back, quiche, arancini and haloumi across the middle, spring rolls and mozzarella sticks lined up at the front.",
+  "leftOff": [],
+  "parts": 20
+ },
+ {
+  "id": "yumcha-platter",
+  "name": "Yumcha Platter",
+  "rules": 0.9012855451774905,
+  "rulesFlags": [
+   "long Spring rolls, cocktail 3.7"
+  ],
+  "rulesMissing": [],
+  "seconds": 22.634,
+  "cost": 0.0604934,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 1.1467084233308726,
+  "aiFlags": [
+   "14 extra copies"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "Marble board",
+  "idea": "A marble board packed in three rows: karaage, fried dim sims and spring rolls at the back, four sauce ramekins (sweet soy and sweet chilli alternating) down the middle, wontons, more karaage and prawn crackers at the front.",
+  "leftOff": [],
+  "parts": 21
+ },
+ {
+  "id": "antipasto-platter",
+  "name": "Antipasto Platter",
+  "rules": 0.06995910117921172,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 14.273,
+  "cost": 0.0422214,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 3.16568851308325,
+  "aiFlags": [
+   "garnish big: Prosciutto 65% of main",
+   "long Cheese selection 3.9",
+   "5 extra copies"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "Marble board",
+  "idea": "Marble board packed in three rows: six dip ramekins along the back, the cured meats and grilled sourdough across the middle, and the three cheeses, crackers and dried fruit along the front.",
+  "leftOff": [],
+  "parts": 15
+ },
+ {
+  "id": "seafood-platter",
+  "name": "Seafood Platter",
+  "rules": 1.533314603274813,
+  "rulesFlags": [
+   "long Scallops 5.1",
+   "7 extra copies",
+   "scattered: every part under 8%"
+  ],
+  "rulesMissing": [],
+  "seconds": 16.622,
+  "cost": 0.0484734,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 3.4403743475545823,
+  "aiFlags": [
+   "overlap Oysters / B.B. whiting 29%",
+   "long Scallops 5.5",
+   "8 extra copies"
+  ],
+  "errors": [],
+  "missing": [],
+  "ware": "Marble board",
+  "idea": "A marble board packed in three rows: oysters, scallops and prawns at the back, whiting, squid and sweet potato chips in the middle, and four sauce ramekins with lemon wedges along the front.",
+  "leftOff": [],
+  "parts": 17
+ },
+ {
+  "id": "prawn-topper",
+  "name": "Prawn Topper",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 3.67,
+  "cost": 0.012921400000000001,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.896957720384578,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "The five peeled prawns sit as one cluster in the middle of the small bowl, ready to go on top of the steak at the pass.",
+  "leftOff": [],
+  "parts": 1
+ },
+ {
+  "id": "calamari-topper",
+  "name": "Calamari Topper",
+  "rules": 0.11198321368641675,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 4.033,
+  "cost": 0.013109400000000002,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.08418738064880238,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "A single pile of the 8 crumbed calamari strips sits in the middle, ready to go on top of the steak.",
+  "leftOff": [],
+  "parts": 1
+ },
+ {
+  "id": "chicken-topper",
+  "name": "Chicken Topper",
+  "rules": 0.057260044468447915,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 2.029,
+  "cost": 0.011337400000000001,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.6062895923305648,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "A single pile of herbed chicken tenders sits in the centre of the small bowl, ready to top a dish.",
+  "leftOff": [
+   {
+    "ingredient": "Italian herbs",
+    "why": "Cooked into the chicken, not seen as a separate part"
+   }
+  ],
+  "parts": 1
+ },
+ {
+  "id": "mushroom-topper",
+  "name": "Mushroom Topper",
+  "rules": 0,
+  "rulesFlags": [],
+  "rulesMissing": [],
+  "seconds": 5.255,
+  "cost": 0.0164894,
+  "served": "claude-opus-5-5",
+  "stop": "end_turn",
+  "ai": 0.11953977116373052,
+  "aiFlags": [],
+  "errors": [],
+  "missing": [],
+  "ware": "book",
+  "idea": "One pile of roasted sliced mushrooms sits centred in the small round bowl as a topper side.",
+  "leftOff": [
+   {
+    "ingredient": "Italian herbs",
+    "why": "Seasoning roasted into the mushrooms, not a separate visible part."
+   }
+  ],
+  "parts": 1
+ }
+]
