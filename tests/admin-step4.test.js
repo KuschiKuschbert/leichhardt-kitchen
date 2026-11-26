@@ -120,6 +120,39 @@ const store = p => p.evaluate(() => window.__fake.dump());
     await p.context().close();
   }
 
+  // Today's team on an empty day: once the server says no team is saved, the On break now board and Add staff / Find a
+  // person wait until there is a team, so the names to tick come first; a failed read keeps the board and its warning
+  {
+    const today = L.ymd(new Date(L.NOW));
+    const cfg = { [K('config', 'main')]: Object.assign({}, L.seed()[K('config', 'main')], { kitShifts: [{ id: 'lunch', name: 'Lunch', from: 600, to: 900 }, { id: 'dinner', name: 'Dinner', from: 960, to: 1320 }] }) };
+    const look = p => p.evaluate(() => {
+      const board = document.querySelector('.tm-away'), dock = document.querySelector('.tm-focus-save, .sv-dock'), first = document.querySelector('[data-k^="tm-quick-person"]');
+      const lab = first && first.closest('label'), r = lab && lab.getBoundingClientRect(), d = dock && dock.getBoundingClientRect();
+      return { board: board ? (board.hidden ? 'hidden' : 'shown') : 'none', words: board ? board.textContent.replace(/\s+/g, ' ').trim().slice(0, 140) : '', toolbar: !!document.querySelector('.tm-focus-toolbar'),
+        firstName: r && d ? r.bottom <= d.top && r.top >= 0 : false, at: r ? Math.round(r.bottom) : null, dock: d ? Math.round(d.top) : null };
+    });
+    for (const [w, h] of [[1920, 1008], [1280, 800]]) {
+      const p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', who: '', width: w, height: h, touch: false, extra: cfg, wait: 2000 });
+      await L.waitFor(p, () => !!document.querySelector('[data-k^="tm-quick-person"]'), null, 8000).catch(() => {}); await L.settle(p, 400);
+      const t = await look(p);
+      ok(t.board === 'hidden' && !t.toolbar && t.firstName, w + ': Today\'s team, nothing saved: no board, no toolbar, the first name to tick above the Save bar (' + JSON.stringify(t) + ')');
+      ok(!p.errors.length && !(await L.overflow(p)), w + ': Today\'s team: no page errors, no sideways scroll ' + p.errors.join(' | '));
+      await p.context().close();
+    }
+    let p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', who: '', width: 1280, height: 800, touch: false, extra: cfg, failReads: '/team(/|$)', wait: 2000 });
+    await L.waitFor(p, () => /Could not/.test((document.querySelector('.ad-main') || {}).textContent || ''), null, 8000).catch(() => {}); await L.settle(p, 600);
+    let t = await look(p);
+    const failed = await p.evaluate(() => { const m = document.querySelector('.ad-main'); return { said: /Could not load the team/.test(m.textContent), retry: !!m.querySelector('button') && /Try again/.test(m.textContent) }; });
+    ok(failed.said && failed.retry && t.board !== 'hidden', 'Today\'s team: a failed read says so with Try again, never a quietly empty page (' + JSON.stringify(Object.assign(t, failed)) + ')');
+    await p.context().close();
+    p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', who: '', width: 1280, height: 800, touch: false, wait: 2000,
+      extra: Object.assign({ [K('team', today)]: { day: today, on: [{ id: 'bo', sh: 'lunch', sec: '' }], at: L.NOW - 3600000, by: 'sam', upd: L.NOW - 3600000 } }, cfg) });
+    await L.waitFor(p, () => !!document.querySelector('.tm-focus-toolbar'), null, 8000).catch(() => {}); await L.settle(p, 400);
+    t = await look(p);
+    ok(t.toolbar, 'Today\'s team: with a team saved, Add staff and Find a person are back (' + JSON.stringify(t) + ')');
+    await p.context().close();
+  }
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });

@@ -16706,6 +16706,8 @@ if (list.length) sg('oreg', 's');
   }
   function tmFocusToolbarHTML() {
     var busy = svOf('t') === 'busy';
+    // an empty day: the staff chooser is open already and there is nobody to find (head chef, 27 Nov 2026, step 4)
+    if (!tmDayPeople().length) return '';
     return '<div class="tm-focus-toolbar"><button type="button" class="btn" data-p="tm-add-staff" aria-expanded="' + !!tmUi.quickOpen + '"' + (busy ? ' disabled' : '') + '>Add staff</button><label class="visually-hidden" for="tm-find">Find a person</label><input id="tm-find" type="search" class="search tm-find" data-k="tm-q" placeholder="Find a person" value="' + esc(tmFind) + '" autocomplete="off"></div>';
   }
   function tmLiveDetailHTML(d) {
@@ -17630,16 +17632,20 @@ if (list.length) sg('oreg', 's');
     if (d.state === 'error') return 'Could not check the latest saved plan. Try Refresh. Current scheduled status is unknown.';
     if (d.state === 'loading') return 'Checking the saved plan. Current scheduled status is not available yet.';
     if (d.state === 'stale') return 'The saved plan needs checking. Refresh to check the latest plan.';
-    if (d.state === 'unset') return 'No saved plan for today. Save today\'s team to publish the planned breaks.';
+    if (d.state === 'unset') return 'No team saved yet. Save today\'s team to publish the planned breaks.';
     return 'Today\'s saved plan has not been checked. Current scheduled status is unknown.';
   }
+  // Hidden when a checked current plan has nobody away (9 Nov 2026), and since 27 Nov 2026 (head chef, step 4) when the server
+  // has said no team is saved today ('unset' comes only from a fresh server read): the board has nothing to say until the
+  // team is saved. A failed, pending or stale read keeps it, with its warning. Its DOM stays, so the clock paints show it again.
   function tmAwayHidden(d) {
     d = d || tmAwayData();
-    return d.state === 'ready' && !d.away.length && !d.invalid;
+    return d.state === 'unset' || d.state === 'ready' && !d.away.length && !d.invalid;
   }
   function tmAwayHTML(d, compact) {
     d = d || tmAwayData();
-    var source = compact ? '<p class="tm-away-source">Today · ' + (d.state === 'ready' || d.state === 'unset' ? 'Saved plan' : d.rec ? 'Last saved plan' : 'Saved plan not checked') + ' · All services</p>' : tmAwaySource(d);
+    // with no team saved there is no plan to name above "No team saved yet" (head chef, 27 Nov 2026, step 4)
+    var source = d.state === 'unset' ? '' : compact ? '<p class="tm-away-source">Today · ' + (d.state === 'ready' ? 'Saved plan' : d.rec ? 'Last saved plan' : 'Saved plan not checked') + ' · All services</p>' : tmAwaySource(d);
     var head = '<div class="tm-away-head"><h3 class="tm-away-title">On break now</h3><span class="tm-nclock" aria-label="Queensland time">' + esc(tmHHMM(T.mins())) + '</span></div>' + source;
     if (d.state !== 'ready') return head + '<p class="' + (d.state === 'unset' || d.state === 'loading' || d.state === 'clock' ? 'tm-away-empty' : 'tm-away-warn') + '">' + esc(tmAwayState(d)) + '</p>';
     var rows = d.away.map(function (g) {
