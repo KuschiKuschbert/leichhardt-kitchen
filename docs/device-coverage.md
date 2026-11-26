@@ -10,11 +10,13 @@ Head chef, 26 November 2026: "make a list of unchecked sizes in all our PRs, so 
 | --- | --- | --- |
 | Phones | Personal, one person each. The design width. | 390 x 844, touch |
 | The kitchen tablet | Kitchen Book OS with a Back and Home pill ([app-launch.md](app-launch.md)). | 768 x 1024, touch |
-| Five section screens | 21 to 24 inch, one in every section, all staff use them for the work all shift (owner, 11 Nov 2026). Touch (head chef, 26 Nov 2026). "The section screen can be read from where the cook stands nice and clean" (head chef, 26 Nov 2026). | **Not confirmed.** 1920 x 1080 comes from the mascot study, not from a screen. With the screen's scaling at 125 % or 150 %, a 1920 x 1080 screen shows the book 1536 or 1280 px wide. |
-| Front of house screen for functions | "I believe it's a 24inch aio screen" (head chef, 26 Nov 2026). | **Not confirmed**: size, scaling, touch and which pages it shows. |
-| Laptop | Admin work. | 1280 x 900, mouse |
+| Five section screens | 21 to 24 inch, one in every section, all staff use them for the work all shift (owner, 11 Nov 2026). Touch (head chef, 26 Nov 2026). "The section screen can be read from where the cook stands nice and clean" (head chef, 26 Nov 2026). | **1920 x 1080 at 100 %**, read from the Screens row (26 Nov 2026): 1920 x 1080 pixels, the book's window 1920 x 1008 as the installed app, touch and a mouse. |
+| Front of house screen for functions | "I believe it's a 24inch aio screen" (head chef, 26 Nov 2026), then "so does the function foh scree[n]" run on 1920x1080. | **1920 x 1080** (head chef, 26 Nov 2026). Touch and which pages it shows: to confirm. |
+| The head chef's computer, and a laptop | Admin work. The head chef's own device read 1920 x 1080 at 100 %, a mouse, the book's window 1920 x 929 (26 Nov 2026). | 1920 x 1080 and 1280 x 900, mouse |
 
-The book's page stops at 1240 px, so a 1920 px screen has about 340 px empty each side ([mascot study](mascot-desktop-options/brief.md)).
+The book's page stops at 1240 px, so a 1920 px screen has about 340 px empty each side ([mascot study](mascot-desktop-options/brief.md)). Every section screen is exactly that.
+
+**Touch and mouse.** Every shared screen in the list reads touch and a mouse. The list says whether a mouse is there, not which input the screen treats as its main one (saved as `ptr`, not shown). The book's mouse-only parts follow the main input, `(hover: hover) and (pointer: fine)`, so a section screen with the mouse as its main input gets them. Step 1 tests a 1920 x 1080 screen both ways, so the answer is covered either way.
 
 ## What "checked" means here
 
@@ -90,8 +92,8 @@ Later pull requests replace earlier ones, so the work is on each page as it is n
 
 After the cleaning sessions, one step at a time, each with the head chef's go:
 
-0. **Read the real screens.** The head chef could not read the sizes off the screens (26 Nov 2026), so the book reads them itself: once the Screens row is live, each device saves its screen after someone signs in on it, and Admin, Kitchen, **Screens the book runs on** lists them, the shared screens summed up by size. One look at that row, or a screenshot of it, gives the sizes for step 1. See [The Screens row](#the-screens-row).
-1. **Put the real sizes into the every-page test.** Add the confirmed section screen size with touch and the front of house size, and add Today's team, Cleaning, the three Functions pages, Deliveries, Suppliers and the chef panel to its pages. One test-only pull request. It catches sideways scroll and errors on every page at once. A failure is a finding to fix, never a check to loosen.
+0. **Read the real screens. Done 26 Nov 2026.** The Screens row in Admin, Kitchen read every shared screen as 1920 x 1080 at 100 %, the book's window 1920 x 1008, touch and a mouse, and the head chef said the front of house screen is 1920 x 1080 too. The head chef's own computer is 1920 x 1080 with a mouse. The Screens row has done its job and can come out in one pull request ([The Screens row](#the-screens-row)).
+1. **Put the real sizes into the every-page test.** Add 1920 x 1080 with touch as the main input, the same with the mouse as the main input (the section and front of house screens), and 1920 x 1080 with a mouse (the head chef's computer), and add Today's team, Cleaning, the three Functions pages, Deliveries, Suppliers and the chef panel to its pages. One test-only pull request. It catches sideways scroll and errors on every page at once. A failure is a finding to fix, never a check to loosen.
 2. **A Where it goes pass on the service pages**, at the section size with touch, 768 and 390, with a busy-day fixture: Prep, Orders, Wastage, Transfers, Cleaning, Home, Today's team and the recipe card. The questions are the council's ([Where it goes](../.claude/skills/service-council/SKILL.md#where-it-goes-and-how-loud)), read against [design misses](design-misses.md). About six agents, one per group of pages, with the UX and interaction designer brief. The findings go into this note, page by page.
 3. **Functions on the front of house screen:** `#/fn`, `#/fn/now` and `#/functions` at that screen's size, the pages with no tablet or wide test today.
 4. **Admin and the chef panel at 1280**, then at a section size if the head chef uses them there. Already the most measured, so last.
