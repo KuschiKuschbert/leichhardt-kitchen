@@ -15087,6 +15087,9 @@ if (list.length) sg('oreg', 's');
     }
     if (e.key === 'Escape' && S.recipeOpen) { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return; }
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.getAttribute && e.target.getAttribute('data-k') === 'n-text') { e.preventDefault(); saveNote(); return; }
+    // Chef to-do (head chef, 27 Nov 2026, step 4): Ctrl+Enter (Cmd+Enter on a Mac) adds the job, as a shift ping saves; Enter
+    // alone still starts a new line. Nothing to add, nothing happens (the button's own rule)
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.getAttribute && e.target.getAttribute('data-k') === 'todo-text') { e.preventDefault(); if (tdDirty()) todoSave(); return; }
     // the guide search: the Search key drops the keyboard so the results show (the list follows each letter already)
     if (e.key === 'Enter' && e.target.getAttribute && e.target.getAttribute('data-k') === 'g-q') { e.preventDefault(); e.target.blur(); return; }
     if (e.key === 'Enter' && e.target.getAttribute && e.target.getAttribute('data-k') === 'p-pin') { e.preventDefault(); var b = S.root.querySelector('[data-p="pin-go"]'); if (b) b.click(); }
