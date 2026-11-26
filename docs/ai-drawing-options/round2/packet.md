@@ -7,7 +7,7 @@ Source commit: `496878c9` (main, 26 Nov 2026). Every round 2 reviewer gets this 
 How a head chef or sous chef gets **Claude to lay out a plate drawing** in the drawing studio (`#/manage/draw/...`), and keeps or discards it.
 
 - **Scope the evidence supports.** Option 1 only: Claude picks and places the book's own library pieces and the recipe's own parts. It never draws new SVG. Plated dishes only: pans, side views and builds were not tested, so any design that offers them is Not evidenced.
-- **Boards.** The head chef picked "neither" on 3 of 4 boards. A design that offers AI on boards must say so plainly.
+- **Boards (corrected 26 Nov 2026 after the round 2 scorers).** Of the 8 boards and platters in the blind pick, Claude won 5 and neither won 3. Of the 4 dishes named Board, neither won 2. Three of the four "neither" picks were boards or platters. An earlier line here said "neither on 3 of 4 boards": that was wrong.
 - **Who.** Head chef and sous chefs (recipe and drawing management). Nobody draws during service. It happens when a dish is added or changed: menu changes, specials, a plate redrawn.
 - **Draw it for me stays.** It is instant, costs nothing and works with no signal. Nobody has proposed removing it.
 
