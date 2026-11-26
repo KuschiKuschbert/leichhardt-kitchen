@@ -14,13 +14,36 @@ const team = {
 const millis = value => value && (value.__fakeTimestamp != null ? value.__fakeTimestamp : value.seconds * 1000 + (value.nanoseconds || 0) / 1000000);
 const saved = p => p.evaluate(path => __fake.dump()[path], CURRENT);
 const writes = p => p.evaluate(path => __fake.writes.flat().filter(x => x.path === path), CURRENT);
+// The 1280 px pill eases its width over 340 ms. A busy runner can still be drawing it when a fixed settle ends, so the
+// clock's own transitions must have ended before anything measures it.
 async function phase(p, value) {
   await L.waitFor(p, value => document.querySelector('.cooling-clock')?.dataset.clockState === value, value, 10000);
   await L.settle(p, 450);
+  await L.waitFor(p, () => {
+    const clock = document.querySelector('.cooling-clock');
+    return !!clock && !clock.getAnimations({ subtree: true }).some(a => a.playState === 'running' && a.effect.getTiming().iterations !== Infinity);
+  }, null, 10000);
 }
-async function advance(p, at) {
-  const before = await p.evaluate(() => LK_TIME.now());
-  await p.clock.fastForward(Math.max(0, Math.ceil(at - before)));
+/* Moves the page clock on to `at` (kitchen time), firing what falls due once, as time passing would. Playwright 1.48's
+   clock (tests/package.json) can undo a jump made while it runs in real time: a real-time tick that began before the
+   jump ends after it and puts the clock back to its own older time. The 4-hour start was then stamped 3.9 s after the
+   2-hour mark, not an hour after it. So the jump pauses the clock, waits for such a tick to end, reads the clock back
+   and jumps again if it went back. `still` keeps it paused at that exact millisecond; else it runs on in real time. */
+async function jump(p, at, still) {
+  const running = !p.still;
+  for (let jumps = 0; ; jumps++) {
+    const [kitchen, page] = await p.evaluate(() => [LK_TIME.now(), Date.now()]);
+    if (kitchen >= at && still && running && !jumps) throw new Error('jump: the page clock is already past ' + at);
+    if (kitchen >= at) break;
+    if (jumps === 3) throw new Error('jump: the page clock went back after ' + jumps + ' jumps');
+    await p.clock.pauseAt(page + Math.ceil(at - kitchen));
+    if (running) await L.settle(p, 100);
+  }
+  p.still = !!still;
+  if (!still) await p.clock.resume();
+}
+async function advance(p, at, still) {
+  await jump(p, at, still);
   await p.evaluate(() => window.dispatchEvent(new Event('lk-clock')));
 }
 async function clockTap(p) { await p.locator('button[data-cooling="clock"]:visible').click(); }
@@ -143,10 +166,9 @@ function controlsFit(a, width) {
       await p.locator('.cooling-clock-status').click();
       ok((await writes(p)).length === 2 && (await saved(p)).run === first.run, width + ': tapping the completed clock cannot arm or write a fresh batch');
       const cutoff = L.NOW + 7 * HOUR, unlock = L.NOW + 20 * HOUR;
-      await p.clock.pauseAt(cutoff - 1);
-      await p.evaluate(() => window.dispatchEvent(new Event('lk-clock')));
+      await advance(p, cutoff - 1, true);
       ok(await p.locator('.cooling-clock').getAttribute('data-clock-state') === 'done2', width + ': completed batch remains locked just before 21:00');
-      await advance(p, cutoff); await phase(p, 'off_hours');
+      await advance(p, cutoff, true); await phase(p, 'off_hours');
       ok((await writes(p)).length === 2 && !await p.locator('.cooling-wrap').count(), width + ': 21:00 resets the presentation without a write or popup');
       drawn = await shape(p);
       ok(drawn.control[2] === (mobile ? 44 : 152) && sameLayout(baseline, drawn) && controlsFit(drawn, width), width + ': overnight status preserves the phone ring, desktop pill and all prep positions');
@@ -159,11 +181,11 @@ function controlsFit(a, width) {
       p = await L.open(browser, '#/prep', { who: 'ann', width, clock: unlock - 60000, deviceMode: 'personal', extra: { ...team, [CURRENT]: second }, wait: 1200 });
       await phase(p, 'off_hours'); await fonts(p);
       ok((await writes(p)).length === 0 && !await p.locator('.cooling-ping').count(), width + ': a morning login keeps yesterday’s record quiet');
-      await p.clock.pauseAt(unlock - 1); await p.evaluate(() => window.dispatchEvent(new Event('lk-clock')));
+      await advance(p, unlock - 1, true);
       ok(await p.locator('.cooling-clock').getAttribute('data-clock-state') === 'off_hours', width + ': the final millisecond before 10:00 stays inert');
-      await advance(p, unlock); await phase(p, 'idle');
+      await advance(p, unlock, true); await phase(p, 'idle');
       ok((await writes(p)).length === 0 && !await p.locator('.cooling-wrap').count() && (await saved(p)).run === first.run, width + ': 10:00 restores idle without starting a batch, replaying alerts or deleting the raw record');
-      await p.clock.resume();
+      await p.clock.resume(); p.still = false;
       await L.waitFor(p, day => {
         const section = JSON.parse(localStorage.getItem('lk.sec.ann') || 'null');
         return section && section.d === day && section.sec === 'larder';
@@ -181,10 +203,15 @@ function controlsFit(a, width) {
       p = await L.open(browser, '#/prep', { who: 'ann', width, touch: true, clock: cutoff - 60000, deviceMode: 'personal', extra: team, wait: 1200 });
       await phase(p, 'idle'); await fonts(p); await L.settle(p, 400);
       const before = await shape(p);
-      await p.clock.pauseAt(cutoff - 1); await p.evaluate(() => window.dispatchEvent(new Event('lk-clock')));
+      await advance(p, cutoff - 1, true);
       ok(await p.locator('.cooling-clock').getAttribute('data-clock-state') === 'idle', width + ': unused timer stays idle until the final millisecond before 21:00');
-      await advance(p, cutoff);
-      const motion = await p.locator('.cooling-clock-status').evaluate(el => ({ transition: getComputedStyle(el).transitionProperty, duration: getComputedStyle(el).transitionDuration, animations: el.getAnimations().map(a => a.transitionProperty) }));
+      // Tell the page the time and read the 340 ms expansion in one call: a busy runner can take longer than that between two.
+      await jump(p, cutoff, true);
+      const motion = await p.evaluate(() => {
+        window.dispatchEvent(new Event('lk-clock'));
+        const el = document.querySelector('.cooling-clock-status');
+        return { transition: getComputedStyle(el).transitionProperty, duration: getComputedStyle(el).transitionDuration, animations: el.getAnimations().map(a => a.transitionProperty) };
+      });
       if (width >= 1280) ok(motion.transition.includes('width') && motion.duration.includes('0.34s') && motion.animations.includes('width'), width + ': the overnight pill expands with the existing 340ms width animation');
       await phase(p, 'off_hours');
       const after = await shape(p);

@@ -46,8 +46,8 @@ const open = (b, hash, fns, o) => L.open(b, hash, Object.assign({ who: 'sam', wi
   ok(/^Functions\s*18:30 .*Early lunch/.test(bt) && /\+1/.test(bt), '(old) the strip says Functions, then the next function, then +1 (' + bt + ')');
   const sb = await p.$('#fn-band .fn-strip-b'); if (sb) { await sb.click(); await L.settle(p, 600); }
   ok(await p.evaluate(() => location.hash) === '#/fn/now', 'with two functions on, a tap on the strip opens the service view');
-  await p.goto(L.BASE + '#/waste'); await L.settle(p, 1400);
-  ok(await p.evaluate(() => { const e = document.getElementById('fn-band'); return !!e && !e.classList.contains('is-strip') && e.querySelectorAll('.fn-row').length >= 2; }), 'Wastage keeps the full band');
+  await p.goto(L.BASE + '#/recipes'); await L.settle(p, 1400);
+  ok(await p.evaluate(() => { const e = document.getElementById('fn-band'); return !!e && !e.classList.contains('is-strip') && e.querySelectorAll('.fn-row').length >= 2; }), 'the Recipes list keeps the full band');
   ok(!p.errors.length, 'no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

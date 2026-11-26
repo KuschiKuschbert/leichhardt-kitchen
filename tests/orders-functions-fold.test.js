@@ -79,8 +79,9 @@ const paint = p => p.evaluate(() => window.LK_FN.paint());
     const expanded = await slot(p);
     ok(!expanded.closed && expanded.focus === 'fold' && /Service view/.test(expanded.text), 'Enter shows real Functions details inline and retains focus');
     await p.goto(L.BASE + '#/prep'); await L.waitFor(p, () => !!document.querySelector('#fn-band.is-strip'));
+    // Wastage is a fold page since 26 Nov 2026: the same person's Show carries there for this kitchen day
     await p.goto(L.BASE + '#/waste'); await L.waitFor(p, () => !!document.querySelector('#fn-band .fn-row'));
-    ok(await p.locator('#fn-band .fn-band-h').textContent() === 'Functions today', 'Prep keeps the strip and Wastage opens expanded independently');
+    ok(await p.locator('#fn-band .fn-band-h').textContent() === 'Functions today', 'Prep keeps the strip and Wastage follows the same Show');
     await p.goto(L.BASE + '#/orders'); await L.waitFor(p, () => !!document.querySelector('.o-main .nb-row'));
     ok(!(await slot(p)).closed, 'the same person returns to their expanded preference this kitchen day');
     await p.locator(fold).press('Space');
@@ -185,6 +186,45 @@ const paint = p => p.evaluate(() => window.LK_FN.paint());
   p = await open(b, {}, { exhausted: 'functions' });
   await L.waitFor(p, () => document.querySelector('#fn-band .fn-stale')?.textContent.includes('Could not load functions'), null, 5000).catch(() => {});
   ok(/Could not load functions/.test((await slot(p)).text), 'a cold failed read remains explicit');
+  await p.context().close();
+
+  // The fold on five more pages (head chef, 26 Nov 2026, docs/band-options/brief.md): Wastage, Transfers, Cleaning,
+  // Today's team and the recipe card open folded on a routine afternoon, phone and section screen; the Recipes list
+  // keeps the full band and its own minus. Show on one fold page carries to the next; a due round opens them all.
+  const PAGES = [['#/waste', '.w-page'], ['#/transfers', '.tr-page'], ['#/cleaning', '.cln-book'], ['#/team', '.tm-nhead'], ['#/r/laksa', '.card']];
+  const band = q => q.evaluate(() => { const e = document.getElementById('fn-band'), f = e && e.querySelector('[data-fn="fold"]');
+    return { h: e ? Math.round(e.getBoundingClientRect().height) : 0, closed: f?.getAttribute('aria-expanded') === 'false', off: f?.getAttribute('aria-disabled') === 'true',
+      rows: e ? e.querySelectorAll('.fn-row').length : 0, text: e ? e.innerText.replace(/\s+/g, ' ').trim() : '' }; });
+  const visit = async (q, hash, sel) => { await q.goto(L.BASE + hash); await L.waitFor(q, s => !!document.querySelector(s) && /Smith/.test(document.getElementById('fn-band')?.textContent || ''), sel, 8000).catch(() => {}); return band(q); };
+  for (const [w, h] of [[390, 844], [1920, 1008]]) {
+    p = await open(b, { [key('config', 'main')]: Object.assign({}, fixtures()[key('config', 'main')], { staffSee: { cleaning: true } }) }, { width: w, height: h });
+    for (const [hash, sel] of PAGES) {
+      const s = await visit(p, hash, sel);
+      ok(s.closed && s.h >= 44 && s.h <= 55 && !s.rows && /18:30 Smith/.test(s.text), w + ' ' + hash + ': starts with the one-line fold, the time and the name (' + JSON.stringify(s) + ')');
+    }
+    const r = await visit(p, '#/recipes', '.find-bar, .pass, .tiles');
+    ok(!r.closed && r.rows >= 2 && r.h > 150, w + ' #/recipes: the Recipes list keeps the full band (' + r.h + ' px, ' + r.rows + ' rows)');
+    ok(!(await L.overflow(p)) && !p.errors.length, w + ': no sideways scroll, no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+  p = await open(b, { [key('config', 'main')]: Object.assign({}, fixtures()[key('config', 'main')], { staffSee: { cleaning: true } }) });
+  await visit(p, '#/cleaning', '.cln-book');
+  await p.locator(fold).click(); await L.settle(p, 150);
+  let s5 = await band(p);
+  ok(!s5.closed && s5.rows >= 2, 'Show on Cleaning opens the band in place');
+  s5 = await visit(p, '#/transfers', '.tr-page');
+  ok(!s5.closed && s5.rows >= 2, 'the same person\'s Show carries to Transfers this kitchen day');
+  s5 = await visit(p, '#/recipes', '.find-bar, .pass, .tiles');
+  await p.locator(fold).click(); await L.settle(p, 150);
+  ok((await band(p)).closed && await p.evaluate(d => localStorage.getItem('lk.fn.fold') === d, day), 'the Recipes list keeps its own per-day minus (lk.fn.fold)');
+  s5 = await visit(p, '#/r/laksa', '.card');
+  ok(!s5.closed && s5.rows >= 2, 'the recipe card follows the fold pages\' Show, not the Recipes list\'s minus');
+  await p.context().close();
+  p = await open(b, {}, { clock: at('17:31') });
+  for (const [hash, sel] of [['#/waste', '.w-page'], ['#/r/laksa', '.card']]) {
+    const s = await visit(p, hash, sel);
+    ok(!s.closed && s.off && s.rows >= 1 && /18:30/.test(s.text), hash + ': a round due within the hour opens the band and it cannot be folded away (' + JSON.stringify(s).slice(0, 200) + ')');
+  }
   await p.context().close();
 
   await b.close();

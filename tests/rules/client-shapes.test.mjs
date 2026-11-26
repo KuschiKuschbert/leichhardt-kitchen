@@ -855,6 +855,14 @@ row('js/prep.js: an April Fools record in another person\'s name (never sent)', 
   run: (db, w, r) => { const o = w === 'ann' ? 'sam' : 'ann'; return W(r, [['set', FOOL(o), Object.assign(foolRec(), { by: o })]]); } });
 row('js/prep.js: an April Fools record for another day (never sent)', { ok: [], asks: [],
   prep: (r, w) => put({ [`fools/2027-04-02_${w}`]: null }), run: (db, w, r) => W(r, [['set', `fools/2027-04-02_${w}`, { day: '2027-04-02', at: Date.now() }]]) });
+// Screens the book runs on (added and removed 26 Nov 2026, docs/device-coverage.md): the Screens row is gone, so the
+// rules refuse screens/<device uid> to everyone, writes and the admin's list alike (stricter, published after the code)
+const SCR = r => `screens/${UID[r]}`;
+const scrRec = () => ({ sw: 1920, sh: 1080, w: 1920, h: 1008, dpr: 1, tp: 10, ptr: 'coarse', mouse: true, hov: true, app: true, kind: 'shared', sec: '', at: Date.now() });
+row('js/prep.js: this device saving its screen (the Screens row, removed; never sent)', { ok: [], asks: [],
+  prep: r => put({ [SCR(r)]: null }), run: (db, w, r) => W(r, [['set', SCR(r), scrRec()]]) });
+row('js/prep.js: the admin reading every screen (the Screens row, removed; never sent)', { ok: [], asks: [],
+  prep: r => put({ [SCR(r)]: Object.assign(scrRec(), { by: WHO[r], at: NOW }) }), run: db => getDocsFromServer(query(C(db, 'screens'), limit(201))) });
 // who said Got it to a function on Home (fnseen, 10 Nov 2026): once, as myself; never changed or deleted
 const SEEN = (w, s, g) => `fnseen/f1_${w}_${s || 'week'}_${g || '1abc2'}`;
 const seenRec = (s, at, by) => Object.assign({ fid: 'f1', g: '1abc2', s: s || 'week', day: TODAY, at: at || Date.now() }, by ? { by } : {});
@@ -979,6 +987,14 @@ row('js/prep.js cleaningSave(): chef replaces a schedule tomorrow in one batch',
   prep: r => put({ ['cleaningTasks/clean-old-' + r]: cleanTask('clean-old-' + r), ['cleaningTasks/clean-next-' + r]: null }),
   run: (db, w, r) => W(r, [['upd', 'cleaningTasks/clean-old-' + r, { until: MIDNIGHT + DAY, next: 'clean-next-' + r }],
     ['set', 'cleaningTasks/clean-next-' + r, cleanTask('clean-old-' + r, { prev: 'clean-old-' + r, from: MIDNIGHT + DAY, by: w })]]) });
+row('js/prep.js cleaningPlanRead(): a chef reads the weights once when the list opens', { ok: CHEFS, asks: CHEFS,
+  prep: () => put({ 'cleaningPlan/main': { v: 1, w: { seed: 2 }, at: NOW, by: 'kit' } }),
+  run: db => getDocFromServer(D(db, 'cleaningPlan/main')) });
+row('js/prep.js cleaningPlanSave(): a chef saves weights and kinds, merged into the one record', { ok: CHEFS, asks: CHEFS,
+  run: (db, w, r) => W(r, [['set', 'cleaningPlan/main', { v: 1, w: { ['job-' + r]: 2 }, k: { ['job-' + r]: 'Shelves' }, at: Date.now() }, true]]) });
+row('js/prep.js cleaningPlanSave(): what each day takes, saved whole by a chef (head chef, sous chefs, the admin)', { ok: CHEFS, asks: CHEFS,
+  prep: () => put({ 'cleaningPlan/main': { v: 1, w: { seed: 2 }, d: [1, 1, 1, 1, 1, 1, 1], at: NOW, by: 'kit' } }),
+  run: (db, w, r) => W(r, [['set', 'cleaningPlan/main', { v: 1, d: [3, 3, 2, 3, 3, 1, 1], at: Date.now() }, true]]) });
 row('js/prep.js cleaningArchive(): chef archives a schedule from tomorrow', { ok: CHEFS, asks: CHEFS,
   prep: r => put({ ['cleaningTasks/clean-archive-' + r]: cleanTask('clean-archive-' + r) }),
   run: (db, w, r) => W(r, [['upd', 'cleaningTasks/clean-archive-' + r, { until: MIDNIGHT + DAY, next: '' }]]) });
@@ -1015,6 +1031,15 @@ row('js/prep.js cleaningImport(): explicit bounded query includes archived roots
 row('js/prep.js cleaningImport(): deterministic checked task is created by a chef', { ok: CHEFS, asks: CHEFS,
   prep: r => put({ ['cleaningTasks/clean-template-fixture-' + r]: null }),
   run: (db, w, r) => W(r, [['set', 'cleaningTasks/clean-template-fixture-' + r, cleanTask('clean-template-fixture-' + r, { by: w, plan: cleanPlan({ template: 'fixture-' + r }) })]]) });
+// Section cleaning (25 Nov 2026): one Load batch holds a job saved to a kitchen section, a 28-day job with no first date
+// yet (never due until a chef sets it) and a shared job that names two sections. A second Load finds the ids and writes
+// nothing, so only the first write is a shape the rules see.
+row('js/prep.js cleaningImport(): section cleaning, a section job, an undated 28-day job and a shared job in one batch', { ok: CHEFS, asks: CHEFS,
+  prep: r => put({ ['cleaningTasks/clean-template-sc-a-' + r]: null, ['cleaningTasks/clean-template-sc-b-' + r]: null, ['cleaningTasks/clean-template-sc-c-' + r]: null }),
+  run: (db, w, r) => W(r, [
+    ['set', 'cleaningTasks/clean-template-sc-a-' + r, cleanTask('clean-template-sc-a-' + r, { by: w, dows: [1], plan: cleanPlan({ template: 'sc-a-' + r, method: '', checks: [] }) })],
+    ['set', 'cleaningTasks/clean-template-sc-b-' + r, cleanTask('clean-template-sc-b-' + r, { by: w, plan: cleanPlan({ template: 'sc-b-' + r, method: '', checks: [], repeat: { days: 28, anchor: '' } }) })],
+    ['set', 'cleaningTasks/clean-template-sc-c-' + r, cleanTask('clean-template-sc-c-' + r, { by: w, section: '', sectionName: '', shared: true, dows: [3], plan: cleanPlan({ template: 'sc-c-' + r, checks: [], responsibility: 'Grill and Pans', review: 'Set one responsible section.' }) })]]) });
 for (const action of ['save', 'block', 'perform']) {
   row('js/prep.js cleaningAct(): ' + action + ' occurrence and immutable server-stamped audit atomically', { ok: TICKS, asks: TICKS,
     prep: r => put({ ['cleaningTasks/clean-flow-' + action + '-' + r]: cleanTask('clean-flow-' + action + '-' + r, { plan: cleanPlan() }) }),

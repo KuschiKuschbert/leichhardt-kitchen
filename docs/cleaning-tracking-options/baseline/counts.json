@@ -1,0 +1,169 @@
+{
+ "kind": "Implemented app, click-test stand-in, synthetic data",
+ "commit": "0acdaf72",
+ "viewports": "390 x 844 and 1280 x 900",
+ "results": {
+  "cook-today-390": {
+   "screensLong": 5.5,
+   "sideways": false,
+   "rows": 52,
+   "wholeRowsOnFirstScreen": 5,
+   "sheetOpen": false,
+   "firstRowText": "Clean the drawersEvery Monday · Grill · To do▾"
+  },
+  "chef-today-390": {
+   "screensLong": 1.6,
+   "sideways": false
+  },
+  "chef-week-390": {
+   "screensLong": 1.8,
+   "sideways": false
+  },
+  "chef-repeat-390": {
+   "screensLong": 2.5,
+   "sideways": false,
+   "controls": [
+    "today",
+    "week",
+    "setup",
+    "hide-setup",
+    "refresh",
+    "first-date",
+    "add",
+    "repeat-page",
+    "edit",
+    "archive",
+    "import-schedule",
+    "import-packdown",
+    "import-section"
+   ]
+  },
+  "chef-form-390": {
+   "screensLong": 3.3,
+   "sideways": false,
+   "fields": [
+    "What needs cleaning?",
+    "What needs cleaning?",
+    "Area or equipmentChoose Area or equipmen",
+    "Area or equipment",
+    "Responsible sectionChoose a sectionShare",
+    "Responsible section",
+    "Repeat on",
+    "How-to guide (optional)No guideSteamed v",
+    "How-to guide (optional)"
+   ],
+   "formHeight": 763
+  },
+  "chef-edit-loaded-390": {
+   "screensLong": 3.3,
+   "sideways": false,
+   "title": "Clean out the topper ingredients fridge",
+   "fields": [
+    "What needs cleaning?",
+    "Area or equipment",
+    "Responsible section",
+    "Repeat on",
+    "Method",
+    "Responsible role",
+    "Required checks, one per line",
+    "When to record",
+    "Procedure clarification",
+    "How-to guide (optional)"
+   ],
+   "formHeight": 1376
+  },
+  "admin-inbox-390": {
+   "screensLong": 1.2,
+   "sideways": false
+  },
+  "records-month-390": {
+   "screensLong": 2.6,
+   "sideways": false
+  },
+  "records-day-390": {
+   "screensLong": 1.3,
+   "sideways": false
+  },
+  "cook-today-1280": {
+   "screensLong": 4.1,
+   "sideways": false,
+   "rows": 52,
+   "wholeRowsOnFirstScreen": 6,
+   "sheetOpen": false,
+   "firstRowText": "Clean the drawersEvery Monday · Grill · To do▾"
+  },
+  "chef-today-1280": {
+   "screensLong": 1.3,
+   "sideways": false
+  },
+  "chef-week-1280": {
+   "screensLong": 1.4,
+   "sideways": false
+  },
+  "chef-repeat-1280": {
+   "screensLong": 1.9,
+   "sideways": false,
+   "controls": [
+    "today",
+    "week",
+    "setup",
+    "hide-setup",
+    "refresh",
+    "first-date",
+    "add",
+    "repeat-page",
+    "edit",
+    "archive",
+    "import-schedule",
+    "import-packdown",
+    "import-section"
+   ]
+  },
+  "chef-form-1280": {
+   "screensLong": 1.9,
+   "sideways": false,
+   "fields": [
+    "What needs cleaning?",
+    "What needs cleaning?",
+    "Area or equipmentChoose Area or equipmen",
+    "Area or equipment",
+    "Responsible sectionChoose a sectionShare",
+    "Responsible section",
+    "Repeat on",
+    "How-to guide (optional)No guideSteamed v",
+    "How-to guide (optional)"
+   ],
+   "formHeight": 650
+  },
+  "chef-edit-loaded-1280": {
+   "screensLong": 2.6,
+   "sideways": false,
+   "title": "Clean out the topper ingredients fridge",
+   "fields": [
+    "What needs cleaning?",
+    "Area or equipment",
+    "Responsible section",
+    "Repeat on",
+    "Method",
+    "Responsible role",
+    "Required checks, one per line",
+    "When to record",
+    "Procedure clarification",
+    "How-to guide (optional)"
+   ],
+   "formHeight": 1228
+  },
+  "admin-inbox-1280": {
+   "screensLong": 1,
+   "sideways": false
+  },
+  "records-month-1280": {
+   "screensLong": 2.5,
+   "sideways": false
+  },
+  "records-day-1280": {
+   "screensLong": 2.5,
+   "sideways": false
+  }
+ }
+}

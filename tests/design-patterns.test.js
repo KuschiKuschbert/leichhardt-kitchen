@@ -26,7 +26,7 @@ const CLASSES = [
   'nb-prog', 'p-card', 'p-h', 'hint', 'btn-row', 'btn', 'dark', 'p-link', 'p-err', 'chip', 'ux-picker', 'hm-team-staff', 'hm-staff-first', 'hm-rota', 'hm-tp-move', 'hm-starts', 'hm-st', 'hm-st-t', 'hm-st-n', 'hm-st-sec', 'hm-st-back', 'hm-st-again', 'hm-st-now', 'hm-st-none', 'is-gone',
   'nt-wrap', 'nt-bg', 'nt', 'nt-grip', 'nt-in', 'nt-head', 'nt-eb', 'nt-h', 'nt-date', 'nt-body', 'nt-foot', 'nt-got',
   'tm-chip', 'wtop-icons', 'rb-venue', 'is-due', 'nb-pw', 'nb-tmset', 'nb-tmday', 'tm-fold', 'nb-ai', 'nb-aw', 'nb-onslot', 'nb-hbar', 'wb-list', 'nb-sgr', 'nb-sgadd', 'o-cut-fold', 'o-cut-cue', 'o-cut-action', 'o-cut-more', 'dl-at', 'dl-dot', 'dl-rb', 'hm-board', 'hm-a', 'hm-paper', 'hm-sec', 'w-secs', 'tr-card', 'tr-cv', 'tr-ret', 'fn-c0', 'fn-cnext', 'fn-end', 'fn-quiet', 'fn-svc-board', 'fn-svc-cd', 'fn-svc-diet', 'fn-svc-k', 'fn-svc-kin', 'fn-svc-kslot', 'fn-svc-kmore', 'fn-svc-shelf', 'fn-svc-trip', 'fn-ws', 'fn-svc-wl', 'jumps', 'ch-grid', 'ch-line', 'find-i',
-  'set-block', 'label', 'a-ch-h', 'c-tools', 'c-tool', 'c-tool-go', 'a-tablewrap', 'a-table', 'a-plain', 'sk-c', 'a-legend', 'dsh-inbox', 'dsh-dtile', 'dsh-cmp', 'dsh-charts-btn', 'tm-learn', 'a-find', 'fd-sheet', 'a-quick', 'wm-tile', 'wm-due',
+  'set-block', 'label', 'a-ch-h', 'dsh-need-miss', 'cln-weigh-row', 'cln-weigh-ctl', 'cln-weigh-h', 'cln-weigh-filter', 'cln-weigh-dock', 'cln-kind', 'cln-weigh-err', 'cln-days', 'cln-days-sum', 'cln-day-row', 'cln-day-staff', 'cln-days-save', 'rec-miss', 'rec-miss-h', 'rec-who', 'rec-sec-h', 'c-tools', 'c-tool', 'c-tool-go', 'a-tablewrap', 'a-table', 'a-plain', 'sk-c', 'a-legend', 'dsh-inbox', 'dsh-dtile', 'dsh-cmp', 'dsh-charts-btn', 'tm-learn', 'a-find', 'fd-sheet', 'a-quick', 'wm-tile', 'wm-due',
   'ps-viewbar', 'ps-minimum', 'ps-grid', 'ps-section', 'ps-fields', 'ps-form-grid', 'ps-catalogue-row', 'ps-standard',
   'ad-admin', 'ad-layout', 'a-nav', 'ad-main', 'ad-heading', 'a-tabs', 'a-pane',
   'nt-dot', 'nt-meta', 'nt-at', 'g-mode', 'g-bar', 'g-vplay', 'gv-frame', 'g-vnone', 'tv-row', 'g-vmove', 'g-vloop', 'g-vposter', 'g-vring', 'g-vsoon', 'tm-tl', 'tm-tlbar', 'dr-run', 'dr-oh', 'st-av', 'st-can', 'todo-more',
@@ -46,6 +46,8 @@ const CLASSES = [
 'tm-worksheet', 'tm-worksheet-head', 'tm-person-head', 'tm-person-section', 'tm-quick-add', 'tm-quick-people', 'tm-quick-services',
   'cln-page', 'cln-book', 'cln-row', 'cln-matrix', 'cln-day-pick', 'cln-form', 'cln-detail', 'cln-task-detail', 'cln-occurrence', 'cln-checks', 'cln-import', 'cln-packdown', 'cln-packdown-title', 'cln-temperature',
   'cln-chef-page', 'cln-fold', 'cln-fold-toggle', 'cln-repeat-browser', 'cln-repeat-layout', 'cln-template-summary', 'cln-editor',
+  // section cleaning (25 Nov 2026): the small line that says how often, the Load panel and the first date notice
+  'cln-often', 'cln-section-import', 'cln-first-date', 'cln-mine', 'cln-mine-title', 'cln-rest-title',
   'dr-notebook', 'dr-book', 'dr-bookhead', 'dr-usual', 'dr-work', 'dr-spine', 'dr-people',
   'is-leaving', 'nb-offw', 'nb-fnoff', 'fn-next-off', 'nb-forfn', 'nb-tick-status', 'p-toast-chip',
   'fn-ahead', 'fn-ahead-b', 'fn-ahead-l', 'fn-ahead-t', 'fn-ahead-n', 'fn-ahead-p', 'fn-ahead-more', 'fn-ahead-hide', 'is-ahead',

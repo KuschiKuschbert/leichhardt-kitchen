@@ -117,6 +117,43 @@ ok(r.code === 0 && /== Worktrees:/.test(r.out), 'and the rest of the check still
 r = run(two);
 ok(/the queue merges it/.test(r.out) && !/Squash merge/.test(r.out), 'the closing hint says the queue merges, not a hand squash merge');
 
+// 6. The risky changes get a /code-review reminder (25 Nov 2026, docs/auto-merge.md, Claude Ship): the rules, the saved shell and
+// startup files (sw.js, index.html, js/upkeep.js, js/boot.js), and 100 lines or more (added plus deleted) in js/prep.js or js/app.js.
+// Other book code, notes, tests, server scripts and workflows ask for none. On 200 merged pull requests that is 37, not 151.
+// The branch only grows from here, so the cases that ask for nothing come first.
+function commit(files, msg) {   // files: names, or [name, lines] for a file of that many lines
+  for (const f of files) {
+    const [name, lines] = Array.isArray(f) ? f : [f, 1];
+    fs.mkdirSync(path.dirname(path.join(work, name)), { recursive: true });
+    fs.writeFileSync(path.join(work, name), Array.from({ length: lines }, (_, i) => msg + ' ' + i).join('\n') + '\n');
+  }
+  git(work, 'add', '.');
+  git(work, 'commit', '-q', '-m', msg);
+}
+const none = /== Review:\n {3}No change to the rules, the saved shell or startup files, and no edit of 100 lines or more to js\/prep\.js or js\/app\.js: no \/code-review needed\./;
+r = run(two);
+ok(none.test(r.out), 'a branch with no changes asks for no review');
+commit(['docs/note.md', 'tests/thing.test.js', 'scripts/job.mjs', '.github/workflows/x.yml', 'README.md'], 'notes, tests, server scripts, workflows');
+r = run(two);
+ok(none.test(r.out) && !/\/code-review medium/.test(r.out), 'notes, tests, server scripts and workflows alone ask for no review');
+commit([['js/data.js', 500], ['css/app.css', 300], ['js/draw.js', 400], 'icons/a.png', ['js/prep.js', 99]], 'ordinary book code');
+r = run(two);
+ok(none.test(r.out), 'a big edit to other book code, and 99 lines in js/prep.js, ask for no review');
+commit([['js/prep.js', 100]], 'prep 100');
+r = run(two);
+ok(/^!! This changes js\/prep\.js by 100 lines\.$/m.test(r.out) && /Run \/code-review medium on this branch before marking it ready/.test(r.out),
+  '100 lines in js/prep.js asks for /code-review medium and names it');
+commit([['js/app.js', 150]], 'app 150');
+r = run(two);
+ok(/^!! This changes js\/app\.js by 150 lines, js\/prep\.js by 100 lines\.$/m.test(r.out), 'js/app.js counts too, and both are named');
+commit(['sw.js'], 'shell');
+r = run(two);
+ok(/^!! This changes js\/app\.js by 150 lines, js\/prep\.js by 100 lines, the saved shell \(sw\.js\)\.$/m.test(r.out), 'sw.js is a saved shell change, named after the two big edits');
+commit(['firestore.rules'], 'rules');
+r = run(two);
+ok(/^!! This changes js\/app\.js by 150 lines, js\/prep\.js by 100 lines, the rules, the saved shell \(sw\.js\)\.$/m.test(r.out), 'a change to the rules asks for it and says so, in a fixed order');
+ok(r.code === 0 && /== Checks before merging:/.test(r.out), 'and the check still finishes');
+
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log((n - fails) + ' of ' + n + ' passed');
 process.exit(fails ? 1 : 0);

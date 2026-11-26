@@ -17,6 +17,14 @@
     return task.from <= at && task.until > at && Array.isArray(task.dows) && task.dows.indexOf(clock.dow(at)) >= 0 &&
       (!repeat || !!repeat.anchor && realDay(repeat.anchor, clock) && at >= clock.at(repeat.anchor) && (at - clock.at(repeat.anchor)) / DAY_MS % repeat.days === 0);
   }
+  // A job that comes round weekly or monthly: on some weekdays but not all, or on a repeat of whole weeks. A nightly
+  // job is not, nor is a repeat that is not whole weeks (every 2 days). The same line rhythm() draws on the row in
+  // js/cleaning.js: "Every Monday", "Mon, Wed, Fri", "Every week", "Every 4 weeks". The nightly count keeps these jobs
+  // one by one, for the admin's results by section (26 Nov 2026, docs/cleaning-tracking-options/brief.md).
+  function round(task) {
+    var repeat = task && task.plan && task.plan.repeat, days = task && Array.isArray(task.dows) ? task.dows : [];
+    return repeat ? repeat.days >= 7 && repeat.days % 7 === 0 : days.length > 0 && days.length < 7;
+  }
   // A plain job's record of a day (the first one), or null.
   function record(task, day, done) {
     return (done || []).filter(function (r) { return r && r.task === task.id && r.day === day; })[0] || null;
@@ -62,7 +70,7 @@
     if (state === 'event') return { state: state, recorded: s.complete > 0 };
     return { state: state === 'open' ? 'missed' : state };
   }
-  var api = { api: 1, isDay: isDay, due: due, record: record, slots: slots, summary: summary, outcome: outcome, past: past };
+  var api = { api: 1, isDay: isDay, due: due, round: round, record: record, slots: slots, summary: summary, outcome: outcome, past: past };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.LK_CLEANING_CORE = api;
 })(typeof window === 'undefined' ? this : window);

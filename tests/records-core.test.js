@@ -33,6 +33,71 @@ const assert = require('node:assert/strict');
   assert.equal(c.cv, R.CLEAN_V);
   assert.equal(R.cleanDay(tasks, done, '2026-11-08').missN >= 1, true, 'a day with no ticks reads as missed, not done');
   assert.equal(R.cleanDay([], [], day).due, 0, 'no tasks set: nothing due, nothing missed');
+  // Results by section, step 1 (26 Nov 2026): the weekly and monthly jobs one by one, under their root id
+  const wk = (id, text, o) => task(id, text, Object.assign({ dows: [6] }, o || {}));
+  const round = [
+    task('n1', 'Nightly wipe'),                                                             // nightly: not kept one by one
+    wk('w1b', 'Clean behind the pizza ovens', { root: 'w1', section: 'hot', sectionName: 'Hot larder', shared: false, from: R.at('2026-11-05') }),   // a moved job: its second revision, the same root
+    wk('w1a', 'Clean behind the pizza ovens', { root: 'w1', section: 'hot', sectionName: 'Hot larder', shared: false, dows: [3], until: R.at('2026-11-05') }),
+    wk('w2', 'Clean the shelves above the pass', { shared: true, section: '' }),            // shared: no section, done
+    wk('w3', 'Clean the drawers', { section: 'grill', sectionName: 'Grill', shared: false, plan: { timing: 'daily' } }),   // planned, blocked
+    wk('w4', 'Deep clean the coldroom floors', { section: 'hot', sectionName: 'Hot larder', shared: false, plan: { timing: 'daily', repeat: { days: 28, anchor: day } } }),   // monthly, awaiting
+    task('e2', 'Change grill drip trays', { plan: { timing: 'daily', repeat: { days: 2, anchor: day } } }),   // every 2 days: not weekly or monthly
+    wk('ev', 'Sanitise boards', { plan: { timing: 'service' } })                             // an event job: never kept one by one
+  ];
+  const ticks = [
+    { day, task: 'w2', done: true, doneAt: R.at(day, 21 * 60 + 40), doneBy: 'Sam', worker: 'Bo' }, { day, task: 'w2', done: true, doneAt: R.at(day, 20 * 60), doneBy: 'Sam', worker: 'Ann' },
+    { day, task: 'w3', flow: { slot: 'daily', status: 'blocked', note: 'No degreaser' } }, { day, task: 'w4', flow: { slot: 'daily', status: 'awaiting' }, doneAt: R.at(day, 22 * 60), doneBy: 'Lou' }
+  ];
+  const team = { names: { lou: 'Lou', vic: 'Vic', ann: 'Ann' }, from: { plans: '2026-09-13', picks: '2026-10-09' },
+    plans: [{ day, on: [{ id: 'lou', sh: 'dinner', sec: 'hot' }, { id: 'ann', sh: 'dinner', sec: 'grill' }, { id: 'lou', sh: 'lunch', sec: 'hot' }] }, { day: '2026-11-06', on: [{ id: 'ann', sh: 'dinner', sec: 'hot' }] }],
+    picks: [{ day, by: 'vic', sec: 'pans', sh: 'dinner', log: [{ sh: 'lunch', sec: 'pans', at: 1 }, { sh: 'dinner', sec: 'hot', at: 2 }] }, { day, by: 'gone', sec: 'hot', sh: 'dinner' }, { day, by: 'ann', sec: 'grill', sh: 'dinner' }] };
+  const rc = R.cleanDay(round, ticks, day, team);
+  assert.deepEqual(rc.r, [
+    { k: 'w1', t: 'Clean behind the pizza ovens', s: 'hot', sn: 'Hot larder', st: 'm' },
+    { k: 'w2', t: 'Clean the shelves above the pass', s: '', sn: '', st: 'd', by: 'Bo', at: '21:40' },
+    { k: 'w3', t: 'Clean the drawers', s: 'grill', sn: 'Grill', st: 'u', n: 'No degreaser' },
+    { k: 'w4', t: 'Deep clean the coldroom floors', s: 'hot', sn: 'Hot larder', st: 'w' }
+  ], 'each weekly or monthly job once, by root id, with its section and state; a done job says who did it (the worker a shared screen asked for) and when: ' + JSON.stringify(rc.r));
+  assert.deepEqual([rc.rN, rc.rn], [4, { due: 3, done: 1, miss: 1, unable: 1, wait: 1 }], 'whole counts, Unable to complete apart from due');
+  assert.equal(R.cleanDay(round, ticks, '2026-11-04').r[0].k, 'w1', 'before it was moved, the same job has the same key (its root id)');
+  assert.deepEqual(rc.ro, [{ s: 'hot', k: 'l', pk: 1, w: [{ n: 'Lou', sh: 'dinner', by: 'p' }, { n: 'Lou', sh: 'lunch', by: 'p' }, { n: 'Vic', sh: 'dinner', by: 'k' }, { n: 'Someone', sh: 'dinner', by: 'k' }] }],
+    'who was on the section with the missed job, as facts with their source: the plan and own picks, by section id, each shift; a section whose jobs were done or unable is not listed: ' + JSON.stringify(rc.ro));
+  assert.deepEqual(R.rostered(day, 'pans', team), { s: 'pans', k: 'l', pk: 1, w: [{ n: 'Vic', sh: 'lunch', by: 'k' }] });
+  assert.deepEqual(R.rostered(day, 'fry', team), { s: 'fry', k: 'n', pk: 1, w: [] }, 'a section nobody was on says nobody, not a guess');
+  assert.deepEqual(R.rostered('2026-10-01', 'hot', team), { s: 'hot', k: 'n', pk: 0, w: [] }, 'a day older than the picks the run read: the plan only, and it says so');
+  assert.deepEqual(R.rostered('2026-09-01', 'hot', team), { s: 'hot', k: 'x' }, 'a day older than the plans the run read: not kept');
+  assert.equal(R.cleanDay(round, ticks, day).ro, undefined, 'with no team data the count keeps no names');
+  assert.deepEqual(R.notCounted(), { cv: R.CLEAN_V, nc: 1 }, 'a day the count does not cover says so, and nothing more');
+  const many = Array.from({ length: 45 }, (x, i) => wk('m' + i, 'Job ' + i, { section: 'hot', shared: false }));
+  const big = R.cleanDay(many, [], day);
+  assert.deepEqual([big.r.length, big.rN, big.rn.miss], [40, 45, 45], 'at most 40 jobs kept one by one a day; the counts stay whole');
+  assert.deepEqual(Object.keys(R.trimClean(R.cleanDay(round, ticks, day, team))).filter(k => ['r', 'ro', 'cut', 'rn', 'rN'].includes(k)), ['rN', 'rn', 'cut'], 'when the board is too large the detail goes and the whole counts stay');
+  assert.deepEqual(R.trimClean(R.notCounted()), { cv: R.CLEAN_V, nc: 1 });
+  // a pick record marked auto with no log is the plan's section copied to the phone, not a cook's own pick
+  const mirrored = { names: { lou: 'Lou' }, from: { plans: '2026-09-13', picks: '2026-10-09' }, plans: [{ day, on: [{ id: 'lou', sh: 'dinner', sec: 'hot' }] }],
+    picks: [{ day, by: 'lou', sec: 'hot', sh: 'dinner', auto: true }, { day, by: 'vic', sec: 'hot', sh: 'dinner', auto: true, log: [{ sh: 'dinner', sec: 'hot', at: 1 }] }] };
+  assert.deepEqual(R.rostered(day, 'hot', mirrored).w, [{ n: 'Lou', sh: 'dinner', by: 'p' }, { n: 'Someone', sh: 'dinner', by: 'k' }], 'the plan copied to a phone is not listed again as a pick; a logged move is a pick');
+  // Size at full lists (the brief's step 1): the book's three built-in lists, 90 days, nothing ticked, every section
+  // with a missed job carrying the most people kept. The cleaning part must stay far inside the board's 700,000 bytes.
+  const sched = require('../js/cleaning-schedule.js'), SECS = { grill: 'Grill', pans: 'Pans', fry: 'Fryers, salads and dessert', hot: 'Hot larder' };
+  const full = sched.drafts().concat(sched.packDownDrafts(), sched.sectionDrafts()).map(d => { const g = sched.sectionGroupOf(d), id = 'clean-template-' + d.plan.template, plan = Object.assign({}, d.plan);
+    if (plan.repeat && !plan.repeat.anchor) plan.repeat = { days: plan.repeat.days, anchor: '2026-08-03' };   // a first date set, so the monthly jobs come due
+    return Object.assign({}, d, { id, root: id, plan, shared: !g, section: g || '', sectionName: g ? SECS[g] : '', from: R.at('2026-07-01'), until: open }); });
+  const crowd = d => ({ names: {}, from: { plans: '2026-07-01', picks: '2026-07-01' }, picks: [], plans: [{ day: d, on: Object.keys(SECS).flatMap(sec => Array.from({ length: 12 }, (x, i) => ({ id: 'person-' + i, sh: 'dinner-service', sec }))) }] });
+  const days90 = Array.from({ length: 90 }, (x, i) => R.qldDay(R.at('2026-08-10') + i * 86400000));
+  const board = days90.map(d => ({ day: d, fs: { v: 1, del: [], c: R.cleanDay(full, [], d, crowd(d)) } }));
+  const size = x => Buffer.byteLength(JSON.stringify(x)), detail = size(board.map(r => ({ r: r.fs.c.r, ro: r.fs.c.ro, rn: r.fs.c.rn, rN: r.fs.c.rN })));
+  assert.deepEqual([full.length, full.filter(require('../js/cleaning-core.js').round).length], [72, 23], 'the three lists hold 72 jobs, 23 of them weekly or monthly');
+  assert.ok(detail < 150000 && size(board) < 250000, 'full lists, 90 days, nothing ticked: the one-by-one detail is ' + detail + ' bytes and the cleaning rows ' + size(board) + ' in all');
+  assert.ok(board.every(r => r.fs.c.rN <= 40 && r.fs.c.r.length === r.fs.c.rN), 'no day reaches the 40 a day cap on the real lists');
+  // and if a board were too large anyway, the detail goes oldest day first until it fits, and the whole counts stay
+  const fat = Array.from({ length: 90 }, (x, i) => ({ day: 'd' + i, fs: { c: R.cleanDay(Array.from({ length: 40 }, (y, k) => wk('f' + k, 'A long job name that takes its whole eighty characters of room on the row, number ' + k, { section: 'hot', sectionName: 'Hot larder', shared: false })), [], day, crowd(day)) } }));
+  const beforeFit = size(fat), trimmed = R.fitClean(fat, 600000, size);
+  assert.ok(beforeFit > 600000 && size(fat) <= 600000 && trimmed > 0 && trimmed < 90, 'a board of ' + beforeFit + ' bytes is cut to ' + size(fat) + ' by trimming ' + trimmed + ' days');
+  assert.ok(fat.slice(0, trimmed).every(r => r.fs.c.cut === 1 && !r.fs.c.r && r.fs.c.rN === 40 && r.fs.c.missN === 40) && fat.slice(trimmed).every(r => !r.fs.c.cut && r.fs.c.r.length === 40), 'the oldest days lose the detail first and keep their whole counts');
+  assert.equal(R.fitClean([{ day: 'x', fs: { c: R.notCounted() } }], 1, size), 0, 'a day that was not counted has nothing to trim');
+  console.log('  size at full lists: detail ' + detail + ' bytes, cleaning rows ' + size(board) + ' bytes over 90 days');
   const del = R.dayDeliveries([
     { day, receivedAt: R.at(day, 9 * 60 + 5), supplier: 'Fresh produce', chilled: 4, frozen: null, note: '', receivedBy: 'Ann' },
     { day, receivedAt: R.at(day, 7 * 60 + 42), supplier: 'Bidfood', chilled: 3.14, frozen: -19.55, note: 'All there', receivedBy: 'Bo' },
@@ -51,5 +116,5 @@ const assert = require('node:assert/strict');
   assert.equal(R.coolDay(cur, recd, '2026-11-05', names, true, '2026-11-08').k, 'before', 'the first night: older days were not kept');
   assert.equal(R.coolDay(cur, { run: 'other', firstAt: ts(day, '16:07'), firstBy: 'bo' }, day, names, false, day).r1, '', 'a confirmation of another run is not this batch\'s');
   assert.equal(R.coolDay(null, null, day, names, false, day).k, 'none', 'no batch at all: none');
-  console.log('PASS records: cleaning due, done, missed, unable, awaiting Pass check and events read like the Cleaning page; deliveries in time order, temperatures as recorded');
+  console.log('PASS records: cleaning due, done, missed, unable, awaiting Pass check and events read like the Cleaning page; weekly and monthly jobs one by one under their root id with who did it and who was on; deliveries in time order, temperatures as recorded');
 })().catch(e => { console.error(e); process.exit(1); });

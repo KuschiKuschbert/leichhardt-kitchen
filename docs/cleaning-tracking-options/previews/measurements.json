@@ -1,0 +1,96 @@
+{
+ "kind": "Preview (schematic pages, not the book)",
+ "viewports": "390 and 1280 wide, 844 tall",
+ "results": {
+  "p-a-390": {
+   "sideways": false,
+   "screensLong": 1.1,
+   "under44": 0
+  },
+  "p-a-1280": {
+   "sideways": false,
+   "screensLong": 1,
+   "under44": 0
+  },
+  "p-b-390": {
+   "sideways": false,
+   "screensLong": 2.7,
+   "under44": 0
+  },
+  "p-b-1280": {
+   "sideways": false,
+   "screensLong": 1.3,
+   "under44": 0
+  },
+  "p-c-390": {
+   "sideways": false,
+   "screensLong": 3.3,
+   "under44": 0
+  },
+  "p-c-1280": {
+   "sideways": false,
+   "screensLong": 2.2,
+   "under44": 0
+  },
+  "t-a-390": {
+   "sideways": false,
+   "screensLong": 1.2,
+   "under44": 0
+  },
+  "t-a-1280": {
+   "sideways": false,
+   "screensLong": 1,
+   "under44": 0
+  },
+  "t-b-390": {
+   "sideways": false,
+   "screensLong": 1.5,
+   "under44": 0
+  },
+  "t-b-1280": {
+   "sideways": false,
+   "screensLong": 1,
+   "under44": 0
+  },
+  "t-c-390": {
+   "sideways": false,
+   "screensLong": 1.5,
+   "under44": 0
+  },
+  "t-c-1280": {
+   "sideways": false,
+   "screensLong": 1.1,
+   "under44": 0
+  },
+  "p-mix-390": {
+   "sideways": false,
+   "screensLong": 3,
+   "under44": 0
+  },
+  "p-mix-1280": {
+   "sideways": false,
+   "screensLong": 2.1,
+   "under44": 0
+  },
+  "p-mix-on-390": {
+   "sideways": false,
+   "screensLong": 5.3,
+   "under44": 0
+  },
+  "p-mix-on-1280": {
+   "sideways": false,
+   "screensLong": 3.3,
+   "under44": 0
+  },
+  "t-mix-390": {
+   "sideways": false,
+   "screensLong": 2.4,
+   "under44": 0
+  },
+  "t-mix-1280": {
+   "sideways": false,
+   "screensLong": 1.8,
+   "under44": 0
+  }
+ }
+}

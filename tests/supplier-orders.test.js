@@ -44,6 +44,8 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   await openCuts(p);
   await p.click('.o-cut-fold .cut-box[data-id^="pfd|"]');
   await L.waitFor(p, () => { const e = document.querySelector('.o-cut-fold .cut-box[data-id^="pfd|"]'); return e && e.getAttribute('aria-pressed') === 'true'; }, null, 10000);
+  // the box turns at once, but the row says Not sent until the write is confirmed: wait for the words, then read
+  await L.waitFor(p, () => /^Ordered by /.test((document.querySelector('.o-cut-fold .cut-o:has(.cut-box[data-id^="pfd|"]) .cut-st') || {}).textContent || ''), null, 10000);
   s = await store(p);
   ok(s[CD('pfd')] && s[CD('pfd')].on === true && s[CD('pfd')].by === 'sam' && s[CD('pfd')].sid === 'pfd' && s[CD('pfd')].day === today && typeof s[CD('pfd')].at === 'number', 'tick: saved for every chef, as Sam (' + JSON.stringify(s[CD('pfd')]) + ')');
   r = await rows(p);
@@ -117,6 +119,7 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   await openCuts(p);
   await p.click('.o-cut-fold .cut-box[data-id^="pfd|"]');
   await L.waitFor(p, () => { const e = document.querySelector('.o-cut-fold .cut-box[data-id^="pfd|"]'); return e && e.getAttribute('aria-pressed') === 'true'; }, null, 10000);
+  await L.waitFor(p, () => /^Ordered by /.test((document.querySelector('.o-cut-fold .cut-o:has(.cut-box[data-id^="pfd|"]) .cut-st') || {}).textContent || ''), null, 10000);
   s = await store(p);
   ok(s[CD('pfd')] && s[CD('pfd')].by === s[CFG].headId && /Ordered by Head chef/.test(await txt(p, '.o-cut-fold .cut-o:has(.cut-box[data-id^="pfd|"]) .cut-st')), 'Google account: ticks as the head chef on their daily PIN');
   await p.context().close();

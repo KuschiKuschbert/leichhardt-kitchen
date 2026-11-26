@@ -36,16 +36,26 @@
   function fold(k) { var f = api && typeof api.secNow === 'function' ? api.secNow(k) : k; return str(f) || k; }
   function secCounts(o) { var c = counts(o), out = {}; Object.keys(c).forEach(function (k) { var f = fold(k); out[f] = (out[f] || 0) + c[k]; }); return out; }
   function secMins(o) { var m = mins(o), out = {}; Object.keys(m).forEach(function (k) { var f = fold(k); out[f] = (out[f] || []).concat(m[k]).slice(0, 2000); }); return out; }
+  /* The cleaning count on a day's row, as far as the Inbox needs it (26 Nov 2026): not counted, an older count, or the
+     number missed with the weekly and monthly jobs one by one (their key, name, section and state). Who did a job and
+     who was on a section are left out here: the Inbox names no person. */
+  function cleanCount(c) {
+    if (!c || typeof c !== 'object') return null;
+    if (c.nc) return { nc: true };
+    if (!c.rn || typeof c.rn !== 'object') return { old: true };
+    var r = !c.cut && Array.isArray(c.r) ? c.r.slice(0, 40).filter(function (x) { return x && str(x.k, 120) && str(x.t); }).map(function (x) { return { k: str(x.k, 120), t: str(x.t), s: str(x.s, 40), sn: str(x.sn, 40), st: str(x.st, 1) }; }) : null;
+    return { miss: n(c.rn.miss), rN: n(c.rN), r: r };
+  }
   function clean(d) {
     if (!d || !Array.isArray(d.days)) return null;
     var days = d.days.filter(function (r) { return r && /^\d{4}-\d{2}-\d{2}$/.test(r.day); }).map(function (r) {
       var p = r.p || {}, w = r.w || {}, x = r.x || {};
       return { day: r.day, p: { n: n(p.n), w: n(p.w), t: n(p.t), r: n(p.r), sec: secCounts(p.sec), mins: secMins(p.mins), who: counts(p.who) },
         w: { n: n(w.n), reason: counts(w.reason), sec: secCounts(w.sec), items: (Array.isArray(w.items) ? w.items : []).slice(0, 400).filter(function (i) { return i && str(i.t); }).map(function (i) { return { t: str(i.t), u: str(i.u, 40), a: n(i.a), n: n(i.n) }; }) },
-        x: { out: n(x.out), in: n(x.in) } };
+        x: { out: n(x.out), in: n(x.in) }, c: cleanCount(r.fs && r.fs.c) };
     }).sort(function (a, b) { return a.day < b.day ? -1 : a.day > b.day ? 1 : 0; });
     var nd = d.needs && typeof d.needs === 'object' ? { links: n(d.needs.links) } : null;
-    return { at: n(d.at), from: str(d.from, 10), to: str(d.to, 10), days: days, needs: nd };
+    return { at: n(d.at), from: str(d.from, 10), to: str(d.to, 10), days: days, needs: nd, cleanFrom: /^\d{4}-\d{2}-\d{2}$/.test(d.cleanFrom) ? d.cleanFrom : '' };
   }
   function load(force) {
     // A failed read waits for Refresh: never an automatic retry loop.
@@ -233,6 +243,8 @@
      The open kitchen mail is listed with the Kitchen mail page's own rows, ticked off and given a new "how soon" in
      place; every other row opens its page. Shown before the numbers, so it never waits for the nightly record. ---------- */
   var MAIL_MAX = 8;
+  // the kitchen day before a kitchen day: plain date arithmetic on the day the book gave (api.today()), like dow() and daysSince()
+  function dayBefore(day) { return new Date(Date.parse(day + 'T12:00:00Z') - 86400000).toISOString().slice(0, 10); }
   function daysSince(day, today) { return Math.max(0, Math.round((Date.parse(today + 'T12:00:00Z') - Date.parse(day + 'T12:00:00Z')) / 86400000)); }
   /* One Inbox row: its state word, title, detail and the button to the page where it is done. The laptop picked-row pane
      (8 Nov 2026) was removed on 10 Nov 2026 (head chef, docs/admin-dashboard-restyle-options/brief.md): it repeated the row. */
@@ -240,6 +252,42 @@
     var tagCls = 'dsh-tag dsh-tag-' + (kind === 'due' ? 'bad' : kind === 'att' ? 'att' : kind === 'ok' ? 'good' : 'flat');
     return '<li class="dsh-need dsh-need-' + kind + '"><span class="dsh-need-mark" aria-hidden="true"></span><div><p class="' + tagCls + '">' + esc(tag) + '</p><p class="dsh-need-title">' + esc(title) + '</p>' +
       (detail ? '<p class="dsh-need-detail">' + esc(detail) + '</p>' : '') + '</div>' + (open ? '<button type="button" class="btn' + (kind === 'att' ? ' dark' : '') + '" data-dsh="open" data-t="' + open + '">' + esc(label) + '</button>' : '') + '</li>';
+  }
+  /* Cleaning results by section, step 2 (head chef, 26 Nov 2026, docs/cleaning-tracking-options/brief.md): last
+     night's weekly and monthly jobs that nobody ticked, as one row for the night. Built from the board this page
+     already holds (no read). It names sections and jobs, never a person: a missed job is its section's. It says only
+     what the count knows: nothing while Cleaning is not switched on (no cleanFrom), nothing for a day the count does
+     not cover or an older count, "not counted yet" for a night the run has not reached, and a number without
+     sections when the jobs were not kept one by one. The button opens that night in Records and is drawn only when
+     this shell can do that (api.openRecords). */
+  function cleanNeed(dd, today) {
+    if (!dd || !dd.cleanFrom || !Array.isArray(dd.days)) return null;
+    var y = dayBefore(today);
+    if (y < dd.cleanFrom) return null;
+    var say = function (day, o) { return new Date(day + 'T12:00:00Z').toLocaleDateString('en-AU', Object.assign({ timeZone: 'UTC' }, o)); };
+    var when = say(y, { weekday: 'long', day: 'numeric', month: 'long' });
+    var row = dd.days.filter(function (r) { return r.day === y; })[0], c = row && row.c;
+    if (!c) return { html: needRow('wait', 'Not counted yet', 'Cleaning, last night', 'The nightly run has not counted ' + when + ' yet. It runs at 03:00.', '', '') };
+    if (c.nc || c.old) return null;
+    if (!c.miss) return { clear: true };
+    var m = c.miss, jobs = m === 1 ? ' weekly or monthly job' : ' weekly or monthly jobs';
+    // the jobs one by one, only when the count kept every one of them: otherwise the number, with no sections
+    var list = c.r && c.rN <= c.r.length ? c.r.filter(function (x) { return x.st === 'm'; }) : [];
+    var title = m + jobs.replace(' job', ' cleaning job') + ' missed last night', detail = when + '.';
+    if (list.length === m) {
+      var secs = [], by = {};
+      list.forEach(function (x) { if (!by[x.s]) { by[x.s] = []; secs.push(x.s); } by[x.s].push(x); });
+      var name = function (s) { return api.secName ? api.secName(s, by[s][0].sn) : (s ? by[s][0].sn || 'A section' : 'Shared kitchen'); };
+      // the same job missed on an earlier night that kept it, by its key: the latest one
+      var also = function (x) { var d = ''; dd.days.forEach(function (r) { if (r.day < y && r.day > d && r.c && r.c.r && r.c.r.some(function (j) { return j.k === x.k && j.st === 'm'; })) d = r.day; }); return d ? ' (also missed ' + say(d, { weekday: 'short', day: 'numeric', month: 'short' }).replace(',', '') + ')' : ''; };
+      // one place named in the title; with more, the detail names each (a shared job has no section, so no count of sections)
+      if (secs.length === 1) title = name(secs[0]) + ': ' + m + jobs + ' missed last night';
+      var shown = 0;
+      detail += ' ' + secs.map(function (s) { var js = by[s].filter(function () { return shown++ < 4; }); return js.length ? name(s) + ': ' + js.map(function (x) { return x.t + also(x); }).join('; ') + '.' : ''; }).filter(Boolean).join(' ') + (m > 4 ? ' And ' + (m - 4) + ' more.' : '');
+    }
+    detail += ' Not ticked by midnight.';
+    return { html: '<li class="dsh-need dsh-need-miss"><span class="dsh-need-mark" aria-hidden="true"></span><div><p class="dsh-tag dsh-tag-att">Missed</p><p class="dsh-need-title">' + esc(title) + '</p><p class="dsh-need-detail">' + esc(detail) + '</p></div>' +
+      (api.openRecords ? '<button type="button" class="btn" data-dsh="records" data-day="' + y + '" data-at="' + n(dd.at) + '">Open that night</button>' : '') + '</li>' };
   }
   function needsHTML(inbox) {
     var nd = api.needs ? api.needs() : {}, rows = [], mailDetails = '', clear = [], today = api.today();
@@ -276,6 +324,9 @@
       else clear.push('item links');
       // training reviews: retired with the written assessments on 10 Nov 2026 (needs.training is no longer published since 13 Nov 2026)
     }
+    // Cleaning: last night's weekly and monthly jobs, from the board (26 Nov 2026)
+    var cn = cleanNeed(state.data, today);
+    if (cn && cn.html) rows.push(cn.html); else if (cn && cn.clear) clear.push('last night\'s weekly and monthly cleaning');
     // Transfers not returned: lent or borrowed before today and still open.
     if (state.loans === undefined) rows.push(needRow('wait', 'Checking', 'Transfers', 'Still loading.', '', ''));
     else if (state.loans === 'error') rows.push(needRow('wait', 'Not checked', 'Transfers', 'Could not load the open transfers.', 'transfers', 'Open Transfers'));
@@ -557,6 +608,7 @@
       watchSet(w2.list.filter(function (x, j) { return j !== i; }), 'Stopped watching ' + gone + '.'); return;
     }
     // a tile of today's numbers on the Inbox says its own period (data-days="7"), the Dashboard's follow the period chips
+    if (a === 'records') { if (api.openRecords) api.openRecords(el.getAttribute('data-day') || '', +el.getAttribute('data-at') || 0); return; }
     if (a === 'open') { var t = el.getAttribute('data-t'); if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs', 'references', 'team'].indexOf(t) >= 0) api.open(t, el.getAttribute('data-days') === '7' ? 7 : state.period); }
   }
   // Typing in the watch list's Find box narrows the choices (the admin panel keeps focus and cursor through redraws).

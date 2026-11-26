@@ -1,0 +1,57 @@
+{
+ "kind": "Implemented app, click-test stand-in, synthetic data",
+ "viewports": "390 x 844, 768 x 900, 1280 x 900",
+ "results": {
+  "inbox-390": {
+   "screensLong": 1.4,
+   "rowTop": 533,
+   "rowHeight": 191,
+   "rowOnFirstScreen": true,
+   "button": "143x44",
+   "sideways": false
+  },
+  "records-night-390": {
+   "screensLong": 1.9,
+   "headingTopAfterTheInboxButton": 100,
+   "missBlockWholeOnScreen": true,
+   "fold": "330x44",
+   "focus": "rec-clean-sec",
+   "sideways": false,
+   "headingTopFromThePageTop": 899
+  },
+  "inbox-768": {
+   "screensLong": 1.2,
+   "rowTop": 654,
+   "rowHeight": 89,
+   "rowOnFirstScreen": true,
+   "button": "143x44",
+   "sideways": false
+  },
+  "records-night-768": {
+   "screensLong": 1.6,
+   "headingTopAfterTheInboxButton": 334,
+   "missBlockWholeOnScreen": true,
+   "fold": "700x44",
+   "focus": "rec-clean-sec",
+   "sideways": false,
+   "headingTopFromThePageTop": 908
+  },
+  "inbox-1280": {
+   "screensLong": 1.1,
+   "rowTop": 600,
+   "rowHeight": 89,
+   "rowOnFirstScreen": true,
+   "button": "143x44",
+   "sideways": false
+  },
+  "records-night-1280": {
+   "screensLong": 2.5,
+   "headingTopAfterTheInboxButton": 80,
+   "missBlockWholeOnScreen": true,
+   "fold": "575x44",
+   "focus": "rec-clean-sec",
+   "sideways": false,
+   "headingTopFromThePageTop": 844
+  }
+ }
+}

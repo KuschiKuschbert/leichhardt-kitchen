@@ -183,6 +183,36 @@ eq([r.deploy, r.held], ['false', undefined], 'publish times: nothing the phones 
   ok(yml.includes("needs.check.outputs.held != 'true'"), 'publish times: Published does not run while a change is held, so no rules go out ahead of their code');
 }
 
+// 2c. The waiting run (24 Nov 2026): GitHub ran none of the timed runs on the windows' first evening, so the 22:35 window
+// passed with four changes held. A held change starts a run that sleeps until a minute after the next window opens,
+// then a window run publishes what waited; the timed runs stay as a fallback.
+{
+  const yml = wf('publish-site.yml');
+  clearAnswers(); deployments([{ sha: c3, state: 'success' }]); answer(pulls, [{ labels: [] }]);
+  r = run(decide, Object.assign({ EVENT: 'workflow_dispatch', TIMED: 'true', SHA: c4, NOW_HHMM: '2236' }, W));
+  eq([r.deploy, r.held], ['true', undefined], 'waiting run: the window run it starts at 22:36 publishes what waited');
+  r = run(decide, Object.assign({ EVENT: 'workflow_dispatch', TIMED: 'true', SHA: c4, NOW_HHMM: '2216' }, W));
+  eq([r.deploy, r.held], ['false', 'true'], 'waiting run: a window run woken early by the cap (22:16) holds again, so the next wait starts');
+  r = run(decide, Object.assign({ EVENT: 'workflow_dispatch', TIMED: 'false', SHA: c4, NOW_HHMM: '1200' }, W));
+  eq(r.deploy, 'true', 'waiting run: Run workflow by hand still publishes at any time');
+  ok(/needs\.check\.outputs\.held == 'true'/.test((yml.split('\n  hold:')[1] || '').split('\n  deploy:')[0]) && /gh workflow run publish-site\.yml --repo "\$REPO" --ref main -f wait=true/.test(yml),
+    'waiting run: a held change starts it');
+  const waitJob = yml.split('\n  wait:')[1] || '';
+  ok(/if: \$\{\{ github\.event_name == 'workflow_dispatch' && inputs\.wait \}\}/.test(waitJob) && /-f timed=true/.test(waitJob), 'waiting run: when it wakes it starts a window run');
+  ok(+((waitJob.match(/timeout-minutes: (\d+)/) || [])[1]) >= 350 && +((waitJob.match(/timeout-minutes: (\d+)/) || [])[1]) < 360, 'waiting run: its job may last the 5 hours 45 minutes, inside GitHub\'s 6-hour limit');
+  ok(yml.includes("group: ${{ github.event_name == 'workflow_dispatch' && inputs.wait && 'publish-wait' || 'pages' }}"), 'waiting run: it sleeps in a group of its own, so it never holds up a publish');
+  ok(yml.includes("if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.wait) }}"), 'waiting run: it does not check or publish itself, so it never publishes outside a window');
+  let sleepStep = 'exit 1\n'; try { sleepStep = stepScript(yml, 'Sleep until the next publish window'); } catch (e) { ok(false, 'waiting run: its sleep step is there'); }
+  const sleepBin = path.join(tmp, 'sleepbin'), slept = path.join(tmp, 'slept');
+  fs.mkdirSync(sleepBin, { recursive: true });
+  fs.writeFileSync(path.join(sleepBin, 'sleep'), '#!/usr/bin/env bash\necho "$1" > "' + slept + '"\n'); fs.chmodSync(path.join(sleepBin, 'sleep'), 0o755);
+  for (const [t, secs] of [['1200', 186 * 60], ['1504', 2 * 60], ['1631', 345 * 60], ['2234', 2 * 60], ['0000', 345 * 60], ['2100', 96 * 60]]) {
+    fs.writeFileSync(slept, '');
+    r = run(sleepStep, Object.assign({ NOW_HHMM: t, PATH: sleepBin + ':' + bin + ':' + process.env.PATH }, W));
+    eq([r.status, fs.readFileSync(slept, 'utf8').trim()], [0, String(secs)], 'waiting run: from ' + t.slice(0, 2) + ':' + t.slice(2) + ' it sleeps ' + secs / 60 + ' minutes');
+  }
+}
+
 // 3. Deploy waits for the artifact produced by this attempt.
 const publish = wf('publish-site.yml');
 const waitArtifact = stepScript(publish, "Wait for this attempt's Pages artifact");

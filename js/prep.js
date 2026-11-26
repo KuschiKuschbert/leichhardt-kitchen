@@ -2202,6 +2202,52 @@
     if (['service', 'prep', 'use'].indexOf(kind) < 0 || !fb || !fb.fs) throw cleaningError('invalid-argument');
     return kind + '-' + fb.fs.doc(colRef('cleaningDone')).id;
   }
+  /* Cleaning weights (head chef, 26 Nov 2026, results by section, step 3; docs/cleaning-schedule.md, Weights and days).
+     One record, cleaningPlan/main, keyed by each job's root id: w, how long a job takes (1 light, 2 medium, 3 heavy),
+     and k, its kind. Chefs only; staff never read it. When: a chef opens Repeat tasks, and Refresh. Cost: 1 read, kept
+     in the page's memory. A missing record is an answer (no weights yet); a refused or failed read is not. */
+  function cleaningPlanRead() {
+    if (!cleaningChef()) return Promise.reject(cleaningError('permission-denied'));
+    return sdk().then(function () { return fb.fs.getDocFromServer(docRef('cleaningPlan', 'main')); }).then(function (sn) { return sn.exists() ? sn.data() : {}; });
+  }
+  // one merged save: only the jobs changed are sent, so a second chef's entries stay. w and k: { root id: value }
+  // An empty map in a merged save is a value to Firestore: it would replace the stored map and wipe every entry. So a
+  // map is sent only when it holds a change. A kind of '' clears that job's kind (the page reads '' as none).
+  // d: what each weekday takes, Sunday first, 1 light to 3 heavy (step 4, 26 Nov 2026), set by the same chefs as the
+  // weights, and only whole: the rules check all seven.
+  function cleaningPlanSave(w, k, d) {
+    var hasW = !!w && typeof w === 'object' && Object.keys(w).length > 0, hasK = !!k && typeof k === 'object' && Object.keys(k).length > 0;
+    var hasD = Array.isArray(d) && d.length === 7 && d.every(function (v) { return v === 1 || v === 2 || v === 3; });
+    if (!canW()) return Promise.reject(cleaningError('unauthenticated'));   // the PIN session lapsed: unlock, then save
+    if (!cleaningChef() || !(hasW || hasK || hasD)) return Promise.reject(cleaningError('permission-denied'));
+    var data = { v: 1, at: now() };
+    if (hasW) data.w = w;
+    if (hasK) data.k = k;
+    if (hasD) data.d = d.slice();
+    return W([['set', docRef('cleaningPlan', 'main'), data, true]]);
+  }
+  /* The suggestion for what each weekday takes, from staffing (head chef, 26 Nov 2026: "learn then based on what days
+     we have more staff on"). How many people were on each weekday, from teamsum/main: the last 30 days of the chefs'
+     plans and the cooks' own picks, written each night. When: the head chef opens What each day takes. Through
+     tsLoad(), so it shares Today's team's copy, its retry wait and who it was read for: none when the chef's pages
+     already read it today, else 1 read, kept for the kitchen day, a missing or late count included. A night count
+     older than yesterday, or none, gives no suggestion (fresh false), never an old one. */
+  function cleaningStaffing() {
+    if (!cleaningChef()) return Promise.reject(cleaningError('permission-denied'));
+    var p = tsLoad(); if (!p) return Promise.reject(cleaningError('unavailable'));
+    return p.then(function () {
+      if (tsum.st !== 'ok') throw cleaningError('unavailable');
+      if (!tsum.rec) return { fresh: false, none: true };
+      var rec = tsFresh(); if (!rec) return { fresh: false };
+      var sum = [0, 0, 0, 0, 0, 0, 0], n = [0, 0, 0, 0, 0, 0, 0];
+      rec.days.forEach(function (d) {
+        var people = {}; d.s.forEach(function (x) { people[x.p] = 1; });
+        var k = Object.keys(people).length; if (!k) return;
+        var w = T.dow(T.at(d.day)); sum[w] += k; n[w]++;
+      });
+      return { fresh: true, avg: sum.map(function (v, i) { return n[i] ? Math.round(v / n[i] * 10) / 10 : null; }), n: n };
+    });
+  }
   function cleaningImport(templates) {
     if (!cleaningChef() || !canW() || !Array.isArray(templates) || !templates.length || templates.length > 100) return Promise.reject(cleaningError('permission-denied'));
     var drafts;
@@ -2344,12 +2390,12 @@
     return { allowed: cleaningOK, chef: cleaningChef, permissionsReady: cleaningPermissionsReady, canTick: cleaningTickOK, identity: stableIdentity, context: cleaningContext,
       shared: shared, workers: function () { return ptPeople().map(function (p) { return { id: p.id, name: p.name }; }); }, recent: hereGet,
       checkers: function () { return ptPeople().filter(function (p) { return cleaningCanCheck(p.id); }).map(function (p) { return { id: p.id, name: p.name }; }); }, canCheck: cleaningCanCheck,
-      sections: function () { return kitSecs().map(function (s) { return { id: s.id, name: s.name }; }); },
+      sections: secList, section: mySecNow, screenSection: screenSection,
       guides: function () { return featOn('guides') ? gLive().map(function (g) { return { id: g.id, title: g.title }; }) : []; }, loadGuides: loadGuides,
       box: function (done) { return done ? TICK : BOX; }, sheetBusy: function () { return sheetOpen() || ksWait || ovBack || dkFirstUp(); }, sheetNext: sheetNext,
       discardAttempt: function () { cleaningAttempt = null; cleaningActionAttempts = Object.create(null); },
       load: cleaningLoad, saveTask: cleaningSave, archiveTask: cleaningArchive, tick: cleaningTick, undo: cleaningUndo, canUndo: cleaningCanUndo,
-      importTasks: cleaningImport, act: cleaningAct, newSlot: cleaningNewSlot, due: cleaningDue, who: function () { return S.who; },
+      importTasks: cleaningImport, planRead: cleaningPlanRead, planSave: cleaningPlanSave, staffing: cleaningStaffing, act: cleaningAct, newSlot: cleaningNewSlot, due: cleaningDue, who: function () { return S.who; },
       canVerify: function (task) { return cleaningTickOK() && !!task.plan && task.plan.verification && task.plan.verifiers.indexOf(S.who) >= 0; } };
   }
   /* Supplier workspace (24 Oct 2026). This bridge shares the kitchen's sign-in, writer, clock and pending-write
@@ -3643,6 +3689,7 @@
       .then(function () { return all('cleaningTasks'); }).then(function (r) { out.cleaningTasks = r; })
       .then(function () { return all('cleaningDone'); }).then(function (r) { out.cleaningDone = r; })
       .then(function () { return all('cleaningActions'); }).then(function (r) { out.cleaningActions = r; })
+      .then(function () { return all('cleaningPlan'); }).then(function (r) { out.cleaningPlan = r; })
       .then(function () { return all('team'); }).then(function (r) { out.team = r; })
       .then(function () { return all('cutdone'); }).then(function (r) { out.cutdone = r; })
       .then(function () { part = 'deliveries'; return f.getDocs(f.query(colRef('deliveries'), f.where('day', '>=', shift(dayNow(), -399)), f.where('day', '<=', dayNow()))).then(grab); }).then(function (r) { out.deliveries = r; })
@@ -3786,7 +3833,8 @@
     })
       .then(function () {
         // Immutable cleaning history needs a source-bound copy procedure. Refuse before any destination write.
-        return Promise.all(['cleaningTasks', 'cleaningDone', 'cleaningActions'].map(function (name) {
+        // the cleaning weights (cleaningPlan) only exist beside these, so a kitchen that has them is refused here too
+        return Promise.all(['cleaningTasks', 'cleaningDone', 'cleaningActions', 'cleaningPlan'].map(function (name) {
           return f.getDocs(f.query(oc(name), f.limit(1))).then(function (sn) { got(sn); if (sn.docs.length) throw { code: 'cleaning-copy' }; });
         }));
       }).then(readRoster).then(function () { return readCol('pinset'); }).then(function () { return readCol('staffpins'); }).then(function () { return readCol('activity'); }).then(function () { return readCol('sections'); })
@@ -7089,9 +7137,24 @@
         if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs', 'references'].indexOf(tab) < 0 || (tab === 'mail' && !mlOwner())) return;
         if (tab === 'insights' || tab === 'waste' || tab === 'transfers') setReportDays(days === 7 ? 7 : 30);
         S.atab = tab; S.agLast = S.agLast || {}; S.agLast[adminGroupOf(tab)[0]] = tab; lsSet('lk.prep.atab', tab); draw(); adminToTop();
-      }
+      },
+      /* Results by section, step 2 (26 Nov 2026): the Inbox's Missed row opens that night in Records, at its weekly
+         and monthly jobs. Its own method, so a dashboard file newer than this shell finds no method and draws no
+         button, instead of a button that does nothing. Records reads the board itself when it opens (1 read). */
+      openRecords: function (day, boardAt) {
+        if (!/^\d{4}-\d\d-\d\d$/.test(day)) return;
+        recCheck();   // a first visit starts Records' memory afresh: do that before choosing the day
+        // Records may hold an older copy of the board than the Inbox that offered this night (opened before the 03:00
+        // run, say): then it reads the board again, so the two pages never disagree about one night. 1 read.
+        var held = REC.board && recRows()[day], heldCount = held && held.fs && held.fs.c;
+        if (REC.board && REC.state !== 'loading' && (!heldCount || (typeof boardAt === 'number' && boardAt > (+REC.board.at || 0)))) { REC.board = null; REC.state = ''; REC.days = {}; }
+        REC.day = day; REC.month = day.slice(0, 7); REC.all = false; REC.jump = true;
+        S.atab = 'records'; S.agLast = S.agLast || {}; S.agLast[adminGroupOf('records')[0]] = 'records'; lsSet('lk.prep.atab', 'records'); draw(); adminToTop(); recJump();
+      },
+      // a section's name now, by its id; else the name its job was saved with; never the raw id
+      secName: function (id, saved) { return recSecName(id, saved); }
     });
-    if (!dashLoading && !dashError) dashLoading = window.LK_APP.load('js/admin-dashboard.js?v=7').then(function () { if (!dashModule()) throw { code: 'workspace-version' }; dashLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { dashLoading = null; dashError = true; if (intelligenceAllowed()) draw(); });
+    if (!dashLoading && !dashError) dashLoading = window.LK_APP.load('js/admin-dashboard.js?v=8').then(function () { if (!dashModule()) throw { code: 'workspace-version' }; dashLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { dashLoading = null; dashError = true; if (intelligenceAllowed()) draw(); });
     return '<section class="set-block"><h3 class="label">Dashboard</h3><p class="hint" role="status">' + (dashError ? 'Could not load the dashboard. Check the connection and reload this page.' : inkLabel('Loading...', 'chef')) + '</p></section>';
   }
   function dashWeek() {
@@ -7496,9 +7559,9 @@
      plan and the nightly day record (supplier orders, functions), read when asked: about 10 to 30 reads, kept in memory.
      A part that could not load says so and is never "nothing that day". Cooling is recorded in Operandio; the book keeps
      only today's batch. Print and Export CSV use only what is on the page (Print this month: no reads). Admin only. */
-  var REC = { ctx: '', board: null, state: '', err: '', month: '', day: '', all: false, days: {}, at: 0 };
+  var REC = { ctx: '', board: null, state: '', err: '', month: '', day: '', all: false, days: {}, at: 0, who: {}, jump: false };
   var REC_DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  function recCheck() { if (REC.ctx !== intelligenceContext()) REC = { ctx: intelligenceContext(), board: null, state: '', err: '', month: '', day: '', all: false, days: {}, at: 0 }; }
+  function recCheck() { if (REC.ctx !== intelligenceContext()) REC = { ctx: intelligenceContext(), board: null, state: '', err: '', month: '', day: '', all: false, days: {}, at: 0, who: {}, jump: false }; }
   function recLoad(force) {
     recCheck();
     if (!intelligenceAllowed() || REC.state === 'loading' || (REC.board && !force)) return;
@@ -7507,7 +7570,7 @@
     fb.fs.getDocFromServer(docRef('analysis', 'dashboard')).then(function (sn) {
       if (REC.ctx !== ctx) return;
       REC.board = sn.exists() ? sn.data() : { days: [] }; REC.state = 'ok'; REC.at = now(); if (force) REC.days = {};
-      if (S.name === 'admin' && S.atab === 'records') draw();
+      if (S.name === 'admin' && S.atab === 'records') { draw(); recJump(); }
     }, function (e) { if (REC.ctx !== ctx) return; REC.state = 'error'; REC.err = errMsg(e && e.code === 'permission-denied' ? 'Only the head chef\'s Google account can read the records.' : 'Could not read the records. Check the signal and tap Refresh.'); if (S.name === 'admin' && S.atab === 'records') draw(); });
   }
   function recRows() { var m = {}; ((REC.board && REC.board.days) || []).forEach(function (r) { if (r && typeof r.day === 'string' && /^\d{4}-\d\d-\d\d$/.test(r.day)) m[r.day] = r; }); return m; }
@@ -7522,10 +7585,111 @@
   }
   function recClean(c) {
     if (!c) return { short: '<span class="rec-wait">Cleaning: count not ready</span>', plain: 'Cleaning: count not ready' };
+    // not counted (26 Nov 2026): the nightly count starts the day it first finds Cleaning switched on for the team
+    if (c.nc) return { short: 'Cleaning: not counted', plain: 'Cleaning: not counted' };
     if (!c.due) return { short: 'Cleaning: no tasks due', plain: 'Cleaning: no tasks due' };
     var more = (c.unableN ? ', ' + c.unableN + ' not possible' : '') + (c.waitN ? ', ' + c.waitN + ' awaiting Pass check' : '');
     var miss = 'Cleaning: ' + (c.missN || 0) + ' missed';
     return { short: (c.missN ? '<span class="rec-adv">' + miss + '</span>' : miss) + esc(more), plain: miss + more };
+  }
+  /* Results by section, step 2 (head chef, 26 Nov 2026, docs/cleaning-tracking-options/brief.md). The nightly count
+     keeps each weekly or monthly job one by one (r, by its root id) and, for a section with a missed job, who was on
+     that day (ro). Records shows them under the day's own cleaning lines: a section with a miss first, in the
+     attention look; then the sections that finished. A missed job is the section's: no person has a count, and no
+     person's name is on the face of the page. Who was on, and who did a job, sit behind each section's fold. Reads nothing: it is all on the board Records already holds. Admin only, like the board. */
+  function recSecName(id, saved) {
+    if (!id) return 'Shared kitchen';
+    // by id over the whole saved list: kitSecs() leaves out a section that is switched off, and a past night may name one
+    var s = ((S.config && S.config.kitSecs) || []).filter(function (x) { return x && x.id === id && String(x.name || '').trim(); })[0];
+    return s ? String(s.name).replace(/\s+/g, ' ').trim().slice(0, 40) : (typeof saved === 'string' && saved.trim() ? saved.trim().slice(0, 40) : 'A section no longer on the list');
+  }
+  function recShiftName(id) {
+    if (!id) return '';
+    // by id over the whole saved list: kitShifts() leaves out a shift that is switched off, and a past night may name one
+    var s = ((S.config && S.config.kitShifts) || []).filter(function (x) { return x && x.id === id && String(x.name || '').trim(); })[0];
+    return s ? String(s.name).replace(/\s+/g, ' ').trim().slice(0, 40) : 'a shift no longer on the list';
+  }
+  // the weekly and monthly jobs a counted day keeps one by one, or null (not counted, an older count, or trimmed)
+  function recRound(c) { return c && !c.nc && !c.cut && Array.isArray(c.r) ? c.r.filter(function (x) { return x && typeof x.k === 'string' && typeof x.t === 'string'; }) : null; }
+  // one job on the days before this one: when it was missed (newest first) and when it was last done. Only a day
+  // that kept the job counts: a day not counted, trimmed, or where the job was not due says nothing.
+  // Built once for a drawn night (one pass over the board), then read per job: { key: { missed: [days], done } }.
+  function recBefore(day) {
+    var rows = recRows(), out = {};
+    Object.keys(rows).filter(function (d) { return d < day; }).sort().reverse().forEach(function (d) {
+      (recRound(rows[d].fs && rows[d].fs.c) || []).forEach(function (x) {
+        var o = out[x.k] = out[x.k] || { missed: [], done: null };
+        if (x.st === 'm' && o.missed.length < 3) o.missed.push(d);
+        if (x.st === 'd' && !o.done) o.done = { day: d, by: typeof x.by === 'string' ? x.by : '', at: typeof x.at === 'string' ? x.at : '' };
+      });
+    });
+    return out;
+  }
+  function recWhoWords(o, sec) {
+    if (!o) return ['Who was on was not kept for this section.'];
+    if (o.k === 'x') return ['Not kept for this day. The nightly count reads the last 8 weeks of plans.'];
+    var w = Array.isArray(o.w) ? o.w.filter(function (x) { return x && typeof x.n === 'string'; }) : [];
+    var say = function (src) { return w.filter(function (x) { return x.by === src; }).map(function (x) { var sh = recShiftName(typeof x.sh === 'string' ? x.sh : ''); return x.n + (sh ? ' (' + sh + ')' : ''); }).join(', '); };
+    var plan = say('p'), pick = say('k'), out = [];
+    out.push(plan ? 'On the plan: ' + plan + '.' : 'Nobody was on the plan for ' + sec + ' that day.');
+    out.push(!o.pk ? 'Own picks were not kept for this day.' : pick ? 'Picked the section themselves: ' + pick + '.' : 'Nobody picked the section themselves.');
+    return out;
+  }
+  function recCleanSecs(day, c) {
+    if (!c || c.nc || !c.rn || !c.rN) return '';
+    var head = '<h5 class="a-ch-h rec-sec-h" id="rec-clean-sec" tabindex="-1">Weekly and monthly jobs, by section</h5>';
+    var list = recRound(c), rn = c.rn;
+    var whole = (rn.done || 0) + ' of ' + (rn.due || 0) + ' done' + (rn.miss ? ', ' + rn.miss + ' missed' : '') + (rn.wait ? ', ' + rn.wait + ' awaiting Pass check' : '') + (rn.unable ? ', ' + rn.unable + ' not possible' : '') + '.';
+    if (!list) return head + '<p class="rec-line">' + esc(whole) + ' The jobs were not kept one by one for this day.</p>';
+    var secs = [], by = {};
+    list.forEach(function (x) { var s = typeof x.s === 'string' ? x.s : ''; if (!by[s]) { by[s] = []; secs.push(s); } by[s].push(x); });
+    var missed = function (s) { return by[s].filter(function (x) { return x.st === 'm'; }).length; };
+    secs.sort(function (a, b) { return (missed(b) ? 1 : 0) - (missed(a) ? 1 : 0) || (a ? 0 : 1) - (b ? 0 : 1); });
+    var short = function (d) { return recShort(d) + ' ' + parseYmd(d).toLocaleDateString('en-AU', { month: 'short' }); }, before = recBefore(day);
+    // the count keeps at most 40 jobs a day: past that, a section's lines are only the jobs listed, and say so
+    var part = c.rN > list.length;
+    // the face of the page: the job, its state, its times and dates. Never a person's name (those are behind the fold)
+    var jobLine = function (x) {
+      if (x.st === 'd') return 'Done: ' + x.t + (x.at ? ' (' + x.at + ')' : '') + '.';
+      if (x.st === 'u') return 'Not possible: ' + x.t + (x.n ? ' (' + x.n + ')' : '') + '.';
+      if (x.st === 'w') return 'Awaiting Pass check: ' + x.t + '.';
+      var b = before[x.k] || { missed: [], done: null };
+      return 'Missed: ' + x.t + '. Not ticked by midnight.' + (b.missed.length ? ' Also missed ' + b.missed.map(short).join(' and ') + '.' : '') +
+        (b.done ? ' Last done ' + short(b.done.day) + '.' : '');
+    };
+    // behind the fold: who did each done job that day, and who last did a job that was missed
+    var doers = function (jobs) {
+      var out = [];
+      jobs.forEach(function (x) {
+        if (x.st === 'd' && x.by) out.push('Done by: ' + x.t + ', ' + x.by + '.');
+        var b = x.st === 'm' ? before[x.k] : null;
+        if (b && b.done && b.done.by) out.push('Last done by: ' + x.t + ', ' + b.done.by + ' (' + short(b.done.day) + ').');
+      });
+      return out;
+    };
+    var foldHTML = function (s, label, lines) {
+      var open = !!REC.who[day + '|' + s];
+      return '<button type="button" class="tm-fold rec-who" data-p="rec-who" data-s="' + esc(s) + '" aria-expanded="' + open + '">' + esc((open ? 'Hide ' : '') + (open ? label.charAt(0).toLowerCase() + label.slice(1) : label)) + '</button>' +
+        (open ? '<div class="rec-who-list">' + lines.map(function (l) { return '<p class="rec-line">' + esc(l) + '</p>'; }).join('') + '</div>' : '');
+    };
+    var ro = Array.isArray(c.ro) ? c.ro : [];
+    var out = secs.map(function (s) {
+      var name = recSecName(s, (by[s][0] || {}).sn), jobs = by[s], m = missed(s), due = jobs.filter(function (x) { return x.st !== 'u'; }).length;
+      var lines = jobs.slice().sort(function (a, b) { return (a.st === 'm' ? 0 : 1) - (b.st === 'm' ? 0 : 1); }).map(function (x) { return '<p class="rec-line">' + esc(jobLine(x)) + '</p>'; }).join('');
+      var did = doers(jobs), didFold = did.length ? foldHTML(s, s ? 'Who did ' + name + '\'s jobs' : 'Who did the shared jobs', did) : '';
+      if (!m) return '<div class="rec-sec"><p class="rec-line"><b>' + esc(name) + ':</b> ' + esc(part ? 'the jobs listed.' : due ? jobs.filter(function (x) { return x.st === 'd'; }).length + ' of ' + due + ' done.' : 'nothing due but a job that was not possible.') + '</p>' + lines + didFold + '</div>';
+      var o = ro.filter(function (x) { return x && x.s === s; })[0];
+      return '<div class="rec-sec rec-miss"><p class="rec-miss-h">' + esc(name) + ': ' + (part ? 'at least ' + m + ' missed' : m + ' of ' + due + ' missed') + '</p>' + lines +
+        (s ? foldHTML(s, 'Who was on ' + name, recWhoWords(o, name).concat(did)) : '<p class="rec-line hint">A shared job has no section, so nobody is listed.</p>' + didFold) + '</div>';
+    }).join('');
+    return head + '<p class="rec-line">' + esc(whole) + (part ? ' ' + (c.rN - list.length) + ' more jobs are counted but not listed, so each section below shows only the jobs listed.' : '') + '</p>' + out;
+  }
+  // after the Inbox opened this night: land on the block, once the day is drawn (the board may still be loading)
+  function recJump() {
+    if (!REC.jump || !S.root) return;
+    var h = S.root.querySelector('#rec-clean-sec');
+    if (!h) { if (REC.state === 'ok' || REC.state === 'error') REC.jump = false; return; }
+    REC.jump = false; h.scrollIntoView({ block: 'start' }); h.focus({ preventScroll: true });
   }
   function recWords(day) {
     var r = recRows()[day];
@@ -7605,6 +7769,7 @@
   }
   function recCleanLines(c) {
     if (!c) return ['Cleaning: count not ready. The Cleaning page shows the day now.'];
+    if (c.nc) return ['Cleaning: not counted. The count starts once Cleaning is switched on for the team.'];
     if (!c.due) return ['Cleaning: no tasks were due.'];
     var out = ['Cleaning: ' + c.done + ' of ' + c.due + ' done.'];
     if (c.missN) out.push('Missed: ' + c.miss.join(', ') + (c.missN > c.miss.length ? ' and ' + (c.missN - c.miss.length) + ' more' : '') + '.');
@@ -7659,7 +7824,7 @@
       '<div class="chiprow" role="group" aria-label="Show"><button type="button" class="chip" data-p="rec-show" data-v="fs" aria-pressed="' + !all + '">Food safety</button><button type="button" class="chip" data-p="rec-show" data-v="all" aria-pressed="' + all + '">Everything</button></div>' +
       status + fails + outputStatus + extra +
       (ev.length ? '<ol class="rec-tl">' + ev.map(function (e) { return '<li><time>' + esc(e[0]) + '</time><span class="rec-k">' + esc(e[1]) + '</span><span>' + esc(e[2]) + '</span></li>'; }).join('') + '</ol>' : empty ? '<p class="rec-line">' + esc(empty) + '</p>' : '') +
-      (counted ? '<div class="rec-clean"><p class="rec-line"><b>' + esc(cl[0]) + '</b></p>' + cl.slice(1).map(function (l) { return '<p class="rec-line' + (/^Missed/.test(l) ? ' rec-adv' : '') + '">' + esc(l) + '</p>'; }).join('') + '</div>' : '') +
+      (counted ? '<div class="rec-clean"><p class="rec-line"><b>' + esc(cl[0]) + '</b></p>' + cl.slice(1).map(function (l) { return '<p class="rec-line' + (/^Missed/.test(l) ? ' rec-adv' : '') + '">' + esc(l) + '</p>'; }).join('') + recCleanSecs(day, c) + '</div>' : '') +
       '<p class="hint">' + esc(REC_COOL) + ' Temperatures as recorded: the book sets no limits until the head chef confirms them.</p></div>';
   }
   function recordsHTML() {
@@ -13382,10 +13547,19 @@ if (list.length) sg('oreg', 's');
     var r = odRow(d);
     return r ? homeRowHTML(r).replace('<li>', '<li data-hm-priority="order">').replace('class="hm-a', 'class="hm-a hm-od') : '';
   }
-  function homeCutSlot() { var h = homeCutsHTML(); return '<div id="hm-cuts"' + (h ? '' : ' hidden') + '>' + h + '</div>'; }
+  /* The words each Home box was drawn with, by its id, until homePaint() first meets that box (24 Nov 2026). Without
+     them the first paint after Home opened (the 20 second function tick, the 30 second cut-off tick or any draw())
+     drew every box again with the same words: the whole board was laid out again and focus inside it lost. */
+  var homeDrawn = {};
+  function homeBoxH(el) {
+    if (el.lkH === undefined && Object.prototype.hasOwnProperty.call(homeDrawn, el.id)) { el.lkH = homeDrawn[el.id]; delete homeDrawn[el.id]; }
+    return el.lkH;
+  }
+  function homeCutSlot() { var h = homeCutsHTML(); homeDrawn['hm-cuts'] = h; return '<div id="hm-cuts"' + (h ? '' : ' hidden') + '>' + h + '</div>'; }
   function homeSlot() {
     if (!cutTick) cutTick = setInterval(cutPaint, 30000);   // the clock, the minutes left and rows that come and go (no reads)
     var day = homeDayHTML(), crew = homeWithHTML(), b = homeBoardHTML(), pp = homePrepHTML(), tt = homeTeamHTML(), staff = !teamOK();
+    homeDrawn['hm-day'] = day; homeDrawn['hm-with-body'] = crew; homeDrawn['hm-board'] = b; homeDrawn['hm-prep'] = pp; homeDrawn['hm-team'] = tt;
     var prep = '<section class="hm-paper hm-prep" id="hm-prep" aria-label="Prep by section"' + (pp ? '' : ' hidden') + '>' + pp + '</section>';
     var team = '<section class="hm-paper hm-team' + (staff ? ' hm-team-staff' : '') + '" id="hm-team" aria-label="On today"' + (tt ? '' : ' hidden') + '>' + tt + '</section>';
     // functions ahead of time (10 Nov 2026): the Function this week card or the Next function line, under Your day
@@ -13401,7 +13575,7 @@ if (list.length) sg('oreg', 's');
     var t = document.getElementById('hm-time'); if (t) { var c = T.clock(now()); if (t.textContent !== c) t.textContent = c; }
     var dy = document.getElementById('hm-day'); if (dy) {
       var dh = homeDayHTML();
-      if (dy.lkH !== dh) {
+      if (homeBoxH(dy) !== dh) {
         var active = document.activeElement, priority = dy.contains(active) && active.closest('[data-hm-priority]');
         var focusRow = priority && priority.getAttribute('data-hm-priority');
         dy.innerHTML = dh; dy.lkH = dh;
@@ -13409,12 +13583,12 @@ if (list.length) sg('oreg', 's');
       }
       dy.hidden = !dh;
     }
-    var cw = document.getElementById('hm-with-body'); if (cw) { var wh = homeWithHTML(); if (cw.lkH !== wh) { cw.innerHTML = wh; cw.lkH = wh; } }
+    var cw = document.getElementById('hm-with-body'); if (cw) { var wh = homeWithHTML(); if (homeBoxH(cw) !== wh) { cw.innerHTML = wh; cw.lkH = wh; } }
     var fd = document.getElementById('hm-full-team'); if (fd && fd.hidden !== !homeFold) fd.hidden = !homeFold;
-    var b = document.getElementById('hm-board'); if (b) { var h = homeBoardHTML(); if (b.lkH !== h) { b.innerHTML = h; b.lkH = h; } b.hidden = !h; }
-    var pp = document.getElementById('hm-prep'); if (pp) { var ph = homePrepHTML(); if (pp.lkH !== ph) { pp.innerHTML = ph; pp.lkH = ph; } pp.hidden = !ph; }
-    var te = document.getElementById('hm-team'); if (te) { var th = homeTeamHTML(); if (te.lkH !== th) { te.innerHTML = th; te.lkH = th; } te.hidden = !th; }
-    var cu = document.getElementById('hm-cuts'); if (cu) { var ch = homeCutsHTML(); if (cu.lkH !== ch) { cu.innerHTML = ch; cu.lkH = ch; } cu.hidden = !ch; }
+    var b = document.getElementById('hm-board'); if (b) { var h = homeBoardHTML(); if (homeBoxH(b) !== h) { b.innerHTML = h; b.lkH = h; } b.hidden = !h; }
+    var pp = document.getElementById('hm-prep'); if (pp) { var ph = homePrepHTML(); if (homeBoxH(pp) !== ph) { pp.innerHTML = ph; pp.lkH = ph; } pp.hidden = !ph; }
+    var te = document.getElementById('hm-team'); if (te) { var th = homeTeamHTML(); if (homeBoxH(te) !== th) { te.innerHTML = th; te.lkH = th; } te.hidden = !th; }
+    var cu = document.getElementById('hm-cuts'); if (cu) { var ch = homeCutsHTML(); if (homeBoxH(cu) !== ch) { cu.innerHTML = ch; cu.lkH = ch; } cu.hidden = !ch; }
   }
   // a section on the board opens the prep list on that section's tab
   document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('[data-hm-sec]'); if (a) { S.tab = a.getAttribute('data-hm-sec') || ''; } }, true);
@@ -13998,15 +14172,18 @@ if (list.length) sg('oreg', 's');
   function ksPut(id, sec, name, extra) { lsSet('lk.sec.' + id, JSON.stringify(Object.assign({ d: dayNow(), sec: sec, name: name }, extra || {}))); }
   function ksLog(l) { return (Array.isArray(l) ? l : []).filter(function (x) { return x && typeof x.sh === 'string' && x.sh.length <= 40 && typeof x.sec === 'string' && x.sec.length <= 40 && typeof x.at === 'number'; }).map(function (x) { return { sh: x.sh, sec: x.sec, at: x.at }; }).slice(-30); }
   /* the section a line goes under when the box is left alone. Staff and leads only: a sous chef writes for every section. */
-  function mySec() {
-    var p = me(); if (!ksPicks(p)) return '';
+  function mySec() { var s = mySecNow(); return s ? s.name : ''; }
+  /* The same section as its id and its name now, or null (staff and leads only). The Cleaning page opens on it by id
+     (25 Nov 2026, docs/cleaning-schedule.md). No read: the pick and the plan are already on the phone. */
+  function mySecNow() {
+    var p = me(); if (!ksPicks(p)) return null;
     var v = ksGet(p.id), plan = tmPlanSec(p.id);
     // Today's team (7 Nov 2026): the plan's section on the shift that counts now, unless the person moved themselves on
     // that shift after the chef saved the plan
-    if (plan && !(v && v.self && v.sec && v.sh === plan.sh && v.at > tm.rec.upd)) return plan.name;
-    if (!v || !v.sec) return '';
+    if (plan && !(v && v.self && v.sec && v.sh === plan.sh && v.at > tm.rec.upd)) return { id: plan.sec, name: plan.name };
+    if (!v || !v.sec) return null;
     var s = kitSecs().filter(function (x) { return x.id === v.sec; })[0];
-    return s ? s.name : '';   // renamed today: the new name; taken off the list: none
+    return s ? { id: s.id, name: s.name } : null;   // renamed today: the new name; taken off the list: none
   }
   /* after the PIN (and when the book opens on a new day): staff and leads are asked once a day, chefs are given their role */
   function ksCheck() {
@@ -14518,6 +14695,7 @@ if (list.length) sg('oreg', 's');
     if (a === 'a-group') { if (intelligenceBusy()) return; S.personId = ''; var gg = A_GROUPS.filter(function (g) { return g[0] === el.getAttribute('data-g'); })[0]; if (gg) { S.atab = (S.agLast || {})[gg[0]] || gg[2].filter(function (t) { return t !== 'mail' || mlOwner(); })[0]; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); } return; }
     // Records (13 Nov 2026): a day, back, Food safety or Everything, another month, Refresh, Try again, print, CSV
     if (a === 'rec-day') { var rdy = el.getAttribute('data-d') || ''; if (/^\d{4}-\d\d-\d\d$/.test(rdy)) { REC.day = rdy; REC.month = rdy.slice(0, 7); draw(); var rdh = S.root.querySelector('.rec-dt'); if (rdh) rdh.focus(); } return; }
+    if (a === 'rec-who') { var rws = REC.day + '|' + (el.getAttribute('data-s') || ''); REC.who[rws] = !REC.who[rws]; draw(); var rwb = [].filter.call(S.root.querySelectorAll('.rec-who'), function (b) { return b.getAttribute('data-s') === el.getAttribute('data-s'); })[0]; if (rwb) rwb.focus(); return; }
     if (a === 'rec-back') { var rbk = REC.day; REC.day = ''; draw(); var rbr = S.root.querySelector('.rec-dayrow[data-d="' + rbk + '"]'); if (rbr) rbr.focus(); return; }
     if (a === 'rec-show') { REC.all = el.getAttribute('data-v') === 'all'; draw(); return; }
     if (a === 'rec-month') { var rmv = el.getAttribute('data-v') || ''; if (/^\d{4}-\d\d$/.test(rmv)) { REC.month = rmv; REC.day = ''; draw(); } return; }
@@ -15525,7 +15703,7 @@ if (list.length) sg('oreg', 's');
   function tmNeedPin() { return teamOK() && !tmCanRead() && !sessP; }
   function tmMe() { var p = me(); return p ? p.id : ((S.config && S.config.headId) || ''); }
   // the next person on the phone starts with nothing of the last chef's
-  function tmReset() { if (tmPop) { tmPop.remove(); tmPop = null; tmPrev = null; } tsum = { day: '', rec: null, st: '', retry: 0, epoch: -1 }; tm = { day: '', rec: null, st: '', at: 0, retry: 0, epoch: -1, stamp: 0 }; tmf = null; tmSnap = ''; tmLastBusy = false; tmLastJob = null; tmPlan = { day: '', owner: '', epoch: -1, days: {}, weeks: {} }; tmSh = ''; tmMsg = ''; tmShowOff = false; tmFind = ''; tmAssignMsg = ''; tmUi = { shifts: 0, sections: 0, people: {}, batch: false, overview: false }; tmRs = null; svStop('t'); }
+  function tmReset() { if (tmPop) { tmPop.remove(); tmPop = null; tmPrev = null; } tsum = { day: '', rec: null, st: '', retry: 0, epoch: -1, p: null }; tm = { day: '', rec: null, st: '', at: 0, retry: 0, epoch: -1, stamp: 0 }; tmf = null; tmSnap = ''; tmLastBusy = false; tmLastJob = null; tmPlan = { day: '', owner: '', epoch: -1, days: {}, weeks: {} }; tmSh = ''; tmMsg = ''; tmShowOff = false; tmFind = ''; tmAssignMsg = ''; tmUi = { shifts: 0, sections: 0, people: {}, batch: false, overview: false }; tmRs = null; svStop('t'); }
   /* today's team: one read (team/<today>) the first time a chef's page or top bar needs it each kitchen day, when the
      page opens (unless read in the last minute), on Refresh and once for each team stamp another phone writes
      (pastCheck()). A failed read, and a "no record" that came from the memory copy with no signal, is never "not set
@@ -17489,19 +17667,21 @@ if (list.length) sg('oreg', 's');
      the sous chefs and the admin only (the rules refuse staff). Read once a kitchen day, when the chef's page, the
      Kitchen sections row or the Team report first needs it (1 read); kept in memory only, as it says who is in
      training. A failed read waits 5 minutes; no record yet (the job has not run) is none, never an error. */
-  var tsum = { day: '', rec: null, st: '', retry: 0, epoch: -1 };
+  var tsum = { day: '', rec: null, st: '', retry: 0, epoch: -1, p: null };
   function tsCan() { return teamOK() && tmCanRead(); }
   /* One freshness rule for the planner's suggestions (head chef, 15 Nov 2026, docs/team-smart-sections-options/brief.md):
      the nightly counts (teamsum/main, read once a kitchen day by tsLoad()) are used only when read from the server and
      made today or yesterday. A late or failed nightly job gives no Usually, no Often and no cross-training hint, rather
      than suggesting from old plans without saying so. */
   function tsFresh() { var r = tsum.rec; return tsCan() && tsum.st === 'ok' && r && r.day && r.day >= shift(dayNow(), -1) ? r : null; }
+  // answers with the read in flight or done (tsum.p), so Cleaning's What each day takes waits on the same one
   function tsLoad() {
     var day = dayNow();
-    if (tsum.day !== day || tsum.epoch !== accessEpoch) tsum = { day: day, rec: null, st: '', retry: 0, epoch: accessEpoch };
-    if (!tsCan() || tsum.st === 'busy' || tsum.st === 'ok' || (tsum.st === 'err' && Date.now() < tsum.retry)) return;
+    if (tsum.day !== day || tsum.epoch !== accessEpoch) tsum = { day: day, rec: null, st: '', retry: 0, epoch: accessEpoch, p: null };
+    if (!tsCan()) return null;
+    if (tsum.st === 'busy' || tsum.st === 'ok' || (tsum.st === 'err' && Date.now() < tsum.retry)) return tsum.p || Promise.resolve();
     var mine = tsum; tsum.st = 'busy';
-    fb.fs.getDoc(docRef('teamsum', 'main')).then(function (sn) {
+    return tsum.p = fb.fs.getDoc(docRef('teamsum', 'main')).then(function (sn) {
       if (tsum !== mine) return;
       if (!sn.exists() && cacheOnly(sn)) throw { code: 'unavailable', cache: true };
       tsum.rec = sn.exists() ? tsClean(sn.data()) : null; tsum.st = 'ok'; draw();
@@ -17704,6 +17884,26 @@ if (list.length) sg('oreg', 's');
   function canChangeDevice() {
     return deviceReady() && canW() && !!me() && (shared() ? whoHead() : deviceOwner() === S.who);
   }
+  /* This screen's section (26 Nov 2026): the kitchen section a shared kitchen screen is set to, as its id and its name now,
+     or null (a personal device, none set, or a section since taken off the list). Only Cleaning's order follows it. It is
+     not the person's section: it never answers Your section today, feeds mySec() or writes shifts/. No read. */
+  // the id this screen is set to, as saved ('' on a personal device or with none set); the section may be off the list
+  function screenSecId() { return shared() && window.LK_DEVICE && window.LK_DEVICE.section ? window.LK_DEVICE.section() : ''; }
+  function screenSection() {
+    var id = screenSecId(), s = id ? kitSecs().filter(function (x) { return x.id === id; })[0] : null;
+    return s ? { id: s.id, name: s.name } : null;
+  }
+  // the kitchen's sections as id and name, for the pages that offer them (Cleaning's setup, this screen's section)
+  function secList() { return kitSecs().map(function (s) { return { id: s.id, name: s.name }; }); }
+  /* The head chef sets it on the screen itself, as they change a shared screen's type. Not an access change: nobody is
+     signed out, nothing is read, unsent work is left alone. Answers '' when saved, or why not: 'locked' (not the head
+     chef on a shared screen now), 'gone' (the section is off the kitchen's list) or 'storage' (the screen could not
+     remember it). */
+  function setScreenSection(id) {
+    if (!canChangeDevice() || !shared() || !window.LK_DEVICE || !window.LK_DEVICE.setSection) return 'locked';
+    if (id && !kitSecs().some(function (x) { return x.id === id; })) return 'gone';
+    return window.LK_DEVICE.setSection(id || '') ? '' : 'storage';
+  }
   function changeDevice(mode, discard) {
     if (sendingNow()) { toast('Not sent yet. Wait until all changes on this device are sent.'); return Promise.resolve(false); }
     if (!canChangeDevice()) { toast(sendingNow() ? 'Not sent yet. Wait until your changes are sent.' : 'Sign in as this device\'s owner before changing it.'); return Promise.resolve(false); }
@@ -17847,7 +18047,7 @@ if (list.length) sg('oreg', 's');
     identity: stableIdentity,
     dirtyForUpdate: dirtyForUpdate,
     blockedRecorder: blockedRecorder,
-    canChangeDevice: canChangeDevice,
+    canChangeDevice: canChangeDevice, setScreenSection: setScreenSection, screenSectionId: screenSecId, kitSections: secList,
     changeDevice: changeDevice,
     // the kitchen PIN is on this device (js/app.js: the signed-out Home says a new device enters it first)
     kitchenPin: function () { return !!S.pin; },

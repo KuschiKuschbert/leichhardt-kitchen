@@ -94,6 +94,8 @@ reads += Math.max(1, out.deliveries.length);
 // Nightly only: retain every schedule revision, including ones closed before the backup window, so the original
 // task wording and revision links survive. One completion range query costs one read per record (or one if empty).
 out.cleaningTasks = await all('cleaningTasks'); reads += Math.max(1, out.cleaningTasks.length);
+// The cleaning weights (26 Nov 2026): one record, read whole every night. One read.
+out.cleaningPlan = await all('cleaningPlan'); reads += Math.max(1, out.cleaningPlan.length);
 out.cleaningDone = grab(await K.collection('cleaningDone').where('day', '>=', shift(today, -(DAYS - 1))).where('day', '<=', today).get());
 reads += Math.max(1, out.cleaningDone.length);
 // One additional dated query keeps the immutable action trail beside each included occurrence.

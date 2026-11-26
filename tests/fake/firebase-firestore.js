@@ -248,6 +248,8 @@ function colRefused(ref, list) {
   if (c === 'adminDevices') return list || !(rawOwner(ref) || rawPlatform(ref) || authUid(ref) && rel[1] === authUid(ref));
   if (c === 'sessions') return list || !authUid(ref) || rel[1] !== authUid(ref);
   if (c === 'push' || c === 'tries' || c === 'proofs') return true;
+  // screens/<uid>: the Screens row was added and removed on 26 Nov 2026; the rules refuse it to everyone, the admin too
+  if (c === 'screens') return true;
   if (rawOwner(ref) && !list && c === 'config' && ['main', 'admins'].includes(rel[1])) return false;
   if (isAdmin(ref)) return false;
   // only the head chef's Google account: PIN fingerprints, the usage counts, the minutes' earlier versions, and the
@@ -264,6 +266,8 @@ function colRefused(ref, list) {
     return store[k] !== undefined && !isToday(store[k].day);   // a new receipt's id may be checked before it is written
   }
   if (c === 'cleaningTasks') return !cleaningReader(ref);
+  // the cleaning weights (26 Nov 2026): one record, read by chefs (the release switch does not matter), listed by the Google account
+  if (c === 'cleaningPlan') return list || rel.length !== 2 || rel[1] !== 'main' || !chefReader(ref);
   if (c === 'cleaningDone' || c === 'cleaningActions') {
     if (!cleaningReader(ref)) return true;
     if (chefReader(ref)) return false;

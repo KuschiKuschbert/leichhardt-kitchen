@@ -13,6 +13,7 @@ Requested 3 November 2026: "Considering how big our app has grown we might have 
 | Text size | This phone (`lk.settings.v1`) | Everyone |
 | Install the app | This phone | Everyone |
 | This device (personal or shared, change, forget) | This phone (`lk.device.v2`), guarded by `canChangeDevice()` | Everyone; changing needs the device's own person, or the head chef for a shared screen |
+| This screen's section (26 Nov 2026: a shared kitchen screen only; Cleaning opens on it for cooks there) | This phone (`lk.device.v2`, `sec`), guarded by `canChangeDevice()` | Everyone signed in on a shared screen reads it; only the head chef changes it |
 | Seasonal celebrations (selection, chooser, movement, ambience, replay) | This phone (`lk.seasonal.v1`) | Everyone |
 | Opens with (The Pass or Tiles) | This phone | Everyone |
 | Open on a phone (QR code, A4 sign) | Nothing saved | Everyone, on screens 900 px and wider |

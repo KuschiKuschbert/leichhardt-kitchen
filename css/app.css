@@ -5414,6 +5414,8 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 /* today's team not set: attention, not failure (its words and the filled button carry it) */
 .dsh-tag-att { color: var(--small-ink); }
 .dsh-need-att .dsh-need-mark { background: var(--accent); }
+/* last night's missed weekly and monthly cleaning (26 Nov 2026): attention, with the plain button, since a finished night can only be read */
+.dsh-need-miss .dsh-need-mark { background: var(--accent); }
 /* today's numbers on the Inbox: one line each, a tap into its report */
 .dsh-inbox .dsh-dtiles { grid-template-columns: minmax(0, 1fr); gap: 0; margin: 0; }
 .dsh-inbox .dsh-dtile { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: .15rem .5rem; padding: .55rem 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; text-align: left; }
@@ -5654,10 +5656,17 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .cln-group-count { flex: none; font: 400 .8125rem var(--body); letter-spacing: 0; color: var(--muted); }
 .cln-packdown-title { margin: 1.1rem 0 .2rem; font: 700 2rem/1.2 'Caveat', cursive; scroll-margin-top: .5rem; }
 .cln-packdown > .hint { margin: .2rem 0 .65rem; line-height: 1.4; }
+/* your section first (25 Nov 2026): the leading section's title with why it leads on the same line, and the title over the rest */
+.cln-mine-title, .cln-rest-title { margin: 1.1rem 0 .2rem; font: 700 2rem/1.2 'Caveat', cursive; }
+.cln-mine-title { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0 .6rem; margin-top: .4rem; }
+.cln-mine-title small { font: 400 .8125rem/1.3 var(--body); color: var(--muted); text-align: right; }
+.cln-mine .cln-packdown-group > .hint { margin: .2rem 0 .65rem; line-height: 1.4; }
 .cln-row { flex-wrap: nowrap; }
 .cln-row .nb-box { align-self: center; margin-top: 0; }
 .cln-row .nb-main { min-width: 0; }
 .cln-row .nb-meta { font-size: .8125rem; }
+/* a small line that says how often ("Every Monday") may wrap, so the state at its end is never cut off (25 Nov 2026) */
+.cln-row .nb-meta.cln-often { white-space: normal; overflow: visible; text-overflow: clip; }
 .cln-row.is-done .nb-t { color: var(--muted); }
 .cln-row.is-pending .nb-meta { color: var(--accent-ink); font-weight: 600; }
 .cln-how { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
@@ -5733,6 +5742,9 @@ button[data-cln-ready-label] > span { position: absolute; inset: 0; display: gri
 .cln-import summary { min-height: 44px; padding: .65rem 0; cursor: pointer; font-weight: 600; }
 .cln-import .btn { margin-top: .5rem; }
 .cln-import .hint { font-size: .875rem; }
+/* section cleaning (25 Nov 2026): one section picker per group in its Load panel, and the chef's first date notice */
+.cln-section-import .cln-fields { margin: .5rem 0; }
+.cln-chef-page .cln-first-date .hint { margin: 0; font-size: .875rem; }
 .cln-guide-link { display: inline-flex; align-items: center; }
 @media (min-width: 720px) { .cln-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1000px) {
@@ -5789,6 +5801,44 @@ button[data-cln-ready-label] > span { position: absolute; inset: 0; display: gri
 .cln-chef-page .cln-pager button { min-width: 44px; min-height: 44px; max-width: 100%; white-space: normal; }
 .cln-chef-page .cln-repeat-browser { min-width: 0; padding-top: .2rem; }
 .cln-chef-page .cln-repeat-browser > .field { max-width: 22rem; }
+/* Weights and days (head chef, 26 Nov 2026, results by section, step 3): every weekly and monthly job as a row by
+   section, Light / Medium / Heavy chips and an optional kind, then the one Save bar frame (.sv-dock), docked above the
+   phone tab bar. Chosen is ink, as every chip; no colour carries a state. */
+.cln-weigh-filter { margin: .5rem 0 .2rem; }
+.cln-weigh-h { margin-top: .9rem; }
+.cln-weigh-h span { font: 400 .8125rem var(--body); letter-spacing: 0; text-transform: none; color: var(--muted); }
+.cln-weigh-list { list-style: none; margin: 0; padding: 0; }
+.cln-chef-page .cln-weigh-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .2rem .8rem; padding: .35rem 0 .55rem; border-bottom: 1px solid var(--rule); }
+.cln-chef-page .cln-weigh-row .cln-template-summary { padding: .25rem 0; border-bottom: 0; }
+.cln-weigh-ctl { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .35rem; }
+.cln-weigh-ctl .chips { gap: .35rem; }
+.cln-weigh-ctl .chip { padding: 0 .75rem; }
+.cln-kind select { min-height: 44px; max-width: 13rem; }
+.cln-weigh-dock { position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .4rem 1rem; margin-top: 1rem; padding: .6rem 0; }
+.cln-weigh-dock .hint { flex: 1 1 12rem; }
+.cln-weigh-dock .btn-row { margin: 0; }
+.cln-weigh-err { color: var(--bad-ink); font-weight: 700; }
+/* What each day takes (head chef, 26 Nov 2026, results by section, step 4a): a fold above the weights list, seven rows
+   with three chips each (Friday and Saturday fixed at light), the staffing suggestion in words under each, and its own
+   Save. */
+.cln-days { margin: .4rem 0 .6rem; }
+.cln-days-sum { margin: .1rem 0 0; }
+.cln-day-list { list-style: none; margin: .3rem 0 0; padding: 0; }
+.cln-day-row { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); align-items: center; gap: .2rem .8rem; padding: .35rem 0; border-bottom: 1px solid var(--rule); }
+.cln-day-row .chips { gap: .35rem; }
+.cln-day-fixed { font-weight: 600; }
+.cln-day-staff { grid-column: 2; color: var(--muted); font-size: .8125rem; }
+.cln-days-save { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .4rem 1rem; padding: .6rem 0 .2rem; }
+.cln-days-save .hint { flex: 1 1 12rem; }
+.cln-days-save .btn-row { margin: 0; }
+@media (max-width: 719px) { .cln-day-row { grid-template-columns: minmax(0, 1fr); } .cln-day-staff { grid-column: 1; } }
+@media (max-width: 719px) {
+  .cln-chef-page .cln-weigh-row { grid-template-columns: minmax(0, 1fr); }
+  .cln-weigh-ctl { justify-content: flex-start; }
+  .cln-kind { flex: 1 0 100%; }   /* its own line, so a longer or shorter kind never re-wraps the row */
+  .cln-weigh-dock { bottom: var(--tabbar-h); }
+  html:has(.cln-weigh-dock) { scroll-padding-bottom: calc(var(--tabbar-h) + 96px); }
+}
 .cln-chef-page .cln-repeat-browser > .hint { margin: .6rem 0; }
 .cln-chef-page .cln-repeat-browser .cln-searchbar > .btn { flex: 0 0 auto; max-width: 100%; white-space: normal; }
 .cln-chef-page .cln-repeat-layout { margin: .75rem 0 .4rem; }
@@ -6394,6 +6444,17 @@ html:has(.tm-focus-page) {
 .rec-dayrow:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
 .rec-adv { color: var(--bad-ink); font-weight: 700; }
 .rec-wait { color: var(--muted); font-weight: 700; }
+/* Results by section, step 2 (head chef, 26 Nov 2026, docs/cleaning-tracking-options/brief.md): a day's weekly and
+   monthly cleaning jobs under Records' own lines. A section with a missed job is attention (an accent edge on quiet
+   paper, said in words), not failure; who was on sits behind the page's fold (.tm-fold). */
+.rec-sec-h { margin: 1rem 0 .3rem; scroll-margin-top: 5rem; }
+.rec-sec-h:focus { outline: none; }
+.rec-sec-h:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.rec-sec { margin: .5rem 0; }
+.rec-miss { padding: .55rem .75rem; border-left: 4px solid var(--accent); background: var(--surface-paper); }
+.rec-miss-h { margin: 0 0 .2rem; font: 700 1.1rem/1.2 var(--display); }
+.rec-who { margin-top: .3rem; }
+.rec-who-list { padding-bottom: .2rem; }
 .rec-dt { margin: 0; font: 700 1.35rem var(--display); }
 .rec-line { margin: .25rem 0; font-size: .9375rem; }
 .rec-bad { margin: .3rem 0; padding: .5rem .7rem; border-left: 3px solid var(--bad-ink); background: var(--bad-tint); color: var(--bad-ink); font-weight: 700; font-size: .875rem; display: flex; justify-content: space-between; align-items: center; gap: .6rem; }

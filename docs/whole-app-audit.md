@@ -42,7 +42,7 @@ This is the verified starting point, not a reason to skip discovery:
 | Data and identity | Firebase web SDK 10.14.1; Firestore, anonymous device identity, separate Google authentication, App Check, server rules and PIN sessions/device grants | `js/prep.js`, `js/firebase-config.js`, `firestore.rules`, current access notes |
 | Installable app | Manifest, `sw.js`, atomic shell updates, `js/upkeep.js`, public saved copies and guarded private state | manifest, service worker, cache/update/session tests |
 | Visual system | Barlow body text, Barlow Condensed headings, Caveat handwriting; warm paper, charcoal and orange; existing CSS tokens and shared controls | `index.html`, `css/app.css`, `js/controls.js` |
-| Browser verification | Custom Node runner using `playwright-core` 1.48.2; PDF checks use `pdfjs-dist` 4.10.38; Firebase stand-ins | `tests/package.json`, lockfile, `tests/run.js`, `tests/lib.js`, `tests/fake/` |
+| Browser verification | Custom Node runner using `playwright-core` 1.65.1 (1.48.2 until 25 Nov 2026); PDF checks use `pdfjs-dist` 4.10.38; Firebase stand-ins | `tests/package.json`, lockfile, `tests/run.js`, `tests/lib.js`, `tests/fake/` |
 | Rules verification | Firebase emulator; `@firebase/rules-unit-testing` 3.0.4, Firebase 10.14.1, Firebase Tools 13.29.1 | `tests/rules/` |
 | Server jobs | Node scripts with `firebase-admin` 12.7.0; scheduled Actions for learning, analysis, backups and reminders | `scripts/`, workflows |
 | Required CI | Node 22, Java 21, browser checks, rules checks and processing checks within the required `Click tests` job | `.github/workflows/pr-tests.yml` |

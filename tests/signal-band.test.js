@@ -18,8 +18,15 @@ const lines = (p, ids) => p.evaluate(ids => {
 }, ids);
 // how far they moved between two looks (0: nothing moved; 999: something went missing)
 const moved = (a, b) => !a || !b || a.rows.length !== b.rows.length || a.rows.some((t, i) => t == null || b.rows[i] == null) ? 999 : Math.max(Math.abs(a.root - b.root), Math.abs(a.y - b.y), ...a.rows.map((t, i) => Math.abs(t - b.rows[i])));
+// both bands at rest: no slide still playing (each takes 0.22 s of the page's real time, which a busy runner can stretch
+// past a fixed pause, so a look then caught a band half way down, 24 Nov 2026)
+const rest = async p => {
+  // two frames first: a class changed a moment ago starts its slide at the next frame, and until then nothing is playing
+  await p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))).catch(() => {});
+  return L.waitFor(p, () => ['.p-sync', '.upd-bar'].every(s => { const e = document.querySelector(s); return !e || e.getAnimations().every(a => a.playState !== 'running'); }), null, 4000).catch(() => {});
+};
 // a band: whether it is on the screen, its words, how it is placed, and where the top bar ends
-const band = (p, sel) => p.evaluate(s => {
+const band = async (p, sel) => { await rest(p); return p.evaluate(s => {
   const e = document.querySelector(s); if (!e) return null;
   const cs = getComputedStyle(e), r = e.getBoundingClientRect(), top = document.querySelector('#app .wtop'), tb = top ? top.getBoundingClientRect() : null;
   // visible: drawn somewhere on the screen; seen: and below the top bar, where the band belongs
@@ -28,7 +35,7 @@ const band = (p, sel) => p.evaluate(s => {
   // where a band belongs: under the top bar, or under the Functions strip (--fn-stick) once the top bar has scrolled off
   const stick = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fn-stick')) || 0, want = tb ? Math.round(Math.max(stick, tb.bottom)) : null;
   return { seen, visible, text: e.textContent.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim(), pos: cs.position, top: Math.round(r.top), h: Math.round(r.height), barBottom: tb ? Math.round(tb.bottom) : null, want, role: e.getAttribute('role') };
-}, sel);
+}, sel); };
 // the band's words against its own colour (WCAG contrast), for the plain words and the bold first ones
 const contrast = (p, sel) => p.evaluate(s => {
   const rgb = c => (c.match(/[\d.]+/g) || []).map(Number);
@@ -65,7 +72,10 @@ const offered = p => L.waitFor(p, () => /New version available\./.test((document
 const hold = p => p.evaluate(() => { window.__fake.mode = 'hold'; });
 const release = p => p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
 // the Not sent mark on a row: 'shown' or 'none'
-const unsentOn = (p, id) => p.evaluate(i => { const m = document.querySelector('#nbr-' + i + ' .nb-unsent'); return m && m.getBoundingClientRect().width > 0 ? 'shown' : 'none'; }, id);
+// A tick lingers in its place for 3.5 s of the page's clock, which runs in real time, so on a busy runner the line has
+// moved on to Done today by the time it is looked at: its Not sent mark goes with it. Every row that can say Not sent
+// carries data-ln="<date>/<id>" wherever it is drawn, so the mark is read on this line, never on another one.
+const unsentOn = async (p, id) => { await rest(p); return p.evaluate(i => { const m = [...document.querySelectorAll('[data-ln$="/' + CSS.escape(i) + '"] .nb-unsent')].find(e => e.getBoundingClientRect().width > 0); return m ? 'shown' : 'none'; }, id); };
 
 (async () => {
   const b = await L.start();
@@ -216,11 +226,11 @@ const unsentOn = (p, id) => p.evaluate(i => { const m = document.querySelector('
   // Back, Today and Forward at every width, so a cook could not change day until the signal came back (the click tests
   // in offline-open.test.js got through only while the page was still moving). A tap on its words or a swipe up puts it
   // away, as the update band; new words (Not sent yet, All sent) or the next page bring it back.
-  const dayBtns = () => p.evaluate(() => ['[data-p="day"][data-d="-1"]', '[data-p="today"]', '[data-p="day"][data-d="1"]'].map(q => {
+  const dayBtns = async () => { await rest(p); return p.evaluate(() => ['[data-p="day"][data-d="-1"]', '[data-p="today"]', '[data-p="day"][data-d="1"]'].map(q => {
     const e = document.querySelector(q); if (!e) return 'none';
     const r = e.getBoundingClientRect(), h = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
     return h && (h === e || e.contains(h)) ? 'open' : h && h.closest('.p-sync') ? 'band' : 'other';
-  }).join(' '));
+  }).join(' ')); };
   for (const w of [390, 768, 1280]) {
     await step('away ' + w, async () => {
       p = await L.open(b, '#/prep', { width: w, wait: 1500 });

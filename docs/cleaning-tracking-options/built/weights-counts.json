@@ -1,0 +1,33 @@
+{
+ "kind": "Implemented app, click-test stand-in, synthetic data",
+ "viewports": "390 x 844, 768 x 900, 1280 x 900",
+ "results": {
+  "repeat-390": {
+   "screensLong": 2.6,
+   "lineTop": 517
+  },
+  "weights-390": {
+   "screensLong": 6.2,
+   "wholeRowsOnFirstScreen": 0,
+   "sideways": false
+  },
+  "repeat-768": {
+   "screensLong": 2,
+   "lineTop": 485
+  },
+  "weights-768": {
+   "screensLong": 3.2,
+   "wholeRowsOnFirstScreen": 3,
+   "sideways": false
+  },
+  "repeat-1280": {
+   "screensLong": 1.9,
+   "lineTop": 508
+  },
+  "weights-1280": {
+   "screensLong": 3,
+   "wholeRowsOnFirstScreen": 4,
+   "sideways": false
+  }
+ }
+}

@@ -1831,6 +1831,25 @@
   function stGroup(id, title, note, rows) {
     return rows ? '<section class="st-grp" aria-labelledby="st-g-' + id + '"><div class="st-gh"><h3 class="label" id="st-g-' + id + '">' + esc(title) + '</h3><p class="hint">' + esc(note) + '</p></div><div class="st-rows">' + rows + '</div></section>' : '';
   }
+  /* This screen's section (26 Nov 2026, docs/cleaning-schedule.md): on a shared kitchen screen, once someone is signed in
+     and the kitchen has sections. The head chef picks one with the chips, as Text size is picked; everyone else reads it.
+     Saved on this screen only (the device record), so it costs no read and changes nobody's access. */
+  // why the last tap could not set it ('' when it could): shown in the row, and forgotten when Settings is left
+  var screenSecFail = '';
+  var SCREEN_SEC_SAY = { locked: 'Sign in as head chef on this screen to change its section.', gone: 'That section is no longer on the kitchen\'s list.', storage: 'This screen could not remember the section. Allow site storage, then try again.' };
+  window.addEventListener('hashchange', function () { screenSecFail = ''; });
+  function screenSecRow(mode, who, canChange) {
+    var P = window.LK_PREP, list = P && P.kitSections ? P.kitSections() : [];
+    if (mode !== 'shared' || !who || !list.length || !P.screenSectionId) return '';
+    var id = P.screenSectionId(), cur = list.filter(function (x) { return x.id === id; })[0];
+    return stRow('screensec', 'This screen\'s section', cur ? cur.name : id ? 'Section removed' : 'None',
+      '<p class="hint">Cooks who sign in on this screen see this section first on Cleaning, with the rest of the kitchen below. A head or sous chef\'s own view does not change. Prep and wastage lines still go under each person\'s own section.</p>' +
+      (id && !cur ? '<p class="hint">The section this screen was set to is no longer on the kitchen\'s list, so no section leads.</p>' : '') +
+      (canChange ? '<div class="chips" role="group" aria-label="This screen\'s section"><button type="button" class="chip" data-act="setscreensec" data-val="" data-k="setscreensec:" aria-pressed="' + !id + '">No section</button>' +
+        list.map(function (x) { return '<button type="button" class="chip" data-act="setscreensec" data-val="' + esc(x.id) + '" data-k="setscreensec:' + esc(x.id) + '" aria-pressed="' + (x.id === id) + '">' + esc(x.name) + '</button>'; }).join('') + '</div>' +
+        (screenSecFail ? '<p class="p-err" role="alert">' + esc(SCREEN_SEC_SAY[screenSecFail] || SCREEN_SEC_SAY.storage) + '</p>' : '')
+        : '<p class="hint">The head chef can change this after signing in.</p>'), { aria: 'This screen\'s section' });
+  }
   var DEVICE_SAY = {
     personal: ['My own device', 'No idle lock. Unlock with your PIN after 04:00 each day. Your Google sign-in stays remembered.'],
     shared: ['Shared kitchen screen', 'Locks after 10 minutes. Google and PIN sign out at 04:00 on this device.']
@@ -1929,6 +1948,7 @@
         '<div class="chips" role="group" aria-label="Keep the screen on with a recipe open"><button type="button" class="chip" data-act="setkeepon" data-val="0" data-k="setkeepon:0" aria-pressed="' + !settings.keepOn + '">Off</button><button type="button" class="chip" data-act="setkeepon" data-val="1" data-k="setkeepon:1" aria-pressed="' + !!settings.keepOn + '">On</button></div>', { aria: 'Keep the screen on' }) : '') +
       stRow('season', 'Seasonal celebrations', stSeason(), '<div id="kb-seasonal-settings"></div>') +
       stRow('device', 'How this device is used', DEVICE_SAY[mode] ? DEVICE_SAY[mode][0] : 'Not chosen yet', deviceBody, { aria: 'This device' }) +
+      screenSecRow(mode, who, changeDevice) +
       stRow('install', 'Install the app', isStandalone() || installedNow ? 'Installed' : 'Not installed', installHTML(), { aria: 'Install the app' }) +
       (adm ? stRow('practice', 'Practice mode', settings.practice ? 'On' : 'Off', '<p class="hint">For trying the book out or showing someone how it works. Lines written here while it is on are marked as practice: the book does not learn from them and the wastage summary leaves them out. A strip on the prep pages says it is on.</p>' +
         '<div class="chips" role="group" aria-label="Practice on this device"><button type="button" class="chip" data-act="setpractice" data-val="0" data-k="setpractice:0" aria-pressed="' + !settings.practice + '">Off</button><button type="button" class="chip" data-act="setpractice" data-val="1" data-k="setpractice:1" aria-pressed="' + !!settings.practice + '">On</button></div>', { aria: 'Practice on this device' }) +
@@ -2475,6 +2495,7 @@
     else if (act === 'device-choice') { if (window.LK_DEVICE) window.LK_DEVICE.settings(); return; }
     else if (act === 'device-forget') { if (window.LK_DEVICE) window.LK_DEVICE.forget(); return; }
     else if (act === 'setpractice') { settings.practice = val === '1'; saveSettings(); }
+    else if (act === 'setscreensec') { var prep = window.LK_PREP; screenSecFail = prep && prep.setScreenSection ? prep.setScreenSection(val || '') : 'locked'; }
     else if (act === 'setkeepon') { settings.keepOn = val === '1'; saveSettings(); ko.refused = false; ko.paused = false; }
     else if (act === 'installno') { settings.installNo = true; saveSettings(); }
     else if (act === 'install') {

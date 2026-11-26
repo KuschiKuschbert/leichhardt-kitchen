@@ -344,7 +344,7 @@ The routine Orders band opens in place for a cancelled, rescheduled or recently 
 
 Before a live redraw of the Orders band, the pinned strip and function-driven updates to the Orders list, the book uses the existing pointer guard. While a finger is down or has just lifted, it keeps the drawn content and the focused control. It applies the queued update after the quiet interval. An explicit Show or Hide responds to the person's tap. If a focused alert control survives a repaint, the replacement gets focus without a scroll; the disclosure or Orders heading receives focus when that control is gone.
 
-### Measured in the app
+### Measured in the app (Orders)
 
 Chromium using the checked-in Barlow and Caveat, synthetic Firebase and the unchanged Orders shell. The chef opened the same three routine functions, including a long name, and seven outstanding requests with a stock tag and two open supplier cut-offs at 14:00 Queensland. Before means released commit `f29eb5660be4`. Complete counts stop above the fixed Add request dock where it covers the list.
 
@@ -357,3 +357,27 @@ Chromium using the checked-in Barlow and Caveat, synthetic Firebase and the unch
 On the phone the third request takes 184 px of scroll on the old opening and fits without a swipe with the fold. Extra large shows one complete request instead of none. When three simultaneous alerts all need their own rows, the longer warning band takes 34 px of scroll to uncover the first full tick. Orders still shows its one-tap Add request. The same normal text and accent colours on charcoal measured 13.53:1 and 5.77:1. The design keeps the existing 44 px effective target around the round Show and Hide control.
 
 The new browser tests cover the first fold, inline keyboard open and close, scope on other workbooks, stable order ticks over repeated held updates and release or cancellation, exact Queensland-hour boundary, Extra large fit, the named warnings and permissions for Confirm out, offline and failed reads, real order and supplier actions and their Undo. The test stand-in uses synthetic records and does not measure physical touch hardware or production connections. See `tests/orders-functions-fold.test.js`, `tests/prep-strip-place.test.js` and `tests/service-targets.test.js`.
+
+## The fold on five more pages (26 November 2026)
+
+Step 2 of the device coverage plan found the full band (218 px on a busy afternoon) at the top of Wastage, Transfers, Cleaning, Today's team and the recipe card on the 1920 x 1080 section screens: with the 132 px top bar, 350 of 1008 px before the page starts ([findings](../device-coverage/step2/findings.md), section 1). Three of four reviewers led with Orders' fold. The head chef chose it: "Yes all recommendations".
+
+What it does: those five pages follow the Orders rules above, unchanged. Routine bookings fold to one line with each time and name; a notice, a due round or a failed read opens the band and it cannot be folded away; Show lasts for this person and kitchen day in this tab, on every fold page; the band waits for a lifted finger before it moves. The Recipes list, Home and the other pages keep the full band and their per-day minus (`lk.fn.fold`); Prep keeps its strip. In code: `foldBand()` in `js/functions.js` names the fold pages; the hold on the Orders list's own updates (`ordersBand()`) stays on Orders.
+
+Quick check: no new button, tab or pop-up; nothing new over a list; the main job of each page is still one tap. Taps for Service view on a routine day go from one to two, as on Orders. Contract fit: the 23 November Orders evidence and its tests carry over; the named warnings stay in words.
+
+### Measured in the app (five pages)
+
+The step 2 busy afternoon (14:00, three routine functions tonight, a supplier cut-off) on the click-test stand-in, a cook on a shared screen, Today's team as the sous chef. Complete items in view, not under a dock or a bar. Before is `main` at 7dd621a.
+
+| Page | 390 phone | 768 tablet | 1920 section screen |
+| --- | --- | --- | --- |
+| Band height | 218 → 50 px | 218 → 50 px | 218 → 50 px |
+| Wastage entries | 3 → 5 of 6 | 6 of 6 | 6 of 6 |
+| Transfers loans | 1 → 3 of 3 | 3 of 3 | 3 of 3 |
+| Cleaning jobs | 1 → 4 of 46 | 6 → 9 of 46 | 6 → 9 of 46 |
+| Today's team people | 0 of 4 (first starts 757 → 590 px) | 1 → 2 of 4 | 1 → 2 of 4 |
+| Recipe card, Into the pan | under the drawing (1372 → 1204 px) | under the drawing | 3 → 5 of 5 |
+
+Checks: `tests/orders-functions-fold.test.js` (each page folded at 390 and 1920, Show carrying from Cleaning to Transfers and the recipe card, the Recipes list's own minus, a due round opening Wastage and the recipe card; 15 of these fail on the old code). The checks that needed the full band moved from Wastage to the Recipes list in `tests/functions.test.js`, `tests/service-targets.test.js`, `tests/sweep-buttons.test.js` and `tests/prep-strip-place.test.js`.
+
