@@ -307,14 +307,17 @@
       mine.filter(function (group) { return group.own; }).forEach(function (group) { html += groupHTML(group, at(group), 'Section clean', 'h4', ''); });
       mine.filter(function (group) { return group.pack; }).forEach(function (group) { html += groupHTML(group, at(group), 'Pack down', 'h4', 'Overhead shelves and frames first. Floors are last.'); });
       // the temperature reminder in full, after the cook's own jobs, not ahead of them (design M)
-      html += '<p class="hint cln-temp-line">' + esc(TEMPERATURE) + '</p></section>';
+      html += '<p class="hint cln-temp-line">' + esc(TEMPERATURE) + '</p></section><div class="cln-others">';
       grouped.filter(function (group) { return !group.own && !group.pack && !group.floors; }).forEach(function (group) { html += groupHTML(group, at(group), '', '', !group.own && plan.repeats ? REPEATS : undefined); });
       // the rest: each Pack down group in its usual order with its own section's clean above it, then any other section
       var rest = [], others = grouped.filter(function (group) { return mine.indexOf(group) < 0 && (group.own || group.pack); });
       others.filter(function (group) { return group.pack; }).forEach(function (group) { var own = group.sec && others.filter(function (other) { return other.own && other.sec === group.sec; })[0]; if (own) rest.push(own); rest.push(group); });
       others.forEach(function (group) { if (rest.indexOf(group) < 0) rest.push(group); });
       if (rest.length) html += '<h3 class="cln-rest-title">Rest of the kitchen</h3>' + rest.map(function (group) { return groupHTML(group, at(group), group.name + (group.pack ? ': pack down' : ': section clean'), 'h4', ''); }).join('');
-      return html + grouped.filter(function (group) { return group.floors; }).map(function (group) { return groupHTML(group, at(group)); }).join('');
+      /* Design M step 2 (head chef, 26 Nov 2026): the cook's section and the rest of the kitchen as two blocks, side by side
+         from 1100 px (css/app.css .cln-split), so a section screen shows the whole width. The order is the same; only the
+         layout changes, and without the new rules (an older saved stylesheet) it is the one column it was. */
+      return '<div class="cln-split">' + html + grouped.filter(function (group) { return group.floors; }).map(function (group) { return groupHTML(group, at(group)); }).join('') + '</div></div>';
     }
     var regular = '', pack = '', floors = '';
     grouped.forEach(function (group, i) { var html = groupHTML(group, i); if (group.pack) pack += html; else if (group.floors) floors += html; else regular += html; });

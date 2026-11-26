@@ -165,7 +165,7 @@ const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
     ok(said === 'Grill|Your section today|Section clean|Pack down|Shared kitchen|Rest of the kitchen|Hot Larder: section clean|Hot larder: pack down|Pans: pack down|Fryers: section clean', width + ': the cook\'s section leads, Shared kitchen follows, then the rest, nothing folded (' + said + ')');
     ok(await rowsIn(p, '.cln-mine section:not([data-cln-packdown-group])') === 'sc-grill-01,sc-grill-02', width + ': Section clean holds the jobs that come round');
     ok(await rowsIn(p, '.cln-mine [data-cln-packdown-group="Grill"]') === 'pd-grill-01,pd-grill-04,sc-grill-03', width + ': the section\'s nightly job follows its numbered Pack down steps');
-    ok(await rowsIn(p, '.cln-body > [data-cln-packdown-group="Pans"]') === 'pd-pans-01,sc-pans-01', width + ': the same rule for another section: the kick oven door after the Pans steps');
+    ok(await rowsIn(p, '.cln-others > [data-cln-packdown-group="Pans"]') === 'pd-pans-01,sc-pans-01', width + ': the same rule for another section: the kick oven door after the Pans steps');
     ok(/Overhead shelves and frames first\. Floors are last\./.test(await p.locator('.cln-mine [data-cln-packdown-group="Grill"] .hint').innerText()), width + ': the floor reminder stays with the leading Pack down');
     ok(await p.locator('.cln-body [hidden], .cln-body details').count() === 0 && await p.locator('.cln-row').count() === 13, width + ': all 13 jobs are on the page, none behind a tap');
     ok(!(await L.overflow(p)) && await p.$$eval('.cln-row .nb-meta.cln-often', es => es.filter(e => e.scrollWidth > e.clientWidth + 1).length) === 0, width + ': no sideways scroll and no line that says how often cut off');
@@ -174,7 +174,7 @@ const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
     // design M (head chef, 26 Nov 2026, docs/cleaning-look-options/brief.md): the frame above the jobs is cut
     const frame = await p.evaluate(() => {
       const count = document.querySelector('.cln-progress'), mine = document.querySelector('.cln-mine'), temp = document.querySelector('.cln-mine .cln-temp-line');
-      const shared = [...document.querySelectorAll('.cln-body > section')].find(s => /^Shared kitchen/.test(s.querySelector('.nb-hd').textContent));
+      const shared = [...document.querySelectorAll('.cln-others > section')].find(s => /^Shared kitchen/.test(s.querySelector('.nb-hd').textContent));
       return { count: count.innerText.replace(/\s+/g, ' ').trim(), handwritten: count.classList.contains('nb-prog'), toggle: !!document.querySelector('[data-cln="temperature"]'),
         temp: temp ? temp.textContent : '', tempLast: !!temp && mine.lastElementChild === temp, topHint: /Record every/.test((document.querySelector('.cln-coverage') || {}).textContent || ''),
         sharedHint: shared ? [...shared.querySelectorAll(':scope > .hint')].map(h => h.textContent).join('') : '', groupCount: (document.querySelector('.cln-mine .cln-group-count') || {}).textContent || '' };
@@ -239,7 +239,7 @@ const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
     await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 4);
     let said = await outline(p);
     ok(said === 'Grill|Your section today|Section clean|Shared kitchen|Rest of the kitchen|Grill: pack down|Pans: section clean', 'one job moved: the section still leads with its own jobs, and its Pack down is not claimed (' + said + ')');
-    ok(await rowsIn(p, '[data-cln-packdown-group="Grill"]') === 'pd-grill-01' && await rowsIn(p, '.cln-body > section:last-child') === 'sc-grill-03', 'one job moved: a nightly job stays under its own section when no Pack down is tied to it');
+    ok(await rowsIn(p, '[data-cln-packdown-group="Grill"]') === 'pd-grill-01' && await rowsIn(p, '.cln-others > section:last-child') === 'sc-grill-03', 'one job moved: a nightly job stays under its own section when no Pack down is tied to it');
     await p.context().close();
 
     // the group left on Shared kitchen: nothing is tied, so the page keeps its usual order for a Grill cook too
@@ -270,7 +270,7 @@ const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
     // a job recorded after each use (c16) is on the day: the plain hint goes with Shared kitchen, not above the jobs
     p = await L.open(b, '#/cleaning', { who: 'ann', width: 390, wait: 1000, clock: MON, init: pickedGrill, extra: loaded(whole.concat([['c16']])) });
     await listed(p); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 14);
-    const at = await p.evaluate(() => { const shared = [...document.querySelectorAll('.cln-body > section')].find(s => /^Shared kitchen/.test(s.querySelector('.nb-hd').textContent)); const hint = shared && shared.querySelector(':scope > .hint'); return { hint: hint ? hint.textContent : '', top: /Record every/.test((document.querySelector('.cln-coverage') || {}).textContent || ''), count: (shared.querySelector('.cln-group-count') || {}).textContent }; });
+    const at = await p.evaluate(() => { const shared = [...document.querySelectorAll('.cln-others > section')].find(s => /^Shared kitchen/.test(s.querySelector('.nb-hd').textContent)); const hint = shared && shared.querySelector(':scope > .hint'); return { hint: hint ? hint.textContent : '', top: /Record every/.test((document.querySelector('.cln-coverage') || {}).textContent || ''), count: (shared.querySelector('.cln-group-count') || {}).textContent }; });
     ok(at.hint === 'Jobs after each service, prep or use: record each one. The count only knows the ones recorded.' && !at.top, 'repeats: the hint is one plain line under Shared kitchen, none above the jobs');
     ok(/^\d+ of \d+$/.test(at.count), 'repeats: Shared kitchen counts in words, without "+ repeats" beside the hint (' + at.count + ')');
   });
@@ -283,6 +283,49 @@ const meta = (p, code) => p.locator(row(code) + ' .nb-meta').innerText();
     await L.settle(p, 200);
     const old = await p.evaluate(() => { const b = document.querySelector('.cln-you .btn').getBoundingClientRect(); return { h: b.height, band: document.querySelector('.cln-you b').textContent, temp: !!document.querySelector('.cln-temp-line').textContent }; });
     ok(!(await L.overflow(p)) && old.h >= 44 && /^You: Pans/.test(old.band) && old.temp, 'old stylesheet: the band, its 44 px link and the temperature words still show, with no sideways scroll (' + Math.round(old.h) + ' px)');
+  });
+
+  await step('design M step 2: two columns on a section screen', async () => {
+    // a 1920 x 1080 touch station screen set to Grill, Ann on Pans: the screen's section left, the rest of the kitchen right
+    p = await L.open(b, '#/cleaning', { who: 'ann', width: 1920, height: 1080, touch: true, wait: 1000, clock: MON, deviceMode: 'shared', profile: screen('grill'), init: pickedPans, extra: loaded(whole) });
+    await listed(p); await L.waitFor(p, () => !!document.querySelector('.cln-split .cln-you'));
+    const wide = await p.evaluate(() => { const m = document.querySelector('.cln-split > .cln-mine').getBoundingClientRect(), o = document.querySelector('.cln-split > .cln-others').getBoundingClientRect(), page = document.querySelector('.page').getBoundingClientRect();
+      return { side: o.left > m.right && Math.abs(o.top - m.top) < 40, page: Math.round(page.width), rows: [...document.querySelectorAll('.cln-row')].filter(r => { const b = r.getBoundingClientRect(); return b.top >= 0 && b.bottom <= innerHeight; }).length }; });
+    ok(wide.side && wide.page > 1700 && !(await L.overflow(p)), 'wide: the screen\'s section and the rest sit side by side across the screen (' + wide.page + ' px)');
+    ok(wide.rows === 13, 'wide: every job of the day is in view on one 1920 x 1080 screen (' + wide.rows + ' of 13)');
+    ok(await outline(p) === 'This screen: Grill|Section clean|Pack down|Shared kitchen|Rest of the kitchen|Hot Larder: section clean|Hot larder: pack down|Pans: pack down|Fryers: section clean', 'wide: the order is the same as on a phone');
+    // the band's link lands on Pans pack down in the right column; a tick there through Who did this moves nothing
+    await p.click('.cln-you [data-cln="pack-down-jump"]');
+    ok(await p.evaluate(() => /Pans: pack down/.test(document.activeElement.textContent) && !!document.activeElement.closest('.cln-others')), 'wide: Go to Pans pack down lands on Pans pack down in the right column');
+    const pans = id('sc-pans-01'), y = () => p.evaluate(() => [...document.querySelectorAll('.nb-box')].map(b => Math.round(b.getBoundingClientRect().top + scrollY)).join(','));
+    const before = await y();
+    await p.evaluate(() => { __fake.mode = 'hold'; });
+    const box = '[data-cln="flow-quick"][data-id="' + pans + '"], [data-cln="tick"][data-id="' + pans + '"]';
+    await p.click(box);
+    await L.waitFor(p, () => !!document.querySelector('#cln-worker-sheet [data-cln-person], #cln-worker-sheet [data-cln-picker="others"]'));
+    await p.evaluate(sel => document.querySelector(sel).click(), box);   // a second tap while the sheet is open
+    ok(await p.locator('#cln-worker-sheet').count() === 1, 'double tap: one Who did this, not two');
+    if (await p.locator('[data-cln-picker="others"]').count() && await p.locator('[data-cln-picker="others"]').isVisible()) await p.click('[data-cln-picker="others"]');
+    await p.click('[data-cln-person="ann"]');
+    await L.waitFor(p, () => !!document.querySelector('.cln-row.is-pending'));   // held: Not sent, not Saved
+    await p.evaluate(() => { __fake.mode = 'ok'; __fake.release(); });   // the signal comes back, the held tick is sent
+    await L.waitFor(p, () => !LK_PREP.unsent());
+    const done = Object.values(await p.evaluate(() => __fake.dump())).filter(r => r.task === 'clean-template-sc-pans-01' && r.done);
+    // a held write, once sent, makes the page read the day again: wait for the list to be back
+    await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 13 && !!document.querySelector('.cln-you') && !document.querySelector('.cln-row.is-pending'));
+    ok(done.length === 1 && await y() === before, 'double tap: one record, and no box moved on the page (' + done.length + ')');
+    const counts = await p.evaluate(() => ({ band: document.querySelector('.cln-you b').textContent, heading: document.querySelector('[data-cln-packdown-group="Pans"] .cln-group-count').textContent }));
+    ok(counts.band.endsWith(counts.heading) && /1 of/.test(counts.heading), 'wide: the band and the Pans heading show the same count (' + counts.band + ' / ' + counts.heading + ')');
+    await p.context().close();
+    // only a cook's Cleaning page widens: another page at 1920 keeps the book's width
+    p = await L.open(b, '#/prep', { who: 'ann', width: 1920, height: 1080, wait: 1000, clock: MON });
+    await L.settle(p, 400);
+    ok(await p.evaluate(() => Math.round(document.querySelector('.page').getBoundingClientRect().width)) <= 1240, 'wide: Prep at 1920 keeps the book\'s width');
+    await p.context().close();
+    // a phone keeps one column: the cook's section above the rest
+    p = await L.open(b, '#/cleaning', { who: 'ann', width: 390, wait: 1000, clock: MON, init: pickedGrill, extra: loaded(whole) });
+    await listed(p); await L.waitFor(p, () => !!document.querySelector('.cln-split'));
+    ok(await p.evaluate(() => document.querySelector('.cln-others').getBoundingClientRect().top > document.querySelector('.cln-mine').getBoundingClientRect().bottom - 1), 'phone: one column, the cook\'s section first');
   });
 
   // ---- step 3: a shared kitchen screen set to a section ----
