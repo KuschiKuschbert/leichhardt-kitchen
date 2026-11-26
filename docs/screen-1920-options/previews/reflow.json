@@ -1,0 +1,56 @@
+{
+ "B ticks Slice onions": {
+  "ticked": 1,
+  "inView": 17,
+  "sharedMove": "0,60",
+  "changedColumn": 12,
+  "movedOtherwise": 12,
+  "examples": [
+   "nbr-i3 786,366 -> 399,426",
+   "nbr-b3 786,449 -> 399,509",
+   "nbr-b2 786,560 -> 399,620",
+   "nbr-b4 786,671 -> 399,731",
+   "nbr-i4 1172,366 -> 786,426"
+  ]
+ },
+ "B ticks Blanch chips|Crumb the calamari": {
+  "ticked": 2,
+  "inView": 16,
+  "sharedMove": "-387,60",
+  "changedColumn": 16,
+  "movedOtherwise": 9,
+  "examples": [
+   "nbr-i4 1172,366 -> 786,426",
+   "nbr-i5 1172,478 -> 786,538",
+   "nbr-b5 1172,560 -> 786,620",
+   "nbr-b6 1172,642 -> 786,702",
+   "nbr-i1 399,366 -> 1172,426"
+  ]
+ },
+ "C ticks Slice onions": {
+  "ticked": 1,
+  "inView": 17,
+  "sharedMove": "0,7",
+  "changedColumn": 6,
+  "movedOtherwise": 14,
+  "examples": [
+   "nbr-i2 396,404 -> 396,410",
+   "nbr-i3 901,344 -> 396,703",
+   "nbr-b3 901,397 -> 396,756",
+   "nbr-b2 901,479 -> 396,838",
+   "nbr-b4 901,562 -> 396,920"
+  ]
+ },
+ "C ticks Blanch chips|Crumb the calamari": {
+  "ticked": 2,
+  "inView": 16,
+  "sharedMove": "0,60",
+  "changedColumn": 0,
+  "movedOtherwise": 3,
+  "examples": [
+   "nbr-b10 1405,480 -> 1405,383",
+   "nbr-b11 1405,533 -> 1405,436",
+   "nbr-b13 1405,586 -> 1405,489"
+  ]
+ }
+}

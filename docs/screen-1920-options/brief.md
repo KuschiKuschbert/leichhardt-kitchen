@@ -113,3 +113,73 @@ Prep 6 of 18, Orders 8 of 26, no sideways scroll; the same layouts as 1920 (Prep
 - Orders' reach is a cook's problem: 1,000 px from tick to ⋯ on a shared screen; the chef's rows are 667 px because the cut-offs sit beside them.
 - Cleaning waits: its day levels (#901) landed today; it joins round 2 once that settles.
 
+
+## Round 2 design frame (UX and interaction designer, 26 November 2026)
+
+Role-based; Implemented app, synthetic data. In the designer's words, lightly shortened.
+
+1. **Must stay visible at 390 px.** Nothing changes below the breakpoint. On the busiest day: the slim strip, the chips, "Lunch: Larder", own section first, each row's tick, Urgent, On it, ⋯, the docked Add. Before equals after: Prep 6, Orders 7 complete lines.
+2. **Loudness budget.** Nothing here earns loud; numbered Urgent and the due cut-off keep their rules. No added colour or band: own section first by place.
+3. **Devices.** Phone and tablet unchanged (Urgent before On it on the phone, as today). Section screen and the head chef's computer: more lines of the 768 row, no third order; from the bench the words, amounts, numbered Urgent and own section read; nothing slides after a tick or needs hover. Laptop 1280 unchanged.
+4. **Placements** (none is a new pop-up):
+   - Prep layout: (1) the notebook to the window bottom: keeps everything, +0 lines on a busy day unless the slip covers the last; (2) the list runs on across the spread: about double, but a tick moves lines across the spine; (3) the Wall board mended (⋯ back, columns hold their place, own section first), opened by width or remembered per screen: 18 of 18 unmended (13 at Extra large), wraps to 82 px, more with ⋯.
+   - Handy: the right page (40 %, two lines); a fold under the list (frees the page, repeats "2 of 20 done"); off the board (Done today costs a Back).
+   - The Undo slip: bottom middle (covers the bottom row's controls); a kept bottom margin (one line less).
+   - Orders: a reading width near Sam's 667 px (⋯ 584 px from the tick); two columns (about 20 in view, reflow Not evidenced); as now (1,000 px).
+   - Breakpoint: 1281 (also wider laptops); 1536 (a real width: test 1535 to 1537); 1600 (125 % keeps Prep 6, Orders 8).
+5. **Fiftieth use.** The slip covered Pastry's bottom On it and Urgent (Seen once): every tick down a column risks it. A hidden ⋯ sends every fix Back to the prep list.
+
+Not evidenced: the mended board's count, the board at 1536 x 806, how often ⋯ is used, laptop widths, more than 20 lines, quick add, reordering at a handover.
+
+## Round 2 designs (Preview over the implemented app, 26 November 2026)
+
+Each design is CSS, with a little preview-only script, laid over the implemented app on the click-test stand-in at `main` 4967d46 ([previews.cjs](previews/previews.cjs), pictures and [metrics.json](previews/metrics.json) in [previews/](previews/), the tick test in [reflow.cjs](previews/reflow.cjs) and [reflow.json](previews/reflow.json)). The step 2 busy afternoon: Ann, a cook on Larder, on a shared section screen; Sam the sous chef; 26 order requests. **Preview, not a build**: the rows, words and controls are the app's own, but the layout rules are a sketch; what needs code is said.
+
+### A. The notebook stays (changes the least)
+
+From 1536 px. Prep opens on the notebook as today, with the Handy page; the notebook runs to the window bottom with the page's own margin kept. Orders rows sit at a reading width (47 rem), so ⋯ is nearer the words. The section screen at 125 % gets the same.
+
+- For: nothing to relearn, the same opening on every device, every control where it is now, no row ever changes column.
+- Against: Prep gains nothing on a busy day at 1920 (9 of 18, the same), 1 line at 1536; Orders' ⋯ is still 600 px from the tick; the chef's narrowed Orders rows wrap (82 px), so Sam sees 8 of 26, one fewer.
+
+### B. The mended Wall board (rethinks the flow)
+
+From 1600 px. A section screen's Prep opens on the Wall board, mended: ⋯ back on each row, the cook's own section's column first, and a column that empties keeps its place (code: the drawing keeps a finished section's column with its words; a still picture cannot show it). Handy (Done today, quick add) is off the board: Back to the prep list. Orders in two columns, read down then across. A screen at 125 % keeps today's layout.
+
+- For: 17 of 18 lines at 1920 (12 at Extra large), every section at a glance, ⋯ 276 px from the tick; a cook's Orders 21 of 26 with ⋯ 438 px away, Sam 14 of 26.
+- Against: a different opening on the section screen than on the phone and tablet (the frame's "no third order" holds for the row, not the page); Done today and quick add cost a Back; at 367 px a column breaks words mid-word with ⋯ back ("barramun / di", Seen); three pieces of code beyond CSS (open by width or per screen, own section first in the board, columns that hold); the unmended board's column jump is Reproduced on `main` today.
+
+### C. The notebook spread (removes the most friction)
+
+From 1281 px. The notebook's list runs on across both pages, each section kept whole; Handy becomes a fold under the list ("Done today (2) and quick add"). The section tabs stay. Orders at a reading width, as A.
+
+- For: 13 of 18 at 1920 (9 at Extra large and at 1536), your own section on the left page, the tabs and ⋯ in place (374 px from the tick), one layout from 1281 px up.
+- Against: **a tick moves lines across the spine** (Reproduced in the preview: ticking one Larder line moved 6 of Grill's lines from the right page to the left, because the two pages balance); Done today moves under the list; wider laptops change too.
+
+### The numbers
+
+| | Today | A | B | C |
+| --- | --- | --- | --- | --- |
+| Taps to tick a line | 1 | 1 | 1 | 1 |
+| Lines at 390 (unchanged) | 6 of 18 | 6 | 6 | 6 |
+| Prep at 1920, default text | 9 of 18 | 9 | **17** | 13 |
+| Prep at 1920, Extra large | 6 | 7 | **12** | 9 |
+| Prep at 1536 (125 %) | 6 | 7 | 6 (today's) | **9** |
+| Prep, tick to ⋯ at 1920 | 453 px | 453 | **276** | 374 |
+| Orders at 1920, cook | 10 of 26, ⋯ 1,000 px | 10, 600 px | **21, 438 px** | 10, 600 px |
+| Orders at 1920, sous chef | 9 of 26, ⋯ 584 px | 8, 246 px | **14**, 230 px | 8, 246 px |
+| A tick moves a line in view to another column | No | No | Only when a section empties (mended: no; Not evidenced until built) | **Yes** (Reproduced in preview) |
+| Done today and quick add | Handy page | Handy page | Back to the prep list | Fold under the list |
+| Opening on a section screen | Notebook | Notebook | Wall board | Notebook spread |
+| Breakpoint | | 1536 | 1600 | 1281 |
+| Build size | | 1 pull request (CSS and a height measure) | 2 to 3 (open rule, own section first and held columns in the board, Orders columns) | 1 to 2 (CSS spread, the Handy fold) |
+| New reads, rules or saved data | | None | None (a per-screen choice would be device-local, like This screen's section) | None |
+
+### How they differ
+
+| | A | B | C |
+| --- | --- | --- | --- |
+| Prep layout | One page list plus Handy | Columns per section, no Handy | One list across two pages, Handy folded |
+| Task sequence for Done today | In view | One Back | One fold |
+| Orders | Reading width | Two columns | Reading width |
+| What moves | Nothing | Columns (unless mended) | Lines across the spine |

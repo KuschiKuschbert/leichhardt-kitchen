@@ -1,0 +1,470 @@
+{
+ "A-prep-1920": {
+  "rows": 18,
+  "whole": 9,
+  "tickToMore": [
+   453,
+   453,
+   453,
+   453
+  ],
+  "medianRowH": 53,
+  "sideways": false,
+  "first": "Slice onions 2 tubsSam 13:00On"
+ },
+ "A-orders-1920-ann": {
+  "rows": 26,
+  "whole": 10,
+  "tickToMore": [
+   600,
+   600,
+   600,
+   600
+  ],
+  "medianRowH": 70,
+  "sideways": false,
+  "first": "Butter 1 boxUsed in Cowboy But"
+ },
+ "A-orders-1920-sam": {
+  "rows": 26,
+  "whole": 8,
+  "tickToMore": [
+   246,
+   246,
+   246,
+   246
+  ],
+  "medianRowH": 82,
+  "sideways": false,
+  "first": "Butter 1 boxUsed in Cowboy But"
+ },
+ "A-prep-1920-xlarge": {
+  "rows": 18,
+  "whole": 7,
+  "tickToMore": [
+   405,
+   405,
+   405,
+   405
+  ],
+  "medianRowH": 65,
+  "sideways": false,
+  "first": "Slice onions 2 tubsSam 13:00On"
+ },
+ "A-prep-1536": {
+  "rows": 18,
+  "whole": 7,
+  "tickToMore": [
+   453,
+   453,
+   453,
+   453
+  ],
+  "medianRowH": 53,
+  "sideways": false,
+  "first": "Slice onions 2 tubsSam 13:00On"
+ },
+ "A-orders-1536-ann": {
+  "rows": 26,
+  "whole": 8,
+  "tickToMore": [
+   600,
+   600,
+   600,
+   600
+  ],
+  "medianRowH": 70,
+  "sideways": false,
+  "first": "Butter 1 boxUsed in Cowboy But"
+ },
+ "A-orders-1536-sam": {
+  "rows": 26,
+  "whole": 5,
+  "tickToMore": [
+   246,
+   246,
+   246,
+   246
+  ],
+  "medianRowH": 82,
+  "sideways": false,
+  "first": "Butter 1 boxUsed in Cowboy But"
+ },
+ "A-prep-1280": {
+  "rows": 18,
+  "whole": 8,
+  "tickToMore": [
+   453,
+   453,
+   453,
+   453
+  ],
+  "medianRowH": 53,
+  "sideways": false,
+  "first": "Slice onions 2 tubsSam 13:00On"
+ },
+ "A-orders-1280-ann": {
+  "rows": 26,
+  "whole": 9,
+  "tickToMore": [
+   1000,
+   1000,
+   1000,
+   1000
+  ],
+  "medianRowH": 70,
+  "sideways": false,
+  "first": "Butter 1 boxUsed in Cowboy But"
+ },
+ "A-orders-1280-sam": {
+  "rows": 26,
+  "whole": 8,
+  "tickToMore": [
+   584,
+   584,
+   584,
+   584
+  ],
+  "medianRowH": 70,
+  "sideways": false,
+  "first": "Butter 1 boxUsed in Cowboy But"
+ },
+ "A-prep-768": {
+  "rows": 18,
+  "whole": 9,
+  "tickToMore": [
+   611,
+   611,
+   611,
+   611
+  ],
+  "medianRowH": 53,
+  "sideways": false,
+  "first": "Slice onions 2 tubsSam 13:00On"
+ },
+ "A-prep-390": {
+  "rows": 18,
+  "whole": 6,
+  "tickToMore": [
+   244,
+   244,
+   244,
+   244
+  ],
+  "medianRowH": 51,
+  "sideways": false,
+  "first": "Slice onions 2 tubsSam 13:00On"
+ },
+ "B-prep-1920": {
+  "rows": 18,
+  "whole": 17,
+  "tickToMore": [
+   276,
+   276,
+   284,
+   284
+  ],
+  "medianRowH": 82,
+  "sideways": false,
+  "first": "Portion rump 20. Start here, 1"
+ },
+ "B-orders-1920-ann": {
+  "rows": 26,
+  "whole": 21,
+  "tickToMore": [
+   438,
+   438,
+   438,
+   438
+  ],
+  "medianRowH": 70,
+  "sideways": false,
+  "first": "Butter 1 boxUsed in Cowboy But"
+ },
+ "B-orders-1920-sam": {
+  "rows": 26,
+  "whole": 14,
+  "tickToMore": [
+   230,
+   230,
+   230,
+   230
+  ],
+  "medianRowH": 82,
+  "sideways": false,
+  "first": "Butter 1 boxUsed in Cowboy But"
+ },
+ "B-prep-1920-xlarge": {
+  "rows": 18,
+  "whole": 12,
+  "tickToMore": [
+   262,
+   262,
+   272,
+   272
+  ],
+  "medianRowH": 101,
+  "sideways": false,
+  "first": "Portion rump 20. Start here, 1"
+ },
+ "B-prep-1536": {
+  "rows": 18,
+  "whole": 6,
+  "tickToMore": [
+   453,
+   453,
+   453,
+   453
+  ],
+  "medianRowH": 53,
+  "sideways": false,
+  "first": "Slice onions 2 tubsSam 13:00On"
+ },
+ "B-orders-1536-ann": {
+  "rows": 26,
+  "whole": 8,
+  "tickToMore": [
+   1000,
+   1000,
+   1000,
+   1000
+  ],
+  "medianRowH": 70,
+  "sideways": false,
+  "first": "Butter 1 boxUsed in Cowboy But"
+ },
+ "B-orders-1536-sam": {
+  "rows": 26,
+  "whole": 7,
+  "tickToMore": [
+   584,
+   584,
+   584,
+   584
+  ],
+  "medianRowH": 70,
+  "sideways": false,
+  "first": "Butter 1 boxUsed in Cowboy But"
+ },
+ "B-prep-1280": {
+  "rows": 18,
+  "whole": 8,
+  "tickToMore": [
+   453,
+   453,
+   453,
+   453
+  ],
+  "medianRowH": 53,
+  "sideways": false,
+  "first": "Slice onions 2 tubsSam 13:00On"
+ },
+ "B-orders-1280-ann": {
+  "rows": 26,
+  "whole": 9,
+  "tickToMore": [
+   1000,
+   1000,
+   1000,
+   1000
+  ],
+  "medianRowH": 70,
+  "sideways": false,
+  "first": "Butter 1 boxUsed in Cowboy But"
+ },
+ "B-orders-1280-sam": {
+  "rows": 26,
+  "whole": 8,
+  "tickToMore": [
+   584,
+   584,
+   584,
+   584
+  ],
+  "medianRowH": 70,
+  "sideways": false,
+  "first": "Butter 1 boxUsed in Cowboy But"
+ },
+ "B-prep-768": {
+  "rows": 18,
+  "whole": 9,
+  "tickToMore": [
+   611,
+   611,
+   611,
+   611
+  ],
+  "medianRowH": 53,
+  "sideways": false,
+  "first": "Slice onions 2 tubsSam 13:00On"
+ },
+ "B-prep-390": {
+  "rows": 18,
+  "whole": 6,
+  "tickToMore": [
+   244,
+   244,
+   244,
+   244
+  ],
+  "medianRowH": 51,
+  "sideways": false,
+  "first": "Slice onions 2 tubsSam 13:00On"
+ },
+ "C-prep-1920": {
+  "rows": 18,
+  "whole": 13,
+  "tickToMore": [
+   374,
+   374,
+   374,
+   374
+  ],
+  "medianRowH": 53,
+  "sideways": false,
+  "first": "Slice onions 2 tubsSam 13:00On"
+ },
+ "C-orders-1920-ann": {
+  "rows": 26,
+  "whole": 10,
+  "tickToMore": [
+   600,
+   600,
+   600,
+   600
+  ],
+  "medianRowH": 70,
+  "sideways": false,
+  "first": "Butter 1 boxUsed in Cowboy But"
+ },
+ "C-orders-1920-sam": {
+  "rows": 26,
+  "whole": 8,
+  "tickToMore": [
+   246,
+   246,
+   246,
+   246
+  ],
+  "medianRowH": 82,
+  "sideways": false,
+  "first": "Butter 1 boxUsed in Cowboy But"
+ },
+ "C-prep-1920-xlarge": {
+  "rows": 18,
+  "whole": 9,
+  "tickToMore": [
+   336,
+   336,
+   336,
+   336
+  ],
+  "medianRowH": 101,
+  "sideways": false,
+  "first": "Slice onions 2 tubsSam 13:00On"
+ },
+ "C-prep-1536": {
+  "rows": 18,
+  "whole": 9,
+  "tickToMore": [
+   374,
+   374,
+   374,
+   374
+  ],
+  "medianRowH": 53,
+  "sideways": false,
+  "first": "Slice onions 2 tubsSam 13:00On"
+ },
+ "C-orders-1536-ann": {
+  "rows": 26,
+  "whole": 8,
+  "tickToMore": [
+   600,
+   600,
+   600,
+   600
+  ],
+  "medianRowH": 70,
+  "sideways": false,
+  "first": "Butter 1 boxUsed in Cowboy But"
+ },
+ "C-orders-1536-sam": {
+  "rows": 26,
+  "whole": 5,
+  "tickToMore": [
+   246,
+   246,
+   246,
+   246
+  ],
+  "medianRowH": 82,
+  "sideways": false,
+  "first": "Butter 1 boxUsed in Cowboy But"
+ },
+ "C-prep-1280": {
+  "rows": 18,
+  "whole": 8,
+  "tickToMore": [
+   453,
+   453,
+   453,
+   453
+  ],
+  "medianRowH": 53,
+  "sideways": false,
+  "first": "Slice onions 2 tubsSam 13:00On"
+ },
+ "C-orders-1280-ann": {
+  "rows": 26,
+  "whole": 9,
+  "tickToMore": [
+   1000,
+   1000,
+   1000,
+   1000
+  ],
+  "medianRowH": 70,
+  "sideways": false,
+  "first": "Butter 1 boxUsed in Cowboy But"
+ },
+ "C-orders-1280-sam": {
+  "rows": 26,
+  "whole": 8,
+  "tickToMore": [
+   584,
+   584,
+   584,
+   584
+  ],
+  "medianRowH": 70,
+  "sideways": false,
+  "first": "Butter 1 boxUsed in Cowboy But"
+ },
+ "C-prep-768": {
+  "rows": 18,
+  "whole": 9,
+  "tickToMore": [
+   611,
+   611,
+   611,
+   611
+  ],
+  "medianRowH": 53,
+  "sideways": false,
+  "first": "Slice onions 2 tubsSam 13:00On"
+ },
+ "C-prep-390": {
+  "rows": 18,
+  "whole": 6,
+  "tickToMore": [
+   244,
+   244,
+   244,
+   244
+  ],
+  "medianRowH": 51,
+  "sideways": false,
+  "first": "Slice onions 2 tubsSam 13:00On"
+ }
+}
