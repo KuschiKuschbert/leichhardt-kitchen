@@ -1745,6 +1745,32 @@ service cloud.firestore {
           : get(cleanDonePath(request.resource.data.occurrence)).data.version == request.resource.data.version - 1);
       allow update, delete: if false;
     }
+    // Cleaning weights (head chef, 26 Nov 2026, results by section, step 3; docs/cleaning-schedule.md, Weights and days).
+    // One record, cleaningPlan/main, keyed by each job's root id: w, how long a job takes (1 light, 2 medium, 3 heavy);
+    // k, its kind from a short list; d, what each weekday takes (Sunday first, 1 to 3). Chefs read it when they open
+    // the list (1 read); staff never. One write saves many jobs, merged, so two chefs keep each other's entries.
+    // The rules bound each map's size and check d whole; they cannot check every entry in a map, so the page checks
+    // each value it reads and ignores anything else. The head chef and the sous chefs write it, as they write the jobs.
+    match /kitchens/KITCHEN_PIN/cleaningPlan/{id} {
+      function cleanPlanWriter() {
+        let c = cfg();
+        let by = request.resource.data.by;
+        return session() && by == reader() && !(by in c.get('fnOnlyIds', [])) && (by == c.get('headId', '') || by in c.get('sousIds', []));
+      }
+      function cleanPlanLevel(v) { return v is int && v >= 1 && v <= 3; }
+      function cleanPlanShape(d) {
+        return d.keys().hasOnly(['v', 'w', 'k', 'd', 'at', 'by']) && d.keys().hasAll(['v', 'at', 'by'])
+          && d.v == 1 && (!('w' in d) || d.w is map && d.w.size() <= 400)
+          && (!('k' in d) || d.k is map && d.k.size() <= 400)
+          && (!('d' in d) || d.d is list && d.d.size() == 7 && cleanPlanLevel(d.d[0]) && cleanPlanLevel(d.d[1]) && cleanPlanLevel(d.d[2])
+            && cleanPlanLevel(d.d[3]) && cleanPlanLevel(d.d[4]) && cleanPlanLevel(d.d[5]) && cleanPlanLevel(d.d[6]))
+          && d.at is number && d.at >= request.time.toMillis() - 300000 && d.at <= request.time.toMillis() + 300000;
+      }
+      allow get: if id == 'main' && (isAdmin() || kitchenRead() && chefId(reader()));
+      allow list: if isAdmin();
+      allow create, update: if id == 'main' && cleanPlanWriter() && cleanPlanShape(request.resource.data);
+      allow delete: if false;
+    }
     match /kitchens/KITCHEN_PIN/push/{id} {
       // Phone pushes for order cut-offs (24 Oct 2026): a chef's phone keeps its push address in push/<hash of it>
       // { tok, at, ua, by }. Only the server reads them (scripts/cutoff-push.mjs, with the service account, which these

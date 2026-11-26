@@ -355,6 +355,43 @@ try {
     for (const draft of templates) { const id = 'clean-template-' + draft.plan.template; b.set(ref(dbs.head, taskPath(id)), task(id, draft)); }
     return b.commit();
   });
+  // Cleaning weights (26 Nov 2026, results by section, step 3): one record, cleaningPlan/main. Chefs read and write it;
+  // staff never read it. A save merges, so a second chef keeps the first one's entries.
+  const planPath = 'cleaningPlan/main', weightRec = (who, x = {}) => ({ v: 1, w: {}, at: Date.now(), by: who, ...x });
+  await put({ [planPath]: weightRec('head', { w: { seed: 2 } }) });
+  for (const r of roles) {
+    const db = dbs[r.id];
+    await check(r.id + ': read the weights', () => getDoc(ref(db, planPath)), r.chef && r.read);
+    await check(r.id + ': save a weight, merged', () => setDoc(ref(db, planPath), weightRec(r.who, { w: { ['job-' + r.id]: 2 } }), { merge: true }), r.chef && r.read);
+  }
+  await put({ [planPath]: weightRec('head', { w: { first: 1 }, k: { first: 'Shelves' } }) });
+  await check('a second chef saves a weight and the first one\'s stays', async () => {
+    await setDoc(ref(dbs.sous, planPath), weightRec('sous', { w: { second: 3 }, k: { second: 'Fridges' } }), { merge: true });
+    let d = null; await env.withSecurityRulesDisabled(async c => { d = (await getDoc(ref(c.firestore(), planPath))).data(); });
+    if (!(d.w.first === 1 && d.w.second === 3 && d.k.first === 'Shelves' && d.k.second === 'Fridges' && d.by === 'sous')) throw new Error(JSON.stringify(d));
+  });
+  await check('a save of kinds only keeps every saved weight (no empty map is sent)', async () => {
+    await setDoc(ref(dbs.head, planPath), (({ w, ...x }) => x)(weightRec('head', { k: { first: 'Floors' } })), { merge: true });
+    let d = null; await env.withSecurityRulesDisabled(async c => { d = (await getDoc(ref(c.firestore(), planPath))).data(); });
+    if (!(d.w.first === 1 && d.w.second === 3 && d.k.first === 'Floors' && d.k.second === 'Fridges')) throw new Error(JSON.stringify(d));
+  });
+  await put({ [planPath]: null });
+  await check('the first save of all may hold kinds only', () => setDoc(ref(dbs.head, planPath), (({ w, ...x }) => x)(weightRec('head', { k: { first: 'Shelves' } })), { merge: true }));
+  await put({ [planPath]: weightRec('head', { w: { first: 1, second: 3 }, k: { first: 'Shelves' } }) });
+  await check('what each day takes, seven days of 1 to 3', () => setDoc(ref(dbs.head, planPath), weightRec('head', { d: [3, 3, 2, 3, 3, 1, 1] }), { merge: true }));
+  for (const [label, x] of [['six days', { d: [3, 3, 2, 3, 3, 1] }], ['a level of 4', { d: [3, 3, 2, 3, 3, 1, 4] }], ['a level as text', { d: [3, 3, '2', 3, 3, 1, 1] }],
+    ['weights that are not a map', { w: [1, 2] }], ['an unknown field', { note: 'x' }], ['a version other than 1', { v: 2 }], ['an old time', { at: Date.now() - 3600000 }],
+    ['another chef\'s name', { by: 'sous' }], ['too many weights', { w: Object.fromEntries(Array.from({ length: 401 }, (x, i) => ['j' + i, 1])) }]])
+    await check('refused: ' + label, () => setDoc(ref(dbs.head, planPath), weightRec('head', x), { merge: true }), false);
+  await check('refused: another record id', () => setDoc(ref(dbs.head, 'cleaningPlan/other'), weightRec('head')), false);
+  await check('refused: delete', () => deleteDoc(ref(dbs.head, planPath)), false);
+  await check('refused: listing the records as a chef', () => getDocs(collection(dbs.head, K + 'cleaningPlan')), false);
+  // the release switch does not matter: the weights are set up before Cleaning is switched on
+  await put({ 'config/main': { ...cfg, staffSee: { ...cfg.staffSee, cleaning: false } } });
+  await check('Cleaning switched off: a chef still reads the weights', () => getDoc(ref(dbs.head, planPath)));
+  await check('Cleaning switched off: a chef still saves a weight', () => setDoc(ref(dbs.sous, planPath), weightRec('sous', { w: { off: 1 } }), { merge: true }));
+  await check('Cleaning switched off: staff still cannot read them', () => getDoc(ref(dbs.staff, planPath)), false);
+  await put({ 'config/main': cfg });
   console.log(`${fails} failed of ${n} cleaning rule checks`);
 } finally { await env.cleanup(); }
 if (fails) process.exit(1);

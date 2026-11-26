@@ -266,6 +266,8 @@ function colRefused(ref, list) {
     return store[k] !== undefined && !isToday(store[k].day);   // a new receipt's id may be checked before it is written
   }
   if (c === 'cleaningTasks') return !cleaningReader(ref);
+  // the cleaning weights (26 Nov 2026): one record, read by chefs (the release switch does not matter), listed by the Google account
+  if (c === 'cleaningPlan') return list || rel.length !== 2 || rel[1] !== 'main' || !chefReader(ref);
   if (c === 'cleaningDone' || c === 'cleaningActions') {
     if (!cleaningReader(ref)) return true;
     if (chefReader(ref)) return false;

@@ -365,7 +365,7 @@ Who was rostered is no longer a question for him: step 1 keeps both the closing 
 | --- | --- | --- |
 | 1 | The nightly count: the release switch and the first night, weekly and monthly jobs by root id with section, who did it and who was rostered, the size check inside the cleaning block | [#890](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/890), merged 26 November 2026. What it keeps: [the cleaning note](../cleaning-schedule.md#what-the-nightly-count-keeps) |
 | 2 | The Inbox row and that night in Records | Built, 26 November 2026. What the admin sees: [the cleaning note](../cleaning-schedule.md#what-the-admin-sees-of-it). As built: `built/` |
-| 3 | The weights list, weights in one side record | To come |
+| 3 | The weights list, weights in one side record | Built 26 November 2026: weights and the optional kind. What each day takes is in the same record's rule, set with step 4. [The cleaning note](../cleaning-schedule.md#weights-and-days) |
 | 4 | Suggested days, in bulk only while Cleaning is off | To come |
 
 ## Step 2 as built, against the previews
