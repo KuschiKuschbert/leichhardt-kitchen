@@ -74,8 +74,8 @@ CASES.push(['form-1536-xlarge', '#/functions/b60', '1536', data(3), { settings: 
   ['fnnow-1920-kitchen', '#/fn/now', '1920', data(3), { who: 'sam' }],
   ['fnnow-1920-t4', '#/fn/now', '1920', data(4)], ['fnnow-1536-t4', '#/fn/now', '1536', data(4)],
   ['form-quiet-1920', '#/functions/b60', '1920', data(0, { quiet: true })], ['form-quiet-1280', '#/functions/b60', '1280', data(0, { quiet: true })]);
-// pictures that every design must leave exactly as they are
-const SAME = ['form-390', 'form-768', 'fnnow-390', 'fnnow-768', 'fnnow-1920-kitchen'];
+// pictures that every design must leave exactly as they are (the form's whole page too, at 390 and 768)
+const SAME = ['form-390', 'form-768', 'form-390-whole', 'form-768-whole', 'fnnow-390', 'fnnow-768', 'fnnow-1920-kitchen'];
 const fonts = p => p.addStyleTag({ content: ['barlow:Barlow:400', 'barlow-600:Barlow:600', 'barlow-700:Barlow:700', 'barlow-condensed:Barlow Condensed:700', 'caveat:Caveat:700']
   .map(f => { const [file, fam, w] = f.split(':'); return "@font-face{font-family:'" + fam + "';font-weight:" + w + ";src:url('/docs/cleaning-chef-options/fonts/" + file + ".woff2') format('woff2')}"; }).join('') })
   .then(() => p.evaluate(() => document.fonts.ready.then(() => true)));
@@ -183,7 +183,7 @@ if (require.main === module) (async () => {
     out.cases[name] = Object.assign({ errors: p.errors.length }, await measure(p));
     await p.screenshot({ path: path.join(OUT, name + '.png') });
     // the whole page too, for the form and the service view at 1920 and the form on the laptop
-    if (['form-1920', 'form-1280', 'fnnow-1920'].includes(name)) await p.screenshot({ path: path.join(OUT, name + '-whole.png'), fullPage: true });
+    if (['form-1920', 'form-1280', 'fnnow-1920', 'form-390', 'form-768'].includes(name)) await p.screenshot({ path: path.join(OUT, name + '-whole.png'), fullPage: true });
     await p.context().close();
   }
   for (const size of ['1920', '1280']) {

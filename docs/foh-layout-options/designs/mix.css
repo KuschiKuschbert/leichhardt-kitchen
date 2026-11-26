@@ -8,6 +8,9 @@
    or a problems list keep the Save bar last; and the right column spans a second row that takes the slack, so no gap
    opens under The function. Below 1150 px the wrappers take no room. */
 .fe-body, .fe-out, .fe-side { display: contents; }
+/* the wrappers make When and the kitchen comment the last in a box; .set-block:last-child would take their line away
+   (the keeper's check), so they keep it, at every width */
+#fe-root .fe-out > .set-block:last-child, #fe-root .fe-side > .set-block:last-child { border-bottom: 1px solid var(--line); }
 @media (min-width: 1150px) {
   #fe-root .fe-body { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); grid-template-rows: auto 1fr; gap: 0.6rem 1.5rem; align-items: start; }
   #fe-root .fe-body > .set-block { grid-column: 1; grid-row: 1; }

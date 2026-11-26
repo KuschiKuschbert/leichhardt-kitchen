@@ -249,8 +249,8 @@
     "inView": true
    },
    "notesBox": {
-    "top": 2039,
-    "bottom": 2119,
+    "top": 2040,
+    "bottom": 2120,
     "left": 20,
     "width": 728,
     "inView": false
@@ -321,8 +321,8 @@
     "inView": false
    },
    "notesBox": {
-    "top": 2746,
-    "bottom": 2826,
+    "top": 2747,
+    "bottom": 2827,
     "left": 16,
     "width": 358,
     "inView": false
@@ -703,7 +703,7 @@
   },
   "form-quiet-1280": {
    "errors": 0,
-   "screens": 2.01,
+   "screens": 2.02,
    "sideways": false,
    "band": 197,
    "barTop": 732,
@@ -800,6 +800,8 @@
   "form-order-new-restored-1280": "head, restored, function, platters, when, notes, comment, SAVE BAR, buttons",
   "same-as-today-form-390": "identical",
   "same-as-today-form-768": "102 pixels differ",
+  "same-as-today-form-390-whole": "identical",
+  "same-as-today-form-768-whole": "identical",
   "same-as-today-fnnow-390": "identical",
   "same-as-today-fnnow-768": "identical",
   "same-as-today-fnnow-1920-kitchen": "identical"
