@@ -9,7 +9,7 @@
   var OPEN = 253402178400000, DAYS = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [0, 'Sun']];
   var AREAS = ['Coldroom', 'Freezer', 'Dry store', 'Oven', 'Fryers', 'Behind equipment', 'Pass', 'Shelves'];
   var M = blank(), generation = 0, recorder = '', context = '', picker = null, popup = null, savedTimer = null, boundaryTimer = null;
-  function blank() { return { root: null, view: 'today', today: T.day(), week: monday(T.day()), selected: T.day(), tasks: [], done: [], state: 'idle', error: '', readAt: 0, readAgain: false, cache: Object.create(null), range: '', pending: Object.create(null), tickErrors: Object.create(null), editor: false, draft: null, original: '', editId: '', saveBusy: false, saveState: '', saveError: '', savedText: '', archiveBusy: '', suspended: false, expanded: Object.create(null), workDrafts: Object.create(null), flowErrors: Object.create(null), flowSaved: Object.create(null), importBusy: false, importError: '', importText: '', temperatureOpen: false, lead: null, leadStale: false, workGroup: '', workPage: 0, workQuery: '', workFilter: 'all', repeatPage: 0, repeatQuery: '', repeatGroup: 'all', plan: { state: 'idle', w: {}, k: {}, d: null, error: '' }, weights: false, wDraft: {}, kDraft: {}, wBusy: false, wError: '', wSaved: 0, wFilter: 'all', daysOpen: false, dDraft: null, dBusy: false, dError: '', dSaved: 0, staff: { state: 'idle' }, sug: null, sugNote: '' }; }
+  function blank() { return { root: null, view: 'today', today: T.day(), week: monday(T.day()), selected: T.day(), tasks: [], done: [], state: 'idle', error: '', readAt: 0, readAgain: false, cache: Object.create(null), range: '', pending: Object.create(null), tickErrors: Object.create(null), editor: false, draft: null, original: '', editId: '', saveBusy: false, saveState: '', saveError: '', savedText: '', archiveBusy: '', suspended: false, expanded: Object.create(null), workDrafts: Object.create(null), flowErrors: Object.create(null), flowSaved: Object.create(null), importBusy: false, importError: '', importText: '', temperatureOpen: false, lead: null, leadStale: false, workGroup: '', workPage: 0, workQuery: '', workFilter: 'all', repeatPage: 0, repeatQuery: '', repeatGroup: 'all', plan: { state: 'idle', w: {}, k: {}, d: null, error: '' }, weights: false, wDraft: {}, kDraft: {}, wBusy: false, wError: '', wSaved: 0, wFilter: 'all', daysOpen: false, dDraft: null, dBusy: false, dError: '', dSaved: 0, staff: { state: 'idle' }, sug: null, sugNote: '', newW: 0, newK: '', addLoad: '' }; }
   function shift(day, n) { return T.day(T.at(day) + n * 86400000 + 43200000); }
   function monday(day) { return shift(day, -((T.dow(T.at(day)) + 6) % 7)); }
   function dates() { return DAYS.map(function (_, i) { return shift(M.week, i); }); }
@@ -442,13 +442,111 @@
       '<label class="field" for="cln-text"><span class="label">What needs cleaning?</span><input id="cln-text" data-cln-field="text" type="text" maxlength="160" value="' + esc(d.text) + '" required></label>' +
       '<div class="cln-fields"><label class="field" for="cln-area"><span class="label">Area or equipment</span><input id="cln-area" data-cln-field="area" type="text" list="cln-areas" maxlength="80" value="' + esc(d.area) + '" required><datalist id="cln-areas">' + AREAS.map(function (area) { return '<option value="' + esc(area) + '">'; }).join('') + '</datalist></label>' +
       '<label class="field" for="cln-section"><span class="label">Responsible section</span><select id="cln-section" data-cln-field="section" required><option value="">Choose a section</option><option value="_shared"' + (d.shared ? ' selected' : '') + '>Shared kitchen</option>' + C.sections().map(function (s) { return '<option value="' + esc(s.id) + '"' + (!d.shared && d.section === s.id ? ' selected' : '') + '>' + esc(s.name) + '</option>'; }).join('') + '</select></label></div>' +
-      '<div><span class="label" id="cln-repeat-label">Repeat on</span><div class="chips cln-repeat" role="group" aria-labelledby="cln-repeat-label">' + DAYS.map(function (day) { return '<button type="button" class="chip" data-cln="repeat" data-dow="' + day[0] + '" aria-pressed="' + (d.dows.indexOf(day[0]) >= 0) + '">' + day[1] + '</button>'; }).join('') + '</div></div>' +
+      addDayBlock(d) +
       planEditor(d) + (P.featOn('guides') && (guides.length || d.guide) ? '<label class="field" for="cln-guide"><span class="label">How-to guide (optional)</span><select id="cln-guide" data-cln-field="guide"><option value="">No guide</option>' + (d.guide && !guides.some(function (g) { return g.id === d.guide; }) ? '<option value="' + esc(d.guide) + '" selected>Current linked guide</option>' : '') + guides.map(function (g) { return '<option value="' + esc(g.id) + '"' + (d.guide === g.id ? ' selected' : '') + '>' + esc(g.title) + '</option>'; }).join('') + '</select></label>' : '') + '</fieldset>' +
       '<p class="cln-save-note' + (M.saveError ? ' p-err' : ' hint') + '" role="' + (M.saveError ? 'alert' : 'status') + '">' + esc(M.saveError || (M.saveBusy ? 'Saving cleaning task. Not saved yet.' : M.savedText)) + '</p><div class="btn-row">' + saveButton() + '<button type="button" class="btn" data-cln="revert"' + (M.saveBusy || !dirtyDraft() ? ' disabled' : '') + '>Undo unsaved changes</button><button type="button" class="p-link' + (B.armed && B.armed('cln-cancel') ? ' lk-del' : '') + '" data-cln="cancel-edit"' + (M.saveBusy ? ' disabled' : '') + '>' + (B.armed && B.armed('cln-cancel') ? 'Tap again to discard' : 'Cancel') + '</button></div></form>';
   }
   function repeatTasks() { return chefGroups(M.tasks.filter(function (task) { return task.until === OPEN; })).reduce(function (list, group) { return list.concat(group.tasks); }, []); }
   function repeatMatches() { return repeatTasks().filter(function (task) { return (M.repeatQuery.trim() || M.repeatGroup === 'all' || chefGroupId(task) === M.repeatGroup) && matchesWords(task, M.repeatQuery, T.day()); }); }
   function editorBlock(outside) { return '<div class="cln-editor">' + (outside ? '<p class="hint cln-editor-context">Your selected task is outside this search or page. Its changes are kept here.</p>' : '') + '<h3 class="cln-editor-title">' + esc(M.editId ? M.draft.text || 'Edit cleaning task' : 'New cleaning task') + '</h3>' + editorForm() + '</div>'; }
+  /* A new job's day (head chef, 26 Nov 2026, results by section, step 4c; docs/cleaning-schedule.md, A new job's day).
+     Only in the Add form and only once Cleaning is on for the team: the council chose no offers on a job that already
+     has a day (m5), and while Cleaning is off Suggest the days does it in bulk. The chef gives the weight (and a kind);
+     the planner (js/cleaning-plan.js, lazy) suggests a day from the saved weights, kinds and what each day takes. The
+     suggestion is a default the chef sees and presses, never saved on its own (c3: no day is chosen until pressed). A
+     new job starts the day it is saved, so today's chip says so: pressed, the job is due at tonight's close. The weight
+     saves in the job's own batch (cleaningSave in js/prep.js). No reads: the weights are the ones read with Repeat tasks. */
+  function addOn() { return !!(M.draft && !M.editId && !M.draft.plan && C.chef() && teamOn() === true); }
+  function addPlanner() {
+    var Pl = window.LK_CLEANING_PLAN; if (Pl && Pl.api === 1) return Pl;
+    if (M.addLoad) return null;   // loading, or failed until Try again
+    var model = M; M.addLoad = 'loading';
+    window.LK_APP.load('js/cleaning-plan.js?v=1').then(function () { if (M !== model) return; M.addLoad = window.LK_CLEANING_PLAN && window.LK_CLEANING_PLAN.api === 1 ? '' : 'error'; patchAddDay(); },
+      function () { if (M !== model) return; M.addLoad = 'error'; patchAddDay(); });
+    return null;
+  }
+  function addSecName(d) { var sec = C.sections().filter(function (x) { return x.id === d.section; })[0]; return d.shared ? '' : sec ? sec.name : null; }
+  // the section's points each night before this job (light 1, medium 2, heavy 3; no weight counts medium), and the
+  // suggestion for the new job: two runs of the pure planner over the jobs already in memory
+  function addPlan(d) {
+    var Pl = window.LK_CLEANING_PLAN, name = addSecName(d);
+    if (!Pl || Pl.api !== 1 || M.plan.state !== 'ok' || name === null || d.dows.length >= 7) return null;
+    var lv = M.plan.d || LEVEL_DEFAULT, opts = { level: lv, order: 'fewest', even: false, only: 'new', needWeight: true, twoHeavy: true, cap: 5 };
+    var jobs = function () { return Pl.jobsFrom(weighJobs(), { w: M.plan.w, k: M.plan.k, key: jobKey, sec: function (task) { return task.shared ? '' : owner(task, T.day()); }, clock: sugClock() }); };
+    var base = Pl.plan(jobs(), opts), has = name ? (base.load.sections[name] || [0, 0, 0, 0, 0, 0, 0]).slice() : null, out = { has: has, name: name };
+    if (!M.newW || d.dows.length > 3) return out;
+    var list = jobs(), job = { id: '_new', key: '_new', text: d.text, sec: name, kind: M.newK, w: M.newW, per: Math.max(1, d.dows.length), days: [], every: 0, move: true };
+    list.push(job);
+    var r = Pl.plan(list, opts), why = r.why._new || '';
+    out.noFit = /No day fits/.test(why) || !(r.days._new || []).length;
+    out.days = out.noFit ? [] : r.days._new.slice().sort(function (a, b) { return DAY_ORDER.indexOf(a) - DAY_ORDER.indexOf(b); });
+    out.why = why; out.heaviest = (r.heaviest || []).indexOf('_new') >= 0;
+    // c3: name the sections that clean the same kind that night ("Hot larder cleans its fridges on a Monday too")
+    out.mates = M.newK && out.days.length ? list.filter(function (j) { return j.id !== '_new' && j.kind === M.newK && j.sec && j.sec !== name && (r.days[j.id] || j.days || []).indexOf(out.days[0]) >= 0; }).map(function (j) { return j.sec; }).filter(function (x, i, a) { return a.indexOf(x) === i; }) : [];
+    return out;
+  }
+  function addTag(dow, p, lv, today) {
+    if (p && p.days && p.days.indexOf(dow) >= 0) return 'suggested';
+    if (dow === today) return 'today';
+    if (lv[dow] === 1) return 'light only';
+    return p && p.has ? 'has ' + p.has[dow] : '';
+  }
+  function levelWords(lv) {
+    var at = function (n) { return DAY_ORDER.filter(function (d) { return lv[d] === n; }).map(function (d) { return DAY_NAME[d]; }); }, light = at(1), mid = at(2), and = function (a) { return a.length > 1 ? a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1] : a[0]; };
+    return (light.length ? and(light) + (light.length > 1 ? ' take' : ' takes') + ' light jobs only. ' : '') + (mid.length ? and(mid) + (mid.length > 1 ? ' take' : ' takes') + ' up to medium. ' : '');
+  }
+  function addDayBlock(d) {
+    var on = addOn(), p = null, lv = M.plan.d || LEVEL_DEFAULT, today = T.dow(T.at(T.day()));
+    if (on && M.plan.state === 'ok' && addPlanner()) p = addPlan(d);
+    var chips = DAYS.map(function (day) {
+      var tag = on ? addTag(day[0], p, lv, today) : '';
+      return '<button type="button" class="chip' + (on ? ' cln-day-chip' : '') + '"' + (on ? ' style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;line-height:1.15"' : '') + ' data-cln="repeat" data-dow="' + day[0] + '" aria-pressed="' + (d.dows.indexOf(day[0]) >= 0) + '"' + (M.saveBusy ? ' disabled' : '') + '>' + (on ? '<span>' + day[1] + '</span> <small style="font-size:.72rem;font-weight:400">' + esc(tag || '\u00a0') + '</small>' : day[1]) + '</button>';
+    }).join('');
+    return '<div class="cln-add-day"><div><span class="label" id="cln-repeat-label">Repeat on</span><div class="chips cln-repeat" role="group" aria-labelledby="cln-repeat-label">' + chips + '</div></div>' + (on ? addDayMore(d, p, lv, today) : '') + '</div>';
+  }
+  function addDayMore(d, p, lv, today) {
+    var n = d.dows.length, todayName = DAY_NAME[today], box = [], tonight;
+    if (M.plan.state === 'error') return '<p class="hint cln-add-note" role="status">Could not read the weights, so the book cannot suggest a day. The job still saves; give it a weight later in Weights and days.</p>';
+    if (M.plan.state !== 'ok') return '<p class="hint cln-add-note" role="status">' + ink('Reading the weights...') + '</p>';
+    if (n >= 7) return '<p class="hint cln-add-note">A job on every day needs no weight. Weights are for weekly and monthly jobs.</p>';
+    if (M.addLoad === 'error') box.push('<span class="hint">Could not open the day planner. Choose the days yourself. <button type="button" class="p-link" data-cln="add-planner">Try again</button></span>');
+    else if (!window.LK_CLEANING_PLAN) box.push('<span class="hint">' + ink('Opening the day planner...') + '</span>');
+    else if (!p) box.push('<span class="hint">Choose the responsible section, and the book suggests a day.</span>');
+    else if (!M.newW) box.push('<span class="hint">Choose how long it takes, and the book suggests a day.</span>');
+    else if (n > 3) box.push('<span class="hint">On 4 or more days a week the book does not suggest one.</span>');
+    else if (p.noFit) box.push('<b>No day fits</b><span class="hint">No ' + (n > 1 ? 'set of days' : 'day') + ' takes a ' + WEIGHTS[M.newW].toLowerCase() + ' job here under the rules. Choose ' + (n > 1 ? 'the days' : 'a day') + ' yourself.</span>');
+    else {
+      var same = n > 0 && d.dows.slice().sort().join() === p.days.slice().sort().join();
+      box.push('<b>Suggested: ' + esc(dayWords(p.days)) + '</b><span class="hint">' + esc(sentence(p.why)) + (p.mates.length && /of its kind/.test(p.why) ? ' ' + esc(p.mates.join(' and ') + (p.mates.length > 1 ? ' clean their ' : ' cleans its ') + M.newK.toLowerCase() + ' on a ' + DAY_NAME[p.days[0]] + ' too.') : '') + (p.heaviest ? ' Pick another day if that is too much.' : '') + ' ' + (same ? 'Chosen.' : n ? 'You chose ' + esc(dayWords(d.dows.slice().sort(function (a, b) { return DAY_ORDER.indexOf(a) - DAY_ORDER.indexOf(b); }))) + '.' : 'No day is chosen until you press one.') + '</span>');
+    }
+    // a new job starts the day it is saved: today's chip pressed makes it due at tonight's close
+    tonight = d.dows.indexOf(today) >= 0 ? '<strong class="cln-add-tonight">' + todayName + ' is today: saved now, this job is due at tonight\'s close.</strong>' : p && p.days && p.days.indexOf(today) >= 0 ? '<strong class="cln-add-tonight">' + todayName + ' is today and the suggested day: pressed, this job is due at tonight\'s close.</strong>' : '<span class="hint">' + todayName + ' is today: a new job starts the day it is saved, so pressing ' + DAYS.filter(function (x) { return x[0] === today; })[0][1] + ' makes it due tonight.</span>';
+    box.push(tonight);
+    if (p && p.has) box.push('<span class="hint">Under each day: the points ' + esc(p.name) + ' already has that night (light 1, medium 2, heavy 3).</span>');
+    var weight = '<div class="cln-add-weight"><span class="label" id="cln-weight-label">How long it takes</span><div class="chips" role="group" aria-labelledby="cln-weight-label">' + [1, 2, 3].map(function (w) { return '<button type="button" class="chip" data-cln="add-weight" data-w="' + w + '" aria-pressed="' + (M.newW === w) + '"' + (M.saveBusy ? ' disabled' : '') + '>' + WEIGHTS[w] + '</button>'; }).join('') + '</div>' +
+      '<p class="hint">' + (M.newW ? 'Your call. ' + esc(levelWords(lv)) : 'Your call. The book needs it to suggest a day.') + '</p></div>';
+    var kind = '<label class="field cln-add-kind" for="cln-add-kind"><span class="label">Kind of job (optional)</span><select id="cln-add-kind" data-cln-field="addkind"' + (M.saveBusy ? ' disabled' : '') + '><option value="">None</option>' + KINDS.map(function (x) { return '<option' + (x === M.newK ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select></label>';
+    return '<div class="cln-sug cln-add-sug" aria-live="polite">' + box.join('') + '</div>' + weight + kind;
+  }
+  // the new job's day block brought up to date in place: the day chips, the weight chips and the kind keep their nodes
+  // (focus and the kind's picker stay put), and the box keeps its live region, so a new suggestion is announced. Only
+  // when what the form offers changes (the weights came in, a section chosen, every day pressed) is it drawn again.
+  function patchAddDay() {
+    var at = M.root && M.root.querySelector('.cln-add-day'); if (!at || !M.draft) return;
+    var tmp = document.createElement('div'); tmp.innerHTML = addDayBlock(M.draft); var next = tmp.firstChild;
+    var shape = function (el) { return [].map.call(el.querySelectorAll('[data-cln], select, .cln-add-sug, .cln-add-note'), function (x) { return x.tagName + (x.getAttribute('data-cln') || '') + (x.getAttribute('data-dow') || x.getAttribute('data-w') || '') + (x.className === 'cln-add-note' ? x.textContent : ''); }).join(); };
+    if (shape(at) !== shape(next)) {
+      var a = document.activeElement, dow = a && at.contains(a) && a.getAttribute('data-dow');
+      at.replaceWith(next); if (dow) { var back = next.querySelector('[data-cln="repeat"][data-dow="' + dow + '"]'); if (back) back.focus({ preventScroll: true }); } return;
+    }
+    [].forEach.call(next.querySelectorAll('[data-cln="repeat"], [data-cln="add-weight"]'), function (b) {
+      var attr = b.hasAttribute('data-dow') ? 'data-dow' : 'data-w', old = at.querySelector('[data-cln="' + b.getAttribute('data-cln') + '"][' + attr + '="' + b.getAttribute(attr) + '"]'); if (!old) return;
+      old.setAttribute('aria-pressed', b.getAttribute('aria-pressed')); old.disabled = b.disabled; if (old.innerHTML !== b.innerHTML) old.innerHTML = b.innerHTML;
+    });
+    ['.cln-add-sug', '.cln-add-weight > .hint'].forEach(function (sel) { var o = at.querySelector(sel), n = next.querySelector(sel); if (o && n && o.innerHTML !== n.innerHTML) o.innerHTML = n.innerHTML; });
+  }
+  // what a new job's save carries: its weight and kind, only for a job that comes round weekly (1 to 6 days)
+  function addWeigh() { return addOn() && M.newW && M.plan.state === 'ok' && M.draft.dows.length >= 1 && M.draft.dows.length <= 6 ? { w: M.newW, k: M.newK } : null; }
   /* Weights and days (head chef, 26 Nov 2026, results by section, step 3; docs/cleaning-schedule.md, Weights and days).
      Every weekly and monthly job (K.round(): the jobs whose row says how often) as one row by section, with Light,
      Medium and Heavy and an optional kind, and one Save. The weights live in one record keyed by each job's root id,
@@ -479,12 +577,12 @@
     if (!C.chef() || !C.planRead || M.plan.state === 'loading' || M.plan.again || (M.plan.state === 'ok' && !force)) return;
     var gen = generation, again = M.plan.state === 'ok';
     // read again (Refresh): the list and its unsaved changes stay on screen until the answer
-    if (again) { M.plan.again = true; C.planRead().then(function (data) { if (gen !== generation) return; var c = planClean(data); M.plan = { state: 'ok', w: c.w, k: c.k, d: c.d, error: '' }; if (M.weights) draw(); else patchNotice(); },
+    if (again) { M.plan.again = true; C.planRead().then(function (data) { if (gen !== generation) return; var c = planClean(data); M.plan = { state: 'ok', w: c.w, k: c.k, d: c.d, error: '' }; if (M.weights) draw(); else { patchNotice(); patchAddDay(); } },
       function () { if (gen !== generation) return; M.plan.again = false; if (M.weights) { M.wError = 'Could not check the weights again. These are the ones read before.'; patchWeigh(); } }); return; }
     M.plan.state = 'loading'; M.plan.error = '';
     // On Repeat tasks only the one line changes (patchNotice), so the page is not drawn again under the chef's hand
-    C.planRead().then(function (data) { if (gen !== generation) return; var c = planClean(data); M.plan = { state: 'ok', w: c.w, k: c.k, d: c.d, error: '' }; if (M.weights) draw(); else patchNotice(); },
-      function (error) { if (gen !== generation) return; M.plan.state = 'error'; M.plan.error = error && error.code === 'permission-denied' ? 'Only the head chef and the sous chefs can read the weights.' : navigator.onLine === false || error && (error.code === 'unavailable' || error.code === 'deadline-exceeded') ? 'No signal.' : 'Check the connection.'; if (M.weights) draw(); else patchNotice(); });
+    C.planRead().then(function (data) { if (gen !== generation) return; var c = planClean(data); M.plan = { state: 'ok', w: c.w, k: c.k, d: c.d, error: '' }; if (M.weights) draw(); else { patchNotice(); patchAddDay(); } },
+      function (error) { if (gen !== generation) return; M.plan.state = 'error'; M.plan.error = error && error.code === 'permission-denied' ? 'Only the head chef and the sous chefs can read the weights.' : navigator.onLine === false || error && (error.code === 'unavailable' || error.code === 'deadline-exceeded') ? 'No signal.' : 'Check the connection.'; if (M.weights) draw(); else { patchNotice(); patchAddDay(); } });
   }
   function patchNotice() {
     var at = M.root && M.root.querySelector('.cln-weights-notice, .cln-weights-link'); if (!at) return;   // no line on the page: nothing to show
@@ -665,7 +763,7 @@
   function sugBlock() { return '<div class="cln-sug-wrap">' + sugInner() + '</div>'; }
   function sugInner() {
     var on = teamOn(); if (on === null || M.plan.state !== 'ok') return '';
-    if (on) return '<p class="hint cln-sug-off">Cleaning is on for the team, so the book no longer suggests days in bulk. Change a job\'s day in Repeat tasks, one at a time.</p>';
+    if (on) return '<div class="cln-attention cln-sug-off" role="status"><b>Cleaning is on</b><span class="hint">The book now suggests a day for new jobs only, in Add cleaning task. A job that has a day stays there until you open it and change it.</span></div>';
     var s = M.sug, wait = weighDirty() || daysDirty();
     if (!s) return '<div class="cln-sug-start">' + (M.sugNote ? '<p class="hint" role="status">' + esc(M.sugNote) + '</p>' : '') + '<p class="hint">Cleaning is off for the team, so the book can suggest a day for each weekly and monthly job. It moves as few as it can. Nothing moves until you save.</p>' +
       '<button type="button" class="btn" data-cln="sug-start"' + (wait ? ' disabled' : '') + '>Suggest the days</button>' + (wait ? '<p class="hint" role="status">Save the weights and the days first.</p>' : '') + '</div>';
@@ -938,7 +1036,7 @@
   function startEditor(task) {
     if (!C.chef() || M.saveBusy || M.archiveBusy) return;
     if (dirtyDraft()) { M.saveError = 'Save or undo your unsaved changes before choosing another task.'; draw(); return; }
-    M.editor = true; M.view = 'setup'; M.editId = task ? task.id : ''; if (task) { var selectedIndex = repeatMatches().map(function (item) { return item.id; }).indexOf(task.id); if (selectedIndex >= 0) M.repeatPage = Math.floor(selectedIndex / 6); } M.draft = draftFor(task); M.original = JSON.stringify(M.draft); M.saveError = M.savedText = M.saveState = ''; draw();
+    M.editor = true; M.view = 'setup'; M.editId = task ? task.id : ''; if (task) { var selectedIndex = repeatMatches().map(function (item) { return item.id; }).indexOf(task.id); if (selectedIndex >= 0) M.repeatPage = Math.floor(selectedIndex / 6); } M.draft = draftFor(task); M.original = JSON.stringify(M.draft); M.newW = 0; M.newK = ''; M.saveError = M.savedText = M.saveState = ''; draw();
     var field = M.root.querySelector('#cln-text'); if (field) field.focus();
   }
   function patchSave() {
@@ -956,22 +1054,36 @@
   }
   function changeField(input) {
     if (!M.draft || M.saveBusy) return; var key = input.getAttribute('data-cln-field');
+    if (key === 'addkind') { if (M.newK !== input.value) { M.newK = KINDS.indexOf(input.value) >= 0 ? input.value : ''; patchAddDay(); } return; }
     if (key === 'section') { M.draft.shared = input.value === '_shared'; M.draft.section = M.draft.shared ? '' : input.value; }
     else M.draft[key] = input.value;
     M.saveError = M.savedText = M.saveState = ''; clearTimeout(savedTimer); patchSave();
+    if (key === 'section' && addOn()) patchAddDay();
   }
   function save() {
     if (!C.chef() || !M.draft || !dirtyDraft() || M.saveBusy) return;
     if (M.state !== 'ok' || M.editId && !taskById(M.editId)) { M.saveError = 'Refresh cleaning before saving this task. Your changes are kept.'; draw(); return; }
     var d = M.draft, error = !d.text.trim() ? 'Write the cleaning task.' : !d.area.trim() ? 'Choose or write the area or equipment.' : !d.shared && !C.sections().some(function (s) { return s.id === d.section; }) ? 'Choose the responsible section.' : !d.dows.length ? 'Choose at least one repeat day.' : d.plan && d.plan.repeat && !(Number.isInteger(d.plan.repeat.days) && d.plan.repeat.days >= 2 && d.plan.repeat.days <= 30) ? 'Repeat every 2 to 30 days, whole days only.' : d.plan && d.plan.verification && cannotCheck(d.plan.verifiers).length ? cannotCheck(d.plan.verifiers).map(checkerName).join(', ') + ' cannot do the Pass check. Untick them, or give them Tick in Staff.' : '';
     if (error) { M.saveError = error; M.saveState = 'error'; draw(); return; }
-    var model = M, old = M.editId ? taskById(M.editId) : null; M.saveBusy = true; M.saveError = M.savedText = ''; M.saveState = 'busy'; draw();
-    C.saveTask(Object.assign({}, d, { text: d.text.trim(), area: d.area.trim(), dows: d.dows.slice() }), old).then(function (result) {
+    var model = M, old = M.editId ? taskById(M.editId) : null, weigh = old ? null : addWeigh(), today = T.dow(T.at(T.day())); M.saveBusy = true; M.saveError = M.savedText = ''; M.saveState = 'busy'; draw();
+    // a new job's weight goes in the job's own batch (step 4c): both land, or neither
+    C.saveTask(Object.assign({}, d, { text: d.text.trim(), area: d.area.trim(), dows: d.dows.slice() }), old, weigh).then(function (result) {
       if (M !== model) return; M.saveBusy = false; if (result.closed) putTask(result.closed); putTask(result.task); M.editId = result.task.id;
+      var root = jobKey(result.task), landed = result.weighed, note = '';
+      if (landed) { M.plan.w[root] = landed.w; if (landed.k) M.plan.k[root] = landed.k; }
+      // an earlier send landed after its answer was lost, with another weight or none: the weight chosen now is sent apart
+      if (result.recovered && weigh && (!landed || landed.w !== weigh.w || landed.k !== weigh.k) && C.planSave) {
+        var w1 = {}, k1 = {}; w1[root] = weigh.w; k1[root] = weigh.k;
+        C.planSave(w1, k1).then(function () { M.plan.w[root] = weigh.w; if (weigh.k) M.plan.k[root] = weigh.k; else delete M.plan.k[root]; },
+          function () { if (M !== model) return; M.savedText += ' Its weight did not save: set it in Weights and days.'; patchSave(); });
+      }
+      M.newW = 0; M.newK = '';
+      if (landed && !result.recovered) note = ' ' + WEIGHTS[landed.w] + (landed.k ? ', ' + landed.k.toLowerCase() : '') + ': its weight is saved.';
       if (result.recovered) { M.original = JSON.stringify(draftFor(result.task)); M.saveState = ''; M.savedText = 'Earlier save confirmed. Your further changes are kept; save them to apply from tomorrow.'; draw(); return; }
-      M.draft = draftFor(result.task); M.original = JSON.stringify(M.draft); M.saveState = 'done'; M.savedText = 'Saved ' + result.task.text + '. ' + (result.task.from > T.at(T.day()) ? 'Starts tomorrow.' : 'Starts today.'); draw();
+      var tonight = !old && result.task.from <= T.at(T.day()) && result.task.dows.indexOf(today) >= 0;
+      M.draft = draftFor(result.task); M.original = JSON.stringify(M.draft); M.saveState = 'done'; M.savedText = 'Saved ' + result.task.text + '. ' + (result.task.from > T.at(T.day()) ? 'Starts tomorrow.' : tonight ? 'Starts today: due at tonight\'s close.' : 'Starts today.') + note; draw();
       savedTimer = setTimeout(function () { if (M === model && M.saveState === 'done') { M.saveState = ''; patchSave(); } }, 1400);
-    }, function (error) { if (M !== model) return; M.saveBusy = false; M.saveState = 'error'; M.saveError = error && error.code === 'stale' ? 'This repeat task changed. Refresh and choose its current version. Your changes are kept.' : error && error.message || 'Could not save. Your changes are kept. Try again.'; draw(); });
+    }, function (error) { if (M !== model) return; M.saveBusy = false; M.saveState = 'error'; M.saveError = error && error.code === 'stale' ? 'This repeat task changed. Refresh and choose its current version. Your changes are kept.' : weigh && error && error.code === 'permission-denied' ? 'Refused: nothing was saved, neither the job nor its weight. Your changes are kept.' : error && error.message || 'Could not save. Your changes are kept. Try again.'; draw(); });
   }
   function archive(task) {
     if (!C.chef() || dirtyDraft() || busy()) { if (dirtyDraft()) { M.saveError = 'Save or undo your unsaved changes before archiving.'; draw(); } return; }
@@ -1080,8 +1192,10 @@
     else if (action === 'add') startEditor(null);
     else if (action === 'edit' && task) startEditor(task);
     else if (action === 'archive' && task) archive(task);
-    else if (action === 'repeat' && M.draft && !M.saveBusy) { var dow = +button.getAttribute('data-dow'), i = M.draft.dows.indexOf(dow); if (i < 0) M.draft.dows.push(dow); else M.draft.dows.splice(i, 1); M.draft.dows.sort(); M.saveError = M.savedText = M.saveState = ''; button.setAttribute('aria-pressed', String(i < 0)); patchSave(); }
-    else if (action === 'revert' && !M.saveBusy) { if (C.discardAttempt) C.discardAttempt(); M.draft = JSON.parse(M.original); M.saveError = M.savedText = M.saveState = ''; draw(); }
+    else if (action === 'repeat' && M.draft && !M.saveBusy) { var dow = +button.getAttribute('data-dow'), i = M.draft.dows.indexOf(dow); if (i < 0) M.draft.dows.push(dow); else M.draft.dows.splice(i, 1); M.draft.dows.sort(); M.saveError = M.savedText = M.saveState = ''; if (addOn()) patchAddDay(); else button.setAttribute('aria-pressed', String(i < 0)); patchSave(); }
+    else if (action === 'add-weight' && M.draft && !M.saveBusy && addOn()) { var wv = +button.getAttribute('data-w'); M.newW = M.newW === wv ? 0 : wv; patchAddDay(); }
+    else if (action === 'add-planner' && addOn()) { M.addLoad = ''; patchAddDay(); }
+    else if (action === 'revert' && !M.saveBusy) { if (C.discardAttempt) C.discardAttempt(); M.draft = JSON.parse(M.original); M.newW = 0; M.newK = ''; M.saveError = M.savedText = M.saveState = ''; draw(); }
     else if (action === 'cancel-edit' && !M.saveBusy) { if (dirtyDraft() && B.arm && !B.arm('cln-cancel', draw)) return; if (C.discardAttempt) C.discardAttempt(); M.draft = null; M.original = ''; M.editId = ''; M.saveError = M.savedText = M.saveState = ''; draw(); }
     else if (action === 'save') save();
   }
