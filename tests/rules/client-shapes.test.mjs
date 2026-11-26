@@ -855,22 +855,14 @@ row('js/prep.js: an April Fools record in another person\'s name (never sent)', 
   run: (db, w, r) => { const o = w === 'ann' ? 'sam' : 'ann'; return W(r, [['set', FOOL(o), Object.assign(foolRec(), { by: o })]]); } });
 row('js/prep.js: an April Fools record for another day (never sent)', { ok: [], asks: [],
   prep: (r, w) => put({ [`fools/2027-04-02_${w}`]: null }), run: (db, w, r) => W(r, [['set', `fools/2027-04-02_${w}`, { day: '2027-04-02', at: Date.now() }]]) });
-// Screens the book runs on (26 Nov 2026, docs/device-coverage.md): screens/<this device's uid>, saved after a PIN when
-// the device has not saved its screen yet or its screen changed; read by the verified admin in Admin, Kitchen
+// Screens the book runs on (26 Nov 2026 to 26 Nov 2026, docs/device-coverage.md): the Screens row is gone, so the
+// rules refuse screens/<device uid> to everyone, writes and the admin's list alike (stricter, published after the code)
 const SCR = r => `screens/${UID[r]}`;
-const scrRec = o => Object.assign({ sw: 1536, sh: 864, w: 1536, h: 730, dpr: 1.25, tp: 10, ptr: 'coarse', mouse: false, hov: false, app: true, kind: 'shared', sec: '', at: Date.now() }, o || {});
-row('js/prep.js scrMark(): this device saves its screen after a PIN (screens/<my device uid>, the whole record)', { ok: PINS, asks: PINS,
+const scrRec = () => ({ sw: 1920, sh: 1080, w: 1920, h: 1008, dpr: 1, tp: 10, ptr: 'coarse', mouse: true, hov: true, app: true, kind: 'shared', sec: '', at: Date.now() });
+row('js/prep.js: this device saving its screen (the Screens row, removed; never sent)', { ok: [], asks: [],
   prep: r => put({ [SCR(r)]: null }), run: (db, w, r) => W(r, [['set', SCR(r), scrRec()]]) });
-row('js/prep.js scrMark(): someone else signs in on the same device after its screen changed (replaces the record)', { ok: PINS, asks: PINS,
-  prep: r => put({ [SCR(r)]: scrRec({ by: 'zed', at: NOW }) }), run: (db, w, r) => W(r, [['set', SCR(r), scrRec({ sw: 1920, sh: 1080, dpr: 1, kind: 'personal' })]]) });
-row('js/prep.js: another device\'s screen record (never sent)', { ok: [], asks: [],
-  prep: () => put({ 'screens/another-device': null }), run: (db, w, r) => W(r, [['set', 'screens/another-device', scrRec()]]) });
-row('js/prep.js scrMark(): a field that is not a screen number or word, like a browser name (never sent)', { ok: [], asks: [],
-  prep: r => put({ [SCR(r)]: null }), run: (db, w, r) => W(r, [['set', SCR(r), scrRec({ ua: 'Chrome' })]]) });
-row('js/prep.js scrMark(): a size out of range or a word off the list (never sent)', { ok: [], asks: [],
-  prep: r => put({ [SCR(r)]: null }), run: (db, w, r) => W(r, [['set', SCR(r), scrRec({ sw: 99999, ptr: 'pen' })]]) });
-row('js/prep.js scrLoad(): the verified admin reads every screen when the Screens row opens', { ok: GOOGLE, asks: GOOGLE,
-  prep: r => put({ [SCR(r)]: scrRec({ by: WHO[r], at: NOW }) }), run: db => getDocsFromServer(query(C(db, 'screens'), limit(201))) });
+row('js/prep.js: the admin reading every screen (the Screens row, removed; never sent)', { ok: [], asks: [],
+  prep: r => put({ [SCR(r)]: Object.assign(scrRec(), { by: WHO[r], at: NOW }) }), run: db => getDocsFromServer(query(C(db, 'screens'), limit(201))) });
 // who said Got it to a function on Home (fnseen, 10 Nov 2026): once, as myself; never changed or deleted
 const SEEN = (w, s, g) => `fnseen/f1_${w}_${s || 'week'}_${g || '1abc2'}`;
 const seenRec = (s, at, by) => Object.assign({ fid: 'f1', g: '1abc2', s: s || 'week', day: TODAY, at: at || Date.now() }, by ? { by } : {});

@@ -1,6 +1,8 @@
 # Firestore reads and writes: audit, 5 November 2026
 
-## Screens the book runs on, 26 November 2026
+## Screens the book runs on, 26 November 2026 (removed the same day)
+
+Removed once it had read the screens: no device writes `screens/` any more and nothing reads it. What it cost while it was live:
 
 Each device writes `screens/<its uid>` once, about 4 seconds after someone types their PIN on it, and again only when its screen, touch, pointer, mouse, installed app, type or section changes (`lk.screen.v1` remembers what it saved). About 10 to 30 writes in all, then almost none; the rules' own lookups for each write are billed like any write's. No read on any phone. The head chef reads them only when the Screens row in Admin, Kitchen opens or Read again is tapped: one query, one read per device (about 10 to 30), kept in memory. No listener, no timer ([device coverage](device-coverage.md#the-screens-row)).
 

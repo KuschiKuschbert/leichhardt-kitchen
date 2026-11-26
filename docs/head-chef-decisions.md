@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **26 November 2026, the Screens row comes out again.** With the sizes read (1920 x 1080 for every shared screen, the front of house screen and the head chef's computer), the head chef said "okay" to taking it out, as he had only needed it once. The code, its rules block and its test are gone; the rules now refuse `screens/` (stricter, after the code). Saved records stay in Firestore, unread. [Device coverage](device-coverage.md#the-screens-row).
+
 - **26 November 2026, no Fable by default.** "Fable is too expensive." The model-router (version 0.2.0) picks Haiku, Sonnet or Opus, never Fable, and turns a helper agent's Fable into Opus. The advisor and every council reviewer run on Opus. Fable stays available by hand with `/model fable`. Detail: `docs/keeping-usage-down.md` (The right model for the job).
 
 - **26 November 2026, the kitchen's screens are 1920 x 1080.** The Screens row in Admin, Kitchen read every shared screen as 1920 x 1080 at 100 %, 1920 x 1080 pixels, the book's window 1920 x 1008 as the installed app, touch and a mouse. The head chef: "Yeah the kitchen screens run on 1920x1080 and so does the function foh scree[n]". His own computer read 1920 x 1080 with a mouse. So the council measures service pages at 390, 768 and 1920 x 1080 with touch, Functions at 1920 x 1080, and admin pages at 1280 and 1920 x 1080. Step 0 of the [device coverage](device-coverage.md) plan is done; step 1 waits for the head chef's go.
