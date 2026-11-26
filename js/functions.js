@@ -713,25 +713,27 @@
     var t = now(), R = bandRows(t), xs = R.xs, stale = staleWords(t, xs);
     var ys = R.ys;
     if (!xs.length && !ys.length && !stale) return '';
-    var a = R.a, b = R.b, folds = foldBand(), warn = false;
-    if (folds) {
-      var me = ahWho();
-      var todayAlerts = xs.filter(function (x) { return foldAlert(x, t, me); });
-      var soonAlerts = ys.filter(function (x) { return x.kind === 'order' && x.short; });
-      warn = !!(stale || todayAlerts.length || soonAlerts.length);
-      a = alertsFirst(a, todayAlerts);
-      b = alertsFirst(b, soonAlerts);
-    }
+    // A warning keeps the band open and first on every page (head chef, 26 Nov 2026, docs/device-coverage/step3/findings.md,
+    // Chosen): a trip waiting for this person, a cancellation, a move, a change, a kitchen comment, a short-notice order,
+    // a round due within the hour or a failed read. On the pages with the full band the minus used to fold it for the day
+    // even while a trip waited, which hid Confirm out on the front of house screen until the next day.
+    var a = R.a, b = R.b, folds = foldBand(), me = ahWho();
+    var todayAlerts = xs.filter(function (x) { return foldAlert(x, t, me); });
+    var soonAlerts = ys.filter(function (x) { return x.kind === 'order' && x.short; });
+    var warn = !!(stale || todayAlerts.length || soonAlerts.length);
+    a = alertsFirst(a, todayAlerts);
+    b = alertsFirst(b, soonAlerts);
     var left = xs.length + ys.length - a.length - b.length;
     var more = left > 0 ? '<button type="button" class="fn-more" data-fn="more" aria-expanded="false">+' + left + ' more</button>' : F.more && (xs.length > 2 || ys.length > 2) ? '<button type="button" class="fn-more" data-fn="more" aria-expanded="true">Show fewer</button>' : '';
     // two or more functions on at once: one view of everything that goes out now
-    var svc = xs.filter(function (x) { return x.kind === 'on'; }).length >= 2 ? '<a class="fn-more fn-svc" href="#/fn/now">Service view</a>' : '';
+    // (#/fn has its own Service view under Today, so the band leaves its copy out there: 26 Nov 2026, step 3)
+    var svc = xs.filter(function (x) { return x.kind === 'on'; }).length >= 2 && location.hash.split('?')[0] !== '#/fn' ? '<a class="fn-more fn-svc" href="#/fn/now">Service view</a>' : '';
     // a label says what the band holds: today's functions, the coming ones (order and tomorrow lines), or both
     var on = xs.filter(function (x) { return x.kind === 'on'; }).length;
     var lab = xs.length && ys.length ? 'Functions today and soon' : xs.length ? 'Functions today' : ys.length ? 'Functions coming up' : 'Functions';
     // The fold pages open folded for routine information. Show lasts for this person and kitchen day in this tab, on
-    // every fold page. Other pages keep their usual per-day minus (lk.fn.fold). A warning there cannot be folded away.
-    var fold = (a.length + b.length) && (folds ? !warn && foldShown !== kday(t) : lsGet('lk.fn.fold') === kday(t));
+    // every fold page. Other pages keep their usual per-day minus (lk.fn.fold). A warning on any page cannot be folded away.
+    var fold = (a.length + b.length) && !warn && (folds ? foldShown !== kday(t) : lsGet('lk.fn.fold') === kday(t));
     var foldLabel = warn ? 'Function alerts are shown' : fold ? 'Show functions' : 'Hide functions';
     var btn = a.length + b.length ? '<button type="button" class="fn-fold" data-fn="fold" aria-expanded="' + !fold + '" aria-label="' + foldLabel +
       '" title="' + (warn ? foldLabel : fold ? 'Show' : 'Hide') + '"' + (warn ? ' aria-disabled="true"' : '') + '>' + (fold ? '+' : '\u2212') + '</button>' : '';
@@ -1511,12 +1513,13 @@
       f.status === 'draft' ? '<p class="fn-banner" role="note"><b>Draft.</b> Not confirmed yet: the kitchen does not see it.</p>' : '';
     // one quiet line for the day, the place, the event start and the guests (10 Nov 2026); then what goes out next, every round, the comment
     var sub = [dayName(f.date), f.loc, 'event ' + when(f.start, f.date), guestsText(f)].filter(Boolean).join(' · ');
-    var out = status + '<p class="fn-sub">' + esc(sub) + '</p>' + nextHTML(f) + wholeHTML(f) +
+    // the service and dietary notes come straight under the day line, before the kitchen's Next out (head chef, 26 Nov
+    // 2026, step 3: on a function's page they sat below the first screen); the sheet, the page and Check and confirm agree
+    var out = status + '<p class="fn-sub">' + esc(sub) + '</p>' + (f.notes ? '<h3 class="fn-h">Service and dietary notes</h3><p class="fn-text">' + esc(f.notes) + '</p>' : '') + nextHTML(f) + wholeHTML(f) +
       ((f.rounds || []).length > 1 || f.status !== 'confirmed' ? '<h3 class="fn-h">Every round</h3>' + roundsList(f) +
         (f.status === 'confirmed' && f.first ? '<p class="hint fn-note">Tick each round as it goes out.</p>' : '') : '');
     if (f.kc) out += '<section class="fn-kc" aria-labelledby="fn-kc-' + esc(f.id) + '"><h3 class="fn-h" id="fn-kc-' + esc(f.id) + '">Kitchen comment</h3><p class="fn-text">' + esc(f.kc) + '</p>' +
       '<p class="fn-by">' + esc(nameOf(f.kcBy)) + ', ' + esc(dayName(kday(f.kcAt)) + ' ' + kclock(f.kcAt)) + '</p></section>';
-    if (f.notes) out += '<h3 class="fn-h">Service and dietary notes</h3><p class="fn-text">' + esc(f.notes) + '</p>';
     if (c.length) out += '<h3 class="fn-h">Changes</h3><ul class="fn-chg">' + c.slice(0, 5).map(function (x) { return '<li><span>' + esc(dayName(kday(x.at)) + ' ' + kclock(x.at)) + ', ' + esc(nameOf(x.by)) + '</span> ' + esc(x.what) + '</li>'; }).join('') + '</ul>';
     out += '<p class="fn-by fn-last">Last changed by ' + esc(nameOf(f.by)) + ', ' + esc(dayName(kday(f.upd)) + ' ' + kclock(f.upd)) + '.</p>';
     if (bare) return out;
@@ -1822,15 +1825,21 @@
      opens the function; Cancel sits at its end. x: the band's entry for a function on today, for its next round. */
   function cardHTML(f, x) {
     var n = (f.rounds || []).length, tot = totalQty(f), off = f.status === 'cancelled', nx = '';
+    var once = false;
     if (x && x.kind === 'on' && !off && f.first) {
-      var w = nowOf(f, now());
+      var w = nowOf(f, now()), wt = waitingTrips(f.id);
       nx = '<span class="fn-cnext' + (w.done ? ' is-done' : '') + '">' + (w.done ? w.html : '<span class="fn-cnext-l">Next out</span> <b class="fn-due' + (w.late ? ' is-late' : '') + '">' + esc(w.time) + '</b> ' + w.html) + '</span>';
+      // a trip the kitchen sent and Functions has not confirmed is named on the card too, so the card and the band agree
+      // on what is happening now (head chef, 26 Nov 2026, step 3: the band said 14:10 waiting, the card only 14:50)
+      if (wt.length) nx = '<span class="fn-cnext fn-cwait"><span class="fn-cnext-l">Waiting</span> Trip ' + wt[0].t.k + ': ' + esc(tripText(f, wt[0].t.n, true)) + ', sent ' + esc(kclock(wt[0].t.sentAt)) + ' ' + esc(nameOf(wt[0].t.sentBy)) +
+        (wt.length > 1 ? ' <span class="fn-of">+' + (wt.length - 1) + ' more waiting</span>' : '') + '</span>' + nx;
+      once = n === 1 && !w.done;   // one round, not sent yet: Next out already says its time and its platters
     }
     var eb = ['Event ' + when(f.start, f.date), f.loc, guestsText(f)].filter(Boolean).join(' · ');
     var food = (f.first ? 'Food from ' + when(f.first, f.date) : 'Food times TBC') + (n > 1 ? ' · ' + n + ' rounds' : '');
     return '<li class="fn-card' + (off ? ' is-off' : '') + '"><a href="#/fn/' + encodeURIComponent(f.id) + '"><span class="fn-c0">' + esc(eb) + '</span><span class="fn-c1"><b>' + esc(f.name) + '</b>' +
       (off ? ' <span class="fn-tag fn-t-off">Cancelled</span>' : '') + (f.kc ? ' <span class="fn-tag fn-t-kc">Kitchen comment</span>' : '') + '</span>' + nx +
-      '<span class="fn-c2">' + esc(food) + '</span><span class="fn-c3">' + esc(linesText(f)) + ' (' + tot + ')</span>' +
+      (once ? '' : '<span class="fn-c2">' + esc(food) + '</span><span class="fn-c3">' + esc(linesText(f)) + ' (' + tot + ')</span>') +
       (f.notes ? '<span class="fn-cnote"><span class="fn-cnote-l">Notes</span> ' + esc(f.notes) + '</span>' : '') + '</a>' +
       (statusHTML(f) ? '<div class="fn-card-actions">' + statusHTML(f) + '</div>' : '') + '</li>';
   }
@@ -1848,8 +1857,9 @@
     if (F.state === 'error') return '<p class="p-err" role="alert">Could not load functions. Showing the copy from ' + esc(dayName(kday(F.at)) + ' ' + kclock(F.at)) + '.</p>';
     if (F.state === 'loading' || F.state === 'idle') return F.at ? '<p class="hint" role="status">Checking for changes. Showing the copy from ' + esc(when(F.at, kday(t))) + '.</p>' : '';
     if (F.offline || navigator.onLine === false) return F.at ? '<p class="hint" role="status">No signal. Last updated ' + esc(dayName(kday(F.at)) + ' ' + kclock(F.at)) + '.</p>' : '';
-    return '<p class="hint fn-fresh">Up to date, ' + esc(kclock(F.at)) + '. Changes show here by themselves.</p>';
+    return '<p class="hint fn-fresh">' + esc(freshWords()) + '</p>';
   }
+  function freshWords() { return 'Up to date, ' + kclock(F.at) + '. Changes show here by themselves.'; }
   /* The failed-read line, one look on every page (LK_PREP.readErr(), docs/design-patterns.md, A page): what could not
      load, never "nothing", then Try again (data-fn="retry", retryNow()). No signal only when the signal is the cause
      (js/prep.js noSignal()); with today's reads used up the line at the top says why, so no "Check the connection". */
@@ -1903,7 +1913,11 @@
       // who sent it are the small lines around it
       return '<li class="fn-svc-trip"><p class="fn-svc-th"><span class="fn-trip-k">Trip ' + x.k + '</span> · ' + esc(kclock(f.rounds[w.i].at)) + ' <b>' + esc(f.name) + '</b>' + (f.loc ? ' · ' + esc(f.loc) : '') + '</p>' +
         '<p class="fn-svc-what fn-svc-tq">' + tripQs(f, x.n) + '</p>' +
-        '<p class="fn-svc-tm">' + (pend && !x.outAt ? '' : I_TICK + ' sent ' + esc(kclock(x.sentAt)) + ' ' + esc(nameOf(x.sentBy)) + ' ') + waitPill(f, x, t) + '</p>' + (acts ? '<div class="fn-svc-tacts">' + acts + '</div>' : '') + '</li>';
+        '<p class="fn-svc-tm">' + (pend && !x.outAt ? '' : I_TICK + ' sent ' + esc(kclock(x.sentAt)) + ' ' + esc(nameOf(x.sentBy)) + ' ') + waitPill(f, x, t) + '</p>' +
+        // the dietaries go with the trip, read before Confirm out (head chef, 26 Nov 2026, step 3): they were only on the
+        // rounds still to go, so a function's last trip showed none
+        (f.notes ? '<p class="fn-svc-diet"><span class="fn-svc-dl">Dietaries and notes</span><span class="fn-svc-dt">' + esc(f.notes) + '</span></p>' : '') +
+        (acts ? '<div class="fn-svc-tacts">' + acts + '</div>' : '') + '</li>';
     }).join('') + '</ul>';
     if (outs.length) {
       var o = outs[0];
@@ -2040,11 +2054,14 @@
        extra tap. Upcoming shows only the days with a function, each with its Print prep sheet; the days with nothing
        booked fold into one quiet line (they had a heading, a grey Print prep sheet and "None." each). */
     var on = showing(F.list, t, isSentK), totals = dayTotals(F.list), days = [], i;
+    // "Up to date" sits on the Today heading line here (head chef, 26 Nov 2026, step 3: about 50 px back above today's
+    // cards); a failed read, an old copy or no signal stay right under the page heading, as on every functions page
+    var note = stateNote(), fresh = known() && /fn-fresh/.test(note);
     for (i = 1; i <= pageDays; i++) days.push(addDays(today, i));
     var body = '';
     if (!known()) body = waitHTML();
     else {
-      body += '<div class="fn-sec"><h3 class="fn-h fn-sec-h">Today <span class="fn-sec-d">' + esc(dayName(today)) + '</span></h3><div class="btn-row fn-sec-acts">' + (on.length ? '<a class="btn dark" href="#/fn/now">Service view</a>' : '') + prepButton(today, t) + '</div>' +
+      body += '<div class="fn-sec"><h3 class="fn-h fn-sec-h">Today <span class="fn-sec-d">' + esc(dayName(today)) + '</span>' + (fresh ? '<span class="fn-fresh fn-sec-fresh">' + esc(freshWords()) + '</span>' : '') + '</h3><div class="btn-row fn-sec-acts">' + (on.length ? '<a class="btn dark" href="#/fn/now">Service view</a>' : '') + prepButton(today, t) + '</div>' +
         (on.length ? '<ul class="fn-cards">' + on.map(function (x) { return cardHTML(x.f, x); }).join('') + '</ul>' + totalsHTML(totals[today]) : '<p class="hint">No functions on now.</p>') + '</div>';
       var empty = [], booked = 0;
       body += '<div class="fn-sec"><h3 class="fn-h fn-sec-h">Upcoming functions <span class="fn-sec-d">the next ' + pageDays + ' days</span></h3>';
@@ -2060,7 +2077,7 @@
     }
     var can = prep.fnOK && prep.fnOK();
     return '<section class="set-block fn-page fn-list-page"><h2 id="rtitle" tabindex="-1">Functions</h2><p class="hint">Confirmed functions and their platters.</p>' +
-      stateNote() + body + (can ? '<div class="btn-row"><a class="btn dark" href="#/functions">Manage functions</a></div>' : '') + '</section>';
+      (fresh ? '' : note) + body + (can ? '<div class="btn-row"><a class="btn dark" href="#/functions">Manage functions</a></div>' : '') + '</section>';
   }
 
   /* ---------- the landing card: today and the next three days, less what the band shows ----------
