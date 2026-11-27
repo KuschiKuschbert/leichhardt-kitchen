@@ -377,6 +377,8 @@ eq(r.publish, 'true', 'rules: a push of the rules alone still publishes them at 
   eq([r.status, r.publish], [1, undefined], 'window publish: a commit not on main publishes nothing');
   git('checkout', '-q', '-');
   clearAnswers();
+  r = run(access6, Object.assign({}, W6, { SITE_SHA: git('rev-parse', 'HEAD') }));
+  eq([r.status, r.publish], [0, 'true'], 'window publish: GitHub not answering: publishes the rules rather than drop rules that waited (it only starts after a publish)');
   r = run(access6, { EVENT_NAME: 'workflow_dispatch' });
   eq([r.status, r.publish], [0, 'true'], 'Run workflow by hand still publishes the rules');
 }

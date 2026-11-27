@@ -101,7 +101,8 @@ jobs:
             # Publish times (24 Nov 2026): a change to the site can wait for a publish window, and its rules wait with it
             # (Published does not run while it is held). When the site goes out, every rules change since the version
             # that was live before it goes out too, not only the last commit's.
-            deployed=$(gh api "repos/$REPO/actions/runs/$RUN_ID/jobs" --jq '[.jobs[] | select(.name == "Deploy" and .conclusion == "success")] | length' 2>/dev/null || echo 0)
+            # the window run starts this only once its Deploy succeeded: GitHub not answering then counts as published
+            deployed=$(gh api "repos/$REPO/actions/runs/$RUN_ID/jobs" --jq '[.jobs[] | select(.name == "Deploy" and .conclusion == "success")] | length' 2>/dev/null || { [ "$TRIGGER" = window ] && echo 1 || echo 0; })
             if [ "$deployed" != 0 ]; then
               head=$(git rev-parse HEAD); before=""
               for pair in $(gh api "repos/$REPO/deployments?environment=github-pages&per_page=30" --jq '.[] | "\(.id):\(.sha)"' 2>/dev/null || true); do
