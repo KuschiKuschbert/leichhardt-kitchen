@@ -153,6 +153,17 @@ const store = p => p.evaluate(() => window.__fake.dump());
     await p.context().close();
   }
 
+  // Order cut-offs: the cut-offs first, the once-set Order days under them
+  {
+    const p = await L.open(b, '#/admin', { admin: true, adminPage: 'cutoffs', who: '', width: 1280, height: 800, touch: false, wait: 1800 });
+    await L.waitFor(p, () => !!document.querySelector('.a-od'), null, 8000).catch(() => {});
+    const o = await p.evaluate(() => { const od = document.querySelector('.a-od'), pane = od && od.parentElement, first = pane && [...pane.children].find(e => e.getClientRects().length);
+      return { first: first ? first.className : '', odAfterCut: !!od && !!od.previousElementSibling }; });
+    ok(o.first && !/a-od/.test(o.first) && o.odAfterCut, 'Order cut-offs: the cut-offs come first, Order days under them (' + JSON.stringify(o) + ')');
+    ok(!p.errors.length && !(await L.overflow(p)), 'Order cut-offs: no page errors, no sideways scroll ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });
