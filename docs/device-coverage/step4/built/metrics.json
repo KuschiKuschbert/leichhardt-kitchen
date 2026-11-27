@@ -1,0 +1,1189 @@
+{
+ "inbox-1920": {
+  "route": "#/admin inbox",
+  "errors": 0,
+  "touch": false,
+  "vw": 1920,
+  "vh": 1008,
+  "column": {
+   "left": 208,
+   "width": 1504
+  },
+  "main": {
+   "left": 228,
+   "width": 1464,
+   "top": 156
+  },
+  "content": {
+   "left": 228,
+   "right": 1692
+  },
+  "emptyRight": 228,
+  "headingsInView": [
+   "Inbox",
+   "Inbox",
+   "Today's numbers"
+  ],
+  "controlsInView": 35,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 132
+   }
+  ],
+  "save": [],
+  "screens": 1.18,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "insights-1920": {
+  "route": "#/admin insights",
+  "errors": 0,
+  "touch": false,
+  "vw": 1920,
+  "vh": 1008,
+  "column": {
+   "left": 208,
+   "width": 1504
+  },
+  "main": {
+   "left": 228,
+   "width": 1464,
+   "top": 156
+  },
+  "content": {
+   "left": -222,
+   "right": 1692
+  },
+  "emptyRight": 228,
+  "headingsInView": [
+   "Reports",
+   "Insights",
+   "01Overview",
+   "What stands out"
+  ],
+  "controlsInView": 46,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 132
+   }
+  ],
+  "save": [],
+  "screens": 6.15,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "records-1920": {
+  "route": "#/admin records",
+  "errors": 0,
+  "touch": false,
+  "vw": 1920,
+  "vh": 1008,
+  "column": {
+   "left": 208,
+   "width": 1504
+  },
+  "main": {
+   "left": 228,
+   "width": 1464,
+   "top": 156
+  },
+  "content": {
+   "left": 228,
+   "right": 1692
+  },
+  "emptyRight": 228,
+  "headingsInView": [
+   "Reports",
+   "Records"
+  ],
+  "controlsInView": 40,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 132
+   }
+  ],
+  "save": [],
+  "screens": 2.16,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "reports-team-1920": {
+  "route": "#/admin team",
+  "errors": 0,
+  "touch": false,
+  "vw": 1920,
+  "vh": 1008,
+  "column": {
+   "left": 208,
+   "width": 1504
+  },
+  "main": {
+   "left": 228,
+   "width": 1464,
+   "top": 156
+  },
+  "content": {
+   "left": 228,
+   "right": 1692
+  },
+  "emptyRight": 228,
+  "headingsInView": [
+   "Reports",
+   "Team",
+   "At a glance",
+   "Who has worked where"
+  ],
+  "controlsInView": 41,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 132
+   }
+  ],
+  "save": [],
+  "screens": 3.65,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "people-1920": {
+  "route": "#/admin people",
+  "errors": 0,
+  "touch": false,
+  "vw": 1920,
+  "vh": 1008,
+  "column": {
+   "left": 208,
+   "width": 1504
+  },
+  "main": {
+   "left": 228,
+   "width": 1464,
+   "top": 156
+  },
+  "content": {
+   "left": 228,
+   "right": 1692
+  },
+  "emptyRight": 228,
+  "headingsInView": [
+   "Team"
+  ],
+  "controlsInView": 35,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 132
+   }
+  ],
+  "save": [],
+  "screens": 1.03,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "plan-1920": {
+  "route": "#/admin plan",
+  "errors": 0,
+  "touch": false,
+  "vw": 1920,
+  "vh": 1008,
+  "column": {
+   "left": 208,
+   "width": 1504
+  },
+  "main": {
+   "left": 228,
+   "width": 1464,
+   "top": 156
+  },
+  "content": {
+   "left": 228,
+   "right": 1692
+  },
+  "emptyRight": 228,
+  "headingsInView": [
+   "Team",
+   "Today's team",
+   "Who's working?"
+  ],
+  "controlsInView": 36,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 132
+   }
+  ],
+  "save": [
+   {
+    "cls": "tm-save tm-focus-save sv-dock",
+    "top": 892,
+    "sticky": "sticky"
+   }
+  ],
+  "screens": 1.21,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "kitchen-1920": {
+  "route": "#/admin kitchen-home",
+  "errors": 0,
+  "touch": false,
+  "vw": 1920,
+  "vh": 1008,
+  "column": {
+   "left": 208,
+   "width": 1504
+  },
+  "main": {
+   "left": 228,
+   "width": 1464,
+   "top": 156
+  },
+  "content": {
+   "left": 228,
+   "right": 1692
+  },
+  "emptyRight": 228,
+  "headingsInView": [
+   "Kitchen",
+   "The kitchen"
+  ],
+  "controlsInView": 41,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 132
+   }
+  ],
+  "save": [],
+  "screens": 1.84,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "cutoffs-1920": {
+  "route": "#/admin cutoffs",
+  "errors": 0,
+  "touch": false,
+  "vw": 1920,
+  "vh": 1008,
+  "column": {
+   "left": 208,
+   "width": 1504
+  },
+  "main": {
+   "left": 228,
+   "width": 1464,
+   "top": 156
+  },
+  "content": {
+   "left": 228,
+   "right": 1692
+  },
+  "emptyRight": 228,
+  "headingsInView": [
+   "Kitchen",
+   "Pushes on this device"
+  ],
+  "controlsInView": 38,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 132
+   }
+  ],
+  "save": [],
+  "screens": 1.44,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "suppliers-1920": {
+  "route": "#/admin suppliers",
+  "errors": 0,
+  "touch": false,
+  "vw": 1920,
+  "vh": 1008,
+  "column": {
+   "left": 208,
+   "width": 1504
+  },
+  "main": {
+   "left": 228,
+   "width": 1464,
+   "top": 156
+  },
+  "content": {
+   "left": 228,
+   "right": 1692
+  },
+  "emptyRight": 228,
+  "headingsInView": [
+   "Kitchen",
+   "Suppliers & pars"
+  ],
+  "controlsInView": 32,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 132
+   }
+  ],
+  "save": [],
+  "screens": 1,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "prep-standards-1920": {
+  "route": "#/admin prep-standards",
+  "errors": 0,
+  "touch": false,
+  "vw": 1920,
+  "vh": 1008,
+  "column": {
+   "left": 208,
+   "width": 1504
+  },
+  "main": {
+   "left": 228,
+   "width": 1464,
+   "top": 156
+  },
+  "content": {
+   "left": 228,
+   "right": 1692
+  },
+  "emptyRight": 228,
+  "headingsInView": [
+   "Prep",
+   "Section prep standards",
+   "Set the section standard"
+  ],
+  "controlsInView": 27,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 132
+   }
+  ],
+  "save": [],
+  "screens": 1.01,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "chef-dashboard-1920": {
+  "route": "#/chef dashboard",
+  "errors": 0,
+  "touch": false,
+  "vw": 1920,
+  "vh": 1008,
+  "column": {
+   "left": 208,
+   "width": 1504
+  },
+  "main": {
+   "left": 228,
+   "width": 1464,
+   "top": 156
+  },
+  "content": {
+   "left": 228,
+   "right": 1692
+  },
+  "emptyRight": 228,
+  "headingsInView": [
+   "Dashboard",
+   "Today at a glance",
+   "Run the shift"
+  ],
+  "controlsInView": 31,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 132
+   }
+  ],
+  "save": [],
+  "screens": 1,
+  "sideways": false,
+  "emptyWords": "Not read yet"
+ },
+ "chef-kitchen-1920": {
+  "route": "#/chef kitchen-home",
+  "errors": 0,
+  "touch": false,
+  "vw": 1920,
+  "vh": 1008,
+  "column": {
+   "left": 208,
+   "width": 1504
+  },
+  "main": {
+   "left": 228,
+   "width": 1464,
+   "top": 156
+  },
+  "content": {
+   "left": 228,
+   "right": 1692
+  },
+  "emptyRight": 228,
+  "headingsInView": [
+   "Kitchen",
+   "Kitchen tools"
+  ],
+  "controlsInView": 25,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 132
+   }
+  ],
+  "save": [],
+  "screens": 1,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "chef-todo-1920": {
+  "route": "#/chef todo",
+  "errors": 0,
+  "touch": false,
+  "vw": 1920,
+  "vh": 1008,
+  "column": {
+   "left": 208,
+   "width": 1504
+  },
+  "main": {
+   "left": 228,
+   "width": 1464,
+   "top": 156
+  },
+  "content": {
+   "left": 228,
+   "right": 1692
+  },
+  "emptyRight": 228,
+  "headingsInView": [
+   "Today",
+   "Chef to-do",
+   "Add a job"
+  ],
+  "controlsInView": 29,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 132
+   }
+  ],
+  "save": [],
+  "screens": 1,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "inbox-1280": {
+  "route": "#/admin inbox",
+  "errors": 0,
+  "touch": false,
+  "vw": 1280,
+  "vh": 800,
+  "column": {
+   "left": 0,
+   "width": 1280
+  },
+  "main": {
+   "left": 20,
+   "width": 1240,
+   "top": 120
+  },
+  "content": {
+   "left": 20,
+   "right": 1260
+  },
+  "emptyRight": 20,
+  "headingsInView": [
+   "Inbox",
+   "Inbox"
+  ],
+  "controlsInView": 33,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 96
+   }
+  ],
+  "save": [],
+  "screens": 1.43,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "insights-1280": {
+  "route": "#/admin insights",
+  "errors": 0,
+  "touch": false,
+  "vw": 1280,
+  "vh": 800,
+  "column": {
+   "left": 0,
+   "width": 1280
+  },
+  "main": {
+   "left": 20,
+   "width": 1240,
+   "top": 120
+  },
+  "content": {
+   "left": -222,
+   "right": 1260
+  },
+  "emptyRight": 20,
+  "headingsInView": [
+   "Reports",
+   "Insights",
+   "01Overview",
+   "What stands out"
+  ],
+  "controlsInView": 46,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 96
+   }
+  ],
+  "save": [],
+  "screens": 7.49,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "records-1280": {
+  "route": "#/admin records",
+  "errors": 0,
+  "touch": false,
+  "vw": 1280,
+  "vh": 800,
+  "column": {
+   "left": 0,
+   "width": 1280
+  },
+  "main": {
+   "left": 20,
+   "width": 1240,
+   "top": 120
+  },
+  "content": {
+   "left": 20,
+   "right": 1260
+  },
+  "emptyRight": 20,
+  "headingsInView": [
+   "Reports",
+   "Records"
+  ],
+  "controlsInView": 37,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 96
+   }
+  ],
+  "save": [],
+  "screens": 2.67,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "reports-team-1280": {
+  "route": "#/admin team",
+  "errors": 0,
+  "touch": false,
+  "vw": 1280,
+  "vh": 800,
+  "column": {
+   "left": 0,
+   "width": 1280
+  },
+  "main": {
+   "left": 20,
+   "width": 1240,
+   "top": 120
+  },
+  "content": {
+   "left": 20,
+   "right": 1260
+  },
+  "emptyRight": 20,
+  "headingsInView": [
+   "Reports",
+   "Team",
+   "At a glance",
+   "Who has worked where"
+  ],
+  "controlsInView": 41,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 96
+   }
+  ],
+  "save": [],
+  "screens": 4.55,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "people-1280": {
+  "route": "#/admin people",
+  "errors": 0,
+  "touch": false,
+  "vw": 1280,
+  "vh": 800,
+  "column": {
+   "left": 0,
+   "width": 1280
+  },
+  "main": {
+   "left": 20,
+   "width": 1240,
+   "top": 120
+  },
+  "content": {
+   "left": 20,
+   "right": 1260
+  },
+  "emptyRight": 20,
+  "headingsInView": [
+   "Team"
+  ],
+  "controlsInView": 33,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 96
+   }
+  ],
+  "save": [],
+  "screens": 1.24,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "plan-1280": {
+  "route": "#/admin plan",
+  "errors": 0,
+  "touch": false,
+  "vw": 1280,
+  "vh": 800,
+  "column": {
+   "left": 0,
+   "width": 1280
+  },
+  "main": {
+   "left": 20,
+   "width": 1240,
+   "top": 120
+  },
+  "content": {
+   "left": 20,
+   "right": 1260
+  },
+  "emptyRight": 20,
+  "headingsInView": [
+   "Team",
+   "Today's team",
+   "Who's working?"
+  ],
+  "controlsInView": 35,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 96
+   }
+  ],
+  "save": [
+   {
+    "cls": "tm-save tm-focus-save sv-dock",
+    "top": 733,
+    "sticky": "sticky"
+   }
+  ],
+  "screens": 1.47,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "kitchen-1280": {
+  "route": "#/admin kitchen-home",
+  "errors": 0,
+  "touch": false,
+  "vw": 1280,
+  "vh": 800,
+  "column": {
+   "left": 0,
+   "width": 1280
+  },
+  "main": {
+   "left": 20,
+   "width": 1240,
+   "top": 120
+  },
+  "content": {
+   "left": 20,
+   "right": 1260
+  },
+  "emptyRight": 20,
+  "headingsInView": [
+   "Kitchen",
+   "The kitchen"
+  ],
+  "controlsInView": 38,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 96
+   }
+  ],
+  "save": [],
+  "screens": 2.26,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "cutoffs-1280": {
+  "route": "#/admin cutoffs",
+  "errors": 0,
+  "touch": false,
+  "vw": 1280,
+  "vh": 800,
+  "column": {
+   "left": 0,
+   "width": 1280
+  },
+  "main": {
+   "left": 20,
+   "width": 1240,
+   "top": 120
+  },
+  "content": {
+   "left": 20,
+   "right": 1260
+  },
+  "emptyRight": 20,
+  "headingsInView": [
+   "Kitchen",
+   "Pushes on this device"
+  ],
+  "controlsInView": 37,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 96
+   }
+  ],
+  "save": [],
+  "screens": 1.79,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "suppliers-1280": {
+  "route": "#/admin suppliers",
+  "errors": 0,
+  "touch": false,
+  "vw": 1280,
+  "vh": 800,
+  "column": {
+   "left": 0,
+   "width": 1280
+  },
+  "main": {
+   "left": 20,
+   "width": 1240,
+   "top": 120
+  },
+  "content": {
+   "left": 20,
+   "right": 1260
+  },
+  "emptyRight": 20,
+  "headingsInView": [
+   "Kitchen",
+   "Suppliers & pars"
+  ],
+  "controlsInView": 32,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 96
+   }
+  ],
+  "save": [],
+  "screens": 1,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "prep-standards-1280": {
+  "route": "#/admin prep-standards",
+  "errors": 0,
+  "touch": false,
+  "vw": 1280,
+  "vh": 800,
+  "column": {
+   "left": 0,
+   "width": 1280
+  },
+  "main": {
+   "left": 20,
+   "width": 1240,
+   "top": 120
+  },
+  "content": {
+   "left": 20,
+   "right": 1260
+  },
+  "emptyRight": 20,
+  "headingsInView": [
+   "Prep",
+   "Section prep standards",
+   "Set the section standard"
+  ],
+  "controlsInView": 27,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 96
+   }
+  ],
+  "save": [],
+  "screens": 1.22,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "chef-dashboard-1280": {
+  "route": "#/chef dashboard",
+  "errors": 0,
+  "touch": false,
+  "vw": 1280,
+  "vh": 800,
+  "column": {
+   "left": 0,
+   "width": 1280
+  },
+  "main": {
+   "left": 20,
+   "width": 1240,
+   "top": 120
+  },
+  "content": {
+   "left": 20,
+   "right": 1260
+  },
+  "emptyRight": 20,
+  "headingsInView": [
+   "Dashboard",
+   "Today at a glance",
+   "Run the shift"
+  ],
+  "controlsInView": 27,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 96
+   }
+  ],
+  "save": [],
+  "screens": 1.13,
+  "sideways": false,
+  "emptyWords": "Not read yet"
+ },
+ "chef-kitchen-1280": {
+  "route": "#/chef kitchen-home",
+  "errors": 0,
+  "touch": false,
+  "vw": 1280,
+  "vh": 800,
+  "column": {
+   "left": 0,
+   "width": 1280
+  },
+  "main": {
+   "left": 20,
+   "width": 1240,
+   "top": 120
+  },
+  "content": {
+   "left": 20,
+   "right": 1260
+  },
+  "emptyRight": 20,
+  "headingsInView": [
+   "Kitchen",
+   "Kitchen tools"
+  ],
+  "controlsInView": 25,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 96
+   }
+  ],
+  "save": [],
+  "screens": 1,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "chef-todo-1280": {
+  "route": "#/chef todo",
+  "errors": 0,
+  "touch": false,
+  "vw": 1280,
+  "vh": 800,
+  "column": {
+   "left": 0,
+   "width": 1280
+  },
+  "main": {
+   "left": 20,
+   "width": 1240,
+   "top": 120
+  },
+  "content": {
+   "left": 20,
+   "right": 1260
+  },
+  "emptyRight": 20,
+  "headingsInView": [
+   "Today",
+   "Chef to-do",
+   "Add a job"
+  ],
+  "controlsInView": 28,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 96
+   }
+  ],
+  "save": [],
+  "screens": 1.1,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "inbox-390": {
+  "route": "#/admin inbox",
+  "errors": 0,
+  "touch": true,
+  "vw": 390,
+  "vh": 844,
+  "column": {
+   "left": 0,
+   "width": 390
+  },
+  "main": {
+   "left": 16,
+   "width": 358,
+   "top": 80
+  },
+  "content": {
+   "left": 16,
+   "right": 442
+  },
+  "emptyRight": -52,
+  "headingsInView": [
+   "Inbox",
+   "Inbox"
+  ],
+  "controlsInView": 31,
+  "under44": [
+   "Skip to content",
+   "Inbox"
+  ],
+  "under44Count": 2,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 64
+   },
+   {
+    "cls": "tabbar",
+    "bottom": 844
+   }
+  ],
+  "save": [],
+  "screens": 1.67,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "chef-dashboard-390": {
+  "route": "#/chef dashboard",
+  "errors": 0,
+  "touch": true,
+  "vw": 390,
+  "vh": 844,
+  "column": {
+   "left": 0,
+   "width": 390
+  },
+  "main": {
+   "left": 16,
+   "width": 358,
+   "top": 80
+  },
+  "content": {
+   "left": 16,
+   "right": 374
+  },
+  "emptyRight": 16,
+  "headingsInView": [
+   "Dashboard",
+   "Today at a glance"
+  ],
+  "controlsInView": 26,
+  "under44": [
+   "Skip to content"
+  ],
+  "under44Count": 1,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 64
+   },
+   {
+    "cls": "tabbar",
+    "bottom": 844
+   }
+  ],
+  "save": [],
+  "screens": 1.42,
+  "sideways": false,
+  "emptyWords": "Not read yet"
+ },
+ "inbox-1280-busy": {
+  "route": "#/admin inbox, a functions day",
+  "errors": 0,
+  "touch": false,
+  "vw": 1280,
+  "vh": 800,
+  "column": {
+   "left": 0,
+   "width": 1280
+  },
+  "main": {
+   "left": 20,
+   "width": 1240,
+   "top": 236
+  },
+  "content": {
+   "left": 20,
+   "right": 1260
+  },
+  "emptyRight": 20,
+  "headingsInView": [
+   "Inbox",
+   "Inbox"
+  ],
+  "controlsInView": 33,
+  "under44": [],
+  "under44Count": 0,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 96
+   },
+   {
+    "cls": "fn-band",
+    "bottom": 212
+   }
+  ],
+  "save": [],
+  "screens": 1.58,
+  "sideways": false,
+  "emptyWords": ""
+ },
+ "chef-dashboard-1920-touch-sous": {
+  "route": "#/chef dashboard, a sous chef on a shared screen",
+  "errors": 0,
+  "touch": true,
+  "vw": 1920,
+  "vh": 1008,
+  "column": {
+   "left": 208,
+   "width": 1504
+  },
+  "main": {
+   "left": 228,
+   "width": 1464,
+   "top": 156
+  },
+  "content": {
+   "left": 228,
+   "right": 1692
+  },
+  "emptyRight": 228,
+  "headingsInView": [
+   "Dashboard",
+   "Today at a glance",
+   "Run the shift"
+  ],
+  "controlsInView": 31,
+  "under44": [
+   "Skip to content"
+  ],
+  "under44Count": 1,
+  "bars": [
+   {
+    "cls": "wtop has-back",
+    "bottom": 132
+   }
+  ],
+  "save": [],
+  "screens": 1,
+  "sideways": false,
+  "emptyWords": "Not read yet"
+ }
+}
