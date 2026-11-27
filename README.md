@@ -4,6 +4,8 @@
 
 # Leichhardt Kitchen Book
 
+[Ask Prep service study](docs/ask-prep-options/brief.md) tests spoken lookups and proposed ticks on a personal phone with a practice board. Shift results are pending.
+
 **Swipe between main tabs (15 November 2026).** On a touch screen, swipe left for the next tab or right for the
 previous one, in the visible tab order. The page follows the finger and settles smoothly; reduced motion removes
 the slide. Forms, open sheets and scrollable rows keep their own gestures. Existing tab buttons stay available.

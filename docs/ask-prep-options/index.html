@@ -1,0 +1,11 @@
+<!doctype html><html lang="en-AU"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Ask Prep trial</title>
+<style>
+*{box-sizing:border-box}body{margin:0 auto;max-width:38rem;padding:1rem;font:1.1rem/1.5 system-ui;color:#212925;background:#faf7f0}button,input{font:inherit;padding:.55rem .8rem;min-height:46px;max-width:100%}button{cursor:pointer}fieldset,details{margin:1rem 0;padding:.8rem}p{margin:.65rem 0}output{display:block;margin:.7rem 0;font-weight:bold}label{display:block}input{width:100%}h1{margin-bottom:.2rem}
+</style><main><h1>Ask Prep trial</h1><p>Practice board · personal phone</p>
+<p>Use the sample food names below. Your browser’s speech service may process audio. The model receives the words you submit. The trial keeps no recordings.</p>
+<button id="touch">Start timed touch lookup</button><details id="book"><summary>View practice prep</summary><ul id="lines"></ul><button id="found" disabled>Found it</button></details>
+<p>Try “What’s left on Grill?” then “Tick the onions.” Ticks are proposals only.</p>
+<button id="talk">Talk</button> <button id="stop">Stop</button>
+<form id="form"><label for="words">Or type a command</label><input id="words" maxlength="250" autocomplete="off"><button>Ask</button></form>
+<p id="heard"></p><output id="reply" aria-live="polite">Ready.</output>
+<fieldset><legend>Observer score</legend><p>Score each completed attempt. Results stay on this device until the page closes.</p><button id="right" disabled>Correct</button> <button id="wrong" disabled>Wrong</button> <button id="retry" disabled>Needed clarification</button><p id="count">0 scored</p><button id="download">Download results</button></fieldset></main><script type="module" src="/trial.js"></script></html>

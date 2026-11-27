@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Ask Prep, 26 November 2026
+
+[Study and runner](ask-prep-options/brief.md). The council recommends the separate personal trial. The live interface choice and shift results are pending.
+
 ## Section cleaning, 25 and 26 November 2026 (all three steps built)
 
 The head chef gave a written cleaning list for Grill, Pans, Fryers with salads and dessert, and Hot larder. Council: round 1 Build smaller 5 of 5; round 2 A first of three for 5 of 6, B last 6 of 6, closed rows rejected 5 of 6; a follow-up on the mix. Chosen: D, your section first with nothing hidden, in three steps. [Brief](cleaning-sections-options/brief.md), [designs](cleaning-sections-options/index.html), [contract](cleaning-schedule.md#section-cleaning-25-november-2026).
