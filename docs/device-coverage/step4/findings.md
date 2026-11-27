@@ -75,7 +75,7 @@ The test data had no prep standards, no to-do jobs, no suppliers or cut-offs and
 
 ## Built (27 November 2026)
 
-All twelve, in one pull request (`js/prep.js`, `js/admin-dashboard.js`, `js/prep-standards.js`, `css/app.css`; no reads, writes, listeners or rules). Measured on the implemented app with [`shots.cjs`](shots.cjs) (`OUT=.../built`, pictures in [`built/`](built/); the step 4 pictures above stay as they were), and in `tests/admin-step4.test.js` (39 checks, 19 of which fail on the code before the build; every fix has at least one):
+All twelve, in one pull request (`js/prep.js`, `js/admin-dashboard.js`, `js/prep-standards.js`, `css/app.css`; no reads, writes, listeners or rules). Measured on the implemented app with [`shots.cjs`](shots.cjs) (`OUT=.../built`, pictures in [`built/`](built/); the step 4 pictures above stay as they were), and in `tests/admin-step4.test.js` (41 checks; 19 of the first 39 fail on the code before the build, and every fix has at least one):
 
 | Where the work starts | 1920, before | 1920, after | 1280, before | 1280, after |
 | --- | --- | --- | --- | --- |
