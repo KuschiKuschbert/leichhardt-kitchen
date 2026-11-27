@@ -104,7 +104,9 @@ async function chef(b) {
     await closed(p);
     ok(await p.evaluate(() => document.activeElement.textContent.trim() === 'Run the shift' && location.hash === '#/chef'), 'Chef: selecting a section focuses its heading inside the panel');
     await p.keyboard.press('Tab');
-    ok(await active(p, '.a-pane [data-p="c-tab"][data-t="todo"]'), 'Chef: Tab stays at the selected section');
+    // the section's first button: Set today's team while no team is saved (head chef, 27 Nov 2026, step 4), else Chef to-do
+    ok(await p.evaluate(() => { const a = document.activeElement, sec = a && a.closest('.a-pane .set-block'), first = sec && sec.querySelector('.btn-row [data-p="c-tab"]');
+      return !!first && a === first && /Run the shift/.test(sec.querySelector('h3').textContent); }), 'Chef: Tab stays at the selected section');
     await p.locator('.wtop-who').click();
     await p.keyboard.press('/');
     ok(await p.locator('.wm').isVisible() && !(await p.locator(input).count()), 'Chef: slash leaves the chef menu open');
