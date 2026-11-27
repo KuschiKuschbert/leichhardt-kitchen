@@ -1,7 +1,8 @@
 # The click tests against the live site (GitHub Pages), as CLAUDE.md asks after every merge.
 # Runs by itself once the site has been published (the Deploy job of Publish site, or GitHub's own publish from the
 # branch until Pages is switched to GitHub Actions), and from the Actions tab with "Run workflow". A merge that changes
-# nothing the phones load is not published, so it runs no live tests (13 Nov 2026, docs/site-publishing.md).
+# nothing the phones load is not published, so it runs no live tests (13 Nov 2026, docs/site-publishing.md). After a
+# window publish Publish site starts it itself (27 Nov 2026): GitHub starts nothing after a run its bot started.
 # Firebase is the stand-in from tests/fake, so no real PIN or data is needed and nothing is written to the real book.
 # Once per venue (19 Nov 2026, docs/venues.md): the click tests run on Leichhardt's copy (GitHub Pages); every venue on
 # its own address is the same code with its settings, security header, name and an empty book swapped in

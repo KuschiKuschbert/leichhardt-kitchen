@@ -11,6 +11,9 @@
 # OWNER_EMAIL secret, then this workflow for that venue in its release window (docs/venues.md).
 # Nothing secret is ever printed: GitHub masks the secrets in the log, and the filled-in copy is never shown or kept.
 # The move to a new kitchen PIN (two PINs live at once) is still pasted by hand: see the header of firestore.rules.
+# It follows Publish site by itself (workflow_run), except after a run GitHub's bot started (the window run), when
+# GitHub starts nothing: that run starts this with site_run and site_sha, and it decides exactly as after it
+# (27 Nov 2026, docs/site-publishing.md).
 name: Publish rules
 
 on:
@@ -32,6 +35,16 @@ on:
         required: false
         default: false
         type: boolean
+      site_run:
+        description: Leave empty. Set by Publish site's window run, which starts this itself after it published
+        required: false
+        default: ''
+        type: string
+      site_sha:
+        description: Leave empty. The commit that window run published
+        required: false
+        default: ''
+        type: string
   workflow_run:
     workflows: ["pages-build-deployment", "Publish site"]
     types: [completed]
@@ -54,7 +67,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.event.workflow_run.head_sha || inputs.site_sha || github.sha }}
           fetch-depth: 0
           filter: blob:none
       - id: access
@@ -65,7 +78,20 @@ jobs:
           FROM: ${{ github.event.workflow_run.name }}
           RUN_ID: ${{ github.event.workflow_run.id }}
           TRIGGER: ${{ github.event.workflow_run.event }}
+          SITE_RUN: ${{ inputs.site_run }}
+          SITE_SHA: ${{ inputs.site_sha }}
         run: |
+          # Started by Publish site's window run (27 Nov 2026): GitHub starts nothing after a run its bot started, so that
+          # run starts this itself and names itself and the commit it published. Decide exactly as after it, from main only.
+          if [ "$EVENT_NAME" = workflow_dispatch ] && [ -n "${SITE_RUN:-}${SITE_SHA:-}" ]; then
+            if ! [[ "${SITE_RUN:-}" =~ ^[0-9]+$ ]] || ! [[ "${SITE_SHA:-}" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "::error::site_run must be a run number and site_sha a whole commit id. Nothing published."; exit 1
+            fi
+            if [ "$(git rev-parse HEAD)" != "$SITE_SHA" ] || ! git merge-base --is-ancestor HEAD origin/main; then
+              echo "::error::The commit to follow is not this checkout on main. Nothing published."; exit 1
+            fi
+            EVENT_NAME=workflow_run; FROM="Publish site"; RUN_ID=$SITE_RUN; TRIGGER=window
+          fi
           # After Publish site (13 Nov 2026, docs/site-publishing.md): only once its Published job ran, so the site is up to
           # date with this commit. It runs also when nothing needed publishing (a change to the rules alone), and not while
           # Pages still publishes from the branch, when GitHub's own publish brings this workflow instead.
@@ -92,8 +118,8 @@ jobs:
               fi
               exit 0
             fi
-            # a timed publish run with nothing to publish brings no rules (it would publish the last commit's again)
-            if [ "$TRIGGER" = schedule ]; then echo "publish=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+            # a timed or window publish run with nothing to publish brings no rules (it would publish the last commit's again)
+            if [ "$TRIGGER" = schedule ] || [ "$TRIGGER" = window ]; then echo "publish=false" >> "$GITHUB_OUTPUT"; exit 0; fi
           fi
           if [ "$EVENT_NAME" = workflow_dispatch ] || git diff-tree --no-commit-id --name-only -r HEAD | grep -Eq '^(firestore.rules|scripts/access-bootstrap.mjs|scripts/ping-index.mjs|.github/workflows/publish-rules.yml)$'; then
             echo "publish=true" >> "$GITHUB_OUTPUT"
@@ -131,7 +157,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.event.workflow_run.head_sha || inputs.site_sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22

@@ -428,7 +428,7 @@ Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records
 | Ping sound and the head chef's choice of sound | `docs/ping-sound.md` |
 | Back arrow, page trail and main-tab swipes | `docs/navigation.md`: 15 November 2026, owner chose main-tab order and smooth motion; `js/app.js`, `css/app.css`, `tests/swipe-pages.test.js`. Touch swipes use the permitted tabs, keep fields/sheets/scrollers and fixed controls steady, and respect reduced motion. |
 | Merging: ready means merge in the next release window, the one-at-a-time queue, `urgent`, the token | `docs/auto-merge.md` |
-| Publishing the site (13 Nov 2026): Publish site compares `main` with the live commit and publishes only when `scripts/site-changed.sh` finds a file the phones or live tests load; Live click tests follow its Deploy job, Publish rules its Published job; needs Pages Source: GitHub Actions; `tests/site-publish.test.js` | `docs/site-publishing.md` |
+| Publishing the site (13 Nov 2026): Publish site compares `main` with the live commit and publishes only when `scripts/site-changed.sh` finds a file the phones or live tests load; Live click tests follow its Deploy job, Publish rules its Published job; after a window run (started by GitHub's bot, which starts no follower) that run starts both itself, Publish rules told its run and commit (27 Nov 2026); needs Pages Source: GitHub Actions; `tests/site-publish.test.js` | `docs/site-publishing.md` |
 | Seasonal celebrations, festival dates and their sources | `docs/seasonal-celebrations.md`, `docs/seasonal-calendar.md` |
 | Admin flow baseline behind The Chef's Desk | `docs/admin-flow-spec.md` |
 | Smoker batch cards and what was left out (30 Oct 2026) | `docs/smoker-batches.md` |
