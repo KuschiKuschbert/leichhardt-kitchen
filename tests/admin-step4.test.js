@@ -1,0 +1,215 @@
+// The admin panel and the chef panel on the head chef's computer and a laptop (head chef, 27 Nov 2026, step 4 of the
+// device coverage plan, docs/device-coverage/step4/findings.md, Chosen). One section per fix; each check fails on the
+// code before the fix. Synthetic people and data on the click-test stand-in.
+const L = require('./lib');
+const { R, ok } = L.results();
+const K = (...p) => ['kitchens', L.PIN, ...p].join('/');
+const store = p => p.evaluate(() => window.__fake.dump());
+
+(async () => {
+  const b = await L.start();
+
+  // Chef to-do: Ctrl+Enter (Cmd+Enter on a Mac) adds the job; Enter alone keeps a new line
+  {
+    const p = await L.open(b, '#/todo', { who: 'sam', width: 1280, height: 800, touch: false, wait: 1500 });
+    await L.waitFor(p, () => !!document.querySelector('[data-k="todo-text"]'), null, 8000).catch(() => {});
+    const jobs = async () => Object.values(await store(p)).filter(x => x && x.st === 'open' && typeof x.text === 'string').map(x => x.text);
+    await p.click('[data-k="todo-text"]'); await p.keyboard.type('Ring the knife man'); await p.keyboard.press('Enter'); await L.settle(p, 200);
+    const nl = await p.$eval('[data-k="todo-text"]', e => e.value);
+    ok(/Ring the knife man\n/.test(nl) && !(await jobs()).includes('Ring the knife man'), 'Chef to-do: Enter alone starts a new line and adds nothing (' + JSON.stringify(nl) + ')');
+    await p.$eval('[data-k="todo-text"]', e => { e.value = ''; e.dispatchEvent(new Event('input', { bubbles: true })); }); await L.settle(p, 150);
+    await p.click('[data-k="todo-text"]'); await p.keyboard.type('Ring the knife man'); await p.keyboard.press('Control+Enter');
+    await L.waitFor(p, () => Object.values(window.__fake.dump()).some(x => x && x.text === 'Ring the knife man'), null, 5000).catch(() => {});
+    ok((await jobs()).includes('Ring the knife man'), 'Chef to-do: Ctrl+Enter adds the job');
+    await L.settle(p, 400);
+    await p.click('[data-k="todo-text"]'); await p.keyboard.type('Sharpen the slicer'); await p.keyboard.press('Meta+Enter');
+    await L.waitFor(p, () => Object.values(window.__fake.dump()).some(x => x && x.text === 'Sharpen the slicer'), null, 5000).catch(() => {});
+    ok((await jobs()).includes('Sharpen the slicer'), 'Chef to-do: Cmd+Enter adds the job too');
+    ok(!p.errors.length, 'Chef to-do: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
+  // the chef Dashboard: the one orange button is Set today's team while no team is saved, Chef to-do once one is
+  {
+    const today = L.ymd(new Date(L.NOW)), dark = p => p.$$eval('.ad-main .btn.dark', e => e.filter(x => x.getClientRects().length).map(x => x.textContent.trim()));
+    let p = await L.open(b, '#/chef', { who: 'sam', width: 1920, height: 1008, touch: false, wait: 1800 });
+    await L.waitFor(p, () => /Set the team/.test(document.body.textContent), null, 8000).catch(() => {});
+    let d = await dark(p);
+    ok(d.length === 1 && d[0] === "Set today's team", 'chef Dashboard, no team saved: the one orange button is Set today\'s team (' + JSON.stringify(d) + ')');
+    await p.click('.ad-main .btn.dark'); await L.settle(p, 500);
+    ok(await p.evaluate(() => (window.LK_PREP && window.LK_PREP.state || {}).ctab) === 'plan', 'chef Dashboard: it opens Today\'s team');
+    ok(!p.errors.length, 'chef Dashboard: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+    p = await L.open(b, '#/chef', { who: 'sam', width: 1920, height: 1008, touch: false, wait: 1800, extra: { [K('team', today)]: { day: today, on: [{ id: 'bo', sh: 'lunch', sec: '' }], at: L.NOW - 3600000, by: 'sam' } } });
+    await L.waitFor(p, () => /Plan saved/.test(document.body.textContent), null, 8000).catch(() => {});
+    d = await dark(p);
+    ok(d.length === 1 && d[0] === 'Chef to-do', 'chef Dashboard, a team saved: Chef to-do is the orange button, as before (' + JSON.stringify(d) + ')');
+    await p.context().close();
+  }
+
+  // one place, one name, one date style: the chef Dashboard is called Dashboard, its date and Prep standards' read time
+  // read as the rest of both panels do ("Fri, 27 Nov", "Read 14:00")
+  {
+    let p = await L.open(b, '#/chef', { who: 'sam', width: 1280, height: 800, touch: false, wait: 1800 });
+    await L.waitFor(p, () => !!document.querySelector('.c-tiles'), null, 8000).catch(() => {});
+    const h = await p.evaluate(() => ({ title: document.querySelector('#rtitle').textContent, date: (document.querySelector('.c-tiles') || {}).previousElementSibling.textContent }));
+    ok(h.title === 'Dashboard' && /^[A-Z][a-z]{2}, \d{1,2} [A-Z][a-z]{2}\. From today/.test(h.date), 'chef Dashboard: named Dashboard, the day as "Fri, 27 Nov" (' + JSON.stringify(h) + ')');
+    await p.context().close();
+    const secs = { [K('config', 'main')]: Object.assign({}, L.seed()[K('config', 'main')], { kitSecs: [{ id: 'larder', name: 'Larder' }, { id: 'grill', name: 'Grill' }] }) };
+    p = await L.open(b, '#/admin', { admin: true, adminPage: 'prep-standards', who: '', width: 1280, height: 800, touch: false, extra: secs, wait: 1800 });
+    await L.waitFor(p, () => !!document.querySelector('.ps-read'), null, 8000).catch(() => {});
+    const read = await p.evaluate(() => (document.querySelector('.ps-read') || {}).textContent || '');
+    ok(/^Read \d\d:\d\d\. /.test(read), 'Prep standards: read today says "Read 14:00." (' + read + ')');
+    await p.context().close();
+  }
+
+  // the Inbox's kitchen mail row is red only while a mail is new, or one marked Today or Food safety is open
+  {
+    const row = p => p.evaluate(() => { const r = [...document.querySelectorAll('.dsh-need')].find(e => /kitchen mails? open/.test(e.textContent)); return r ? { cls: r.className, tag: (r.querySelector('.dsh-tag') || {}).className, text: r.textContent.replace(/\s+/g, ' ').trim() } : null; });
+    const open = extra => L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width: 1280, height: 800, touch: false, wait: 1800, extra: Object.assign({ [K('config', 'admins')]: { x: 1, mailOpened: L.NOW } }, extra) });
+    let p = await open(L.mail());
+    await L.waitFor(p, () => /kitchen mails? open/.test(document.body.textContent), null, 8000).catch(() => {}); await L.settle(p, 400);
+    let r = await row(p);
+    ok(!!r && /dsh-need-due/.test(r.cls) && /dsh-tag-bad/.test(r.tag), 'Inbox: open mail with one marked Today and one Food safety stays red (' + JSON.stringify(r) + ')');
+    await p.context().close();
+    const idea = { [K('mail', 'm3')]: { from: 'sam', by: 'sam', cat: 'idea', pri: 'week', text: 'Pickle the leftover red onion', at: L.NOW - 5 * 3600000, done: false, seen: true },
+      [K('mailstat', 'm3')]: { seen: true, done: false, by: 'sam' } };
+    p = await open(idea);
+    await L.waitFor(p, () => /kitchen mail open/.test(document.body.textContent), null, 8000).catch(() => {}); await L.settle(p, 400);
+    r = await row(p);
+    ok(!!r && /dsh-need-wait/.test(r.cls) && !/dsh-tag-bad/.test(r.tag) && /All read, not done yet\./.test(r.text), 'Inbox: one read idea for this week is the quiet waiting row, not red (' + JSON.stringify(r) + ')');
+    ok(!p.errors.length, 'Inbox: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
+  // one Inbox count: on a laptop the rail's Inbox shows its count and Today none; a phone keeps Today (3)
+  for (const [w, h, touch] of [[1280, 800, false], [390, 844, true]]) {
+    const p = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width: w, height: h, touch, wait: 1800, extra: Object.assign({ [K('config', 'admins')]: { x: 1, mailOpened: L.NOW } }, L.mail()) });
+    await L.waitFor(p, () => /kitchen mails? open/.test(document.body.textContent), null, 8000).catch(() => {}); await L.settle(p, 400);
+    const c = await p.evaluate(() => ({ today: (document.querySelector('[data-p="a-group"][data-g="today"]') || {}).innerText || '', inbox: ((document.querySelector('.a-quick[data-v="inbox"] em') || {}).innerText || '') }));
+    ok(w === 1280 ? c.today.trim() === 'Today' && /^\d+$/.test(c.inbox) : /^Today \(3\)$/.test(c.today.trim()), w + ': one count for the Inbox (' + JSON.stringify(c) + ')');
+    await p.context().close();
+  }
+
+  // Prep standards: the Section picker, the read time and Add standard share one row on the laptop and the computer
+  for (const [w, h] of [[1920, 1008], [1280, 800]]) {
+    const secs = { [K('config', 'main')]: Object.assign({}, L.seed()[K('config', 'main')], { kitSecs: [{ id: 'larder', name: 'Larder' }, { id: 'grill', name: 'Grill' }] }) };
+    const p = await L.open(b, '#/admin', { admin: true, adminPage: 'prep-standards', who: '', width: w, height: h, touch: false, extra: secs, wait: 1800 });
+    await L.waitFor(p, () => !!document.querySelector('.ps-read'), null, 8000).catch(() => {});
+    const r = await p.evaluate(() => { const t = e => e && e.getBoundingClientRect(), s = t(document.querySelector('.ps-manager .ps-bar > .ps-section')), a = t(document.querySelector('[data-ps="new"]'));
+      return s && a ? { selTop: Math.round(s.top), addTop: Math.round(a.top), addBottom: Math.round(a.bottom), vh: innerHeight } : null; });
+    ok(!!r && Math.abs(r.addTop - r.selTop) < 30 && r.addBottom <= r.vh, w + ': Prep standards: Section and Add standard on one row, Add standard on the first screen (' + JSON.stringify(r) + ')');
+    ok(!p.errors.length && !(await L.overflow(p)), w + ': Prep standards: no page errors, no sideways scroll ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
+  // Kitchen Overview: at the chef Kitchen's width, each value whole beside its label (the shifts were cut off)
+  for (const [w, h] of [[1920, 1008], [1280, 800]]) {
+    const cfg = { [K('config', 'main')]: Object.assign({}, L.seed()[K('config', 'main')], { kitSecs: [{ id: 'larder', name: 'Larder' }, { id: 'grill', name: 'Grill' }],
+      kitShifts: [{ id: 'lunch', name: 'Lunch', from: 600, to: 900 }, { id: 'dinner', name: 'Dinner', from: 960, to: 1320 }, { id: 'close', name: 'Close', from: 1320, to: 1410 }] }) };
+    const p = await L.open(b, '#/admin', { admin: true, adminPage: 'kitchen-home', who: '', width: w, height: h, touch: false, extra: cfg, wait: 1800 });
+    await L.waitFor(p, () => !!document.querySelector('.k-home .st-v'), null, 8000).catch(() => {});
+    const k = await p.evaluate(() => {
+      const rows = [...document.querySelectorAll('.k-home .st-row')].filter(e => e.getClientRects().length), wide = Math.max(...rows.map(e => e.getBoundingClientRect().width));
+      const cut = [...document.querySelectorAll('.k-home .st-v > span')].filter(e => e.scrollWidth > e.clientWidth + 1).map(e => e.textContent);
+      const gaps = rows.map(r => { const l = r.querySelector('.st-l'), v = r.querySelector('.st-v > span'); return l && v && v.textContent.trim() ? Math.round(v.getBoundingClientRect().left - l.getBoundingClientRect().right) : 0; });
+      return { wide: Math.round(wide), cut, gap: Math.max(...gaps) };
+    });
+    ok(k.wide <= 800 && !k.cut.length && k.gap < 520, w + ': Kitchen Overview: rows at most 768 px wide, no value cut off, label and value near (' + JSON.stringify(k) + ')');
+    ok(!p.errors.length && !(await L.overflow(p)), w + ': Kitchen Overview: no page errors, no sideways scroll ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
+  // Today's team on an empty day: once the server says no team is saved, the On break now board and Add staff / Find a
+  // person wait until there is a team, so the names to tick come first; a failed read keeps the board and its warning
+  {
+    const today = L.ymd(new Date(L.NOW));
+    const cfg = { [K('config', 'main')]: Object.assign({}, L.seed()[K('config', 'main')], { kitShifts: [{ id: 'lunch', name: 'Lunch', from: 600, to: 900 }, { id: 'dinner', name: 'Dinner', from: 960, to: 1320 }] }) };
+    const look = p => p.evaluate(() => {
+      const board = document.querySelector('.tm-away'), dock = document.querySelector('.tm-focus-save, .sv-dock'), first = document.querySelector('[data-k^="tm-quick-person"]');
+      const lab = first && first.closest('label'), r = lab && lab.getBoundingClientRect(), d = dock && dock.getBoundingClientRect();
+      return { board: board ? (board.hidden ? 'hidden' : 'shown') : 'none', words: board ? board.textContent.replace(/\s+/g, ' ').trim().slice(0, 140) : '', toolbar: !!document.querySelector('.tm-focus-toolbar'),
+        firstName: r && d ? r.bottom <= d.top && r.top >= 0 : false, at: r ? Math.round(r.bottom) : null, dock: d ? Math.round(d.top) : null };
+    });
+    for (const [w, h] of [[1920, 1008], [1280, 800]]) {
+      const p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', who: '', width: w, height: h, touch: false, extra: cfg, wait: 2000 });
+      await L.waitFor(p, () => !!document.querySelector('[data-k^="tm-quick-person"]'), null, 8000).catch(() => {}); await L.settle(p, 400);
+      const t = await look(p);
+      ok(t.board === 'hidden' && !t.toolbar && t.firstName, w + ': Today\'s team, nothing saved: no board, no toolbar, the first name to tick above the Save bar (' + JSON.stringify(t) + ')');
+      ok(!p.errors.length && !(await L.overflow(p)), w + ': Today\'s team: no page errors, no sideways scroll ' + p.errors.join(' | '));
+      await p.context().close();
+    }
+    let p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', who: '', width: 1280, height: 800, touch: false, extra: cfg, failReads: '/team(/|$)', wait: 2000 });
+    await L.waitFor(p, () => /Could not/.test((document.querySelector('.ad-main') || {}).textContent || ''), null, 8000).catch(() => {}); await L.settle(p, 600);
+    let t = await look(p);
+    const failed = await p.evaluate(() => { const m = document.querySelector('.ad-main'); return { said: /Could not load the team/.test(m.textContent), retry: !!m.querySelector('button') && /Try again/.test(m.textContent) }; });
+    ok(failed.said && failed.retry && t.board !== 'hidden', 'Today\'s team: a failed read says so with Try again, never a quietly empty page (' + JSON.stringify(Object.assign(t, failed)) + ')');
+    await p.context().close();
+    p = await L.open(b, '#/admin', { admin: true, adminPage: 'plan', who: '', width: 1280, height: 800, touch: false, wait: 2000,
+      extra: Object.assign({ [K('team', today)]: { day: today, on: [{ id: 'bo', sh: 'lunch', sec: '' }], at: L.NOW - 3600000, by: 'sam', upd: L.NOW - 3600000 } }, cfg) });
+    await L.waitFor(p, () => !!document.querySelector('.tm-focus-toolbar'), null, 8000).catch(() => {}); await L.settle(p, 400);
+    t = await look(p);
+    ok(t.toolbar, 'Today\'s team: with a team saved, Add staff and Find a person are back (' + JSON.stringify(t) + ')');
+    await p.context().close();
+  }
+
+  // Order cut-offs: the cut-offs first, the once-set Order days under them
+  {
+    const p = await L.open(b, '#/admin', { admin: true, adminPage: 'cutoffs', who: '', width: 1280, height: 800, touch: false, wait: 1800 });
+    await L.waitFor(p, () => !!document.querySelector('.a-od'), null, 8000).catch(() => {});
+    const o = await p.evaluate(() => { const od = document.querySelector('.a-od'), pane = od && od.parentElement, first = pane && [...pane.children].find(e => e.getClientRects().length);
+      return { first: first ? first.className : '', odAfterCut: !!od && !!od.previousElementSibling }; });
+    ok(o.first && !/a-od/.test(o.first) && o.odAfterCut, 'Order cut-offs: the cut-offs come first, Order days under them (' + JSON.stringify(o) + ')');
+    ok(!p.errors.length && !(await L.overflow(p)), 'Order cut-offs: no page errors, no sideways scroll ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
+  // slimmer page tops: the Google line level with the rail's Find from 1000 px (a phone keeps it at the top), the heading
+  // that repeats the tab not drawn (kept for screen readers), the Inbox's count on its intro line
+  {
+    const extra = Object.assign({ [K('config', 'admins')]: { x: 1, mailOpened: L.NOW } }, L.mail());
+    for (const [w, h, touch] of [[1920, 1008, false], [1280, 800, false], [390, 844, true]]) {
+      let p = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width: w, height: h, touch, wait: 1800, extra });
+      await L.waitFor(p, () => !!document.querySelector('.dsh-need'), null, 8000).catch(() => {}); await L.settle(p, 400);
+      const t = await p.evaluate(() => {
+        const r = s => { const e = document.querySelector(s); return e && e.getClientRects().length ? e.getBoundingClientRect() : null; };
+        const bar = r('.p-admin > .p-bar'), find = r('.a-find-rail'), rail = r('.a-nav'), row = r('.dsh-need'), head = document.querySelector('.dsh-needs .dsh-panel-head');
+        return { barTop: bar && Math.round(bar.top), barLeft: bar && Math.round(bar.left), findTop: find && Math.round(find.top), railRight: rail && Math.round(rail.right), firstRow: row && Math.round(row.top),
+          headDrawn: !!head && head.getBoundingClientRect().height > 2, headRead: !!head && /Inbox/.test(head.textContent), intro: (document.querySelector('.ad-intro') || {}).textContent || '' };
+      });
+      if (w >= 1000) ok(Math.abs(t.barTop - t.findTop) < 40 && t.barLeft > t.railRight && t.firstRow < (w === 1920 ? 470 : 430) && !t.headDrawn && t.headRead && /^What needs you today\. \d+ to look at\.$/.test(t.intro),
+        w + ': Inbox: the Google line beside Find, the repeated Inbox row not drawn but read, the count on the intro, the first row higher (' + JSON.stringify(t) + ')');
+      else ok(t.barTop !== null && t.barTop < 120 && t.firstRow > 0 && t.headDrawn, w + ': Inbox on a phone: the Google line stays at the top, the Inbox row with its count still shows (' + JSON.stringify(t) + ')');
+      ok(!p.errors.length && !(await L.overflow(p)), w + ': Inbox: no page errors, no sideways scroll ' + p.errors.join(' | '));
+      await p.context().close();
+      if (w === 390) continue;
+      p = await L.open(b, '#/admin', { admin: true, adminPage: 'people', who: '', width: w, height: h, touch, wait: 1800 });
+      await L.waitFor(p, () => !!document.querySelector('.pp-room'), null, 8000).catch(() => {}); await L.settle(p, 300);
+      const pp = await p.evaluate(() => { const echo = document.querySelector('.pp-room .a-tab-echo'), first = [...document.querySelectorAll('.pp-room tr, .pp-room li, .pp-room [data-p="pp-open"], .pp-room .pp-row')].find(e => e.getClientRects().length && /Sam/.test(e.textContent));
+        return { echo: echo ? echo.textContent : '', echoDrawn: !!echo && echo.getBoundingClientRect().height > 2, first: first ? Math.round(first.getBoundingClientRect().top) : null }; });
+      ok(pp.echo === 'People' && !pp.echoDrawn && pp.first !== null && pp.first < (w === 1920 ? 560 : 520), w + ': People: the repeated People heading not drawn, the first person higher (' + JSON.stringify(pp) + ')');
+      await p.context().close();
+    }
+  }
+
+  // the Inbox's count on its intro line follows the rows: tick the last open mail Done and the count drops with its row
+  {
+    const one = { [K('config', 'admins')]: { x: 1, mailOpened: L.NOW }, [K('mail', 'm3')]: { from: 'sam', by: 'sam', cat: 'idea', pri: 'week', text: 'Pickle the leftover red onion', at: L.NOW - 5 * 3600000, done: false, seen: true },
+      [K('mailstat', 'm3')]: { seen: true, done: false, by: 'sam' } };
+    const p = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width: 1280, height: 800, touch: false, wait: 1800, extra: one });
+    await L.waitFor(p, () => !!document.querySelector('.dsh-needs .ml-row [data-p="ml-tick"]'), null, 8000).catch(() => {}); await L.settle(p, 300);
+    const state = () => p.evaluate(() => ({ intro: (document.querySelector('.ad-intro') || {}).textContent || '', rows: document.querySelectorAll('.dsh-need').length, badge: (document.querySelector('.a-quick[data-v="inbox"] em') || {}).textContent || '' }));
+    const before = await state();
+    await p.click('.dsh-needs .ml-row [data-p="ml-tick"]');
+    await L.waitFor(p, () => (window.__fake.dump()['kitchens/000000/mail/m3'] || {}).done === true, null, 8000).catch(() => {}); await L.settle(p, 800);
+    const after = await state();
+    const said = t => +((t.intro.match(/(\d+) to look at/) || [])[1] || 0);
+    ok(said(before) === before.rows && said(after) === after.rows && after.rows === before.rows - 1 && after.badge === String(after.rows),
+      'Inbox: after the last mail is ticked Done, the intro, the rows and the rail agree (' + JSON.stringify({ before, after }) + ')');
+    ok(!p.errors.length, 'Inbox Done: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
+  await b.close();
+  L.report(R);
+})().catch(e => { console.error(e); process.exit(1); });

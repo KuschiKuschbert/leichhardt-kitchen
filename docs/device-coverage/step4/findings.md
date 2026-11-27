@@ -72,3 +72,22 @@ The test data had no prep standards, no to-do jobs, no suppliers or cut-offs and
 - **Build, with his OK (each changes an earlier choice):** open kitchen mail red only while a mail is new or urgent (2, the colour contract); the Google account line beside the rail's Find (1, from 23 Oct); with no team saved, Today's team hides the On break now board and the toolbar until it is saved (3, extends 9 Nov); Order cut-offs before the once-set Order days (6, changes 24 Nov).
 - **His use:** at his computer the admin panel is mostly for setting things up (People, Today's team, the Kitchen pages), so the Inbox keeps its single column (question 1: no numbers beside it).
 - **Not asked yet:** the Records pane (4), Kitchen Overview with only its own rows and Suppliers & pars opening the catalogue (6); questions 2 to 4.
+
+## Built (27 November 2026)
+
+All twelve, in one pull request (`js/prep.js`, `js/admin-dashboard.js`, `js/prep-standards.js`, `css/app.css`; no reads, writes, listeners or rules). Measured on the implemented app with [`shots.cjs`](shots.cjs) (`OUT=.../built`, pictures in [`built/`](built/); the step 4 pictures above stay as they were), and in `tests/admin-step4.test.js` (41 checks; 19 of the first 39 fail on the code before the build, and every fix has at least one):
+
+| Where the work starts | 1920, before | 1920, after | 1280, before | 1280, after |
+| --- | --- | --- | --- | --- |
+| Inbox: the first row | 545 | 435 | 503 | 392 |
+| People: the first person | | 535 | 597 | 492 |
+| Insights: the first numbers | 988 | about 690 | 791 | about 650 |
+| Prep standards: Add standard | 952 | about 720 | below the first screen | about 680 |
+| Today's team, no team saved: the first name to tick (Save bar at 941 and 733) | under the Save bar | 725 | under the Save bar | 682 |
+
+- **How each one was built.** The Google account line moves level with the rail's Find from 1000 px (the chef panel's name line too, as both panels share the frame); a phone keeps it at the top. The repeated heading is kept for screen readers and the jump chips (`.a-tab-echo`); the Inbox's own row hides from 720 px, where the intro shows its count, and a phone keeps it. "Urgent" mail is one marked Today or Food safety (Kitchen mail has no other urgent field): with none open and nothing new, the row is the quiet waiting row. Today's team hides its board only after a fresh server read says no team is saved (a failed read shows "Could not load the team" with Try again, as before), and its toolbar while the day has nobody on it; "Who's working?" is said once on screen (the list's own name kept for screen readers). Order days sit under the cut-offs (the order day brief says so too). The chef Dashboard's date and Prep standards' read time use the book's `dayShort()` ("Fri, 27 Nov", "Read 14:00.").
+- **Phones and the tablet** (390 and 768, every admin page pictured and the chef Dashboard, compared pixel for pixel with the code before): the repeated headings stay drawn there (the rule is from 1000 px, where it was studied), so Insights, Records, Reports Team, People, Suppliers, Kitchen mail and Guides are the same pixels as before. What differs is what was chosen: the Inbox mail row's words, Today's team on an empty day, Prep standards' one row, Order days under the cut-offs, the chef Dashboard's name, date and orange button, and Kitchen Overview, whose values now show whole on a phone too instead of being cut short.
+- **The Inbox count follows the rows:** ticking the last open mail Done drops the intro, the rows and the rail from 2 to 1 together (checked).
+- **Tests changed with a reason:** `tests/chef-panel.test.js` (Today opens on its Dashboard, now named Dashboard), `tests/team-notebook.test.js` (with no team saved the board waits; the page is ready when its staff chooser shows), `tests/admin-find-keyboard.test.js` (Tab lands on Run the shift's first button, Set today's team while no team is saved).
+- **Still not tested:** a long Google address beside Find at 1000 to 1100 px, a real day's prep standards and to-do jobs, and Tab order with a keyboard on the laptop.
+

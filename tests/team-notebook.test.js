@@ -34,7 +34,7 @@ const pick = async (p, k, v) => { await L.pick(p, 'select[data-k="' + k + '"]', 
 const val = (p, k) => p.$eval('select[data-k="' + k + '"]', e => e.value);
 const lines = (p, id) => p.$$eval('.tm-tlrow[data-id="' + id + '"] .tm-tlsvc', all => all.map(e => e.dataset.sh));
 // the notebook's work column is drawn (its Add staff button shows with or without people on the day)
-async function ready(p) { await L.waitFor(p, () => !!document.querySelector('.tm-page.tm-notebook .tm-nbook .tm-work [data-p="tm-add-staff"]'), null, 6000); }
+async function ready(p) { await L.waitFor(p, () => !!document.querySelector('.tm-page.tm-notebook .tm-nbook .tm-work [data-p="tm-add-staff"], .tm-page.tm-notebook .tm-nbook .tm-work .tm-quick-add:not([hidden])'), null, 6000); }
 async function refresh(p, rec) {
   if (rec !== undefined) await p.evaluate(([k, v]) => window.__fake.write(k, v), [TEAM, rec]);
   await press(p, '[data-p="tm-refresh"]');
@@ -174,8 +174,9 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   const loading = await away(p) || await txt(p, '.tm-page') || '';
   ok(/Checking|Loading/i.test(loading) && !/Nobody scheduled away|No saved plan/i.test(loading), 'loading: a pending plan read never becomes a false zero or an unset plan');
   await p.evaluate(() => window.__fake.releaseTeamRead()); await ready(p);
-  ok(/No saved plan/i.test(await away(p) || '') && !/Nobody scheduled away/i.test(await away(p) || ''), 'unset: no saved plan is distinct from a checked empty schedule');
-  ok(await boardShown(p), 'unset: a missing saved plan keeps its explanatory board visible');
+  ok(/No team saved yet/i.test(await away(p) || '') && !/Nobody scheduled away/i.test(await away(p) || ''), 'unset: no team saved is distinct from a checked empty schedule');
+  // since 27 Nov 2026 (head chef, step 4) the board waits until a team is saved: the names to tick come first
+  ok(!(await boardShown(p)), 'unset: with no team saved the board waits until there is one');
   await p.evaluate(() => { window.__fake.failReads = /\/team(?:\/|$)/; }); await refresh(p);
   const errorState = await away(p) || await txt(p, '.tm-page') || '';
   ok(/Could not check|Could not load/i.test(errorState) && !/Nobody scheduled away/i.test(errorState), 'failed read: an unavailable plan is unknown, never Nobody scheduled away');

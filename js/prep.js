@@ -7028,7 +7028,9 @@
     return { canRead: psCanRead, canEdit: psCanEdit, canAdd: psCanAdd, identity: stableIdentity, workLock: workLock,
       sections: kitSecs, defaultSection: psDefaultSection, recipes: function () { return D.recipes.filter(function (r) { return r.id && r.name; }); },
       read: psRead, save: psSave, draw: draw, refreshHint: psHintPaint, listHTML: lvHTML,
-      now: now, day: dayNow, clock: function (ms) { return T.day(ms) + ' ' + T.clock(ms); }, esc: esc, inkWait: inkWait,
+      // one date style across both panels (head chef, 27 Nov 2026, step 4): "Read 14:00" today, "Thu, 26 Nov, 14:00" before,
+      // as Kitchen mail and Records say it (it was 2026-11-27 14:00)
+      now: now, day: dayNow, clock: function (ms) { return T.day(ms) === dayNow() ? T.clock(ms) : mlWhen(ms); }, esc: esc, inkWait: inkWait,
       saveButton: svButton, saveStart: svStart, saveDone: svDone, saveFail: svFail, saveLine: svLine,
       saveStop: svStop, saveHeld: svHeld, arm: arm, armed: armed, btnPatch: btnPatch, errMsg: errMsg,
       pick: psPick, add: psAdd, openWork: psOpenWork };
@@ -7367,6 +7369,8 @@
     var navBusy = intelligenceBusy(), mlN = mlInfo().n, ag = adminGroupOf(at), agTabs = ag[2].filter(function (t) { return t !== 'overview' && (t !== 'mail' || mlOwner()); });
     // The shared rooms (4 Nov 2026 design B, plus Prep on 8 Nov): a rail on a laptop and one row on
     // a phone, with the room's pages as tabs beside its title. Page ids are the same as before the rooms.
+    // Today's mail count (.a-g-n) hides where the Inbox shows its own count beside it: one count for one queue (head chef,
+    // 27 Nov 2026, step 4); a phone, with no Inbox badge, keeps it
     // Redesign step 8 (8 Nov 2026, admin B): on a laptop the rail is dark and starts with Find (/), then the Inbox with its
     // count and the Dashboard, one tap from any room; the rooms follow. On a phone Find sits in the page heading and the
     // rooms stay one row. Drawn after the page, so the Inbox count is the one the page just drew (no read of its own).
@@ -7376,7 +7380,7 @@
         return '<button type="button" class="a-quick" data-p="a-view" data-v="' + q[0] + '"' + (navBusy ? ' disabled' : '') + ' aria-current="' + (at === q[0]) + '"><span>' + q[1] + '</span>' + (q[0] === 'inbox' && n ? '<em>' + n + '</em>' : '') + '</button>';
       }).join('') + '</div>' : '';
       return '<aside class="a-nav">' + findBtn('a-find-rail') + quick + '<p class="ad-nav-label">Admin panel</p><nav class="a-groups" aria-label="Admin rooms">' + A_GROUPS.map(function (g) {
-        return '<button type="button" class="a-group" data-p="a-group" data-g="' + g[0] + '"' + (navBusy ? ' disabled' : '') + ' aria-current="' + (ag[0] === g[0] ? 'page' : 'false') + '"><span>' + g[1] + (g[0] === 'today' && mlN ? ' (' + mlN + ')' : '') + '</span></button>';
+        return '<button type="button" class="a-group" data-p="a-group" data-g="' + g[0] + '"' + (navBusy ? ' disabled' : '') + ' aria-current="' + (ag[0] === g[0] ? 'page' : 'false') + '"><span>' + g[1] + (g[0] === 'today' && mlN ? '<span class="a-g-n"> (' + mlN + ')</span>' : '') + '</span></button>';
       }).join('') + '</nav></aside>';
     }
     function findBtn(cls) { return '<button type="button" class="a-find ' + cls + '" data-p="a-find"' + (navBusy ? ' disabled' : '') + ' aria-haspopup="dialog" aria-keyshortcuts="/"><span>Find</span><kbd aria-hidden="true">/</kbd></button>'; }
@@ -7386,7 +7390,7 @@
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
-    var pane = at === 'prep-standards' ? psPanelHTML() : at === 'plan' ? (teamOK() ? teamPageHTML() : teamNoHTML()) : at === 'dashboard' || at === 'inbox' ? dashHTML(at) : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? (CUT_OK ? odAdminHTML() : '') + cutAdminHTML() : at === 'kitchen-home' ? kitchenHomeHTML(d, saveBlock) : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'records' ? recordsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' && owner && S.personId ? personPageHTML(d, S.personId, saveBlock) : at === 'people' ? (
+    var pane = at === 'prep-standards' ? psPanelHTML() : at === 'plan' ? (teamOK() ? teamPageHTML() : teamNoHTML()) : at === 'dashboard' || at === 'inbox' ? dashHTML(at) : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() + (CUT_OK ? odAdminHTML() : '') : at === 'kitchen-home' ? kitchenHomeHTML(d, saveBlock) : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'records' ? recordsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' && owner && S.personId ? personPageHTML(d, S.personId, saveBlock) : at === 'people' ? (
       '<section class="set-block pp-room"><span class="label">People</span>' +
       (S.level === 'owner' && S.platformSt === 'err' ? '<p class="p-err a-plat-err" role="status">Could not check which profile is the owner\'s own. A change to it may not save. The book tries again by itself.</p>' : '') +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
@@ -7404,9 +7408,18 @@
     if (at !== 'proofreader' && intelligenceAllowed() && proofModule()) resume += proofModule().resumeHTML(proofAdapter());
     // Today's team takes the chef panel's one-line Team heading on a phone (css, .tm-admin-plan), so the On break now
     // board ends above the Save dock on the first screen (16 Nov 2026, docs/team-minimum-options/brief.md, Board above the dock)
+    // a page's first heading that only repeats the tab just above it is kept for screen readers and the jump chips, not
+    // drawn (head chef, 27 Nov 2026, step 4: People under People, Insights under Insights)
+    if (at !== 'inbox') pane = tabEcho(pane, A_TAB_NAMES[at]);   // the Inbox's head has its own rule (.dsh-head-echo)
     return panelShellHTML(bar, railHTML(), findBtn('a-find-head') + adminHeadingHTML(ag, at), tabsBar, (owner ? idCardHTML() : '') + resume + pane, at === 'plan' ? 'tm-admin-plan' : '');
   }
   // The owner and PIN chefs use one responsive panel shell. Each supplies its own permitted rooms and real pages.
+  // the first heading in a page whose words are exactly its tab's name gets .a-tab-echo (one per page, the first only)
+  function tabEcho(pane, name) {
+    if (!name) return pane;
+    var re = new RegExp('<(h2|h3|span) class="([^"]*\\b(?:a-title|label|a-ch-h|p-h|ai-queue-title)\\b[^"]*)"([^>]*)>' + esc(name).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '</(?:h2|h3|span)>');
+    return pane.replace(re, function (m, tag, cls, rest) { return '<' + tag + ' class="' + cls + ' a-tab-echo"' + rest + '>' + esc(name) + '</' + tag + '>'; });
+  }
   function panelShellHTML(bar, rail, heading, tabs, pane, extra) {
     return '<div class="p-admin ad-admin' + (extra ? ' ' + extra : '') + '">' + bar + '<div class="ad-layout">' + rail + '<div class="ad-main"><header class="ad-heading">' + heading + '</header>' + tabs + '<div class="a-pane">' + pane + '</div></div></div></div>';
   }
@@ -7457,11 +7470,13 @@
     var prepWait = S.date !== dayNow() || S.itemsState === 'idle' ? 'Not read yet' : S.itemsState === 'error' ? 'Could not load' : S.itemsState === 'offline' ? 'No signal' : 'Checking the list';
     var orderWait = S.ordState === 'error' ? 'Could not load' : S.ordState === 'offline' ? 'No signal' : S.ordState === 'loading' ? 'Checking the list' : 'Not read yet';
     var need = teamNeed(), teamText = { set: 'Plan saved', unset: 'Set the team', error: 'Could not load', loading: 'Checking the plan' }[need] || 'Checking the plan';
-    return '<section class="set-block"><h3 class="a-ch-h">Today at a glance</h3><p class="hint">' + esc(longDate(dayNow())) + '. From today’s lists on this device.</p><div class="dsh-dtiles c-tiles">' +
+    return '<section class="set-block"><h3 class="a-ch-h">Today at a glance</h3><p class="hint">' + esc(dayShort(dayNow())) + '. From today’s lists on this device.</p><div class="dsh-dtiles c-tiles">' +
       chefTile('prep-history', 'Prep', prep ? prep.filter(function (x) { return x.done; }).length + ' of ' + prep.length + ' done' : prepWait, dayNow()) +
       chefTile('order-history', 'Orders', orders ? orders.filter(function (x) { return !x.ordered; }).length + ' still to order' : orderWait, dayNow()) +
       chefTile('plan', "Today's team", teamText) + '</div></section>' +
-      '<section class="set-block"><h3 class="a-ch-h">Run the shift</h3><div class="btn-row"><button type="button" class="btn dark" data-p="c-tab" data-t="todo">Chef to-do</button>' +
+      // the one orange button is the job that needs doing: with no team saved it is Set today's team, as on the admin Inbox
+      // (head chef, 27 Nov 2026, step 4); otherwise Chef to-do, as before
+      '<section class="set-block"><h3 class="a-ch-h">Run the shift</h3><div class="btn-row">' + (need === 'unset' && chefTabAllowed('plan') ? '<button type="button" class="btn dark" data-p="c-tab" data-t="plan">Set today\'s team</button><button type="button" class="btn" data-p="c-tab" data-t="todo">Chef to-do</button>' : '<button type="button" class="btn dark" data-p="c-tab" data-t="todo">Chef to-do</button>') +
       (chefTabAllowed('notes') ? '<button type="button" class="btn" data-p="c-tab" data-t="notes">Write a shift ping</button>' : '') +
       (chefTabAllowed('mail') ? '<button type="button" class="btn" data-p="c-tab" data-t="mail">Kitchen mail</button>' : '') +
       '<a class="btn" href="#/fn/now">Functions service view</a></div></section>';
@@ -7545,7 +7560,8 @@
     else pane = chefKitchenHTML();
     pane = pane.replace(/ id="rtitle"/g, '');
     var bar = '<div class="p-bar"><span><strong>' + title + '</strong> · ' + esc(whoName()) + '</span><span class="p-links">' + (adminTabs() ? '<a class="p-link" href="#/admin">Admin panel</a>' : '') + '</span></div>';
-    var heading = find('a-find-head') + '<p class="ad-eyebrow">' + title + '</p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + group[1] + '</h2><p class="ad-intro">' + ({today:'Run the shift with the team. ' + (adminTabs() ? 'Owner reports, permissions and settings are in the Admin panel.' : whoHead() ? 'Owner reports, permissions and settings need the Admin panel’s Google sign-in.' : 'Owner reports, permissions and settings are the head chef’s.'),reports:'Read the prep and order records for a day.',team:'Plan the team and look after the people.',kitchen:'The recipe book and the kitchen tools.',prep:'The prep each section should have ready before service.'})[group[0]] + '</p>';
+    // the Dashboard is called Dashboard, as the admin panel's is (head chef, 27 Nov 2026, step 4: one place, one name)
+    var heading = find('a-find-head') + '<p class="ad-eyebrow">' + title + '</p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + (at === 'dashboard' ? C_NAMES.dashboard : group[1]) + '</h2><p class="ad-intro">' + ({today:'Run the shift with the team. ' + (adminTabs() ? 'Owner reports, permissions and settings are in the Admin panel.' : whoHead() ? 'Owner reports, permissions and settings need the Admin panel’s Google sign-in.' : 'Owner reports, permissions and settings are the head chef’s.'),reports:'Read the prep and order records for a day.',team:'Plan the team and look after the people.',kitchen:'The recipe book and the kitchen tools.',prep:'The prep each section should have ready before service.'})[group[0]] + '</p>';
     if (at === 'plan') {
       bar = '';
       heading = find('a-find-head') + '<div class="tm-chef-identity"><p><strong>' + title + '</strong> · ' + esc(whoName()) + '</p>' + (adminTabs() ? '<a class="p-link" href="#/admin">Admin panel</a>' : '') + '</div><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + group[1] + '</h2>';
@@ -7985,7 +8001,9 @@
   /* The admin heading: the room, or on the Inbox and the Dashboard the page's own name under Today (head chef,
      10 Nov 2026, docs/admin-dashboard-restyle-options/brief.md), so one place has one name. */
   function adminHeadingHTML(ag, at) {
-    var page = at === 'inbox' ? ['Inbox', 'What needs you today.'] : at === 'dashboard' ? ['Dashboard', 'How the kitchen is going, and where to look next.'] : null;
+    // the Inbox's count sits on its intro line (head chef, 27 Nov 2026, step 4: the row that said it is not drawn)
+    var m = at === 'inbox' && intelligenceAllowed() ? dashModule() : null, n = m && m.count ? m.count() : null;
+    var page = at === 'inbox' ? ['Inbox', 'What needs you today.' + (n ? ' ' + n + ' to look at.' : n === 0 ? ' All clear.' : '')] : at === 'dashboard' ? ['Dashboard', 'How the kitchen is going, and where to look next.'] : null;
     return '<p class="ad-eyebrow">' + (page ? 'Today' : 'Kitchen administration') + '</p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + (page ? page[0] : ag[1]) + '</h2><p class="ad-intro">' + (page ? page[1] : A_GROUP_NOTES[ag[0]]) + '</p>';
   }
   /* The admin page the panel opens on: the Inbox on a first visit (redesign step 8, 8 Nov 2026; until then the
@@ -15087,6 +15105,9 @@ if (list.length) sg('oreg', 's');
     }
     if (e.key === 'Escape' && S.recipeOpen) { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return; }
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.getAttribute && e.target.getAttribute('data-k') === 'n-text') { e.preventDefault(); saveNote(); return; }
+    // Chef to-do (head chef, 27 Nov 2026, step 4): Ctrl+Enter (Cmd+Enter on a Mac) adds the job, as a shift ping saves; Enter
+    // alone still starts a new line. Nothing to add, nothing happens (the button's own rule)
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.getAttribute && e.target.getAttribute('data-k') === 'todo-text') { e.preventDefault(); if (tdDirty()) todoSave(); return; }
     // the guide search: the Search key drops the keyboard so the results show (the list follows each letter already)
     if (e.key === 'Enter' && e.target.getAttribute && e.target.getAttribute('data-k') === 'g-q') { e.preventDefault(); e.target.blur(); return; }
     if (e.key === 'Enter' && e.target.getAttribute && e.target.getAttribute('data-k') === 'p-pin') { e.preventDefault(); var b = S.root.querySelector('[data-p="pin-go"]'); if (b) b.click(); }
@@ -15230,8 +15251,9 @@ if (list.length) sg('oreg', 's');
       toast(on ? 'Sous chefs can read and tick off kitchen mail now.' : 'Only you read kitchen mail now.');
     }, function (e) { failed(e); draw(); });
   }
-  // n: open mail (the count on the chef hat), fresh: how many of them nobody has opened the Mail tab for yet
-  function mlInfo() { var l = mlOwner() && mlOpen ? mlOpen : []; return { n: l.length, fresh: l.filter(function (x) { return !x.seen; }).length }; }
+  // n: open mail (the count on the chef hat), fresh: how many of them nobody has opened the Mail tab for yet, urg: how many
+  // are marked Today or Food safety (the Inbox row is red only while one is fresh or urgent: head chef, 27 Nov 2026, step 4)
+  function mlInfo() { var l = mlOwner() && mlOpen ? mlOpen : []; return { n: l.length, fresh: l.filter(function (x) { return !x.seen; }).length, urg: l.filter(function (x) { return x.pri === 'today' || x.cat === 'safety'; }).length }; }
   function mlTell() { var n = mlInfo().n; if (n !== mlLastN) { mlLastN = n; try { window.dispatchEvent(new Event('lk-mail')); } catch (e) {} } }
   function mlGrab(sn) { return sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); }
   /* open mail: one query (one read per open message), on the head chef's device when the book opens and after 30 minutes
@@ -16689,12 +16711,15 @@ if (list.length) sg('oreg', 's');
     var body = '<p class="hint">Choose the staff working this day and the services for this group. Add them, then set sections and breaks. Nothing is saved until Save.</p>' +
       '<fieldset class="tm-quick-services' + (hid.length ? ' tm-occ-row' : '') + '"><legend>Services for this group</legend>' + shs.map(function (x) { return '<label><input type="checkbox" data-k="tm-quick-shift:' + esc(x.id) + '"' + (q.shifts[x.id] ? ' checked' : '') + dis + '><span>' + esc(x.name) + '</span></label>'; }).join('') +
       hid.map(function (x) { return '<button type="button" class="chip tm-occ-add" data-p="tm-occ-show" data-v="' + esc(x.id) + '" aria-label="' + esc('Add ' + x.name + ' to the services for this group') + '"' + dis + '>+ ' + esc(x.name) + '</button>'; }).join('') + '</fieldset>' +
-      '<fieldset class="tm-quick-people"><legend>Who\'s working?</legend>' + ps.map(function (p) { return '<label><input type="checkbox" data-k="tm-quick-person:' + esc(p.id) + '"' + (q.people[p.id] ? ' checked' : '') + dis + '><span>' + esc(p.name) + '</span></label>'; }).join('') + '</fieldset>' +
+      // the list's own name repeats the section's heading just above it: read by screen readers, not drawn (27 Nov 2026)
+      '<fieldset class="tm-quick-people"><legend class="visually-hidden">Who\'s working?</legend>' + ps.map(function (p) { return '<label><input type="checkbox" data-k="tm-quick-person:' + esc(p.id) + '"' + (q.people[p.id] ? ' checked' : '') + dis + '><span>' + esc(p.name) + '</span></label>'; }).join('') + '</fieldset>' +
       '<p class="hint" role="status">' + count + (count === 1 ? ' person' : ' people') + ' selected · ' + services + (services === 1 ? ' service' : ' services') + '.</p><button type="button" class="btn" data-p="tm-quick-add"' + (!count || !services || busy ? ' disabled' : '') + '>Add selected staff</button>';
     return '<section class="tm-quick-add" aria-label="Who\'s working?"' + (!empty && !tmUi.quickOpen ? ' hidden' : '') + '><h3>Who\'s working?</h3>' + body + (!empty ? '<button type="button" class="p-link" data-p="tm-add-staff">Close staff selection</button>' : '') + '</section>';
   }
   function tmFocusToolbarHTML() {
     var busy = svOf('t') === 'busy';
+    // an empty day: the staff chooser is open already and there is nobody to find (head chef, 27 Nov 2026, step 4)
+    if (!tmDayPeople().length) return '';
     return '<div class="tm-focus-toolbar"><button type="button" class="btn" data-p="tm-add-staff" aria-expanded="' + !!tmUi.quickOpen + '"' + (busy ? ' disabled' : '') + '>Add staff</button><label class="visually-hidden" for="tm-find">Find a person</label><input id="tm-find" type="search" class="search tm-find" data-k="tm-q" placeholder="Find a person" value="' + esc(tmFind) + '" autocomplete="off"></div>';
   }
   function tmLiveDetailHTML(d) {
@@ -17619,16 +17644,20 @@ if (list.length) sg('oreg', 's');
     if (d.state === 'error') return 'Could not check the latest saved plan. Try Refresh. Current scheduled status is unknown.';
     if (d.state === 'loading') return 'Checking the saved plan. Current scheduled status is not available yet.';
     if (d.state === 'stale') return 'The saved plan needs checking. Refresh to check the latest plan.';
-    if (d.state === 'unset') return 'No saved plan for today. Save today\'s team to publish the planned breaks.';
+    if (d.state === 'unset') return 'No team saved yet. Save today\'s team to publish the planned breaks.';
     return 'Today\'s saved plan has not been checked. Current scheduled status is unknown.';
   }
+  // Hidden when a checked current plan has nobody away (9 Nov 2026), and since 27 Nov 2026 (head chef, step 4) when the server
+  // has said no team is saved today ('unset' comes only from a fresh server read): the board has nothing to say until the
+  // team is saved. A failed, pending or stale read keeps it, with its warning. Its DOM stays, so the clock paints show it again.
   function tmAwayHidden(d) {
     d = d || tmAwayData();
-    return d.state === 'ready' && !d.away.length && !d.invalid;
+    return d.state === 'unset' || d.state === 'ready' && !d.away.length && !d.invalid;
   }
   function tmAwayHTML(d, compact) {
     d = d || tmAwayData();
-    var source = compact ? '<p class="tm-away-source">Today · ' + (d.state === 'ready' || d.state === 'unset' ? 'Saved plan' : d.rec ? 'Last saved plan' : 'Saved plan not checked') + ' · All services</p>' : tmAwaySource(d);
+    // with no team saved there is no plan to name above "No team saved yet" (head chef, 27 Nov 2026, step 4)
+    var source = d.state === 'unset' ? '' : compact ? '<p class="tm-away-source">Today · ' + (d.state === 'ready' ? 'Saved plan' : d.rec ? 'Last saved plan' : 'Saved plan not checked') + ' · All services</p>' : tmAwaySource(d);
     var head = '<div class="tm-away-head"><h3 class="tm-away-title">On break now</h3><span class="tm-nclock" aria-label="Queensland time">' + esc(tmHHMM(T.mins())) + '</span></div>' + source;
     if (d.state !== 'ready') return head + '<p class="' + (d.state === 'unset' || d.state === 'loading' || d.state === 'clock' ? 'tm-away-empty' : 'tm-away-warn') + '">' + esc(tmAwayState(d)) + '</p>';
     var rows = d.away.map(function (g) {
