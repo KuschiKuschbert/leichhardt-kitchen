@@ -6,6 +6,7 @@
 # only when scripts/site-changed.sh finds a file the site needs. Run it by hand (Run workflow) to publish anyway.
 # Needs Settings, Pages, Source: GitHub Actions. While Pages still publishes from the branch this only says so.
 # Live click tests follow the Deploy job; Publish rules follows the Published job (it also runs when nothing was published).
+# A run GitHub's bot started (the window run) starts them itself (the follow job below): GitHub starts nothing after it.
 # A venue served by its own Firebase project (venues/*.json with host firebase, docs/venues.md) gets its own copy of the
 # same publish (scripts/venue-site.cjs: its settings, security header, name and an empty book) on its own address, in its
 # own GitHub environment, straight after the Pages publish. Published waits for those too, so no venue's rules are ever
@@ -259,6 +260,44 @@ jobs:
     timeout-minutes: 2
     steps:
       - run: echo "The site is up to date with this commit."
+
+  # GitHub starts no workflow when a run its bot started ends (no workflow_run for a run its own token started). The
+  # window run is one: the waiting run starts it. So Live click tests and Publish rules, which follow this workflow,
+  # never ran after a window publish (26 Nov 2026 22:36 and 27 Nov 15:06), and rules held with their code would have
+  # stayed held. Such a run starts both itself once it has published. Publish rules is told this run and its commit, and
+  # decides as it does after any publish. A run a person or a merge started is followed as before, so nothing runs twice;
+  # a window run that published nothing starts neither (it brings no rules, like a timed run).
+  follow:
+    name: Start the live tests and rules
+    needs: [check, deploy, published]
+    if: ${{ always() && needs.deploy.result == 'success' && needs.published.result == 'success' && github.event_name == 'workflow_dispatch' && github.triggering_actor == 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Start Live click tests and Publish rules
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SITE_RUN: ${{ github.run_id }}
+          SITE_SHA: ${{ github.sha }}
+        run: |
+          # each is tried three times, and one that cannot be started does not stop the other
+          start() {
+            for i in 1 2 3; do
+              gh workflow run "$@" --repo "$REPO" --ref main && return 0
+              [ "$i" = 3 ] || sleep $((i * 10))
+            done
+            return 1
+          }
+          failed=""
+          start live-tests.yml || failed="Live click tests"
+          start publish-rules.yml -f mode=publish -f venue=all -f site_run="$SITE_RUN" -f site_sha="$SITE_SHA" || failed="${failed:+$failed and }Publish rules"
+          if [ -n "$failed" ]; then
+            echo "::error::Could not start $failed after this window publish. Run it by hand from the Actions tab."; exit 1
+          fi
+          echo "Started Live click tests, and Publish rules, which decides from this run ($SITE_RUN) whether rules waited with their code."
 
   # The waiting run: sleeps until a minute after the next window opens (at most 5 hours 45 minutes, inside GitHub's
   # 6-hour job limit), then starts a window run, which publishes what waited. Woken early by the cap, the window run

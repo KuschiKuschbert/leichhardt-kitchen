@@ -70,6 +70,7 @@ const repo = path.join(tmp, 'repo'), bin = path.join(tmp, 'bin'), answers = path
 fs.writeFileSync(path.join(bin, 'gh'), [
   '#!/usr/bin/env bash',
   '# gh api <path> --jq <expr>: the answer saved for that path, through jq; no answer saved is an error, as when GitHub does not answer',
+  'if [ "$1" = workflow ]; then echo "${*:2}" >> "${GH_CALLS:-/dev/null}"; case " $* " in *" ${GH_FAIL:-none} "*) exit 1 ;; esac; exit 0; fi',
   '[ "$1" = api ] || exit 2',
   'key=$(printf "%s" "$2" | tr -c "A-Za-z0-9" "_")',
   'f="' + answers + '/$key.json"',
@@ -308,6 +309,79 @@ r = run(access, { EVENT_NAME: 'workflow_run', FROM: 'Publish site', RUN_ID: '7',
 eq(r.publish, 'false', 'rules: a timed run that published nothing brings no rules (the last commit\'s went out with its own push)');
 r = run(access, { EVENT_NAME: 'workflow_run', FROM: 'Publish site', RUN_ID: '7', TRIGGER: 'push' });
 eq(r.publish, 'true', 'rules: a push of the rules alone still publishes them at once');
+
+// 6. After a window publish (27 Nov 2026): GitHub starts no workflow when a run its bot started ends, and the window run
+// is one (the waiting run starts it). No Live click tests ran after the 26 Nov 22:36 and 27 Nov 15:06 window publishes,
+// and rules held with their code would have stayed held. That run now starts both itself, and Publish rules decides from it.
+{
+  const yml = wf('publish-site.yml');
+  const follow = (yml.split('\n  follow:\n')[1] || '').split(/\n  [\w-]+:\n/)[0];
+  ok(/if: \$\{\{ always\(\) && needs\.deploy\.result == 'success' && needs\.published\.result == 'success' && github\.event_name == 'workflow_dispatch' && github\.triggering_actor == 'github-actions\[bot\]' \}\}/.test(follow),
+    'window publish: only a run the bot started, once it published and Published ran, starts the followers (a person\'s run is followed by GitHub, so nothing runs twice)');
+  ok(/needs: \[check, deploy, published\]/.test(follow) && /permissions:\n      actions: write/.test(follow), 'window publish: it waits for Published and may start workflows');
+  let step = 'exit 1\n'; try { step = stepScript(yml, 'Start Live click tests and Publish rules'); } catch (e) { ok(false, 'window publish: its step is there'); }
+  const calls = path.join(tmp, 'gh-calls'), SITE = { SITE_RUN: '45943786682', SITE_SHA: 'a'.repeat(40) };
+  const started = () => fs.existsSync(calls) ? fs.readFileSync(calls, 'utf8').split('\n').filter(Boolean) : [];
+  fs.writeFileSync(calls, ''); r = run(step, Object.assign({ GH_CALLS: calls }, SITE));
+  const got = started();
+  eq([r.status, got.length], [0, 2], 'window publish: it starts two workflows');
+  ok(/^run live-tests\.yml --repo k\/book --ref main$/.test(got[0] || ''), 'window publish: Live click tests on main (' + got[0] + ')');
+  ok((got[1] || '') === 'run publish-rules.yml -f mode=publish -f venue=all -f site_run=45943786682 -f site_sha=' + 'a'.repeat(40) + ' --repo k/book --ref main',
+    'window publish: Publish rules on main, told this run and the commit it published (' + got[1] + ')');
+  fs.writeFileSync(calls, ''); r = run(step, Object.assign({ GH_CALLS: calls, GH_FAIL: 'live-tests.yml' }, SITE));
+  eq([r.status, started().filter(c => /publish-rules\.yml/.test(c)).length], [1, 1], 'window publish: Live click tests not starting still starts Publish rules, and the run fails');
+  ok(/Could not start Live click tests after this window publish/.test(r.log), 'window publish: and says which one to run by hand');
+  fs.writeFileSync(calls, ''); r = run(step, Object.assign({ GH_CALLS: calls, GH_FAIL: 'publish-rules.yml' }, SITE));
+  eq([r.status, started().filter(c => /live-tests\.yml/.test(c)).length], [1, 1], 'window publish: Publish rules not starting still starts Live click tests, and the run fails');
+  ok(/Could not start Publish rules after this window publish/.test(r.log), 'window publish: and says Publish rules is the one to run by hand');
+}
+{
+  // Publish rules started by the window run decides as after it: rules that waited with their code go out once, after it
+  const rulesWf = wf('publish-rules.yml');
+  ok((rulesWf.match(/ref: \$\{\{ github\.event\.workflow_run\.head_sha \|\| inputs\.site_sha \|\| github\.sha \}\}/g) || []).length === 2,
+    'window publish: Publish rules checks out the commit the window run published, not a newer main');
+  // the step reads them from env only: inputs.site_run once (its env line), inputs.site_sha three times (its env line, the two checkouts)
+  eq([(rulesWf.match(/inputs\.site_run/g) || []).length, (rulesWf.match(/inputs\.site_sha/g) || []).length,
+    /^          SITE_RUN: \$\{\{ inputs\.site_run \}\}\n          SITE_SHA: \$\{\{ inputs\.site_sha \}\}$/m.test(rulesWf)], [1, 3, true], 'window publish: the inputs reach the step through env only');
+  const access6 = stepScript(rulesWf, 'access');
+  const held = commit(['firestore.rules', 'js/prep.js'], 'rules and code, held for the window');
+  const note = commit(['docs/g.md'], 'a note after');
+  git('update-ref', 'refs/remotes/origin/main', note);
+  const W6 = { EVENT_NAME: 'workflow_dispatch', SITE_RUN: '7', SITE_SHA: note };
+  clearAnswers(); jobs([['Check', 'success'], ['Deploy', 'success'], ['Published', 'success'], ['Start the live tests and rules', 'in_progress']]);
+  pagesLive([{ sha: note, states: ['success'] }, { sha: before0, states: ['inactive', 'success'] }]);
+  r = run(access6, W6);
+  eq([r.status, r.publish], [0, 'true'], 'window publish: rules held with their code are published after the window run published the site');
+  const code = commit(['js/app.js'], 'code only, held for the window');
+  git('update-ref', 'refs/remotes/origin/main', code);
+  clearAnswers(); jobs([['Check', 'success'], ['Deploy', 'success'], ['Published', 'success']]);
+  pagesLive([{ sha: code, states: ['success'] }, { sha: note, states: ['inactive', 'success'] }]);
+  r = run(access6, Object.assign({}, W6, { SITE_SHA: code }));
+  eq([r.status, r.publish], [0, 'false'], 'window publish: no rules change since the version before: no rules');
+  clearAnswers(); jobs([['Check', 'success'], ['Deploy', 'skipped'], ['Published', 'success']]);
+  commit(['firestore.rules'], 'rules alone, already out with their own push');
+  git('update-ref', 'refs/remotes/origin/main', 'HEAD');
+  r = run(access6, Object.assign({}, W6, { SITE_SHA: git('rev-parse', 'HEAD') }));
+  eq([r.status, r.publish], [0, 'false'], 'window publish: a window run that published nothing brings no rules (the last commit\'s went out with its push)');
+  jobs([['Check', 'success'], ['Deploy', 'success'], ['Published', 'skipped']]);
+  r = run(access6, Object.assign({}, W6, { SITE_SHA: git('rev-parse', 'HEAD') }));
+  eq([r.status, r.publish], [0, 'false'], 'window publish: not while Published did not run (a venue copy failed), so no rules go ahead of their code');
+  for (const [bad, why] of [[{ SITE_RUN: '7; true' }, 'a run that is not a number'], [{ SITE_SHA: 'main' }, 'a commit that is not a whole commit id'],
+    [{ SITE_SHA: held }, 'a commit that is not this checkout']]) {
+    r = run(access6, Object.assign({}, W6, { SITE_SHA: git('rev-parse', 'HEAD') }, bad));
+    eq([r.status, r.publish], [1, undefined], 'window publish: ' + why + ' publishes nothing');
+  }
+  const side = git('commit-tree', 'HEAD^{tree}', '-p', 'HEAD', '-m', 'not on main');
+  git('checkout', '-q', side);
+  r = run(access6, Object.assign({}, W6, { SITE_SHA: side }));
+  eq([r.status, r.publish], [1, undefined], 'window publish: a commit not on main publishes nothing');
+  git('checkout', '-q', '-');
+  clearAnswers();
+  r = run(access6, Object.assign({}, W6, { SITE_SHA: git('rev-parse', 'HEAD') }));
+  eq([r.status, r.publish], [0, 'true'], 'window publish: GitHub not answering: publishes the rules rather than drop rules that waited (it only starts after a publish)');
+  r = run(access6, { EVENT_NAME: 'workflow_dispatch' });
+  eq([r.status, r.publish], [0, 'true'], 'Run workflow by hand still publishes the rules');
+}
 
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log((n - fails) + ' of ' + n + ' passed');
