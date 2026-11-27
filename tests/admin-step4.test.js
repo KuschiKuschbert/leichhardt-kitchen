@@ -164,6 +164,34 @@ const store = p => p.evaluate(() => window.__fake.dump());
     await p.context().close();
   }
 
+  // slimmer page tops: the Google line level with the rail's Find from 1000 px (a phone keeps it at the top), the heading
+  // that repeats the tab not drawn (kept for screen readers), the Inbox's count on its intro line
+  {
+    const extra = Object.assign({ [K('config', 'admins')]: { x: 1, mailOpened: L.NOW } }, L.mail());
+    for (const [w, h, touch] of [[1920, 1008, false], [1280, 800, false], [390, 844, true]]) {
+      let p = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width: w, height: h, touch, wait: 1800, extra });
+      await L.waitFor(p, () => !!document.querySelector('.dsh-need'), null, 8000).catch(() => {}); await L.settle(p, 400);
+      const t = await p.evaluate(() => {
+        const r = s => { const e = document.querySelector(s); return e && e.getClientRects().length ? e.getBoundingClientRect() : null; };
+        const bar = r('.p-admin > .p-bar'), find = r('.a-find-rail'), rail = r('.a-nav'), row = r('.dsh-need'), head = document.querySelector('.dsh-needs .dsh-panel-head');
+        return { barTop: bar && Math.round(bar.top), barLeft: bar && Math.round(bar.left), findTop: find && Math.round(find.top), railRight: rail && Math.round(rail.right), firstRow: row && Math.round(row.top),
+          headDrawn: !!head && head.getBoundingClientRect().height > 2, headRead: !!head && /Inbox/.test(head.textContent), intro: (document.querySelector('.ad-intro') || {}).textContent || '' };
+      });
+      if (w >= 1000) ok(Math.abs(t.barTop - t.findTop) < 40 && t.barLeft > t.railRight && t.firstRow < (w === 1920 ? 470 : 430) && !t.headDrawn && t.headRead && /^What needs you today\. \d+ to look at\.$/.test(t.intro),
+        w + ': Inbox: the Google line beside Find, the repeated Inbox row not drawn but read, the count on the intro, the first row higher (' + JSON.stringify(t) + ')');
+      else ok(t.barTop !== null && t.barTop < 120 && t.firstRow > 0, w + ': Inbox on a phone: the Google line stays at the top (' + JSON.stringify(t) + ')');
+      ok(!p.errors.length && !(await L.overflow(p)), w + ': Inbox: no page errors, no sideways scroll ' + p.errors.join(' | '));
+      await p.context().close();
+      if (w === 390) continue;
+      p = await L.open(b, '#/admin', { admin: true, adminPage: 'people', who: '', width: w, height: h, touch, wait: 1800 });
+      await L.waitFor(p, () => !!document.querySelector('.pp-room'), null, 8000).catch(() => {}); await L.settle(p, 300);
+      const pp = await p.evaluate(() => { const echo = document.querySelector('.pp-room .a-tab-echo'), first = [...document.querySelectorAll('.pp-room tr, .pp-room li, .pp-room [data-p="pp-open"], .pp-room .pp-row')].find(e => e.getClientRects().length && /Sam/.test(e.textContent));
+        return { echo: echo ? echo.textContent : '', echoDrawn: !!echo && echo.getBoundingClientRect().height > 2, first: first ? Math.round(first.getBoundingClientRect().top) : null }; });
+      ok(pp.echo === 'People' && !pp.echoDrawn && pp.first !== null && pp.first < (w === 1920 ? 560 : 520), w + ': People: the repeated People heading not drawn, the first person higher (' + JSON.stringify(pp) + ')');
+      await p.context().close();
+    }
+  }
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });

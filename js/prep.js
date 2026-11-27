@@ -7408,9 +7408,18 @@
     if (at !== 'proofreader' && intelligenceAllowed() && proofModule()) resume += proofModule().resumeHTML(proofAdapter());
     // Today's team takes the chef panel's one-line Team heading on a phone (css, .tm-admin-plan), so the On break now
     // board ends above the Save dock on the first screen (16 Nov 2026, docs/team-minimum-options/brief.md, Board above the dock)
+    // a page's first heading that only repeats the tab just above it is kept for screen readers and the jump chips, not
+    // drawn (head chef, 27 Nov 2026, step 4: People under People, Insights under Insights)
+    pane = tabEcho(pane, A_TAB_NAMES[at]);
     return panelShellHTML(bar, railHTML(), findBtn('a-find-head') + adminHeadingHTML(ag, at), tabsBar, (owner ? idCardHTML() : '') + resume + pane, at === 'plan' ? 'tm-admin-plan' : '');
   }
   // The owner and PIN chefs use one responsive panel shell. Each supplies its own permitted rooms and real pages.
+  // the first heading in a page whose words are exactly its tab's name gets .a-tab-echo (one per page, the first only)
+  function tabEcho(pane, name) {
+    if (!name) return pane;
+    var re = new RegExp('<(h2|h3|span) class="([^"]*\\b(?:a-title|label|a-ch-h|p-h|ai-queue-title)\\b[^"]*)"([^>]*)>' + esc(name).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '</(?:h2|h3|span)>');
+    return pane.replace(re, function (m, tag, cls, rest) { return '<' + tag + ' class="' + cls + ' a-tab-echo"' + rest + '>' + esc(name) + '</' + tag + '>'; });
+  }
   function panelShellHTML(bar, rail, heading, tabs, pane, extra) {
     return '<div class="p-admin ad-admin' + (extra ? ' ' + extra : '') + '">' + bar + '<div class="ad-layout">' + rail + '<div class="ad-main"><header class="ad-heading">' + heading + '</header>' + tabs + '<div class="a-pane">' + pane + '</div></div></div></div>';
   }
@@ -7992,7 +8001,9 @@
   /* The admin heading: the room, or on the Inbox and the Dashboard the page's own name under Today (head chef,
      10 Nov 2026, docs/admin-dashboard-restyle-options/brief.md), so one place has one name. */
   function adminHeadingHTML(ag, at) {
-    var page = at === 'inbox' ? ['Inbox', 'What needs you today.'] : at === 'dashboard' ? ['Dashboard', 'How the kitchen is going, and where to look next.'] : null;
+    // the Inbox's count sits on its intro line (head chef, 27 Nov 2026, step 4: the row that said it is not drawn)
+    var m = at === 'inbox' && intelligenceAllowed() ? dashModule() : null, n = m && m.count ? m.count() : null;
+    var page = at === 'inbox' ? ['Inbox', 'What needs you today.' + (n ? ' ' + n + ' to look at.' : n === 0 ? ' All clear.' : '')] : at === 'dashboard' ? ['Dashboard', 'How the kitchen is going, and where to look next.'] : null;
     return '<p class="ad-eyebrow">' + (page ? 'Today' : 'Kitchen administration') + '</p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + (page ? page[0] : ag[1]) + '</h2><p class="ad-intro">' + (page ? page[1] : A_GROUP_NOTES[ag[0]]) + '</p>';
   }
   /* The admin page the panel opens on: the Inbox on a first visit (redesign step 8, 8 Nov 2026; until then the
@@ -16700,7 +16711,8 @@ if (list.length) sg('oreg', 's');
     var body = '<p class="hint">Choose the staff working this day and the services for this group. Add them, then set sections and breaks. Nothing is saved until Save.</p>' +
       '<fieldset class="tm-quick-services' + (hid.length ? ' tm-occ-row' : '') + '"><legend>Services for this group</legend>' + shs.map(function (x) { return '<label><input type="checkbox" data-k="tm-quick-shift:' + esc(x.id) + '"' + (q.shifts[x.id] ? ' checked' : '') + dis + '><span>' + esc(x.name) + '</span></label>'; }).join('') +
       hid.map(function (x) { return '<button type="button" class="chip tm-occ-add" data-p="tm-occ-show" data-v="' + esc(x.id) + '" aria-label="' + esc('Add ' + x.name + ' to the services for this group') + '"' + dis + '>+ ' + esc(x.name) + '</button>'; }).join('') + '</fieldset>' +
-      '<fieldset class="tm-quick-people"><legend>Who\'s working?</legend>' + ps.map(function (p) { return '<label><input type="checkbox" data-k="tm-quick-person:' + esc(p.id) + '"' + (q.people[p.id] ? ' checked' : '') + dis + '><span>' + esc(p.name) + '</span></label>'; }).join('') + '</fieldset>' +
+      // the list's own name repeats the section's heading just above it: read by screen readers, not drawn (27 Nov 2026)
+      '<fieldset class="tm-quick-people"><legend class="visually-hidden">Who\'s working?</legend>' + ps.map(function (p) { return '<label><input type="checkbox" data-k="tm-quick-person:' + esc(p.id) + '"' + (q.people[p.id] ? ' checked' : '') + dis + '><span>' + esc(p.name) + '</span></label>'; }).join('') + '</fieldset>' +
       '<p class="hint" role="status">' + count + (count === 1 ? ' person' : ' people') + ' selected · ' + services + (services === 1 ? ' service' : ' services') + '.</p><button type="button" class="btn" data-p="tm-quick-add"' + (!count || !services || busy ? ' disabled' : '') + '>Add selected staff</button>';
     return '<section class="tm-quick-add" aria-label="Who\'s working?"' + (!empty && !tmUi.quickOpen ? ' hidden' : '') + '><h3>Who\'s working?</h3>' + body + (!empty ? '<button type="button" class="p-link" data-p="tm-add-staff">Close staff selection</button>' : '') + '</section>';
   }

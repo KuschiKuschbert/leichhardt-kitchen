@@ -3679,6 +3679,8 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
 .p-admin.ad-admin { display: block; width: 100%; max-width: none; margin: 0 auto; }
 .p-admin.ad-admin > .p-bar { align-items: center; gap: .25rem 1rem; margin-bottom: .8rem; padding-bottom: .55rem; border-bottom: 1px solid var(--line); color: var(--muted); font-size: .8125rem; overflow-wrap: anywhere; }
 .p-admin.ad-admin > .p-bar > span { min-width: 0; }
+/* a page's heading that only repeats its tab, and the Inbox's own head row: read by screen readers, not drawn (27 Nov 2026) */
+.a-tab-echo { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .p-admin.ad-admin > .p-bar strong { color: var(--ink); font-weight: 600; }
 .p-admin.ad-admin .ad-layout { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; min-width: 0; }
 .p-admin.ad-admin .a-nav { position: sticky; top: calc(var(--fn-stick, 0px) + var(--upd-h, 0px)); z-index: 12; display: flex; flex-direction: column; gap: .4rem; min-width: 0; margin: 0 0 1.3rem; padding: .5rem 0 .8rem; border: 0; border-bottom: 1px solid var(--line); background: var(--bg); transform: none; transition: none; }
@@ -5440,6 +5442,11 @@ html.tm-open, html.tm-open body { overflow: hidden; }
   .p-admin.ad-admin .a-group[aria-current="page"] { background: rgba(251, 248, 241, .12); box-shadow: inset 3px 0 var(--accent); color: var(--bar-text); }
   .p-admin.ad-admin .a-find-rail { display: flex; width: 100%; margin-bottom: .7rem; border-color: rgba(251, 248, 241, .4); background: rgba(251, 248, 241, .08); color: var(--bar-text); }
   .p-admin.ad-admin .a-quick-list { display: flex; flex-direction: column; gap: .2rem; }
+  /* the Google account line (and the chef panel's name line) at the top of the page column, level with the rail's Find,
+     instead of a line across the whole panel (head chef, 27 Nov 2026, step 4: about 90 px back on every page) */
+  .p-admin.ad-admin:has(> .p-bar) { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .p-admin.ad-admin > .p-bar { grid-area: 1 / 1; justify-self: end; align-self: start; position: relative; z-index: 13; max-width: calc(100% - 14rem); margin: .35rem 0 0; padding: 0; border: 0; text-align: right; }
+  .p-admin.ad-admin > .ad-layout { grid-area: 1 / 1; }
   .p-admin.ad-admin:has(.a-quick em) .a-g-n { display: none; }   /* one Inbox count where the Inbox shows its own (27 Nov 2026) */
   .p-admin.ad-admin .a-quick { display: flex; align-items: center; justify-content: space-between; gap: .5rem; min-height: 44px; padding: .5rem .7rem; border: 0; border-radius: 8px; background: transparent; color: var(--bar-text); font: 600 1rem/1.1 var(--body); text-align: left; cursor: pointer; }
   .p-admin.ad-admin .a-quick[aria-current="true"] { background: rgba(251, 248, 241, .12); box-shadow: inset 3px 0 var(--accent); }
