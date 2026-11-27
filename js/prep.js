@@ -7410,7 +7410,7 @@
     // board ends above the Save dock on the first screen (16 Nov 2026, docs/team-minimum-options/brief.md, Board above the dock)
     // a page's first heading that only repeats the tab just above it is kept for screen readers and the jump chips, not
     // drawn (head chef, 27 Nov 2026, step 4: People under People, Insights under Insights)
-    pane = tabEcho(pane, A_TAB_NAMES[at]);
+    if (at !== 'inbox') pane = tabEcho(pane, A_TAB_NAMES[at]);   // the Inbox's head has its own rule (.dsh-head-echo)
     return panelShellHTML(bar, railHTML(), findBtn('a-find-head') + adminHeadingHTML(ag, at), tabsBar, (owner ? idCardHTML() : '') + resume + pane, at === 'plan' ? 'tm-admin-plan' : '');
   }
   // The owner and PIN chefs use one responsive panel shell. Each supplies its own permitted rooms and real pages.

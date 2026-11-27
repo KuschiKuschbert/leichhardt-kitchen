@@ -352,9 +352,9 @@
     state.count = rows.filter(function (r) { return r.indexOf('>Checking<') < 0; }).length;
     var title = inbox ? 'Inbox' : 'To do';
     var out = rows.length ? '<ul class="dsh-need-list">' + rows.join('') + mailDetails + '</ul>' : '';
-    // the Inbox's own head only repeats the page's title just above it: kept for screen readers, not drawn, and its count
-    // is on the page's intro line (head chef, 27 Nov 2026, step 4)
-    return '<section class="dsh-panel dsh-needs" aria-label="' + title + '"><div class="dsh-panel-head' + (inbox ? ' a-tab-echo' : '') + '"><h3 class="a-ch-h">' + title + '</h3><span class="hint">' + (rows.length ? rows.length + ' to look at' : 'All clear') + '</span></div>' +
+    // the Inbox's own head only repeats the page's title just above it: from 720 px, where the page's intro line shows its
+    // count, it is kept for screen readers and not drawn (head chef, 27 Nov 2026, step 4); a phone keeps it, count and all
+    return '<section class="dsh-panel dsh-needs" aria-label="' + title + '"><div class="dsh-panel-head' + (inbox ? ' dsh-head-echo' : '') + '"><h3 class="a-ch-h">' + title + '</h3><span class="hint">' + (rows.length ? rows.length + ' to look at' : 'All clear') + '</span></div>' +
       out + ok + '</section>';
   }
 

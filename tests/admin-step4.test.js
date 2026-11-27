@@ -179,7 +179,7 @@ const store = p => p.evaluate(() => window.__fake.dump());
       });
       if (w >= 1000) ok(Math.abs(t.barTop - t.findTop) < 40 && t.barLeft > t.railRight && t.firstRow < (w === 1920 ? 470 : 430) && !t.headDrawn && t.headRead && /^What needs you today\. \d+ to look at\.$/.test(t.intro),
         w + ': Inbox: the Google line beside Find, the repeated Inbox row not drawn but read, the count on the intro, the first row higher (' + JSON.stringify(t) + ')');
-      else ok(t.barTop !== null && t.barTop < 120 && t.firstRow > 0, w + ': Inbox on a phone: the Google line stays at the top (' + JSON.stringify(t) + ')');
+      else ok(t.barTop !== null && t.barTop < 120 && t.firstRow > 0 && t.headDrawn, w + ': Inbox on a phone: the Google line stays at the top, the Inbox row with its count still shows (' + JSON.stringify(t) + ')');
       ok(!p.errors.length && !(await L.overflow(p)), w + ': Inbox: no page errors, no sideways scroll ' + p.errors.join(' | '));
       await p.context().close();
       if (w === 390) continue;

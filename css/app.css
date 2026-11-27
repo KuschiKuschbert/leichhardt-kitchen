@@ -3681,6 +3681,7 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
 .p-admin.ad-admin > .p-bar > span { min-width: 0; }
 /* a page's heading that only repeats its tab, and the Inbox's own head row: read by screen readers, not drawn (27 Nov 2026) */
 .a-tab-echo { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+@media (min-width: 720px) { .dsh-head-echo { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; } }
 .p-admin.ad-admin > .p-bar strong { color: var(--ink); font-weight: 600; }
 .p-admin.ad-admin .ad-layout { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; min-width: 0; }
 .p-admin.ad-admin .a-nav { position: sticky; top: calc(var(--fn-stick, 0px) + var(--upd-h, 0px)); z-index: 12; display: flex; flex-direction: column; gap: .4rem; min-width: 0; margin: 0 0 1.3rem; padding: .5rem 0 .8rem; border: 0; border-bottom: 1px solid var(--line); background: var(--bg); transform: none; transition: none; }
