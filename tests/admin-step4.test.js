@@ -192,6 +192,24 @@ const store = p => p.evaluate(() => window.__fake.dump());
     }
   }
 
+  // the Inbox's count on its intro line follows the rows: tick the last open mail Done and the count drops with its row
+  {
+    const one = { [K('config', 'admins')]: { x: 1, mailOpened: L.NOW }, [K('mail', 'm3')]: { from: 'sam', by: 'sam', cat: 'idea', pri: 'week', text: 'Pickle the leftover red onion', at: L.NOW - 5 * 3600000, done: false, seen: true },
+      [K('mailstat', 'm3')]: { seen: true, done: false, by: 'sam' } };
+    const p = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width: 1280, height: 800, touch: false, wait: 1800, extra: one });
+    await L.waitFor(p, () => !!document.querySelector('.dsh-needs .ml-row [data-p="ml-tick"]'), null, 8000).catch(() => {}); await L.settle(p, 300);
+    const state = () => p.evaluate(() => ({ intro: (document.querySelector('.ad-intro') || {}).textContent || '', rows: document.querySelectorAll('.dsh-need').length, badge: (document.querySelector('.a-quick[data-v="inbox"] em') || {}).textContent || '' }));
+    const before = await state();
+    await p.click('.dsh-needs .ml-row [data-p="ml-tick"]');
+    await L.waitFor(p, () => (window.__fake.dump()['kitchens/000000/mail/m3'] || {}).done === true, null, 8000).catch(() => {}); await L.settle(p, 800);
+    const after = await state();
+    const said = t => +((t.intro.match(/(\d+) to look at/) || [])[1] || 0);
+    ok(said(before) === before.rows && said(after) === after.rows && after.rows === before.rows - 1 && after.badge === String(after.rows),
+      'Inbox: after the last mail is ticked Done, the intro, the rows and the rail agree (' + JSON.stringify({ before, after }) + ')');
+    ok(!p.errors.length, 'Inbox Done: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });

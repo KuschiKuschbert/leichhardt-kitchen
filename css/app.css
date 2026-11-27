@@ -3679,8 +3679,9 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
 .p-admin.ad-admin { display: block; width: 100%; max-width: none; margin: 0 auto; }
 .p-admin.ad-admin > .p-bar { align-items: center; gap: .25rem 1rem; margin-bottom: .8rem; padding-bottom: .55rem; border-bottom: 1px solid var(--line); color: var(--muted); font-size: .8125rem; overflow-wrap: anywhere; }
 .p-admin.ad-admin > .p-bar > span { min-width: 0; }
-/* a page's heading that only repeats its tab, and the Inbox's own head row: read by screen readers, not drawn (27 Nov 2026) */
-.a-tab-echo { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+/* a page's heading that only repeats its tab, from 1000 px where the rail and the room's tabs name the page (head chef,
+   27 Nov 2026, step 4: studied at 1920 and 1280); phones and the tablet keep it drawn. Read by screen readers either way */
+@media (min-width: 1000px) { .a-tab-echo { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; } }
 @media (min-width: 720px) { .dsh-head-echo { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; } }
 .p-admin.ad-admin > .p-bar strong { color: var(--ink); font-weight: 600; }
 .p-admin.ad-admin .ad-layout { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; min-width: 0; }
